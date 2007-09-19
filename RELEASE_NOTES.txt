@@ -1,0 +1,234 @@
+
+pbrt Release 1.03 (24 June 2007)
+
+-------------
+Installation:
+-------------
+
+The pbrtsrc-1.03.tar.gz and pbrtsrc-1.03.zip files include updated source
+code to the pbrt rendering system described in "Physically Based Rendering:
+From Theory to Implementation" by Matt Pharr and Greg Humphreys.  The zip
+file includes project files, source code, and OpenEXR libraries for bulding
+the system under Windows, and the tar.gz file includes makefiles and source
+code for building under Linux, OSX, FreeBSD, and OpenBSD.  (For these
+platforms, you are expected to install OpenEXR on your system yourself;
+information about how to do this is provided during the build process.)
+
+See page 1017 of the PBR book for informaton about building and installing
+under Windows and page 1018 for information about building and installing
+under Linux.  See the pbrt.org website for more information about pbrt.
+
+The source code to pbrt (*but not the contents of the book itself*) is
+released under the GNU Public License; see the accompanying file
+COPYING.txt for information about the license agreement under which this
+software is provided.  Your use of this software constitutes acceptance of
+this license.
+
+Thanks in particular to John Danks and Kevin Egan for many bug reports and
+patches that went into this release.
+
+--------------------
+** Important note **
+--------------------
+
+This release includes a fix to bug 45, which leads to different results
+being returned from FresnelBlend BSDFs.  In particular, the TT model (and
+any other scene that uses this BSDF) will render differently in 1.03 than
+it did in 1.02.  However, the 1.03 behavior should match the 1.01
+behavior.  (And is believed to finally be fully correct.)
+
+--------------
+Other Changes:
+--------------
+
+This release (like the 1.02 release, though it wasn't mentioned in the
+release notes for that release), has the author-supplied plugins from
+http://pbrt.org/downloads.php already included.
+
+----------
+Bug Fixes: 
+----------
+
+The following bugs from the pbrt bug database (http://pbrt.org/bugtracker)
+are fixed in this release.
+
+- Bug #77: Fix the Mie scattering phase functions to actually integrate to
+one...
+
+- Bug #76: Added missing deletes in ParamSet::Erase*() methods.
+
+- Bug #75: Rewrote ply2pbrt to be in newfangled "ANSI C", not K&R.
+
+- Bug #74: Added calls to let Materials access geometry and material
+ParamSets directly.
+
+- Bug #70: The hemisphere check in the Blinn class was incorrect
+
+- Bug #68: The OrenNayar BRDF would return NaNs for certain ill-behaved
+  directions.
+
+- Bug #66: Logic in exponent check in Blinn() constructor was incorrect
+
+- Bug #65: May have uninitialized values in LDSampler if an instance is
+constructed and then destroyed without any samples being generated.
+
+- Bug #57: Cylindrical texture mapping code had a typo in the discontiuity
+detection code where it computes dtdy.
+
+- Bug #56: Partial derivatives of disks are computed incorrectly if the
+inner-radius is non-zero.
+
+- Bug #55: The single-scattering volume integrator would crash when there
+were no lights
+
+- Bug #54: Change embedded ^M in pbrtlex.l to a more-portable \x0a
+
+- Bug #53: The DirectLighting integrator was incorrectly requesting a
+single 2D sample, rather than a single 1D sample, for the case of
+choosing a single light source to sample from. 
+
+- Bug #51: Fixed gcc 4.02 build issues.
+
+- Bug #48: Radiance scale factor for transmission into a dielectric was
+incorrect.
+
+- Bug #46: TriangleMesh::GetShadingGeometry() wasn't properly transforming
+the partial derivatives into world space.
+
+- Bug #45: Fixed incorrect scale factor in FresnelBlend::f() method.
+
+- Bug #44: Invalid ray differentials could be initialized in Scene::
+Render() due to that method not paying addention to the weights
+returned by Camera::GenerateRay() for the auxiliary rays.
+
+- Bug #43: OSX 10.4 build issues fixed
+
+- Bug #42: NURBS specificed with homogeneous "Pw" coordinates would
+incorrectly hit an assertion in the NURBS CreateShape() routine.
+
+- Bug #41: Use safe string functions (snprintf(), etc.) to avoid buffer
+  overflows (and make OpenBSD's compiler happier)
+
+- Bug #40: Added support for OpenBSD to makefile and pbrt.h
+
+- Bug #34: Out of bounds sample locations would crash
+  ImageFilm::AddSample()
+
+------------------------------
+Bug Fixes In The 1.02 Release:
+------------------------------
+
+The following bugs were fixed in the previous pbrt patch release.
+
+- Bug #2: Fixed errors in windows project files: film.cpp was missing
+from core project, buffer security turned off for release builds, had
+project file to build bumpy.cpp (which doesn't exist)
+file to build bumpy.cpp was missing.
+
+- Bug #3: Added checks to camera and light constructors to detect
+non-uniform scale transformations and warn about them, if present.
+(Cameras and lights don't work properly if their transformations have
+non-uniform scales)
+
+- Bug #8: Add checks in Blinn and Anisotropic microfacet distribution
+constructors to detect excessively large and NaN exponent values.
+
+- Bug #10: Added casts in PhotonIntegrator to eliminate compiler warnings
+about casts from doubles.
+
+- Bug #12: Fixed pbrtTransform() to set the current transformation matrix
+from the given matrix; previously, it was multiplying by the given matrix,
+just like pbrtConcatTransform()
+
+- Bug #13: Input file parser doesn't detect errors like:
+ "float foo" "some-texture-name".  (Where "float" should have been
+"texture").  This is particularly bad since the TT scene on the CD has this
+error in it.  Fixed the parser to detect this case and treat it as a
+texture as intended by the user.
+
+- Bug #14: Fixed InfiniteAreaLight::Sample_L() to no longer potentially
+divide by an uninitialized variable depending on how the compiler generated
+code.  (Also fixed AreaLight in a similar manner).
+
+- Bug #15: Fixed SphericalMapping2D::Map() method to compute *dtdy
+correctly (it would incorrectly assign to *dtdx in the else clause of the
+if test.)
+
+- Bug #17: Added COREDLL to declaration of ComputeStep1dCDF() function so
+that it's available to plugins under windows.
+
+- Bug #18: Fixed triangle area calculation in test for degenerate uv
+mapping on triangles in TriangleMesh's CreateShape() function.
+
+- Bug #20: Avoid possible degenerate case when computing dPdu and dPdv on
+spheres.
+
+- Bug #21: Fix Assert() macro to handle expressions using modulus '%'
+operator.
+
+- Bug #25: Fix error in implementation of Anisotropic::sampleFirstQuadrant()
+
+- Bug #26: dNdu and dNdv in DifferentialGeometry should be Normals (and in
+particular should transform like Normals), not Vectors.
+
+- Bug #27: Fix AggregateVolume::p() method to correctly handle the case of
+multiple overlapping volumes.
+
+- Bug #28: Fixed Scene::WorldBound() to include the extents of any
+VolumeRegions in the scene as well as the scene geometry.
+
+- Bug #29: Fixed the Monte Carlo-based implementation of BxDF::rho() to no
+longer incorrectly divide by M_PI.
+
+- Bug #30: Fixed the computation of blinn_pdf value in Blinn microfacet
+distribution to divide by exponent+2, not exponent+1.
+
+- Bug #32: Use $(MAKE), not "make" in clean rule in makefile.
+
+- Bug #33: Fixed implementation of Anisotropic::D() and anisotropic_pdf
+calculations to match derivation.
+
+- Bug #36: Fixed possible dereference of NULL pointer when per-vertex
+tangents were provided for triangle mesh without per-vertex normals.
+
+- Bug #37: Fixed LookAt implementation so that it actually will always
+generate a rigid body transformation.
+
+-------------------------------------
+Additional fixes without bug numbers:
+-------------------------------------
+
+Turned off buffer security checks on windows builds; this speeds things up
+a bunch!
+
+Added missing COREDLL declarations to: Spectrum::Exp(),
+RejectionSampleDisk(), Rotate[XYZ](), Rotate(), LookAt(), EstimateDirect(),
+SampleStep1d(), ComputeStep1dCDF(), MemoryArena class, GeometricPrimitive
+class, and InstancePrimitive class.
+
+Added missing const qualifier to Point::operator+ method.
+
+Fixed BBox::BoundingSphere() method to handle degenerate bounding boxes
+gracefully.
+
+Fixed typo in MipMap down-filtering of previous mip-map level.
+
+Fixed DirectLighting integrator so that area light sources visible from
+specular reflection or refraction would still be visible.
+
+Fixed AreaLight::Sample_L() method to pass the sampled point to
+AreaLight::L() to compute outgoing radiance, not the point at which
+lighting is being computed.
+
+Fixed memory leaks in LDSampler by freeing memory in destructor.
+
+Fix TriangleMesh computation of bitangent vectors in cases where tangent
+vectors are provided explicitly.
+
+Fixed case in ImageFilm that could lead to images with zero pixels in one
+dimension when a small crop window was given.
+
+Added 2005 to copyright notices.
+
+Bumped version number to 1.02.
+
