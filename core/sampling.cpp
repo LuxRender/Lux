@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // sampling.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "sampling.h"
 #include "transport.h"
 #include "volume.h"

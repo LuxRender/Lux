@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_LIGHT_H
-#define PBRT_LIGHT_H
+#ifndef LUX_LIGHT_H
+#define LUX_LIGHT_H
 // light.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 #include "transform.h"
 #include "color.h"
@@ -113,4 +113,4 @@ protected:
 	Reference<Shape> shape;
 	float area;
 };
-#endif // PBRT_LIGHT_H
+#endif // LUX_LIGHT_H

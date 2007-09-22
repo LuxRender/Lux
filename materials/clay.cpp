@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // clay.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Clay Class Declarations
 class Clay : public Material {

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // glass.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Glass Class Declarations
 class Glass : public Material {

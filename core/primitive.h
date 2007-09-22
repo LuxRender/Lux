@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_PRIMITIVE_H
-#define PBRT_PRIMITIVE_H
+#ifndef LUX_PRIMITIVE_H
+#define LUX_PRIMITIVE_H
 // primitive.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "shape.h"
 #include "material.h"
 // Primitive Declarations
@@ -105,4 +105,4 @@ public:
 	BSDF *GetBSDF(const DifferentialGeometry &dg,
 	              const Transform &) const;
 };
-#endif // PBRT_PRIMITIVE_H
+#endif // LUX_PRIMITIVE_H

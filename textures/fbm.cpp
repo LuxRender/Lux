@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // fbm.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "texture.h"
 #include "paramset.h"
 // FBmTexture Declarations

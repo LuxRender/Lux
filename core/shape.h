@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_SHAPE_H
-#define PBRT_SHAPE_H
+#ifndef LUX_SHAPE_H
+#define LUX_SHAPE_H
 // shape.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 #include "transform.h"
 #include "paramset.h"
@@ -168,4 +168,4 @@ private:
 	vector<float> areaCDF;
 	vector<Reference<Shape> > shapes;
 };
-#endif // PBRT_SHAPE_H
+#endif // LUX_SHAPE_H

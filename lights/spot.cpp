@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // spot.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "light.h"
 #include "shape.h"
 // SpotLight Declarations

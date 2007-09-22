@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // camera.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "camera.h"
 #include "film.h"
 #include "mc.h"

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // matte.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Matte Class Declarations
 class Matte : public Material {

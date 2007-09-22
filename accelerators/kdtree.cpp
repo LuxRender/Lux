@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // kdtree.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "primitive.h"
 // KdAccelNode Declarations
 struct MailboxPrim {

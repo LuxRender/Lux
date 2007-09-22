@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_FILM_H
-#define PBRT_FILM_H
+#ifndef LUX_FILM_H
+#define LUX_FILM_H
 // film.h*
-#include "pbrt.h"
+#include "lux.h"
 // Film Declarations
 class Film {
 public:
@@ -49,4 +49,4 @@ extern COREDLL void ApplyImagingPipeline(float *rgb,
 	const ParamSet *toneMapParams = NULL,
 	float gamma = 2.2, float dither = 0.5f,
 	int maxDisplayValue = 255);
-#endif // PBRT_FILM_H
+#endif // LUX_FILM_H

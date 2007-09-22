@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // mirror.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Mirror Class Declarations
 class Mirror : public Material {

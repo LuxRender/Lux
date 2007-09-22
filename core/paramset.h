@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_PARAMSET_H
-#define PBRT_PARAMSET_H
+#ifndef LUX_PARAMSET_H
+#define LUX_PARAMSET_H
 // paramset.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 #include "texture.h"
 #include "color.h"
@@ -212,4 +212,4 @@ private:
 	map<string,
 	    Reference<Texture<Spectrum> > > &spectrumTextures;
 };
-#endif // PBRT_PARAMSET_H
+#endif // LUX_PARAMSET_H

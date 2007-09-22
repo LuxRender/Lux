@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // shinymetal.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // ShinyMetal Class Declarations
 class ShinyMetal : public Material {

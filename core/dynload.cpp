@@ -287,7 +287,7 @@ static string SearchPath(const string &searchpath,
 	const char *start = searchpath.c_str();
 	const char *end = start;
 	while (*start) {
-		while (*end && *end != PBRT_PATH_SEP[0])
+		while (*end && *end != LUX_PATH_SEP[0])
 			++end;
 		string component(start, end);
 
@@ -297,7 +297,7 @@ static string SearchPath(const string &searchpath,
 			fclose(f);
 			return fn;
 		}
-		if (*end == PBRT_PATH_SEP[0]) ++end;
+		if (*end == LUX_PATH_SEP[0]) ++end;
 		start = end;
 	}
 	return "";

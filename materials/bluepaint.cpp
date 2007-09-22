@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // bluepaint.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // BluePaint Class Declarations
 class BluePaint : public Material {

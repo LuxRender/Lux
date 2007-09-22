@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_DYNLOAD_H
-#define PBRT_DYNLOAD_H
+#ifndef LUX_DYNLOAD_H
+#define LUX_DYNLOAD_H
 // dynload.h*
-#include "pbrt.h"
+#include "lux.h"
 // Runtime Loading Declarations
 COREDLL void UpdatePluginPath(const string &newpath);
 COREDLL Reference<Shape> MakeShape(const string &name,
@@ -58,4 +58,4 @@ COREDLL ToneMap *MakeToneMap(const string &name,
 	const ParamSet &paramSet);
 COREDLL Film *MakeFilm(const string &name,
 	const ParamSet &paramSet, Filter *filt);
-#endif // PBRT_DYNLOAD_H
+#endif // LUX_DYNLOAD_H

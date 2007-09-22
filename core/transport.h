@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_TRANSPORT_H
-#define PBRT_TRANSPORT_H
+#ifndef LUX_TRANSPORT_H
+#define LUX_TRANSPORT_H
 // transport.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "primitive.h"
 #include "color.h"
 #include "light.h"
@@ -62,4 +62,4 @@ COREDLL Spectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,
 	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,
 	float *&avgYsample, float *&cdf, float &overallAvgY);
-#endif // PBRT_TRANSPORT_H
+#endif // LUX_TRANSPORT_H

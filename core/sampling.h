@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_SAMPLING_H
-#define PBRT_SAMPLING_H
+#ifndef LUX_SAMPLING_H
+#define LUX_SAMPLING_H
 // sampling.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 // Sampling Declarations
 class COREDLL Sampler {
@@ -171,4 +171,4 @@ inline void LDShuffleScrambled2D(int nSamples,
 		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(samples, nPixel, 2 * nSamples);
 }
-#endif // PBRT_SAMPLING_H
+#endif // LUX_SAMPLING_H

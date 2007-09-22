@@ -30,7 +30,7 @@
 #include <ImfChannelList.h>
 #include <ImfFrameBuffer.h>
 #include <half.h>
-#include "pbrt.h"
+#include "lux.h"
 #include "color.h"
 using namespace Imf;
 using namespace Imath;

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // path.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "transport.h"
 #include "scene.h"
 // PathIntegrator Declarations

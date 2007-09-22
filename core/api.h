@@ -20,21 +20,21 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_API_H
-#define PBRT_API_H
+#ifndef LUX_API_H
+#define LUX_API_H
 // api.h*
-#include "pbrt.h"
+#include "lux.h"
 // API Function Declarations
-extern COREDLL void pbrtIdentity();
-extern COREDLL void pbrtTranslate(float dx, float dy, float dz);
-extern COREDLL void pbrtRotate(float angle,
+extern COREDLL void luxIdentity();
+extern COREDLL void luxTranslate(float dx, float dy, float dz);
+extern COREDLL void luxRotate(float angle,
                                float ax,
 							   float ay,
 							   float az);
-extern COREDLL void pbrtScale(float sx,
+extern COREDLL void luxScale(float sx,
                               float sy,
 							  float sz);
-extern COREDLL void pbrtLookAt(float ex,
+extern COREDLL void luxLookAt(float ex,
                                float ey,
 							   float ez,
 							   float lx,
@@ -44,42 +44,42 @@ extern COREDLL void pbrtLookAt(float ex,
 							   float uy,
 							   float uz);
 extern COREDLL
-	void pbrtConcatTransform(float transform[16]);
+	void luxConcatTransform(float transform[16]);
 extern COREDLL
-	void pbrtTransform(float transform[16]);
-extern COREDLL void pbrtCoordinateSystem(const string &);
-extern COREDLL void pbrtCoordSysTransform(const string &);
-extern COREDLL void pbrtPixelFilter(const string &name, const ParamSet &params);
-extern COREDLL void pbrtFilm(const string &type,
+	void luxTransform(float transform[16]);
+extern COREDLL void luxCoordinateSystem(const string &);
+extern COREDLL void luxCoordSysTransform(const string &);
+extern COREDLL void luxPixelFilter(const string &name, const ParamSet &params);
+extern COREDLL void luxFilm(const string &type,
                             const ParamSet &params);
-extern COREDLL void pbrtSampler(const string &name,
+extern COREDLL void luxSampler(const string &name,
                                const ParamSet &params);
-extern COREDLL void pbrtAccelerator(const string &name,
+extern COREDLL void luxAccelerator(const string &name,
 	                               const ParamSet &params);
 extern COREDLL
-	void pbrtSurfaceIntegrator(const string &name,
+	void luxSurfaceIntegrator(const string &name,
 							  const ParamSet &params);
 extern COREDLL
-	void pbrtVolumeIntegrator(const string &name,
+	void luxVolumeIntegrator(const string &name,
 							 const ParamSet &params);
-extern COREDLL void pbrtCamera(const string &, const ParamSet &cameraParams);
-extern COREDLL void pbrtSearchPath(const string &path);
-extern COREDLL void pbrtWorldBegin();
-extern COREDLL void pbrtAttributeBegin();
-extern COREDLL void pbrtAttributeEnd();
-extern COREDLL void pbrtTransformBegin();
-extern COREDLL void pbrtTransformEnd();
-extern COREDLL void pbrtTexture(const string &name, const string &type,
+extern COREDLL void luxCamera(const string &, const ParamSet &cameraParams);
+extern COREDLL void luxSearchPath(const string &path);
+extern COREDLL void luxWorldBegin();
+extern COREDLL void luxAttributeBegin();
+extern COREDLL void luxAttributeEnd();
+extern COREDLL void luxTransformBegin();
+extern COREDLL void luxTransformEnd();
+extern COREDLL void luxTexture(const string &name, const string &type,
 	const string &texname, const ParamSet &params);
-extern COREDLL void pbrtMaterial(const string &name,
+extern COREDLL void luxMaterial(const string &name,
                                const ParamSet &params);
-extern COREDLL void pbrtLightSource(const string &name, const ParamSet &params);
-extern COREDLL void pbrtAreaLightSource(const string &name, const ParamSet &params);
-extern COREDLL void pbrtShape(const string &name, const ParamSet &params);
-extern COREDLL void pbrtReverseOrientation();
-extern COREDLL void pbrtVolume(const string &name, const ParamSet &params);
-extern COREDLL void pbrtObjectBegin(const string &name);
-extern COREDLL void pbrtObjectEnd();
-extern COREDLL void pbrtObjectInstance(const string &name);
-extern COREDLL void pbrtWorldEnd();
+extern COREDLL void luxLightSource(const string &name, const ParamSet &params);
+extern COREDLL void luxAreaLightSource(const string &name, const ParamSet &params);
+extern COREDLL void luxShape(const string &name, const ParamSet &params);
+extern COREDLL void luxReverseOrientation();
+extern COREDLL void luxVolume(const string &name, const ParamSet &params);
+extern COREDLL void luxObjectBegin(const string &name);
+extern COREDLL void luxObjectEnd();
+extern COREDLL void luxObjectInstance(const string &name);
+extern COREDLL void luxWorldEnd();
 #endif // PBRT_API_H

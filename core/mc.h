@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_MC_H
-#define PBRT_MC_H
+#ifndef LUX_MC_H
+#define LUX_MC_H
 // mc.h*
 // MC Utility Declarations
 extern COREDLL void RejectionSampleDisk(float u1, float u2, float *x, float *y);
@@ -56,4 +56,4 @@ inline float PowerHeuristic(int nf, float fPdf, int ng,
 	float f = nf * fPdf, g = ng * gPdf;
 	return (f*f) / (f*f + g*g);
 }
-#endif // PBRT_MC_H
+#endif // LUX_MC_H

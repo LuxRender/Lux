@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_TEXTURE_H
-#define PBRT_TEXTURE_H
+#ifndef LUX_TEXTURE_H
+#define LUX_TEXTURE_H
 // texture.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "color.h"
 #include "geometry.h"
 #include "transform.h"
@@ -120,4 +120,4 @@ public:
 private:
 	T value;
 };
-#endif // PBRT_TEXTURE_H
+#endif // LUX_TEXTURE_H

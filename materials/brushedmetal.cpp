@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // brushedmetal.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // BrushedMetal Class Declarations
 class BrushedMetal : public Material {

@@ -47,7 +47,7 @@ ACCELERATORS = grid kdtree
 CAMERAS      = environment orthographic perspective
 CORE         = api camera color dynload exrio film geometry light material mc \
                paramset parser primitive reflection sampling scene shape \
-               texture timer transform transport util volume pbrtparse pbrtlex
+               texture timer transform transport util volume luxparse luxlex
 FILM         = image
 FILTERS      = box gaussian mitchell sinc triangle
 INTEGRATORS  = directlighting emission irradiancecache \
@@ -64,13 +64,13 @@ TEXTURES     = bilerp checkerboard constant dots fbm imagemap marble mix \
 TONEMAPS     = contrast highcontrast maxwhite nonlinear
 VOLUMES      = exponential homogeneous volumegrid
 
-RENDERER     = pbrt
+RENDERER     = lux
 
 
 
 RENDERER_OBJS     := $(addprefix objs/, $(RENDERER:=.o) )
 CORE_OBJS         := $(addprefix objs/, $(CORE:=.o) )
-CORE_LIB          := core/libpbrt.a
+CORE_LIB          := core/liblux.a
 
 SHAPES_DSOS       := $(addprefix bin/, $(SHAPES:=.so))
 MATERIALS_DSOS    := $(addprefix bin/, $(MATERIALS:=.so))
@@ -98,10 +98,10 @@ FILM_OBJS         := $(addprefix objs/, $(FILM:=.o))
 TONEMAPS_OBJS     := $(addprefix objs/, $(TONEMAPS:=.o))
 SAMPLERS_OBJS     := $(addprefix objs/, $(SAMPLERS:=.o))
 
-RENDERER_BINARY = bin/pbrt
+RENDERER_BINARY = bin/lux
 
 CORE_HEADERFILES = api.h camera.h color.h dynload.h film.h geometry.h \
-                  kdtree.h light.h pbrt.h material.h mc.h mipmap.h octree.h \
+                  kdtree.h light.h lux.h material.h mc.h mipmap.h octree.h \
                   paramset.h primitive.h reflection.h sampling.h scene.h \
                   shape.h texture.h timer.h tonemap.h transform.h transport.h \
                   volume.h 
@@ -120,14 +120,14 @@ tools: $(CORE_LIB)
 	(cd tools && $(MAKE))
 
 $(CORE_LIB): $(CORE_OBJS)
-	@echo "Building the core rendering library (libpbrt.a)"
+	@echo "Building the core rendering library (liblux.a)"
 	@ar rcs $(CORE_LIB) $(CORE_OBJS)
 
 bin/%.so: objs/%.o 
 	@$(LD) $(SHARED_LDFLAGS) $^ -o $@
 
 objs/%.o: renderer/%.cpp $(CORE_HEADERS)
-	@echo "Building the rendering binary (pbrt)"
+	@echo "Building the rendering binary (lux)"
 	@$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 objs/%.o: core/%.cpp $(CORE_HEADERS)
@@ -186,22 +186,22 @@ objs/%.o: samplers/%.cpp $(CORE_HEADERS)
 	@echo "Building Sampler Plugin \"$*\""
 	@$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-core/pbrtlex.cpp: core/pbrtlex.l
-	@echo "Lex'ing pbrtlex.l"
-	@$(LEX) -o$@ core/pbrtlex.l
+core/luxlex.cpp: core/luxlex.l
+	@echo "Lex'ing luxlex.l"
+	@$(LEX) -o$@ core/luxlex.l
 
-core/pbrtparse.h core/pbrtparse.cpp: core/pbrtparse.y
-	@echo "YACC'ing pbrtparse.y"
-	@$(YACC) -o $@ core/pbrtparse.y
-	@if [ -e core/pbrtparse.cpp.h ]; then /bin/mv core/pbrtparse.cpp.h core/pbrtparse.h; fi
-	@if [ -e core/pbrtparse.hpp ]; then /bin/mv core/pbrtparse.hpp core/pbrtparse.h; fi
+core/luxparse.h core/luxparse.cpp: core/luxparse.y
+	@echo "YACC'ing luxparse.y"
+	@$(YACC) -o $@ core/luxparse.y
+	@if [ -e core/luxparse.cpp.h ]; then /bin/mv core/luxparse.cpp.h core/luxparse.h; fi
+	@if [ -e core/luxparse.hpp ]; then /bin/mv core/luxparse.hpp core/luxparse.h; fi
 
 $(RENDERER_BINARY): $(RENDERER_OBJS) $(CORE_LIB)
 	@echo "Linking $@"
-	@$(CXX) $(LRT_LDFLAGS) -o $@ $(RENDERER_OBJS) $(PBRTPRELINK) $(CORE_OBJS) $(PBRTPOSTLINK) $(LIBS)
+	@$(CXX) $(LRT_LDFLAGS) -o $@ $(RENDERER_OBJS) $(LUXPRELINK) $(CORE_OBJS) $(LUXPOSTLINK) $(LIBS)
 
 clean:
-	rm -f */*.o */*.so */*.a bin/pbrt core/pbrtlex.[ch]* core/pbrtparse.[ch]*
+	rm -f */*.o */*.so */*.a bin/lux core/luxlex.[ch]* core/luxparse.[ch]*
 	(cd tools && $(MAKE) clean)
 
 objs/exrio.o: exrcheck

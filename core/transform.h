@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_TRANSFORM_H
-#define PBRT_TRANSFORM_H
+#ifndef LUX_TRANSFORM_H
+#define LUX_TRANSFORM_H
 // transform.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 // Transform Declarations
 class COREDLL Transform {
@@ -132,4 +132,4 @@ inline void Transform::operator()(const Ray &r,
 	rt->maxt = r.maxt;
 	rt->time = r.time;
 }
-#endif // PBRT_TRANSFORM_H
+#endif // LUX_TRANSFORM_H

@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_COLOR_H
-#define PBRT_COLOR_H
+#ifndef LUX_COLOR_H
+#define LUX_COLOR_H
 // color.h*
-#include "pbrt.h"
+#include "lux.h"
 // Spectrum Declarations
 class COREDLL Spectrum {
 public:
@@ -186,4 +186,4 @@ private:
 	static float ZWeight[COLOR_SAMPLES];
 	friend Spectrum FromXYZ(float x, float y, float z);
 };
-#endif // PBRT_COLOR_H
+#endif // LUX_COLOR_H

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // image.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "film.h"
 #include "color.h"
 #include "paramset.h"
@@ -211,7 +211,7 @@ void ImageFilm::WriteImage() {
 }
 extern "C" DLLEXPORT Film *CreateFilm(const ParamSet &params, Filter *filter)
 {
-	string filename = params.FindOneString("filename", "pbrt.exr");
+	string filename = params.FindOneString("filename", "lux.exr");
 	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);
 
 	int xres = params.FindOneInt("xresolution", 640);

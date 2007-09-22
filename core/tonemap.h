@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_TONEMAP_H
-#define PBRT_TONEMAP_H
+#ifndef LUX_TONEMAP_H
+#define LUX_TONEMAP_H
 // tonemap.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "film.h"
 // ToneMap Declarations
 class ToneMap {
@@ -33,4 +33,4 @@ public:
 	virtual void Map(const float *y, int xRes, int yRes,
 		float maxDisplayY, float *scale) const = 0;
 };
-#endif // PBRT_TONEMAP_H
+#endif // LUX_TONEMAP_H

@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_GEOMETRY_H
-#define PBRT_GEOMETRY_H
+#ifndef LUX_GEOMETRY_H
+#define LUX_GEOMETRY_H
 // geometry.h*
-#include "pbrt.h"
+#include "lux.h"
 #include <float.h>
 // Geometry Declarations
 class COREDLL Vector {
@@ -401,4 +401,4 @@ inline float SphericalPhi(const Vector &v) {
 	float p = atan2f(v.y, v.x);
 	return (p < 0.f) ? p + 2.f*M_PI : p;
 }
-#endif // PBRT_GEOMETRY_H
+#endif // LUX_GEOMETRY_H

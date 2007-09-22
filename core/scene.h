@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_SCENE_H
-#define PBRT_SCENE_H
+#ifndef LUX_SCENE_H
+#define LUX_SCENE_H
 // scene.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "primitive.h"
 #include "transport.h"
 // Scene Declarations
@@ -56,4 +56,4 @@ public:
 	Sampler *sampler;
 	BBox bound;
 };
-#endif // PBRT_SCENE_H
+#endif // LUX_SCENE_H

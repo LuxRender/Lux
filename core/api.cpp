@@ -69,14 +69,14 @@ RenderOptions::RenderOptions() {
 	SurfIntegratorName = "directlighting";
 	VolIntegratorName = "emission";
 	CameraName = "perspective";
-	char *searchEnv = getenv("PBRT_SEARCHPATH");
+	char *searchEnv = getenv("LUX_SEARCHPATH");
 	if (searchEnv == NULL) {
-		Warning("PBRT_SEARCHPATH not set in your environment.\n"
-			  "pbrt won't be able to find plugins if "
+		Warning("LUX_SEARCHPATH not set in your environment.\n"
+			  "lux won't be able to find plugins if "
 			  "no SearchPath in input file.\n"
-			  "PBRT_SEARCHPATH should be a "
+			  "LUX_SEARCHPATH should be a "
 			  "\"%s\"-separated list of directories.\n",
-			  PBRT_PATH_SEP);
+			  LUX_PATH_SEP);
 		gotSearchPath = false;
 	}
 	else {
@@ -118,7 +118,7 @@ static vector<Transform> pushedTransforms;
 // API Macros
 #define VERIFY_INITIALIZED(func) \
 if (currentApiState == STATE_UNINITIALIZED) { \
-	Error("pbrtInit() must be before calling \"%s()\". " \
+	Error("luxInit() must be before calling \"%s()\". " \
 		"Ignoring.", func); \
 	return; \
 } else /* swallow trailing semicolon */
@@ -137,7 +137,7 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 	return; \
 } else /* swallow trailing semicolon */
 // API Function Definitions
-COREDLL void pbrtInit() {
+COREDLL void luxInit() {
 	// System-wide initialization
 	// Make sure floating point unit's rounding stuff is set
 	// as is expected by the fast FP-conversion routines.  In particular,
@@ -154,32 +154,32 @@ COREDLL void pbrtInit() {
 	#endif // FAST_INT
 	// API Initialization
 	if (currentApiState != STATE_UNINITIALIZED)
-		Error("pbrtInit() has already been called.");
+		Error("luxInit() has already been called.");
 	currentApiState = STATE_OPTIONS_BLOCK;
 	renderOptions = new RenderOptions;
 	graphicsState = GraphicsState();
 }
-COREDLL void pbrtCleanup() {
+COREDLL void luxCleanup() {
 	StatsCleanup();
 	// API Cleanup
 	if (currentApiState == STATE_UNINITIALIZED)
-		Error("pbrtCleanup() called without pbrtInit().");
+		Error("luxCleanup() called without luxInit().");
 	else if (currentApiState == STATE_WORLD_BLOCK)
-		Error("pbrtCleanup() called while inside world block.");
+		Error("luxCleanup() called while inside world block.");
 	currentApiState = STATE_UNINITIALIZED;
 	delete renderOptions;
 	renderOptions = NULL;
 }
-COREDLL void pbrtIdentity() {
+COREDLL void luxIdentity() {
 	VERIFY_INITIALIZED("Identity");
 	curTransform = Transform();
 }
-COREDLL void pbrtTranslate(float dx, float dy, float dz) {
+COREDLL void luxTranslate(float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Translate");
 	curTransform =
 		curTransform * Translate(Vector(dx, dy, dz));
 }
-COREDLL void pbrtTransform(float tr[16]) {
+COREDLL void luxTransform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
 	curTransform = Transform(new Matrix4x4(
 		tr[0], tr[4], tr[8], tr[12],
@@ -187,7 +187,7 @@ COREDLL void pbrtTransform(float tr[16]) {
 		tr[2], tr[6], tr[10], tr[14],
 		tr[3], tr[7], tr[11], tr[15]));
 }
-COREDLL void pbrtConcatTransform(float tr[16]) {
+COREDLL void luxConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
 	curTransform = curTransform * Transform(
 		new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
@@ -195,62 +195,62 @@ COREDLL void pbrtConcatTransform(float tr[16]) {
 				 tr[2], tr[6], tr[10], tr[14],
 				 tr[3], tr[7], tr[11], tr[15]));
 }
-COREDLL void pbrtRotate(float angle, float dx, float dy, float dz) {
+COREDLL void luxRotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Rotate");
 	curTransform = curTransform * Rotate(angle, Vector(dx, dy, dz));
 }
-COREDLL void pbrtScale(float sx, float sy, float sz) {
+COREDLL void luxScale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED("Scale");
 	curTransform = curTransform * Scale(sx, sy, sz);
 }
-COREDLL void pbrtLookAt(float ex, float ey, float ez, float lx, float ly,
+COREDLL void luxLookAt(float ex, float ey, float ez, float lx, float ly,
 	float lz, float ux, float uy, float uz) {
 	VERIFY_INITIALIZED("LookAt");
 	curTransform = curTransform * LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
 		Vector(ux, uy, uz));
 }
-COREDLL void pbrtCoordinateSystem(const string &name) {
+COREDLL void luxCoordinateSystem(const string &name) {
 	VERIFY_INITIALIZED("CoordinateSystem");
 	namedCoordinateSystems[name] = curTransform;
 }
-COREDLL void pbrtCoordSysTransform(const string &name) {
+COREDLL void luxCoordSysTransform(const string &name) {
 	VERIFY_INITIALIZED("CoordSysTransform");
 	if (namedCoordinateSystems.find(name) !=
 	    namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[name];
 }
-COREDLL void pbrtPixelFilter(const string &name,
+COREDLL void luxPixelFilter(const string &name,
                            const ParamSet &params) {
 	VERIFY_OPTIONS("PixelFilter");
 	renderOptions->FilterName = name;
 	renderOptions->FilterParams = params;
 }
-COREDLL void pbrtFilm(const string &type, const ParamSet &params) {
+COREDLL void luxFilm(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film");
 	renderOptions->FilmParams = params;
 	renderOptions->FilmName = type;
 }
-COREDLL void pbrtSampler(const string &name, const ParamSet &params) {
+COREDLL void luxSampler(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Sampler");
 	renderOptions->SamplerName = name;
 	renderOptions->SamplerParams = params;
 }
-COREDLL void pbrtAccelerator(const string &name, const ParamSet &params) {
+COREDLL void luxAccelerator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Accelerator");
 	renderOptions->AcceleratorName = name;
 	renderOptions->AcceleratorParams = params;
 }
-COREDLL void pbrtSurfaceIntegrator(const string &name, const ParamSet &params) {
+COREDLL void luxSurfaceIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("SurfaceIntegrator");
 	renderOptions->SurfIntegratorName = name;
 	renderOptions->SurfIntegratorParams = params;
 }
-COREDLL void pbrtVolumeIntegrator(const string &name, const ParamSet &params) {
+COREDLL void luxVolumeIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("VolumeIntegrator");
 	renderOptions->VolIntegratorName = name;
 	renderOptions->VolIntegratorParams = params;
 }
-COREDLL void pbrtCamera(const string &name,
+COREDLL void luxCamera(const string &name,
                        const ParamSet &params) {
 	VERIFY_OPTIONS("Camera");
 	renderOptions->CameraName = name;
@@ -259,26 +259,26 @@ COREDLL void pbrtCamera(const string &name,
 	namedCoordinateSystems["camera"] =
 		curTransform.GetInverse();
 }
-COREDLL void pbrtSearchPath(const string &path) {
+COREDLL void luxSearchPath(const string &path) {
 	VERIFY_OPTIONS("SearchPath");
 	UpdatePluginPath(path);
 	renderOptions->gotSearchPath = true;
 }
-COREDLL void pbrtWorldBegin() {
+COREDLL void luxWorldBegin() {
 	VERIFY_OPTIONS("WorldBegin");
 	currentApiState = STATE_WORLD_BLOCK;
 	curTransform = Transform();
 	namedCoordinateSystems["world"] = curTransform;
 }
-COREDLL void pbrtAttributeBegin() {
+COREDLL void luxAttributeBegin() {
 	VERIFY_WORLD("AttributeBegin");
 	pushedGraphicsStates.push_back(graphicsState);
 	pushedTransforms.push_back(curTransform);
 }
-COREDLL void pbrtAttributeEnd() {
+COREDLL void luxAttributeEnd() {
 	VERIFY_WORLD("AttributeEnd");
 	if (!pushedGraphicsStates.size()) {
-		Error("Unmatched pbrtAttributeEnd() encountered. "
+		Error("Unmatched luxAttributeEnd() encountered. "
 			"Ignoring it.");
 		return;
 	}
@@ -287,21 +287,21 @@ COREDLL void pbrtAttributeEnd() {
 	pushedGraphicsStates.pop_back();
 	pushedTransforms.pop_back();
 }
-COREDLL void pbrtTransformBegin() {
+COREDLL void luxTransformBegin() {
 	VERIFY_WORLD("TransformBegin");
 	pushedTransforms.push_back(curTransform);
 }
-COREDLL void pbrtTransformEnd() {
+COREDLL void luxTransformEnd() {
 	VERIFY_WORLD("TransformEnd");
 	if (!pushedTransforms.size()) {
-		Error("Unmatched pbrtTransformEnd() encountered. "
+		Error("Unmatched luxTransformEnd() encountered. "
 			"Ignoring it.");
 		return;
 	}
 	curTransform = pushedTransforms.back();
 	pushedTransforms.pop_back();
 }
-COREDLL void pbrtTexture(const string &name,
+COREDLL void luxTexture(const string &name,
                          const string &type,
 						 const string &texname,
 						 const ParamSet &params) {
@@ -329,28 +329,28 @@ COREDLL void pbrtTexture(const string &name,
 	else
 		Error("Texture type \"%s\" unknown.", type.c_str());
 }
-COREDLL void pbrtMaterial(const string &name, const ParamSet &params) {
+COREDLL void luxMaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Material");
 	graphicsState.material = name;
 	graphicsState.materialParams = params;
 }
-COREDLL void pbrtLightSource(const string &name,
+COREDLL void luxLightSource(const string &name,
                              const ParamSet &params) {
 	VERIFY_WORLD("LightSource");
 	Light *lt = MakeLight(name, curTransform, params);
 	if (lt == NULL)
-		Error("pbrtLightSource: light type "
+		Error("luxLightSource: light type "
 		      "\"%s\" unknown.", name.c_str());
 	else
 		renderOptions->lights.push_back(lt);
 }
-COREDLL void pbrtAreaLightSource(const string &name,
+COREDLL void luxAreaLightSource(const string &name,
                                  const ParamSet &params) {
 	VERIFY_WORLD("AreaLightSource");
 	graphicsState.areaLight = name;
 	graphicsState.areaLightParams = params;
 }
-COREDLL void pbrtShape(const string &name,
+COREDLL void luxShape(const string &name,
                        const ParamSet &params) {
 	VERIFY_WORLD("Shape");
 	Reference<Shape> shape = MakeShape(name,
@@ -393,21 +393,21 @@ COREDLL void pbrtShape(const string &name,
 		}
 	}
 }
-COREDLL void pbrtReverseOrientation() {
+COREDLL void luxReverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation");
 	graphicsState.reverseOrientation =
 		!graphicsState.reverseOrientation;
 }
-COREDLL void pbrtVolume(const string &name,
+COREDLL void luxVolume(const string &name,
                         const ParamSet &params) {
 	VERIFY_WORLD("Volume");
 	VolumeRegion *vr = MakeVolumeRegion(name,
 		curTransform, params);
 	if (vr) renderOptions->volumeRegions.push_back(vr);
 }
-COREDLL void pbrtObjectBegin(const string &name) {
+COREDLL void luxObjectBegin(const string &name) {
 	VERIFY_WORLD("ObjectBegin");
-	pbrtAttributeBegin();
+	luxAttributeBegin();
 	if (renderOptions->currentInstance)
 		Error("ObjectBegin called inside "
 		      "of instance definition");
@@ -416,15 +416,15 @@ COREDLL void pbrtObjectBegin(const string &name) {
 	renderOptions->currentInstance =
 		&renderOptions->instances[name];
 }
-COREDLL void pbrtObjectEnd() {
+COREDLL void luxObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
 	if (!renderOptions->currentInstance)
 		Error("ObjectEnd called outside "
 		      "of instance definition");
 	renderOptions->currentInstance = NULL;
-	pbrtAttributeEnd();
+	luxAttributeEnd();
 }
-COREDLL void pbrtObjectInstance(const string &name) {
+COREDLL void luxObjectInstance(const string &name) {
 	VERIFY_WORLD("ObjectInstance");
 	// Object instance error checking
 	if (renderOptions->currentInstance) {
@@ -454,18 +454,18 @@ COREDLL void pbrtObjectInstance(const string &name) {
 		curTransform);
 	renderOptions->primitives.push_back(prim);
 }
-COREDLL void pbrtWorldEnd() {
+COREDLL void luxWorldEnd() {
 	VERIFY_WORLD("WorldEnd");
 	// Ensure the search path was set
 	if (!renderOptions->gotSearchPath)
-		Severe("PBRT_SEARCHPATH environment variable "
+		Severe("LUX_SEARCHPATH environment variable "
 		                  "wasn't set and a plug-in\n"
 			              "search path wasn't given in the "
 						  "input (with the SearchPath "
 						  "directive).\n");
 	// Ensure there are no pushed graphics states
 	while (pushedGraphicsStates.size()) {
-		Warning("Missing end to pbrtAttributeBegin()");
+		Warning("Missing end to luxAttributeBegin()");
 		pushedGraphicsStates.pop_back();
 		pushedTransforms.pop_back();
 	}

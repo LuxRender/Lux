@@ -20,9 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_PBRT_H
-#define PBRT_PBRT_H
-// pbrt.h*
+#ifndef LUX_LUX_H
+#define LUX_LUX_H
+// lux.h*
 // Global Include Files
 #if !defined(__APPLE__) && !defined(__OpenBSD__)
 #include <malloc.h> // for _alloca, memalign
@@ -108,9 +108,9 @@ extern "C" {
 #define DLLEXPORT
 #endif
 #ifdef WIN32
-#define PBRT_PATH_SEP ";"
+#define LUX_PATH_SEP ";"
 #else
-#define PBRT_PATH_SEP ":"
+#define LUX_PATH_SEP ":"
 #endif
 #ifdef WIN32
 #define isnan _isnan
@@ -203,7 +203,7 @@ class VolumeIntegrator;
 #ifndef INFINITY
 #define INFINITY FLT_MAX
 #endif
-#define PBRT_VERSION 1.03
+#define LUX_VERSION 0.1
 #define RAY_EPSILON 1e-3f
 #define COLOR_SAMPLES 3
 // Global Function Declarations
@@ -232,8 +232,8 @@ COREDLL Spectrum *ReadImage(const string &name, int *xSize,
 COREDLL void WriteRGBAImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
-COREDLL void pbrtInit();
-COREDLL void pbrtCleanup();
+COREDLL void luxInit();
+COREDLL void luxCleanup();
 COREDLL Transform Translate(const Vector &delta);
 COREDLL Transform Scale(float x, float y, float z);
 extern COREDLL Transform RotateX(float angle);
@@ -661,4 +661,4 @@ inline float ExponentialAverage(float avg,
                               float val, float alpha) {
 	return (1.f - alpha) * val + alpha * avg;
 }
-#endif // PBRT_PBRT_H
+#endif // LUX_LUX_H

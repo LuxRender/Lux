@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_TIMER_H
-#define PBRT_TIMER_H
+#ifndef LUX_TIMER_H
+#define LUX_TIMER_H
 // timer.h*
-#include "pbrt.h"
+#include "lux.h"
 #if defined ( WIN32 )
 #include <windows.h>
 #else
@@ -73,4 +73,4 @@ private:
 	struct timeval timeofday;
 #endif
 };
-#endif // PBRT_TIMER_H
+#endif // LUX_TIMER_H

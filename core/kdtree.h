@@ -23,7 +23,7 @@
 #ifndef PBRT_KDTREE_H
 #define PBRT_KDTREE_H
 // kdtree.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 // KdTree Declarations
 struct KdNode {
@@ -167,4 +167,4 @@ KdTree<NodeData, LookupProc>::privateLookup(u_int nodeNum,
 	if (dist2 < maxDistSquared)
 		process(nodeData[nodeNum], dist2, maxDistSquared);
 }
-#endif // PBRT_KDTREE_H
+#endif // LUX_KDTREE_H

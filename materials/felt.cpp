@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // felt.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Felt Class Declarations
 class Felt : public Material {

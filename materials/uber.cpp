@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // uber.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // UberMaterial Class Declarations
 class UberMaterial : public Material {

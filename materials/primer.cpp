@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // primer.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Primer Class Declarations
 class Primer : public Material {

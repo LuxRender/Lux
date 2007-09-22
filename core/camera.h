@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_CAMERA_H
-#define PBRT_CAMERA_H
+#ifndef LUX_CAMERA_H
+#define LUX_CAMERA_H
 // camera.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "color.h"
 #include "sampling.h"
 #include "geometry.h"
@@ -59,4 +59,4 @@ protected:
 	Transform ScreenToRaster, RasterToScreen;
 	float LensRadius, FocalDistance;
 };
-#endif // PBRT_CAMERA_H
+#endif // LUX_CAMERA_H

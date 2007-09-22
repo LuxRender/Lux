@@ -34,7 +34,7 @@
 #include <ImfFrameBuffer.h>
 #include <half.h>
 
-#include "pbrt.h"
+#include "lux.h"
 #include "film.h"
 #include "paramset.h"
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     float *rgba;
     int xRes, yRes;
     bool hasAlpha;
-    pbrtInit();
+    luxInit();
 
     if (ReadEXR(inFile, rgba, xRes, yRes, hasAlpha)) {
 	float *rgb = new float[xRes*yRes*3];
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
 	WriteTIFF(outFile, rgba, xRes, yRes, hasAlpha);
     }
-    pbrtCleanup();
+    luxCleanup();
     return 0;
 }
 

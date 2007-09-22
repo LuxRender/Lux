@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // skin.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Skin Class Declarations
 class Skin : public Material {

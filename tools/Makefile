@@ -1,30 +1,30 @@
-PBRT_TOOLS = exrassemble exravg exrtotiff tifftoexr ply2pbrt samplepat
+PBRT_TOOLS = exrassemble exravg exrtotiff tifftoexr ply2lux samplepat
 
 ARCH = $(shell uname)
 
-PBRTDIR=..
-PBRTLIB=$(PBRTDIR)/core/libpbrt.a
+LUXDIR=..
+LUXLIB=$(LUXDIR)/core/liblux.a
 EXRDIR=../OpenEXR
 OPT=-g
-CXXFLAGS = $(OPT) -I/sw/include -I$(EXRDIR)/include -I$(PBRTDIR)/core
+CXXFLAGS = $(OPT) -I/sw/include -I$(EXRDIR)/include -I$(LUXDIR)/core
 
 ifeq ($(ARCH),Darwin)
 LDFLAGS = -L$(EXRDIR)/lib-osx -L/sw/lib
-LDFLAGS += -Wl,-all_load $(PBRTDIR)/core/libpbrt.a 
+LDFLAGS += -Wl,-all_load $(LUXDIR)/core/liblux.a 
 CXXFLAGS += -Wno-long-double
 else
 LDFLAGS = -L$(EXRDIR)/lib-linux
-LDFLAGS += -Wl,--export-dynamic -Wl,-whole-archive $(PBRTLIB) -Wl,-no-whole-archive 
+LDFLAGS += -Wl,--export-dynamic -Wl,-whole-archive $(LUXLIB) -Wl,-no-whole-archive 
 endif
 
 LDFLAGS += -lIlmImf -lImath -lIex -lHalf -lz -ltiff -ldl
 
-default: $(PBRT_TOOLS)
+default: $(LUX_TOOLS)
 
-%: %.cpp $(PBRTLIB)
+%: %.cpp $(LUXLIB)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
-ply2pbrt: ply.h ply.c ply2pbrt.c
-	$(CC) $(OPT) -I. -o ply2pbrt ply2pbrt.c ply.c -lm
+ply2lux: ply.h ply.c ply2lux.c
+	$(CC) $(OPT) -I. -o ply2lux ply2lux.c ply.c -lm
 clean:
-	rm -f $(PBRT_TOOLS) *.o *~
+	rm -f $(LUX_TOOLS) *.o *~

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // mc.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 #include "shape.h"
 #include "mc.h"

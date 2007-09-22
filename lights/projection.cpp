@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // projection.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "light.h"
 #include "shape.h"
 #include "mipmap.h"

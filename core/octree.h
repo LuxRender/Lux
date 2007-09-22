@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_OCTREE_H
-#define PBRT_OCTREE_H
+#ifndef LUX_OCTREE_H
+#define LUX_OCTREE_H
 // octree.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 // Octree Declarations
 template <class NodeData> struct OctNode {
@@ -143,4 +143,4 @@ void Octree<NodeData, LookupProc>::lookupPrivate(
 			process);
 	}
 }
-#endif // PBRT_OCTREE_H
+#endif // LUX_OCTREE_H

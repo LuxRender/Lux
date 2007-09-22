@@ -23,7 +23,7 @@
 
 %{
 #include "api.h"
-#include "pbrt.h"
+#include "lux.h"
 #include "paramset.h"
 #include <stdarg.h>
 
@@ -295,176 +295,176 @@ ri_stmt: ACCELERATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtAccelerator($2, params);
+	luxAccelerator($2, params);
 	FreeArgs();
 }
 | AREALIGHTSOURCE STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtAreaLightSource($2, params);
+	luxAreaLightSource($2, params);
 	FreeArgs();
 }
 | ATTRIBUTEBEGIN
 {
-	pbrtAttributeBegin();
+	luxAttributeBegin();
 }
 | ATTRIBUTEEND
 {
-	pbrtAttributeEnd();
+	luxAttributeEnd();
 }
 | CAMERA STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtCamera($2, params);
+	luxCamera($2, params);
 	FreeArgs();
 }
 | CONCATTRANSFORM num_array
 {
 	if (VerifyArrayLength( $2, 16, "ConcatTransform" ))
-		pbrtConcatTransform( (float *) $2->array );
+		luxConcatTransform( (float *) $2->array );
 	ArrayFree( $2 );
 }
 | COORDINATESYSTEM STRING
 {
-	pbrtCoordinateSystem( $2 );
+	luxCoordinateSystem( $2 );
 }
 | COORDSYSTRANSFORM STRING
 {
-	pbrtCoordSysTransform( $2 );
+	luxCoordSysTransform( $2 );
 }
 | FILM STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtFilm($2, params);
+	luxFilm($2, params);
 	FreeArgs();
 }
 | IDENTITY
 {
-	pbrtIdentity();
+	luxIdentity();
 }
 | LIGHTSOURCE STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtLightSource($2, params);
+	luxLightSource($2, params);
 	FreeArgs();
 }
 | LOOKAT NUM NUM NUM NUM NUM NUM NUM NUM NUM
 {
-	pbrtLookAt($2, $3, $4, $5, $6, $7, $8, $9, $10);
+	luxLookAt($2, $3, $4, $5, $6, $7, $8, $9, $10);
 }
 | MATERIAL STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtMaterial($2, params);
+	luxMaterial($2, params);
 	FreeArgs();
 }
 | OBJECTBEGIN STRING
 {
-	pbrtObjectBegin($2);
+	luxObjectBegin($2);
 }
 | OBJECTEND
 {
-	pbrtObjectEnd();
+	luxObjectEnd();
 }
 | OBJECTINSTANCE STRING
 {
-	pbrtObjectInstance($2);
+	luxObjectInstance($2);
 }
 | PIXELFILTER STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtPixelFilter($2, params);
+	luxPixelFilter($2, params);
 	FreeArgs();
 }
 | REVERSEORIENTATION
 {
-	pbrtReverseOrientation();
+	luxReverseOrientation();
 }
 | ROTATE NUM NUM NUM NUM
 {
-	pbrtRotate($2, $3, $4, $5);
+	luxRotate($2, $3, $4, $5);
 }
 | SAMPLER STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtSampler($2, params);
+	luxSampler($2, params);
 	FreeArgs();
 }
 | SCALE NUM NUM NUM
 {
-	pbrtScale($2, $3, $4);
+	luxScale($2, $3, $4);
 }
 | SEARCHPATH STRING
 {
-	pbrtSearchPath($2);
+	luxSearchPath($2);
 }
 | SHAPE STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtShape($2, params);
+	luxShape($2, params);
 	FreeArgs();
 }
 | SURFACEINTEGRATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtSurfaceIntegrator($2, params);
+	luxSurfaceIntegrator($2, params);
 	FreeArgs();
 }
 | TEXTURE STRING STRING STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtTexture($2, $3, $4, params);
+	luxTexture($2, $3, $4, params);
 	FreeArgs();
 }
 | TRANSFORMBEGIN
 {
-	pbrtTransformBegin();
+	luxTransformBegin();
 }
 | TRANSFORMEND
 {
-	pbrtTransformEnd();
+	luxTransformEnd();
 }
 | TRANSFORM real_num_array
 {
 	if (VerifyArrayLength( $2, 16, "Transform" ))
-		pbrtTransform( (float *) $2->array );
+		luxTransform( (float *) $2->array );
 	ArrayFree( $2 );
 }
 | TRANSLATE NUM NUM NUM
 {
-	pbrtTranslate($2, $3, $4);
+	luxTranslate($2, $3, $4);
 }
 | VOLUMEINTEGRATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtVolumeIntegrator($2, params);
+	luxVolumeIntegrator($2, params);
 	FreeArgs();
 }
 | VOLUME STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	pbrtVolume($2, params);
+	luxVolume($2, params);
 	FreeArgs();
 }
 | WORLDBEGIN
 {
-	pbrtWorldBegin();
+	luxWorldBegin();
 }
 | WORLDEND
 {
-	pbrtWorldEnd();
+	luxWorldEnd();
 };
 %%
 static void InitParamSet(ParamSet &ps, int count, const char **tokens,

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // dots.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "texture.h"
 #include "paramset.h"
 // DotsTexture Declarations

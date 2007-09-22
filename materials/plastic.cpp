@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // plastic.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Plastic Class Declarations
 class Plastic : public Material {

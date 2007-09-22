@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // samplepat.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "sampling.h"
 // BestCandidate Sampling Constants
 #define SQRT_SAMPLE_TABLE_SIZE 64

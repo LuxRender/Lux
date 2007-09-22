@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_REFLECTION_H
-#define PBRT_REFLECTION_H
+#ifndef LUX_REFLECTION_H
+#define LUX_REFLECTION_H
 // reflection.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "geometry.h"
 #include "shape.h"
 // BSDF Inline Functions
@@ -382,4 +382,4 @@ inline int BSDF::NumComponents(BxDFType flags) const {
 		if (bxdfs[i]->MatchesFlags(flags)) ++num;
 	return num;
 }
-#endif // PBRT_REFLECTION_H
+#endif // LUX_REFLECTION_H

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // nurbs.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "shape.h"
 #include "geometry.h"
 #include "dynload.h"

@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_VOLUME_H
-#define PBRT_VOLUME_H
+#ifndef LUX_VOLUME_H
+#define LUX_VOLUME_H
 // volume.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "color.h"
 #include "geometry.h"
 #include "paramset.h"
@@ -111,4 +111,4 @@ public:
 		const Ray &ray, const Sample *sample,
 		float *alpha) const = 0;
 };
-#endif // PBRT_VOLUME_H
+#endif // LUX_VOLUME_H

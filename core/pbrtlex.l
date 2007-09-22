@@ -27,15 +27,15 @@
 #define YY_MAIN 0
 #define YY_NEVER_INTERACTIVE 1
 
-#include "pbrt.h"
+#include "lux.h"
 #include "api.h"
 
 struct ParamArray;
 
 #ifdef WIN32
-#include "pbrtparse.hpp"
+#include "luxparse.hpp"
 #else
-#include "pbrtparse.h"
+#include "luxparse.h"
 #endif
 
 #ifdef WIN32

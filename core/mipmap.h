@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_MIPMAP_H
-#define PBRT_MIPMAP_H
+#ifndef LUX_MIPMAP_H
+#define LUX_MIPMAP_H
 // mipmap.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "color.h"
 // MIPMap Declarations
 typedef enum {
@@ -312,4 +312,4 @@ T MIPMap<T>::EWA(float s, float t, float ds0, float dt0,
 	return num / den;
 }
 template <class T> float *MIPMap<T>::weightLut = NULL;
-#endif // PBRT_MIPMAP_H
+#endif // LUX_MIPMAP_H

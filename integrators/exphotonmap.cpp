@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // exphotonmap.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "transport.h"
 #include "scene.h"
 #include "mc.h"

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // translucent.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "material.h"
 // Translucent Class Declarations
 class Translucent : public Material {

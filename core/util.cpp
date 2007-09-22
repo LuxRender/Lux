@@ -21,16 +21,16 @@
  ***************************************************************************/
 
 // util.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "timer.h"
 #include <map>
 using std::map;
 // Error Reporting Includes
 #include <stdarg.h>
 // Error Reporting Definitions
-#define PBRT_ERROR_IGNORE 0
-#define PBRT_ERROR_CONTINUE 1
-#define PBRT_ERROR_ABORT 2
+#define LUX_ERROR_IGNORE 0
+#define LUX_ERROR_CONTINUE 1
+#define LUX_ERROR_ABORT 2
 // Error Reporting Functions
 static void processError(const char *format, va_list args,
 		const char *message, int disposition) {
@@ -43,9 +43,9 @@ static void processError(const char *format, va_list args,
 #endif
 	// Report error
 	switch (disposition) {
-	case PBRT_ERROR_IGNORE:
+	case LUX_ERROR_IGNORE:
 		return;
-	case PBRT_ERROR_CONTINUE:
+	case LUX_ERROR_CONTINUE:
 		fprintf(stderr, "%s: %s\n", message, errorBuf);
 		// Print scene file and line number, if appropriate
 		extern int line_num;
@@ -55,7 +55,7 @@ static void processError(const char *format, va_list args,
 				current_file.c_str());
 		}
 		break;
-	case PBRT_ERROR_ABORT:
+	case LUX_ERROR_ABORT:
 		fprintf(stderr, "%s: %s\n", message, errorBuf);
 		// Print scene file and line number, if appropriate
 		extern int line_num;
@@ -73,25 +73,25 @@ static void processError(const char *format, va_list args,
 COREDLL void Info(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
-	processError(format, args, "Notice", PBRT_ERROR_CONTINUE);
+	processError(format, args, "Notice", LUX_ERROR_CONTINUE);
 	va_end(args);
 }
 COREDLL void Warning(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
-	processError(format, args, "Warning", PBRT_ERROR_CONTINUE);
+	processError(format, args, "Warning", LUX_ERROR_CONTINUE);
 	va_end(args);
 }
 COREDLL void Error(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
-	processError(format, args, "Error", PBRT_ERROR_CONTINUE);
+	processError(format, args, "Error", LUX_ERROR_CONTINUE);
 	va_end(args);
 }
 COREDLL void Severe(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
-	processError(format, args, "Fatal Error", PBRT_ERROR_ABORT);
+	processError(format, args, "Fatal Error", LUX_ERROR_ABORT);
 	va_end(args);
 }
 // Matrix Method Definitions

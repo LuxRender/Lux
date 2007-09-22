@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_MATERIAL_H
-#define PBRT_MATERIAL_H
+#ifndef LUX_MATERIAL_H
+#define LUX_MATERIAL_H
 // material.h*
-#include "pbrt.h"
+#include "lux.h"
 #include "primitive.h"
 #include "texture.h"
 #include "color.h"
@@ -38,4 +38,4 @@ public:
 	static void Bump(Reference<Texture<float> > d, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
 };
-#endif // PBRT_MATERIAL_H
+#endif // LUX_MATERIAL_H

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // parser.cpp*
-#include "pbrt.h"
+#include "lux.h"
 // Parsing Global Interface
 COREDLL bool ParseFile(const char *filename) {
 	extern FILE *yyin;
@@ -30,7 +30,7 @@ COREDLL bool ParseFile(const char *filename) {
 	extern int line_num;
 	extern int yydebug;
 
-	if (getenv("PBRT_YYDEBUG") != NULL)
+	if (getenv("LUX_YYDEBUG") != NULL)
 		yydebug = 1;
 
 	if (strcmp(filename, "-") == 0)

@@ -21,7 +21,7 @@
  ***************************************************************************/
  
 // infinitesample.cpp*
-#include "pbrt.h"
+#include "lux.h"
 #include "light.h"
 #include "texture.h"
 #include "shape.h"
