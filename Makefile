@@ -10,8 +10,8 @@ ifeq ($(ARCH),OpenBSD)
   DLLLIB =
 endif
 
-EXRINCLUDE=-I/usr/local/include/OpenEXR
-EXRLIBDIR=-L/usr/local/lib
+EXRINCLUDE=-I/usr/include/OpenEXR
+EXRLIBDIR=-L/usr/lib
 EXRLIBS=$(EXRLIBDIR) -Bstatic -lIex -lIlmImf -lImath -lIex -lHalf -Bdynamic -lz
 ifeq ($(ARCH),Linux)
   EXRLIBS += -lpthread
@@ -26,7 +26,7 @@ OPT=-O2
 INCLUDE=-I. -Icore $(EXRINCLUDE)
 WARN=-Wall
 CWD=$(shell pwd)
-CXXFLAGS=$(OPT) $(INCLUDE) $(WARN)
+CXXFLAGS=$(OPT) $(INCLUDE) $(WARN) -fPIC
 CCFLAGS=$(CXXFLAGS)
 LIBS=$(LEXLIB) $(DLLLIB) $(EXRLIBDIR) $(EXRLIBS) -lm 
 

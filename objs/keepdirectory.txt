@@ -1,0 +1,1 @@
+This directory is needed by the current Makefile, this file garantees that CVS will keep it when you download the project.
