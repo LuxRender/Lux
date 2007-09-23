@@ -25,7 +25,15 @@
 // geometry.h*
 #include "lux.h"
 #include <float.h>
+
+//#define LUX_USE_SSE 1
+
+#ifdef LUX_USE_SSE
+#include <xmmintrin.h>
+#endif
+
 // Geometry Declarations
+#ifndef LUX_USE_SSE
 class COREDLL Vector {
 public:
 	// Vector Public Methods
@@ -90,6 +98,94 @@ public:
 	// Vector Public Data
 	float x, y, z;
 };
+#else
+class COREDLL Vector {
+public:
+	// Vector Public Methods
+	Vector(float _x=0, float _y=0, float _z=0)
+		: x(_x), y(_y), z(_z) {
+	}
+	Vector(__m128 _vec)
+        : vec(_vec)
+    {}
+	
+	explicit Vector(const Point &p);
+	Vector operator+(const Vector &v) const {
+		return Vector(x + v.x, y + v.y, z + v.z);
+	}
+	
+	Vector& operator+=(const Vector &v) {
+		vec=_mm_add_ps(vec,v.vec);
+		return *this;
+	}
+	Vector operator-(const Vector &v) const {
+		return Vector(_mm_sub_ps(vec,v.vec));
+	}
+	
+	Vector& operator-=(const Vector &v) {
+		vec=_mm_sub_ps(vec,v.vec);
+		return *this;
+	}
+	bool operator==(const Vector &v) const {
+		return x == v.x && y == v.y && z == v.z;
+	}
+	Vector operator*(float f) const {
+		return Vector(_mm_mul_ps(vec,_mm_set_ps1(f)));
+	}
+	
+	Vector &operator*=(float f) {
+		vec=_mm_mul_ps(vec,_mm_set_ps1(f));
+		return *this;
+	}
+	Vector operator/(float f) const {
+		Assert(f!=0);
+		float inv = 1.f / f;
+		return Vector(x * inv, y * inv, z * inv);
+		
+		//test the following
+		/*
+		BOOST_ASSERT(f!=0);
+      	return Vector(_mm_div_ps(vec,_mm_set_ps1(f)));
+		  */
+	}
+	
+	Vector &operator/=(float f) {
+		Assert(f!=0);
+		float inv = 1.f / f;
+		x *= inv; y *= inv; z *= inv;
+		return *this;
+	}
+	Vector operator-() const {
+		return Vector(-x, -y, -z);
+	}
+	float operator[](int i) const {
+		Assert(i >= 0 && i <= 2);
+		return (&x)[i];
+	}
+	
+	float &operator[](int i) {
+		Assert(i >= 0 && i <= 2);
+		return (&x)[i];
+	}
+	float LengthSquared() const 
+	{ __m128 r = _mm_mul_ps(vec,vec);
+      __m128 t = _mm_add_ss(_mm_shuffle_ps(r,r,1), _mm_add_ss(_mm_movehl_ps(r,r),r));
+      return *(float *)&t;
+    }
+	float Length() const { return sqrtf(LengthSquared()); }
+	explicit Vector(const Normal &n);
+	// Vector Public Data
+	//float x, y, z;
+	union {
+      __m128 vec;
+      struct
+      {
+        float   x,y,z,pad;
+      };
+    };
+};
+#endif
+
 class COREDLL Point {
 public:
 	// Point Methods
@@ -291,17 +387,39 @@ inline ostream &operator<<(ostream &os, const Vector &v) {
 inline Vector operator*(float f, const Vector &v) {
 	return v*f;
 }
+//#ifndef LUX_USE_SSE
 inline float Dot(const Vector &v1, const Vector &v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
+/*#else
+inline float Dot(const Vector &v1, const Vector &v2) {
+	__m128 r = _mm_mul_ps(v1.vec,v2.vec);
+    __m128 t = _mm_add_ss(_mm_shuffle_ps(r,r,1), _mm_add_ps(_mm_movehl_ps(r,r),r));
+    return *(float *)&t;
+}
+#endif*/
 inline float AbsDot(const Vector &v1, const Vector &v2) {
 	return fabsf(Dot(v1, v2));
 }
+
+//#ifndef LUX_USE_SSE
 inline Vector Cross(const Vector &v1, const Vector &v2) {
 	return Vector((v1.y * v2.z) - (v1.z * v2.y),
                   (v1.z * v2.x) - (v1.x * v2.z),
                   (v1.x * v2.y) - (v1.y * v2.x));
 }
+/*#else
+inline Vector Cross(const Vector &v1, const Vector &v2) {
+	__m128 l1, l2, m1, m2;
+      l1 = _mm_shuffle_ps(v1.vec,v1.vec, _MM_SHUFFLE(3,1,0,2));
+      l2 = _mm_shuffle_ps(v2.vec,v2.vec, _MM_SHUFFLE(3,0,2,1));
+      m2 = _mm_mul_ps(l1,l2);
+      l1 = _mm_shuffle_ps(v1.vec,v1.vec, _MM_SHUFFLE(3,0,2,1));
+      l2 = _mm_shuffle_ps(v2.vec,v2.vec, _MM_SHUFFLE(3,1,0,2));
+      m1 = _mm_mul_ps(l1,l2);
+      return _mm_sub_ps(m1,m2);
+}
+#endif*/
 inline Vector Cross(const Vector &v1, const Normal &v2) {
 	return Vector((v1.y * v2.z) - (v1.z * v2.y),
                   (v1.z * v2.x) - (v1.x * v2.z),
