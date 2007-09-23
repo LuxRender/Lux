@@ -11,24 +11,27 @@ ifeq ($(ARCH),OpenBSD)
 endif
 
 EXRINCLUDE=-I/usr/include/OpenEXR
-EXRLIBDIR=-L/usr/lib
-EXRLIBS=$(EXRLIBDIR) -Bstatic -lIex -lIlmImf -lImath -lIex -lHalf -Bdynamic -lz
+EXRLIBDIR=-L/usr/lib -L/usr/lib64
+#EXRLIBS=$(EXRLIBDIR) -Bstatic -lIex -lIlmImf -lImath -lHalf -Bdynamic -lz
+EXRLIBS=$(EXRLIBDIR) -lIex -lIlmImf -lImath -lHalf -Bdynamic -lz 
 ifeq ($(ARCH),Linux)
   EXRLIBS += -lpthread
 endif
 
 
-CC=gcc
-CXX=g++
+#CC=gcc
+#CXX=g++
+CC=icc
+CXX=icc
 LD=$(CXX) $(OPT)
-OPT=-O2
+OPT=-O3
 # OPT=-O2 -msse -mfpmath=sse
 INCLUDE=-I. -Icore $(EXRINCLUDE)
 WARN=-Wall
 CWD=$(shell pwd)
 CXXFLAGS=$(OPT) $(INCLUDE) $(WARN) -fPIC
 CCFLAGS=$(CXXFLAGS)
-LIBS=$(LEXLIB) $(DLLLIB) $(EXRLIBDIR) $(EXRLIBS) -lm 
+LIBS=$(LEXLIB) $(DLLLIB) $(EXRLIBDIR) $(EXRLIBS) -lm
 
 SHARED_LDFLAGS = -shared
 LRT_LDFLAGS=-rdynamic $(OPT)
@@ -208,5 +211,6 @@ objs/exrio.o: exrcheck
 
 exrcheck:
 	@echo -n Checking for EXR installation... 
+	@echo $(LIBS)
 	@$(CXX) $(CXXFLAGS) -o exrcheck exrcheck.cpp $(LIBS) || \
 		(cat exrinstall.txt; exit 1)
