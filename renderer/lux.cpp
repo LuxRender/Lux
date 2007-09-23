@@ -27,7 +27,7 @@
 int main(int argc, char *argv[]) {
 	// Print welcome banner
 	printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
-	printf("This program comes with ABSOLUTELY NO WARRANTY\nThis is free software, covered by the GNU General Public License V3\nYou are welcome to redistribute it under certain conditions;\n see COPYRIGHT.TXT for details.\n");      
+	printf("This program comes with ABSOLUTELY NO WARRANTY.\nThis is free software, covered by the GNU General Public License V3\nYou are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");      
 
 	fflush(stdout);
 	luxInit();
