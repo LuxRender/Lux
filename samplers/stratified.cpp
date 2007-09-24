@@ -21,31 +21,8 @@
  ***************************************************************************/
 
 // stratified.cpp*
-#include "sampling.h"
-#include "paramset.h"
-#include "film.h"
-// StratifiedSampler Declarations
-class StratifiedSampler : public Sampler {
-public:
-	// StratifiedSampler Public Methods
-	StratifiedSampler(int xstart, int xend,
-	                  int ystart, int yend,
-					  int xs, int ys, bool jitter);
-	int RoundSize(int size) const {
-		return size;
-	}
-	~StratifiedSampler() {
-		FreeAligned(imageSamples);
-	}
-	bool GetNextSample(Sample *sample);
-private:
-	// StratifiedSampler Private Data
-	int xPixelSamples, yPixelSamples;
-	bool jitterSamples;
-	int xPos, yPos;
-	float *imageSamples, *lensSamples, *timeSamples;
-	int samplePos;
-};
+#include "stratified.h"
+
 // StratifiedSampler Method Definitions
 StratifiedSampler::StratifiedSampler(int xstart, int xend,
 		int ystart, int yend, int xs, int ys, bool jitter)
@@ -128,7 +105,7 @@ bool StratifiedSampler::GetNextSample(Sample *sample) {
 	++samplePos;
 	return true;
 }
-extern "C" DLLEXPORT Sampler *CreateSampler(const ParamSet &params, const Film *film) {
+Sampler* StratifiedSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	bool jitter = params.FindOneBool("jitter", true);
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;

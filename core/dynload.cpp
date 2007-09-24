@@ -45,6 +45,11 @@
 #include "../shapes/sphere.h"
 #include "../shapes/trianglemesh.h"
 
+#include "../samplers/bestcandidate.h"
+#include "../samplers/lowdiscrepancy.h"
+#include "../samplers/random.h"
+#include "../samplers/stratified.h"
+
 using std::map;
 // Runtime Loading Forward Declarations
 static string SearchPath(const string &searchpath,  // NOBOOK
@@ -444,12 +449,20 @@ COREDLL Camera *MakeCamera(const string &name,
 }
 COREDLL Sampler *MakeSampler(const string &name,
 		const ParamSet &paramSet, const Film *film) {
+			/*
 	SamplerPlugin *plugin = GetPlugin<SamplerPlugin>(name, samplerPlugins, PluginSearchPath);
 	if (plugin) {
 		Sampler *ret = plugin->CreateSampler(paramSet, film);
 		paramSet.ReportUnused();
 		return ret;
-	}
+	}*/
+	
+	if(name=="bestcandidate") return  BestCandidateSampler::CreateSampler(paramSet, film);
+	if(name=="lowdiscrepancy") return  LDSampler::CreateSampler(paramSet, film);
+	if(name=="random") return  RandomSampler::CreateSampler(paramSet, film);
+	if(name=="stratified") return  StratifiedSampler::CreateSampler(paramSet, film);
+	
+	Error("Static loading of sampler '%s' failed.",name.c_str());
 	return NULL;
 }
 COREDLL Filter *MakeFilter(const string &name,

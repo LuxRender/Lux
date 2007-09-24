@@ -21,37 +21,8 @@
  ***************************************************************************/
  
 // lowdiscrepancy.cpp*
-#include "sampling.h"
-#include "paramset.h"
-#include "film.h"
-// LDSampler Declarations
-class LDSampler : public Sampler {
-public:
-	// LDSampler Public Methods
-	LDSampler(int xstart, int xend,
-	          int ystart, int yend,
-			  int nsamp);
-	~LDSampler() {
-		delete[] imageSamples;
-		for (int i = 0; i < n1D; ++i)
-			delete[] oneDSamples[i];
-		for (int i = 0; i < n2D; ++i)
-			delete[] twoDSamples[i];
-		delete[] oneDSamples;
-		delete[] twoDSamples;
-	}
-	int RoundSize(int size) const {
-		return RoundUpPow2(size);
-	}
-	bool GetNextSample(Sample *sample);
-private:
-	// LDSampler Private Data
-	int xPos, yPos, pixelSamples;
-	int samplePos;
-	float *imageSamples, *lensSamples, *timeSamples;
-	float **oneDSamples, **twoDSamples;
-	int n1D, n2D;
-};
+#include "lowdiscrepancy.h"
+
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
 		int ystart, int yend, int ps)
@@ -125,7 +96,7 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	++samplePos;
 	return true;
 }
-extern "C" DLLEXPORT Sampler *CreateSampler(const ParamSet &params, const Film *film) {
+Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
