@@ -21,32 +21,8 @@
  ***************************************************************************/
 
 // nurbs.cpp*
-#include "lux.h"
-#include "shape.h"
-#include "geometry.h"
-#include "dynload.h"
-#include "texture.h"
-// NURBS Declarations
-class NURBS : public Shape {
-public:
-	// NURBS Methods
-	NURBS(const Transform &o2w, bool reverseOrientation, int nu, int uorder,
-		const float *uknot, float umin, float umax,
-		int nv, int vorder, const float *vknot, float vmin, float vmax,
-		const float *P, bool isHomogeneous);
-	~NURBS();
-	virtual BBox ObjectBound() const;
-	virtual BBox WorldBound() const;
-	virtual bool CanIntersect() const { return false; }
-	virtual void Refine(vector<Reference<Shape> > &refined) const;
-private:
-	// NURBS Data
-	int nu, uorder, nv, vorder;
-	float umin, umax, vmin, vmax;
-	float *uknot, *vknot;
-	bool isHomogeneous;
-	float *P;
-};
+#include "nurbs.h"
+
 // NURBS Evaluation Functions
 static int KnotOffset(const float *knot, int order, int np, float t) {
     int firstKnot = order - 1;
@@ -295,7 +271,7 @@ void NURBS::Refine(vector<Reference<Shape> > &refined) const {
 	delete[] evalNs;
 	delete[] vertices;
 }
-extern "C" DLLEXPORT Shape *CreateShape(const Transform &o2w,
+Shape* NURBS::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	int nu = params.FindOneInt("nu", -1);
 	int uorder = params.FindOneInt("uorder", -1);

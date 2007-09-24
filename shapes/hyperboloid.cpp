@@ -21,27 +21,8 @@
  ***************************************************************************/
 
 // hyperboloid.cpp*
-#include "shape.h"
-// Hyperboloid Declarations
-class Hyperboloid: public Shape {
-public:
-	// Hyperboloid Public Methods
-	Hyperboloid(const Transform &o2w, bool ro,
-	            const Point &point1, const Point &point2,
-	            float tm);
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
-	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-protected:
-	// Hyperboloid Data
-	Point p1, p2;
-	float zmin, zmax;
-	float phiMax;
-	float rmax;
-	float a, c;
-};
+#include "hyperboloid.h"
+
 // Hyperboloid Method Definitions
 Hyperboloid::Hyperboloid(const Transform &o2w, bool ro,
 		const Point &point1, const Point &point2, float tm)
@@ -236,7 +217,7 @@ float Hyperboloid::Area() const {
 }
 #undef SQR
 #undef QUAD
-extern "C" DLLEXPORT Shape *CreateShape(const Transform &o2w,
+Shape* Hyperboloid::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	Point p1 = params.FindOnePoint( "p1", Point(0,0,0) );
 	Point p2 = params.FindOnePoint( "p2", Point(1,1,1) );

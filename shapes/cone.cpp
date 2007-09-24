@@ -21,22 +21,8 @@
  ***************************************************************************/
 
 // cone.cpp*
-#include "shape.h"
-// Cone Declarations
-class Cone: public Shape {
-public:
-	// Cone Public Methods
-	Cone(const Transform &o2w, bool ro,
-	     float height, float rad, float tm );
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
-	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-protected:
-	// Cone Data
-	float radius, height, phiMax;
-};
+#include "cone.h"
+
 // Cone Method Definitions
 Cone::Cone(const Transform &o2w, bool ro,
            float ht, float rad, float tm )
@@ -183,7 +169,7 @@ float Cone::Area() const {
 		sqrtf((height*height)+
 		      (radius*radius))/(2.0f*radius);
 }
-extern "C" DLLEXPORT Shape *CreateShape(const Transform &o2w,
+Shape* Cone::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	float radius = params.FindOneFloat( "radius", 1 );
 	float height = params.FindOneFloat( "height", 1 );

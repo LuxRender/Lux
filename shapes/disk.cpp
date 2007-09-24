@@ -21,32 +21,8 @@
  ***************************************************************************/
 
 // disk.cpp*
-#include "shape.h"
-// Disk Declarations
-class Disk : public Shape {
-public:
-	// Disk Public Methods
-	Disk(const Transform &o2w, bool ro, float height,
-	     float radius, float innerRadius, float phiMax);
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
-	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-	Point Sample(float u1, float u2, Normal *Ns) const {
-		Point p;
-		ConcentricSampleDisk(u1, u2, &p.x, &p.y);
-		p.x *= radius;
-		p.y *= radius;
-		p.z = height;
-		*Ns = Normalize(ObjectToWorld(Normal(0,0,1)));
-		if (reverseOrientation) *Ns *= -1.f;
-		return ObjectToWorld(p);
-	}
-private:
-	// Disk Private Data
-	float height, radius, innerRadius, phiMax;
-};
+#include "disk.h"
+
 // Disk Method Definitions
 Disk::Disk(const Transform &o2w, bool ro, float ht,
            float r, float ri, float tmax)
@@ -127,7 +103,7 @@ float Disk::Area() const {
 	return phiMax * 0.5f *
             (radius * radius -innerRadius * innerRadius );
 }
-extern "C" DLLEXPORT Shape *CreateShape(const Transform &o2w,
+Shape* Disk::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	float height = params.FindOneFloat( "height", 0. );
 	float radius = params.FindOneFloat( "radius", 1 );

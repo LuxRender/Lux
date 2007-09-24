@@ -33,6 +33,18 @@
 #endif
 #endif
 #include <map>
+
+#include "../shapes/cone.h"
+#include "../shapes/cylinder.h"
+#include "../shapes/disk.h"
+#include "../shapes/heightfield.h"
+#include "../shapes/hyperboloid.h"
+#include "../shapes/loopsubdiv.h"
+#include "../shapes/nurbs.h"
+#include "../shapes/paraboloid.h"
+#include "../shapes/sphere.h"
+#include "../shapes/trianglemesh.h"
+
 using std::map;
 // Runtime Loading Forward Declarations
 static string SearchPath(const string &searchpath,  // NOBOOK
@@ -272,6 +284,7 @@ COREDLL Reference<Shape> MakeShape(const string &name,
 		const Transform &object2world,
 		bool reverseOrientation,
 		const ParamSet &paramSet) {
+			/*
 	ShapePlugin *plugin =
 		GetPlugin<ShapePlugin>(name,
 							   shapePlugins,
@@ -279,7 +292,19 @@ COREDLL Reference<Shape> MakeShape(const string &name,
 	if (plugin)
 		return plugin->CreateShape(object2world,
 		                          reverseOrientation,
-								  paramSet);
+								  paramSet);*/
+	
+	if(name=="cone") return Cone::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="cylinder") return Cylinder::CreateShape(object2world, reverseOrientation, paramSet);							 
+	if(name=="disk") return Disk::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="heightfield") return Heightfield::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="hyperboloid") return Hyperboloid::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="loopsubdiv") return LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="nurbs") return NURBS::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="paraboloid") return Paraboloid::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="sphere") return Sphere::CreateShape(object2world, reverseOrientation, paramSet);
+	if(name=="trianglemesh") return TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet);
+	Error("Static loading of shape '%s' failed.",name.c_str());
 	return NULL;
 }
 static string SearchPath(const string &searchpath,

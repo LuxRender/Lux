@@ -21,24 +21,8 @@
  ***************************************************************************/
 
 // paraboloid.cpp*
-#include "shape.h"
-// Paraboloid Declarations
-class Paraboloid: public Shape {
-public:
-	// Paraboloid Public Methods
-	Paraboloid(const Transform &o2w, bool ro, float rad,
-	           float z0, float z1, float tm );
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
-	                  DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-protected:
-	// Paraboloid Data
-	float radius;
-	float zmin, zmax;
-	float phiMax;
-};
+#include "paraboloid.h"
+
 // Paraboloid Method Definitions
 Paraboloid::Paraboloid(const Transform &o2w, bool ro,
                        float rad, float z0, float z1,
@@ -187,7 +171,7 @@ float Paraboloid::Area() const {
 	return phiMax/12.0f *
 		(powf(1+4*zmin, 1.5f) - powf(1+4*zmax, 1.5f));
 }
-extern "C" DLLEXPORT Shape *CreateShape(const Transform &o2w,
+Shape* Paraboloid::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	float radius = params.FindOneFloat( "radius", 1 );
 	float zmin = params.FindOneFloat( "zmin", 0 );

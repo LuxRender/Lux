@@ -21,23 +21,8 @@
  ***************************************************************************/
 
 // heightfield.cpp*
-#include "shape.h"
-#include "paramset.h"
-#include "dynload.h"
-// Heightfield Declarations
-class Heightfield : public Shape {
-public:
-	// Heightfield Public Methods
-	Heightfield(const Transform &o2w, bool ro, int nu, int nv, const float *zs);
-	~Heightfield();
-	bool CanIntersect() const;
-	void Refine(vector<Reference<Shape> > &refined) const;
-	BBox ObjectBound() const;
-private:
-	// Heightfield Data
-	float *z;
-	int nx, ny;
-};
+#include "heightfield.h"
+
 // Heightfield Method Definitions
 Heightfield::Heightfield(const Transform &o2w, bool ro, int x, int y,
 		const float *zs)
@@ -104,7 +89,7 @@ void Heightfield::Refine(vector<Reference<Shape> > &refined) const {
 	delete[] uvs;
 	delete[] verts;
 }
-extern "C" DLLEXPORT Shape *CreateShape(const Transform &o2w,
+Shape* Heightfield::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	int nu = params.FindOneInt("nu", -1);
 	int nv = params.FindOneInt("nv", -1);

@@ -19,10 +19,10 @@ ifeq ($(ARCH),Linux)
 endif
 
 
-#CC=gcc
-#CXX=g++
-CC=icc
-CXX=icc
+CC=gcc
+CXX=g++
+#CC=icc
+#CXX=icc
 LD=$(CXX) $(OPT)
 OPT=-O3
 # OPT=-O2 -msse -mfpmath=sse
@@ -50,7 +50,9 @@ ACCELERATORS = grid kdtree
 CAMERAS      = environment orthographic perspective
 CORE         = api camera color dynload exrio film geometry light material mc \
                paramset parser primitive reflection sampling scene shape \
-               texture timer transform transport util volume luxparse luxlex
+               texture timer transform transport util volume luxparse luxlex \
+               cone cylinder disk heightfield hyperboloid loopsubdiv nurbs \
+               paraboloid sphere trianglemesh
 FILM         = image
 FILTERS      = box gaussian mitchell sinc triangle
 INTEGRATORS  = directlighting emission irradiancecache \
@@ -60,8 +62,8 @@ MATERIALS    = bluepaint brushedmetal clay felt \
                glass matte mirror plastic primer \
                shinymetal skin substrate translucent uber
 SAMPLERS     = bestcandidate lowdiscrepancy random stratified
-SHAPES       = cone cylinder disk heightfield hyperboloid loopsubdiv nurbs \
-               paraboloid sphere trianglemesh
+#SHAPES       = cone cylinder disk heightfield hyperboloid loopsubdiv nurbs \
+#               paraboloid sphere trianglemesh
 TEXTURES     = bilerp checkerboard constant dots fbm imagemap marble mix \
                scale uv windy wrinkled
 TONEMAPS     = contrast highcontrast maxwhite nonlinear
@@ -117,14 +119,14 @@ CORE_HEADERS := $(addprefix core/, $(CORE_HEADERFILES) )
 
 .PHONY: tools exrcheck
 
-default: $(CORE_LIB) $(RENDERER_BINARY) $(INTEGRATORS_DSOS) $(VOLUMES_DSOS) $(FILM_DSOS) $(SHAPES_DSOS) $(MATERIALS_DSOS) $(LIGHTS_DSOS) $(ACCELERATORS_DSOS) $(CAMERAS_DSOS) $(SAMPLERS_DSOS) $(FILTERS_DSOS) $(TONEMAPS_DSOS) $(TEXTURES_DSOS) #tools
+default: $(CORE_LIB) $(RENDERER_BINARY) $(INTEGRATORS_DSOS) $(VOLUMES_DSOS) $(FILM_DSOS) $(MATERIALS_DSOS) $(LIGHTS_DSOS) $(ACCELERATORS_DSOS) $(CAMERAS_DSOS) $(SAMPLERS_DSOS) $(FILTERS_DSOS) $(TONEMAPS_DSOS) $(TEXTURES_DSOS) #tools
 
 tools: $(CORE_LIB)
 	(cd tools && $(MAKE))
 
 $(CORE_LIB): $(CORE_OBJS)
 	@echo "Building the core rendering library (liblux.a)"
-	@ar rcs $(CORE_LIB) $(CORE_OBJS)
+	@ar rcs $(CORE_LIB) $(CORE_OBJS) 
 
 bin/%.so: objs/%.o 
 	@$(LD) $(SHARED_LDFLAGS) $^ -o $@
