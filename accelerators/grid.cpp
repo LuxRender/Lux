@@ -22,102 +22,11 @@
  ***************************************************************************/
 
 // grid.cpp*
-#include "lux.h"
-#include "primitive.h"
-static StatsRatio rayTests("Grid Accelerator", "Intersection tests per ray"); // NOBOOK
-static StatsRatio rayHits("Grid Accelerator", "Intersections found per ray"); // NOBOOK
-// GridAccel Forward Declarations
-struct MailboxPrim;
-struct Voxel;
-// MailboxPrim Declarations
-struct MailboxPrim {
-	MailboxPrim(const Reference<Primitive> &p) {
-		primitive = p;
-		lastMailboxId = -1;
-	}
-	Reference<Primitive> primitive;
-	int lastMailboxId;
-};
-// Voxel Declarations
-struct Voxel {
-	// Voxel Public Methods
-	Voxel(MailboxPrim *op) {
-		allCanIntersect = false;
-		nPrimitives = 1;
-		onePrimitive = op;
-	}
-	void AddPrimitive(MailboxPrim *prim) {
-		if (nPrimitives == 1) {
-			// Allocate initial _primitives_ array in voxel
-			MailboxPrim **p = new MailboxPrim *[2];
-			p[0] = onePrimitive;
-			primitives = p;
-		}
-		else if (IsPowerOf2(nPrimitives)) {
-			// Increase size of _primitives_ array in voxel
-			int nAlloc = 2 * nPrimitives;
-			MailboxPrim **p = new MailboxPrim *[nAlloc];
-			for (u_int i = 0; i < nPrimitives; ++i)
-				p[i] = primitives[i];
-			delete[] primitives;
-			primitives = p;
-		}
-		primitives[nPrimitives] = prim;
-		++nPrimitives;
-	}
-	~Voxel() {
-		if (nPrimitives > 1) delete[] primitives;
-	}
-	bool Intersect(const Ray &ray,
-	               Intersection *isect,
-				   int rayId);
-	bool IntersectP(const Ray &ray, int rayId);
-	union {
-		MailboxPrim *onePrimitive;
-		MailboxPrim **primitives;
-	};
-	u_int allCanIntersect:1;
-	u_int nPrimitives:31;
-};
-// GridAccel Declarations
-class  GridAccel : public Aggregate {
-public:
-	// GridAccel Public Methods
-	GridAccel(const vector<Reference<Primitive> > &p,
-	          bool forRefined, bool refineImmediately);
-	BBox WorldBound() const;
-	bool CanIntersect() const { return true; }
-	~GridAccel();
-	bool Intersect(const Ray &ray, Intersection *isect) const;
-	bool IntersectP(const Ray &ray) const;
-private:
-	// GridAccel Private Methods
-	int PosToVoxel(const Point &P, int axis) const {
-		int v = Float2Int((P[axis] - bounds.pMin[axis]) *
-		                  InvWidth[axis]);
-		return Clamp(v, 0, NVoxels[axis]-1);
-	}
-	float VoxelToPos(int p, int axis) const {
-		return bounds.pMin[axis] + p * Width[axis];
-	}
-	Point VoxelToPos(int x, int y, int z) const {
-		return bounds.pMin +
-			Vector(x * Width[0], y * Width[1], z * Width[2]);
-	}
-	inline int Offset(int x, int y, int z) const {
-		return z*NVoxels[0]*NVoxels[1] + y*NVoxels[0] + x;
-	}
-	// GridAccel Private Data
-	bool gridForRefined;
-	u_int nMailboxes;
-	MailboxPrim *mailboxes;
-	int NVoxels[3];
-	BBox bounds;
-	Vector Width, InvWidth;
-	Voxel **voxels;
-	ObjectArena<Voxel> voxelArena;
-	static int curMailboxId;
-};
+#include "grid.h"
+
+//static StatsRatio rayTests("Grid Accelerator", "Intersection tests per ray"); // NOBOOK
+//static StatsRatio rayHits("Grid Accelerator", "Intersections found per ray"); // NOBOOK
+
 // GridAccel Method Definitions
 GridAccel::GridAccel(const vector<Reference<Primitive> > &p,
 		bool forRefined, bool refineImmediately)
@@ -131,10 +40,10 @@ GridAccel::GridAccel(const vector<Reference<Primitive> > &p,
 		prims = p;
 	// Initialize mailboxes for grid
 	nMailboxes = prims.size();
-	mailboxes = (MailboxPrim *)AllocAligned(nMailboxes *
-		sizeof(MailboxPrim));
+	mailboxes = (GMailboxPrim *)AllocAligned(nMailboxes *
+		sizeof(GMailboxPrim));
 	for (u_int i = 0; i < nMailboxes; ++i)
-		new (&mailboxes[i]) MailboxPrim(prims[i]);
+		new (&mailboxes[i]) GMailboxPrim(prims[i]);
 	// Compute bounds and choose grid resolution
 	for (u_int i = 0; i < prims.size(); ++i)
 		bounds = Union(bounds, prims[i]->WorldBound());
@@ -213,7 +122,7 @@ BBox GridAccel::WorldBound() const {
 }
 GridAccel::~GridAccel() {
 	for (u_int i = 0; i < nMailboxes; ++i)
-		mailboxes[i].~MailboxPrim();
+		mailboxes[i].~GMailboxPrim();
 	FreeAligned(mailboxes);
 	for (int i = 0;
 	     i < NVoxels[0]*NVoxels[1]*NVoxels[2];
@@ -224,8 +133,8 @@ GridAccel::~GridAccel() {
 bool GridAccel::Intersect(const Ray &ray,
                           Intersection *isect) const {
 	if (!gridForRefined) { // NOBOOK
-		rayTests.Add(0, 1); // NOBOOK
-		rayHits.Add(0, 1); // NOBOOK
+		//rayTests.Add(0, 1); // NOBOOK
+		//rayHits.Add(0, 1); // NOBOOK
 	} // NOBOOK
 	// Check ray against overall grid bounds
 	float rayT;
@@ -290,11 +199,11 @@ bool Voxel::Intersect(const Ray &ray,
 					  int rayId) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
-		MailboxPrim **mpp;
+		GMailboxPrim **mpp;
 		if (nPrimitives == 1) mpp = &onePrimitive;
 		else mpp = primitives;
 		for (u_int i = 0; i < nPrimitives; ++i) {
-			MailboxPrim *mp = mpp[i];
+			GMailboxPrim *mp = mpp[i];
 			// Refine primitive in _mp_ if it's not intersectable
 			if (!mp->primitive->CanIntersect()) {
 				vector<Reference<Primitive> > p;
@@ -310,19 +219,19 @@ bool Voxel::Intersect(const Ray &ray,
 	}
 	// Loop over primitives in voxel and find intersections
 	bool hitSomething = false;
-	MailboxPrim **mpp;
+	GMailboxPrim **mpp;
 	if (nPrimitives == 1) mpp = &onePrimitive;
 	else mpp = primitives;
 	for (u_int i = 0; i < nPrimitives; ++i) {
-		MailboxPrim *mp = mpp[i];
+		GMailboxPrim *mp = mpp[i];
 		// Do mailbox check between ray and primitive
 		if (mp->lastMailboxId == rayId)
 			continue;
 		// Check for ray--primitive intersection
 		mp->lastMailboxId = rayId;
-		rayTests.Add(1, 0); // NOBOOK
+		//rayTests.Add(1, 0); // NOBOOK
 		if (mp->primitive->Intersect(ray, isect)) {
-			rayHits.Add(1, 0); // NOBOOK
+			//rayHits.Add(1, 0); // NOBOOK
 			hitSomething = true;
 		}
 	}
@@ -330,8 +239,8 @@ bool Voxel::Intersect(const Ray &ray,
 }
 bool GridAccel::IntersectP(const Ray &ray) const {
 	if (!gridForRefined) { // NOBOOK
-		rayTests.Add(0, 1); // NOBOOK
-		rayHits.Add(0, 1); // NOBOOK
+		//rayTests.Add(0, 1); // NOBOOK
+		//rayHits.Add(0, 1); // NOBOOK
 	} // NOBOOK
 	int rayId = ++curMailboxId;
 	// Check ray against overall grid bounds
@@ -391,11 +300,11 @@ bool GridAccel::IntersectP(const Ray &ray) const {
 bool Voxel::IntersectP(const Ray &ray, int rayId) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
-		MailboxPrim **mpp;
+		GMailboxPrim **mpp;
 		if (nPrimitives == 1) mpp = &onePrimitive;
 		else mpp = primitives;
 		for (u_int i = 0; i < nPrimitives; ++i) {
-			MailboxPrim *mp = mpp[i];
+			GMailboxPrim *mp = mpp[i];
 			// Refine primitive in _mp_ if it's not intersectable
 			if (!mp->primitive->CanIntersect()) {
 				vector<Reference<Primitive> > p;
@@ -409,25 +318,25 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 		}
 		allCanIntersect = true;
 	}
-	MailboxPrim **mpp;
+	GMailboxPrim **mpp;
 	if (nPrimitives == 1) mpp = &onePrimitive;
 	else mpp = primitives;
 	for (u_int i = 0; i < nPrimitives; ++i) {
-		MailboxPrim *mp = mpp[i];
+		GMailboxPrim *mp = mpp[i];
 		// Do mailbox check between ray and primitive
 		if (mp->lastMailboxId == rayId)
 			continue;
 		// Check for ray--primitive intersection for shadow ray
 		mp->lastMailboxId = rayId;
-		rayTests.Add(1, 0);
+		//rayTests.Add(1, 0);
 		if (mp->primitive->IntersectP(ray)) {
-			rayHits.Add(1, 0);
+			//rayHits.Add(1, 0);
 			return true;
 		}
 	}
 	return false;
 }
-extern "C" DLLEXPORT Primitive *CreateAccelerator(const vector<Reference<Primitive> > &prims,
+Primitive* GridAccel::CreateAccelerator(const vector<Reference<Primitive> > &prims,
 		const ParamSet &ps) {
 	bool refineImmediately = ps.FindOneBool("refineimmediately", false);
 	return new GridAccel(prims, false, refineImmediately);

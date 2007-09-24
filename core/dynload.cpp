@@ -34,6 +34,9 @@
 #endif
 #include <map>
 
+#include "../accelerators/grid.h"
+#include "../accelerators/kdtree.h"
+
 #include "../shapes/cone.h"
 #include "../shapes/cylinder.h"
 #include "../shapes/disk.h"
@@ -54,26 +57,31 @@ using std::map;
 // Runtime Loading Forward Declarations
 static string SearchPath(const string &searchpath,  // NOBOOK
                          const string &filename); // NOBOOK
-template <class D> D *GetPlugin(const string &name,
-		map<string, D *> &loadedPlugins,
-		const string &searchPath) {
-	if (loadedPlugins.find(name) != loadedPlugins.end())
-		return loadedPlugins[name];
-	string filename = name;
-	// Add platform-specific shared library filename suffix
-	#ifdef WIN32
-	filename += ".dll";
-	#else
-	filename += ".so";
-	#endif
-	string path = SearchPath(searchPath, filename);
-	D *plugin = NULL;
-	if (path != "")
-		loadedPlugins[name] = plugin = new D(path.c_str());
-	else
-		Error("Unable to find Plugin/DLL for \"%s\"",
-			name.c_str());
-	return plugin;
+template <class D>
+D *GetPlugin(const string &name,
+             map<string, D *> &loadedPlugins,
+             const string &searchPath)
+{
+    if (loadedPlugins.find(name) != loadedPlugins.end())
+        return loadedPlugins[name];
+    string filename = name;
+    // Add platform-specific shared library filename suffix
+#ifdef WIN32
+
+    filename += ".dll";
+#else
+
+    filename += ".so";
+#endif
+
+    string path = SearchPath(searchPath, filename);
+    D *plugin = NULL;
+    if (path != "")
+        loadedPlugins[name] = plugin = new D(path.c_str());
+    else
+        Error("Unable to find Plugin/DLL for \"%s\"",
+              name.c_str());
+    return plugin;
 }
 class ShapePlugin;
 class FilterPlugin;
@@ -108,444 +116,561 @@ static map<string, AcceleratorPlugin *> acceleratorPlugins;
 static map<string, CameraPlugin *> cameraPlugins;
 static map<string, SamplerPlugin *> samplerPlugins;
 // Runtime Loading Local Classes
-class Plugin {
+class Plugin
+{
 public:
-	// Plugin Public Methods
-	Plugin(const string &fname);
-	~Plugin();
-	void *GetSymbol(const string &symname);
+    // Plugin Public Methods
+    Plugin(const string &fname);
+    ~Plugin();
+    void *GetSymbol(const string &symname);
 private:
-	// Plugin Private Data
-	#if defined(WIN32)
-	HMODULE hinstLib;
-	#elif defined(__APPLE__)
-	NSModule hinstLib;
-	#else
-	void *hinstLib;
-	#endif
-	string pluginName;
+    // Plugin Private Data
+#if defined(WIN32)
+
+    HMODULE hinstLib;
+#elif defined(__APPLE__)
+
+    NSModule hinstLib;
+#else
+
+    void *hinstLib;
+#endif
+
+    string pluginName;
 };
-class ShapePlugin : public Plugin {
+class ShapePlugin : public Plugin
+{
 public:
-	// ShapePlugin Constructor
-	ShapePlugin(const string &name)
-		: Plugin(name) {
-		CreateShape =
-			(CreateShapeFunc)(GetSymbol("CreateShape"));
-	}
-	typedef Shape * (*CreateShapeFunc)(const Transform &o2w,
-		bool reverseOrientation, const ParamSet &params);
-	CreateShapeFunc CreateShape;
+    // ShapePlugin Constructor
+    ShapePlugin(const string &name)
+            : Plugin(name)
+    {
+        CreateShape =
+            (CreateShapeFunc)(GetSymbol("CreateShape"));
+    }
+    typedef Shape * (*CreateShapeFunc)(const Transform &o2w,
+                                       bool reverseOrientation, const ParamSet &params);
+    CreateShapeFunc CreateShape;
 };
-class MaterialPlugin : public Plugin {
-	typedef Material * (*CreateMaterialFunc)(const Transform &shader2world, const TextureParams &);
+class MaterialPlugin : public Plugin
+{
+    typedef Material * (*CreateMaterialFunc)(const Transform &shader2world, const TextureParams &);
 public:
-	MaterialPlugin( const string &name ): Plugin( name )
-	{
-		CreateMaterial =
-			(CreateMaterialFunc)(GetSymbol("CreateMaterial"));
-	}
-	CreateMaterialFunc CreateMaterial;
+    MaterialPlugin( const string &name ): Plugin( name )
+    {
+        CreateMaterial =
+            (CreateMaterialFunc)(GetSymbol("CreateMaterial"));
+    }
+    CreateMaterialFunc CreateMaterial;
 };
-class TexturePlugin : public Plugin {
-	typedef Texture<float> *
-		(*CreateFloatFunc)(const Transform &shader2world, const TextureParams &);
-	typedef Texture<Spectrum> *
-		(*CreateSpectrumFunc)(const Transform &shader2world, const TextureParams &);
+class TexturePlugin : public Plugin
+{
+    typedef Texture<float> *
+    (*CreateFloatFunc)(const Transform &shader2world, const TextureParams &);
+    typedef Texture<Spectrum> *
+    (*CreateSpectrumFunc)(const Transform &shader2world, const TextureParams &);
 public:
-	TexturePlugin( const string &name ): Plugin( name )
-	{
-		CreateFloatTex =
-			(CreateFloatFunc)(GetSymbol("CreateFloatTexture"));
-		CreateSpectrumTex =
-			(CreateSpectrumFunc)(GetSymbol("CreateSpectrumTexture"));
-	}
-	CreateFloatFunc CreateFloatTex;
-	CreateSpectrumFunc CreateSpectrumTex;
+    TexturePlugin( const string &name ): Plugin( name )
+    {
+        CreateFloatTex =
+            (CreateFloatFunc)(GetSymbol("CreateFloatTexture"));
+        CreateSpectrumTex =
+            (CreateSpectrumFunc)(GetSymbol("CreateSpectrumTexture"));
+    }
+    CreateFloatFunc CreateFloatTex;
+    CreateSpectrumFunc CreateSpectrumTex;
 };
-class LightPlugin : public Plugin {
-	typedef Light *(*CreateLightFunc)(
-		const Transform &light2world, const ParamSet &params);
+class LightPlugin : public Plugin
+{
+    typedef Light *(*CreateLightFunc)(
+        const Transform &light2world, const ParamSet &params);
 public:
-	LightPlugin( const string &name ): Plugin( name )
-	{
-		CreateLight =
-			(CreateLightFunc)(GetSymbol("CreateLight"));
-	}
-	CreateLightFunc CreateLight;
+    LightPlugin( const string &name ): Plugin( name )
+    {
+        CreateLight =
+            (CreateLightFunc)(GetSymbol("CreateLight"));
+    }
+    CreateLightFunc CreateLight;
 };
-class VolumeRegionPlugin : public Plugin {
-	typedef VolumeRegion *(*CreateVolumeFunc)(const Transform &volume2world,
-		const ParamSet &params);
+class VolumeRegionPlugin : public Plugin
+{
+    typedef VolumeRegion *(*CreateVolumeFunc)(const Transform &volume2world,
+            const ParamSet &params);
 public:
-	VolumeRegionPlugin( const string &name ): Plugin( name )
-	{
-		CreateVolumeRegion =
-			(CreateVolumeFunc)(GetSymbol("CreateVolumeRegion"));
-	}
-	CreateVolumeFunc CreateVolumeRegion;
+    VolumeRegionPlugin( const string &name ): Plugin( name )
+    {
+        CreateVolumeRegion =
+            (CreateVolumeFunc)(GetSymbol("CreateVolumeRegion"));
+    }
+    CreateVolumeFunc CreateVolumeRegion;
 };
-class AreaLightPlugin : public Plugin {
-	typedef AreaLight *(*CreateAreaLightFunc)(
-		const Transform &light2world, const ParamSet &params,
-		const Reference<Shape> &shape);
+class AreaLightPlugin : public Plugin
+{
+    typedef AreaLight *(*CreateAreaLightFunc)(
+        const Transform &light2world, const ParamSet &params,
+        const Reference<Shape> &shape);
 public:
-	AreaLightPlugin( const string &name ): Plugin( name )
-	{
-		CreateAreaLight =
-			(CreateAreaLightFunc)(GetSymbol("CreateAreaLight"));
-	}
-	CreateAreaLightFunc CreateAreaLight;
+    AreaLightPlugin( const string &name ): Plugin( name )
+    {
+        CreateAreaLight =
+            (CreateAreaLightFunc)(GetSymbol("CreateAreaLight"));
+    }
+    CreateAreaLightFunc CreateAreaLight;
 };
-class SurfaceIntegratorPlugin : public Plugin {
-	typedef SurfaceIntegrator *(*CreateSurfaceIntegratorFunc)(const ParamSet &params);
+class SurfaceIntegratorPlugin : public Plugin
+{
+    typedef SurfaceIntegrator *(*CreateSurfaceIntegratorFunc)(const ParamSet &params);
 public:
-	SurfaceIntegratorPlugin( const string &name ): Plugin( name )
-	{
-		CreateSurfaceIntegrator =
-			(CreateSurfaceIntegratorFunc)(GetSymbol("CreateSurfaceIntegrator"));
-	}
-	CreateSurfaceIntegratorFunc CreateSurfaceIntegrator;
+    SurfaceIntegratorPlugin( const string &name ): Plugin( name )
+    {
+        CreateSurfaceIntegrator =
+            (CreateSurfaceIntegratorFunc)(GetSymbol("CreateSurfaceIntegrator"));
+    }
+    CreateSurfaceIntegratorFunc CreateSurfaceIntegrator;
 };
-class VolumeIntegratorPlugin : public Plugin {
-	typedef VolumeIntegrator *(*CreateVolumeIntegratorFunc)(const ParamSet &params);
+class VolumeIntegratorPlugin : public Plugin
+{
+    typedef VolumeIntegrator *(*CreateVolumeIntegratorFunc)(const ParamSet &params);
 public:
-	VolumeIntegratorPlugin( const string &name ): Plugin( name )
-	{
-		CreateVolumeIntegrator =
-			(CreateVolumeIntegratorFunc)(GetSymbol("CreateVolumeIntegrator"));
-	}
-	CreateVolumeIntegratorFunc CreateVolumeIntegrator;
+    VolumeIntegratorPlugin( const string &name ): Plugin( name )
+    {
+        CreateVolumeIntegrator =
+            (CreateVolumeIntegratorFunc)(GetSymbol("CreateVolumeIntegrator"));
+    }
+    CreateVolumeIntegratorFunc CreateVolumeIntegrator;
 };
-class AcceleratorPlugin : public Plugin {
-	typedef Primitive *(*CreateAcceleratorFunc)(const vector<Reference<Primitive> > &prims, const ParamSet &params);
+class AcceleratorPlugin : public Plugin
+{
+    typedef Primitive *(*CreateAcceleratorFunc)(const vector<Reference<Primitive> > &prims, const ParamSet &params);
 public:
-	AcceleratorPlugin( const string &name ): Plugin( name )
-	{
-		CreateAccelerator =
-			(CreateAcceleratorFunc)(GetSymbol("CreateAccelerator"));
-	}
-	CreateAcceleratorFunc CreateAccelerator;
+    AcceleratorPlugin( const string &name ): Plugin( name )
+    {
+        CreateAccelerator =
+            (CreateAcceleratorFunc)(GetSymbol("CreateAccelerator"));
+    }
+    CreateAcceleratorFunc CreateAccelerator;
 };
-class SamplerPlugin : public Plugin {
-	typedef Sampler *(*CreateSamplerFunc)(const ParamSet &params, const Film *film);
+class SamplerPlugin : public Plugin
+{
+    typedef Sampler *(*CreateSamplerFunc)(const ParamSet &params, const Film *film);
 public:
-	SamplerPlugin( const string &name ): Plugin( name )
-	{
-		CreateSampler =
-			(CreateSamplerFunc)(GetSymbol("CreateSampler"));
-	}
-	CreateSamplerFunc CreateSampler;
+    SamplerPlugin( const string &name ): Plugin( name )
+    {
+        CreateSampler =
+            (CreateSamplerFunc)(GetSymbol("CreateSampler"));
+    }
+    CreateSamplerFunc CreateSampler;
 };
-class CameraPlugin : public Plugin {
-	typedef Camera *(*CreateCameraFunc)(const ParamSet &params, const Transform &world2cam, Film *film);
+class CameraPlugin : public Plugin
+{
+    typedef Camera *(*CreateCameraFunc)(const ParamSet &params, const Transform &world2cam, Film *film);
 public:
-	CameraPlugin( const string &name ): Plugin( name )
-	{
-		CreateCamera =
-			(CreateCameraFunc)(GetSymbol("CreateCamera"));
-	}
-	CreateCameraFunc CreateCamera;
+    CameraPlugin( const string &name ): Plugin( name )
+    {
+        CreateCamera =
+            (CreateCameraFunc)(GetSymbol("CreateCamera"));
+    }
+    CreateCameraFunc CreateCamera;
 };
-class FilterPlugin : public Plugin {
-	typedef Filter *(*CreateFilterFunc)(const ParamSet &params);
+class FilterPlugin : public Plugin
+{
+    typedef Filter *(*CreateFilterFunc)(const ParamSet &params);
 public:
-	FilterPlugin( const string &name ): Plugin( name ) {
-		CreateFilter =
-			(CreateFilterFunc)(GetSymbol("CreateFilter"));
-	}
-	CreateFilterFunc CreateFilter;
+    FilterPlugin( const string &name ): Plugin( name )
+    {
+        CreateFilter =
+            (CreateFilterFunc)(GetSymbol("CreateFilter"));
+    }
+    CreateFilterFunc CreateFilter;
 };
-class ToneMapPlugin : public Plugin {
-	typedef ToneMap *(*CreateToneMapFunc)(const ParamSet &params);
+class ToneMapPlugin : public Plugin
+{
+    typedef ToneMap *(*CreateToneMapFunc)(const ParamSet &params);
 public:
-	ToneMapPlugin( const string &name ): Plugin( name ) {
-		CreateToneMap =
-			(CreateToneMapFunc)(GetSymbol("CreateToneMap"));
-	}
-	CreateToneMapFunc CreateToneMap;
+    ToneMapPlugin( const string &name ): Plugin( name )
+    {
+        CreateToneMap =
+            (CreateToneMapFunc)(GetSymbol("CreateToneMap"));
+    }
+    CreateToneMapFunc CreateToneMap;
 };
-class FilmPlugin : public Plugin {
-	typedef Film *(*CreateFilmFunc)(const ParamSet &params, Filter *filter);
+class FilmPlugin : public Plugin
+{
+    typedef Film *(*CreateFilmFunc)(const ParamSet &params, Filter *filter);
 public:
-	FilmPlugin( const string &name ): Plugin( name ) {
-		CreateFilm =
-			(CreateFilmFunc)(GetSymbol("CreateFilm"));
-	}
-	CreateFilmFunc CreateFilm;
+    FilmPlugin( const string &name ): Plugin( name )
+    {
+        CreateFilm =
+            (CreateFilmFunc)(GetSymbol("CreateFilm"));
+    }
+    CreateFilmFunc CreateFilm;
 };
 // Runtime Loading Method Definitions
-COREDLL void UpdatePluginPath(const string &newpath) {
-	string ret;
-	for (u_int i = 0; i < newpath.size(); ++i) {
-		if (newpath[i] != '&')
-			ret += newpath[i];
-		else
-			ret += PluginSearchPath;
-	}
-	PluginSearchPath = ret;
+COREDLL void UpdatePluginPath(const string &newpath)
+{
+    string ret;
+    for (u_int i = 0; i < newpath.size(); ++i)
+    {
+        if (newpath[i] != '&')
+            ret += newpath[i];
+        else
+            ret += PluginSearchPath;
+    }
+    PluginSearchPath = ret;
 }
 COREDLL Reference<Shape> MakeShape(const string &name,
-		const Transform &object2world,
-		bool reverseOrientation,
-		const ParamSet &paramSet) {
-			/*
-	ShapePlugin *plugin =
-		GetPlugin<ShapePlugin>(name,
-							   shapePlugins,
-							   PluginSearchPath);
-	if (plugin)
-		return plugin->CreateShape(object2world,
-		                          reverseOrientation,
-								  paramSet);*/
-	
-	if(name=="cone") return Cone::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="cylinder") return Cylinder::CreateShape(object2world, reverseOrientation, paramSet);							 
-	if(name=="disk") return Disk::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="heightfield") return Heightfield::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="hyperboloid") return Hyperboloid::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="loopsubdiv") return LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="nurbs") return NURBS::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="paraboloid") return Paraboloid::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="sphere") return Sphere::CreateShape(object2world, reverseOrientation, paramSet);
-	if(name=="trianglemesh") return TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet);
-	Error("Static loading of shape '%s' failed.",name.c_str());
-	return NULL;
+                                   const Transform &object2world,
+                                   bool reverseOrientation,
+                                   const ParamSet &paramSet)
+{
+    /*
+    ShapePlugin *plugin =
+    GetPlugin<ShapePlugin>(name,
+    				   shapePlugins,
+    				   PluginSearchPath);
+    if (plugin)
+    return plugin->CreateShape(object2world,
+                             reverseOrientation,
+    					  paramSet);*/
+
+    if(name=="cone")
+        return Cone::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="cylinder")
+        return Cylinder::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="disk")
+        return Disk::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="heightfield")
+        return Heightfield::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="hyperboloid")
+        return Hyperboloid::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="loopsubdiv")
+        return LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="nurbs")
+        return NURBS::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="paraboloid")
+        return Paraboloid::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="sphere")
+        return Sphere::CreateShape(object2world, reverseOrientation, paramSet);
+    if(name=="trianglemesh")
+        return TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet);
+    Error("Static loading of shape '%s' failed.",name.c_str());
+    return NULL;
 }
 static string SearchPath(const string &searchpath,
-		const string &filename) {
-	const char *start = searchpath.c_str();
-	const char *end = start;
-	while (*start) {
-		while (*end && *end != LUX_PATH_SEP[0])
-			++end;
-		string component(start, end);
+                         const string &filename)
+{
+    const char *start = searchpath.c_str();
+    const char *end = start;
+    while (*start)
+    {
+        while (*end && *end != LUX_PATH_SEP[0])
+            ++end;
+        string component(start, end);
 
-		string fn = component + "/" + filename;
-		FILE *f = fopen(fn.c_str(), "r");
-		if (f) {
-			fclose(f);
-			return fn;
-		}
-		if (*end == LUX_PATH_SEP[0]) ++end;
-		start = end;
-	}
-	return "";
+        string fn = component + "/" + filename;
+        FILE *f = fopen(fn.c_str(), "r");
+        if (f)
+        {
+            fclose(f);
+            return fn;
+        }
+        if (*end == LUX_PATH_SEP[0])
+            ++end;
+        start = end;
+    }
+    return "";
 }
 COREDLL Reference<Material> MakeMaterial(const string &name,
-		const Transform &mtl2world,
-		const TextureParams &mp) {
-	MaterialPlugin *plugin = GetPlugin<MaterialPlugin>(name, materialPlugins,
-		PluginSearchPath);
-	if (plugin) {
-		Reference<Material> ret =
-			plugin->CreateMaterial(mtl2world, mp);
-		mp.ReportUnused();
-		return ret;
-	}
-	return NULL;
+        const Transform &mtl2world,
+        const TextureParams &mp)
+{
+    MaterialPlugin *plugin = GetPlugin<MaterialPlugin>(name, materialPlugins,
+                             PluginSearchPath);
+    if (plugin)
+    {
+        Reference<Material> ret =
+            plugin->CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL Reference<Texture<float> > MakeFloatTexture(const string &name,
-		const Transform &tex2world, const TextureParams &tp) {
-	TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
-		PluginSearchPath);
-	if (plugin) {
-		Reference<Texture<float> > ret =
-			plugin->CreateFloatTex(tex2world, tp);
-		tp.ReportUnused();
-		return ret;
-	}
-	return NULL;
+        const Transform &tex2world, const TextureParams &tp)
+{
+    TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
+                            PluginSearchPath);
+    if (plugin)
+    {
+        Reference<Texture<float> > ret =
+            plugin->CreateFloatTex(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
-		const Transform &tex2world, const TextureParams &tp) {
-	TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
-		PluginSearchPath);
-	if (plugin) {
-		Reference<Texture<Spectrum> > ret =
-			plugin->CreateSpectrumTex(tex2world, tp);
-		tp.ReportUnused();
-		return ret;
-	}
-	return NULL;
+        const Transform &tex2world, const TextureParams &tp)
+{
+    TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
+                            PluginSearchPath);
+    if (plugin)
+    {
+        Reference<Texture<Spectrum> > ret =
+            plugin->CreateSpectrumTex(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL Light *MakeLight(const string &name,
-		const Transform &light2world, const ParamSet &paramSet) {
-	LightPlugin *plugin = GetPlugin<LightPlugin>(name, lightPlugins, PluginSearchPath);
-	if (plugin) {
-		Light *ret = plugin->CreateLight(light2world, paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                         const Transform &light2world, const ParamSet &paramSet)
+{
+    LightPlugin *plugin = GetPlugin<LightPlugin>(name, lightPlugins, PluginSearchPath);
+    if (plugin)
+    {
+        Light *ret = plugin->CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL AreaLight *MakeAreaLight(const string &name,
-		const Transform &light2world, const ParamSet &paramSet,
-		const Reference<Shape> &shape) {
-	AreaLightPlugin *plugin = GetPlugin<AreaLightPlugin>(name, arealightPlugins,
-		PluginSearchPath);
-	if (plugin) {
-		AreaLight *ret = plugin->CreateAreaLight(light2world, paramSet, shape);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                                 const Transform &light2world, const ParamSet &paramSet,
+                                 const Reference<Shape> &shape)
+{
+    AreaLightPlugin *plugin = GetPlugin<AreaLightPlugin>(name, arealightPlugins,
+                              PluginSearchPath);
+    if (plugin)
+    {
+        AreaLight *ret = plugin->CreateAreaLight(light2world, paramSet, shape);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
-		const Transform &volume2world, const ParamSet &paramSet) {
-	VolumeRegionPlugin *plugin = GetPlugin<VolumeRegionPlugin>(name, volumePlugins,
-		PluginSearchPath);
-	if (plugin) {
-		VolumeRegion *ret = plugin->CreateVolumeRegion(volume2world, paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                                       const Transform &volume2world, const ParamSet &paramSet)
+{
+    VolumeRegionPlugin *plugin = GetPlugin<VolumeRegionPlugin>(name, volumePlugins,
+                                 PluginSearchPath);
+    if (plugin)
+    {
+        VolumeRegion *ret = plugin->CreateVolumeRegion(volume2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
-		const ParamSet &paramSet) {
-	SurfaceIntegratorPlugin *plugin = GetPlugin<SurfaceIntegratorPlugin>(name,
-		surf_integratorPlugins, PluginSearchPath);
-	if (plugin) {
-		SurfaceIntegrator *ret = plugin->CreateSurfaceIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+        const ParamSet &paramSet)
+{
+    SurfaceIntegratorPlugin *plugin = GetPlugin<SurfaceIntegratorPlugin>(name,
+                                      surf_integratorPlugins, PluginSearchPath);
+    if (plugin)
+    {
+        SurfaceIntegrator *ret = plugin->CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
-		const ParamSet &paramSet) {
-	VolumeIntegratorPlugin *plugin = GetPlugin<VolumeIntegratorPlugin>(name, vol_integratorPlugins,
-		PluginSearchPath);
-	if (plugin) {
-		VolumeIntegrator *ret = plugin->CreateVolumeIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+        const ParamSet &paramSet)
+{
+    VolumeIntegratorPlugin *plugin = GetPlugin<VolumeIntegratorPlugin>(name, vol_integratorPlugins,
+                                     PluginSearchPath);
+    if (plugin)
+    {
+        VolumeIntegrator *ret = plugin->CreateVolumeIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
-COREDLL Primitive *MakeAccelerator(const string &name,
-		const vector<Reference<Primitive> > &prims,
-		const ParamSet &paramSet) {
-	AcceleratorPlugin *plugin = GetPlugin<AcceleratorPlugin>(name, acceleratorPlugins,
-		PluginSearchPath);
-	if (plugin) {
-		Primitive *ret = plugin->CreateAccelerator(prims, paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+COREDLL Primitive *MakeAccelerator(const string &name, const vector<Reference<Primitive> > &prims, const ParamSet &paramSet)
+{
+    /*
+       AcceleratorPlugin *plugin = GetPlugin<AcceleratorPlugin>(name, acceleratorPlugins,
+                                   PluginSearchPath);
+       if (plugin)
+       {
+           Primitive *ret = plugin->CreateAccelerator(prims, paramSet);
+           paramSet.ReportUnused();
+           return ret;
+       }*/
+    Primitive* ret;
+
+    if(name=="kdtree")
+    {
+        ret=KdTreeAccel::CreateAccelerator(prims, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="grid")
+    {
+        ret=GridAccel::CreateAccelerator(prims, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
+    Error("Static loading of accelerator '%s' failed.",name.c_str());
+    return NULL;
 }
 COREDLL Camera *MakeCamera(const string &name,
-		const ParamSet &paramSet,
-		const Transform &world2cam, Film *film) {
-	CameraPlugin *plugin = GetPlugin<CameraPlugin>(name, cameraPlugins, PluginSearchPath);
-	if (plugin) {
-		Camera *ret = plugin->CreateCamera(paramSet, world2cam, film);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                           const ParamSet &paramSet,
+                           const Transform &world2cam, Film *film)
+{
+    CameraPlugin *plugin = GetPlugin<CameraPlugin>(name, cameraPlugins, PluginSearchPath);
+    if (plugin)
+    {
+        Camera *ret = plugin->CreateCamera(paramSet, world2cam, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL Sampler *MakeSampler(const string &name,
-		const ParamSet &paramSet, const Film *film) {
-			/*
-	SamplerPlugin *plugin = GetPlugin<SamplerPlugin>(name, samplerPlugins, PluginSearchPath);
-	if (plugin) {
-		Sampler *ret = plugin->CreateSampler(paramSet, film);
-		paramSet.ReportUnused();
-		return ret;
-	}*/
-	
-	if(name=="bestcandidate") return  BestCandidateSampler::CreateSampler(paramSet, film);
-	if(name=="lowdiscrepancy") return  LDSampler::CreateSampler(paramSet, film);
-	if(name=="random") return  RandomSampler::CreateSampler(paramSet, film);
-	if(name=="stratified") return  StratifiedSampler::CreateSampler(paramSet, film);
-	
-	Error("Static loading of sampler '%s' failed.",name.c_str());
-	return NULL;
+                             const ParamSet &paramSet, const Film *film)
+{
+    /*
+    SamplerPlugin *plugin = GetPlugin<SamplerPlugin>(name, samplerPlugins, PluginSearchPath);
+    if (plugin) {
+    Sampler *ret = plugin->CreateSampler(paramSet, film);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+    Sampler *ret;
+
+    if(name=="bestcandidate")
+    {
+        ret=BestCandidateSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="lowdiscrepancy")
+    {
+        ret=LDSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="random")
+    {
+        ret=RandomSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="stratified")
+    {
+        ret=StratifiedSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
+    Error("Static loading of sampler '%s' failed.",name.c_str());
+    return NULL;
 }
 COREDLL Filter *MakeFilter(const string &name,
-	const ParamSet &paramSet) {
-	FilterPlugin *plugin = GetPlugin<FilterPlugin>(name, filterPlugins, PluginSearchPath);
-	if (plugin) {
-		Filter *ret = plugin->CreateFilter(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                           const ParamSet &paramSet)
+{
+    FilterPlugin *plugin = GetPlugin<FilterPlugin>(name, filterPlugins, PluginSearchPath);
+    if (plugin)
+    {
+        Filter *ret = plugin->CreateFilter(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL ToneMap *MakeToneMap(const string &name,
-	const ParamSet &paramSet) {
-	ToneMapPlugin *plugin = GetPlugin<ToneMapPlugin>(name, tonemapPlugins, PluginSearchPath);
-	if (plugin) {
-		ToneMap *ret = plugin->CreateToneMap(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                             const ParamSet &paramSet)
+{
+    ToneMapPlugin *plugin = GetPlugin<ToneMapPlugin>(name, tonemapPlugins, PluginSearchPath);
+    if (plugin)
+    {
+        ToneMap *ret = plugin->CreateToneMap(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 COREDLL Film *MakeFilm(const string &name,
-	const ParamSet &paramSet, Filter *filter) {
-	FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);
-	if (plugin) {
-		Film *ret = plugin->CreateFilm(paramSet, filter);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	return NULL;
+                       const ParamSet &paramSet, Filter *filter)
+{
+    FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);
+    if (plugin)
+    {
+        Film *ret = plugin->CreateFilm(paramSet, filter);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    return NULL;
 }
 // Plugin Method Definitions
-Plugin::Plugin(const string &fname) {
-	pluginName = fname;
+Plugin::Plugin(const string &fname)
+{
+    pluginName = fname;
 #if defined(WIN32)
-	hinstLib = LoadLibrary(fname.c_str());
-	if (!hinstLib)
-		Error("Can't open plug-in \"%s\"", fname.c_str());
+
+    hinstLib = LoadLibrary(fname.c_str());
+    if (!hinstLib)
+        Error("Can't open plug-in \"%s\"", fname.c_str());
 #elif defined(__APPLE__)
-	NSObjectFileImage fileImage;
-	NSObjectFileImageReturnCode returnCode =
-		NSCreateObjectFileImageFromFile(fname.c_str(), &fileImage);
-	if(returnCode == NSObjectFileImageSuccess) {
-		hinstLib = NSLinkModule(fileImage,fname.c_str(),
-			NSLINKMODULE_OPTION_RETURN_ON_ERROR
-		     |  NSLINKMODULE_OPTION_PRIVATE);
-		NSDestroyObjectFileImage(fileImage);
-		if (!hinstLib) {
-			Error("Can't open plug-in \"%s\"", fname.c_str());
-		}
-	}
-	else {
-		Error("Can't open plug-in \"%s\"", fname.c_str());
-	}
+
+    NSObjectFileImage fileImage;
+    NSObjectFileImageReturnCode returnCode =
+                                          NSCreateObjectFileImageFromFile(fname.c_str(), &fileImage);
+    if(returnCode == NSObjectFileImageSuccess)
+    {
+        hinstLib = NSLinkModule(fileImage,fname.c_str(),
+                                NSLINKMODULE_OPTION_RETURN_ON_ERROR
+                                |  NSLINKMODULE_OPTION_PRIVATE);
+        NSDestroyObjectFileImage(fileImage);
+        if (!hinstLib)
+        {
+            Error("Can't open plug-in \"%s\"", fname.c_str());
+        }
+    }
+    else
+    {
+        Error("Can't open plug-in \"%s\"", fname.c_str());
+    }
 #else
-	hinstLib = dlopen(fname.c_str(), RTLD_LAZY);
-	if (!hinstLib)
-		Error("Can't open plug-in \"%s\" (%s)", fname.c_str(),
-			dlerror());
+    hinstLib = dlopen(fname.c_str(), RTLD_LAZY);
+    if (!hinstLib)
+        Error("Can't open plug-in \"%s\" (%s)", fname.c_str(),
+              dlerror());
 #endif
 }
-Plugin::~Plugin() {
+Plugin::~Plugin()
+{
 #if defined(WIN32)
-	FreeLibrary(hinstLib);
+    FreeLibrary(hinstLib);
 #elif defined(__APPLE__)
-	NSUnLinkModule(hinstLib,0);
+
+    NSUnLinkModule(hinstLib,0);
 #else
-	dlclose(hinstLib);
+
+    dlclose(hinstLib);
 #endif
 }
-void *Plugin::GetSymbol(const string &symname) {
-	void *data;
+void *Plugin::GetSymbol(const string &symname)
+{
+    void *data;
 #if defined(WIN32)
-	data = GetProcAddress(hinstLib, symname.c_str());
+
+    data = GetProcAddress(hinstLib, symname.c_str());
 #elif defined(__APPLE__)
-	string apple_lossage = string("_") + symname;
-	NSSymbol nssym = NSLookupSymbolInModule(hinstLib,apple_lossage.c_str());
-	data = NSAddressOfSymbol(nssym);
+
+    string apple_lossage = string("_") + symname;
+    NSSymbol nssym = NSLookupSymbolInModule(hinstLib,apple_lossage.c_str());
+    data = NSAddressOfSymbol(nssym);
 #else
-	data = dlsym(hinstLib, symname.c_str());
+
+    data = dlsym(hinstLib, symname.c_str());
 #endif
-	if (!data)
-		Severe("Couldn't get symbol \"%s\" in Plugin %s.", symname.c_str(), pluginName.c_str());
-	return data;
+
+    if (!data)
+        Severe("Couldn't get symbol \"%s\" in Plugin %s.", symname.c_str(), pluginName.c_str());
+    return data;
 }

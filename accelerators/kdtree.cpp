@@ -21,121 +21,8 @@
  ***************************************************************************/
 
 // kdtree.cpp*
-#include "lux.h"
-#include "primitive.h"
-// KdAccelNode Declarations
-struct MailboxPrim {
-	MailboxPrim(const Reference<Primitive> &p) {
-		primitive = p;
-		lastMailboxId = -1;
-	}
-	Reference<Primitive> primitive;
-	int lastMailboxId;
-};
-struct KdAccelNode {
-	// KdAccelNode Methods
-	void initLeaf(int *primNums, int np,
-			MailboxPrim *mailboxPrims, MemoryArena &arena) {
-		// Update kd leaf node allocation statistics
-		static StatsCounter numLeafMade("Kd-Tree Accelerator",
-		                                "Leaf kd-tree nodes made");
-		//static StatsCounter maxDepth("Kd-Tree Accelerator",
-		//                             "Maximum kd-tree depth");
-		static StatsCounter maxLeafPrims("Kd-Tree Accelerator",
-			"Maximum number of primitives in leaf node");
-		++numLeafMade;
-		//maxDepth.Max(depth);
-		maxLeafPrims.Max(np);
-		static StatsRatio leafPrims("Kd-Tree Accelerator",
-			"Avg. number of primitives in leaf nodes");
-		leafPrims.Add(np, 1);
-		nPrims = np << 2;
-		flags |= 3;
-		// Store _MailboxPrim *_s for leaf node
-		if (np == 0)
-			onePrimitive = NULL;
-		else if (np == 1)
-			onePrimitive = &mailboxPrims[primNums[0]];
-		else {
-			primitives = (MailboxPrim **)arena.Alloc(np *
-				sizeof(MailboxPrim *));
-			for (int i = 0; i < np; ++i)
-				primitives[i] = &mailboxPrims[primNums[i]];
-		}
-	}
-	void initInterior(int axis, float s) {
-		static StatsCounter nodesMade("Kd-Tree Accelerator", "Interior kd-tree nodes made"); // NOBOOK
-		++nodesMade; // NOBOOK
-		split = s;
-		flags &= ~3;
-		flags |= axis;
-	}
-	float SplitPos() const { return split; }
-	int nPrimitives() const { return nPrims >> 2; }
-	int SplitAxis() const { return flags & 3; }
-	bool IsLeaf() const { return (flags & 3) == 3; }
-	union {
-		u_int flags;   // Both
-		float split;   // Interior
-		u_int nPrims;  // Leaf
-	};
-	union {
-		u_int aboveChild;           // Interior
-		MailboxPrim *onePrimitive;  // Leaf
-		MailboxPrim **primitives;   // Leaf
-	};
-};
-struct BoundEdge {
-	// BoundEdge Public Methods
-	BoundEdge() { }
-	BoundEdge(float tt, int pn, bool starting) {
-		t = tt;
-		primNum = pn;
-		type = starting ? START : END;
-	}
-	bool operator<(const BoundEdge &e) const {
-		if (t == e.t)
-			return (int)type < (int)e.type;
-		else return t < e.t;
-	}
-	float t;
-	int primNum;
-	enum { START, END } type;
-};
-// KdTreeAccel Declarations
-struct KdAccelNode;
-class  KdTreeAccel : public Aggregate {
-public:
-	// KdTreeAccel Public Methods
-	KdTreeAccel(const vector<Reference<Primitive> > &p,
-		int icost, int scost,
-		float ebonus, int maxp, int maxDepth);
-	BBox WorldBound() const { return bounds; }
-	bool CanIntersect() const { return true; }
-	~KdTreeAccel();
-	void buildTree(int nodeNum, const BBox &bounds,
-	    const vector<BBox> &primBounds,
-		int *primNums, int nprims, int depth,
-		BoundEdge *edges[3],
-		int *prims0, int *prims1, int badRefines = 0);
-	bool Intersect(const Ray &ray, Intersection *isect) const;
-	bool IntersectP(const Ray &ray) const;
-private:
-	// KdTreeAccel Private Data
-	int isectCost, traversalCost, maxPrims;
-	float emptyBonus;
-	u_int nMailboxes;
-	MailboxPrim *mailboxPrims;
-	mutable int curMailboxId;
-	KdAccelNode *nodes;
-	int nAllocedNodes, nextFreeNode;
-	BBox bounds;
-	MemoryArena arena;
-};
-struct KdToDo {
-	const KdAccelNode *node;
-	float tmin, tmax;
-};
+#include "kdtree.h"
+
 // KdTreeAccel Method Definitions
 KdTreeAccel::
     KdTreeAccel(const vector<Reference<Primitive> > &p,
@@ -483,7 +370,7 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
 	}
 	return false;
 }
-extern "C" DLLEXPORT Primitive *CreateAccelerator(const vector<Reference<Primitive> > &prims,
+Primitive* KdTreeAccel::CreateAccelerator(const vector<Reference<Primitive> > &prims,
 		const ParamSet &ps) {
 	int isectCost = ps.FindOneInt("intersectcost", 80);
 	int travCost = ps.FindOneInt("traversalcost", 1);

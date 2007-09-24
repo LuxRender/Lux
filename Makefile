@@ -24,7 +24,7 @@ CXX=g++
 #CC=icc
 #CXX=icc
 LD=$(CXX) $(OPT)
-OPT=-O3
+OPT=-O1 -g
 # OPT=-O2 -msse -mfpmath=sse
 INCLUDE=-I. -Icore $(EXRINCLUDE)
 WARN=-Wall
@@ -46,14 +46,15 @@ ifeq ($(ARCH), Darwin)
   WARN += -Wno-long-double
 endif
 
-ACCELERATORS = grid kdtree
+#ACCELERATORS = grid kdtree
 CAMERAS      = environment orthographic perspective
 CORE         = api camera color dynload exrio film geometry light material mc \
                paramset parser primitive reflection sampling scene shape \
                texture timer transform transport util volume luxparse luxlex \
                cone cylinder disk heightfield hyperboloid loopsubdiv nurbs \
                paraboloid sphere trianglemesh \
-               bestcandidate lowdiscrepancy random stratified
+               bestcandidate lowdiscrepancy random stratified \
+               grid kdtree
 FILM         = image
 FILTERS      = box gaussian mitchell sinc triangle
 INTEGRATORS  = directlighting emission irradiancecache \
@@ -120,7 +121,7 @@ CORE_HEADERS := $(addprefix core/, $(CORE_HEADERFILES) )
 
 .PHONY: tools exrcheck
 
-default: $(CORE_LIB) $(RENDERER_BINARY) $(INTEGRATORS_DSOS) $(VOLUMES_DSOS) $(FILM_DSOS) $(MATERIALS_DSOS) $(LIGHTS_DSOS) $(ACCELERATORS_DSOS) $(CAMERAS_DSOS) $(FILTERS_DSOS) $(TONEMAPS_DSOS) $(TEXTURES_DSOS) #tools
+default: $(CORE_LIB) $(RENDERER_BINARY) $(INTEGRATORS_DSOS) $(VOLUMES_DSOS) $(FILM_DSOS) $(MATERIALS_DSOS) $(LIGHTS_DSOS) $(CAMERAS_DSOS) $(FILTERS_DSOS) $(TONEMAPS_DSOS) $(TEXTURES_DSOS) #tools
 
 tools: $(CORE_LIB)
 	(cd tools && $(MAKE))
