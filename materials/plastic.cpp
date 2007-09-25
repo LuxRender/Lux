@@ -21,28 +21,8 @@
  ***************************************************************************/
 
 // plastic.cpp*
-#include "lux.h"
-#include "material.h"
-// Plastic Class Declarations
-class Plastic : public Material {
-public:
-	// Plastic Public Methods
-	Plastic(Reference<Texture<Spectrum> > kd,
-			Reference<Texture<Spectrum> > ks,
-			Reference<Texture<float> > rough,
-			Reference<Texture<float> > bump) {
-		Kd = kd;
-		Ks = ks;
-		roughness = rough;
-		bumpMap = bump;
-	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-	              const DifferentialGeometry &dgShading) const;
-private:
-	// Plastic Private Data
-	Reference<Texture<Spectrum> > Kd, Ks;
-	Reference<Texture<float> > roughness, bumpMap;
-};
+#include "plastic.h"
+
 // Plastic Method Definitions
 BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const {
@@ -66,7 +46,7 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 	return bsdf;
 }
 // Plastic Dynamic Creation Routine
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Plastic::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
 	Reference<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));

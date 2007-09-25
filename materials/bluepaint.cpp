@@ -21,15 +21,8 @@
  ***************************************************************************/
 
 // bluepaint.cpp*
-#include "lux.h"
-#include "material.h"
-// BluePaint Class Declarations
-class BluePaint : public Material {
-public:
-	BluePaint(Reference<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
-};
+#include "bluepaint.h"
+
 // BluePaint Method Definitions
 BSDF *BluePaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare bluepaint coefficients
@@ -57,7 +50,7 @@ BSDF *BluePaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialG
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* BluePaint::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new BluePaint(bumpMap);

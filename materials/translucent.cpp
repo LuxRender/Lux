@@ -21,32 +21,8 @@
  ***************************************************************************/
 
 // translucent.cpp*
-#include "lux.h"
-#include "material.h"
-// Translucent Class Declarations
-class Translucent : public Material {
-public:
-	// Translucent Public Methods
-	Translucent(Reference<Texture<Spectrum> > kd, Reference<Texture<Spectrum> > ks,
-			Reference<Texture<float> > rough,
-			Reference<Texture<Spectrum> > refl,
-			Reference<Texture<Spectrum> > trans,
-			Reference<Texture<float> > bump) {
-		Kd = kd;
-		Ks = ks;
-		roughness = rough;
-		reflect = refl;
-		transmit = trans;
-		bumpMap = bump;
-	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-private:
-	// Translucent Private Data
-	Reference<Texture<Spectrum> > Kd, Ks;
-	Reference<Texture<float> > roughness;
-	Reference<Texture<Spectrum> > reflect, transmit;
-	Reference<Texture<float> > bumpMap;
-};
+#include "translucent.h"
+
 // Translucent Method Definitions
 BSDF *Translucent::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
@@ -81,7 +57,7 @@ BSDF *Translucent::GetBSDF(const DifferentialGeometry &dgGeom, const Differentia
 	}
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Translucent::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
 	Reference<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));

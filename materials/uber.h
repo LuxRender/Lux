@@ -20,27 +20,32 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// mirror.cpp*
-#include "mirror.h"
-
-// Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(SpecularReflection)(R,
-			BSDF_ALLOC(FresnelNoOp)()));
-	return bsdf;
-}
-Material* Mirror::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Mirror(Kr, bumpMap);
-}
+// uber.cpp*
+#include "lux.h"
+#include "material.h"
+// UberMaterial Class Declarations
+class UberMaterial : public Material {
+public:
+	// UberMaterial Method Declarations
+	UberMaterial(Reference<Texture<Spectrum> > kd,
+		Reference<Texture<Spectrum> > ks,
+		Reference<Texture<Spectrum> > kr,
+		Reference<Texture<float> > rough,
+		Reference<Texture<Spectrum> > op,
+		Reference<Texture<float> > bump) {
+		Kd = kd;
+		Ks = ks;
+		Kr = kr;
+		roughness = rough;
+		opacity = op;
+		bumpMap = bump;
+	}
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	
+	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+private:
+	// UberMaterial Private Data
+	Reference<Texture<Spectrum> > Kd, Ks, Kr, opacity;
+	Reference<Texture<float> > roughness;
+	Reference<Texture<float> > bumpMap;
+};

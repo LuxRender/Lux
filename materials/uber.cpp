@@ -21,32 +21,8 @@
  ***************************************************************************/
 
 // uber.cpp*
-#include "lux.h"
-#include "material.h"
-// UberMaterial Class Declarations
-class UberMaterial : public Material {
-public:
-	// UberMaterial Method Declarations
-	UberMaterial(Reference<Texture<Spectrum> > kd,
-		Reference<Texture<Spectrum> > ks,
-		Reference<Texture<Spectrum> > kr,
-		Reference<Texture<float> > rough,
-		Reference<Texture<Spectrum> > op,
-		Reference<Texture<float> > bump) {
-		Kd = kd;
-		Ks = ks;
-		Kr = kr;
-		roughness = rough;
-		opacity = op;
-		bumpMap = bump;
-	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-private:
-	// UberMaterial Private Data
-	Reference<Texture<Spectrum> > Kd, Ks, Kr, opacity;
-	Reference<Texture<float> > roughness;
-	Reference<Texture<float> > bumpMap;
-};
+#include "uber.h"
+
 // UberMaterial Method Definitions
 BSDF *UberMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
@@ -86,7 +62,7 @@ BSDF *UberMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const Differenti
 	return bsdf;
 }
 // UberMaterial Dynamic Creation Routine
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* UberMaterial::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
 	Reference<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));

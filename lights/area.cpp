@@ -102,7 +102,7 @@ Spectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 	if (pdf == 0.f) return Spectrum(0.f);
 	return L(P, Ns, -*wo) /	pdf;
 }
-extern "C" DLLEXPORT Light *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
+AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
 		const Reference<Shape> &shape) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	int nSamples = paramSet.FindOneInt("nsamples", 1);

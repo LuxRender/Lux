@@ -21,26 +21,8 @@
  ***************************************************************************/
 
 // matte.cpp*
-#include "lux.h"
-#include "material.h"
-// Matte Class Declarations
-class Matte : public Material {
-public:
-	// Matte Public Methods
-	Matte(Reference<Texture<Spectrum> > kd,
-			Reference<Texture<float> > sig,
-			Reference<Texture<float> > bump) {
-		Kd = kd;
-		sigma = sig;
-		bumpMap = bump;
-	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-	              const DifferentialGeometry &dgShading) const;
-private:
-	// Matte Private Data
-	Reference<Texture<Spectrum> > Kd;
-	Reference<Texture<float> > sigma, bumpMap;
-};
+#include "matte.h"
+
 // Matte Method Definitions
 BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const {
@@ -61,7 +43,7 @@ BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
 	return bsdf;
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Matte::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
 	Reference<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);

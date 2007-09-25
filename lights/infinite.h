@@ -20,27 +20,44 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// mirror.cpp*
-#include "mirror.h"
-
-// Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(SpecularReflection)(R,
-			BSDF_ALLOC(FresnelNoOp)()));
-	return bsdf;
-}
-Material* Mirror::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Mirror(Kr, bumpMap);
-}
+// infinite.cpp*
+#include "lux.h"
+#include "light.h"
+#include "texture.h"
+#include "shape.h"
+#include "scene.h"
+#include "mipmap.h"
+// InfiniteAreaLight Declarations
+class InfiniteAreaLight : public Light {
+public:
+	// InfiniteAreaLight Public Methods
+	InfiniteAreaLight(const Transform &light2world,	const Spectrum &power, int ns, const string &texmap);
+	~InfiniteAreaLight();
+	Spectrum Power(const Scene *scene) const {
+		Point worldCenter;
+		float worldRadius;
+		scene->WorldBound().BoundingSphere(&worldCenter,
+		                                    &worldRadius);
+		return Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
+			M_PI * worldRadius * worldRadius;
+	}
+	bool IsDeltaLight() const { return false; }
+	Spectrum Le(const RayDifferential &r) const;
+	Spectrum Sample_L(const Point &p, const Normal &n,
+		float u1, float u2, Vector *wi, float *pdf,
+		VisibilityTester *visibility) const;
+	Spectrum Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf,
+		VisibilityTester *visibility) const;
+	Spectrum Sample_L(const Scene *scene, float u1, float u2,
+			float u3, float u4, Ray *ray, float *pdf) const;
+	float Pdf(const Point &, const Normal &, const Vector &) const;
+	float Pdf(const Point &, const Vector &) const;
+	Spectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
+	
+	static Light *CreateLight(const Transform &light2world,
+		const ParamSet &paramSet);
+private:
+	// InfiniteAreaLight Private Data
+	Spectrum Lbase;
+	MIPMap<Spectrum> *radianceMap;
+};

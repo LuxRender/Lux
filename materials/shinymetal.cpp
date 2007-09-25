@@ -21,26 +21,8 @@
  ***************************************************************************/
 
 // shinymetal.cpp*
-#include "lux.h"
-#include "material.h"
-// ShinyMetal Class Declarations
-class ShinyMetal : public Material {
-public:
-	// ShinyMetal Public Methods
-	ShinyMetal(Reference<Texture<Spectrum> > ks, Reference<Texture<float> > rough,
-			Reference<Texture<Spectrum> > kr, Reference<Texture<float> > bump) {
-		Ks = ks;
-		roughness = rough;
-		Kr = kr;
-		bumpMap = bump;
-	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-private:
-	// ShinyMetal Private Data
-	Reference<Texture<Spectrum> > Ks, Kr;
-	Reference<Texture<float> > roughness;
-	Reference<Texture<float> > bumpMap;
-};
+#include "shinymetal.h"
+
 // ShinyMetal Method Definitions
 BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
@@ -62,7 +44,7 @@ BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 	bsdf->Add(BSDF_ALLOC(SpecularReflection)(1., frSr));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* ShinyMetal::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
 	Reference<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));

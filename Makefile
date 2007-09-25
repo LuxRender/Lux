@@ -59,15 +59,19 @@ CORE         = api camera color dynload exrio film geometry light material mc \
                image \
                box gaussian mitchell sinc triangle \
                directlighting emission irradiancecache \
-               path photonmap single whitted igi debug exphotonmap bidirectional
+               path photonmap single whitted igi debug exphotonmap bidirectional \
+               area distant goniometric infinite point projection spot infinitesample \
+               bluepaint brushedmetal clay felt \
+               glass matte mirror plastic primer \
+               shinymetal skin substrate translucent uber
 #FILM         = image
 #FILTERS      = box gaussian mitchell sinc triangle
 #INTEGRATORS  = directlighting emission irradiancecache \
 #               path photonmap single whitted igi debug exphotonmap
-LIGHTS       = area distant goniometric infinite point projection spot infinitesample
-MATERIALS    = bluepaint brushedmetal clay felt \
-               glass matte mirror plastic primer \
-               shinymetal skin substrate translucent uber
+#LIGHTS       = area distant goniometric infinite point projection spot infinitesample
+#MATERIALS    = bluepaint brushedmetal clay felt \
+#               glass matte mirror plastic primer \
+#               shinymetal skin substrate translucent uber
 #SAMPLERS     = bestcandidate lowdiscrepancy random stratified
 #SHAPES       = cone cylinder disk heightfield hyperboloid loopsubdiv nurbs \
 #               paraboloid sphere trianglemesh
@@ -126,7 +130,7 @@ CORE_HEADERS := $(addprefix core/, $(CORE_HEADERFILES) )
 
 .PHONY: tools exrcheck
 
-default: $(CORE_LIB) $(RENDERER_BINARY) $(VOLUMES_DSOS) $(MATERIALS_DSOS) $(LIGHTS_DSOS) $(TONEMAPS_DSOS) $(TEXTURES_DSOS) #tools
+default: $(CORE_LIB) $(RENDERER_BINARY) $(VOLUMES_DSOS) $(TONEMAPS_DSOS) $(TEXTURES_DSOS) #tools
 
 tools: $(CORE_LIB)
 	(cd tools && $(MAKE))

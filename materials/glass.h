@@ -20,27 +20,26 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// mirror.cpp*
-#include "mirror.h"
-
-// Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(SpecularReflection)(R,
-			BSDF_ALLOC(FresnelNoOp)()));
-	return bsdf;
-}
-Material* Mirror::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Mirror(Kr, bumpMap);
-}
+// glass.cpp*
+#include "lux.h"
+#include "material.h"
+// Glass Class Declarations
+class Glass : public Material {
+public:
+	// Glass Public Methods
+	Glass(Reference<Texture<Spectrum> > r, Reference<Texture<Spectrum> > t,
+			Reference<Texture<float> > i, Reference<Texture<float> > bump) {
+		Kr = r;
+		Kt = t;
+		index = i;
+		bumpMap = bump;
+	}
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	
+	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+private:
+	// Glass Private Data
+	Reference<Texture<Spectrum> > Kr, Kt;
+	Reference<Texture<float> > index;
+	Reference<Texture<float> > bumpMap;
+};

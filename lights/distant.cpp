@@ -21,34 +21,8 @@
  ***************************************************************************/
 
 // distant.cpp*
-#include "lux.h"
-#include "light.h"
-#include "shape.h"
-#include "scene.h"
-// DistantLight Declarations
-class DistantLight : public Light {
-public:
-	// DistantLight Public Methods
-	DistantLight(const Transform &light2world, const Spectrum &radiance, const Vector &dir);
-	bool IsDeltaLight() const { return true; }
-	Spectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *) const;
-	Spectrum Power(const Scene *scene) const {
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-		                                   &worldRadius);
-		return L * M_PI * worldRadius * worldRadius;
-	}
-	Spectrum Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
-		float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
-private:
-	// DistantLight Private Data
-	Vector lightDir;
-	Spectrum L;
-};
+#include "distant.h"
+
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
 		const Spectrum &radiance, const Vector &dir)
@@ -90,7 +64,7 @@ Spectrum DistantLight::Sample_L(const Scene *scene,
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	return L;
 }
-extern "C" DLLEXPORT Light *CreateLight(const Transform &light2world,
+Light* DistantLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	Point from = paramSet.FindOnePoint("from", Point(0,0,0));

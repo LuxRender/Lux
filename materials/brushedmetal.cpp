@@ -21,15 +21,8 @@
  ***************************************************************************/
 
 // brushedmetal.cpp*
-#include "lux.h"
-#include "material.h"
-// BrushedMetal Class Declarations
-class BrushedMetal : public Material {
-public:
-	BrushedMetal(Reference<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
-};
+#include "brushedmetal.h"
+
 // BrushedMetal Method Definitions
 BSDF *BrushedMetal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare brushedmetal coefficients
@@ -57,7 +50,7 @@ BSDF *BrushedMetal::GetBSDF(const DifferentialGeometry &dgGeom, const Differenti
 		BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* BrushedMetal::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new BrushedMetal(bumpMap);

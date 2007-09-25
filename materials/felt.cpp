@@ -21,15 +21,7 @@
  ***************************************************************************/
 
 // felt.cpp*
-#include "lux.h"
-#include "material.h"
-// Felt Class Declarations
-class Felt : public Material {
-public:
-	Felt(Reference<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
-};
+#include "felt.h"
 
 // Felt Method Definitions
 BSDF *Felt::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
@@ -58,7 +50,7 @@ BSDF *Felt::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeomet
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Felt::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Felt(bumpMap);

@@ -21,15 +21,7 @@
  ***************************************************************************/
 
 // skin.cpp*
-#include "lux.h"
-#include "material.h"
-// Skin Class Declarations
-class Skin : public Material {
-public:
-	Skin(Reference<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
-};
+#include "skin.h"
 
 // Skin Method Definitions
 BSDF *Skin::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
@@ -58,7 +50,7 @@ BSDF *Skin::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeomet
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Skin::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Skin(bumpMap);

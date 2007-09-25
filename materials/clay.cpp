@@ -21,16 +21,7 @@
  ***************************************************************************/
 
 // clay.cpp*
-#include "lux.h"
-#include "material.h"
-// Clay Class Declarations
-class Clay : public Material {
-public:
-	Clay(Reference<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const; // NOBOOK
-private:
-	Reference<Texture<float> > bumpMap;
-};
+#include "clay.h"
 
 // Clay Method Definitions
 BSDF *Clay::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
@@ -59,7 +50,7 @@ BSDF *Clay::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeomet
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Clay::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Clay(bumpMap);

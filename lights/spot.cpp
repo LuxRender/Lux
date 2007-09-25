@@ -21,32 +21,8 @@
  ***************************************************************************/
 
 // spot.cpp*
-#include "lux.h"
-#include "light.h"
-#include "shape.h"
-// SpotLight Declarations
-class SpotLight : public Light {
-public:
-	// SpotLight Public Methods
-	SpotLight(const Transform &light2world, const Spectrum &, float width, float fall);
-	Spectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
-	bool IsDeltaLight() const { return true; }
-	float Falloff(const Vector &w) const;
-	Spectrum Power(const Scene *) const {
-		return Intensity * 2.f * M_PI *
-			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
-	}
-	Spectrum Sample_L(const Point &P, float u1, float u2,
-			Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
-private:
-	// SpotLight Private Data
-	float cosTotalWidth, cosFalloffStart;
-	Point lightPos;
-	Spectrum Intensity;
-};
+#include "spot.h"
+
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &light2world,
 		const Spectrum &intensity, float width, float fall)
@@ -92,7 +68,7 @@ Spectrum SpotLight::Sample_L(const Scene *scene, float u1,
 	*pdf = UniformConePdf(cosTotalWidth);
 	return Intensity * Falloff(ray->d);
 }
-extern "C" DLLEXPORT Light *CreateLight(const Transform &l2w, const ParamSet &paramSet) {
+Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);

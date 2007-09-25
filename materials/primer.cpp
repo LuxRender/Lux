@@ -21,15 +21,7 @@
  ***************************************************************************/
 
 // primer.cpp*
-#include "lux.h"
-#include "material.h"
-// Primer Class Declarations
-class Primer : public Material {
-public:
-	Primer(Reference<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
-};
+#include "primer.h"
 
 // Primer Method Definitions
 BSDF *Primer::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
@@ -58,7 +50,7 @@ BSDF *Primer::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeom
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }
-extern "C" DLLEXPORT Material * CreateMaterial(const Transform &xform,
+Material* Primer::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Primer(bumpMap);

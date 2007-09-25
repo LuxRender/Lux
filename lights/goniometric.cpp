@@ -21,44 +21,8 @@
  ***************************************************************************/
 
 // goniometric.cpp*
-#include "lux.h"
-#include "light.h"
-#include "shape.h"
-#include "scene.h"
-#include "mipmap.h"
-// GonioPhotometricLight Declarations
-class GonioPhotometricLight : public Light {
-public:
-	// GonioPhotometricLight Public Methods
-	GonioPhotometricLight(const Transform &light2world, const Spectrum &, const
-	string &texname);
-	Spectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
-	~GonioPhotometricLight() { delete mipmap; }
-	bool IsDeltaLight() const { return true; }
-	Spectrum Scale(const Vector &w) const {
-		Vector wp = Normalize(WorldToLight(w));
-		swap(wp.y, wp.z);
-		float theta = SphericalTheta(wp);
-		float phi   = SphericalPhi(wp);
-		float s = phi * INV_TWOPI, t = theta * INV_PI;
-		return mipmap ? mipmap->Lookup(s, t) : 1.f;
-	}
-	Spectrum Power(const Scene *) const {
-		return 4.f * M_PI * Intensity *
-			mipmap->Lookup(.5f, .5f, .5f);
-	}
-	Spectrum Sample_L(const Point &P, float u1, float u2, Vector *wo,
-		float *pdf, VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
-private:
-	// GonioPhotometricLight Private Data
-	Point lightPos;
-	Spectrum Intensity;
-	MIPMap<Spectrum> *mipmap;
+#include "goniometric.h"
 
-};
 // GonioPhotometricLight Method Definitions
 Spectrum GonioPhotometricLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {
@@ -99,7 +63,7 @@ Spectrum GonioPhotometricLight::Sample_L(const Scene *scene, float u1, float u2,
 float GonioPhotometricLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-extern "C" DLLEXPORT Light *CreateLight(const Transform &light2world,
+Light* GonioPhotometricLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
 	string texname = paramSet.FindOneString("mapname", "");

@@ -20,27 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// mirror.cpp*
-#include "mirror.h"
-
-// Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(SpecularReflection)(R,
-			BSDF_ALLOC(FresnelNoOp)()));
-	return bsdf;
-}
-Material* Mirror::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Mirror(Kr, bumpMap);
-}
+// primer.cpp*
+#include "lux.h"
+#include "material.h"
+// Primer Class Declarations
+class Primer : public Material {
+public:
+	Primer(Reference<Texture<float> > bump) : bumpMap(bump) { }
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	Reference<Texture<float> > bumpMap;
+	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+};

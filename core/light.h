@@ -107,6 +107,9 @@ public:
 		float *pdf, VisibilityTester *visibility) const;
 	Spectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
+			
+	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
+		const Reference<Shape> &shape);
 protected:
 	// AreaLight Protected Data
 	Spectrum Lemit;

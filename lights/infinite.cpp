@@ -21,43 +21,8 @@
  ***************************************************************************/
 
 // infinite.cpp*
-#include "lux.h"
-#include "light.h"
-#include "texture.h"
-#include "shape.h"
-#include "scene.h"
-#include "mipmap.h"
-// InfiniteAreaLight Declarations
-class InfiniteAreaLight : public Light {
-public:
-	// InfiniteAreaLight Public Methods
-	InfiniteAreaLight(const Transform &light2world,	const Spectrum &power, int ns, const string &texmap);
-	~InfiniteAreaLight();
-	Spectrum Power(const Scene *scene) const {
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-		                                    &worldRadius);
-		return Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius;
-	}
-	bool IsDeltaLight() const { return false; }
-	Spectrum Le(const RayDifferential &r) const;
-	Spectrum Sample_L(const Point &p, const Normal &n,
-		float u1, float u2, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Normal &, const Vector &) const;
-	float Pdf(const Point &, const Vector &) const;
-	Spectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
-private:
-	// InfiniteAreaLight Private Data
-	Spectrum Lbase;
-	MIPMap<Spectrum> *radianceMap;
-};
+#include "infinite.h"
+
 // InfiniteAreaLight Method Definitions
 InfiniteAreaLight::~InfiniteAreaLight() {
 	delete radianceMap;
@@ -159,7 +124,7 @@ Spectrum InfiniteAreaLight::Sample_L(const Point &p,
 	if (pdf == 0.f) return Spectrum(0.f);
 	return L / pdf;
 }
-extern "C" DLLEXPORT Light *CreateLight(const Transform &light2world,
+Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");

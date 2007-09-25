@@ -20,27 +20,33 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// mirror.cpp*
-#include "mirror.h"
-
-// Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(SpecularReflection)(R,
-			BSDF_ALLOC(FresnelNoOp)()));
-	return bsdf;
-}
-Material* Mirror::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Mirror(Kr, bumpMap);
-}
+// spot.cpp*
+#include "lux.h"
+#include "light.h"
+#include "shape.h"
+// SpotLight Declarations
+class SpotLight : public Light {
+public:
+	// SpotLight Public Methods
+	SpotLight(const Transform &light2world, const Spectrum &, float width, float fall);
+	Spectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
+	bool IsDeltaLight() const { return true; }
+	float Falloff(const Vector &w) const;
+	Spectrum Power(const Scene *) const {
+		return Intensity * 2.f * M_PI *
+			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
+	}
+	Spectrum Sample_L(const Point &P, float u1, float u2,
+			Vector *wo, float *pdf, VisibilityTester *visibility) const;
+	Spectrum Sample_L(const Scene *scene, float u1, float u2,
+			float u3, float u4, Ray *ray, float *pdf) const;
+	float Pdf(const Point &, const Vector &) const;
+	
+	static Light *CreateLight(const Transform &light2world,
+		const ParamSet &paramSet);
+private:
+	// SpotLight Private Data
+	float cosTotalWidth, cosFalloffStart;
+	Point lightPos;
+	Spectrum Intensity;
+};

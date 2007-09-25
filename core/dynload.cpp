@@ -77,7 +77,28 @@
 #include "../integrators/single.h"
 #include "../integrators/whitted.h"
 
+#include "../lights/distant.h"
+#include "../lights/goniometric.h"
+#include "../lights/infinitesample.h"
+#include "../lights/infinite.h"
+#include "../lights/point.h"
+#include "../lights/projection.h"
+#include "../lights/spot.h"
 
+#include "../materials/bluepaint.h"
+#include "../materials/brushedmetal.h"
+#include "../materials/clay.h"
+#include "../materials/felt.h"
+#include "../materials/glass.h"
+#include "../materials/matte.h"
+#include "../materials/mirror.h"
+#include "../materials/plastic.h"
+#include "../materials/primer.h"
+#include "../materials/shinymetal.h"
+#include "../materials/skin.h"
+#include "../materials/substrate.h"
+#include "../materials/translucent.h"
+#include "../materials/uber.h"
 
 using std::map;
 // Runtime Loading Forward Declarations
@@ -410,7 +431,7 @@ COREDLL Reference<Material> MakeMaterial(const string &name,
         const Transform &mtl2world,
         const TextureParams &mp)
 {
-    MaterialPlugin *plugin = GetPlugin<MaterialPlugin>(name, materialPlugins,
+    /*MaterialPlugin *plugin = GetPlugin<MaterialPlugin>(name, materialPlugins,
                              PluginSearchPath);
     if (plugin)
     {
@@ -418,7 +439,94 @@ COREDLL Reference<Material> MakeMaterial(const string &name,
             plugin->CreateMaterial(mtl2world, mp);
         mp.ReportUnused();
         return ret;
+    }*/
+    if(name=="bluepaint")
+    {
+    	Reference<Material> ret = BluePaint::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
     }
+    if(name=="brushedmetal")
+    {
+    	Reference<Material> ret = BrushedMetal::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="clay")
+    {
+    	Reference<Material> ret = Clay::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="felt")
+    {
+    	Reference<Material> ret = Felt::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="glass")
+    {
+    	Reference<Material> ret = Glass::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="matte")
+    {
+    	Reference<Material> ret = Matte::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="mirror")
+    {
+    	Reference<Material> ret = Mirror::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="plastic")
+    {
+    	Reference<Material> ret = Plastic::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="primer")
+    {
+    	Reference<Material> ret = Primer::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="shinymetal")
+    {
+    	Reference<Material> ret = ShinyMetal::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="skin")
+    {
+    	Reference<Material> ret = Skin::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="substrate")
+    {
+    	Reference<Material> ret = Substrate::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="translucent")
+    {
+    	Reference<Material> ret = Translucent::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="uber")
+    {
+    	Reference<Material> ret = UberMaterial::CreateMaterial(mtl2world, mp);
+        mp.ReportUnused();
+        return ret;
+    }
+    
+    
+    Error("Static loading of material '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL Reference<Texture<float> > MakeFloatTexture(const string &name,
@@ -452,27 +560,80 @@ COREDLL Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
 COREDLL Light *MakeLight(const string &name,
                          const Transform &light2world, const ParamSet &paramSet)
 {
-    LightPlugin *plugin = GetPlugin<LightPlugin>(name, lightPlugins, PluginSearchPath);
+    /*LightPlugin *plugin = GetPlugin<LightPlugin>(name, lightPlugins, PluginSearchPath);
     if (plugin)
     {
         Light *ret = plugin->CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    if(name=="distant")
+    {
+    	Light *ret = DistantLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
+    if(name=="goniometric")
+    {
+    	Light *ret = GonioPhotometricLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="infinitesample")
+    {
+    	Light *ret = InfiniteAreaLightIS::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="infinite")
+    {
+    	Light *ret = InfiniteAreaLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="point")
+    {
+    	Light *ret = PointLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="projection")
+    {
+    	Light *ret = ProjectionLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="spot")
+    {
+    	Light *ret = SpotLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of light '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL AreaLight *MakeAreaLight(const string &name,
                                  const Transform &light2world, const ParamSet &paramSet,
                                  const Reference<Shape> &shape)
 {
-    AreaLightPlugin *plugin = GetPlugin<AreaLightPlugin>(name, arealightPlugins,
+    /*AreaLightPlugin *plugin = GetPlugin<AreaLightPlugin>(name, arealightPlugins,
                               PluginSearchPath);
     if (plugin)
     {
         AreaLight *ret = plugin->CreateAreaLight(light2world, paramSet, shape);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    
+    if(name=="area")
+    {
+    	AreaLight *ret = AreaLight::CreateAreaLight(light2world, paramSet, shape);
+        paramSet.ReportUnused();
+        return ret;
     }
+    
+    Error("Static loading of area light '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL VolumeRegion *MakeVolumeRegion(const string &name,

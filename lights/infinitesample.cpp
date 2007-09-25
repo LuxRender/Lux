@@ -21,68 +21,7 @@
  ***************************************************************************/
  
 // infinitesample.cpp*
-#include "lux.h"
-#include "light.h"
-#include "texture.h"
-#include "shape.h"
-#include "scene.h"
-#include "mipmap.h"
-// Utility Classes and Functions
-struct Distribution1D {
-	// Distribution1D Methods
-	Distribution1D(float *f, int n) {
-		func = new float[n];
-		cdf = new float[n+1];
-		count = n;
-		memcpy(func, f, n*sizeof(float));
-		ComputeStep1dCDF(func, n, &funcInt, cdf);
-		invFuncInt = 1.f / funcInt;
-		invCount = 1.f / count;
-	}
-	float Sample(float u, float *pdf) {
-		// Find surrounding cdf segments
-		float *ptr = std::lower_bound(cdf, cdf+count+1, u);
-		int offset = (int) (ptr-cdf-1);
-		// Return offset along current cdf segment
-		u = (u - cdf[offset]) / (cdf[offset+1] - cdf[offset]);
-		*pdf = func[offset] * invFuncInt;
-		return offset + u;
-	}
-	// Distribution1D Data
-	float *func, *cdf;
-	float funcInt, invFuncInt, invCount;
-	int count;
-};
-// InfiniteAreaLightIS Definitions
-class InfiniteAreaLightIS : public Light {
-public:
-	// InfiniteAreaLightIS Public Methods
-	InfiniteAreaLightIS(const Transform &light2world,	const Spectrum &power, int ns,
-			  const string &texmap);
-	~InfiniteAreaLightIS();
-	Spectrum Power(const Scene *scene) const {
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-			&worldRadius);
-		return Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius;
-	}
-	bool IsDeltaLight() const { return false; }
-	Spectrum Le(const RayDifferential &r) const;
-	Spectrum Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
-	Spectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
-
-private:
-	// InfiniteAreaLightIS Private Data
-	Spectrum Lbase;
-	MIPMap<Spectrum> *radianceMap;
-	Distribution1D *uDistrib, **vDistribs;
-};
+#include "infinitesample.h"
 
 // InfiniteAreaLightIS Method Definitions
 InfiniteAreaLightIS::~InfiniteAreaLightIS() {
@@ -213,7 +152,7 @@ Spectrum InfiniteAreaLightIS::Sample_L(const Point &p,
 	return L / pdf;
 }
 
-extern "C" DLLEXPORT Light *CreateLight(const Transform &light2world,
+Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");
