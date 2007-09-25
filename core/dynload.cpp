@@ -100,6 +100,20 @@
 #include "../materials/translucent.h"
 #include "../materials/uber.h"
 
+#include "../textures/bilerp.h"
+#include "../textures/checkerboard.h"
+#include "../textures/constant.h"
+#include "../textures/dots.h"
+#include "../textures/fbm.h"
+#include "../textures/imagemap.h"
+#include "../textures/marble.h"
+#include "../textures/mix.h"
+#include "../textures/scale.h"
+#include "../textures/uv.h"
+#include "../textures/windy.h"
+#include "../textures/wrinkled.h"
+
+
 using std::map;
 // Runtime Loading Forward Declarations
 static string SearchPath(const string &searchpath,  // NOBOOK
@@ -532,7 +546,7 @@ COREDLL Reference<Material> MakeMaterial(const string &name,
 COREDLL Reference<Texture<float> > MakeFloatTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
-    TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
+    /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                             PluginSearchPath);
     if (plugin)
     {
@@ -540,13 +554,87 @@ COREDLL Reference<Texture<float> > MakeFloatTexture(const string &name,
             plugin->CreateFloatTex(tex2world, tp);
         tp.ReportUnused();
         return ret;
+    }*/
+    if(name=="bilerp")
+    {
+    	Reference<Texture<float> >  ret = BilerpTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
     }
+    if(name=="checkerboard")
+    {
+    	Reference<Texture<float> >  ret = Checkerboard::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="constant")
+    {
+    	Reference<Texture<float> >  ret = Constant::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="dots")
+    {
+    	Reference<Texture<float> >  ret = DotsTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="fbm")
+    {
+    	Reference<Texture<float> >  ret = FBmTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="imagemap")
+    {
+    	Reference<Texture<float> >  ret = ImageTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="marble")
+    {
+    	Reference<Texture<float> >  ret = MarbleTexture::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="mix")
+    {
+    	Reference<Texture<float> >  ret = MixTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="scale")
+    {
+    	Reference<Texture<float> >  ret = ScaleTexture<float,float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="uv")
+    {
+    	Reference<Texture<float> >  ret = UVTexture::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="windy")
+    {
+    	Reference<Texture<float> >  ret = WindyTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="wrinkled")
+    {
+    	Reference<Texture<float> >  ret = WrinkledTexture<float>::CreateFloatTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of float texture '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
-    TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
+    /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                             PluginSearchPath);
     if (plugin)
     {
@@ -554,7 +642,81 @@ COREDLL Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
             plugin->CreateSpectrumTex(tex2world, tp);
         tp.ReportUnused();
         return ret;
+    }*/
+    if(name=="bilerp")
+    {
+    	Reference<Texture<Spectrum> >  ret = BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
     }
+    if(name=="checkerboard")
+    {
+    	Reference<Texture<Spectrum> >  ret = Checkerboard::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="constant")
+    {
+    	Reference<Texture<Spectrum> >  ret = Constant::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="dots")
+    {
+    	Reference<Texture<Spectrum> >  ret = DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="fbm")
+    {
+    	Reference<Texture<Spectrum> >  ret = FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="imagemap")
+    {
+    	Reference<Texture<Spectrum> >  ret = ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="marble")
+    {
+    	Reference<Texture<Spectrum> >  ret = MarbleTexture::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="mix")
+    {
+    	Reference<Texture<Spectrum> >  ret = MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="scale")
+    {
+    	Reference<Texture<Spectrum> >  ret = ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="uv")
+    {
+    	Reference<Texture<Spectrum> >  ret = UVTexture::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="windy")
+    {
+    	Reference<Texture<Spectrum> >  ret = WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="wrinkled")
+    {
+    	Reference<Texture<Spectrum> >  ret = WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+        tp.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of spectrum texture '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL Light *MakeLight(const string &name,

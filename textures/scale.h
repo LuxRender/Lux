@@ -20,5 +20,43 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// dots.cpp*
-#include "dots.h"
+// scale.cpp*
+#include "lux.h"
+#include "texture.h"
+#include "paramset.h"
+// ScaleTexture Declarations
+template <class T1, class T2>
+class ScaleTexture : public Texture<T2> {
+public:
+	// ScaleTexture Public Methods
+	ScaleTexture(Reference<Texture<T1> > t1,
+			Reference<Texture<T2> > t2) {
+		tex1 = t1;
+		tex2 = t2;
+	}
+	T2 Evaluate(
+			const DifferentialGeometry &dg) const {
+		return tex1->Evaluate(dg) * tex2->Evaluate(dg);
+	}
+	
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	Reference<Texture<T1> > tex1;
+	Reference<Texture<T2> > tex2;
+};
+
+// ScaleTexture Method Definitions
+template <class T, class U> inline Texture<float> * ScaleTexture<T,U>::CreateFloatTexture(const Transform &tex2world,
+		const TextureParams &tp) {
+	return new ScaleTexture<float, float>(tp.GetFloatTexture("tex1", 1.f),
+		tp.GetFloatTexture("tex2", 1.f));
+}
+
+template <class T,class U> inline Texture<Spectrum> * ScaleTexture<T,U>::CreateSpectrumTexture(const Transform &tex2world,
+		const TextureParams &tp) {
+	return new ScaleTexture<Spectrum, Spectrum>(
+		tp.GetSpectrumTexture("tex1", Spectrum(1.f)),
+		tp.GetSpectrumTexture("tex2", Spectrum(1.f)));
+}
+

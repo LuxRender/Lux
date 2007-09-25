@@ -20,5 +20,32 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// dots.cpp*
-#include "dots.h"
+// uv.cpp*
+#include "lux.h"
+#include "texture.h"
+#include "paramset.h"
+// UVTexture Declarations
+class UVTexture : public Texture<Spectrum> {
+public:
+	// UVTexture Public Methods
+	UVTexture(TextureMapping2D *m) {
+		mapping = m;
+	}
+	~UVTexture() {
+		delete mapping;
+	}
+	Spectrum Evaluate(const DifferentialGeometry &dg) const {
+		float s, t, dsdx, dtdx, dsdy, dtdy;
+		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
+		float cs[COLOR_SAMPLES];
+		memset(cs, 0, COLOR_SAMPLES * sizeof(float));
+		cs[0] = s - Floor2Int(s);
+		cs[1] = t - Floor2Int(t);
+		return Spectrum(cs);
+	}
+	
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	TextureMapping2D *mapping;
+};

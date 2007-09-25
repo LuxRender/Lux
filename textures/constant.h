@@ -20,5 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// dots.cpp*
-#include "dots.h"
+// constant.cpp*
+#include "lux.h"
+#include "texture.h"
+#include "paramset.h"
+
+namespace Constant
+{
+Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+}

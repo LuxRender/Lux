@@ -20,5 +20,51 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// dots.cpp*
-#include "dots.h"
+// wrinkled.cpp*
+#include "lux.h"
+#include "texture.h"
+#include "paramset.h"
+// WrinkledTexture Declarations
+template <class T> class WrinkledTexture : public Texture<T> {
+public:
+	// WrinkledTexture Public Methods
+	~WrinkledTexture() {
+		delete mapping;
+	}
+	WrinkledTexture(int oct, float roughness, TextureMapping3D *map) {
+		omega = roughness;
+		octaves = oct;
+		mapping = map;
+	}
+	T Evaluate(const DifferentialGeometry &dg) const {
+		Vector dpdx, dpdy;
+		Point P = mapping->Map(dg, &dpdx, &dpdy);
+		return Turbulence(P, dpdx, dpdy, omega, octaves);
+	}
+	
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	// WrinkledTexture Private Data
+	int octaves;
+	float omega;
+	TextureMapping3D *mapping;
+};
+
+
+// WrinkledTexture Method Definitions
+template <class T> inline Texture<float> * WrinkledTexture<T>::CreateFloatTexture(const Transform &tex2world,
+		const TextureParams &tp) {
+	// Initialize 3D texture mapping _map_ from _tp_
+	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	return new WrinkledTexture<float>(tp.FindInt("octaves", 8),
+		tp.FindFloat("roughness", .5f), map);
+}
+
+template <class T> inline Texture<Spectrum> * WrinkledTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+		const TextureParams &tp) {
+	// Initialize 3D texture mapping _map_ from _tp_
+	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	return new WrinkledTexture<Spectrum>(tp.FindInt("octaves", 8),
+		tp.FindFloat("roughness", .5f), map);
+}

@@ -21,16 +21,15 @@
  ***************************************************************************/
 
 // constant.cpp*
-#include "lux.h"
-#include "texture.h"
-#include "paramset.h"
+#include "constant.h"
+
 // ConstantTexture Method Definitions
-extern "C" DLLEXPORT Texture<float> * CreateFloatTexture(const Transform &tex2world,
+Texture<float> * Constant::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	return new ConstantTexture<float>(tp.FindFloat("value", 1.f));
 }
 
-extern "C" DLLEXPORT Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world,
+Texture<Spectrum> * Constant::CreateSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	return new ConstantTexture<Spectrum>(tp.FindSpectrum("value", Spectrum(1.f)));
 }
