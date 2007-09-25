@@ -20,16 +20,20 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// orthographic.cpp*
+#include "camera.h"
+#include "film.h"
+#include "paramset.h"
+// OrthographicCamera Declarations
+class OrthoCamera : public ProjectiveCamera {
+public:
+	// OrthoCamera Public Methods
+	OrthoCamera(const Transform &world2cam,
+	            const float Screen[4],
+		        float hither, float yon,
+				float sopen, float sclose,
+				float lensr, float focald, Film *film);
+	float GenerateRay(const Sample &sample, Ray *) const;
+	
+	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
+};

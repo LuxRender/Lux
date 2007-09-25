@@ -21,20 +21,8 @@
  ***************************************************************************/
 
 // orthographic.cpp*
-#include "camera.h"
-#include "film.h"
-#include "paramset.h"
-// OrthographicCamera Declarations
-class OrthoCamera : public ProjectiveCamera {
-public:
-	// OrthoCamera Public Methods
-	OrthoCamera(const Transform &world2cam,
-	            const float Screen[4],
-		        float hither, float yon,
-				float sopen, float sclose,
-				float lensr, float focald, Film *film);
-	float GenerateRay(const Sample &sample, Ray *) const;
-};
+#include "orthographic.h"
+
 // OrthographicCamera Definitions
 OrthoCamera::OrthoCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
@@ -76,7 +64,7 @@ float OrthoCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-extern "C" DLLEXPORT Camera *CreateCamera(const ParamSet &params,
+Camera* OrthoCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));

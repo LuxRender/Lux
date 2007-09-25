@@ -53,6 +53,32 @@
 #include "../samplers/random.h"
 #include "../samplers/stratified.h"
 
+#include "../cameras/environment.h"
+#include "../cameras/orthographic.h"
+#include "../cameras/perspective.h"
+
+#include "../film/image.h"
+
+#include "../filters/box.h"
+#include "../filters/gaussian.h"
+#include "../filters/mitchell.h"
+#include "../filters/sinc.h"
+#include "../filters/triangle.h"
+
+#include "../integrators/bidirectional.h"
+#include "../integrators/debug.h"
+#include "../integrators/directlighting.h"
+#include "../integrators/emission.h"
+#include "../integrators/exphotonmap.h"
+#include "../integrators/igi.h"
+#include "../integrators/irradiancecache.h"
+#include "../integrators/path.h"
+#include "../integrators/photonmap.h"
+#include "../integrators/single.h"
+#include "../integrators/whitted.h"
+
+
+
 using std::map;
 // Runtime Loading Forward Declarations
 static string SearchPath(const string &searchpath,  // NOBOOK
@@ -465,19 +491,89 @@ COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
 COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
         const ParamSet &paramSet)
 {
-    SurfaceIntegratorPlugin *plugin = GetPlugin<SurfaceIntegratorPlugin>(name,
+    /*SurfaceIntegratorPlugin *plugin = GetPlugin<SurfaceIntegratorPlugin>(name,
                                       surf_integratorPlugins, PluginSearchPath);
     if (plugin)
     {
         SurfaceIntegrator *ret = plugin->CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    
+    if(name=="bidirectional")
+    {
+        SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
+    if(name=="debug")
+    {
+        SurfaceIntegrator *ret=DebugIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="directlighting")
+    {
+        SurfaceIntegrator *ret=DirectLighting::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    /*if(name=="emission")
+    {
+        SurfaceIntegrator *ret=EmissionIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }*/
+    if(name=="exphotonmap")
+    {
+        SurfaceIntegrator *ret=ExPhotonIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="igi")
+    {
+        SurfaceIntegrator *ret=IGIIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="irradiancecache")
+    {
+        SurfaceIntegrator *ret=IrradianceCache::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="path")
+    {
+        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="photonmap")
+    {
+        SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    /*if(name=="single")
+    {
+        SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }*/
+    if(name=="whitted")
+    {
+        SurfaceIntegrator *ret=WhittedIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of surface integrator '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
         const ParamSet &paramSet)
 {
+    /*
     VolumeIntegratorPlugin *plugin = GetPlugin<VolumeIntegratorPlugin>(name, vol_integratorPlugins,
                                      PluginSearchPath);
     if (plugin)
@@ -485,7 +581,23 @@ COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
         VolumeIntegrator *ret = plugin->CreateVolumeIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    
+    if(name=="single")
+    {
+        VolumeIntegrator *ret=SingleScattering::CreateVolumeIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
+    
+    if(name=="emission")
+    {
+        VolumeIntegrator *ret=EmissionIntegrator::CreateVolumeIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of volume integrator '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL Primitive *MakeAccelerator(const string &name, const vector<Reference<Primitive> > &prims, const ParamSet &paramSet)
@@ -499,17 +611,17 @@ COREDLL Primitive *MakeAccelerator(const string &name, const vector<Reference<Pr
            paramSet.ReportUnused();
            return ret;
        }*/
-    Primitive* ret;
+    //Primitive* ret;
 
     if(name=="kdtree")
     {
-        ret=KdTreeAccel::CreateAccelerator(prims, paramSet);
+        Primitive* ret=KdTreeAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
     if(name=="grid")
     {
-        ret=GridAccel::CreateAccelerator(prims, paramSet);
+        Primitive* ret=GridAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
@@ -521,13 +633,34 @@ COREDLL Camera *MakeCamera(const string &name,
                            const ParamSet &paramSet,
                            const Transform &world2cam, Film *film)
 {
+    /*
     CameraPlugin *plugin = GetPlugin<CameraPlugin>(name, cameraPlugins, PluginSearchPath);
     if (plugin)
     {
         Camera *ret = plugin->CreateCamera(paramSet, world2cam, film);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    if(name=="environment")
+    {
+        Camera *ret=EnvironmentCamera::CreateCamera(paramSet, world2cam, film);
+        paramSet.ReportUnused();
+        return ret;
     }
+    if(name=="orthographic")
+    {
+        Camera *ret=OrthoCamera::CreateCamera(paramSet, world2cam, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="perspective")
+    {
+        Camera *ret=PerspectiveCamera::CreateCamera(paramSet, world2cam, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of camera '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL Sampler *MakeSampler(const string &name,
@@ -540,29 +673,29 @@ COREDLL Sampler *MakeSampler(const string &name,
     paramSet.ReportUnused();
     return ret;
 }*/
-    Sampler *ret;
+    //Sampler *ret;
 
     if(name=="bestcandidate")
     {
-        ret=BestCandidateSampler::CreateSampler(paramSet, film);
+        Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
     if(name=="lowdiscrepancy")
     {
-        ret=LDSampler::CreateSampler(paramSet, film);
+        Sampler *ret=LDSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
     if(name=="random")
     {
-        ret=RandomSampler::CreateSampler(paramSet, film);
+        Sampler *ret=RandomSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
     if(name=="stratified")
     {
-        ret=StratifiedSampler::CreateSampler(paramSet, film);
+        Sampler *ret=StratifiedSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
@@ -573,13 +706,50 @@ COREDLL Sampler *MakeSampler(const string &name,
 COREDLL Filter *MakeFilter(const string &name,
                            const ParamSet &paramSet)
 {
-    FilterPlugin *plugin = GetPlugin<FilterPlugin>(name, filterPlugins, PluginSearchPath);
+    /*FilterPlugin *plugin = GetPlugin<FilterPlugin>(name, filterPlugins, PluginSearchPath);
     if (plugin)
     {
         Filter *ret = plugin->CreateFilter(paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    
+    if(name=="box")
+    {
+        Filter *ret=BoxFilter::CreateFilter(paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
+    
+    if(name=="gaussian")
+    {
+        Filter *ret=GaussianFilter::CreateFilter(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    if(name=="mitchell")
+    {
+        Filter *ret=MitchellFilter::CreateFilter(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    if(name=="sinc")
+    {
+        Filter *ret=LanczosSincFilter::CreateFilter(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    if(name=="triangle")
+    {
+        Filter *ret=TriangleFilter::CreateFilter(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of filter '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL ToneMap *MakeToneMap(const string &name,
@@ -597,13 +767,22 @@ COREDLL ToneMap *MakeToneMap(const string &name,
 COREDLL Film *MakeFilm(const string &name,
                        const ParamSet &paramSet, Filter *filter)
 {
-    FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);
+    /*FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);
     if (plugin)
     {
         Film *ret = plugin->CreateFilm(paramSet, filter);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    
+    if(name=="image")
+    {
+        Film *ret=ImageFilm::CreateFilm(paramSet, filter);
+        paramSet.ReportUnused();
+        return ret;
     }
+    
+    Error("Static loading of film '%s' failed.",name.c_str());
     return NULL;
 }
 // Plugin Method Definitions

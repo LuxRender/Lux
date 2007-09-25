@@ -20,16 +20,50 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// image.cpp*
+#include "lux.h"
+#include "film.h"
+#include "color.h"
+#include "paramset.h"
+#include "tonemap.h"
+#include "sampling.h"
+// ImageFilm Declarations
+class ImageFilm : public Film {
+public:
+	// ImageFilm Public Methods
+	ImageFilm(int xres, int yres,
+	                     Filter *filt, const float crop[4],
+		             const string &filename, bool premult,
+		             int wf);
+	~ImageFilm() {
+		delete pixels;
+		delete filter;
+		delete[] filterTable;
+	}
+	void AddSample(const Sample &sample, const Ray &ray,
+	               const Spectrum &L, float alpha);
+	void GetSampleExtent(int *xstart, int *xend,
+	                     int *ystart, int *yend) const;
+	void WriteImage();
+	
+	static Film *CreateFilm(const ParamSet &params, Filter *filter);
+private:
+	// ImageFilm Private Data
+	Filter *filter;
+	int writeFrequency, sampleCount;
+	string filename;
+	bool premultiplyAlpha;
+	float cropWindow[4];
+	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
+	struct Pixel {
+		Pixel() : L(0.f) {
+			alpha = 0.f;
+			weightSum = 0.f;
+		}
+		Spectrum L;
+		float alpha, weightSum;
+	};
+	BlockedArray<Pixel> *pixels;
+	float *filterTable;
+};
+

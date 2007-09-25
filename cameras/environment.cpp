@@ -21,20 +21,8 @@
  ***************************************************************************/
 
 // environment.cpp*
-#include "camera.h"
-#include "film.h"
-#include "paramset.h"
-// EnvironmentCamera Declarations
-class EnvironmentCamera : public Camera {
-public:
-	// EnvironmentCamera Public Methods
-	EnvironmentCamera(const Transform &world2cam, float hither,
-		float yon, float sopen, float sclose, Film *film);
-	float GenerateRay(const Sample &sample, Ray *) const;
-private:
-	// EnvironmentCamera Private Data
-	Point rayOrigin;
-};
+#include "environment.h"
+
 // EnvironmentCamera Method Definitions
 EnvironmentCamera::
     EnvironmentCamera(const Transform &world2cam,
@@ -58,7 +46,7 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 	ray->maxt = ClipYon;
 	return 1.f;
 }
-extern "C" DLLEXPORT Camera *CreateCamera(const ParamSet &params,
+Camera* EnvironmentCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));

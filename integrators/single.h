@@ -20,16 +20,23 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// single.cpp*
+#include "volume.h"
+#include "transport.h"
+#include "scene.h"
+// SingleScattering Declarations
+class SingleScattering : public VolumeIntegrator {
+public:
+	// SingleScattering Public Methods
+	SingleScattering(float ss) { stepSize = ss; }
+	Spectrum Transmittance(const Scene *, const Ray &ray,
+		const Sample *sample, float *alpha) const;
+	void RequestSamples(Sample *sample, const Scene *scene);
+	Spectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	
+	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
+private:
+	// SingleScattering Private Data
+	float stepSize;
+	int tauSampleOffset, scatterSampleOffset;
+};

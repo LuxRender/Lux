@@ -20,16 +20,20 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// environment.cpp*
+#include "camera.h"
+#include "film.h"
+#include "paramset.h"
+// EnvironmentCamera Declarations
+class EnvironmentCamera : public Camera {
+public:
+	// EnvironmentCamera Public Methods
+	EnvironmentCamera(const Transform &world2cam, float hither,
+		float yon, float sopen, float sclose, Film *film);
+	float GenerateRay(const Sample &sample, Ray *) const;
+	
+	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
+private:
+	// EnvironmentCamera Private Data
+	Point rayOrigin;
+};

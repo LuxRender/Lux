@@ -20,16 +20,24 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// whitted.cpp*
+#include "lux.h"
+#include "transport.h"
+#include "scene.h"
+// WhittedIntegrator Declarations
+class WhittedIntegrator : public SurfaceIntegrator {
+public:
+	// WhittedIntegrator Public Methods
+	Spectrum Li(const Scene *scene, const RayDifferential &ray,
+			const Sample *sample, float *alpha) const;
+	WhittedIntegrator(int md) {
+		maxDepth = md;
+		rayDepth = 0;
+	}
+	
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+private:
+	// WhittedIntegrator Private Data
+	int maxDepth;
+	mutable int rayDepth;
+};

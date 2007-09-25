@@ -20,16 +20,27 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// path.cpp*
+#include "lux.h"
+#include "transport.h"
+#include "scene.h"
+// PathIntegrator Declarations
+class PathIntegrator : public SurfaceIntegrator {
+public:
+	// PathIntegrator Public Methods
+	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	void RequestSamples(Sample *sample, const Scene *scene);
+	PathIntegrator(int md) { maxDepth = md; }
+	
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+private:
+	// PathIntegrator Private Data
+	int maxDepth;
+	#define SAMPLE_DEPTH 3
+	int lightPositionOffset[SAMPLE_DEPTH];
+	int lightNumOffset[SAMPLE_DEPTH];
+	int bsdfDirectionOffset[SAMPLE_DEPTH];
+	int bsdfComponentOffset[SAMPLE_DEPTH];
+	int outgoingDirectionOffset[SAMPLE_DEPTH];
+	int outgoingComponentOffset[SAMPLE_DEPTH];
+};

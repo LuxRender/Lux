@@ -21,43 +21,7 @@
  ***************************************************************************/
 
 // igi.cpp*
-#include "lux.h"
-#include "transport.h"
-#include "scene.h"
-#include "mc.h"
-#include "sampling.h"
-
-// IGI Local Structures
-struct VirtualLight {
-	VirtualLight() { }
-	VirtualLight(const Point &pp, const Normal &nn, const Spectrum &le)
-		: p(pp), n(nn), Le(le) { }
-	Point p;
-	Normal n;
-	Spectrum Le;
-};
-
-class IGIIntegrator : public SurfaceIntegrator {
-public:
-	// IGIIntegrator Public Methods
-	IGIIntegrator(int nl, int ns, float md, float rrt, float is);
-	Spectrum Li(const Scene *scene, const RayDifferential &ray,
-		const Sample *sample, float *alpha) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	void Preprocess(const Scene *);
-
-private:
-	// IGI Private Data
-	u_int nLightPaths, nLightSets;
-	vector<VirtualLight> *virtualLights;
-	mutable int specularDepth;
-	int maxSpecularDepth;
-	float minDist2, rrThreshold, indirectScale;
-	int vlSetOffset;
-
-	int *lightSampleOffset, lightNumOffset;
-	int *bsdfSampleOffset, *bsdfComponentOffset;
-};
+#include "igi.h"
 
 // IGIIntegrator Implementation
 IGIIntegrator::IGIIntegrator(int nl, int ns, float md,
@@ -284,7 +248,7 @@ Spectrum IGIIntegrator::Li(const Scene *scene,
 	}
 	return L;
 }
-extern "C" DLLEXPORT SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params)
+SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	int nLightPaths = params.FindOneInt("nlights", 64);
 	int nLightSets = params.FindOneInt("nsets", 4);

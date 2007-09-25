@@ -20,16 +20,33 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+#ifndef LUX_GAUSSIAN_H
+#define LUX_GAUSSIAN_H
+
+// gaussian.cpp*
+#include "sampling.h"
+#include "paramset.h"
+// Gaussian Filter Declarations
+class GaussianFilter : public Filter {
+public:
+	// GaussianFilter Public Methods
+	GaussianFilter(float xw, float yw, float a)
+		: Filter(xw, yw) {
+		alpha = a;
+		expX = expf(-alpha * xWidth * xWidth);
+		expY = expf(-alpha * yWidth * yWidth);
+	}
+	float Evaluate(float x, float y) const;
+	
+	static Filter *CreateFilter(const ParamSet &ps);
+private:
+	// GaussianFilter Private Data
+	float alpha;
+	float expX, expY;
+	// GaussianFilter Utility Functions
+	float Gaussian(float d, float expv) const {
+		return max(0.f, float(expf(-alpha * d * d) - expv));
+	}
+};
+
+#endif

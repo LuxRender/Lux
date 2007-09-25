@@ -20,16 +20,21 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// box.cpp*
+
+#ifndef LUX_BOX_H
+#define LUX_BOX_H
+
+#include "sampling.h"
+#include "paramset.h"
+// Box Filter Declarations
+class BoxFilter : public Filter {
+public:
+	BoxFilter(float xw, float yw) : Filter(xw, yw) { }
+	float Evaluate(float x, float y) const;
+	
+	static Filter *CreateFilter(const ParamSet &ps);
+};
+
+#endif
+

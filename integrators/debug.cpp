@@ -25,37 +25,7 @@
 
 // debug.cpp*
 
-#include "lux.h"
-#include "transport.h"
-#include "scene.h"
-
-typedef enum {
-	DEBUG_U, DEBUG_V,
-	DEBUG_GEOM_NORMAL_X,
-	DEBUG_GEOM_NORMAL_Y,
-	DEBUG_GEOM_NORMAL_Z,
-	DEBUG_SHAD_NORMAL_X,
-	DEBUG_SHAD_NORMAL_Y,
-	DEBUG_SHAD_NORMAL_Z,
-	DEBUG_ONE,
-	DEBUG_ZERO,
-	DEBUG_HIT_SOMETHING
-} DebugVariable;
-
-class DebugIntegrator : public SurfaceIntegrator {
-public:
-	// DebugIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray,
-			const Sample *sample, float *alpha) const;
-	DebugIntegrator( DebugVariable v[3] )
-	{
-		debug_variable[0] = v[0];
-		debug_variable[1] = v[1];
-		debug_variable[2] = v[2];
-	}
-private:
-	DebugVariable debug_variable[3];
-};
+#include "debug.h"
 
 Spectrum DebugIntegrator::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
@@ -131,7 +101,7 @@ Spectrum DebugIntegrator::Li(const Scene *scene,
 	return L;
 }
 
-extern "C" DLLEXPORT SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params)
+SurfaceIntegrator* DebugIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	string strs[3];
 	strs[0] = params.FindOneString( "red", "u" );

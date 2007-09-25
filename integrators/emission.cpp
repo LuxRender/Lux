@@ -21,22 +21,8 @@
  ***************************************************************************/
 
 // emission.cpp*
-#include "volume.h"
-#include "transport.h"
-#include "scene.h"
-// EmissionIntegrator Declarations
-class EmissionIntegrator : public VolumeIntegrator {
-public:
-	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss) { stepSize = ss; }
-	void RequestSamples(Sample *sample, const Scene *scene);
-	Spectrum Transmittance(const Scene *, const Ray &ray, const Sample *sample, float *alpha) const;
-	Spectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-private:
-	// EmissionIntegrator Private Data
-	float stepSize;
-	int tauSampleOffset, scatterSampleOffset;
-};
+#include "emission.h"
+
 // EmissionIntegrator Method Definitions
 void EmissionIntegrator::RequestSamples(Sample *sample,
 		const Scene *scene) {
@@ -92,7 +78,7 @@ Spectrum EmissionIntegrator::Li(const Scene *scene,
 	}
 	return Lv * step;
 }
-extern "C" DLLEXPORT VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params) {
+VolumeIntegrator* EmissionIntegrator::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new EmissionIntegrator(stepSize);
 }

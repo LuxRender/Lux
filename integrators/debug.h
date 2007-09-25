@@ -20,16 +20,41 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// triangle.cpp*
-#include "triangle.h"
-// Triangle Filter Method Definitions
-float TriangleFilter::Evaluate(float x, float y) const {
-	return max(0.f, xWidth - fabsf(x)) *
-		max(0.f, yWidth - fabsf(y));
-}
-Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
-	// Find common filter parameters
-	float xw = ps.FindOneFloat("xwidth", 2.);
-	float yw = ps.FindOneFloat("ywidth", 2.);
-	return new TriangleFilter(xw, yw);
-}
+// debug.cpp*
+// Debug integrator by Greg Humphreys
+
+// debug.cpp*
+
+#include "lux.h"
+#include "transport.h"
+#include "scene.h"
+
+typedef enum {
+	DEBUG_U, DEBUG_V,
+	DEBUG_GEOM_NORMAL_X,
+	DEBUG_GEOM_NORMAL_Y,
+	DEBUG_GEOM_NORMAL_Z,
+	DEBUG_SHAD_NORMAL_X,
+	DEBUG_SHAD_NORMAL_Y,
+	DEBUG_SHAD_NORMAL_Z,
+	DEBUG_ONE,
+	DEBUG_ZERO,
+	DEBUG_HIT_SOMETHING
+} DebugVariable;
+
+class DebugIntegrator : public SurfaceIntegrator {
+public:
+	// DebugIntegrator Public Methods
+	Spectrum Li(const Scene *scene, const RayDifferential &ray,
+			const Sample *sample, float *alpha) const;
+	DebugIntegrator( DebugVariable v[3] )
+	{
+		debug_variable[0] = v[0];
+		debug_variable[1] = v[1];
+		debug_variable[2] = v[2];
+	}
+	
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+private:
+	DebugVariable debug_variable[3];
+};

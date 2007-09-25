@@ -21,20 +21,8 @@
  ***************************************************************************/
 
 // perspective.cpp*
-#include "camera.h"
-#include "film.h"
-#include "paramset.h"
-// PerspectiveCamera Declarations
-class PerspectiveCamera : public ProjectiveCamera {
-public:
-	// PerspectiveCamera Public Methods
-	PerspectiveCamera(const Transform &world2cam,
-		const float Screen[4], float hither, float yon,
-		float sopen, float sclose,
-		float lensr, float focald, float fov,
-		Film *film);
-	float GenerateRay(const Sample &sample, Ray *) const;
-};
+#include "perspective.h"
+
 // PerspectiveCamera Method Definitions
 PerspectiveCamera::
     PerspectiveCamera(const Transform &world2cam,
@@ -79,7 +67,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-extern "C" DLLEXPORT Camera *CreateCamera(const ParamSet &params,
+Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));

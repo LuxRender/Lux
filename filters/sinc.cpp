@@ -21,21 +21,8 @@
  ***************************************************************************/
 
 // sinc.cpp*
-#include "sampling.h"
-#include "paramset.h"
-// Sinc Filter Declarations
-class LanczosSincFilter : public Filter {
-public:
-	LanczosSincFilter(float xw,
-	                  float yw,
-					  float t) : Filter(xw, yw) {
-		tau = t;
-	}
-	float Evaluate(float x, float y) const;
-	float Sinc1D(float x) const;
-private:
-	float tau;
-};
+#include "sinc.h"
+
 // Sinc Filter Method Definitions
 float LanczosSincFilter::Evaluate(float x, float y) const{
 	return Sinc1D(x * invXWidth) * Sinc1D(y * invYWidth);
@@ -49,7 +36,7 @@ float LanczosSincFilter::Sinc1D(float x) const {
 	float lanczos = sinf(x) / x;
 	return sinc * lanczos;
 }
-extern "C" DLLEXPORT Filter *CreateFilter(const ParamSet &ps) {
+Filter* LanczosSincFilter::CreateFilter(const ParamSet &ps) {
 	float xw = ps.FindOneFloat("xwidth", 4.);
 	float yw = ps.FindOneFloat("ywidth", 4.);
 	float tau = ps.FindOneFloat("tau", 3.f);

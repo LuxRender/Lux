@@ -21,49 +21,8 @@
  ***************************************************************************/
 
 // image.cpp*
-#include "lux.h"
-#include "film.h"
-#include "color.h"
-#include "paramset.h"
-#include "tonemap.h"
-#include "sampling.h"
-// ImageFilm Declarations
-class ImageFilm : public Film {
-public:
-	// ImageFilm Public Methods
-	ImageFilm(int xres, int yres,
-	                     Filter *filt, const float crop[4],
-		             const string &filename, bool premult,
-		             int wf);
-	~ImageFilm() {
-		delete pixels;
-		delete filter;
-		delete[] filterTable;
-	}
-	void AddSample(const Sample &sample, const Ray &ray,
-	               const Spectrum &L, float alpha);
-	void GetSampleExtent(int *xstart, int *xend,
-	                     int *ystart, int *yend) const;
-	void WriteImage();
-private:
-	// ImageFilm Private Data
-	Filter *filter;
-	int writeFrequency, sampleCount;
-	string filename;
-	bool premultiplyAlpha;
-	float cropWindow[4];
-	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
-	struct Pixel {
-		Pixel() : L(0.f) {
-			alpha = 0.f;
-			weightSum = 0.f;
-		}
-		Spectrum L;
-		float alpha, weightSum;
-	};
-	BlockedArray<Pixel> *pixels;
-	float *filterTable;
-};
+#include "image.h"
+
 // ImageFilm Method Definitions
 ImageFilm::ImageFilm(int xres, int yres,
                      Filter *filt, const float crop[4],
@@ -209,7 +168,7 @@ void ImageFilm::WriteImage() {
 	delete[] alpha;
 	delete[] rgb;
 }
-extern "C" DLLEXPORT Film *CreateFilm(const ParamSet &params, Filter *filter)
+Film* ImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 {
 	string filename = params.FindOneString("filename", "lux.exr");
 	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);

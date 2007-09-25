@@ -21,59 +21,8 @@
  ***************************************************************************/
 
 // directlighting.cpp*
-#include "lux.h"
-#include "transport.h"
-#include "scene.h"
-// DirectLighting Declarations
-enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
-	SAMPLE_ONE_WEIGHTED  // NOBOOK
-};
-class DirectLighting : public SurfaceIntegrator {
-public:
-	// DirectLighting Public Methods
-	DirectLighting(LightStrategy ls, int md);
-	~DirectLighting();
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample,
-		float *alpha) const;
-	void RequestSamples(Sample *sample, const Scene *scene) {
-		if (strategy == SAMPLE_ALL_UNIFORM) {
-			// Allocate and request samples for sampling all lights
-			u_int nLights = scene->lights.size();
-			lightSampleOffset = new int[nLights];
-			bsdfSampleOffset = new int[nLights];
-			bsdfComponentOffset = new int[nLights];
-			for (u_int i = 0; i < nLights; ++i) {
-				const Light *light = scene->lights[i];
-				int lightSamples =
-					scene->sampler->RoundSize(light->nSamples);
-				lightSampleOffset[i] = sample->Add2D(lightSamples);
-				bsdfSampleOffset[i] = sample->Add2D(lightSamples);
-				bsdfComponentOffset[i] = sample->Add1D(lightSamples);
-			}
-			lightNumOffset = -1;
-		}
-		else {
-			// Allocate and request samples for sampling one light
-			lightSampleOffset = new int[1];
-			lightSampleOffset[0] = sample->Add2D(1);
-			lightNumOffset = sample->Add1D(1);
-			bsdfSampleOffset = new int[1];
-			bsdfSampleOffset[0] = sample->Add2D(1);
-			bsdfComponentOffset = new int[1];
-			bsdfComponentOffset[0] = sample->Add1D(1);
-		}
-	}
-private:
-	// DirectLighting Private Data
-	LightStrategy strategy;
-	mutable int rayDepth; // NOBOOK
-	int maxDepth; // NOBOOK
-	// Declare sample parameters for light source sampling
-	int *lightSampleOffset, lightNumOffset;
-	int *bsdfSampleOffset, *bsdfComponentOffset;
-	mutable float *avgY, *avgYsample, *cdf;
-	mutable float overallAvgY;
-};
+#include "directlighting.h"
+
 // DirectLighting Method Definitions
 DirectLighting::~DirectLighting() {
 	delete[] avgY;
@@ -191,7 +140,7 @@ Spectrum DirectLighting::Li(const Scene *scene,
 	}
 	return L;
 }
-extern "C" DLLEXPORT SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params) {
+SurfaceIntegrator* DirectLighting::CreateSurfaceIntegrator(const ParamSet &params) {
 	int maxDepth = params.FindOneInt("maxdepth", 5);
 	LightStrategy strategy;
 	string st = params.FindOneString("strategy", "all");

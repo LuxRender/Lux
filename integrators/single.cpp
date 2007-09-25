@@ -21,23 +21,8 @@
  ***************************************************************************/
 
 // single.cpp*
-#include "volume.h"
-#include "transport.h"
-#include "scene.h"
-// SingleScattering Declarations
-class SingleScattering : public VolumeIntegrator {
-public:
-	// SingleScattering Public Methods
-	SingleScattering(float ss) { stepSize = ss; }
-	Spectrum Transmittance(const Scene *, const Ray &ray,
-		const Sample *sample, float *alpha) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	Spectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-private:
-	// SingleScattering Private Data
-	float stepSize;
-	int tauSampleOffset, scatterSampleOffset;
-};
+#include "single.h"
+
 // SingleScattering Method Definitions
 void SingleScattering::RequestSamples(Sample *sample,
 		const Scene *scene) {
@@ -113,7 +98,7 @@ Spectrum SingleScattering::Li(const Scene *scene,
 	}
 	return Lv * step;
 }
-extern "C" DLLEXPORT VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params) {
+VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new SingleScattering(stepSize);
 }

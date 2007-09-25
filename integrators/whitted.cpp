@@ -21,24 +21,8 @@
  ***************************************************************************/
 
 // whitted.cpp*
-#include "lux.h"
-#include "transport.h"
-#include "scene.h"
-// WhittedIntegrator Declarations
-class WhittedIntegrator : public SurfaceIntegrator {
-public:
-	// WhittedIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray,
-			const Sample *sample, float *alpha) const;
-	WhittedIntegrator(int md) {
-		maxDepth = md;
-		rayDepth = 0;
-	}
-private:
-	// WhittedIntegrator Private Data
-	int maxDepth;
-	mutable int rayDepth;
-};
+#include "whitted.h"
+
 // WhittedIntegrator Method Definitions
 Spectrum WhittedIntegrator::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
@@ -137,7 +121,7 @@ Spectrum WhittedIntegrator::Li(const Scene *scene,
 	}
 	return L;
 }
-extern "C" DLLEXPORT SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params)
+SurfaceIntegrator* WhittedIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	int maxDepth = params.FindOneInt("maxdepth", 5);
 	return new WhittedIntegrator(maxDepth);
