@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // kdtree.cpp*
-#include "kdtree.h"
+#include "kdtreeaccel.h"
 
 // KdTreeAccel Method Definitions
 KdTreeAccel::

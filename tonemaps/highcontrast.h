@@ -20,19 +20,31 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// homogeneous.cpp*
-#include "homogeneous.h"
-
-// HomogeneousVolume Method Definitions
-VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
-		const ParamSet &params) {
-	// Initialize common volume region parameters
-	Spectrum sigma_a = params.FindOneSpectrum("sigma_a", 0.);
-	Spectrum sigma_s = params.FindOneSpectrum("sigma_s", 0.);
-	float g = params.FindOneFloat("g", 0.);
-	Spectrum Le = params.FindOneSpectrum("Le", 0.);
-	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
-	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
-	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world);
-}
+// highcontrast.cpp*
+#include "tonemap.h"
+#include "mipmap.h"
+// HighContrastOp Declarations
+class HighContrastOp : public ToneMap {
+public:
+	void Map(const float *y,
+	         int xRes, int yRes,
+			 float maxDisplayY, float *scale) const;
+			 
+	static ToneMap *CreateToneMap(const ParamSet &ps);
+private:
+	// HighContrastOp Utility Methods
+	static float C(float y) {
+		if (y < 0.0034f)
+			return y / 0.0014f;
+		else if (y < 1)
+			return 2.4483f + log10f(y/0.0034f)/0.4027f;
+		else if (y < 7.2444f)
+			return 16.563f + (y - 1)/0.4027f;
+		else
+			return 32.0693f + log10f(y / 7.2444f)/0.0556f;
+	}
+	static float T(float y, float CYmin, float CYmax,
+			float maxDisplayY) {
+		return maxDisplayY * (C(y) - CYmin) / (CYmax - CYmin);
+	}
+};

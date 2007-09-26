@@ -21,23 +21,9 @@
  ***************************************************************************/
 
 // maxwhite.cpp*
-#include "tonemap.h"
-// MaxWhiteOp Declarations
-class MaxWhiteOp : public ToneMap {
-public:
-	// MaxWhiteOp Public Methods
-	void Map(const float *y, int xRes, int yRes,
-	         float maxDisplayY, float *scale) const {
-		// Compute maximum luminance of all pixels
-		float maxY = 0.;
-		for (int i = 0; i < xRes * yRes; ++i)
-			maxY = max(maxY, y[i]);
-		float s = maxDisplayY / maxY;
-		for (int i = 0; i < xRes * yRes; ++i)
-			scale[i] = s;
-	}
-};
+#include "maxwhite.h"
+
 // MaxWhiteOp Method Definitions
-extern "C" DLLEXPORT ToneMap *CreateToneMap(const ParamSet &ps) {
+ToneMap * MaxWhiteOp::CreateToneMap(const ParamSet &ps) {
 	return new MaxWhiteOp;
 }

@@ -20,19 +20,23 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// homogeneous.cpp*
-#include "homogeneous.h"
+// maxwhite.cpp*
+#include "tonemap.h"
+// MaxWhiteOp Declarations
+class MaxWhiteOp : public ToneMap {
+public:
+	// MaxWhiteOp Public Methods
+	void Map(const float *y, int xRes, int yRes,
+	         float maxDisplayY, float *scale) const {
+		// Compute maximum luminance of all pixels
+		float maxY = 0.;
+		for (int i = 0; i < xRes * yRes; ++i)
+			maxY = max(maxY, y[i]);
+		float s = maxDisplayY / maxY;
+		for (int i = 0; i < xRes * yRes; ++i)
+			scale[i] = s;
+	}
+	
+	static ToneMap *CreateToneMap(const ParamSet &ps);
+};
 
-// HomogeneousVolume Method Definitions
-VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
-		const ParamSet &params) {
-	// Initialize common volume region parameters
-	Spectrum sigma_a = params.FindOneSpectrum("sigma_a", 0.);
-	Spectrum sigma_s = params.FindOneSpectrum("sigma_s", 0.);
-	float g = params.FindOneFloat("g", 0.);
-	Spectrum Le = params.FindOneSpectrum("Le", 0.);
-	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
-	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
-	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world);
-}

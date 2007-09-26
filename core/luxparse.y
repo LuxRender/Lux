@@ -403,7 +403,7 @@ ri_stmt: ACCELERATOR STRING paramlist
 }
 | SEARCHPATH STRING
 {
-	luxSearchPath($2);
+	;//luxSearchPath($2);
 }
 | SHAPE STRING paramlist
 {

@@ -32,11 +32,13 @@
 
 struct ParamArray;
 
+#include "luxparse.hpp"
+/*
 #ifdef WIN32
 #include "luxparse.hpp"
 #else
 #include "luxparse.h"
-#endif
+#endif*/
 
 #ifdef WIN32
 #pragma warning ( disable: 4244 )

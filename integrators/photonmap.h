@@ -20,17 +20,24 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+#ifndef LUX_PHOTONMAP_H
+#define LUX_PHOTONMAP_H
+
 // photonmap.cpp*
+
 #include "lux.h"
+#include "kdtree.h"
 #include "transport.h"
 #include "scene.h"
 #include "mc.h"
-#include "kdtree.h"
 #include "sampling.h"
 // Photonmap Local Declarations
 struct Photon;
 struct ClosePhoton;
 struct PhotonProcess;
+
+
+
 class PhotonIntegrator : public SurfaceIntegrator {
 public:
 	// PhotonIntegrator Public Methods
@@ -102,3 +109,5 @@ struct ClosePhoton {
 	const Photon *photon;
 	float distanceSquared;
 };
+
+#endif

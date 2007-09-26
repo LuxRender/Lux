@@ -21,10 +21,13 @@
  ***************************************************************************/
 
 // dynload.cpp*
+#include "kdtree.h"
+
 #include "dynload.h"
 #include "paramset.h"
 #include "shape.h"
 #include "material.h"
+/*
 #ifndef WIN32
 #ifndef __APPLE__
 #include <dlfcn.h>
@@ -32,89 +35,100 @@
 #include <mach-o/dyld.h>
 #endif
 #endif
-#include <map>
+#include <map>*/
 
-#include "../accelerators/grid.h"
-#include "../accelerators/kdtree.h"
 
-#include "../shapes/cone.h"
-#include "../shapes/cylinder.h"
-#include "../shapes/disk.h"
-#include "../shapes/heightfield.h"
-#include "../shapes/hyperboloid.h"
-#include "../shapes/loopsubdiv.h"
-#include "../shapes/nurbs.h"
-#include "../shapes/paraboloid.h"
-#include "../shapes/sphere.h"
-#include "../shapes/trianglemesh.h"
 
-#include "../samplers/bestcandidate.h"
-#include "../samplers/lowdiscrepancy.h"
-#include "../samplers/random.h"
-#include "../samplers/stratified.h"
+#include "cone.h"
+#include "cylinder.h"
+#include "disk.h"
+#include "heightfield.h"
+#include "hyperboloid.h"
+#include "loopsubdiv.h"
+#include "nurbs.h"
+#include "paraboloid.h"
+#include "sphere.h"
+#include "trianglemesh.h"
 
-#include "../cameras/environment.h"
-#include "../cameras/orthographic.h"
-#include "../cameras/perspective.h"
+#include "bestcandidate.h"
+#include "lowdiscrepancy.h"
+#include "random.h"
+#include "stratified.h"
 
-#include "../film/image.h"
+#include "environment.h"
+#include "orthographic.h"
+#include "perspective.h"
 
-#include "../filters/box.h"
-#include "../filters/gaussian.h"
-#include "../filters/mitchell.h"
-#include "../filters/sinc.h"
-#include "../filters/triangle.h"
+#include "image.h"
 
-#include "../integrators/bidirectional.h"
-#include "../integrators/debug.h"
-#include "../integrators/directlighting.h"
-#include "../integrators/emission.h"
-#include "../integrators/exphotonmap.h"
-#include "../integrators/igi.h"
-#include "../integrators/irradiancecache.h"
-#include "../integrators/path.h"
-#include "../integrators/photonmap.h"
-#include "../integrators/single.h"
-#include "../integrators/whitted.h"
+#include "box.h"
+#include "gaussian.h"
+#include "mitchell.h"
+#include "sinc.h"
+#include "triangle.h"
 
-#include "../lights/distant.h"
-#include "../lights/goniometric.h"
-#include "../lights/infinitesample.h"
-#include "../lights/infinite.h"
-#include "../lights/point.h"
-#include "../lights/projection.h"
-#include "../lights/spot.h"
+#include "bidirectional.h"
+#include "debug.h"
+#include "directlighting.h"
+#include "emission.h"
+#include "exphotonmap.h"
+#include "igi.h"
+#include "irradiancecache.h"
+#include "path.h"
+#include "photonmap.h"
+#include "single.h"
+#include "whitted.h"
 
-#include "../materials/bluepaint.h"
-#include "../materials/brushedmetal.h"
-#include "../materials/clay.h"
-#include "../materials/felt.h"
-#include "../materials/glass.h"
-#include "../materials/matte.h"
-#include "../materials/mirror.h"
-#include "../materials/plastic.h"
-#include "../materials/primer.h"
-#include "../materials/shinymetal.h"
-#include "../materials/skin.h"
-#include "../materials/substrate.h"
-#include "../materials/translucent.h"
-#include "../materials/uber.h"
+#include "distant.h"
+#include "goniometric.h"
+#include "infinitesample.h"
+#include "infinite.h"
+#include "point.h"
+#include "projection.h"
+#include "spot.h"
 
-#include "../textures/bilerp.h"
-#include "../textures/checkerboard.h"
-#include "../textures/constant.h"
-#include "../textures/dots.h"
-#include "../textures/fbm.h"
-#include "../textures/imagemap.h"
-#include "../textures/marble.h"
-#include "../textures/mix.h"
-#include "../textures/scale.h"
-#include "../textures/uv.h"
-#include "../textures/windy.h"
-#include "../textures/wrinkled.h"
+#include "bluepaint.h"
+#include "brushedmetal.h"
+#include "clay.h"
+#include "felt.h"
+#include "glass.h"
+#include "matte.h"
+#include "mirror.h"
+#include "plastic.h"
+#include "primer.h"
+#include "shinymetal.h"
+#include "skin.h"
+#include "substrate.h"
+#include "translucent.h"
+#include "uber.h"
 
+#include "bilerp.h"
+#include "checkerboard.h"
+#include "constant.h"
+#include "dots.h"
+#include "fbm.h"
+#include "imagemap.h"
+#include "marble.h"
+#include "mix.h"
+#include "scale.h"
+#include "uv.h"
+#include "windy.h"
+#include "wrinkled.h"
+
+#include "contrast.h"
+#include "highcontrast.h"
+#include "maxwhite.h"
+#include "nonlinear.h"
+
+#include "exponential.h"
+#include "homogeneous.h"
+#include "volumegrid.h"
+
+#include "grid.h"
+#include "kdtreeaccel.h"
 
 using std::map;
+/*
 // Runtime Loading Forward Declarations
 static string SearchPath(const string &searchpath,  // NOBOOK
                          const string &filename); // NOBOOK
@@ -365,8 +379,9 @@ public:
             (CreateFilmFunc)(GetSymbol("CreateFilm"));
     }
     CreateFilmFunc CreateFilm;
-};
+};*/
 // Runtime Loading Method Definitions
+/*
 COREDLL void UpdatePluginPath(const string &newpath)
 {
     string ret;
@@ -378,7 +393,7 @@ COREDLL void UpdatePluginPath(const string &newpath)
             ret += PluginSearchPath;
     }
     PluginSearchPath = ret;
-}
+}*/
 COREDLL Reference<Shape> MakeShape(const string &name,
                                    const Transform &object2world,
                                    bool reverseOrientation,
@@ -417,6 +432,7 @@ COREDLL Reference<Shape> MakeShape(const string &name,
     Error("Static loading of shape '%s' failed.",name.c_str());
     return NULL;
 }
+/*
 static string SearchPath(const string &searchpath,
                          const string &filename)
 {
@@ -440,7 +456,7 @@ static string SearchPath(const string &searchpath,
         start = end;
     }
     return "";
-}
+}*/
 COREDLL Reference<Material> MakeMaterial(const string &name,
         const Transform &mtl2world,
         const TextureParams &mp)
@@ -801,14 +817,35 @@ COREDLL AreaLight *MakeAreaLight(const string &name,
 COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
                                        const Transform &volume2world, const ParamSet &paramSet)
 {
-    VolumeRegionPlugin *plugin = GetPlugin<VolumeRegionPlugin>(name, volumePlugins,
+    /*VolumeRegionPlugin *plugin = GetPlugin<VolumeRegionPlugin>(name, volumePlugins,
                                  PluginSearchPath);
     if (plugin)
     {
         VolumeRegion *ret = plugin->CreateVolumeRegion(volume2world, paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    
+    if(name=="exponential")
+    {
+    	VolumeRegion *ret = ExponentialDensity::CreateVolumeRegion(volume2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
+    if(name=="homogeneous")
+    {
+    	VolumeRegion *ret = HomogeneousVolume::CreateVolumeRegion(volume2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="volumegrid")
+    {
+    	VolumeRegion *ret = VolumeGrid::CreateVolumeRegion(volume2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of volume region '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
@@ -1078,13 +1115,39 @@ COREDLL Filter *MakeFilter(const string &name,
 COREDLL ToneMap *MakeToneMap(const string &name,
                              const ParamSet &paramSet)
 {
-    ToneMapPlugin *plugin = GetPlugin<ToneMapPlugin>(name, tonemapPlugins, PluginSearchPath);
+    /*ToneMapPlugin *plugin = GetPlugin<ToneMapPlugin>(name, tonemapPlugins, PluginSearchPath);
     if (plugin)
     {
         ToneMap *ret = plugin->CreateToneMap(paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    if(name=="contrast")
+    {
+        ToneMap *ret=ContrastOp::CreateToneMap(paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
+    if(name=="highcontrast")
+    {
+        ToneMap *ret=HighContrastOp::CreateToneMap(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="maxwhite")
+    {
+        ToneMap *ret=MaxWhiteOp::CreateToneMap(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="nonlinear")
+    {
+        ToneMap *ret=NonLinearOp::CreateToneMap(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    
+    Error("Static loading of tonemap '%s' failed.",name.c_str());
     return NULL;
 }
 COREDLL Film *MakeFilm(const string &name,
@@ -1109,6 +1172,7 @@ COREDLL Film *MakeFilm(const string &name,
     return NULL;
 }
 // Plugin Method Definitions
+/*
 Plugin::Plugin(const string &fname)
 {
     pluginName = fname;
@@ -1176,3 +1240,5 @@ void *Plugin::GetSymbol(const string &symname)
         Severe("Couldn't get symbol \"%s\" in Plugin %s.", symname.c_str(), pluginName.c_str());
     return data;
 }
+*/
+

@@ -69,6 +69,7 @@ RenderOptions::RenderOptions() {
 	SurfIntegratorName = "directlighting";
 	VolIntegratorName = "emission";
 	CameraName = "perspective";
+	/*
 	char *searchEnv = getenv("LUX_SEARCHPATH");
 	if (searchEnv == NULL) {
 		Warning("LUX_SEARCHPATH not set in your environment.\n"
@@ -82,7 +83,7 @@ RenderOptions::RenderOptions() {
 	else {
 		UpdatePluginPath(searchEnv);
 		gotSearchPath = true;
-	}
+	}*/
 	currentInstance = NULL;
 }
 struct GraphicsState {
@@ -259,11 +260,11 @@ COREDLL void luxCamera(const string &name,
 	namedCoordinateSystems["camera"] =
 		curTransform.GetInverse();
 }
-COREDLL void luxSearchPath(const string &path) {
+/*COREDLL void luxSearchPath(const string &path) {
 	VERIFY_OPTIONS("SearchPath");
 	UpdatePluginPath(path);
 	renderOptions->gotSearchPath = true;
-}
+}*/
 COREDLL void luxWorldBegin() {
 	VERIFY_OPTIONS("WorldBegin");
 	currentApiState = STATE_WORLD_BLOCK;
@@ -457,12 +458,12 @@ COREDLL void luxObjectInstance(const string &name) {
 COREDLL void luxWorldEnd() {
 	VERIFY_WORLD("WorldEnd");
 	// Ensure the search path was set
-	if (!renderOptions->gotSearchPath)
+	/*if (!renderOptions->gotSearchPath)
 		Severe("LUX_SEARCHPATH environment variable "
 		                  "wasn't set and a plug-in\n"
 			              "search path wasn't given in the "
 						  "input (with the SearchPath "
-						  "directive).\n");
+						  "directive).\n");*/
 	// Ensure there are no pushed graphics states
 	while (pushedGraphicsStates.size()) {
 		Warning("Missing end to luxAttributeBegin()");

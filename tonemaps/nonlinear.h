@@ -20,19 +20,35 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// homogeneous.cpp*
-#include "homogeneous.h"
-
-// HomogeneousVolume Method Definitions
-VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
-		const ParamSet &params) {
-	// Initialize common volume region parameters
-	Spectrum sigma_a = params.FindOneSpectrum("sigma_a", 0.);
-	Spectrum sigma_s = params.FindOneSpectrum("sigma_s", 0.);
-	float g = params.FindOneFloat("g", 0.);
-	Spectrum Le = params.FindOneSpectrum("Le", 0.);
-	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
-	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
-	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world);
-}
+// nonlinear.cpp*
+#include "tonemap.h"
+#include "paramset.h"
+// NonLinearOp Declarations
+class NonLinearOp : public ToneMap {
+public:
+	// NonLinearOp Public Methods
+	NonLinearOp(float my) { maxY = my; }
+	void Map(const float *y, int xRes, int yRes,
+			float maxDisplayY, float *scale) const {
+		float invY2;
+		if (maxY <= 0.f) {
+			// Compute world adaptation luminance, _Ywa_
+			float Ywa = 0.;
+			for (int i = 0; i < xRes * yRes; ++i)
+				if (y[i] > 0) Ywa += logf(y[i]);
+			Ywa = expf(Ywa / (xRes * yRes));
+			Ywa /= 683.f;
+			invY2 = 1.f / (Ywa * Ywa);
+		}
+		else invY2 = 1.f / (maxY * maxY);
+		for (int i = 0; i < xRes * yRes; ++i) {
+			float ys = y[i] / 683.f;
+			scale[i] = maxDisplayY / 683.f *
+				(1.f + ys * invY2) / (1.f + ys);
+		}
+	}
+	
+	static ToneMap *CreateToneMap(const ParamSet &ps);
+private:
+	float maxY;
+};

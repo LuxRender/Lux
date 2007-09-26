@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef PBRT_KDTREE_H
-#define PBRT_KDTREE_H
+#ifndef LUX_KDTREE_H
+#define LUX_KDTREE_H
 // kdtree.h*
 #include "lux.h"
 #include "geometry.h"

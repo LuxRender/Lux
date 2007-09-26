@@ -38,7 +38,7 @@ BestCandidateSampler::
 	oneDSamples = twoDSamples = NULL;
 	strat2D = NULL;
 }
-#include "samplers/sampledata.cpp"
+#include "sampledata.h"
 bool BestCandidateSampler::GetNextSample(Sample *sample) {
 again:
 	if (tableOffset == SAMPLE_TABLE_SIZE) {

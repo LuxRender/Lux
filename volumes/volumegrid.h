@@ -20,19 +20,33 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// homogeneous.cpp*
-#include "homogeneous.h"
-
-// HomogeneousVolume Method Definitions
-VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
-		const ParamSet &params) {
-	// Initialize common volume region parameters
-	Spectrum sigma_a = params.FindOneSpectrum("sigma_a", 0.);
-	Spectrum sigma_s = params.FindOneSpectrum("sigma_s", 0.);
-	float g = params.FindOneFloat("g", 0.);
-	Spectrum Le = params.FindOneSpectrum("Le", 0.);
-	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
-	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
-	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world);
-}
+// volumegrid.cpp*
+#include "volume.h"
+// VolumeGrid Declarations
+class VolumeGrid : public DensityRegion {
+public:
+	// VolumeGrid Public Methods
+	VolumeGrid(const Spectrum &sa, const Spectrum &ss, float gg,
+	 		const Spectrum &emit, const BBox &e, const Transform &v2w,
+			int nx, int ny, int nz, const float *d);
+	~VolumeGrid() { delete[] density; }
+	BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
+	bool IntersectP(const Ray &r, float *t0, float *t1) const {
+		Ray ray = WorldToVolume(r);
+		return extent.IntersectP(ray, t0, t1);
+	}
+	float Density(const Point &Pobj) const;
+	float D(int x, int y, int z) const {
+		x = Clamp(x, 0, nx-1);
+		y = Clamp(y, 0, ny-1);
+		z = Clamp(z, 0, nz-1);
+		return density[z*nx*ny + y*nx + x];
+	}
+	
+	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
+private:
+	// VolumeGrid Private Data
+	float *density;
+	const int nx, ny, nz;
+	const BBox extent;
+};

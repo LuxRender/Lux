@@ -21,17 +21,8 @@
  ***************************************************************************/
 
 // contrast.cpp*
-#include "tonemap.h"
-#include "paramset.h"
-// ContrastOp Declarations
-class ContrastOp : public ToneMap {
-public:
-	ContrastOp(float day) { displayAdaptationY = day; }
-	void Map(const float *y,
-	         int xRes, int yRes,
-			 float maxDisplayY, float *scale) const;
-	float displayAdaptationY;
-};
+#include "contrast.h"
+
 // ContrastOp Method Definitions
 void ContrastOp::Map(const float *y, int xRes, int yRes,
 		float maxDisplayY, float *scale) const {
@@ -46,7 +37,7 @@ void ContrastOp::Map(const float *y, int xRes, int yRes,
 	for (int i = 0; i < xRes*yRes; ++i)
 		scale[i] = s;
 }
-extern "C" DLLEXPORT ToneMap *CreateToneMap(const ParamSet &ps) {
+ToneMap * ContrastOp::CreateToneMap(const ParamSet &ps) {
 	float day = ps.FindOneFloat("displayadaptationY", 50.f);
 	return new ContrastOp(day);
 }

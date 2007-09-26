@@ -22,6 +22,9 @@
 
 #ifndef LUX_LUX_H
 #define LUX_LUX_H
+
+// #define WIN32
+
 // lux.h*
 // Global Include Files
 #if !defined(__APPLE__) && !defined(__OpenBSD__)
@@ -96,17 +99,10 @@ extern "C" {
 #pragma warning( disable: 4190 )
 // extern "C" nonsense when returning a template
 #endif
-#ifdef WIN32
-#ifdef CORE_SOURCE
-#define COREDLL __declspec(dllexport)
-#else
-#define COREDLL __declspec(dllimport)
-#endif
-#define DLLEXPORT __declspec(dllexport)
-#else
+
 #define COREDLL
 #define DLLEXPORT
-#endif
+
 #ifdef WIN32
 #define LUX_PATH_SEP ";"
 #else
@@ -201,7 +197,8 @@ class VolumeIntegrator;
 #define INV_PI  0.31830988618379067154f
 #define INV_TWOPI  0.15915494309189533577f
 #ifndef INFINITY
-#define INFINITY FLT_MAX
+#define INFINITY HUGE_VAL
+//#define INFINITY std::numeric_limits<float>::max()
 #endif
 #define LUX_VERSION 0.1
 #define RAY_EPSILON 1e-3f

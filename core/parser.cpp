@@ -28,10 +28,10 @@ COREDLL bool ParseFile(const char *filename) {
 	extern int yyparse(void);
 	extern string current_file;
 	extern int line_num;
-	extern int yydebug;
+	/*extern int yydebug;
 
 	if (getenv("LUX_YYDEBUG") != NULL)
-		yydebug = 1;
+		yydebug = 1;*/
 
 	if (strcmp(filename, "-") == 0)
 		yyin = stdin;

@@ -21,33 +21,8 @@
  ***************************************************************************/
 
 // volumegrid.cpp*
-#include "volume.h"
-// VolumeGrid Declarations
-class VolumeGrid : public DensityRegion {
-public:
-	// VolumeGrid Public Methods
-	VolumeGrid(const Spectrum &sa, const Spectrum &ss, float gg,
-	 		const Spectrum &emit, const BBox &e, const Transform &v2w,
-			int nx, int ny, int nz, const float *d);
-	~VolumeGrid() { delete[] density; }
-	BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
-	bool IntersectP(const Ray &r, float *t0, float *t1) const {
-		Ray ray = WorldToVolume(r);
-		return extent.IntersectP(ray, t0, t1);
-	}
-	float Density(const Point &Pobj) const;
-	float D(int x, int y, int z) const {
-		x = Clamp(x, 0, nx-1);
-		y = Clamp(y, 0, ny-1);
-		z = Clamp(z, 0, nz-1);
-		return density[z*nx*ny + y*nx + x];
-	}
-private:
-	// VolumeGrid Private Data
-	float *density;
-	const int nx, ny, nz;
-	const BBox extent;
-};
+#include "volumegrid.h"
+
 // VolumeGrid Method Definitions
 VolumeGrid::VolumeGrid(const Spectrum &sa,
 		const Spectrum &ss, float gg,
@@ -81,7 +56,7 @@ float VolumeGrid::Density(const Point &Pobj) const {
 	float d1 = Lerp(dy, d01, d11);
 	return Lerp(dz, d0, d1);
 }
-extern "C" DLLEXPORT VolumeRegion *CreateVolumeRegion(const Transform &volume2world,
+VolumeRegion * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {
 	// Initialize common volume region parameters
 	Spectrum sigma_a = params.FindOneSpectrum("sigma_a", 0.);

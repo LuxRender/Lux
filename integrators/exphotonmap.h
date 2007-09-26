@@ -21,11 +21,15 @@
  ***************************************************************************/
 
 // exphotonmap.cpp*
+#ifndef LUX_EXPHOTONMAP_H
+#define LUX_EXPHOTONMAP_H
+
+
 #include "lux.h"
 #include "transport.h"
 #include "scene.h"
-#include "mc.h"
 #include "kdtree.h"
+#include "mc.h"
 #include "sampling.h"
 
 struct EClosePhoton;
@@ -141,3 +145,5 @@ private:
 	mutable KdTree<EPhoton, EPhotonProcess> *indirectMap;
 	mutable KdTree<ERadiancePhoton, ERadiancePhotonProcess> *radianceMap;
 };
+
+#endif
