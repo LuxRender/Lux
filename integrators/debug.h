@@ -45,7 +45,7 @@ typedef enum {
 class DebugIntegrator : public SurfaceIntegrator {
 public:
 	// DebugIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray,
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
 			const Sample *sample, float *alpha) const;
 	DebugIntegrator( DebugVariable v[3] )
 	{
@@ -53,7 +53,8 @@ public:
 		debug_variable[1] = v[1];
 		debug_variable[2] = v[2];
 	}
-	
+	virtual DebugIntegrator* clone() const; // Lux (copy) constructor for multithreading
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	DebugVariable debug_variable[3];

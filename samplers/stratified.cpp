@@ -22,7 +22,11 @@
 
 // stratified.cpp*
 #include "stratified.h"
-
+// Lux (copy) constructor
+StratifiedSampler* StratifiedSampler::clone() const
+ {
+   return new StratifiedSampler(*this);
+ }
 // StratifiedSampler Method Definitions
 StratifiedSampler::StratifiedSampler(int xstart, int xend,
 		int ystart, int yend, int xs, int ys, bool jitter)
@@ -59,6 +63,10 @@ StratifiedSampler::StratifiedSampler(int xstart, int xend,
 	Shuffle(lensSamples, xPixelSamples*yPixelSamples, 2);
 	Shuffle(timeSamples, xPixelSamples*yPixelSamples, 1);
 	samplePos = 0;
+}
+void StratifiedSampler::setSeed( u_int s )
+{
+    //fs_scramble = s;
 }
 bool StratifiedSampler::GetNextSample(Sample *sample) {
 	// Compute new set of samples if needed for next pixel

@@ -22,7 +22,11 @@
 
 // bidirectional.cpp*
 #include "bidirectional.h"
-
+// Lux (copy) constructor
+BidirIntegrator* BidirIntegrator::clone() const
+ {
+   return new BidirIntegrator(*this);
+ }
 // Bidirectional Method Definitions
 void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	for (int i = 0; i < MAX_VERTS; ++i) {
@@ -39,7 +43,7 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	lightPosOffset = sample->Add2D(1);
 	lightDirOffset = sample->Add2D(1);
 }
-Spectrum BidirIntegrator::Li(const Scene *scene,
+Spectrum BidirIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
 	Spectrum L(0.);
@@ -103,7 +107,8 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		if (!scene->Intersect(ray, &isect))
 			break;
 		BidirVertex &v = vertices[nVerts];
-		v.bsdf = isect.GetBSDF(ray); // do before Ns is set!
+		MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
+		v.bsdf = isect.GetBSDF(arena, ray); // do before Ns is set!
 		v.p = isect.dg.p;
 		v.ng = isect.dg.nn;
 		v.ns = v.bsdf->dgShading.nn;

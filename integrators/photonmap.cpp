@@ -22,7 +22,11 @@
 
 // photonmap.cpp*
 #include "photonmap.h"
-
+// Lux (copy) constructor
+PhotonIntegrator* PhotonIntegrator::clone() const
+ {
+   return new PhotonIntegrator(*this);
+ }
 // Photonmap Method Definitions
 PhotonIntegrator::PhotonIntegrator(int ncaus, int ndir, int nind,
 		int nl,	int mdepth, float mdist, bool fg,
@@ -130,7 +134,8 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 				// Handle photon/surface intersection
 				alpha *= scene->Transmittance(photonRay);
 				Vector wo = -photonRay.d;
-				BSDF *photonBSDF = photonIsect.GetBSDF(photonRay);
+				MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
+				BSDF *photonBSDF = photonIsect.GetBSDF(arena, photonRay);
 				BxDFType specularType = BxDFType(BSDF_REFLECTION |
 					BSDF_TRANSMISSION | BSDF_SPECULAR);
 				bool hasNonSpecular = (photonBSDF->NumComponents() >
@@ -214,11 +219,11 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 				}
 			}
 		}
-		BSDF::FreeAll();
+		//BSDF::FreeAll();													TODO FIX THIS
 	}
 	progress.Done(); // NOBOOK
 }
-Spectrum PhotonIntegrator::Li(const Scene *scene,
+Spectrum PhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	// Compute reflected radiance with photon map
@@ -230,7 +235,7 @@ Spectrum PhotonIntegrator::Li(const Scene *scene,
 		// Compute emitted light if ray hit an area light source
 		L += isect.Le(wo);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		// Compute direct lighting for photon map integrator
@@ -266,7 +271,7 @@ Spectrum PhotonIntegrator::Li(const Scene *scene,
 				Intersection gatherIsect;
 				if (scene->Intersect(bounceRay, &gatherIsect)) {
 					// Compute exitant radiance at final gather intersection
-					BSDF *gatherBSDF = gatherIsect.GetBSDF(bounceRay);
+					BSDF *gatherBSDF = gatherIsect.GetBSDF(arena, bounceRay);
 					Vector bounceWo = -bounceRay.d;
 					Spectrum Lindir =
 						LPhoton(directMap, nDirectPaths, nLookup,

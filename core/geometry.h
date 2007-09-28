@@ -69,13 +69,13 @@ public:
 		return *this;
 	}
 	Vector operator/(float f) const {
-		Assert(f!=0);
+//		Assert(f!=0);
 		float inv = 1.f / f;
 		return Vector(x * inv, y * inv, z * inv);
 	}
 	
 	Vector &operator/=(float f) {
-		Assert(f!=0);
+//		Assert(f!=0);
 		float inv = 1.f / f;
 		x *= inv; y *= inv; z *= inv;
 		return *this;

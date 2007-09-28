@@ -22,7 +22,11 @@
 
 // igi.cpp*
 #include "igi.h"
-
+// Lux (copy) constructor
+IGIIntegrator* IGIIntegrator::clone() const
+ {
+   return new IGIIntegrator(*this);
+ }
 // IGIIntegrator Implementation
 IGIIntegrator::IGIIntegrator(int nl, int ns, float md,
 		float rrt, float is) {
@@ -98,7 +102,8 @@ void IGIIntegrator::Preprocess(const Scene *scene) {
 				++nIntersections;
 				alpha *= scene->Transmittance(ray);
 				Vector wo = -ray.d;
-				BSDF *bsdf = isect.GetBSDF(ray);
+				MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
+				BSDF *bsdf = isect.GetBSDF(arena, ray);
 				// Create virtual light at ray intersection point
 				static StatsCounter vls("IGI Integrator", "Virtual Lights Created"); //NOBOOK
 				++vls; //NOBOOK
@@ -123,14 +128,14 @@ void IGIIntegrator::Preprocess(const Scene *scene) {
 				fprintf(stderr, "\tnew alpha %f\n", alpha.y());
 				ray = RayDifferential(isect.dg.p, wi);
 			}
-			BSDF::FreeAll();
+			//BSDF::FreeAll();																TODO FIX THIS !!!!!!!!!!
 		}
 	}
 	delete[] lightNum; // NOBOOK
 	delete[] lightSamp0; // NOBOOK
 	delete[] lightSamp1; // NOBOOK
 }
-Spectrum IGIIntegrator::Li(const Scene *scene,
+Spectrum IGIIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		   float *alpha) const {
 	Spectrum L(0.);
@@ -141,7 +146,7 @@ Spectrum IGIIntegrator::Li(const Scene *scene,
 		// Compute emitted light if ray hit an area light source
 		L += isect.Le(wo);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		L += UniformSampleAllLights(scene, p, n,

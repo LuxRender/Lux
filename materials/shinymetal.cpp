@@ -24,24 +24,24 @@
 #include "shinymetal.h"
 
 // ShinyMetal Method Definitions
-BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
 	Spectrum spec = Ks->Evaluate(dgs).Clamp();
 	float rough = roughness->Evaluate(dgs);
 	Spectrum R = Kr->Evaluate(dgs).Clamp();
 
-	MicrofacetDistribution *md = BSDF_ALLOC(Blinn)(1.f / rough);
+	MicrofacetDistribution *md = BSDF_ALLOC(arena, Blinn)(1.f / rough);
 	Spectrum k = 0.;
-	Fresnel *frMf = BSDF_ALLOC(FresnelConductor)(FresnelApproxEta(spec), k);
-	Fresnel *frSr = BSDF_ALLOC(FresnelConductor)(FresnelApproxEta(R), k);
-	bsdf->Add(BSDF_ALLOC(Microfacet)(1., frMf, md));
-	bsdf->Add(BSDF_ALLOC(SpecularReflection)(1., frSr));
+	Fresnel *frMf = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(spec), k);
+	Fresnel *frSr = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(R), k);
+	bsdf->Add(BSDF_ALLOC(arena, Microfacet)(1., frMf, md));
+	bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(1., frSr));
 	return bsdf;
 }
 Material* ShinyMetal::CreateMaterial(const Transform &xform,

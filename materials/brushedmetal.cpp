@@ -24,7 +24,7 @@
 #include "brushedmetal.h"
 
 // BrushedMetal Method Definitions
-BSDF *BrushedMetal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *BrushedMetal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare brushedmetal coefficients
 	static float diffuse[3] = { 0, 0, 0 };
 	static float xy0[3] =     {  -1.11854f, -1.11845f, -1.11999f  };
@@ -45,8 +45,8 @@ BSDF *BrushedMetal::GetBSDF(const DifferentialGeometry &dgGeom, const Differenti
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	bsdf->Add(BSDF_ALLOC(Lafortune)(Spectrum(*diffuse), 3, xy, xy, z, e,
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	bsdf->Add(BSDF_ALLOC(arena, Lafortune)(Spectrum(*diffuse), 3, xy, xy, z, e,
 		BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)));
 	return bsdf;
 }

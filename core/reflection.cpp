@@ -522,4 +522,4 @@ Spectrum BSDF::rho(const Vector &wo, BxDFType flags) const {
 			ret += bxdfs[i]->rho(wo);
 	return ret;
 }
-MemoryArena BSDF::arena;
+//MemoryArena BSDF::arena;

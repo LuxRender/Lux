@@ -33,7 +33,7 @@ public:
 	// DirectLighting Public Methods
 	DirectLighting(LightStrategy ls, int md);
 	~DirectLighting();
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample,
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene) {
 		if (strategy == SAMPLE_ALL_UNIFORM) {
@@ -63,7 +63,8 @@ public:
 			bsdfComponentOffset[0] = sample->Add1D(1);
 		}
 	}
-	
+	virtual DirectLighting* clone() const; // Lux (copy) constructor for multithreading
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// DirectLighting Private Data

@@ -22,7 +22,11 @@
 
 // bestcandidate.cpp*
 #include "bestcandidate.h"
-
+// Lux (copy) constructor
+BestCandidateSampler* BestCandidateSampler::clone() const
+ {
+   return new BestCandidateSampler(*this);
+ }
 // BestCandidateSampler Method Definitions
 BestCandidateSampler::
     BestCandidateSampler(int xstart, int xend,
@@ -38,6 +42,11 @@ BestCandidateSampler::
 	oneDSamples = twoDSamples = NULL;
 	strat2D = NULL;
 }
+void BestCandidateSampler::setSeed( u_int s )
+{
+    //fs_scramble = s;
+}
+
 #include "sampledata.h"
 bool BestCandidateSampler::GetNextSample(Sample *sample) {
 again:

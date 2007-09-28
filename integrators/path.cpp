@@ -22,7 +22,11 @@
 
 // path.cpp*
 #include "path.h"
-
+// Lux (copy) constructor
+PathIntegrator* PathIntegrator::clone() const
+ {
+   return new PathIntegrator(*this);
+ }
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample,
 		const Scene *scene) {
@@ -35,7 +39,7 @@ void PathIntegrator::RequestSamples(Sample *sample,
 		outgoingComponentOffset[i] = sample->Add1D(1);
 	}
 }
-Spectrum PathIntegrator::Li(const Scene *scene,
+Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const {
 	// Declare common path integration variables
@@ -63,7 +67,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		if (pathLength == 0 || specularBounce)
 			L += pathThroughput * isect.Le(-ray.d);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

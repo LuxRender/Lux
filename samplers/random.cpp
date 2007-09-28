@@ -22,7 +22,11 @@
 
 // random.cpp*
 #include "random.h"
-
+// Lux (copy) constructor
+RandomSampler* RandomSampler::clone() const
+ {
+   return new RandomSampler(*this);
+ }
 RandomSampler::RandomSampler(int xstart, int xend,
                              int ystart, int yend, int xs, int ys)
         : Sampler(xstart, xend, ystart, yend, xs * ys)
@@ -56,7 +60,10 @@ RandomSampler::RandomSampler(int xstart, int xend,
     }
     samplePos = 0;
 }
-
+void RandomSampler::setSeed( u_int s )
+{
+    //fs_scramble = s;
+}
 bool RandomSampler::GetNextSample(Sample *sample)
 {
     // Compute new set of samples if needed for next pixel

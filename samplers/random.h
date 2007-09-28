@@ -33,11 +33,13 @@ public:
     {
         FreeAligned(imageSamples);
     }
+	void setSeed( u_int s );
     bool GetNextSample(Sample *sample);
     int RoundSize(int sz) const
     {
         return sz;
     }
+    virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
     static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:

@@ -41,13 +41,13 @@ public:
 	void FullyRefine(vector<Reference<Primitive> > &refined)
 	const;
 	virtual const AreaLight *GetAreaLight() const = 0;
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dg,
+	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 		const Transform &WorldToObject) const = 0;
 };
 struct COREDLL Intersection {
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
-	BSDF *GetBSDF(const RayDifferential &ray) const;
+	BSDF *GetBSDF(MemoryArena &arena, const RayDifferential &ray) const;
 	Spectrum Le(const Vector &wo) const;
 	DifferentialGeometry dg;
 	const Primitive *primitive;
@@ -66,7 +66,7 @@ public:
 	                   const Reference<Material> &m,
 	                   AreaLight *a);
 	const AreaLight *GetAreaLight() const;
-	BSDF *GetBSDF(const DifferentialGeometry &dg,
+	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 	              const Transform &WorldToObject) const;
 private:
 	// GeometricPrimitive Private Data
@@ -86,7 +86,7 @@ public:
 	bool Intersect(const Ray &r, Intersection *in) const;
 	bool IntersectP(const Ray &r) const;
 	const AreaLight *GetAreaLight() const { return NULL; }
-	BSDF *GetBSDF(const DifferentialGeometry &dg,
+	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 	              const Transform &WorldToObject) const {
 		return NULL;
 	}
@@ -102,7 +102,7 @@ class COREDLL Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	const AreaLight *GetAreaLight() const;
-	BSDF *GetBSDF(const DifferentialGeometry &dg,
+	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 	              const Transform &) const;
 };
 #endif // LUX_PRIMITIVE_H

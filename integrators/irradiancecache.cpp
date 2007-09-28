@@ -22,7 +22,11 @@
 
 // irradiancecache.cpp*
 #include "irradiancecache.h"
-
+// Lux (copy) constructor
+IrradianceCache* IrradianceCache::clone() const
+ {
+   return new IrradianceCache(*this);
+ }
 // IrradianceCache Method Definitions
 IrradianceCache::IrradianceCache(int maxspec, int maxind,
 		float maxerr, int ns) {
@@ -49,14 +53,14 @@ void IrradianceCache::RequestSamples(Sample *sample,
 	}
 	lightNumOffset = -1;
 }
-Spectrum IrradianceCache::Li(const Scene *scene, const RayDifferential &ray,
+Spectrum IrradianceCache::Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
 	Intersection isect;
 	Spectrum L(0.);
 	if (scene->Intersect(ray, &isect)) {
 		if (alpha) *alpha = 1.;
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -186,7 +190,8 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 				if (specularBounce)
 					L += pathThroughput * isect.Le(-ray.d);
 				// Evaluate BSDF at hit point
-				BSDF *bsdf = isect.GetBSDF(ray);
+				MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
+				BSDF *bsdf = isect.GetBSDF(arena, ray);
 				// Sample illumination from lights to find path contribution
 				const Point &p = bsdf->dgShading.p;
 				const Normal &n = bsdf->dgShading.nn;

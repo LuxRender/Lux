@@ -28,10 +28,11 @@
 class PathIntegrator : public SurfaceIntegrator {
 public:
 	// PathIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	PathIntegrator(int md) { maxDepth = md; }
-	
+	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data

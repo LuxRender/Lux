@@ -95,8 +95,8 @@ public:
 	Spectrum rho(BxDFType flags = BSDF_ALL) const;
 	Spectrum rho(const Vector &wo,
 	             BxDFType flags = BSDF_ALL) const;
-	static void *Alloc(u_int sz) { return arena.Alloc(sz); }
-	static void FreeAll() { arena.FreeAll(); }
+	static void *Alloc(MemoryArena &u_arena, u_int sz) { return u_arena.Alloc(sz); }		// TODO remove original memory arena
+	static void FreeAll(MemoryArena &u_arena) { u_arena.FreeAll(); }
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
@@ -110,9 +110,9 @@ private:
 	int nBxDFs;
 	#define MAX_BxDFS 8
 	BxDF * bxdfs[MAX_BxDFS];
-	static MemoryArena arena;
+	//static MemoryArena arena;
 };
-#define BSDF_ALLOC(T)  new (BSDF::Alloc(sizeof(T))) T
+#define BSDF_ALLOC(A, T)  new (BSDF::Alloc(A, sizeof(T))) T
 // BxDF Declarations
 class COREDLL BxDF {
 public:

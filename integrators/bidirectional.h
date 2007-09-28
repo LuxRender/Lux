@@ -30,8 +30,9 @@ struct BidirVertex;
 class BidirIntegrator : public SurfaceIntegrator {
 public:
 	// BidirIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
+	virtual BidirIntegrator* clone() const; // Lux (copy) constructor for multithreading
 	
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:

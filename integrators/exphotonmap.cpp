@@ -22,7 +22,11 @@
 
 // exphotonmap.cpp*
 #include "exphotonmap.h"
-
+// Lux (copy) constructor
+ExPhotonIntegrator* ExPhotonIntegrator::clone() const
+ {
+   return new ExPhotonIntegrator(*this);
+ }
 // ExPhotonIntegrator Method Definitions
 EPhotonProcess::EPhotonProcess(u_int mp, const Point &P)
 	: p(P) {
@@ -251,7 +255,8 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 				// Handle photon/surface intersection
 				alpha *= scene->Transmittance(photonRay);
 				Vector wo = -photonRay.d;
-				BSDF *photonBSDF = photonIsect.GetBSDF(photonRay);
+				MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
+				BSDF *photonBSDF = photonIsect.GetBSDF(arena, photonRay);
 				BxDFType specularType = BxDFType(BSDF_REFLECTION |
 					BSDF_TRANSMISSION | BSDF_SPECULAR);
 				bool hasNonSpecular = (photonBSDF->NumComponents() >
@@ -336,7 +341,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 				photonRay = RayDifferential(photonIsect.dg.p, wi);
 			}
 		}
-		BSDF::FreeAll();
+		//BSDF::FreeAll();															TODO FIX THIS
 	}
 
 	progress.Done(); // NOBOOK
@@ -374,7 +379,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	}
 }
 
-Spectrum ExPhotonIntegrator::Li(const Scene *scene,
+Spectrum ExPhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	// Compute reflected radiance with photon map
@@ -386,7 +391,7 @@ Spectrum ExPhotonIntegrator::Li(const Scene *scene,
 		// Compute emitted light if ray hit an area light source
 		L += isect.Le(wo);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		L += UniformSampleAllLights(scene, p, n,

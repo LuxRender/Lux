@@ -22,7 +22,11 @@
 
 // single.cpp*
 #include "single.h"
-
+// Lux (copy) constructor
+SingleScattering* SingleScattering::clone() const
+ {
+   return new SingleScattering(*this);
+ }
 // SingleScattering Method Definitions
 void SingleScattering::RequestSamples(Sample *sample,
 		const Scene *scene) {
@@ -38,7 +42,7 @@ Spectrum SingleScattering::Transmittance(const Scene *scene,
 	Spectrum tau = scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
 }
-Spectrum SingleScattering::Li(const Scene *scene,
+Spectrum SingleScattering::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;

@@ -41,10 +41,11 @@ class IGIIntegrator : public SurfaceIntegrator {
 public:
 	// IGIIntegrator Public Methods
 	IGIIntegrator(int nl, int ns, float md, float rrt, float is);
-	Spectrum Li(const Scene *scene, const RayDifferential &ray,
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const Scene *);
+    virtual IGIIntegrator* clone() const; // Lux (copy) constructor for multithreading
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:

@@ -31,8 +31,9 @@ public:
 	EmissionIntegrator(float ss) { stepSize = ss; }
 	void RequestSamples(Sample *sample, const Scene *scene);
 	Spectrum Transmittance(const Scene *, const Ray &ray, const Sample *sample, float *alpha) const;
-	Spectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-	
+	Spectrum Li(MemoryArena &arena, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	virtual EmissionIntegrator* clone() const; // Lux (copy) constructor for multithreading
+
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// EmissionIntegrator Private Data

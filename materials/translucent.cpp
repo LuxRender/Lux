@@ -24,35 +24,35 @@
 #include "translucent.h"
 
 // Translucent Method Definitions
-BSDF *Translucent::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Translucent::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
 	Spectrum r = reflect->Evaluate(dgs).Clamp();
 	Spectrum t = transmit->Evaluate(dgs).Clamp();
 	if (r.Black() && t.Black()) return bsdf;
 
 	Spectrum kd = Kd->Evaluate(dgs).Clamp();
 	if (!kd.Black()) {
-		if (!r.Black()) bsdf->Add(BSDF_ALLOC(Lambertian)(r * kd));
-		if (!t.Black()) bsdf->Add(BSDF_ALLOC(BRDFToBTDF)(BSDF_ALLOC(Lambertian)(t * kd)));
+		if (!r.Black()) bsdf->Add(BSDF_ALLOC(arena, Lambertian)(r * kd));
+		if (!t.Black()) bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Lambertian)(t * kd)));
 	}
 	Spectrum ks = Ks->Evaluate(dgs).Clamp();
 	if (!ks.Black()) {
 		float rough = roughness->Evaluate(dgs);
 		if (!r.Black()) {
-			Fresnel *fresnel = BSDF_ALLOC(FresnelDielectric)(1.5f, 1.f);
-			bsdf->Add(BSDF_ALLOC(Microfacet)(r * ks, fresnel,
-				BSDF_ALLOC(Blinn)(1.f / rough)));
+			Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+			bsdf->Add(BSDF_ALLOC(arena, Microfacet)(r * ks, fresnel,
+				BSDF_ALLOC(arena, Blinn)(1.f / rough)));
 		}
 		if (!t.Black()) {
-			Fresnel *fresnel = BSDF_ALLOC(FresnelDielectric)(1.5f, 1.f);
-			bsdf->Add(BSDF_ALLOC(BRDFToBTDF)(BSDF_ALLOC(Microfacet)(t * ks, fresnel,
-				BSDF_ALLOC(Blinn)(1.f / rough))));
+			Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+			bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(t * ks, fresnel,
+				BSDF_ALLOC(arena, Blinn)(1.f / rough))));
 		}
 	}
 	return bsdf;

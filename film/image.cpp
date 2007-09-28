@@ -160,10 +160,12 @@ void ImageFilm::WriteImage() {
 		}
 	}
 	// Write RGBA image
+	printf("\n\nWriting RGBA image to file \"%s\"...\n", filename.c_str());
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart);
+	printf("Done...\n\n");
 	// Release temporary image memory
 	delete[] alpha;
 	delete[] rgb;

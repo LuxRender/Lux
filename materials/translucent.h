@@ -39,7 +39,7 @@ public:
 		transmit = trans;
 		bumpMap = bump;
 	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

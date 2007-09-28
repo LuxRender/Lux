@@ -22,9 +22,13 @@
 
 // whitted.cpp*
 #include "whitted.h"
-
+// Lux (copy) constructor
+WhittedIntegrator* WhittedIntegrator::clone() const
+ {
+   return new WhittedIntegrator(*this);
+ }
 // WhittedIntegrator Method Definitions
-Spectrum WhittedIntegrator::Li(const Scene *scene,
+Spectrum WhittedIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	Intersection isect;
@@ -45,7 +49,7 @@ Spectrum WhittedIntegrator::Li(const Scene *scene,
 		if (alpha) *alpha = 1.;
 		// Compute emitted and reflected light at ray intersection point
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		// Initialize common variables for Whitted integrator
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

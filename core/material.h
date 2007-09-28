@@ -32,7 +32,7 @@
 class COREDLL Material : public ReferenceCounted {
 public:
 	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
+	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const = 0;
 	virtual ~Material();
 	static void Bump(Reference<Texture<float> > d, const DifferentialGeometry &dgGeom,

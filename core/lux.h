@@ -38,6 +38,8 @@
 #endif
 #ifdef WIN32
 #include <float.h>
+#pragma warning(disable : 4244) // conversion from double to float (VS2005) - Radiance
+#pragma warning(disable : 4996) // deprecated fuinctions (VS2005) - Radiance
 #endif
 #include <math.h>
 #include <stdlib.h>
@@ -320,6 +322,7 @@ private:
 	ReferenceCounted(const ReferenceCounted &);
 	ReferenceCounted &operator=(const ReferenceCounted &);
 };
+
 template <class T> class Reference {
 public:
 	// Reference Public Methods
@@ -346,7 +349,7 @@ public:
 	~Reference() {
 		if (ptr && --ptr->nReferences == 0)
 			delete ptr;
-	}
+	} 
 	T *operator->() { return ptr; }
 	const T *operator->() const { return ptr; }
 	operator bool() const { return ptr != NULL; }

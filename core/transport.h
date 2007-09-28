@@ -35,7 +35,8 @@ class COREDLL Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
-	virtual Spectrum Li(const Scene *scene,
+	virtual Spectrum Li(MemoryArena &arena,
+						const Scene *scene,
 					    const RayDifferential &ray,
 					    const Sample *sample,
 					    float *alpha) const = 0;
@@ -44,6 +45,7 @@ public:
 	virtual void RequestSamples(Sample *sample,
 	                            const Scene *scene) {
 	}
+	virtual Integrator* clone() const = 0;   // Lux Virtual (Copy) Constructor for multithreading
 };
 class SurfaceIntegrator : public Integrator {
 };

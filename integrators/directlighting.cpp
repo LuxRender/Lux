@@ -22,7 +22,11 @@
 
 // directlighting.cpp*
 #include "directlighting.h"
-
+// Lux (copy) constructor
+DirectLighting* DirectLighting::clone() const
+ {
+   return new DirectLighting(*this);
+ }
 // DirectLighting Method Definitions
 DirectLighting::~DirectLighting() {
 	delete[] avgY;
@@ -36,7 +40,7 @@ DirectLighting::DirectLighting(LightStrategy st, int md) {
 	avgY = avgYsample = cdf = NULL;
 	overallAvgY = 0.;
 }
-Spectrum DirectLighting::Li(const Scene *scene,
+Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	Intersection isect;
@@ -44,7 +48,7 @@ Spectrum DirectLighting::Li(const Scene *scene,
 	if (scene->Intersect(ray, &isect)) {
 		if (alpha) *alpha = 1.;
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

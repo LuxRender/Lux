@@ -35,10 +35,11 @@ public:
 	// IrradianceCache Public Methods
 	IrradianceCache(int maxspec, int maxind, float maxerr, int nsamples);
 	~IrradianceCache();
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const Scene *);
-	
+	virtual IrradianceCache* clone() const; // Lux (copy) constructor for multithreading
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// IrradianceCache Data

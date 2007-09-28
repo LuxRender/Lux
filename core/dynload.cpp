@@ -889,7 +889,7 @@ COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
         SurfaceIntegrator *ret=ExPhotonIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
-    }
+    } 
     if(name=="igi")
     {
         SurfaceIntegrator *ret=IGIIntegrator::CreateSurfaceIntegrator(paramSet);
@@ -913,7 +913,7 @@ COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
         SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
-    }
+    } 
     /*if(name=="single")
     {
         SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);

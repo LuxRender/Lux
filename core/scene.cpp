@@ -27,63 +27,178 @@
 #include "sampling.h"
 #include "dynload.h"
 #include "volume.h"
+#  if HAVE_PTHREAD_H
+// Use POSIX threading...
+
+#    include <pthread.h>
+
+typedef pthread_t Fl_Thread;
+
+static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
+  return pthread_create((pthread_t*)&t, 0, f, p);
+}
+
+#  elif defined(WIN32) && !defined(__WATCOMC__) // Use Windows threading...
+
+#    include <windows.h>
+#    include <process.h>
+
+typedef unsigned long Fl_Thread;
+
+static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
+  return t = (Fl_Thread)_beginthread((void( __cdecl * )( void * ))f, 0, p);
+}
+
+#  elif defined(__WATCOMC__)
+#    include <process.h>
+
+typedef unsigned long Fl_Thread;
+
+static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
+  return t = (Fl_Thread)_beginthread((void(* )( void * ))f, 32000, p);
+}
+#  endif // !HAVE_PTHREAD_H
+
+#define THR_SIG_RUN 1
+#define THR_SIG_PAUSE 2
+#define THR_SIG_EXIT 3
+
+class Thread_data
+{
+    public:
+    int Sig, n;
+    Integrator* Si;
+	Integrator* Vi;
+	Sample* Spl;
+	Sampler* Splr;
+	Camera* Cam;
+	Scene* Scn;
+	MemoryArena* arena;
+};
+
+Thread_data* thr_dat_ptrs[64];
+Fl_Thread* thr_ptrs[64];
+
+void* Render_Thread( void* p );
+
 // Scene Methods
-void Scene::Render() {
-	// Allocate and initialize _sample_
-	Sample *sample = new Sample(surfaceIntegrator,
-	                            volumeIntegrator,
-	                            this);
-	// Allow integrators to do pre-processing for the scene
-	surfaceIntegrator->Preprocess(this);
-	volumeIntegrator->Preprocess(this);
+void* Render_Thread( void* p )
+{
+    Thread_data* t_d = (Thread_data*) p;
+
+	// unpack thread data
+	int n = t_d->n;
+	printf("THR%i: thread started\n", n);
+
+	SurfaceIntegrator* surfaceIntegrator = (SurfaceIntegrator*) t_d->Si;
+	VolumeIntegrator* volumeIntegrator = (VolumeIntegrator*) t_d->Vi;
+    Sample* sample = t_d->Spl;
+	Sampler* sampler = t_d->Splr;
+	Scene* scene = t_d->Scn;
+	Camera* camera = t_d->Cam;
+	MemoryArena* arena = t_d->arena;
+
 	// Trace rays: The main loop
-	ProgressReporter progress(sampler->TotalSamples(), "Rendering");
+	//ProgressReporter progress(sampler->TotalSamples(), "Rendering");
+	//while (t_d->Sig != THR_SIG_EXIT) // TODO add sleeps
+		//while (t_d->Sig == THR_SIG_RUN && sampler->GetNextSample(sample)) {
 	while (sampler->GetNextSample(sample)) {
-		// Find camera ray for _sample_
-		RayDifferential ray;
-		float rayWeight = camera->GenerateRay(*sample, &ray);
-		// Generate ray differentials for camera ray
-		++(sample->imageX);
-		float wt1 = camera->GenerateRay(*sample, &ray.rx);
-		--(sample->imageX);
-		++(sample->imageY);
-		float wt2 = camera->GenerateRay(*sample, &ray.ry);
-		if (wt1 > 0 && wt2 > 0) ray.hasDifferentials = true;
-		--(sample->imageY);
-		// Evaluate radiance along camera ray
-		float alpha;
-		Spectrum Ls = 0.f;
-		if (rayWeight > 0.f)
-			Ls = rayWeight * Li(ray, sample, &alpha);
-		// Issue warning if unexpected radiance value returned
-		if (Ls.IsNaN()) {
-			Error("Not-a-number radiance value returned "
-		          "for image sample.  Setting to black.");
-			Ls = Spectrum(0.f);
+			// Find camera ray for _sample_
+			RayDifferential ray;
+			float rayWeight = camera->GenerateRay(*sample, &ray);
+			// Generate ray differentials for camera ray
+			++(sample->imageX);
+			float wt1 = camera->GenerateRay(*sample, &ray.rx);
+			--(sample->imageX);
+			++(sample->imageY);
+			float wt2 = camera->GenerateRay(*sample, &ray.ry);
+			if (wt1 > 0 && wt2 > 0) ray.hasDifferentials = true;
+			--(sample->imageY);
+			// Evaluate radiance along camera ray
+			float alpha;
+			Spectrum Ls = 0.f;
+			if (rayWeight > 0.f) {
+				//Ls = rayWeight * scene->Li(ray, sample, &alpha); don't use
+
+				Spectrum Lo = surfaceIntegrator->Li(*arena, scene, ray, sample, &alpha);
+				Spectrum T = volumeIntegrator->Transmittance(scene, ray, sample, &alpha);
+				Spectrum Lv = volumeIntegrator->Li(*arena, scene, ray, sample, &alpha);
+				Ls = rayWeight * ( T * Lo + Lv );
+				//Ls = rayWeight * Lo;
+			} 
+			// Issue warning if unexpected radiance value returned
+			if (Ls.IsNaN()) {
+				Error("Nan radiance value returned.\n");
+				Ls = Spectrum(0.f);
+			}
+			else if (Ls.y() < -1e-5) {
+				Error("NegLum value, %g, returned.\n", Ls.y());
+				Ls = Spectrum(0.f);
+			}
+			else if (isinf(Ls.y())) {
+				Error("InfinLum value returned.\n");
+				Ls = Spectrum(0.f);
+			} 
+			// Add sample contribution to image
+			camera->film->AddSample(*sample, ray, Ls, alpha);
+			// Free BSDF memory from computing image sample value
+	//		BSDF::FreeAll( arena );
+			arena->FreeAll();
+			// Report rendering progress
+			//static StatsCounter cameraRaysTraced("Camera", "Camera Rays Traced");
+			//++cameraRaysTraced;
+			//progress.Update();
 		}
-		else if (Ls.y() < -1e-5) {
-			Error("Negative luminance value, %g, returned "
-		          "for image sample.  Setting to black.", Ls.y());
-			Ls = Spectrum(0.f);
-		}
-		else if (isinf(Ls.y())) {
-			Error("Infinite luminance value returned "
-		          "for image sample.  Setting to black.");
-			Ls = Spectrum(0.f);
-		}
-		// Add sample contribution to image
-		camera->film->AddSample(*sample, ray, Ls, alpha);
-		// Free BSDF memory from computing image sample value
-		BSDF::FreeAll();
-		// Report rendering progress
-		static StatsCounter cameraRaysTraced("Camera", "Camera Rays Traced");
-		++cameraRaysTraced;
-		progress.Update();
+    return 0; // _endthread(); ??? 
+}
+
+void Scene::Render() {
+	// integrator preprocessing
+	printf("CTL: Preprocessing integrators...\n");
+    surfaceIntegrator->Preprocess(this);
+    volumeIntegrator->Preprocess(this);
+
+	// init threads
+	int thr_nr = 1;
+
+	// create thread data structures and launch threads
+	printf("CTL: Initializing %i render threads.\n", thr_nr);
+	for( int i = 0; i < thr_nr; i++ ) {
+		Thread_data* thr_dat = new Thread_data();
+		// Set signal to pause
+		thr_dat->Sig = THR_SIG_PAUSE;
+		// Set data
+		thr_dat->n = i;
+		thr_dat->Si	= surfaceIntegrator->clone();									// SurfaceIntegrator (uc)
+		thr_dat->Vi = volumeIntegrator->clone();									// VolumeIntegrator (uc)
+		thr_dat->Spl = new Sample( (SurfaceIntegrator*) thr_dat->Si, 				// Sample (u)
+			(VolumeIntegrator*) thr_dat->Vi, this );
+		thr_dat->Splr = sampler->clone();											// Sampler (uc)		
+		thr_dat->Splr->setSeed( (u_int) RandomUInt() );															// TODO set unique seed
+		thr_dat->Cam = camera;														// Camera (1)
+		thr_dat->Scn = this;														// Scene (this)
+		thr_dat->arena = new MemoryArena();											// MemoryArena (u)
+
+		Fl_Thread* thr_ptr = new Fl_Thread();
+		fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
+		thr_dat_ptrs[i] = thr_dat;
+		thr_ptrs[i] = thr_ptr;
 	}
-	// Clean up after rendering and store final image
-	delete sample;
-	progress.Done();
+
+	// Start Threads
+	printf("CTL: Signaling threads to start...\n");
+	for( int i = 0; i < thr_nr; i++ )
+		thr_dat_ptrs[i]->Sig = THR_SIG_RUN;
+
+	// ZZZzzz...
+	while(true) { Sleep(1000); }
+
+	// Clean up after rendering and store final image TODO cleanup all thread cloned stuff too ;-)
+	//delete sample;
+	//progress.Done();
 	camera->film->WriteImage();
+
+	return; // everything worked fine! Have a great day :)
 }
 Scene::~Scene() {
 	delete camera;
@@ -118,11 +233,15 @@ const BBox &Scene::WorldBound() const {
 }
 Spectrum Scene::Li(const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
-	Spectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
-	Spectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
-	Spectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
-	return T * Lo + Lv;
+//	Spectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
+//	Spectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
+//	Spectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
+//	return T * Lo + Lv;
+	Spectrum Lo;
+	return Lo;
 }
 Spectrum Scene::Transmittance(const Ray &ray) const {
 	return volumeIntegrator->Transmittance(this, ray, NULL, NULL);
+//	Spectrum Dummy;
+//	return Dummy;
 }

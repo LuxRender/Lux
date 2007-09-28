@@ -24,39 +24,39 @@
 #include "uber.h"
 
 // UberMaterial Method Definitions
-BSDF *UberMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *UberMaterial::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
 
 	Spectrum op = opacity->Evaluate(dgs).Clamp();
 	if (op != Spectrum(1.)) {
-	    BxDF *tr = BSDF_ALLOC(SpecularTransmission)(-op + Spectrum(1.), 1., 1.);
+	    BxDF *tr = BSDF_ALLOC(arena, SpecularTransmission)(-op + Spectrum(1.), 1., 1.);
 	    bsdf->Add(tr);
 	}
 
 	Spectrum kd = op * Kd->Evaluate(dgs).Clamp();
 	if (!kd.Black()) {
-	    BxDF *diff = BSDF_ALLOC(Lambertian)(kd);
+	    BxDF *diff = BSDF_ALLOC(arena, Lambertian)(kd);
 	    bsdf->Add(diff);
 	}
 
 	Spectrum ks = op * Ks->Evaluate(dgs).Clamp();
 	if (!ks.Black()) {
-	    Fresnel *fresnel = BSDF_ALLOC(FresnelDielectric)(1.5f, 1.f);
+	    Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
 	    float rough = roughness->Evaluate(dgs);
-	    BxDF *spec = BSDF_ALLOC(Microfacet)(ks, fresnel, BSDF_ALLOC(Blinn)(1.f / rough));
+	    BxDF *spec = BSDF_ALLOC(arena, Microfacet)(ks, fresnel, BSDF_ALLOC(arena, Blinn)(1.f / rough));
 	    bsdf->Add(spec);
 	}
 
 	Spectrum kr = op * Kr->Evaluate(dgs).Clamp();
 	if (!kr.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(FresnelDielectric)(1.5f, 1.f);
-		bsdf->Add(BSDF_ALLOC(SpecularReflection)(kr, fresnel));
+		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(kr, fresnel));
 	}
 
 	return bsdf;

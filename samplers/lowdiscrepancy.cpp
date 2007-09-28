@@ -22,13 +22,21 @@
  
 // lowdiscrepancy.cpp*
 #include "lowdiscrepancy.h"
-
+// Lux (copy) constructor
+LDSampler* LDSampler::clone() const
+ {
+   return new LDSampler(*this);
+ }
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
 		int ystart, int yend, int ps)
 	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
+
+	fs_pos = 0;
+	fs_scramble = RandomUInt();
+
 	if (!IsPowerOf2(ps)) {
 		Warning("Pixel samples being"
 		        " rounded up to power of 2");
@@ -43,6 +51,12 @@ LDSampler::LDSampler(int xstart, int xend,
 	timeSamples = imageSamples + 4*pixelSamples;
 	n1D = n2D = 0;
 }
+
+void LDSampler::setSeed( u_int s )							// TODO fix all seeds in all samplers
+{
+    fs_scramble = s;
+}
+
 bool LDSampler::GetNextSample(Sample *sample) {
 	if (!oneDSamples) {
 		// Allocate space for pixel's low-discrepancy sample tables
@@ -58,13 +72,23 @@ bool LDSampler::GetNextSample(Sample *sample) {
 		                               pixelSamples];
 	}
 	if (samplePos == pixelSamples) {
-		// Advance to next pixel for low-discrepancy sampling
-		if (++xPos == xPixelEnd) {
-			xPos = xPixelStart;
-			++yPos;
+		// sample random pixel (radiance) TODO finish
+		fs_pos++;
+		if( fs_pos == 4294967295 ) { // uint -1
+			printf("\nlds film sampler reset...\n");
+			fs_pos = 0;
 		}
-		if (yPos == yPixelEnd)
-			return false;
+
+		xPos = xPixelStart + Ceil2Int( VanDerCorput( fs_pos, fs_scramble ) * xPixelEnd );
+		yPos = yPixelStart + Ceil2Int( Sobol2( fs_pos, fs_scramble ) * yPixelEnd );
+
+		// Advance to next pixel for low-discrepancy sampling
+		//if (++xPos == xPixelEnd) {
+		//	xPos = xPixelStart;
+		//	++yPos;
+		//}
+		//if (yPos == yPixelEnd)
+		//	return false;
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
 		LDShuffleScrambled2D(1, pixelSamples, imageSamples);

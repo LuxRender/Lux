@@ -41,12 +41,14 @@ public:
 		delete[] oneDSamples;
 		delete[] twoDSamples;
 	}
+	void setSeed( u_int s );
 	int RoundSize(int size) const {
 		int root = Ceil2Int(sqrtf((float)size - .5f));
 		return root*root;
 	}
 	bool GetNextSample(Sample *sample);
-	
+	virtual BestCandidateSampler* clone() const; // Lux (copy) constructor for multithreading
+
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
 	// BestCandidateSampler Private Data

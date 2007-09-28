@@ -22,7 +22,11 @@
 
 // emission.cpp*
 #include "emission.h"
-
+// Lux (copy) constructor
+EmissionIntegrator* EmissionIntegrator::clone() const
+ {
+   return new EmissionIntegrator(*this);
+ }
 // EmissionIntegrator Method Definitions
 void EmissionIntegrator::RequestSamples(Sample *sample,
 		const Scene *scene) {
@@ -42,7 +46,7 @@ Spectrum
 		scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
 }
-Spectrum EmissionIntegrator::Li(const Scene *scene,
+Spectrum EmissionIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;

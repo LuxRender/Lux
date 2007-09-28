@@ -24,7 +24,7 @@
 #include "clay.h"
 
 // Clay Method Definitions
-BSDF *Clay::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Clay::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare clay coefficients
 	static float diffuse[3] = {   0.383626f,   0.260749f,   0.274207f };
 	static float xy0[3] =     {  -1.089701f,  -1.102701f,  -1.107603f };
@@ -45,8 +45,8 @@ BSDF *Clay::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeomet
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	bsdf->Add(BSDF_ALLOC(Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	bsdf->Add(BSDF_ALLOC(arena, Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }

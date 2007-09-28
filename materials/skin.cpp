@@ -24,7 +24,7 @@
 #include "skin.h"
 
 // Skin Method Definitions
-BSDF *Skin::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Skin::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare skin coefficients
 	static float diffuse[3] = {  0.428425f,  0.301341f,  0.331054f};
 	static float xy0[3] =     { -1.131747f, -1.016939f, -0.966018f};
@@ -45,8 +45,8 @@ BSDF *Skin::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeomet
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
-	bsdf->Add(BSDF_ALLOC(Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	bsdf->Add(BSDF_ALLOC(arena, Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }

@@ -39,7 +39,9 @@ public:
 			(xPixelEnd - xPixelStart) *
 			(yPixelEnd - yPixelStart);
 	}
+	virtual void setSeed( u_int s ) = 0;
 	virtual int RoundSize(int size) const = 0;
+	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	int samplesPerPixel;

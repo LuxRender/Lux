@@ -24,17 +24,19 @@
 #include "lux.h"
 #include "transport.h"
 #include "scene.h"
+
 // WhittedIntegrator Declarations
 class WhittedIntegrator : public SurfaceIntegrator {
 public:
 	// WhittedIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray,
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
 			const Sample *sample, float *alpha) const;
 	WhittedIntegrator(int md) {
 		maxDepth = md;
 		rayDepth = 0;
 	}
-	
+	virtual WhittedIntegrator* clone() const; // Lux (copy) constructor for multithreading
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// WhittedIntegrator Private Data

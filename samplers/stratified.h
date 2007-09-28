@@ -37,8 +37,10 @@ public:
 	~StratifiedSampler() {
 		FreeAligned(imageSamples);
 	}
+	void setSeed( u_int s );
 	bool GetNextSample(Sample *sample);
-	
+	virtual StratifiedSampler* clone() const; // Lux (copy) constructor for multithreading
+
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
 	// StratifiedSampler Private Data

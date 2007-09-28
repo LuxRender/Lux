@@ -40,11 +40,13 @@ public:
 		delete[] oneDSamples;
 		delete[] twoDSamples;
 	}
+	void setSeed( u_int s );
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
 	}
 	bool GetNextSample(Sample *sample);
-	
+	virtual LDSampler* clone() const; // Lux (copy) constructor for multithreading
+
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
 	// LDSampler Private Data
@@ -53,4 +55,5 @@ private:
 	float *imageSamples, *lensSamples, *timeSamples;
 	float **oneDSamples, **twoDSamples;
 	int n1D, n2D;
+	u_int fs_pos, fs_scramble;
 };
