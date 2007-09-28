@@ -27,6 +27,11 @@
 #include "geometry.h"
 #include "texture.h"
 #include "color.h"
+
+#ifdef LUX_USE_SSE
+#include <xmmintrin.h>
+#endif
+
 #include <map>
 using std::map;
 #if (_MSC_VER >= 1400) // NOBOOK
@@ -137,17 +142,30 @@ template <class T> struct ParamSetItem {
 	}
 	ParamSetItem(const string &name, const T *val, int nItems = 1);
 	~ParamSetItem() {
-		delete[] data;
+//#ifndef LUX_USE_SSE
+	delete[] data;
+/*#else
+	_mm_free(data);
+#endif*/
 	}
 	// ParamSetItem Data
 	string name;
 	int nItems;
 	T *data;
 	bool lookedUp;
+
+/*
+#ifdef LUX_USE_SSE
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+#endif*/
+	
 };
 // ParamSetItem Methods
 template <class T>
-ParamSetItem<T>::ParamSetItem(const string &n,
+inline ParamSetItem<T>::ParamSetItem(const string &n,
 							  const T *v,
 							  int ni) {
 	name = n;
@@ -157,6 +175,26 @@ ParamSetItem<T>::ParamSetItem(const string &n,
 		data[i] = v[i];
 	lookedUp = false;
 }
+
+#ifdef LUX_USE_SSE
+template<>
+inline ParamSetItem<Point>::ParamSetItem(const string &n,
+							  const Point *v,
+							  int ni) {
+	name = n;
+	nItems = ni;
+	data = new Point[nItems];
+	for (int i = 0; i < nItems; ++i)
+	{
+		data[i].x = v->x;
+		data[i].y = v->y;
+		data[i].z = v->z;
+		//std::cout<<v->x <<','<<v->y<<','<<v->z<<std::endl;
+	}
+	lookedUp = false;
+}
+#endif
+
 // TextureParams Declarations
 class COREDLL TextureParams {
 public:

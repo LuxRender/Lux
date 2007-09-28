@@ -39,7 +39,8 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #All dependencies OK !
 
 #Compiler flags
-ADD_DEFINITIONS(-O3 -Wall) #-g -DHAVE_CONFIG_H -msse
+#ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 
 # Create custom command for flex/lex (note the outputs)
 ADD_CUSTOM_COMMAND(

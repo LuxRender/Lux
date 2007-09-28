@@ -26,8 +26,6 @@
 #include "lux.h"
 #include <float.h>
 
-//#define LUX_USE_SSE 1
-
 #ifdef LUX_USE_SSE
 #include <xmmintrin.h>
 #endif
@@ -139,24 +137,29 @@ public:
 	}
 	Vector operator/(float f) const {
 		Assert(f!=0);
-		float inv = 1.f / f;
-		return Vector(x * inv, y * inv, z * inv);
+		/*float inv = 1.f / f;
+		return Vector(x * inv, y * inv, z * inv);*/
 		
 		//test the following
-		/*
-		BOOST_ASSERT(f!=0);
+		
+		//BOOST_ASSERT(f!=0);
       	return Vector(_mm_div_ps(vec,_mm_set_ps1(f)));
-		  */
+		  
 	}
 	
 	Vector &operator/=(float f) {
 		Assert(f!=0);
+		/*
 		float inv = 1.f / f;
 		x *= inv; y *= inv; z *= inv;
-		return *this;
+		return *this;*/
+		//BOOST_ASSERT(f!=0);
+      	vec=_mm_div_ps(vec,_mm_set_ps1(f));
+      	return *this;
 	}
 	Vector operator-() const {
-		return Vector(-x, -y, -z);
+		//return Vector(-x, -y, -z);
+		return Vector(_mm_sub_ps(_mm_set_ps1(0.f),vec));
 	}
 	float operator[](int i) const {
 		Assert(i >= 0 && i <= 2);
@@ -186,6 +189,7 @@ public:
 };
 #endif
 
+#ifndef LUX_USE_SSE
 class COREDLL Point {
 public:
 	// Point Methods
@@ -240,6 +244,83 @@ public:
 	// Point Public Data
 	float x,y,z;
 };
+#else
+class COREDLL Point {
+public:
+	// Point Methods
+	Point(float _x=0, float _y=0, float _z=0)
+		: x(_x), y(_y), z(_z) {
+	}
+	
+	Point(__m128 _vec)
+        : vec(_vec)
+    {}
+	
+	Point operator+(const Vector &v) const {
+		return Point(_mm_add_ps(vec,v.vec));
+	}
+	
+	Point &operator+=(const Vector &v) {
+		vec=_mm_add_ps(vec,v.vec);//vec+=v.vec;
+      	return *this;
+	}
+	Vector operator-(const Point &p) const {
+		return Vector(_mm_sub_ps(vec,p.vec));
+	}
+	
+	Point operator-(const Vector &v) const {
+		return Point(_mm_sub_ps(vec,v.vec));
+	}
+	
+	Point &operator-=(const Vector &v) {
+		vec=_mm_sub_ps(vec,v.vec);//vec-=v.vec;
+      return *this;
+	}
+	Point &operator+=(const Point &p) {
+		vec=_mm_add_ps(vec,p.vec);//vec+=p.vec;
+      return *this;
+	}
+	Point operator+(const Point &p) const {
+		return Point(_mm_add_ps(vec,p.vec));
+	}
+	Point operator* (float f) const {
+		return Point(_mm_mul_ps(vec,_mm_set_ps1(f)));
+	}
+	Point &operator*=(float f) {
+		vec=_mm_mul_ps(vec,_mm_set_ps1(f));//vec*=_mm_set_ps1(f);
+      return *this;
+	}
+	Point operator/ (float f) const {
+		//float inv = 1.f/f;
+		//return Point(inv*x, inv*y, inv*z);
+		//BOOST_ASSERT(f!=0);
+      return Point(_mm_div_ps(vec,_mm_set_ps1(f)));
+	}
+	Point &operator/=(float f) {
+		/*float inv = 1.f/f;
+		x *= inv; y *= inv; z *= inv;
+		return *this;*/
+		vec=_mm_div_ps(vec,_mm_set_ps1(f));//vec/=_mm_set_ps1(f);
+      	return *this;
+	}
+	float operator[](int i) const { return (&x)[i]; }
+	float &operator[](int i) { return (&x)[i]; }
+	// Point Public Data
+	union {
+      __m128 vec; //!< Vector representation of the coordinates
+      struct
+      {
+        float   x,y,z,w; //!< Coordinates
+      };
+    };
+    
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+};
+#endif
+
 class COREDLL Normal {
 public:
 	// Normal Methods
@@ -305,6 +386,17 @@ public:
 	Vector d;
 	mutable float mint, maxt;
 	float time;
+
+#ifdef LUX_USE_SSE
+	float pad;
+#endif
+	
+#ifdef LUX_USE_SSE
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+#endif
 };
 class COREDLL RayDifferential : public Ray {
 public:
@@ -318,8 +410,16 @@ public:
 		hasDifferentials = false;
 	}
 	// RayDifferential Public Data
-	bool hasDifferentials;
+	
 	Ray rx, ry;
+	bool hasDifferentials;
+	
+#ifdef LUX_USE_SSE
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+#endif	
 };
 class COREDLL BBox {
 public:
@@ -375,6 +475,14 @@ public:
 					float *hitt1 = NULL) const;
 	// BBox Public Data
 	Point pMin, pMax;
+	
+#ifdef LUX_USE_SSE
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+#endif
+	
 };
 // Geometry Inline Functions
 inline Vector::Vector(const Point &p)
@@ -387,28 +495,28 @@ inline ostream &operator<<(ostream &os, const Vector &v) {
 inline Vector operator*(float f, const Vector &v) {
 	return v*f;
 }
-//#ifndef LUX_USE_SSE
+#ifndef LUX_USE_SSE
 inline float Dot(const Vector &v1, const Vector &v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
-/*#else
+#else
 inline float Dot(const Vector &v1, const Vector &v2) {
 	__m128 r = _mm_mul_ps(v1.vec,v2.vec);
     __m128 t = _mm_add_ss(_mm_shuffle_ps(r,r,1), _mm_add_ps(_mm_movehl_ps(r,r),r));
     return *(float *)&t;
 }
-#endif*/
+#endif
 inline float AbsDot(const Vector &v1, const Vector &v2) {
 	return fabsf(Dot(v1, v2));
 }
 
-//#ifndef LUX_USE_SSE
+#ifndef LUX_USE_SSE
 inline Vector Cross(const Vector &v1, const Vector &v2) {
 	return Vector((v1.y * v2.z) - (v1.z * v2.y),
                   (v1.z * v2.x) - (v1.x * v2.z),
                   (v1.x * v2.y) - (v1.y * v2.x));
 }
-/*#else
+#else
 inline Vector Cross(const Vector &v1, const Vector &v2) {
 	__m128 l1, l2, m1, m2;
       l1 = _mm_shuffle_ps(v1.vec,v1.vec, _MM_SHUFFLE(3,1,0,2));
@@ -419,7 +527,7 @@ inline Vector Cross(const Vector &v1, const Vector &v2) {
       m1 = _mm_mul_ps(l1,l2);
       return _mm_sub_ps(m1,m2);
 }
-#endif*/
+#endif
 inline Vector Cross(const Vector &v1, const Normal &v2) {
 	return Vector((v1.y * v2.z) - (v1.z * v2.y),
                   (v1.z * v2.x) - (v1.x * v2.z),
@@ -430,9 +538,15 @@ inline Vector Cross(const Normal &v1, const Vector &v2) {
                   (v1.z * v2.x) - (v1.x * v2.z),
                   (v1.x * v2.y) - (v1.y * v2.x));
 }
+#ifndef LUX_USE_SSE
 inline Vector Normalize(const Vector &v) {
 	return v / v.Length();
 }
+#else
+inline Vector Normalize(const Vector &v) {
+	return Vector(_mm_div_ps(v.vec,_mm_set_ps1(v.Length())));
+}
+#endif
 inline void CoordinateSystem(const Vector &v1, Vector *v2, Vector *v3) {
 	if (fabsf(v1.x) > fabsf(v1.y)) {
 		float invLen = 1.f / sqrtf(v1.x*v1.x + v1.z*v1.z);

@@ -44,14 +44,24 @@ public:
 	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 		const Transform &WorldToObject) const = 0;
 };
-struct COREDLL Intersection {
+class COREDLL Intersection {
+	public:
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
 	BSDF *GetBSDF(MemoryArena &arena, const RayDifferential &ray) const;
 	Spectrum Le(const Vector &wo) const;
+	
+#ifdef LUX_USE_SSE
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+#endif
+	
 	DifferentialGeometry dg;
-	const Primitive *primitive;
 	Transform WorldToObject;
+	const Primitive *primitive;
+	
 };
 class COREDLL GeometricPrimitive : public Primitive {
 public:

@@ -28,7 +28,9 @@
 #include "transform.h"
 #include "paramset.h"
 // DifferentialGeometry Declarations
-struct COREDLL DifferentialGeometry {
+class COREDLL DifferentialGeometry {
+	public:
+	
 	DifferentialGeometry() { u = v = 0.; shape = NULL; }
 	// DifferentialGeometry Public Methods
 	DifferentialGeometry(const Point &P, const Vector &DPDU,
@@ -39,12 +41,19 @@ struct COREDLL DifferentialGeometry {
 	// DifferentialGeometry Public Data
 	Point p;
 	Normal nn;
-	float u, v;
-	const Shape *shape;
 	Vector dpdu, dpdv;
 	Normal dndu, dndv;
 	mutable Vector dpdx, dpdy;
+	float u, v;
+	const Shape *shape;
 	mutable float dudx, dvdx, dudy, dvdy;
+	
+	#ifdef LUX_USE_SSE
+void* operator new(size_t t) { return _mm_malloc(t,16); }
+void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+void* operator new[](size_t t) { return _mm_malloc(t,16); }
+void operator delete[] (void* ptr) { _mm_free(ptr); }
+#endif
 };
 // Shape Declarations
 class COREDLL Shape : public ReferenceCounted {

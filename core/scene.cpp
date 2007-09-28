@@ -191,7 +191,7 @@ void Scene::Render() {
 		thr_dat_ptrs[i]->Sig = THR_SIG_RUN;
 
 	// ZZZzzz...
-	while(true) { Sleep(1000); }
+	while(true) { sleep(1000); }
 
 	// Clean up after rendering and store final image TODO cleanup all thread cloned stuff too ;-)
 	//delete sample;

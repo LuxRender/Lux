@@ -98,6 +98,8 @@ BBox Triangle::WorldBound() const {
 }
 bool Triangle::Intersect(const Ray &ray, float *tHit,
 		DifferentialGeometry *dg) const {
+			
+	Vector e1,e2,s1;
 	// Initialize triangle intersection statistics
 	static
 	StatsPercentage triangleHits("Geometry",
@@ -109,9 +111,9 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	const Point &p1 = mesh->p[v[0]];
 	const Point &p2 = mesh->p[v[1]];
 	const Point &p3 = mesh->p[v[2]];
-	Vector e1 = p2 - p1;
-	Vector e2 = p3 - p1;
-	Vector s1 = Cross(ray.d, e2);
+	e1 = p2 - p1;
+	e2 = p3 - p1;
+	s1 = Cross(ray.d, e2);
 	float divisor = Dot(s1, e1);
 	if (divisor == 0.)
 		return false;
