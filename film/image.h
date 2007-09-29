@@ -27,6 +27,8 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
+#include <boost/timer.hpp>
+
 // ImageFilm Declarations
 class ImageFilm : public Film {
 public:
@@ -34,7 +36,7 @@ public:
 	ImageFilm(int xres, int yres,
 	                     Filter *filt, const float crop[4],
 		             const string &filename, bool premult,
-		             int wf);
+		             int wf, int wfs);
 	~ImageFilm() {
 		delete pixels;
 		delete filter;
@@ -50,7 +52,7 @@ public:
 private:
 	// ImageFilm Private Data
 	Filter *filter;
-	int writeFrequency, sampleCount;
+	int writeFrequency, writeFrequencySeconds, sampleCount;
 	string filename;
 	bool premultiplyAlpha;
 	float cropWindow[4];
@@ -65,5 +67,6 @@ private:
 	};
 	BlockedArray<Pixel> *pixels;
 	float *filterTable;
+	boost::timer Timer;
 };
 

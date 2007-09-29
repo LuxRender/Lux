@@ -26,13 +26,14 @@
 // ImageFilm Method Definitions
 ImageFilm::ImageFilm(int xres, int yres,
                      Filter *filt, const float crop[4],
-		             const string &fn, bool premult, int wf)
+		             const string &fn, bool premult, int wf, int wfs)
 	: Film(xres, yres) {
 	filter = filt;
 	memcpy(cropWindow, crop, 4 * sizeof(float));
 	filename = fn;
 	premultiplyAlpha = premult;
 	writeFrequency = sampleCount = wf;
+	writeFrequencySeconds = wfs;
 	// Compute film image extent
 	xPixelStart = Ceil2Int(xResolution * cropWindow[0]);
 	xPixelCount =
@@ -97,10 +98,20 @@ void ImageFilm::AddSample(const Sample &sample,
 			pixel.alpha += alpha * filterWt;
 			pixel.weightSum += filterWt;
 		}
+
 	// Possibly write out in-progress image
-	if (--sampleCount == 0) {
-		WriteImage();
-		sampleCount = writeFrequency;
+	if (writeFrequency == -1) {
+		// seconds elapsed
+		if( Floor2Int(Timer.elapsed()) > writeFrequencySeconds ) {
+			Timer.restart();
+			WriteImage();
+		}
+	} else {
+		// samplecount
+		if (--sampleCount == 0) {
+			WriteImage();
+			sampleCount = writeFrequency;
+		}
 	}
 }
 void ImageFilm::GetSampleExtent(int *xstart,
@@ -160,7 +171,7 @@ void ImageFilm::WriteImage() {
 		}
 	}
 	// Write RGBA image
-	printf("\n\nWriting RGBA image to file \"%s\"...\n", filename.c_str());
+	printf("\n\nWriting OpenEXR(RGBA) image to file \"%s\"...\n", filename.c_str());
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
@@ -187,7 +198,7 @@ Film* ImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[3] = Clamp(max(cr[2], cr[3]), 0., 1.);
 	}
 	int writeFrequency = params.FindOneInt("writefrequency", -1);
-
+    int writeFrequencySeconds = params.FindOneInt("writefrequencyseconds", 20);
 	return new ImageFilm(xres, yres, filter, crop,
-		filename, premultiplyAlpha, writeFrequency);
+		filename, premultiplyAlpha, writeFrequency, writeFrequencySeconds);
 }
