@@ -88,7 +88,7 @@ void* Render_Thread( void* p )
 
 	// unpack thread data
 	int n = t_d->n;
-	printf("THR%i: thread started\n", n);
+	printf("THR%i: thread started\n", n+1);
 
 	SurfaceIntegrator* surfaceIntegrator = (SurfaceIntegrator*) t_d->Si;
 	VolumeIntegrator* volumeIntegrator = (VolumeIntegrator*) t_d->Vi;
@@ -119,7 +119,6 @@ void* Render_Thread( void* p )
 			Spectrum Ls = 0.f;
 			if (rayWeight > 0.f) {
 				//Ls = rayWeight * scene->Li(ray, sample, &alpha); don't use
-
 				Spectrum Lo = surfaceIntegrator->Li(*arena, scene, ray, sample, &alpha);
 				Spectrum T = volumeIntegrator->Transmittance(scene, ray, sample, &alpha);
 				Spectrum Lv = volumeIntegrator->Li(*arena, scene, ray, sample, &alpha);
@@ -128,22 +127,23 @@ void* Render_Thread( void* p )
 			} 
 			// Issue warning if unexpected radiance value returned
 			if (Ls.IsNaN()) {
-				Error("Nan radiance value returned.\n");
+				Error("THR%i: Nan radiance value returned.\n", n+1);
 				Ls = Spectrum(0.f);
 			}
 			else if (Ls.y() < -1e-5) {
-				Error("NegLum value, %g, returned.\n", Ls.y());
+				Error("THR%i: NegLum value, %g, returned.\n", n+1, Ls.y());
 				Ls = Spectrum(0.f);
 			}
 			else if (isinf(Ls.y())) {
-				Error("InfinLum value returned.\n");
+				Error("THR%i: InfinLum value returned.\n", n+1);
 				Ls = Spectrum(0.f);
 			} 
 			// Add sample contribution to image
 			camera->film->AddSample(*sample, ray, Ls, alpha);
+
 			// Free BSDF memory from computing image sample value
-	//		BSDF::FreeAll( arena );
 			arena->FreeAll();
+
 			// Report rendering progress
 			//static StatsCounter cameraRaysTraced("Camera", "Camera Rays Traced");
 			//++cameraRaysTraced;
@@ -159,7 +159,13 @@ void Scene::Render() {
     volumeIntegrator->Preprocess(this);
 
 	// init threads
-	int thr_nr = 1;
+	int thr_nr = 4;
+
+	u_int seeds[4];
+	seeds[0] = 536870912;
+	seeds[1] = 1073741824;
+	seeds[2] = 1610612736;
+	seeds[3] = 2147483648;
 
 	// create thread data structures and launch threads
 	printf("CTL: Initializing %i render threads.\n", thr_nr);
@@ -174,7 +180,7 @@ void Scene::Render() {
 		thr_dat->Spl = new Sample( (SurfaceIntegrator*) thr_dat->Si, 				// Sample (u)
 			(VolumeIntegrator*) thr_dat->Vi, this );
 		thr_dat->Splr = sampler->clone();											// Sampler (uc)		
-		thr_dat->Splr->setSeed( (u_int) RandomUInt() );															// TODO set unique seed
+		thr_dat->Splr->setSeed( seeds[i] );															// TODO set unique seed
 		thr_dat->Cam = camera;														// Camera (1)
 		thr_dat->Scn = this;														// Scene (this)
 		thr_dat->arena = new MemoryArena();											// MemoryArena (u)

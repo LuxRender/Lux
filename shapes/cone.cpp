@@ -169,6 +169,7 @@ float Cone::Area() const {
 		sqrtf((height*height)+
 		      (radius*radius))/(2.0f*radius);
 }
+
 Shape* Cone::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	float radius = params.FindOneFloat( "radius", 1 );

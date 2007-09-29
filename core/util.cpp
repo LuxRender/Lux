@@ -117,13 +117,14 @@ Matrix4x4::Matrix4x4(float t00, float t01, float t02, float t03,
 	m[2][0] = t20; m[2][1] = t21; m[2][2] = t22; m[2][3] = t23;
 	m[3][0] = t30; m[3][1] = t31; m[3][2] = t32; m[3][3] = t33;
 }
-Reference<Matrix4x4> Matrix4x4::Transpose() const {
-   return new Matrix4x4(m[0][0], m[1][0], m[2][0], m[3][0],
+Matrix4x4Ptr Matrix4x4::Transpose() const {
+   Matrix4x4Ptr o (new Matrix4x4(m[0][0], m[1][0], m[2][0], m[3][0],
 	                    m[0][1], m[1][1], m[2][1], m[3][1],
 	                    m[0][2], m[1][2], m[2][2], m[3][2],
-	                    m[0][3], m[1][3], m[2][3], m[3][3]);
+	                    m[0][3], m[1][3], m[2][3], m[3][3]));
+   return o;
 }
-Reference<Matrix4x4> Matrix4x4::Inverse() const {
+Matrix4x4Ptr Matrix4x4::Inverse() const {
 	int indxc[4], indxr[4];
 	int ipiv[4] = { 0, 0, 0, 0 };
 	float minv[4][4];
@@ -179,7 +180,8 @@ Reference<Matrix4x4> Matrix4x4::Inverse() const {
 				swap(minv[k][indxr[j]], minv[k][indxc[j]]);
 		}
 	}
-	return new Matrix4x4(minv);
+	Matrix4x4Ptr o (new Matrix4x4(minv));
+	return o;
 }
 // Statistics Definitions
 struct COREDLL StatTracker {

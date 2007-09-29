@@ -24,21 +24,22 @@
 #define LUX_DYNLOAD_H
 // dynload.h*
 #include "lux.h"
+#include "texture.h"
 // Runtime Loading Declarations
 COREDLL void UpdatePluginPath(const string &newpath);
-COREDLL Reference<Shape> MakeShape(const string &name,
+COREDLL ShapePtr MakeShape(const string &name,
 	const Transform &object2world, bool reverseOrientation, const ParamSet &paramSet);
-COREDLL Reference<Material> MakeMaterial(const string &name,
+COREDLL MaterialPtr MakeMaterial(const string &name,
 	const Transform &mtl2world, const TextureParams &mp);
-COREDLL Reference<Texture<float> > MakeFloatTexture(const string &name,
+COREDLL Texture<float>::TexturePtr MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
-COREDLL Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+COREDLL Texture<Spectrum>::TexturePtr MakeSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
 COREDLL Light *MakeLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
 COREDLL AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world,
-	const ParamSet &paramSet, const Reference<Shape> &shape);
+	const ParamSet &paramSet, const ShapePtr &shape);
 COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
 COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
@@ -46,7 +47,7 @@ COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 		const ParamSet &paramSet);
 COREDLL Primitive *MakeAccelerator(const string &name,
-		const vector<Reference<Primitive> > &prims,
+		const vector<Primitive* > &prims,
 		const ParamSet &paramSet);
 COREDLL Camera *MakeCamera(const string &name,
 	const ParamSet &paramSet, const Transform &world2cam, Film *film);

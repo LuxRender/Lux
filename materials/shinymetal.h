@@ -27,8 +27,8 @@
 class ShinyMetal : public Material {
 public:
 	// ShinyMetal Public Methods
-	ShinyMetal(Reference<Texture<Spectrum> > ks, Reference<Texture<float> > rough,
-			Reference<Texture<Spectrum> > kr, Reference<Texture<float> > bump) {
+	ShinyMetal(Texture<Spectrum>::TexturePtr ks, Texture<float>::TexturePtr rough,
+			Texture<Spectrum>::TexturePtr kr, Texture<float>::TexturePtr bump) {
 		Ks = ks;
 		roughness = rough;
 		Kr = kr;
@@ -39,7 +39,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// ShinyMetal Private Data
-	Reference<Texture<Spectrum> > Ks, Kr;
-	Reference<Texture<float> > roughness;
-	Reference<Texture<float> > bumpMap;
+	Texture<Spectrum>::TexturePtr Ks, Kr;
+	Texture<float>::TexturePtr roughness;
+	Texture<float>::TexturePtr bumpMap;
 };

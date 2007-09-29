@@ -56,7 +56,7 @@ void operator delete[] (void* ptr) { _mm_free(ptr); }
 #endif
 };
 // Shape Declarations
-class COREDLL Shape : public ReferenceCounted {
+class COREDLL Shape : public ReferenceCounted<Shape> {
 public:
 	// Shape Interface
 	Shape(const Transform &o2w, bool ro);
@@ -67,7 +67,7 @@ public:
 	}
 	virtual bool CanIntersect() const { return true; }
 	virtual void
-		Refine(vector<Reference<Shape> > &refined) const {
+		Refine(vector<ShapePtr > &refined) const {
 		Severe("Unimplemented Shape::Refine() method called");
 	}
 	virtual bool Intersect(const Ray &ray, float *tHit,
@@ -127,7 +127,7 @@ public:
 			if (ls < areaCDF[sn]) break;
 		return shapes[sn]->Sample(u1, u2, Ns);
 	}
-	ShapeSet(const vector<Reference<Shape> > &s,
+	ShapeSet(const vector<ShapePtr > &s,
 		const Transform &o2w, bool ro)
 		: Shape(o2w, ro) {
 		shapes = s;
@@ -162,7 +162,7 @@ public:
 			if (shapes[i]->Intersect(ray, t_hitp, dg)) anyHit = true;
 		return anyHit;
 	}
-	void Refine(vector<Reference<Shape> > &refined) const {
+	void Refine(vector<ShapePtr > &refined) const {
 		for (u_int i = 0; i < shapes.size(); ++i) {
 			if (shapes[i]->CanIntersect())
 				refined.push_back(shapes[i]);
@@ -175,6 +175,6 @@ private:
 	// ShapeSet Private Data
 	float area;
 	vector<float> areaCDF;
-	vector<Reference<Shape> > shapes;
+	vector<ShapePtr > shapes;
 };
 #endif // LUX_SHAPE_H

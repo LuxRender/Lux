@@ -40,7 +40,7 @@ BSDF *Mirror::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, co
 }
 Material* Mirror::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	Texture<Spectrum>::TexturePtr Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
+	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Mirror(Kr, bumpMap);
 }

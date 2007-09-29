@@ -27,6 +27,7 @@
 #include "paramset.h"
 #include "shape.h"
 #include "material.h"
+#include "texture.h"
 /*
 #ifndef WIN32
 #ifndef __APPLE__
@@ -283,7 +284,7 @@ class AreaLightPlugin : public Plugin
 {
     typedef AreaLight *(*CreateAreaLightFunc)(
         const Transform &light2world, const ParamSet &params,
-        const Reference<Shape> &shape);
+        const ShapePtr &shape);
 public:
     AreaLightPlugin( const string &name ): Plugin( name )
     {
@@ -316,7 +317,7 @@ public:
 };
 class AcceleratorPlugin : public Plugin
 {
-    typedef Primitive *(*CreateAcceleratorFunc)(const vector<Reference<Primitive> > &prims, const ParamSet &params);
+    typedef Primitive *(*CreateAcceleratorFunc)(const vector<Primitive* > &prims, const ParamSet &params);
 public:
     AcceleratorPlugin( const string &name ): Plugin( name )
     {
@@ -394,7 +395,7 @@ COREDLL void UpdatePluginPath(const string &newpath)
     }
     PluginSearchPath = ret;
 }*/
-COREDLL Reference<Shape> MakeShape(const string &name,
+COREDLL ShapePtr MakeShape(const string &name,
                                    const Transform &object2world,
                                    bool reverseOrientation,
                                    const ParamSet &paramSet)
@@ -410,27 +411,28 @@ COREDLL Reference<Shape> MakeShape(const string &name,
     					  paramSet);*/
 
     if(name=="cone")
-        return Cone::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Cone::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="cylinder")
-        return Cylinder::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Cylinder::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="disk")
-        return Disk::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Disk::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="heightfield")
-        return Heightfield::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Heightfield::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="hyperboloid")
-        return Hyperboloid::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Hyperboloid::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="loopsubdiv")
-        return LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="nurbs")
-        return NURBS::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(NURBS::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="paraboloid")
-        return Paraboloid::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Paraboloid::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="sphere")
-        return Sphere::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="trianglemesh")
-        return TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet);
+        return ShapePtr(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     Error("Static loading of shape '%s' failed.",name.c_str());
-    return NULL;
+    ShapePtr o;
+	return o;
 }
 /*
 static string SearchPath(const string &searchpath,
@@ -457,7 +459,7 @@ static string SearchPath(const string &searchpath,
     }
     return "";
 }*/
-COREDLL Reference<Material> MakeMaterial(const string &name,
+COREDLL MaterialPtr MakeMaterial(const string &name,
         const Transform &mtl2world,
         const TextureParams &mp)
 {
@@ -465,275 +467,278 @@ COREDLL Reference<Material> MakeMaterial(const string &name,
                              PluginSearchPath);
     if (plugin)
     {
-        Reference<Material> ret =
+        MaterialPtr ret =
             plugin->CreateMaterial(mtl2world, mp);
         mp.ReportUnused();
         return ret;
     }*/
     if(name=="bluepaint")
     {
-    	Reference<Material> ret = BluePaint::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(BluePaint::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="brushedmetal")
     {
-    	Reference<Material> ret = BrushedMetal::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(BrushedMetal::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="clay")
     {
-    	Reference<Material> ret = Clay::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Clay::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="felt")
     {
-    	Reference<Material> ret = Felt::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Felt::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="glass")
     {
-    	Reference<Material> ret = Glass::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Glass::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="matte")
     {
-    	Reference<Material> ret = Matte::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Matte::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="mirror")
     {
-    	Reference<Material> ret = Mirror::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Mirror::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="plastic")
     {
-    	Reference<Material> ret = Plastic::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Plastic::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="primer")
     {
-    	Reference<Material> ret = Primer::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Primer::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="shinymetal")
     {
-    	Reference<Material> ret = ShinyMetal::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(ShinyMetal::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="skin")
     {
-    	Reference<Material> ret = Skin::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Skin::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="substrate")
     {
-    	Reference<Material> ret = Substrate::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Substrate::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="translucent")
     {
-    	Reference<Material> ret = Translucent::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(Translucent::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     if(name=="uber")
     {
-    	Reference<Material> ret = UberMaterial::CreateMaterial(mtl2world, mp);
+    	MaterialPtr ret = MaterialPtr(UberMaterial::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
     
     
     Error("Static loading of material '%s' failed.",name.c_str());
-    return NULL;
+	MaterialPtr o;
+    return o;
 }
-COREDLL Reference<Texture<float> > MakeFloatTexture(const string &name,
+COREDLL Texture<float>::TexturePtr MakeFloatTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                             PluginSearchPath);
     if (plugin)
     {
-        Reference<Texture<float> > ret =
+        Texture<float>::TexturePtr ret =
             plugin->CreateFloatTex(tex2world, tp);
         tp.ReportUnused();
         return ret;
     }*/
     if(name=="bilerp")
     {
-    	Reference<Texture<float> >  ret = BilerpTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(BilerpTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="checkerboard")
     {
-    	Reference<Texture<float> >  ret = Checkerboard::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(Checkerboard::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="constant")
     {
-    	Reference<Texture<float> >  ret = Constant::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(Constant::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="dots")
     {
-    	Reference<Texture<float> >  ret = DotsTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(DotsTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="fbm")
     {
-    	Reference<Texture<float> >  ret = FBmTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(FBmTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="imagemap")
     {
-    	Reference<Texture<float> >  ret = ImageTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(ImageTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="marble")
     {
-    	Reference<Texture<float> >  ret = MarbleTexture::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(MarbleTexture::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="mix")
     {
-    	Reference<Texture<float> >  ret = MixTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(MixTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="scale")
+/*    if(name=="scale") // TEMPORARILY DISABLED - SEE scale.h
     {
-    	Reference<Texture<float> >  ret = ScaleTexture<float,float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = ScaleTexture<float,float>::CreateFloatTexture(tex2world, tp);
         tp.ReportUnused();
         return ret;
-    }
+    } */
     if(name=="uv")
     {
-    	Reference<Texture<float> >  ret = UVTexture::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(UVTexture::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="windy")
     {
-    	Reference<Texture<float> >  ret = WindyTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(WindyTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="wrinkled")
     {
-    	Reference<Texture<float> >  ret = WrinkledTexture<float>::CreateFloatTexture(tex2world, tp);
+    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(WrinkledTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     
     Error("Static loading of float texture '%s' failed.",name.c_str());
-    return NULL;
+	Texture<float>::TexturePtr o;
+    return o;
 }
-COREDLL Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+COREDLL Texture<Spectrum>::TexturePtr MakeSpectrumTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                             PluginSearchPath);
     if (plugin)
     {
-        Reference<Texture<Spectrum> > ret =
+        Texture<Spectrum>::TexturePtr ret =
             plugin->CreateSpectrumTex(tex2world, tp);
         tp.ReportUnused();
         return ret;
     }*/
     if(name=="bilerp")
     {
-    	Reference<Texture<Spectrum> >  ret = BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="checkerboard")
     {
-    	Reference<Texture<Spectrum> >  ret = Checkerboard::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(Checkerboard::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="constant")
     {
-    	Reference<Texture<Spectrum> >  ret = Constant::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(Constant::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="dots")
     {
-    	Reference<Texture<Spectrum> >  ret = DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="fbm")
     {
-    	Reference<Texture<Spectrum> >  ret = FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="imagemap")
     {
-    	Reference<Texture<Spectrum> >  ret = ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="marble")
     {
-    	Reference<Texture<Spectrum> >  ret = MarbleTexture::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(MarbleTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="mix")
     {
-    	Reference<Texture<Spectrum> >  ret = MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="scale")
+/*    if(name=="scale") // TEMPORARILY DISALBED - SEE scale.h
     {
-    	Reference<Texture<Spectrum> >  ret = ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp);
         tp.ReportUnused();
         return ret;
-    }
+    } */
     if(name=="uv")
     {
-    	Reference<Texture<Spectrum> >  ret = UVTexture::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(UVTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="windy")
     {
-    	Reference<Texture<Spectrum> >  ret = WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="wrinkled")
     {
-    	Reference<Texture<Spectrum> >  ret = WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     
     Error("Static loading of spectrum texture '%s' failed.",name.c_str());
-    return NULL;
+	Texture<Spectrum>::TexturePtr o;
+    return o;
 }
 COREDLL Light *MakeLight(const string &name,
                          const Transform &light2world, const ParamSet &paramSet)
@@ -793,7 +798,7 @@ COREDLL Light *MakeLight(const string &name,
 }
 COREDLL AreaLight *MakeAreaLight(const string &name,
                                  const Transform &light2world, const ParamSet &paramSet,
-                                 const Reference<Shape> &shape)
+                                 const ShapePtr &shape)
 {
     /*AreaLightPlugin *plugin = GetPlugin<AreaLightPlugin>(name, arealightPlugins,
                               PluginSearchPath);
@@ -960,7 +965,7 @@ COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
     Error("Static loading of volume integrator '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL Primitive *MakeAccelerator(const string &name, const vector<Reference<Primitive> > &prims, const ParamSet &paramSet)
+COREDLL Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims, const ParamSet &paramSet)
 {
     /*
        AcceleratorPlugin *plugin = GetPlugin<AcceleratorPlugin>(name, acceleratorPlugins,

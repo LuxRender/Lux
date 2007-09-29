@@ -26,9 +26,9 @@
 // BrushedMetal Class Declarations
 class BrushedMetal : public Material {
 public:
-	BrushedMetal(Reference<Texture<float> > bump) : bumpMap(bump) { }
+	BrushedMetal(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
+	Texture<float>::TexturePtr bumpMap;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

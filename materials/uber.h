@@ -27,12 +27,12 @@
 class UberMaterial : public Material {
 public:
 	// UberMaterial Method Declarations
-	UberMaterial(Reference<Texture<Spectrum> > kd,
-		Reference<Texture<Spectrum> > ks,
-		Reference<Texture<Spectrum> > kr,
-		Reference<Texture<float> > rough,
-		Reference<Texture<Spectrum> > op,
-		Reference<Texture<float> > bump) {
+	UberMaterial(Texture<Spectrum>::TexturePtr kd,
+		Texture<Spectrum>::TexturePtr ks,
+		Texture<Spectrum>::TexturePtr kr,
+		Texture<float>::TexturePtr rough,
+		Texture<Spectrum>::TexturePtr op,
+		Texture<float>::TexturePtr bump) {
 		Kd = kd;
 		Ks = ks;
 		Kr = kr;
@@ -45,7 +45,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// UberMaterial Private Data
-	Reference<Texture<Spectrum> > Kd, Ks, Kr, opacity;
-	Reference<Texture<float> > roughness;
-	Reference<Texture<float> > bumpMap;
+	Texture<Spectrum>::TexturePtr Kd, Ks, Kr, opacity;
+	Texture<float>::TexturePtr roughness;
+	Texture<float>::TexturePtr bumpMap;
 };

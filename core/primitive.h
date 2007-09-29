@@ -27,7 +27,7 @@
 #include "shape.h"
 #include "material.h"
 // Primitive Declarations
-class COREDLL Primitive : public ReferenceCounted {
+class COREDLL Primitive : public ReferenceCounted<Primitive> {
 public:
 	// Primitive Interface
 	virtual ~Primitive();
@@ -37,8 +37,8 @@ public:
 		Intersection *in) const = 0;
 	virtual bool IntersectP(const Ray &r) const = 0;
 	virtual void
-		Refine(vector<Reference<Primitive> > &refined) const;
-	void FullyRefine(vector<Reference<Primitive> > &refined)
+		Refine(vector<Primitive* > &refined) const;
+	void FullyRefine(vector<Primitive* > &refined)
 	const;
 	virtual const AreaLight *GetAreaLight() const = 0;
 	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
@@ -67,27 +67,27 @@ class COREDLL GeometricPrimitive : public Primitive {
 public:
 	// GeometricPrimitive Public Methods
 	bool CanIntersect() const;
-	void Refine(vector<Reference<Primitive> > &refined) const;
+	void Refine(vector<Primitive* > &refined) const;
 	virtual BBox WorldBound() const;
 	virtual bool Intersect(const Ray &r,
 	                       Intersection *isect) const;
 	virtual bool IntersectP(const Ray &r) const;
-	GeometricPrimitive(const Reference<Shape> &s,
-	                   const Reference<Material> &m,
+	GeometricPrimitive(const ShapePtr &s,
+	                   const MaterialPtr &m,
 	                   AreaLight *a);
 	const AreaLight *GetAreaLight() const;
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 	              const Transform &WorldToObject) const;
 private:
 	// GeometricPrimitive Private Data
-	Reference<Shape> shape;
-	Reference<Material> material;
+	ShapePtr shape;
+	MaterialPtr material;
 	AreaLight *areaLight;
 };
 class COREDLL InstancePrimitive : public Primitive {
 public:
 	// InstancePrimitive Public Methods
-	InstancePrimitive(Reference<Primitive> &i,
+	InstancePrimitive(Primitive* &i,
 	                  const Transform &i2w) {
 		instance = i;
 		InstanceToWorld = i2w;
@@ -105,7 +105,7 @@ public:
 	}
 private:
 	// InstancePrimitive Private Data
-	Reference<Primitive> instance;
+	Primitive* instance;
 	Transform InstanceToWorld, WorldToInstance;
 };
 class COREDLL Aggregate : public Primitive {

@@ -59,11 +59,11 @@ BSDF *Translucent::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeo
 }
 Material* Translucent::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
-	Reference<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
-	Reference<Texture<Spectrum> > reflect = mp.GetSpectrumTexture("reflect", Spectrum(0.5f));
-	Reference<Texture<Spectrum> > transmit = mp.GetSpectrumTexture("transmit", Spectrum(0.5f));
-	Reference<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	Texture<Spectrum>::TexturePtr Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
+	Texture<Spectrum>::TexturePtr Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
+	Texture<Spectrum>::TexturePtr reflect = mp.GetSpectrumTexture("reflect", Spectrum(0.5f));
+	Texture<Spectrum>::TexturePtr transmit = mp.GetSpectrumTexture("transmit", Spectrum(0.5f));
+	Texture<float>::TexturePtr roughness = mp.GetFloatTexture("roughness", .1f);
+	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Translucent(Kd, Ks, roughness, reflect, transmit, bumpMap);
 }

@@ -35,6 +35,7 @@ public:
 	float Area() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+
 protected:
 	// Cone Data
 	float radius, height, phiMax;

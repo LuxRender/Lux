@@ -29,9 +29,9 @@ template <class T>
 class MixTexture : public Texture<T> {
 public:
 	// MixTexture Public Methods
-	MixTexture(Reference<Texture<T> > t1,
-			   Reference<Texture<T> > t2,
-			   Reference<Texture<float> > amt) {
+	MixTexture(Texture<T>::TexturePtr t1,
+			   Texture<T>::TexturePtr t2,
+			   Texture<float>::TexturePtr amt) {
 		tex1 = t1;
 		tex2 = t2;
 		amount = amt;
@@ -45,8 +45,8 @@ public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
-	Reference<Texture<T> > tex1, tex2;
-	Reference<Texture<float> > amount;
+	Texture<T>::TexturePtr tex1, tex2;
+	Texture<float>::TexturePtr amount;
 };
 
 // MixTexture Method Definitions

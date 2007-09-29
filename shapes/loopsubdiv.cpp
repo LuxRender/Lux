@@ -110,7 +110,7 @@ bool LoopSubdiv::CanIntersect() const {
 	return false;
 }
 void
-LoopSubdiv::Refine(vector<Reference<Shape> > &refined)
+LoopSubdiv::Refine(vector<ShapePtr > &refined)
 const {
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;

@@ -20,6 +20,11 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+// Radiance - boost::shared_ptr implementation
+// THIS HEADER IS TEMPORARILY DISABLED ALONG WITH scale.cpp (exclude for your build) TODO FIX
+
+/*
+
 // scale.cpp*
 #include "lux.h"
 #include "texture.h"
@@ -29,8 +34,8 @@ template <class T1, class T2>
 class ScaleTexture : public Texture<T2> {
 public:
 	// ScaleTexture Public Methods
-	ScaleTexture(Reference<Texture<T1> > t1,
-			Reference<Texture<T2> > t2) {
+	ScaleTexture(Texture<T1>::TexturePtr t1,
+			Texture<T2>::TexturePtr t2) {
 		tex1 = t1;
 		tex2 = t2;
 	}
@@ -42,8 +47,8 @@ public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
-	Reference<Texture<T1> > tex1;
-	Reference<Texture<T2> > tex2;
+	Texture<T1>::TexturePtr tex1;
+	Texture<T2>::TexturePtr tex2;
 };
 
 // ScaleTexture Method Definitions
@@ -60,3 +65,4 @@ template <class T,class U> inline Texture<Spectrum> * ScaleTexture<T,U>::CreateS
 		tp.GetSpectrumTexture("tex2", Spectrum(1.f)));
 }
 
+*/

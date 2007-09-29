@@ -38,7 +38,7 @@ public:
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return false; }
-	virtual void Refine(vector<Reference<Shape> > &refined) const;
+	virtual void Refine(vector<ShapePtr > &refined) const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 private:

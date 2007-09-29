@@ -31,18 +31,30 @@ bool Primitive::CanIntersect() const {
 }
 
 void
-Primitive::Refine(vector<Reference<Primitive> > &refined)
+Primitive::Refine(vector<Primitive* > &refined)
 const {
 	Severe("Unimplemented Primitive::Refine"
 	         "method called!");
 }
+/*
 void Primitive::FullyRefine(
-		vector<Reference<Primitive> > &refined) const {
-	vector<Reference<Primitive> > todo;
-	todo.push_back(const_cast<Primitive *>(this));
+		vector<Primitive* > &refined) const {
+	vector<Primitive* > todo;
+	//Primitive* op(new const_cast<Primitive *>(this));
+	//Primitive* op = const_cast<boost::shared_ptr<Primitive> > (shared_from_this()));
+	//Primitive* op(const_cast<boost::shared_ptr<const Primitive> >(shared_from_this()));
+	//Primitive* op(shared_from_this());
+	Primitive* o;
+
+	//Primitive* o = shared_from_this();
+
+	//Primitive* o;
+	//o.reset(const_cast<Primitive *>(this));
+	//todo.push_back(const_cast<Primitive *>(this));
+	todo.push_back(o);
 	while (todo.size()) {
 		// Refine last primitive in todo list
-		Reference<Primitive> prim = todo.back();
+		Primitive* prim = todo.back();
 		todo.pop_back();
 		if (prim->CanIntersect())
 			refined.push_back(prim);
@@ -50,6 +62,22 @@ void Primitive::FullyRefine(
 			prim->Refine(todo);
 	}
 }
+*/ // TODO CLEANUP
+void Primitive::FullyRefine(
+		vector<Primitive* > &refined) const {
+	vector<Primitive*> todo;
+	todo.push_back(const_cast<Primitive *>(this));
+	while (todo.size()) {
+		// Refine last primitive in todo list
+		Primitive* prim = todo.back();
+		todo.pop_back();
+		if (prim->CanIntersect())
+			refined.push_back(prim);
+		else
+			prim->Refine(todo);
+	}
+}
+
 const AreaLight *Aggregate::GetAreaLight() const {
 	Severe("Aggregate::GetAreaLight() method"
 	     "called; should have gone to GeometricPrimitive");
@@ -93,20 +121,22 @@ bool GeometricPrimitive::CanIntersect() const {
 	return shape->CanIntersect();
 }
 void GeometricPrimitive::
-        Refine(vector<Reference<Primitive> > &refined)
+        Refine(vector<Primitive* > &refined)
         const {
-	vector<Reference<Shape> > r;
+	vector<ShapePtr > r;
 	shape->Refine(r);
 	for (u_int i = 0; i < r.size(); ++i) {
-		GeometricPrimitive *gp =
-		    new GeometricPrimitive(r[i],
-			   material, areaLight);
-		refined.push_back(gp);
+		//GeometricPrimitive *gp =
+		//    new GeometricPrimitive(r[i],
+		//	   material, areaLight);
+		Primitive* o (new GeometricPrimitive(r[i],
+			   material, areaLight));
+		refined.push_back(o);
 	}
 }
 GeometricPrimitive::
-    GeometricPrimitive(const Reference<Shape> &s,
-		const Reference<Material> &m, AreaLight *a)
+    GeometricPrimitive(const ShapePtr &s,
+		const MaterialPtr &m, AreaLight *a)
 	: shape(s), material(m), areaLight(a) {
 }
 bool GeometricPrimitive::Intersect(const Ray &r,

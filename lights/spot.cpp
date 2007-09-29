@@ -78,11 +78,11 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	Vector dir = Normalize(to - from);
 	Vector du, dv;
 	CoordinateSystem(dir, &du, &dv);
-	Transform dirToZ =
-		Transform(new Matrix4x4( du.x,  du.y,  du.z, 0.,
+	Matrix4x4Ptr o (new Matrix4x4( du.x,  du.y,  du.z, 0.,
 	                                 dv.x,  dv.y,  dv.z, 0.,
 	                                dir.x, dir.y, dir.z, 0.,
 	                                    0,     0,     0, 1.));
+	Transform dirToZ = Transform(o);
 	Transform light2world =
 	l2w *
 	Translate(Vector(from.x, from.y, from.z)) *

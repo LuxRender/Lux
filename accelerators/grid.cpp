@@ -28,11 +28,11 @@
 //static StatsRatio rayHits("Grid Accelerator", "Intersections found per ray"); // NOBOOK
 
 // GridAccel Method Definitions
-GridAccel::GridAccel(const vector<Reference<Primitive> > &p,
+GridAccel::GridAccel(const vector<Primitive* > &p,
 		bool forRefined, bool refineImmediately)
 	: gridForRefined(forRefined) {
 	// Initialize _prims_ with primitives for grid
-	vector<Reference<Primitive> > prims;
+	vector<Primitive* > prims;
 	if (refineImmediately)
 		for (u_int i = 0; i < p.size(); ++i)
 			p[i]->FullyRefine(prims);
@@ -43,7 +43,7 @@ GridAccel::GridAccel(const vector<Reference<Primitive> > &p,
 	mailboxes = (GMailboxPrim *)AllocAligned(nMailboxes *
 		sizeof(GMailboxPrim));
 	for (u_int i = 0; i < nMailboxes; ++i)
-		new (&mailboxes[i]) GMailboxPrim(prims[i]);
+		new (&mailboxes[i]) GMailboxPrim((const Primitive*&)prims[i]);
 	// Compute bounds and choose grid resolution
 	for (u_int i = 0; i < prims.size(); ++i)
 		bounds = Union(bounds, prims[i]->WorldBound());
@@ -206,13 +206,15 @@ bool Voxel::Intersect(const Ray &ray,
 			GMailboxPrim *mp = mpp[i];
 			// Refine primitive in _mp_ if it's not intersectable
 			if (!mp->primitive->CanIntersect()) {
-				vector<Reference<Primitive> > p;
+				vector<Primitive* > p;
 				mp->primitive->FullyRefine(p);
 				Assert(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
-				else
-					mp->primitive = new GridAccel(p, true, false);
+				else {
+					Primitive* o (new GridAccel(p, true, false));
+					mp->primitive = o;
+				}
 			}
 		}
 		allCanIntersect = true;
@@ -307,13 +309,15 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 			GMailboxPrim *mp = mpp[i];
 			// Refine primitive in _mp_ if it's not intersectable
 			if (!mp->primitive->CanIntersect()) {
-				vector<Reference<Primitive> > p;
+				vector<Primitive* > p;
 				mp->primitive->FullyRefine(p);
 				Assert(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
-				else
-					mp->primitive = new GridAccel(p, true, false);
+				else {
+					Primitive* o (new GridAccel(p, true, false));
+					mp->primitive = o;
+				}
 			}
 		}
 		allCanIntersect = true;
@@ -336,7 +340,7 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 	}
 	return false;
 }
-Primitive* GridAccel::CreateAccelerator(const vector<Reference<Primitive> > &prims,
+Primitive* GridAccel::CreateAccelerator(const vector<Primitive* > &prims,
 		const ParamSet &ps) {
 	bool refineImmediately = ps.FindOneBool("refineimmediately", false);
 	return new GridAccel(prims, false, refineImmediately);

@@ -31,11 +31,11 @@ struct Voxel;
 // GMailboxPrim Declarations
 
 struct GMailboxPrim {
-	GMailboxPrim(const Reference<Primitive> &p) {
-		primitive = p;
+	GMailboxPrim(const Primitive* &p) {
+		primitive = (Primitive*) p;
 		lastMailboxId = -1;
 	}
-	Reference<Primitive> primitive;
+	Primitive* primitive;
 	int lastMailboxId;
 };
 
@@ -85,7 +85,7 @@ struct Voxel {
 class  GridAccel : public Aggregate {
 public:
 	// GridAccel Public Methods
-	GridAccel(const vector<Reference<Primitive> > &p,
+	GridAccel(const vector<Primitive* > &p,
 	          bool forRefined, bool refineImmediately);
 	BBox WorldBound() const;
 	bool CanIntersect() const { return true; }
@@ -93,7 +93,7 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect) const;
 	bool IntersectP(const Ray &ray) const;
 	
-	static Primitive *CreateAccelerator(const vector<Reference<Primitive> > &prims, const ParamSet &ps);
+	static Primitive *CreateAccelerator(const vector<Primitive* > &prims, const ParamSet &ps);
 private:
 	// GridAccel Private Methods
 	int PosToVoxel(const Point &P, int axis) const {

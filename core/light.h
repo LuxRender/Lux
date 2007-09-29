@@ -88,7 +88,7 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		const Spectrum &power, int ns, const Reference<Shape> &shape);
+		const Spectrum &power, int ns, const ShapePtr &shape);
 	virtual Spectrum L(const Point &p, const Normal &n,
 			const Vector &w) const {
 		return Dot(n, w) > 0 ? Lemit : 0.;
@@ -109,11 +109,11 @@ public:
 			float u3, float u4, Ray *ray, float *pdf) const;
 			
 	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
-		const Reference<Shape> &shape);
+		const ShapePtr &shape);
 protected:
 	// AreaLight Protected Data
 	Spectrum Lemit;
-	Reference<Shape> shape;
+	ShapePtr shape;
 	float area;
 };
 #endif // LUX_LIGHT_H

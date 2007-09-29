@@ -45,8 +45,8 @@ BSDF *Matte::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 }
 Material* Matte::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
-	Reference<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	Texture<Spectrum>::TexturePtr Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
+	Texture<float>::TexturePtr sigma = mp.GetFloatTexture("sigma", 0.f);
+	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Matte(Kd, sigma, bumpMap);
 }

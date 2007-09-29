@@ -27,8 +27,8 @@
 class Glass : public Material {
 public:
 	// Glass Public Methods
-	Glass(Reference<Texture<Spectrum> > r, Reference<Texture<Spectrum> > t,
-			Reference<Texture<float> > i, Reference<Texture<float> > bump) {
+	Glass(Texture<Spectrum>::TexturePtr r, Texture<Spectrum>::TexturePtr t,
+			Texture<float>::TexturePtr i, Texture<float>::TexturePtr bump) {
 		Kr = r;
 		Kt = t;
 		index = i;
@@ -39,7 +39,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Glass Private Data
-	Reference<Texture<Spectrum> > Kr, Kt;
-	Reference<Texture<float> > index;
-	Reference<Texture<float> > bumpMap;
+	Texture<Spectrum>::TexturePtr Kr, Kt;
+	Texture<float>::TexturePtr index;
+	Texture<float>::TexturePtr bumpMap;
 };

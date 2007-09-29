@@ -27,11 +27,11 @@
 class Translucent : public Material {
 public:
 	// Translucent Public Methods
-	Translucent(Reference<Texture<Spectrum> > kd, Reference<Texture<Spectrum> > ks,
-			Reference<Texture<float> > rough,
-			Reference<Texture<Spectrum> > refl,
-			Reference<Texture<Spectrum> > trans,
-			Reference<Texture<float> > bump) {
+	Translucent(Texture<Spectrum>::TexturePtr kd, Texture<Spectrum>::TexturePtr ks,
+			Texture<float>::TexturePtr rough,
+			Texture<Spectrum>::TexturePtr refl,
+			Texture<Spectrum>::TexturePtr trans,
+			Texture<float>::TexturePtr bump) {
 		Kd = kd;
 		Ks = ks;
 		roughness = rough;
@@ -44,8 +44,8 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Translucent Private Data
-	Reference<Texture<Spectrum> > Kd, Ks;
-	Reference<Texture<float> > roughness;
-	Reference<Texture<Spectrum> > reflect, transmit;
-	Reference<Texture<float> > bumpMap;
+	Texture<Spectrum>::TexturePtr Kd, Ks;
+	Texture<float>::TexturePtr roughness;
+	Texture<Spectrum>::TexturePtr reflect, transmit;
+	Texture<float>::TexturePtr bumpMap;
 };

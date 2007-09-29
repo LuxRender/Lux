@@ -42,10 +42,10 @@ BSDF *Substrate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 }
 Material* Substrate::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Reference<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(.5f));
-	Reference<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(.5f));
-	Reference<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
-	Reference<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	Texture<Spectrum>::TexturePtr Kd = mp.GetSpectrumTexture("Kd", Spectrum(.5f));
+	Texture<Spectrum>::TexturePtr Ks = mp.GetSpectrumTexture("Ks", Spectrum(.5f));
+	Texture<float>::TexturePtr uroughness = mp.GetFloatTexture("uroughness", .1f);
+	Texture<float>::TexturePtr vroughness = mp.GetFloatTexture("vroughness", .1f);
+	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Substrate(Kd, Ks, uroughness, vroughness, bumpMap);
 }

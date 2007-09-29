@@ -30,21 +30,23 @@ class COREDLL Transform {
 public:
 	// Transform Public Methods
 	Transform() {
-		m = mInv = new Matrix4x4;
+		Matrix4x4Ptr o (new Matrix4x4());
+		m = mInv = o;
 	}
 	Transform(float mat[4][4]) {
-		m=new Matrix4x4(mat[0][0],mat[0][1],mat[0][2],mat[0][3],
+		Matrix4x4Ptr o (new Matrix4x4(mat[0][0],mat[0][1],mat[0][2],mat[0][3],
 	                	mat[1][0],mat[1][1],mat[1][2],mat[1][3],
 	                	mat[2][0],mat[2][1],mat[2][2],mat[2][3],
-	                	mat[3][0],mat[3][1],mat[3][2],mat[3][3]);
+	                	mat[3][0],mat[3][1],mat[3][2],mat[3][3]));
+		m = o;
 		mInv = m->Inverse();
 	}
-	Transform(const Reference<Matrix4x4> &mat) {
+	Transform(const Matrix4x4Ptr &mat) {
 		m = mat;
 		mInv = m->Inverse();
 	}
-	Transform(const Reference<Matrix4x4> &mat,
-	          const Reference<Matrix4x4> &minv) {
+	Transform(const Matrix4x4Ptr &mat,
+	          const Matrix4x4Ptr &minv) {
 		m = mat;
 		mInv = minv;
 	}
@@ -66,7 +68,7 @@ public:
 	bool SwapsHandedness() const;
 private:
 	// Transform Private Data
-	Reference<Matrix4x4> m, mInv;
+	Matrix4x4Ptr m, mInv;
 };
 // Transform Inline Functions
 inline Point Transform::operator()(const Point &pt) const {

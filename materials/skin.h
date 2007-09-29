@@ -26,9 +26,9 @@
 // Skin Class Declarations
 class Skin : public Material {
 public:
-	Skin(Reference<Texture<float> > bump) : bumpMap(bump) { }
+	Skin(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
+	Texture<float>::TexturePtr bumpMap;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

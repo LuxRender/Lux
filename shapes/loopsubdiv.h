@@ -116,7 +116,7 @@ public:
 	           const Point *P, int nlevels);
 	~LoopSubdiv();
 	bool CanIntersect() const;
-	void Refine(vector<Reference<Shape> > &refined) const;
+	void Refine(vector<ShapePtr > &refined) const;
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	

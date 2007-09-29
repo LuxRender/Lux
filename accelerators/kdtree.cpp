@@ -25,12 +25,12 @@
 
 // KdTreeAccel Method Definitions
 KdTreeAccel::
-    KdTreeAccel(const vector<Reference<Primitive> > &p,
+    KdTreeAccel(const vector<Primitive* > &p,
 		int icost, int tcost,
 		float ebonus, int maxp, int maxDepth)
 	: isectCost(icost), traversalCost(tcost),
 	maxPrims(maxp), emptyBonus(ebonus) {
-	vector<Reference<Primitive > > prims;
+	vector<Primitive* > prims;
 	for (u_int i = 0; i < p.size(); ++i)
 		p[i]->FullyRefine(prims);
 	// Initialize mailboxes for _KdTreeAccel_
@@ -39,7 +39,7 @@ KdTreeAccel::
 	mailboxPrims = (MailboxPrim *)AllocAligned(nMailboxes *
 		sizeof(MailboxPrim));
 	for (u_int i = 0; i < nMailboxes; ++i)
-		new (&mailboxPrims[i]) MailboxPrim(prims[i]);
+		new (&mailboxPrims[i]) MailboxPrim((const Primitive*&)prims[i]);
 	// Build kd-tree for accelerator
 	nextFreeNode = nAllocedNodes = 0;
 	if (maxDepth <= 0)
@@ -370,7 +370,7 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
 	}
 	return false;
 }
-Primitive* KdTreeAccel::CreateAccelerator(const vector<Reference<Primitive> > &prims,
+Primitive* KdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
 		const ParamSet &ps) {
 	int isectCost = ps.FindOneInt("intersectcost", 80);
 	int travCost = ps.FindOneInt("traversalcost", 1);

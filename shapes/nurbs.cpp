@@ -196,7 +196,7 @@ BBox NURBS::WorldBound() const {
 	}
 }
 
-void NURBS::Refine(vector<Reference<Shape> > &refined) const {
+void NURBS::Refine(vector<ShapePtr > &refined) const {
 	// Compute NURBS dicing rates
 	int diceu = 30, dicev = 30;
 	float *ueval = new float[diceu];

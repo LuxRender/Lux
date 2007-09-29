@@ -26,18 +26,18 @@
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,
 		const Spectrum &le, int ns,
-		const Reference<Shape> &s)
+		const ShapePtr &s)
 	: Light(light2world, ns) {
 	Lemit = le;
 	if (s->CanIntersect())
 		shape = s;
 	else {
 		// Create _ShapeSet_ for _Shape_
-		Reference<Shape> shapeSet = s;
-		vector<Reference<Shape> > todo, done;
+		ShapePtr shapeSet = s;
+		vector<ShapePtr > todo, done;
 		todo.push_back(shapeSet);
 		while (todo.size()) {
-			Reference<Shape> sh = todo.back();
+			ShapePtr sh = todo.back();
 			todo.pop_back();
 			if (sh->CanIntersect())
 				done.push_back(sh);
@@ -49,7 +49,8 @@ AreaLight::AreaLight(const Transform &light2world,
 			if (done.size() > 16)
 				Warning("Area light geometry turned into %d shapes; "
 					"may be very inefficient.", (int)done.size());
-			shape = new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation);
+			ShapePtr o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
+			shape = o;
 		}
 	}
 	area = shape->Area();
@@ -103,7 +104,7 @@ Spectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 	return L(P, Ns, -*wo) /	pdf;
 }
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
-		const Reference<Shape> &shape) {
+		const ShapePtr &shape) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	return new AreaLight(light2world, L, nSamples, shape);

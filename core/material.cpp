@@ -25,7 +25,7 @@
 // Material Method Definitions
 Material::~Material() {
 }
-void Material::Bump(Reference<Texture<float> > d,
+void Material::Bump(Texture<float>::TexturePtr d,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgs,
 		DifferentialGeometry *dgBump) {

@@ -35,7 +35,7 @@ public:
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	bool CanIntersect() const { return false; }
-	void Refine(vector<Reference<Shape> > &refined) const;
+	void Refine(vector<ShapePtr > &refined) const;
 	friend class Triangle;
 	template <class T> friend class VertexTexture;
 	
@@ -135,6 +135,6 @@ public:
 	Point Sample(float u1, float u2, Normal *Ns) const;
 private:
 	// Triangle Data
-	Reference<TriangleMesh> mesh;
+	TriangleMesh* mesh;
 	int *v;
 };

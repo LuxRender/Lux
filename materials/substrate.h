@@ -27,9 +27,9 @@
 class Substrate : public Material {
 public:
 	// Substrate Public Methods
-	Substrate(Reference<Texture<Spectrum> > kd, Reference<Texture<Spectrum> > ks,
-			Reference<Texture<float> > u, Reference<Texture<float> > v,
-			Reference<Texture<float> > bump) {
+	Substrate(Texture<Spectrum>::TexturePtr kd, Texture<Spectrum>::TexturePtr ks,
+			Texture<float>::TexturePtr u, Texture<float>::TexturePtr v,
+			Texture<float>::TexturePtr bump) {
 		Kd = kd;
 		Ks = ks;
 		nu = u;
@@ -41,7 +41,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Substrate Private Data
-	Reference<Texture<Spectrum> > Kd, Ks;
-	Reference<Texture<float> > nu, nv;
-	Reference<Texture<float> > bumpMap;
+	Texture<Spectrum>::TexturePtr Kd, Ks;
+	Texture<float>::TexturePtr nu, nv;
+	Texture<float>::TexturePtr bumpMap;
 };

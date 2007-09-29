@@ -73,13 +73,15 @@ BBox TriangleMesh::WorldBound() const {
 	return worldBounds;
 }
 void
-TriangleMesh::Refine(vector<Reference<Shape> > &refined)
+TriangleMesh::Refine(vector<ShapePtr > &refined)
 const {
-	for (int i = 0; i < ntris; ++i)
-		refined.push_back(new Triangle(ObjectToWorld,
+	for (int i = 0; i < ntris; ++i) {
+		ShapePtr o (new Triangle(ObjectToWorld,
 		                               reverseOrientation,
                                        (TriangleMesh *)this,
 									   i));
+		refined.push_back(o);
+	}
 }
 BBox Triangle::ObjectBound() const {
 	// Get triangle vertices in _p1_, _p2_, and _p3_

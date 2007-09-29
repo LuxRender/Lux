@@ -173,6 +173,7 @@ class CylindricalMapping2D;
 class PlanarMapping2D;
 class TextureMapping3D;
 class IdentityMapping3D;
+class TriangleMesh;
 template <class T> class Texture;
 COREDLL float Noise(float x, float y = .5f, float z = .5f);
 COREDLL float Noise(const Point &P);
@@ -314,7 +315,24 @@ private:
 	// StatsPercentage Private Data
 	StatsCounterType na, nb;
 };
-class COREDLL ReferenceCounted {
+
+// Lux renderer boost::shared_ptr implementation - Radiance
+
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+
+//#define Reference boost::shared_ptr
+#define ReferenceCounted boost::enable_shared_from_this
+
+typedef boost::shared_ptr<Matrix4x4> Matrix4x4Ptr;
+//typedef boost::shared_ptr<Texture<float> > TexturePtr<float>;
+
+typedef boost::shared_ptr<Shape> ShapePtr;
+//typedef boost::shared_ptr<Primitive> PrimitivePtr;
+typedef boost::shared_ptr<Material> MaterialPtr;
+//typedef boost::shared_ptr<TriangleMesh> TriangleMesh*;
+
+/* class COREDLL ReferenceCounted {
 public:
 	ReferenceCounted() { nReferences = 0; }
 	int nReferences;
@@ -359,6 +377,8 @@ public:
 private:
 	T *ptr;
 };
+*/
+
 template <class T> class ObjectArena {
 public:
 	// ObjectArena Public Methods
@@ -492,7 +512,8 @@ private:
 	T *data;
 	int uRes, vRes, uBlocks;
 };
-struct COREDLL Matrix4x4 : public ReferenceCounted {
+
+struct COREDLL Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
 		for (int i = 0; i < 4; ++i)
@@ -505,7 +526,7 @@ struct COREDLL Matrix4x4 : public ReferenceCounted {
 	          float t10, float t11, float t12, float t13,
 	          float t20, float t21, float t22, float t23,
 	          float t30, float t31, float t32, float t33);
-	Reference<Matrix4x4> Transpose() const;
+	Matrix4x4Ptr Transpose() const;
 	void Print(ostream &os) const {
 		os << "[ ";
 		for (int i = 0; i < 4; ++i) {
@@ -518,9 +539,9 @@ struct COREDLL Matrix4x4 : public ReferenceCounted {
 		}
 		os << " ] ";
 	}
-	static Reference<Matrix4x4>
-		Mul(const Reference<Matrix4x4> &m1,
-	        const Reference<Matrix4x4> &m2) {
+	static Matrix4x4Ptr
+		Mul(const Matrix4x4Ptr &m1,
+	        const Matrix4x4Ptr &m2) {
 		float r[4][4];
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
@@ -528,11 +549,13 @@ struct COREDLL Matrix4x4 : public ReferenceCounted {
 				          m1->m[i][1] * m2->m[1][j] +
 				          m1->m[i][2] * m2->m[2][j] +
 				          m1->m[i][3] * m2->m[3][j];
-		return new Matrix4x4(r);
+		Matrix4x4Ptr o (new Matrix4x4(r));
+		return o;
 	}
-	Reference<Matrix4x4> Inverse() const;
+	Matrix4x4Ptr Inverse() const;
 	float m[4][4];
 };
+
 // Global Inline Functions
 #ifdef NDEBUG
 #define Assert(expr) ((void)0)

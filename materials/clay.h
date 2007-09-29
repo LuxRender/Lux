@@ -26,10 +26,10 @@
 // Clay Class Declarations
 class Clay : public Material {
 public:
-	Clay(Reference<Texture<float> > bump) : bumpMap(bump) { }
+	Clay(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const; // NOBOOK
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
-	Reference<Texture<float> > bumpMap;
+	Texture<float>::TexturePtr bumpMap;
 };

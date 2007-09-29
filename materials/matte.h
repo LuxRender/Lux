@@ -27,9 +27,9 @@
 class Matte : public Material {
 public:
 	// Matte Public Methods
-	Matte(Reference<Texture<Spectrum> > kd,
-			Reference<Texture<float> > sig,
-			Reference<Texture<float> > bump) {
+	Matte(Texture<Spectrum>::TexturePtr kd,
+			Texture<float>::TexturePtr sig,
+			Texture<float>::TexturePtr bump) {
 		Kd = kd;
 		sigma = sig;
 		bumpMap = bump;
@@ -40,6 +40,6 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Matte Private Data
-	Reference<Texture<Spectrum> > Kd;
-	Reference<Texture<float> > sigma, bumpMap;
+	Texture<Spectrum>::TexturePtr Kd;
+	Texture<float>::TexturePtr sigma, bumpMap;
 };

@@ -55,18 +55,18 @@ struct RenderOptions {
 	Transform WorldToCamera;
 	bool gotSearchPath;
 	mutable vector<Light *> lights;
-	mutable vector<Reference<Primitive> > primitives;
+	mutable vector<Primitive* > primitives;
 	mutable vector<VolumeRegion *> volumeRegions;
-	map<string, vector<Reference<Primitive> > > instances;
-	vector<Reference<Primitive> > *currentInstance;
+	map<string, vector<Primitive* > > instances;
+	vector<Primitive* > *currentInstance;
 };
 RenderOptions::RenderOptions() {
 	// RenderOptions Constructor Implementation
 	FilterName = "mitchell";
 	FilmName = "image";
-	SamplerName = "bestcandidate";
+	SamplerName = "lowdiscrepancy";
 	AcceleratorName = "kdtree";
-	SurfIntegratorName = "directlighting";
+	SurfIntegratorName = "path";
 	VolIntegratorName = "emission";
 	CameraName = "perspective";
 	/*
@@ -90,9 +90,9 @@ struct GraphicsState {
 	// Graphics State Methods
 	GraphicsState();
 	// Graphics State
-	map<string, Reference<Texture<float> > >
+	map<string, Texture<float>::TexturePtr >
 		floatTextures;
-	map<string, Reference<Texture<Spectrum> > >
+	map<string, Texture<Spectrum>::TexturePtr >
 		spectrumTextures;
 	ParamSet materialParams;
 	string material;
@@ -182,19 +182,20 @@ COREDLL void luxTranslate(float dx, float dy, float dz) {
 }
 COREDLL void luxTransform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
-	curTransform = Transform(new Matrix4x4(
+	Matrix4x4Ptr o (new Matrix4x4(
 		tr[0], tr[4], tr[8], tr[12],
 		tr[1], tr[5], tr[9], tr[13],
 		tr[2], tr[6], tr[10], tr[14],
 		tr[3], tr[7], tr[11], tr[15]));
+	curTransform = Transform(o);
 }
 COREDLL void luxConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
-	curTransform = curTransform * Transform(
-		new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+    Matrix4x4Ptr o (new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 				 tr[1], tr[5], tr[9], tr[13],
 				 tr[2], tr[6], tr[10], tr[14],
 				 tr[3], tr[7], tr[11], tr[15]));
+	curTransform = curTransform * Transform(o);
 }
 COREDLL void luxRotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Rotate");
@@ -315,7 +316,7 @@ COREDLL void luxTexture(const string &name,
 		if (graphicsState.floatTextures.find(name) !=
 		    graphicsState.floatTextures.end())
 			Warning("Texture \"%s\" being redefined", name.c_str());
-		Reference<Texture<float> > ft = MakeFloatTexture(texname,
+		Texture<float>::TexturePtr ft = MakeFloatTexture(texname,
 			curTransform, tp);
 		if (ft) graphicsState.floatTextures[name] = ft;
 	}
@@ -323,7 +324,7 @@ COREDLL void luxTexture(const string &name,
 		// Create _color_ texture and store in _spectrumTextures_
 		if (graphicsState.spectrumTextures.find(name) != graphicsState.spectrumTextures.end())
 			Warning("Texture \"%s\" being redefined", name.c_str());
-		Reference<Texture<Spectrum> > st = MakeSpectrumTexture(texname,
+		Texture<Spectrum>::TexturePtr st = MakeSpectrumTexture(texname,
 			curTransform, tp);
 		if (st) graphicsState.spectrumTextures[name] = st;
 	}
@@ -354,7 +355,7 @@ COREDLL void luxAreaLightSource(const string &name,
 COREDLL void luxShape(const string &name,
                        const ParamSet &params) {
 	VERIFY_WORLD("Shape");
-	Reference<Shape> shape = MakeShape(name,
+	ShapePtr shape = MakeShape(name,
 		curTransform, graphicsState.reverseOrientation,
 		params);
 	if (!shape) return;
@@ -369,8 +370,8 @@ COREDLL void luxShape(const string &name,
 	                 graphicsState.materialParams,
 					 graphicsState.floatTextures,
 					 graphicsState.spectrumTextures);
-	Reference<Texture<float> > bump = NULL;
-	Reference<Material> mtl =
+	Texture<float>::TexturePtr bump;
+	MaterialPtr mtl =
 		MakeMaterial(graphicsState.material,
 		             curTransform, mp);
 	if (!mtl)
@@ -378,8 +379,7 @@ COREDLL void luxShape(const string &name,
 	if (!mtl)
 		Severe("Unable to create \"matte\" material?!");
 	// Create primitive and add to scene or current instance
-	Reference<Primitive> prim =
-		new GeometricPrimitive(shape, mtl, area);
+	Primitive* prim (new GeometricPrimitive(shape, mtl, area));
 	if (renderOptions->currentInstance) {
 		if (area)
 			Warning("Area lights not supported "
@@ -413,7 +413,7 @@ COREDLL void luxObjectBegin(const string &name) {
 		Error("ObjectBegin called inside "
 		      "of instance definition");
 	renderOptions->instances[name] =
-		vector<Reference<Primitive> >();
+		vector<Primitive* >();
 	renderOptions->currentInstance =
 		&renderOptions->instances[name];
 }
@@ -436,12 +436,12 @@ COREDLL void luxObjectInstance(const string &name) {
 		Error("Unable to find instance named \"%s\"", name.c_str());
 		return;
 	}
-	vector<Reference<Primitive> > &in =
+	vector<Primitive* > &in =
 		renderOptions->instances[name];
 	if (in.size() == 0) return;
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
-		Reference<Primitive> accel =
+		Primitive* accel =
 			MakeAccelerator(renderOptions->AcceleratorName,
 			               in, renderOptions->AcceleratorParams);
 		if (!accel)
@@ -451,8 +451,8 @@ COREDLL void luxObjectInstance(const string &name) {
 		in.erase(in.begin(), in.end());
 		in.push_back(accel);
 	}
-	Reference<Primitive> prim = new InstancePrimitive(in[0],
-		curTransform);
+    Primitive* o (new InstancePrimitive(in[0], curTransform));
+	Primitive* prim = o;
 	renderOptions->primitives.push_back(prim);
 }
 COREDLL void luxWorldEnd() {

@@ -26,8 +26,8 @@
 // Primer Class Declarations
 class Primer : public Material {
 public:
-	Primer(Reference<Texture<float> > bump) : bumpMap(bump) { }
+	Primer(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Reference<Texture<float> > bumpMap;
+	Texture<float>::TexturePtr bumpMap;
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

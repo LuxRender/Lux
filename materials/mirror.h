@@ -27,7 +27,7 @@
 class Mirror : public Material {
 public:
 	// Mirror Public Methods
-	Mirror(Reference<Texture<Spectrum> > r, Reference<Texture<float> > bump) {
+	Mirror(Texture<Spectrum>::TexturePtr r, Texture<float>::TexturePtr bump) {
 		Kr = r;
 		bumpMap = bump;
 	}
@@ -36,6 +36,6 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Mirror Private Data
-	Reference<Texture<Spectrum> > Kr;
-	Reference<Texture<float> > bumpMap;
+	Texture<Spectrum>::TexturePtr Kr;
+	Texture<float>::TexturePtr bumpMap;
 };

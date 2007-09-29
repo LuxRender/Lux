@@ -102,8 +102,9 @@ public:
 private:
 	Transform WorldToTexture;
 };
-template <class T> class Texture : public ReferenceCounted {
+template <class T> class Texture /*: public ReferenceCounted<Texture> */ {
 public:
+	typedef boost::shared_ptr<Texture> TexturePtr; 
 	// Texture Interface
 	virtual T Evaluate(const DifferentialGeometry &) const = 0;
 	virtual ~Texture() { }

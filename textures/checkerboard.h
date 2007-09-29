@@ -39,8 +39,8 @@ template <class T> class Checkerboard2D : public Texture<T> {
 public:
 	// Checkerboard2D Public Methods
 	Checkerboard2D(TextureMapping2D *m,
-	               Reference<Texture<T> > c1,
-			       Reference<Texture<T> > c2,
+	               Texture<T>::TexturePtr c1,
+			       Texture<T>::TexturePtr c2,
 				   const string &aa) {
 		mapping = m;
 		tex1 = c1;
@@ -128,15 +128,15 @@ public:
 	}
 private:
 	// Checkerboard2D Private Data
-	Reference<Texture<T> > tex1, tex2;
+	Texture<T>::TexturePtr tex1, tex2;
 	TextureMapping2D *mapping;
 };
 template <class T> class Checkerboard3D : public Texture<T> {
 public:
 	// Checkerboard3D Public Methods
 	Checkerboard3D(TextureMapping3D *m,
-	               Reference<Texture<T> > c1,
-			       Reference<Texture<T> > c2) {
+	               Texture<T>::TexturePtr c1,
+			       Texture<T>::TexturePtr c2) {
 		mapping = m;
 		tex1 = c1;
 		tex2 = c2;
@@ -174,7 +174,7 @@ public:
 	}
 private:
 	// Checkerboard3D Private Data
-	Reference<Texture<T> > tex1, tex2;
+	Texture<T>::TexturePtr tex1, tex2;
 	TextureMapping3D *mapping;
 };
 

@@ -52,6 +52,6 @@ BSDF *Primer::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, co
 }
 Material* Primer::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Primer(bumpMap);
 }

@@ -52,6 +52,6 @@ BSDF *BrushedMetal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGe
 }
 Material* BrushedMetal::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Reference<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new BrushedMetal(bumpMap);
 }

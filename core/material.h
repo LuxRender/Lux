@@ -29,13 +29,13 @@
 #include "color.h"
 #include "reflection.h"
 // Material Class Declarations
-class COREDLL Material : public ReferenceCounted {
+class COREDLL Material : public ReferenceCounted<Material>  {
 public:
 	// Material Interface
 	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const = 0;
 	virtual ~Material();
-	static void Bump(Reference<Texture<float> > d, const DifferentialGeometry &dgGeom,
+	static void Bump(Texture<float>::TexturePtr d, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
 };
 #endif // LUX_MATERIAL_H

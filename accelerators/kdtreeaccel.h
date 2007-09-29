@@ -30,11 +30,11 @@
 // KdAccelNode Declarations
 
 struct MailboxPrim {
-	MailboxPrim(const Reference<Primitive> &p) {
-		primitive = p;
+	MailboxPrim(const Primitive* &p) {
+		primitive = (Primitive*) p;
 		lastMailboxId = -1;
 	}
-	Reference<Primitive> primitive;
+	Primitive* primitive;
 	int lastMailboxId;
 };
 struct KdAccelNode {
@@ -112,7 +112,7 @@ struct KdAccelNode;
 class  KdTreeAccel : public Aggregate {
 public:
 	// KdTreeAccel Public Methods
-	KdTreeAccel(const vector<Reference<Primitive> > &p,
+	KdTreeAccel(const vector<Primitive* > &p,
 		int icost, int scost,
 		float ebonus, int maxp, int maxDepth);
 	BBox WorldBound() const { return bounds; }
@@ -126,7 +126,7 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect) const;
 	bool IntersectP(const Ray &ray) const;
 	
-	static Primitive *CreateAccelerator(const vector<Reference<Primitive> > &prims, const ParamSet &ps);
+	static Primitive *CreateAccelerator(const vector<Primitive* > &prims, const ParamSet &ps);
 	
 #ifdef LUX_USE_SSE
 void* operator new(size_t t) { return _mm_malloc(t,16); }

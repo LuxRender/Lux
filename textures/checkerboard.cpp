@@ -33,8 +33,8 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 		Error("%d dimensional checkerboard texture not supported", dim);
 		return NULL;
 	}
-	Reference<Texture<float> > tex1 = tp.GetFloatTexture("tex1", 1.f);
-	Reference<Texture<float> > tex2 = tp.GetFloatTexture("tex2", 0.f);
+	Texture<float>::TexturePtr tex1 = tp.GetFloatTexture("tex1", 1.f);
+	Texture<float>::TexturePtr tex2 = tp.GetFloatTexture("tex2", 0.f);
 	if (dim == 2) {
 		// Initialize 2D texture mapping _map_ from _tp_
 		TextureMapping2D *map = NULL;
@@ -74,8 +74,8 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 		Error("%d dimensional checkerboard texture not supported", dim);
 		return NULL;
 	}
-	Reference<Texture<Spectrum> > tex1 = tp.GetSpectrumTexture("tex1", 1.f);
-	Reference<Texture<Spectrum> > tex2 = tp.GetSpectrumTexture("tex2", 0.f);
+	Texture<Spectrum>::TexturePtr tex1 = tp.GetSpectrumTexture("tex1", 1.f);
+	Texture<Spectrum>::TexturePtr tex2 = tp.GetSpectrumTexture("tex2", 0.f);
 	if (dim == 2) {
 		// Initialize 2D texture mapping _map_ from _tp_
 		TextureMapping2D *map = NULL;

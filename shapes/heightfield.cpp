@@ -46,7 +46,7 @@ BBox Heightfield::ObjectBound() const {
 bool Heightfield::CanIntersect() const {
 	return false;
 }
-void Heightfield::Refine(vector<Reference<Shape> > &refined) const {
+void Heightfield::Refine(vector<ShapePtr > &refined) const {
 	int ntris = 2*(nx-1)*(ny-1);
 	refined.reserve(ntris);
 	int *verts = new int[3*ntris];

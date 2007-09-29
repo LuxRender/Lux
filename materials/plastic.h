@@ -27,10 +27,10 @@
 class Plastic : public Material {
 public:
 	// Plastic Public Methods
-	Plastic(Reference<Texture<Spectrum> > kd,
-			Reference<Texture<Spectrum> > ks,
-			Reference<Texture<float> > rough,
-			Reference<Texture<float> > bump) {
+	Plastic(Texture<Spectrum>::TexturePtr kd,
+			Texture<Spectrum>::TexturePtr ks,
+			Texture<float>::TexturePtr rough,
+			Texture<float>::TexturePtr bump) {
 		Kd = kd;
 		Ks = ks;
 		roughness = rough;
@@ -42,6 +42,6 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);	              
 private:
 	// Plastic Private Data
-	Reference<Texture<Spectrum> > Kd, Ks;
-	Reference<Texture<float> > roughness, bumpMap;
+	Texture<Spectrum>::TexturePtr Kd, Ks;
+	Texture<float>::TexturePtr roughness, bumpMap;
 };

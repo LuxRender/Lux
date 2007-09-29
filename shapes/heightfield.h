@@ -31,7 +31,7 @@ public:
 	Heightfield(const Transform &o2w, bool ro, int nu, int nv, const float *zs);
 	~Heightfield();
 	bool CanIntersect() const;
-	void Refine(vector<Reference<Shape> > &refined) const;
+	void Refine(vector<ShapePtr > &refined) const;
 	BBox ObjectBound() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
