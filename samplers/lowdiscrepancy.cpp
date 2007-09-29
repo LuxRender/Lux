@@ -81,6 +81,7 @@ bool LDSampler::GetNextSample(Sample *sample) {
 
 		xPos = xPixelStart + Ceil2Int( VanDerCorput( fs_pos, fs_scramble ) * xPixelEnd );
 		yPos = yPixelStart + Ceil2Int( Sobol2( fs_pos, fs_scramble ) * yPixelEnd );
+		
 
 		// Advance to next pixel for low-discrepancy sampling
 		//if (++xPos == xPixelEnd) {
