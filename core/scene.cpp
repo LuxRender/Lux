@@ -139,7 +139,8 @@ void* Render_Thread( void* p )
 				Ls = Spectrum(0.f);
 			} 
 			// Add sample contribution to image
-			camera->film->AddSample(*sample, ray, Ls, alpha);
+			if( Ls != Spectrum(0.f) )
+			   camera->film->AddSample(*sample, ray, Ls, alpha);
 
 			// Free BSDF memory from computing image sample value
 			arena->FreeAll();
@@ -159,7 +160,7 @@ void Scene::Render() {
     volumeIntegrator->Preprocess(this);
 
 	// init threads
-	int thr_nr = 4;
+	int thr_nr = 3;
 
 	u_int seeds[4];
 	seeds[0] = 536870912;

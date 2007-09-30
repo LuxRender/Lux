@@ -20,24 +20,30 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// image.cpp*
 #include "lux.h"
 #include "film.h"
 #include "color.h"
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
+#include <stdio.h>
 #include <boost/timer.hpp>
 
+#define WI_HDR 0
+#define WI_LDR 1
+#define WI_DISPLAY 2
+
 // ImageFilm Declarations
-class ImageFilm : public Film {
+class MultiImageFilm : public Film {
 public:
-	// ImageFilm Public Methods
-	ImageFilm(int xres, int yres,
-	                     Filter *filt, const float crop[4],
-		             const string &filename, bool premult,
-		             int wf, int wfs);
-	~ImageFilm() {
+	// MultiImageFilm Public Methods
+	MultiImageFilm(int xres, int yres,
+	                     Filter *filt, const float crop[4], bool hdr_out, bool ldr_out, 
+		             const string &hdr_filename, const string &ldr_filename, bool premult,
+		             int hdr_writeInterval, int ldr_writeInterval, int ldr_displayInterval,
+					 const string &toneMapper, float contrast_displayAdaptationY, float nonlinear_MaxY,
+					 float bloomWidth, float bloomRadius, float gamma, float dither);
+	~MultiImageFilm() {
 		delete pixels;
 		delete filter;
 		delete[] filterTable;
@@ -46,16 +52,19 @@ public:
 	               const Spectrum &L, float alpha);
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;
-	void WriteImage();
-	void WriteImage(int oType) {};
-	
+	void WriteImage() {};
+	void WriteImage(int oType);
+	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
+	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
+
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 private:
-	// ImageFilm Private Data
+	// MultiImageFilm Private Data
 	Filter *filter;
-	int writeFrequency, writeFrequencySeconds, sampleCount;
-	string filename;
-	bool premultiplyAlpha;
+	int hdrWriteInterval, ldrWriteInterval, ldrDisplayInterval, sampleCount;
+	string hdrFilename, ldrFilename;
+    bool ldrLock, hdrLock, displayLock;
+	bool hdrOut, ldrOut, premultiplyAlpha;
 	float cropWindow[4];
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
 	struct Pixel {
@@ -68,6 +77,10 @@ private:
 	};
 	BlockedArray<Pixel> *pixels;
 	float *filterTable;
-	boost::timer Timer;
-};
+	boost::timer ldrTimer, hdrTimer, displayTimer;
 
+	string toneMapper;
+	ParamSet toneParams;
+	float contrastDisplayAdaptationY, nonlinearMaxY,
+		bloomWidth, bloomRadius, gamma, dither;
+};

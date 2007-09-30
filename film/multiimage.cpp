@@ -20,20 +20,66 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// image.cpp*
-#include "image.h"
+/*
+ * MultiImage Film class
+ *
+ * This extended Film class allows for configurable multiple outputs
+ * in hdr and ldr (tonemapped) image file formats, aswell as updating the
+ * lux gui film display.
+ * The original 'Image' film class was left intact as to ensure
+ * backwards compatibility with .pbrt scene files.
+ *
+ * 30/09/07 - Radiance - Initial Version
+ */
 
-// ImageFilm Method Definitions
-ImageFilm::ImageFilm(int xres, int yres,
-                     Filter *filt, const float crop[4],
-		             const string &fn, bool premult, int wf, int wfs)
+#include "multiimage.h"
+
+// MultiImageFilm Method Definitions
+MultiImageFilm::MultiImageFilm(int xres, int yres,
+	                     Filter *filt, const float crop[4], bool hdr_out, bool ldr_out, 
+		             const string &hdr_filename, const string &ldr_filename, bool premult,
+		             int hdr_wI, int ldr_wI, int ldr_dI,
+					 const string &tm, float c_dY, float n_MY,
+					 float bw, float br, float g, float d)
 	: Film(xres, yres) {
 	filter = filt;
 	memcpy(cropWindow, crop, 4 * sizeof(float));
-	filename = fn;
+	hdrFilename = hdr_filename;
+	ldrFilename = ldr_filename;
 	premultiplyAlpha = premult;
-	writeFrequency = sampleCount = wf;
-	writeFrequencySeconds = wfs;
+	sampleCount = 0;
+
+	hdrWriteInterval = hdr_wI;
+    ldrWriteInterval = ldr_wI;
+    ldrDisplayInterval = ldr_dI;
+	hdrOut = hdr_out;
+	ldrOut = ldr_out;
+
+    contrastDisplayAdaptationY = c_dY;
+    nonlinearMaxY = n_MY;
+	toneMapper = tm;
+	bloomWidth = bw;
+	bloomRadius = br;
+	gamma = g;
+	dither = d;	
+
+	// Set tonemapper params	
+	if( toneMapper == "contrast" ) {
+		string sdY = "displayadaptationY";
+		toneParams.AddFloat(sdY, &contrastDisplayAdaptationY, 1);
+	} else if( toneMapper == "nonlinear" ) {
+		string smY = "maxY";
+		toneParams.AddFloat(smY, &nonlinearMaxY, 1);
+	}
+
+	// init locks and timers
+	ldrLock = false;
+	hdrLock = false;
+	displayLock = false;
+	ldrTimer.restart();
+	hdrTimer.restart();
+	displayTimer.restart();
+
 	// Compute film image extent
 	xPixelStart = Ceil2Int(xResolution * cropWindow[0]);
 	xPixelCount =
@@ -59,7 +105,7 @@ ImageFilm::ImageFilm(int xres, int yres,
 		}
 	}
 }
-void ImageFilm::AddSample(const Sample &sample,
+void MultiImageFilm::AddSample(const Sample &sample,
 		const Ray &ray, const Spectrum &L, float alpha) {
 	// Compute sample's raster extent
 	float dImageX = sample.imageX - 0.5f;
@@ -75,7 +121,7 @@ void ImageFilm::AddSample(const Sample &sample,
 	if ((x1-x0) < 0 || (y1-y0) < 0) return;
 	// Loop over filter support and add sample to pixel arrays
 	// Precompute $x$ and $y$ filter table offsets
-	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));					// TODO check deallocation
+	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));
 	for (int x = x0; x <= x1; ++x) {
 		float fx = fabsf((x - dImageX) *
 		                 filter->invXWidth * FILTER_TABLE_SIZE);
@@ -99,22 +145,25 @@ void ImageFilm::AddSample(const Sample &sample,
 			pixel.weightSum += filterWt;
 		}
 
-	// Possibly write out in-progress image
-	if (writeFrequency == -1) {
-		// seconds elapsed
-		if( Floor2Int(Timer.elapsed()) > writeFrequencySeconds ) {
-			Timer.restart();
-			WriteImage();
+    // Possibly write out in-progress image
+	if(ldrOut && !ldrLock)
+		if(Floor2Int(ldrTimer.elapsed()) > ldrWriteInterval) {
+			ldrLock = true;
+			WriteImage( WI_LDR );
+			ldrTimer.restart();
+			ldrLock = false;
 		}
-	} else {
-		// samplecount
-		if (--sampleCount == 0) {
-			WriteImage();
-			sampleCount = writeFrequency;
+
+	if(hdrOut && !hdrLock)
+	    if (Floor2Int(hdrTimer.elapsed()) > hdrWriteInterval) {
+			hdrLock = true;
+			WriteImage( WI_HDR );
+			hdrTimer.restart();
+			hdrLock = false;
 		}
-	}
+
 }
-void ImageFilm::GetSampleExtent(int *xstart,
+void MultiImageFilm::GetSampleExtent(int *xstart,
 		int *xend, int *ystart, int *yend) const {
 	*xstart = Floor2Int(xPixelStart + .5f - filter->xWidth);
 	*xend   = Floor2Int(xPixelStart + .5f + xPixelCount  +
@@ -123,7 +172,8 @@ void ImageFilm::GetSampleExtent(int *xstart,
 	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount +
 		filter->yWidth);
 }
-void ImageFilm::WriteImage() {
+
+void MultiImageFilm::WriteImage(int oType) {
 	// Convert image to RGB and compute final pixel values
 	int nPix = xPixelCount * yPixelCount;
 	float *rgb = new float[3*nPix], *alpha = new float[nPix];
@@ -170,24 +220,96 @@ void ImageFilm::WriteImage() {
 			++offset;
 		}
 	}
-	// Write RGBA image
-	printf("\n\nWriting OpenEXR(RGBA) image to file \"%s\"...\n", filename.c_str());
-	WriteRGBAImage(filename, rgb, alpha,
-		xPixelCount, yPixelCount,
-		xResolution, yResolution,
-		xPixelStart, yPixelStart);
-	printf("Done...\n\n");
+
+	switch ( oType ) {
+		case WI_HDR : 
+			// Write hdr EXR file
+			WriteEXRImage(rgb, alpha, hdrFilename);
+			break;
+
+		case WI_LDR : 
+			// Write tonemapped ldr TGA file
+		    ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
+			  bloomRadius,bloomWidth,toneMapper.c_str(),
+			  &toneParams,gamma,dither,255);
+			WriteTGAImage(rgb, alpha, ldrFilename);
+			break;
+
+		case WI_DISPLAY : 
+			// Update gui film display
+			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
+			  bloomRadius,bloomWidth,toneMapper.c_str(),
+			  &toneParams,gamma,dither,255);
+			// TODO update gui
+	}
+
 	// Release temporary image memory
 	delete[] alpha;
 	delete[] rgb;
 }
-Film* ImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
-{
-	string filename = params.FindOneString("filename", "lux.exr");
-	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);
 
-	int xres = params.FindOneInt("xresolution", 640);
-	int yres = params.FindOneInt("yresolution", 480);
+void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filename)
+{
+	printf("\nWriting Tonemapped TGA image to file \"%s\"...\n", filename.c_str());
+	
+	// Open file
+	FILE* tgaFile = fopen(filename.c_str(),"wb");
+	if (!tgaFile) {
+		std::cout << "Error: Cannot open file for output" << std::endl;
+		return;	
+	}
+	
+	// write the header
+	// make sure its platform independent of little endian and big endian
+	char header[18];
+	memset(header, 0,sizeof(char)*18);
+	
+	header[2] = 2;							// set the data type of the targa (2 = uncompressed)
+	short xResShort = xResolution;			// set the resolution and make sure the bytes are in the right order
+	header[13] = (char) (xResShort >> 8);
+	header[12] = xResShort;	
+	short yResShort = yResolution;
+	header[15] = (char) (yResShort >> 8);
+	header[14] = yResShort;
+	header[16] = 32;						// set the bitdepth
+	
+	// put the header data into the file
+	for (int i=0; i < 18; i++)
+		fputc(header[i],tgaFile);
+	
+	// write the bytes of data out
+	for (int i=yPixelCount-1;  i >= 0 ; i--) {
+		for (int j=0;  j < xPixelCount; j++) {	
+			fputc((int) rgb[(i*xPixelCount+j)*3+2], tgaFile);
+			fputc((int) rgb[(i*xPixelCount+j)*3+1], tgaFile);
+			fputc((int) rgb[(i*xPixelCount+j)*3+0], tgaFile);
+			fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
+		}
+	}
+		
+	fclose(tgaFile);
+	printf("Done.\n");
+}
+
+void MultiImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filename)
+{
+	// Write OpenEXR RGBA image
+	printf("\nWriting OpenEXR image to file \"%s\"...\n", filename.c_str());
+	WriteRGBAImage(filename, rgb, alpha,
+		xPixelCount, yPixelCount,
+		xResolution, yResolution,
+		xPixelStart, yPixelStart);
+	printf("Done.\n");
+}
+
+Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
+{
+	bool hdr_out, ldr_out;
+
+	// General
+	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);	
+	int xres = params.FindOneInt("xresolution", 800);
+	int yres = params.FindOneInt("yresolution", 600);
 	float crop[4] = { 0, 1, 0, 1 };
 	int cwi;
 	const float *cr = params.FindFloat("cropwindow", &cwi);
@@ -197,8 +319,38 @@ Film* ImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[2] = Clamp(min(cr[2], cr[3]), 0., 1.);
 		crop[3] = Clamp(max(cr[2], cr[3]), 0., 1.);
 	}
-	int writeFrequency = params.FindOneInt("writefrequency", -1);
-    int writeFrequencySeconds = params.FindOneInt("writefrequencyseconds", 20);
-	return new ImageFilm(xres, yres, filter, crop,
-		filename, premultiplyAlpha, writeFrequency, writeFrequencySeconds);
+
+	// output filenames
+	string hdr_filename = params.FindOneString("hdr_filename", "-");
+	string ldr_filename = params.FindOneString("ldr_filename", "-");
+	if(hdr_filename == "-")
+		if(ldr_filename == "-")
+		ldr_filename = "luxout.tga"; // default to ldr output
+	hdr_out = ldr_out = false;
+	if( hdr_filename != "-") hdr_out = true;
+	if( ldr_filename != "-") ldr_out = true;
+
+	// intervals
+	int hdr_writeInterval = params.FindOneInt("hdr_writeinterval", 60);
+	int ldr_writeInterval = params.FindOneInt("ldr_writeinterval", 30);
+	int ldr_displayInterval = params.FindOneInt("ldr_displayinterval", 10);
+
+	// tonemapper
+	string toneMapper = params.FindOneString("tonemapper", "contrast");
+    float contrast_displayAdaptationY = params.FindOneFloat("contrast_displayadaptationY", 50.0f);
+	float nonlinear_MaxY = params.FindOneFloat("nonlinear_maxY", 0.0f);
+
+	// Pipeline correction
+	float bloomWidth = params.FindOneFloat("bloomwidth", 0.0f);
+	float bloomRadius = params.FindOneFloat("bloomradius", 0.0f);
+	float gamma = params.FindOneFloat("gamma", 1.0f);
+	float dither = params.FindOneFloat("dither", 0.0f);
+
+	return new MultiImageFilm(xres, yres, filter, crop,
+		hdr_out, ldr_out, hdr_filename, ldr_filename, premultiplyAlpha,
+		hdr_writeInterval, ldr_writeInterval, ldr_displayInterval,
+        toneMapper, contrast_displayAdaptationY, nonlinear_MaxY,
+		bloomWidth, bloomRadius, gamma, dither);
 }
+
+

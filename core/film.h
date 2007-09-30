@@ -35,6 +35,7 @@ public:
 	virtual void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha) = 0;
 	virtual void WriteImage() = 0;
+	virtual void WriteImage(int oType) = 0;
 	virtual void GetSampleExtent(int *xstart,
 		int *xend, int *ystart, int *yend) const = 0;
 	// Film Public Data

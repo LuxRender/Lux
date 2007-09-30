@@ -61,6 +61,7 @@
 #include "perspective.h"
 
 #include "image.h"
+#include "multiimage.h"
 
 #include "box.h"
 #include "gaussian.h"
@@ -1172,7 +1173,14 @@ COREDLL Film *MakeFilm(const string &name,
         paramSet.ReportUnused();
         return ret;
     }
-    
+
+	if(name=="multiimage")
+    {
+		Film *ret=MultiImageFilm::CreateFilm(paramSet, filter);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
     Error("Static loading of film '%s' failed.",name.c_str());
     return NULL;
 }
