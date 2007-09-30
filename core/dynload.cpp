@@ -121,6 +121,7 @@
 #include "highcontrast.h"
 #include "maxwhite.h"
 #include "nonlinear.h"
+#include "reinhard.h"
 
 #include "exponential.h"
 #include "homogeneous.h"
@@ -1152,7 +1153,13 @@ COREDLL ToneMap *MakeToneMap(const string &name,
         paramSet.ReportUnused();
         return ret;
     }
-    
+    if(name=="reinhard")
+    {
+        ToneMap *ret=ReinhardOp::CreateToneMap(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
     Error("Static loading of tonemap '%s' failed.",name.c_str());
     return NULL;
 }

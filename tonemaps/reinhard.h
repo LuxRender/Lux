@@ -20,44 +20,47 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef LUX_SCENE_H
-#define LUX_SCENE_H
-// scene.h*
-#include "lux.h"
-#include "primitive.h"
-#include "transport.h"
-
-//#include <boost/thread/thread.hpp>
-//#include <boost/thread/mutex.hpp>
-
-// Scene Declarations
-class COREDLL Scene {
+#include "tonemap.h"
+#include "paramset.h"
+// ReinhardOp Declarations
+class ReinhardOp : public ToneMap {
 public:
-	// Scene Public Methods
-	void Render();
-	Scene(Camera *c, SurfaceIntegrator *in,
-		VolumeIntegrator *vi, Sampler *s,
-		Primitive *accel, const vector<Light *> &lts,
-		VolumeRegion *vr);
-	~Scene();
-	bool Intersect(const Ray &ray, Intersection *isect) const {
-		return aggregate->Intersect(ray, isect);
-	}
-	bool IntersectP(const Ray &ray) const {
-		return aggregate->IntersectP(ray);
-	}
-	const BBox &WorldBound() const;
-	Spectrum Li(const RayDifferential &ray, const Sample *sample,
-		float *alpha = NULL) const;
-	Spectrum Transmittance(const Ray &ray) const;
-	// Scene Data
-	Primitive *aggregate;
-	vector<Light *> lights;
-	Camera *camera;
-	VolumeRegion *volumeRegion;
-	SurfaceIntegrator *surfaceIntegrator;
-	VolumeIntegrator *volumeIntegrator;
-	Sampler *sampler;
-	BBox bound;
+	ReinhardOp(float prS, float poS, float b);
+	void Map(const float *y,
+	         int xRes, int yRes,
+			 float maxDisplayY, float *scale) const;
+
+	float pre_scale;
+	float post_scale;
+	float burn;
+	
+	static ToneMap *CreateToneMap(const ParamSet &ps);
 };
-#endif // LUX_SCENE_H
+
+
+/*
+class ReinhardToneMapper : public ToneMapper
+{
+public:
+	=====================================================================
+	ReinhardToneMapper
+	------------------
+	
+	=====================================================================
+	ReinhardToneMapper(float pre_scale, float post_scale, float burn);
+
+	virtual ~ReinhardToneMapper();
+
+
+	virtual void draftToneMapImage(Image& image);
+
+	virtual void toneMapImage(Image& image);
+
+private:
+	void doToneMap(Image& image, bool nice_aa);
+
+	float pre_scale;
+	float post_scale;
+	float burn;
+};
+*/
