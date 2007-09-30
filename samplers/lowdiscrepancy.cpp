@@ -83,13 +83,13 @@ bool LDSampler::GetNextSample(Sample *sample) {
 		yPos = yPixelStart + Ceil2Int( Sobol2( fs_pos, fs_scramble ) * yPixelEnd );
 		
 
-		// Advance to next pixel for low-discrepancy sampling
-		//if (++xPos == xPixelEnd) {
-		//	xPos = xPixelStart;
-		//	++yPos;
-		//}
-		//if (yPos == yPixelEnd)
-		//	return false;
+/*		// Advance to next pixel for low-discrepancy sampling
+		if (++xPos == xPixelEnd) {
+			xPos = xPixelStart;
+			++yPos;
+		}
+		if (yPos == yPixelEnd)
+			return false; */
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
 		LDShuffleScrambled2D(1, pixelSamples, imageSamples);

@@ -36,31 +36,3 @@ public:
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 };
-
-
-/*
-class ReinhardToneMapper : public ToneMapper
-{
-public:
-	=====================================================================
-	ReinhardToneMapper
-	------------------
-	
-	=====================================================================
-	ReinhardToneMapper(float pre_scale, float post_scale, float burn);
-
-	virtual ~ReinhardToneMapper();
-
-
-	virtual void draftToneMapImage(Image& image);
-
-	virtual void toneMapImage(Image& image);
-
-private:
-	void doToneMap(Image& image, bool nice_aa);
-
-	float pre_scale;
-	float post_scale;
-	float burn;
-};
-*/

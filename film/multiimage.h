@@ -42,6 +42,7 @@ public:
 		             const string &hdr_filename, const string &ldr_filename, bool premult,
 		             int hdr_writeInterval, int ldr_writeInterval, int ldr_displayInterval,
 					 const string &toneMapper, float contrast_displayAdaptationY, float nonlinear_MaxY,
+					 float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
 					 float bloomWidth, float bloomRadius, float gamma, float dither);
 	~MultiImageFilm() {
 		delete pixels;
@@ -82,5 +83,6 @@ private:
 	string toneMapper;
 	ParamSet toneParams;
 	float contrastDisplayAdaptationY, nonlinearMaxY,
+		reinhardPrescale, reinhardPostscale, reinhardBurn,
 		bloomWidth, bloomRadius, gamma, dither;
 };

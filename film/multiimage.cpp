@@ -40,6 +40,7 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 		             const string &hdr_filename, const string &ldr_filename, bool premult,
 		             int hdr_wI, int ldr_wI, int ldr_dI,
 					 const string &tm, float c_dY, float n_MY,
+					 float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
 					 float bw, float br, float g, float d)
 	: Film(xres, yres) {
 	filter = filt;
@@ -57,6 +58,9 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 
     contrastDisplayAdaptationY = c_dY;
     nonlinearMaxY = n_MY;
+	reinhardPrescale = reinhard_prescale;
+	reinhardPostscale = reinhard_postscale;
+	reinhardBurn = reinhard_burn;
 	toneMapper = tm;
 	bloomWidth = bw;
 	bloomRadius = br;
@@ -65,11 +69,18 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 
 	// Set tonemapper params	
 	if( toneMapper == "contrast" ) {
-		string sdY = "displayadaptationY";
-		toneParams.AddFloat(sdY, &contrastDisplayAdaptationY, 1);
+		string st = "displayadaptationY";
+		toneParams.AddFloat(st, &contrastDisplayAdaptationY, 1);
 	} else if( toneMapper == "nonlinear" ) {
-		string smY = "maxY";
-		toneParams.AddFloat(smY, &nonlinearMaxY, 1);
+		string st = "maxY";
+		toneParams.AddFloat(st, &nonlinearMaxY, 1);
+	} else if( toneMapper == "reinhard" ) {
+		string st = "prescale";
+		toneParams.AddFloat(st, &reinhardPrescale, 1);
+		string st2 = "postscale";
+		toneParams.AddFloat(st2, &reinhardPostscale, 1);
+		string st3 = "burn";
+        toneParams.AddFloat(st3, &reinhardBurn, 1);
 	}
 
 	// init locks and timers
@@ -336,20 +347,24 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	int ldr_displayInterval = params.FindOneInt("ldr_displayinterval", 10);
 
 	// tonemapper
-	string toneMapper = params.FindOneString("tonemapper", "contrast");
+	string toneMapper = params.FindOneString("tonemapper", "reinhard");
     float contrast_displayAdaptationY = params.FindOneFloat("contrast_displayadaptationY", 50.0f);
 	float nonlinear_MaxY = params.FindOneFloat("nonlinear_maxY", 0.0f);
+	float reinhard_prescale = params.FindOneFloat("reinhard_prescale", 1.0f);
+	float reinhard_postscale = params.FindOneFloat("reinhard_postscale", 1.0f);
+	float reinhard_burn = params.FindOneFloat("reinhard_burn", 6.0f);
 
 	// Pipeline correction
 	float bloomWidth = params.FindOneFloat("bloomwidth", 0.0f);
 	float bloomRadius = params.FindOneFloat("bloomradius", 0.0f);
-	float gamma = params.FindOneFloat("gamma", 1.0f);
+	float gamma = params.FindOneFloat("gamma", 2.2f);
 	float dither = params.FindOneFloat("dither", 0.0f);
 
 	return new MultiImageFilm(xres, yres, filter, crop,
 		hdr_out, ldr_out, hdr_filename, ldr_filename, premultiplyAlpha,
 		hdr_writeInterval, ldr_writeInterval, ldr_displayInterval,
         toneMapper, contrast_displayAdaptationY, nonlinear_MaxY,
+		reinhard_prescale, reinhard_postscale, reinhard_burn,
 		bloomWidth, bloomRadius, gamma, dither);
 }
 

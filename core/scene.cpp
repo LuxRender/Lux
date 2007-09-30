@@ -152,6 +152,32 @@ void* Render_Thread( void* p )
 		}
     return 0; // _endthread(); ??? 
 }
+/*
+#include <fltk/Window.h>
+#include <fltk/rgbImage.h>
+#include <fltk/run.h>
+
+fltk::rgbImage* rgb_image;
+fltk::Window* window;
+
+fltk::Window* Render_Window(int film_x, int film_y, fltk::rgbImage* image) {
+  fltk::Window* w;
+   {fltk::Window* o = new fltk::Window(film_x + 100, film_y + 100);
+    w = o;
+    o->image(image);
+    o->color((fltk::Color)0x80808000);
+    o->shortcut(0xff1b);
+    o->align(fltk::ALIGN_CENTER);
+    o->resizable(o);
+  }
+  return  w;
+}
+
+void update(void*) {
+//	rgb_image->uncache();
+    fltk::redraw();
+    fltk::repeat_timeout(10.0, update);
+}*/
 
 void Scene::Render() {
 	// integrator preprocessing
@@ -160,7 +186,7 @@ void Scene::Render() {
     volumeIntegrator->Preprocess(this);
 
 	// init threads
-	int thr_nr = 3;
+	int thr_nr = 4;
 
 	u_int seeds[4];
 	seeds[0] = 536870912;
@@ -181,10 +207,10 @@ void Scene::Render() {
 		thr_dat->Spl = new Sample( (SurfaceIntegrator*) thr_dat->Si, 				// Sample (u)
 			(VolumeIntegrator*) thr_dat->Vi, this );
 		thr_dat->Splr = sampler->clone();											// Sampler (uc)		
-		thr_dat->Splr->setSeed( seeds[i] );															// TODO set unique seed
+		thr_dat->Splr->setSeed( seeds[i] );	
 		thr_dat->Cam = camera;														// Camera (1)
 		thr_dat->Scn = this;														// Scene (this)
-		thr_dat->arena = new MemoryArena();											// MemoryArena (u)
+		thr_dat->arena = new MemoryArena();											// MemoryArena (u)			// TODO delete sample * memoryarena
 
 		Fl_Thread* thr_ptr = new Fl_Thread();
 		fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
@@ -196,8 +222,25 @@ void Scene::Render() {
 	printf("CTL: Signaling threads to start...\n");
 	for( int i = 0; i < thr_nr; i++ )
 		thr_dat_ptrs[i]->Sig = THR_SIG_RUN;
+/*
+	int film_resX = camera->film->xResolution;
+	int film_resY = camera->film->yResolution;
 
-	// ZZZzzz...
+	uchar* rgb_datap; // = camera->film->getData();
+    rgb_image = new fltk::rgbImage( rgb_datap , film_resX, film_resY, 3, 0);
+
+    window = Render_Window( film_resX, film_resY, rgb_image );
+    window->show(1, m_argv);
+
+	fltk::add_timeout(10.0, update);
+    
+    // run gui
+    return fltk::run();    
+
+
+
+*/
+
 
 #if defined(WIN32)
 	while(true) { Sleep(1000); } // win32 Sleep(milliseconds)
@@ -205,12 +248,8 @@ void Scene::Render() {
 	while(true) { sleep(1); }	// linux/gcc sleep(seconds)
 #endif
 
-	// Clean up after rendering and store final image TODO cleanup all thread cloned stuff too ;-)
-	//delete sample;
-	//progress.Done();
-	camera->film->WriteImage();
 
-	return; // everything worked fine! Have a great day :)
+	return; // everything worked fine! Have a great day :) */
 }
 Scene::~Scene() {
 	delete camera;

@@ -24,7 +24,6 @@
  * Reinhard Tonemapping (Indigo compatible) class
  *
  * Uses Indigo compatible parameters.
- * Adapted from Indigo Reinhard Tonemapper from Violet GPL sources.
  *
  * 30/09/07 - Radiance - Initial Version
  */
@@ -42,38 +41,27 @@ ReinhardOp::ReinhardOp(float prS, float poS, float b)
 void ReinhardOp::Map(const float *y, int xRes, int yRes,
 		float maxDisplayY, float *scale) const
 {
-	const float alpha = 0.1f;
+	const float alpha = .1f;
+    const float invA = 1.f / 683.f;
+
+	// Compute world adaptation luminance, _Ywa_
 	float Ywa = 0.;
 	for (int i = 0; i < xRes * yRes; ++i)
-		Ywa += y[i];
-	const float av_lum = Ywa / (float) (xRes * yRes);
-	const float iscale = pre_scale * alpha / av_lum;
+		if (y[i] > 0) Ywa += y[i];
+	Ywa = Ywa / (xRes * yRes);
+	Ywa *= invA;
 
-	// find maximum luminance
-	float maxY = 0.0f;
-	for (int i = 0; i < xRes * yRes; ++i)
-		if( maxY < y[i] )
-			maxY = y[i];
+	const float Yw = pre_scale * alpha * burn;
+	const float invY2 = 1.f / (Yw * Yw);
+	const float pScale = pre_scale * alpha / Ywa;
 
-	if(maxY == 0.0f) return;
-
-	// use linear tonemapping if post_scale = 0
-	if (post_scale == 0) 
-	{
-		for (int i = 0; i < xRes * yRes; ++i)
-			scale[i] = pre_scale / av_lum;
-		return;
-	} 
-
-	const float Y_white = pre_scale * alpha * burn;
-	const float recip_Y_white2 = 1.0f / (Y_white * Y_white);
-
-	// do tonemap
 	for (int i = 0; i < xRes * yRes; ++i) {
-		float lum = iscale * y[i];
-		scale[i] = ( post_scale * (1.0f + lum*recip_Y_white2) / (1.0f + lum) ); //* maxDisplayY;
+		float ys = y[i] * invA;
+		scale[i] = pScale * (maxDisplayY * invA *
+			post_scale * (1.f + ys * invY2) / (1.f + ys));
 	}
 }
+
 ToneMap * ReinhardOp::CreateToneMap(const ParamSet &ps) {
 	float pre_scale = ps.FindOneFloat("prescale", 1.f);
 	float post_scale = ps.FindOneFloat("postscale", 1.f);
