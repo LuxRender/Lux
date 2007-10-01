@@ -67,6 +67,8 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	gamma = g;
 	dither = d;	
 
+	framebuffer = NULL;
+
 	// Set tonemapper params	
 	if( toneMapper == "contrast" ) {
 		string st = "displayadaptationY";
@@ -246,12 +248,16 @@ void MultiImageFilm::WriteImage(int oType) {
 			WriteTGAImage(rgb, alpha, ldrFilename);
 			break;
 
-		case WI_DISPLAY : 
+		case WI_FRAMEBUFFER : 
 			// Update gui film display
 			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
 			  bloomRadius,bloomWidth,toneMapper.c_str(),
 			  &toneParams,gamma,dither,255);
-			// TODO update gui
+			// Copy to framebuffer pixels
+			u_int nPix = xPixelCount * yPixelCount;
+			for (u_int i=0;  i < nPix*3 ; i++) {
+					framebuffer[i] = (unsigned char) rgb[i];
+			}
 	}
 
 	// Release temporary image memory
@@ -311,6 +317,33 @@ void MultiImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filen
 		xResolution, yResolution,
 		xPixelStart, yPixelStart);
 	printf("Done.\n");
+}
+
+void MultiImageFilm::createFrameBuffer()
+{
+	// allocate pixels
+	u_int nPix = xPixelCount * yPixelCount;
+    framebuffer = new unsigned char[3*nPix];			// TODO delete data
+
+	// zero it out
+	for(u_int i = 0; i < 3*nPix; i++)
+		framebuffer[i] = unsigned char(0);
+}
+
+void MultiImageFilm::updateFrameBuffer()
+{
+	if(!framebuffer)
+		createFrameBuffer();
+
+	WriteImage(WI_FRAMEBUFFER);
+}
+
+unsigned char* MultiImageFilm::getFrameBuffer()
+{
+	if(!framebuffer)
+		createFrameBuffer();
+	
+	return framebuffer;
 }
 
 Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)

@@ -48,6 +48,10 @@ public:
 	                     int *ystart, int *yend) const;
 	void WriteImage();
 	void WriteImage(int oType) {};
+
+	unsigned char* getFrameBuffer() { return NULL; };
+	void updateFrameBuffer() {};
+	float getldrDisplayInterval() { return 10.0f; }
 	
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 private:

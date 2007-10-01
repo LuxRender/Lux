@@ -20,37 +20,32 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef LUX_FILM_H
-#define LUX_FILM_H
-// film.h*
-#include "lux.h"
-// Film Declarations
-class Film {
-public:
-	// Film Interface
-	Film(int xres, int yres)
-		: xResolution(xres), yResolution(yres) {
-	}
-	virtual ~Film() { }
-	virtual void AddSample(const Sample &sample, const Ray &ray,
-		const Spectrum &L, float alpha) = 0;
-	virtual void WriteImage() = 0;
-	virtual void WriteImage(int oType) = 0;
-	virtual void GetSampleExtent(int *xstart,
-		int *xend, int *ystart, int *yend) const = 0;
-	virtual unsigned char* getFrameBuffer() = 0;
-	virtual void updateFrameBuffer() = 0;
-	virtual float getldrDisplayInterval() = 0;
-	// Film Public Data
-	const int xResolution, yResolution;
-};
-// Image Pipeline Declarations
-extern COREDLL void ApplyImagingPipeline(float *rgb,
-	int xResolution, int yResolution,
-	float *yWeight = NULL,
-	float bloomRadius = .2f, float bloomWeight = 0.f,
-	const char *tonemap = NULL,
-	const ParamSet *toneMapParams = NULL,
-	float gamma = 2.2, float dither = 0.5f,
-	int maxDisplayValue = 255);
-#endif // LUX_FILM_H
+#ifndef LUX_GUI_H
+#define LUX_GUI_H
+
+#include <FL/Fl.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/fl_ask.H>
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Menu_Bar.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Tabs.H>
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Gl_Window.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Value_Slider.H>
+#include <FL/Fl_Value_Input.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Round_Button.H>
+#include <FL/Fl_Text_Buffer.H>
+#include <FL/Fl_Text_Editor.H>
+#include <FL/Fl_Help_Dialog.H>
+#include <FL/Fl_Overlay_Window.H>
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+
+
+#endif // LUX_GUI_H

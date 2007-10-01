@@ -31,7 +31,7 @@
 
 #define WI_HDR 0
 #define WI_LDR 1
-#define WI_DISPLAY 2
+#define WI_FRAMEBUFFER 2
 
 // ImageFilm Declarations
 class MultiImageFilm : public Film {
@@ -57,6 +57,12 @@ public:
 	void WriteImage(int oType);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
+
+	// used by gui
+	void createFrameBuffer();
+	void updateFrameBuffer();
+	unsigned char* getFrameBuffer();
+	float getldrDisplayInterval() { return ldrDisplayInterval; }
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 private:
@@ -85,4 +91,5 @@ private:
 	float contrastDisplayAdaptationY, nonlinearMaxY,
 		reinhardPrescale, reinhardPostscale, reinhardBurn,
 		bloomWidth, bloomRadius, gamma, dither;
+	unsigned char *framebuffer;
 };

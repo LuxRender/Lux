@@ -27,41 +27,9 @@
 #include "sampling.h"
 #include "dynload.h"
 #include "volume.h"
-#  if HAVE_PTHREAD_H
-// Use POSIX threading...
+#include "luxgui.h"
 
-#    include <pthread.h>
-
-typedef pthread_t Fl_Thread;
-
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
-  return pthread_create((pthread_t*)&t, 0, f, p);
-}
-
-#  elif defined(WIN32) && !defined(__WATCOMC__) // Use Windows threading...
-
-#    include <windows.h>
-#    include <process.h>
-
-typedef unsigned long Fl_Thread;
-
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
-  return t = (Fl_Thread)_beginthread((void( __cdecl * )( void * ))f, 0, p);
-}
-
-#  elif defined(__WATCOMC__)
-#    include <process.h>
-
-typedef unsigned long Fl_Thread;
-
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
-  return t = (Fl_Thread)_beginthread((void(* )( void * ))f, 32000, p);
-}
-#  endif // !HAVE_PTHREAD_H
-
-#define THR_SIG_RUN 1
-#define THR_SIG_PAUSE 2
-#define THR_SIG_EXIT 3
+extern Scene* GuiScenePtr;	// init in luxgui.cpp
 
 class Thread_data
 {
@@ -76,17 +44,15 @@ class Thread_data
 	MemoryArena* arena;
 };
 
+// thread pointers
 Thread_data* thr_dat_ptrs[64];
 Fl_Thread* thr_ptrs[64];
-
-void* Render_Thread( void* p );
 
 // Scene Methods
 void* Render_Thread( void* p )
 {
-    Thread_data* t_d = (Thread_data*) p;
-
 	// unpack thread data
+    Thread_data* t_d = (Thread_data*) p;
 	int n = t_d->n;
 	printf("THR%i: thread started\n", n+1);
 
@@ -150,49 +116,31 @@ void* Render_Thread( void* p )
 			//++cameraRaysTraced;
 			//progress.Update();
 		}
-    return 0; // _endthread(); ??? 
+
+	_endthread();
+    return 0;
 }
-/*
-#include <fltk/Window.h>
-#include <fltk/rgbImage.h>
-#include <fltk/run.h>
-
-fltk::rgbImage* rgb_image;
-fltk::Window* window;
-
-fltk::Window* Render_Window(int film_x, int film_y, fltk::rgbImage* image) {
-  fltk::Window* w;
-   {fltk::Window* o = new fltk::Window(film_x + 100, film_y + 100);
-    w = o;
-    o->image(image);
-    o->color((fltk::Color)0x80808000);
-    o->shortcut(0xff1b);
-    o->align(fltk::ALIGN_CENTER);
-    o->resizable(o);
-  }
-  return  w;
-}
-
-void update(void*) {
-//	rgb_image->uncache();
-    fltk::redraw();
-    fltk::repeat_timeout(10.0, update);
-}*/
 
 void Scene::Render() {
+	// set pointer for gui
+	GuiScenePtr = (Scene*) this;
+
 	// integrator preprocessing
 	printf("CTL: Preprocessing integrators...\n");
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
 	// init threads
-	int thr_nr = 4;
+	int thr_nr = 3;
 
 	u_int seeds[4];
 	seeds[0] = 536870912;
 	seeds[1] = 1073741824;
 	seeds[2] = 1610612736;
 	seeds[3] = 2147483648;
+
+	// lock gui TODO add check
+	Fl::lock();    
 
 	// create thread data structures and launch threads
 	printf("CTL: Initializing %i render threads.\n", thr_nr);
@@ -213,7 +161,7 @@ void Scene::Render() {
 		thr_dat->arena = new MemoryArena();											// MemoryArena (u)			// TODO delete sample * memoryarena
 
 		Fl_Thread* thr_ptr = new Fl_Thread();
-		fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
+		fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );	// TODO make thr_ptr[i] ?
 		thr_dat_ptrs[i] = thr_dat;
 		thr_ptrs[i] = thr_ptr;
 	}
@@ -222,25 +170,9 @@ void Scene::Render() {
 	printf("CTL: Signaling threads to start...\n");
 	for( int i = 0; i < thr_nr; i++ )
 		thr_dat_ptrs[i]->Sig = THR_SIG_RUN;
-/*
-	int film_resX = camera->film->xResolution;
-	int film_resY = camera->film->yResolution;
-
-	uchar* rgb_datap; // = camera->film->getData();
-    rgb_image = new fltk::rgbImage( rgb_datap , film_resX, film_resY, 3, 0);
-
-    window = Render_Window( film_resX, film_resY, rgb_image );
-    window->show(1, m_argv);
-
-	fltk::add_timeout(10.0, update);
-    
-    // run gui
-    return fltk::run();    
-
-
-
-*/
-
+   
+	// unlock gui TODO add check
+    Fl::unlock();
 
 #if defined(WIN32)
 	while(true) { Sleep(1000); } // win32 Sleep(milliseconds)
