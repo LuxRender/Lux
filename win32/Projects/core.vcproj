@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers"
+				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../win32/fltk-1.1.x-r5940-vs2005;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers"
 				PreprocessorDefinitions="CORE_SOURCE;WIN32;NDEBUG;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
@@ -129,7 +129,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers"
+				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../win32/fltk-1.1.x-r5940-vs2005;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers;../renderer"
 				PreprocessorDefinitions="CORE_SOURCE;NDEBUG;WIN32;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -152,10 +152,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib"
+				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib fltk.lib fltkforms.lib fltkgl.lib fltkimages.lib fltkjpeg.lib fltkpng.lib fltkz.lib ws2_32.lib comctl32.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../win32/openexr-1.4.0-vs2005/lib"
+				AdditionalLibraryDirectories="../../win32/openexr-1.4.0-vs2005/lib;../../win32/fltk-1.1.x-r5940-vs2005/lib"
 				GenerateDebugInformation="false"
 				ProgramDatabaseFile="$(OUTDIR)/core.pdb"
 				SubSystem="1"
@@ -316,6 +316,10 @@
 				>
 				<File
 					RelativePath="..\..\film\image.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\film\multiimage.cpp"
 					>
 				</File>
 			</Filter>
@@ -507,7 +511,7 @@
 				Name="renderer"
 				>
 				<File
-					RelativePath="..\..\renderer\lux.cpp"
+					RelativePath="..\..\renderer\luxgui.cpp"
 					>
 				</File>
 			</Filter>
@@ -652,6 +656,10 @@
 				</File>
 				<File
 					RelativePath="..\..\tonemaps\nonlinear.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\tonemaps\reinhard.cpp"
 					>
 				</File>
 			</Filter>
@@ -810,6 +818,10 @@
 				>
 				<File
 					RelativePath="..\..\film\image.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\film\multiimage.h"
 					>
 				</File>
 			</Filter>
@@ -1116,6 +1128,10 @@
 					RelativePath="..\..\tonemaps\nonlinear.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\tonemaps\reinhard.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="volumes"
@@ -1130,6 +1146,14 @@
 				</File>
 				<File
 					RelativePath="..\..\volumes\volumegrid.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="renderer"
+				>
+				<File
+					RelativePath="..\..\renderer\luxgui.h"
 					>
 				</File>
 			</Filter>
