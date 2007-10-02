@@ -200,16 +200,16 @@ class COREDLL TextureParams {
 public:
 	// TextureParams Public Methods
 	TextureParams(const ParamSet &geomp, const ParamSet &matp,
-			map<string, Texture<float>::TexturePtr > &ft,
-			map<string, Texture<Spectrum>::TexturePtr > &st)
+			map<string, boost::shared_ptr<Texture<float> > > &ft,
+			map<string, boost::shared_ptr<Texture<Spectrum> > > &st)
 		: geomParams(geomp),
 		  materialParams(matp),
 		  floatTextures(ft),
 		  spectrumTextures(st) {
 	}
-	Texture<Spectrum>::TexturePtr GetSpectrumTexture(const string &name,
+	boost::shared_ptr<Texture<Spectrum> > GetSpectrumTexture(const string &name,
 			const Spectrum &def) const;
-	Texture<float>::TexturePtr GetFloatTexture(const string &name,
+	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
 			float def) const;
 	float FindFloat(const string &n, float d) const {
 		return geomParams.FindOneFloat(n,
@@ -246,8 +246,8 @@ private:
 	// TextureParams Private Data
 	const ParamSet &geomParams, &materialParams;
 	map<string,
-	    Texture<float>::TexturePtr > &floatTextures;
+	    boost::shared_ptr<Texture<float> > > &floatTextures;
 	map<string,
-	    Texture<Spectrum>::TexturePtr > &spectrumTextures;
+	    boost::shared_ptr<Texture<Spectrum> > > &spectrumTextures;
 };
 #endif // LUX_PARAMSET_H

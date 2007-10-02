@@ -27,11 +27,11 @@
 class Translucent : public Material {
 public:
 	// Translucent Public Methods
-	Translucent(Texture<Spectrum>::TexturePtr kd, Texture<Spectrum>::TexturePtr ks,
-			Texture<float>::TexturePtr rough,
-			Texture<Spectrum>::TexturePtr refl,
-			Texture<Spectrum>::TexturePtr trans,
-			Texture<float>::TexturePtr bump) {
+	Translucent(boost::shared_ptr<Texture<Spectrum> > kd, boost::shared_ptr<Texture<Spectrum> > ks,
+			boost::shared_ptr<Texture<float> > rough,
+			boost::shared_ptr<Texture<Spectrum> > refl,
+			boost::shared_ptr<Texture<Spectrum> > trans,
+			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
 		roughness = rough;
@@ -44,8 +44,8 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Translucent Private Data
-	Texture<Spectrum>::TexturePtr Kd, Ks;
-	Texture<float>::TexturePtr roughness;
-	Texture<Spectrum>::TexturePtr reflect, transmit;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
+	boost::shared_ptr<Texture<float> > roughness;
+	boost::shared_ptr<Texture<Spectrum> > reflect, transmit;
+	boost::shared_ptr<Texture<float> > bumpMap;
 };

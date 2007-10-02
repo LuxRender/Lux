@@ -90,9 +90,9 @@ struct GraphicsState {
 	// Graphics State Methods
 	GraphicsState();
 	// Graphics State
-	map<string, Texture<float>::TexturePtr >
+	map<string, boost::shared_ptr<Texture<float> > >
 		floatTextures;
-	map<string, Texture<Spectrum>::TexturePtr >
+	map<string, boost::shared_ptr<Texture<Spectrum> > >
 		spectrumTextures;
 	ParamSet materialParams;
 	string material;
@@ -316,7 +316,7 @@ COREDLL void luxTexture(const string &name,
 		if (graphicsState.floatTextures.find(name) !=
 		    graphicsState.floatTextures.end())
 			Warning("Texture \"%s\" being redefined", name.c_str());
-		Texture<float>::TexturePtr ft = MakeFloatTexture(texname,
+		boost::shared_ptr<Texture<float> > ft = MakeFloatTexture(texname,
 			curTransform, tp);
 		if (ft) graphicsState.floatTextures[name] = ft;
 	}
@@ -324,7 +324,7 @@ COREDLL void luxTexture(const string &name,
 		// Create _color_ texture and store in _spectrumTextures_
 		if (graphicsState.spectrumTextures.find(name) != graphicsState.spectrumTextures.end())
 			Warning("Texture \"%s\" being redefined", name.c_str());
-		Texture<Spectrum>::TexturePtr st = MakeSpectrumTexture(texname,
+		boost::shared_ptr<Texture<Spectrum> > st = MakeSpectrumTexture(texname,
 			curTransform, tp);
 		if (st) graphicsState.spectrumTextures[name] = st;
 	}
@@ -370,7 +370,7 @@ COREDLL void luxShape(const string &name,
 	                 graphicsState.materialParams,
 					 graphicsState.floatTextures,
 					 graphicsState.spectrumTextures);
-	Texture<float>::TexturePtr bump;
+	boost::shared_ptr<Texture<float> > bump;
 	MaterialPtr mtl =
 		MakeMaterial(graphicsState.material,
 		             curTransform, mp);

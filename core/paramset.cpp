@@ -431,7 +431,7 @@ string ParamSet::ToString() const {
 	return ret;
 }
 // TextureParams Method Definitions
-Texture<Spectrum>::TexturePtr
+boost::shared_ptr<Texture<Spectrum> >
 	TextureParams::GetSpectrumTexture(const string &n,
              const Spectrum &def) const {
 	string name = geomParams.FindTexture(n);
@@ -446,10 +446,10 @@ Texture<Spectrum>::TexturePtr
 	}
 	Spectrum val = geomParams.FindOneSpectrum(n,
 		materialParams.FindOneSpectrum(n, def));
-	Texture<Spectrum>::TexturePtr o (new ConstantTexture<Spectrum>(val));
+	boost::shared_ptr<Texture<Spectrum> > o (new ConstantTexture<Spectrum>(val));
 	return o;
 }
-Texture<float>::TexturePtr TextureParams::GetFloatTexture(const string &n,
+boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n,
 		float def) const {
 	string name = geomParams.FindTexture(n);
 	if (name == "") name = materialParams.FindTexture(n);
@@ -461,6 +461,6 @@ Texture<float>::TexturePtr TextureParams::GetFloatTexture(const string &n,
 	}
 	float val = geomParams.FindOneFloat(n,
 		materialParams.FindOneFloat(n, def));
-	Texture<float>::TexturePtr o (new ConstantTexture<float>(val));
+	boost::shared_ptr<Texture<float> > o (new ConstantTexture<float>(val));
 	return o;
 }

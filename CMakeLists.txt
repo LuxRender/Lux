@@ -109,5 +109,5 @@ INCLUDE_DIRECTORIES(${OPENEXR_INC}
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIB})
 
-ADD_EXECUTABLE(luxrender renderer/lux.cpp)
+ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB})

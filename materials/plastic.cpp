@@ -48,9 +48,9 @@ BSDF *Plastic::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 // Plastic Dynamic Creation Routine
 Material* Plastic::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Texture<Spectrum>::TexturePtr Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
-	Texture<Spectrum>::TexturePtr Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
-	Texture<float>::TexturePtr roughness = mp.GetFloatTexture("roughness", .1f);
-	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	boost::shared_ptr<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
+	boost::shared_ptr<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
+	boost::shared_ptr<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
+	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Plastic(Kd, Ks, roughness, bumpMap);
 }

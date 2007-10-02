@@ -64,11 +64,11 @@ BSDF *UberMaterial::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGe
 // UberMaterial Dynamic Creation Routine
 Material* UberMaterial::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Texture<Spectrum>::TexturePtr Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
-	Texture<Spectrum>::TexturePtr Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
-	Texture<Spectrum>::TexturePtr Kr = mp.GetSpectrumTexture("Kr", Spectrum(0.f));
-	Texture<float>::TexturePtr roughness = mp.GetFloatTexture("roughness", .1f);
-	Texture<Spectrum>::TexturePtr opacity = mp.GetSpectrumTexture("opacity", 1.f);
-	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	boost::shared_ptr<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
+	boost::shared_ptr<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
+	boost::shared_ptr<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(0.f));
+	boost::shared_ptr<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
+	boost::shared_ptr<Texture<Spectrum> > opacity = mp.GetSpectrumTexture("opacity", 1.f);
+	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new UberMaterial(Kd, Ks, Kr, roughness, opacity, bumpMap);
 }

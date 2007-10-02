@@ -27,8 +27,8 @@
 class ShinyMetal : public Material {
 public:
 	// ShinyMetal Public Methods
-	ShinyMetal(Texture<Spectrum>::TexturePtr ks, Texture<float>::TexturePtr rough,
-			Texture<Spectrum>::TexturePtr kr, Texture<float>::TexturePtr bump) {
+	ShinyMetal(boost::shared_ptr<Texture<Spectrum> > ks, boost::shared_ptr<Texture<float> > rough,
+			boost::shared_ptr<Texture<Spectrum> > kr, boost::shared_ptr<Texture<float> > bump) {
 		Ks = ks;
 		roughness = rough;
 		Kr = kr;
@@ -39,7 +39,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// ShinyMetal Private Data
-	Texture<Spectrum>::TexturePtr Ks, Kr;
-	Texture<float>::TexturePtr roughness;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<Spectrum> > Ks, Kr;
+	boost::shared_ptr<Texture<float> > roughness;
+	boost::shared_ptr<Texture<float> > bumpMap;
 };

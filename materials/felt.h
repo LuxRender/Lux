@@ -26,9 +26,9 @@
 // Felt Class Declarations
 class Felt : public Material {
 public:
-	Felt(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
+	Felt(boost::shared_ptr<Texture<float> > bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<float> > bumpMap;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

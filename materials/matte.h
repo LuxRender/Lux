@@ -27,9 +27,9 @@
 class Matte : public Material {
 public:
 	// Matte Public Methods
-	Matte(Texture<Spectrum>::TexturePtr kd,
-			Texture<float>::TexturePtr sig,
-			Texture<float>::TexturePtr bump) {
+	Matte(boost::shared_ptr<Texture<Spectrum> > kd,
+			boost::shared_ptr<Texture<float> > sig,
+			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		sigma = sig;
 		bumpMap = bump;
@@ -40,6 +40,6 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Matte Private Data
-	Texture<Spectrum>::TexturePtr Kd;
-	Texture<float>::TexturePtr sigma, bumpMap;
+	boost::shared_ptr<Texture<Spectrum> > Kd;
+	boost::shared_ptr<Texture<float> > sigma, bumpMap;
 };

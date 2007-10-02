@@ -27,10 +27,10 @@
 class Plastic : public Material {
 public:
 	// Plastic Public Methods
-	Plastic(Texture<Spectrum>::TexturePtr kd,
-			Texture<Spectrum>::TexturePtr ks,
-			Texture<float>::TexturePtr rough,
-			Texture<float>::TexturePtr bump) {
+	Plastic(boost::shared_ptr<Texture<Spectrum> > kd,
+			boost::shared_ptr<Texture<Spectrum> > ks,
+			boost::shared_ptr<Texture<float> > rough,
+			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
 		roughness = rough;
@@ -42,6 +42,6 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);	              
 private:
 	// Plastic Private Data
-	Texture<Spectrum>::TexturePtr Kd, Ks;
-	Texture<float>::TexturePtr roughness, bumpMap;
+	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
+	boost::shared_ptr<Texture<float> > roughness, bumpMap;
 };

@@ -31,9 +31,9 @@ COREDLL ShapePtr MakeShape(const string &name,
 	const Transform &object2world, bool reverseOrientation, const ParamSet &paramSet);
 COREDLL MaterialPtr MakeMaterial(const string &name,
 	const Transform &mtl2world, const TextureParams &mp);
-COREDLL Texture<float>::TexturePtr MakeFloatTexture(const string &name,
+COREDLL boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
-COREDLL Texture<Spectrum>::TexturePtr MakeSpectrumTexture(const string &name,
+COREDLL boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
 COREDLL Light *MakeLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);

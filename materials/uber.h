@@ -27,12 +27,12 @@
 class UberMaterial : public Material {
 public:
 	// UberMaterial Method Declarations
-	UberMaterial(Texture<Spectrum>::TexturePtr kd,
-		Texture<Spectrum>::TexturePtr ks,
-		Texture<Spectrum>::TexturePtr kr,
-		Texture<float>::TexturePtr rough,
-		Texture<Spectrum>::TexturePtr op,
-		Texture<float>::TexturePtr bump) {
+	UberMaterial(boost::shared_ptr<Texture<Spectrum> > kd,
+		boost::shared_ptr<Texture<Spectrum> > ks,
+		boost::shared_ptr<Texture<Spectrum> > kr,
+		boost::shared_ptr<Texture<float> > rough,
+		boost::shared_ptr<Texture<Spectrum> > op,
+		boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
 		Kr = kr;
@@ -45,7 +45,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// UberMaterial Private Data
-	Texture<Spectrum>::TexturePtr Kd, Ks, Kr, opacity;
-	Texture<float>::TexturePtr roughness;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<Spectrum> > Kd, Ks, Kr, opacity;
+	boost::shared_ptr<Texture<float> > roughness;
+	boost::shared_ptr<Texture<float> > bumpMap;
 };

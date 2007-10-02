@@ -27,9 +27,9 @@
 class Substrate : public Material {
 public:
 	// Substrate Public Methods
-	Substrate(Texture<Spectrum>::TexturePtr kd, Texture<Spectrum>::TexturePtr ks,
-			Texture<float>::TexturePtr u, Texture<float>::TexturePtr v,
-			Texture<float>::TexturePtr bump) {
+	Substrate(boost::shared_ptr<Texture<Spectrum> > kd, boost::shared_ptr<Texture<Spectrum> > ks,
+			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
+			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
 		nu = u;
@@ -41,7 +41,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Substrate Private Data
-	Texture<Spectrum>::TexturePtr Kd, Ks;
-	Texture<float>::TexturePtr nu, nv;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
+	boost::shared_ptr<Texture<float> > nu, nv;
+	boost::shared_ptr<Texture<float> > bumpMap;
 };

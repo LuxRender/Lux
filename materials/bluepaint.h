@@ -26,8 +26,8 @@
 // BluePaint Class Declarations
 class BluePaint : public Material {
 public:
-	BluePaint(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
+	BluePaint(boost::shared_ptr<Texture<float> > bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<float> > bumpMap;
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

@@ -27,7 +27,7 @@
 #include "sampling.h"
 #include "dynload.h"
 #include "volume.h"
-#include "luxgui.h"
+//#include "luxgui.h" << jromang : We cannot include FLTK Stuff here ! libcore needs to build without FLTK/OpenGL dependencies 
 
 extern Scene* GuiScenePtr;	// init in luxgui.cpp
 

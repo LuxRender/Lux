@@ -104,7 +104,7 @@ private:
 };
 template <class T> class Texture /*: public ReferenceCounted<Texture> */ {
 public:
-	typedef boost::shared_ptr<Texture> TexturePtr; 
+	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
 	virtual T Evaluate(const DifferentialGeometry &) const = 0;
 	virtual ~Texture() { }

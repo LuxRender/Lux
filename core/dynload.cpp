@@ -564,182 +564,182 @@ COREDLL MaterialPtr MakeMaterial(const string &name,
 	MaterialPtr o;
     return o;
 }
-COREDLL Texture<float>::TexturePtr MakeFloatTexture(const string &name,
+COREDLL boost::shared_ptr< Texture<float> > MakeFloatTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                             PluginSearchPath);
     if (plugin)
     {
-        Texture<float>::TexturePtr ret =
+        boost::shared_ptr<Texture<float> > ret =
             plugin->CreateFloatTex(tex2world, tp);
         tp.ReportUnused();
         return ret;
     }*/
     if(name=="bilerp")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(BilerpTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BilerpTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="checkerboard")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(Checkerboard::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(Checkerboard::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="constant")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(Constant::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(Constant::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="dots")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(DotsTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(DotsTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="fbm")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(FBmTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(FBmTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="imagemap")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(ImageTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(ImageTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="marble")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(MarbleTexture::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(MarbleTexture::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="mix")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(MixTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(MixTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-/*    if(name=="scale") // TEMPORARILY DISABLED - SEE scale.h
+    if(name=="scale")
     {
-    	Texture<float>::TexturePtr  ret = ScaleTexture<float,float>::CreateFloatTexture(tex2world, tp);
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(ScaleTexture<float,float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
-    } */
+    } 
     if(name=="uv")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(UVTexture::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(UVTexture::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="windy")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(WindyTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(WindyTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="wrinkled")
     {
-    	Texture<float>::TexturePtr  ret = Texture<float>::TexturePtr(WrinkledTexture<float>::CreateFloatTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(WrinkledTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     
     Error("Static loading of float texture '%s' failed.",name.c_str());
-	Texture<float>::TexturePtr o;
+	boost::shared_ptr<Texture<float> > o;
     return o;
 }
-COREDLL Texture<Spectrum>::TexturePtr MakeSpectrumTexture(const string &name,
+COREDLL boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                             PluginSearchPath);
     if (plugin)
     {
-        Texture<Spectrum>::TexturePtr ret =
+        boost::shared_ptr<Texture<Spectrum> > ret =
             plugin->CreateSpectrumTex(tex2world, tp);
         tp.ReportUnused();
         return ret;
     }*/
     if(name=="bilerp")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="checkerboard")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(Checkerboard::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Checkerboard::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="constant")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(Constant::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Constant::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="dots")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="fbm")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="imagemap")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="marble")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(MarbleTexture::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MarbleTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="mix")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
 /*    if(name=="scale") // TEMPORARILY DISALBED - SEE scale.h
     {
-    	Texture<Spectrum>::TexturePtr  ret = ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	boost::shared_ptr<Texture<Spectrum> >  ret = ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp);
         tp.ReportUnused();
         return ret;
     } */
     if(name=="uv")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(UVTexture::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(UVTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="windy")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="wrinkled")
     {
-    	Texture<Spectrum>::TexturePtr  ret = Texture<Spectrum>::TexturePtr(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     
     Error("Static loading of spectrum texture '%s' failed.",name.c_str());
-	Texture<Spectrum>::TexturePtr o;
+	boost::shared_ptr<Texture<Spectrum> > o;
     return o;
 }
 COREDLL Light *MakeLight(const string &name,

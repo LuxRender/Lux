@@ -44,9 +44,9 @@ BSDF *Glass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, con
 }
 Material* Glass::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	Texture<Spectrum>::TexturePtr Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
-	Texture<Spectrum>::TexturePtr Kt = mp.GetSpectrumTexture("Kt", Spectrum(1.f));
-	Texture<float>::TexturePtr index = mp.GetFloatTexture("index", 1.5f);
-	Texture<float>::TexturePtr bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	boost::shared_ptr<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
+	boost::shared_ptr<Texture<Spectrum> > Kt = mp.GetSpectrumTexture("Kt", Spectrum(1.f));
+	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
+	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Glass(Kr, Kt, index, bumpMap);
 }

@@ -26,9 +26,9 @@
 // Skin Class Declarations
 class Skin : public Material {
 public:
-	Skin(Texture<float>::TexturePtr bump) : bumpMap(bump) { }
+	Skin(boost::shared_ptr<Texture<float> > bump) : bumpMap(bump) { }
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	Texture<float>::TexturePtr bumpMap;
+	boost::shared_ptr<Texture<float> > bumpMap;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

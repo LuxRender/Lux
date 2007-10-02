@@ -31,8 +31,8 @@ public:
 	~DotsTexture() {
 		delete mapping;
 	}
-	DotsTexture(TextureMapping2D *m, Texture<T>::TexturePtr c1,
-			Texture<T>::TexturePtr c2) {
+	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<T> > c1,
+			boost::shared_ptr<Texture<T> > c2) {
 		mapping = m;
 		outsideDot = c1;
 		insideDot = c2;
@@ -61,7 +61,7 @@ public:
 	
 private:
 	// DotsTexture Private Data
-	Texture<T>::TexturePtr outsideDot, insideDot;
+	boost::shared_ptr<Texture<T> > outsideDot, insideDot;
 	TextureMapping2D *mapping;
 };
 
