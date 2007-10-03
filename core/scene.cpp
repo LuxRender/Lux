@@ -28,7 +28,7 @@
 #include "dynload.h"
 #include "volume.h"
 
-//#include "luxgui.h" << jromang : We cannot include FLTK Stuff here ! libcore needs to build without FLTK/OpenGL dependencies 
+#include "luxgui.h" //<< jromang : We cannot include FLTK Stuff here ! libcore needs to build without FLTK/OpenGL dependencies 
 
 //here are the control methods
 extern Scene *luxCurrentScene;
@@ -39,7 +39,7 @@ void Scene::Pause() {}
 void Scene::Exit() {}
 
 //controlling number of threads
-int Scene::AddThread() {}
+int Scene::AddThread() { return 0; }
 void Scene::RemoveThread() {}
 
 //framebuffer access

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="core"
 	ProjectGUID="{8C159477-7802-4C52-865E-131537BBAD83}"
 	RootNamespace="core"
@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../win32/fltk-1.1.x-r5940-vs2005;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers"
+				AdditionalIncludeDirectories="../../renderer;../../core;../..;&quot;../../win32/openexr-1.4.0-vs2005/include/OpenEXR&quot;;&quot;../../win32/fltk-1.1.x-r5940-vs2005&quot;;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers"
 				PreprocessorDefinitions="CORE_SOURCE;WIN32;NDEBUG;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
@@ -62,10 +62,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib"
+				AdditionalDependencies="comctl32.lib fltkgl.lib opengl32.lib glu32.lib wsock32.lib fltk.lib Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../win32/openexr-1.4.0-vs2005/lib"
+				AdditionalLibraryDirectories="&quot;../../win32/openexr-1.4.0-vs2005/lib&quot;;&quot;../../win32/fltk-1.1.x-r5940-vs2005/lib&quot;"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OUTDIR)/core.pdb"
