@@ -28,6 +28,7 @@
 #include "film.h"
 #include "dynload.h"
 #include "volume.h"
+#include <string>
 #include <map>
 using std::map;
 #if (_MSC_VER >= 1400) // NOBOOK
@@ -582,6 +583,7 @@ int luxDisplayInterval()
 
 double luxStatistics(char *statName)
 {
-	return luxCurrentScene->Statistics(statName);
+	if(std::string(statName)=="sceneIsReady") return(luxCurrentScene!=NULL);
+	else return luxCurrentScene->Statistics(statName);
 }
 
