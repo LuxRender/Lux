@@ -27,7 +27,31 @@
 #include "sampling.h"
 #include "dynload.h"
 #include "volume.h"
+
 //#include "luxgui.h" << jromang : We cannot include FLTK Stuff here ! libcore needs to build without FLTK/OpenGL dependencies 
+
+//here are the control methods
+extern Scene *luxCurrentScene;
+
+//Control methods
+void Scene::Start() {}
+void Scene::Pause() {}
+void Scene::Exit() {}
+
+//controlling number of threads
+int Scene::AddThread() {}
+void Scene::RemoveThread() {}
+
+//framebuffer access
+void Scene::UpdateFramebuffer() {}
+unsigned char* Scene::GetFramebuffer() { return NULL; }
+int Scene::DisplayInterval() { return 1; }
+
+//statistics
+double Scene::Statistics(char *statName) { return 0; }
+
+
+
 
 extern Scene* GuiScenePtr;	// init in luxgui.cpp
 
@@ -124,6 +148,7 @@ void* Render_Thread( void* p )
 void Scene::Render() {
 	// set pointer for gui
 	GuiScenePtr = (Scene*) this;
+	luxCurrentScene=this;
 
 	// integrator preprocessing
 	printf("CTL: Preprocessing integrators...\n");

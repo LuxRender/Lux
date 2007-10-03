@@ -82,4 +82,24 @@ extern COREDLL void luxObjectBegin(const string &name);
 extern COREDLL void luxObjectEnd();
 extern COREDLL void luxObjectInstance(const string &name);
 extern COREDLL void luxWorldEnd();
-#endif // PBRT_API_H
+
+
+//CORE engine control
+//user interactive thread functions
+extern void luxStart();
+extern void luxPause();
+extern void luxExit();
+
+//controlling number of threads
+extern int luxAddThread();
+extern void luxRemoveThread();
+
+//framebuffer access
+extern void luxUpdateFramebuffer();
+extern unsigned char* luxFramebuffer();
+extern int luxDisplayInterval();
+
+//statistics
+extern double luxStatistics(char *statName);
+
+#endif // LUX_API_H

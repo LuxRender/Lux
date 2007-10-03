@@ -86,6 +86,22 @@ public:
 	Spectrum Li(const RayDifferential &ray, const Sample *sample,
 		float *alpha = NULL) const;
 	Spectrum Transmittance(const Ray &ray) const;
+	
+	//Control methods
+	void Start();
+	void Pause();
+	void Exit();
+	//controlling number of threads
+	int AddThread(); //returns the thread ID
+	void RemoveThread();
+	//framebuffer access
+	void UpdateFramebuffer();
+	unsigned char* GetFramebuffer();
+	int DisplayInterval();
+	//statistics
+	double Statistics(char *statName);
+	
+	
 	// Scene Data
 	Primitive *aggregate;
 	vector<Light *> lights;

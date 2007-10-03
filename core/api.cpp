@@ -34,6 +34,10 @@ using std::map;
 #include <stdio.h>     // NOBOOK
 #define snprintf _snprintf // NOBOOK
 #endif // NOBOOK
+
+//jromang : here is the 'current' scene (we will need to replace that by a context
+Scene *luxCurrentScene=NULL;
+
 // API Local Classes
 struct RenderOptions {
 	// RenderOptions Public Methods
@@ -527,3 +531,57 @@ Scene *RenderOptions::MakeScene() const {
 	                  volumeRegions.end());
 	return ret;
 }
+
+//interactive control
+
+//CORE engine control
+
+
+//user interactive thread functions
+void luxStart()
+{
+	luxCurrentScene->Start();
+}
+
+void luxPause()
+{
+	luxCurrentScene->Pause();
+}
+
+void luxExit()
+{
+	luxCurrentScene->Exit();
+}
+
+//controlling number of threads
+int luxAddThread()
+{
+	return luxCurrentScene->AddThread();
+}
+
+void luxRemoveThread()
+{
+	luxCurrentScene->RemoveThread();
+}
+
+//framebuffer access
+void luxUpdateFramebuffer()
+{
+	luxCurrentScene->UpdateFramebuffer();
+}
+
+unsigned char* luxFramebuffer()
+{
+	return luxCurrentScene->GetFramebuffer();
+}
+
+int luxDisplayInterval()
+{
+	return luxCurrentScene->DisplayInterval();
+}
+
+double luxStatistics(char *statName)
+{
+	return luxCurrentScene->Statistics(statName);
+}
+
