@@ -79,8 +79,10 @@ bool LDSampler::GetNextSample(Sample *sample) {
 			fs_pos = 0;
 		}
 
-		xPos = xPixelStart + Ceil2Int( VanDerCorput( fs_pos, fs_scramble ) * xPixelEnd );
-		yPos = yPixelStart + Ceil2Int( Sobol2( fs_pos, fs_scramble ) * yPixelEnd );
+		xPos = xPixelStart + 
+			Ceil2Int( VanDerCorput( fs_pos, fs_scramble ) * xPixelEnd );
+		yPos = yPixelStart + 
+			Ceil2Int( Sobol2( fs_pos, fs_scramble ) * yPixelEnd );
 		
 
 /*		// Advance to next pixel for low-discrepancy sampling
@@ -125,6 +127,7 @@ Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+	int prog = params.FindOneInt("progressive", 0);
 	int nsamp = params.FindOneInt("pixelsamples", 4);
 	return new LDSampler(xstart, xend, ystart, yend, nsamp);
 }

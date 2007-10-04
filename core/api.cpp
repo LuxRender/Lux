@@ -581,6 +581,16 @@ int luxDisplayInterval()
 	return luxCurrentScene->DisplayInterval();
 }
 
+int luxFilmXres()
+{
+	return luxCurrentScene->FilmXres();
+}
+
+int luxFilmYres()
+{
+	return luxCurrentScene->FilmYres();
+}
+
 double luxStatistics(char *statName)
 {
 	if(std::string(statName)=="sceneIsReady") return(luxCurrentScene!=NULL);

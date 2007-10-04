@@ -98,8 +98,14 @@ public:
 	void UpdateFramebuffer();
 	unsigned char* GetFramebuffer();
 	int DisplayInterval();
+	int FilmXres();
+	int FilmYres();
 	//statistics
 	double Statistics(char *statName);
+
+	void SignalThreads(int signal);
+	int CreateRenderThread();
+	void RemoveRenderThread();
 	
 	
 	// Scene Data

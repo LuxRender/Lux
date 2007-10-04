@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="core"
 	ProjectGUID="{8C159477-7802-4C52-865E-131537BBAD83}"
 	RootNamespace="core"
@@ -129,7 +129,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../win32/fltk-1.1.x-r5940-vs2005;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers;../renderer"
+				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../win32/fltk-1.1.x-r5940-vs2005;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers;../../renderer"
 				PreprocessorDefinitions="CORE_SOURCE;NDEBUG;WIN32;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -617,14 +617,6 @@
 				<File
 					RelativePath="..\..\textures\scale.cpp"
 					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\textures\uv.cpp"
@@ -1154,6 +1146,10 @@
 				>
 				<File
 					RelativePath="..\..\renderer\luxgui.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\renderer\luxwindow.h"
 					>
 				</File>
 			</Filter>

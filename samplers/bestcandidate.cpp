@@ -135,5 +135,6 @@ Sampler* BestCandidateSampler::CreateSampler(const ParamSet &params, const Film 
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	int nsamp = params.FindOneInt("pixelsamples", 4);
+	int prog = params.FindOneInt("progressive", 0);
 	return new BestCandidateSampler(xstart, xend, ystart, yend, nsamp);
 }

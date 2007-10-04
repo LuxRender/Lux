@@ -98,6 +98,8 @@ extern void luxRemoveThread();
 extern void luxUpdateFramebuffer();
 extern unsigned char* luxFramebuffer();
 extern int luxDisplayInterval();
+extern int luxFilmXres();
+extern int luxFilmYres();
 
 //statistics
 extern double luxStatistics(char *statName);

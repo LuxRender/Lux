@@ -116,6 +116,7 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
     int xsamp = params.FindOneInt("xsamples", 2);
     int ysamp = params.FindOneInt("ysamples", 2);
+	int prog = params.FindOneInt("progressive", 0);
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,

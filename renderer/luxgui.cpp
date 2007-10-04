@@ -30,7 +30,7 @@
 
 int RenderScenefile();
 
-Scene* GuiScenePtr;
+bool GuiSceneReady = false;
 float framebufferUpdate;
 Fl_RGB_Image* rgb_image;
 Fl_Window* window;
@@ -62,63 +62,13 @@ void open_cb(Fl_Widget*, void*) {
 	RenderScenefile();
 }
 
-Fl_Menu_Item menu_menu[] = {
- {"File", 0,  0, 0, 64, FL_NORMAL_LABEL, 0, 12, 0},
- {"Open Scenefile...", 0x4006f,  (Fl_Callback*)open_cb, 0, 128, FL_NORMAL_LABEL, 0, 12, 0},
- {"Exit", 0x40071,  0, 0, 0, FL_NORMAL_LABEL, 0, 12, 0},
- {0,0,0,0,0,0,0,0,0},
- {0,0,0,0,0,0,0,0,0}
-};
-
-Fl_Button* image_button;
-
-Fl_Window* Render_Window(unsigned int& width, unsigned int& height, Fl_RGB_Image* rgb_image) {
-   Fl_Double_Window* w;
-  { Fl_Double_Window* o = new Fl_Double_Window(1024, 768, "Lux Render");
-    w = o;
-    o->color((Fl_Color)1);
-    { Fl_Group* o = new Fl_Group(0, 0, 1024, 768);
-      o->box(FL_FLAT_BOX);
-      o->color((Fl_Color)3);
-      o->align(FL_ALIGN_CENTER);
-      { Fl_Scroll* o = new Fl_Scroll(0, 23, 1024, 722, "scroll");
-        o->box(FL_FLAT_BOX);
-        o->color(FL_INACTIVE_COLOR);
-        o->labeltype(FL_NO_LABEL);
-        o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
-        { Fl_Button* o = new Fl_Button(1024 / 2 - width / 2, 768 / 2 - height / 2, width, height);
-          o->box(FL_NO_BOX);
-          //o->image(rgb_image); TODO set buttonsize
-          o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
-		  Fl_Group::current()->resizable(o);
-		  image_button = o;
-        } // Fl_Button* o
-        o->end();
-        Fl_Group::current()->resizable(o);
-      } // Fl_Scroll* o
-      { Fl_Menu_Bar* o = new Fl_Menu_Bar(0, 0, 1024, 23);
-	    o->labeltype(FL_NO_LABEL);
-        o->menu(menu_menu);
-      } // Fl_Menu_Bar* o
-      { Fl_Group* o = new Fl_Group(0, 745, 1024, 23, "status_bar");
-        o->box(FL_UP_BOX);
-        o->labeltype(FL_NO_LABEL);
-        o->end();
-      } // Fl_Group* o
-      o->end();
-      Fl_Group::current()->resizable(o);
-    } // Fl_Group* o
-    o->size_range(400, 300);
-    o->end();
-  } // Fl_Double_Window* o
-  return w;
-}
+#include "luxwindow.h"	// radiance: fltk window code temporarily in luxwindow.h (exported from fluid)
 
 void merge_FrameBuffer(void*) {
-	printf("Updating frambuffer...\n");
+	printf("GUI: Updating framebuffer...\n");
 	Fl::lock();
-	GuiScenePtr->camera->film->updateFrameBuffer();
-	printf("Done.\n");
+	luxUpdateFramebuffer();
+	printf("GUI: Done.\n");
 	Fl::unlock();
 
     rgb_image->uncache();
@@ -129,12 +79,12 @@ void merge_FrameBuffer(void*) {
 
 void* Engine_Thread( void* p )
 {
-	printf("Initializing Parser\n");
+	printf("GUI: Initializing Parser\n");
     luxInit();
 
-	printf("Parsing scenefile '%s'...\n", gui_current_scenefile);
+	printf("GUI: Parsing scenefile '%s'...\n", gui_current_scenefile);
 	ParseFile( gui_current_scenefile );
-	printf("Finished parsing scenefile.\n");
+	printf("GUI: Finished parsing scenefile.\n");
 
 	luxCleanup();
 
@@ -150,31 +100,37 @@ int RenderScenefile()
 }
 
 void bindFrameBuffer() {
-	if(GuiScenePtr) {
+	if(GuiSceneReady) {
 		// fetch camera settings
-		Film* cFilm = GuiScenePtr->camera->film;
-		u_int xRes = cFilm->xResolution;
-		u_int yRes = cFilm->yResolution;
-		framebufferUpdate = cFilm->getldrDisplayInterval();
+		u_int xRes = luxFilmXres();
+		u_int yRes = luxFilmYres();
+		framebufferUpdate = luxDisplayInterval();
 
 	    // bind frame- to rgb buffer
-	    uchar* fbP = GuiScenePtr->camera->film->getFrameBuffer();
+	    uchar* fbP = luxFramebuffer();
 	    rgb_image = new Fl_RGB_Image( fbP , xRes, yRes, 3, 0); 
 
 		// update display
 		rgb_image->uncache();
-		image_button->image(rgb_image);
+		renderview->image(rgb_image);
 		Fl::redraw();
 
         Fl::add_timeout(framebufferUpdate, merge_FrameBuffer);
 	}
 }
 
-void check_scenePtr(void*) {
-	if(GuiScenePtr) {
+void check_SceneReady(void*) {
+	if(luxStatistics("sceneIsReady")) {
+		GuiSceneReady = true;
+
+		// add initial render thread
+		Fl::lock();
+		luxAddThread();
+
+		// hook up the film framebuffer
 		bindFrameBuffer();
 	} else
-		Fl::repeat_timeout(0.25, check_scenePtr);
+		Fl::repeat_timeout(0.25, check_SceneReady);
 }
 
 // main program
@@ -185,17 +141,17 @@ int main(int argc, char *argv[]) {
 	printf("This is free software, covered by the GNU General Public License V3\n");
 	printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");      
 
-	GuiScenePtr = NULL;
+	GuiSceneReady = false;
 	framebufferUpdate = 10.0f;
 
 	// create render window
 	u_int width = 800;
 	u_int height = 600;
-    window = Render_Window( width, height, rgb_image );
+    window = make_window( width, height, rgb_image );
 	window->show();
 
 	// set timeouts
-    Fl::add_timeout(0.25, check_scenePtr);
+    Fl::add_timeout(0.25, check_SceneReady);
     
     // run gui
     Fl::run();

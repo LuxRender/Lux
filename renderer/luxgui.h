@@ -24,28 +24,19 @@
 #define LUX_GUI_H
 
 #include <FL/Fl.H>
-#include <FL/Fl_Group.H>
 #include <FL/Fl_Double_Window.H>
-#include <FL/fl_ask.H>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl_Input.H>
+#include <FL/Fl_Group.H>
 #include <FL/Fl_Tabs.H>
-#include <FL/Fl_Scroll.H>
-#include <FL/Fl_Gl_Window.H>
-#include <FL/Fl_Progress.H>
-#include <FL/Fl_Value_Slider.H>
-#include <FL/Fl_Value_Input.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Button.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Round_Button.H>
-#include <FL/Fl_Text_Buffer.H>
-#include <FL/Fl_Text_Editor.H>
-#include <FL/Fl_Help_Dialog.H>
-#include <FL/Fl_Overlay_Window.H>
-
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <FL/Fl_Menu_Bar.H>
+Fl_Double_Window* make_window();
+extern Fl_Menu_Item menu_[];
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Value_Slider.H>
+#include <FL/FL_File_Chooser.H>
+Fl_Double_Window* make_tonewindow();
 
 
 #endif // LUX_GUI_H
