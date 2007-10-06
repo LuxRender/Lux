@@ -162,3 +162,4 @@ Shape* Cylinder::CreateShape(const Transform &o2w, bool reverseOrientation,
 	float phimax = params.FindOneFloat( "phimax", 360 );
 	return new Cylinder(o2w, reverseOrientation, radius, zmin, zmax, phimax);
 }
+

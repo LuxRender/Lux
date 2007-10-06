@@ -180,7 +180,8 @@ int Scene::CreateRenderThread()
 		thr_dat->arena = new MemoryArena();											// MemoryArena (u)	// TODO delete sample * memoryarena
 
 		Fl_Thread* thr_ptr = new Fl_Thread();
-		fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
+		//fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
+		fl_create_thread(*thr_ptr, Render_Thread, thr_dat );
 		thr_dat_ptrs[thr_nr] = thr_dat;
 		thr_ptrs[thr_nr] = thr_ptr;
 		printf("CTL: Done.\n");

@@ -35,7 +35,7 @@ float framebufferUpdate;
 Fl_RGB_Image* rgb_image;
 Fl_Window* window;
 
-Fl_Thread* e_thr;
+Fl_Thread e_thr;
 
 char gui_current_scenefile[256];
 
@@ -99,7 +99,8 @@ void* Engine_Thread( void* p )
 int RenderScenefile()
 {
 	fflush(stdout);
-    fl_create_thread((Fl_Thread&)e_thr, Engine_Thread, 0 );
+    //fl_create_thread((Fl_Thread&)e_thr, Engine_Thread, 0 );
+    fl_create_thread(e_thr, Engine_Thread, 0 );
 	return 0;
 }
 
