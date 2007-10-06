@@ -322,12 +322,12 @@ void MultiImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filen
 void MultiImageFilm::createFrameBuffer()
 {
 	// allocate pixels
-	u_int nPix = xPixelCount * yPixelCount;
+	unsigned int nPix = xPixelCount * yPixelCount;
     framebuffer = new unsigned char[3*nPix];			// TODO delete data
 
 	// zero it out
-	for(u_int i = 0; i < 3*nPix; i++)
-		framebuffer[i] = unsigned char(0);
+	for(unsigned int i = 0; i < 3*nPix; i++)
+		framebuffer[i] = (unsigned char)(0);
 }
 
 void MultiImageFilm::updateFrameBuffer()

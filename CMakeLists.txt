@@ -1,3 +1,5 @@
+#INCLUDE(FindFLTK)
+
 PROJECT(lux)
 OPTION(WITH_GUI "Enable the GUI." OFF)
 OPTION(WITH_SSE "Enable SSE optimisations" ON)
@@ -35,6 +37,24 @@ FIND_PROGRAM(FLEX_EXECUTABLE flex)
 IF (NOT FLEX_EXECUTABLE)
 MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
+
+#FIND_PACKAGE(FLTK REQUIRED)
+FIND_PATH(FLTK_INCLUDE_DIR
+ 	          NAMES FL/Fl.H
+	          PATHS
+	            /usr
+ 	            /usr/local
+ 	)
+ 	
+ 	IF (FLTK_INCLUDE_DIR)
+ 	  SET(FLTK_FOUND 1)
+ 	  SET(FLTK_LIB fltk)
+ 	  MESSAGE(STATUS "FLTK found")
+ 	  MESSAGE(${FLTK_INCLUDE_DIR})
+ 	ELSE (FLTK_INCLUDE_DIR)
+ 		MESSAGE(STATUS "FLTK *NOT* found")
+ 	ENDIF (FLTK_INCLUDE_DIR)
+
 
 #All dependencies OK !
 
@@ -79,7 +99,7 @@ SET(lux_lib_src
         samplers/random.cpp samplers/stratified.cpp
         accelerators/grid.cpp accelerators/kdtree.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp
-        film/image.cpp
+        film/image.cpp film/multiimage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/directlighting.cpp integrators/emission.cpp integrators/irradiancecache.cpp
         integrators/path.cpp integrators/photonmap.cpp integrators/single.cpp
@@ -94,7 +114,7 @@ SET(lux_lib_src
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
-        tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp
+        tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
 	)
 
@@ -109,5 +129,7 @@ INCLUDE_DIRECTORIES(${OPENEXR_INC}
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIB})
 
+INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
+
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB} ${FLTK_LIB})

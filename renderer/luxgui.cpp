@@ -88,7 +88,11 @@ void* Engine_Thread( void* p )
 
 	luxCleanup();
 
+#ifdef WIN32
 	_endthread();
+#else
+	pthread_exit(0);
+#endif
     return 0;
 }
 

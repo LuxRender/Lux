@@ -35,7 +35,7 @@ Fl_Double_Window* make_window();
 extern Fl_Menu_Item menu_[];
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Value_Slider.H>
-#include <FL/FL_File_Chooser.H>
+#include <FL/Fl_File_Chooser.H>
 Fl_Double_Window* make_tonewindow();
 
 

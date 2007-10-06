@@ -143,7 +143,11 @@ void* Render_Thread( void* p )
 	}
 
 	printf("THR%i: Exiting.\n", n+1);
+#ifdef WIN32
 	_endthread();
+#else
+	pthread_exit(0);
+#endif
     return 0;
 }
 
