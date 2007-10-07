@@ -102,8 +102,8 @@ class Thread_data
 #define MAX_THREADS 64
 int CurThreadSignal;
 int thr_nr;
-Thread_data* thr_dat_ptrs[64];
-Fl_Thread* thr_ptrs[64];
+Thread_data* thr_dat_ptrs[MAX_THREADS];
+Fl_Thread* thr_ptrs[MAX_THREADS];
 
 #if defined(WIN32)
 #define SLEEP1S Sleep(1000)
@@ -121,6 +121,7 @@ double Scene::Statistics_SamplesPPx()
 		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
 	}
 
+	// divide by total pixels
 	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
 }
 
@@ -132,9 +133,15 @@ double Scene::Statistics_SamplesPSec()
 		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
 	}
 
-	double elapsed = s_Timer.Time();
+	double time = s_Timer.Time();
+	double dif_samples = samples - lastSamples;
+	double elapsed = time - lastTime;
+	lastSamples = samples;
+	lastTime = time;
+
+	// return current samples / sec total
 	if(elapsed != 0.)
-		return samples / elapsed;
+		return dif_samples / elapsed;
 	else
 		return 0.;
 }
@@ -228,7 +235,7 @@ int Scene::CreateRenderThread()
 		printf("CTL: Adding thread...\n");
 		Thread_data* thr_dat = new Thread_data();
 
-		// Set signal to pause
+		// Set thread signal
 		thr_dat->Sig = CurThreadSignal;
 
 		// Set data
@@ -245,7 +252,6 @@ int Scene::CreateRenderThread()
 		thr_dat->arena = new MemoryArena();											// MemoryArena (u)
 
 		Fl_Thread* thr_ptr = new Fl_Thread();
-		//fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
 		fl_create_thread(*thr_ptr, Render_Thread, thr_dat );
 		thr_dat_ptrs[thr_nr] = thr_dat;
 		thr_ptrs[thr_nr] = thr_ptr;
@@ -262,7 +268,6 @@ void Scene::RemoveRenderThread()
 {
 	printf("CTL: Removing thread...\n");
 	thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
-	//SLEEP1S;
 	//delete thr_dat_ptrs[thr_nr -1]->Si;
 	//delete thr_dat_ptrs[thr_nr -1]->Vi;
 	//delete thr_dat_ptrs[thr_nr -1]->Spl;
@@ -280,8 +285,10 @@ void Scene::Render() {
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
+	// number of threads
 	thr_nr = 0;
 
+	// initial thread signal is paused
 	CurThreadSignal = THR_SIG_PAUSE;
 
     // set current scene pointer
@@ -289,7 +296,7 @@ void Scene::Render() {
 
 	while(true) { SLEEP1S; }	// TODO fix for non-progressive rendering
 
-	return; // everything worked fine! Have a great day :) */
+	return; // everything worked fine! Have a great day :) 
 }
 Scene::~Scene() {
 	delete camera;
@@ -313,6 +320,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 	volumeIntegrator = vi;
 	volumeRegion = vr;
 	s_Timer.Reset();
+	lastSamples = 0.;
+	lastTime = 0.;
 	if (lts.size() == 0)
 		Warning("No light sources defined in scene; "
 			"possibly rendering a black image.");

@@ -104,6 +104,7 @@ public:
 	int FilmXres();
 	int FilmYres();
 	Timer s_Timer;
+	double lastSamples, lastTime;
 	//statistics
 	double Statistics(char *statName);
 
