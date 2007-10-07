@@ -1145,11 +1145,11 @@
 				Name="renderer"
 				>
 				<File
-					RelativePath="..\..\renderer\luxgui.h"
+					RelativePath="..\..\renderer\icons.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\renderer\luxwindow.h"
+					RelativePath="..\..\renderer\luxgui.h"
 					>
 				</File>
 			</Filter>

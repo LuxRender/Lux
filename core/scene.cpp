@@ -28,33 +28,62 @@
 #include "dynload.h"
 #include "volume.h"
 
-//here are the control methods
+// Control Methods -------------------------------
 extern Scene *luxCurrentScene;
 
-//Control methods
-void Scene::Start() { SignalThreads(THR_SIG_RUN); s_Timer.Start(); }
-void Scene::Pause() { SignalThreads(THR_SIG_PAUSE); s_Timer.Stop(); }
-void Scene::Exit() { SignalThreads(THR_SIG_EXIT); }
+// Engine Control (start/pause/restart) methods
+void Scene::Start() {
+	SignalThreads(THR_SIG_RUN);
+	s_Timer.Start();
+}
+void Scene::Pause() {
+	SignalThreads(THR_SIG_PAUSE);
+	s_Timer.Stop();
+}
+void Scene::Exit() {
+	SignalThreads(THR_SIG_EXIT);
+}
 
-//controlling number of threads
-int Scene::AddThread() { return CreateRenderThread(); }
-void Scene::RemoveThread() { RemoveRenderThread(); }
+// Engine Thread Control (adding/removing)
+int Scene::AddThread() {
+	return CreateRenderThread();
+}
+void Scene::RemoveThread() {
+	RemoveRenderThread();
+}
 
-//framebuffer access
-void Scene::UpdateFramebuffer() { camera->film->updateFrameBuffer(); }
-unsigned char* Scene::GetFramebuffer() { return camera->film->getFrameBuffer(); }
-int Scene::DisplayInterval() { return camera->film->getldrDisplayInterval(); }
-int Scene::FilmXres() { return camera->film->xResolution; }
-int Scene::FilmYres() { return camera->film->yResolution; }
+// Framebuffer Access for GUI
+void Scene::UpdateFramebuffer() {
+	camera->film->updateFrameBuffer();
+}
+unsigned char* Scene::GetFramebuffer() {
+	return camera->film->getFrameBuffer();
+}
+int Scene::DisplayInterval() {
+	return camera->film->getldrDisplayInterval();
+}
+int Scene::FilmXres() {
+	return camera->film->xResolution;
+}
+int Scene::FilmYres() {
+	return camera->film->yResolution;
+}
 
-//statistics
-double Scene::Statistics(char *statName) { if(std::string(statName)=="secElapsed") return s_Timer.Time();
-											if(std::string(statName)=="samplesSec") return Statistics_SamplesPSec(); 
-											if(std::string(statName)=="samplesPx") return Statistics_SamplesPPx(); 
-											//if(std::string(statName)=="framebufferUpdated") return (double) camera->film->getFramebufferUpdated(); 
-											return 0.;}
+// Statistics Access
+double Scene::Statistics(char *statName) {
+	if(std::string(statName)=="secElapsed")
+		return s_Timer.Time();
+	if(std::string(statName)=="samplesSec")
+		return Statistics_SamplesPSec(); 
+	if(std::string(statName)=="samplesPx")
+		return Statistics_SamplesPPx(); 
+	
+	return 0.;
+}
 
-// thread data pack class
+// Thread data --------------------------
+
+// Thread data pack
 class Thread_data
 {
     public:
@@ -69,7 +98,7 @@ class Thread_data
 		MemoryArena* arena;
 };
 
-// thread pointers
+// Thread pointers
 #define MAX_THREADS 64
 int CurThreadSignal;
 int thr_nr;
@@ -82,7 +111,42 @@ Fl_Thread* thr_ptrs[64];
 #define SLEEP1S sleep(1)
 #endif
 
-// Scene Methods
+
+// Control Implementations in Scene::
+double Scene::Statistics_SamplesPPx()
+{
+	// collect samples from all threads
+	double samples = 0.;
+	for(int i = 0; i < thr_nr; i++) {
+		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
+	}
+
+	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
+}
+
+double Scene::Statistics_SamplesPSec()
+{
+	// collect samples from all threads
+	double samples = 0.;
+	for(int i = 0; i < thr_nr; i++) {
+		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
+	}
+
+	double elapsed = s_Timer.Time();
+	if(elapsed != 0.)
+		return samples / elapsed;
+	else
+		return 0.;
+}
+
+void Scene::SignalThreads(int signal)
+{
+	for(int i = 0; i < thr_nr; i++)
+		thr_dat_ptrs[i]->Sig = signal;
+	CurThreadSignal = signal;
+}
+
+// Scene Methods -----------------------
 void* Render_Thread( void* p )
 {
 	// unpack thread data
@@ -156,39 +220,6 @@ void* Render_Thread( void* p )
 	pthread_exit(0);
 #endif
     return 0;
-}
-
-double Scene::Statistics_SamplesPPx()
-{
-	// collect samples from all threads
-	double samples = 0.;
-	for(int i = 0; i < thr_nr; i++) {
-		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
-	}
-
-	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
-}
-
-double Scene::Statistics_SamplesPSec()
-{
-	// collect samples from all threads
-	double samples = 0.;
-	for(int i = 0; i < thr_nr; i++) {
-		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
-	}
-
-	double elapsed = s_Timer.Time();
-	if(elapsed != 0.)
-		return samples / elapsed;
-	else
-		return 0.;
-}
-
-void Scene::SignalThreads(int signal)
-{
-	for(int i = 0; i < thr_nr; i++)
-		thr_dat_ptrs[i]->Sig = signal;
-	CurThreadSignal = signal;
 }
 
 int Scene::CreateRenderThread()

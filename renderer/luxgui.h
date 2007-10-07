@@ -31,13 +31,47 @@
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Menu_Bar.H>
-Fl_Double_Window* make_window();
-extern Fl_Menu_Item menu_[];
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/FL_File_Chooser.H>
 #include <FL/Fl_Image.H>
-Fl_Double_Window* make_tonewindow();
 
+bool GuiSceneReady = false;
+float framebufferUpdate;
+Fl_RGB_Image* rgb_image;
+Fl_Window* window;
+Fl_Thread e_thr;
+
+Fl_Group *renderview;
+Fl_Group *info_render;
+Fl_Group *info_render_group;
+Fl_Group *info_tonemap;
+Fl_Group *info_tonemap_group;
+Fl_Group *info_statistics;
+Fl_Group *info_statistics_group;
+
+int gui_nrthreads = 0;
+char gui_current_scenefile[256];
+
+#define STATUS_RENDER_NONE 0
+#define STATUS_RENDER_IDLE 1
+#define STATUS_RENDER_RENDER 2
+
+int status_render = STATUS_RENDER_NONE;
+
+// functions
+void AddThread();
+void RemoveThread();
+void RenderStart();
+void RenderPause();
+int RenderScenefile();
+// callbacks
+void open_cb(Fl_Widget*, void*);
+void exit_cb(Fl_Widget*, void*);
+void addthread_cb(Fl_Widget*, void*);
+void removethread_cb(Fl_Widget*, void*);
+void start_cb(Fl_Widget*, void*);
+void stop_cb(Fl_Widget*, void*);
+void restart_cb(Fl_Widget*, void*);
 
 #endif // LUX_GUI_H
