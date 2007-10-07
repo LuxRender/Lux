@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "geometry.h"
 // Sampling Declarations
-class COREDLL Sampler {
+class  Sampler {
 public:
 	// Sampler Interface
 	virtual ~Sampler();
@@ -72,14 +72,14 @@ struct Sample {
 	vector<u_int> n1D, n2D;
 	float **oneD, **twoD;
 };
-COREDLL void StratifiedSample1D(float *samples,
+ void StratifiedSample1D(float *samples,
 					            int nsamples,
 						        bool jitter = true);
-COREDLL void StratifiedSample2D(float *samples,
+ void StratifiedSample2D(float *samples,
                                 int nx, int ny,
 								bool jitter = true);
-COREDLL void Shuffle(float *samp, int count, int dims);
-COREDLL
+ void Shuffle(float *samp, int count, int dims);
+
 void LatinHypercube(float *samples, int nSamples, int nDim);
 inline double RadicalInverse(int n, int base) {
 	double val = 0;

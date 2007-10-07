@@ -28,7 +28,7 @@ ostream &operator<<(ostream &os, const Transform &t) {
 	t.m->Print(os);
 	return os;
 }
-COREDLL Transform Translate(const Vector &delta) {
+ Transform Translate(const Vector &delta) {
 	Matrix4x4Ptr m (new Matrix4x4(1, 0, 0, delta.x,
                       0, 1, 0, delta.y,
                       0, 0, 1, delta.z,
@@ -39,7 +39,7 @@ COREDLL Transform Translate(const Vector &delta) {
                          0, 0, 0,        1));
 	return Transform(m, minv);
 }
-COREDLL Transform Scale(float x, float y, float z) {
+ Transform Scale(float x, float y, float z) {
 	Matrix4x4Ptr m (new Matrix4x4(x, 0, 0, 0,
                       0, y, 0, 0,
                       0, 0, z, 0,
@@ -189,11 +189,11 @@ bool Transform::SwapsHandedness() const {
 	return det < 0.f;
 }
 #endif
-Transform COREDLL Orthographic(float znear, float zfar) {
+Transform  Orthographic(float znear, float zfar) {
 	return Scale(1.f, 1.f, 1.f / (zfar-znear)) *
 		Translate(Vector(0.f, 0.f, -znear));
 }
-COREDLL
+
 Transform Perspective(float fov, float n, float f) {
 	// Perform projective divide
 	float inv_denom = 1.f/(f-n);

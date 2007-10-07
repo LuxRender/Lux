@@ -34,7 +34,7 @@
 #define snprintf _snprintf
 #endif
 // Timer Declarations
-class COREDLL Timer {
+class  Timer {
 public:
 	// Public Timer Methods
 	Timer();

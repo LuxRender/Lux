@@ -58,7 +58,7 @@ void RejectionSampleDisk(float *x, float *y) {
 	*x = sx;
 	*y = sy;
 }
-COREDLL Vector UniformSampleHemisphere(float u1, float u2) {
+ Vector UniformSampleHemisphere(float u1, float u2) {
 	float z = u1;
 	float r = sqrtf(max(0.f, 1.f - z*z));
 	float phi = 2 * M_PI * u2;
@@ -66,10 +66,10 @@ COREDLL Vector UniformSampleHemisphere(float u1, float u2) {
 	float y = r * sinf(phi);
 	return Vector(x, y, z);
 }
-COREDLL float UniformHemispherePdf(float theta, float phi) {
+ float UniformHemispherePdf(float theta, float phi) {
 	return INV_TWOPI;
 }
-COREDLL Vector UniformSampleSphere(float u1, float u2) {
+ Vector UniformSampleSphere(float u1, float u2) {
 	float z = 1.f - 2.f * u1;
 	float r = sqrtf(max(0.f, 1.f - z*z));
 	float phi = 2.f * M_PI * u2;
@@ -77,17 +77,17 @@ COREDLL Vector UniformSampleSphere(float u1, float u2) {
 	float y = r * sinf(phi);
 	return Vector(x, y, z);
 }
-COREDLL float UniformSpherePdf() {
+ float UniformSpherePdf() {
 	return 1.f / (4.f * M_PI);
 }
-COREDLL void UniformSampleDisk(float u1, float u2,
+ void UniformSampleDisk(float u1, float u2,
 		float *x, float *y) {
 	float r = sqrtf(u1);
 	float theta = 2.0f * M_PI * u2;
 	*x = r * cosf(theta);
 	*y = r * sinf(theta);
 }
-COREDLL void ConcentricSampleDisk(float u1, float u2,
+ void ConcentricSampleDisk(float u1, float u2,
 		float *dx, float *dy) {
 	float r, theta;
 	// Map uniform random numbers to $[-1,1]^2$
@@ -131,13 +131,13 @@ COREDLL void ConcentricSampleDisk(float u1, float u2,
 	*dx = r*cosf(theta);
 	*dy = r*sinf(theta);
 }
-COREDLL void UniformSampleTriangle(float u1, float u2,
+ void UniformSampleTriangle(float u1, float u2,
 		float *u, float *v) {
 	float su1 = sqrtf(u1);
 	*u = 1.f - su1;
 	*v = u2 * su1;
 }
-COREDLL float UniformConePdf(float cosThetaMax) {
+ float UniformConePdf(float cosThetaMax) {
 	return 1.f / (2.f * M_PI * (1.f - cosThetaMax));
 }
 Vector UniformSampleCone(float u1, float u2,
@@ -149,7 +149,7 @@ Vector UniformSampleCone(float u1, float u2,
 	              sinf(phi) * sintheta,
 		          costheta);
 }
-COREDLL Vector UniformSampleCone(float u1, float u2, float costhetamax,
+ Vector UniformSampleCone(float u1, float u2, float costhetamax,
 		const Vector &x, const Vector &y, const Vector &z) {
 	float costheta = Lerp(u1, costhetamax, 1.f);
 	float sintheta = sqrtf(1.f - costheta*costheta);
@@ -157,7 +157,7 @@ COREDLL Vector UniformSampleCone(float u1, float u2, float costhetamax,
 	return cosf(phi) * sintheta * x + sinf(phi) * sintheta * y +
 		costheta * z;
 }
-COREDLL Vector SampleHG(const Vector &w, float g,
+ Vector SampleHG(const Vector &w, float g,
 		float u1, float u2) {
 	float costheta;
 	if (fabsf(g) < 1e-3)
@@ -172,7 +172,7 @@ COREDLL Vector SampleHG(const Vector &w, float g,
 	return SphericalDirection(sintheta, costheta,
 		phi, v1, v2, w);
 }
-COREDLL float HGPdf(const Vector &w, const Vector &wp,
+ float HGPdf(const Vector &w, const Vector &wp,
 		float g) {
 	return PhaseHG(w, wp, g);
 }

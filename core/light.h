@@ -30,7 +30,7 @@
 #include "paramset.h"
 #include "mc.h"
 // Light Declarations
-class COREDLL Light {
+class  Light {
 public:
 	// Light Interface
 	virtual ~Light();
@@ -72,7 +72,7 @@ protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;
 };
-struct COREDLL VisibilityTester {
+struct  VisibilityTester {
 	// VisibilityTester Public Methods
 	void SetSegment(const Point &p1, const Point &p2) {
 		r = Ray(p1, p2-p1, RAY_EPSILON, 1.f - RAY_EPSILON);

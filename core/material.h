@@ -29,7 +29,7 @@
 #include "color.h"
 #include "reflection.h"
 // Material Class Declarations
-class COREDLL Material  {
+class  Material  {
 public:
 	// Material Interface
 	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,

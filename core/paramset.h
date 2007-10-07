@@ -56,7 +56,7 @@ using std::map;
 }		} \
 	return d
 // ParamSet Declarations
-class COREDLL ParamSet {
+class  ParamSet {
 public:
 	// ParamSet Public Methods
 	ParamSet() { }
@@ -187,7 +187,7 @@ inline ParamSetItem<Point>::ParamSetItem(const string &n,
 */
 
 // TextureParams Declarations
-class COREDLL TextureParams {
+class  TextureParams {
 public:
 	// TextureParams Public Methods
 	TextureParams(const ParamSet &geomp, const ParamSet &matp,

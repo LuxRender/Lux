@@ -23,7 +23,7 @@
 // geometry.cpp*
 #include "geometry.h"
 // BBox Method Definitions
-COREDLL BBox Union(const BBox &b, const Point &p) {
+ BBox Union(const BBox &b, const Point &p) {
 	BBox ret = b;
 	ret.pMin.x = min(b.pMin.x, p.x);
 	ret.pMin.y = min(b.pMin.y, p.y);
@@ -33,7 +33,7 @@ COREDLL BBox Union(const BBox &b, const Point &p) {
 	ret.pMax.z = max(b.pMax.z, p.z);
 	return ret;
 }
-COREDLL BBox Union(const BBox &b, const BBox &b2) {
+ BBox Union(const BBox &b, const BBox &b2) {
 	BBox ret;
 	ret.pMin.x = min(b.pMin.x, b2.pMin.x);
 	ret.pMin.y = min(b.pMin.y, b2.pMin.y);

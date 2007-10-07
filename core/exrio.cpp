@@ -35,7 +35,7 @@
 using namespace Imf;
 using namespace Imath;
 // EXR Function Definitions
-COREDLL Spectrum *ReadImage(const string &name, int *width, int *height) {
+ Spectrum *ReadImage(const string &name, int *width, int *height) {
 	try {
 	InputFile file(name.c_str());
 	Box2i dw = file.header().dataWindow();
@@ -70,7 +70,7 @@ COREDLL Spectrum *ReadImage(const string &name, int *width, int *height) {
 	}
 }
 
-COREDLL void WriteRGBAImage(const string &name, float *pixels,
+ void WriteRGBAImage(const string &name, float *pixels,
 		float *alpha, int xRes, int yRes,
 		int totalXRes, int totalYRes,
 		int xOffset, int yOffset) {

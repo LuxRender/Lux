@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "geometry.h"
 // Transform Declarations
-class COREDLL Transform {
+class  Transform {
 public:
 	// Transform Public Methods
 	Transform() {

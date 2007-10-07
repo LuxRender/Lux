@@ -23,29 +23,29 @@
 // volume.cpp*
 #include "volume.h"
 // Volume Scattering Definitions
-COREDLL
+
 float PhaseIsotropic(const Vector &, const Vector &) {
 	return 1.f / (4.f * M_PI);
 }
-COREDLL float PhaseRayleigh(const Vector &w, const Vector &wp) {
+ float PhaseRayleigh(const Vector &w, const Vector &wp) {
 	float costheta = Dot(w, wp);
 	return  3.f/(16.f*M_PI) * (1 + costheta * costheta);
 }
-COREDLL float PhaseMieHazy(const Vector &w, const Vector &wp) {
+ float PhaseMieHazy(const Vector &w, const Vector &wp) {
 	float costheta = Dot(w, wp);
 	return (0.5f + 4.5f * powf(0.5 * (1.f + costheta), 8.f)) / (4.f*M_PI);
 }
-COREDLL float PhaseMieMurky(const Vector &w, const Vector &wp) {
+ float PhaseMieMurky(const Vector &w, const Vector &wp) {
 	float costheta = Dot(w, wp);
 	return (0.5f + 16.5f * powf(0.5 * (1.f + costheta), 32.f)) / (4.f*M_PI);
 }
-COREDLL
+
 float PhaseHG(const Vector &w, const Vector &wp, float g) {
 	float costheta = Dot(w, wp);
 	return 1.f / (4.f * M_PI) * (1.f - g*g) /
 		powf(1.f + g*g - 2.f * g * costheta, 1.5f);
 }
-COREDLL
+
 float PhaseSchlick(const Vector &w,
                    const Vector &wp, float g) {
 	float k = 1.55f * g - .55f * g * g * g;

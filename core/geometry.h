@@ -31,7 +31,7 @@
 #endif
 
 // Geometry Declarations
-class COREDLL Vector {
+class  Vector {
 public:
 	// Vector Public Methods
 	Vector(float _x=0, float _y=0, float _z=0)
@@ -98,7 +98,7 @@ public:
 
 
 
-class COREDLL Point {
+class  Point {
 public:
 	// Point Methods
 	Point(float _x=0, float _y=0, float _z=0)
@@ -154,7 +154,7 @@ public:
 };
 
 
-class COREDLL Normal {
+class  Normal {
 public:
 	// Normal Methods
 	Normal(float _x=0, float _y=0, float _z=0)
@@ -206,7 +206,7 @@ public:
 	// Normal Public Data
 	float x,y,z;
 };
-class COREDLL Ray {
+class  Ray {
 public:
 	// Ray Public Methods
 	Ray(): mint(RAY_EPSILON), maxt(INFINITY), time(0.f) {}
@@ -221,7 +221,7 @@ public:
 	float time;
 };
 
-class COREDLL RayDifferential : public Ray {
+class  RayDifferential : public Ray {
 public:
 	// RayDifferential Methods
 	RayDifferential() { hasDifferentials = false; }
@@ -239,7 +239,7 @@ public:
 	
 
 };
-class COREDLL BBox {
+class  BBox {
 public:
 	// BBox Public Methods
 	BBox() {
@@ -257,8 +257,8 @@ public:
 	}
 	friend inline ostream &
 		operator<<(ostream &os, const BBox &b);
-	friend COREDLL BBox Union(const BBox &b, const Point &p);
-	friend COREDLL BBox Union(const BBox &b, const BBox &b2);
+	friend  BBox Union(const BBox &b, const Point &p);
+	friend  BBox Union(const BBox &b, const BBox &b2);
 	bool Overlaps(const BBox &b) const {
 		bool x = (pMax.x >= b.pMin.x) && (pMin.x <= b.pMax.x);
 		bool y = (pMax.y >= b.pMin.y) && (pMin.y <= b.pMax.y);

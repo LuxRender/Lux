@@ -152,7 +152,7 @@ Point IdentityMapping3D::Map(const DifferentialGeometry &dg,
 	*dpdy = WorldToTexture(dg.dpdy);
 	return WorldToTexture(dg.p);
 }
-COREDLL float Noise(float x, float y, float z) {
+ float Noise(float x, float y, float z) {
 	// Compute noise cell coordinates and offsets
 	int ix = Floor2Int(x);
 	int iy = Floor2Int(y);
@@ -182,7 +182,7 @@ COREDLL float Noise(float x, float y, float z) {
 	float y1 = Lerp(wy, x01, x11);
 	return Lerp(wz, y0, y1);
 }
-COREDLL float Noise(const Point &P) {
+ float Noise(const Point &P) {
 	return Noise(P.x, P.y, P.z);
 }
 inline float Grad(int x, int y, int z, float dx,
@@ -198,7 +198,7 @@ inline float NoiseWeight(float t) {
 	float t4 = t3*t;
 	return 6.f*t4*t - 15.f*t4 + 10.f*t3;
 }
-COREDLL float FBm(const Point &P, const Vector &dpdx,
+ float FBm(const Point &P, const Vector &dpdx,
 		const Vector &dpdy, float omega, int maxOctaves) {
 	// Compute number of octaves for anti-aliased FBm
 	float s2 = max(dpdx.LengthSquared(), dpdy.LengthSquared());
@@ -217,7 +217,7 @@ COREDLL float FBm(const Point &P, const Vector &dpdx,
 	       Noise(lambda * P);
 	return sum;
 }
-COREDLL float Turbulence(const Point &P, const Vector &dpdx,
+ float Turbulence(const Point &P, const Vector &dpdx,
 		const Vector &dpdy, float omega, int maxOctaves) {
 	// Compute number of octaves for anti-aliased FBm
 	float s2 = max(dpdx.LengthSquared(), dpdy.LengthSquared());
@@ -237,7 +237,7 @@ COREDLL float Turbulence(const Point &P, const Vector &dpdx,
 	return sum;
 }
 // Texture Function Definitions
-COREDLL float Lanczos(float x, float tau) {
+ float Lanczos(float x, float tau) {
 	x = fabsf(x);
 	if (x < 1e-5) return 1;
 	if (x > 1.)    return 0;

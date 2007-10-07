@@ -29,7 +29,7 @@
 #include "geometry.h"
 #include "transform.h"
 // Camera Declarations
-class COREDLL Camera {
+class  Camera {
 public:
 	// Camera Interface
 	virtual float GenerateRay(const Sample &sample,
@@ -45,7 +45,7 @@ protected:
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
 };
-class COREDLL ProjectiveCamera : public Camera {
+class  ProjectiveCamera : public Camera {
 public:
 	// ProjectiveCamera Public Methods
 	ProjectiveCamera(const Transform &world2cam,

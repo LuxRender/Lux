@@ -143,7 +143,7 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 	return; \
 } else /* swallow trailing semicolon */
 // API Function Definitions
-COREDLL void luxInit() {
+void luxInit() {
 	// System-wide initialization
 	// Make sure floating point unit's rounding stuff is set
 	// as is expected by the fast FP-conversion routines.  In particular,
@@ -165,7 +165,7 @@ COREDLL void luxInit() {
 	renderOptions = new RenderOptions;
 	graphicsState = GraphicsState();
 }
-COREDLL void luxCleanup() {
+ void luxCleanup() {
 	StatsCleanup();
 	// API Cleanup
 	if (currentApiState == STATE_UNINITIALIZED)
@@ -176,16 +176,16 @@ COREDLL void luxCleanup() {
 	delete renderOptions;
 	renderOptions = NULL;
 }
-COREDLL void luxIdentity() {
+ void luxIdentity() {
 	VERIFY_INITIALIZED("Identity");
 	curTransform = Transform();
 }
-COREDLL void luxTranslate(float dx, float dy, float dz) {
+ void luxTranslate(float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Translate");
 	curTransform =
 		curTransform * Translate(Vector(dx, dy, dz));
 }
-COREDLL void luxTransform(float tr[16]) {
+ void luxTransform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
 	Matrix4x4Ptr o (new Matrix4x4(
 		tr[0], tr[4], tr[8], tr[12],
@@ -194,7 +194,7 @@ COREDLL void luxTransform(float tr[16]) {
 		tr[3], tr[7], tr[11], tr[15]));
 	curTransform = Transform(o);
 }
-COREDLL void luxConcatTransform(float tr[16]) {
+void luxConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
     Matrix4x4Ptr o (new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 				 tr[1], tr[5], tr[9], tr[13],
@@ -202,62 +202,62 @@ COREDLL void luxConcatTransform(float tr[16]) {
 				 tr[3], tr[7], tr[11], tr[15]));
 	curTransform = curTransform * Transform(o);
 }
-COREDLL void luxRotate(float angle, float dx, float dy, float dz) {
+void luxRotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Rotate");
 	curTransform = curTransform * Rotate(angle, Vector(dx, dy, dz));
 }
-COREDLL void luxScale(float sx, float sy, float sz) {
+void luxScale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED("Scale");
 	curTransform = curTransform * Scale(sx, sy, sz);
 }
-COREDLL void luxLookAt(float ex, float ey, float ez, float lx, float ly,
+void luxLookAt(float ex, float ey, float ez, float lx, float ly,
 	float lz, float ux, float uy, float uz) {
 	VERIFY_INITIALIZED("LookAt");
 	curTransform = curTransform * LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
 		Vector(ux, uy, uz));
 }
-COREDLL void luxCoordinateSystem(const string &name) {
+void luxCoordinateSystem(const string &name) {
 	VERIFY_INITIALIZED("CoordinateSystem");
 	namedCoordinateSystems[name] = curTransform;
 }
-COREDLL void luxCoordSysTransform(const string &name) {
+void luxCoordSysTransform(const string &name) {
 	VERIFY_INITIALIZED("CoordSysTransform");
 	if (namedCoordinateSystems.find(name) !=
 	    namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[name];
 }
-COREDLL void luxPixelFilter(const string &name,
+void luxPixelFilter(const string &name,
                            const ParamSet &params) {
 	VERIFY_OPTIONS("PixelFilter");
 	renderOptions->FilterName = name;
 	renderOptions->FilterParams = params;
 }
-COREDLL void luxFilm(const string &type, const ParamSet &params) {
+void luxFilm(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film");
 	renderOptions->FilmParams = params;
 	renderOptions->FilmName = type;
 }
-COREDLL void luxSampler(const string &name, const ParamSet &params) {
+void luxSampler(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Sampler");
 	renderOptions->SamplerName = name;
 	renderOptions->SamplerParams = params;
 }
-COREDLL void luxAccelerator(const string &name, const ParamSet &params) {
+void luxAccelerator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Accelerator");
 	renderOptions->AcceleratorName = name;
 	renderOptions->AcceleratorParams = params;
 }
-COREDLL void luxSurfaceIntegrator(const string &name, const ParamSet &params) {
+void luxSurfaceIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("SurfaceIntegrator");
 	renderOptions->SurfIntegratorName = name;
 	renderOptions->SurfIntegratorParams = params;
 }
-COREDLL void luxVolumeIntegrator(const string &name, const ParamSet &params) {
+void luxVolumeIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("VolumeIntegrator");
 	renderOptions->VolIntegratorName = name;
 	renderOptions->VolIntegratorParams = params;
 }
-COREDLL void luxCamera(const string &name,
+void luxCamera(const string &name,
                        const ParamSet &params) {
 	VERIFY_OPTIONS("Camera");
 	renderOptions->CameraName = name;
@@ -266,23 +266,18 @@ COREDLL void luxCamera(const string &name,
 	namedCoordinateSystems["camera"] =
 		curTransform.GetInverse();
 }
-/*COREDLL void luxSearchPath(const string &path) {
-	VERIFY_OPTIONS("SearchPath");
-	UpdatePluginPath(path);
-	renderOptions->gotSearchPath = true;
-}*/
-COREDLL void luxWorldBegin() {
+void luxWorldBegin() {
 	VERIFY_OPTIONS("WorldBegin");
 	currentApiState = STATE_WORLD_BLOCK;
 	curTransform = Transform();
 	namedCoordinateSystems["world"] = curTransform;
 }
-COREDLL void luxAttributeBegin() {
+void luxAttributeBegin() {
 	VERIFY_WORLD("AttributeBegin");
 	pushedGraphicsStates.push_back(graphicsState);
 	pushedTransforms.push_back(curTransform);
 }
-COREDLL void luxAttributeEnd() {
+void luxAttributeEnd() {
 	VERIFY_WORLD("AttributeEnd");
 	if (!pushedGraphicsStates.size()) {
 		Error("Unmatched luxAttributeEnd() encountered. "
@@ -294,11 +289,11 @@ COREDLL void luxAttributeEnd() {
 	pushedGraphicsStates.pop_back();
 	pushedTransforms.pop_back();
 }
-COREDLL void luxTransformBegin() {
+void luxTransformBegin() {
 	VERIFY_WORLD("TransformBegin");
 	pushedTransforms.push_back(curTransform);
 }
-COREDLL void luxTransformEnd() {
+void luxTransformEnd() {
 	VERIFY_WORLD("TransformEnd");
 	if (!pushedTransforms.size()) {
 		Error("Unmatched luxTransformEnd() encountered. "
@@ -308,7 +303,7 @@ COREDLL void luxTransformEnd() {
 	curTransform = pushedTransforms.back();
 	pushedTransforms.pop_back();
 }
-COREDLL void luxTexture(const string &name,
+void luxTexture(const string &name,
                          const string &type,
 						 const string &texname,
 						 const ParamSet &params) {
@@ -336,12 +331,12 @@ COREDLL void luxTexture(const string &name,
 	else
 		Error("Texture type \"%s\" unknown.", type.c_str());
 }
-COREDLL void luxMaterial(const string &name, const ParamSet &params) {
+void luxMaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Material");
 	graphicsState.material = name;
 	graphicsState.materialParams = params;
 }
-COREDLL void luxLightSource(const string &name,
+void luxLightSource(const string &name,
                              const ParamSet &params) {
 	VERIFY_WORLD("LightSource");
 
@@ -367,13 +362,13 @@ COREDLL void luxLightSource(const string &name,
 			renderOptions->lights.push_back(lt);
 	}
 }
-COREDLL void luxAreaLightSource(const string &name,
+void luxAreaLightSource(const string &name,
                                  const ParamSet &params) {
 	VERIFY_WORLD("AreaLightSource");
 	graphicsState.areaLight = name;
 	graphicsState.areaLightParams = params;
 }
-COREDLL void luxShape(const string &name,
+void luxShape(const string &name,
                        const ParamSet &params) {
 	VERIFY_WORLD("Shape");
 	ShapePtr shape = MakeShape(name,
@@ -415,19 +410,19 @@ COREDLL void luxShape(const string &name,
 		}
 	}
 }
-COREDLL void luxReverseOrientation() {
+void luxReverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation");
 	graphicsState.reverseOrientation =
 		!graphicsState.reverseOrientation;
 }
-COREDLL void luxVolume(const string &name,
+void luxVolume(const string &name,
                         const ParamSet &params) {
 	VERIFY_WORLD("Volume");
 	VolumeRegion *vr = MakeVolumeRegion(name,
 		curTransform, params);
 	if (vr) renderOptions->volumeRegions.push_back(vr);
 }
-COREDLL void luxObjectBegin(const string &name) {
+void luxObjectBegin(const string &name) {
 	VERIFY_WORLD("ObjectBegin");
 	luxAttributeBegin();
 	if (renderOptions->currentInstance)
@@ -438,7 +433,7 @@ COREDLL void luxObjectBegin(const string &name) {
 	renderOptions->currentInstance =
 		&renderOptions->instances[name];
 }
-COREDLL void luxObjectEnd() {
+void luxObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
 	if (!renderOptions->currentInstance)
 		Error("ObjectEnd called outside "
@@ -446,7 +441,7 @@ COREDLL void luxObjectEnd() {
 	renderOptions->currentInstance = NULL;
 	luxAttributeEnd();
 }
-COREDLL void luxObjectInstance(const string &name) {
+void luxObjectInstance(const string &name) {
 	VERIFY_WORLD("ObjectInstance");
 	// Object instance error checking
 	if (renderOptions->currentInstance) {
@@ -476,7 +471,7 @@ COREDLL void luxObjectInstance(const string &name) {
 	Primitive* prim = o;
 	renderOptions->primitives.push_back(prim);
 }
-COREDLL void luxWorldEnd() {
+void luxWorldEnd() {
 	VERIFY_WORLD("WorldEnd");
 	// Ensure the search path was set
 	/*if (!renderOptions->gotSearchPath)

@@ -23,7 +23,7 @@
 // parser.cpp*
 #include "lux.h"
 // Parsing Global Interface
-COREDLL bool ParseFile(const char *filename) {
+ bool ParseFile(const char *filename) {
 	extern FILE *yyin;
 	extern int yyparse(void);
 	extern string current_file;

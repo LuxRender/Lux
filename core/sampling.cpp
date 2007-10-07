@@ -68,7 +68,7 @@ Sample::Sample(SurfaceIntegrator *surf,
 	}
 }
 // Sampling Function Definitions
-COREDLL void StratifiedSample1D(float *samp, int nSamples,
+ void StratifiedSample1D(float *samp, int nSamples,
 		bool jitter) {
 	float invTot = 1.f / nSamples;
 	for (int i = 0;  i < nSamples; ++i) {
@@ -76,7 +76,7 @@ COREDLL void StratifiedSample1D(float *samp, int nSamples,
 		*samp++ = (i + delta) * invTot;
 	}
 }
-COREDLL void StratifiedSample2D(float *samp, int nx, int ny,
+ void StratifiedSample2D(float *samp, int nx, int ny,
 		bool jitter) {
 	float dx = 1.f / nx, dy = 1.f / ny;
 	for (int y = 0; y < ny; ++y)
@@ -87,14 +87,14 @@ COREDLL void StratifiedSample2D(float *samp, int nx, int ny,
 			*samp++ = (y + jy) * dy;
 		}
 }
-COREDLL void Shuffle(float *samp, int count, int dims) {
+ void Shuffle(float *samp, int count, int dims) {
 	for (int i = 0; i < count; ++i) {
 		u_int other = RandomUInt() % count;
 		for (int j = 0; j < dims; ++j)
 			swap(samp[dims*i + j], samp[dims*other + j]);
 	}
 }
-COREDLL void LatinHypercube(float *samples,
+ void LatinHypercube(float *samples,
                              int nSamples, int nDim) {
 	// Generate LHS samples along diagonal
 	float delta = 1.f / nSamples;

@@ -83,32 +83,32 @@ static void processError(const char *format, va_list args,
 	free(errorBuf);
 #endif
 }
-COREDLL void Info(const char *format, ...) {
+ void Info(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 	processError(format, args, "Notice", LUX_ERROR_CONTINUE);
 	va_end(args);
 }
-COREDLL void Warning(const char *format, ...) {
+ void Warning(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 	processError(format, args, "Warning", LUX_ERROR_CONTINUE);
 	va_end(args);
 }
-COREDLL void Error(const char *format, ...) {
+ void Error(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 	processError(format, args, "Error", LUX_ERROR_CONTINUE);
 	va_end(args);
 }
-COREDLL void Severe(const char *format, ...) {
+ void Severe(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 	processError(format, args, "Fatal Error", LUX_ERROR_ABORT);
 	va_end(args);
 }
 // Matrix Method Definitions
-COREDLL bool SolveLinearSystem2x2(const float A[2][2],
+ bool SolveLinearSystem2x2(const float A[2][2],
 		const float B[2], float x[2]) {
 	float det = A[0][0]*A[1][1] - A[0][1]*A[1][0];
 	if (fabsf(det) < 1e-5)
@@ -338,7 +338,7 @@ Matrix4x4Ptr Matrix4x4::Inverse() const {
 
 
 // Statistics Definitions
-struct COREDLL StatTracker {
+struct  StatTracker {
 	StatTracker(const string &cat, const string &n,
 	            StatsCounterType *pa, StatsCounterType *pb = NULL,
 		    bool percentage = true);
@@ -492,7 +492,7 @@ static void init_genrand(u_long seed) {
 		/* for >32 bit machines */
 	}
 }
-COREDLL unsigned long genrand_int32(void)
+ unsigned long genrand_int32(void)
 {
 	unsigned long y;
 	static unsigned long mag01[2]={0x0UL, MATRIX_A};
@@ -529,25 +529,25 @@ COREDLL unsigned long genrand_int32(void)
 	return y;
 }
 /* generates a random number on [0,1]-real-interval */
-COREDLL float genrand_real1(void)
+ float genrand_real1(void)
 {
 	return genrand_int32()*((float)1.0/(float)4294967295.0);
 	/* divided by 2^32-1 */
 }
 /* generates a random number on [0,1)-real-interval */
-COREDLL float genrand_real2(void)
+ float genrand_real2(void)
 {
 	return genrand_int32()*((float)1.0/(float)4294967296.0);
 	/* divided by 2^32 */
 }
 // Memory Allocation Functions
-COREDLL void *AllocAligned(size_t size) {
+ void *AllocAligned(size_t size) {
 #ifndef L1_CACHE_LINE_SIZE
 #define L1_CACHE_LINE_SIZE 64
 #endif
 	return memalign(L1_CACHE_LINE_SIZE, size);
 }
-COREDLL void FreeAligned(void *ptr) {
+ void FreeAligned(void *ptr) {
 #ifdef WIN32 // NOBOOK
 	_aligned_free(ptr);
 #else // NOBOOK

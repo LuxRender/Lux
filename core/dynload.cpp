@@ -387,7 +387,7 @@ public:
 };*/
 // Runtime Loading Method Definitions
 /*
-COREDLL void UpdatePluginPath(const string &newpath)
+ void UpdatePluginPath(const string &newpath)
 {
     string ret;
     for (u_int i = 0; i < newpath.size(); ++i)
@@ -399,7 +399,7 @@ COREDLL void UpdatePluginPath(const string &newpath)
     }
     PluginSearchPath = ret;
 }*/
-COREDLL ShapePtr MakeShape(const string &name,
+ ShapePtr MakeShape(const string &name,
                                    const Transform &object2world,
                                    bool reverseOrientation,
                                    const ParamSet &paramSet)
@@ -463,7 +463,7 @@ static string SearchPath(const string &searchpath,
     }
     return "";
 }*/
-COREDLL MaterialPtr MakeMaterial(const string &name,
+ MaterialPtr MakeMaterial(const string &name,
         const Transform &mtl2world,
         const TextureParams &mp)
 {
@@ -566,7 +566,7 @@ COREDLL MaterialPtr MakeMaterial(const string &name,
 	MaterialPtr o;
     return o;
 }
-COREDLL boost::shared_ptr< Texture<float> > MakeFloatTexture(const string &name,
+ boost::shared_ptr< Texture<float> > MakeFloatTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
@@ -655,7 +655,7 @@ COREDLL boost::shared_ptr< Texture<float> > MakeFloatTexture(const string &name,
 	boost::shared_ptr<Texture<float> > o;
     return o;
 }
-COREDLL boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+ boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp)
 {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
@@ -744,7 +744,7 @@ COREDLL boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &
 	boost::shared_ptr<Texture<Spectrum> > o;
     return o;
 }
-COREDLL Light *MakeLight(const string &name,
+ Light *MakeLight(const string &name,
                          const Transform &light2world, const ParamSet &paramSet)
 {
     /*LightPlugin *plugin = GetPlugin<LightPlugin>(name, lightPlugins, PluginSearchPath);
@@ -811,7 +811,7 @@ COREDLL Light *MakeLight(const string &name,
     Error("Static loading of light '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL AreaLight *MakeAreaLight(const string &name,
+ AreaLight *MakeAreaLight(const string &name,
                                  const Transform &light2world, const ParamSet &paramSet,
                                  const ShapePtr &shape)
 {
@@ -834,7 +834,7 @@ COREDLL AreaLight *MakeAreaLight(const string &name,
     Error("Static loading of area light '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
+ VolumeRegion *MakeVolumeRegion(const string &name,
                                        const Transform &volume2world, const ParamSet &paramSet)
 {
     /*VolumeRegionPlugin *plugin = GetPlugin<VolumeRegionPlugin>(name, volumePlugins,
@@ -868,7 +868,7 @@ COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
     Error("Static loading of volume region '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
+ SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
         const ParamSet &paramSet)
 {
     /*SurfaceIntegratorPlugin *plugin = GetPlugin<SurfaceIntegratorPlugin>(name,
@@ -950,7 +950,7 @@ COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
     Error("Static loading of surface integrator '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
+ VolumeIntegrator *MakeVolumeIntegrator(const string &name,
         const ParamSet &paramSet)
 {
     /*
@@ -980,7 +980,7 @@ COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
     Error("Static loading of volume integrator '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims, const ParamSet &paramSet)
+ Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims, const ParamSet &paramSet)
 {
     /*
        AcceleratorPlugin *plugin = GetPlugin<AcceleratorPlugin>(name, acceleratorPlugins,
@@ -1009,7 +1009,7 @@ COREDLL Primitive *MakeAccelerator(const string &name, const vector<Primitive* >
     Error("Static loading of accelerator '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL Camera *MakeCamera(const string &name,
+ Camera *MakeCamera(const string &name,
                            const ParamSet &paramSet,
                            const Transform &world2cam, Film *film)
 {
@@ -1043,7 +1043,7 @@ COREDLL Camera *MakeCamera(const string &name,
     Error("Static loading of camera '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL Sampler *MakeSampler(const string &name,
+ Sampler *MakeSampler(const string &name,
                              const ParamSet &paramSet, const Film *film)
 {
     /*
@@ -1083,7 +1083,7 @@ COREDLL Sampler *MakeSampler(const string &name,
     Error("Static loading of sampler '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL Filter *MakeFilter(const string &name,
+ Filter *MakeFilter(const string &name,
                            const ParamSet &paramSet)
 {
     /*FilterPlugin *plugin = GetPlugin<FilterPlugin>(name, filterPlugins, PluginSearchPath);
@@ -1132,7 +1132,7 @@ COREDLL Filter *MakeFilter(const string &name,
     Error("Static loading of filter '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL ToneMap *MakeToneMap(const string &name,
+ ToneMap *MakeToneMap(const string &name,
                              const ParamSet &paramSet)
 {
     /*ToneMapPlugin *plugin = GetPlugin<ToneMapPlugin>(name, tonemapPlugins, PluginSearchPath);
@@ -1176,7 +1176,7 @@ COREDLL ToneMap *MakeToneMap(const string &name,
     Error("Static loading of tonemap '%s' failed.",name.c_str());
     return NULL;
 }
-COREDLL Film *MakeFilm(const string &name,
+ Film *MakeFilm(const string &name,
                        const ParamSet &paramSet, Filter *filter)
 {
     /*FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);

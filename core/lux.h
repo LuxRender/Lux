@@ -109,8 +109,6 @@ extern "C" {
 // extern "C" nonsense when returning a template
 #endif
 
-#define COREDLL
-#define DLLEXPORT
 
 #ifdef WIN32
 #define LUX_PATH_SEP ";"
@@ -182,11 +180,11 @@ class TextureMapping3D;
 class IdentityMapping3D;
 class TriangleMesh;
 template <class T> class Texture;
-COREDLL float Noise(float x, float y = .5f, float z = .5f);
-COREDLL float Noise(const Point &P);
-COREDLL float FBm(const Point &P, const Vector &dpdx, const Vector &dpdy,
+ float Noise(float x, float y = .5f, float z = .5f);
+ float Noise(const Point &P);
+ float FBm(const Point &P, const Vector &dpdx, const Vector &dpdy,
 	float omega, int octaves);
-COREDLL float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
+ float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
 	float omega, int octaves);
 class VolumeRegion;
 class Light;
@@ -221,60 +219,60 @@ class VolumeIntegrator;
 #else
 #define PRINTF_FUNC
 #endif // __GNUG__
-extern COREDLL void Info(const char *, ...) PRINTF_FUNC;
-extern COREDLL void Warning(const char *, ...) PRINTF_FUNC;
-extern COREDLL void Error(const char *, ...) PRINTF_FUNC;
-extern COREDLL void Severe(const char *, ...) PRINTF_FUNC;
+extern  void Info(const char *, ...) PRINTF_FUNC;
+extern  void Warning(const char *, ...) PRINTF_FUNC;
+extern  void Error(const char *, ...) PRINTF_FUNC;
+extern  void Severe(const char *, ...) PRINTF_FUNC;
 extern void StatsPrint(FILE *dest);
 extern void StatsCleanup();
-COREDLL void *AllocAligned(size_t size);
-COREDLL void FreeAligned(void *);
-COREDLL bool SolveLinearSystem2x2(const float A[2][2], const float B[2],
+ void *AllocAligned(size_t size);
+ void FreeAligned(void *);
+ bool SolveLinearSystem2x2(const float A[2][2], const float B[2],
 	float x[2]);
-COREDLL unsigned long genrand_int32(void);
-COREDLL extern float genrand_real1(void);
-COREDLL extern float genrand_real2(void);
-COREDLL Spectrum *ReadImage(const string &name, int *xSize,
+ unsigned long genrand_int32(void);
+ extern float genrand_real1(void);
+ extern float genrand_real2(void);
+ Spectrum *ReadImage(const string &name, int *xSize,
 	int *ySize);
-COREDLL void WriteRGBAImage(const string &name,
+ void WriteRGBAImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
-COREDLL void luxInit();
-COREDLL void luxCleanup();
-COREDLL Transform Translate(const Vector &delta);
-COREDLL Transform Scale(float x, float y, float z);
-extern COREDLL Transform RotateX(float angle);
-extern COREDLL Transform RotateY(float angle);
-extern COREDLL Transform RotateZ(float angle);
-extern COREDLL Transform Rotate(float angle, const Vector &axis);
-extern COREDLL Transform LookAt(const Point &pos, const Point &look,
+ void luxInit();
+ void luxCleanup();
+ Transform Translate(const Vector &delta);
+ Transform Scale(float x, float y, float z);
+extern  Transform RotateX(float angle);
+extern  Transform RotateY(float angle);
+extern  Transform RotateZ(float angle);
+extern  Transform Rotate(float angle, const Vector &axis);
+extern  Transform LookAt(const Point &pos, const Point &look,
                         const Vector &up);
-COREDLL Transform Orthographic(float znear, float zfar);
-COREDLL
+ Transform Orthographic(float znear, float zfar);
+
 Transform Perspective(float fov, float znear, float zfar);
-COREDLL Spectrum FrDiel(float cosi, float cost,
+ Spectrum FrDiel(float cosi, float cost,
                         const Spectrum &etai,
 						const Spectrum &etat);
-COREDLL Spectrum FrCond(float cosi,
+ Spectrum FrCond(float cosi,
                         const Spectrum &n,
 						const Spectrum &k);
-COREDLL
+
 	Spectrum FresnelApproxEta(const Spectrum &intensity);
-COREDLL
+
 	Spectrum FresnelApproxK(const Spectrum &intensity);
-COREDLL float Lanczos(float, float tau=2);
-COREDLL Spectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
+ float Lanczos(float, float tau=2);
+ Spectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSamp, int bsdfSamp,
 	int bsdfComponent, u_int sampleNum);
-extern COREDLL void ComputeStep1dCDF(float *f, int nValues, float *c, float *cdf);
-extern COREDLL float SampleStep1d(float *f, float *cdf, float c,
+extern  void ComputeStep1dCDF(float *f, int nValues, float *c, float *cdf);
+extern  float SampleStep1d(float *f, float *cdf, float c,
 	int nSteps, float u, float *weight);
-COREDLL void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
-COREDLL void UniformSampleTriangle(float ud1, float ud2, float *u, float *v);
-COREDLL bool ParseFile(const char *filename);
+ void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
+ void UniformSampleTriangle(float ud1, float ud2, float *u, float *v);
+ bool ParseFile(const char *filename);
 // Global Classes
-struct COREDLL ProgressReporter {
+struct  ProgressReporter {
 	// ProgressReporter Public Methods
 	ProgressReporter(int totalWork, const string &title,
 		int barLength=58);
@@ -291,7 +289,7 @@ struct COREDLL ProgressReporter {
 	char *buf;
 	mutable char *curSpace;
 };
-class COREDLL StatsCounter {
+class  StatsCounter {
 public:
 	// StatsCounter Public Methods
 	StatsCounter(const string &category, const string &name);
@@ -304,7 +302,7 @@ private:
 	// StatsCounter Private Data
 	StatsCounterType num;
 };
-class COREDLL StatsRatio {
+class  StatsRatio {
 public:
 	// StatsRatio Public Methods
 	StatsRatio(const string &category, const string &name);
@@ -313,7 +311,7 @@ private:
 	// StatsRatio Private Data
 	StatsCounterType na, nb;
 };
-class COREDLL StatsPercentage {
+class  StatsPercentage {
 public:
 	// StatsPercentage Public Methods
 	void Add(int a, int b) { na += a; nb += b; }
@@ -339,7 +337,7 @@ typedef boost::shared_ptr<Shape> ShapePtr;
 typedef boost::shared_ptr<Material> MaterialPtr;
 //typedef boost::shared_ptr<TriangleMesh> TriangleMesh*;
 
-/* class COREDLL ReferenceCounted {
+/* class  ReferenceCounted {
 public:
 	ReferenceCounted() { nReferences = 0; }
 	int nReferences;
@@ -419,7 +417,7 @@ private:
 	int nAvailable;
 	vector<T *> toDelete;
 };
-class COREDLL MemoryArena {
+class  MemoryArena {
 public:
 	// MemoryArena Public Methods
 	MemoryArena(u_int bs = 32768) {
@@ -520,7 +518,7 @@ private:
 	int uRes, vRes, uBlocks;
 };
 /*
-struct COREDLL Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
+struct  Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
 		for (int i = 0; i < 4; ++i)
@@ -564,7 +562,7 @@ struct COREDLL Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 };*/
 
 #ifndef LUX_USE_SSE
-struct COREDLL Matrix4x4 {
+struct  Matrix4x4 {
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
 		for (int i = 0; i < 4; ++i)

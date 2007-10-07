@@ -61,7 +61,7 @@ enum BxDFType {
 	BSDF_ALL              = BSDF_ALL_REFLECTION |
 	                        BSDF_ALL_TRANSMISSION
 };
-class COREDLL BSDF {
+class  BSDF {
 public:
 	// BSDF Public Methods
 	Spectrum Sample_f(const Vector &o, Vector *wi, float u1, float u2,
@@ -114,7 +114,7 @@ private:
 };
 #define BSDF_ALLOC(A, T)  new (BSDF::Alloc(A, sizeof(T))) T
 // BxDF Declarations
-class COREDLL BxDF {
+class  BxDF {
 public:
 	// BxDF Interface
 	virtual ~BxDF() { }
@@ -135,7 +135,7 @@ public:
 	// BxDF Public Data
 	const BxDFType type;
 };
-class COREDLL BRDFToBTDF : public BxDF {
+class  BRDFToBTDF : public BxDF {
 public:
 	// BRDFToBTDF Public Methods
 	BRDFToBTDF(BxDF *b)
@@ -160,13 +160,13 @@ public:
 private:
 	BxDF *brdf;
 };
-class COREDLL Fresnel {
+class  Fresnel {
 public:
 	// Fresnel Interface
 	virtual ~Fresnel();
 	virtual Spectrum Evaluate(float cosi) const = 0;
 };
-class COREDLL FresnelConductor : public Fresnel {
+class  FresnelConductor : public Fresnel {
 public:
 	// FresnelConductor Public Methods
 	Spectrum Evaluate(float cosi) const;
@@ -177,7 +177,7 @@ private:
 	// FresnelConductor Private Data
 	Spectrum eta, k;
 };
-class COREDLL FresnelDielectric : public Fresnel {
+class  FresnelDielectric : public Fresnel {
 public:
 	// FresnelDielectric Public Methods
 	Spectrum Evaluate(float cosi) const;
@@ -189,11 +189,11 @@ private:
 	// FresnelDielectric Private Data
 	float eta_i, eta_t;
 };
-class COREDLL FresnelNoOp : public Fresnel {
+class  FresnelNoOp : public Fresnel {
 public:
 	Spectrum Evaluate(float) const { return Spectrum(1.); }
 };
-class COREDLL SpecularReflection : public BxDF {
+class  SpecularReflection : public BxDF {
 public:
 	// SpecularReflection Public Methods
 	SpecularReflection(const Spectrum &r, Fresnel *f)
@@ -213,7 +213,7 @@ private:
 	Spectrum R;
 	Fresnel *fresnel;
 };
-class COREDLL SpecularTransmission : public BxDF {
+class  SpecularTransmission : public BxDF {
 public:
 	// SpecularTransmission Public Methods
 	SpecularTransmission(const Spectrum &t, float ei, float et)
@@ -236,7 +236,7 @@ private:
 	float etai, etat;
 	FresnelDielectric fresnel;
 };
-class COREDLL Lambertian : public BxDF {
+class  Lambertian : public BxDF {
 public:
 	// Lambertian Public Methods
 	Lambertian(const Spectrum &reflectance)
@@ -252,7 +252,7 @@ private:
 	// Lambertian Private Data
 	Spectrum R, RoverPI;
 };
-class COREDLL OrenNayar : public BxDF {
+class  OrenNayar : public BxDF {
 public:
 	// OrenNayar Public Methods
 	Spectrum f(const Vector &wo, const Vector &wi) const;
@@ -269,7 +269,7 @@ private:
 	Spectrum R;
 	float A, B;
 };
-class COREDLL MicrofacetDistribution {
+class  MicrofacetDistribution {
 public:
 	// MicrofacetDistribution Interface
 	virtual ~MicrofacetDistribution() { }
@@ -279,7 +279,7 @@ public:
 	virtual float Pdf(const Vector &wo,
 	                  const Vector &wi) const = 0;
 };
-class COREDLL Microfacet : public BxDF {
+class  Microfacet : public BxDF {
 public:
 	// Microfacet Public Methods
 	Microfacet(const Spectrum &reflectance, Fresnel *f,
@@ -303,7 +303,7 @@ private:
 	MicrofacetDistribution *distribution;
 	Fresnel *fresnel;
 };
-class COREDLL Blinn : public MicrofacetDistribution {
+class  Blinn : public MicrofacetDistribution {
 public:
 	Blinn(float e) { if (e > 1000.f || isnan(e)) e = 1000.f; exponent = e; }
 	// Blinn Public Methods
@@ -318,7 +318,7 @@ public:
 private:
 	float exponent;
 };
-class COREDLL Anisotropic : public MicrofacetDistribution {
+class  Anisotropic : public MicrofacetDistribution {
 public:
 	// Anisotropic Public Methods
 	Anisotropic(float x, float y) { ex = x; ey = y;
@@ -337,7 +337,7 @@ public:
 private:
 	float ex, ey;
 };
-class COREDLL Lafortune : public BxDF {
+class  Lafortune : public BxDF {
 public:
 	// Lafortune Public Methods
 	Lafortune(const Spectrum &r, u_int nl,
@@ -353,7 +353,7 @@ private:
 	u_int nLobes;
 	const Spectrum *x, *y, *z, *exponent;
 };
-class COREDLL FresnelBlend : public BxDF {
+class  FresnelBlend : public BxDF {
 public:
 	// FresnelBlend Public Methods
 	FresnelBlend(const Spectrum &Rd,

@@ -25,16 +25,16 @@
 // api.h*
 #include "lux.h"
 // API Function Declarations
-extern COREDLL void luxIdentity();
-extern COREDLL void luxTranslate(float dx, float dy, float dz);
-extern COREDLL void luxRotate(float angle,
+extern  void luxIdentity();
+extern  void luxTranslate(float dx, float dy, float dz);
+extern  void luxRotate(float angle,
                                float ax,
 							   float ay,
 							   float az);
-extern COREDLL void luxScale(float sx,
+extern  void luxScale(float sx,
                               float sy,
 							  float sz);
-extern COREDLL void luxLookAt(float ex,
+extern  void luxLookAt(float ex,
                                float ey,
 							   float ez,
 							   float lx,
@@ -43,45 +43,45 @@ extern COREDLL void luxLookAt(float ex,
 							   float ux,
 							   float uy,
 							   float uz);
-extern COREDLL
+extern 
 	void luxConcatTransform(float transform[16]);
-extern COREDLL
+extern 
 	void luxTransform(float transform[16]);
-extern COREDLL void luxCoordinateSystem(const string &);
-extern COREDLL void luxCoordSysTransform(const string &);
-extern COREDLL void luxPixelFilter(const string &name, const ParamSet &params);
-extern COREDLL void luxFilm(const string &type,
+extern  void luxCoordinateSystem(const string &);
+extern  void luxCoordSysTransform(const string &);
+extern  void luxPixelFilter(const string &name, const ParamSet &params);
+extern  void luxFilm(const string &type,
                             const ParamSet &params);
-extern COREDLL void luxSampler(const string &name,
+extern  void luxSampler(const string &name,
                                const ParamSet &params);
-extern COREDLL void luxAccelerator(const string &name,
+extern  void luxAccelerator(const string &name,
 	                               const ParamSet &params);
-extern COREDLL
+extern 
 	void luxSurfaceIntegrator(const string &name,
 							  const ParamSet &params);
-extern COREDLL
+extern 
 	void luxVolumeIntegrator(const string &name,
 							 const ParamSet &params);
-extern COREDLL void luxCamera(const string &, const ParamSet &cameraParams);
-extern COREDLL void luxSearchPath(const string &path);
-extern COREDLL void luxWorldBegin();
-extern COREDLL void luxAttributeBegin();
-extern COREDLL void luxAttributeEnd();
-extern COREDLL void luxTransformBegin();
-extern COREDLL void luxTransformEnd();
-extern COREDLL void luxTexture(const string &name, const string &type,
+extern  void luxCamera(const string &, const ParamSet &cameraParams);
+extern  void luxSearchPath(const string &path);
+extern  void luxWorldBegin();
+extern  void luxAttributeBegin();
+extern  void luxAttributeEnd();
+extern  void luxTransformBegin();
+extern  void luxTransformEnd();
+extern  void luxTexture(const string &name, const string &type,
 	const string &texname, const ParamSet &params);
-extern COREDLL void luxMaterial(const string &name,
+extern  void luxMaterial(const string &name,
                                const ParamSet &params);
-extern COREDLL void luxLightSource(const string &name, const ParamSet &params);
-extern COREDLL void luxAreaLightSource(const string &name, const ParamSet &params);
-extern COREDLL void luxShape(const string &name, const ParamSet &params);
-extern COREDLL void luxReverseOrientation();
-extern COREDLL void luxVolume(const string &name, const ParamSet &params);
-extern COREDLL void luxObjectBegin(const string &name);
-extern COREDLL void luxObjectEnd();
-extern COREDLL void luxObjectInstance(const string &name);
-extern COREDLL void luxWorldEnd();
+extern  void luxLightSource(const string &name, const ParamSet &params);
+extern  void luxAreaLightSource(const string &name, const ParamSet &params);
+extern  void luxShape(const string &name, const ParamSet &params);
+extern  void luxReverseOrientation();
+extern  void luxVolume(const string &name, const ParamSet &params);
+extern  void luxObjectBegin(const string &name);
+extern  void luxObjectEnd();
+extern  void luxObjectInstance(const string &name);
+extern  void luxWorldEnd();
 
 
 //CORE engine control

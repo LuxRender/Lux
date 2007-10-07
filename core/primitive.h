@@ -27,7 +27,7 @@
 #include "shape.h"
 #include "material.h"
 // Primitive Declarations
-class COREDLL Primitive {
+class  Primitive {
 public:
 	// Primitive Interface
 	virtual ~Primitive();
@@ -44,7 +44,7 @@ public:
 	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 		const Transform &WorldToObject) const = 0;
 };
-class COREDLL Intersection {
+class  Intersection {
 	public:
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
@@ -58,7 +58,7 @@ class COREDLL Intersection {
 	const Primitive *primitive;
 	
 };
-class COREDLL GeometricPrimitive : public Primitive {
+class  GeometricPrimitive : public Primitive {
 public:
 	// GeometricPrimitive Public Methods
 	bool CanIntersect() const;
@@ -79,7 +79,7 @@ private:
 	MaterialPtr material;
 	AreaLight *areaLight;
 };
-class COREDLL InstancePrimitive : public Primitive {
+class  InstancePrimitive : public Primitive {
 public:
 	// InstancePrimitive Public Methods
 	InstancePrimitive(Primitive* &i,
@@ -103,7 +103,7 @@ private:
 	Primitive* instance;
 	Transform InstanceToWorld, WorldToInstance;
 };
-class COREDLL Aggregate : public Primitive {
+class  Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	const AreaLight *GetAreaLight() const;

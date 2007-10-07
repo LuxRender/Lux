@@ -28,7 +28,7 @@
 #include "transform.h"
 #include "paramset.h"
 // DifferentialGeometry Declarations
-class COREDLL DifferentialGeometry {
+class  DifferentialGeometry {
 	public:
 	
 	DifferentialGeometry() { u = v = 0.; shape = NULL; }
@@ -51,7 +51,7 @@ class COREDLL DifferentialGeometry {
 
 };
 // Shape Declarations
-class COREDLL Shape {
+class  Shape {
 public:
 	// Shape Interface
 	Shape(const Transform &o2w, bool ro);

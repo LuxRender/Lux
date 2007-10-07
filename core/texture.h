@@ -28,7 +28,7 @@
 #include "geometry.h"
 #include "transform.h"
 // Texture Declarations
-class COREDLL TextureMapping2D {
+class  TextureMapping2D {
 public:
 	// TextureMapping2D Interface
 	virtual ~TextureMapping2D() { }
@@ -36,7 +36,7 @@ public:
 		float *s, float *t, float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const = 0;
 };
-class COREDLL UVMapping2D : public TextureMapping2D {
+class  UVMapping2D : public TextureMapping2D {
 public:
 	// UVMapping2D Public Methods
 	UVMapping2D(float su = 1, float sv = 1,
@@ -47,7 +47,7 @@ public:
 private:
 	float su, sv, du, dv;
 };
-class COREDLL SphericalMapping2D : public TextureMapping2D {
+class  SphericalMapping2D : public TextureMapping2D {
 public:
 	// SphericalMapping2D Public Methods
 	SphericalMapping2D(const Transform &toSph)
@@ -61,7 +61,7 @@ private:
 	Transform WorldToTexture;
 };
 class
-COREDLL CylindricalMapping2D : public TextureMapping2D {
+ CylindricalMapping2D : public TextureMapping2D {
 public:
 	// CylindricalMapping2D Public Methods
 	CylindricalMapping2D(const Transform &toCyl)
@@ -74,7 +74,7 @@ private:
 	void cylinder(const Point &P, float *s, float *t) const;
 	Transform WorldToTexture;
 };
-class COREDLL PlanarMapping2D : public TextureMapping2D {
+class  PlanarMapping2D : public TextureMapping2D {
 public:
 	// PlanarMapping2D Public Methods
 	PlanarMapping2D(const Vector &v1, const Vector &v2,
@@ -86,14 +86,14 @@ private:
 	Vector vs, vt;
 	float ds, dt;
 };
-class COREDLL TextureMapping3D {
+class  TextureMapping3D {
 public:
 	// TextureMapping3D Interface
 	virtual ~TextureMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg,
 		Vector *dpdx, Vector *dpdy) const = 0;
 };
-class COREDLL IdentityMapping3D : public TextureMapping3D {
+class  IdentityMapping3D : public TextureMapping3D {
 public:
 	IdentityMapping3D(const Transform &x)
 		: WorldToTexture(x) { }

@@ -31,7 +31,7 @@
 #include "sampling.h"
 #include "material.h"
 // Integrator Declarations
-class COREDLL Integrator {
+class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
@@ -49,17 +49,17 @@ public:
 };
 class SurfaceIntegrator : public Integrator {
 };
-COREDLL Spectrum UniformSampleAllLights(const Scene *scene,
+ Spectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo,
 	BSDF *bsdf, const Sample *sample,
 	int *lightSampleOffset, int *bsdfSampleOffset,
 	int *bsdfComponentOffset);
-COREDLL Spectrum UniformSampleOneLight(const Scene *scene, const Point &p,
+ Spectrum UniformSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset = -1,
 	int lightNumOffset = -1, int bsdfSampleOffset = -1,
 	int bsdfComponentOffset = -1);
-COREDLL Spectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
+ Spectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,
 	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,

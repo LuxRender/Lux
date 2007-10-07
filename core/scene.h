@@ -68,7 +68,7 @@ static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
 #define THR_SIG_EXIT 3
 
 // Scene Declarations
-class COREDLL Scene {
+class  Scene {
 public:
 	// Scene Public Methods
 	void Render();

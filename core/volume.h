@@ -30,16 +30,16 @@
 #include "transform.h"
 #include "transport.h"
 // Volume Scattering Declarations
-COREDLL float PhaseIsotropic(const Vector &w, const Vector &wp);
-COREDLL
+ float PhaseIsotropic(const Vector &w, const Vector &wp);
+
 float PhaseRayleigh(const Vector &w, const Vector &wp);
-COREDLL
+
 float PhaseMieHazy(const Vector &w, const Vector &wp);
-COREDLL
+
 float PhaseMieMurky(const Vector &w, const Vector &wp);
-COREDLL float PhaseHG(const Vector &w, const Vector &wp, float g);
-COREDLL float PhaseSchlick(const Vector &w, const Vector &wp, float g);
-class COREDLL VolumeRegion {
+ float PhaseHG(const Vector &w, const Vector &wp, float g);
+ float PhaseSchlick(const Vector &w, const Vector &wp, float g);
+class  VolumeRegion {
 public:
 	// VolumeRegion Interface
 	virtual ~VolumeRegion() { }
@@ -58,7 +58,7 @@ public:
 	virtual Spectrum Tau(const Ray &ray,
 		float step = 1.f, float offset = 0.5) const = 0;
 };
-class COREDLL DensityRegion : public VolumeRegion {
+class  DensityRegion : public VolumeRegion {
 public:
 	// DensityRegion Public Methods
 	DensityRegion(const Spectrum &sig_a, const Spectrum &sig_s,
@@ -87,7 +87,7 @@ protected:
 	Spectrum sig_a, sig_s, le;
 	float g;
 };
-class COREDLL AggregateVolume : public VolumeRegion {
+class  AggregateVolume : public VolumeRegion {
 public:
 	// AggregateVolume Public Methods
 	AggregateVolume(const vector<VolumeRegion *> &r);

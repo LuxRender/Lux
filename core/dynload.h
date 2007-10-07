@@ -26,37 +26,37 @@
 #include "lux.h"
 #include "texture.h"
 // Runtime Loading Declarations
-COREDLL void UpdatePluginPath(const string &newpath);
-COREDLL ShapePtr MakeShape(const string &name,
+ void UpdatePluginPath(const string &newpath);
+ ShapePtr MakeShape(const string &name,
 	const Transform &object2world, bool reverseOrientation, const ParamSet &paramSet);
-COREDLL MaterialPtr MakeMaterial(const string &name,
+ MaterialPtr MakeMaterial(const string &name,
 	const Transform &mtl2world, const TextureParams &mp);
-COREDLL boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
+ boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
-COREDLL boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+ boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
-COREDLL Light *MakeLight(const string &name,
+ Light *MakeLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
-COREDLL AreaLight *MakeAreaLight(const string &name,
+ AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world,
 	const ParamSet &paramSet, const ShapePtr &shape);
-COREDLL VolumeRegion *MakeVolumeRegion(const string &name,
+ VolumeRegion *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
-COREDLL SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
+ SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 		const ParamSet &paramSet);
-COREDLL VolumeIntegrator *MakeVolumeIntegrator(const string &name,
+ VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 		const ParamSet &paramSet);
-COREDLL Primitive *MakeAccelerator(const string &name,
+ Primitive *MakeAccelerator(const string &name,
 		const vector<Primitive* > &prims,
 		const ParamSet &paramSet);
-COREDLL Camera *MakeCamera(const string &name,
+ Camera *MakeCamera(const string &name,
 	const ParamSet &paramSet, const Transform &world2cam, Film *film);
-COREDLL Sampler *MakeSampler(const string &name,
+ Sampler *MakeSampler(const string &name,
 	const ParamSet &paramSet, const Film *film);
-COREDLL Filter *MakeFilter(const string &name,
+ Filter *MakeFilter(const string &name,
 	const ParamSet &paramSet);
-COREDLL ToneMap *MakeToneMap(const string &name,
+ ToneMap *MakeToneMap(const string &name,
 	const ParamSet &paramSet);
-COREDLL Film *MakeFilm(const string &name,
+ Film *MakeFilm(const string &name,
 	const ParamSet &paramSet, Filter *filt);
 #endif // LUX_DYNLOAD_H

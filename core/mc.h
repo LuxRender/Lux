@@ -24,16 +24,16 @@
 #define LUX_MC_H
 // mc.h*
 // MC Utility Declarations
-extern COREDLL void RejectionSampleDisk(float u1, float u2, float *x, float *y);
-COREDLL Vector UniformSampleHemisphere(float u1, float u2);
-COREDLL float  UniformHemispherePdf(float theta, float phi);
-COREDLL Vector UniformSampleSphere(float u1, float u2);
-COREDLL float  UniformSpherePdf();
-COREDLL Vector UniformSampleCone(float u1, float u2, float costhetamax);
-COREDLL Vector UniformSampleCone(float u1, float u2, float costhetamax,
+extern  void RejectionSampleDisk(float u1, float u2, float *x, float *y);
+ Vector UniformSampleHemisphere(float u1, float u2);
+ float  UniformHemispherePdf(float theta, float phi);
+ Vector UniformSampleSphere(float u1, float u2);
+ float  UniformSpherePdf();
+ Vector UniformSampleCone(float u1, float u2, float costhetamax);
+ Vector UniformSampleCone(float u1, float u2, float costhetamax,
 	const Vector &x, const Vector &y, const Vector &z);
-COREDLL float  UniformConePdf(float costhetamax);
-COREDLL void UniformSampleDisk(float u1, float u2, float *x, float *y);
+ float  UniformConePdf(float costhetamax);
+ void UniformSampleDisk(float u1, float u2, float *x, float *y);
 inline Vector CosineSampleHemisphere(float u1, float u2) {
 	Vector ret;
 	ConcentricSampleDisk(u1, u2, &ret.x, &ret.y);
@@ -44,8 +44,8 @@ inline Vector CosineSampleHemisphere(float u1, float u2) {
 inline float CosineHemispherePdf(float costheta, float phi) {
 	return costheta * INV_PI;
 }
-extern COREDLL Vector SampleHG(const Vector &w, float g, float u1, float u2);
-extern COREDLL float HGPdf(const Vector &w, const Vector &wp, float g);
+extern  Vector SampleHG(const Vector &w, float g, float u1, float u2);
+extern  float HGPdf(const Vector &w, const Vector &wp, float g);
 // MC Inline Functions
 inline float BalanceHeuristic(int nf, float fPdf, int ng,
 		float gPdf) {

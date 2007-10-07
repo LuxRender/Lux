@@ -25,7 +25,7 @@
 // color.h*
 #include "lux.h"
 // Spectrum Declarations
-class COREDLL Spectrum {
+class  Spectrum {
 public:
 	// Spectrum Public Methods
 	Spectrum(float v = 0.f) {

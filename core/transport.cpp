@@ -27,7 +27,7 @@
 Integrator::~Integrator() {
 }
 // Integrator Utility Functions
-COREDLL Spectrum UniformSampleAllLights(const Scene *scene,
+ Spectrum UniformSampleAllLights(const Scene *scene,
 		const Point &p, const Normal &n, const Vector &wo,
 		BSDF *bsdf, const Sample *sample,
 		int *lightSampleOffset, int *bsdfSampleOffset,
@@ -47,7 +47,7 @@ COREDLL Spectrum UniformSampleAllLights(const Scene *scene,
 	}
 	return L;
 }
-COREDLL Spectrum UniformSampleOneLight(const Scene *scene,
+ Spectrum UniformSampleOneLight(const Scene *scene,
 		const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		int lightSampleOffset, int lightNumOffset,
@@ -67,7 +67,7 @@ COREDLL Spectrum UniformSampleOneLight(const Scene *scene,
 			lightSampleOffset, bsdfSampleOffset,
 			bsdfComponentOffset, 0);
 }
-COREDLL Spectrum WeightedSampleOneLight(const Scene *scene,
+ Spectrum WeightedSampleOneLight(const Scene *scene,
 		const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf,
 		const Sample *sample, int lightSampleOffset,

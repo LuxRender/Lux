@@ -45,7 +45,7 @@ public:
 	const int xResolution, yResolution;
 };
 // Image Pipeline Declarations
-extern COREDLL void ApplyImagingPipeline(float *rgb,
+extern  void ApplyImagingPipeline(float *rgb,
 	int xResolution, int yResolution,
 	float *yWeight = NULL,
 	float bloomRadius = .2f, float bloomWeight = 0.f,

@@ -27,7 +27,7 @@
 #include "sampling.h"
 #include <stdarg.h>
 // BxDF Utility Functions
-COREDLL Spectrum FrDiel(float cosi, float cost,
+ Spectrum FrDiel(float cosi, float cost,
                         const Spectrum &etai,
 						const Spectrum &etat) {
         Spectrum Rparl = ((etat * cosi) - (etai * cost)) /
@@ -36,7 +36,7 @@ COREDLL Spectrum FrDiel(float cosi, float cost,
                          ((etai * cosi) + (etat * cost));
 	return (Rparl*Rparl + Rperp*Rperp) / 2.f;
 }
-COREDLL Spectrum FrCond(float cosi,
+ Spectrum FrCond(float cosi,
                          const Spectrum &eta,
 					     const Spectrum &k) {
     Spectrum tmp = (eta*eta + k*k) * cosi*cosi;
@@ -48,12 +48,12 @@ COREDLL Spectrum FrCond(float cosi,
 	    (tmp_f + (2.f * eta * cosi) + cosi*cosi);
     return (Rparl2 + Rperp2) / 2.f;
 }
-COREDLL Spectrum FresnelApproxEta(const Spectrum &Fr) {
+ Spectrum FresnelApproxEta(const Spectrum &Fr) {
 	Spectrum reflectance = Fr.Clamp(0.f, .999f);
 	return (Spectrum(1.) + reflectance.Sqrt()) /
 		(Spectrum(1.) - reflectance.Sqrt());
 }
-COREDLL Spectrum FresnelApproxK(const Spectrum &Fr) {
+ Spectrum FresnelApproxK(const Spectrum &Fr) {
 	Spectrum reflectance = Fr.Clamp(0.f, .999f);
 	return 2.f * (reflectance /
 	              (Spectrum(1.) - reflectance)).Sqrt();
