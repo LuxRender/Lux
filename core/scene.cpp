@@ -216,6 +216,9 @@ void* Render_Thread( void* p )
 
 		t_d->stat_Samples++;
 
+		//if( t_d->stat_Samples >= 100 )	// TEMP CODE FOR CHECKING SAMPLERS - radiance
+		//	while(true) {SLEEP1S;}
+
 		// Free BSDF memory from computing image sample value
 		arena->FreeAll();
 	}
@@ -245,8 +248,11 @@ int Scene::CreateRenderThread()
 		thr_dat->Vi = volumeIntegrator->clone();									// VolumeIntegrator (uc)
 		thr_dat->Spl = new Sample( (SurfaceIntegrator*) thr_dat->Si, 				// Sample (u)
 			(VolumeIntegrator*) thr_dat->Vi, this );
-		thr_dat->Splr = sampler->clone();											// Sampler (uc)		
-		thr_dat->Splr->setSeed( RandomUInt() );	
+		thr_dat->Splr = sampler->clone();											// Sampler (uc)	
+
+		/* TODO add different seeds and unique backend random generator for threads - radiance */
+		//thr_dat->Splr->setSeed( RandomUInt() );	
+
 		thr_dat->Cam = camera;														// Camera (1)
 		thr_dat->Scn = this;														// Scene (this)
 		thr_dat->arena = new MemoryArena();											// MemoryArena (u)

@@ -30,7 +30,7 @@ public:
 	// LDSampler Public Methods
 	LDSampler(int xstart, int xend,
 	          int ystart, int yend,
-			  int nsamp);
+			  int nsamp, bool prog);
 	~LDSampler() {
 		delete[] imageSamples;
 		for (int i = 0; i < n1D; ++i)
@@ -40,7 +40,7 @@ public:
 		delete[] oneDSamples;
 		delete[] twoDSamples;
 	}
-	void setSeed( u_int s );
+	void setSeed( u_int s ) { /* TODO add different seeds and new backend random generator for threads - radiance */ }
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
 	}
@@ -55,5 +55,6 @@ private:
 	float *imageSamples, *lensSamples, *timeSamples;
 	float **oneDSamples, **twoDSamples;
 	int n1D, n2D;
-	u_int fs_pos, fs_scramble;
+	bool fs_progressive;
+	u_int fs_pos, fs_scrambleX, fs_scrambleY;
 };

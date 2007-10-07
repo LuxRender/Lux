@@ -28,13 +28,16 @@ RandomSampler* RandomSampler::clone() const
    return new RandomSampler(*this);
  }
 RandomSampler::RandomSampler(int xstart, int xend,
-                             int ystart, int yend, int xs, int ys)
+                             int ystart, int yend, int xs, int ys, bool prog)
         : Sampler(xstart, xend, ystart, yend, xs * ys)
 {
     xPos = xPixelStart;
     yPos = yPixelStart;
     xPixelSamples = xs;
     yPixelSamples = ys;
+
+	fs_progressive = prog;
+
     // Get storage for a pixel's worth of stratified samples
     imageSamples = (float *)AllocAligned(5 * xPixelSamples *
                                          yPixelSamples * sizeof(float));
@@ -60,23 +63,28 @@ RandomSampler::RandomSampler(int xstart, int xend,
     }
     samplePos = 0;
 }
-void RandomSampler::setSeed( u_int s )
-{
-    //fs_scramble = s;
-}
+
 bool RandomSampler::GetNextSample(Sample *sample)
 {
     // Compute new set of samples if needed for next pixel
     if (samplePos == xPixelSamples * yPixelSamples)
     {
-        // Advance to next pixel for stratified sampling
-        if (++xPos == xPixelEnd)
-        {
-            xPos = xPixelStart;
-            ++yPos;
-        }
-        if (yPos == yPixelEnd)
-            return false;
+		if(fs_progressive) {
+			// Progressive film sampling (random)
+			xPos = xPixelStart + 
+				Ceil2Int( RandomFloat() * xPixelEnd );
+			yPos = yPixelStart + 
+				Ceil2Int( RandomFloat() * yPixelEnd );
+		} else {
+			// Linear/finite film sampling
+			// Advance to next pixel for stratified sampling
+			if (++xPos == xPixelEnd) {
+				xPos = xPixelStart;
+				++yPos;
+			}
+			if (yPos == yPixelEnd)
+				return false;
+		}
 
         for (int i = 0;
                 i < 5 * xPixelSamples * yPixelSamples;
@@ -116,10 +124,10 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
     int xsamp = params.FindOneInt("xsamples", 2);
     int ysamp = params.FindOneInt("ysamples", 2);
-	int prog = params.FindOneInt("progressive", 0);
+	bool prog = params.FindOneBool("progressive", false);
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,
                              ystart, yend,
-                             xsamp, ysamp);
+                             xsamp, ysamp, prog);
 }

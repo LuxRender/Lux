@@ -120,7 +120,6 @@ Sampler* StratifiedSampler::CreateSampler(const ParamSet &params, const Film *fi
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	int xsamp = params.FindOneInt("xsamples", 2);
 	int ysamp = params.FindOneInt("ysamples", 2);
-	int prog = params.FindOneInt("progressive", 0);
 	return new StratifiedSampler(xstart, xend, ystart, yend, xsamp, ysamp,
 		jitter);
 }

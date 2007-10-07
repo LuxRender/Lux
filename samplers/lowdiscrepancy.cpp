@@ -29,13 +29,15 @@ LDSampler* LDSampler::clone() const
  }
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
-		int ystart, int yend, int ps)
+		int ystart, int yend, int ps, bool prog)
 	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
 
+	fs_progressive = prog;
 	fs_pos = 0;
-	fs_scramble = RandomUInt();
+	fs_scrambleX = RandomUInt();
+	fs_scrambleY = RandomUInt();
 
 	if (!IsPowerOf2(ps)) {
 		Warning("Pixel samples being"
@@ -50,11 +52,6 @@ LDSampler::LDSampler(int xstart, int xend,
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
 	n1D = n2D = 0;
-}
-
-void LDSampler::setSeed( u_int s )							// TODO fix all seeds in all samplers
-{
-    fs_scramble = s;
 }
 
 bool LDSampler::GetNextSample(Sample *sample) {
@@ -72,26 +69,27 @@ bool LDSampler::GetNextSample(Sample *sample) {
 		                               pixelSamples];
 	}
 	if (samplePos == pixelSamples) {
-		// sample random pixel (radiance) TODO finish
-		fs_pos++;
-		if( fs_pos == 4294967295 ) { // uint -1
-			printf("\nlds film sampler reset...\n");
-			fs_pos = 0;
-		}
+		if(fs_progressive) {
+			// // Progressive film sampling (LDS 02 sequence)
+			fs_pos++;
 
-		xPos = xPixelStart + 
-			Ceil2Int( VanDerCorput( fs_pos, fs_scramble ) * xPixelEnd );
-		yPos = yPixelStart + 
-			Ceil2Int( Sobol2( fs_pos, fs_scramble ) * yPixelEnd );
-		
+			if( fs_pos == 4294967295 ) // u_int size -1
+				fs_pos = 0;
 
-/*		// Advance to next pixel for low-discrepancy sampling
-		if (++xPos == xPixelEnd) {
-			xPos = xPixelStart;
-			++yPos;
+			xPos = xPixelStart + 
+				Ceil2Int( VanDerCorput( fs_pos, fs_scrambleX ) * xPixelEnd );
+			yPos = yPixelStart + 
+				Ceil2Int( Sobol2( fs_pos, fs_scrambleY ) * yPixelEnd );
+		} else {
+			// Linear/finite film sampling
+			// Advance to next pixel for low-discrepancy sampling
+			if (++xPos == xPixelEnd) {
+				xPos = xPixelStart;
+				++yPos;
+			}
+			if (yPos == yPixelEnd)
+				return false;
 		}
-		if (yPos == yPixelEnd)
-			return false; */
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
 		LDShuffleScrambled2D(1, pixelSamples, imageSamples);
@@ -127,7 +125,7 @@ Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	int prog = params.FindOneInt("progressive", 0);
+	bool prog = params.FindOneBool("progressive", false);
 	int nsamp = params.FindOneInt("pixelsamples", 4);
-	return new LDSampler(xstart, xend, ystart, yend, nsamp);
+	return new LDSampler(xstart, xend, ystart, yend, nsamp, prog);
 }
