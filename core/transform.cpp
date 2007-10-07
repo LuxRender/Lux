@@ -159,6 +159,7 @@ Transform Transform::operator*(const Transform &t2) const {
 	Matrix4x4Ptr m2 = Matrix4x4::Mul(t2.mInv, mInv);
 	return Transform(m1, m2);
 }
+#ifndef LUX_USE_SSE
 bool Transform::SwapsHandedness() const {
 	float det = ((m->m[0][0] *
                   (m->m[1][1] * m->m[2][2] -
@@ -169,8 +170,25 @@ bool Transform::SwapsHandedness() const {
                  (m->m[0][2] *
                   (m->m[1][0] * m->m[2][1] -
                    m->m[1][1] * m->m[2][0])));
+	//std::cout<<"Det:"<<det<<std::endl;
+	return det < 0.f;
+	
+}
+#else
+bool Transform::SwapsHandedness() const {
+	float det = ((m->_11 *
+                  (m->_22 * m->_33 -
+                   m->_23 * m->_32)) -
+                 (m->_12 *
+                  (m->_21 * m->_33 -
+                   m->_23 * m->_31)) +
+                 (m->_13 *
+                  (m->_21 * m->_32 -
+                   m->_22 * m->_31)));
+	//std::cout<<"Det:"<<det<<std::endl;
 	return det < 0.f;
 }
+#endif
 Transform COREDLL Orthographic(float znear, float zfar) {
 	return Scale(1.f, 1.f, 1.f / (zfar-znear)) *
 		Translate(Vector(0.f, 0.f, -znear));

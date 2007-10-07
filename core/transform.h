@@ -71,6 +71,7 @@ private:
 	Matrix4x4Ptr m, mInv;
 };
 // Transform Inline Functions
+#ifndef LUX_USE_SSE
 inline Point Transform::operator()(const Point &pt) const {
 	float x = pt.x, y = pt.y, z = pt.z;
 	float xp = m->m[0][0]*x + m->m[0][1]*y + m->m[0][2]*z + m->m[0][3];
@@ -82,8 +83,32 @@ inline Point Transform::operator()(const Point &pt) const {
 	if (wp == 1.) return Point(xp, yp, zp);
 	else          return Point(xp, yp, zp)/wp;
 }
-inline void Transform::operator()(const Point &pt,
-		Point *ptrans) const {
+#else
+inline Point Transform::operator()(const Point &pt) const {
+	__m128 ptvec=_mm_set_ps(0,pt.z,pt.y,pt.x);
+	
+	union{
+		__m128 vec;
+		float f[4];
+	};
+
+      vec = m->_L4;
+      vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0x00) , m->_L1));
+      vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0x55) , m->_L2));
+      vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0xAA) , m->_L3));
+
+	Assert(f[3] != 0);
+      //BOOST_ASSERT(result.w != 0);
+      
+      //std::cout<<"Pt:"<<f[0]<<','<< f[1] <<','<< f[2]<< ',' << f[3] << std::endl;
+      
+      if (f[3] == 1.) return Point(f[0], f[1], f[2]);
+	else          return Point(f[0], f[1], f[2])/f[3];
+}
+#endif
+
+#ifndef LUX_USE_SSE
+inline void Transform::operator()(const Point &pt, Point *ptrans) const {
 	float x = pt.x, y = pt.y, z = pt.z;
 	ptrans->x = m->m[0][0]*x + m->m[0][1]*y + m->m[0][2]*z + m->m[0][3];
 	ptrans->y = m->m[1][0]*x + m->m[1][1]*y + m->m[1][2]*z + m->m[1][3];
@@ -91,12 +116,51 @@ inline void Transform::operator()(const Point &pt,
 	float w   = m->m[3][0]*x + m->m[3][1]*y + m->m[3][2]*z + m->m[3][3];
 	if (w != 1.) *ptrans /= w;
 }
+#else
+inline void Transform::operator()(const Point &pt, Point *ptrans) const {
+	__m128 ptvec=_mm_set_ps(0,pt.z,pt.y,pt.x);
+	
+	union{
+		__m128 vec;
+		float f[4];
+	};
+
+      vec = m->_L4;
+      vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0x00) , m->_L1));
+      vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0x55) , m->_L2));
+      vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0xAA) , m->_L3));
+
+	Assert(f[3] != 0);
+    ptrans->x=f[0];
+    ptrans->y=f[1];
+    ptrans->z=f[2];
+    if (f[3] != 1.) *ptrans /= f[3];
+}
+#endif
+
+#ifndef LUX_USE_SSE
 inline Vector Transform::operator()(const Vector &v) const {
   float x = v.x, y = v.y, z = v.z;
   return Vector(m->m[0][0]*x + m->m[0][1]*y + m->m[0][2]*z,
 			    m->m[1][0]*x + m->m[1][1]*y + m->m[1][2]*z,
 			    m->m[2][0]*x + m->m[2][1]*y + m->m[2][2]*z);
 }
+#else
+inline Vector Transform::operator()(const Vector &v) const {    
+	__m128 vec=_mm_set_ps(0,v.z,v.y,v.x);
+	union{
+		__m128 res;
+		float f[4];
+	};
+		    
+    res = _mm_mul_ps(_mm_shuffle_ps(vec,vec,0x00) , m->_L1);
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0x55) , m->_L2));
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0xAA) , m->_L3));
+    return Vector(f[0], f[1], f[2]);
+}
+#endif
+
+#ifndef LUX_USE_SSE
 inline void Transform::operator()(const Vector &v,
 		Vector *vt) const {
   float x = v.x, y = v.y, z = v.z;
@@ -104,12 +168,47 @@ inline void Transform::operator()(const Vector &v,
   vt->y = m->m[1][0] * x + m->m[1][1] * y + m->m[1][2] * z;
   vt->z = m->m[2][0] * x + m->m[2][1] * y + m->m[2][2] * z;
 }
+#else
+inline void Transform::operator()(const Vector &v, Vector *vt) const
+{
+    __m128 vec=_mm_set_ps(0,v.z,v.y,v.x);
+	union{
+		__m128 res;
+		float f[4];
+	};
+		    
+    res = _mm_mul_ps(_mm_shuffle_ps(vec,vec,0x00) , m->_L1);
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0x55) , m->_L2));
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0xAA) , m->_L3));
+    vt->x=f[0];
+    vt->y=f[1];
+    vt->z=f[2];
+}
+#endif
+
+#ifndef LUX_USE_SSE
 inline Normal Transform::operator()(const Normal &n) const {
 	float x = n.x, y = n.y, z = n.z;
 	return Normal(mInv->m[0][0]*x + mInv->m[1][0]*y + mInv->m[2][0]*z,
                   mInv->m[0][1]*x + mInv->m[1][1]*y + mInv->m[2][1]*z,
                   mInv->m[0][2]*x + mInv->m[1][2]*y + mInv->m[2][2]*z);
 }
+#else
+inline Normal Transform::operator()(const Normal &n) const {
+	__m128 vec=_mm_set_ps(0,n.z,n.y,n.x);
+	union{
+		__m128 res;
+		float f[4];
+	};
+		    
+    res = _mm_mul_ps(_mm_shuffle_ps(vec,vec,0x00) , m->_L1);
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0x55) , m->_L2));
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0xAA) , m->_L3));
+    return Normal(f[0], f[1], f[2]);
+}
+#endif
+
+#ifndef LUX_USE_SSE
 inline void Transform::operator()(const Normal &n,
 		Normal *nt) const {
 	float x = n.x, y = n.y, z = n.z;
@@ -117,6 +216,24 @@ inline void Transform::operator()(const Normal &n,
 	nt->y = mInv->m[0][1]*x + mInv->m[1][1]*y + mInv->m[2][1]*z;
 	nt->z = mInv->m[0][2]*x + mInv->m[1][2]*y + mInv->m[2][2]*z;
 }
+#else
+inline void Transform::operator()(const Normal &n,
+		Normal *nt) const {
+	__m128 vec=_mm_set_ps(0,n.z,n.y,n.x);
+	union{
+		__m128 res;
+		float f[4];
+	};
+		    
+    res = _mm_mul_ps(_mm_shuffle_ps(vec,vec,0x00) , m->_L1);
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0x55) , m->_L2));
+    res = _mm_add_ps(res,_mm_mul_ps(_mm_shuffle_ps(vec,vec,0xAA) , m->_L3));
+    nt->x=f[0];
+    nt->y=f[1];
+    nt->z=f[2];
+}
+#endif
+
 inline Ray Transform::operator()(const Ray &r) const {
 	Ray ret;
 	(*this)(r.o, &ret.o);
