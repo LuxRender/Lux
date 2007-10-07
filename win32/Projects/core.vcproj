@@ -443,7 +443,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\lights\sky.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\lights\spot.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\lights\sun.cpp"
 					>
 				</File>
 			</Filter>
@@ -917,7 +925,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\lights\sky.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\lights\spot.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\lights\sun.h"
 					>
 				</File>
 			</Filter>

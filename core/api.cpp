@@ -344,12 +344,28 @@ COREDLL void luxMaterial(const string &name, const ParamSet &params) {
 COREDLL void luxLightSource(const string &name,
                              const ParamSet &params) {
 	VERIFY_WORLD("LightSource");
-	Light *lt = MakeLight(name, curTransform, params);
-	if (lt == NULL)
-		Error("luxLightSource: light type "
-		      "\"%s\" unknown.", name.c_str());
-	else
-		renderOptions->lights.push_back(lt);
+
+	if(name == "sunsky") {
+		// SunSky light - create both sun & sky lightsources
+		Light *lt_sun = MakeLight("sun", curTransform, params);
+		if (lt_sun == NULL)
+			Error("luxLightSource: light type sun unknown.");
+		else
+			renderOptions->lights.push_back(lt_sun);
+		Light *lt_sky = MakeLight("sky", curTransform, params);
+		if (lt_sky == NULL)
+			Error("luxLightSource: light type sky unknown.");
+		else
+			renderOptions->lights.push_back(lt_sky);
+	} else {
+		// other lightsource type
+		Light *lt = MakeLight(name, curTransform, params);
+		if (lt == NULL)
+			Error("luxLightSource: light type "
+			      "\"%s\" unknown.", name.c_str());
+		else
+			renderOptions->lights.push_back(lt);
+	}
 }
 COREDLL void luxAreaLightSource(const string &name,
                                  const ParamSet &params) {

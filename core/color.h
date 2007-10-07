@@ -172,18 +172,120 @@ public:
 	friend class ParamSet;
 	
 	// Spectrum Public Data
+	float c[COLOR_SAMPLES];
 	static const int CIEstart = 360;
 	static const int CIEend = 830;
 	static const int nCIE = CIEend-CIEstart+1;
 	static const float CIE_X[nCIE];
 	static const float CIE_Y[nCIE];
 	static const float CIE_Z[nCIE];
+	
 private:
 	// Spectrum Private Data
-	float c[COLOR_SAMPLES];
 	static float XWeight[COLOR_SAMPLES];
 	static float YWeight[COLOR_SAMPLES];
 	static float ZWeight[COLOR_SAMPLES];
 	friend Spectrum FromXYZ(float x, float y, float z);
 };
+
+class RegularSpectrum {
+public:
+	float *wavelengths;
+    float lambdaMin, lambdaMax;
+    float delta, invDelta;
+	int sWa;
+    
+    RegularSpectrum(float *wl, float lMin, float lMax, int n) {
+        lambdaMin = lMin;
+        lambdaMax = lMax;
+        wavelengths = wl;
+		sWa = n;
+        delta = (lambdaMax - lambdaMin) / (sWa-1);
+        invDelta = 1 / delta;
+    }
+    
+    inline float sample(float lambda) {
+        // reject wavelengths outside the valid range
+        if (lambda < lambdaMin || lambda > lambdaMax)
+            return 0.;
+        // interpolate the two closest samples linearly
+        float x = (lambda - lambdaMin) * invDelta;
+        int b0 = (int) x;
+        int b1 = min(b0+1, sWa-1);
+        float dx = x - b0;
+        return (1-dx) * wavelengths[b0] + dx * wavelengths[b1];
+    }
+
+	inline Spectrum toSpectrum() {
+		float st[2];	// TODO Add color samples & cleanup
+		st[2] = sample( 360 );
+		st[1] = sample( 595 );
+		st[0] = sample( 830 );
+        Spectrum o = Spectrum( st );
+		return o;
+        /*for (int i = 0, w = WAVELENGTH_MIN; i < CIE_xbar.length; i++, w += WAVELENGTH_STEP) {
+            float s = sample(w);
+            X += s * CIE_xbar[i];
+            Y += s * CIE_ybar[i];
+            Z += s * CIE_zbar[i];
+        }
+        return new XYZColor(X, Y, Z).mul(WAVELENGTH_STEP); */
+    }
+};
+
+class IrregularSpectrum {
+public:
+    float *wavelengths;
+    float *amplitudes;
+	int sWa, sAm;
+
+    IrregularSpectrum(float *wl, float *am, int n)
+	{
+        wavelengths = wl;
+        amplitudes = am;
+		sWa = n;
+		sAm = n;
+  //      if(sWa != sAm)		// TODO cleanup
+   //         return; // TODO add exception    
+   //     for(int i = 1; i < sWa; i++)
+   //         if(wavelengths[i-1] >= wavelengths[i])
+   //             return; // TODO add exception    
+
+    }
+
+    inline float sample(float lambda)
+	{
+        if(sWa == 0)
+            return 0; // no data
+        if(sWa == 1 || lambda <= wavelengths[0])
+            return amplitudes[0];
+        if(lambda >= wavelengths[sWa-1])
+            return amplitudes[sWa-1];
+        for(int i=1; i < sWa; i++) {
+            if(lambda < wavelengths[i]) {
+                float dx = (lambda - wavelengths[i-1]) /
+					(wavelengths[i] - wavelengths[i-1]);
+                return (1-dx) * amplitudes[i-1] + dx * amplitudes[i];
+            }
+        }
+        return amplitudes[sWa-1];
+    }
+
+	inline Spectrum toSpectrum() {
+		float st[2];	// // TODO Add color samples & cleanup
+		st[2] = sample( 360 );
+		st[1] = sample( 595 );
+		st[0] = sample( 830 );
+        Spectrum o = Spectrum( st );
+		return o;
+        /*for (int i = 0, w = WAVELENGTH_MIN; i < CIE_xbar.length; i++, w += WAVELENGTH_STEP) {
+            float s = sample(w);
+            X += s * CIE_xbar[i];
+            Y += s * CIE_ybar[i];
+            Z += s * CIE_zbar[i];
+        }
+        return new XYZColor(X, Y, Z).mul(WAVELENGTH_STEP); */
+    }
+};
+
 #endif // LUX_COLOR_H

@@ -88,6 +88,8 @@
 #include "point.h"
 #include "projection.h"
 #include "spot.h"
+#include "sun.h"
+#include "sky.h"
 
 #include "bluepaint.h"
 #include "brushedmetal.h"
@@ -794,7 +796,18 @@ COREDLL Light *MakeLight(const string &name,
         paramSet.ReportUnused();
         return ret;
     }
-    
+    if(name=="sun")
+    {
+    	Light *ret = SunLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="sky")
+    {
+    	Light *ret = SkyLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
     Error("Static loading of light '%s' failed.",name.c_str());
     return NULL;
 }
