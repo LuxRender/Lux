@@ -51,7 +51,7 @@ void BestCandidateSampler::setSeed( u_int s )
 bool BestCandidateSampler::GetNextSample(Sample *sample) {
 again:
 	if (tableOffset == SAMPLE_TABLE_SIZE) {
-		// TODO implement progressive mode - radiance //
+		// TODO implement progressive mode - radiance
 		// Advance to next best-candidate sample table position
 		tableOffset = 0;
 		xTableCorner += tableWidth;

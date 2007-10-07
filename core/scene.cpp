@@ -216,9 +216,6 @@ void* Render_Thread( void* p )
 
 		t_d->stat_Samples++;
 
-		//if( t_d->stat_Samples >= 100 )	// TEMP CODE FOR CHECKING SAMPLERS - radiance
-		//	while(true) {SLEEP1S;}
-
 		// Free BSDF memory from computing image sample value
 		arena->FreeAll();
 	}
@@ -274,8 +271,8 @@ void Scene::RemoveRenderThread()
 {
 	printf("CTL: Removing thread...\n");
 	thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
-	//delete thr_dat_ptrs[thr_nr -1]->Si;
-	//delete thr_dat_ptrs[thr_nr -1]->Vi;
+	//delete thr_dat_ptrs[thr_nr -1]->Si;				// TODO deleting thread pack data deletes too much (shared_ptr?) - radiance
+	//delete thr_dat_ptrs[thr_nr -1]->Vi;				// leave off for now. (creates slight memory leak when removing threads (~5kb))
 	//delete thr_dat_ptrs[thr_nr -1]->Spl;
 	//delete thr_dat_ptrs[thr_nr -1]->Splr;
 	//delete thr_dat_ptrs[thr_nr -1]->arena;
@@ -291,7 +288,7 @@ void Scene::Render() {
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
-	// number of threads
+	// set thread number to 0
 	thr_nr = 0;
 
 	// initial thread signal is paused
