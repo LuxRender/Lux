@@ -68,7 +68,7 @@ struct RenderOptions {
 RenderOptions::RenderOptions() {
 	// RenderOptions Constructor Implementation
 	FilterName = "mitchell";
-	FilmName = "image";
+	FilmName = "multiimage";
 	SamplerName = "lowdiscrepancy";
 	AcceleratorName = "kdtree";
 	SurfIntegratorName = "path";
@@ -490,6 +490,8 @@ Scene *RenderOptions::MakeScene() const {
 	// Create scene objects from API settings
 	Filter *filter = MakeFilter(FilterName, FilterParams);
 	Film *film = MakeFilm(FilmName, FilmParams, filter);
+	if(std::string(FilmName)=="film")
+		Warning("Warning: Legacy PBRT 'film' does not provide tonemapped output or GUI film display.\nUse 'multifilm' instead.\n");
 	Camera *camera = MakeCamera(CameraName, CameraParams,
 		WorldToCamera, film);
 	Sampler *sampler = MakeSampler(SamplerName, SamplerParams, film);

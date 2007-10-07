@@ -36,7 +36,7 @@ LDSampler::LDSampler(int xstart, int xend,
 
 	fs_progressive = prog;
 	fs_pos = 0;
-	fs_scrambleX = RandomUInt();
+	fs_scrambleX = RandomUInt();			// TODO provide LDS seeds - radiance
 	fs_scrambleY = RandomUInt();
 
 	if (!IsPowerOf2(ps)) {

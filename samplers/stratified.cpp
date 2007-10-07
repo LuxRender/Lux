@@ -29,13 +29,16 @@ StratifiedSampler* StratifiedSampler::clone() const
  }
 // StratifiedSampler Method Definitions
 StratifiedSampler::StratifiedSampler(int xstart, int xend,
-		int ystart, int yend, int xs, int ys, bool jitter)
+		int ystart, int yend, int xs, int ys, bool jitter, bool prog)
 	: Sampler(xstart, xend, ystart, yend, xs * ys) {
 	jitterSamples = jitter;
 	xPos = xPixelStart;
 	yPos = yPixelStart;
 	xPixelSamples = xs;
 	yPixelSamples = ys;
+
+	fs_progressive = prog;
+
 	// Allocate storage for a pixel's worth of stratified samples
 	imageSamples = (float *)AllocAligned(5 * xPixelSamples *
 		yPixelSamples * sizeof(float));
@@ -64,20 +67,26 @@ StratifiedSampler::StratifiedSampler(int xstart, int xend,
 	Shuffle(timeSamples, xPixelSamples*yPixelSamples, 1);
 	samplePos = 0;
 }
-void StratifiedSampler::setSeed( u_int s )
-{
-    //fs_scramble = s;
-}
+
 bool StratifiedSampler::GetNextSample(Sample *sample) {
 	// Compute new set of samples if needed for next pixel
 	if (samplePos == xPixelSamples * yPixelSamples) {
-		// Advance to next pixel for stratified sampling
-		if (++xPos == xPixelEnd) {
-			xPos = xPixelStart;
-			++yPos;
+		if(fs_progressive) {
+			// Progressive film sampling (random)
+			xPos = xPixelStart + 
+				Ceil2Int( RandomFloat() * xPixelEnd );
+			yPos = yPixelStart + 
+				Ceil2Int( RandomFloat() * yPixelEnd );
+		} else {
+			// Linear/finite film sampling
+			// Advance to next pixel for stratified sampling
+			if (++xPos == xPixelEnd) {
+				xPos = xPixelStart;
+				++yPos;
+			}
+			if (yPos == yPixelEnd)
+				return false;
 		}
-		if (yPos == yPixelEnd)
-			return false;
 		// Generate stratified camera samples for (_xPos_,_yPos_)
 		StratifiedSample2D(imageSamples,
 			xPixelSamples, yPixelSamples,
@@ -120,6 +129,7 @@ Sampler* StratifiedSampler::CreateSampler(const ParamSet &params, const Film *fi
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	int xsamp = params.FindOneInt("xsamples", 2);
 	int ysamp = params.FindOneInt("ysamples", 2);
+	bool prog = params.FindOneBool("progressive", false);
 	return new StratifiedSampler(xstart, xend, ystart, yend, xsamp, ysamp,
-		jitter);
+		jitter, prog);
 }

@@ -30,14 +30,14 @@ public:
 	// StratifiedSampler Public Methods
 	StratifiedSampler(int xstart, int xend,
 	                  int ystart, int yend,
-					  int xs, int ys, bool jitter);
+					  int xs, int ys, bool jitter, bool prog);
 	int RoundSize(int size) const {
 		return size;
 	}
 	~StratifiedSampler() {
 		FreeAligned(imageSamples);
 	}
-	void setSeed( u_int s );
+	void setSeed( u_int s ) { /* TODO add different seeds and new backend random generator for threads - radiance */ }
 	bool GetNextSample(Sample *sample);
 	virtual StratifiedSampler* clone() const; // Lux (copy) constructor for multithreading
 
@@ -49,4 +49,5 @@ private:
 	int xPos, yPos;
 	float *imageSamples, *lensSamples, *timeSamples;
 	int samplePos;
+	bool fs_progressive;
 };
