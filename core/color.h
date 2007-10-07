@@ -217,7 +217,7 @@ public:
     }
 
 	inline Spectrum toSpectrum() {
-		float st[2];	// TODO Add color samples & cleanup
+		float st[3];	// TODO Add color samples & cleanup
 		st[2] = sample( 360 );
 		st[1] = sample( 595 );
 		st[0] = sample( 830 );
@@ -272,7 +272,7 @@ public:
     }
 
 	inline Spectrum toSpectrum() {
-		float st[2];	// // TODO Add color samples & cleanup
+		float st[3];	// // TODO Add color samples & cleanup
 		st[2] = sample( 360 );
 		st[1] = sample( 595 );
 		st[0] = sample( 830 );
