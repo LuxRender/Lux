@@ -50,7 +50,7 @@ public:
 
 	// internal methods
 	void InitSunThetaPhi();
-	Spectrum ComputeAttenuatedSunlight(float theta, int turbidity);
+	Spectrum ComputeAttenuatedSunlight(float theta, float turbidity);
 private:
 	// SunLight Private Data
 	Vector lightDir, sundir, toSun;

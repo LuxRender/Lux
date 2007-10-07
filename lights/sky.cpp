@@ -787,7 +787,7 @@ static float solAmplitudes[38] = {
 // ********************************************************/
 
 /* Most units not in SI system - For units, refer MI */
-Spectrum SkyLight::ComputeAttenuatedSunlight(float theta, int turbidity)
+Spectrum SkyLight::ComputeAttenuatedSunlight(float theta, float turbidity)
 {
     IrregularSpectrum k_oCurve(k_oAmplitudes, k_oWavelengths, 65);
     IrregularSpectrum k_gCurve(k_gAmplitudes, k_gWavelengths, 4);

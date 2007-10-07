@@ -70,7 +70,7 @@ public:
 			       Spectrum &atmInscatter ) const;
 
     void 	InitSunThetaPhi();
-    Spectrum ComputeAttenuatedSunlight(float theta, int turbidity);
+    Spectrum ComputeAttenuatedSunlight(float theta, float turbidity);
     Spectrum ChromaticityToSpectrum(float x, float y) const;
     Spectrum AttenuationFactor(float h0, float thetav, float s) const;
     Spectrum InscatteredRadiance(float h0, float thetav, float

@@ -75,7 +75,7 @@ Spectrum SunLight::Sample_L(const Scene *scene,
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));		// TODO radiance fix with attenuated sunlight function
-	int nSamples = paramSet.FindOneInt("nsamples", 1);					// unused for sun
+	//int nSamples = paramSet.FindOneInt("nsamples", 1);					// TODO  radiance : unused for sun   / jeff : unused, is it okay ?
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	Normalize(sundir);
 	float turb = paramSet.FindOneFloat("turbidity", 2.0f);				// [in] turb  Turbidity (1.0,30+) 2-6 are most useful for clear days.
@@ -264,7 +264,7 @@ static float solAmplitudes[38] = {
 // ********************************************************/
 
 /* Most units not in SI system - For units, refer MI */
-Spectrum SunLight::ComputeAttenuatedSunlight(float theta, int turbidity)
+Spectrum SunLight::ComputeAttenuatedSunlight(float theta, float turbidity)
 {
     IrregularSpectrum k_oCurve(k_oAmplitudes, k_oWavelengths, 65);
     IrregularSpectrum k_gCurve(k_gAmplitudes, k_gWavelengths, 4);
