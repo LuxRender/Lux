@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "primitive.h"
 #include "transport.h"
+#include "timer.h"
 
 //#include <boost/thread/thread.hpp>
 //#include <boost/thread/mutex.hpp>
@@ -94,12 +95,15 @@ public:
 	//controlling number of threads
 	int AddThread(); //returns the thread ID
 	void RemoveThread();
+	double Statistics_SamplesPSec();
+	double Statistics_SamplesPPx();
 	//framebuffer access
 	void UpdateFramebuffer();
 	unsigned char* GetFramebuffer();
 	int DisplayInterval();
 	int FilmXres();
 	int FilmYres();
+	Timer s_Timer;
 	//statistics
 	double Statistics(char *statName);
 

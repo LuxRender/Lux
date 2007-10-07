@@ -32,8 +32,8 @@
 extern Scene *luxCurrentScene;
 
 //Control methods
-void Scene::Start() { SignalThreads(THR_SIG_RUN); }
-void Scene::Pause() { SignalThreads(THR_SIG_PAUSE); }
+void Scene::Start() { SignalThreads(THR_SIG_RUN); s_Timer.Start(); }
+void Scene::Pause() { SignalThreads(THR_SIG_PAUSE); s_Timer.Stop(); }
 void Scene::Exit() { SignalThreads(THR_SIG_EXIT); }
 
 //controlling number of threads
@@ -48,13 +48,18 @@ int Scene::FilmXres() { return camera->film->xResolution; }
 int Scene::FilmYres() { return camera->film->yResolution; }
 
 //statistics
-double Scene::Statistics(char *statName) { return 0; }
+double Scene::Statistics(char *statName) { if(std::string(statName)=="secElapsed") return s_Timer.Time();
+											if(std::string(statName)=="samplesSec") return Statistics_SamplesPSec(); 
+											if(std::string(statName)=="samplesPx") return Statistics_SamplesPPx(); 
+											//if(std::string(statName)=="framebufferUpdated") return (double) camera->film->getFramebufferUpdated(); 
+											return 0.;}
 
 // thread data pack class
 class Thread_data
 {
     public:
 		int Sig, n;
+		double stat_Samples;
 		Integrator* Si;
 		Integrator* Vi;
 		Sample* Spl;
@@ -138,6 +143,8 @@ void* Render_Thread( void* p )
 		if( Ls != Spectrum(0.f) )
 		   camera->film->AddSample(*sample, ray, Ls, alpha);
 
+		t_d->stat_Samples++;
+
 		// Free BSDF memory from computing image sample value
 		arena->FreeAll();
 	}
@@ -149,6 +156,32 @@ void* Render_Thread( void* p )
 	pthread_exit(0);
 #endif
     return 0;
+}
+
+double Scene::Statistics_SamplesPPx()
+{
+	// collect samples from all threads
+	double samples = 0.;
+	for(int i = 0; i < thr_nr; i++) {
+		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
+	}
+
+	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
+}
+
+double Scene::Statistics_SamplesPSec()
+{
+	// collect samples from all threads
+	double samples = 0.;
+	for(int i = 0; i < thr_nr; i++) {
+		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
+	}
+
+	double elapsed = s_Timer.Time();
+	if(elapsed != 0.)
+		return samples / elapsed;
+	else
+		return 0.;
 }
 
 void Scene::SignalThreads(int signal)
@@ -169,6 +202,7 @@ int Scene::CreateRenderThread()
 
 		// Set data
 		thr_dat->n = thr_nr;
+		thr_dat->stat_Samples = 0.;
 		thr_dat->Si	= surfaceIntegrator->clone();									// SurfaceIntegrator (uc)
 		thr_dat->Vi = volumeIntegrator->clone();									// VolumeIntegrator (uc)
 		thr_dat->Spl = new Sample( (SurfaceIntegrator*) thr_dat->Si, 				// Sample (u)
@@ -177,7 +211,7 @@ int Scene::CreateRenderThread()
 		thr_dat->Splr->setSeed( RandomUInt() );	
 		thr_dat->Cam = camera;														// Camera (1)
 		thr_dat->Scn = this;														// Scene (this)
-		thr_dat->arena = new MemoryArena();											// MemoryArena (u)	// TODO delete sample * memoryarena
+		thr_dat->arena = new MemoryArena();											// MemoryArena (u)
 
 		Fl_Thread* thr_ptr = new Fl_Thread();
 		//fl_create_thread((Fl_Thread&)thr_ptr, Render_Thread, thr_dat );
@@ -197,6 +231,14 @@ void Scene::RemoveRenderThread()
 {
 	printf("CTL: Removing thread...\n");
 	thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
+	//SLEEP1S;
+	//delete thr_dat_ptrs[thr_nr -1]->Si;
+	//delete thr_dat_ptrs[thr_nr -1]->Vi;
+	//delete thr_dat_ptrs[thr_nr -1]->Spl;
+	//delete thr_dat_ptrs[thr_nr -1]->Splr;
+	//delete thr_dat_ptrs[thr_nr -1]->arena;
+	//delete thr_dat_ptrs[thr_nr -1];
+	//delete thr_ptrs[thr_nr -1];
 	thr_nr--;
 	printf("CTL: Done.\n");
 }
@@ -209,7 +251,7 @@ void Scene::Render() {
 
 	thr_nr = 0;
 
-	CurThreadSignal = THR_SIG_RUN;
+	CurThreadSignal = THR_SIG_PAUSE;
 
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
@@ -239,6 +281,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 	surfaceIntegrator = si;
 	volumeIntegrator = vi;
 	volumeRegion = vr;
+	s_Timer.Reset();
 	if (lts.size() == 0)
 		Warning("No light sources defined in scene; "
 			"possibly rendering a black image.");

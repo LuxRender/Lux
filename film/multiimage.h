@@ -70,7 +70,7 @@ private:
 	Filter *filter;
 	int hdrWriteInterval, ldrWriteInterval, ldrDisplayInterval, sampleCount;
 	string hdrFilename, ldrFilename;
-    bool ldrLock, hdrLock, displayLock;
+    bool ldrLock, hdrLock, ldrDisplayLock;
 	bool hdrOut, ldrOut, premultiplyAlpha;
 	float cropWindow[4];
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
@@ -84,7 +84,7 @@ private:
 	};
 	BlockedArray<Pixel> *pixels;
 	float *filterTable;
-	boost::timer ldrTimer, hdrTimer, displayTimer;
+	boost::timer ldrTimer, hdrTimer, ldrDisplayTimer;
 
 	string toneMapper;
 	ParamSet toneParams;

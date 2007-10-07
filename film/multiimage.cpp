@@ -55,6 +55,7 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
     ldrDisplayInterval = ldr_dI;
 	hdrOut = hdr_out;
 	ldrOut = ldr_out;
+	//ldrDisplayOut = ldrDisplay_out;
 
     contrastDisplayAdaptationY = c_dY;
     nonlinearMaxY = n_MY;
@@ -88,10 +89,10 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	// init locks and timers
 	ldrLock = false;
 	hdrLock = false;
-	displayLock = false;
+	ldrDisplayLock = false;
 	ldrTimer.restart();
 	hdrTimer.restart();
-	displayTimer.restart();
+	ldrDisplayTimer.restart();
 
 	// Compute film image extent
 	xPixelStart = Ceil2Int(xResolution * cropWindow[0]);
@@ -159,6 +160,17 @@ void MultiImageFilm::AddSample(const Sample &sample,
 		}
 
     // Possibly write out in-progress image
+
+/*	// LDR Display buffer
+	if(ldrDisplayOut && !ldrDisplayLock)
+		if(Floor2Int(ldrDisplayTimer.elapsed()) > ldrDisplayInterval) {
+			ldrDisplayLock = true;
+			WriteImage( WI_FRAMEBUFFER );
+			ldrDisplayTimer.restart();
+			ldrDisplayLock = false;
+		} */
+
+	// LDR File output
 	if(ldrOut && !ldrLock)
 		if(Floor2Int(ldrTimer.elapsed()) > ldrWriteInterval) {
 			ldrLock = true;
@@ -167,6 +179,7 @@ void MultiImageFilm::AddSample(const Sample &sample,
 			ldrLock = false;
 		}
 
+	// HDR File output
 	if(hdrOut && !hdrLock)
 	    if (Floor2Int(hdrTimer.elapsed()) > hdrWriteInterval) {
 			hdrLock = true;
@@ -174,8 +187,29 @@ void MultiImageFilm::AddSample(const Sample &sample,
 			hdrTimer.restart();
 			hdrLock = false;
 		}
-
 }
+
+/*
+int getFramebufferUpdated()
+{
+	return ldrFramebufferUpdated;
+		
+}
+
+int lockFramebuffer()
+{
+	if(!ldrDisplayLock) {
+		ldrDisplayLock = true;					// TODO add mutexes for all these
+		return 0;
+	} else
+		return 1;
+}
+
+void unlockFramebuffer()
+{
+	ldrDisplayLock = false;
+}
+*/
 void MultiImageFilm::GetSampleExtent(int *xstart,
 		int *xend, int *ystart, int *yend) const {
 	*xstart = Floor2Int(xPixelStart + .5f - filter->xWidth);
