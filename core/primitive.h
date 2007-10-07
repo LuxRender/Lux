@@ -50,13 +50,8 @@ class COREDLL Intersection {
 	Intersection() { primitive = NULL; }
 	BSDF *GetBSDF(MemoryArena &arena, const RayDifferential &ray) const;
 	Spectrum Le(const Vector &wo) const;
-	
-#ifdef LUX_USE_SSE
-void* operator new(size_t t) { return _mm_malloc(t,16); }
-void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
-void* operator new[](size_t t) { return _mm_malloc(t,16); }
-void operator delete[] (void* ptr) { _mm_free(ptr); }
-#endif
+
+
 	
 	DifferentialGeometry dg;
 	Transform WorldToObject;

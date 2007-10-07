@@ -128,12 +128,7 @@ public:
 	
 	static Primitive *CreateAccelerator(const vector<Primitive* > &prims, const ParamSet &ps);
 	
-#ifdef LUX_USE_SSE
-void* operator new(size_t t) { return _mm_malloc(t,16); }
-void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
-void* operator new[](size_t t) { return _mm_malloc(t,16); }
-void operator delete[] (void* ptr) { _mm_free(ptr); }
-#endif
+
 	
 private:
 	// KdTreeAccel Private Data

@@ -33,7 +33,7 @@
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Value_Slider.H>
-#include <FL/FL_File_Chooser.H>
+#include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Image.H>
 
 bool GuiSceneReady = false;

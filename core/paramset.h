@@ -28,9 +28,7 @@
 #include "texture.h"
 #include "color.h"
 
-#ifdef LUX_USE_SSE
-#include <xmmintrin.h>
-#endif
+
 
 #include <map>
 using std::map;
@@ -142,11 +140,9 @@ template <class T> struct ParamSetItem {
 	}
 	ParamSetItem(const string &name, const T *val, int nItems = 1);
 	~ParamSetItem() {
-//#ifndef LUX_USE_SSE
+
 	delete[] data;
-/*#else
-	_mm_free(data);
-#endif*/
+
 	}
 	// ParamSetItem Data
 	string name;
@@ -154,14 +150,7 @@ template <class T> struct ParamSetItem {
 	T *data;
 	bool lookedUp;
 
-/*
-#ifdef LUX_USE_SSE
-void* operator new(size_t t) { return _mm_malloc(t,16); }
-void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
-void* operator new[](size_t t) { return _mm_malloc(t,16); }
-void operator delete[] (void* ptr) { _mm_free(ptr); }
-#endif*/
-	
+
 };
 // ParamSetItem Methods
 template <class T>
@@ -176,6 +165,7 @@ inline ParamSetItem<T>::ParamSetItem(const string &n,
 	lookedUp = false;
 }
 
+/*
 #ifdef LUX_USE_SSE
 template<>
 inline ParamSetItem<Point>::ParamSetItem(const string &n,
@@ -194,6 +184,7 @@ inline ParamSetItem<Point>::ParamSetItem(const string &n,
 	lookedUp = false;
 }
 #endif
+*/
 
 // TextureParams Declarations
 class COREDLL TextureParams {
