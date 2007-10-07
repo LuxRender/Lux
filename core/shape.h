@@ -51,7 +51,7 @@ class COREDLL DifferentialGeometry {
 
 };
 // Shape Declarations
-class COREDLL Shape : public ReferenceCounted<Shape> {
+class COREDLL Shape {
 public:
 	// Shape Interface
 	Shape(const Transform &o2w, bool ro);

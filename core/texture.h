@@ -102,7 +102,7 @@ public:
 private:
 	Transform WorldToTexture;
 };
-template <class T> class Texture /*: public ReferenceCounted<Texture> */ {
+template <class T> class Texture {
 public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface

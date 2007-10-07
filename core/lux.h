@@ -329,7 +329,7 @@ private:
 #include <boost/enable_shared_from_this.hpp>
 
 //#define Reference boost::shared_ptr
-#define ReferenceCounted boost::enable_shared_from_this
+//#define ReferenceCounted boost::enable_shared_from_this
 
 typedef boost::shared_ptr<Matrix4x4> Matrix4x4Ptr;
 //typedef boost::shared_ptr<Texture<float> > TexturePtr<float>;
@@ -564,7 +564,7 @@ struct COREDLL Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 };*/
 
 #ifndef LUX_USE_SSE
-struct COREDLL Matrix4x4 : public ReferenceCounted<Matrix4x4> {
+struct COREDLL Matrix4x4 {
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
 		for (int i = 0; i < 4; ++i)
@@ -607,7 +607,7 @@ struct COREDLL Matrix4x4 : public ReferenceCounted<Matrix4x4> {
 	float m[4][4];
 };
 #else
-struct _MM_ALIGN16  Matrix4x4  : public ReferenceCounted<Matrix4x4> {
+struct _MM_ALIGN16  Matrix4x4  {
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
       __m128 zerone = _mm_set_ps(1.f,0.f,0.f,1.f);//_V1001;

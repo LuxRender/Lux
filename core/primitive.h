@@ -27,7 +27,7 @@
 #include "shape.h"
 #include "material.h"
 // Primitive Declarations
-class COREDLL Primitive : public ReferenceCounted<Primitive> {
+class COREDLL Primitive {
 public:
 	// Primitive Interface
 	virtual ~Primitive();
