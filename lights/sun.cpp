@@ -28,7 +28,6 @@ SunLight::SunLight(const Transform &light2world,
 		const Spectrum &radiance, const Vector &dir, float turb)
 	: Light(light2world) {
 	lightDir = Normalize(LightToWorld(dir));
-	L = radiance;
 	sundir = lightDir;
 	turbidity = turb;
 
@@ -36,7 +35,11 @@ SunLight::SunLight(const Transform &light2world,
 
     InitSunThetaPhi();
     toSun = Vector(cos(phiS)*sin(thetaS), sin(phiS)*sin(thetaS), cos(thetaS));
+	float sunSolidAngle =  0.25*M_PI*1.39*1.39/(150*150);  // = 6.7443e-05
     L = radiance * ComputeAttenuatedSunlight(thetaS, turbidity);
+
+	printf("sunsolidangle: %f\n", sunSolidAngle);
+	printf("sunspectralrad luminance: %f\n", L.y() );
 }
 Spectrum SunLight::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
@@ -74,8 +77,8 @@ Spectrum SunLight::Sample_L(const Scene *scene,
 }
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));		// TODO radiance fix with attenuated sunlight function
-	//int nSamples = paramSet.FindOneInt("nsamples", 1);					// TODO  radiance : unused for sun   / jeff : unused, is it okay ?
+	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));			// Base color (gain) must be 1.f (5000?)
+	int nSamples = paramSet.FindOneInt("nsamples", 1);					// unused for SunLight - MUST stay for compatiblity with SkyLight params.
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	Normalize(sundir);
 	float turb = paramSet.FindOneFloat("turbidity", 2.0f);				// [in] turb  Turbidity (1.0,30+) 2-6 are most useful for clear days.
@@ -101,6 +104,7 @@ void SunLight::InitSunThetaPhi()
 /* All data lifted from MI */
 /* Units are either [] or cm^-1. refer when in doubt MI */
 
+
 // k_o Spectrum table from pg 127, MI.
 static float k_oWavelengths[64] = {
 300, 305, 310, 315, 320,
@@ -121,7 +125,7 @@ static float k_oWavelengths[64] = {
 690,
 
 700, 710, 720, 730, 740,
-750, 760, 770, 780, 790,
+750, 760, 770, 780, 790
 };
 
 static float k_oAmplitudes[65] = {
@@ -195,7 +199,6 @@ static float k_oAmplitudes[65] = {
   .0
 };
 
-
 // k_g Spectrum table from pg 130, MI.
 static float k_gWavelengths[4] = {
   759,
@@ -244,7 +247,6 @@ static float k_waAmplitudes[13] = {
   0.360e-1
 };
 
-
 // 380-750 by 10nm
 static float solAmplitudes[38] = {
     165.5, 162.3, 211.2, 258.8, 258.2,
@@ -256,7 +258,6 @@ static float solAmplitudes[38] = {
     211.0, 207.3, 202.4, 198.7, 194.3,
     190.7, 186.3, 182.6
 };
-
 
 /**********************************************************
 // Sunlight Transmittance Functions
@@ -276,9 +277,9 @@ Spectrum SunLight::ComputeAttenuatedSunlight(float theta, float turbidity)
     float beta = 0.04608365822050 * turbidity - 0.04586025928522;
     float tauR, tauA, tauO, tauG, tauWA;
 
-    float m = 1.0/(cos(theta) + 0.15*pow(93.885-theta/M_PI*180.0,-1.253));  // Relative Optical Mass
+    //float m = 1.0/(cos(theta) + 0.15*pow(93.885-theta/M_PI*180.0,-1.253));  // Relative Optical Mass
 				// equivalent  
-//    RiReal m = 1.0/(cos(theta) + 0.000940 * pow(1.6386 - theta,-1.253));  // Relative Optical Mass
+    float m = 1.0/(cos(theta) + 0.000940 * pow(1.6386 - theta,-1.253));  // Relative Optical Mass
 
     int i;
     float lambda;
@@ -311,10 +312,9 @@ Spectrum SunLight::ComputeAttenuatedSunlight(float theta, float turbidity)
 	tauWA = exp(-0.2385 * k_waCurve.sample(lambda) * w * m /
 		    pow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
 
-	data[i] = /*100 * */solCurve.sample(lambda); //* tauR * tauA * tauO * tauG * tauWA;  // 100 comes from solCurve being
-	                                                                       // in wrong units. 
+	data[i] = 100 * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;  // 100 comes from solCurve being
+																				// in wrong units. 
     }
     RegularSpectrum oSC(data, 350,800,91);
-    //return oSC.toSpectrum();  // Converts to Spectrum
-	return 70000.f;
+    return oSC.toSpectrum();  // Converts to Spectrum
 }

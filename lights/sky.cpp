@@ -85,6 +85,7 @@ SkyLight::SkyLight(const Transform &light2world,
 		InitA0();
     }
     atmInited = atm;
+	printf("skyzenithrad luminance: %f\n", GetSkySpectralRadiance(.0, .0).y() );
 }
 Spectrum
 	SkyLight::Le(const RayDifferential &r) const {
@@ -168,7 +169,7 @@ Spectrum SkyLight::Sample_L(const Point &p,
 }
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));			// Base color (gain) must be 1.f
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	Normalize(sundir);
@@ -834,12 +835,11 @@ Spectrum SkyLight::ComputeAttenuatedSunlight(float theta, float turbidity)
 	tauWA = exp(-0.2385 * k_waCurve.sample(lambda) * w * m /
 		    pow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
 
-	data[i] = /*100 * */solCurve.sample(lambda); //* tauR * tauA * tauO * tauG * tauWA;  // 100 comes from solCurve being
-	                                                                       // in wrong units. 
+	data[i] = 100 * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;  // 100 comes from solCurve being
+																				// in wrong units. 
     }
     RegularSpectrum oSC(data, 350,800,91);
-    //return oSC.toSpectrum();  // Converts to Spectrum
-	return 250.f;
+    return oSC.toSpectrum();  // Converts to Spectrum
 }
 
 // -------------------------------------------------------------------------------------------------------------

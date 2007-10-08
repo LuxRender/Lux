@@ -38,8 +38,8 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                    &worldRadius);
-		return Lbase * GetSkySpectralRadiance(SphericalTheta(.5), SphericalPhi(.5)) *
-			M_PI * worldRadius * worldRadius;
+		//return Lbase * GetSkySpectralRadiance(.0, .0) * M_PI * worldRadius * worldRadius;
+		return Lbase * M_PI * worldRadius * worldRadius;
 	}
 	bool IsDeltaLight() const { return false; }
 	Spectrum Le(const RayDifferential &r) const;

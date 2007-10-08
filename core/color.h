@@ -180,7 +180,7 @@ public:
 	static const float CIE_Y[nCIE];
 	static const float CIE_Z[nCIE];
 	
-private:
+protected:
 	// Spectrum Private Data
 	static float XWeight[COLOR_SAMPLES];
 	static float YWeight[COLOR_SAMPLES];
@@ -188,7 +188,7 @@ private:
 	friend Spectrum FromXYZ(float x, float y, float z);
 };
 
-class RegularSpectrum {
+class RegularSpectrum : public Spectrum {
 public:
 	float *wavelengths;
     float lambdaMin, lambdaMax;
@@ -213,27 +213,22 @@ public:
         int b0 = (int) x;
         int b1 = min(b0+1, sWa-1);
         float dx = x - b0;
-        return (1-dx) * wavelengths[b0] + dx * wavelengths[b1];
+        return (1. -dx) * wavelengths[b0] + dx * wavelengths[b1];
     }
 
 	inline Spectrum toSpectrum() {
-		float st[3];	// TODO Add color samples & cleanup
-		st[2] = sample( 360 );
-		st[1] = sample( 595 );
-		st[0] = sample( 830 );
-        Spectrum o = Spectrum( st );
-		return o;
-        /*for (int i = 0, w = WAVELENGTH_MIN; i < CIE_xbar.length; i++, w += WAVELENGTH_STEP) {
-            float s = sample(w);
-            X += s * CIE_xbar[i];
-            Y += s * CIE_ybar[i];
-            Z += s * CIE_zbar[i];
-        }
-        return new XYZColor(X, Y, Z).mul(WAVELENGTH_STEP); */
-    }
+		float X = 0, Y = 0, Z = 0;
+		for(int i=0,w=CIEstart; i < nCIE; i++, w++) {
+			float s = sample(w);
+			X += s * CIE_X[i];
+			Y += s * CIE_Y[i];
+			Z += s * CIE_Z[i];
+		}
+		return FromXYZ(X,Y,Z);
+	}
 };
 
-class IrregularSpectrum {
+class IrregularSpectrum : public Spectrum {
 public:
     float *wavelengths;
     float *amplitudes;
@@ -245,16 +240,32 @@ public:
         amplitudes = am;
 		sWa = n;
 		sAm = n;
-  //      if(sWa != sAm)		// TODO cleanup
-   //         return; // TODO add exception    
-   //     for(int i = 1; i < sWa; i++)
-   //         if(wavelengths[i-1] >= wavelengths[i])
-   //             return; // TODO add exception    
-
     }
 
     inline float sample(float lambda)
 	{
+		if (lambda < wavelengths[0])
+			return amplitudes[0];
+		if (lambda > wavelengths[sWa-1])
+			return amplitudes[sWa - 1];
+ 
+		int index = 0;
+		for (; index < sWa; ++index)
+			if (wavelengths[index] >= lambda)
+				break;
+ 
+		if (wavelengths[index] == lambda)
+			return amplitudes[index];
+ 
+		float intervalWidth = wavelengths[index] - wavelengths[index - 1];
+		float u = (lambda - wavelengths[index - 1]) / intervalWidth;
+		return ((1. - u) * amplitudes[index - 1]) + (u * amplitudes[index]);
+
+
+
+
+/*
+
         if(sWa == 0)
             return 0; // no data
         if(sWa == 1 || lambda <= wavelengths[0])
@@ -265,27 +276,22 @@ public:
             if(lambda < wavelengths[i]) {
                 float dx = (lambda - wavelengths[i-1]) /
 					(wavelengths[i] - wavelengths[i-1]);
-                return (1-dx) * amplitudes[i-1] + dx * amplitudes[i];
+                return (1. -dx) * amplitudes[i-1] + dx * amplitudes[i];
             }
         }
-        return amplitudes[sWa-1];
+        return amplitudes[sWa-1]; */
     }
 
 	inline Spectrum toSpectrum() {
-		float st[3];	// // TODO Add color samples & cleanup
-		st[2] = sample( 360 );
-		st[1] = sample( 595 );
-		st[0] = sample( 830 );
-        Spectrum o = Spectrum( st );
-		return o;
-        /*for (int i = 0, w = WAVELENGTH_MIN; i < CIE_xbar.length; i++, w += WAVELENGTH_STEP) {
-            float s = sample(w);
-            X += s * CIE_xbar[i];
-            Y += s * CIE_ybar[i];
-            Z += s * CIE_zbar[i];
-        }
-        return new XYZColor(X, Y, Z).mul(WAVELENGTH_STEP); */
-    }
+		float X = 0, Y = 0, Z = 0;
+		for(int i=0,w=CIEstart; i < nCIE; i++, w++) {
+			float s = sample(w);
+			X += s * CIE_X[i];
+			Y += s * CIE_Y[i];
+			Z += s * CIE_Z[i];
+		}
+		return FromXYZ(X,Y,Z);
+	}
 };
 
 #endif // LUX_COLOR_H

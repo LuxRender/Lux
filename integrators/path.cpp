@@ -55,7 +55,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			// add emitting sources (radiance) TODO test/cleanup ---
 			if (pathLength == 0 || specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
-					L += scene->lights[i]->Le(ray);
+					L += scene->lights[i]->Le(ray) * M_PI;// * scene->lights[i]->Power(scene);
 			/*if (pathLength == 0 && alpha) {
 				if (L != 0.) *alpha = 1.;
 				else *alpha = 0.;
