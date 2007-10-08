@@ -33,15 +33,15 @@ extern Scene *luxCurrentScene;
 
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
-	SignalThreads(THR_SIG_RUN);
+	SignalThreads(RenderThread::SIG_RUN);
 	s_Timer.Start();
 }
 void Scene::Pause() {
-	SignalThreads(THR_SIG_PAUSE);
+	SignalThreads(RenderThread::SIG_PAUSE);
 	s_Timer.Stop();
 }
 void Scene::Exit() {
-	SignalThreads(THR_SIG_EXIT);
+	SignalThreads(RenderThread::SIG_EXIT);
 }
 
 // Engine Thread Control (adding/removing)
@@ -83,43 +83,14 @@ double Scene::Statistics(char *statName) {
 
 // Thread data --------------------------
 
-// Thread data pack
-class Thread_data
-{
-    public:
-		int Sig, n;
-		double stat_Samples;
-		Integrator* Si;
-		Integrator* Vi;
-		Sample* Spl;
-		Sampler* Splr;
-		Camera* Cam;
-		Scene* Scn;
-		MemoryArena* arena;
-};
-
-// Thread pointers
-#define MAX_THREADS 64
-int CurThreadSignal;
-int thr_nr;
-Thread_data* thr_dat_ptrs[MAX_THREADS];
-Fl_Thread* thr_ptrs[MAX_THREADS];
-
-#if defined(WIN32)
-#define SLEEP1S Sleep(1000)
-#else
-#define SLEEP1S sleep(1)
-#endif
-
 
 // Control Implementations in Scene::
 double Scene::Statistics_SamplesPPx()
 {
 	// collect samples from all threads
 	double samples = 0.;
-	for(int i = 0; i < thr_nr; i++) {
-		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
-	}
+	for(unsigned int i=0;i<renderThreads.size();i++) // TODO add mutex
+		samples +=renderThreads[i]->stat_Samples;
 
 	// divide by total pixels
 	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
@@ -129,9 +100,8 @@ double Scene::Statistics_SamplesPSec()
 {
 	// collect samples from all threads
 	double samples = 0.;
-	for(int i = 0; i < thr_nr; i++) {
-		samples += thr_dat_ptrs[i]->stat_Samples;		// TODO add mutex
-	}
+	for(unsigned int i=0;i<renderThreads.size();i++)   // TODO add mutex
+		samples +=renderThreads[i]->stat_Samples; 
 
 	double time = s_Timer.Time();
 	double dif_samples = samples - lastSamples;
@@ -140,137 +110,113 @@ double Scene::Statistics_SamplesPSec()
 	lastTime = time;
 
 	// return current samples / sec total
-	if(elapsed != 0.)
-		return dif_samples / elapsed;
-	else
-		return 0.;
+	if(elapsed != 0.) return dif_samples / elapsed;
+	else return 0.;
 }
 
 void Scene::SignalThreads(int signal)
 {
-	for(int i = 0; i < thr_nr; i++)
-		thr_dat_ptrs[i]->Sig = signal;
+	for(unsigned int i=0;i<renderThreads.size();i++)
+	{
+		std::cout<<"signaling thread "<<i<<" message:"<<signal<<std::endl;
+		renderThreads[i]->signal=signal;
+	}	
 	CurThreadSignal = signal;
 }
 
 // Scene Methods -----------------------
-void* Render_Thread( void* p )
+
+//void RenderThread::operator() ()
+void RenderThread::render(RenderThread *myThread)
 {
-	// unpack thread data
-    Thread_data* t_d = (Thread_data*) p;
-	int n = t_d->n;
-	printf("THR%i: Started.\n", n+1);
-
-	SurfaceIntegrator* surfaceIntegrator = (SurfaceIntegrator*) t_d->Si;
-	VolumeIntegrator* volumeIntegrator = (VolumeIntegrator*) t_d->Vi;
-    Sample* sample = t_d->Spl;
-	Sampler* sampler = t_d->Splr;
-	Scene* scene = t_d->Scn;
-	Camera* camera = t_d->Cam;
-	MemoryArena* arena = t_d->arena;
-
 	// Trace rays: The main loop
-	while (sampler->GetNextSample(sample)) {
-		while(t_d->Sig == THR_SIG_PAUSE) { SLEEP1S; }
-		if(t_d->Sig == THR_SIG_EXIT)
+	while (myThread->sampler->GetNextSample(myThread->sample)) {
+		while(myThread->signal == RenderThread::SIG_PAUSE)
+		{ 
+			boost::xtime xt;
+			boost::xtime_get(&xt, boost::TIME_UTC);
+			xt.sec += 1;
+			boost::thread::sleep(xt);
+			
+			std::cout<<"thread "<<myThread->n<<" paused"<<std::endl;
+		}
+		if(myThread->signal== RenderThread::SIG_EXIT)
 			break;
 
 		// Find camera ray for _sample_
 		RayDifferential ray;
-		float rayWeight = camera->GenerateRay(*sample, &ray);
+		float rayWeight = myThread->camera->GenerateRay(*(myThread->sample), &ray);
 		// Generate ray differentials for camera ray
-		++(sample->imageX);
-		float wt1 = camera->GenerateRay(*sample, &ray.rx);
-		--(sample->imageX);
-		++(sample->imageY);
-		float wt2 = camera->GenerateRay(*sample, &ray.ry);
+		++(myThread->sample->imageX);
+		float wt1 = myThread->camera->GenerateRay(*(myThread->sample), &ray.rx);
+		--(myThread->sample->imageX);
+		++(myThread->sample->imageY);
+		float wt2 = myThread->camera->GenerateRay(*(myThread->sample), &ray.ry);
 		if (wt1 > 0 && wt2 > 0) ray.hasDifferentials = true;
-		--(sample->imageY);
+		--(myThread->sample->imageY);
 		// Evaluate radiance along camera ray
 		float alpha;
 		Spectrum Ls = 0.f;
 		if (rayWeight > 0.f) {
 			//Ls = rayWeight * scene->Li(ray, sample, &alpha); don't use
-			Spectrum Lo = surfaceIntegrator->Li(*arena, scene, ray, sample, &alpha);
-			Spectrum T = volumeIntegrator->Transmittance(scene, ray, sample, &alpha);
-			Spectrum Lv = volumeIntegrator->Li(*arena, scene, ray, sample, &alpha);
+			Spectrum Lo = myThread->surfaceIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
+			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
+			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
 			//Ls = rayWeight * Lo;
 		} 
 		// Issue warning if unexpected radiance value returned
 		if (Ls.IsNaN()) {
-			Error("THR%i: Nan radiance value returned.\n", n+1);
+			Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
 			Ls = Spectrum(0.f);
 		}
 		else if (Ls.y() < -1e-5) {
-			Error("THR%i: NegLum value, %g, returned.\n", n+1, Ls.y());
+			Error("THR%i: NegLum value, %g, returned.\n", myThread->n+1, Ls.y());
 			Ls = Spectrum(0.f);
 		}
 		else if (isinf(Ls.y())) {
-			Error("THR%i: InfinLum value returned.\n", n+1);
+			Error("THR%i: InfinLum value returned.\n", myThread->n+1);
 			Ls = Spectrum(0.f);
 		} 
 		// Add sample contribution to image
 		if( Ls != Spectrum(0.f) )
-		   camera->film->AddSample(*sample, ray, Ls, alpha);
+		   myThread->camera->film->AddSample(*(myThread->sample), ray, Ls, alpha);
 
-		t_d->stat_Samples++;
+		myThread->stat_Samples++;
 
 		// Free BSDF memory from computing image sample value
-		arena->FreeAll();
+		myThread->arena->FreeAll();
 	}
 
-	printf("THR%i: Exiting.\n", n+1);
-#ifdef WIN32
-	_endthread();
-#else
-	pthread_exit(0);
-#endif
-    return 0;
+	printf("THR%i: Exiting.\n", myThread->n+1);
+    return;
 }
 
 int Scene::CreateRenderThread()
 {
-	if(thr_nr < MAX_THREADS) {
-		printf("CTL: Adding thread...\n");
-		Thread_data* thr_dat = new Thread_data();
-
-		// Set thread signal
-		thr_dat->Sig = CurThreadSignal;
-
-		// Set data
-		thr_dat->n = thr_nr;
-		thr_dat->stat_Samples = 0.;
-		thr_dat->Si	= surfaceIntegrator->clone();									// SurfaceIntegrator (uc)
-		thr_dat->Vi = volumeIntegrator->clone();									// VolumeIntegrator (uc)
-		thr_dat->Spl = new Sample( (SurfaceIntegrator*) thr_dat->Si, 				// Sample (u)
-			(VolumeIntegrator*) thr_dat->Vi, this );
-		thr_dat->Splr = sampler->clone();											// Sampler (uc)	
-
-		/* TODO add different seeds and unique backend random generator for threads - radiance */
-		//thr_dat->Splr->setSeed( RandomUInt() );	
-
-		thr_dat->Cam = camera;														// Camera (1)
-		thr_dat->Scn = this;														// Scene (this)
-		thr_dat->arena = new MemoryArena();											// MemoryArena (u)
-
-		Fl_Thread* thr_ptr = new Fl_Thread();
-		fl_create_thread(*thr_ptr, Render_Thread, thr_dat );
-		thr_dat_ptrs[thr_nr] = thr_dat;
-		thr_ptrs[thr_nr] = thr_ptr;
+		printf("CTL: Adding thread...\n");	
+		std::cout<<CurThreadSignal<<std::endl;
+		RenderThread *rt=new  RenderThread (renderThreads.size(),
+										CurThreadSignal,
+										(SurfaceIntegrator*)surfaceIntegrator->clone(), 
+										(VolumeIntegrator*)volumeIntegrator->clone(),
+										sampler->clone(),
+										camera,
+										this
+										);
+		
+		renderThreads.push_back(rt);									
+		rt->thread=new boost::thread(boost::bind(RenderThread::render,rt));
 		printf("CTL: Done.\n");
-		thr_nr++;
 		return 0;
-	} else {
-		printf("CTL: Cannot create thread. (MAX_THREADS reached)\n");
-		return 1;
-	}
 }
 
 void Scene::RemoveRenderThread()
 {
 	printf("CTL: Removing thread...\n");
-	thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
+	//thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
+	renderThreads.back()->signal=RenderThread::SIG_EXIT;
+	renderThreads.pop_back();
 	//delete thr_dat_ptrs[thr_nr -1]->Si;				// TODO deleting thread pack data deletes too much (shared_ptr?) - radiance
 	//delete thr_dat_ptrs[thr_nr -1]->Vi;				// leave off for now. (creates slight memory leak when removing threads (~5kb))
 	//delete thr_dat_ptrs[thr_nr -1]->Spl;
@@ -278,7 +224,7 @@ void Scene::RemoveRenderThread()
 	//delete thr_dat_ptrs[thr_nr -1]->arena;
 	//delete thr_dat_ptrs[thr_nr -1];
 	//delete thr_ptrs[thr_nr -1];
-	thr_nr--;
+	//thr_nr--;
 	printf("CTL: Done.\n");
 }
 
@@ -288,16 +234,19 @@ void Scene::Render() {
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
-	// set thread number to 0
-	thr_nr = 0;
-
 	// initial thread signal is paused
-	CurThreadSignal = THR_SIG_PAUSE;
+	CurThreadSignal = RenderThread::SIG_PAUSE;
 
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
 
-	while(true) { SLEEP1S; }	// TODO fix for non-progressive rendering
+	while(true) // TODO fix for non-progressive rendering
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 1;
+		boost::thread::sleep(xt);
+	}	
 
 	return; // everything worked fine! Have a great day :) 
 }

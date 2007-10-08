@@ -258,7 +258,8 @@ void stop_cb(Fl_Widget*, void*) { RenderPause(); }
 void restart_cb(Fl_Widget*, void*) { /*luxExit();*/ }
 
 // Engine init/parse/build thread
-void* Engine_Thread( void* p )
+//void* Engine_Thread( void* p )
+void Engine_Thread()
 {
 	printf("GUI: Initializing Parser\n");
     luxInit();
@@ -268,13 +269,13 @@ void* Engine_Thread( void* p )
 	printf("GUI: Finished parsing scenefile.\n");
 
 	luxCleanup();
-
+/*
 #ifdef WIN32
 	_endthread();
 #else
 	pthread_exit(0);
 #endif
-    return 0;
+    return 0;*/
 }
 
 // GUI functions
@@ -303,7 +304,9 @@ int RenderScenefile()
 {
 	fflush(stdout);
     //fl_create_thread((Fl_Thread&)e_thr, Engine_Thread, 0 );
-    fl_create_thread(e_thr, Engine_Thread, 0 );
+    //fl_create_thread(e_thr, Engine_Thread, 0 );
+    new boost::thread(&Engine_Thread);
+    
 	return 0;
 }
 

@@ -56,6 +56,23 @@ FIND_PATH(FLTK_INCLUDE_DIR
  	ENDIF (FLTK_INCLUDE_DIR)
 
 
+# Find and setup Boost library for this project
+FIND_PACKAGE(Boost REQUIRED)
+
+# Now some variables are defined in order to use Boost library:
+# BOOST_FOUND - System has Boost
+# BOOST_INCLUDE_DIRS - Boost include directory
+# BOOST_LIBRARIES - Link these to use Boost
+# BOOST_LIBRARY_DIRS - The path to where the Boost library files are.
+# BOOST_DEFINITIONS - Compiler switches required for using Boost
+
+IF(Boost_FOUND)
+	MESSAGE(STATUS ${BOOST_LIBRARIES})
+ELSE(Boost_FOUND)
+	MESSAGE(STATUS "Boost NOT found")
+ENDIF(Boost_FOUND)
+
+
 #All dependencies OK !
 
 #Compiler flags
@@ -119,7 +136,8 @@ SET(lux_lib_src
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
 	)
 
-INCLUDE_DIRECTORIES(${OPENEXR_INC} 
+INCLUDE_DIRECTORIES(${OPENEXR_INC}
+					${BOOST_INCLUDE_DIRS}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
 					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
@@ -128,9 +146,9 @@ INCLUDE_DIRECTORIES(${OPENEXR_INC}
 					${CMAKE_BINARY_DIR}
 					)
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIB})
+TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIB} boost_thread)
 
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
 
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB} ${FLTK_LIB})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB} ${FLTK_LIB} boost_thread)

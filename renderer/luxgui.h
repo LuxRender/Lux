@@ -40,7 +40,7 @@ bool GuiSceneReady = false;
 float framebufferUpdate;
 Fl_RGB_Image* rgb_image;
 Fl_Window* window;
-Fl_Thread e_thr;
+//Fl_Thread e_thr;
 
 Fl_Group *renderview;
 Fl_Group *info_render;

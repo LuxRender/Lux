@@ -28,44 +28,52 @@
 #include "transport.h"
 #include "timer.h"
 
-//#include <boost/thread/thread.hpp>
+#include <iostream>
+#include <vector>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/xtime.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/bind.hpp>
 //#include <boost/thread/mutex.hpp>
 
-#  if HAVE_PTHREAD_H
-// Use POSIX threading...
+class RenderThread : public boost::noncopyable
+{
+	public:
+		RenderThread( int _n, int _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam, Scene* _Scn)
+			: n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi), sampler(_Splr), camera(_Cam), scene(_Scn)
+		{
+			stat_Samples=0;
+			sample=new Sample( surfaceIntegrator, volumeIntegrator, scene);
+			arena=new MemoryArena();
+			sampler->setSeed( RandomUInt() );	//TODO add different seeds and unique backend random generator for threads - radiance
+			//std::cout<<"yepeee, creating thread"<<std::endl;
+		}
+	
+		~RenderThread()
+		{
+			delete sample;
+			delete arena;	
+			delete thread;
+		}
+		
+		static void render(RenderThread *r);
+		
+		int  n, signal;
+		double stat_Samples;
+		SurfaceIntegrator *surfaceIntegrator;
+		VolumeIntegrator *volumeIntegrator;
+		Sample *sample;
+		Sampler *sampler;
+		Camera *camera;
+		Scene *scene;
+		MemoryArena* arena;
+		boost::thread *thread; //keep pointer the delete the thread object
+		
+		static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
+};
 
-#    include <pthread.h>
 
-typedef pthread_t Fl_Thread;
 
-inline int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
-  return pthread_create((pthread_t*)&t, 0, f, p);
-}
-
-#  elif defined(WIN32) && !defined(__WATCOMC__) // Use Windows threading...
-
-#    include <windows.h>
-#    include <process.h>
-
-typedef unsigned long Fl_Thread;
-
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
-  return t = (Fl_Thread)_beginthread((void( __cdecl * )( void * ))f, 0, p);
-}
-
-#  elif defined(__WATCOMC__)
-#    include <process.h>
-
-typedef unsigned long Fl_Thread;
-
-static int fl_create_thread(Fl_Thread& t, void *(*f) (void *), void* p) {
-  return t = (Fl_Thread)_beginthread((void(* )( void * ))f, 32000, p);
-}
-#  endif // !HAVE_PTHREAD_H
-
-#define THR_SIG_RUN 1
-#define THR_SIG_PAUSE 2
-#define THR_SIG_EXIT 3
 
 // Scene Declarations
 class  Scene {
@@ -122,5 +130,9 @@ public:
 	VolumeIntegrator *volumeIntegrator;
 	Sampler *sampler;
 	BBox bound;
+	
+	private:
+		std::vector<RenderThread*> renderThreads;
+		int CurThreadSignal;
 };
 #endif // LUX_SCENE_H
