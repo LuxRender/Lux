@@ -1,0 +1,91 @@
+# Lux Render v0.1 Scene File
+# Exported by LuxBlend_01_alpha1
+
+LookAt -3.781930 -3.518734 1.539027   -3.539650 -2.548527 1.539027 0.000000 0.000000 1.000000
+Camera "perspective" "float fov" [49.550281]
+
+Film "multiimage"
+     "integer xresolution" [800] "integer yresolution" [600]
+	 "string hdr_filename" ["out.exr"]
+	 	"integer hdr_writeinterval" [320]
+	 "string ldr_filename" ["out.tga"]
+		"integer ldr_writeinterval" [240]
+		"integer ldr_displayinterval" [10]
+		"string tonemapper" ["reinhard"]
+			"float reinhard_prescale" [1.0]
+			"float reinhard_postscale" [1.0]
+			"float reinhard_burn" [10.0]
+		"float gamma" [2.2]
+		"float dither" [0.5]
+
+PixelFilter "gaussian" "float xwidth" [1.000000] "float ywidth" [1.000000]
+
+Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [8]
+
+SurfaceIntegrator "path" "integer maxdepth" [1000]
+
+Accelerator "kdtree"
+
+
+WorldBegin
+
+AttributeBegin
+LightSource "sunsky" "integer nsamples" [1]
+            "vector sundir" [0.443031 -0.252145 0.860317]
+		"float turbidity" [2.000000]
+AttributeEnd
+
+Include "mat-sunsky_test.lux"
+
+Include "geom-sunsky_test.lux"
+
+AttributeBegin
+Transform [0.716800272465 0.331046849489 0.0265424698591 0.0  -0.212453708053 0.408549338579 0.64191120863 0.0  0.255264431238 -0.589571535587 0.459722369909 0.0  -1.03554785252 7.84323120117 0.401569128036 1.0]
+
+	ObjectInstance "Suzanne.003"
+AttributeEnd
+
+AttributeBegin
+Transform [0.294601500034 0.732533037663 0.0265424698591 0.0  -0.43481451273 0.151609688997 0.64191120863 0.0  0.590123295784 -0.25398632884 0.459722369909 0.0  -3.6721200943 2.1672770977 0.401569128036 1.0]
+
+	ObjectInstance "Suzanne.003"
+AttributeEnd
+
+AttributeBegin
+Transform [0.540160238743 -0.575865924358 0.0265424717218 0.0  0.320727854967 0.330428242683 0.64191120863 0.0  -0.479019522667 -0.428129434586 0.459722369909 0.0  -2.53692936897 0.281395435333 0.401569128036 1.0]
+
+	ObjectInstance "Suzanne.003"
+AttributeEnd
+
+AttributeBegin
+Transform [0.470744878054 -0.634427666664 -1.3886595627e-016 0.0  0.3876260221 0.287618219852 0.625396668911 0.0  -0.502239525318 -0.372661352158 0.48267814517 0.0  1.27288293839 3.78313970566 0.440821111202 1.0]
+
+	ObjectInstance "Suzanne"
+AttributeEnd
+
+AttributeBegin
+Transform [7.5497901264e-008 0.0 -1.0 0.0  -1.0 -4.37113882867e-008 -7.5497901264e-008 0.0  -4.37113882867e-008 1.0 -3.30011807778e-015 0.0  -0.592350363731 -3.37184095383 4.60210704803 1.0]
+
+	ObjectInstance "Cube.002"
+AttributeEnd
+
+AttributeBegin
+Transform [7.5497901264e-008 1.0 0.0 0.0  -1.0 7.5497901264e-008 0.0 0.0  0.0 0.0 1.0 0.0  -0.592350363731 -4.6476726532 0.0 1.0]
+
+	ObjectInstance "Cube.001"
+AttributeEnd
+
+AttributeBegin
+Transform [1.0 0.0 0.0 0.0  0.0 1.0 0.0 0.0  0.0 0.0 1.0 0.0  -5.74124288559 -3.37184095383 0.0 1.0]
+
+	ObjectInstance "Cube"
+AttributeEnd
+
+AttributeBegin
+Transform [1.98022949696 0.0 0.0 0.0  0.0 1.98022949696 0.0 0.0  0.0 0.0 1.98022949696 0.0  0.0 0.0 0.0 1.0]
+
+	ObjectInstance "Plane.001"
+AttributeEnd
+
+WorldEnd
+
