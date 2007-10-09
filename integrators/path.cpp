@@ -53,13 +53,13 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			// Stop path sampling since no intersection was found
 
 			// add emitting sources (radiance) TODO test/cleanup ---
-			if (pathLength == 0 || specularBounce)
+			/*if (pathLength == 0 || specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
-					L += scene->lights[i]->Le(ray) * M_PI;// * scene->lights[i]->Power(scene);
-			/*if (pathLength == 0 && alpha) {
+					L += scene->lights[i]->Le(ray); */
+			if (pathLength == 0 && alpha) {
 				if (L != 0.) *alpha = 1.;
 				else *alpha = 0.;
-			}*/
+			}
 			// ---
 
 			break;

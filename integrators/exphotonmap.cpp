@@ -425,7 +425,7 @@ Spectrum ExPhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					photonDirs[i] = proc.photons[i].photon->wi;
 				// Use BSDF to do final gathering
 				Spectrum Li = 0.;
-				// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", // NOBOOK "Final gather rays traced"); // NOBOOK
+				// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", "Final gather rays traced"); // NOBOOK
 				for (int i = 0; i < gatherSamples; ++i) {
 					// Sample random direction from BSDF for final gather ray
 					Vector wi;

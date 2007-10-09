@@ -55,7 +55,7 @@ Spectrum SunLight::Sample_L(const Point &p, float u1, float u2,
 float SunLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-Spectrum SunLight::Sample_L(const Scene *scene,
+Spectrum SunLight::Sample_L(const Scene *scene,											// TODO - radiance - add portal implementation?
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	// Choose point on disk oriented toward infinite light direction
@@ -77,7 +77,7 @@ Spectrum SunLight::Sample_L(const Scene *scene,
 }
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));			// Base color (gain) must be 1.f (5000?)
+	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(0.005));		// Base color (gain) 0.005 is good
 	int nSamples = paramSet.FindOneInt("nsamples", 1);					// unused for SunLight - MUST stay for compatiblity with SkyLight params.
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	Normalize(sundir);

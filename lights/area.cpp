@@ -24,7 +24,7 @@
 #include "light.h"
 #include "primitive.h"
 // AreaLight Method Definitions
-AreaLight::AreaLight(const Transform &light2world,
+AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - add portal implementation
 		const Spectrum &le, int ns,
 		const ShapePtr &s)
 	: Light(light2world, ns) {

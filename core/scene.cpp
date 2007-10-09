@@ -110,8 +110,7 @@ double Scene::Statistics_SamplesPSec()
 	lastTime = time;
 
 	// return current samples / sec total
-	if(elapsed != 0.) return dif_samples / elapsed;
-	else return 0.;
+	return dif_samples / elapsed;
 }
 
 void Scene::SignalThreads(int signal)
@@ -129,6 +128,8 @@ void Scene::SignalThreads(int signal)
 //void RenderThread::operator() ()
 void RenderThread::render(RenderThread *myThread)
 {
+	myThread->stat_Samples = 0.;
+
 	// Trace rays: The main loop
 	while (myThread->sampler->GetNextSample(myThread->sample)) {
 		while(myThread->signal == RenderThread::SIG_PAUSE)
@@ -146,46 +147,49 @@ void RenderThread::render(RenderThread *myThread)
 		// Find camera ray for _sample_
 		RayDifferential ray;
 		float rayWeight = myThread->camera->GenerateRay(*(myThread->sample), &ray);
-		// Generate ray differentials for camera ray
-		++(myThread->sample->imageX);
-		float wt1 = myThread->camera->GenerateRay(*(myThread->sample), &ray.rx);
-		--(myThread->sample->imageX);
-		++(myThread->sample->imageY);
-		float wt2 = myThread->camera->GenerateRay(*(myThread->sample), &ray.ry);
-		if (wt1 > 0 && wt2 > 0) ray.hasDifferentials = true;
-		--(myThread->sample->imageY);
-		// Evaluate radiance along camera ray
-		float alpha;
-		Spectrum Ls = 0.f;
 		if (rayWeight > 0.f) {
+			// Generate ray differentials for camera ray
+			++(myThread->sample->imageX);
+			float wt1 = myThread->camera->GenerateRay(*(myThread->sample), &ray.rx);
+			--(myThread->sample->imageX);
+			++(myThread->sample->imageY);
+			float wt2 = myThread->camera->GenerateRay(*(myThread->sample), &ray.ry);
+			if (wt1 > 0 && wt2 > 0) ray.hasDifferentials = true;
+			--(myThread->sample->imageY);
+
+			// Evaluate radiance along camera ray
+			float alpha;
+			Spectrum Ls = 0.f;
+
 			//Ls = rayWeight * scene->Li(ray, sample, &alpha); don't use
 			Spectrum Lo = myThread->surfaceIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
-			//Ls = rayWeight * Lo;
-		} 
-		// Issue warning if unexpected radiance value returned
-		if (Ls.IsNaN()) {
-			Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
-			Ls = Spectrum(0.f);
+			
+			// Issue warning if unexpected radiance value returned
+			if (Ls.IsNaN()) {
+				Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
+				Ls = Spectrum(0.f);
+			}
+			else if (Ls.y() < -1e-5) {
+				Error("THR%i: NegLum value, %g, returned.\n", myThread->n+1, Ls.y());
+				Ls = Spectrum(0.f);
+			}
+			else if (isinf(Ls.y())) {
+				Error("THR%i: InfinLum value returned.\n", myThread->n+1);
+				Ls = Spectrum(0.f);
+			} 
+			// Add sample contribution to image
+			if( Ls != Spectrum(0.f) )
+			   myThread->camera->film->AddSample(*(myThread->sample), ray, Ls, alpha);
+			
+			// Free BSDF memory from computing image sample value
+			myThread->arena->FreeAll();
 		}
-		else if (Ls.y() < -1e-5) {
-			Error("THR%i: NegLum value, %g, returned.\n", myThread->n+1, Ls.y());
-			Ls = Spectrum(0.f);
-		}
-		else if (isinf(Ls.y())) {
-			Error("THR%i: InfinLum value returned.\n", myThread->n+1);
-			Ls = Spectrum(0.f);
-		} 
-		// Add sample contribution to image
-		if( Ls != Spectrum(0.f) )
-		   myThread->camera->film->AddSample(*(myThread->sample), ray, Ls, alpha);
 
+		// update samples statistics
 		myThread->stat_Samples++;
-
-		// Free BSDF memory from computing image sample value
-		myThread->arena->FreeAll();
 	}
 
 	printf("THR%i: Exiting.\n", myThread->n+1);
@@ -240,7 +244,7 @@ void Scene::Render() {
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
 
-	while(true) // TODO fix for non-progressive rendering
+	while(true) // TODO replace this loop with a 'wait till renderthreads exit'
 	{
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
@@ -290,11 +294,8 @@ Spectrum Scene::Li(const RayDifferential &ray,
 //	Spectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
 //	Spectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
 //	return T * Lo + Lv;
-	Spectrum Lo;
-	return Lo;
+	return 0.;
 }
 Spectrum Scene::Transmittance(const Ray &ray) const {
 	return volumeIntegrator->Transmittance(this, ray, NULL, NULL);
-//	Spectrum Dummy;
-//	return Dummy;
 }

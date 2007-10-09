@@ -264,7 +264,7 @@ Spectrum PhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
 				if (fr.Black() || pdf == 0.f) continue;
 				RayDifferential bounceRay(p, wi);
-				// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", // NOBOOK "Final gather rays traced"); // NOBOOK
+				// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", "Final gather rays traced"); // NOBOOK
 				// radiance - disabled for threading // ++gatherRays; // NOBOOK
 				Intersection gatherIsect;
 				if (scene->Intersect(bounceRay, &gatherIsect)) {

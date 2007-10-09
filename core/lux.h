@@ -46,7 +46,8 @@
 #ifdef WIN32
 #include <float.h>
 #pragma warning(disable : 4244) // conversion from double to float (VS2005) - Radiance
-#pragma warning(disable : 4996) // deprecated fuinctions (VS2005) - Radiance
+#pragma warning(disable : 4305) // truncation from double to float (VS2005) - Radiance
+#pragma warning(disable : 4996) // deprecated functions (VS2005) - Radiance
 #endif
 #include <math.h>
 #include <stdlib.h>

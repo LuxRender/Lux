@@ -134,6 +134,7 @@ Rotate			{ return ROTATE;		}
 Sampler			{ return SAMPLER;		}
 SearchPath		{ return SEARCHPATH;		}
 Scale 			{ return SCALE;			}
+PortalShape		{ return PORTALSHAPE;           }
 Shape			{ return SHAPE;			}
 SurfaceIntegrator	{ return SURFACEINTEGRATOR;	}
 Texture			{ return TEXTURE;		}

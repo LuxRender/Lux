@@ -135,13 +135,13 @@ void MultiImageFilm::AddSample(const Sample &sample,
 	if ((x1-x0) < 0 || (y1-y0) < 0) return;
 	// Loop over filter support and add sample to pixel arrays
 	// Precompute $x$ and $y$ filter table offsets
-	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));
+	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
 	for (int x = x0; x <= x1; ++x) {
 		float fx = fabsf((x - dImageX) *
 		                 filter->invXWidth * FILTER_TABLE_SIZE);
 		ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
 	}
-	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));
+	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
 	for (int y = y0; y <= y1; ++y) {
 		float fy = fabsf((y - dImageY) *
 		                 filter->invYWidth * FILTER_TABLE_SIZE);

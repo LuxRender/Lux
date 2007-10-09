@@ -328,9 +328,9 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 			continue;
 		// Check for ray--primitive intersection for shadow ray
 		mp->lastMailboxId = rayId;
-		// radiance - disabled for threading // rayTests.Add(1, 0);
+		// radiance - disabled for threading // //rayTests.Add(1, 0);
 		if (mp->primitive->IntersectP(ray)) {
-			// radiance - disabled for threading // rayHits.Add(1, 0);
+			// radiance - disabled for threading // //rayHits.Add(1, 0);
 			return true;
 		}
 	}

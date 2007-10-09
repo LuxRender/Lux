@@ -75,6 +75,7 @@ extern  void luxMaterial(const string &name,
                                const ParamSet &params);
 extern  void luxLightSource(const string &name, const ParamSet &params);
 extern  void luxAreaLightSource(const string &name, const ParamSet &params);
+extern  void luxPortalShape(const string &name, const ParamSet &params);
 extern  void luxShape(const string &name, const ParamSet &params);
 extern  void luxReverseOrientation();
 extern  void luxVolume(const string &name, const ParamSet &params);

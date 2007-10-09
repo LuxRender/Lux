@@ -39,3 +39,37 @@ Spectrum VisibilityTester::
 Spectrum Light::Le(const RayDifferential &) const {
 	return Spectrum(0.);
 }
+
+void Light::AddPortalShape(ShapePtr s) {
+	ShapePtr PortalShape;
+
+	if (s->CanIntersect())
+		PortalShape = s;
+	else {
+		// Create _ShapeSet_ for _Shape_
+		ShapePtr shapeSet = s;
+		vector<ShapePtr > todo, done;
+		todo.push_back(shapeSet);
+		while (todo.size()) {
+			ShapePtr sh = todo.back();
+			todo.pop_back();
+			if (sh->CanIntersect())
+				done.push_back(sh);
+			else
+				sh->Refine(todo);
+		}
+		if (done.size() == 1) PortalShape = done[0];
+		else {
+			if (done.size() > 16)
+				Warning("Portal light geometry turned into %d shapes; "
+					"may be very inefficient.", (int)done.size());
+			ShapePtr o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
+			PortalShape = o;
+			havePortalShape = true; 
+			// store
+			PortalArea += PortalShape->Area();
+			PortalShapes.push_back(PortalShape);
+		}
+	}
+
+}

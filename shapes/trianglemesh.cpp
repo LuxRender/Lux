@@ -72,6 +72,7 @@ BBox TriangleMesh::WorldBound() const {
 		worldBounds = Union(worldBounds, p[i]);
 	return worldBounds;
 }
+
 void
 TriangleMesh::Refine(vector<ShapePtr > &refined)
 const {
@@ -83,6 +84,7 @@ const {
 		refined.push_back(o);
 	}
 }
+
 BBox Triangle::ObjectBound() const {
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];

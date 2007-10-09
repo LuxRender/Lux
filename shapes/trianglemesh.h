@@ -48,6 +48,7 @@ protected:
 	Normal *n;
 	Vector *s;
 	float *uvs;
+	vector<ShapePtr > triPtrs;
 };
 class Triangle : public Shape {
 public:

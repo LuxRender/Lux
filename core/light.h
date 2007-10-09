@@ -43,6 +43,9 @@ public:
 				"that this transform will have no scale factors in it.\n"
 				"Proceed at your own risk; your image may have errors or\n"
 				"the system may crash as a result of this.");
+		havePortalShape = false;
+		nrPortalShapes = 0;
+		PortalArea = 0;
 	}
 	virtual Spectrum Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *vis) const = 0;
@@ -66,8 +69,14 @@ public:
 	virtual Spectrum Sample_L(const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
+
+	void AddPortalShape(ShapePtr shape);
 	// Light Public Data
 	const int nSamples;
+	bool havePortalShape;
+	int nrPortalShapes;
+	vector<ShapePtr > PortalShapes;
+	float PortalArea;
 protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;

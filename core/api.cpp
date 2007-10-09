@@ -103,6 +103,8 @@ struct GraphicsState {
 	string material;
 	ParamSet areaLightParams;
 	string areaLight;
+	string currentLight;
+	Light* currentLightPtr;
 	bool reverseOrientation;
 };
 GraphicsState::GraphicsState() {
@@ -345,29 +347,75 @@ void luxLightSource(const string &name,
 		Light *lt_sun = MakeLight("sun", curTransform, params);
 		if (lt_sun == NULL)
 			Error("luxLightSource: light type sun unknown.");
-		else
+		else {
 			renderOptions->lights.push_back(lt_sun);
+		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL)
 			Error("luxLightSource: light type sky unknown.");
-		else
+		else {
 			renderOptions->lights.push_back(lt_sky);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt_sky;
+		}
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(name, curTransform, params);
 		if (lt == NULL)
 			Error("luxLightSource: light type "
 			      "\"%s\" unknown.", name.c_str());
-		else
+		else {
 			renderOptions->lights.push_back(lt);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt;
+		}
 	}
 }
+
 void luxAreaLightSource(const string &name,
                                  const ParamSet &params) {
 	VERIFY_WORLD("AreaLightSource");
 	graphicsState.areaLight = name;
 	graphicsState.areaLightParams = params;
 }
+
+void luxPortalShape(const string &name,
+                       const ParamSet &params) {
+	VERIFY_WORLD("PortalShape");
+	ShapePtr shape = MakeShape(name,
+		curTransform, graphicsState.reverseOrientation,
+		params);
+	if (!shape) return;
+	params.ReportUnused();
+	// Initialize area light for shape									// TODO - radiance - add portalshape to area light & cleanup
+	AreaLight *area = NULL;
+	//if (graphicsState.areaLight != "")
+	//	area = MakeAreaLight(graphicsState.areaLight,
+	//	curTransform, graphicsState.areaLightParams, shape);
+	
+	if (graphicsState.currentLight != "") {
+		if(graphicsState.currentLight == "sunsky" 
+			|| graphicsState.currentLight == "infinite")
+			graphicsState.currentLightPtr->AddPortalShape( shape );
+		else {
+			Warning("LightType '%s' does not support PortalShape(s).\n", 
+				graphicsState.currentLight);
+			return;
+		}
+	}
+
+	// Initialize material for shape (dummy)
+	TextureParams mp(params,
+	                 graphicsState.materialParams,
+					 graphicsState.floatTextures,
+					 graphicsState.spectrumTextures);
+	boost::shared_ptr<Texture<float> > bump;
+	MaterialPtr mtl = MakeMaterial("matte", curTransform, mp);
+
+	// Create primitive (for refining) (dummy)
+	Primitive* prim (new GeometricPrimitive(shape, mtl, area));
+}
+
 void luxShape(const string &name,
                        const ParamSet &params) {
 	VERIFY_WORLD("Shape");

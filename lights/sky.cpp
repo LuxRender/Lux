@@ -104,20 +104,31 @@ Spectrum SkyLight::Sample_L(const Point &p,
 		const Normal &n, float u1, float u2,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
-	// Sample cosine-weighted direction on unit sphere
-	float x, y, z;
-	ConcentricSampleDisk(u1, u2, &x, &y);
-	z = sqrtf(max(0.f, 1.f - x*x - y*y));
-	if (RandomFloat() < .5) z *= -1;
-	*wi = Vector(x, y, z);
-	// Compute _pdf_ for cosine-weighted infinite light direction
-	*pdf = fabsf(wi->z) * INV_TWOPI;
-	// Transform direction to world space
-	Vector v1, v2;
-	CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
-	*wi = Vector(v1.x * wi->x + v2.x * wi->y + n.x * wi->z,
-	             v1.y * wi->x + v2.y * wi->y + n.y * wi->z,
-	             v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
+	if(!havePortalShape) {
+		// Sample cosine-weighted direction on unit sphere
+		float x, y, z;
+		ConcentricSampleDisk(u1, u2, &x, &y);
+		z = sqrtf(max(0.f, 1.f - x*x - y*y));
+		if (RandomFloat() < .5) z *= -1;
+		*wi = Vector(x, y, z);
+		// Compute _pdf_ for cosine-weighted infinite light direction
+		*pdf = fabsf(wi->z) * INV_TWOPI;
+		// Transform direction to world space
+		Vector v1, v2;
+		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
+		*wi = Vector(v1.x * wi->x + v2.x * wi->y + n.x * wi->z,
+					 v1.y * wi->x + v2.y * wi->y + n.y * wi->z,
+					 v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
+	} else {
+	    // Sample a random Portal
+		int shapeidx = 0;
+		if(nrPortalShapes > 1) 
+			shapeidx = Floor2Int(RandomFloat() * nrPortalShapes);
+		Normal ns;
+		Point ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+		*wi = Normalize(ps - p);
+		*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+	}
 	visibility->SetRay(p, *wi);
 	return Le(RayDifferential(p, *wi));
 }
@@ -128,15 +139,26 @@ float SkyLight::Pdf(const Point &, const Normal &n,
 Spectrum SkyLight::Sample_L(const Point &p,
 		float u1, float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
-	*wi = UniformSampleSphere(u1, u2);
-	*pdf = UniformSpherePdf();
+	if(!havePortalShape) {
+		*wi = UniformSampleSphere(u1, u2);
+		*pdf = UniformSpherePdf();
+	} else {
+	    // Sample a random Portal
+		int shapeidx = 0;
+		if(nrPortalShapes > 1) 
+			shapeidx = Floor2Int(RandomFloat() * nrPortalShapes);
+		Normal ns;
+		Point ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+		*wi = Normalize(ps - p);
+		*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+	}
 	visibility->SetRay(p, *wi);
 	return Le(RayDifferential(p, *wi));
 }
 float SkyLight::Pdf(const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
-Spectrum SkyLight::Sample_L(const Scene *scene,
+Spectrum SkyLight::Sample_L(const Scene *scene,									// TODO - radiance - add portal implementation
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	// Choose two points _p1_ and _p2_ on scene bounding sphere
@@ -169,7 +191,7 @@ Spectrum SkyLight::Sample_L(const Point &p,
 }
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));			// Base color (gain) must be 1.f
+	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(0.005));		// Base color (gain) 0.005 is good
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	Normalize(sundir);
