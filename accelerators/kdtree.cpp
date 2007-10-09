@@ -214,9 +214,9 @@ bool KdTreeAccel::Intersect(const Ray &ray,
 	while (node != NULL) {
 		// Bail out if we found a hit closer than the current node
 		if (ray.maxt < tmin) break;
-		//static StatsCounter nodesTraversed("Kd-Tree Accelerator", //NOBOOK
-		//	"Number of kd-tree nodes traversed by normal rays"); //NOBOOK
-		//++nodesTraversed; //NOBOOK
+		// radiance - disabled for threading // static StatsCounter nodesTraversed("Kd-Tree Accelerator", 
+		// radiance - disabled for threading // "Number of kd-tree nodes traversed by normal rays"); //NOBOOK 
+		// radiance - disabled for threading // ++nodesTraversed; //NOBOOK
 		if (!node->IsLeaf()) {
 			// Process kd-tree interior node
 			// Compute parametric distance along ray to split plane
@@ -300,9 +300,9 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
 	const KdAccelNode *node = &nodes[0];
 	while (node != NULL) {
 		// Update kd-tree shadow ray traversal statistics
-		//static StatsCounter nodesTraversed("Kd-Tree Accelerator",
-		//	"Number of kd-tree nodes traversed by shadow rays");
-		//++nodesTraversed;
+		// radiance - disabled for threading // static StatsCounter nodesTraversed("Kd-Tree Accelerator",
+		// radiance - disabled for threading // "Number of kd-tree nodes traversed by shadow rays");
+		// radiance - disabled for threading // ++nodesTraversed;
 		if (node->IsLeaf()) {
 			// Check for shadow ray intersections inside leaf node
 			u_int nPrimitives = node->nPrimitives();

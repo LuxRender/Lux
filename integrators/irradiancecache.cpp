@@ -163,9 +163,7 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 		for (int i = 0; i < nSamples; ++i) {
 			// Trace ray to sample radiance for irradiance estimate
 			// Update irradiance statistics for rays traced
-			static StatsCounter nIrradiancePaths("Irradiance Cache",
-				"Paths followed for irradiance estimates");
-			++nIrradiancePaths;
+			// radiance - disabled for threading // static StatsCounter nIrradiancePaths("Irradiance Cache","Paths followed for irradiance estimates"); ++nIrradiancePaths;
 			float u[2];
 			Sample02(i, scramble, u);
 			Vector w = CosineSampleHemisphere(u[0], u[1]);
@@ -228,9 +226,7 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 		E *= M_PI / float(nSamples);
 		// Add computed irradiance value to cache
 		// Update statistics for new irradiance sample
-		static StatsCounter nSamplesComputed("Irradiance Cache",
-			"Irradiance estimates computed");
-		++nSamplesComputed;
+		// radiance - disabled for threading // static StatsCounter nSamplesComputed("Irradiance Cache", "Irradiance estimates computed"); ++nSamplesComputed;
 		// Compute bounding box of irradiance sample's contribution region
 		static float minMaxDist =
 			.001f * powf(scene->WorldBound().Volume(), 1.f/3.f);
@@ -264,15 +260,12 @@ IrradianceCache::InterpolateIrradiance(const Scene *scene,
 	IrradProcess proc(n, maxError);
 	octree->Lookup(p, proc);
 	// Update irradiance cache lookup statistics
-	static StatsPercentage nSuccessfulLookups("Irradiance Cache",
-		"Successful irradiance cache lookups");
-	static StatsRatio nSamplesFound("Irradiance Cache",
-		"Irradiance samples found per successful lookup");
-	static StatsRatio nSamplesChecked("Irradiance Cache",
-		"Irradiance samples checked per lookup");
-	nSuccessfulLookups.Add(proc.Successful() ? 1 : 0, 1);
-	nSamplesFound.Add(proc.nFound, 1);
-	nSamplesChecked.Add(proc.samplesChecked, 1);
+	// radiance - disabled for threading // static StatsPercentage nSuccessfulLookups("Irradiance Cache","Successful irradiance cache lookups");
+	// radiance - disabled for threading // static StatsRatio nSamplesFound("Irradiance Cache","Irradiance samples found per successful lookup");
+	// radiance - disabled for threading // static StatsRatio nSamplesChecked("Irradiance Cache","Irradiance samples checked per lookup");
+	// radiance - disabled for threading // nSuccessfulLookups.Add(proc.Successful() ? 1 : 0, 1);
+	// radiance - disabled for threading // nSamplesFound.Add(proc.nFound, 1);
+	// radiance - disabled for threading // nSamplesChecked.Add(proc.samplesChecked, 1);
 	if (!proc.Successful()) return false;
 	*E = proc.GetIrradiance();
 	return true;

@@ -163,8 +163,8 @@ GeometricPrimitive::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 // Intersection Method Definitions
 BSDF *Intersection::GetBSDF(MemoryArena &arena, const RayDifferential &ray)
 		const {
-	static StatsCounter pointsShaded("Shading", "Number of points shaded"); // NOBOOK
-	++pointsShaded; // NOBOOK
+	// radiance - disabled for threading // static StatsCounter pointsShaded("Shading", "Number of points shaded"); // NOBOOK
+	// radiance - disabled for threading // ++pointsShaded; // NOBOOK
 	dg.ComputeDifferentials(ray);
 	return primitive->GetBSDF(arena, dg, WorldToObject);
 }

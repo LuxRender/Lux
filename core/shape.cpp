@@ -28,9 +28,8 @@ Shape::Shape(const Transform &o2w, bool ro)
 	reverseOrientation(ro),
 	transformSwapsHandedness(o2w.SwapsHandedness()) {
 	// Update shape creation statistics
-	static StatsCounter nShapesMade("Geometry",
-	                                "Total shapes created");
-	++nShapesMade;
+	// radiance - disabled for threading // static StatsCounter nShapesMade("Geometry","Total shapes created");
+	// radiance - disabled for threading // ++nShapesMade;
 }
 // DifferentialGeometry Method Definitions
 DifferentialGeometry::DifferentialGeometry(const Point &P,

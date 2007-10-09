@@ -165,9 +165,8 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	TexInfo texInfo(filename, doTrilinear, maxAniso, wrap);
 	if (textures.find(texInfo) != textures.end())
 		return textures[texInfo];
-	static StatsCounter texLoaded("Texture", // NOBOOK
-		"Number of image maps loaded"); // NOBOOK
-	++texLoaded; // NOBOOK
+	// radiance - disabled for threading // static StatsCounter texLoaded("Texture", "Number of image maps loaded"); // NOBOOK
+	// radiance - disabled for threading // ++texLoaded; // NOBOOK
 	int width, height;
 	Spectrum *texels = ReadImage(filename, &width, &height);
 	MIPMap<T> *ret = NULL;

@@ -91,18 +91,14 @@ GridAccel::GridAccel(const vector<Primitive* > &p,
 						voxels[offset]->AddPrimitive(&mailboxes[i]);
 					}
 				}
-		static StatsRatio nPrimitiveVoxels("Grid Accelerator", // NOBOOK
-			"Voxels covered vs # / primitives"); // NOBOOK
+		static StatsRatio nPrimitiveVoxels("Grid Accelerator", "Voxels covered vs # / primitives"); // NOBOOK
 		nPrimitiveVoxels.Add((1 + vmax[0]-vmin[0]) * (1 + vmax[1]-vmin[1]) * // NOBOOK
 			(1 + vmax[2]-vmin[2]), 1); // NOBOOK
 	}
 	// Update grid statistics
-	static StatsPercentage nEmptyVoxels("Grid Accelerator",
-	                                    "Empty voxels");
-	static StatsRatio avgPrimsInVoxel("Grid Accelerator",
-		"Average # of primitives in voxel");
-	static StatsCounter maxPrimsInVoxel("Grid Accelerator",
-		"Max # of primitives in a grid voxel");
+	static StatsPercentage nEmptyVoxels("Grid Accelerator","Empty voxels");
+	static StatsRatio avgPrimsInVoxel("Grid Accelerator","Average # of primitives in voxel");
+	static StatsCounter maxPrimsInVoxel("Grid Accelerator","Max # of primitives in a grid voxel");
 	nEmptyVoxels.Add(0, NVoxels[0] * NVoxels[1] * NVoxels[2]);
 	avgPrimsInVoxel.Add(0,NVoxels[0] * NVoxels[1] * NVoxels[2]);
 	for (int z = 0; z < NVoxels[2]; ++z)
@@ -240,10 +236,10 @@ bool Voxel::Intersect(const Ray &ray,
 	return hitSomething;
 }
 bool GridAccel::IntersectP(const Ray &ray) const {
-	if (!gridForRefined) { // NOBOOK
-		//rayTests.Add(0, 1); // NOBOOK
-		//rayHits.Add(0, 1); // NOBOOK
-	} // NOBOOK
+	// radiance - disabled for threading // if (!gridForRefined) { // NOBOOK
+	// radiance - disabled for threading // 	//rayTests.Add(0, 1); // NOBOOK
+	// radiance - disabled for threading // 	//rayHits.Add(0, 1); // NOBOOK
+	// radiance - disabled for threading // } // NOBOOK
 	int rayId = ++curMailboxId;
 	// Check ray against overall grid bounds
 	float rayT;
@@ -332,9 +328,9 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 			continue;
 		// Check for ray--primitive intersection for shadow ray
 		mp->lastMailboxId = rayId;
-		//rayTests.Add(1, 0);
+		// radiance - disabled for threading // rayTests.Add(1, 0);
 		if (mp->primitive->IntersectP(ray)) {
-			//rayHits.Add(1, 0);
+			// radiance - disabled for threading // rayHits.Add(1, 0);
 			return true;
 		}
 	}

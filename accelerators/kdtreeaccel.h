@@ -42,18 +42,14 @@ struct KdAccelNode {
 	void initLeaf(int *primNums, int np,
 			MailboxPrim *mailboxPrims, MemoryArena &arena) {
 		// Update kd leaf node allocation statistics
-		static StatsCounter numLeafMade("Kd-Tree Accelerator",
-		                                "Leaf kd-tree nodes made");
-		//static StatsCounter maxDepth("Kd-Tree Accelerator",
-		//                             "Maximum kd-tree depth");
-		static StatsCounter maxLeafPrims("Kd-Tree Accelerator",
-			"Maximum number of primitives in leaf node");
-		++numLeafMade;
+		// radiance - disabled for threading // static StatsCounter numLeafMade("Kd-Tree Accelerator","Leaf kd-tree nodes made");
+		// radiance - disabled for threading // static StatsCounter maxDepth("Kd-Tree Accelerator","Maximum kd-tree depth");
+		// radiance - disabled for threading // static StatsCounter maxLeafPrims("Kd-Tree Accelerator","Maximum number of primitives in leaf node");
+		// radiance - disabled for threading // ++numLeafMade;
 		//maxDepth.Max(depth);
-		maxLeafPrims.Max(np);
-		static StatsRatio leafPrims("Kd-Tree Accelerator",
-			"Avg. number of primitives in leaf nodes");
-		leafPrims.Add(np, 1);
+		// radiance - disabled for threading // maxLeafPrims.Max(np);
+		// radiance - disabled for threading // static StatsRatio leafPrims("Kd-Tree Accelerator","Avg. number of primitives in leaf nodes");
+		// radiance - disabled for threading // leafPrims.Add(np, 1);
 		nPrims = np << 2;
 		flags |= 3;
 		// Store _MailboxPrim *_s for leaf node
@@ -69,8 +65,8 @@ struct KdAccelNode {
 		}
 	}
 	void initInterior(int axis, float s) {
-		static StatsCounter nodesMade("Kd-Tree Accelerator", "Interior kd-tree nodes made"); // NOBOOK
-		++nodesMade; // NOBOOK
+		// radiance - disabled for threading // static StatsCounter nodesMade("Kd-Tree Accelerator", "Interior kd-tree nodes made"); // NOBOOK
+		// radiance - disabled for threading // ++nodesMade; // NOBOOK
 		split = s;
 		flags &= ~3;
 		flags |= axis;

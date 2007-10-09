@@ -200,9 +200,8 @@ MIPMap<T>::~MIPMap() {
 }
 template <class T>
 T MIPMap<T>::Lookup(float s, float t, float width) const {
-	static StatsCounter mipTrilerps("Texture", // NOBOOK
-		"Trilinear MIPMap lookups"); // NOBOOK
-	++mipTrilerps; // NOBOOK
+	// radiance - disabled for threading // static StatsCounter mipTrilerps("Texture","Trilinear MIPMap lookups"); // NOBOOK
+	// radiance - disabled for threading // ++mipTrilerps; // NOBOOK
 	// Compute MIPMap level for trilinear filtering
 	float level = nLevels - 1 + Log2(max(width, 1e-8f));
 	// Perform trilinear interpolation at appropriate MIPMap level
@@ -232,8 +231,8 @@ T MIPMap<T>::triangle(int level, float s, float t) const {
 template <class T>
 T MIPMap<T>::Lookup(float s, float t, float ds0, float dt0,
 		float ds1, float dt1) const {
-	static StatsCounter ewaLookups("Texture", "EWA filter lookups"); // NOBOOK
-	++ewaLookups; // NOBOOK
+	// radiance - disabled for threading // static StatsCounter ewaLookups("Texture", "EWA filter lookups"); // NOBOOK
+	// radiance - disabled for threading // ++ewaLookups; // NOBOOK
 	if (doTrilinear)
 		return Lookup(s, t,
 		              2.f * max(max(fabsf(ds0),
@@ -289,8 +288,8 @@ T MIPMap<T>::EWA(float s, float t, float ds0, float dt0,
 	int s1 = Floor2Int(s + 2.f * invDet * uSqrt);
 	int t0 = Ceil2Int (t - 2.f * invDet * vSqrt);
 	int t1 = Floor2Int(t + 2.f * invDet * vSqrt);
-	static StatsRatio ewaTexels("Texture", "Texels per EWA lookup"); // NOBOOK
-	ewaTexels.Add((1+s1-s0) * (1+t1-t0), 1); // NOBOOK
+	// radiance - disabled for threading // static StatsRatio ewaTexels("Texture", "Texels per EWA lookup"); // NOBOOK
+	// radiance - disabled for threading // ewaTexels.Add((1+s1-s0) * (1+t1-t0), 1); // NOBOOK
 	// Scan over ellipse bound and compute quadratic equation
 	T num(0.);
 	float den = 0;

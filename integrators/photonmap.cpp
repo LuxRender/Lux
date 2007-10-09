@@ -81,8 +81,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 	directPhotons.reserve(nDirectPhotons); // NOBOOK
 	indirectPhotons.reserve(nIndirectPhotons); // NOBOOK
 	// Initialize photon shooting statistics
-	static StatsCounter nshot("Photon Map",
-		"Number of photons shot from lights");
+	static StatsCounter nshot("Photon Map","Number of photons shot from lights");
 	bool causticDone = (nCausticPhotons == 0);
 	bool directDone = (nDirectPhotons == 0);
 	bool indirectDone = (nIndirectPhotons == 0);
@@ -265,9 +264,8 @@ Spectrum PhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
 				if (fr.Black() || pdf == 0.f) continue;
 				RayDifferential bounceRay(p, wi);
-				static StatsCounter gatherRays("Photon Map", // NOBOOK
-					"Final gather rays traced"); // NOBOOK
-				++gatherRays; // NOBOOK
+				// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", // NOBOOK "Final gather rays traced"); // NOBOOK
+				// radiance - disabled for threading // ++gatherRays; // NOBOOK
 				Intersection gatherIsect;
 				if (scene->Intersect(bounceRay, &gatherIsect)) {
 					// Compute exitant radiance at final gather intersection
@@ -368,17 +366,17 @@ Spectrum PhotonIntegrator::LPhoton(
 		BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
 	if (bsdf->NumComponents(nonSpecular) == 0)
 		return L;
-	static StatsCounter lookups("Photon Map", "Total lookups"); // NOBOOK
+	// radiance - disabled for threading // static StatsCounter lookups("Photon Map", "Total lookups"); // NOBOOK
 	// Initialize _PhotonProcess_ object, _proc_, for photon map lookups
 	PhotonProcess proc(nLookup, isect.dg.p);
 	proc.photons =
 		(ClosePhoton *)alloca(nLookup * sizeof(ClosePhoton));
 	// Do photon map lookup
-	++lookups;  // NOBOOK
+	// radiance - disabled for threading // ++lookups;  // NOBOOK
 	map->Lookup(isect.dg.p, proc, maxDistSquared);
 	// Accumulate light from nearby photons
-	static StatsRatio foundRate("Photon Map", "Photons found per lookup"); // NOBOOK
-	foundRate.Add(proc.foundPhotons, 1); // NOBOOK
+	// radiance - disabled for threading // static StatsRatio foundRate("Photon Map", "Photons found per lookup"); // NOBOOK
+	// radiance - disabled for threading // foundRate.Add(proc.foundPhotons, 1); // NOBOOK
 	float scale = 1.f / (float(nPaths) * maxDistSquared * M_PI);
 	// Estimate reflected light from photons
 	ClosePhoton *photons = proc.photons;
@@ -416,8 +414,8 @@ PhotonProcess::PhotonProcess(u_int mp, const Point &P)
 }
 void PhotonProcess::operator()(const Photon &photon,
 		float distSquared, float &maxDistSquared) const {
-	static StatsPercentage discarded("Photon Map", "Discarded photons"); // NOBOOK
-	discarded.Add(0, 1); // NOBOOK
+	// radiance - disabled for threading // static StatsPercentage discarded("Photon Map", "Discarded photons"); // NOBOOK
+	// radiance - disabled for threading // discarded.Add(0, 1); // NOBOOK
 	if (foundPhotons < nLookup) {
 		// Add photon to unordered array of photons
 		photons[foundPhotons++] = ClosePhoton(&photon, distSquared);
@@ -428,7 +426,7 @@ void PhotonProcess::operator()(const Photon &photon,
 	}
 	else {
 		// Remove most distant photon from heap and add new photon
-		discarded.Add(1, 0); // NOBOOK
+		// radiance - disabled for threading // discarded.Add(1, 0); // NOBOOK
 		std::pop_heap(&photons[0], &photons[nLookup]);
 		photons[nLookup-1] = ClosePhoton(&photon, distSquared);
 		std::push_heap(&photons[0], &photons[nLookup]);

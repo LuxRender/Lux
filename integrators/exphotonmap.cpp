@@ -55,8 +55,8 @@ Spectrum ExPhotonIntegrator::estimateE(
 void EPhotonProcess::operator()(const EPhoton &photon,
 		float distSquared, float &maxDistSquared) const {
 	// Do usual photon heap management
-	static StatsPercentage discarded("Photon Map", "Discarded photons"); // NOBOOK
-	discarded.Add(0, 1); // NOBOOK
+	// radiance - disabled for threading // static StatsPercentage discarded("Photon Map", "Discarded photons"); // NOBOOK
+	// radiance - disabled for threading // discarded.Add(0, 1); // NOBOOK
 	if (foundPhotons < nLookup) {
 		// Add photon to unordered array of photons
 		photons[foundPhotons++] = EClosePhoton(&photon, distSquared);
@@ -67,7 +67,7 @@ void EPhotonProcess::operator()(const EPhoton &photon,
 	}
 	else {
 		// Remove most distant photon from heap and add new photon
-		discarded.Add(1, 0); // NOBOOK
+		// radiance - disabled for threading // discarded.Add(1, 0); // NOBOOK
 		std::pop_heap(&photons[0], &photons[nLookup]);
 		photons[nLookup-1] = EClosePhoton(&photon, distSquared);
 		std::push_heap(&photons[0], &photons[nLookup]);
@@ -85,17 +85,17 @@ Spectrum ExPhotonIntegrator::LPhoton(
 		BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
 	if (bsdf->NumComponents(nonSpecular) == 0)
 		return L;
-	static StatsCounter lookups("Photon Map", "Total lookups"); // NOBOOK
+	// radiance - disabled for threading // static StatsCounter lookups("Photon Map", "Total lookups"); // NOBOOK
 	// Initialize _PhotonProcess_ object, _proc_, for photon map lookups
 	EPhotonProcess proc(nLookup, isect.dg.p);
 	proc.photons =
 		(EClosePhoton *)alloca(nLookup * sizeof(EClosePhoton));
 	// Do photon map lookup
-	++lookups;  // NOBOOK
+	// radiance - disabled for threading // ++lookups;  // NOBOOK
 	map->Lookup(isect.dg.p, proc, maxDistSquared);
 	// Accumulate light from nearby photons
-	static StatsRatio foundRate("Photon Map", "Photons found per lookup"); // NOBOOK
-	foundRate.Add(proc.foundPhotons, 1); // NOBOOK
+	// radiance - disabled for threading // static StatsRatio foundRate("Photon Map", "Photons found per lookup"); // NOBOOK
+	// radiance - disabled for threading // foundRate.Add(proc.foundPhotons, 1); // NOBOOK
 	// Estimate reflected light from photons
 	EClosePhoton *photons = proc.photons;
 	int nFound = proc.foundPhotons;
@@ -193,8 +193,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	causticPhotons.reserve(nCausticPhotons); // NOBOOK
 	indirectPhotons.reserve(nIndirectPhotons); // NOBOOK
 	// Initialize photon shooting statistics
-	static StatsCounter nshot("Photon Map",
-		"Number of photons shot from lights");
+	static StatsCounter nshot("Photon Map","Number of photons shot from lights");
 	bool causticDone = (nCausticPhotons == 0);
 	bool indirectDone = (nIndirectPhotons == 0);
 
@@ -297,8 +296,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 					}
 					if (finalGather && RandomFloat() < .125f) {
 						// Store data for radiance photon
-						static StatsCounter rp("Photon Map", "Radiance photons created"); // NOBOOK
-						++rp; // NOBOOK
+						// radiance - disabled for threading // static StatsCounter rp("Photon Map", "Radiance photons created"); // NOBOOK ++rp; // NOBOOK
 						Normal n = photonIsect.dg.nn;
 						if (Dot(n, photonRay.d) > 0.f) n = -n;
 						radiancePhotons.push_back(ERadiancePhoton(photonIsect.dg.p, n));
@@ -427,8 +425,7 @@ Spectrum ExPhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					photonDirs[i] = proc.photons[i].photon->wi;
 				// Use BSDF to do final gathering
 				Spectrum Li = 0.;
-				static StatsCounter gatherRays("Photon Map", // NOBOOK
-					"Final gather rays traced"); // NOBOOK
+				// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", // NOBOOK "Final gather rays traced"); // NOBOOK
 				for (int i = 0; i < gatherSamples; ++i) {
 					// Sample random direction from BSDF for final gather ray
 					Vector wi;
@@ -441,7 +438,7 @@ Spectrum ExPhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					if (fr.Black() || pdf == 0.f) continue;
 					// Trace BSDF final gather ray and accumulate radiance
 					RayDifferential bounceRay(p, wi);
-					++gatherRays; // NOBOOK
+					// radiance - disabled for threading // ++gatherRays; // NOBOOK
 					Intersection gatherIsect;
 					if (scene->Intersect(bounceRay, &gatherIsect)) {
 						// Compute exitant radiance using precomputed irradiance
@@ -493,7 +490,7 @@ Spectrum ExPhotonIntegrator::Li(MemoryArena &arena, const Scene *scene,
 							photonPdf += conePdf;
 					photonPdf /= nIndirSamplePhotons;
 					RayDifferential bounceRay(p, wi);
-					++gatherRays; // NOBOOK
+					// radiance - disabled for threading // ++gatherRays; // NOBOOK
 					Intersection gatherIsect;
 					if (scene->Intersect(bounceRay, &gatherIsect)) {
 						// Compute exitant radiance using precomputed irradiance

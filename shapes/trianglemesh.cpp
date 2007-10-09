@@ -103,11 +103,9 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 			
 	Vector e1,e2,s1;
 	// Initialize triangle intersection statistics
-	static
-	StatsPercentage triangleHits("Geometry",
-	                             "Triangle Ray Intersections");
+	// radiance - disabled for threading // static StatsPercentage triangleHits("Geometry", "Triangle Ray Intersections");
 	// Update triangle tests count
-	triangleHits.Add(0, 1);
+	// radiance - disabled for threading // triangleHits.Add(0, 1);
 	// Compute $\VEC{s}_1$
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
@@ -134,7 +132,7 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	float t = Dot(e2, s2) * invDivisor;
 	if (t < ray.mint || t > ray.maxt)
 		return false;
-	triangleHits.Add(1, 0); //NOBOOK
+	// radiance - disabled for threading // triangleHits.Add(1, 0); //NOBOOK
 	// Fill in _DifferentialGeometry_ from triangle hit
 	// Compute triangle partial derivatives
 	Vector dpdu, dpdv;
@@ -168,11 +166,9 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 }
 bool Triangle::IntersectP(const Ray &ray) const {
 	// Initialize triangle intersection statistics
-	static
-	StatsPercentage triangleHits("Geometry",
-	                             "Triangle Ray Intersections");
+	// radiance - disabled for threading // static StatsPercentage triangleHits("Geometry","Triangle Ray Intersections");
 	// Update triangle tests count
-	triangleHits.Add(0, 1);
+	// radiance - disabled for threading // triangleHits.Add(0, 1);
 	// Compute $\VEC{s}_1$
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
@@ -199,7 +195,7 @@ bool Triangle::IntersectP(const Ray &ray) const {
 	float t = Dot(e2, s2) * invDivisor;
 	if (t < ray.mint || t > ray.maxt)
 		return false;
-	triangleHits.Add(1, 0); //NOBOOK
+	// radiance - disabled for threading // triangleHits.Add(1, 0); //NOBOOK
 	return true;
 }
 void Triangle::GetUVs(float uv[3][2]) const {

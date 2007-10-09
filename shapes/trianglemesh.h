@@ -58,9 +58,8 @@ public:
 		mesh = m;
 		v = &mesh->vertexIndex[3*n];
 		// Update created triangles stats
-		static StatsCounter trisMade("Geometry",
-		                             "Triangles created");
-		++trisMade;
+		// radiance - disabled for threading // static StatsCounter trisMade("Geometry","Triangles created");
+		// radiance - disabled for threading // ++trisMade;
 	}
 	BBox ObjectBound() const;
 	BBox WorldBound() const;

@@ -105,8 +105,8 @@ void IGIIntegrator::Preprocess(const Scene *scene) {
 				MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
 				BSDF *bsdf = isect.GetBSDF(arena, ray);
 				// Create virtual light at ray intersection point
-				static StatsCounter vls("IGI Integrator", "Virtual Lights Created"); //NOBOOK
-				++vls; //NOBOOK
+				// radiance - disabled for threading // static StatsCounter vls("IGI Integrator", "Virtual Lights Created"); //NOBOOK
+				// radiance - disabled for threading // ++vls; //NOBOOK
 				Spectrum Le = alpha * bsdf->rho(wo) / M_PI;
 				fprintf(stderr, "\tmade light with le y %f\n", Le.y());
 				virtualLights[s].push_back(VirtualLight(isect.dg.p, isect.dg.nn, Le));
@@ -178,8 +178,7 @@ Spectrum IGIIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					continue;
 				Llight /= continueProbability;
 			}
-			static StatsCounter vlsr("IGI Integrator", "Shadow Rays to Virtual Lights"); //NOBOOK
-			++vlsr; //NOBOOK
+			// radiance - disabled for threading // static StatsCounter vlsr("IGI Integrator", "Shadow Rays to Virtual Lights"); //NOBOOK ++vlsr; //NOBOOK
 			if (!scene->IntersectP(Ray(p, vl.p - p, RAY_EPSILON,
 					1.f - RAY_EPSILON)))
 				L += Llight;

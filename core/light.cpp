@@ -28,9 +28,8 @@ Light::~Light() {
 }
 bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	// Update shadow ray statistics
-	static StatsCounter nShadowRays("Lights",
-		"Number of shadow rays traced");
-	++nShadowRays;
+	// radiance - disabled for threading // static StatsCounter nShadowRays("Lights","Number of shadow rays traced");
+	// radiance - disabled for threading // ++nShadowRays;
 	return !scene->IntersectP(r);
 }
 Spectrum VisibilityTester::
