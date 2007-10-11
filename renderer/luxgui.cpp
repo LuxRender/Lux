@@ -232,7 +232,7 @@ void open_cb(Fl_Widget*, void*) {
 
     // Create the file chooser, and show it
     Fl_File_Chooser chooser(".",			// directory
-			    "Lux Files (*.lux)\tPBRT Files (*.pbrt)",			// filter
+			    "LuxRender Scenes (*.lxs)\tPBRT Scenes (*.pbrt)",			// filter
 			    Fl_File_Chooser::SINGLE, 	// chooser type
 			    "Open Scenefile...");	// title
     chooser.show();
