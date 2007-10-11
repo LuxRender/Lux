@@ -51,17 +51,16 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
 			// Stop path sampling since no intersection was found
-
-			// add emitting sources (radiance) TODO test/cleanup ---
-			/*if (pathLength == 0 || specularBounce)
+			// Possibly add emitted light
+			// NOTE - Added by radiance - adds horizon in render & reflections
+			if (pathLength == 0 || specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
-					L += scene->lights[i]->Le(ray); */
+					L += pathThroughput * scene->lights[i]->Le(ray); 
+			// Set alpha channel
 			if (pathLength == 0 && alpha) {
 				if (L != 0.) *alpha = 1.;
 				else *alpha = 0.;
 			}
-			// ---
-
 			break;
 		}
 		if (pathLength == 0) {
@@ -87,7 +86,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					lightNumOffset[pathLength],
 					bsdfDirectionOffset[pathLength],
 					bsdfComponentOffset[pathLength]);
-		else
+		else 
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample);
@@ -119,7 +118,9 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			float continueProbability = .5f;
 			if (RandomFloat() > continueProbability)
 				break;
-			pathThroughput /= continueProbability;
+			// NOTE - radiance - disabled pathTroughput increase
+			// amplifies precision error and creates bright fireflies
+			//pathThroughput /= continueProbability;
 		}
 		if (pathLength == maxDepth)
 			break;

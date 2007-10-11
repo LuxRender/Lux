@@ -166,7 +166,7 @@ void RenderThread::render(RenderThread *myThread)
 			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
-			
+
 			// Issue warning if unexpected radiance value returned
 			if (Ls.IsNaN()) {
 				Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
@@ -180,6 +180,7 @@ void RenderThread::render(RenderThread *myThread)
 				Error("THR%i: InfinLum value returned.\n", myThread->n+1);
 				Ls = Spectrum(0.f);
 			} 
+
 			// Add sample contribution to image
 			if( Ls != Spectrum(0.f) )
 			   myThread->camera->film->AddSample(*(myThread->sample), ray, Ls, alpha);
@@ -244,7 +245,7 @@ void Scene::Render() {
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
 
-	while(true) // TODO replace this loop with a 'wait till renderthreads exit'
+	while(true) // TODO replace this loop with a 'wait till my renderthreads exit'
 	{
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
@@ -290,6 +291,8 @@ const BBox &Scene::WorldBound() const {
 }
 Spectrum Scene::Li(const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
+//  NOTE - radiance - leave these off for now, should'nt be used
+//  TODO - radiance - cleanup / reimplement into integrators
 //	Spectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
 //	Spectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
 //	Spectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
