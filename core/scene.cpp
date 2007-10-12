@@ -212,6 +212,8 @@ int Scene::CreateRenderThread()
 		
 		renderThreads.push_back(rt);									
 		rt->thread=new boost::thread(boost::bind(RenderThread::render,rt));
+		threadGroup.add_thread(rt->thread);
+		
 		printf("CTL: Done.\n");
 		return 0;
 }
@@ -245,13 +247,16 @@ void Scene::Render() {
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
 
-	while(true) // TODO replace this loop with a 'wait till my renderthreads exit'
+	
+	while(renderThreads.size()==0) //wait for at least a thread to start
 	{
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		xt.sec += 1;
 		boost::thread::sleep(xt);
-	}	
+	}
+	
+	threadGroup.join_all(); //wait all threads to finish their job
 
 	return; // everything worked fine! Have a great day :) 
 }

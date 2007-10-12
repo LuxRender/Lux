@@ -133,6 +133,7 @@ public:
 	
 	private:
 		std::vector<RenderThread*> renderThreads;
+		boost::thread_group threadGroup;
 		int CurThreadSignal;
 };
 #endif // LUX_SCENE_H
