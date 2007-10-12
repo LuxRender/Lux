@@ -122,7 +122,7 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 void MultiImageFilm::AddSample(const Sample &sample,
 		const Ray &ray, const Spectrum &L, float alpha) {
 			
-			//boost::mutex::scoped_lock lock(addSampleMutex);
+			boost::mutex::scoped_lock lock(addSampleMutex);
 			
 	// Compute sample's raster extent
 	float dImageX = sample.imageX - 0.5f;

@@ -94,5 +94,6 @@ private:
 		bloomWidth, bloomRadius, gamma, dither;
 	unsigned char *framebuffer;
 	
+	
 	boost::mutex addSampleMutex;
 };
