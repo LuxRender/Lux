@@ -188,6 +188,8 @@ protected:
 	friend Spectrum FromXYZ(float x, float y, float z);
 };
 
+Spectrum FromXYZ(float x, float y, float z);
+
 class RegularSpectrum : public Spectrum {
 public:
 	float *wavelengths;
