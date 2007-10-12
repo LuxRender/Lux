@@ -398,8 +398,7 @@ void luxPortalShape(const string &name,
 			|| graphicsState.currentLight == "infinite")
 			graphicsState.currentLightPtr->AddPortalShape( shape );
 		else {
-			Warning("LightType '%s' does not support PortalShape(s).\n", 
-				graphicsState.currentLight);
+			Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState.currentLight.c_str());
 			return;
 		}
 	}

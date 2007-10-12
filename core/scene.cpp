@@ -60,7 +60,7 @@ unsigned char* Scene::GetFramebuffer() {
 	return camera->film->getFrameBuffer();
 }
 int Scene::DisplayInterval() {
-	return camera->film->getldrDisplayInterval();
+	return (int)camera->film->getldrDisplayInterval();
 }
 int Scene::FilmXres() {
 	return camera->film->xResolution;
@@ -258,7 +258,7 @@ void Scene::Render() {
 	
 	std::cout<<"waiting fro threads to join..."<<std::endl;
 	//threadGroup.join_all(); //wait all threads to finish their job
-	for(int i=0;i<renderThreads.size();i++)
+	for(unsigned int i=0;i<renderThreads.size();i++)
 	{
 		renderThreads[i]->thread->join();
 	}
