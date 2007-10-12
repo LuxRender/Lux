@@ -28,6 +28,7 @@
 #include "sampling.h"
 #include <stdio.h>
 #include <boost/timer.hpp>
+#include <boost/thread/mutex.hpp>
 
 #define WI_HDR 0
 #define WI_LDR 1
@@ -92,4 +93,6 @@ private:
 		reinhardPrescale, reinhardPostscale, reinhardBurn,
 		bloomWidth, bloomRadius, gamma, dither;
 	unsigned char *framebuffer;
+	
+	boost::mutex addSampleMutex;
 };

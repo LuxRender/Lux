@@ -89,7 +89,7 @@ double Scene::Statistics_SamplesPPx()
 {
 	// collect samples from all threads
 	double samples = 0.;
-	for(unsigned int i=0;i<renderThreads.size();i++) // TODO add mutex
+	for(unsigned int i=0;i<renderThreads.size();i++) // jromang - no need for mutex here : this is just statistics, one or two samples more don't hurt
 		samples +=renderThreads[i]->stat_Samples;
 
 	// divide by total pixels
@@ -100,7 +100,7 @@ double Scene::Statistics_SamplesPSec()
 {
 	// collect samples from all threads
 	double samples = 0.;
-	for(unsigned int i=0;i<renderThreads.size();i++)   // TODO add mutex
+	for(unsigned int i=0;i<renderThreads.size();i++)   // jromang - no need for mutex here : this is just statistics, one or two samples more don't hurt
 		samples +=renderThreads[i]->stat_Samples; 
 
 	double time = s_Timer.Time();
@@ -212,7 +212,7 @@ int Scene::CreateRenderThread()
 		
 		renderThreads.push_back(rt);									
 		rt->thread=new boost::thread(boost::bind(RenderThread::render,rt));
-		threadGroup.add_thread(rt->thread);
+		//threadGroup.add_thread(rt->thread);
 		
 		printf("CTL: Done.\n");
 		return 0;
@@ -247,7 +247,7 @@ void Scene::Render() {
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
 
-	
+	//while(true)
 	while(renderThreads.size()==0) //wait for at least a thread to start
 	{
 		boost::xtime xt;
@@ -256,7 +256,13 @@ void Scene::Render() {
 		boost::thread::sleep(xt);
 	}
 	
-	threadGroup.join_all(); //wait all threads to finish their job
+	std::cout<<"waiting fro threads to join..."<<std::endl;
+	//threadGroup.join_all(); //wait all threads to finish their job
+	for(int i=0;i<renderThreads.size();i++)
+	{
+		renderThreads[i]->thread->join();
+	}
+	std::cout<<"all threads joined"<<std::endl;
 
 	return; // everything worked fine! Have a great day :) 
 }
