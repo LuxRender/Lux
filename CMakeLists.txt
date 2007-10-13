@@ -152,3 +152,6 @@ INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
 
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB} ${FLTK_LIB} boost_thread)
+
+ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIB} boost_thread)

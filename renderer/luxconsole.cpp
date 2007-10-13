@@ -20,58 +20,34 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef LUX_GUI_H
-#define LUX_GUI_H
+// luxgui.cpp*
+#include "lux.h"
+#include "api.h"
 
-#include <FL/Fl.H>
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Group.H>
-#include <FL/Fl_Tabs.H>
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Menu_Button.H>
-#include <FL/Fl_Button.H>
-#include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl_Choice.H>
-#include <FL/Fl_Value_Slider.H>
-#include <FL/Fl_File_Chooser.H>
-#include <FL/Fl_Image.H>
+#include <iostream>
 
-bool GuiSceneReady = false;
-float framebufferUpdate;
-Fl_RGB_Image* rgb_image;
-Fl_Window* window;
-//Fl_Thread e_thr;
+// main program
+int main(int argc, char *argv[]) {
+	// Print welcome banner
+	// Print welcome banner
+	printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
+	printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
+	printf("This is free software, covered by the GNU General Public License V3\n");
+	printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");    
+	fflush(stdout);
+	luxInit();
 
-Fl_Group *renderview;
-Fl_Group *info_render;
-Fl_Group *info_render_group;
-Fl_Group *info_tonemap;
-Fl_Group *info_tonemap_group;
-Fl_Group *info_statistics;
-Fl_Group *info_statistics_group;
-
-int gui_nrthreads = 1;
-char gui_current_scenefile[256];
-
-#define STATUS_RENDER_NONE 0
-#define STATUS_RENDER_IDLE 1
-#define STATUS_RENDER_RENDER 2
-
-int status_render = STATUS_RENDER_NONE;
-
-// functions
-void AddThread();
-void RemoveThread();
-void RenderStart();
-void RenderPause();
-int RenderScenefile();
-// callbacks
-void open_cb(Fl_Widget*, void*);
-void exit_cb(Fl_Widget*, void*);
-void addthread_cb(Fl_Widget*, void*);
-void removethread_cb(Fl_Widget*, void*);
-void start_cb(Fl_Widget*, void*);
-void stop_cb(Fl_Widget*, void*);
-void restart_cb(Fl_Widget*, void*);
-
-#endif // LUX_GUI_H
+	// Process scene description
+	if (argc == 1) {
+		// Parse scene from standard input
+		ParseFile("-");
+	} else {
+		// Parse scene from input files
+		for (int i = 1; i < argc; i++)
+			if (!ParseFile(argv[i]))
+				Error("Couldn't open scene file \"%s\"\n", argv[i]);
+	}
+	
+	luxCleanup();
+	return 0;
+}

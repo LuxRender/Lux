@@ -420,8 +420,8 @@ void check_SceneReady(void*) {
 		Fl::redraw();
 
 		Fl::lock();
-		AddThread();
-		luxStart();
+		//AddThread();
+		//luxStart();
 
 		// hook up the film framebuffer
 		bindFrameBuffer();

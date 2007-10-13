@@ -242,10 +242,16 @@ void Scene::Render() {
     volumeIntegrator->Preprocess(this);
 
 	// initial thread signal is paused
-	CurThreadSignal = RenderThread::SIG_PAUSE;
+	CurThreadSignal = RenderThread::SIG_RUN;
 
     // set current scene pointer
 	luxCurrentScene = (Scene*) this;
+	
+	//add a thread
+	CreateRenderThread();
+	
+	//launch the render
+	
 
 	//while(true)
 	while(renderThreads.size()==0) //wait for at least a thread to start
