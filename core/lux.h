@@ -720,6 +720,7 @@ struct _MM_ALIGN16  Matrix4x4  {
 #endif
 
 // Global Inline Functions
+/*
 #ifdef NDEBUG
 #define Assert(expr) ((void)0)
 #else
@@ -727,7 +728,7 @@ struct _MM_ALIGN16  Matrix4x4  {
     ((expr) ? (void)0 : \
 		Severe("Assertion \"%s\" failed in %s, line %d", \
                #expr, __FILE__, __LINE__))
-#endif // NDEBUG
+#endif // NDEBUG */
 inline float Lerp(float t, float v1, float v2) {
 	return (1.f - t) * v1 + t * v2;
 }
@@ -847,4 +848,6 @@ inline float ExponentialAverage(float avg,
                               float val, float alpha) {
 	return (1.f - alpha) * val + alpha * avg;
 }
+
+
 #endif // LUX_LUX_H

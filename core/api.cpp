@@ -30,6 +30,7 @@
 #include "volume.h"
 #include <string>
 #include <map>
+#include <boost/date_time/posix_time/posix_time.hpp>
 using std::map;
 #if (_MSC_VER >= 1400) // NOBOOK
 #include <stdio.h>     // NOBOOK
@@ -656,4 +657,48 @@ double luxStatistics(char *statName)
 	if(std::string(statName)=="sceneIsReady") return(luxCurrentScene!=NULL);
 	else return luxCurrentScene->Statistics(statName);
 }
+
+//error handling
+LuxErrorHandler luxError=luxErrorPrint;
+int luxLastError=LUX_NOERROR;
+
+void luxErrorHandler (LuxErrorHandler handler)
+{
+    luxError=handler;
+}
+
+void luxErrorAbort (int code, int severity, char *message)
+{
+    luxErrorPrint(code,severity,message);
+    exit(code);
+}
+
+void luxErrorIgnore (int code, int severity, char *message)
+{
+    luxLastError=code;
+}
+
+void luxErrorPrint (int code, int severity, char *message)
+{
+    luxLastError=code;
+    std::cerr<<"[Lux ";
+    std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
+    switch (severity)
+    {
+    case LUX_INFO:
+        std::cerr<<"INFO";
+        break;
+    case LUX_WARNING:
+        std::cerr<<"WARNING";
+        break;
+    case LUX_ERROR:
+        std::cerr<<"ERROR";
+        break;
+    case LUX_SEVERE:
+        std::cerr<<"SEVERE ERROR";
+        break;
+    }
+    std::cerr<<" : "<<code<<" ] "<<message<<std::endl;
+}
+
 

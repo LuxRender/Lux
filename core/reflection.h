@@ -373,7 +373,7 @@ private:
 };
 // BSDF Inline Method Definitions
 inline void BSDF::Add(BxDF *b) {
-	Assert(nBxDFs < MAX_BxDFS);
+	BOOST_ASSERT(nBxDFs < MAX_BxDFS);
 	bxdfs[nBxDFs++] = b;
 }
 inline int BSDF::NumComponents(BxDFType flags) const {

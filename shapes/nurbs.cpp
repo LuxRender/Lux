@@ -277,16 +277,16 @@ Shape* NURBS::CreateShape(const Transform &o2w,
 	int uorder = params.FindOneInt("uorder", -1);
 	int nuknots, nvknots;
 	const float *uknots = params.FindFloat("uknots", &nuknots);
-	Assert(nu != -1 && uorder != -1 && uknots != NULL);
-	Assert(nuknots == nu + uorder);
+	BOOST_ASSERT(nu != -1 && uorder != -1 && uknots != NULL);
+	BOOST_ASSERT(nuknots == nu + uorder);
 	float u0 = params.FindOneFloat("u0", uknots[uorder-1]);
 	float u1 = params.FindOneFloat("u1", uknots[nu]);
 
 	int nv = params.FindOneInt("nv", -1);
 	int vorder = params.FindOneInt("vorder", -1);
 	const float *vknots = params.FindFloat("vknots", &nvknots);
-	Assert(nv != -1 && vorder != -1 && vknots != NULL);
-	Assert(nvknots == nv + vorder);
+	BOOST_ASSERT(nv != -1 && vorder != -1 && vknots != NULL);
+	BOOST_ASSERT(nvknots == nv + vorder);
 	float v0 = params.FindOneFloat("v0", vknots[vorder-1]);
 	float v1 = params.FindOneFloat("v1", vknots[nv]);
 
@@ -299,8 +299,8 @@ Shape* NURBS::CreateShape(const Transform &o2w,
 		if (!P) return NULL;
 		isHomogeneous = true;
 	}
-	Assert(P);
-	Assert(npts == nu*nv);
+	BOOST_ASSERT(P);
+	BOOST_ASSERT(npts == nu*nv);
 	return new NURBS(o2w, reverseOrientation, nu, uorder, uknots, u0, u1,
                          nv, vorder, vknots, v0, v1, (float *)P,
                          isHomogeneous);

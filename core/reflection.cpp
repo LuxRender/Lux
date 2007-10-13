@@ -438,7 +438,7 @@ Spectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 				bxdf = bxdfs[i];
 				break;
 			}
-	Assert(bxdf); // NOBOOK
+	BOOST_ASSERT(bxdf); // NOBOOK
 	// Sample chosen _BxDF_
 	Vector wi;
 	Vector wo = WorldToLocal(woW);

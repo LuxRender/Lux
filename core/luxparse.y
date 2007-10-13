@@ -548,7 +548,7 @@ static void InitParamSet(ParamSet &ps, int count, const char **tokens,
 	}
 }
 static bool lookupType(const char *token, int *type, string &name) {
-	Assert(token != NULL);
+	BOOST_ASSERT(token != NULL);
 	*type = 0;
 	const char *strp = token;
 	while (*strp && isspace(*strp))

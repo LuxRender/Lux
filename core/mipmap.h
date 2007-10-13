@@ -44,7 +44,7 @@ private:
 	// MIPMap Private Methods
 	struct ResampleWeight;
 	ResampleWeight *resampleWeights(int oldres, int newres) {
-		Assert(newres >= oldres);
+		BOOST_ASSERT(newres >= oldres);
 		ResampleWeight *wt = new ResampleWeight[newres];
 		float filterwidth = 2.f;
 		for (int i = 0; i < newres; ++i) {

@@ -79,7 +79,7 @@ inline Point Transform::operator()(const Point &pt) const {
 	float zp = m->m[2][0]*x + m->m[2][1]*y + m->m[2][2]*z + m->m[2][3];
 	float wp = m->m[3][0]*x + m->m[3][1]*y + m->m[3][2]*z + m->m[3][3];
 
-	Assert(wp != 0);
+	BOOST_ASSERT(wp != 0);
 	if (wp == 1.) return Point(xp, yp, zp);
 	else          return Point(xp, yp, zp)/wp;
 }
@@ -97,7 +97,7 @@ inline Point Transform::operator()(const Point &pt) const {
       vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0x55) , m->_L2));
       vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0xAA) , m->_L3));
 
-	Assert(f[3] != 0);
+	BOOST_ASSERT(f[3] != 0);
       //BOOST_ASSERT(result.w != 0);
       
       //std::cout<<"Pt:"<<f[0]<<','<< f[1] <<','<< f[2]<< ',' << f[3] << std::endl;
@@ -130,7 +130,7 @@ inline void Transform::operator()(const Point &pt, Point *ptrans) const {
       vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0x55) , m->_L2));
       vec = _mm_add_ps(vec,_mm_mul_ps(_mm_shuffle_ps(ptvec,ptvec,0xAA) , m->_L3));
 
-	Assert(f[3] != 0);
+	BOOST_ASSERT(f[3] != 0);
     ptrans->x=f[0];
     ptrans->y=f[1];
     ptrans->z=f[2];

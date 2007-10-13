@@ -105,4 +105,64 @@ extern int luxFilmYres();
 //statistics
 extern double luxStatistics(char *statName);
 
+
+//Error Handlers
+extern int luxLastError; //!< Keeps track of the last error code
+typedef void  (*LuxErrorHandler)(int code, int severity, char *msg);
+extern void luxErrorHandler (LuxErrorHandler handler);
+extern void luxErrorAbort (int code, int severity, char *message);
+extern void luxErrorIgnore (int code, int severity, char *message);
+extern void luxErrorPrint (int code, int severity, char *message);
+
+/*
+    Error codes
+
+     1 - 10     System and File errors
+    11 - 20     Program Limitations
+    21 - 40     State Errors
+    41 - 60     Parameter and Protocol Errors
+    61 - 80     Execution Errors
+*/
+
+#define LUX_NOERROR         0
+
+#define LUX_NOMEM           1       /* Out of memory */
+#define LUX_SYSTEM          2       /* Miscellaneous system error */
+#define LUX_NOFILE          3       /* File nonexistant */
+#define LUX_BADFILE         4       /* Bad file format */
+#define LUX_BADVERSION      5       /* File version mismatch */
+#define LUX_DISKFULL        6       /* Target disk is full */
+
+#define LUX_UNIMPLEMENT    12       /* Unimplemented feature */
+#define LUX_LIMIT          13       /* Arbitrary program limit */
+#define LUX_BUG            14       /* Probably a bug in renderer */
+
+#define LUX_NOTSTARTED     23       /* luxInit() not called */
+#define LUX_NESTING        24       /* Bad begin-end nesting - jromang will be used in API v2 */
+#define LUX_NOTOPTIONS     25       /* Invalid state for options - jromang will be used in API v2 */
+#define LUX_NOTATTRIBS     26       /* Invalid state for attributes - jromang will be used in API v2 */
+#define LUX_NOTPRIMS       27       /* Invalid state for primitives - jromang will be used in API v2 */
+#define LUX_ILLSTATE       28       /* Other invalid state - jromang will be used in API v2 */
+#define LUX_BADMOTION      29       /* Badly formed motion block - jromang will be used in API v2 */
+#define LUX_BADSOLID       30       /* Badly formed solid block - jromang will be used in API v2 */
+
+#define LUX_BADTOKEN       41       /* Invalid token for request */
+#define LUX_RANGE          42       /* Parameter out of range */
+#define LUX_CONSISTENCY    43       /* Parameters inconsistent */
+#define LUX_BADHANDLE      44       /* Bad object/light handle */
+#define LUX_NOPLUGIN       45       /* Can't load requested plugin */
+#define LUX_MISSINGDATA    46       /* Required parameters not provided */
+#define LUX_SYNTAX         47       /* Declare type syntax error */
+
+#define LUX_MATH           61       /* Zerodivide, noninvert matrix, etc. */
+
+
+/* Error severity levels */
+
+#define LUX_INFO            0       /* Rendering stats & other info */
+#define LUX_WARNING         1       /* Something seems wrong, maybe okay */
+#define LUX_ERROR           2       /* Problem.  Results may be wrong */
+#define LUX_SEVERE          3       /* So bad you should probably abort */
+
+
 #endif // LUX_API_H

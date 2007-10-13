@@ -20,38 +20,31 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// luxgui.cpp*
-#include "lux.h"
-#include "api.h"
-#include "error.h"
+#ifndef LUX_ERROR_H
+#define LUX_ERROR_H
 
 #include <iostream>
+#include <sstream>
+#include <string>
 
-// main program
-int main(int argc, char *argv[]) {
-	// Print welcome banner
-	// Print welcome banner
-	printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
-	printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
-	printf("This is free software, covered by the GNU General Public License V3\n");
-	printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");    
-	fflush(stdout);
-	luxInit();
+#define BOOST_ENABLE_ASSERT_HANDLER
+#define BOOST_ENABLE_ASSERTS
+//#define BOOST_DISABLE_ASSERTS
+#include <boost/assert.hpp>
 
-	//luxError(LUX_INFO,LUX_NOERROR,"Starting up!");
-	//BOOST_ASSERT(argc==12);
+#include "api.h"
 
-	// Process scene description
-	if (argc == 1) {
-		// Parse scene from standard input
-		ParseFile("-");
-	} else {
-		// Parse scene from input files
-		for (int i = 1; i < argc; i++)
-			if (!ParseFile(argv[i]))
-				Error("Couldn't open scene file \"%s\"\n", argv[i]);
-	}
-	
-	luxCleanup();
-	return 0;
+extern LuxErrorHandler luxError;
+
+namespace boost
+{
+	inline void assertion_failed(char const *expr, char const *function, char const *file, long line)
+	{
+		std::ostringstream o;
+		o<< "Assertion '"<<expr<<"' failed in function '"<<function<<"' (file:"<<file<<" line:"<<line<<")";
+		luxError(LUX_BUG, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
+	}	
 }
+
+
+#endif //LUX_ERROR_H

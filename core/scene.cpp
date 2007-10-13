@@ -252,7 +252,7 @@ void Scene::Render() {
 	
 	//launch the render
 	
-
+/*
 	//while(true)
 	while(renderThreads.size()==0) //wait for at least a thread to start
 	{
@@ -262,8 +262,10 @@ void Scene::Render() {
 		boost::thread::sleep(xt);
 	}
 	
-	std::cout<<"waiting fro threads to join..."<<std::endl;
-	//threadGroup.join_all(); //wait all threads to finish their job
+	std::cout<<"waiting fro threads to join..."<<std::endl;*/
+	//threadGroup.join_all();
+	
+	//wait all threads to finish their job
 	for(unsigned int i=0;i<renderThreads.size();i++)
 	{
 		renderThreads[i]->thread->join();

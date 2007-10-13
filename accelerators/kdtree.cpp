@@ -85,7 +85,7 @@ void KdTreeAccel::buildTree(int nodeNum,
 		const vector<BBox> &allPrimBounds, int *primNums,
 		int nPrims, int depth, BoundEdge *edges[3],
 		int *prims0, int *prims1, int badRefines) {
-	Assert(nodeNum == nextFreeNode); // NOBOOK
+	BOOST_ASSERT(nodeNum == nextFreeNode); // NOBOOK
 	// Get next free node from _nodes_ array
 	if (nextFreeNode == nAllocedNodes) {
 		int nAlloc = max(2 * nAllocedNodes, 512);
@@ -161,7 +161,7 @@ void KdTreeAccel::buildTree(int nodeNum,
 		}
 		if (edges[axis][i].type == BoundEdge::START) ++nBelow;
 	}
-	Assert(nBelow == nPrims && nAbove == 0); // NOBOOK
+	BOOST_ASSERT(nBelow == nPrims && nAbove == 0); // NOBOOK
 	// Create leaf if no good splits were found
 	if (bestAxis == -1 && retries < 2) {
 		++retries;

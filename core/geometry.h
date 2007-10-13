@@ -66,13 +66,13 @@ public:
 		return *this;
 	}
 	Vector operator/(float f) const {
-//		Assert(f!=0);
+//		BOOST_ASSERT(f!=0);
 		float inv = 1.f / f;
 		return Vector(x * inv, y * inv, z * inv);
 	}
 	
 	Vector &operator/=(float f) {
-//		Assert(f!=0);
+//		BOOST_ASSERT(f!=0);
 		float inv = 1.f / f;
 		x *= inv; y *= inv; z *= inv;
 		return *this;
@@ -81,12 +81,12 @@ public:
 		return Vector(-x, -y, -z);
 	}
 	float operator[](int i) const {
-		Assert(i >= 0 && i <= 2);
+		BOOST_ASSERT(i >= 0 && i <= 2);
 		return (&x)[i];
 	}
 	
 	float &operator[](int i) {
-		Assert(i >= 0 && i <= 2);
+		BOOST_ASSERT(i >= 0 && i <= 2);
 		return (&x)[i];
 	}
 	float LengthSquared() const { return x*x + y*y + z*z; }

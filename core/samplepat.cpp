@@ -98,7 +98,7 @@ int main() {
 				best = t;
 			}
 		}
-		Assert(best != -1); // NOBOOK
+		BOOST_ASSERT(best != -1); // NOBOOK
 		swap(timeSamples[best], timeSamples[currentSample]);
 		timeProgress.Update(); //NOBOOK
 	}
@@ -229,7 +229,7 @@ static void Redistribute2D(float samples[][2],
 				best = samp;
 			}
 		}
-		Assert(best != -1); // NOBOOK
+		BOOST_ASSERT(best != -1); // NOBOOK
 		swap(samples[best][0], samples[currentSample][0]);
 		swap(samples[best][1], samples[currentSample][1]);
 		progress.Update(); //NOBOOK

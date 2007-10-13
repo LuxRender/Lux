@@ -51,7 +51,7 @@ GridAccel::GridAccel(const vector<Primitive* > &p,
 	// Find _voxelsPerUnitDist_ for grid
 	int maxAxis = bounds.MaximumExtent();
 	float invMaxWidth = 1.f / delta[maxAxis];
-	Assert(invMaxWidth > 0.f); // NOBOOK
+	BOOST_ASSERT(invMaxWidth > 0.f); // NOBOOK
 	float cubeRoot = 3.f * powf(float(prims.size()), 1.f/3.f);
 	float voxelsPerUnitDist = cubeRoot * invMaxWidth;
 	for (int axis = 0; axis < 3; ++axis) {
@@ -204,7 +204,7 @@ bool Voxel::Intersect(const Ray &ray,
 			if (!mp->primitive->CanIntersect()) {
 				vector<Primitive* > p;
 				mp->primitive->FullyRefine(p);
-				Assert(p.size() > 0); // NOBOOK
+				BOOST_ASSERT(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
 				else {
@@ -307,7 +307,7 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 			if (!mp->primitive->CanIntersect()) {
 				vector<Primitive* > p;
 				mp->primitive->FullyRefine(p);
-				Assert(p.size() > 0); // NOBOOK
+				BOOST_ASSERT(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
 				else {

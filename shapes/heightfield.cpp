@@ -95,7 +95,7 @@ Shape* Heightfield::CreateShape(const Transform &o2w,
 	int nv = params.FindOneInt("nv", -1);
 	int nitems;
 	const float *Pz = params.FindFloat("Pz", &nitems);
-	Assert(nitems == nu*nv);
-	Assert(nu != -1 && nv != -1 && Pz != NULL);
+	BOOST_ASSERT(nitems == nu*nv);
+	BOOST_ASSERT(nu != -1 && nv != -1 && Pz != NULL);
 	return new Heightfield(o2w, reverseOrientation, nu, nv, Pz);
 }

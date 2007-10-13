@@ -104,14 +104,14 @@ Timer::~Timer()
 
 void Timer::Start()
 {
-	Assert( !running );
+	BOOST_ASSERT( !running );
 	running = 1;
 	time0 = GetTime();
 }
 
 void Timer::Stop()
 {
-	Assert( running );
+	BOOST_ASSERT( running );
 	running = 0;
 
 	elapsed += GetTime() - time0;
