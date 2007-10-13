@@ -241,6 +241,9 @@ void Scene::Render() {
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
+	//start the timer
+	s_Timer.Start();
+
 	// initial thread signal is paused
 	CurThreadSignal = RenderThread::SIG_RUN;
 
