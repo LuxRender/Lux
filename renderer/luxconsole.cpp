@@ -38,8 +38,9 @@ int main(int argc, char *argv[]) {
 	fflush(stdout);
 	luxInit();
 
-	//luxError(LUX_INFO,LUX_NOERROR,"Starting up!");
-	//BOOST_ASSERT(argc==12);
+	luxErrorHandler(luxErrorIgnore);
+	luxError(LUX_INFO,LUX_NOERROR,"Starting up!");
+	BOOST_ASSERT(argc==12);
 
 	// Process scene description
 	if (argc == 1) {

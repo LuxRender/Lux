@@ -670,7 +670,8 @@ void luxErrorHandler (LuxErrorHandler handler)
 void luxErrorAbort (int code, int severity, char *message)
 {
     luxErrorPrint(code,severity,message);
-    exit(code);
+    if(severity!=LUX_INFO)
+    	exit(code);
 }
 
 void luxErrorIgnore (int code, int severity, char *message)
