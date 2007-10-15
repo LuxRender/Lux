@@ -275,6 +275,9 @@ void Scene::Render() {
 	}
 	std::cout<<"all threads joined"<<std::endl;
 
+
+	// Store final image
+	camera->film->WriteImage();
 	return; // everything worked fine! Have a great day :) 
 }
 Scene::~Scene() {
