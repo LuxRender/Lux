@@ -50,6 +50,11 @@ Fl_Group *info_tonemap_group;
 Fl_Group *info_statistics;
 Fl_Group *info_statistics_group;
 
+Fl_Button *button_play;
+Fl_Button *button_pause;
+Fl_Button *button_restart;
+
+boost::thread *engine_thread;
 int gui_nrthreads = 1;
 char gui_current_scenefile[256];
 

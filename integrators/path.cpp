@@ -56,11 +56,11 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			if (pathLength == 0 || specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					L += pathThroughput * scene->lights[i]->Le(ray); 
-			// Set alpha channel
-			if (pathLength == 0 && alpha) {
+			// Set alpha channel NOTE - RADIANCE - disabled for now
+			/*if (pathLength == 0 && alpha) {
 				if (L != 0.) *alpha = 1.;
 				else *alpha = 0.;
-			}
+			} */
 			break;
 		}
 		if (pathLength == 0) {

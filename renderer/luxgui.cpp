@@ -26,6 +26,7 @@
 #include "scene.h"
 #include "camera.h"
 #include "film.h"
+#include "direct.h"
 
 #include "luxgui.h"
 
@@ -51,24 +52,27 @@ Fl_Menu_Item menu_[] = {
 // main window
 Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffer)
 {
+  Fl_Color col_back = fl_rgb_color(212, 208, 200);
+  Fl_Color col_activeback = fl_rgb_color(255, 170, 20);
+  Fl_Color col_renderback = fl_rgb_color(128, 128, 128);
 
   Fl_Double_Window* w;
-  { Fl_Double_Window* o = new Fl_Double_Window(width, height, "Lux Render");
+  { Fl_Double_Window* o = new Fl_Double_Window(width, height, "LuxRender");
     w = o;
-    o->color((Fl_Color)30);
+    o->color(col_back);
     { Fl_Group* o = new Fl_Group(0, 20, width, height-20);
-      o->color((Fl_Color)30);
+      o->color(col_back);
       o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
       { Fl_Tabs* o = new Fl_Tabs(0, 20, width, height-20);
         o->labelsize(12);
-        { Fl_Group* o = new Fl_Group(0, 40, width, height-40, "View");
+        { Fl_Group* o = new Fl_Group(0, 40, width, height-40, "Film");	// Film tab
           o->box(FL_FLAT_BOX);
-          o->color((Fl_Color)31);
+          o->color(col_back);
           o->labelsize(11);
           o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
-          { Fl_Group* o = new Fl_Group(0, 40, width, height-40, "RenderDisplay");
+          { Fl_Group* o = new Fl_Group(0, 40, width, height-40, ""); // Renderdisplay
             o->box(FL_FLAT_BOX);
-            o->color((Fl_Color)31);
+            o->color(col_renderback);
             //o->image(rgb_buffer);
             o->labelsize(10);
             o->align(FL_ALIGN_CENTER);
@@ -78,7 +82,7 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
           } // Fl_Group* o
           o->end();
         } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(0, 40, width, height-40, "Console");
+       /* { Fl_Group* o = new Fl_Group(0, 40, width, height-40, "Console"); // NOTE - radiance - disabled GUI console tab for now
           o->box(FL_FLAT_BOX);
           o->color((Fl_Color)24);
           o->labelsize(11);
@@ -87,16 +91,16 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
           o->deactivate();
           o->end();
           Fl_Group::current()->resizable(o);
-        } // Fl_Group* o
+        }*/ // Fl_Group* o
         o->end();
       } // Fl_Tabs* o
       { Fl_Group* o = new Fl_Group(90, 20, width-90, 20, "toolbar");
         o->box(FL_FLAT_BOX);
-        o->color((Fl_Color)9);
+        o->color(col_back);
         o->labeltype(FL_NO_LABEL);
         { Fl_Group* o = new Fl_Group(310, 20, 260, 20, "statistics");
           o->box(FL_FLAT_BOX);
-          o->color((Fl_Color)11);
+          o->color(col_back);
 		  o->deactivate();
 		  info_statistics_group = o;
           o->labeltype(FL_NO_LABEL);
@@ -117,7 +121,7 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
         } // Fl_Group* o
         { Fl_Group* o = new Fl_Group(90, 20, 85, 20, "geometry");
           o->box(FL_FLAT_BOX);
-          o->color((Fl_Color)12);
+          o->color(col_back);
           o->labeltype(FL_NO_LABEL);
           o->deactivate();
           { Fl_Box* o = new Fl_Box(90, 20, 85, 20);
@@ -136,7 +140,7 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
         } // Fl_Group* o
         { Fl_Group* o = new Fl_Group(570, 20, 230, 20, "render");
           o->box(FL_FLAT_BOX);
-          o->color((Fl_Color)21);
+          o->color(col_back);
           o->labeltype(FL_NO_LABEL);
 		  o->deactivate();
 		  info_render_group = o;
@@ -144,7 +148,7 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
           { Fl_Menu_Button* o = new Fl_Menu_Button(570, 20, 170, 20);
             o->box(FL_THIN_UP_BOX);
             o->down_box(FL_THIN_DOWN_BOX);
-            o->color((Fl_Color)19);
+            o->color(col_activeback);
             o->image(image_render);
             o->deimage(image_render1);
             o->labelsize(11);
@@ -162,14 +166,14 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
         } // Fl_Group* o
         { Fl_Group* o = new Fl_Group(175, 20, 135, 20, "tonemap");
           o->box(FL_FLAT_BOX);
-          o->color((Fl_Color)81);
+          o->color(col_back);
 		  info_tonemap_group = o;
 		  o->deactivate();
           o->labeltype(FL_NO_LABEL);
           { Fl_Menu_Button* o = new Fl_Menu_Button(175, 20, 135, 20);
             o->box(FL_THIN_UP_BOX);
             o->down_box(FL_THIN_DOWN_BOX);
-            o->color((Fl_Color)19);
+            o->color(col_activeback);
             o->image(image_tonemap);
             o->deimage(image_tonemap1);
             o->labelsize(11);
@@ -185,30 +189,38 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
         } // Fl_Group* o
         { Fl_Group* o = new Fl_Group(width-60, 20, 69, 20, "buttons");
           o->box(FL_FLAT_BOX);
-          o->color((Fl_Color)115);
+          o->color(col_back);
           o->labeltype(FL_NO_LABEL);
           o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
-          //o->deactivate();
-          { Fl_Button* o = new Fl_Button(width-20, 20, 20, 20);
+          { Fl_Button* o = new Fl_Button(width-20, 20, 20, 20);	// pause button
             o->box(FL_THIN_UP_BOX);
             o->down_box(FL_THIN_DOWN_BOX);
             o->image(image_stop);
             o->deimage(image_stop1);
             o->callback((Fl_Callback*)stop_cb);
+			o->deactivate();
+			o->color(col_back);
+			button_pause = o;
           } // Fl_Button* o
-          { Fl_Button* o = new Fl_Button(width-40, 20, 20, 20);
+          { Fl_Button* o = new Fl_Button(width-40, 20, 20, 20); // restart button
             o->box(FL_THIN_UP_BOX);
             o->down_box(FL_THIN_DOWN_BOX);
             o->image(image_rewind);
             o->deimage(image_rewind1);
             o->callback((Fl_Callback*)restart_cb);
+			o->deactivate();
+			o->color(col_back);
+			button_restart = o;
           } // Fl_Button* o
-          { Fl_Button* o = new Fl_Button(width-60, 20, 20, 20);
+          { Fl_Button* o = new Fl_Button(width-60, 20, 20, 20); // play button
             o->box(FL_THIN_UP_BOX);
             o->down_box(FL_THIN_DOWN_BOX);
             o->image(image_play);
             o->deimage(image_play1);
             o->callback((Fl_Callback*)start_cb);
+			o->deactivate();
+			o->color(col_back);
+			button_play = o;
           } // Fl_Button* o
           o->end();
         } // Fl_Group* o
@@ -219,7 +231,9 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
     } // Fl_Group* o
     { Fl_Menu_Bar* o = new Fl_Menu_Bar(0, 0, 800, 20);
       o->box(FL_THIN_UP_BOX);
+	  o->color(col_back);
       o->menu(menu_1);
+
     } // Fl_Menu_Bar* o
     o->end();
   } // Fl_Double_Window* o
@@ -229,36 +243,53 @@ Fl_Double_Window* make_MainWindow(int width, int height, Fl_RGB_Image* rgb_buffe
 // Callback implementations
 // 'File | Open' from main menu
 void open_cb(Fl_Widget*, void*) {
+	if( status_render == STATUS_RENDER_NONE ) {
+		// Create the file chooser, and show it
+		Fl_File_Chooser chooser(".",			// directory
+					"LuxRender Scenes (*.lxs)\tPBRT Scenes (*.pbrt)",			// filter
+					Fl_File_Chooser::SINGLE, 	// chooser type
+					"Open Scenefile...");	// title
+		chooser.preview(0);
+		chooser.show();
 
-    // Create the file chooser, and show it
-    Fl_File_Chooser chooser(".",			// directory
-			    "LuxRender Scenes (*.lxs)\tPBRT Scenes (*.pbrt)",			// filter
-			    Fl_File_Chooser::SINGLE, 	// chooser type
-			    "Open Scenefile...");	// title
-    chooser.show();
+		// Block until user picks something.
+		while(chooser.shown())
+			{ Fl::wait(); }
 
-    // Block until user picks something.
-    while(chooser.shown())
-        { Fl::wait(); }
+		// User hit cancel?
+		if ( chooser.value() == NULL ) return;
 
-    // User hit cancel?
-    if ( chooser.value() == NULL ) return;
+		// set pwd and launch scene file render
+		strcpy(gui_current_scenefile, chooser.value());
 
-    // dir is in: chooser.directory()
-	//gui_current_scenefile = chooser.value();
-	strcpy(gui_current_scenefile, chooser.value());
-	RenderScenefile();
+		// set PWD
+		printf("GUI: Changing working directory to: %s\n", chooser.value());
+		_chdir(chooser.directory());
+		
+		// update window filename string
+		static char wintxt[512];
+		sprintf(wintxt, "LuxRender: %s", chooser.value());
+		window->label(wintxt);
+
+		// start engine thread
+		RenderScenefile();
+	}
 }
 
-void exit_cb(Fl_Widget*, void*) {};
+void exit_cb(Fl_Widget*, void*) {
+	if(engine_thread) {
+		luxExit();
+		engine_thread->join();
+	}
+	exit(0);
+}
+
 void addthread_cb(Fl_Widget*, void*) { AddThread(); };
 void removethread_cb(Fl_Widget*, void*) { RemoveThread(); };
 void start_cb(Fl_Widget*, void*) { RenderStart(); }
 void stop_cb(Fl_Widget*, void*) { RenderPause(); }
-void restart_cb(Fl_Widget*, void*) { /*luxExit();*/ }
+void restart_cb(Fl_Widget*, void*) {  }
 
-// Engine init/parse/build thread
-//void* Engine_Thread( void* p )
 void Engine_Thread()
 {
 	printf("GUI: Initializing Parser\n");
@@ -303,9 +334,7 @@ void merge_FrameBuffer(void*) {
 int RenderScenefile()
 {
 	fflush(stdout);
-    //fl_create_thread((Fl_Thread&)e_thr, Engine_Thread, 0 );
-    //fl_create_thread(e_thr, Engine_Thread, 0 );
-    new boost::thread(&Engine_Thread);
+    engine_thread = new boost::thread(&Engine_Thread);
     
 	return 0;
 }
@@ -318,14 +347,24 @@ void setInfo_render()
 		sprintf(irtxt, "(%i) Rendering...", gui_nrthreads);
 		info_render_group->activate();
 		info_tonemap_group->activate();
+		button_play->value(1);
+		button_play->deactivate();
+		button_pause->activate();
 		info_statistics_group->activate();
 	} else if(status_render == STATUS_RENDER_IDLE) {
 		sprintf(irtxt, "(%i) Idle.", gui_nrthreads);
 		info_statistics_group->activate();
 		info_render_group->activate();
+		button_play->activate();
+		button_play->value(0);
+		button_pause->deactivate();
 	} else {
 		info_render_group->deactivate();
 		info_tonemap_group->deactivate();
+		button_play->deactivate();
+		button_pause->deactivate();
+		button_play->value(0);
+		button_pause->value(0);
 		info_statistics_group->deactivate();
 		sprintf(irtxt, "(0)");
 	}
@@ -439,6 +478,8 @@ int main(int argc, char *argv[]) {
 
 	GuiSceneReady = false;
 	framebufferUpdate = 10.0f;
+
+	status_render = STATUS_RENDER_NONE;
 
 	// create render window
 	int width = 800;

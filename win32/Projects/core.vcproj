@@ -152,7 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib fltk.lib fltkforms.lib fltkgl.lib fltkimages.lib fltkjpeg.lib fltkpng.lib fltkz.lib ws2_32.lib comctl32.lib"
+				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1.lib fltk.lib fltkforms.lib fltkgl.lib fltkimages.lib fltkjpeg.lib fltkpng.lib fltkz.lib ws2_32.lib comctl32.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../win32/openexr-1.4.0-vs2005/lib;../../win32/fltk-1.1.x-r5940-vs2005/lib;../../win32/boost_1.34_1-vs2005\release\link-static\threading-multi"
