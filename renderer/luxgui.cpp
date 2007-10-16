@@ -26,7 +26,13 @@
 #include "scene.h"
 #include "camera.h"
 #include "film.h"
+
+#ifdef WIN32
 #include "direct.h"
+#else
+#include <dirent.h>
+#endif
+
 
 #include "luxgui.h"
 
@@ -264,7 +270,11 @@ void open_cb(Fl_Widget*, void*) {
 
 		// set PWD
 		printf("GUI: Changing working directory to: %s\n", chooser.value());
+#ifdef WIN32
 		_chdir(chooser.directory());
+#else
+		chdir(chooser.directory());
+#endif
 		
 		// update window filename string
 		static char wintxt[512];
