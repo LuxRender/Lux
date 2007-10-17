@@ -191,7 +191,8 @@ Spectrum SkyLight::Sample_L(const Point &p,
 }
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(0.005));		// Base color (gain) 0.005 is good
+	//Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(0.005));		// Base color (gain) 0.005 is good
+	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.000));
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	Normalize(sundir);
@@ -804,6 +805,92 @@ static float solAmplitudes[38] = {
 };
 
 
+// The suns irradiance as sampled outside the atmosphere from 380 - 770 nm at 5nm intervals
+// I have no idea what the unit really is for these values, but they seem to work.
+static float sun_irradiance[79] = {
+    1.1200E09,
+    1.0980E09,
+    1.0980E09,
+    1.1890E09,
+    1.4290E09,
+    1.6440E09,
+    1.7510E09,
+    1.7740E09,
+    1.7470E09,
+    1.6930E09,
+    1.6390E09,
+    1.6630E09,
+    1.8100E09,
+    1.9220E09,
+    2.0060E09,
+    2.0570E09,
+    2.0660E09,
+    2.0480E09,
+    2.0330E09,
+    2.0440E09,
+    2.0740E09,
+    1.9760E09,
+    1.9500E09,
+    1.9600E09,
+    1.9420E09,
+    1.9200E09,
+    1.8820E09,
+    1.8330E09,
+    1.8330E09,
+    1.8520E09,
+    1.8420E09,
+    1.8180E09,
+    1.7830E09,
+    1.7540E09,
+    1.7250E09,
+    1.7200E09,
+    1.6950E09,
+    1.7050E09,
+    1.7120E09,
+    1.7190E09,
+    1.7150E09,
+    1.7120E09,
+    1.7000E09,
+    1.6820E09,
+    1.6660E09,
+    1.6470E09,
+    1.6350E09,
+    1.6150E09,
+    1.6020E09,
+    1.5900E09,
+    1.5700E09,
+    1.5550E09,
+    1.5440E09,
+    1.5270E09,
+    1.5110E09,
+    1.4985E09,
+    1.4860E09,
+    1.4710E09,
+    1.4560E09,
+    1.4415E09,
+    1.4270E09,
+    1.4145E09,
+    1.4020E09,
+    1.4855E09,
+    1.3690E09,
+    1.3565E09,
+    1.3440E09,
+    1.3290E09,
+    1.3140E09,
+    1.3020E09,
+    1.2900E09,
+    1.2750E09,
+    1.2600E09,
+    1.2475E09,
+    1.2350E09,
+    1.2230E09,
+    1.2110E09,
+    1.1980E09,
+    1.1850E09
+};
+
+
+
 /**********************************************************
 // Sunlight Transmittance Functions
 // 
@@ -815,8 +902,10 @@ Spectrum SkyLight::ComputeAttenuatedSunlight(float theta, float turbidity)
     IrregularSpectrum k_oCurve(k_oAmplitudes, k_oWavelengths, 65);
     IrregularSpectrum k_gCurve(k_gAmplitudes, k_gWavelengths, 4);
     IrregularSpectrum k_waCurve(k_waAmplitudes, k_waWavelengths, 13);
-    RegularSpectrum   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS
-				                                     // Need a factor of 100 (done below)
+    //RegularSpectrum   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS, Need a factor of 100 (done below)
+
+    RegularSpectrum   solCurve(sun_irradiance, 380, 770, 79);  // every 5 nm
+
     float  data[91];  // (800 - 350) / 5  + 1
 
     float beta = 0.04608365822050 * turbidity - 0.04586025928522;
@@ -857,8 +946,8 @@ Spectrum SkyLight::ComputeAttenuatedSunlight(float theta, float turbidity)
 	tauWA = exp(-0.2385 * k_waCurve.sample(lambda) * w * m /
 		    pow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
 
-	data[i] = 100 * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;  // 100 comes from solCurve being
-																				// in wrong units. 
+	//data[i] = 100 * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;
+	data[i] = solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;
     }
     RegularSpectrum oSC(data, 350,800,91);
     return oSC.toSpectrum();  // Converts to Spectrum
