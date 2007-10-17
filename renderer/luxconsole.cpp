@@ -26,33 +26,116 @@
 #include "error.h"
 
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <exception>
+#include <boost/program_options.hpp>
 
-// main program
-int main(int argc, char *argv[]) {
-	// Print welcome banner
-	// Print welcome banner
-	printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
-	printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
-	printf("This is free software, covered by the GNU General Public License V3\n");
-	printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");    
-	fflush(stdout);
-	luxInit();
+namespace po = boost::program_options;
 
-	luxErrorHandler(luxErrorIgnore);
-	luxError(LUX_INFO,LUX_NOERROR,"Starting up!");
-	BOOST_ASSERT(argc==12);
 
-	// Process scene description
-	if (argc == 1) {
-		// Parse scene from standard input
-		ParseFile("-");
-	} else {
-		// Parse scene from input files
-		for (int i = 1; i < argc; i++)
-			if (!ParseFile(argv[i]))
-				Error("Couldn't open scene file \"%s\"\n", argv[i]);
-	}
-	
-	luxCleanup();
+int main (int ac, char *av[])
+{
+  /*
+  // Print welcome banner
+  printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
+  printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
+  printf("This is free software, covered by the GNU General Public License V3\n");
+  printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");    
+  fflush(stdout);
+  */
+  
+  try
+  {
+    int threads;
+
+// Declare a group of options that will be
+// allowed only on command line
+    po::options_description generic ("Generic options");
+    generic.add_options ()
+      ("version,v", "print version string") ("help", "produce help message");
+
+// Declare a group of options that will be
+// allowed both on command line and in
+// config file
+    po::options_description config ("Configuration");
+    config.add_options ()
+      ("threads", po::value < int >(),
+       "Specify the number of threads that Lux will run in parallel.");
+
+// Hidden options, will be allowed both on command line and
+// in config file, but will not be shown to the user.
+    po::options_description hidden ("Hidden options");
+    hidden.add_options ()
+      ("input-file", po::value< vector<string> >(), "input file");
+
+
+    po::options_description cmdline_options;
+    cmdline_options.add (generic).add (config).add (hidden);
+
+    po::options_description config_file_options;
+    config_file_options.add (config).add (hidden);
+
+    po::options_description visible ("Allowed options");
+    visible.add (generic).add (config);
+
+    po::positional_options_description p;
+
+    p.add ("input-file", -1);
+
+    po::variables_map vm;
+    store (po::command_line_parser (ac, av).
+	   options (cmdline_options).positional (p).run (), vm);
+
+    std::ifstream
+    ifs ("luxconsole.cfg");
+    store (parse_config_file (ifs, config_file_options), vm);
+    notify (vm);
+
+    if (vm.count ("help"))
+      {
+      	std::cout << "Usage: luxconsole [options]\n"; 
+		std::cout << visible << "\n";
 	return 0;
+      }
+
+    if (vm.count ("version"))
+      {
+	std::cout << "Lux version "<<LUX_VERSION<<std::endl;
+	return 0;
+      }
+
+	if (vm.count("threads"))
+	{
+    	threads=vm["threads"].as<int>();
+	}
+	else
+	{
+    	threads=1;;
+	}
+
+    if (vm.count ("input-file"))
+      {
+	const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
+			for (unsigned int i = 0; i < v.size(); i++)
+			{
+	  			//std::cout << v[i] <<std::endl;
+	  			luxInit();
+	  			if (!ParseFile(v[i].c_str())) std::cerr<<"Couldn't open scene file "<<v[i]<<std::endl;
+				luxCleanup();
+			}
+
+      }
+     else
+     {
+     	std::cout<<	"luxconsole: no input file"<<std::endl;
+     }
+
+  }
+  catch (std::exception & e)
+  {
+    std::cout << e.what () << "\n";
+    return 1;
+  }
+  return 0;
 }

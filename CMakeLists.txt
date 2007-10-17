@@ -73,9 +73,9 @@ ELSE(Boost_FOUND)
 ENDIF(Boost_FOUND)
 
 IF(APPLE)
-	SET(BOOST_LIB boost_thread-mt)
+	SET(BOOST_LIB boost_thread-mt boost_program_options)
 ELSE(APPLE)
-	SET(BOOST_LIB boost_thread)
+	SET(BOOST_LIB boost_thread boost_program_options)
 ENDIF(APPLE)
 
 
