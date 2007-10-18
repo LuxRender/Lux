@@ -667,22 +667,22 @@ void luxErrorHandler (LuxErrorHandler handler)
     luxError=handler;
 }
 
-void luxErrorAbort (int code, int severity, char *message)
+void luxErrorAbort (int code, int severity, const char *message)
 {
     luxErrorPrint(code,severity,message);
     if(severity!=LUX_INFO)
     	exit(code);
 }
 
-void luxErrorIgnore (int code, int severity, char *message)
+void luxErrorIgnore (int code, int severity, const char *message)
 {
     luxLastError=code;
 }
 
-void luxErrorPrint (int code, int severity, char *message)
+void luxErrorPrint (int code, int severity, const char *message)
 {
     luxLastError=code;
-    std::cerr<<"[Lux ";
+    std::cerr<<std::endl<<"[Lux ";
     std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
     switch (severity)
     {

@@ -108,11 +108,11 @@ extern double luxStatistics(char *statName);
 
 //Error Handlers
 extern int luxLastError; //!< Keeps track of the last error code
-typedef void  (*LuxErrorHandler)(int code, int severity, char *msg);
+typedef void  (*LuxErrorHandler)(int code, int severity, const char *msg);
 extern void luxErrorHandler (LuxErrorHandler handler);
-extern void luxErrorAbort (int code, int severity, char *message);
-extern void luxErrorIgnore (int code, int severity, char *message);
-extern void luxErrorPrint (int code, int severity, char *message);
+extern void luxErrorAbort (int code, int severity, const char *message);
+extern void luxErrorIgnore (int code, int severity, const char *message);
+extern void luxErrorPrint (int code, int severity, const char *message);
 
 /*
     Error codes

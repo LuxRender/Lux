@@ -22,6 +22,7 @@
 
 // image.cpp*
 #include "image.h"
+#include "error.h"
 
 // ImageFilm Method Definitions
 ImageFilm::ImageFilm(int xres, int yres,
@@ -171,12 +172,13 @@ void ImageFilm::WriteImage() {
 		}
 	}
 	// Write RGBA image
-	printf("\n\nWriting OpenEXR(RGBA) image to file \"%s\"...\n", filename.c_str());
+	//printf("\n\nWriting OpenEXR(RGBA) image to file \"%s\"...\n", filename.c_str());
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR(RGBA) image to file ")+filename).c_str());
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart);
-	printf("Done...\n\n");
+	//printf("Done...\n\n");
 	// Release temporary image memory
 	delete[] alpha;
 	delete[] rgb;

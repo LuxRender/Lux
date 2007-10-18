@@ -33,6 +33,7 @@
  */
 
 #include "multiimage.h"
+#include "error.h"
 
 // MultiImageFilm Method Definitions
 MultiImageFilm::MultiImageFilm(int xres, int yres,
@@ -304,13 +305,15 @@ void MultiImageFilm::WriteImage(int oType) {
 
 void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filename)
 {
-	printf("\nWriting Tonemapped TGA image to file \"%s\"...\n", filename.c_str());
+	//printf("\nWriting Tonemapped TGA image to file \"%s\"...\n", filename.c_str());
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped TGA image to file ")+filename).c_str());
 	
 	// Open file
 	FILE* tgaFile = fopen(filename.c_str(),"wb");
 	if (!tgaFile) {
-		std::cout << "Error: Cannot open file for output" << std::endl;
-		return;	
+		luxError(LUX_SYSTEM, LUX_SEVERE, "Cannot open file for output");
+		//std::cout << "Error: Cannot open file for output" << std::endl;
+		//return;	
 	}
 	
 	// write the header
@@ -342,18 +345,19 @@ void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filen
 	}
 		
 	fclose(tgaFile);
-	printf("Done.\n");
+	//printf("Done.\n");
 }
 
 void MultiImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filename)
 {
 	// Write OpenEXR RGBA image
-	printf("\nWriting OpenEXR image to file \"%s\"...\n", filename.c_str());
+	//printf("\nWriting OpenEXR image to file \"%s\"...\n", filename.c_str());
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart);
-	printf("Done.\n");
+	//printf("Done.\n");
 }
 
 void MultiImageFilm::createFrameBuffer()

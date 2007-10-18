@@ -30,9 +30,45 @@
 #include <string>
 #include <exception>
 #include <boost/program_options.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/xtime.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace po = boost::program_options;
 
+std::string sceneFileName;
+int threads;
+
+void engineThread()
+{
+    luxInit();
+	ParseFile( sceneFileName.c_str() );
+	luxCleanup();
+}
+
+void infoThread()
+{
+	char progress[5] ="/-\\|";
+	unsigned int pc=0;
+	while(true)
+	{
+			
+			boost::xtime xt;
+			boost::xtime_get(&xt, boost::TIME_UTC);
+			xt.sec += 1;
+			boost::thread::sleep(xt);
+			
+			boost::posix_time::time_duration td(0,0,(int)luxStatistics("secElapsed"),0);
+			
+			std::cout<<'\r'
+					<<progress[(pc++)%4]
+					<<'['<<threads<<']'
+					<<td
+					<<" "<<(int)luxStatistics("samplesSec")<<" samples/sec "
+					<<" "<<(float)luxStatistics("samplesPx")<<" samples/pix"
+					<<"    "<<std::flush;
+	}	
+}
 
 int main (int ac, char *av[])
 {
@@ -47,7 +83,7 @@ int main (int ac, char *av[])
   
   try
   {
-    int threads;
+    
 
 // Declare a group of options that will be
 // allowed only on command line
@@ -94,14 +130,14 @@ int main (int ac, char *av[])
 
     if (vm.count ("help"))
       {
-      	std::cout << "Usage: luxconsole [options]\n"; 
+      	std::cout << "Usage: luxconsole [options] file...\n"; 
 		std::cout << visible << "\n";
 	return 0;
       }
 
     if (vm.count ("version"))
       {
-	std::cout << "Lux version "<<LUX_VERSION<<std::endl;
+	std::cout << "Lux version "<<LUX_VERSION<<" of "<<__DATE__<<" at "<<__TIME__<<std::endl;
 	return 0;
       }
 
@@ -119,10 +155,31 @@ int main (int ac, char *av[])
 	const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++)
 			{
-	  			//std::cout << v[i] <<std::endl;
-	  			luxInit();
-	  			if (!ParseFile(v[i].c_str())) std::cerr<<"Couldn't open scene file "<<v[i]<<std::endl;
-				luxCleanup();
+	  			sceneFileName=v[i];
+				boost::thread t(&engineThread);
+				
+				//wait the scene parsing to finish
+				while(!luxStatistics("sceneIsReady"))
+				{
+					boost::xtime xt;
+					boost::xtime_get(&xt, boost::TIME_UTC);
+					xt.sec += 1;
+					boost::thread::sleep(xt);
+				}
+				
+				//add rendering threads
+				int threadsToAdd=threads;
+				while(--threadsToAdd)
+				{
+					luxAddThread();
+				}
+				
+				//launch info printing thread
+				//boost::thread *i=new 
+				boost::thread i(&infoThread);
+				
+				//wait for threads to finish
+				t.join();
 			}
 
       }
@@ -134,7 +191,7 @@ int main (int ac, char *av[])
   }
   catch (std::exception & e)
   {
-    std::cout << e.what () << "\n";
+    std::cout << e.what () << std::endl;
     return 1;
   }
   return 0;

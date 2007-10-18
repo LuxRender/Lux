@@ -82,7 +82,8 @@ ENDIF(APPLE)
 #All dependencies OK !
 
 #Compiler flags
-ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 
 # Create custom command for flex/lex (note the outputs)

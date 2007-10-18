@@ -21,12 +21,15 @@
  ***************************************************************************/
 
 // scene.cpp*
+#include <sstream>
+
 #include "scene.h"
 #include "camera.h"
 #include "film.h"
 #include "sampling.h"
 #include "dynload.h"
 #include "volume.h"
+#include "error.h"
 
 // Control Methods -------------------------------
 extern Scene *luxCurrentScene;
@@ -117,7 +120,7 @@ void Scene::SignalThreads(int signal)
 {
 	for(unsigned int i=0;i<renderThreads.size();i++)
 	{
-		std::cout<<"signaling thread "<<i<<" message:"<<signal<<std::endl;
+		//std::cout<<"signaling thread "<<i<<" message:"<<signal<<std::endl;
 		renderThreads[i]->signal=signal;
 	}	
 	CurThreadSignal = signal;
@@ -139,7 +142,7 @@ void RenderThread::render(RenderThread *myThread)
 			xt.sec += 1;
 			boost::thread::sleep(xt);
 			
-			std::cout<<"thread "<<myThread->n<<" paused"<<std::endl;
+			//std::cout<<"thread "<<myThread->n<<" paused"<<std::endl;
 		}
 		if(myThread->signal== RenderThread::SIG_EXIT)
 			break;
@@ -169,15 +172,22 @@ void RenderThread::render(RenderThread *myThread)
 
 			// Issue warning if unexpected radiance value returned
 			if (Ls.IsNaN()) {
-				Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
+				std::stringstream error;
+				error<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
+				luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
+				//Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
 				Ls = Spectrum(0.f);
 			}
 			else if (Ls.y() < -1e-5) {
-				Error("THR%i: NegLum value, %g, returned.\n", myThread->n+1, Ls.y());
+				std::stringstream error;
+				error<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
+				luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
+				//Error("THR%i: NegLum value, %g, returned.\n", myThread->n+1, Ls.y());
 				Ls = Spectrum(0.f);
 			}
 			else if (isinf(Ls.y())) {
-				Error("THR%i: InfinLum value returned.\n", myThread->n+1);
+				luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
+				//Error("THR%i: InfinLum value returned.\n", myThread->n+1);
 				Ls = Spectrum(0.f);
 			} 
 
@@ -193,14 +203,14 @@ void RenderThread::render(RenderThread *myThread)
 		myThread->stat_Samples++;
 	}
 
-	printf("THR%i: Exiting.\n", myThread->n+1);
+	//printf("THR%i: Exiting.\n", myThread->n+1);
     return;
 }
 
 int Scene::CreateRenderThread()
 {
-		printf("CTL: Adding thread...\n");	
-		std::cout<<CurThreadSignal<<std::endl;
+		//printf("CTL: Adding thread...\n");	
+		//std::cout<<CurThreadSignal<<std::endl;
 		RenderThread *rt=new  RenderThread (renderThreads.size(),
 										CurThreadSignal,
 										(SurfaceIntegrator*)surfaceIntegrator->clone(), 
@@ -214,13 +224,13 @@ int Scene::CreateRenderThread()
 		rt->thread=new boost::thread(boost::bind(RenderThread::render,rt));
 		//threadGroup.add_thread(rt->thread);
 		
-		printf("CTL: Done.\n");
+		//printf("CTL: Done.\n");
 		return 0;
 }
 
 void Scene::RemoveRenderThread()
 {
-	printf("CTL: Removing thread...\n");
+	//printf("CTL: Removing thread...\n");
 	//thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
 	renderThreads.back()->signal=RenderThread::SIG_EXIT;
 	renderThreads.pop_back();
@@ -232,12 +242,12 @@ void Scene::RemoveRenderThread()
 	//delete thr_dat_ptrs[thr_nr -1];
 	//delete thr_ptrs[thr_nr -1];
 	//thr_nr--;
-	printf("CTL: Done.\n");
+	//printf("CTL: Done.\n");
 }
 
 void Scene::Render() {
 	// integrator preprocessing
-	printf("CTL: Preprocessing integrators...\n");
+	//printf("CTL: Preprocessing integrators...\n");
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
@@ -273,7 +283,7 @@ void Scene::Render() {
 	{
 		renderThreads[i]->thread->join();
 	}
-	std::cout<<"all threads joined"<<std::endl;
+	//std::cout<<"all threads joined"<<std::endl;
 
 
 	// Store final image
