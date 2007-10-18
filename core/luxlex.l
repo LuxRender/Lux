@@ -147,6 +147,7 @@ VolumeIntegrator	{ return VOLUMEINTEGRATOR;	}
 WorldBegin 		{ return WORLDBEGIN; 		}
 WorldEnd 		{ return WORLDEND;		}
 {WHITESPACE} /* do nothing */
+\r /* jromang - do nothing */
 \n { line_num++; }
 {NUMBER} {
   yylval.num = (float) atof(yytext);
