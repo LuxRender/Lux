@@ -44,6 +44,7 @@ FIND_PATH(FLTK_INCLUDE_DIR
 	          PATHS
 	            /usr
  	            /usr/local
+ 	            /usr/include/fltk-1.1
  	)
  	
  	IF (FLTK_INCLUDE_DIR)
