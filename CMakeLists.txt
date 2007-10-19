@@ -22,6 +22,7 @@ FIND_PACKAGE( FLTK REQUIRED )
 IF( FLTK_FOUND )
         #MESSAGE( ${FLTK_INCLUDE_DIR} )
         #MESSAGE( ${FLTK_LIBRARIES} )
+        #MESSAGE(STATUS ${FLTK_BASE_LIBRARY} )
 ELSE( FLTK_FOUND )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
 ENDIF( FLTK_FOUND )
@@ -142,6 +143,7 @@ INCLUDE_DIRECTORIES(${OPENEXR_INCLUDE_DIRS}
 					${CMAKE_BINARY_DIR}
 					)
 
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1)
 					
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
