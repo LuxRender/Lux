@@ -1,15 +1,49 @@
-#INCLUDE(FindFLTK)
-
 PROJECT(lux)
-OPTION(WITH_GUI "Enable the GUI." OFF)
-OPTION(WITH_SSE "Enable SSE optimisations" ON)
+#OPTION(WITH_GUI "Enable the GUI." OFF)
+#OPTION(WITH_SSE "Enable SSE optimisations" ON)
+
+
+#Find BISON
+FIND_PROGRAM(BISON_EXECUTABLE bison)
+IF (NOT BISON_EXECUTABLE)
+MESSAGE(FATAL_ERROR "bison not found - aborting")
+ENDIF (NOT BISON_EXECUTABLE)
+
+
+#Find FLEX
+FIND_PROGRAM(FLEX_EXECUTABLE flex)
+IF (NOT FLEX_EXECUTABLE)
+MESSAGE(FATAL_ERROR "flex not found - aborting")
+ENDIF (NOT FLEX_EXECUTABLE)
+
+
+# Find and setup FLTK library
+FIND_PACKAGE( FLTK REQUIRED )
+IF( FLTK_FOUND )
+        #MESSAGE( ${FLTK_INCLUDE_DIR} )
+        #MESSAGE( ${FLTK_LIBRARIES} )
+ELSE( FLTK_FOUND )
+        MESSAGE(FATAL_ERROR "Could not find FLTK")
+ENDIF( FLTK_FOUND )
+
+
+# Find and setup Boost library
+FIND_PACKAGE(Boost REQUIRED)
+IF(Boost_FOUND)
+	#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
+	#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
+	IF(APPLE)
+	SET(Boost_LIBRARIES boost_thread-mt boost_program_options boost_filesystem)
+	ELSE(APPLE)
+	SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
+	ENDIF(APPLE)
+ELSE(Boost_FOUND)
+	MESSAGE(FATAL_ERROR "Could not find Boost")
+ENDIF(Boost_FOUND)
+
 
 # Find and setup OpenEXR
-#IF(WIN32)
-#SET(OPENEXR_INC ${CMAKE_SOURCE_DIR}/win32/openexr-1.4.0/include/OpenEXR)
-#SET(LINK_DIRECTORIES ${CMAKE_SOURCE_DIR}/win32/openexr-1.4.0/lib)
-#ELSE(WIN32)
-  FIND_PATH(OPENEXR_INC
+FIND_PATH(OPENEXR_INCLUDE_DIRS
     ImfXdr.h
     PATHS
     /usr/local/include/OpenEXR
@@ -18,74 +52,17 @@ OPTION(WITH_SSE "Enable SSE optimisations" ON)
     /opt/local/include/OpenEXR
     /opt/csw/include/OpenEXR
     /opt/include/OpenEXR
-  ) 
-
-#ENDIF(WIN32)
-
-SET(OPENEXR_LIB Half IlmImf Iex Imath)
-
-#MESSAGE(${OPENEXR_INC})
-#MESSAGE(${OPENEXR_LIB})
-#MESSAGE(${LINK_DIRECTORIES})
-
-FIND_PROGRAM(BISON_EXECUTABLE bison)
-IF (NOT BISON_EXECUTABLE)
-MESSAGE(FATAL_ERROR "bison not found - aborting")
-ENDIF (NOT BISON_EXECUTABLE)
-
-FIND_PROGRAM(FLEX_EXECUTABLE flex)
-IF (NOT FLEX_EXECUTABLE)
-MESSAGE(FATAL_ERROR "flex not found - aborting")
-ENDIF (NOT FLEX_EXECUTABLE)
-
-#FIND_PACKAGE(FLTK REQUIRED)
-FIND_PATH(FLTK_INCLUDE_DIR
- 	          NAMES FL/Fl.H
-	          PATHS
-	            /usr
- 	            /usr/local
- 	            /usr/include/fltk-1.1
- 	)
- 	
- 	IF (FLTK_INCLUDE_DIR)
- 	  SET(FLTK_FOUND 1)
- 	  SET(FLTK_LIB fltk)
- 	  MESSAGE(STATUS "FLTK found")
- 	  MESSAGE(${FLTK_INCLUDE_DIR})
- 	ELSE (FLTK_INCLUDE_DIR)
- 		MESSAGE(STATUS "FLTK *NOT* found")
- 	ENDIF (FLTK_INCLUDE_DIR)
-
-
-# Find and setup Boost library for this project
-FIND_PACKAGE(Boost REQUIRED)
-
-# Now some variables are defined in order to use Boost library:
-# BOOST_FOUND - System has Boost
-# BOOST_INCLUDE_DIRS - Boost include directory
-# BOOST_LIBRARIES - Link these to use Boost
-# BOOST_LIBRARY_DIRS - The path to where the Boost library files are.
-# BOOST_DEFINITIONS - Compiler switches required for using Boost
-
-IF(Boost_FOUND)
-	MESSAGE(STATUS ${BOOST_LIBRARIES})
-ELSE(Boost_FOUND)
-	MESSAGE(STATUS "Boost NOT found")
-ENDIF(Boost_FOUND)
-
-IF(APPLE)
-	SET(BOOST_LIB boost_thread-mt boost_program_options boost_filesystem)
-ELSE(APPLE)
-	SET(BOOST_LIB boost_thread boost_program_options boost_filesystem)
-ENDIF(APPLE)
-
+) 
+SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
 
 #All dependencies OK !
+
 
 #Compiler flags
 ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
+
 
 # Create custom command for flex/lex (note the outputs)
 ADD_CUSTOM_COMMAND(
@@ -97,6 +74,7 @@ TARGET LuxLexer
 #DEPENDS ${CMAKE_BINARY_DIR}/core/pbrtparse.cpp ${lux_BINARY_DIR}/core/pbrtparse.h
 OUTPUTS ${CMAKE_BINARY_DIR}/luxlex.cpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
+
 
 # Create custom command for bison/yacc (note the DEPENDS)
 IF(APPLE)
@@ -154,8 +132,8 @@ SET(lux_lib_src
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
 	)
 
-INCLUDE_DIRECTORIES(${OPENEXR_INC}
-					${BOOST_INCLUDE_DIRS}
+INCLUDE_DIRECTORIES(${OPENEXR_INCLUDE_DIRS}
+					${Boost_INCLUDE_DIRS}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
 					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
@@ -163,11 +141,20 @@ INCLUDE_DIRECTORIES(${OPENEXR_INC}
 					${CMAKE_SOURCE_DIR}/volumes
 					${CMAKE_BINARY_DIR}
 					)
+
+					
+#Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIB} ${BOOST_LIB})
+TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
 
+
+#Here we build the console executable
+ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
+
+
+#Here we build the GUI executable
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
-
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
 IF(APPLE)
 SET(GUI_TYPE MACOSX_BUNDLE)
@@ -180,10 +167,9 @@ MARK_AS_ADVANCED (CARBON_LIBRARY)
 MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
 MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB} ${FLTK_LIB} ${BOOST_LIB} ${EXTRA_LIBS})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES}} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIB} ${FLTK_LIB} ${BOOST_LIB})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES})
 ENDIF(APPLE)
 
-ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIB} ${BOOST_LIB})
+
