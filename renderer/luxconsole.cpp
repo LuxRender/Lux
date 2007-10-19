@@ -33,6 +33,14 @@
 #include <boost/thread.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
+
+#ifdef WIN32
+#include "direct.h"
+#define chdir _chdir
+#endif
+
 
 namespace po = boost::program_options;
 
@@ -41,6 +49,8 @@ int threads;
 
 void engineThread()
 {
+
+	
     luxInit();
 	ParseFile( sceneFileName.c_str() );
 	luxCleanup();
@@ -150,12 +160,22 @@ int main (int ac, char *av[])
     	threads=1;;
 	}
 
+	
+
+
     if (vm.count ("input-file"))
       {
 	const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++)
 			{
-	  			sceneFileName=v[i];
+	  			//sceneFileName=v[i];
+	  			
+	  			//change the working directory
+				boost::filesystem::path fullPath( boost::filesystem::initial_path() );
+				fullPath = boost::filesystem::system_complete( boost::filesystem::path( v[i], boost::filesystem::native ) );
+				sceneFileName=fullPath.leaf();
+				chdir (fullPath.branch_path().string().c_str());		
+	  			
 				boost::thread t(&engineThread);
 				
 				//wait the scene parsing to finish
