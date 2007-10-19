@@ -260,7 +260,8 @@ void MultiImageFilm::WriteImage(int oType) {
 					Clamp(rgb[3*offset+1] * invWt, 0.f, INFINITY);
 				rgb[3*offset+2] =
 					Clamp(rgb[3*offset+2] * invWt, 0.f, INFINITY);
-				alpha[offset] = Clamp(alpha[offset] * invWt, 0.f, 1.f);
+				// NOTE - radiance - leave off for now, creates rounding error and square filter blocks/artifacts
+				//alpha[offset] = Clamp(alpha[offset] * invWt, 0.f, 1.f);
 			}
 			// Compute premultiplied alpha color
 			if (premultiplyAlpha) {

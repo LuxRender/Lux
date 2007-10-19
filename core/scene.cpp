@@ -92,7 +92,7 @@ double Scene::Statistics_SamplesPPx()
 {
 	// collect samples from all threads
 	double samples = 0.;
-	for(unsigned int i=0;i<renderThreads.size();i++) // jromang - no need for mutex here : this is just statistics, one or two samples more don't hurt
+	for(unsigned int i=0;i<renderThreads.size();i++)
 		samples +=renderThreads[i]->stat_Samples;
 
 	// divide by total pixels
@@ -103,7 +103,7 @@ double Scene::Statistics_SamplesPSec()
 {
 	// collect samples from all threads
 	double samples = 0.;
-	for(unsigned int i=0;i<renderThreads.size();i++)   // jromang - no need for mutex here : this is just statistics, one or two samples more don't hurt
+	for(unsigned int i=0;i<renderThreads.size();i++)
 		samples +=renderThreads[i]->stat_Samples; 
 
 	double time = s_Timer.Time();

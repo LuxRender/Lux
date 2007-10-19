@@ -44,6 +44,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		float *alpha) const {
 	// Declare common path integration variables
 	Spectrum pathThroughput = 1., L = 0.;
+	int transmissionBounces = 0;
 	RayDifferential ray(r);
 	bool specularBounce = false;
 	for (int pathLength = 0; ; ++pathLength) {
@@ -112,15 +113,20 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			break;
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
 		pathThroughput *= f * AbsDot(wi, n) / pdf;
+
 		ray = RayDifferential(p, wi);
 		// Possibly terminate the path
-		if (pathLength > 3) {
+		// NOTE - radiance - added no RR termination for transmission bounces
+		if((flags & BSDF_TRANSMISSION) != 0) { transmissionBounces++; }// L *= 2.f;  }
+		if ((pathLength - transmissionBounces) > 3) {
 			float continueProbability = .5f;
 			if (RandomFloat() > continueProbability)
 				break;
 			// NOTE - radiance - disabled pathTroughput increase
-			// amplifies precision error and creates bright fireflies
-			//pathThroughput /= continueProbability;
+			// amplifies precision error and creates bright fireflies with speculars
+			// pathThroughput /= continueProbability;
+			if((flags & BSDF_TRANSMISSION) != 0) pathThroughput /= continueProbability;
+			// *
 		}
 		if (pathLength == maxDepth)
 			break;
