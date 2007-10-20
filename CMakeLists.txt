@@ -19,7 +19,17 @@ ENDIF (NOT FLEX_EXECUTABLE)
 
 
 # Find and setup FLTK library
-SET( FLTK_INCLUDE_DIR /usr/include) #This is a hack, FIND_PACKAGE doesn't find fltk otherwise
+#This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
+FIND_PATH(FLTK_INCLUDE_DIR
+    Fl/Fl.h
+    PATHS
+    /usr/local/include/
+    /usr/local/include/fltk-1.1
+    /usr/include/
+    /usr/include/fltk-1.1
+    /opt/local/include/
+    /opt/include/
+)
 FIND_PACKAGE( FLTK REQUIRED )
 IF( FLTK_FOUND )
         #MESSAGE( STATUS ${FLTK_INCLUDE_DIR} )
