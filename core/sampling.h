@@ -33,7 +33,7 @@ public:
 	Sampler(int xstart, int xend,
 	        int ystart, int yend,
 			int spp);
-	virtual bool GetNextSample(Sample *sample) = 0;
+	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
 	int TotalSamples() const {
 		return samplesPerPixel *
 			(xPixelEnd - xPixelStart) *

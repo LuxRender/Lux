@@ -33,7 +33,7 @@ public:
     {
         FreeAligned(imageSamples);
     }
-    bool GetNextSample(Sample *sample);
+    bool GetNextSample(Sample *sample, u_int *use_pos);
     int RoundSize(int sz) const
     {
         return sz;

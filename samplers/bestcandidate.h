@@ -46,7 +46,7 @@ public:
 		int root = Ceil2Int(sqrtf((float)size - .5f));
 		return root*root;
 	}
-	bool GetNextSample(Sample *sample);
+	bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual BestCandidateSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

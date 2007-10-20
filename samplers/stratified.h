@@ -38,7 +38,7 @@ public:
 		FreeAligned(imageSamples);
 	}
 	void setSeed( u_int s ) { /* TODO add different seeds and new backend random generator for threads - radiance */ }
-	bool GetNextSample(Sample *sample);
+	bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual StratifiedSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

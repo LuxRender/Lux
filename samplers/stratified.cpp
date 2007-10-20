@@ -68,7 +68,7 @@ StratifiedSampler::StratifiedSampler(int xstart, int xend,
 	samplePos = 0;
 }
 
-bool StratifiedSampler::GetNextSample(Sample *sample) {
+bool StratifiedSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	// Compute new set of samples if needed for next pixel
 	if (samplePos == xPixelSamples * yPixelSamples) {
 		if(fs_progressive) {

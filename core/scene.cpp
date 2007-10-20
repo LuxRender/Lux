@@ -31,6 +31,10 @@
 #include "volume.h"
 #include "error.h"
 
+// global sample pos/mutex
+u_int sampPos;
+boost::mutex sampPosMutex;
+
 // Control Methods -------------------------------
 extern Scene *luxCurrentScene;
 
@@ -84,9 +88,6 @@ double Scene::Statistics(char *statName) {
 	return 0.;
 }
 
-// Thread data --------------------------
-
-
 // Control Implementations in Scene::
 double Scene::Statistics_SamplesPPx()
 {
@@ -127,14 +128,16 @@ void Scene::SignalThreads(int signal)
 }
 
 // Scene Methods -----------------------
-
-//void RenderThread::operator() ()
 void RenderThread::render(RenderThread *myThread)
 {
 	myThread->stat_Samples = 0.;
+	
+	// allocate sample pos
+	u_int *useSampPos = new u_int();
+	*useSampPos = 1;
 
 	// Trace rays: The main loop
-	while (myThread->sampler->GetNextSample(myThread->sample)) {
+	while (myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
 		while(myThread->signal == RenderThread::SIG_PAUSE)
 		{ 
 			boost::xtime xt;
@@ -194,6 +197,7 @@ void RenderThread::render(RenderThread *myThread)
 			// Add sample contribution to image
 			if( Ls != Spectrum(0.f) )
 			   myThread->camera->film->AddSample(*(myThread->sample), ray, Ls, alpha);
+
 			
 			// Free BSDF memory from computing image sample value
 			myThread->arena->FreeAll();
@@ -201,8 +205,18 @@ void RenderThread::render(RenderThread *myThread)
 
 		// update samples statistics
 		myThread->stat_Samples++;
+
+		// increment (locked) global sample pos if necessary
+		if(*useSampPos == 0) {
+			boost::mutex::scoped_lock lock(sampPosMutex);
+			if( sampPos >= 4294967295 ) // u_int size -1
+				sampPos = 0;
+			sampPos++;
+			*useSampPos = sampPos;
+		}
 	}
 
+	delete useSampPos;
 	//printf("THR%i: Exiting.\n", myThread->n+1);
     return;
 }
@@ -250,6 +264,8 @@ void Scene::Render() {
 	//printf("CTL: Preprocessing integrators...\n");
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
+
+	sampPos = 1;
 
 	//start the timer
 	s_Timer.Start();

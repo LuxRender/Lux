@@ -519,6 +519,18 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\..\renderer\luxconsole.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\..\renderer\luxgui.cpp"
 					>
 				</File>

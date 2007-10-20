@@ -195,8 +195,8 @@ int main (int ac, char *av[])
 				}
 				
 				//launch info printing thread
-				//boost::thread *i=new 
-				boost::thread i(&infoThread);
+				//boost::thread *j=new 
+				boost::thread j(&infoThread);
 				
 				//wait for threads to finish
 				t.join();

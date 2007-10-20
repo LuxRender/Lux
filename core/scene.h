@@ -72,9 +72,6 @@ class RenderThread : public boost::noncopyable
 		static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
 };
 
-
-
-
 // Scene Declarations
 class  Scene {
 public:

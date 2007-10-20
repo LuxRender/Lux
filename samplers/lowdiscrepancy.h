@@ -44,7 +44,7 @@ public:
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
 	}
-	bool GetNextSample(Sample *sample);
+	bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual LDSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

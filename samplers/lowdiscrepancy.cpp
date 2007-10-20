@@ -35,9 +35,11 @@ LDSampler::LDSampler(int xstart, int xend,
 	yPos = yPixelStart;
 
 	fs_progressive = prog;
-	fs_pos = 0;
-	fs_scrambleX = RandomUInt();			// TODO provide LDS seeds - radiance
+	//fs_pos = 0;
+	fs_scrambleX = RandomUInt();
 	fs_scrambleY = RandomUInt();
+	//fs_scrambleX = 0.;
+	//fs_scrambleY = 0.;
 
 	if (!IsPowerOf2(ps)) {
 		Warning("Pixel samples being"
@@ -54,7 +56,7 @@ LDSampler::LDSampler(int xstart, int xend,
 	n1D = n2D = 0;
 }
 
-bool LDSampler::GetNextSample(Sample *sample) {
+bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	if (!oneDSamples) {
 		// Allocate space for pixel's low-discrepancy sample tables
 		oneDSamples = new float *[sample->n1D.size()];
@@ -70,16 +72,13 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	}
 	if (samplePos == pixelSamples) {
 		if(fs_progressive) {
-			// // Progressive film sampling (LDS 02 sequence)
-			fs_pos++;
-
-			if( fs_pos == 4294967295 ) // u_int size -1
-				fs_pos = 0;
-
+			// Progressive film sampling (LDS 02 sequence)
 			xPos = xPixelStart + 
-				Ceil2Int( VanDerCorput( fs_pos, fs_scrambleX ) * xPixelEnd );
+				Ceil2Int( VanDerCorput( *use_pos, fs_scrambleX ) * xPixelEnd );
 			yPos = yPixelStart + 
-				Ceil2Int( Sobol2( fs_pos, fs_scrambleY ) * yPixelEnd );
+				Ceil2Int( Sobol2( *use_pos, fs_scrambleY ) * yPixelEnd );
+			// reset so scene knows to increment
+			*use_pos = 0;
 		} else {
 			// Linear/finite film sampling
 			// Advance to next pixel for low-discrepancy sampling

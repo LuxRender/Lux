@@ -48,7 +48,7 @@ void BestCandidateSampler::setSeed( u_int s )
 }
 
 #include "sampledata.h"
-bool BestCandidateSampler::GetNextSample(Sample *sample) {
+bool BestCandidateSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 again:
 	if (tableOffset == SAMPLE_TABLE_SIZE) {
 		// TODO implement progressive mode - radiance
