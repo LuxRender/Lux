@@ -1,4 +1,5 @@
 PROJECT(lux)
+#INCLUDE(CPack)
 #OPTION(WITH_GUI "Enable the GUI." OFF)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
 
@@ -18,10 +19,11 @@ ENDIF (NOT FLEX_EXECUTABLE)
 
 
 # Find and setup FLTK library
+SET( FLTK_INCLUDE_DIR /usr/include) #This is a hack, FIND_PACKAGE doesn't find fltk otherwise
 FIND_PACKAGE( FLTK REQUIRED )
 IF( FLTK_FOUND )
-        #MESSAGE( ${FLTK_INCLUDE_DIR} )
-        #MESSAGE( ${FLTK_LIBRARIES} )
+        #MESSAGE( STATUS ${FLTK_INCLUDE_DIR} )
+        #MESSAGE( STATUS ${FLTK_LIBRARIES} )
         #MESSAGE(STATUS ${FLTK_BASE_LIBRARY} )
 ELSE( FLTK_FOUND )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
