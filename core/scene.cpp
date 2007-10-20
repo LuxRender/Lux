@@ -330,9 +330,11 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 	s_Timer.Reset();
 	lastSamples = 0.;
 	lastTime = 0.;
-	if (lts.size() == 0)
-		Warning("No light sources defined in scene; "
-			"possibly rendering a black image.");
+	if (lts.size() == 0) {
+		Error("No light sources defined in scene; "
+			"nothing to render. Exitting...");
+		exit(1);
+	}
 	// Scene Constructor Implementation
 	bound = aggregate->WorldBound();
 	if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());

@@ -523,7 +523,6 @@
 					>
 					<FileConfiguration
 						Name="Release|Win32"
-						ExcludedFromBuild="true"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -533,6 +532,14 @@
 				<File
 					RelativePath="..\..\renderer\luxgui.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter

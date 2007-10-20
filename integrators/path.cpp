@@ -117,15 +117,19 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		ray = RayDifferential(p, wi);
 		// Possibly terminate the path
 		// NOTE - radiance - added no RR termination for transmission bounces
-		if((flags & BSDF_TRANSMISSION) != 0) { transmissionBounces++; }// L *= 2.f;  }
+		if(forceTransmit)
+		    if((flags & BSDF_TRANSMISSION) != 0)
+				transmissionBounces++;
+
 		if ((pathLength - transmissionBounces) > 3) {
-			float continueProbability = .5f;
+			//float continueProbability = .5f;
 			if (RandomFloat() > continueProbability)
 				break;
 			// NOTE - radiance - disabled pathTroughput increase
 			// amplifies precision error and creates bright fireflies with speculars
 			// pathThroughput /= continueProbability;
-			if((flags & BSDF_TRANSMISSION) != 0) pathThroughput /= continueProbability;
+			if(forceTransmit)
+				if((flags & BSDF_TRANSMISSION) != 0) pathThroughput /= continueProbability;
 			// *
 		}
 		if (pathLength == maxDepth)
@@ -135,5 +139,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
 	int maxDepth = params.FindOneInt("maxdepth", 5);
-	return new PathIntegrator(maxDepth);
+	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .5f);				// continueprobability for RR (0.0-1.0)
+	bool RRforceTransmit = params.FindOneBool("rrforcetransmit", true);				// forces RR to ignore transmission bounces
+	return new PathIntegrator(maxDepth, RRcontinueProb, RRforceTransmit);
 }

@@ -30,13 +30,15 @@ public:
 	// PathIntegrator Public Methods
 	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	PathIntegrator(int md) { maxDepth = md; }
+	PathIntegrator(int md, float cp, bool ft) { maxDepth = md; continueProbability = cp; forceTransmit = ft; }
 	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data
 	int maxDepth;
+	bool forceTransmit;
+	float continueProbability;
 	#define SAMPLE_DEPTH 3
 	int lightPositionOffset[SAMPLE_DEPTH];
 	int lightNumOffset[SAMPLE_DEPTH];
