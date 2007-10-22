@@ -261,16 +261,19 @@ Shape* TriangleMesh::CreateShape(const Transform &o2w,
 		for (int i = 0; i < nvi; i += 3, vp += 3) {
 			float area = .5f * Cross(P[vp[0]]-P[vp[1]], P[vp[2]]-P[vp[1]]).Length();
 			if (area < 1e-7) continue; // ignore degenerate tris.
-			if ((uvs[2*vp[0]] == uvs[2*vp[1]] &&
+			// NOTE - radiance - disabled check for degenerate uv coordinates.
+			// discards all uvs in case of unimportant small errors from exporters.
+			/*if ((uvs[2*vp[0]] == uvs[2*vp[1]] &&
 				uvs[2*vp[0]+1] == uvs[2*vp[1]+1]) ||
 				(uvs[2*vp[1]] == uvs[2*vp[2]] &&
 				uvs[2*vp[1]+1] == uvs[2*vp[2]+1]) ||
 				(uvs[2*vp[2]] == uvs[2*vp[0]] &&
 				uvs[2*vp[2]+1] == uvs[2*vp[0]+1])) {
 				Warning("Degenerate uv coordinates in triangle mesh.  Discarding all uvs.");
+				printf("vp = %i\n", *vp);
 				uvs = NULL;
 				break;
-			}
+			}*/
 		}
 	}
 	for (int i = 0; i < nvi; ++i)
