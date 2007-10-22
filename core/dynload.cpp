@@ -715,12 +715,12 @@ static string SearchPath(const string &searchpath,
         tp.ReportUnused();
         return ret;
     }
-/*    if(name=="scale") // TEMPORARILY DISALBED - SEE scale.h
+    if(name=="scale")
     {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp);
+    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
-    } */
+    } 
     if(name=="uv")
     {
     	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(UVTexture::CreateSpectrumTexture(tex2world, tp));
