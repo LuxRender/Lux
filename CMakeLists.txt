@@ -1,4 +1,11 @@
 PROJECT(lux)
+
+#Setting Universal Binary Properties, only for Mac OS X
+IF(APPLE)
+SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
+SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)                                                      
+ENDIF(APPLE)
+
 #OPTION(WITH_GUI "Enable the GUI." OFF)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
 
@@ -20,7 +27,7 @@ ENDIF (NOT FLEX_EXECUTABLE)
 # Find and setup FLTK library
 #This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
 FIND_PATH(FLTK_INCLUDE_DIR
-    Fl/Fl.H
+    Fl/Fl.h
     PATHS
     /usr/local/include/
     /usr/local/include/fltk-1.1
@@ -50,9 +57,9 @@ IF(Boost_FOUND)
 	#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
 	#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
 	IF(APPLE)
-	SET(Boost_LIBRARIES boost_thread-mt boost_program_options boost_filesystem)
+		SET(Boost_LIBRARIES boost_thread-mt boost_program_options boost_filesystem)
 	ELSE(APPLE)
-	SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
+		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
 	ENDIF(APPLE)
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
@@ -70,13 +77,31 @@ FIND_PATH(OPENEXR_INCLUDE_DIRS
     /opt/csw/include/OpenEXR
     /opt/include/OpenEXR
 ) 
+
+IF(APPLE)
+FIND_PATH(OPENEXR_LIB_DIRS
+    libHalf.a
+    PATHS
+    /usr/local/lib
+    /usr/lib
+)
+
+SET(OPENEXR_LIBRARIES ${OPENEXR_LIB_DIRS}/libHalf.a ${OPENEXR_LIB_DIRS}/libIlmImf.a ${OPENEXR_LIB_DIRS}/libIex.a ${OPENEXR_LIB_DIRS}/libImath.a ${OPENEXR_LIB_DIRS}/libIlmThread.a)
+
+ELSE(APPLE)
+
 SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+
+ENDIF(APPLE)
 
 #All dependencies OK !
 
 
 #Compiler flags
 ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H)
+IF(APPLE)
+ADD_DEFINITIONS(-DAPPLE)
+ENDIF(APPLE)
 #ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 
@@ -168,15 +193,19 @@ TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
+IF(APPLE)
+TARGET_LINK_LIBRARIES(luxconsole lux ${Boost_LIBRARIES} z ${HALF} ${Boost_LIBRARIES})
+ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
-
+ENDIF(APPLE)
 
 #Here we build the GUI executable
-INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
+INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include)
+
 IF(APPLE)
 SET(GUI_TYPE MACOSX_BUNDLE)
-INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon )
+INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
 FIND_LIBRARY(CARBON_LIBRARY Carbon)
 FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
 FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
@@ -185,7 +214,7 @@ MARK_AS_ADVANCED (CARBON_LIBRARY)
 MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
 MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS})
+TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${Boost_LIBRARIES})
 ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES})
 ENDIF(APPLE)
