@@ -42,7 +42,7 @@ Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
 import math
 import os
 import Blender
-from Blender import NMesh, Scene, Object, Material, Texture, Window, sys, Draw, BGL, Mathutils
+from Blender import Mesh, Scene, Object, Material, Texture, Window, sys, Draw, BGL, Mathutils
 
 
 ######################################################
@@ -66,6 +66,18 @@ def luxMatrix(matrix):
 		  matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3],\
 		  matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]) 
 	return ostr
+
+# use this because some data dosnt have both .materials and .getMaterials()
+def dataMaterials(data):
+	try:
+		return data.materials
+	except:
+		try:
+			return data.getMaterials()
+		except:
+			return []
+	
+	
 
 #################### Export Material Texture ###
 
@@ -363,7 +375,7 @@ def collectObjectMaterials(obj):
 	objecttype = obj.getType()
 	if (objecttype == "Mesh") or (objecttype == "Curve") or (objecttype == "Text"):
 		print("Collecting materials for object: %s" %objectname)
-		materials = obj.getData().getMaterials()
+		materials = dataMaterials(obj.getData(mesh=1))
 		meshlight = 0
 		if len(materials) > 0:
 			mat0 = materials[0]
@@ -388,7 +400,7 @@ def exportMesh(mesh, obj, isLight, isPortal):
 	mestr = ""
 	
 	#materials = obj.getData().getMaterials()
-	materials = mesh.getMaterials()	
+	materials = mesh.materials
 
 	def writeMeshData():
 		vdata = []
@@ -489,11 +501,13 @@ def exportMesh(mesh, obj, isLight, isPortal):
 		ostr = ""
 
 		emindex = 0
-		have_uvs = 0
-
+		have_uvs = mesh.faceUV
+		materials_names = [material.name for material in materials]
+		
 		print "obstart\n"
 		for material in materials:
 		# Construct list of verts/faces
+			material_name = material.name
 			vdata = []
 			vlist = []
 			flist = []
@@ -503,16 +517,19 @@ def exportMesh(mesh, obj, isLight, isPortal):
 
 			for face in mesh.faces:
 				iis = [-1, -1, -1, -1]
-				if( material.name == materials[face.materialIndex].name ):	
-					for vi in range(len(face.v)):
-						vert = face.v[vi]
+				if( material_name == materials_names[face.mat] ):	
+					if have_uvs:
+						face_uv = face.uv
+					
+					if not face.smooth:
+						normal = face.no
+					
+					for vi, vert in enumerate(face):
 						if face.smooth:
 							normal = vert.no
-						else:
-							normal = face.no
-						if len(face.uv) == len(face.v):
-							uv = face.uv[vi]
-							have_uvs = 1
+						
+						if have_uvs:
+							uv = face_uv[vi]
 						else:
 							uv = []
 						iis[vi] = addVertex(vert.index, vert.co, normal, uv)
@@ -523,9 +540,11 @@ def exportMesh(mesh, obj, isLight, isPortal):
 		
 			if have_faces:
 				ostr += writeGroup(material)
-			del vdata[:]
-			del vlist[:]
-			del flist[:]
+				
+			# clear lists
+			vdata[:] = []
+			vlist[:] = []
+			flist[:] = []
 		return ostr
 
 
@@ -575,17 +594,20 @@ def exportObject(obj):
 	if (objecttype == "Mesh") or\
 		(objecttype == "Curve") or\
 		 (objecttype == "Text"):
-			mesh = Blender.NMesh.GetRawFromObject(objectname)
-			meshname = mesh.name
+			#mesh = Blender.NMesh.GetRawFromObject(objectname)
+			mesh = Mesh.New()
+			mesh.getFromObject(obj)
+			meshname = obj.getData(name_only=1)
 
 			if (objecttype == "Curve") or (objecttype == "Text"):
-				meshname = obj.getData().getName()			  
+				meshname = obj.getData(name_only=1)
 				mesh.name = meshname
 				for f in mesh.faces:
 					f.smooth = 1
 
-			if (objecttype == "Curve"):
-				mesh.setMaterials(obj.getData().getMaterials())
+			# Not needed anymore, Mesh does this, NMesh didnt
+			#if (objecttype == "Curve"):
+			#	mesh.setMaterials(obj.getData(mesh=1).getMaterials())
 
 			isLight = 0
 			isPortal = 0
@@ -749,16 +771,15 @@ def save_lux(filename, unindexedname):
 	activelayers = Window.ViewLayer()
 	object_list = []
 	matnames= []
-	for obj in Blender.Scene.GetCurrent().getChildren():
-		for layer in obj.layers:
-			if layer in activelayers:
-				objecttype = obj.getType()
-				if (objecttype == "Mesh") and (len(obj.getData().getMaterials()) > 0)\
-						and (obj.getData().getMaterials()[0].name == "PORTAL"):
-							portalstr += exportObject(obj)[1]
-				else:
-					object_list.append(obj)
-					collectObjectMaterials(obj)
+	for obj in currentscene.objects:
+		if obj.Layers & currentscene.Layers:
+			objecttype = obj.getType()
+			if (objecttype == "Mesh") and (len(obj.getData(mesh=1).materials) > 0)\
+					and (obj.getData(mesh=1).materials[0].name.upper() == "PORTAL"):
+						portalstr += exportObject(obj)[1]
+			else:
+				object_list.append(obj)
+				collectObjectMaterials(obj)
 
 	########## BEGIN World
 	file.write("\n")
