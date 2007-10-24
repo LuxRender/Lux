@@ -21,6 +21,12 @@
  ***************************************************************************/
 
 // exrio.cpp*
+#include <algorithm>
+
+#define cimg_display_type  0
+#include "CImg.h"
+using namespace cimg_library;
+
 #ifdef WIN32
 #define hypotf hypot // For the OpenEXR headers
 #endif
@@ -31,11 +37,12 @@
 #include <ImfFrameBuffer.h>
 #include <half.h>
 #include "lux.h"
+#include "error.h"
 #include "color.h"
 using namespace Imf;
 using namespace Imath;
 // EXR Function Definitions
- Spectrum *ReadImage(const string &name, int *width, int *height) {
+ Spectrum *ReadExrImage(const string &name, int *width, int *height) {
 	try {
 	InputFile file(name.c_str());
 	Box2i dw = file.header().dataWindow();
@@ -64,12 +71,66 @@ using namespace Imath;
 	delete[] rgb;
 	return ret;
 	} catch (const std::exception &e) {
-		Error("Unable to read image file \"%s\": %s", name.c_str(),
+		Error("Unable to read EXR image file \"%s\": %s", name.c_str(),
 			e.what());
 		return NULL;
 	}
 }
 
+
+ Spectrum *ReadCimgImage(const string &name, int *width, int *height)
+ {
+ 	CImg<float> image(name.c_str());
+ 	*width  = image.dimx();
+ 	*height = image.dimz();
+ 	
+ 	Spectrum *ret = new Spectrum[*width * *height];
+ 	int i=0;
+ 	for (int x = 0; x < *width; ++x)
+ 	  for (int y = 0; y < *height; ++y)
+ 	{
+ 		float c[3]={ image(x,y,0,0),image(x,y,0,1),image(x,y,0,2) };
+ 		ret[i++] = Spectrum(c);
+ 	}
+ 	return ret;
+ }
+
+ Spectrum *ReadImage(const string &name, int *width, int *height)
+ {
+	int p = name.find_last_of('.',name.size());
+	//string fileName = name.substr(0, p);
+	std::string extension = name.substr(p+1, name.size()-p-1);
+	//transform extension to lowercase
+	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower );
+ 	
+ 	if(extension=="exr") return ReadExrImage(name, width, height);
+ 	
+ 	/*
+ 	The CImg Library can NATIVELY handle the following file formats :
+    * RAW : consists in a very simple header (in ascii), then the image data.
+    * ASC (Ascii)
+    * HDR (Analyze 7.5)
+    * INR (Inrimage)
+    * PPM/PGM (Portable Pixmap)
+    * BMP (uncompressed)
+    * PAN (Pandore-5)
+    * DLM (Matlab ASCII)*/
+    if(extension=="raw") return ReadCimgImage(name, width, height);
+    if(extension=="asc") return ReadCimgImage(name, width, height);
+    if(extension=="hdr") return ReadCimgImage(name, width, height);
+    if(extension=="inr") return ReadCimgImage(name, width, height);
+    if(extension=="ppm") return ReadCimgImage(name, width, height);
+    if(extension=="pgm") return ReadCimgImage(name, width, height);
+    if(extension=="bmp") return ReadCimgImage(name, width, height);
+    if(extension=="pan") return ReadCimgImage(name, width, height);
+    if(extension=="dlm") return ReadCimgImage(name, width, height);
+    
+ 	
+ 	std::string errorMessage="Cannot recognise file format for file : "+name;
+ 	luxError(LUX_ERROR,LUX_BADFILE,errorMessage.c_str());
+ 	return NULL;
+ }
+ 
  void WriteRGBAImage(const string &name, float *pixels,
 		float *alpha, int xRes, int yRes,
 		int totalXRes, int totalYRes,
