@@ -21,6 +21,9 @@
  ***************************************************************************/
 
 // luxgui.cpp*
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
+
 #include "lux.h"
 #include "api.h"
 #include "scene.h"
@@ -488,6 +491,7 @@ int main(int argc, char *argv[]) {
 
 	GuiSceneReady = false;
 	framebufferUpdate = 10.0f;
+	strcpy(gui_current_scenefile,"");
 
 	status_render = STATUS_RENDER_NONE;
 
@@ -501,8 +505,32 @@ int main(int argc, char *argv[]) {
 	// set timeouts
     Fl::add_timeout(0.25, check_SceneReady);
     
+     // load a file if provided in command line
+    if(argc>=1)
+    {
+    	printf("loading file : %s \n",argv[1]);	
+    	
+    	//change directory
+    	boost::filesystem::path fullPath( boost::filesystem::initial_path() );
+		fullPath = boost::filesystem::system_complete( boost::filesystem::path( argv[1], boost::filesystem::native ) );
+		strcpy(gui_current_scenefile, fullPath.leaf().c_str());
+		chdir (fullPath.branch_path().string().c_str());	
+    	
+    	#ifdef WIN32
+		_chdir(fullPath.branch_path().string().c_str());
+		#else
+		chdir(fullPath.branch_path().string().c_str());
+		#endif
+		
+		//launch rendering
+    	RenderScenefile();
+    }
+    
     // run gui
     Fl::run();
+    
+   
+    
 
 	// TODO stop everything
 	return 0;
