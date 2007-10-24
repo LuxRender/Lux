@@ -435,7 +435,11 @@ public:
 	}
 	void *Alloc(u_int sz) {
 		// Round up _sz_ to minimum machine alignment
+		#ifndef LUX_USE_SSE
 		sz = ((sz + 7) & (~7));
+		#else
+		sz = ((sz + 15) & (~15));
+		#endif
 		if (curBlockPos + sz > blockSize) {
 			// Get new block of memory for _MemoryArena_
 			usedBlocks.push_back(currentBlock);

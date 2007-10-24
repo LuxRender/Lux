@@ -25,6 +25,9 @@
 // color.h*
 #include "lux.h"
 // Spectrum Declarations
+
+#ifndef LUX_USE_SSE
+
 class  Spectrum {
 public:
 	// Spectrum Public Methods
@@ -187,6 +190,219 @@ protected:
 	static float ZWeight[COLOR_SAMPLES];
 	friend Spectrum FromXYZ(float x, float y, float z);
 };
+
+#else //LUX_USE_SSE
+
+#define COLOR_VECTORS 1
+
+class  _MM_ALIGN16 Spectrum {
+public:
+	// Spectrum Public Methods
+	Spectrum(float v = 0.f) {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			c[i] = v;
+	}
+	Spectrum(float cs[COLOR_SAMPLES]) {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			c[i] = cs[i];
+	}
+	Spectrum(__m128 cv[COLOR_VECTORS])
+    {
+    	for (int i = 0; i < COLOR_VECTORS; ++i)
+    		cvec[i]=cv[i];
+    }
+	
+	friend ostream &operator<<(ostream &, const Spectrum &);
+	Spectrum &operator+=(const Spectrum &s2) {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			c[i] += s2.c[i];
+		return *this;
+	}
+	Spectrum operator+(const Spectrum &s2) const {
+		Spectrum ret;// = *this;
+		for (int i = 0; i < COLOR_VECTORS; ++i)
+			ret.cvec[i]=_mm_add_ps(cvec[i],s2.cvec[i]);
+		
+		//for (int i = 0; i < COLOR_SAMPLES; ++i)
+		//	ret.c[i] += s2.c[i];
+		return ret;
+	}
+	Spectrum operator-(const Spectrum &s2) const {
+		Spectrum ret = *this;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] -= s2.c[i];
+		return ret;
+	}
+	Spectrum operator/(const Spectrum &s2) const {
+		Spectrum ret;// = *this;
+		for (int i = 0; i < COLOR_VECTORS; ++i)
+			ret.cvec[i]=_mm_div_ps(cvec[i],s2.cvec[i]);
+		//for (int i = 0; i < COLOR_SAMPLES; ++i)
+		//	ret.c[i] /= s2.c[i];
+		return ret;
+	}
+	Spectrum operator*(const Spectrum &sp) const {
+		Spectrum ret;// = *this;
+		for (int i = 0; i < COLOR_VECTORS; ++i)
+			ret.cvec[i]=_mm_mul_ps(cvec[i],sp.cvec[i]);
+		
+		/*for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] *= sp.c[i];*/
+		return ret;
+	}
+	Spectrum &operator*=(const Spectrum &sp) {
+		//for (int i = 0; i < COLOR_SAMPLES; ++i)
+		//	c[i] *= sp.c[i];
+		
+		for (int i = 0; i < COLOR_VECTORS; ++i)
+			cvec[i]=_mm_mul_ps(cvec[i],sp.cvec[i]);
+		
+		return *this;
+	}
+	Spectrum operator*(float a) const {
+		Spectrum ret = *this;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] *= a;
+		return ret;
+	}
+	Spectrum &operator*=(float a) {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			c[i] *= a;
+		return *this;
+	}
+	friend inline
+	Spectrum operator*(float a, const Spectrum &s) {
+		return s * a;
+	}
+	Spectrum operator/(float a) const {
+		return *this * (1.f / a);
+	}
+	Spectrum &operator/=(float a) {
+		float inv = 1.f / a;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			c[i] *= inv;
+		return *this;
+	}
+	void AddWeighted(float w, const Spectrum &s) {
+		//for (int i = 0; i < COLOR_SAMPLES; ++i)
+		//	c[i] += w * s.c[i];
+		__m128 wvec=_mm_set_ps1(w);
+		
+		for (int i = 0; i < COLOR_VECTORS; ++i)
+			cvec[i]=_mm_add_ps(cvec[i],_mm_mul_ps(s.cvec[i],wvec));
+	}
+	bool operator==(const Spectrum &sp) const {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			if (c[i] != sp.c[i]) return false;
+		
+		//for (int i = 0; i < COLOR_VECTORS; ++i)	
+		//	if(_mm_cmpneq_ps(cvec[i],sp.cvec[i])) return false;
+		return true;
+	}
+	bool operator!=(const Spectrum &sp) const {
+		return !(*this == sp);
+	}
+	bool Black() const {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			if (c[i] != 0.) return false;
+		return true;
+	}
+	Spectrum Sqrt() const {
+		Spectrum ret;
+		//for (int i = 0; i < COLOR_SAMPLES; ++i)
+		//	ret.c[i] = sqrtf(c[i]);
+			
+		for (int i = 0; i < COLOR_VECTORS; ++i)	
+			ret.cvec[i]=_mm_sqrt_ps(cvec[i]);
+		return ret;
+	}
+	Spectrum Pow(const Spectrum &e) const {
+		Spectrum ret;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] = c[i] > 0 ? powf(c[i], e.c[i]) : 0.f;
+		return ret;
+	}
+	Spectrum operator-() const {
+		Spectrum ret;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] = -c[i];
+		return ret;
+	}
+	friend Spectrum Exp(const Spectrum &s) {
+		Spectrum ret;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] = expf(s.c[i]);
+		return ret;
+	}
+	Spectrum Clamp(float low = 0.f,
+	               float high = INFINITY) const {
+		Spectrum ret;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] = ::Clamp(c[i], low, high);
+		return ret;
+	}
+	bool IsNaN() const {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			if (isnan(c[i])) return true;
+		return false;
+	}
+	void Print(FILE *f) const {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			fprintf(f, "%f ", c[i]);
+	}
+	void XYZ(float xyz[3]) const {
+		xyz[0] = xyz[1] = xyz[2] = 0.;
+		for (int i = 0; i < COLOR_SAMPLES; ++i) {
+			xyz[0] += XWeight[i] * c[i];
+			xyz[1] += YWeight[i] * c[i];
+			xyz[2] += ZWeight[i] * c[i];
+		}
+	}
+	float y() const {
+		float v = 0.;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			v += YWeight[i] * c[i];
+		return v;
+	}
+	bool operator<(const Spectrum &s2) const {
+		return y() < s2.y();
+	}
+	friend class ParamSet;
+	
+	// Spectrum Public Data
+	//float c[COLOR_SAMPLES];
+	
+	union
+    {
+     	__m128  cvec[COLOR_VECTORS];
+      float c[COLOR_SAMPLES];
+    };
+	
+	
+	static const int CIEstart = 360;
+	static const int CIEend = 830;
+	static const int nCIE = CIEend-CIEstart+1;
+	static const float CIE_X[nCIE];
+	static const float CIE_Y[nCIE];
+	static const float CIE_Z[nCIE];
+
+/*	
+	void* operator new(size_t t) { return _mm_malloc(t,16); }
+    void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+    void* operator new[](size_t t) { return _mm_malloc(t,16); }
+    void operator delete[] (void* ptr) { _mm_free(ptr); }
+    void* operator new(long unsigned int i, Spectrum*) { return new Spectrum[i]; }
+    */
+	
+protected:
+	// Spectrum Private Data
+	static float XWeight[COLOR_SAMPLES];
+	static float YWeight[COLOR_SAMPLES];
+	static float ZWeight[COLOR_SAMPLES];
+	friend Spectrum FromXYZ(float x, float y, float z);
+};
+
+#endif
 
 Spectrum FromXYZ(float x, float y, float z);
 

@@ -353,7 +353,13 @@ private:
 	u_int nLobes;
 	const Spectrum *x, *y, *z, *exponent;
 };
-class  FresnelBlend : public BxDF {
+
+//#ifndef LUX_USE_SSE
+class  FresnelBlend : public BxDF
+//#else
+//class  _MM_ALIGN16 FresnelBlend : public BxDF
+//#endif
+{
 public:
 	// FresnelBlend Public Methods
 	FresnelBlend(const Spectrum &Rd,
@@ -366,6 +372,15 @@ public:
 	}
 	Spectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wi, const Vector &wo) const;
+/*
+#ifdef LUX_USE_SSE	
+	void* operator new(size_t t) { return _mm_malloc(t,16); }
+    void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+    void* operator new[](size_t t) { return _mm_malloc(t,16); }
+    void operator delete[] (void* ptr) { _mm_free(ptr); }
+    void* operator new(long unsigned int i, void*) { return _mm_malloc(sizeof(FresnelBlend)*i,16); }
+#endif*/
+	
 private:
 	// FresnelBlend Private Data
 	Spectrum Rd, Rs;
