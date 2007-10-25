@@ -344,12 +344,33 @@ void luxLightSource(const string &name,
 	VERIFY_WORLD("LightSource");
 
 	if(name == "sunsky") {
-		// SunSky light - create both sun & sky lightsources
+		//SunSky light - create both sun & sky lightsources
 		Light *lt_sun = MakeLight("sun", curTransform, params);
 		if (lt_sun == NULL)
 			Error("luxLightSource: light type sun unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sun);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt_sun;
+		}
+		Light *lt_sky = MakeLight("sky", curTransform, params);
+		if (lt_sky == NULL)
+			Error("luxLightSource: light type sky unknown.");
+		else {
+			renderOptions->lights.push_back(lt_sky);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt_sky;
+		}
+        }
+	else if(name == "sunsky_exp") {
+		//SunSky light - create both sun & sky lightsources
+		Light *lt_sun = MakeLight("sun2", curTransform, params);
+		if (lt_sun == NULL)
+			Error("luxLightSource: light type sun unknown.");
+		else {
+			renderOptions->lights.push_back(lt_sun);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt_sun;
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL)
