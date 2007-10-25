@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
     Fl::add_timeout(0.25, check_SceneReady);
     
      // load a file if provided in command line
-    if(argc>=1)
+    if(argc>=2)
     {
     	printf("loading file : %s \n",argv[1]);	
     	
