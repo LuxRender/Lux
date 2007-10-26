@@ -10,37 +10,56 @@ ENDIF(APPLE)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
 
 
-#Find BISON
+#############################################################################
+#############################################################################
+###########################      Find BISON       ###########################
+#############################################################################
+#############################################################################
 FIND_PROGRAM(BISON_EXECUTABLE bison)
 IF (NOT BISON_EXECUTABLE)
 MESSAGE(FATAL_ERROR "bison not found - aborting")
 ENDIF (NOT BISON_EXECUTABLE)
 
 
-#Find FLEX
+#############################################################################
+#############################################################################
+###########################      Find FLEX        ###########################
+#############################################################################
+#############################################################################
 FIND_PROGRAM(FLEX_EXECUTABLE flex)
 IF (NOT FLEX_EXECUTABLE)
 MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
 
 
-# Find and setup FLTK library
+#############################################################################
+#############################################################################
+########################### FLTK  LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
 #This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
-FIND_PATH(FLTK_INCLUDE_DIR
-    Fl/Fl.h
-    PATHS
-    /usr/local/include/
-    /usr/local/include/fltk-1.1
-    /usr/include/
-    /usr/include/fltk-1.1
-    /opt/local/include/
-    /opt/include/
-)
+IF(APPLE)
+	SET(FLTK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/MacOS/fltk-1.1/include)
+	SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/MacOS/fltk-1.1/lib)
+ELSE(APPLE)
+	FIND_PATH(FLTK_INCLUDE_DIR
+		Fl/Fl.h
+		PATHS
+		/usr/local/include/
+		/usr/local/include/fltk-1.1
+		/usr/include/
+		/usr/include/fltk-1.1
+		/opt/local/include/
+		/opt/include/
+	)
+ENDIF(APPLE)
+
 IF( FLTK_INCLUDE_DIR )
 	SET(FLTK_LIBRARIES fltk)
 ELSE( FLTK_INCLUDE_DIR )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
 ENDIF( FLTK_INCLUDE_DIR )
+
 #FIND_PACKAGE( FLTK REQUIRED )
 #IF( FLTK_FOUND )
         #MESSAGE( STATUS ${FLTK_INCLUDE_DIR} )
@@ -51,61 +70,69 @@ ENDIF( FLTK_INCLUDE_DIR )
 #ENDIF( FLTK_FOUND )
 
 
-# Find and setup Boost library
-FIND_PACKAGE(Boost REQUIRED)
-IF(Boost_FOUND)
-	#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
-	#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
-	IF(APPLE)
-		SET(Boost_LIBRARIES boost_thread-mt boost_program_options boost_filesystem)
-	ELSE(APPLE)
-		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
-	ENDIF(APPLE)
-ELSE(Boost_FOUND)
-	MESSAGE(FATAL_ERROR "Could not find Boost")
-ENDIF(Boost_FOUND)
-
-
-# Find and setup OpenEXR
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-    ImfXdr.h
-    PATHS
-    /usr/local/include/OpenEXR
-    /usr/include/OpenEXR
-    /sw/include/OpenEXR
-    /opt/local/include/OpenEXR
-    /opt/csw/include/OpenEXR
-    /opt/include/OpenEXR
-) 
-
+#############################################################################
+#############################################################################
+########################### BOOST LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
 IF(APPLE)
-FIND_PATH(OPENEXR_LIB_DIRS
-    libHalf.a
-    PATHS
-    /usr/local/lib
-    /usr/lib
-)
-
-SET(OPENEXR_LIBRARIES ${OPENEXR_LIB_DIRS}/libHalf.a ${OPENEXR_LIB_DIRS}/libIlmImf.a ${OPENEXR_LIB_DIRS}/libIex.a ${OPENEXR_LIB_DIRS}/libImath.a ${OPENEXR_LIB_DIRS}/libIlmThread.a)
-
+	SET(Boost_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/MacOS/boost-1.34.1/include)
+	SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/MacOS/boost-1.34.1/lib)
+	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1)
 ELSE(APPLE)
-
-SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
-
+	FIND_PACKAGE(Boost REQUIRED)
+	IF(Boost_FOUND)
+		#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
+		#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
+		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
+	ELSE(Boost_FOUND)
+		MESSAGE(FATAL_ERROR "Could not find Boost")
+	ENDIF(Boost_FOUND)
 ENDIF(APPLE)
 
+
+#############################################################################
+#############################################################################
+######################### OPENEXR LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
+IF(APPLE)
+	SET(OPENEXR_LIB_DIRS ${CMAKE_BINARY_DIR}/MacOS/openexr-1.4.0/lib)
+	SET(OPENEXR_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/MacOS/openexr-1.4.0/include)
+	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
+ELSE(APPLE)
+	FIND_PATH(OPENEXR_INCLUDE_DIRS
+		ImfXdr.h
+		PATHS
+		/usr/local/include/OpenEXR
+		/usr/include/OpenEXR
+		/sw/include/OpenEXR
+		/opt/local/include/OpenEXR
+		/opt/csw/include/OpenEXR
+		/opt/include/OpenEXR
+	) 
+	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+ENDIF(APPLE)
+
+
+
+
 #All dependencies OK !
-
-
-#Compiler flags
+#############################################################################
+#############################################################################
+#########################      COMPILER FLAGS     ###########################
+#############################################################################
+#############################################################################
 ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
-IF(APPLE)
-ADD_DEFINITIONS(-DAPPLE)
-ENDIF(APPLE)
 
 
+#############################################################################
+#############################################################################
+#########################      CUSTOM COMMAND     ###########################
+#############################################################################
+#############################################################################
 # Create custom command for flex/lex (note the outputs)
 ADD_CUSTOM_COMMAND(
 SOURCE ${CMAKE_SOURCE_DIR}/core/luxlex.l
@@ -140,6 +167,12 @@ OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
 ENDIF(APPLE)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 
+
+#############################################################################
+#############################################################################
+#####################      SOURCE FILE FOR lux_lib     ######################
+#############################################################################
+#############################################################################
 SET(lux_lib_src
 		${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxlex.cpp
 		core/api.cpp core/camera.cpp core/color.cpp core/dynload.cpp core/exrio.cpp core/film.cpp
@@ -175,7 +208,7 @@ SET(lux_lib_src
 	)
 
 INCLUDE_DIRECTORIES(${OPENEXR_INCLUDE_DIRS}
-					${Boost_INCLUDE_DIRS}
+					${Boost_INCLUDE_DIRS} ${FLTK_INCLUDE_DIR}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
 					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
@@ -184,7 +217,14 @@ INCLUDE_DIRECTORIES(${OPENEXR_INCLUDE_DIRS}
 					${CMAKE_BINARY_DIR}
 					)
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1)
+
+#############################################################################
+#############################################################################
+#####################            LINKER INFO           ######################
+#############################################################################
+#############################################################################
+
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${FLTK_LIBRARIES_DIR} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1)
 					
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
@@ -194,7 +234,7 @@ TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${Boost_LIBRARIES} z ${HALF} ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES})
 ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
 ENDIF(APPLE)
