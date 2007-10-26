@@ -43,7 +43,7 @@ IF(APPLE)
 	SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/MacOS/fltk-1.1/lib)
 ELSE(APPLE)
 	FIND_PATH(FLTK_INCLUDE_DIR
-		Fl/Fl.h
+		Fl/Fl.H
 		PATHS
 		/usr/local/include/
 		/usr/local/include/fltk-1.1
