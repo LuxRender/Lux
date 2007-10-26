@@ -92,6 +92,15 @@ Spectrum FresnelDielectric::Evaluate(float cosi) const {
 		return FrDiel(fabsf(cosi), cost, ei, et);
 	}
 }
+
+Spectrum FresnelSlick::Evaluate(float cosi) const {
+  return normal_incidence + (1.0f - normal_incidence) * powf (1.0 - cosi, 5.0f);
+}
+
+FresnelSlick::FresnelSlick (float ni) {
+  normal_incidence = ni;
+}
+
 Spectrum SpecularReflection::Sample_f(const Vector &wo,
 		Vector *wi, float u1, float u2, float *pdf) const {
 	// Compute perfect specular reflection direction

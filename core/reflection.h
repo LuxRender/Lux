@@ -193,6 +193,15 @@ class  FresnelNoOp : public Fresnel {
 public:
 	Spectrum Evaluate(float) const { return Spectrum(1.); }
 };
+
+class  FresnelSlick : public Fresnel {
+public:
+  Spectrum Evaluate(float cosi) const;
+  FresnelSlick (float r);
+private:
+  float normal_incidence;
+};
+
 class  SpecularReflection : public BxDF {
 public:
 	// SpecularReflection Public Methods
