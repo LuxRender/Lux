@@ -239,6 +239,57 @@ float Microfacet::Pdf(const Vector &wo,
 	if (!SameHemisphere(wo, wi)) return 0.f;
 	return distribution->Pdf(wo, wi);
 }
+
+Beckmann::Beckmann(float rms) {
+  r = rms;
+}
+
+float Beckmann::D(const Vector &wh) const {
+  float costhetah = fabsf(CosTheta(wh));
+  float sinthetah = fabsf(SinTheta(wh));
+  float tanthetah = 1.0;
+
+  if (costhetah != 0.0f)
+    tanthetah = sinthetah / costhetah;
+
+  float dfac = tanthetah / r;
+
+  return exp(-(dfac * dfac)) / (M_PI * r * r * powf(costhetah, 4.0));
+}
+
+void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
+  // Compute sampled half-angle vector $\wh$ for Beckmann distribution
+  // Adapted from B. Walter et al, Microfacet Models for Refraction, Eurographics Symposium on Rendering, 2007, page 7
+
+  float theta = atan (sqrt (-(r * r) * log(1.0 - u1)));
+  float costheta = cos (theta);
+  float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
+  float phi = u2 * 2.f * M_PI;
+
+  Vector H = SphericalDirection(sintheta, costheta, phi);
+
+  if (!SameHemisphere(wo, H))
+    H.z *= -1.f;
+
+  // Compute incident direction by reflecting about $\wh$
+  *wi = -wo + 2.f * Dot(wo, H) * H;
+
+  // Compute PDF for \wi from Beckmann distribution
+
+  float conversion_factor = 1.0 / 4.f * Dot(wo, H);
+  float beckmann_pdf = conversion_factor * D(H);
+
+  *pdf = beckmann_pdf;
+}
+
+float Beckmann::Pdf(const Vector &wo, const Vector &wi) const {
+  Vector H = Normalize(wo + wi);
+  float conversion_factor = 1.0 / 4.f * Dot(wo, H);
+  float beckmann_pdf = conversion_factor * D(H);
+
+  return beckmann_pdf;
+}
+
 void Blinn::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
 	// Compute sampled half-angle vector $\wh$ for Blinn distribution

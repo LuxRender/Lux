@@ -318,6 +318,22 @@ public:
 private:
 	float exponent;
 };
+
+class  Beckmann : public MicrofacetDistribution {
+public:
+
+  Beckmann (float rms);
+
+  // Beckmann Public Methods
+  float D (const Vector &wh) const;
+  virtual void Sample_f (const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
+  virtual float Pdf (const Vector &wi, const Vector &wo) const;
+
+private:
+
+  float r;
+};
+
 class  Anisotropic : public MicrofacetDistribution {
 public:
 	// Anisotropic Public Methods
