@@ -714,7 +714,9 @@ def save_lux(filename, unindexedname):
 	##### Write film ######
 	file.write("Film \"multiimage\"\n") 
 	file.write("     \"integer xresolution\" [%d] \"integer yresolution\" [%d]\n" % (SizeX.val*ScaleSize.val/100, SizeY.val*ScaleSize.val/100) )
-
+	if(SaveIGI.val == 1):
+		file.write("	 \"string igi_filename\" [\"out.igi\"]\n")
+		file.write("	 	\"integer igi_writeinterval\" [%i]\n" %(SaveIGIint.val))
 	if(SaveEXR.val == 1):
 		file.write("	 \"string hdr_filename\" [\"out.exr\"]\n")
 		file.write("	 	\"integer hdr_writeinterval\" [%i]\n" %(SaveEXRint.val))
@@ -1119,6 +1121,8 @@ OutputDither = Draw.Create(0.0)
 # file output
 SaveEXR = Draw.Create(0)
 SaveEXRint = Draw.Create(120)
+SaveIGI = Draw.Create(0)
+SaveIGIint = Draw.Create(120)
 SaveTGA = Draw.Create(1)
 SaveTGAint = Draw.Create(120)
 Displayint = Draw.Create(12)
@@ -1151,6 +1155,8 @@ def update_Registry():
 	d['filmiso'] = FilmIso.val
 	d['saveexr'] = SaveEXR.val
 	d['saveexrint'] = SaveEXRint.val
+	d['saveigi'] = SaveIGI.val
+	d['saveigiint'] = SaveIGIint.val
 	d['savetga'] = SaveTGA.val
 	d['savetgaint'] = SaveTGAint.val
 	d['savedisplayint'] = Displayint.val
@@ -1208,6 +1214,8 @@ if rdict:
 		FilmIso.val = rdict['filmiso']
 		SaveEXR.val = rdict['saveexr']
 		SaveEXRint.val = rdict['saveexrint']
+		SaveIGI.val = rdict['saveigi']
+		SaveIGIint.val = rdict['saveigiint']
 		SaveTGA.val = rdict['savetga']
 		SaveTGAint.val = rdict['savetgaint']
 		Displayint.val = rdict['savedisplayint']
@@ -1265,24 +1273,15 @@ def drawCamera():
 	BGL.glRectf(10,182,90,183)
 	BGL.glColor3f(0.9,0.9,0.9)
 
-
-	#ToneMapScale = Draw.Number("Shutter: 1/", evtNoEvt,10, 150, 200, 18, ToneMapScale.val, 1, 8000, "Exposure")
-	#Autoexp = Draw.Toggle("AUTO", evtNoEvt, 215, 150, 40, 18, Autoexp.val, "Enable Autoexposure")
 	LensRadius = Draw.Number("Lens Radius: ", evtNoEvt, 10, 130, 200, 18, LensRadius.val, 0.0, 3.0, "Defines the lens radius. Values higher than 0. enable DOF and control the amount")
-	#FilmIso = Draw.Number("FilmIso", evtNoEvt,10,110,200,18,FilmIso.val,1,100000, "Set FilmIso")
 	FocalDistance = Draw.Number("Focal Distance: ", evtNoEvt, 10, 90, 200, 18, FocalDistance.val, 0.0, 100, "Distance from the camera at which objects will be in focus. Has no effect if Lens Radius is 0.")
 	Draw.Button("S", evtFocusS, 215, 90, 20, 18, "Get the distance from the selected object")
 	Draw.Button("C", evtFocusC, 235, 90, 20, 18, "Get the distance from the 3d cursor")
-	#BGL.glRasterPos2i(260,135) ; Draw.Text("White Balance:")
-	#WhiteBalance = Draw.Menu(strWhiteBalance, evtNoEvt, 345, 130, 65, 18, WhiteBalance.val, "Set the white_balance (def=D65)")
-	
-	#FilmWidth = Draw.Number("Film Width: ", evtNoEvt, 260, 150, 150, 18, FilmWidth.val, 0.0, 100.0, "Width of the \"Film.\" in mm.")
-	
 	BGL.glColor3f(0.9,0.9,0.9) ; BGL.glRasterPos2i(10,65) ; Draw.Text("Size:")
 	SizeX = Draw.Number("X: ", evtchangesize, 45, 60, 75, 18, SizeX.val, 1, 4096, "Width of the render")
 	SizeY = Draw.Number("Y: ", evtchangesize, 130, 60, 75, 18, SizeY.val, 1, 3072, "Height of the render")
 	ScaleSize = Draw.Menu(strScaleSize, evtNoEvt, 210, 60, 65, 18, ScaleSize.val, "Scale Image Size of ...")
-	#
+
 ##############  Draw Environment  #######################################
 def drawEnv():
 ####################################################
@@ -1345,28 +1344,11 @@ def drawSettings():
 	Filterxwidth = Draw.Number("X width:", evtNoEvt,140,70,120,18, Filterxwidth.val,1,4, "Horizontal filter width")
 	Filterywidth = Draw.Number("Y width:", evtNoEvt,260,70,120,18, Filterywidth.val,1,4, "Vertical filter width")
 
-
-	#BGL.glRasterPos2i(10,165) ; Draw.Text("Metropolis light transport settings")
-	#MLT = Draw.Toggle("Metropolis", evtNoEvt, 10, 80, 80, 18, MLT.val, "If pressed, use MLT otherwise use pathtracer")
-	#LMP = Draw.Number("LM probability: ", evtNoEvt, 10, 140, 200, 18, LMP.val, 0.0, 1.0, "Probability of using fresh random numbers")
-	#MaxChange = Draw.Number("Max Change: ", evtNoEvt, 10, 120, 200, 18, MaxChange.val, 0.0, 1.0, "Maximum mutation size") 
-	#MaxNumConsRej = Draw.Number("Max num consec reject:", evtNoEvt, 10, 100, 200, 18, MaxNumConsRej.val, 0, 10000, "The lower the value the more biased the calculation")
-	#Threads = Draw.Number("Threads", evtNoEvt, 210,60,200,18, Threads.val,1,4, "Set Threadnumber")
-	
-	#BGL.glRasterPos2i(210,165) ; Draw.Text("General tracing parameters")
-	#Bidirectional = Draw.Toggle("Bidirectional", evtNoEvt, 210, 80, 80, 18, Bidirectional.val, "If pressed, use bidirectional tracing")
-	#RRLP = Draw.Number("RR live probability: ", evtNoEvt, 210, 140, 200, 18, RRLP.val, 0.0, 1.0, "Russian roulette live probability")
-	#MaxDepth = Draw.Number("Max depth:", evtNoEvt, 210, 120, 200, 18, MaxDepth.val, 1, 10000, "Maximum ray bounce depth")
-	#
-	#BGL.glRasterPos2i(10,150) ; Draw.Text("Path tracer settings")
-	#StrataWidth = Draw.Number("Strata width:", evtNoEvt, 210, 100, 200, 18, StrataWidth.val, 1, 50, "Number of samples per pixel = strata width*strata width")
-	#SaveEXR = Draw.Toggle("Save EXR", evtNoEvt, 10, 150, 80, 18, SaveEXR.val, "Save untonemapped EXR file")#
-
 ##################  Draw RSettings  #########################	
 def drawSystem():
 ########################################
 	global Logging, MatFile
-	global SaveUTMExr, SaveTMExr, ColExponent, OutputGamma, SaveEXR, SaveEXRint, SaveTGA, SaveTGAint, Displayint, OutputDither
+	global SaveUTMExr, SaveTMExr, ColExponent, OutputGamma, SaveEXR, SaveEXRint, SaveIGI, SaveIGIint, SaveTGA, SaveTGAint, Displayint, OutputDither
 	global HaltTime, FrameUp, ImageSave
 	
 	drawButtons()
@@ -1375,28 +1357,18 @@ def drawSystem():
 	BGL.glRectf(330,182,410,183)
 	BGL.glColor3f(0.9,0.9,0.9)
 	
-	#Logging = Draw.Toggle("Logging", evtNoEvt, 210, 150, 80, 18, Logging.val, "Write to log.txt if pressed")
-	#SaveUTMExr = Draw.Toggle("Save utm EXR", evtNoEvt, 210, 130, 80, 18, SaveUTMExr.val, "Save untonemapped EXR file")
-	#SaveTMExr = Draw.Toggle("Save tm EXR", evtNoEvt, 210, 110, 80, 18, SaveTMExr.val, "Save tonemapped EXR file")
-	#MatFile = Draw.Toggle("Sep. Materials", evtNoEvt, 210, 90, 80, 18, MatFile.val, "Save all the material settings to a separate file with a \"-materials\" extension")
-	
+	SaveIGI = Draw.Toggle("Save IGI", evtNoEvt, 10, 160, 80, 18, SaveIGI.val, "Save untonemapped IGI file")
+	SaveIGIint = Draw.Number("Interval", evtNoEvt,132,160,150,18, SaveIGIint.val,20,10000, "Set Interval for IGI file write (seconds)")
+	SaveEXR = Draw.Toggle("Save EXR", evtNoEvt, 10, 140, 80, 18, SaveEXR.val, "Save untonemapped EXR file")
+	SaveEXRint = Draw.Number("Interval", evtNoEvt,132,140,150,18, SaveEXRint.val,20,10000, "Set Interval for EXR file write (seconds)")
+	SaveTGA = Draw.Toggle("Save TGA", evtNoEvt, 10, 120, 80, 18, SaveTGA.val, "Save tonemapped TGA file")
+	SaveTGAint = Draw.Number("Interval", evtNoEvt,132,120,150,18, SaveTGAint.val,20,10000, "Set Interval for TGA file write (seconds)")
 
-	SaveEXR = Draw.Toggle("Save EXR", evtNoEvt, 10, 150, 80, 18, SaveEXR.val, "Save untonemapped EXR file")
-	SaveEXRint = Draw.Number("Interval", evtNoEvt,132,150,150,18, SaveEXRint.val,20,10000, "Set Interval for EXR file write (seconds)")
-	SaveTGA = Draw.Toggle("Save TGA", evtNoEvt, 10, 130, 80, 18, SaveTGA.val, "Save tonemapped TGA file")
-	SaveTGAint = Draw.Number("Interval", evtNoEvt,132,130,150,18, SaveTGAint.val,20,10000, "Set Interval for TGA file write (seconds)")
-
-	Displayint = Draw.Number("Display Interval", evtNoEvt,10,100,150,18, Displayint.val,5,10000, "Set Interval for Display (seconds)")
-
+	Displayint = Draw.Number("Display Interval", evtNoEvt,10,90,150,18, Displayint.val,5,10000, "Set Interval for Display (seconds)")
 
 	OutputGamma = Draw.Number("Output Gamma: ", evtNoEvt, 10, 60, 200, 18, OutputGamma.val, 0.0, 6.0, "Output Image Gamma")
 	OutputDither = Draw.Number("Output Dither: ", evtNoEvt, 210, 60, 150, 18, OutputDither.val, 0.0, 1.0, "Output Image Dither")
 
-	#ColExponent = Draw.Number("Gamma : ", evtNoEvt, 10, 150, 150, 18, ColExponent.val, 0.01, 5.0, "Gamma exponent")
-	#HaltTime = Draw.Number("Halt Time :", evtNoEvt, 10, 130, 150, 18, HaltTime.val, -1, 10000, "Set the Halttime in min")  
-	#FrameUp = Draw.Number("Frame Upl :", evtNoEvt,10,110,150,18, FrameUp.val,20,10000, "Set Frame Upload Time")	
-	#ImageSave = Draw.Number("Image Up", evtNoEvt,10,90,150,18, ImageSave.val,20,10000, "Set Image Uplaod Time")
-	
 #################  Draw Tonemapping  #########################
 def drawTonemap():
 #######################################
@@ -1419,14 +1391,9 @@ def drawTonemap():
 		ToneMapPreScale = Draw.Number("PreS: ", evtNoEvt, 10, 130, 110, 18, ToneMapPreScale.val, 0.01,100.0, "Pre Scale: See Lux Manual ;)")
 		ToneMapPostScale = Draw.Number("PostS: ", evtNoEvt, 120, 130, 110, 18, ToneMapPostScale.val, 0.01,100.0, "Post Scale: See Lux Manual ;)")
 	
-	#
-
 	Bloom = Draw.Toggle("Bloom", evtNoEvt, 10, 80, 80, 18, Bloom.val, "Enable HDR Bloom")
 	BloomWidth = Draw.Number("Width: ", evtNoEvt, 90, 80, 120, 18, BloomWidth.val, 0.1, 2.0, "Amount of bloom")
 	BloomRadius = Draw.Number("Radius: ", evtNoEvt, 210, 80, 120, 18, BloomRadius.val, 0.1, 2.0, "Radius of the bloom filter")
-
-#	DiffuseGain = Draw.Number("Diffuse gain: ", evtNoEvt, 130, 40, 150, 18, DiffuseGain.val, 0.0, 1.0, "Overall diffuse color gain")
-#	SpecularGain = Draw.Number("Specular gain: ", evtNoEvt, 300, 40, 150, 18, SpecularGain.val, 0.0, 1.0, "Overall specular color gain")
 	
 ##############
 def drawGUI():
@@ -1466,7 +1433,6 @@ def drawButtons():
 	
 	#ExecuteLux = Draw.Toggle("Run", evtNoEvt, 10, 5, 30, 10, ExecuteLux.val, "Execute Lux and render the saved .lxs file")
 	#DefaultExport = Draw.Toggle("def",evtNoEvt,40,5,30,10, DefaultExport.val, "Use default.lxs as filename") 
-	#ExportGeom = Draw.Toggle("geo",evtNoEvt,70,5,30,10, ExportGeom.val, "Export Geometry")
 	
 	BGL.glColor3f(0.9, 0.9, 0.9) ; BGL.glRasterPos2i(340,7) ; Draw.Text("Press Q or ESC to quit.", "tiny")
 	
