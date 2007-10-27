@@ -25,6 +25,7 @@
 
 #define cimg_display_type  0
 #define cimg_use_png 1
+#define cimg_use_tiff 1
 #include "cimg.h"
 using namespace cimg_library;
 
@@ -140,6 +141,8 @@ using namespace Imath;
     if(extension=="pan") return ReadCimgImage(name, width, height);
     if(extension=="dlm") return ReadCimgImage(name, width, height);
     if(extension=="png") return ReadCimgImage(name, width, height);
+    if(extension=="tif") return ReadCimgImage(name, width, height);
+    if(extension=="tiff") return ReadCimgImage(name, width, height);
     
  	
  	std::string errorMessage="Cannot recognise file format for file : "+name;

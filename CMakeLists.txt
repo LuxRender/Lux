@@ -38,42 +38,37 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #############################################################################
 #############################################################################
 #This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
-#IF(APPLE)
-#	SET(FLTK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/include)
-#	SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/lib)
-#ELSE(APPLE)
-#	FIND_PATH(FLTK_INCLUDE_DIR
-#		Fl/Fl.H
-#		PATHS
-#		/usr/local/include/
-#		/usr/local/include/fltk-1.1
-#		/usr/include/
-#		/usr/include/fltk-1.1
-#		/opt/local/include/
-#		/opt/include/
-#	)
-#ENDIF(APPLE)
-
-#IF( FLTK_INCLUDE_DIR )
-#	SET(FLTK_LIBRARIES fltk)
-#ELSE( FLTK_INCLUDE_DIR )
-#        MESSAGE(FATAL_ERROR "Could not find FLTK")
-#ENDIF( FLTK_INCLUDE_DIR )
-
 IF(APPLE)
 	SET(FLTK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/include)
 	SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/lib)
 ELSE(APPLE)
-
-INCLUDE(FindFLTK)
-FIND_PACKAGE( FLTK REQUIRED )
-IF( FLTK_FOUND )
-        MESSAGE( STATUS "Found FLTK" )
-ELSE( FLTK_FOUND )
-        MESSAGE(FATAL_ERROR "Could not find FLTK")
-ENDIF( FLTK_FOUND )
-
+	FIND_PATH(FLTK_INCLUDE_DIR
+		Fl/Fl.H
+		PATHS
+		/usr/local/include/
+		/usr/local/include/fltk-1.1
+		/usr/include/
+		/usr/include/fltk-1.1
+		/opt/local/include/
+		/opt/include/
+	)
 ENDIF(APPLE)
+
+IF( FLTK_INCLUDE_DIR )
+	SET(FLTK_LIBRARIES fltk)
+ELSE( FLTK_INCLUDE_DIR )
+        MESSAGE(FATAL_ERROR "Could not find FLTK")
+ENDIF( FLTK_INCLUDE_DIR )
+
+
+#INCLUDE(FindFLTK)
+#FIND_PACKAGE( FLTK REQUIRED )
+#IF( FLTK_FOUND )
+#        MESSAGE( STATUS "Found FLTK" )
+#ELSE( FLTK_FOUND )
+#        MESSAGE(FATAL_ERROR "Could not find FLTK")
+#ENDIF( FLTK_FOUND )
+
 
 
 #############################################################################
@@ -126,7 +121,7 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-INCLUDE(FindPNG)
+
 # - Find the native PNG includes and library
 #
 # This module defines
@@ -138,9 +133,31 @@ INCLUDE(FindPNG)
 #  PNG_LIBRARY, where to find the PNG library.
 # None of the above will be defined unles zlib can be found.
 # PNG depends on Zlib
+INCLUDE(FindPNG)
 FIND_PACKAGE(PNG REQUIRED)
 
 
+#############################################################################
+#############################################################################
+########################### TIFF  LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
+
+# - Find TIFF library
+# Find the native TIFF includes and library
+# This module defines
+#  TIFF_INCLUDE_DIR, where to find tiff.h, etc.
+#  TIFF_LIBRARIES, libraries to link against to use TIFF.
+#  TIFF_FOUND, If false, do not try to use TIFF.
+# also defined, but not for general use are
+#  TIFF_LIBRARY, where to find the TIFF library.
+INCLUDE(FindTIFF)
+FIND_PACKAGE(TIFF REQUIRED)
+IF(TIFF_FOUND)
+		MESSAGE( STATUS "Found TIFF" )
+ELSE(TIFF_FOUND)
+		MESSAGE(FATAL_ERROR "Could not find TIFF")
+ENDIF(TIFF_FOUND)
 
 
 #All dependencies OK !
@@ -250,7 +267,8 @@ SET(lux_lib_src
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
 	)
 
-INCLUDE_DIRECTORIES(${PNG_INCLUDE_DIR}
+INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR}
+					${PNG_INCLUDE_DIR}
 					${OPENEXR_INCLUDE_DIRS}
 					${Boost_INCLUDE_DIRS} ${FLTK_INCLUDE_DIR}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
@@ -268,19 +286,19 @@ INCLUDE_DIRECTORIES(${PNG_INCLUDE_DIR}
 #############################################################################
 #############################################################################
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${FLTK_LIBRARIES_DIR} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1)
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${FLTK_LIBRARIES_DIR} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1 ${PNG_LIBRARY} ${TIFF_LIBRARY})
 					
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES})
+TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 ENDIF(APPLE)
 
 #Here we build the GUI executable
@@ -298,8 +316,8 @@ MARK_AS_ADVANCED (CARBON_LIBRARY)
 MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
 MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${Boost_LIBRARIES} ${PNG_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 ENDIF(APPLE)
 
