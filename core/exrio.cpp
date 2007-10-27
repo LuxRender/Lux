@@ -24,7 +24,7 @@
 #include <algorithm>
 
 #define cimg_display_type  0
-#include "CImg.h"
+#include "cimg.h"
 using namespace cimg_library;
 
 #ifdef WIN32
