@@ -134,7 +134,7 @@ ENDIF(APPLE)
 # None of the above will be defined unles zlib can be found.
 # PNG depends on Zlib
 INCLUDE(FindPNG)
-FIND_PACKAGE(PNG REQUIRED)
+#FIND_PACKAGE(PNG REQUIRED)
 
 
 #############################################################################
@@ -152,12 +152,35 @@ FIND_PACKAGE(PNG REQUIRED)
 # also defined, but not for general use are
 #  TIFF_LIBRARY, where to find the TIFF library.
 INCLUDE(FindTIFF)
-FIND_PACKAGE(TIFF REQUIRED)
+#FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
 		MESSAGE( STATUS "Found TIFF" )
 ELSE(TIFF_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find TIFF")
 ENDIF(TIFF_FOUND)
+
+
+#############################################################################
+#############################################################################
+########################### JPEG  LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
+
+# - Find JPEG
+# Find the native JPEG includes and library
+# This module defines
+#  JPEG_INCLUDE_DIR, where to find jpeglib.h, etc.
+#  JPEG_LIBRARIES, the libraries needed to use JPEG.
+#  JPEG_FOUND, If false, do not try to use JPEG.
+# also defined, but not for general use are
+#  JPEG_LIBRARY, where to find the JPEG library.
+INCLUDE(FindJPEG)
+#FIND_PACKAGE(JPEG REQUIRED)
+IF(JPEG_FOUND)
+		#MESSAGE( STATUS "Found JPEG" )
+ELSE(JPEG_FOUND)
+		MESSAGE(FATAL_ERROR "Could not find JPEG")
+ENDIF(JPEG_FOUND)
 
 
 #All dependencies OK !
@@ -267,7 +290,8 @@ SET(lux_lib_src
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
 	)
 
-INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR}
+INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
+					${TIFF_INCLUDE_DIR}
 					${PNG_INCLUDE_DIR}
 					${OPENEXR_INCLUDE_DIRS}
 					${Boost_INCLUDE_DIRS} ${FLTK_INCLUDE_DIR}
@@ -286,19 +310,19 @@ INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR}
 #############################################################################
 #############################################################################
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${FLTK_LIBRARIES_DIR} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1 ${PNG_LIBRARY} ${TIFF_LIBRARY})
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${FLTK_LIBRARIES_DIR} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1 ${PNG_LIBRARY} ${TIFF_LIBRARY} ${JPEG_LIBRARY})
 					
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ENDIF(APPLE)
 
 #Here we build the GUI executable
@@ -316,8 +340,8 @@ MARK_AS_ADVANCED (CARBON_LIBRARY)
 MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
 MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ENDIF(APPLE)
 
