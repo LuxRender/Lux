@@ -24,6 +24,7 @@
 #include <algorithm>
 
 #define cimg_display_type  0
+#define cimg_use_png 1
 #include "cimg.h"
 using namespace cimg_library;
 
