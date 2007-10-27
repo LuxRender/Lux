@@ -67,6 +67,7 @@ using namespace Imath;
 	// XXX should do real RGB -> Spectrum conversion here
 	for (int i = 0; i < *width * *height; ++i) {
 		float c[3] = { rgb[3*i], rgb[3*i+1], rgb[3*i+2] };
+		if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
 		ret[i] = Spectrum(c);
 	}
 
@@ -85,18 +86,21 @@ using namespace Imath;
  {
 	printf("Loading Cimg Texture: '%s'...\n", name.c_str());
 	CImg<float> image(name.c_str());
+	//CImg<float> imagexyz=image.RGBtoXYZ ();
  	*width  = image.dimx();
- 	*height = image.dimz();
-
+ 	*height = image.dimy();
+ 	int pixels=*width * *height;
+ 	
  	Spectrum *ret = new Spectrum[*width * *height];
-	printf("%f %f %f",image(6,6,0,0),image(6,6,0,1),image(6,6,0,2) );
- 	int i=0;
- 	for (int x = 0; x < *width; ++x)
- 	  for (int y = 0; y < *height; ++y)
- 	{
- 		float c[3]={ image(x,y,0,0) / 256,image(x,y,0,1) / 256,image(x,y,0,2) / 256 };
- 		ret[i++] = Spectrum(c);
- 	}
+	//printf("%f %f %f\n",image(6,6,0,0),image(6,6,0,1),image(6,6,0,2) );
+ 	
+ 	// XXX should do real RGB -> Spectrum conversion here
+	for (int i = 0; i < *width * *height; ++i) {
+		float c[3] = { image[i]/255.0, image[i+pixels]/255.0, image[i+pixels*2]/255.0 };
+		//if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
+		ret[i] = Spectrum(c);
+	}
+ 	
     printf("Done.\n");
  	return ret;
  }
