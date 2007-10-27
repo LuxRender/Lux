@@ -139,6 +139,7 @@ using namespace Imath;
     if(extension=="bmp") return ReadCimgImage(name, width, height);
     if(extension=="pan") return ReadCimgImage(name, width, height);
     if(extension=="dlm") return ReadCimgImage(name, width, height);
+    if(extension=="png") return ReadCimgImage(name, width, height);
     
  	
  	std::string errorMessage="Cannot recognise file format for file : "+name;
