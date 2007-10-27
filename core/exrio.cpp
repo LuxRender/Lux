@@ -69,7 +69,7 @@ using namespace Imath;
 		float c[3] = { rgb[3*i], rgb[3*i+1], rgb[3*i+2] };
 		ret[i] = Spectrum(c);
 	}
-	printf("%f %f %f",rgb[0], rgb[1], rgb[2] );
+
 	delete[] rgb;
 	printf("Done.\n");
 	return ret;
