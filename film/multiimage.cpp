@@ -37,9 +37,9 @@
 
 // MultiImageFilm Method Definitions
 MultiImageFilm::MultiImageFilm(int xres, int yres,
-	                     Filter *filt, const float crop[4], bool hdr_out, bool ldr_out, 
-		             const string &hdr_filename, const string &ldr_filename, bool premult,
-		             int hdr_wI, int ldr_wI, int ldr_dI,
+	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
+		             const string &hdr_filename, const string &igi_filename, const string &ldr_filename, bool premult,
+		             int hdr_wI, int igi_wI, int ldr_wI, int ldr_dI,
 					 const string &tm, float c_dY, float n_MY,
 					 float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
 					 float bw, float br, float g, float d)
@@ -47,14 +47,17 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	filter = filt;
 	memcpy(cropWindow, crop, 4 * sizeof(float));
 	hdrFilename = hdr_filename;
+	igiFilename = igi_filename;
 	ldrFilename = ldr_filename;
 	premultiplyAlpha = premult;
 	sampleCount = 0;
 
 	hdrWriteInterval = hdr_wI;
+	igiWriteInterval = hdr_wI;
     ldrWriteInterval = ldr_wI;
     ldrDisplayInterval = ldr_dI;
 	hdrOut = hdr_out;
+	igiOut = igi_out;
 	ldrOut = ldr_out;
 	//ldrDisplayOut = ldrDisplay_out;
 
@@ -90,8 +93,10 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	// init locks and timers
 	ldrLock = false;
 	hdrLock = false;
+	igiLock = false;
 	ldrDisplayLock = false;
 	ldrTimer.restart();
+	igiTimer.restart();
 	hdrTimer.restart();
 	ldrDisplayTimer.restart();
 
@@ -191,6 +196,14 @@ void MultiImageFilm::AddSample(const Sample &sample,
 			hdrTimer.restart();
 			hdrLock = false;
 		}
+	// IGI File output
+	if(igiOut && !igiLock)
+	    if (Floor2Int(igiTimer.elapsed()) > igiWriteInterval) {
+			igiLock = true;
+			WriteImage( WI_IGI );
+			igiTimer.restart();
+			igiLock = false;
+		}
 }
 
 /*
@@ -279,6 +292,11 @@ void MultiImageFilm::WriteImage(int oType) {
 			WriteEXRImage(rgb, alpha, hdrFilename);
 			break;
 
+		case WI_IGI : 
+			// Write hdr IGI file
+			WriteIGIImage(rgb, alpha, igiFilename);
+			break;
+
 		case WI_LDR : 
 			// Write tonemapped ldr TGA file
 		    ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
@@ -352,13 +370,21 @@ void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filen
 void MultiImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filename)
 {
 	// Write OpenEXR RGBA image
-	//printf("\nWriting OpenEXR image to file \"%s\"...\n", filename.c_str());
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart);
-	//printf("Done.\n");
+}
+
+void MultiImageFilm::WriteIGIImage(float *rgb, float *alpha, const string &filename)
+{
+	// Write IGI image
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing IGI image to file ")+filename).c_str());
+	WriteIgiImage(filename, rgb, alpha,
+		xPixelCount, yPixelCount,
+		xResolution, yResolution,
+		xPixelStart, yPixelStart);
 }
 
 void MultiImageFilm::createFrameBuffer()
@@ -390,7 +416,7 @@ unsigned char* MultiImageFilm::getFrameBuffer()
 
 Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 {
-	bool hdr_out, ldr_out;
+	bool hdr_out, igi_out, ldr_out;
 
 	// General
 	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);	
@@ -408,16 +434,20 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	// output filenames
 	string hdr_filename = params.FindOneString("hdr_filename", "-");
+	string igi_filename = params.FindOneString("igi_filename", "-");
 	string ldr_filename = params.FindOneString("ldr_filename", "-");
-	if(hdr_filename == "-")
-		if(ldr_filename == "-")
-		ldr_filename = "luxout.tga"; // default to ldr output
-	hdr_out = ldr_out = false;
+	if(igi_filename == "-")
+		if(hdr_filename == "-")
+			if(ldr_filename == "-")
+				ldr_filename = "luxout.tga"; // default to ldr output
+	hdr_out = igi_out = ldr_out = false;
 	if( hdr_filename != "-") hdr_out = true;
+	if( igi_filename != "-") igi_out = true;
 	if( ldr_filename != "-") ldr_out = true;
 
 	// intervals
 	int hdr_writeInterval = params.FindOneInt("hdr_writeinterval", 60);
+	int igi_writeInterval = params.FindOneInt("igi_writeinterval", 60);
 	int ldr_writeInterval = params.FindOneInt("ldr_writeinterval", 30);
 	int ldr_displayInterval = params.FindOneInt("ldr_displayinterval", 10);
 
@@ -436,8 +466,8 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float dither = params.FindOneFloat("dither", 0.0f);
 
 	return new MultiImageFilm(xres, yres, filter, crop,
-		hdr_out, ldr_out, hdr_filename, ldr_filename, premultiplyAlpha,
-		hdr_writeInterval, ldr_writeInterval, ldr_displayInterval,
+		hdr_out, igi_out, ldr_out, hdr_filename, igi_filename, ldr_filename, premultiplyAlpha,
+		hdr_writeInterval, igi_writeInterval, ldr_writeInterval, ldr_displayInterval,
         toneMapper, contrast_displayAdaptationY, nonlinear_MaxY,
 		reinhard_prescale, reinhard_postscale, reinhard_burn,
 		bloomWidth, bloomRadius, gamma, dither);

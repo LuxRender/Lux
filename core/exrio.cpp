@@ -44,6 +44,7 @@ using namespace Imath;
 // EXR Function Definitions
  Spectrum *ReadExrImage(const string &name, int *width, int *height) {
 	try {
+    printf("Loading OpenEXR Texture: '%s'...\n", name.c_str());
 	InputFile file(name.c_str());
 	Box2i dw = file.header().dataWindow();
 	*width  = dw.max.x - dw.min.x + 1;
@@ -68,7 +69,9 @@ using namespace Imath;
 		float c[3] = { rgb[3*i], rgb[3*i+1], rgb[3*i+2] };
 		ret[i] = Spectrum(c);
 	}
+	printf("%f %f %f",rgb[0], rgb[1], rgb[2] );
 	delete[] rgb;
+	printf("Done.\n");
 	return ret;
 	} catch (const std::exception &e) {
 		Error("Unable to read EXR image file \"%s\": %s", name.c_str(),
@@ -80,18 +83,21 @@ using namespace Imath;
 
  Spectrum *ReadCimgImage(const string &name, int *width, int *height)
  {
- 	CImg<float> image(name.c_str());
+	printf("Loading Cimg Texture: '%s'...\n", name.c_str());
+	CImg<float> image(name.c_str());
  	*width  = image.dimx();
  	*height = image.dimz();
- 	
+
  	Spectrum *ret = new Spectrum[*width * *height];
+	printf("%f %f %f",image(6,6,0,0),image(6,6,0,1),image(6,6,0,2) );
  	int i=0;
  	for (int x = 0; x < *width; ++x)
  	  for (int y = 0; y < *height; ++y)
  	{
- 		float c[3]={ image(x,y,0,0),image(x,y,0,1),image(x,y,0,2) };
+ 		float c[3]={ image(x,y,0,0) / 256,image(x,y,0,1) / 256,image(x,y,0,2) / 256 };
  		ret[i++] = Spectrum(c);
  	}
+    printf("Done.\n");
  	return ret;
  }
 
@@ -101,8 +107,12 @@ using namespace Imath;
 	//string fileName = name.substr(0, p);
 	std::string extension = name.substr(p+1, name.size()-p-1);
 	//transform extension to lowercase
+	#ifdef WIN32
+	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower );
+	#else
 	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower );
- 	
+ 	#endif
+
  	if(extension=="exr") return ReadExrImage(name, width, height);
  	
  	/*

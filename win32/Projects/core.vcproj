@@ -228,6 +228,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\core\igiio.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\core\light.cpp"
 				>
 			</File>
@@ -533,13 +537,6 @@
 				<File
 					RelativePath="..\..\renderer\luxgui.cpp"
 					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -726,6 +723,10 @@
 			</File>
 			<File
 				RelativePath="..\..\core\geometry.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\core\igiio.h"
 				>
 			</File>
 			<File

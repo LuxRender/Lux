@@ -26,12 +26,14 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
+#include "igiio.h"
 #include <stdio.h>
 #include <boost/timer.hpp>
 #include <boost/thread/mutex.hpp>
 
 #define WI_HDR 0
 #define WI_LDR 1
+#define WI_IGI 3
 #define WI_FRAMEBUFFER 2
 
 // ImageFilm Declarations
@@ -39,9 +41,9 @@ class MultiImageFilm : public Film {
 public:
 	// MultiImageFilm Public Methods
 	MultiImageFilm(int xres, int yres,
-	                     Filter *filt, const float crop[4], bool hdr_out, bool ldr_out, 
-		             const string &hdr_filename, const string &ldr_filename, bool premult,
-		             int hdr_writeInterval, int ldr_writeInterval, int ldr_displayInterval,
+	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
+		             const string &hdr_filename, const string &igi_filename, const string &ldr_filename, bool premult,
+		             int hdr_writeInterval, int igi_writeInterval, int ldr_writeInterval, int ldr_displayInterval,
 					 const string &toneMapper, float contrast_displayAdaptationY, float nonlinear_MaxY,
 					 float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
 					 float bloomWidth, float bloomRadius, float gamma, float dither);
@@ -58,6 +60,7 @@ public:
 	void WriteImage(int oType);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
+	void WriteIGIImage(float *rgb, float *alpha, const string &filename);
 
 	// used by gui
 	void createFrameBuffer();
@@ -69,10 +72,10 @@ public:
 private:
 	// MultiImageFilm Private Data
 	Filter *filter;
-	int hdrWriteInterval, ldrWriteInterval, ldrDisplayInterval, sampleCount;
-	string hdrFilename, ldrFilename;
-    bool ldrLock, hdrLock, ldrDisplayLock;
-	bool hdrOut, ldrOut, premultiplyAlpha;
+	int hdrWriteInterval, igiWriteInterval, ldrWriteInterval, ldrDisplayInterval, sampleCount;
+	string hdrFilename, igiFilename, ldrFilename;
+    bool ldrLock, hdrLock, igiLock, ldrDisplayLock;
+	bool hdrOut, ldrOut, igiOut, premultiplyAlpha;
 	float cropWindow[4];
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
 	struct Pixel {
@@ -85,7 +88,7 @@ private:
 	};
 	BlockedArray<Pixel> *pixels;
 	float *filterTable;
-	boost::timer ldrTimer, hdrTimer, ldrDisplayTimer;
+	boost::timer ldrTimer, hdrTimer, igiTimer, ldrDisplayTimer;
 
 	string toneMapper;
 	ParamSet toneParams;
@@ -93,7 +96,6 @@ private:
 		reinhardPrescale, reinhardPostscale, reinhardBurn,
 		bloomWidth, bloomRadius, gamma, dither;
 	unsigned char *framebuffer;
-	
-	
+
 	boost::mutex addSampleMutex;
 };
