@@ -64,7 +64,7 @@ public:
 		}
 	}
 	virtual DirectLighting* clone() const; // Lux (copy) constructor for multithreading
-
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) { return NULL; }; // Not implemented
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// DirectLighting Private Data

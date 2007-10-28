@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../renderer;../../core;../..;&quot;../../win32/openexr-1.4.0-vs2005/include/OpenEXR&quot;;&quot;../../win32/fltk-1.1.x-r5940-vs2005&quot;;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers"
+				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR;../../../platform/win32/fltk-1.1.x-r5940-vs2005;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222;../../../integrationsamplers/"
 				PreprocessorDefinitions="CORE_SOURCE;WIN32;NDEBUG;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
@@ -65,7 +65,7 @@
 				AdditionalDependencies="comctl32.lib fltkgl.lib opengl32.lib glu32.lib wsock32.lib fltk.lib Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;../../win32/openexr-1.4.0-vs2005/lib&quot;;&quot;../../win32/fltk-1.1.x-r5940-vs2005/lib&quot;"
+				AdditionalLibraryDirectories="&quot;../../../platform/win32/openexr-1.4.0-vs2005/lib&quot;;&quot;../../../platform/win32/fltk-1.1.x-r5940-vs2005/lib&quot;;&quot;../../../platform/win32/boost_1.34_1-vs2005\debug\link-static\threading-multi\&quot;"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OUTDIR)/core.pdb"
@@ -129,7 +129,7 @@
 				FavorSizeOrSpeed="0"
 				OmitFramePointers="false"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR;../../../platform/win32/fltk-1.1.x-r5940-vs2005;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222"
+				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR;../../../platform/win32/fltk-1.1.x-r5940-vs2005;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222;../../../integrationsamplers/"
 				PreprocessorDefinitions="CORE_SOURCE;NDEBUG;WIN32;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -270,6 +270,14 @@
 			<File
 				RelativePath="..\..\..\core\samplepat.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="true"
@@ -716,6 +724,14 @@
 				</File>
 				<File
 					RelativePath="..\..\..\volumes\volumegrid.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="integrationsamplers"
+				>
+				<File
+					RelativePath="..\..\..\integrationsamplers\metropolis.cpp"
 					>
 				</File>
 			</Filter>
@@ -1222,6 +1238,14 @@
 				</File>
 				<File
 					RelativePath="..\..\..\renderer\luxgui.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="integrationsamplers"
+				>
+				<File
+					RelativePath="..\..\..\integrationsamplers\metropolis.h"
 					>
 				</File>
 			</Filter>

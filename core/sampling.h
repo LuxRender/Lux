@@ -46,10 +46,12 @@ public:
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	int samplesPerPixel;
 };
-struct Sample {
+class Sample {
+public:
 	// Sample Public Methods
 	Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 		const Scene *scene);
+
 	u_int Add1D(u_int num) {
 		n1D.push_back(num);
 		return n1D.size()-1;
@@ -173,4 +175,14 @@ inline void LDShuffleScrambled2D(int nSamples,
 		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(samples, nPixel, 2 * nSamples);
 }
+class IntegrationSampler {
+public:
+	IntegrationSampler() {}
+	virtual void SetParams(int mR, float pL) = 0;
+	virtual void SetFilmRes(int fX, int fY) = 0;
+	virtual bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos) = 0;
+	virtual void GetNext(float& bs1, float& bs2, float& bcs, int pathLength) = 0;
+	virtual void AddSample(const Sample &sample, const Ray &ray,
+		const Spectrum &L, float alpha, Film *film) = 0;
+};
 #endif // LUX_SAMPLING_H

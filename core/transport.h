@@ -45,6 +45,7 @@ public:
 	virtual void RequestSamples(Sample *sample,
 	                            const Scene *scene) {
 	}
+	virtual IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) = 0;
 	virtual Integrator* clone() const = 0;   // Lux Virtual (Copy) Constructor for multithreading
 };
 class SurfaceIntegrator : public Integrator {

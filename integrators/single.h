@@ -34,7 +34,7 @@ public:
 	void RequestSamples(Sample *sample, const Scene *scene);
 	Spectrum Li(MemoryArena &arena, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	virtual SingleScattering* clone() const; // Lux (copy) constructor for multithreading
-
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) { return NULL; }; // Not implemented
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// SingleScattering Private Data

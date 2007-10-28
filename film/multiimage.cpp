@@ -125,14 +125,34 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 		}
 	}
 }
-void MultiImageFilm::AddSample(const Sample &sample,
-		const Ray &ray, const Spectrum &L, float alpha) {
+void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alpha) {
 			
 			boost::mutex::scoped_lock lock(addSampleMutex);
 			
+	// Issue warning if unexpected radiance value returned
+	if (L.IsNaN()) {
+		//std::stringstream error;
+		//error<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
+		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
+		//L = Spectrum(0.f);
+		return;
+	}
+	else if (L.y() < -1e-5) {
+		//std::stringstream error;
+		//error<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
+		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
+		//L = Spectrum(0.f);
+		return;
+	}
+	else if (isinf(L.y())) {
+		//luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
+		//L = Spectrum(0.f);
+		return;
+	} 
+
 	// Compute sample's raster extent
-	float dImageX = sample.imageX - 0.5f;
-	float dImageY = sample.imageY - 0.5f;
+	float dImageX = sX - 0.5f;
+	float dImageY = sY - 0.5f;
 	int x0 = Ceil2Int (dImageX - filter->xWidth);
 	int x1 = Floor2Int(dImageX + filter->xWidth);
 	int y0 = Ceil2Int (dImageY - filter->yWidth);

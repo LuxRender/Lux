@@ -23,6 +23,7 @@
 // path.cpp*
 #include "lux.h"
 #include "transport.h"
+#include "metropolis.h"
 #include "scene.h"
 // PathIntegrator Declarations
 class PathIntegrator : public SurfaceIntegrator {
@@ -30,15 +31,21 @@ public:
 	// PathIntegrator Public Methods
 	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	PathIntegrator(int md, float cp, bool ft) { maxDepth = md; continueProbability = cp; forceTransmit = ft; }
+	PathIntegrator(int md, float cp, bool ft, bool mlt, int maxreject, float plarge) { 
+			maxDepth = md; continueProbability = cp; forceTransmit = ft;
+			useMlt = mlt; maxReject = maxreject; pLarge = plarge; }
 	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
-
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data
 	int maxDepth;
 	bool forceTransmit;
 	float continueProbability;
+	bool useMlt;
+	int maxReject;
+	float pLarge;
+	IntegrationSampler *mltIntegrationSampler;
 	#define SAMPLE_DEPTH 3
 	int lightPositionOffset[SAMPLE_DEPTH];
 	int lightNumOffset[SAMPLE_DEPTH];

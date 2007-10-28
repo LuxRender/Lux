@@ -39,6 +39,17 @@ void PathIntegrator::RequestSamples(Sample *sample,
 		outgoingComponentOffset[i] = sample->Add1D(1);
 	}
 }
+
+IntegrationSampler* PathIntegrator::HasIntegrationSampler(IntegrationSampler *is) {
+	IntegrationSampler *isa = NULL;
+	if(useMlt) {
+		isa = new Metropolis();	// TODO - radiance - delete afterwards in renderthread
+		isa->SetParams(maxReject, pLarge);
+		mltIntegrationSampler = isa;
+	}
+    return isa;
+}
+
 Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const {
@@ -79,7 +90,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
-		if (pathLength < SAMPLE_DEPTH)
+/*		if (pathLength < SAMPLE_DEPTH) // TODO - radiance - reenable using MLT integration sampler
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample,
@@ -88,7 +99,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 					bsdfDirectionOffset[pathLength],
 					bsdfComponentOffset[pathLength]);
 		else 
-			L += pathThroughput *
+*/			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample);
 		// Sample BSDF to get new path direction
@@ -104,6 +115,10 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			bs2 = RandomFloat();
 			bcs = RandomFloat();
 		}
+		if(useMlt) {
+			// use metropolis integration sampler to possible mutate samples
+			mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
+		} 
 		Vector wi;
 		float pdf;
 		BxDFType flags;
@@ -127,10 +142,8 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 				break;
 			// NOTE - radiance - disabled pathTroughput increase
 			// amplifies precision error and creates bright fireflies with speculars
-			// pathThroughput /= continueProbability;
-			if(forceTransmit)
-				if((flags & BSDF_TRANSMISSION) != 0) pathThroughput /= continueProbability;
-			// *
+			// NOTE - reenabled for testing MLT implementation ;-)
+			pathThroughput /= continueProbability;
 		}
 		if (pathLength == maxDepth)
 			break;
@@ -141,5 +154,11 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	int maxDepth = params.FindOneInt("maxdepth", 5);
 	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .5f);				// continueprobability for RR (0.0-1.0)
 	bool RRforceTransmit = params.FindOneBool("rrforcetransmit", true);				// forces RR to ignore transmission bounces
-	return new PathIntegrator(maxDepth, RRcontinueProb, RRforceTransmit);
+	
+	// Radiance - MLT stuff
+	bool mlt = params.FindOneBool("metropolis", false);                      // enables use of metropolis integrationsampler
+	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 128);              // number of consecutive rejects before a new mutation is forced
+	float LargeMutationProb = params.FindOneFloat("largemutationprob", .25f);		// probability of generation a large sample (mutation)
+
+	return new PathIntegrator(maxDepth, RRcontinueProb, RRforceTransmit, mlt, MaxConsecRejects, LargeMutationProb);
 }

@@ -36,7 +36,7 @@ public:
 		rayDepth = 0;
 	}
 	virtual WhittedIntegrator* clone() const; // Lux (copy) constructor for multithreading
-
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) { return NULL; }; // Not implemented
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// WhittedIntegrator Private Data

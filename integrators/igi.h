@@ -46,7 +46,7 @@ public:
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const Scene *);
     virtual IGIIntegrator* clone() const; // Lux (copy) constructor for multithreading
-
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) { return NULL; }; // Not implemented
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// IGI Private Data

@@ -32,7 +32,7 @@ public:
 		: xResolution(xres), yResolution(yres) {
 	}
 	virtual ~Film() { }
-	virtual void AddSample(const Sample &sample, const Ray &ray,
+	virtual void AddSample(float sX, float sY, 
 		const Spectrum &L, float alpha) = 0;
 	virtual void WriteImage() = 0;
 	virtual void WriteImage(int oType) = 0;

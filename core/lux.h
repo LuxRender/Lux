@@ -150,7 +150,8 @@ class Spectrum;
 class Camera;
 class ProjectiveCamera;
 class Sampler;
-struct Sample;
+class IntegrationSampler;
+class Sample;
 #define BC_GRID_SIZE 40
 typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 #define GRID(v) (int((v) * BC_GRID_SIZE))

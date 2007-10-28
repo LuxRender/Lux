@@ -137,7 +137,17 @@ void RenderThread::render(RenderThread *myThread)
 	*useSampPos = 1;
 
 	// Trace rays: The main loop
-	while (myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
+	while (true) {
+		if(myThread->integrationSampler) {
+			// use integration sampler, it might want to mutate them etc...
+			if(!myThread->integrationSampler->GetNextSample(myThread->sampler, myThread->sample, useSampPos))
+				break;
+		} else {
+			// use traditional sampler
+			if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
+				break;
+		}
+
 		while(myThread->signal == RenderThread::SIG_PAUSE)
 		{ 
 			boost::xtime xt;
@@ -173,32 +183,18 @@ void RenderThread::render(RenderThread *myThread)
 			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
 
-			// Issue warning if unexpected radiance value returned
-			if (Ls.IsNaN()) {
-				std::stringstream error;
-				error<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
-				luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
-				//Error("THR%i: Nan radiance value returned.\n", myThread->n+1);
-				Ls = Spectrum(0.f);
-			}
-			else if (Ls.y() < -1e-5) {
-				std::stringstream error;
-				error<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
-				luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
-				//Error("THR%i: NegLum value, %g, returned.\n", myThread->n+1, Ls.y());
-				Ls = Spectrum(0.f);
-			}
-			else if (isinf(Ls.y())) {
-				luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
-				//Error("THR%i: InfinLum value returned.\n", myThread->n+1);
-				Ls = Spectrum(0.f);
-			} 
+			// Radiance - Add sample contribution to image using integrationsampler if necessary
+			// the integration sampler might want to add the sample in a different way.
+			if(myThread->integrationSampler)
+				myThread->integrationSampler->AddSample(*(myThread->sample), 
+					ray, Ls, alpha, myThread->camera->film);
+			else
+				if( Ls != Spectrum(0.f) ) {
+					float sX = myThread->sample->imageX;
+					float sY = myThread->sample->imageY;
+					myThread->camera->film->AddSample(sX, sY, Ls, alpha);
+				}
 
-			// Add sample contribution to image
-			if( Ls != Spectrum(0.f) )
-			   myThread->camera->film->AddSample(*(myThread->sample), ray, Ls, alpha);
-
-			
 			// Free BSDF memory from computing image sample value
 			myThread->arena->FreeAll();
 		}

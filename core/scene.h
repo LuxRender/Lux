@@ -27,6 +27,8 @@
 #include "primitive.h"
 #include "transport.h"
 #include "timer.h"
+#include "camera.h"
+#include "film.h"
 
 #include <iostream>
 #include <vector>
@@ -44,6 +46,12 @@ class RenderThread : public boost::noncopyable
 		{
 			stat_Samples=0;
 			sample=new Sample( surfaceIntegrator, volumeIntegrator, scene);
+
+			// Radiance - hand the sample struct to the integrationsampler if used by the surfaceintegrator
+			integrationSampler = surfaceIntegrator->HasIntegrationSampler(NULL);
+			if(integrationSampler)
+				integrationSampler->SetFilmRes(_Cam->film->xResolution, _Cam->film->yResolution);
+
 			arena=new MemoryArena();
 			sampler->setSeed( RandomUInt() );	//TODO add different seeds and unique backend random generator for threads - radiance
 			//std::cout<<"yepeee, creating thread"<<std::endl;
@@ -62,6 +70,7 @@ class RenderThread : public boost::noncopyable
 		double stat_Samples;
 		SurfaceIntegrator *surfaceIntegrator;
 		VolumeIntegrator *volumeIntegrator;
+		IntegrationSampler *integrationSampler;
 		Sample *sample;
 		Sampler *sampler;
 		Camera *camera;

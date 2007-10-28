@@ -52,7 +52,7 @@ public:
 		delete filter;
 		delete[] filterTable;
 	}
-	void AddSample(const Sample &sample, const Ray &ray,
+	void AddSample(float sX, float sY, 
 	               const Spectrum &L, float alpha);
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;

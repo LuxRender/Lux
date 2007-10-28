@@ -54,7 +54,7 @@ public:
 		debug_variable[2] = v[2];
 	}
 	virtual DebugIntegrator* clone() const; // Lux (copy) constructor for multithreading
-
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) { return NULL; }; // Not implemented
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	DebugVariable debug_variable[3];
