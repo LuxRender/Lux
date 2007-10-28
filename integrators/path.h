@@ -23,7 +23,7 @@
 // path.cpp*
 #include "lux.h"
 #include "transport.h"
-#include "metropolis.h"
+#include "../integrationsamplers/metropolis.h"
 #include "scene.h"
 // PathIntegrator Declarations
 class PathIntegrator : public SurfaceIntegrator {
