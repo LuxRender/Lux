@@ -1,3 +1,5 @@
+#CMake file for GNU/Linux static building
+
 PROJECT(lux)
 #OPTION(WITH_GUI "Enable the GUI." OFF)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
@@ -36,14 +38,6 @@ IF( FLTK_INCLUDE_DIR )
 ELSE( FLTK_INCLUDE_DIR )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
 ENDIF( FLTK_INCLUDE_DIR )
-#FIND_PACKAGE( FLTK REQUIRED )
-#IF( FLTK_FOUND )
-        #MESSAGE( STATUS ${FLTK_INCLUDE_DIR} )
-        #MESSAGE( STATUS ${FLTK_LIBRARIES} )
-        #MESSAGE(STATUS ${FLTK_BASE_LIBRARY} )
-#ELSE( FLTK_FOUND )
-#        MESSAGE(FATAL_ERROR "Could not find FLTK")
-#ENDIF( FLTK_FOUND )
 
 
 # Find and setup Boost library
@@ -51,11 +45,6 @@ FIND_PACKAGE(Boost REQUIRED)
 IF(Boost_FOUND)
 	#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
 	#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
-	IF(APPLE)
-	SET(Boost_LIBRARIES boost_thread-mt boost_program_options boost_filesystem)
-	ELSE(APPLE)
-	SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
-	ENDIF(APPLE)
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
 ENDIF(Boost_FOUND)
@@ -97,15 +86,6 @@ SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
 
 
 # Create custom command for bison/yacc (note the DEPENDS)
-IF(APPLE)
-ADD_CUSTOM_COMMAND(
-TARGET LuxParser
-#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-COMMAND ${BISON_EXECUTABLE} -y ${CMAKE_SOURCE_DIR}/core/luxparse.y -o ${CMAKE_BINARY_DIR}/luxparse.cpp -d
-COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp
-OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ELSE(APPLE)
 ADD_CUSTOM_COMMAND(
 SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
 COMMAND ${BISON_EXECUTABLE} 
@@ -115,7 +95,6 @@ ARGS -y ${CMAKE_SOURCE_DIR}/core/luxparse.y
 TARGET LuxParser
 #DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
 OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ENDIF(APPLE)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 
 SET(lux_lib_src
@@ -169,31 +148,14 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 SET_TARGET_PROPERTIES (lux PROPERTIES LINK_FLAGS "-L/home/jeff/workspace/lux/linux/x64 -L/usr/lib")
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} pthread z ${Boost_LIBRARIES})
 
-
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 SET_TARGET_PROPERTIES (luxconsole PROPERTIES LINK_FLAGS "-L/home/jeff/workspace/lux/linux/x64 -L/usr/lib")
 TARGET_LINK_LIBRARIES(luxconsole lux pthread z ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
 
-
-
 #Here we build the GUI executable
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
-IF(APPLE)
-SET(GUI_TYPE MACOSX_BUNDLE)
-INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon )
-FIND_LIBRARY(CARBON_LIBRARY Carbon)
-FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
-FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
-MESSAGE(STATUS ${CARBON_LIBRARY})
-MARK_AS_ADVANCED (CARBON_LIBRARY)
-MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
-MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES}} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS})
-ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES})
-ENDIF(APPLE)
 SET_TARGET_PROPERTIES (luxrender PROPERTIES LINK_FLAGS "-L/home/jeff/workspace/lux/linux/x64 -L/usr/lib")
 
