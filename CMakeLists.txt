@@ -262,7 +262,7 @@ SET(lux_lib_src
 		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/transform.cpp
-        core/transport.cpp core/util.cpp core/volume.cpp core/igiio.cpp
+        core/transport.cpp core/util.cpp core/volume.cpp
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
         shapes/paraboloid.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
