@@ -132,10 +132,10 @@ TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} png jpeg tiff)
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} png jpeg tiff )
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} png tiff jpeg )
 
 #Here we build the GUI executable
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} png jpeg tiff)
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} png tiff jpeg )
 
