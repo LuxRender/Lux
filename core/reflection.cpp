@@ -285,8 +285,11 @@ void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float 
 
   // Compute PDF for \wi from Beckmann distribution
 
-  float conversion_factor = 1.0 / 4.f * Dot(wo, H);
+  float conversion_factor = 1.0 / (4.f * Dot(wo, H));
   float beckmann_pdf = conversion_factor * D(H);
+
+  //printf("beckmann_D: %f\n", D(H));
+//  printf("beckmann_pdf: %f\n", beckmann_pdf);
 
   *pdf = beckmann_pdf;
 }
@@ -302,7 +305,7 @@ float Beckmann::Pdf(const Vector &wo, const Vector &wi) const {
 void Blinn::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
 	// Compute sampled half-angle vector $\wh$ for Blinn distribution
-	float costheta = powf(u1, 1.f / (exponent+1));
+	float costheta = powf(u1, 1.f / (exponent+2.0f));
 	float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
 	float phi = u2 * 2.f * M_PI;
 	Vector H = SphericalDirection(sintheta, costheta, phi);
@@ -313,6 +316,9 @@ void Blinn::Sample_f(const Vector &wo, Vector *wi,
 	float blinn_pdf = ((exponent + 2.f) *
 	                   powf(costheta, exponent)) /
 		(2.f * M_PI * 4.f * Dot(wo, H));
+
+        //printf("blinn_pdf: %f\n", blinn_pdf);
+
 	*pdf = blinn_pdf;
 }
 float Blinn::Pdf(const Vector &wo, const Vector &wi) const {
