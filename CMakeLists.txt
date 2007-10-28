@@ -299,7 +299,7 @@ INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
 					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
 					${CMAKE_SOURCE_DIR}/shapes ${CMAKE_SOURCE_DIR}/textures ${CMAKE_SOURCE_DIR}/tonemaps
-					${CMAKE_SOURCE_DIR}/volumes
+					${CMAKE_SOURCE_DIR}/volumes ${CMAKE_SOURCE_DIR}/integrationsamplers
 					${CMAKE_BINARY_DIR}
 					)
 
