@@ -145,7 +145,7 @@ Spectrum NSunLight::computeAttenuatedSunlight(float theta, float turbidity) {
     // Attenuation due to mixed gases absorption
     // Results agree with the graph (pg 131, MI)
 
-    tauG = exp(-1.41f * k_gCurve.sample(lambda) * m / pow(1.0f + 118.93 * k_gCurve.sample(lambda) * m, 0.45f));
+    tauG = exp(-1.41f * k_gCurve.sample(lambda) * m / powf(1.0f + 118.93 * k_gCurve.sample(lambda) * m, 0.45f));
 
     // Attenuation due to water vapor absorbtion  
     // w - precipitable water vapor in centimeters (standard = 2)

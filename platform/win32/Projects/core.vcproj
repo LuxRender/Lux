@@ -129,7 +129,7 @@
 				FavorSizeOrSpeed="0"
 				OmitFramePointers="false"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../core;../..;../../win32/openexr-1.4.0-vs2005/include/OpenEXR;../../win32/fltk-1.1.x-r5940-vs2005;../../accelerators;../../cameras;../../film;../../filters;../../integrators;../../lights;../../materials;../../volumes;../../tonemaps;../../textures;../../shapes;../../samplers;../../renderer"
+				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR;../../../platform/win32/fltk-1.1.x-r5940-vs2005;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222"
 				PreprocessorDefinitions="CORE_SOURCE;NDEBUG;WIN32;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -155,7 +155,7 @@
 				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1.lib fltk.lib fltkforms.lib fltkgl.lib fltkimages.lib fltkjpeg.lib fltkpng.lib fltkz.lib ws2_32.lib comctl32.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../win32/openexr-1.4.0-vs2005/lib;../../win32/fltk-1.1.x-r5940-vs2005/lib;../../win32/boost_1.34_1-vs2005\release\link-static\threading-multi"
+				AdditionalLibraryDirectories="../../../platform/win32/openexr-1.4.0-vs2005/lib;../../../platform/win32/fltk-1.1.x-r5940-vs2005/lib;../../../platform/win32/boost_1.34_1-vs2005\release\link-static\threading-multi"
 				GenerateDebugInformation="false"
 				ProgramDatabaseFile="$(OUTDIR)/core.pdb"
 				SubSystem="1"
@@ -200,118 +200,130 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\core\api.cpp"
+				RelativePath="..\..\..\core\api.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\camera.cpp"
+				RelativePath="..\..\..\core\camera.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\color.cpp"
+				RelativePath="..\..\..\core\color.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\dynload.cpp"
+				RelativePath="..\..\..\core\dynload.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\exrio.cpp"
+				RelativePath="..\..\..\core\exrio.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\film.cpp"
+				RelativePath="..\..\..\core\film.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\geometry.cpp"
+				RelativePath="..\..\..\core\geometry.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\igiio.cpp"
+				RelativePath="..\..\..\core\igiio.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\light.cpp"
+				RelativePath="..\..\..\core\light.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\luxlex.cpp"
+				RelativePath="..\..\..\core\luxlex.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\luxparse.cpp"
+				RelativePath="..\..\..\core\luxparse.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\material.cpp"
+				RelativePath="..\..\..\core\material.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\mc.cpp"
+				RelativePath="..\..\..\core\mc.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\paramset.cpp"
+				RelativePath="..\..\..\core\paramset.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\parser.cpp"
+				RelativePath="..\..\..\core\parser.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\primitive.cpp"
+				RelativePath="..\..\..\core\primitive.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\reflection.cpp"
+				RelativePath="..\..\..\core\reflection.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\sampling.cpp"
+				RelativePath="..\..\..\core\samplepat.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\core\sampling.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\scene.cpp"
+				RelativePath="..\..\..\core\scene.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\shape.cpp"
+				RelativePath="..\..\..\core\shape.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\texture.cpp"
+				RelativePath="..\..\..\core\texture.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\timer.cpp"
+				RelativePath="..\..\..\core\timer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\transform.cpp"
+				RelativePath="..\..\..\core\transform.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\transport.cpp"
+				RelativePath="..\..\..\core\transport.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\util.cpp"
+				RelativePath="..\..\..\core\util.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\volume.cpp"
+				RelativePath="..\..\..\core\volume.cpp"
 				>
 			</File>
 			<Filter
 				Name="accelerators"
 				>
 				<File
-					RelativePath="..\..\accelerators\grid.cpp"
+					RelativePath="..\..\..\accelerators\grid.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\accelerators\kdtree.cpp"
+					RelativePath="..\..\..\accelerators\kdtree.cpp"
 					>
 				</File>
 			</Filter>
@@ -319,11 +331,11 @@
 				Name="film"
 				>
 				<File
-					RelativePath="..\..\film\image.cpp"
+					RelativePath="..\..\..\film\image.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\film\multiimage.cpp"
+					RelativePath="..\..\..\film\multiimage.cpp"
 					>
 				</File>
 			</Filter>
@@ -331,15 +343,15 @@
 				Name="cameras"
 				>
 				<File
-					RelativePath="..\..\cameras\environment.cpp"
+					RelativePath="..\..\..\cameras\environment.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\cameras\orthographic.cpp"
+					RelativePath="..\..\..\cameras\orthographic.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\cameras\perspective.cpp"
+					RelativePath="..\..\..\cameras\perspective.cpp"
 					>
 				</File>
 			</Filter>
@@ -347,23 +359,23 @@
 				Name="filters"
 				>
 				<File
-					RelativePath="..\..\filters\box.cpp"
+					RelativePath="..\..\..\filters\box.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\gaussian.cpp"
+					RelativePath="..\..\..\filters\gaussian.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\mitchell.cpp"
+					RelativePath="..\..\..\filters\mitchell.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\sinc.cpp"
+					RelativePath="..\..\..\filters\sinc.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\triangle.cpp"
+					RelativePath="..\..\..\filters\triangle.cpp"
 					>
 				</File>
 			</Filter>
@@ -371,47 +383,47 @@
 				Name="integrators"
 				>
 				<File
-					RelativePath="..\..\integrators\bidirectional.cpp"
+					RelativePath="..\..\..\integrators\bidirectional.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\debug.cpp"
+					RelativePath="..\..\..\integrators\debug.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\directlighting.cpp"
+					RelativePath="..\..\..\integrators\directlighting.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\emission.cpp"
+					RelativePath="..\..\..\integrators\emission.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\exphotonmap.cpp"
+					RelativePath="..\..\..\integrators\exphotonmap.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\igi.cpp"
+					RelativePath="..\..\..\integrators\igi.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\irradiancecache.cpp"
+					RelativePath="..\..\..\integrators\irradiancecache.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\path.cpp"
+					RelativePath="..\..\..\integrators\path.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\photonmap.cpp"
+					RelativePath="..\..\..\integrators\photonmap.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\single.cpp"
+					RelativePath="..\..\..\integrators\single.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\whitted.cpp"
+					RelativePath="..\..\..\integrators\whitted.cpp"
 					>
 				</File>
 			</Filter>
@@ -419,43 +431,47 @@
 				Name="lights"
 				>
 				<File
-					RelativePath="..\..\lights\area.cpp"
+					RelativePath="..\..\..\lights\area.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\distant.cpp"
+					RelativePath="..\..\..\lights\distant.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\goniometric.cpp"
+					RelativePath="..\..\..\lights\goniometric.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\infinite.cpp"
+					RelativePath="..\..\..\lights\infinite.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\infinitesample.cpp"
+					RelativePath="..\..\..\lights\infinitesample.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\point.cpp"
+					RelativePath="..\..\..\lights\point.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\projection.cpp"
+					RelativePath="..\..\..\lights\projection.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\sky.cpp"
+					RelativePath="..\..\..\lights\sky.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\spot.cpp"
+					RelativePath="..\..\..\lights\spot.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\sun.cpp"
+					RelativePath="..\..\..\lights\sun.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\lights\sun2.cpp"
 					>
 				</File>
 			</Filter>
@@ -463,59 +479,59 @@
 				Name="materials"
 				>
 				<File
-					RelativePath="..\..\materials\bluepaint.cpp"
+					RelativePath="..\..\..\materials\bluepaint.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\brushedmetal.cpp"
+					RelativePath="..\..\..\materials\brushedmetal.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\clay.cpp"
+					RelativePath="..\..\..\materials\clay.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\felt.cpp"
+					RelativePath="..\..\..\materials\felt.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\glass.cpp"
+					RelativePath="..\..\..\materials\glass.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\matte.cpp"
+					RelativePath="..\..\..\materials\matte.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\mirror.cpp"
+					RelativePath="..\..\..\materials\mirror.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\plastic.cpp"
+					RelativePath="..\..\..\materials\plastic.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\primer.cpp"
+					RelativePath="..\..\..\materials\primer.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\shinymetal.cpp"
+					RelativePath="..\..\..\materials\shinymetal.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\skin.cpp"
+					RelativePath="..\..\..\materials\skin.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\substrate.cpp"
+					RelativePath="..\..\..\materials\substrate.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\translucent.cpp"
+					RelativePath="..\..\..\materials\translucent.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\uber.cpp"
+					RelativePath="..\..\..\materials\uber.cpp"
 					>
 				</File>
 			</Filter>
@@ -523,8 +539,16 @@
 				Name="renderer"
 				>
 				<File
-					RelativePath="..\..\renderer\luxconsole.cpp"
+					RelativePath="..\..\..\renderer\luxconsole.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
 						ExcludedFromBuild="true"
@@ -535,7 +559,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\renderer\luxgui.cpp"
+					RelativePath="..\..\..\renderer\luxgui.cpp"
 					>
 				</File>
 			</Filter>
@@ -543,43 +567,43 @@
 				Name="shapes"
 				>
 				<File
-					RelativePath="..\..\shapes\cone.cpp"
+					RelativePath="..\..\..\shapes\cone.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\cylinder.cpp"
+					RelativePath="..\..\..\shapes\cylinder.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\disk.cpp"
+					RelativePath="..\..\..\shapes\disk.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\heightfield.cpp"
+					RelativePath="..\..\..\shapes\heightfield.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\hyperboloid.cpp"
+					RelativePath="..\..\..\shapes\hyperboloid.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\loopsubdiv.cpp"
+					RelativePath="..\..\..\shapes\loopsubdiv.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\nurbs.cpp"
+					RelativePath="..\..\..\shapes\nurbs.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\paraboloid.cpp"
+					RelativePath="..\..\..\shapes\paraboloid.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\sphere.cpp"
+					RelativePath="..\..\..\shapes\sphere.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\trianglemesh.cpp"
+					RelativePath="..\..\..\shapes\trianglemesh.cpp"
 					>
 				</File>
 			</Filter>
@@ -587,19 +611,19 @@
 				Name="samplers"
 				>
 				<File
-					RelativePath="..\..\samplers\bestcandidate.cpp"
+					RelativePath="..\..\..\samplers\bestcandidate.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\lowdiscrepancy.cpp"
+					RelativePath="..\..\..\samplers\lowdiscrepancy.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\random.cpp"
+					RelativePath="..\..\..\samplers\random.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\stratified.cpp"
+					RelativePath="..\..\..\samplers\stratified.cpp"
 					>
 				</File>
 			</Filter>
@@ -607,51 +631,51 @@
 				Name="textures"
 				>
 				<File
-					RelativePath="..\..\textures\bilerp.cpp"
+					RelativePath="..\..\..\textures\bilerp.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\checkerboard.cpp"
+					RelativePath="..\..\..\textures\checkerboard.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\constant.cpp"
+					RelativePath="..\..\..\textures\constant.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\dots.cpp"
+					RelativePath="..\..\..\textures\dots.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\fbm.cpp"
+					RelativePath="..\..\..\textures\fbm.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\imagemap.cpp"
+					RelativePath="..\..\..\textures\imagemap.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\marble.cpp"
+					RelativePath="..\..\..\textures\marble.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\mix.cpp"
+					RelativePath="..\..\..\textures\mix.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\scale.cpp"
+					RelativePath="..\..\..\textures\scale.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\uv.cpp"
+					RelativePath="..\..\..\textures\uv.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\windy.cpp"
+					RelativePath="..\..\..\textures\windy.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\wrinkled.cpp"
+					RelativePath="..\..\..\textures\wrinkled.cpp"
 					>
 				</File>
 			</Filter>
@@ -659,23 +683,23 @@
 				Name="tonemaps"
 				>
 				<File
-					RelativePath="..\..\tonemaps\contrast.cpp"
+					RelativePath="..\..\..\tonemaps\contrast.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\highcontrast.cpp"
+					RelativePath="..\..\..\tonemaps\highcontrast.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\maxwhite.cpp"
+					RelativePath="..\..\..\tonemaps\maxwhite.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\nonlinear.cpp"
+					RelativePath="..\..\..\tonemaps\nonlinear.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\reinhard.cpp"
+					RelativePath="..\..\..\tonemaps\reinhard.cpp"
 					>
 				</File>
 			</Filter>
@@ -683,15 +707,15 @@
 				Name="volumes"
 				>
 				<File
-					RelativePath="..\..\volumes\exponential.cpp"
+					RelativePath="..\..\..\volumes\exponential.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\volumes\homogeneous.cpp"
+					RelativePath="..\..\..\volumes\homogeneous.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\volumes\volumegrid.cpp"
+					RelativePath="..\..\..\volumes\volumegrid.cpp"
 					>
 				</File>
 			</Filter>
@@ -702,118 +726,126 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\core\api.h"
+				RelativePath="..\..\..\core\api.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\camera.h"
+				RelativePath="..\..\..\core\camera.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\color.h"
+				RelativePath="..\..\..\core\cimg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\dynload.h"
+				RelativePath="..\..\..\core\color.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\film.h"
+				RelativePath="..\..\..\core\dynload.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\geometry.h"
+				RelativePath="..\..\..\core\error.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\igiio.h"
+				RelativePath="..\..\..\core\film.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\kdtree.h"
+				RelativePath="..\..\..\core\geometry.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\light.h"
+				RelativePath="..\..\..\core\igiio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\lux.h"
+				RelativePath="..\..\..\core\kdtree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\material.h"
+				RelativePath="..\..\..\core\light.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\mc.h"
+				RelativePath="..\..\..\core\lux.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\mipmap.h"
+				RelativePath="..\..\..\core\material.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\octree.h"
+				RelativePath="..\..\..\core\mc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\paramset.h"
+				RelativePath="..\..\..\core\mipmap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\primitive.h"
+				RelativePath="..\..\..\core\octree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\reflection.h"
+				RelativePath="..\..\..\core\paramset.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\sampling.h"
+				RelativePath="..\..\..\core\primitive.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\scene.h"
+				RelativePath="..\..\..\core\reflection.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\shape.h"
+				RelativePath="..\..\..\core\sampling.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\texture.h"
+				RelativePath="..\..\..\core\scene.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\timer.h"
+				RelativePath="..\..\..\core\shape.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\tonemap.h"
+				RelativePath="..\..\..\core\texture.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\transform.h"
+				RelativePath="..\..\..\core\timer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\transport.h"
+				RelativePath="..\..\..\core\tonemap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\core\volume.h"
+				RelativePath="..\..\..\core\transform.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\core\transport.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\core\volume.h"
 				>
 			</File>
 			<Filter
 				Name="accelerators"
 				>
 				<File
-					RelativePath="..\..\accelerators\grid.h"
+					RelativePath="..\..\..\accelerators\grid.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\accelerators\kdtreeaccel.h"
+					RelativePath="..\..\..\accelerators\kdtreeaccel.h"
 					>
 				</File>
 			</Filter>
@@ -821,15 +853,15 @@
 				Name="cameras"
 				>
 				<File
-					RelativePath="..\..\cameras\environment.h"
+					RelativePath="..\..\..\cameras\environment.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\cameras\orthographic.h"
+					RelativePath="..\..\..\cameras\orthographic.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\cameras\perspective.h"
+					RelativePath="..\..\..\cameras\perspective.h"
 					>
 				</File>
 			</Filter>
@@ -837,11 +869,11 @@
 				Name="film"
 				>
 				<File
-					RelativePath="..\..\film\image.h"
+					RelativePath="..\..\..\film\image.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\film\multiimage.h"
+					RelativePath="..\..\..\film\multiimage.h"
 					>
 				</File>
 			</Filter>
@@ -849,23 +881,23 @@
 				Name="filters"
 				>
 				<File
-					RelativePath="..\..\filters\box.h"
+					RelativePath="..\..\..\filters\box.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\gaussian.h"
+					RelativePath="..\..\..\filters\gaussian.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\mitchell.h"
+					RelativePath="..\..\..\filters\mitchell.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\sinc.h"
+					RelativePath="..\..\..\filters\sinc.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\filters\triangle.h"
+					RelativePath="..\..\..\filters\triangle.h"
 					>
 				</File>
 			</Filter>
@@ -873,47 +905,47 @@
 				Name="integrators"
 				>
 				<File
-					RelativePath="..\..\integrators\bidirectional.h"
+					RelativePath="..\..\..\integrators\bidirectional.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\debug.h"
+					RelativePath="..\..\..\integrators\debug.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\directlighting.h"
+					RelativePath="..\..\..\integrators\directlighting.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\emission.h"
+					RelativePath="..\..\..\integrators\emission.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\exphotonmap.h"
+					RelativePath="..\..\..\integrators\exphotonmap.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\igi.h"
+					RelativePath="..\..\..\integrators\igi.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\irradiancecache.h"
+					RelativePath="..\..\..\integrators\irradiancecache.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\path.h"
+					RelativePath="..\..\..\integrators\path.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\photonmap.h"
+					RelativePath="..\..\..\integrators\photonmap.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\single.h"
+					RelativePath="..\..\..\integrators\single.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\integrators\whitted.h"
+					RelativePath="..\..\..\integrators\whitted.h"
 					>
 				</File>
 			</Filter>
@@ -921,39 +953,43 @@
 				Name="lights"
 				>
 				<File
-					RelativePath="..\..\lights\distant.h"
+					RelativePath="..\..\..\lights\distant.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\goniometric.h"
+					RelativePath="..\..\..\lights\goniometric.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\infinite.h"
+					RelativePath="..\..\..\lights\infinite.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\infinitesample.h"
+					RelativePath="..\..\..\lights\infinitesample.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\point.h"
+					RelativePath="..\..\..\lights\point.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\projection.h"
+					RelativePath="..\..\..\lights\projection.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\sky.h"
+					RelativePath="..\..\..\lights\sky.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\spot.h"
+					RelativePath="..\..\..\lights\spot.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\lights\sun.h"
+					RelativePath="..\..\..\lights\sun.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\lights\sun2.h"
 					>
 				</File>
 			</Filter>
@@ -961,59 +997,59 @@
 				Name="materials"
 				>
 				<File
-					RelativePath="..\..\materials\bluepaint.h"
+					RelativePath="..\..\..\materials\bluepaint.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\brushedmetal.h"
+					RelativePath="..\..\..\materials\brushedmetal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\clay.h"
+					RelativePath="..\..\..\materials\clay.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\felt.h"
+					RelativePath="..\..\..\materials\felt.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\glass.h"
+					RelativePath="..\..\..\materials\glass.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\matte.h"
+					RelativePath="..\..\..\materials\matte.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\mirror.h"
+					RelativePath="..\..\..\materials\mirror.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\plastic.h"
+					RelativePath="..\..\..\materials\plastic.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\primer.h"
+					RelativePath="..\..\..\materials\primer.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\shinymetal.h"
+					RelativePath="..\..\..\materials\shinymetal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\skin.h"
+					RelativePath="..\..\..\materials\skin.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\substrate.h"
+					RelativePath="..\..\..\materials\substrate.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\translucent.h"
+					RelativePath="..\..\..\materials\translucent.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\materials\uber.h"
+					RelativePath="..\..\..\materials\uber.h"
 					>
 				</File>
 			</Filter>
@@ -1021,23 +1057,23 @@
 				Name="samplers"
 				>
 				<File
-					RelativePath="..\..\samplers\bestcandidate.h"
+					RelativePath="..\..\..\samplers\bestcandidate.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\lowdiscrepancy.h"
+					RelativePath="..\..\..\samplers\lowdiscrepancy.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\random.h"
+					RelativePath="..\..\..\samplers\random.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\sampledata.h"
+					RelativePath="..\..\..\samplers\sampledata.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\samplers\stratified.h"
+					RelativePath="..\..\..\samplers\stratified.h"
 					>
 				</File>
 			</Filter>
@@ -1045,43 +1081,43 @@
 				Name="shapes"
 				>
 				<File
-					RelativePath="..\..\shapes\cone.h"
+					RelativePath="..\..\..\shapes\cone.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\cylinder.h"
+					RelativePath="..\..\..\shapes\cylinder.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\disk.h"
+					RelativePath="..\..\..\shapes\disk.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\heightfield.h"
+					RelativePath="..\..\..\shapes\heightfield.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\hyperboloid.h"
+					RelativePath="..\..\..\shapes\hyperboloid.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\loopsubdiv.h"
+					RelativePath="..\..\..\shapes\loopsubdiv.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\nurbs.h"
+					RelativePath="..\..\..\shapes\nurbs.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\paraboloid.h"
+					RelativePath="..\..\..\shapes\paraboloid.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\sphere.h"
+					RelativePath="..\..\..\shapes\sphere.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\shapes\trianglemesh.h"
+					RelativePath="..\..\..\shapes\trianglemesh.h"
 					>
 				</File>
 			</Filter>
@@ -1089,51 +1125,51 @@
 				Name="textures"
 				>
 				<File
-					RelativePath="..\..\textures\bilerp.h"
+					RelativePath="..\..\..\textures\bilerp.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\checkerboard.h"
+					RelativePath="..\..\..\textures\checkerboard.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\constant.h"
+					RelativePath="..\..\..\textures\constant.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\dots.h"
+					RelativePath="..\..\..\textures\dots.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\fbm.h"
+					RelativePath="..\..\..\textures\fbm.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\imagemap.h"
+					RelativePath="..\..\..\textures\imagemap.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\marble.h"
+					RelativePath="..\..\..\textures\marble.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\mix.h"
+					RelativePath="..\..\..\textures\mix.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\scale.h"
+					RelativePath="..\..\..\textures\scale.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\uv.h"
+					RelativePath="..\..\..\textures\uv.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\windy.h"
+					RelativePath="..\..\..\textures\windy.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\textures\wrinkled.h"
+					RelativePath="..\..\..\textures\wrinkled.h"
 					>
 				</File>
 			</Filter>
@@ -1141,23 +1177,23 @@
 				Name="tonemaps"
 				>
 				<File
-					RelativePath="..\..\tonemaps\contrast.h"
+					RelativePath="..\..\..\tonemaps\contrast.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\highcontrast.h"
+					RelativePath="..\..\..\tonemaps\highcontrast.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\maxwhite.h"
+					RelativePath="..\..\..\tonemaps\maxwhite.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\nonlinear.h"
+					RelativePath="..\..\..\tonemaps\nonlinear.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\tonemaps\reinhard.h"
+					RelativePath="..\..\..\tonemaps\reinhard.h"
 					>
 				</File>
 			</Filter>
@@ -1165,15 +1201,15 @@
 				Name="volumes"
 				>
 				<File
-					RelativePath="..\..\volumes\exponential.h"
+					RelativePath="..\..\..\volumes\exponential.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\volumes\homogeneous.h"
+					RelativePath="..\..\..\volumes\homogeneous.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\volumes\volumegrid.h"
+					RelativePath="..\..\..\volumes\volumegrid.h"
 					>
 				</File>
 			</Filter>
@@ -1181,11 +1217,11 @@
 				Name="renderer"
 				>
 				<File
-					RelativePath="..\..\renderer\icons.h"
+					RelativePath="..\..\..\renderer\icons.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\renderer\luxgui.h"
+					RelativePath="..\..\..\renderer\luxgui.h"
 					>
 				</File>
 			</Filter>
@@ -1200,7 +1236,7 @@
 			Name="Parser Files"
 			>
 			<File
-				RelativePath="..\..\core\luxlex.l"
+				RelativePath="..\..\..\core\luxlex.l"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1224,7 +1260,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\core\luxparse.y"
+				RelativePath="..\..\..\core\luxparse.y"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
