@@ -1,10 +1,6 @@
 #CMake file for GNU/Linux static building
-
 PROJECT(lux)
-#OPTION(WITH_GUI "Enable the GUI." OFF)
-#OPTION(WITH_SSE "Enable SSE optimisations" ON)
 
-#SET (CMAKE_EXE_LINK_DYNAMIC_C_FLAGS "-Wl,-Bstatic")
 SET (CMAKE_EXE_LINK_DYNAMIC_C_FLAGS "-static")
 
 #Find BISON
@@ -13,13 +9,11 @@ IF (NOT BISON_EXECUTABLE)
 MESSAGE(FATAL_ERROR "bison not found - aborting")
 ENDIF (NOT BISON_EXECUTABLE)
 
-
 #Find FLEX
 FIND_PROGRAM(FLEX_EXECUTABLE flex)
 IF (NOT FLEX_EXECUTABLE)
 MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
-
 
 # Find and setup FLTK library
 #This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
@@ -43,26 +37,15 @@ ENDIF( FLTK_INCLUDE_DIR )
 # Find and setup Boost library
 FIND_PACKAGE(Boost REQUIRED)
 IF(Boost_FOUND)
-	#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
-	#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
+	SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
 ENDIF(Boost_FOUND)
 
 
 # Find and setup OpenEXR
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-    ImfXdr.h
-    PATHS
-    /usr/local/include/OpenEXR
-    /usr/include/OpenEXR
-    /sw/include/OpenEXR
-    /opt/local/include/OpenEXR
-    /opt/csw/include/OpenEXR
-    /opt/include/OpenEXR
-) 
-SET(OPENEXR_LIBRARIES z pthread Imath Half IlmImf Iex IlmThread )
-#-pthread -lImath -lHalf -lIex -lIlmThread
+SET(OPENEXR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/platform/linux/include/OpenEXR)
+SET(OPENEXR_LIBRARIES  IlmImf Half Iex Imath IlmThread z pthread )
 
 #All dependencies OK !
 
@@ -80,7 +63,6 @@ COMMAND ${FLEX_EXECUTABLE}
 ARGS -o${CMAKE_BINARY_DIR}/luxlex.cpp
       ${CMAKE_SOURCE_DIR}/core/luxlex.l
 TARGET LuxLexer
-#DEPENDS ${CMAKE_BINARY_DIR}/core/pbrtparse.cpp ${lux_BINARY_DIR}/core/pbrtparse.h
 OUTPUTS ${CMAKE_BINARY_DIR}/luxlex.cpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
 
@@ -93,14 +75,13 @@ ARGS -y ${CMAKE_SOURCE_DIR}/core/luxparse.y
      -o ${CMAKE_BINARY_DIR}/luxparse.cpp
      -d
 TARGET LuxParser
-#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
 OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 
 SET(lux_lib_src
 		${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxlex.cpp
 		core/api.cpp core/camera.cpp core/color.cpp core/dynload.cpp core/exrio.cpp core/film.cpp
-		core/geometry.cpp core/light.cpp core/material.cpp core/mc.cpp
+		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/transform.cpp
         core/transport.cpp core/util.cpp core/volume.cpp
@@ -116,10 +97,10 @@ SET(lux_lib_src
         integrators/directlighting.cpp integrators/emission.cpp integrators/irradiancecache.cpp
         integrators/path.cpp integrators/photonmap.cpp integrators/single.cpp
         integrators/whitted.cpp integrators/igi.cpp
-        integrators/debug.cpp integrators/exphotonmap.cpp integrators/bidirectional.cpp
+        integrators/debug.cpp integrators/exphotonmap.cpp integrators/bidirectional.cpp integrationsamplers/metropolis.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
-        lights/sun.cpp lights/sky.cpp
+        lights/sun.cpp lights/sky.cpp lights/sun2.cpp
         materials/bluepaint.cpp materials/brushedmetal.cpp materials/clay.cpp materials/felt.cpp
         materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp materials/primer.cpp
         materials/shinymetal.cpp materials/skin.cpp materials/substrate.cpp
@@ -131,6 +112,7 @@ SET(lux_lib_src
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
 	)
 
+
 INCLUDE_DIRECTORIES(${OPENEXR_INCLUDE_DIRS}
 					${Boost_INCLUDE_DIRS}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
@@ -138,24 +120,22 @@ INCLUDE_DIRECTORIES(${OPENEXR_INCLUDE_DIRS}
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
 					${CMAKE_SOURCE_DIR}/shapes ${CMAKE_SOURCE_DIR}/textures ${CMAKE_SOURCE_DIR}/tonemaps
 					${CMAKE_SOURCE_DIR}/volumes
+					${CMAKE_SOURCE_DIR}/integrationsamplers
 					${CMAKE_BINARY_DIR}
 					)
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1)
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${CMAKE_SOURCE_DIR}/platform/linux/x86 ${CMAKE_SOURCE_DIR}/platform/linux/x64 )
 					
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-SET_TARGET_PROPERTIES (lux PROPERTIES LINK_FLAGS "-L/home/jeff/workspace/lux/linux/x64 -L/usr/lib")
-TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} pthread z ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} png jpeg tiff)
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
-SET_TARGET_PROPERTIES (luxconsole PROPERTIES LINK_FLAGS "-L/home/jeff/workspace/lux/linux/x64 -L/usr/lib")
-TARGET_LINK_LIBRARIES(luxconsole lux pthread z ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} png jpeg tiff )
 
 #Here we build the GUI executable
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR})
 ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES})
-SET_TARGET_PROPERTIES (luxrender PROPERTIES LINK_FLAGS "-L/home/jeff/workspace/lux/linux/x64 -L/usr/lib")
 
