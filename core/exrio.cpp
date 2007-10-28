@@ -70,7 +70,7 @@ using namespace Imath;
 	// XXX should do real RGB -> Spectrum conversion here
 	for (int i = 0; i < *width * *height; ++i) {
 		float c[3] = { rgb[3*i], rgb[3*i+1], rgb[3*i+2] };
-		if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
+		//if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
 		ret[i] = Spectrum(c);
 	}
 
