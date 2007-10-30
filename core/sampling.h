@@ -147,13 +147,13 @@ inline float VanDerCorput(u_int n, u_int scramble) {
 	return (float)n / (float)0x100000000LL;
 }
 inline float Sobol2(u_int n, u_int scramble) {
-	for (u_int v = 1 << 31; n != 0; n >>= 1, v ^= v >> 1)
+	for (u_int v = 1u << 31; n != 0; n >>= 1, v ^= v >> 1)
 		if (n & 0x1) scramble ^= v;
 	return (float)scramble / (float)0x100000000LL;
 }
 inline float
 LarcherPillichshammer2(u_int n, u_int scramble) {
-	for (u_int v = 1 << 31; n != 0; n >>= 1, v |= v >> 1)
+	for (u_int v = 1u << 31; n != 0; n >>= 1, v |= v >> 1)
 		if (n & 0x1) scramble ^= v;
 	return (float)scramble / (float)0x100000000LL;
 }

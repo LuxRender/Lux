@@ -192,6 +192,9 @@ ENDIF(JPEG_FOUND)
 ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
+#ICC definitions
+#ADD_DEFINITIONS(-O3 -ipo -no-prec-div -static -fp-model fast=2 -rcd)
+
 
 
 #############################################################################
@@ -316,6 +319,8 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} $
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 
+#Needed for ICC
+#REMOVE_DEFINITIONS(-ipo)
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)

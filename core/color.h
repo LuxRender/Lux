@@ -26,7 +26,7 @@
 #include "lux.h"
 // Spectrum Declarations
 
-#ifndef LUX_USE_SSE
+#ifndef DISABLED_LUX_USE_SSE
 
 class  Spectrum {
 public:
