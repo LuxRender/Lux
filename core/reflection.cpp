@@ -254,16 +254,13 @@ Beckmann::Beckmann(float rms) {
 }
 
 float Beckmann::D(const Vector &wh) const {
-  float costhetah = fabsf(CosTheta(wh));
-  float sinthetah = fabsf(SinTheta(wh));
-  float tanthetah = 1.0;
-
-  if (costhetah != 0.0f)
-    tanthetah = sinthetah / costhetah;
+  float costhetah = CosTheta(wh);
+  float theta = acos(costhetah);
+  float tanthetah = tan(theta);
 
   float dfac = tanthetah / r;
 
-  return exp(-(dfac * dfac)) / (M_PI * r * r * powf(costhetah, 4.0));
+  return exp(-(dfac * dfac)) / (r * r * powf(costhetah, 4.0));
 }
 
 void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
@@ -283,23 +280,70 @@ void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float 
   // Compute incident direction by reflecting about $\wh$
   *wi = -wo + 2.f * Dot(wo, H) * H;
 
-  // Compute PDF for \wi from Beckmann distribution
+  // Compute PDF for \wi from Beckmann distribution - note that the inverse of the integral over
+  // the Beckmann distribution is not available in closed form, so this is not really correct
+  // (see Kelemen and Szirmay-Kalos / Microfacet Based BRDF Model, Eurographics 2001)
 
   float conversion_factor = 1.0 / (4.f * Dot(wo, H));
   float beckmann_pdf = conversion_factor * D(H);
 
-  //printf("beckmann_D: %f\n", D(H));
-//  printf("beckmann_pdf: %f\n", beckmann_pdf);
-
   *pdf = beckmann_pdf;
 }
 
+// NB: See note above!
 float Beckmann::Pdf(const Vector &wo, const Vector &wi) const {
   Vector H = Normalize(wo + wi);
   float conversion_factor = 1.0 / 4.f * Dot(wo, H);
   float beckmann_pdf = conversion_factor * D(H);
 
   return beckmann_pdf;
+}
+
+// Ward isotropic distribution, adapted from Kelemen and Szirmay-Kalos / Microfacet Based BRDF Model, Eurographics 2001
+WardIsotropic::WardIsotropic(float rms) {
+  r = rms;
+}
+
+float WardIsotropic::D(const Vector &wh) const {
+  float costhetah = CosTheta(wh);
+  float theta = acos(costhetah);
+  float tanthetah = tan(theta);
+
+  float dfac = tanthetah / r;
+
+  return exp(-(dfac * dfac)) / (M_PI * r * r * powf(costhetah, 3.0));
+}
+
+void WardIsotropic::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
+  // Compute sampled half-angle vector $\wh$ for Ward distribution
+
+  float theta = atan (r * sqrt (-log(1.0 - u1)));
+  float costheta = cos (theta);
+  float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
+  float phi = u2 * 2.f * M_PI;
+
+  Vector H = SphericalDirection(sintheta, costheta, phi);
+
+  if (!SameHemisphere(wo, H))
+    H.z *= -1.f;
+
+  // Compute incident direction by reflecting about $\wh$
+  *wi = -wo + 2.f * Dot(wo, H) * H;
+
+  // Compute PDF for \wi from isotropic Ward distribution
+
+  float conversion_factor = 1.0 / (4.f * Dot(wo, H));
+  float ward_pdf = conversion_factor * D(H);
+
+  *pdf = ward_pdf;
+}
+
+float WardIsotropic::Pdf(const Vector &wo, const Vector &wi) const {
+  Vector H = Normalize(wo + wi);
+  float conversion_factor = 1.0 / 4.f * Dot(wo, H);
+  float ward_pdf = conversion_factor * D(H);
+
+  return ward_pdf;
 }
 
 void Blinn::Sample_f(const Vector &wo, Vector *wi,
@@ -316,8 +360,6 @@ void Blinn::Sample_f(const Vector &wo, Vector *wi,
 	float blinn_pdf = ((exponent + 2.f) *
 	                   powf(costheta, exponent)) /
 		(2.f * M_PI * 4.f * Dot(wo, H));
-
-        //printf("blinn_pdf: %f\n", blinn_pdf);
 
 	*pdf = blinn_pdf;
 }
