@@ -312,6 +312,26 @@ private:
 	MicrofacetDistribution *distribution;
 	Fresnel *fresnel;
 };
+
+// Multilobe Cook-Torrance model
+class  CookTorrance : public BxDF {
+public:
+  // CookTorrance Public Methods
+  CookTorrance(const Spectrum &kd, u_int nl,
+               const Spectrum *ks, MicrofacetDistribution **dist, Fresnel **fres);
+  Spectrum f(const Vector &wo, const Vector &wi) const;
+  float G(const Vector &wo, const Vector &wi, const Vector &wh) const;
+  Spectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
+  float Pdf(const Vector &wi, const Vector &wo) const;
+private:
+  // Cook-Torrance Private Data
+  Spectrum KD;
+  u_int nLobes;
+  const Spectrum *KS;
+  MicrofacetDistribution **distribution;
+  Fresnel **fresnel;
+};
+
 class  Blinn : public MicrofacetDistribution {
 public:
 	Blinn(float e) { if (e > 100000.f || isnan(e)) e = 100000.f; exponent = e; }

@@ -221,6 +221,42 @@ Spectrum FresnelBlend::f(const Vector &wo,
 		SchlickFresnel(Dot(wi, H));
 	return diffuse + specular;
 }
+
+CookTorrance::CookTorrance(const Spectrum &kd, u_int nl,
+                           const Spectrum *ks,
+                           MicrofacetDistribution **dist, Fresnel **fres) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)) {
+  KD = kd;
+  KS = ks;
+  nLobes = nl;
+  distribution = dist;
+  fresnel = fres;
+}
+
+Spectrum CookTorrance::f(const Vector &wo, const Vector &wi) const {
+  Spectrum ret = KD * INV_PI;
+
+  float cosThetaO = fabsf(CosTheta(wo));
+  float cosThetaI = fabsf(CosTheta(wi));
+  Vector wh = Normalize(wi + wo);
+  float cosThetaH = Dot(wi, wh);
+  float cG = G(wo, wi, wh);
+
+  for (u_int i = 0; i < nLobes; ++i) {
+    // Add contribution for $i$th Cook-Torrance lobe
+
+    ret += KS[i] * distribution[i]->D(wh) * cG * fresnel[i]->Evaluate(cosThetaH) / (4.f * cosThetaI * cosThetaO);
+  }
+  return ret;
+}
+
+float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) const {
+  float NdotWh = fabsf(CosTheta(wh));
+  float NdotWo = fabsf(CosTheta(wo));
+  float NdotWi = fabsf(CosTheta(wi));
+  float WOdotWh = AbsDot(wo, wh);
+  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));
+}
+
 Spectrum BxDF::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
@@ -480,6 +516,42 @@ float FresnelBlend::Pdf(const Vector &wo,
 	return .5f * (fabsf(wi.z) * INV_PI +
 		distribution->Pdf(wo, wi));
 }
+
+Spectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
+  // Pick a random component
+  u_int comp = RandomUInt() % (nLobes+1);
+
+  if (comp == nLobes) {
+    // The diffuse term; cosine-sample the hemisphere, flipping the direction if necessary
+    *wi = CosineSampleHemisphere(u1, u2);
+    if (wo.z < 0.)
+      wi->z *= -1.f;
+  }
+  else {
+    // Sample lobe number _comp_ for Cook-Torrance BRDF
+   distribution[comp]->Sample_f(wo, wi, u1, u2, pdf);
+  }
+  // If outgoing and incoming is in different hemispheres, return None
+  if (!SameHemisphere(wo, *wi))
+    return Spectrum(0.f);
+
+  *pdf = Pdf(wo, *wi);
+  return f(wo, *wi);
+}
+
+float CookTorrance::Pdf(const Vector &wo, const Vector &wi) const {
+  if (!SameHemisphere(wo, wi))
+    return 0.f;
+
+  // Average of all pdf's
+  float pdfSum = fabsf(wi.z) * INV_PI;
+
+  for (u_int i = 0; i < nLobes; ++i) {
+    pdfSum += distribution[i]->Pdf(wo, wi);
+  }
+  return pdfSum / (1.f + nLobes);
+}
+
 Spectrum BxDF::rho(const Vector &w, int nSamples,
 		float *samples) const {
 	if (!samples) {
