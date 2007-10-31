@@ -21,11 +21,11 @@
  ***************************************************************************/
 
 // exrio.cpp*
-#ifdef __APPLE__
+//#ifdef __APPLE__
 #include "lux.h"
 #include "error.h"
 #include "color.h"
-#endif
+//#endif
 #include <algorithm>
 
 #define cimg_display_type  0
@@ -44,11 +44,11 @@ using namespace cimg_library;
 #include <ImfChannelList.h>
 #include <ImfFrameBuffer.h>
 #include <half.h>
-#ifndef __APPLE__
+/*#ifndef __APPLE__
 #include "lux.h"
 #include "error.h"
 #include "color.h"
-#endif
+#endif*/
 using namespace Imf;
 using namespace Imath;
 // EXR Function Definitions
