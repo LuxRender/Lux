@@ -1,10 +1,15 @@
 PROJECT(lux)
-
-#Setting Universal Binary Properties, only for Mac OS X
 IF(APPLE)
-SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
-SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)                                                      
+SET(APPLE_64 0)
 ENDIF(APPLE)
+#Setting Universal Binary Properties, only for Mac OS X
+IF(APPLE_64)
+	SET(CMAKE_OSX_ARCHITECTURES ppc64;x86_64)
+	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
+ELSE(APPLE_64)
+	SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
+	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
+ENDIF(APPLE_64)
 
 #OPTION(WITH_GUI "Enable the GUI." OFF)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
@@ -40,7 +45,11 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
 IF(APPLE)
 	SET(FLTK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/include)
-	SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/lib)
+	IF(APPLE_64)
+		SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/lib/64bit)
+	ELSE(APPLE_64)
+		SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/platform/macos/fltk-1.1/lib)
+	ENDIF(APPLE_64)
 ELSE(APPLE)
 	FIND_PATH(FLTK_INCLUDE_DIR
 		Fl/Fl.H
@@ -77,14 +86,18 @@ ENDIF( FLTK_INCLUDE_DIR )
 #############################################################################
 #############################################################################
 IF(APPLE)
-	SET(Boost_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/platform/macos/boost-1.34.1/include)
-	SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/platform/macos/boost-1.34.1/lib)
+	SET(Boost_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/platform/)
+	IF(APPLE_64)
+		SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/platform/macos/boost/64bit)
+	ELSE(APPLE_64)
+		SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/platform/macos/boost/)
+	ENDIF(APPLE_64)
 	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1)
 ELSE(APPLE)
 	FIND_PACKAGE(Boost REQUIRED)
 	IF(Boost_FOUND)
-		#MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
-		#MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
+		MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
+		MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
 		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem)
 	ELSE(Boost_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find Boost")
@@ -98,7 +111,11 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 IF(APPLE)
-	SET(OPENEXR_LIB_DIRS ${CMAKE_BINARY_DIR}/platform/macos/openexr-1.4.0/lib)
+	IF(APPLE_64)
+		SET(OPENEXR_LIB_DIRS ${CMAKE_BINARY_DIR}/platform/macos/openexr-1.4.0/lib/64bit)
+	ELSE(APPLE_64)
+		SET(OPENEXR_LIB_DIRS ${CMAKE_BINARY_DIR}/platform/macos/openexr-1.4.0/lib)
+	ENDIF(APPLE_64)
 	SET(OPENEXR_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/platform/macos/openexr-1.4.0/include)
 	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
 ELSE(APPLE)
@@ -151,13 +168,19 @@ INCLUDE(FindPNG)
 #  TIFF_FOUND, If false, do not try to use TIFF.
 # also defined, but not for general use are
 #  TIFF_LIBRARY, where to find the TIFF library.
-INCLUDE(FindTIFF)
-#FIND_PACKAGE(TIFF REQUIRED)
-IF(TIFF_FOUND)
+IF(APPLE)
+	SET(TIFF_INCLUDE_DIR ${CMAKE_BINARY_DIR}/platform/macos/tiff/include)
+	SET(TIFF_LIBRARY ${CMAKE_BINARY_DIR}/platform/macos/tiff/lib)
+	SET(TIFF_LIBRARIES tiff tiffxx)
+ELSE(APPLE)
+	INCLUDE(FindTIFF)
+	#FIND_PACKAGE(TIFF REQUIRED)
+	IF(TIFF_FOUND)
 		MESSAGE( STATUS "Found TIFF" )
-ELSE(TIFF_FOUND)
+	ELSE(TIFF_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find TIFF")
-ENDIF(TIFF_FOUND)
+	ENDIF(TIFF_FOUND)
+ENDIF(APPLE)
 
 
 #############################################################################
@@ -174,13 +197,19 @@ ENDIF(TIFF_FOUND)
 #  JPEG_FOUND, If false, do not try to use JPEG.
 # also defined, but not for general use are
 #  JPEG_LIBRARY, where to find the JPEG library.
-INCLUDE(FindJPEG)
-#FIND_PACKAGE(JPEG REQUIRED)
-IF(JPEG_FOUND)
+IF(APPLE)
+	SET(JPEG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/platform/macos/jpeg/include)
+	SET(JPEG_LIBRARY ${CMAKE_BINARY_DIR}/platform/macos/jpeg/lib)
+	SET(JPEG_LIBRARIES tiff tiffxx)
+ELSE(APPLE)
+	INCLUDE(FindJPEG)
+	#FIND_PACKAGE(JPEG REQUIRED)
+	IF(JPEG_FOUND)
 		#MESSAGE( STATUS "Found JPEG" )
-ELSE(JPEG_FOUND)
+	ELSE(JPEG_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find JPEG")
-ENDIF(JPEG_FOUND)
+	ENDIF(JPEG_FOUND)
+ENDIF(APPLE)
 
 
 #All dependencies OK !
@@ -215,25 +244,25 @@ SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
 
 
 # Create custom command for bison/yacc (note the DEPENDS)
-IF(APPLE)
-ADD_CUSTOM_COMMAND(
-TARGET LuxParser
-#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-COMMAND ${BISON_EXECUTABLE} -y ${CMAKE_SOURCE_DIR}/core/luxparse.y -o ${CMAKE_BINARY_DIR}/luxparse.cpp -d
-COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp
-OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ELSE(APPLE)
-ADD_CUSTOM_COMMAND(
-SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-COMMAND ${BISON_EXECUTABLE} 
-ARGS -y ${CMAKE_SOURCE_DIR}/core/luxparse.y
-     -o ${CMAKE_BINARY_DIR}/luxparse.cpp
-     -d
-TARGET LuxParser
-#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ENDIF(APPLE)
+IF(APPLE AND !APPLE_64)
+	ADD_CUSTOM_COMMAND(
+	TARGET LuxParser
+	#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
+	SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
+	COMMAND ${BISON_EXECUTABLE} -y ${CMAKE_SOURCE_DIR}/core/luxparse.y -o ${CMAKE_BINARY_DIR}/luxparse.cpp -d
+	COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp
+	OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
+ELSE(APPLE AND !APPLE_64)
+	ADD_CUSTOM_COMMAND(
+	SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
+	COMMAND ${BISON_EXECUTABLE} 
+	ARGS -y ${CMAKE_SOURCE_DIR}/core/luxparse.y
+	     -o ${CMAKE_BINARY_DIR}/luxparse.cpp
+	     -d
+	TARGET LuxParser
+	#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
+	OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
+ENDIF(APPLE AND !APPLE_64)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 
 
