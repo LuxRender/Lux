@@ -1,8 +1,11 @@
 PROJECT(lux)
+
 IF(APPLE)
 SET(APPLE_64 0)
 ENDIF(APPLE)
+
 #Setting Universal Binary Properties, only for Mac OS X
+IF(APPLE)
 IF(APPLE_64)
 	SET(CMAKE_OSX_ARCHITECTURES ppc64;x86_64)
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
@@ -10,6 +13,7 @@ ELSE(APPLE_64)
 	SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
 ENDIF(APPLE_64)
+ENDIF(APPLE)
 
 #OPTION(WITH_GUI "Enable the GUI." OFF)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
@@ -295,6 +299,7 @@ SET(lux_lib_src
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/transform.cpp
         core/transport.cpp core/util.cpp core/volume.cpp
+        core/sfmt/SFMT.c
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
         shapes/paraboloid.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
