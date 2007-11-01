@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// luxgui.cpp*
+//// luxgui.cpp*
 #include "lux.h"
 #include "api.h"
 #include "error.h"
