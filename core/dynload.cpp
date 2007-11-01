@@ -106,6 +106,7 @@
 #include "substrate.h"
 #include "translucent.h"
 #include "uber.h"
+#include "carpaint.h"
 
 #include "bilerp.h"
 #include "checkerboard.h"
@@ -558,6 +559,12 @@ static string SearchPath(const string &searchpath,
     if(name=="uber")
     {
     	MaterialPtr ret = MaterialPtr(UberMaterial::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="carpaint")
+    {
+    	MaterialPtr ret = MaterialPtr(CarPaint::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }

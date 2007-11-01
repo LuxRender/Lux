@@ -319,7 +319,7 @@ SET(lux_lib_src
         materials/bluepaint.cpp materials/brushedmetal.cpp materials/clay.cpp materials/felt.cpp
         materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp materials/primer.cpp
         materials/shinymetal.cpp materials/skin.cpp materials/substrate.cpp
-        materials/translucent.cpp materials/uber.cpp
+        materials/translucent.cpp materials/uber.cpp materials/carpaint.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
