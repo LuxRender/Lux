@@ -29,6 +29,7 @@
 
 #include "lux.h"
 #include "api.h"
+#include "error.h"
 
 struct ParamArray;
 

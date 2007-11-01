@@ -214,6 +214,7 @@ class VolumeIntegrator;
 #define RAY_EPSILON 1e-3f
 #define COLOR_SAMPLES 3
 // Global Function Declarations
+
 // Setup printf format
 #ifdef __GNUG__
 #define PRINTF_FUNC __attribute__ \
