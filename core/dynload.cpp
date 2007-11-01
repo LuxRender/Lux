@@ -107,6 +107,7 @@
 #include "translucent.h"
 #include "uber.h"
 #include "carpaint.h"
+#include "metal.h"
 
 #include "bilerp.h"
 #include "checkerboard.h"
@@ -565,6 +566,12 @@ static string SearchPath(const string &searchpath,
     if(name=="carpaint")
     {
     	MaterialPtr ret = MaterialPtr(CarPaint::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="metal")
+    {
+    	MaterialPtr ret = MaterialPtr(Metal::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
