@@ -1,6 +1,6 @@
 #!BPY
 """Registration info for Blender menus:
-Name: 'LuxBlend-v0.1-alpha8...'
+Name: 'LuxBlend-v0.1-alpha9...'
 Blender: 240
 Group: 'Export'
 Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
@@ -9,7 +9,7 @@ Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # --------------------------------------------------------------------------
-# LuxBlend v0.1 alpha8 exporter
+# LuxBlend v0.1 alpha9 exporter
 # --------------------------------------------------------------------------
 #
 # Authors:
@@ -103,7 +103,7 @@ def getMaterialType(mat):
 
 	# test for Transmissive (transparent) Materials
 	elif (mat.mode & Material.Modes.RAYTRANSP):
-		if(mat.getTranslucency < 1.0):
+		if(mat.getTranslucency() < 1.0):
 			### 'glass' material ###
 			mat_type = 0	
 		else:
@@ -690,7 +690,7 @@ def save_lux(filename, unindexedname):
 
 	##### Write Header ######
 	file.write("# Lux Render v0.1 Scene File\n")
-	file.write("# Exported by LuxBlend_01_alpha1\n")
+	file.write("# Exported by LuxBlend_01_alpha9\n")
 
 	file.write("\n")
 
@@ -1422,7 +1422,7 @@ def drawButtons():
 	
 	BGL.glColor3f(0.2,0.2,0.2)
 	BGL.glRectf(0,0,440,230)
-	BGL.glColor3f(0.9,0.9,0.9);BGL.glRasterPos2i(10,205) ; Draw.Text("LuxBlend v0.1alpha8", "small")
+	BGL.glColor3f(0.9,0.9,0.9);BGL.glRasterPos2i(10,205) ; Draw.Text("LuxBlend v0.1alpha9", "small")
 	
 	Draw.Button("Render", evtExport, 10, 19, 100, 30, "Open file dialog and export")
 	Draw.Button("Export Anim", evtExportAnim, 112, 19, 100, 30, "Open file dialog and export animation (careful: takes a lot of diskspace!!!)")
