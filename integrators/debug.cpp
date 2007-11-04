@@ -97,7 +97,10 @@ Spectrum DebugIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		}
 		if (color[i] < 0)
 		{
-			Severe( "i = %d\ndebug_variable[i] = %d\nhit_something = %d\ncolor[i] = %f", i, debug_variable[i], hitSomething, color[i] );
+			//Severe( "i = %d\ndebug_variable[i] = %d\nhit_something = %d\ncolor[i] = %f", i, debug_variable[i], hitSomething, color[i] );
+			std::stringstream ss;
+			ss<<"i = "<<i<<" debug_variable[i] = "<<debug_variable[i]<<" hit_something = "<<hitSomething<<" color[i] = "<<color[i];
+			luxError(LUX_CONSISTENCY,LUX_SEVERE,ss.str().c_str());
 		}
 	}
 
@@ -130,7 +133,10 @@ SurfaceIntegrator* DebugIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 		else if (strs[i] == "one") { vars[i] = DEBUG_ONE; }
 		else
 		{
-			Error( "Unknown debug type \"%s\", defaulting to zero.", strs[i].c_str() );
+			//Error( "Unknown debug type \"%s\", defaulting to zero.", strs[i].c_str() );
+			std::stringstream ss;
+			ss<<"Unknown debug type '"<<strs[i]<<"' defaulting to zero.";
+			luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 			vars[i] = DEBUG_ZERO;
 		}
 	}

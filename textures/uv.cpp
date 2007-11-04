@@ -22,6 +22,7 @@
 
 // uv.cpp*
 #include "uv.h"
+#include "error.h"
 
 // UVTexture Method Definitions
 Texture<float> * UVTexture::CreateFloatTexture(const Transform &tex2world,
@@ -48,7 +49,10 @@ Texture<Spectrum> * UVTexture::CreateSpectrumTexture(const Transform &tex2world,
 			tp.FindVector("v2", Vector(0,1,0)),
 			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 	else {
-		Error("2D texture mapping \"%s\" unknown", type.c_str());
+		//Error("2D texture mapping \"%s\" unknown", type.c_str());
+		std::stringstream ss;
+		ss<<"2D texture mapping '"<<type<<"' unknown";
+		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
 	return new UVTexture(map);

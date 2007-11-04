@@ -27,6 +27,7 @@
 #include "geometry.h"
 #include "transform.h"
 #include "paramset.h"
+#include "error.h"
 // DifferentialGeometry Declarations
 class  DifferentialGeometry {
 	public:
@@ -63,17 +64,16 @@ public:
 	virtual bool CanIntersect() const { return true; }
 	virtual void
 		Refine(vector<ShapePtr > &refined) const {
-		Severe("Unimplemented Shape::Refine() method called");
+		//Severe("Unimplemented Shape::Refine() method called");
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Refine() method called");
 	}
 	virtual bool Intersect(const Ray &ray, float *tHit,
 			DifferentialGeometry *dg) const {
-		Severe("Unimplemented Shape::Intersect()"
-	           "method called");
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Intersect() method called");
 		return false;
 	}
 	virtual bool IntersectP(const Ray &ray) const {
-		Severe("Unimplemented Shape::IntersectP()"
-	           "method called");
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::IntersectP() method called");
 		return false;
 	}
 	virtual void GetShadingGeometry(const Transform &obj2world,
@@ -82,11 +82,11 @@ public:
 		*dgShading = dg;
 	}
 	virtual float Area() const {
-		Severe("Unimplemented Shape::Area() method called");
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Area() method called");
 		return 0.;
 	}
 	virtual Point Sample(float u1, float u2, Normal *Ns) const {
-		Severe("Unimplemented Shape::Sample method called");
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Sample method called");
 		return Point();
 	}
 	virtual float Pdf(const Point &Pshape) const {

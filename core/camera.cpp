@@ -25,6 +25,7 @@
 #include "camera.h"
 #include "film.h"
 #include "mc.h"
+#include "error.h"
 // Camera Method Definitions
 Camera::~Camera() {
 	delete film;
@@ -40,11 +41,7 @@ Camera::Camera(const Transform &world2cam,
 	ShutterClose = sclose;
 	film = f;
 	if (WorldToCamera.HasScale())
-		Warning("Scaling detected in world-to-camera transformation!\n"
-			"The system has numerous assumptions, implicit and explicit,\n"
-			"that this transform will have no scale factors in it.\n"
-			"Proceed at your own risk; your image may have errors or\n"
-			"the system may crash as a result of this.");
+		luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-camera transformation!\n The system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 }
 ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
 		const Transform &proj, const float Screen[4],

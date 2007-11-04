@@ -29,6 +29,7 @@
 #include "color.h"
 #include "paramset.h"
 #include "mc.h"
+#include "error.h"
 // Light Declarations
 class  Light {
 public:
@@ -38,11 +39,7 @@ public:
 		: nSamples(max(1, ns)), LightToWorld(l2w),
 		  WorldToLight(l2w.GetInverse()) {
 		if (WorldToLight.HasScale())
-			Warning("Scaling detected in world-to-light transformation!\n"
-				"The system has numerous assumptions, implicit and explicit,\n"
-				"that this transform will have no scale factors in it.\n"
-				"Proceed at your own risk; your image may have errors or\n"
-				"the system may crash as a result of this.");
+			luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-light transformation!\nThe system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;

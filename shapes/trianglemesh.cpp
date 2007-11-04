@@ -246,12 +246,12 @@ Shape* TriangleMesh::CreateShape(const Transform &o2w,
 	if (!vi || !P) return NULL;
 	const Vector *S = params.FindVector("S", &nsi);
 	if (S && nsi != npi) {
-		Error("Number of \"S\"s for triangle mesh must match \"P\"s");
+		luxError(LUX_CONSISTENCY,LUX_ERROR,"Number of \"S\"s for triangle mesh must match \"P\"s");
 		S = NULL;
 	}
 	const Normal *N = params.FindNormal("N", &nni);
 	if (N && nni != npi) {
-		Error("Number of \"N\"s for triangle mesh must match \"P\"s");
+		luxError(LUX_CONSISTENCY,LUX_ERROR,"Number of \"N\"s for triangle mesh must match \"P\"s");
 		N = NULL;
 	}
 	if (uvs && N) {
@@ -278,8 +278,11 @@ Shape* TriangleMesh::CreateShape(const Transform &o2w,
 	}
 	for (int i = 0; i < nvi; ++i)
 		if (vi[i] >= npi) {
-			Error("trianglemesh has out of-bounds vertex index %d (%d \"P\" values were given",
-				vi[i], npi);
+			//Error("trianglemesh has out of-bounds vertex index %d (%d \"P\" values were given",
+			//	vi[i], npi);
+			std::stringstream ss;
+			ss<<"trianglemesh has out of-bounds vertex index "<<vi[i]<<" ("<<npi<<"  \"P\" values were given";
+			luxError(LUX_CONSISTENCY,LUX_ERROR,ss.str().c_str());
 			return NULL;
 		}
 	return new TriangleMesh(o2w, reverseOrientation, nvi/3, npi, vi, P,

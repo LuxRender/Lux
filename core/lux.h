@@ -216,6 +216,7 @@ class VolumeIntegrator;
 // Global Function Declarations
 
 // Setup printf format
+/*
 #ifdef __GNUG__
 #define PRINTF_FUNC __attribute__ \
 	((__format__ (__printf__, 1, 2)))
@@ -225,7 +226,7 @@ class VolumeIntegrator;
 extern  void Info(const char *, ...) PRINTF_FUNC;
 extern  void Warning(const char *, ...) PRINTF_FUNC;
 extern  void Error(const char *, ...) PRINTF_FUNC;
-extern  void Severe(const char *, ...) PRINTF_FUNC;
+extern  void Severe(const char *, ...) PRINTF_FUNC;*/
 extern void StatsPrint(FILE *dest);
 extern void StatsCleanup();
  void *AllocAligned(size_t size);

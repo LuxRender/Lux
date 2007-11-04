@@ -24,8 +24,10 @@
 %{
 #include "api.h"
 #include "lux.h"
+#include "error.h"
 #include "paramset.h"
 #include <stdarg.h>
+#include <sstream>
 
 extern int yylex( void );
 int line_num = 0;
@@ -34,9 +36,13 @@ string current_file;
 #define YYMAXDEPTH 100000000
 
 void yyerror( char *str ) {
-	Severe( "Parsing error: %s", str);
+	std::stringstream ss;
+	ss<<"Parsing error: "<<str;
+	luxError( LUX_SYNTAX,LUX_SEVERE,ss.str().c_str());
+	//Severe( "Parsing error: %s", str);
 }
 
+/*
 void ParseError( const char *format, ... ) PRINTF_FUNC;
 
 void ParseError( const char *format, ... ) {
@@ -46,7 +52,7 @@ void ParseError( const char *format, ... ) {
 	vsnprintf(error, 4096, format, args);
 	yyerror(error);
 	va_end( args );
-}
+}*/
 
 int cur_paramlist_allocated = 0;
 int cur_paramlist_size = 0;
@@ -112,7 +118,9 @@ void FreeArgs()
 static bool VerifyArrayLength( ParamArray *arr, int required,
 	const char *command ) {
 	if (arr->nelems != required) {
-		ParseError( "%s requires a(n) %d element array!", command, required);
+		std::stringstream ss;
+		ss<<command<<" requires a(n) "<<required<<" element array!";
+		//ParseError( "%s requires a(n) %d element array!", command, required);
 		return false;
 	}
 	return true;
@@ -483,7 +491,10 @@ static void InitParamSet(ParamSet &ps, int count, const char **tokens,
 		if (lookupType(tokens[i], &type, name)) {
 			if (texture_helper && texture_helper[i] && type != PARAM_TYPE_TEXTURE && type != PARAM_TYPE_STRING)
 			{
-				Warning( "Bad type for %s. Changing it to a texture.", name.c_str());
+				std::stringstream ss;
+				ss<<"Bad type for "<<name<<". Changing it to a texture.";
+				luxError( LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
+				//Warning( "Bad type for %s. Changing it to a texture.", name.c_str());
 				type = PARAM_TYPE_TEXTURE;
 			}
 			void *data = args[i];
@@ -507,8 +518,11 @@ static void InitParamSet(ParamSet &ps, int count, const char **tokens,
 					if (s == "true") bdata[j] = true;
 					else if (s == "false") bdata[j] = false;
 					else {
-						Warning("Value \"%s\" unknown for boolean parameter \"%s\"."
-							"Using \"false\".", s.c_str(), tokens[i]);
+						std::stringstream ss;
+						ss<<"Value '"<<s<<"' unknown for boolean parameter '"<<tokens[i]<<"'. Using 'false'.";
+						luxError( LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
+						//Warning("Value \"%s\" unknown for boolean parameter \"%s\"."
+						//	"Using \"false\".", s.c_str(), tokens[i]);
 						bdata[j] = false;
 					}
 				}
@@ -538,13 +552,21 @@ static void InitParamSet(ParamSet &ps, int count, const char **tokens,
 					ps.AddTexture(name, val);
 				}
 				else
-					Error("Only one string allowed for \"texture\" parameter \"%s\"",
-						name.c_str());
+				{
+						//Error("Only one string allowed for \"texture\" parameter \"%s\"", name.c_str());
+						std::stringstream ss;
+						ss<<"Only one string allowed for 'texture' parameter "<<name;
+						luxError( LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+				}
 			}
 		}
 		else
-			Warning("Type of parameter \"%s\" is unknown",
-				tokens[i]);
+		{
+			//Warning("Type of parameter \"%s\" is unknown", tokens[i]);
+			std::stringstream ss;
+			ss<<"Type of parameter '"<<tokens[i]<<"' is unknown";
+			luxError( LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
+		}
 	}
 }
 static bool lookupType(const char *token, int *type, string &name) {
@@ -554,7 +576,10 @@ static bool lookupType(const char *token, int *type, string &name) {
 	while (*strp && isspace(*strp))
 		++strp;
 	if (!*strp) {
-		Error("Parameter \"%s\" doesn't have a type declaration?!", token);
+		//Error("Parameter \"%s\" doesn't have a type declaration?!", token);
+		std::stringstream ss;
+		ss<<"Parameter '"<<token<<"' doesn't have a type declaration?!";
+		luxError( LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
 		return false;
 	}
 	#define TRY_DECODING_TYPE(name, mask) \
@@ -571,7 +596,10 @@ static bool lookupType(const char *token, int *type, string &name) {
 	else TRY_DECODING_TYPE("texture",  PARAM_TYPE_TEXTURE)
 	else TRY_DECODING_TYPE("color",    PARAM_TYPE_COLOR)
 	else {
-		Error("Unable to decode type for token \"%s\"", token);
+		//Error("Unable to decode type for token \"%s\"", token);
+		std::stringstream ss;
+		ss<<"Unable to decode type for token '"<<token<<"'";
+		luxError( LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
 		return false;
 	}
 	while (*strp && isspace(*strp))

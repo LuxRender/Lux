@@ -24,6 +24,7 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+#include "error.h"
 // BilerpTexture Declarations
 template <class T>
 class BilerpTexture : public Texture<T> {
@@ -79,7 +80,10 @@ template <class T> Texture<float>* BilerpTexture<T>::CreateFloatTexture(const Tr
 			tp.FindVector("v2", Vector(0,1,0)),
 			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 	else {
-		Error("2D texture mapping \"%s\" unknown", type.c_str());
+		std::stringstream ss;
+		ss<<"2D texture mapping '"<<type<<"' unknown";
+		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
+		//luxError(LUX_UNIMPLEMENT,LUX_ERROR,"2D texture mapping \"%s\" unknown", type.c_str());
 		map = new UVMapping2D;
 	}
 	return new BilerpTexture<float>(map,
@@ -106,7 +110,10 @@ template <class T> Texture<Spectrum>* BilerpTexture<T>::CreateSpectrumTexture(co
 			tp.FindVector("v2", Vector(0,1,0)),
 			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 	else {
-		Error("2D texture mapping \"%s\" unknown", type.c_str());
+		//Error("2D texture mapping \"%s\" unknown", type.c_str());
+		std::stringstream ss;
+		ss<<"2D texture mapping '"<<type<<"' unknown";
+		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
 	return new BilerpTexture<Spectrum>(map,

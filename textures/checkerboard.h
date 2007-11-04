@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "sampling.h"
 #include "shape.h"
+#include "error.h"
 // Checkerboard2D Private Types
 //enum { NONE, SUPERSAMPLE, CLOSEDFORM } aaMethod;
 typedef enum { NONE, SUPERSAMPLE, CLOSEDFORM } MethodType;
@@ -50,9 +51,12 @@ public:
 		else if (aa == "supersample") aaMethod = SUPERSAMPLE;
 		else if (aa == "closedform") aaMethod = CLOSEDFORM;
 		else {
-			Warning("Anti-aliasing mode \"%s\" not understood "
-				"by Checkerboard2D, defaulting"
-				"to \"supersample\"", aa.c_str());
+			//Warning("Anti-aliasing mode \"%s\" not understood "
+			//	"by Checkerboard2D, defaulting"
+			//	"to \"supersample\"", aa.c_str());
+			std::stringstream ss;
+			ss<<"Anti-aliasing mode '"<<aa<<"' not understood by Checkerboard2D, defaulting to 'supersample'";
+			luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 			aaMethod = SUPERSAMPLE;
 		}
 	}

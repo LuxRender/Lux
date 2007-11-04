@@ -33,8 +33,7 @@ bool Primitive::CanIntersect() const {
 void
 Primitive::Refine(vector<Primitive* > &refined)
 const {
-	Severe("Unimplemented Primitive::Refine"
-	         "method called!");
+	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Refine method called!");
 }
 /*
 void Primitive::FullyRefine(
@@ -79,14 +78,12 @@ void Primitive::FullyRefine(
 }
 
 const AreaLight *Aggregate::GetAreaLight() const {
-	Severe("Aggregate::GetAreaLight() method"
-	     "called; should have gone to GeometricPrimitive");
+	luxError(LUX_BUG,LUX_SEVERE,"Aggregate::GetAreaLight() method called; should have gone to GeometricPrimitive");
 	return NULL;
 }
 BSDF *Aggregate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &,
 		const Transform &) const {
-	Severe("Aggregate::GetBSDF() method"
-	    "called; should have gone to GeometricPrimitive");
+	luxError(LUX_BUG,LUX_SEVERE,"Aggregate::GetBSDF() method called; should have gone to GeometricPrimitive");
 	return NULL;
 }
 // InstancePrimitive Method Definitions

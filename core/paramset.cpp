@@ -22,6 +22,8 @@
 
 // paramset.cpp*
 #include "paramset.h"
+#include "error.h"
+#include <sstream>
 // ParamSet Methods
 ParamSet::ParamSet(const ParamSet &p2) {
 	*this = p2;
@@ -242,8 +244,11 @@ void ParamSet::ReportUnused() const {
 #define CHECK_UNUSED(v) \
 	for (i = 0; i < (v).size(); ++i) \
 		if (!(v)[i]->lookedUp) \
-			Warning("Parameter \"%s\" not used", \
-				(v)[i]->name.c_str())
+		{ \
+			std::stringstream ss; \
+			ss<<"Parameter '"<<(v)[i]->name<<"' not used"; \
+			luxError(LUX_NOERROR,LUX_WARNING,ss.str().c_str()); \
+		}
 	u_int i;
 	CHECK_UNUSED(ints);       CHECK_UNUSED(bools);
 	CHECK_UNUSED(floats);   CHECK_UNUSED(points);
@@ -441,8 +446,13 @@ boost::shared_ptr<Texture<Spectrum> >
 		       spectrumTextures.end())
 			return spectrumTextures[name];
 		else
-			Error("Couldn't find spectrum"
-			      "texture named \"%s\"", n.c_str());
+		{
+			//Error("Couldn't find spectrum"
+			//      "texture named \"%s\"", n.c_str());
+			std::stringstream ss;
+			ss<<"Couldn't find spectrum texture named '"<<n<<"'";
+			luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+		}
 	}
 	Spectrum val = geomParams.FindOneSpectrum(n,
 		materialParams.FindOneSpectrum(n, def));
@@ -457,7 +467,12 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 		if (floatTextures.find(name) != floatTextures.end())
 			return floatTextures[name];
 		else
-			Error("Couldn't find float texture named \"%s\"", n.c_str());
+		{
+					//Error("Couldn't find float texture named \"%s\"", n.c_str());
+					std::stringstream ss;
+					ss<<"Couldn't find float texture named '"<<n<<"'";
+					luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+		}
 	}
 	float val = geomParams.FindOneFloat(n,
 		materialParams.FindOneFloat(n, def));

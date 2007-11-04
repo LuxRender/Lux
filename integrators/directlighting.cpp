@@ -152,8 +152,10 @@ SurfaceIntegrator* DirectLighting::CreateSurfaceIntegrator(const ParamSet &param
 	else if (st == "all") strategy = SAMPLE_ALL_UNIFORM;
 	else if (st == "weighted") strategy = SAMPLE_ONE_WEIGHTED;
 	else {
-		Warning("Strategy \"%s\" for direct lighting unknown. "
-			"Using \"all\".", st.c_str());
+		//Warning("Strategy \"%s\" for direct lighting unknown. Using \"all\".", st.c_str());
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"all\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		strategy = SAMPLE_ALL_UNIFORM;
 	}
 	return new DirectLighting(strategy, maxDepth);

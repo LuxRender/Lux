@@ -30,7 +30,10 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	int dim = tp.FindInt("dimension", 2);
 	if (dim != 2 && dim != 3) {
-		Error("%d dimensional checkerboard texture not supported", dim);
+		//Error("%d dimensional checkerboard texture not supported", dim);
+		std::stringstream ss;
+		ss<<dim<<" dimensional checkerboard texture not supported";
+		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
 	boost::shared_ptr<Texture<float> > tex1 = tp.GetFloatTexture("tex1", 1.f);
@@ -53,7 +56,10 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 				tp.FindVector("v2", Vector(0,1,0)),
 				tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 		else {
-			Error("2D texture mapping \"%s\" unknown", type.c_str());
+			//Error("2D texture mapping \"%s\" unknown", type.c_str());
+			std::stringstream ss;
+			ss<<"2D texture mapping '"<<type<<"' unknown";
+			luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 			map = new UVMapping2D;
 		}
 		string aamode = tp.FindString("aamode");
@@ -71,7 +77,10 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 		const TextureParams &tp) {
 	int dim = tp.FindInt("dimension", 2);
 	if (dim != 2 && dim != 3) {
-		Error("%d dimensional checkerboard texture not supported", dim);
+		//Error("%d dimensional checkerboard texture not supported", dim);
+		std::stringstream ss;
+		ss<<dim<<" dimensional checkerboard texture not supported";
+		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
 	boost::shared_ptr<Texture<Spectrum> > tex1 = tp.GetSpectrumTexture("tex1", 1.f);
@@ -94,7 +103,10 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 				tp.FindVector("v2", Vector(0,1,0)),
 				tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 		else {
-			Error("2D texture mapping \"%s\" unknown", type.c_str());
+			//Error("2D texture mapping \"%s\" unknown", type.c_str());
+			std::stringstream ss;
+			ss<<"2D texture mapping '"<<type<<"' unknown";
+			luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 			map = new UVMapping2D;
 		}
 		string aamode = tp.FindString("aamode");

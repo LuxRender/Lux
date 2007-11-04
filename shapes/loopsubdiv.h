@@ -25,6 +25,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "texture.h"
+#include "error.h"
 #include <set>
 #include <map>
 using std::set;
@@ -64,7 +65,7 @@ struct SDFace {
 	int vnum(SDVertex *vert) const {
 		for (int i = 0; i < 3; ++i)
 			if (v[i] == vert) return i;
-		Severe("Basic logic error in SDFace::vnum()");
+		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDFace::vnum()");
 		return -1;
 	}
 	SDFace *nextFace(SDVertex *vert) {
@@ -83,7 +84,7 @@ struct SDFace {
 		for (int i = 0; i < 3; ++i)
 			if (v[i] != v0 && v[i] != v1)
 				return v[i];
-		Severe("Basic logic error in SDVertex::otherVert()");
+		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDVertex::otherVert()");
 		return NULL;
 	}
 	SDVertex *v[3];

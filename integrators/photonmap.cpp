@@ -98,7 +98,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 			 unsuccessful(nIndirectPhotons,
 			              indirectPhotons.size(),
 						  nshot))) {
-			Error("Unable to store enough photons.  Giving up.\n");
+			luxError(LUX_CONSISTENCY,LUX_ERROR,"Unable to store enough photons.  Giving up.");
 			return;
 		}
 		// Trace a photon path and store contribution

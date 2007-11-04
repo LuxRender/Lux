@@ -28,7 +28,9 @@
 #include "film.h"
 #include "dynload.h"
 #include "volume.h"
+#include "error.h"
 #include <string>
+#include <sstream>
 #include <map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 using std::map;
@@ -127,22 +129,25 @@ static vector<Transform> pushedTransforms;
 // API Macros
 #define VERIFY_INITIALIZED(func) \
 if (currentApiState == STATE_UNINITIALIZED) { \
-	Error("luxInit() must be before calling \"%s()\". " \
-		"Ignoring.", func); \
+		std::stringstream ss; \
+		ss<<"luxInit() must be before calling  '"<<func<<"'. Ignoring."; \
+		luxError(LUX_NOTSTARTED,LUX_SEVERE,ss.str().c_str()); \
 	return; \
 } else /* swallow trailing semicolon */
 #define VERIFY_OPTIONS(func) \
 VERIFY_INITIALIZED(func); \
 if (currentApiState == STATE_WORLD_BLOCK) { \
-	Error("Options cannot be set inside world block; " \
-		"\"%s\" not allowed.  Ignoring.", func); \
+		std::stringstream ss;  \
+		ss<<"Options cannot be set inside world block; '"<<func<<"' not allowed.  Ignoring."; \
+		luxError(LUX_NESTING,LUX_ERROR,ss.str().c_str()); \
 	return; \
 } else /* swallow trailing semicolon */
 #define VERIFY_WORLD(func) \
 VERIFY_INITIALIZED(func); \
 if (currentApiState == STATE_OPTIONS_BLOCK) { \
-	Error("Scene description must be inside world block; " \
-		"\"%s\" not allowed. Ignoring.", func); \
+	std::stringstream ss;  \
+	ss<<"Scene description must be inside world block; '"<<func<<"' not allowed.  Ignoring."; \
+	luxError(LUX_NESTING,LUX_ERROR,ss.str().c_str()); \
 	return; \
 } else /* swallow trailing semicolon */
 // API Function Definitions
@@ -163,7 +168,7 @@ void luxInit() {
 	#endif // FAST_INT
 	// API Initialization
 	if (currentApiState != STATE_UNINITIALIZED)
-		Error("luxInit() has already been called.");
+		luxError(LUX_ILLSTATE,LUX_ERROR,"luxInit() has already been called.");
 	currentApiState = STATE_OPTIONS_BLOCK;
 	renderOptions = new RenderOptions;
 	graphicsState = GraphicsState();
@@ -172,9 +177,9 @@ void luxInit() {
 	StatsCleanup();
 	// API Cleanup
 	if (currentApiState == STATE_UNINITIALIZED)
-		Error("luxCleanup() called without luxInit().");
+		luxError(LUX_NOTSTARTED,LUX_ERROR,"luxCleanup() called without luxInit().");
 	else if (currentApiState == STATE_WORLD_BLOCK)
-		Error("luxCleanup() called while inside world block.");
+		luxError(LUX_ILLSTATE,LUX_ERROR,"luxCleanup() called while inside world block.");
 	currentApiState = STATE_UNINITIALIZED;
 	delete renderOptions;
 	renderOptions = NULL;
@@ -283,8 +288,7 @@ void luxAttributeBegin() {
 void luxAttributeEnd() {
 	VERIFY_WORLD("AttributeEnd");
 	if (!pushedGraphicsStates.size()) {
-		Error("Unmatched luxAttributeEnd() encountered. "
-			"Ignoring it.");
+		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxAttributeEnd() encountered. Ignoring it.");
 		return;
 	}
 	graphicsState = pushedGraphicsStates.back();
@@ -299,8 +303,7 @@ void luxTransformBegin() {
 void luxTransformEnd() {
 	VERIFY_WORLD("TransformEnd");
 	if (!pushedTransforms.size()) {
-		Error("Unmatched luxTransformEnd() encountered. "
-			"Ignoring it.");
+		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxTransformEnd() encountered. Ignoring it.");
 		return;
 	}
 	curTransform = pushedTransforms.back();
@@ -318,7 +321,12 @@ void luxTexture(const string &name,
 		// Create _float_ texture and store in _floatTextures_
 		if (graphicsState.floatTextures.find(name) !=
 		    graphicsState.floatTextures.end())
-			Warning("Texture \"%s\" being redefined", name.c_str());
+		{
+			//Warning("Texture \"%s\" being redefined", name.c_str());
+			std::stringstream ss;
+			ss<<"Texture '"<<name<<"' being redefined.";
+			luxError(LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
+		}
 		boost::shared_ptr<Texture<float> > ft = MakeFloatTexture(texname,
 			curTransform, tp);
 		if (ft) graphicsState.floatTextures[name] = ft;
@@ -326,13 +334,24 @@ void luxTexture(const string &name,
 	else if (type == "color")  {
 		// Create _color_ texture and store in _spectrumTextures_
 		if (graphicsState.spectrumTextures.find(name) != graphicsState.spectrumTextures.end())
-			Warning("Texture \"%s\" being redefined", name.c_str());
+		{
+					//Warning("Texture \"%s\" being redefined", name.c_str());
+					std::stringstream ss;
+					ss<<"Texture '"<<name<<"' being redefined.";
+					luxError(LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
+		}
 		boost::shared_ptr<Texture<Spectrum> > st = MakeSpectrumTexture(texname,
 			curTransform, tp);
 		if (st) graphicsState.spectrumTextures[name] = st;
 	}
 	else
-		Error("Texture type \"%s\" unknown.", type.c_str());
+	{
+		//Error("Texture type \"%s\" unknown.", type.c_str());
+		std::stringstream ss;
+		ss<<"Texture type '"<<type<<"' unknown";
+		luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+	}
+		
 }
 void luxMaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Material");
@@ -347,7 +366,7 @@ void luxLightSource(const string &name,
 		//SunSky light - create both sun & sky lightsources
 		Light *lt_sun = MakeLight("sun", curTransform, params);
 		if (lt_sun == NULL)
-			Error("luxLightSource: light type sun unknown.");
+			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sun);
 			graphicsState.currentLight = name;
@@ -355,7 +374,7 @@ void luxLightSource(const string &name,
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL)
-			Error("luxLightSource: light type sky unknown.");
+			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sky);
 			graphicsState.currentLight = name;
@@ -366,7 +385,7 @@ void luxLightSource(const string &name,
 		//SunSky light - create both sun & sky lightsources
 		Light *lt_sun = MakeLight("sun2", curTransform, params);
 		if (lt_sun == NULL)
-			Error("luxLightSource: light type sun unknown.");
+			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sun);
 			graphicsState.currentLight = name;
@@ -374,7 +393,7 @@ void luxLightSource(const string &name,
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL)
-			Error("luxLightSource: light type sky unknown.");
+			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sky);
 			graphicsState.currentLight = name;
@@ -384,8 +403,13 @@ void luxLightSource(const string &name,
 		// other lightsource type
 		Light *lt = MakeLight(name, curTransform, params);
 		if (lt == NULL)
-			Error("luxLightSource: light type "
-			      "\"%s\" unknown.", name.c_str());
+		{
+			//Error("luxLightSource: light type "
+			//      "\"%s\" unknown.", name.c_str());
+			std::stringstream ss;
+			ss<<"luxLightSource: light type  '"<<name<<"' unknown";
+			luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+		}
 		else {
 			renderOptions->lights.push_back(lt);
 			graphicsState.currentLight = name;
@@ -420,7 +444,10 @@ void luxPortalShape(const string &name,
 			|| graphicsState.currentLight == "infinite")
 			graphicsState.currentLightPtr->AddPortalShape( shape );
 		else {
-			Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState.currentLight.c_str());
+			//Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState.currentLight.c_str());
+			std::stringstream ss;
+			ss<<"LightType '"<<graphicsState.currentLight<<" does not support PortalShape(s).";
+			luxError(LUX_UNIMPLEMENT,LUX_WARNING,ss.str().c_str());
 			return;
 		}
 	}
@@ -462,13 +489,12 @@ void luxShape(const string &name,
 	if (!mtl)
 		mtl = MakeMaterial("matte", curTransform, mp);
 	if (!mtl)
-		Severe("Unable to create \"matte\" material?!");
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
 	// Create primitive and add to scene or current instance
 	Primitive* prim (new GeometricPrimitive(shape, mtl, area));
 	if (renderOptions->currentInstance) {
 		if (area)
-			Warning("Area lights not supported "
-			        "with object instancing");
+			luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Area lights not supported with object instancing");
 		renderOptions->currentInstance->push_back(prim);
 	}
 	else {
@@ -495,8 +521,7 @@ void luxObjectBegin(const string &name) {
 	VERIFY_WORLD("ObjectBegin");
 	luxAttributeBegin();
 	if (renderOptions->currentInstance)
-		Error("ObjectBegin called inside "
-		      "of instance definition");
+		luxError(LUX_NESTING,LUX_ERROR,"ObjectBegin called inside of instance definition");
 	renderOptions->instances[name] =
 		vector<Primitive* >();
 	renderOptions->currentInstance =
@@ -505,8 +530,7 @@ void luxObjectBegin(const string &name) {
 void luxObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
 	if (!renderOptions->currentInstance)
-		Error("ObjectEnd called outside "
-		      "of instance definition");
+		luxError(LUX_NESTING,LUX_ERROR,"ObjectEnd called outside of instance definition");
 	renderOptions->currentInstance = NULL;
 	luxAttributeEnd();
 }
@@ -514,11 +538,14 @@ void luxObjectInstance(const string &name) {
 	VERIFY_WORLD("ObjectInstance");
 	// Object instance error checking
 	if (renderOptions->currentInstance) {
-		Error("ObjectInstance can't be called inside instance definition");
+		luxError(LUX_NESTING,LUX_ERROR,"ObjectInstance can't be called inside instance definition");
 		return;
 	}
 	if (renderOptions->instances.find(name) == renderOptions->instances.end()) {
-		Error("Unable to find instance named \"%s\"", name.c_str());
+		//Error("Unable to find instance named \"%s\"", name.c_str());
+		std::stringstream ss;
+		ss<<"Unable to find instance named '"<<name<<"'";
+		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		return;
 	}
 	vector<Primitive* > &in =
@@ -532,7 +559,7 @@ void luxObjectInstance(const string &name) {
 		if (!accel)
 			accel = MakeAccelerator("kdtree", in, ParamSet());
 		if (!accel)
-			Severe("Unable to find \"kdtree\" accelerator");
+			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
 		in.erase(in.begin(), in.end());
 		in.push_back(accel);
 	}
@@ -551,7 +578,7 @@ void luxWorldEnd() {
 						  "directive).\n");*/
 	// Ensure there are no pushed graphics states
 	while (pushedGraphicsStates.size()) {
-		Warning("Missing end to luxAttributeBegin()");
+		luxError(LUX_NESTING,LUX_WARNING,"Missing end to luxAttributeBegin()");
 		pushedGraphicsStates.pop_back();
 		pushedTransforms.pop_back();
 	}
@@ -571,7 +598,7 @@ Scene *RenderOptions::MakeScene() const {
 	Filter *filter = MakeFilter(FilterName, FilterParams);
 	Film *film = MakeFilm(FilmName, FilmParams, filter);
 	if(std::string(FilmName)=="film")
-		Warning("Warning: Legacy PBRT 'film' does not provide tonemapped output or GUI film display.\nUse 'multifilm' instead.\n");
+		luxError(LUX_NOERROR,LUX_WARNING,"Warning: Legacy PBRT 'film' does not provide tonemapped output or GUI film display. Use 'multifilm' instead.");
 	Camera *camera = MakeCamera(CameraName, CameraParams,
 		WorldToCamera, film);
 	Sampler *sampler = MakeSampler(SamplerName, SamplerParams, film);
@@ -586,7 +613,7 @@ Scene *RenderOptions::MakeScene() const {
 		accelerator = MakeAccelerator("kdtree", primitives, ps);
 	}
 	if (!accelerator)
-		Severe("Unable to find \"kdtree\" accelerator");
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
 	// Initialize _volumeRegion_ from volume region(s)
 	VolumeRegion *volumeRegion;
 	if (volumeRegions.size() == 0)
@@ -598,8 +625,7 @@ Scene *RenderOptions::MakeScene() const {
 	// Make sure all plugins initialized properly
 	if (!camera || !sampler || !film || !accelerator ||
 		!filter || !surfaceIntegrator || !volumeIntegrator) {
-		Severe("Unable to create scene due "
-		       "to missing plug-ins");
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to create scene due to missing plug-ins");
 		return NULL;
 	}
 	Scene *ret = new Scene(camera,

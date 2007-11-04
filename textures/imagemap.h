@@ -25,6 +25,7 @@
 #include "texture.h"
 #include "mipmap.h"
 #include "paramset.h"
+#include "error.h"
 #include <map>
 using std::map;
 // ImageMapTexture Declarations
@@ -77,7 +78,10 @@ template <class T> inline Texture<float> * ImageTexture<T>::CreateFloatTexture(c
 			tp.FindVector("v2", Vector(0,1,0)),
 			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 	else {
-		Error("2D texture mapping \"%s\" unknown", type.c_str());
+		//Error("2D texture mapping \"%s\" unknown", type.c_str());
+		std::stringstream ss;
+		ss<<"2D texture mapping  '"<<type<<"' unknown";
+		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
 	// Initialize _ImageTexture_ parameters
@@ -111,7 +115,10 @@ template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTex
 			tp.FindVector("v2", Vector(0,1,0)),
 			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
 	else {
-		Error("2D texture mapping \"%s\" unknown", type.c_str());
+		//Error("2D texture mapping \"%s\" unknown", type.c_str());
+		std::stringstream ss;
+		ss<<"2D texture mapping  '"<<type<<"' unknown";
+		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
 	// Initialize _ImageTexture_ parameters

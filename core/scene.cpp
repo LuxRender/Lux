@@ -327,8 +327,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 	lastSamples = 0.;
 	lastTime = 0.;
 	if (lts.size() == 0) {
-		Error("No light sources defined in scene; "
-			"nothing to render. Exitting...");
+		luxError(LUX_MISSINGDATA,LUX_SEVERE,"No light sources defined in scene; nothing to render. Exitting...");
 		exit(1);
 	}
 	// Scene Constructor Implementation

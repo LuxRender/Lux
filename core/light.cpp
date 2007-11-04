@@ -61,8 +61,13 @@ void Light::AddPortalShape(ShapePtr s) {
 		if (done.size() == 1) PortalShape = done[0];
 		else {
 			if (done.size() > 16)
-				Warning("Portal light geometry turned into %d shapes; "
-					"may be very inefficient.", (int)done.size());
+			{
+				//Warning("Portal light geometry turned into %d shapes; "
+				//	"may be very inefficient.", (int)done.size());
+				std::stringstream ss;
+				ss<<"Portal light geometry turned into "<<(int)done.size()<<" shapes may be very inefficient.";
+				luxError(LUX_NOERROR,LUX_WARNING,ss.str().c_str());
+			}
 			ShapePtr o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
 			PortalShape = o;
 			havePortalShape = true; 

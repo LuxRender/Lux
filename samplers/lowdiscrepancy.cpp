@@ -22,6 +22,7 @@
  
 // lowdiscrepancy.cpp*
 #include "lowdiscrepancy.h"
+#include "error.h"
 // Lux (copy) constructor
 LDSampler* LDSampler::clone() const
  {
@@ -42,8 +43,7 @@ LDSampler::LDSampler(int xstart, int xend,
 	//fs_scrambleY = 0.;
 
 	if (!IsPowerOf2(ps)) {
-		Warning("Pixel samples being"
-		        " rounded up to power of 2");
+		luxError(LUX_CONSISTENCY,LUX_WARNING,"Pixel samples being rounded up to power of 2");
 		pixelSamples = RoundUpPow2(ps);
 	}
 	else

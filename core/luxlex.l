@@ -27,6 +27,7 @@
 #define YY_MAIN 0
 #define YY_NEVER_INTERACTIVE 1
 
+#include <sstream>
 #include "lux.h"
 #include "api.h"
 #include "error.h"
@@ -62,11 +63,11 @@ void add_string_char( char c )
 }
 
 extern void yyerror( const char *str );
-extern void ParseError( const char *format, ... ) PRINTF_FUNC;
+//extern void ParseError( const char *format, ... ) PRINTF_FUNC;
 
 void include_push(char *filename) {
 	if (includeStack.size() > 32)
-		Severe("Only 32 levels of nested Include allowed in scene files.");
+		luxError(LUX_NESTING,LUX_SEVERE,"Only 32 levels of nested Include allowed in scene files.");
 	IncludeInfo ii;
 	extern string current_file;
 	ii.filename = current_file;
@@ -79,7 +80,12 @@ void include_push(char *filename) {
 
 	yyin = fopen(filename, "r");
 	if (!yyin)
-		Severe("Unable to open included scene file \"%s\"", filename);
+	{
+		//Severe("Unable to open included scene file \"%s\"", filename);
+		std::stringstream ss;
+		ss<<"Unable to open included scene file "<<filename;
+		luxError(LUX_NOFILE,LUX_SEVERE,ss.str().c_str());
+	}
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 }
 
@@ -103,9 +109,9 @@ IDENT [a-zA-Z_][a-zA-Z_0-9]*
 Include { BEGIN(INCL); }
 <INCL>{WHITESPACE} ;
 <INCL>\" { BEGIN(INCL_FILE); }
-<INCL>. { ParseError( "Illegal character following Include directive" ); }
+<INCL>. { luxError( LUX_SYNTAX,LUX_SEVERE,"Illegal character following Include directive" ); }
 <INCL_FILE>\" { BEGIN INITIAL; }
-<INCL_FILE>. { ParseError( "Illegal character in Include file name" ); }
+<INCL_FILE>. { luxError( LUX_SYNTAX,LUX_SEVERE,"Illegal character in Include file name" ); }
 <INCL_FILE>[\-a-zA-Z_\.0-9/ \t]+ {
 	BEGIN(INITIAL);
 	include_push(yytext);
@@ -178,9 +184,9 @@ WorldEnd 		{ return WORLDEND;		}
 <STR>\\. { add_string_char(yytext[1]);}
 <STR>\" {BEGIN INITIAL; return STRING;}
 <STR>. {add_string_char(yytext[0]);}
-<STR>\n {ParseError("Unterminated string!");}
+<STR>\n {luxError( LUX_SYNTAX,LUX_SEVERE,"Unterminated string!");}
 
-. { ParseError( "Illegal character: %c",yytext[0] ); }
+. { std::stringstream ss; ss<<"Illegal character: "<<yytext[0]; luxError( LUX_SYNTAX,LUX_SEVERE,ss.str().c_str()); }
 %%
 int yywrap(void)
 {

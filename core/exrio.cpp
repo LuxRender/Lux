@@ -85,8 +85,11 @@ using namespace Imath;
 	printf("Done.\n");
 	return ret;
 	} catch (const std::exception &e) {
-		Error("Unable to read EXR image file \"%s\": %s", name.c_str(),
-			e.what());
+		//Error("Unable to read EXR image file \"%s\": %s", name.c_str(),
+		//	e.what());
+		std::stringstream ss;
+		ss<<"Unable to read EXR image file '"<<name<<"' : "<<e.what();
+		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
 }
@@ -199,8 +202,11 @@ using namespace Imath;
 		file.writePixels(yRes);
 	}
 	catch (const std::exception &e) {
-		Error("Unable to write image file \"%s\": %s", name.c_str(),
-			e.what());
+		//Error("Unable to write image file \"%s\": %s", name.c_str(),
+		//	e.what());
+		std::stringstream ss;
+		ss<<"Unable to write image file '"<<name<<"' : "<<e.what();
+		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 	}
 
 	delete[] (hrgb + 3 * (xOffset + yOffset * xRes));

@@ -437,7 +437,10 @@ public:
         return ShapePtr(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="trianglemesh")
         return ShapePtr(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
-    Error("Static loading of shape '%s' failed.",name.c_str());
+    //Error("Static loading of shape '%s' failed.",name.c_str());
+	std::stringstream ss;
+	ss<<"Static loading of shape '"<<name<<"' failed.";
+	luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     ShapePtr o;
 	return o;
 }
@@ -577,7 +580,10 @@ static string SearchPath(const string &searchpath,
     }
     
     
-    Error("Static loading of material '%s' failed.",name.c_str());
+    //Error("Static loading of material '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of material '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 	MaterialPtr o;
     return o;
 }
@@ -666,7 +672,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of float texture '%s' failed.",name.c_str());
+    //Error("Static loading of float texture '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of texture '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 	boost::shared_ptr<Texture<float> > o;
     return o;
 }
@@ -755,7 +764,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of spectrum texture '%s' failed.",name.c_str());
+    //Error("Static loading of spectrum texture '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of specturm texture '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 	boost::shared_ptr<Texture<Spectrum> > o;
     return o;
 }
@@ -829,7 +841,10 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
-    Error("Static loading of light '%s' failed.",name.c_str());
+    //Error("Static loading of light '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of light '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  AreaLight *MakeAreaLight(const string &name,
@@ -852,7 +867,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of area light '%s' failed.",name.c_str());
+    //Error("Static loading of area light '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of area light '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  VolumeRegion *MakeVolumeRegion(const string &name,
@@ -886,7 +904,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of volume region '%s' failed.",name.c_str());
+    //Error("Static loading of volume region '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of volume region '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
@@ -968,7 +989,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of surface integrator '%s' failed.",name.c_str());
+    //Error("Static loading of surface integrator '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of surface integrator '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  VolumeIntegrator *MakeVolumeIntegrator(const string &name,
@@ -998,7 +1022,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of volume integrator '%s' failed.",name.c_str());
+    //Error("Static loading of volume integrator '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of volume integrator '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims, const ParamSet &paramSet)
@@ -1027,7 +1054,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
 
-    Error("Static loading of accelerator '%s' failed.",name.c_str());
+    //Error("Static loading of accelerator '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of accelerator '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  Camera *MakeCamera(const string &name,
@@ -1061,7 +1091,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of camera '%s' failed.",name.c_str());
+    //Error("Static loading of camera '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of camera '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  Sampler *MakeSampler(const string &name,
@@ -1101,7 +1134,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
 
-    Error("Static loading of sampler '%s' failed.",name.c_str());
+    //Error("Static loading of sampler '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of sampler '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  Filter *MakeFilter(const string &name,
@@ -1150,7 +1186,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
     
-    Error("Static loading of filter '%s' failed.",name.c_str());
+    //Error("Static loading of filter '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of fiter '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  ToneMap *MakeToneMap(const string &name,
@@ -1194,7 +1233,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
 
-    Error("Static loading of tonemap '%s' failed.",name.c_str());
+    //Error("Static loading of tonemap '%s' failed.",name.c_str());
+    std::stringstream ss;
+    ss<<"Static loading of tonemap '"<<name<<"' failed.";
+    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
  Film *MakeFilm(const string &name,
@@ -1222,7 +1264,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
 
-    Error("Static loading of film '%s' failed.",name.c_str());
+    //Error("Static loading of film '%s' failed.",name.c_str());
+	std::stringstream ss;
+	ss<<"Static loading of film '"<<name<<"' failed.";
+	luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
     return NULL;
 }
 // Plugin Method Definitions
