@@ -571,6 +571,7 @@ def exportMesh(mesh, obj, isLight, isPortal):
 		#str += "ObjectBegin \"%s\"\n\n" %(meshname.replace("<","-").replace(">","-"))
 		#str += writeMeshData()
 		#str += "ObjectEnd # %s\n\n\n" %(meshname.replace("<","-").replace(">","-"))
+		str += """# Object: "%s" Mesh: "%s"\n""" % (objectname, obj.getData(name_only=1))
 		str += "AttributeBegin\n"
 		matrix = obj.getMatrix()
 		str += luxMatrix(matrix)

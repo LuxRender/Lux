@@ -104,7 +104,7 @@ void Metropolis::AddSample(const Sample &sample, const Ray &ray,
 		sum += newL.y();
 		nmetro++;
 	}
-	float accprob = __min(1, newL.y()/L.y());
+	float accprob = min(1.0f, newL.y()/L.y());
 
 	if (L.y() > 0.f && L != Spectrum(0.f))
 		film->AddSample(msamp.value(0, 0.)*xRes, 
