@@ -72,7 +72,7 @@ Sample::Sample(SurfaceIntegrator *surf,
 		bool jitter) {
 	float invTot = 1.f / nSamples;
 	for (int i = 0;  i < nSamples; ++i) {
-		float delta = jitter ? RandomFloat() : 0.5f;
+		float delta = jitter ? lux::random::floatValue() : 0.5f;
 		*samp++ = (i + delta) * invTot;
 	}
 }
@@ -81,15 +81,15 @@ Sample::Sample(SurfaceIntegrator *surf,
 	float dx = 1.f / nx, dy = 1.f / ny;
 	for (int y = 0; y < ny; ++y)
 		for (int x = 0; x < nx; ++x) {
-			float jx = jitter ? RandomFloat() : 0.5f;
-			float jy = jitter ? RandomFloat() : 0.5f;
+			float jx = jitter ? lux::random::floatValue() : 0.5f;
+			float jy = jitter ? lux::random::floatValue() : 0.5f;
 			*samp++ = (x + jx) * dx;
 			*samp++ = (y + jy) * dy;
 		}
 }
  void Shuffle(float *samp, int count, int dims) {
 	for (int i = 0; i < count; ++i) {
-		u_int other = RandomUInt() % count;
+		u_int other = lux::random::uintValue() % count;
 		for (int j = 0; j < dims; ++j)
 			swap(samp[dims*i + j], samp[dims*other + j]);
 	}
@@ -100,11 +100,11 @@ Sample::Sample(SurfaceIntegrator *surf,
 	float delta = 1.f / nSamples;
 	for (int i = 0; i < nSamples; ++i)
 		for (int j = 0; j < nDim; ++j)
-			samples[nDim * i + j] = (i + RandomFloat()) * delta;
+			samples[nDim * i + j] = (i + lux::random::floatValue()) * delta;
 	// Permute LHS samples in each dimension
 	for (int i = 0; i < nDim; ++i) {
 		for (int j = 0; j < nSamples; ++j) {
-			u_int other = RandomUInt() % nSamples;
+			u_int other = lux::random::uintValue() % nSamples;
 			swap(samples[nDim * j + i],
 			     samples[nDim * other + i]);
 		}

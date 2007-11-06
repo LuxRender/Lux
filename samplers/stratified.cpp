@@ -74,9 +74,9 @@ bool StratifiedSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		if(fs_progressive) {
 			// Progressive film sampling (random)
 			xPos = xPixelStart + 
-				Ceil2Int( RandomFloat() * xPixelEnd );
+				Ceil2Int( lux::random::floatValue() * xPixelEnd );
 			yPos = yPixelStart + 
-				Ceil2Int( RandomFloat() * yPixelEnd );
+				Ceil2Int( lux::random::floatValue() * yPixelEnd );
 		} else {
 			// Linear/finite film sampling
 			// Advance to next pixel for stratified sampling

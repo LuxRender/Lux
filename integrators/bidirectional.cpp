@@ -117,7 +117,7 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		// Possibly terminate bidirectional path sampling
 		if (nVerts > 2) {
 			float rrProb = .2f;
-			if (RandomFloat() > rrProb)
+			if (lux::random::floatValue() > rrProb)
 				break;
 			v.rrWeight = 1.f / rrProb;
 		}

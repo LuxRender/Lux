@@ -294,7 +294,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 							}
 						}
 					}
-					if (finalGather && RandomFloat() < .125f) {
+					if (finalGather && lux::random::floatValue() < .125f) {
 						// Store data for radiance photon
 						// radiance - disabled for threading // static StatsCounter rp("Photon Map", "Radiance photons created"); // NOBOOK ++rp; // NOBOOK
 						Normal n = photonIsect.dg.nn;
@@ -318,9 +318,9 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 					u3 = RadicalInverse((int)nshot+1, 19);
 				}
 				else {
-					u1 = RandomFloat();
-					u2 = RandomFloat();
-					u3 = RandomFloat();
+					u1 = lux::random::floatValue();
+					u2 = lux::random::floatValue();
+					u3 = lux::random::floatValue();
 				}
 
 				// Compute new photon weight and possibly terminate with RR
@@ -331,7 +331,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 				Spectrum anew = alpha * fr *
 					AbsDot(wi, photonBSDF->dgShading.nn) / pdf;
 				float continueProb = min(1.f, anew.y() / alpha.y());
-				if (RandomFloat() > continueProb || nIntersections > 10)
+				if (lux::random::floatValue() > continueProb || nIntersections > 10)
 					break;
 				alpha = anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&

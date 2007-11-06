@@ -41,7 +41,7 @@ Spectrum
 	float step = sample ? stepSize : 4.f * stepSize;
 	float offset =
 		sample ? sample->oneD[tauSampleOffset][0] :
-		RandomFloat();
+		lux::random::floatValue();
 	Spectrum tau =
 		scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
@@ -63,18 +63,18 @@ Spectrum EmissionIntegrator::Li(MemoryArena &arena, const Scene *scene,
 	if (sample)
 		t0 += sample->oneD[scatterSampleOffset][0] * step;
 	else
-		t0 += RandomFloat() * step;
+		t0 += lux::random::floatValue() * step;
 	for (int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
 		pPrev = p;
 		p = ray(t0);
 		Spectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
-			.5f * stepSize, RandomFloat());
+			.5f * stepSize, lux::random::floatValue());
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
 		if (Tr.y() < 1e-3) {
 			const float continueProb = .5f;
-			if (RandomFloat() > continueProb) break;
+			if (lux::random::floatValue() > continueProb) break;
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_

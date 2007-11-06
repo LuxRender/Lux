@@ -146,7 +146,7 @@ Spectrum InfiniteAreaLightIS::Sample_L(const Scene *scene,
 Spectrum InfiniteAreaLightIS::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	float pdf;
-	Spectrum L = Sample_L(p, RandomFloat(), RandomFloat(),
+	Spectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
 		wi, &pdf, visibility);
 	if (pdf == 0.) return Spectrum(0.);
 	return L / pdf;

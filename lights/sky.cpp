@@ -109,7 +109,7 @@ Spectrum SkyLight::Sample_L(const Point &p,
 		float x, y, z;
 		ConcentricSampleDisk(u1, u2, &x, &y);
 		z = sqrtf(max(0.f, 1.f - x*x - y*y));
-		if (RandomFloat() < .5) z *= -1;
+		if (lux::random::floatValue() < .5) z *= -1;
 		*wi = Vector(x, y, z);
 		// Compute _pdf_ for cosine-weighted infinite light direction
 		*pdf = fabsf(wi->z) * INV_TWOPI;
@@ -123,7 +123,7 @@ Spectrum SkyLight::Sample_L(const Point &p,
 	    // Sample a random Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = Floor2Int(RandomFloat() * nrPortalShapes);
+			shapeidx = Floor2Int(lux::random::floatValue() * nrPortalShapes);
 		Normal ns;
 		Point ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
 		*wi = Normalize(ps - p);
@@ -146,7 +146,7 @@ Spectrum SkyLight::Sample_L(const Point &p,
 	    // Sample a random Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = Floor2Int(RandomFloat() * nrPortalShapes);
+			shapeidx = Floor2Int(lux::random::floatValue() * nrPortalShapes);
 		Normal ns;
 		Point ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
 		*wi = Normalize(ps - p);
@@ -184,7 +184,7 @@ Spectrum SkyLight::Sample_L(const Scene *scene,									// TODO - radiance - add
 Spectrum SkyLight::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	float pdf;
-	Spectrum L = Sample_L(p, RandomFloat(), RandomFloat(),
+	Spectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
 		wi, &pdf, visibility);
 	if (pdf == 0.f) return Spectrum(0.f);
 	return L / pdf;

@@ -59,7 +59,7 @@ int main() {
 	// Compute time samples
 	ProgressReporter timeProgress(SAMPLE_TABLE_SIZE, "Time samples"); //NOBOOK
 	for (int i = 0; i < SAMPLE_TABLE_SIZE; ++i)
-		timeSamples[i] = (i + RandomFloat()) /
+		timeSamples[i] = (i + lux::random::floatValue()) /
 		                         SAMPLE_TABLE_SIZE;
 	for (int currentSample = 1;
 	     currentSample < SAMPLE_TABLE_SIZE;
@@ -137,8 +137,8 @@ void BestCandidate2D(float table[][2], int totalSamples,
 	ProgressReporter  //NOBOOK
 		progress(totalSamples-1, "Throwing Darts"); //NOBOOK
 	// Generate first 2D sample arbitrarily
-	table[0][0] = RandomFloat();
-	table[0][1] = RandomFloat();
+	table[0][0] = lux::random::floatValue();
+	table[0][1] = lux::random::floatValue();
 	addSampleToGrid(table, 0, grid);
 	for (int currentSample = 1;
 	     currentSample < totalSamples;
@@ -151,8 +151,8 @@ void BestCandidate2D(float table[][2], int totalSamples,
 			 ++currentCandidate) {
 			// Generate a random candidate sample
 			float candidate[2];
-			candidate[0] = RandomFloat();
-			candidate[1] = RandomFloat();
+			candidate[0] = lux::random::floatValue();
+			candidate[1] = lux::random::floatValue();
 			// Loop over neighboring grid cells and check distances
 			float sampleDist2 = INFINITY;
 			int gu = GRID(candidate[0]), gv = GRID(candidate[1]);

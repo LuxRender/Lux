@@ -101,7 +101,7 @@ float AreaLight::Pdf(const Point &P, const Vector &w) const {
 Spectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 		VisibilityTester *visibility) const {
 	Normal Ns;
-	Point Ps = shape->Sample(P, RandomFloat(), RandomFloat(), &Ns);
+	Point Ps = shape->Sample(P, lux::random::floatValue(), lux::random::floatValue(), &Ns);
 	*wo = Normalize(Ps - P);
 	visibility->SetSegment(P, Ps);
 	float pdf = shape->Pdf(P, *wo);

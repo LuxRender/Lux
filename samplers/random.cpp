@@ -50,7 +50,7 @@ RandomSampler::RandomSampler(int xstart, int xend,
             i < 5 * xPixelSamples * yPixelSamples;
             ++i)
     {
-        imageSamples[i] = RandomFloat();
+        imageSamples[i] = lux::random::floatValue();
     }
 
     // Shift image samples to pixel coordinates
@@ -72,9 +72,9 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if(fs_progressive) {
 			// Progressive film sampling (random)
 			xPos = xPixelStart + 
-				Ceil2Int( RandomFloat() * xPixelEnd );
+				Ceil2Int( lux::random::floatValue() * xPixelEnd );
 			yPos = yPixelStart + 
-				Ceil2Int( RandomFloat() * yPixelEnd );
+				Ceil2Int( lux::random::floatValue() * yPixelEnd );
 		} else {
 			// Linear/finite film sampling
 			// Advance to next pixel for stratified sampling
@@ -90,7 +90,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
                 i < 5 * xPixelSamples * yPixelSamples;
                 ++i)
         {
-            imageSamples[i] = RandomFloat();
+            imageSamples[i] = lux::random::floatValue();
         }
 
         // Shift image samples to pixel coordinates
@@ -112,10 +112,10 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
     // Generate stratified samples for integrators
     for (u_int i = 0; i < sample->n1D.size(); ++i)
         for (u_int j = 0; j < sample->n1D[i]; ++j)
-            sample->oneD[i][j] = RandomFloat();
+            sample->oneD[i][j] = lux::random::floatValue();
     for (u_int i = 0; i < sample->n2D.size(); ++i)
         for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-            sample->twoD[i][j] = RandomFloat();
+            sample->twoD[i][j] = lux::random::floatValue();
     ++samplePos;
     return true;
 }

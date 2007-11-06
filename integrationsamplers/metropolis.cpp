@@ -25,8 +25,8 @@
 
 float MetroSample::mutate (const float x) const {
 	static const float s1 = 1/1024., s2 = 1/16.;
-	float dx = s2 * exp(-log(s2/s1) * RandomFloat());
-	if (RandomFloat() < 0.5) {
+	float dx = s2 * exp(-log(s2/s1) * lux::random::floatValue());
+	if (lux::random::floatValue() < 0.5) {
 		float x1 = x + dx;
 		return (x1 > 1) ? x1 - 1 : x1;
 	} else {
@@ -67,7 +67,7 @@ void Metropolis::GetNext(float& bs1, float& bs2, float& bcs, int pathLength)
 
 bool Metropolis::GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos)
 {
-	large = (RandomFloat() < pLarge);
+	large = (lux::random::floatValue() < pLarge);
 	if(large) {
 		// large mutation
 		newsamp = MetroSample();
@@ -114,7 +114,7 @@ void Metropolis::AddSample(const Sample &sample, const Ray &ray,
 		film->AddSample(newsamp.value(0, 0.)*xRes, 
 			newsamp.value(1, 0.)*yRes, newL*(1/newL.y())*accprob, alpha);
 
-	if (RandomFloat() < accprob || consec_rejects > maxReject) {
+	if (lux::random::floatValue() < accprob || consec_rejects > maxReject) {
 		msamp = newsamp;
 		L = newL;
 		consec_rejects = 0;

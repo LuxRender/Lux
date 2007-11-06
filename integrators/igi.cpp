@@ -114,15 +114,15 @@ void IGIIntegrator::Preprocess(const Scene *scene) {
 				Vector wi;
 				float pdf;
 				BxDFType flags;
-				Spectrum fr = bsdf->Sample_f(wo, &wi, RandomFloat(),
-								 RandomFloat(), RandomFloat(),
+				Spectrum fr = bsdf->Sample_f(wo, &wi, lux::random::floatValue(),
+								 lux::random::floatValue(), lux::random::floatValue(),
 								 &pdf, BSDF_ALL, &flags);
 				if (fr.Black() || pdf == 0.f)
 					break;
 				Spectrum anew = alpha * fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
 				float r = anew.y() / alpha.y();
 				fprintf(stderr, "\tr = %f\n", r);
-				if (RandomFloat() > r)
+				if (lux::random::floatValue() > r)
 					break;
 				alpha = anew / r;
 				fprintf(stderr, "\tnew alpha %f\n", alpha.y());
@@ -174,7 +174,7 @@ Spectrum IGIIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			// Possibly skip shadow ray with Russian roulette
 			if (Llight.y() < rrThreshold) {
 				float continueProbability = .1f;
-				if (RandomFloat() > continueProbability)
+				if (lux::random::floatValue() > continueProbability)
 					continue;
 				Llight /= continueProbability;
 			}

@@ -116,7 +116,7 @@ class ShapeSet : public Shape {
 public:
 	// ShapeSet Public Methods
 	Point Sample(float u1, float u2, Normal *Ns) const {
-		float ls = RandomFloat();
+		float ls = lux::random::floatValue();
 		u_int sn;
 		for (sn = 0; sn < shapes.size()-1; ++sn)
 			if (ls < areaCDF[sn]) break;

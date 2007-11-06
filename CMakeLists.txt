@@ -296,7 +296,7 @@ SET(lux_lib_src
 		${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxlex.cpp
 		core/api.cpp core/camera.cpp core/color.cpp core/dynload.cpp core/exrio.cpp core/film.cpp
 		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
-        core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/sampling.cpp
+        core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/randomgen.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/transform.cpp
         core/transport.cpp core/util.cpp core/volume.cpp
         

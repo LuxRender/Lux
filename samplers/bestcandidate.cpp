@@ -79,7 +79,7 @@ again:
 		}
 		// Update sample shifts
 		for (int i = 0; i < 3; ++i)
-			sampleOffsets[i] = RandomFloat();
+			sampleOffsets[i] = lux::random::floatValue();
 		// Generate _SAMPLE\_TABLE\_SIZE_-sized tables for single samples
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
 			if (sample->n1D[i] == 1)

@@ -158,7 +158,7 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 	Spectrum E;
 	if (!InterpolateIrradiance(scene, p, n, &E)) {
 		// Compute irradiance at current point
-		u_int scramble[2] = { RandomUInt(), RandomUInt() };
+		u_int scramble[2] = { lux::random::uintValue(), lux::random::uintValue() };
 		float sumInvDists = 0.;
 		for (int i = 0; i < nSamples; ++i) {
 			// Trace ray to sample radiance for irradiance estimate
@@ -199,7 +199,7 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 				if (pathLength+1 == maxIndirectDepth) break;
 				// Sample BSDF to get new path direction
 				// Get random numbers for sampling new direction, \mono{bs1}, \mono{bs2}, and \mono{bcs}
-				float bs1 = RandomFloat(), bs2 = RandomFloat(), bcs = RandomFloat();
+				float bs1 = lux::random::floatValue(), bs2 = lux::random::floatValue(), bcs = lux::random::floatValue();
 				Vector wi;
 				float pdf;
 				BxDFType flags;
@@ -213,7 +213,7 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 				// Possibly terminate the path
 				if (pathLength > 3) {
 					float continueProbability = .5f;
-					if (RandomFloat() > continueProbability)
+					if (lux::random::floatValue() > continueProbability)
 						break;
 					pathThroughput /= continueProbability;
 				}

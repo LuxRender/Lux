@@ -111,9 +111,9 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
 		}
 		else {
-			bs1 = RandomFloat();
-			bs2 = RandomFloat();
-			bcs = RandomFloat();
+			bs1 = lux::random::floatValue();
+			bs2 = lux::random::floatValue();
+			bcs = lux::random::floatValue();
 		}
 		if(useMlt) {
 			// use metropolis integration sampler to possible mutate samples
@@ -138,7 +138,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 
 		if ((pathLength - transmissionBounces) > 3) {
 			//float continueProbability = .5f;
-			if (RandomFloat() > continueProbability)
+			if (lux::random::floatValue() > continueProbability)
 				break;
 			// NOTE - radiance - disabled pathTroughput increase
 			// amplifies precision error and creates bright fireflies with speculars

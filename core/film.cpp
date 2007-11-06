@@ -131,5 +131,5 @@ void ApplyImagingPipeline(float *rgb, int xResolution,
 	// Dither image
 	if (dither > 0.f)
 		for (int i = 0; i < 3*nPix; ++i)
-			rgb[i] += 2.f * dither * (RandomFloat() - .5f);
+			rgb[i] += 2.f * dither * (lux::random::floatValue() - .5f);
 }

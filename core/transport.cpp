@@ -59,7 +59,7 @@ Integrator::~Integrator() {
 		lightNum = Floor2Int(sample->oneD[lightNumOffset][0] *
 							 nLights);
 	else
-		lightNum = Floor2Int(RandomFloat() * nLights);
+		lightNum = Floor2Int(lux::random::floatValue() * nLights);
 	lightNum = min(lightNum, nLights-1);
 	Light *light = scene->lights[lightNum];
 	return (float)nLights *
@@ -137,11 +137,11 @@ Spectrum EstimateDirect(const Scene *scene,
 		bcs = sample->oneD[bsdfComponent][sampleNum];
 	}
 	else {
-		ls1 = RandomFloat();
-		ls2 = RandomFloat();
-		bs1 = RandomFloat();
-		bs2 = RandomFloat();
-		bcs = RandomFloat();
+		ls1 = lux::random::floatValue();
+		ls2 = lux::random::floatValue();
+		bs1 = lux::random::floatValue();
+		bs2 = lux::random::floatValue();
+		bcs = lux::random::floatValue();
 	}
 	// Sample light source with multiple importance sampling
 	Vector wi;

@@ -52,8 +52,8 @@ float SampleStep1d(float *f, float *cdf, float c,
 void RejectionSampleDisk(float *x, float *y) {
 	float sx, sy;
 	do {
-		sx = 1.f - 2.f * RandomFloat();
-		sy = 1.f - 2.f * RandomFloat();
+		sx = 1.f - 2.f * lux::random::floatValue();
+		sy = 1.f - 2.f * lux::random::floatValue();
 	} while (sx*sx + sy*sy > 1.f);
 	*x = sx;
 	*y = sy;

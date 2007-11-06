@@ -70,6 +70,9 @@ using std::sort;
 #include <windows.h>
 #endif
 #include <assert.h>
+
+#include "randomgen.h"
+
 // Platform-specific definitions
 #if defined(WIN32)
 #define memalign(a,b) _aligned_malloc(b, a)
@@ -826,6 +829,7 @@ inline int Ceil2Int(double val) {
 	return (int)ceil(val);
 #endif
 }
+/*
 inline float RandomFloat();
 inline unsigned long RandomUInt();
 inline float RandomFloat() {
@@ -834,7 +838,7 @@ inline float RandomFloat() {
 
 inline unsigned long RandomUInt() {
 	return genrand_int32();
-}
+}*/
 inline bool Quadratic(float A, float B, float C, float *t0,
 		float *t1) {
 	// Find quadratic discriminant

@@ -197,9 +197,9 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 					u3 = (float)RadicalInverse((int)nshot+1, 19);
 				}
 				else {
-					u1 = RandomFloat();
-					u2 = RandomFloat();
-					u3 = RandomFloat();
+					u1 = lux::random::floatValue();
+					u2 = lux::random::floatValue();
+					u3 = lux::random::floatValue();
 				}
 				Spectrum fr = photonBSDF->Sample_f(wo, &wi, u1, u2, u3,
 					&pdf, BSDF_ALL, &flags);
@@ -212,7 +212,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 				// Possibly terminate photon path
 				if (nIntersections > 3) {
 					float continueProbability = .5f;
-					if (RandomFloat() > continueProbability)
+					if (lux::random::floatValue() > continueProbability)
 						break;
 					alpha /= continueProbability;
 				}

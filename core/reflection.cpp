@@ -456,7 +456,7 @@ float Anisotropic::Pdf(const Vector &wo,
 }
 Spectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
-	u_int comp = RandomUInt() % (nLobes+1);
+	u_int comp = lux::random::uintValue() % (nLobes+1);
 	if (comp == nLobes) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		*wi = CosineSampleHemisphere(u1, u2);
@@ -519,7 +519,7 @@ float FresnelBlend::Pdf(const Vector &wo,
 
 Spectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
   // Pick a random component
-  u_int comp = RandomUInt() % (nLobes+1);
+  u_int comp = lux::random::uintValue() % (nLobes+1);
 
   if (comp == nLobes) {
     // The diffuse term; cosine-sample the hemisphere, flipping the direction if necessary
@@ -594,8 +594,8 @@ Spectrum BxDF::rho(int nSamples, float *samples) const {
 Spectrum BSDF::Sample_f(const Vector &wo, Vector *wi, BxDFType flags,
 	BxDFType *sampledType) const {
 	float pdf;
-	Spectrum f = Sample_f(wo, wi, RandomFloat(), RandomFloat(),
-		RandomFloat(), &pdf, flags, sampledType);
+	Spectrum f = Sample_f(wo, wi, lux::random::floatValue(), lux::random::floatValue(),
+		lux::random::floatValue(), &pdf, flags, sampledType);
 	if (!f.Black() && pdf > 0.) f /= pdf;
 	return f;
 }

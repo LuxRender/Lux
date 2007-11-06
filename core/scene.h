@@ -53,7 +53,7 @@ class RenderThread : public boost::noncopyable
 				integrationSampler->SetFilmRes(_Cam->film->xResolution, _Cam->film->yResolution);
 
 			arena=new MemoryArena();
-			sampler->setSeed( RandomUInt() );	//TODO add different seeds and unique backend random generator for threads - radiance
+			sampler->setSeed( lux::random::uintValue() );	//TODO add different seeds and unique backend random generator for threads - radiance
 			//std::cout<<"yepeee, creating thread"<<std::endl;
 		}
 	

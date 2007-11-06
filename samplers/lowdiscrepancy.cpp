@@ -37,8 +37,8 @@ LDSampler::LDSampler(int xstart, int xend,
 
 	fs_progressive = prog;
 	//fs_pos = 0;
-	fs_scrambleX = RandomUInt();
-	fs_scrambleY = RandomUInt();
+	fs_scrambleX = lux::random::uintValue();
+	fs_scrambleY = lux::random::uintValue();
 	//fs_scrambleX = 0.;
 	//fs_scrambleY = 0.;
 
