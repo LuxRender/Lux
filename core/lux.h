@@ -237,8 +237,8 @@ extern void StatsCleanup();
  bool SolveLinearSystem2x2(const float A[2][2], const float B[2],
 	float x[2]);
  unsigned long genrand_int32(void);
- extern float genrand_real1(void);
- extern float genrand_real2(void);
+ //extern float genrand_real1(void);
+ //extern float genrand_real2(void);
  Spectrum *ReadImage(const string &name, int *xSize,
 	int *ySize);
  void WriteRGBAImage(const string &name,

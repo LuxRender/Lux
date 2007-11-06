@@ -153,6 +153,10 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 // API Function Definitions
 void luxInit() {
 	// System-wide initialization
+	
+	//random number init
+	lux::random::init();
+	
 	// Make sure floating point unit's rounding stuff is set
 	// as is expected by the fast FP-conversion routines.  In particular,
 	// we want double precision on Linux, not extended precision!
