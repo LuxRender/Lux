@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="core"
 	ProjectGUID="{8C159477-7802-4C52-865E-131537BBAD83}"
 	RootNamespace="core"
@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR;../../../platform/win32/fltk-1.1.x-r5940-vs2005;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222;../../../integrationsamplers/"
+				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/include;&quot;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR&quot;;&quot;../../../platform/win32/fltk-1.1.x-r5940-vs2005&quot;;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222;../../../integrationsamplers/"
 				PreprocessorDefinitions="CORE_SOURCE;WIN32;NDEBUG;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
@@ -65,7 +65,7 @@
 				AdditionalDependencies="comctl32.lib fltkgl.lib opengl32.lib glu32.lib wsock32.lib fltk.lib Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1d.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;../../../platform/win32/openexr-1.4.0-vs2005/lib&quot;;&quot;../../../platform/win32/fltk-1.1.x-r5940-vs2005/lib&quot;;&quot;../../../platform/win32/boost_1.34_1-vs2005\debug\link-static\threading-multi\&quot;"
+				AdditionalLibraryDirectories="&quot;../../../platform/win32/openexr-1.4.0-vs2005/lib&quot;;&quot;../../../platform/win32/fltk-1.1.x-r5940-vs2005/lib&quot;;&quot;../../../platform/win32/boost_1.34_1-vs2005/debug/link-static/threading-multi&quot;"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OUTDIR)/core.pdb"
@@ -129,7 +129,7 @@
 				FavorSizeOrSpeed="0"
 				OmitFramePointers="false"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR;../../../platform/win32/fltk-1.1.x-r5940-vs2005;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222;../../../integrationsamplers/"
+				AdditionalIncludeDirectories="../../../core;../../..;../../../platform;../../../platform/win32/include;&quot;../../../platform/win32/openexr-1.4.0-vs2005/include/OpenEXR&quot;;&quot;../../../platform/win32/fltk-1.1.x-r5940-vs2005&quot;;../../../accelerators;../../../cameras;../../../film;../../../filters;../../../integrators;../../../lights;../../../materials;../../../volumes;../../../tonemaps;../../../textures;../../../shapes;../../../samplers;../../../renderer;../../../platform/win32/lpng1222;../../../integrationsamplers/"
 				PreprocessorDefinitions="CORE_SOURCE;NDEBUG;WIN32;_WINDOWS;WINDOWS;_USRDLL;undefined_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -155,7 +155,7 @@
 				AdditionalDependencies="Half.lib Iex.lib IlmImf.lib Imath.lib IlmThread.lib zlib1.lib fltk.lib fltkforms.lib fltkgl.lib fltkimages.lib fltkjpeg.lib fltkpng.lib fltkz.lib ws2_32.lib comctl32.lib"
 				OutputFile="$(OUTDIR)/lux.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../../platform/win32/openexr-1.4.0-vs2005/lib;../../../platform/win32/fltk-1.1.x-r5940-vs2005/lib;../../../platform/win32/boost_1.34_1-vs2005\release\link-static\threading-multi"
+				AdditionalLibraryDirectories="&quot;../../../platform/win32/openexr-1.4.0-vs2005/lib&quot;;&quot;../../../platform/win32/fltk-1.1.x-r5940-vs2005/lib&quot;;&quot;../../../platform/win32/boost_1.34_1-vs2005/release/link-static/threading-multi&quot;"
 				GenerateDebugInformation="false"
 				ProgramDatabaseFile="$(OUTDIR)/core.pdb"
 				SubSystem="1"
@@ -199,130 +199,6 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath="..\..\..\core\api.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\camera.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\color.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\dynload.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\exrio.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\film.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\geometry.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\igiio.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\light.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\luxlex.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\luxparse.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\material.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\mc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\paramset.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\parser.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\primitive.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\reflection.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\samplepat.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\core\sampling.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\scene.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\shape.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\texture.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\timer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\transform.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\transport.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\util.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\volume.cpp"
-				>
-			</File>
 			<Filter
 				Name="accelerators"
 				>
@@ -495,6 +371,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\materials\carpaint.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\materials\clay.cpp"
 					>
 				</File>
@@ -508,6 +388,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\materials\matte.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\materials\metal.cpp"
 					>
 				</File>
 				<File
@@ -735,124 +619,148 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="core"
+				>
+				<File
+					RelativePath="..\..\..\core\api.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\camera.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\color.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\dynload.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\exrio.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\film.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\geometry.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\igiio.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\light.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\luxlex.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\luxparse.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\material.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\mc.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\paramset.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\parser.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\primitive.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\reflection.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\samplepat.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\..\core\sampling.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\scene.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\shape.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\timer.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\transform.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\transport.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\util.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\volume.cpp"
+					>
+				</File>
+				<Filter
+					Name="SFMT"
+					>
+					<File
+						RelativePath="..\..\..\core\SFMT\SFMT.cpp"
+						>
+					</File>
+				</Filter>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\..\core\api.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\camera.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\cimg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\color.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\dynload.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\error.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\film.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\geometry.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\igiio.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\kdtree.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\light.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\lux.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\material.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\mc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\mipmap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\octree.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\paramset.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\primitive.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\reflection.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\sampling.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\scene.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\shape.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\texture.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\timer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\tonemap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\transform.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\transport.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\core\volume.h"
-				>
-			</File>
 			<Filter
 				Name="accelerators"
 				>
@@ -1021,6 +929,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\materials\carpaint.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\materials\clay.h"
 					>
 				</File>
@@ -1034,6 +946,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\materials\matte.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\materials\metal.h"
 					>
 				</File>
 				<File
@@ -1249,6 +1165,146 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="core"
+				>
+				<File
+					RelativePath="..\..\..\core\api.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\camera.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\cimg.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\color.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\dynload.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\error.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\film.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\geometry.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\igiio.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\kdtree.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\light.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\lux.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\material.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\mc.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\mipmap.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\octree.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\paramset.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\primitive.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\randomgen.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\reflection.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\sampling.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\scene.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\shape.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\texture.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\timer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\tonemap.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\transform.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\transport.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\core\volume.h"
+					>
+				</File>
+				<Filter
+					Name="SFMT"
+					>
+					<File
+						RelativePath="..\..\..\core\SFMT\SFMT-params.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\core\SFMT\SFMT-params19937.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\core\SFMT\SFMT-sse2.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\core\SFMT\SFMT.h"
+						>
+					</File>
+				</Filter>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -1268,7 +1324,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Lexing $(InputName)"
-						CommandLine="c:\cygwin\bin\flex.exe -o$(InputDir)/$(InputName).cpp $(InputPath)&#x0D;&#x0A;"
+						CommandLine="flex -o&quot;$(InputDir)/$(InputName).cpp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
 						Outputs="$(InputDir)/luxlex.cpp"
 					/>
 				</FileConfiguration>
@@ -1278,7 +1334,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Lexing $(InputName)"
-						CommandLine="c:\cygwin\bin\flex.exe -o$(InputDir)/$(InputName).cpp $(InputPath)&#x0D;&#x0A;"
+						CommandLine="flex -o&quot;$(InputDir)/$(InputName).cpp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
 						Outputs="$(InputDir)/luxlex.cpp"
 					/>
 				</FileConfiguration>
@@ -1292,7 +1348,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Yacc&apos;ing $(InputName)"
-						CommandLine="c:\cygwin\bin\bison.exe -d -v -t -o$(InputDir)/$(InputName).cpp $(InputPath)&#x0D;&#x0A;"
+						CommandLine="bison -d -v -t -o&quot;$(InputDir)/$(InputName).cpp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
 						Outputs="$(InputDir)/$(InputName).cpp;$(InputDir)$(InputName).hpp"
 					/>
 				</FileConfiguration>
@@ -1302,7 +1358,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Yacc&apos;ing $(InputName)"
-						CommandLine="c:\cygwin\bin\bison.exe -d -v -t -o$(InputDir)/$(InputName).cpp $(InputPath)&#x0D;&#x0A;"
+						CommandLine="bison -d -v -t -o&quot;$(InputDir)/$(InputName).cpp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
 						Outputs="$(InputDir)/$(InputName).cpp;$(InputDir)$(InputName).hpp"
 					/>
 				</FileConfiguration>
