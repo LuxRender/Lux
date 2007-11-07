@@ -29,6 +29,7 @@ class SampleVector {
 public:
 	mutable int i;
 	SampleVector () : i(0) {}
+	virtual ~SampleVector() {}
 	virtual float value (const int i, float defval) const = 0;
 };
 

@@ -178,6 +178,7 @@ inline void LDShuffleScrambled2D(int nSamples,
 class IntegrationSampler {
 public:
 	IntegrationSampler() {}
+	virtual ~IntegrationSampler() {}
 	virtual void SetParams(int mR, float pL) = 0;
 	virtual void SetFilmRes(int fX, int fY) = 0;
 	virtual bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos) = 0;
