@@ -874,22 +874,23 @@ def save_lux(filename, unindexedname):
 
 def launchLux(filename):
 	# get blenders 'bpydata' directory
-	datadir=Blender.Get("datadir")
+	#datadir=Blender.Get("datadir")
 	
 	# open 'LuxWrapper.conf' and read the first line
-	f = open(datadir + '/LuxWrapper.conf', 'r+')
-	ic=f.readline()
-	f.close()
+	#f = open(datadir + '/LuxWrapper.conf', 'r+')
+	#ic=f.readline()
+	#f.close()
 	
 	# create 'LuxWrapper.cmd' and write two lines of code into it
-	f = open(datadir + "\LuxWrapper.cmd", 'w')
-	f.write("cd /d " + ic + "\n")
-	f.write("start /b /belownormal Lux.exe %1 -t " + str(Threads.val) + "\n")
-	f.close()
+	#f = open(datadir + "\LuxWrapper.cmd", 'w')
+	#f.write("cd /d " + ic + "\n")
+	#f.write("start /b /belownormal Lux.exe %1 -t " + str(Threads.val) + "\n")
+	#f.close()
 	
 	# call external shell script to start Lux
-	cmd= "\"" + datadir + "\LuxWrapper.cmd " + filename + "\""
-	print cmd
+	#cmd= "\"" + datadir + "\LuxWrapper.cmd " + filename + "\""
+	cmd= "luxrender \"" + filename + "\""
+	print("Running Luxrender:\n"+cmd)
 	os.system(cmd)
 
 
@@ -922,8 +923,8 @@ def save_still(filename):
 	MatSaved = 0
 	unindexedname = filename
 	save_lux(filename, unindexedname)
-	#if ExecuteLux.val == 1:
-	#	launchLux(filename)
+	if ExecuteLux.val == 1:
+		launchLux(filename)
 
 
 
@@ -937,8 +938,8 @@ def save_still(filename):
 
 
 ###psor's add
-ExecuteLux = Draw.Create(1)
-DefaultExport = Draw.Create(1)
+ExecuteLux = Draw.Create(0)
+DefaultExport = Draw.Create(0)
 ###END
 
 
@@ -1432,8 +1433,8 @@ def drawButtons():
 	Draw.Button("Tonemap", openTmap, 250, 185, 80, 13, "open Tonemap Settings")
 	Draw.Button("System", openSSet, 330, 185, 80, 13, "open System Settings")
 	
-	#ExecuteLux = Draw.Toggle("Run", evtNoEvt, 10, 5, 30, 10, ExecuteLux.val, "Execute Lux and render the saved .lxs file")
-	#DefaultExport = Draw.Toggle("def",evtNoEvt,40,5,30,10, DefaultExport.val, "Use default.lxs as filename") 
+	ExecuteLux = Draw.Toggle("Run", evtNoEvt, 10, 5, 30, 10, ExecuteLux.val, "Execute Lux after saving")
+	DefaultExport = Draw.Toggle("def",evtNoEvt,40,5,30,10, DefaultExport.val, "Save as default.lxs to a temporary directory")
 	
 	BGL.glColor3f(0.9, 0.9, 0.9) ; BGL.glRasterPos2i(340,7) ; Draw.Text("Press Q or ESC to quit.", "tiny")
 	
@@ -1453,15 +1454,16 @@ def buttonEvt(evt):  # function that handles button events
 	global Screen, EnFile
 	
 	if evt == evtExport:
-		#if DefaultExport == 0:
+		if DefaultExport == 0:
 			Blender.Window.FileSelector(save_still, "Export", newFName('lxs'))
-		#else:
-		#	datadir=Blender.Get("datadir")
+		else:
+			datadir=Blender.Get("datadir")
 		#	f = open(datadir + '/LuxWrapper.conf', 'r+')
 		#	ic=f.readline()
 		#	f.close()
 		#	filename = ic + "\default.lxs"
-		#	save_still(filename)
+			filename = datadir + "/default.lxs"
+			save_still(filename)
 	
 	if evt == evtExportAnim:
 		Blender.Window.FileSelector(save_anim, "Export Animation", newFName('lxs'))
