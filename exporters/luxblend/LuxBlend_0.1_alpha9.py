@@ -13,10 +13,10 @@ Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
 # --------------------------------------------------------------------------
 #
 # Authors:
-# Radiance (aka Terrence Vergauwen)
+# radiance, zuegs, ideasman42, luxblender
 #
 # Based on:
-# * Lux exporter - Nick Chapman, Gregor Quade, Zuegs, Ewout Fernhout, Leope, psor
+# * Indigo exporter 
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -49,14 +49,9 @@ from Blender import Mesh, Scene, Object, Material, Texture, Window, sys, Draw, B
 # Functions
 ######################################################
 
-
 # New name based on old with a different extension
 def newFName(ext):
 	return Blender.Get('filename')[: -len(Blender.Get('filename').split('.', -1)[-1]) ] + ext
-
-# zuegs: added color exponent
-def colGamma(value):
-	return value**ColExponent.val
 
 def luxMatrix(matrix):
 	ostr = ""
@@ -77,8 +72,6 @@ def dataMaterials(data):
 		except:
 			return []
 	
-	
-
 #################### Export Material Texture ###
 
 # MATERIAL TYPES enum
@@ -216,24 +209,14 @@ def exportMaterial(mat):
 			return write_float_imagemap( param, m.name, chan_file, ss )
 
 	# translates blender mat.hard (range: 1-511) 
-	# to lux blinn value (0.0 - 1.0 Reversed)
-	def HardtoBlinn(hard):
-		blinn = 1.0 / (float(hard) *5)
-		if( blinn < 0.00001 ):
-			blinn = 0.00001
-		if( blinn > 1.0 ):
-			blinn = 1.0
-		return blinn
-
-	# translates blender mat.hard (range: 1-511) 
-	# to lux aniso shinyness value (0.00001 = nearly specular - 1.0 = diffuse)
-	def HardtoAniso(hard):
-		aniso = 1.0 / (float(hard) *5)
-		if( aniso < 0.00001 ):
-			aniso = 0.00001
-		if( aniso > 1.0 ):
-			aniso = 1.0
-		return aniso
+	# to lux microfacet shinyness value (0.00001 = nearly specular - 1.0 = diffuse)
+	def HardtoMicro(hard):
+		micro = 1.0 / (float(hard) *5)
+		if( micro < 0.00001 ):
+			micro = 0.00001
+		if( micro > 1.0 ):
+			micro = 1.0
+		return micro
 
 	mat_type = getMaterialType(mat)
 
@@ -257,7 +240,7 @@ def exportMaterial(mat):
 		str += write_color_param( mat, "Ks", 'COL', mat.R, mat.G, mat.B )
 		str += "Texture \"reflect-%s\" \"float\" \"constant\" \"float value\" [.5]\n" %(mat.name)
 		str += "Texture \"transmit-%s\" \"float\" \"constant\" \"float value\" [.5]\n" %(mat.name)
-		str += write_float_param( mat, "roughness", 'HARD', HardtoBlinn(mat.hard) )
+		str += write_float_param( mat, "roughness", 'HARD', HardtoMicro(mat.hard) )
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
 	elif (mat_type == 2):
@@ -271,7 +254,7 @@ def exportMaterial(mat):
 		str += "# Type: 'plastic'\n"
 		str += write_color_param( mat, "Kd", 'COL', mat.R, mat.G, mat.B )
 		str += write_color_param( mat, "Ks", 'SPEC', mat.specR * mat.getSpec(), mat.specG * mat.getSpec(), mat.specB * mat.getSpec() )
-		str += write_float_param( mat, "roughness", 'HARD', HardtoBlinn(mat.hard) )
+		str += write_float_param( mat, "roughness", 'HARD', HardtoMicro(mat.hard) )
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
 	elif (mat_type == 4):
@@ -279,7 +262,7 @@ def exportMaterial(mat):
 		str += "# Type: 'shinymetal'\n"
 		str += write_color_param( mat, "Ks", 'COL', mat.R, mat.G, mat.B )
 		str += write_color_param( mat, "Kr", 'SPEC',mat.specR * mat.getSpec(), mat.specG * mat.getSpec(), mat.specB * mat.getSpec() )
-		str += write_float_param( mat, "roughness", 'HARD', HardtoBlinn(mat.hard) )
+		str += write_float_param( mat, "roughness", 'HARD', HardtoMicro(mat.hard) )
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
 	elif (mat_type == 5):
@@ -288,8 +271,8 @@ def exportMaterial(mat):
 		str += write_color_param( mat, "Kd", 'COL', mat.R, mat.G, mat.B )
 		str += write_color_param( mat, "Ks", 'SPEC', mat.specR * mat.getSpec(), mat.specG * mat.getSpec(), mat.specB * mat.getSpec() )
 		# TODO: add different inputs for both u/v roughenss for aniso effect
-		str += write_float_param( mat, "uroughness", 'HARD', HardtoAniso(mat.hard) )
-		str += write_float_param( mat, "vroughness", 'HARD', HardtoAniso(mat.hard) )
+		str += write_float_param( mat, "uroughness", 'HARD', HardtoMicro(mat.hard) )
+		str += write_float_param( mat, "vroughness", 'HARD', HardtoMicro(mat.hard) )
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
 	elif (mat_type == 6):
@@ -757,6 +740,15 @@ def save_lux(filename, unindexedname):
 
 	##### Write Integrator ######
 	file.write("SurfaceIntegrator \"path\" \"integer maxdepth\" [%i] " %(pathMaxDepth.val))
+
+	if(pathMetropolis.val == 1):
+		file.write("\"bool metropolis\" [\"true\"] ")
+	else:
+		file.write("\"bool metropolis\" [\"false\"] ")
+
+	file.write("\"float maxconsecrejects\" [%f] " %(pathMetropolisMaxRejects.val))
+	file.write("\"float largemutationprob\" [%f] " %(pathMetropolisLMProb.val))
+
 	if(pathRRforcetransmit.val == 1):
 		file.write("\"bool rrforcetransmit\" [\"true\"] ")
 	else:
@@ -857,19 +849,8 @@ def save_lux(filename, unindexedname):
 
 
 
-
-
-
-
-
-
-
-
-
-
 #########################################################################
-###	 LAUNCH LuxRender AND RENDER CURRENT SCENE (WINDOWS ONLY)		 ###
-###  psor's first steps to Python(executing Lux per shell script)  ###
+###	 LAUNCH LuxRender AND RENDER CURRENT SCENE (WINDOWS ONLY)
 #########################################################################
 
 def launchLux(filename):
@@ -892,12 +873,6 @@ def launchLux(filename):
 	cmd= "luxrender \"" + filename + "\""
 	print("Running Luxrender:\n"+cmd)
 	os.system(cmd)
-
-
-### END OF PSOR ##########################################################
-
-
-
 
 #### SAVE ANIMATION ####	
 def save_anim(filename):
@@ -927,21 +902,12 @@ def save_still(filename):
 		launchLux(filename)
 
 
-
-
-
-
-
 ######################################################
 # Settings GUI
 ######################################################
 
-
-###psor's add
 ExecuteLux = Draw.Create(0)
 DefaultExport = Draw.Create(0)
-###END
-
 
 # Assign event numbers to buttons
 evtNoEvt	= 0
@@ -959,98 +925,20 @@ evtFocusS = 4
 evtFocusC = 5
 
 # Set initial values of buttons
-
-##  <size>800 600</size>
-
 sceneSizeX = Scene.GetCurrent().getRenderingContext().imageSizeX()
 sceneSizeY = Scene.GetCurrent().getRenderingContext().imageSizeY()
-
 SizeX = Draw.Create(sceneSizeX)
 SizeY = Draw.Create(sceneSizeY)
-
 strScaleSize = "Scale Size %t | 100 % %x100 | 75 % %x75 | 50 % %x50 | 25 % %x25"
 ScaleSize = Draw.Create(100)
-
-ColExponent = Draw.Create(2.2)
-
-##  <metropolis>1</metropolis>
-MLT = Draw.Create(1)
-
-##  <large_mutation_prob>0.1</large_mutation_prob>
-LMP = Draw.Create(0.1)
-
-##  <max_change>0.02</max_change>
-MaxChange = Draw.Create(0.02)
-
-##  <max_num_consec_rejections>100</max_num_consec_rejections>
-MaxNumConsRej = Draw.Create(100)
-
-##  <russian_roulette_live_prob>0.7</russian_roulette_live_prob>
-RRLP = Draw.Create(0.7)
-
-##  <max_depth>1000</max_depth>
-MaxDepth = Draw.Create(1000)
-
-##  <bidirectional>true</bidirectional>
-Bidirectional = Draw.Create(1)
-
-##  <strata_width>14</strata_width>
-StrataWidth = Draw.Create(14)
-
-##Threads
-Threads = Draw.Create(1)
-
-##  <logging>0</logging>
-Logging = Draw.Create(0)
-
-##  <save_untonemapped_exr>false</save_untonemapped_exr>
-SaveUTMExr = Draw.Create(0)
-
-##  <save_tonemapped_exr>false</save_tonemapped_exr>
-SaveTMExr = Draw.Create(0)
-
-#HaltTime
-HaltTime = Draw.Create(-1)
-
-#Frameup
-FrameUp = Draw.Create(20)
-
-#ImageSave
-ImageSave = Draw.Create(20)
 
 #ExpotGeom
 ExportGeom = Draw.Create(1)
 geom_pfilename = ""
-##  <sensor_width>0.035</sensor_width>
-FilmWidth = Draw.Create(35.0)
 
-##  <lens_radius>0.0</lens_radius>
+# lens radius/focal distance
 LensRadius = Draw.Create(0.0)
-
-##  <focus_distance>2.0</focus_distance>
 FocalDistance = Draw.Create(2.0)
-
-##  <white_balance>D65</white_balance>
-#strWhiteBalance = "White Balance %t | D50 %x50 | D55 %x55 | D65 %x65 | D75 %x75"
-strWhiteBalance = "White Balance %t | E %x0 | D50 %x1 | D55 %x2 | D65 %x3 | D75 %x4 "
-strWhiteBalance += "| A %x5 | B %x6 | C %x7 | 9300 %x8 | F2 %x9 | F7 %x10 | F11 %x11"
-WhiteBalance = Draw.Create(0)
-whiteBalanceV = {}
-whiteBalanceV[0] = "E"
-whiteBalanceV[1] = "D50"
-whiteBalanceV[2] = "D55"
-whiteBalanceV[3] = "D65"
-whiteBalanceV[4] = "D75"
-whiteBalanceV[5] = "A"
-whiteBalanceV[6] = "B"
-whiteBalanceV[7] = "C"
-whiteBalanceV[8] = "9300"
-whiteBalanceV[9] = "F2"
-whiteBalanceV[10] = "F7"
-whiteBalanceV[11] = "F11"
-
-##FilmIso
-FilmIso = Draw.Create(100)
 
 ## Environment Type
 strEnvType = "Env Type %t | Background Color %x0 | Physical Sky %x1 | Texture Map %x2 | None %x3"
@@ -1061,11 +949,6 @@ Turbidity = Draw.Create(2.0)
 
 ##  <sky_gain>2.0</sky_gain>
 SkyGain = Draw.Create(0.005)
-
-GroundPlane = Draw.Create(0)
-
-## Separate materials
-MatFile = Draw.Create(0)
 
 ## Environment map
 EnvFile = Draw.Create("none")
@@ -1099,13 +982,12 @@ strIntegratorType = "Integrator %t | path %x0"
 IntegratorType = Draw.Create(0)
 IntegratorTypeV = {}
 IntegratorTypeV[0] = "path"
-pathRRforcetransmit = Draw.Create(1)
+pathMetropolis = Draw.Create(1)
+pathMetropolisMaxRejects = Draw.Create(128)
+pathMetropolisLMProb = Draw.Create(0.25)
+pathRRforcetransmit = Draw.Create(0)
 pathRRcontinueprob = Draw.Create(0.5)
 pathMaxDepth = Draw.Create(512)
-
-## Exposure
-ToneMapScale = Draw.Create(125)
-Autoexp = Draw.Create(0)
 
 ## Tonemapping
 strToneMapType = "ToneMap type %t | None %x0 | Reinhard %x1"
@@ -1134,27 +1016,18 @@ Bloom = Draw.Create(0)
 BloomWidth = Draw.Create(0.1)
 BloomRadius = Draw.Create(0.1)
 
-## Overall color gain
-DiffuseGain = Draw.Create(1.00)
-SpecularGain = Draw.Create(1.00)
-
 # text color fix
 textcol = [0, 0, 0]
 geom_pfilename = ""
 
 ## Registry
 def update_Registry():
-	#global EnvFile, EnvMapType
 	d = {}
 	d['sizex'] = SizeX#.val
 	d['sizey'] = SizeY#.val
 	d['scalesize'] = ScaleSize.val
-	d['colexponent'] = ColExponent.val
-	d['filmwidth'] = FilmWidth.val
 	d['apertureradius'] = LensRadius.val
 	d['focusdistance'] = FocalDistance.val
-	d['whitebalance'] = WhiteBalance.val
-	d['filmiso'] = FilmIso.val
 	d['saveexr'] = SaveEXR.val
 	d['saveexrint'] = SaveEXRint.val
 	d['saveigi'] = SaveIGI.val
@@ -1162,22 +1035,7 @@ def update_Registry():
 	d['savetga'] = SaveTGA.val
 	d['savetgaint'] = SaveTGAint.val
 	d['savedisplayint'] = Displayint.val
-	d['mlt'] = MLT.val
-	d['lmp'] = LMP.val
-	d['maxchange'] = MaxChange.val
-	d['maxnumconsrej'] = MaxNumConsRej.val
-	d['bidirectional'] = Bidirectional.val
-	d['rrlp'] = RRLP.val
-	d['maxdepth'] = MaxDepth.val
-	d['stratawidth'] = StrataWidth.val
-	d['threads'] = Threads.val
-	d['logging'] = Logging.val
-	d['groundplane'] = GroundPlane.val
-	d['saveutmexr'] = SaveUTMExr.val
-	d['savetmexr'] = SaveTMExr.val
 	d['tonemaptype'] = ToneMapType.val
-	d['tonemapscale'] = ToneMapScale.val
-	d['autoexp'] = Autoexp.val
 	d['tonemapprescale'] = ToneMapPreScale.val
 	d['tonemappostscale'] = ToneMapPostScale.val
 	d['outputgamma'] = OutputGamma.val
@@ -1187,20 +1045,13 @@ def update_Registry():
 	d['envfile'] = EnvFile.val
 	d['envmaptype'] = EnvMapType.val
 	d['envgain'] = EnvGain.val
-	d['envwidth'] = EnvWidth.val
 	d['turbidity'] = Turbidity.val
 	d['skygain'] = SkyGain.val
-	d['matfile'] = MatFile.val
 	d['ExecuteLux'] = ExecuteLux.val
-	d['HaltTime'] = HaltTime.val
-	d['frameup'] = FrameUp.val
-	d['imagesave'] = ImageSave.val
-	d['pfile'] = geom_pfilename
 
 #TODO save/retrieve to registry for samplers, filters and engine (renderer tab contents)
 
 	Blender.Registry.SetKey('BlenderLux', d, True)
-
 rdict = Blender.Registry.GetKey('BlenderLux', True)
 
 if rdict:
@@ -1208,12 +1059,9 @@ if rdict:
 		SizeX.val = rdict['sizex']
 		SizeY.val = rdict['sizey']
 		ScaleSize.val = rdict['scalesize']
-		ColExponent.val = rdict['colexponent']
 		FilmWidth.val = rdict['filmwidth']
 		LensRadius.val = rdict['apertureradius']
 		FocalDistance.val = rdict['focusdistance']
-		WhiteBalance.val = rdict['whitebalance']
-		FilmIso.val = rdict['filmiso']
 		SaveEXR.val = rdict['saveexr']
 		SaveEXRint.val = rdict['saveexrint']
 		SaveIGI.val = rdict['saveigi']
@@ -1221,22 +1069,7 @@ if rdict:
 		SaveTGA.val = rdict['savetga']
 		SaveTGAint.val = rdict['savetgaint']
 		Displayint.val = rdict['savedisplayint']
-		MLT.val = rdict['mlt'] 
-		LMP.val = rdict['lmp']
-		MaxChange.val = rdict['maxchange']
-		MaxNumConsRej.val = rdict['maxnumconsrej']
-		Bidirectional.val = rdict['bidirectional']
-		RRLP.val = rdict['rrlp']
-		MaxDepth.val = rdict['maxdepth']
-		StrataWidth.val = rdict['stratawidth']
-		Threads.val = rdict['threads']
-		Logging.val = rdict['logging']
-		GroundPlane.val = rdict['groundplane']
-		SaveUTMExr.val = rdict['saveutmexr']
-		SaveTMExr.val = rdict['savetmexr']
 		ToneMapType.val = rdict['tonemaptype']
-		ToneMapScale.val = rdict['tonemapscale']
-		Autoexp.val = rdict['autoexp']
 		ToneMapPreScale.val = rdict['tonemapprescale']
 		ToneMapPostScale.val = rdict['tonemappostscale']
 		OutputGamma.val = rdict['outputgamma']
@@ -1249,25 +1082,17 @@ if rdict:
 		EnvWidth.val = rdict['envwidth']
 		Turbidity.val = rdict['turbidity']
 		SkyGain.val = rdict['skygain']
-		MatFile.val = rdict['matfile']
 		ExecuteLux.val = rdict['ExecuteLux']
-		LuxDir.val = rdict['LuxDir']
-		HaltTime.val = rdict['HaltTime']
-		FrameUp.val = rdicr['frameup']
-		ImageSave.val = rdict['imagesave']
-		geom_pfilename = rdict['pfile']
 		
 	except: update_Registry()   
 		
 ######  Draw Camera  ###############################################
 def drawCamera():
-####################################################################
-	global evtNoEvt, evtExport, evtExportAnim, evtFocusS, evtFocusC, openCamera, openEnv ,evtchangesize
-	global SizeX, SizeY, strScaleSize, ScaleSize, ColExponent, RRLP, MaxDepth, Bidirectional, StrataWidth, Logging, LensRadius, FocalDistance, GroundPlane, MatFile, FilmWidth
-	global SaveUTMExr, SaveTMExr, ToneMapType, ToneMapScale, Autoexp, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
-	global MLT, LMP, MaxChange, MaxNumConsRej
-	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, EnvWidth, Turbidity, SkyGain, DiffuseGain, SpecularGain
-	global strWhiteBalance, WhiteBalance, whiteBalanceV, Screen, HaltTime, ExecuteLux, FilmIso
+	global evtNoEvt, evtExport, evtExportAnim, evtFocusS, evtFocusC, openCamera, openEnv ,evtchangesize, Screen
+	global SizeX, SizeY, strScaleSize, ScaleSize, LensRadius, FocalDistance
+	global ToneMapType, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
+	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, Turbidity, SkyGain
+	global ExecuteLux
    
 	drawButtons()
 	
@@ -1279,6 +1104,7 @@ def drawCamera():
 	FocalDistance = Draw.Number("Focal Distance: ", evtNoEvt, 10, 90, 200, 18, FocalDistance.val, 0.0, 100, "Distance from the camera at which objects will be in focus. Has no effect if Lens Radius is 0.")
 	Draw.Button("S", evtFocusS, 215, 90, 20, 18, "Get the distance from the selected object")
 	Draw.Button("C", evtFocusC, 235, 90, 20, 18, "Get the distance from the 3d cursor")
+
 	BGL.glColor3f(0.9,0.9,0.9) ; BGL.glRasterPos2i(10,65) ; Draw.Text("Size:")
 	SizeX = Draw.Number("X: ", evtchangesize, 45, 60, 75, 18, SizeX.val, 1, 4096, "Width of the render")
 	SizeY = Draw.Number("Y: ", evtchangesize, 130, 60, 75, 18, SizeY.val, 1, 3072, "Height of the render")
@@ -1286,13 +1112,11 @@ def drawCamera():
 
 ##############  Draw Environment  #######################################
 def drawEnv():
-####################################################
 	global evtNoEvt, evtExport, evtExportAnim, evtFocusS, evtFocusC, openCamera, openEnv, evtloadimg
-	global SizeX, SizeY, strScaleSize, ScaleSize, ColExponent, RRLP, MaxDepth, Bidirectional, StrataWidth, Logging, LensRadius, FocalDistance, GroundPlane, MatFile, FilmWidth
-	global SaveUTMExr, SaveTMExr, ToneMapType, ToneMapScale, Autoexp, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
-	global MLT, LMP, MaxChange, MaxNumConsRej
-	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, EnvWidth, Turbidity, SkyGain, DiffuseGain, SpecularGain
-	global strWhiteBalance, WhiteBalance, whiteBalanceV, Screen, HaltTime, ExecuteLux
+	global SizeX, SizeY, strScaleSize, ScaleSize, LensRadius, FocalDistance
+	global ToneMapType, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
+	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, Turbidity, SkyGain
+	global Screen, ExecuteLux
 	
 	drawButtons()
 	
@@ -1302,29 +1126,21 @@ def drawEnv():
 	
 	EnvType = Draw.Menu(strEnvType, evtNoEvt, 10, 150, 150, 18, EnvType.val, "Set the Enviroment type")
 	if EnvType.val == 2:
-		EnvFile = Draw.String("Probe: ", evtNoEvt, 10, 130, 255, 18, EnvFile.val, 50, "the file name of the raw/exr probe")
+		EnvFile = Draw.String("Probe: ", evtNoEvt, 10, 130, 255, 18, EnvFile.val, 50, "the file name of the EXR latlong map")
 		EnvMapType = Draw.Menu(strEnvMapType, evtNoEvt, 10, 110, 100, 18, EnvMapType.val, "Set the map type of the probe")
-		#EnvGain = Draw.Number("Gain: ", evtNoEvt, 165, 150, 100, 18, EnvGain.val, 0.001, 1000.00, "Gain")
 		Draw.Button("Load", evtloadimg, 235, 110, 30,18,"Load Env Map")
-		#if EnvMapType.val == 0:
-		#	EnvWidth = Draw.Number("Width: ", evtNoEvt, 110, 110, 100, 18, EnvWidth.val, 1, 10000, "Width")
 	if EnvType.val == 1:
 		Turbidity = Draw.Number("Sky Turbidity", evtNoEvt, 10, 130, 150, 18, Turbidity.val, 1.5, 5.0, "Sky Turbidity")
 		SkyGain = Draw.Number("Sky Gain", evtNoEvt, 10, 110, 150, 18, SkyGain.val, 0.0, 5.0, "Sky Gain")
 	
-	#GroundPlane = Draw.Toggle("Ground Plane", evtNoEvt, 10, 60, 150, 18, GroundPlane.val, "Place infinite large ground plane at 0,0,0")
-	
 ###############  Draw Rendersettings   ###################################
 def drawSettings():
-#####################################################
-	global SizeX, SizeY, strScaleSize, ScaleSize, ColExponent, RRLP, MaxDepth, Bidirectional, StrataWidth, Logging, LensRadius, FocalDistance, GroundPlane, MatFile, FilmWidth
-	global SaveUTMExr, SaveTMExr, ToneMapType, ToneMapScale, Autoexp, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
-	global MLT, LMP, MaxChange, MaxNumConsRej, Threads
-	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, EnvWidth, Turbidity, SkyGain, DiffuseGain, SpecularGain
-	global strWhiteBalance, WhiteBalance, whiteBalanceV, Screen, HaltTime, ExecuteLux
+	global SizeX, SizeY, strScaleSize, ScaleSize, LensRadius, FocalDistance
+	global ToneMapType, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
+	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, Turbidity, SkyGain
+	global Screen, ExecuteLux
 	global IntegratorType, SamplerType, FilterType, SamplerProgressive, SamplerPixelsamples, Filterxwidth, Filterywidth
-	global pathMaxDepth, pathRRcontinueprob, pathRRforcetransmit
-
+	global pathMaxDepth, pathRRcontinueprob, pathRRforcetransmit, pathMetropolis, pathMetropolisMaxRejects, pathMetropolisLMProb
 
 	drawButtons()
 	
@@ -1332,11 +1148,13 @@ def drawSettings():
 	BGL.glRectf(170,182,250,183)
 	BGL.glColor3f(0.9,0.9,0.9)
 
-
-	IntegratorType = Draw.Menu(strIntegratorType, evtNoEvt, 10, 150, 120, 18, IntegratorType.val, "Engine Integrator type")
-	pathMaxDepth = Draw.Number("Maxdepth:", evtNoEvt,140,150,120,18, pathMaxDepth.val,1,1024, "Maximum path depth (bounces)")
-	pathRRcontinueprob = Draw.Number("RRcProb:", evtNoEvt,140,130,140,18, pathRRcontinueprob.val,0.01,1.0, "Russian Roulette continue probability")
-	pathRRforcetransmit = Draw.Toggle("RRfTransmit", evtNoEvt, 290, 130, 100, 18, pathRRforcetransmit.val, "Russian Roulette force transmission")
+	IntegratorType = Draw.Menu(strIntegratorType, evtNoEvt, 10, 150, 100, 18, IntegratorType.val, "Engine Integrator type")
+	pathMetropolis =  Draw.Toggle("MLT", evtNoEvt, 120, 150, 60, 18, pathMetropolis.val, "use Metropolis Light Transport")
+	pathMetropolisMaxRejects = Draw.Number("MaxRejects:", evtNoEvt,180,150,120,18, pathMetropolisMaxRejects.val,1,1024, "Maximum nr of consecutive rejections for Metropolis accept")
+	pathMetropolisLMProb = Draw.Number("LMprob:", evtNoEvt,300,150,120,18, pathMetropolisLMProb.val,0,1, "Probability of using a large mutation for Metropolis")
+	pathMaxDepth = Draw.Number("Maxdepth:", evtNoEvt,120,130,120,18, pathMaxDepth.val,1,1024, "Maximum path depth (bounces)")
+	pathRRcontinueprob = Draw.Number("RRprob:", evtNoEvt,240,130,120,18, pathRRcontinueprob.val,0.01,1.0, "Russian Roulette continue probability")
+	pathRRforcetransmit = Draw.Toggle("RRfTrans", evtNoEvt, 360, 130, 70, 18, pathRRforcetransmit.val, "Russian Roulette force transmission")
 
 	SamplerType = Draw.Menu(strSamplerType, evtNoEvt, 10, 100, 120, 18, SamplerType.val, "Engine Sampler type")
 	SamplerProgressive = Draw.Toggle("Progressive", evtNoEvt, 140, 100, 120, 18, SamplerProgressive.val, "Sample film progressively or linearly")
@@ -1348,10 +1166,7 @@ def drawSettings():
 
 ##################  Draw RSettings  #########################	
 def drawSystem():
-########################################
-	global Logging, MatFile
-	global SaveUTMExr, SaveTMExr, ColExponent, OutputGamma, SaveEXR, SaveEXRint, SaveIGI, SaveIGIint, SaveTGA, SaveTGAint, Displayint, OutputDither
-	global HaltTime, FrameUp, ImageSave
+	global OutputGamma, SaveEXR, SaveEXRint, SaveIGI, SaveIGIint, SaveTGA, SaveTGAint, Displayint, OutputDither
 	
 	drawButtons()
 	
@@ -1373,12 +1188,10 @@ def drawSystem():
 
 #################  Draw Tonemapping  #########################
 def drawTonemap():
-#######################################
-	global SizeX, SizeY, strScaleSize, ScaleSize, ColExponent, RRLP, MaxDepth, Bidirectional, StrataWidth, Logging, LensRadius, FocalDistance, GroundPlane, MatFile, FilmWidth
-	global SaveUTMExr, SaveTMExr, ToneMapType, ToneMapScale, Autoexp, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
-	global MLT, LMP, MaxChange, MaxNumConsRej
-	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, EnvWidth, Turbidity, SkyGain, DiffuseGain, SpecularGain
-	global strWhiteBalance, WhiteBalance, whiteBalanceV, Screen, HaltTime, ExecuteLux, Bloom, BloomWidth, BloomRadius
+	global SizeX, SizeY, strScaleSize, ScaleSize, LensRadius, FocalDistance
+	global ToneMapType, ToneMapPreScale, ToneMapPostScale, ToneMapBurn, OutputGamma
+	global textcol, strEnvType, EnvType, EnvFile, strEnvMapType, EnvMapType, EnvGain, Turbidity, SkyGain
+	global Screen, ExecuteLux, Bloom, BloomWidth, BloomRadius
 	
 	drawButtons()
 	
