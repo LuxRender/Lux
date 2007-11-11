@@ -46,7 +46,7 @@ public:
 
 class Metropolis : public IntegrationSampler {
 public:
-	Metropolis() { L = 0.f; nmetro = 0; sum = 0.f; consec_rejects = 0; }
+	Metropolis() { L = 0.f; consec_rejects = 0; }
 	void SetParams(int mR, float pL) { maxReject = mR; pLarge = pL; }
 	void SetFilmRes(int fX, int fY) { xRes = fX, yRes = fY; }
 	bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos);
@@ -55,14 +55,8 @@ public:
 		const Spectrum &L, float alpha, Film *film);
 
 	MetroSample msamp, newsamp;
-Spectrum L;
-int xRes, yRes;
-bool large;
-float sum;
-u_int nmetro;
-int maxReject;
-float pLarge;
-Sample *mSample;
-int consec_rejects;
-
+	Spectrum L;
+	int xRes, yRes, maxReject, consec_rejects;
+	bool large;
+	float pLarge;
 };

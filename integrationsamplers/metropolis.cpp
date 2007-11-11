@@ -20,9 +20,15 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+// initial metropolis light transport sample integrator
+// by radiance
+
+// TODO: add scaling of output image samples
+
 // metropolis.cpp*
 #include "metropolis.h"
 
+// mutate a value in the metrosample vector
 float MetroSample::mutate (const float x) const {
 	static const float s1 = 1/1024., s2 = 1/16.;
 	float dx = s2 * exp(-log(s2/s1) * lux::random::floatValue());
@@ -35,6 +41,8 @@ float MetroSample::mutate (const float x) const {
 	}
 }
 
+// retrieve a mutated value from the vector,
+// or add one with defval or a random one with defval = -1.f
 float MetroSample::value (const int i, float defval) const {
 	if (i >= (int) values.size()) {
 		int oldsize = values.size();
@@ -42,7 +50,10 @@ float MetroSample::value (const int i, float defval) const {
 		values.resize(newsize);
 		modify.resize(newsize);
 		for (int j = oldsize; j < newsize; j++) {
-			values[j] = defval;
+			if(defval == -1.)
+				values[j] = lux::random::floatValue();
+			else
+			    values[j] = defval;
 			modify[j] = time;
 		}
 	}
@@ -51,69 +62,75 @@ float MetroSample::value (const int i, float defval) const {
 	return values[i];
 }
 
+// reset the sample vector for the next mutated set
 MetroSample MetroSample::next () const {
 	MetroSample newsamp(*this);
 	newsamp.time = time + 1;
 	return newsamp;
 }
 
+// interface for retrieving from integrators
 void Metropolis::GetNext(float& bs1, float& bs2, float& bcs, int pathLength)
 {
-	float os1 = bs1, os2 = bs2, ocs = bcs;
-	bs1 = newsamp.value(5+pathLength, os1);
-	bs2 = newsamp.value(5+pathLength+1, os2);
-	bcs = newsamp.value(5+pathLength+2, ocs);
+	bs1 = newsamp.value(5+pathLength, -1.);
+	bs2 = newsamp.value(5+pathLength+1, -1.);
+	bcs = newsamp.value(5+pathLength+2, -1.);
 }
 
+// interface for new ray/samples from scene
 bool Metropolis::GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos)
 {
 	large = (lux::random::floatValue() < pLarge);
 	if(large) {
-		// large mutation
+		// *** large mutation ***
 		newsamp = MetroSample();
 
 		// fetch samples from sampler
 		if(!sampler->GetNextSample(sample, use_pos))
 			return false;
 
+		// store in first 5 positions
 		newsamp.value(0, sample->imageX / xRes);
 		newsamp.value(1, sample->imageY / yRes);
 		newsamp.value(2, sample->lensU);
 		newsamp.value(3, sample->lensV);
 		newsamp.value(4, sample->time);
 	} else {
-		// small mutation
+		// *** small mutation ***
 		newsamp = msamp.next();
 
 		// mutate current sample
-		sample->imageX = newsamp.value(0, 0.) * xRes;
-		sample->imageY = newsamp.value(1, 0.) * yRes;
-		sample->lensU = newsamp.value(2, 0.);
-		sample->lensV = newsamp.value(3, 0.);
-		sample->time = newsamp.value(4, 0.);
+		sample->imageX = newsamp.value(0, -1.) * xRes;
+		sample->imageY = newsamp.value(1, -1.) * yRes;
+		sample->lensU = newsamp.value(2, -1.);
+		sample->lensV = newsamp.value(3, -1.);
+		sample->time = newsamp.value(4, -1.);
 	}
 
+	// set increment
 	newsamp.i = 5;
+
     return true;
 }
 
+// interface for adding/accepting a new image sample.
 void Metropolis::AddSample(const Sample &sample, const Ray &ray,
 			   const Spectrum &newL, float alpha, Film *film)
 {
-	if (large) {
-		sum += newL.y();
-		nmetro++;
-	}
+	// calculate accept probability from old and new image sample
 	float accprob = min(1.0f, newL.y()/L.y());
 
+	// add old sample
 	if (L.y() > 0.f && L != Spectrum(0.f))
-		film->AddSample(msamp.value(0, 0.)*xRes, 
-			msamp.value(1, 0.)*yRes, L*(1/L.y())*(1-accprob), alpha);
+		film->AddSample(msamp.value(0, -1.)*xRes, 
+			msamp.value(1, -1.)*yRes, L*(1/L.y())*(1-accprob), alpha);
 
+	// add new sample
 	if (newL.y() > 0.f && newL != Spectrum(0.f))
-		film->AddSample(newsamp.value(0, 0.)*xRes, 
-			newsamp.value(1, 0.)*yRes, newL*(1/newL.y())*accprob, alpha);
+		film->AddSample(newsamp.value(0, -1.)*xRes, 
+			newsamp.value(1, -1.)*yRes, newL*(1/newL.y())*accprob, alpha);
 
+	// try or force accepting of the new sample
 	if (lux::random::floatValue() < accprob || consec_rejects > maxReject) {
 		msamp = newsamp;
 		L = newL;
