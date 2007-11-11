@@ -746,7 +746,7 @@ def save_lux(filename, unindexedname):
 	else:
 		file.write("\"bool metropolis\" [\"false\"] ")
 
-	file.write("\"float maxconsecrejects\" [%f] " %(pathMetropolisMaxRejects.val))
+	file.write("\"int maxconsecrejects\" [%f] " %(pathMetropolisMaxRejects.val))
 	file.write("\"float largemutationprob\" [%f] " %(pathMetropolisLMProb.val))
 
 	if(pathRRforcetransmit.val == 1):
