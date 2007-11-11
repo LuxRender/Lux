@@ -31,7 +31,7 @@
 #define cimg_display_type  0
 #define cimg_use_png 1
 //#define cimg_use_tiff 1
-//#define cimg_use_jpeg 1
+#define cimg_use_jpeg 1
 #include "cimg.h"
 using namespace cimg_library;
 
@@ -105,12 +105,10 @@ using namespace Imath;
  	int pixels=*width * *height;
  	
  	Spectrum *ret = new Spectrum[*width * *height];
-	//printf("%f %f %f\n",image(6,6,0,0),image(6,6,0,1),image(6,6,0,2) );
  	
  	// XXX should do real RGB -> Spectrum conversion here
 	for (int i = 0; i < *width * *height; ++i) {
 		float c[3] = { image[i]/255.0, image[i+pixels]/255.0, image[i+pixels*2]/255.0 };
-		//if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
 		ret[i] = Spectrum(c);
 	}
  	
