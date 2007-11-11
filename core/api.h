@@ -23,7 +23,10 @@
 #ifndef LUX_API_H
 #define LUX_API_H
 // api.h*
-#include "lux.h"
+//#include "lux.h"
+#include <string>
+using std::string;
+class ParamSet;
 // API Function Declarations
 extern  void luxIdentity();
 extern  void luxTranslate(float dx, float dy, float dz);
