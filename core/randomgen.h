@@ -23,7 +23,8 @@
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
-#define MEXP 19937
+#include <ctime>
+#define MEXP 216091
 #include "./SFMT/SFMT.h"
 
 namespace lux
@@ -36,7 +37,7 @@ namespace random
 
 	inline void init()
 	{
-		init_gen_rand(1234);
+		init_gen_rand(std::clock());
 	}
 
 	inline float floatValue()
