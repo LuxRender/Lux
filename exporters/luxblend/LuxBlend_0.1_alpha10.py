@@ -350,30 +350,6 @@ def exportMaterialGeomTag(mat):
 	str += "\n"
 	return str
 
-# collect Materials
-matnames = []
-def collectObjectMaterials(obj):
-	global matnames
-	objectname = obj.getName()
-	objecttype = obj.getType()
-	if (objecttype == "Mesh") or (objecttype == "Curve") or (objecttype == "Text"):
-		print("Collecting materials for object: %s" %objectname)
-		materials = dataMaterials(obj.getData(mesh=1))
-		meshlight = 0
-		if len(materials) > 0:
-			mat0 = materials[0]
-			if mat0.emit > 0:
-				meshlight = 1
-		if meshlight == 0:
-			for mat in materials:
-				if mat.name not in matnames:
-					matnames.append(mat.name)
-	elif (objecttype == "Empty"):
-		group = obj.DupGroup
-		if group:
-			groupname = group.name
-			for o, m in obj.DupObjects:
-				collectObjectMaterials(o)
 
 ################################################################
 
@@ -412,14 +388,17 @@ class luxExport:
 					self.meshes[mesh_name] += [obj]
 				except KeyError:
 					self.meshes[mesh_name] = [obj]				
-				mats = obj.getData().getMaterials()
-				if ((len(mats)>0) and (mats[0].name == "PORTAL")):
-					self.portals.append([obj, matrix])
+				mats = dataMaterials(obj.getData())   # obj.getData().getMaterials()
+				if (len(mats)>0):
+					if (mats[0].name == "PORTAL"):
+						self.portals.append([obj, matrix])
+					else:
+						self.objects.append([obj, matrix])
+						for mat in mats:
+							if mat not in self.materials:
+								self.materials.append(mat)
 				else:
-					self.objects.append([obj, matrix])
-					for mat in mats:
-						if mat not in self.materials:
-							self.materials.append(mat)
+					print "WARNING: object \"%s\" has no materials assigned"%(obj.getName())
 
 	#-------------------------------------------------
 	# analyseScene(self)
@@ -618,7 +597,7 @@ class luxExport:
 			mesh_name = obj.getData(name_only=True)
 			if mesh_name in self.meshes:
 				mesh.getFromObject(obj, 0, 1)
-				mats = obj.getData().getMaterials()
+				mats = dataMaterials(obj.getData()) # obj.getData().getMaterials()
 				if (mesh_optimizing):
 					self.exportMeshOpt(file, mesh, mats, mesh_name)
 				else:
@@ -753,24 +732,6 @@ def save_lux(filename, unindexedname):
 	file.write("Accelerator \"kdtree\"\n")
 	file.write("\n")
 
-	##### Get all the objects/materials in this scene #####
-	portalstr = ""
-	activelayers = Window.ViewLayer()
-	object_list = []
-	matnames= []
-	for obj in currentscene.objects:
-		if obj.Layers & currentscene.Layers:
-			objecttype = obj.getType()
-			if (objecttype == "Mesh") and (len(obj.getData(mesh=1).materials) > 0)\
-					and (obj.getData(mesh=1).materials[0].name.upper() == "PORTAL"):
-
-### Zuegs: just pass here			portalstr += exportObject(obj)[1]
-						pass
-
-
-			else:
-				object_list.append(obj)
-				collectObjectMaterials(obj)
 
 	########## BEGIN World
 	file.write("\n")
@@ -779,14 +740,9 @@ def save_lux(filename, unindexedname):
 	file.write("\n")
 
 
-
-
-
 ### Zuegs: initialization for export class
 	export = luxExport(Blender.Scene.GetCurrent())
 	export.analyseScene()
-
-
 
 
 
@@ -841,29 +797,15 @@ def save_lux(filename, unindexedname):
 
 	export.exportMaterials(mat_file)
 
-#	materials = Material.Get()
-#	for mat in materials:
-#		if mat.name in matnames:
-#			mat_file.write(exportMaterial(mat))	
 
 	##### Write Geometry file #####
 	meshlist = []
 	geom_file.write("")
 
 
-
-
 	export.exportMeshes(geom_file)
 	export.exportObjects(geom_file)
 	del export
-
-#	for obj in object_list:
-#		global expobj
-#		expobj = exportObject(obj)
-#		file.write(expobj[0])
-#		geom_file.write(expobj[1])
-
-
 
 
 	##### END World & Close files
