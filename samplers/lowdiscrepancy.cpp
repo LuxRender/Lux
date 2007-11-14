@@ -36,11 +36,8 @@ LDSampler::LDSampler(int xstart, int xend,
 	yPos = yPixelStart;
 
 	fs_progressive = prog;
-	//fs_pos = 0;
 	fs_scrambleX = lux::random::uintValue();
 	fs_scrambleY = lux::random::uintValue();
-	//fs_scrambleX = 0.;
-	//fs_scrambleY = 0.;
 
 	if (!IsPowerOf2(ps)) {
 		luxError(LUX_CONSISTENCY,LUX_WARNING,"Pixel samples being rounded up to power of 2");
@@ -77,6 +74,11 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 				Ceil2Int( VanDerCorput( *use_pos, fs_scrambleX ) * xPixelEnd );
 			yPos = yPixelStart + 
 				Ceil2Int( Sobol2( *use_pos, fs_scrambleY ) * yPixelEnd );
+
+			// calculate new scramble offset
+			fs_scrambleX = lux::random::uintValue() / 1000;
+			fs_scrambleY = lux::random::uintValue() / 1000;
+
 			// reset so scene knows to increment
 			*use_pos = 0;
 		} else {
