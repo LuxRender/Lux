@@ -85,8 +85,6 @@ using namespace Imath;
 	printf("Done.\n");
 	return ret;
 	} catch (const std::exception &e) {
-		//Error("Unable to read EXR image file \"%s\": %s", name.c_str(),
-		//	e.what());
 		std::stringstream ss;
 		ss<<"Unable to read EXR image file '"<<name<<"' : "<<e.what();
 		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
@@ -97,23 +95,30 @@ using namespace Imath;
 
  Spectrum *ReadCimgImage(const string &name, int *width, int *height)
  {
-	printf("Loading Cimg Texture: '%s'...\n", name.c_str());
-	CImg<float> image(name.c_str());
-	//CImg<float> imagexyz=image.RGBtoXYZ ();
- 	*width  = image.dimx();
- 	*height = image.dimy();
- 	int pixels=*width * *height;
- 	
- 	Spectrum *ret = new Spectrum[*width * *height];
- 	
- 	// XXX should do real RGB -> Spectrum conversion here
-	for (int i = 0; i < *width * *height; ++i) {
-		float c[3] = { image[i]/255.0, image[i+pixels]/255.0, image[i+pixels*2]/255.0 };
-		ret[i] = Spectrum(c);
+	try {
+		printf("Loading Cimg Texture: '%s'...\n", name.c_str());
+		CImg<float> image(name.c_str());
+
+		*width  = image.dimx();
+ 		*height = image.dimy();
+ 		int pixels=*width * *height;
+	 	
+ 		Spectrum *ret = new Spectrum[*width * *height];
+	 	
+ 		// XXX should do real RGB -> Spectrum conversion here
+		for (int i = 0; i < *width * *height; ++i) {
+			float c[3] = { image[i]/255.0, image[i+pixels]/255.0, image[i+pixels*2]/255.0 };
+			ret[i] = Spectrum(c);
+		}
+	 	
+		printf("Done.\n");
+ 		return ret;
+	} catch (CImgIOException) {
+		std::stringstream ss;
+		ss<<"Unable to read Cimg image file '"<<name<<"'";
+		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+		return NULL;
 	}
- 	
-    printf("Done.\n");
- 	return ret;
  }
 
  Spectrum *ReadImage(const string &name, int *width, int *height)
