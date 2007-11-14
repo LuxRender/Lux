@@ -138,6 +138,9 @@ public:
 			areaCDF.push_back(prevCDF + areas[i] / area);
 			prevCDF = areaCDF[i];
 		}
+		worldbound = WorldBound();
+		worldbound.pMin *= 1.01f;
+		worldbound.pMax *= 1.01f;
 	}
 	BBox ObjectBound() const {
 		BBox ob;
@@ -152,10 +155,13 @@ public:
 	}
 	bool Intersect(const Ray &ray, float *t_hitp,
 			DifferentialGeometry *dg) const {
-		bool anyHit = false;
-		for (u_int i = 0; i < shapes.size(); ++i)
-			if (shapes[i]->Intersect(ray, t_hitp, dg)) anyHit = true;
-		return anyHit;
+		Ray bray = ray;
+		if(worldbound.IntersectP(bray)) {
+			for (u_int i = 0; i < shapes.size(); ++i) {
+				if (shapes[i]->Intersect(ray, t_hitp, dg)) return true;
+			}
+		}
+		return false;
 	}
 	void Refine(vector<ShapePtr > &refined) const {
 		for (u_int i = 0; i < shapes.size(); ++i) {
@@ -171,5 +177,6 @@ private:
 	float area;
 	vector<float> areaCDF;
 	vector<ShapePtr > shapes;
+	BBox worldbound;
 };
 #endif // LUX_SHAPE_H

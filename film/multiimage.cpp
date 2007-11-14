@@ -226,27 +226,6 @@ void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alph
 		}
 }
 
-/*
-int getFramebufferUpdated()
-{
-	return ldrFramebufferUpdated;
-		
-}
-
-int lockFramebuffer()
-{
-	if(!ldrDisplayLock) {
-		ldrDisplayLock = true;					// TODO add mutexes for all these
-		return 0;
-	} else
-		return 1;
-}
-
-void unlockFramebuffer()
-{
-	ldrDisplayLock = false;
-}
-*/
 void MultiImageFilm::GetSampleExtent(int *xstart,
 		int *xend, int *ystart, int *yend) const {
 	*xstart = Floor2Int(xPixelStart + .5f - filter->xWidth);
@@ -379,7 +358,9 @@ void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filen
 			fputc((int) rgb[(i*xPixelCount+j)*3+2], tgaFile);
 			fputc((int) rgb[(i*xPixelCount+j)*3+1], tgaFile);
 			fputc((int) rgb[(i*xPixelCount+j)*3+0], tgaFile);
-			fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
+			// NOTE - radiance - removed alpha output in TGA files due to errors
+			fputc((int) 255.0, tgaFile);
+			//fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
 		}
 	}
 		

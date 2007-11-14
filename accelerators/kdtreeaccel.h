@@ -75,8 +75,12 @@ struct KdAccelNode {
 	int nPrimitives() const { return nPrims >> 2; }
 	int SplitAxis() const { return flags & 3; }
 	bool IsLeaf() const { return (flags & 3) == 3; }
+
+	// NOTE - radiance - applied bugfix for light leaks on planes (found by ratow)
+	// moved flags outside of union
+	u_int flags;   // Both
 	union {
-		u_int flags;   // Both
+		//u_int flags;   // Both
 		float split;   // Interior
 		u_int nPrims;  // Leaf
 	};

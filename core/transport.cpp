@@ -142,7 +142,7 @@ Spectrum EstimateDirect(const Scene *scene,
 		bs1 = lux::random::floatValue();
 		bs2 = lux::random::floatValue();
 		bcs = lux::random::floatValue();
-	}
+	} 
 	// Sample light source with multiple importance sampling
 	Vector wi;
 	float lightPdf, bsdfPdf;
@@ -163,6 +163,7 @@ Spectrum EstimateDirect(const Scene *scene,
 			}
 		}
 	}
+	
 	// Sample BSDF with multiple importance sampling
 	if (!light->IsDeltaLight()) {
 		BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
@@ -189,5 +190,6 @@ Spectrum EstimateDirect(const Scene *scene,
 			}
 		}
 	}
+	
 	return Ld;
 }

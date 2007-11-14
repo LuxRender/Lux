@@ -48,8 +48,6 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 		else {
 			if (done.size() > 16)
 			{
-				//Warning("Area light geometry turned into %d(int)done.size()"
-				//	"may be very inefficient.", (int)done.size());
 				std::stringstream ss;
 				ss<<"Area light geometry turned into "<<(int)done.size()<<" may be very inefficient.";
 				luxError(LUX_NOERROR,LUX_WARNING,ss.str().c_str());

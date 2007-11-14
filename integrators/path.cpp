@@ -64,7 +64,6 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		if (!scene->Intersect(ray, &isect)) {
 			// Stop path sampling since no intersection was found
 			// Possibly add emitted light
-			// NOTE - Added by radiance - adds horizon in render & reflections
 			if (pathLength == 0 || specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					L += pathThroughput * scene->lights[i]->Le(ray); 

@@ -235,7 +235,9 @@ bool KdTreeAccel::Intersect(const Ray &ray,
 				secondChild = node + 1;
 			}
 			// Advance to next child node, possibly enqueue other child
-			if (tplane > tmax || tplane < 0)
+			// NOTE - radiance - applied bugfix for bands/artifacts on planes (found by ratow)
+			//if (tplane > tmax || tplane < 0)
+			if (tplane > tmax || tplane <= 0)
 				node = firstChild;
 			else if (tplane < tmin)
 				node = secondChild;
@@ -353,7 +355,9 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
 				secondChild = node + 1;
 			}
 			// Advance to next child node, possibly enqueue other child
-			if (tplane > tmax || tplane < 0)
+			// NOTE - radiance - applied bugfix for bands/artifacts on planes (found by ratow)
+			//if (tplane > tmax || tplane < 0)
+			if (tplane > tmax || tplane <= 0)
 				node = firstChild;
 			else if (tplane < tmin)
 				node = secondChild;
