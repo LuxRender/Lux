@@ -758,7 +758,7 @@ def save_lux(filename, unindexedname):
 
 		file.write("AttributeEnd\n")
 	if EnvType.val == 1:
-		for obj in object_list:
+		for obj in currentscene.objects:
 			if obj.getType() == "Lamp":
 				if obj.data.getType() == 1: # sun object
 					invmatrix = Mathutils.Matrix(obj.getInverseMatrix())
