@@ -636,7 +636,7 @@ struct /*_MM_ALIGN16*/  Matrix4x4  {
         _L4 (m._L4)
     {}
     
-    Matrix4x4(__m128 l1,__m128 l2,__m128 l3,__m128 l4):_L1 (l1), _L2 (l2), _L3 (l3), _L4 (l4)
+    Matrix4x4(const __m128 &l1,const __m128 &l2,const __m128 &l3,const __m128 &l4):_L1 (l1), _L2 (l2), _L3 (l3), _L4 (l4)
     {}
     
 	Matrix4x4(float mat[4][4]);
