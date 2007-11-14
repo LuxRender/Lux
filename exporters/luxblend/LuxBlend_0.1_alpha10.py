@@ -945,7 +945,7 @@ Filterywidth = Draw.Create(2.0)
 
 # samplers
 strSamplerType = "Sampler %t | lowdiscrepancy %x0 | random %x1"
-SamplerType = Draw.Create(0)
+SamplerType = Draw.Create(1)
 SamplerTypeV = {}
 SamplerTypeV[0] = "lowdiscrepancy"
 SamplerTypeV[1] = "random"
