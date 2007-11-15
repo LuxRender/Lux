@@ -1,6 +1,6 @@
 #!BPY
 """Registration info for Blender menus:
-Name: 'LuxBlend-v0.1-alpha11...'
+Name: 'LuxBlend-v0.1-alpha12...'
 Blender: 240
 Group: 'Export'
 Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
@@ -9,7 +9,7 @@ Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # --------------------------------------------------------------------------
-# LuxBlend v0.1 alpha11 exporter
+# LuxBlend v0.1 alpha12 exporter
 # --------------------------------------------------------------------------
 #
 # Authors:
@@ -62,15 +62,30 @@ def luxMatrix(matrix):
 		  matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]) 
 	return ostr
 
-# use this because some data dosnt have both .materials and .getMaterials()
-def dataMaterials(data):
+
+def getMaterials(obj): # retrives materials from object or data dependent of obj.colbits
+	mats = [None]*16
+	colbits = obj.colbits
+	objMats = obj.getMaterials(1)
+	data = obj.getData()
 	try:
-		return data.materials
+		dataMats = data.materials
 	except:
 		try:
-			return data.getMaterials()
+			dataMats = data.getMaterials(1)
 		except:
-			return []
+			dataMats = []
+			colbits = 0xffff
+	m = max(len(objMats), len(dataMats))
+	objMats.extend([None]*16)
+	dataMats.extend([None]*16)
+	for i in range(m):
+		if (colbits & (1<<i) > 0):
+			mats[i] = objMats[i]
+		else:
+			mats[i] = dataMats[i]
+	return mats
+
 	
 #################### Export Material Texture ###
 
@@ -516,14 +531,14 @@ class luxExport:
 					self.meshes[mesh_name] += [obj]
 				except KeyError:
 					self.meshes[mesh_name] = [obj]				
-				mats = dataMaterials(obj.getData())   # obj.getData().getMaterials()
-				if (len(mats)>0):
+				mats = getMaterials(obj)
+				if (len(mats)>0) and (mats[0]!=None):
 					if (mats[0].name == "PORTAL"):
 						self.portals.append([obj, matrix])
 					else:
 						self.objects.append([obj, matrix])
 						for mat in mats:
-							if mat not in self.materials:
+							if (mat!=None) and (mat not in self.materials):
 								self.materials.append(mat)
 				else:
 					print "WARNING: object \"%s\" has no materials assigned"%(obj.getName())
@@ -566,103 +581,116 @@ class luxExport:
 	#-------------------------------------------------
 	def exportMesh(self, file, mesh, mats, name, portal=False):
 		for matIndex in range(len(mats)):
-			if (portal):
-				file.write("\tShape \"trianglemesh\" \"integer indices\" [\n")
-			else:
-				self.exportMaterialLink(file, mats[matIndex])
-				file.write("\tPortalShape \"trianglemesh\" \"integer indices\" [\n")
-			index = 0
-			for face in mesh.faces:
-				if (face.mat == matIndex):
-					file.write("%d %d %d\n"%(index, index+1, index+2))
-					if (len(face.verts)==4):
-						file.write("%d %d %d\n"%(index, index+2, index+3))
-					index += len(face.verts)
-			file.write("\t] \"point P\" [\n");
-			for face in mesh.faces:
-				if (face.mat == matIndex):
-					for vertex in face.verts:
-						file.write("%f %f %f\n"%(vertex.co[0], vertex.co[1], vertex.co[2]))
-			file.write("\t] \"normal N\" [\n")
-			for face in mesh.faces:
-				if (face.mat == matIndex):
-					normal = face.no
-					for vertex in face.verts:
-						if (face.smooth):
-							normal = vertex.no
-						file.write("%f %f %f\n"%(normal[0], normal[1], normal[2]))
-			if (mesh.faceUV):
-				file.write("\t] \"float uv\" [\n")
-				for face in mesh.faces:
-					if (face.mat == matIndex):
-						for uv in face.uv:
-							file.write("%f %f\n"%(uv[0], uv[1]))
-			file.write("\t]\n")
-
-	#-------------------------------------------------
-	# exportMeshOpt(self, file, mesh, mats, name, portal)
-	# exports mesh to the file with optimization
-	#-------------------------------------------------
-	def exportMeshOpt(self, file, mesh, mats, name, portal=False):
-		for matIndex in range(len(mats)):
-			blenderExportVertexMap = []
-			exportVerts = []
-			exportFaces = []
-			for face in mesh.faces:
-				if (face.mat == matIndex):
-					exportVIndices = []
-					index = 0
-					normal = face.no
-					for vertex in face.verts:
-						if (face.smooth):
-							normal = vertex.no
-						if (mesh.faceUV):
-							uv = face.uv[index]
-							v = [vertex.co[0], vertex.co[1], vertex.co[2], normal[0], normal[1], normal[2], uv[0], uv[1]]
-						else:						
-							v = [vertex.co[0], vertex.co[1], vertex.co[2], normal[0], normal[1], normal[2]]
-						blenderVIndex = vertex.index
-						newExportVIndex = -1
-						if (blenderVIndex < len(blenderExportVertexMap)):
-							for exportVIndex in blenderExportVertexMap[blenderVIndex]:
-								v2 = exportVerts[exportVIndex]
-								if (abs(v[0]-v2[0])<0.0001) and (abs(v[1]-v2[1])<0.0001) and (abs(v[2]-v2[2])<0.0001) and \
-								   (abs(v[3]-v2[3])<0.0001) and (abs(v[4]-v2[4])<0.0001) and (abs(v[5]-v2[5])<0.0001):
-									if (not(mesh.faceUV) or ((abs(v[6]-v2[6])<0.0001) and (abs(v[7]-v2[7])<0.0001))):
-										newExportVIndex = exportVIndex
-										break
-						if (newExportVIndex < 0):
-							newExportVIndex = len(exportVerts)
-							exportVerts.append(v)
-							while blenderVIndex >= len(blenderExportVertexMap):
-								blenderExportVertexMap.append([])
-							blenderExportVertexMap[blenderVIndex].append(newExportVIndex)
-						exportVIndices.append(newExportVIndex)
-						index += 1
-					exportFaces.append(exportVIndices)
-			if (len(exportVerts)>0):
+			if (mats[matIndex] != None):
 				if (portal):
-					file.write("\tPortalShape \"trianglemesh\" \"integer indices\" [\n")
+					file.write("\tShape \"trianglemesh\" \"integer indices\" [\n")
 				else:
 					self.exportMaterialLink(file, mats[matIndex])
-					file.write("\tShape \"trianglemesh\" \"integer indices\" [\n")
-				for face in exportFaces:
-					file.write("%d %d %d\n"%(face[0], face[1], face[2]))
-					if (len(face)==4):
-						file.write("%d %d %d\n"%(face[0], face[2], face[3]))
+					file.write("\tPortalShape \"trianglemesh\" \"integer indices\" [\n")
+				index = 0
+				for face in mesh.faces:
+					if (face.mat == matIndex):
+						file.write("%d %d %d\n"%(index, index+1, index+2))
+						if (len(face.verts)==4):
+							file.write("%d %d %d\n"%(index, index+2, index+3))
+						index += len(face.verts)
 				file.write("\t] \"point P\" [\n");
-				for vertex in exportVerts:
-					file.write("%f %f %f\n"%(vertex[0], vertex[1], vertex[2]))
+				for face in mesh.faces:
+					if (face.mat == matIndex):
+						for vertex in face.verts:
+							file.write("%f %f %f\n"%(vertex.co[0], vertex.co[1], vertex.co[2]))
 				file.write("\t] \"normal N\" [\n")
-				for vertex in exportVerts:
-					file.write("%f %f %f\n"%(vertex[3], vertex[4], vertex[5]))
+				for face in mesh.faces:
+					if (face.mat == matIndex):
+						normal = face.no
+						for vertex in face.verts:
+							if (face.smooth):
+								normal = vertex.no
+							file.write("%f %f %f\n"%(normal[0], normal[1], normal[2]))
 				if (mesh.faceUV):
-					file.write("\t] \"float st\" [\n")
-					for vertex in exportVerts:
-						file.write("%f %f\n"%(vertex[6], vertex[7]))				
+					file.write("\t] \"float uv\" [\n")
+					for face in mesh.faces:
+						if (face.mat == matIndex):
+							for uv in face.uv:
+								file.write("%f %f\n"%(uv[0], uv[1]))
 				file.write("\t]\n")
-				print "  shape: %d vertices, %d faces (optimized)"%(len(exportVerts), len(exportFaces))
 
+	#-------------------------------------------------
+	# exportMeshOpt(self, file, mesh, mats, name, portal, optNormals)
+	# exports mesh to the file with optimization.
+	# portal: export without normals and UVs
+	# optNormals: speed and filesize optimization, flat faces get exported without normals
+	#-------------------------------------------------
+	def exportMeshOpt(self, file, mesh, mats, name, portal=False, optNormals=True):
+		shapeList, smoothFltr, shapeText = [0], [[0,1]], [""]
+		if portal:
+			normalFltr, uvFltr, shapeText = [0], [0], ["portal"] # portal, no normals, no UVs
+		else:
+			uvFltr, normalFltr, shapeText = [1], [1], ["mixed with normals"] # normals and UVs
+			if optNormals: # one pass for flat faces without normals and another pass for smoothed faces with normals, all with UVs
+				shapeList, smoothFltr, normalFltr, uvFltr, shapeText = [0,1], [[0],[1]], [0,1], [1,1], ["flat w/o normals", "smoothed with normals"]
+		for matIndex in range(len(mats)):
+			if (mats[matIndex] != None):
+				if not(portal):
+					self.exportMaterialLink(file, mats[matIndex])
+				for shape in shapeList:
+					blenderExportVertexMap = []
+					exportVerts = []
+					exportFaces = []
+					for face in mesh.faces:
+						if (face.mat == matIndex) and (face.smooth in smoothFltr[shape]):
+							exportVIndices = []
+							index = 0
+							for vertex in face.verts:
+								v = [vertex.co[0], vertex.co[1], vertex.co[2]]
+								if normalFltr[shape]:
+									if (face.smooth):
+										v.extend(vertex.no)
+									else:
+										v.extend(face.no)
+								if (uvFltr[shape]) and (mesh.faceUV):
+									v.extend((face.uv[index])[0:1])
+								blenderVIndex = vertex.index
+								newExportVIndex = -1
+								length = len(v)
+								if (blenderVIndex < len(blenderExportVertexMap)):
+									for exportVIndex in blenderExportVertexMap[blenderVIndex]:
+										v2 = exportVerts[exportVIndex]
+										if (length==len(v2)) and (v == v2):
+											newExportVIndex = exportVIndex
+											break
+								if (newExportVIndex < 0):
+									newExportVIndex = len(exportVerts)
+									exportVerts.append(v)
+									while blenderVIndex >= len(blenderExportVertexMap):
+										blenderExportVertexMap.append([])
+									blenderExportVertexMap[blenderVIndex].append(newExportVIndex)
+								exportVIndices.append(newExportVIndex)
+								index += 1
+							exportFaces.append(exportVIndices)
+					if (len(exportVerts)>0):
+						if (portal):
+							file.write("\tPortalShape \"trianglemesh\" \"integer indices\" [\n")
+						else:
+							file.write("\tShape \"trianglemesh\" \"integer indices\" [\n")
+						for face in exportFaces:
+							file.write("%d %d %d\n"%(face[0], face[1], face[2]))
+							if (len(face)==4):
+								file.write("%d %d %d\n"%(face[0], face[2], face[3]))
+						file.write("\t] \"point P\" [\n");
+						for vertex in exportVerts:
+							file.write("%f %f %f\n"%(vertex[0], vertex[1], vertex[2]))
+						if normalFltr[shape]:
+							file.write("\t] \"normal N\" [\n")
+							for vertex in exportVerts:
+								file.write("%f %f %f\n"%(vertex[3], vertex[4], vertex[5]))
+						if (uvFltr[shape]) and (mesh.faceUV):
+							file.write("\t] \"float uv\" [\n")
+							for vertex in exportVerts:
+								file.write("%f %f\n"%(vertex[-2], vertex[-1]))				
+						file.write("\t]\n")
+						print "  shape(%s): %d vertices, %d faces"%(shapeText[shape], len(exportVerts), len(exportFaces))
+	
 	#-------------------------------------------------
 	# exportMeshes(self, file)
 	# exports meshes that uses instancing (meshes that are used by at least "instancing_threshold" objects)
@@ -676,8 +704,8 @@ class luxExport:
 				del self.meshes[mesh_name]
 				obj = objs[0]
 				mesh.getFromObject(obj, 0, 1)
-				mats = obj.getData().getMaterials()
-				print "mesh: %s (blender: %d vertices, %d faces, %d materials)"%(mesh_name, len(mesh.verts), len(mesh.faces), len(mats))
+				mats = getMaterials(obj) # mats = obj.getData().getMaterials()
+				print "blender-mesh: %s (%d vertices, %d faces)"%(mesh_name, len(mesh.verts), len(mesh.faces))
 				file.write("ObjectBegin \"%s\"\n"%mesh_name)
 				if (mesh_optimizing):
 					self.exportMeshOpt(file, mesh, mats, mesh_name)
@@ -701,7 +729,7 @@ class luxExport:
 		  		  matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]))
 			mesh_name = obj.getData(name_only=True)
 			mesh.getFromObject(obj, 0, 1)
-			mats = obj.getData().getMaterials()
+			mats = getMaterials(obj) # mats = obj.getData().getMaterials()
 			if (mesh_optimizing):
 				self.exportMeshOpt(file, mesh, mats, mesh_name, True)
 			else:
@@ -725,13 +753,15 @@ class luxExport:
 			mesh_name = obj.getData(name_only=True)
 			if mesh_name in self.meshes:
 				mesh.getFromObject(obj, 0, 1)
-				mats = dataMaterials(obj.getData()) # obj.getData().getMaterials()
+				mats = getMaterials(obj)
+				print "  blender-mesh: %s (%d vertices, %d faces)"%(mesh_name, len(mesh.verts), len(mesh.faces))
 				if (mesh_optimizing):
 					self.exportMeshOpt(file, mesh, mats, mesh_name)
 				else:
 					self.exportMesh(file, mesh, mats, mesh_name)
 			else:
-				file.write("\tObjectInstance \"%s\"\n"%obj.getData(name_only=True))
+				print "  instance %s"%(mesh_name)
+				file.write("\tObjectInstance \"%s\"\n"%mesh_name)
 			file.write("AttributeEnd\n\n")
 
 
@@ -753,13 +783,13 @@ def save_lux(filename, unindexedname):
 	filepath = os.path.dirname(filename)
 	print filename
 	print filepath
-	filebase = os.path.basename(filename)
+	filebase = os.path.splitext(os.path.basename(filename))[0]
 
-	geom_filename = os.path.join(filepath, "geom-" + filebase)
-	geom_pfilename = "geom-" + filebase
+	geom_filename = os.path.join(filepath, filebase + "-geom.lxo")
+	geom_pfilename = filebase + "-geom.lxo"
 
-	mat_filename = os.path.join(filepath, "mat-" + filebase)
-	mat_pfilename = "mat-" + filebase
+	mat_filename = os.path.join(filepath, filebase + "-mat.lxm")
+	mat_pfilename = filebase + "-mat.lxm"
 
 	print("Exporting materials to '" + mat_filename + "'...\n")
 	print("Exporting geometry to '" + geom_filename + "'...\n")
@@ -769,7 +799,7 @@ def save_lux(filename, unindexedname):
 
 	##### Write Header ######
 	file.write("# Lux Render v0.1 Scene File\n")
-	file.write("# Exported by LuxBlend_01_alpha11\n")
+	file.write("# Exported by LuxBlend_01_alpha12\n")
 
 	file.write("\n")
 
@@ -973,7 +1003,7 @@ def launchLux(filename):
 	
 	# call external shell script to start Lux
 	#cmd= "\"" + datadir + "\LuxWrapper.cmd " + filename + "\""
-	cmd= "luxrender \"" + filename + "\""
+	cmd= "lux \"" + filename + "\""
 	print("Running Luxrender:\n"+cmd)
 	os.system(cmd)
 
@@ -1339,7 +1369,7 @@ def drawButtons():
 	
 	BGL.glColor3f(0.2,0.2,0.2)
 	BGL.glRectf(0,0,440,230)
-	BGL.glColor3f(0.9,0.9,0.9);BGL.glRasterPos2i(10,205) ; Draw.Text("LuxBlend v0.1alpha11", "small")
+	BGL.glColor3f(0.9,0.9,0.9);BGL.glRasterPos2i(10,205) ; Draw.Text("LuxBlend v0.1alpha12", "small")
 	
 	Draw.Button("Render", evtExport, 10, 19, 100, 30, "Open file dialog and export")
 	Draw.Button("Export Anim", evtExportAnim, 112, 19, 100, 30, "Open file dialog and export animation (careful: takes a lot of diskspace!!!)")
