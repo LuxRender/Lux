@@ -37,14 +37,8 @@ Sun3Light::Sun3Light(const Transform &light2world, const Spectrum &le, int ns, V
   turbidity = turb;
   sunDir = sundir;
 
-  // Height, radius, innerradius, degrees
-  //shape = new Disk(light2world, 0.0, 1.0, 1.0, 0.0, 360.0);
-
-  // new Sphere(o2w, reverseOrientation, radius, zmin, zmax, phimax);
-
   Transform l2w = Translate (SUN_DIST * sundir) * light2world;
 
-//  shape = ShapePtr(new Sphere(light2world, false, SUN_RAD, -SUN_RAD, SUN_RAD, 360.0));
   shape = ShapePtr(new Sphere(l2w, false, SUN_RAD, -SUN_RAD, SUN_RAD, 360.0));
 
   area = shape->Area();
@@ -400,7 +394,7 @@ Spectrum Sun3Light::computeAttenuatedSunlight(float theta, float turbidity) {
     const float w = 2.0f;
     tauWA = exp(-0.2385f * k_waCurve.sample(lambda) * w * m / pow(1.0f + 20.07f * k_waCurve.sample(lambda) * w * m, 0.45f));
 
-    data[i++] = 1000 * (1.0f / sunSolidAngle) * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;
+    data[i++] = 500 * (1.0f / sunSolidAngle) * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;
   }
 
   RegularSpectrum oSC(data, 350,800,91);
