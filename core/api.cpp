@@ -403,6 +403,25 @@ void luxLightSource(const string &name,
 			graphicsState.currentLight = name;
 			graphicsState.currentLightPtr = lt_sky;
 		}
+	}
+	else if(name == "sunsky_exp2") {
+		//SunSky light - create both sun & sky lightsources
+		Light *lt_sun = MakeLight("sun3", curTransform, params);
+		if (lt_sun == NULL)
+			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
+		else {
+			renderOptions->lights.push_back(lt_sun);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt_sun;
+		}
+		Light *lt_sky = MakeLight("sky", curTransform, params);
+		if (lt_sky == NULL)
+			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
+		else {
+			renderOptions->lights.push_back(lt_sky);
+			graphicsState.currentLight = name;
+			graphicsState.currentLightPtr = lt_sky;
+		}
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(name, curTransform, params);
