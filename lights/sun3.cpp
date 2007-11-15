@@ -26,7 +26,7 @@
 #include "shape.h"
 
 #define SUN_DIST 1000.0f
-#define SUN_RAD 10.0f
+#define SUN_RAD 20.0f
 
 //#define SUN_RAD 6.955E8
 
@@ -42,6 +42,8 @@ Sun3Light::Sun3Light(const Transform &light2world, const Spectrum &le, int ns, V
   shape = ShapePtr(new Sphere(l2w, false, SUN_RAD, -SUN_RAD, SUN_RAD, 360.0));
 
   area = shape->Area();
+
+  printf("Area: %f\n", area);
 
   float sunTheta = SphericalTheta(sundir);
   printf("sunTheta: %f\n", sunTheta);
@@ -70,7 +72,7 @@ Spectrum Sun3Light::Sample_L(const Point &p, const Normal &n, float u1, float u2
   *wi = Normalize(ps - p);
   *pdf = shape->Pdf(p, *wi);
 
-  visibility->SetSegment(p, ps);
+  visibility->SetRay(p, *wi);
 
   return L(ps, ns, -*wi);
 }
@@ -87,7 +89,7 @@ Spectrum Sun3Light::Sample_L(const Point &P, float u1, float u2, Vector *wo, flo
   *wo = Normalize(Ps - P);
   *pdf = shape->Pdf(P, *wo);
 
-  visibility->SetSegment(P, Ps);
+  visibility->SetRay(P, *wo);
 
   return L(Ps, Ns, -*wo);
 }
@@ -117,7 +119,7 @@ Spectrum Sun3Light::Sample_L(const Point &P, Vector *wo, VisibilityTester *visib
 
   *wo = Normalize(Ps - P);
 
-  visibility->SetSegment(P, Ps);
+  visibility->SetRay(P, *wo);
   float pdf = shape->Pdf(P, *wo);
 
   if (pdf == 0.f)
@@ -394,7 +396,7 @@ Spectrum Sun3Light::computeAttenuatedSunlight(float theta, float turbidity) {
     const float w = 2.0f;
     tauWA = exp(-0.2385f * k_waCurve.sample(lambda) * w * m / pow(1.0f + 20.07f * k_waCurve.sample(lambda) * w * m, 0.45f));
 
-    data[i++] = 500 * (1.0f / sunSolidAngle) * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;
+    data[i++] = (1.0f / sunSolidAngle) * 100 * solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA;
   }
 
   RegularSpectrum oSC(data, 350,800,91);
