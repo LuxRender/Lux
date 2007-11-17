@@ -99,6 +99,7 @@
 #include "clay.h"
 #include "felt.h"
 #include "glass.h"
+#include "roughglass.h"
 #include "matte.h"
 #include "mirror.h"
 #include "plastic.h"
@@ -512,6 +513,12 @@ static string SearchPath(const string &searchpath,
     if(name=="glass")
     {
     	MaterialPtr ret = MaterialPtr(Glass::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="roughglass")
+    {
+    	MaterialPtr ret = MaterialPtr(RoughGlass::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
