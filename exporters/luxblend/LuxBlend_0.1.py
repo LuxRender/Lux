@@ -91,7 +91,7 @@ def getMaterials(obj): # retrives materials from object or data dependent of obj
 
 # MATERIAL TYPES enum
 # 0 = 'glass'
-# 1 = 'translucent'
+# 1 = 'roughglass'
 # 2 = 'mirror'
 # 3 = 'plastic'
 # 4 = 'shinymetal'
@@ -218,7 +218,7 @@ def getMaterialType(mat):
 			### 'glass' material ###
 			mat_type = 0	
 		else:
-			### 'translucent' material ###
+			### 'roughglass' material ###
 			mat_type = 1
 
 	# test for Mirror Material
@@ -271,7 +271,7 @@ def getTextureforChannel(mat, channel):
 
 # MATERIAL TYPES enum
 # 0 = 'glass'
-# 1 = 'translucent'
+# 1 = 'roughglass'
 # 2 = 'mirror'
 # 3 = 'plastic'
 # 4 = 'shinymetal'
@@ -353,13 +353,12 @@ def exportMaterial(mat):
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
 	elif (mat_type == 1):
-		### 'translucent' material ###
-		str += "# Type: 'translucent'\n"
-		str += write_color_param( mat, "Kd", 'SPEC', mat.specR, mat.specG, mat.specB )
-		str += write_color_param( mat, "Ks", 'COL', mat.R, mat.G, mat.B )
-		str += "Texture \"reflect-%s\" \"float\" \"constant\" \"float value\" [.5]\n" %(mat.name)
-		str += "Texture \"transmit-%s\" \"float\" \"constant\" \"float value\" [.5]\n" %(mat.name)
+		### 'roughglass' material ###
+		str += "# Type: 'roughglass'\n"
+		str += write_color_param( mat, "Kr", 'SPEC', mat.specR, mat.specG, mat.specB )
+		str += write_color_param( mat, "Kt", 'COL', mat.R, mat.G, mat.B )
 		str += write_float_param( mat, "roughness", 'HARD', HardtoMicro(mat.hard) )
+		str += write_float_param( mat, "index", 'REF', mat.IOR )
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
 	elif (mat_type == 2):
@@ -435,11 +434,9 @@ def exportMaterialGeomTag(mat):
 			str += " \"texture bumpmap\" \"bumpmap-%s\"" %mat.name
 
 		elif (mat_type == 1):
-			### 'translucent' material ###
-			str += " \"translucent\" \"texture Kd\" \"Kd-%s\"" %mat.name
-			str += " \"texture Ks\" \"Ks-%s\"" %mat.name
-			str += " \"texture reflect\" \"reflect-%s\"" %mat.name
-			str += " \"texture transmit\" \"transmit-%s\"" %mat.name
+			### 'roughglass' material ###
+			str += " \"roughglass\" \"texture Kr\" \"Kr-%s\"" %mat.name
+			str += " \"texture Kt\" \"Kt-%s\"" %mat.name
 			str += " \"texture roughness\" \"roughness-%s\"" %mat.name
 			str += " \"texture index\" \"index-%s\"" %mat.name
 			str += " \"texture bumpmap\" \"bumpmap-%s\"" %mat.name
