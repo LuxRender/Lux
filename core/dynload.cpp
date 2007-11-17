@@ -135,6 +135,7 @@
 
 #include "grid.h"
 #include "kdtreeaccel.h"
+#include "bruteforce.h"
 
 using std::map;
 /*
@@ -1060,6 +1061,13 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
+		// NOTE - ratow - Added a brute force (de)accelerator for debugging purposes.
+    if(name=="none")
+		{
+        Primitive* ret=BruteForceAccel::CreateAccelerator(prims, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+		}
 
     //Error("Static loading of accelerator '%s' failed.",name.c_str());
     std::stringstream ss;

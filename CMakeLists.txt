@@ -305,7 +305,7 @@ SET(lux_lib_src
         shapes/paraboloid.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
         samplers/bestcandidate.cpp samplers/lowdiscrepancy.cpp
         samplers/random.cpp samplers/stratified.cpp
-        accelerators/grid.cpp accelerators/kdtree.cpp
+        accelerators/grid.cpp accelerators/kdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp
         film/image.cpp film/multiimage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
