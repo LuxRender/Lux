@@ -27,11 +27,13 @@
 class RoughGlass : public Material {
 public:
 	// RoughGlass Public Methods
-	RoughGlass(boost::shared_ptr<Texture<Spectrum> > r, boost::shared_ptr<Texture<Spectrum> > t, boost::shared_ptr<Texture<float> > rough,
+	RoughGlass(boost::shared_ptr<Texture<Spectrum> > r, boost::shared_ptr<Texture<Spectrum> > t, 
+			boost::shared_ptr<Texture<float> > urough, boost::shared_ptr<Texture<float> > vrough,
 			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > bump) {
 		Kr = r;
 		Kt = t;
-		roughness = rough;
+		uroughness = urough;
+		vroughness = vrough;
 		index = i;
 		bumpMap = bump;
 	}
@@ -42,6 +44,7 @@ private:
 	// RoughGlass Private Data
 	boost::shared_ptr<Texture<Spectrum> > Kr, Kt;
 	boost::shared_ptr<Texture<float> > index;
-	boost::shared_ptr<Texture<float> > roughness;
+	boost::shared_ptr<Texture<float> > uroughness;
+	boost::shared_ptr<Texture<float> > vroughness;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };

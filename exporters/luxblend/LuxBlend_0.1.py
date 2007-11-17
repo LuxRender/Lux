@@ -357,7 +357,8 @@ def exportMaterial(mat):
 		str += "# Type: 'roughglass'\n"
 		str += write_color_param( mat, "Kr", 'SPEC', mat.specR, mat.specG, mat.specB )
 		str += write_color_param( mat, "Kt", 'COL', mat.R, mat.G, mat.B )
-		str += write_float_param( mat, "roughness", 'HARD', HardtoMicro(mat.hard) )
+		str += write_float_param( mat, "uroughness", 'HARD', HardtoMicro(mat.hard) )
+		str += write_float_param( mat, "vroughness", 'HARD', HardtoMicro(mat.hard) )
 		str += write_float_param( mat, "index", 'REF', mat.IOR )
 		str += write_float_param( mat, "bumpmap", 'NOR', 0.0 )
 
@@ -437,7 +438,8 @@ def exportMaterialGeomTag(mat):
 			### 'roughglass' material ###
 			str += " \"roughglass\" \"texture Kr\" \"Kr-%s\"" %mat.name
 			str += " \"texture Kt\" \"Kt-%s\"" %mat.name
-			str += " \"texture roughness\" \"roughness-%s\"" %mat.name
+			str += " \"texture uroughness\" \"uroughness-%s\"" %mat.name
+			str += " \"texture vroughness\" \"vroughness-%s\"" %mat.name
 			str += " \"texture index\" \"index-%s\"" %mat.name
 			str += " \"texture bumpmap\" \"bumpmap-%s\"" %mat.name
 

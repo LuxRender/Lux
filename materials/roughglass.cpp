@@ -34,17 +34,18 @@ BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom
 	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
 	Spectrum R = Kr->Evaluate(dgs).Clamp();
 	Spectrum T = Kt->Evaluate(dgs).Clamp();
-	float rough = roughness->Evaluate(dgs);
+	float urough = uroughness->Evaluate(dgs);
+	float vrough = vroughness->Evaluate(dgs);
 	float ior = index->Evaluate(dgs);
 	if (!R.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1., ior);
 		bsdf->Add(BSDF_ALLOC(arena, Microfacet)(R, fresnel,
-				BSDF_ALLOC(arena, Anisotropic)(1.f/rough, 1.f/rough)));
+				BSDF_ALLOC(arena, Anisotropic)(1.f/urough, 1.f/vrough)));
 	}
 	if (!T.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1., ior);
 		bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(T, fresnel,
-				BSDF_ALLOC(arena, Anisotropic)(1.f/rough, 1.f/rough))));
+				BSDF_ALLOC(arena, Anisotropic)(1.f/urough, 1.f/vrough))));
 
 	}
 	return bsdf;
@@ -53,8 +54,9 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	boost::shared_ptr<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
 	boost::shared_ptr<Texture<Spectrum> > Kt = mp.GetSpectrumTexture("Kt", Spectrum(1.f));
-	boost::shared_ptr<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
+	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .001f);
+	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .001f);
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new RoughGlass(Kr, Kt, roughness, index, bumpMap);
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, bumpMap);
 }
