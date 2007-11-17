@@ -304,7 +304,7 @@ SET(lux_lib_src
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
         shapes/paraboloid.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
         samplers/bestcandidate.cpp samplers/lowdiscrepancy.cpp
-        samplers/random.cpp samplers/stratified.cpp
+        samplers/random.cpp samplers/stratified.cpp samplers/halton.cpp
         accelerators/grid.cpp accelerators/kdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp
         film/image.cpp film/multiimage.cpp
@@ -319,7 +319,7 @@ SET(lux_lib_src
         materials/bluepaint.cpp materials/brushedmetal.cpp materials/clay.cpp materials/felt.cpp
         materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp materials/primer.cpp
         materials/shinymetal.cpp materials/skin.cpp materials/substrate.cpp
-        materials/translucent.cpp materials/uber.cpp materials/carpaint.cpp materials/metal.cpp
+        materials/translucent.cpp materials/uber.cpp materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
