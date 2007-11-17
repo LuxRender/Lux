@@ -72,7 +72,7 @@ RenderOptions::RenderOptions() {
 	// RenderOptions Constructor Implementation
 	FilterName = "mitchell";
 	FilmName = "multiimage";
-	SamplerName = "lowdiscrepancy";
+	SamplerName = "random";
 	AcceleratorName = "kdtree";
 	SurfIntegratorName = "path";
 	VolIntegratorName = "emission";

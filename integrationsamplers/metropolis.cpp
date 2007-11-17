@@ -72,9 +72,9 @@ MetroSample MetroSample::next () const {
 // interface for retrieving from integrators
 void Metropolis::GetNext(float& bs1, float& bs2, float& bcs, int pathLength)
 {
-	bs1 = newsamp.value(5+pathLength, -1.);
-	bs2 = newsamp.value(5+pathLength+1, -1.);
-	bcs = newsamp.value(5+pathLength+2, -1.);
+	bs1 = newsamp.value(5+pathLength, bs1);
+	bs2 = newsamp.value(5+pathLength+1, bs2);
+	bcs = newsamp.value(5+pathLength+2, bcs);
 }
 
 // interface for new ray/samples from scene

@@ -53,6 +53,7 @@
 
 #include "bestcandidate.h"
 #include "lowdiscrepancy.h"
+#include "halton.h"
 #include "random.h"
 #include "stratified.h"
 
@@ -1133,6 +1134,12 @@ static string SearchPath(const string &searchpath,
     if(name=="lowdiscrepancy")
     {
         Sampler *ret=LDSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="halton")
+    {
+        Sampler *ret=HaltonSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }

@@ -104,7 +104,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		// Sample BSDF to get new path direction
 		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
 		float bs1, bs2, bcs;
-		if (pathLength < SAMPLE_DEPTH && !useMlt) {
+		if (pathLength < SAMPLE_DEPTH) {
 			bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
 			bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
 			bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];

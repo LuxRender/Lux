@@ -20,16 +20,16 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
  
-// lowdiscrepancy.cpp*
-#include "lowdiscrepancy.h"
+// halton.cpp*
+#include "halton.h"
 #include "error.h"
 // Lux (copy) constructor
-LDSampler* LDSampler::clone() const
+HaltonSampler* HaltonSampler::clone() const
  {
-   return new LDSampler(*this);
+   return new HaltonSampler(*this);
  }
-// LDSampler Method Definitions
-LDSampler::LDSampler(int xstart, int xend,
+// HaltonSampler Method Definitions
+HaltonSampler::HaltonSampler(int xstart, int xend,
 		int ystart, int yend, int ps, bool prog)
 	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
 	xPos = xPixelStart - 1;
@@ -53,7 +53,7 @@ LDSampler::LDSampler(int xstart, int xend,
 	n1D = n2D = 0;
 }
 
-bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
+bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	if (!oneDSamples) {
 		// Allocate space for pixel's low-discrepancy sample tables
 		oneDSamples = new float *[sample->n1D.size()];
@@ -69,15 +69,15 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	}
 	if (samplePos == pixelSamples) {
 		if(fs_progressive) {
-			// Progressive film sampling (LDS 02 sequence)
+			// Progressive film sampling (Halton-zaremba sequence)
 			// shuffle
 			u_int shuffle = Floor2Int(lux::random::floatValue() * 2 * pixelSamples);
 
 			// generate film pixel coordinates
 			xPos = xPixelStart + 
-				Ceil2Int( VanDerCorput( *use_pos + shuffle, fs_scrambleX ) * xPixelEnd );
+				Ceil2Int( FoldedRadicalInverse( *use_pos + shuffle, 2 ) * xPixelEnd );
 			yPos = yPixelStart + 
-				Ceil2Int( Sobol2( *use_pos + shuffle, fs_scrambleY ) * yPixelEnd );
+				Ceil2Int( FoldedRadicalInverse( *use_pos + shuffle, 3 ) * yPixelEnd );
 
 			// reset so scene knows to increment
 			*use_pos = 0;
@@ -93,14 +93,14 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		}
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
-		LDShuffleScrambled2D(1, pixelSamples, imageSamples);
-		LDShuffleScrambled2D(1, pixelSamples, lensSamples);
-		LDShuffleScrambled1D(1, pixelSamples, timeSamples);
+		HaltonShuffleScrambled2D(1, pixelSamples, imageSamples);
+		HaltonShuffleScrambled2D(1, pixelSamples, lensSamples);
+		HaltonShuffleScrambled1D(1, pixelSamples, timeSamples);
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			LDShuffleScrambled1D(sample->n1D[i], pixelSamples,
+			HaltonShuffleScrambled1D(sample->n1D[i], pixelSamples,
 				oneDSamples[i]);
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			LDShuffleScrambled2D(sample->n2D[i], pixelSamples,
+			HaltonShuffleScrambled2D(sample->n2D[i], pixelSamples,
 				twoDSamples[i]);
 	}
 	// Copy low-discrepancy samples from tables
@@ -122,11 +122,11 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	++samplePos;
 	return true;
 }
-Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
+Sampler* HaltonSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	bool prog = params.FindOneBool("progressive", false);
 	int nsamp = params.FindOneInt("pixelsamples", 4);
-	return new LDSampler(xstart, xend, ystart, yend, nsamp, prog);
+	return new HaltonSampler(xstart, xend, ystart, yend, nsamp, prog);
 }

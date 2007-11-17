@@ -115,8 +115,15 @@ inline float
 	Sobol2(u_int n, u_int scramble = 0);
 inline float
 	LarcherPillichshammer2(u_int n, u_int scramble = 0);
+inline float 
+	Halton(u_int n, u_int scramble = 0);
+inline float 
+	Halton2(u_int n, u_int scramble = 0);
 inline void
 	Sample02(u_int n,
+	            u_int scramble[2], float sample[2]);
+inline void
+	SampleHalton(u_int n,
 	            u_int scramble[2], float sample[2]);
 class Filter {
 public:
@@ -137,6 +144,17 @@ inline void Sample02(u_int n, u_int scramble[2],
 	sample[0] = VanDerCorput(n, scramble[0]);
 	sample[1] = Sobol2(n, scramble[1]);
 }
+inline void SampleHalton(u_int n, u_int scramble[2],
+                                  float sample[2]) {
+	sample[0] = FoldedRadicalInverse(n, 2);
+	sample[1] = FoldedRadicalInverse(n, 3);
+	u_int s0 = (u_int) (sample[0] * (float)0x100000000LL);
+	u_int s1 = (u_int) (sample[1] * (float)0x100000000LL);
+	s0 ^= scramble[0];
+	s1 ^= scramble[1];
+	sample[0] = (float)s0 / (float)0x100000000LL;
+	sample[1] = (float)s1 / (float)0x100000000LL;
+}
 inline float VanDerCorput(u_int n, u_int scramble) {
 	n = (n << 16) | (n >> 16);
 	n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8);
@@ -145,6 +163,18 @@ inline float VanDerCorput(u_int n, u_int scramble) {
 	n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
 	n ^= scramble;
 	return (float)n / (float)0x100000000LL;
+}
+inline float Halton(u_int n, u_int scramble) {
+	float s = FoldedRadicalInverse(n, 2);
+	u_int s0 = (u_int) (s * (float)0x100000000LL);
+	s0 ^= scramble;
+	return (float)s0 / (float)0x100000000LL;
+}
+inline float Halton2(u_int n, u_int scramble) {
+	float s = FoldedRadicalInverse(n, 3);
+	u_int s0 = (u_int) (s * (float)0x100000000LL);
+	s0 ^= scramble;
+	return (float)s0 / (float)0x100000000LL;
 }
 inline float Sobol2(u_int n, u_int scramble) {
 	for (u_int v = 1u << 31; n != 0; n >>= 1, v ^= v >> 1)
@@ -171,6 +201,24 @@ inline void LDShuffleScrambled2D(int nSamples,
 	u_int scramble[2] = { lux::random::uintValue(), lux::random::uintValue() };
 	for (int i = 0; i < nSamples * nPixel; ++i)
 		Sample02(i, scramble, &samples[2*i]);
+	for (int i = 0; i < nPixel; ++i)
+		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
+	Shuffle(samples, nPixel, 2 * nSamples);
+}
+inline void HaltonShuffleScrambled1D(int nSamples,
+		int nPixel, float *samples) {
+	u_int scramble = lux::random::uintValue();
+	for (int i = 0; i < nSamples * nPixel; ++i)
+		samples[i] = Halton(i, scramble);
+	for (int i = 0; i < nPixel; ++i)
+		Shuffle(samples + i * nSamples, nSamples, 1);
+	Shuffle(samples, nPixel, nSamples);
+}
+inline void HaltonShuffleScrambled2D(int nSamples,
+		int nPixel, float *samples) {
+	u_int scramble[2] = { lux::random::uintValue(), lux::random::uintValue() };
+	for (int i = 0; i < nSamples * nPixel; ++i)
+		SampleHalton(i, scramble, &samples[2*i]);
 	for (int i = 0; i < nPixel; ++i)
 		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(samples, nPixel, 2 * nSamples);
