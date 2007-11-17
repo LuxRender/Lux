@@ -225,7 +225,9 @@ bool KdTreeAccel::Intersect(const Ray &ray,
 				invDir[axis];
 			// Get node children pointers for ray
 			const KdAccelNode *firstChild, *secondChild;
-			int belowFirst = ray.o[axis] <= node->SplitPos();
+			// NOTE - ratow - added direction test for when ray origin is in split plane (fixes bands/artifacts)
+			int belowFirst = (ray.o[axis] < node->SplitPos()) ||
+				(ray.o[axis] == node->SplitPos() && ray.d[axis] < 0);
 			if (belowFirst) {
 				firstChild = node + 1;
 				secondChild = &nodes[node->aboveChild];
@@ -345,7 +347,9 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
 				invDir[axis];
 			// Get node children pointers for ray
 			const KdAccelNode *firstChild, *secondChild;
-			int belowFirst = ray.o[axis] <= node->SplitPos();
+			// NOTE - ratow - added direction test for when ray origin is in split plane (fixes bands/artifacts)
+			int belowFirst = (ray.o[axis] < node->SplitPos()) ||
+				(ray.o[axis] == node->SplitPos() && ray.d[axis] < 0);
 			if (belowFirst) {
 				firstChild = node + 1;
 				secondChild = &nodes[node->aboveChild];
