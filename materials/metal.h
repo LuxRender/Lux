@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// metal.cpp*
+// metal.* - adapted to Lux from code by Asbjørn Heid
 #include "lux.h"
 #include "material.h"
 
