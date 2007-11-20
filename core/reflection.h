@@ -245,6 +245,7 @@ private:
 	float etai, etat;
 	FresnelDielectric fresnel;
 };
+
 class  Lambertian : public BxDF {
 public:
 	// Lambertian Public Methods

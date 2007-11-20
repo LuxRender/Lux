@@ -133,6 +133,7 @@ Spectrum SpecularTransmission::Sample_f(const Vector &wo,
 	return (et*et)/(ei*ei) * (Spectrum(1.)-F) * T /
 		fabsf(CosTheta(*wi));
 }
+
 Spectrum Lambertian::f(const Vector &wo,
 		const Vector &wi) const {
 	return RoverPI;
