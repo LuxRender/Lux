@@ -31,7 +31,7 @@
 // DifferentialGeometry Declarations
 class  DifferentialGeometry {
 	public:
-	
+
 	DifferentialGeometry() { u = v = 0.; shape = NULL; }
 	// DifferentialGeometry Public Methods
 	DifferentialGeometry(const Point &P, const Vector &DPDU,
@@ -48,7 +48,7 @@ class  DifferentialGeometry {
 	float u, v;
 	const Shape *shape;
 	mutable float dudx, dvdx, dudy, dvdy;
-	
+
 
 };
 // Shape Declarations
@@ -106,7 +106,7 @@ public:
 		float pdf = DistanceSquared(p, ray(thit)) /
 			(AbsDot(dgLight.nn, -wi) * Area());
 		if (AbsDot(dgLight.nn, -wi) == 0.f) pdf = 1.; // NOTE - radiance - modified pdf from INFINITY to 1.
-		return pdf; 
+		return pdf;
 	}
 	// Shape Public Data
 	const Transform ObjectToWorld, WorldToObject;
@@ -139,8 +139,9 @@ public:
 			prevCDF = areaCDF[i];
 		}
 		worldbound = WorldBound();
-		worldbound.pMin *= 1.01f;
-		worldbound.pMax *= 1.01f;
+		// NOTE - ratow - Correctly enpands bounds when pMin is not negative or pMax is not positive;
+		worldbound.pMin -= (worldbound.pMax-worldbound.pMin)*0.01f;
+		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
 	}
 	BBox ObjectBound() const {
 		BBox ob;
@@ -155,13 +156,19 @@ public:
 	}
 	bool Intersect(const Ray &ray, float *t_hitp,
 			DifferentialGeometry *dg) const {
+		bool anyHit = false;
 		Ray bray = ray;
 		if(worldbound.IntersectP(bray)) {
+			// NOTE - ratow - Testing each shape for intersections again because the _ShapeSet_ can be non-planar.
+			// _t_hitp_ and _dg_ are now set according to the nearest intersection.
 			for (u_int i = 0; i < shapes.size(); ++i) {
-				if (shapes[i]->Intersect(ray, t_hitp, dg)) return true;
+				if (shapes[i]->Intersect(bray, t_hitp, dg)) {
+					bray.maxt = *t_hitp;
+					anyHit = true;
+				}
 			}
 		}
-		return false;
+		return anyHit;
 	}
 	void Refine(vector<ShapePtr > &refined) const {
 		for (u_int i = 0; i < shapes.size(); ++i) {
@@ -169,7 +176,7 @@ public:
 				refined.push_back(shapes[i]);
 			else shapes[i]->Refine(refined);
 		}
-	
+
 	}
 	float Area() const { return area; }
 private:
