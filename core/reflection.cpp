@@ -225,7 +225,7 @@ Spectrum FresnelBlend::f(const Vector &wo,
 
 CookTorrance::CookTorrance(const Spectrum &kd, u_int nl,
                            const Spectrum *ks,
-                           MicrofacetDistribution **dist, Fresnel **fres) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)) {
+                           MicrofacetDistribution **dist, Fresnel **fres) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)) {
   KD = kd;
   KS = ks;
   nLobes = nl;
@@ -242,10 +242,10 @@ Spectrum CookTorrance::f(const Vector &wo, const Vector &wi) const {
   float cosThetaH = Dot(wi, wh);
   float cG = G(wo, wi, wh);
 
-  for (u_int i = 0; i < nLobes; ++i) {
+  for (u_int i = 0; i < nLobes; i++) {
     // Add contribution for $i$th Cook-Torrance lobe
 
-    ret += KS[i] * distribution[i]->D(wh) * cG * fresnel[i]->Evaluate(cosThetaH) / (4.f * cosThetaI * cosThetaO);
+    ret += KS[i] * distribution[i]->D(wh) * cG * fresnel[i]->Evaluate(cosThetaH) / (M_PI * cosThetaI * cosThetaO);
   }
   return ret;
 }
