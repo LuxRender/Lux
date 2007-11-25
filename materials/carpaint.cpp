@@ -75,14 +75,14 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, 
   MicrofacetDistribution *md3 = BSDF_ALLOC(arena, Blinn)((2.0 * M_PI / (m3 * m3)) - 1.0);
 
   // The Slick approximation is much faster and visually almost the same
-  Fresnel *fr1 = BSDF_ALLOC(arena, FresnelSlick)(r1);
-  Fresnel *fr2 = BSDF_ALLOC(arena, FresnelSlick)(r2);
-  Fresnel *fr3 = BSDF_ALLOC(arena, FresnelSlick)(r3);
+//  Fresnel *sfr1 = BSDF_ALLOC(arena, FresnelSlick)(r1);
+//  Fresnel *sfr2 = BSDF_ALLOC(arena, FresnelSlick)(r2);
+//  Fresnel *sfr3 = BSDF_ALLOC(arena, FresnelSlick)(r3);
 
-  /*Spectrum k = 0.;
+  Spectrum k = 0.0;
   Fresnel *fr1 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r1), k);
   Fresnel *fr2 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r2), k);
-  Fresnel *fr3 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r3), k);*/
+  Fresnel *fr3 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r3), k);
 
   // The Carpaint BRDF is really a Multi-lobe Cook-Torrance model with a Lambertian base
 
