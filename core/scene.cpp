@@ -138,7 +138,9 @@ void RenderThread::render(RenderThread *myThread)
 
 	// Trace rays: The main loop
 	while (true) {
-		if(myThread->integrationSampler) {
+		// NOTE - ratow - Integration sampler might try to mutate the first sample (which
+		// is not initialized) so we must use the traditional sampler. (bug #21544)
+		if(myThread->integrationSampler && myThread->stat_Samples != 0.) {
 			// use integration sampler, it might want to mutate them etc...
 			if(!myThread->integrationSampler->GetNextSample(myThread->sampler, myThread->sample, useSampPos))
 				break;
