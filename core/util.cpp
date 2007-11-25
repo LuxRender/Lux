@@ -507,3 +507,18 @@ void ProgressReporter::Done() const {
 	fprintf(outFile, " (%.1fs)       \n", seconds);
 	fflush(outFile);
 }
+
+//jromang - this is just for debugging purposes, i will remove this ugly definition soon ;-)
+#ifdef LUX_USE_BOOST_RANDOM 
+#include "randomgen.h"
+namespace lux
+{
+namespace random
+{
+	RandomGenerator *myGen;
+}
+}
+#endif
+
+
+
