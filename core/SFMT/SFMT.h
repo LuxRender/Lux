@@ -97,14 +97,14 @@ inline static double genrand_real1(void)
 }
 
 /** generates a random number on [0,1)-real-interval */
-inline static float  to_real2(uint32_t v)
+inline static double to_real2(uint32_t v)
 {
     return v * (1.0/4294967296.0); 
     /* divided by 2^32 */
 }
 
 /** generates a random number on [0,1)-real-interval */
-inline static float  genrand_real2(void)
+inline static double genrand_real2(void)
 {
     return to_real2(gen_rand32());
 }

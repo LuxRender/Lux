@@ -20,12 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
 //#ifndef LUX_USE_BOOST_RANDOM 
 
 #include <ctime>
+#include <climits>
 #define MEXP 216091
 #include "./SFMT/SFMT.h"
 
@@ -49,7 +51,8 @@ namespace random
 
 	inline float floatValue()
 	{
-		return genrand_real2();
+		//return genrand_real2();
+		return gen_rand32()*(1.f/4294967296.f);
 	}
 		
 	inline unsigned long uintValue()
@@ -61,7 +64,7 @@ namespace random
 	class RandomGenerator
 	{
 	public:
-		RandomGenerator() : engine(static_cast<unsigned int>(std::time(0))), uni_dist(0,1), uni(engine, uni_dist), intdist(0,2147483647), intgen(engine, intdist)
+		RandomGenerator() : engine(static_cast<unsigned int>(std::time(0))), uni_dist(0,1), uni(engine, uni_dist), intdist(0,INT_MAX), intgen(engine, intdist)
 		{ }
 		
 		inline float generateFloat()
