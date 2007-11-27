@@ -752,7 +752,24 @@ void luxErrorIgnore (int code, int severity, const char *message)
 void luxErrorPrint (int code, int severity, const char *message)
 {
     luxLastError=code;
-    std::cerr<<std::endl<<"[Lux ";
+    std::cerr<<std::endl<<"[";
+    //set the color
+    switch (severity)
+        {
+        case LUX_INFO:
+            std::cerr<<"\033[0;32m";
+            break;
+        case LUX_WARNING:
+            std::cerr<<"\033[0;33m";
+            break;
+        case LUX_ERROR:
+            std::cerr<<"\033[0;31m";
+            break;
+        case LUX_SEVERE:
+            std::cerr<<"\033[0;31m";
+            break;
+        }
+    std::cerr<<"Lux ";
     std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
     switch (severity)
     {
@@ -769,7 +786,7 @@ void luxErrorPrint (int code, int severity, const char *message)
         std::cerr<<"SEVERE ERROR";
         break;
     }
-    std::cerr<<" : "<<code<<" ] "<<message<<std::endl;
+    std::cerr<<" : "<<code<<"\033[0m"<<"] "<<message<<std::endl;
 }
 
 
