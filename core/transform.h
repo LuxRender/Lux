@@ -25,6 +25,8 @@
 // transform.h*
 #include "lux.h"
 #include "geometry.h"
+
+
 // Transform Declarations
 class  Transform {
 public:
@@ -251,4 +253,7 @@ inline void Transform::operator()(const Ray &r,
 	rt->maxt = r.maxt;
 	rt->time = r.time;
 }
+
+
+
 #endif // LUX_TRANSFORM_H

@@ -123,6 +123,8 @@ extern "C" {
 #define isnan _isnan
 #define isinf(f) (!_finite((f)))
 #endif
+
+
 // Global Type Declarations
 typedef double StatsCounterType;
 typedef unsigned char u_char;

@@ -27,6 +27,7 @@
 #include "color.h"
 #include "geometry.h"
 #include "transform.h"
+
 // Texture Declarations
 class  TextureMapping2D {
 public:
@@ -121,4 +122,7 @@ public:
 private:
 	T value;
 };
+
+
+
 #endif // LUX_TEXTURE_H
