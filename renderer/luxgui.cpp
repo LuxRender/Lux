@@ -332,10 +332,14 @@ void merge_FrameBuffer(void*) {
 	info_tonemap->label(txttp);
 	Fl::redraw();
 
+#ifndef __APPLE__
 	Fl::lock();
+#endif
 	luxUpdateFramebuffer();
 	printf("GUI: Done.\n");
+#ifndef __APPLE__
 	Fl::unlock();
+#endif
 
     rgb_image->uncache();
 	sprintf(ittxt, "(1) Idle.");
@@ -471,7 +475,9 @@ void check_SceneReady(void*) {
 		Fl::add_timeout(2.0, update_Statistics);
 		Fl::redraw();
 
+#ifndef __APPLE__
 		Fl::lock();
+#endif
 		//AddThread();
 		//luxStart();
 
