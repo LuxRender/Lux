@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+#include <cmath>
+#include <math.h>
+
 #ifndef LUX_LUX_H
 #define LUX_LUX_H
 
@@ -97,7 +100,7 @@ using std::sort;
 #define log10f log10
 #define expf exp
 #define sqrtf sqrt
-#if __GNUC__ == 3
+#if (__GNUC__ == 3) || (__GNUC__ == 4)
 extern "C" {
   int isinf(double);
   int isnan(double);
