@@ -154,7 +154,13 @@ ENDIF(APPLE)
 #  PNG_LIBRARY, where to find the PNG library.
 # None of the above will be defined unles zlib can be found.
 # PNG depends on Zlib
+IF(APPLE)
+	SET(PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/../macos/png/include)
+	SET(PNG_LIBRARY ${CMAKE_BINARY_DIR}/../macos/png/lib)
+	SET(PNG_LIBRARIES png png12)
+ELSE(APPLE)
 INCLUDE(FindPNG)
+ENDIF(APPLE)
 #FIND_PACKAGE(PNG REQUIRED)
 
 
