@@ -31,7 +31,9 @@ BSDF *Translucent::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeo
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+	float ior = index->Evaluate(dgs);
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn, ior);
 	Spectrum r = reflect->Evaluate(dgs).Clamp();
 	Spectrum t = transmit->Evaluate(dgs).Clamp();
 	if (r.Black() && t.Black()) return bsdf;
@@ -45,12 +47,14 @@ BSDF *Translucent::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeo
 	if (!ks.Black()) {
 		float rough = roughness->Evaluate(dgs);
 		if (!r.Black()) {
-			Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+			// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+			Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.f, ior);
 			bsdf->Add(BSDF_ALLOC(arena, Microfacet)(r * ks, fresnel,
 				BSDF_ALLOC(arena, Blinn)(1.f / rough)));
 		}
 		if (!t.Black()) {
-			Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+			// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+			Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.f, ior);
 			bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(t * ks, fresnel,
 				BSDF_ALLOC(arena, Blinn)(1.f / rough))));
 		}
@@ -64,6 +68,8 @@ Material* Translucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<Spectrum> > reflect = mp.GetSpectrumTexture("reflect", Spectrum(0.5f));
 	boost::shared_ptr<Texture<Spectrum> > transmit = mp.GetSpectrumTexture("transmit", Spectrum(0.5f));
 	boost::shared_ptr<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Translucent(Kd, Ks, roughness, reflect, transmit, bumpMap);
+	return new Translucent(Kd, Ks, roughness, reflect, transmit, index, bumpMap);
 }

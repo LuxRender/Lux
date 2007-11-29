@@ -24,17 +24,17 @@
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
-//#ifndef LUX_USE_BOOST_RANDOM 
+#ifndef LUX_USE_BOOST_RANDOM 
 
 #include <ctime>
 #include <climits>
 #define MEXP 216091
 #include "./SFMT/SFMT.h"
 
-//#else //LUX_USE_BOOST_RANDOM 
+#else //LUX_USE_BOOST_RANDOM 
 #include <boost/random.hpp>
 #include <boost/random/mersenne_twister.hpp>
-//#endif //LUX_USE_BOOST_RANDOM 
+#endif //LUX_USE_BOOST_RANDOM 
 
 namespace lux
 {

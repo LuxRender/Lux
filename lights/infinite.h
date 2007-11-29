@@ -38,8 +38,11 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                    &worldRadius);
-		return Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius;
+		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000081: crash in infinite light
+		Spectrum L = Lbase;
+		if (radianceMap != NULL)
+			L *= radianceMap->Lookup(.5f, .5f, .5f);
+		return L * (M_PI * worldRadius * worldRadius);
 	}
 	bool IsDeltaLight() const { return false; }
 	Spectrum Le(const RayDifferential &r) const;

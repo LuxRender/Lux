@@ -31,10 +31,11 @@ BSDF *Glass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, con
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+	float ior = index->Evaluate(dgs);
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn, ior);
 	Spectrum R = Kr->Evaluate(dgs).Clamp();
 	Spectrum T = Kt->Evaluate(dgs).Clamp();
-	float ior = index->Evaluate(dgs);
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R,
 			BSDF_ALLOC(arena, FresnelDielectric)(1., ior)));

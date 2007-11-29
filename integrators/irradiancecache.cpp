@@ -241,7 +241,8 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 		octree->Add(IrradianceSample(E, p, n, maxDist),
 			sampleExtent);
 	}
-	return .5f * bsdf->rho(wo, flags) * E;
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000072: incorrect irradiance cache factor 
+	return INV_PI * bsdf->rho(wo, flags) * E;
 }
 void IrradianceCache::Preprocess(const Scene *scene) {
 	BBox wb = scene->WorldBound();

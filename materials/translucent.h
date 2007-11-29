@@ -31,12 +31,16 @@ public:
 			boost::shared_ptr<Texture<float> > rough,
 			boost::shared_ptr<Texture<Spectrum> > refl,
 			boost::shared_ptr<Texture<Spectrum> > trans,
+			// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+			boost::shared_ptr<Texture<float> > i,
 			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
 		roughness = rough;
 		reflect = refl;
 		transmit = trans;
+		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+		index = i;
 		bumpMap = bump;
 	}
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
@@ -47,5 +51,7 @@ private:
 	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
 	boost::shared_ptr<Texture<float> > roughness;
 	boost::shared_ptr<Texture<Spectrum> > reflect, transmit;
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
+	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };

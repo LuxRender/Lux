@@ -39,10 +39,17 @@ Integrator::~Integrator() {
 			sample->n2D[lightSampleOffset[i]] : 1;
 		// Estimate direct lighting from _light_ samples
 		Spectrum Ld(0.);
+		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
+		int curLightSampleOffset = (lightSampleOffset) ? 
+			lightSampleOffset[i] : -1;
+		int curBsdfSampleOffset = (lightSampleOffset) ? 
+			lightSampleOffset[i] : -1;
+		int curBsdfComponentOffset = (bsdfComponentOffset) ? 
+			bsdfComponentOffset[i] : -1;
 		for (int j = 0; j < nSamples; ++j)
 			Ld += EstimateDirect(scene, light, p, n, wo, bsdf,
-				sample, lightSampleOffset[i], bsdfSampleOffset[i],
-				bsdfComponentOffset[i], j);
+				sample, curLightSampleOffset,
+				curBsdfSampleOffset, curBsdfComponentOffset, j);
 		L += Ld / nSamples;
 	}
 	return L;
@@ -54,6 +61,9 @@ Integrator::~Integrator() {
 		int bsdfSampleOffset, int bsdfComponentOffset) {
 	// Randomly choose a single light to sample, _light_
 	int nLights = int(scene->lights.size());
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
+	if (nLights == 0) 
+		return Spectrum(0.f);
 	int lightNum;
 	if (lightNumOffset != -1)
 		lightNum = Floor2Int(sample->oneD[lightNumOffset][0] *
@@ -76,6 +86,9 @@ Integrator::~Integrator() {
 		float *&avgYsample, float *&cdf,
 		float &overallAvgY) {
 	int nLights = int(scene->lights.size());
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
+	if (nLights == 0) 
+		return Spectrum(0.f);
 	// Initialize _avgY_ array if necessary
 	if (!avgY) {
 		avgY = new float[nLights];
@@ -127,7 +140,8 @@ Spectrum EstimateDirect(const Scene *scene,
 	Spectrum Ld(0.);
 	// Find light and BSDF sample values for direct lighting estimate
 	float ls1, ls2, bs1, bs2, bcs;
-	if (lightSamp != -1 && bsdfSamp != -1 &&
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
+	if (lightSamp != -1 && bsdfSamp != -1 && bsdfComponent != -1 &&
 		sampleNum < sample->n2D[lightSamp] &&
 		sampleNum < sample->n2D[bsdfSamp]) {
 		ls1 = sample->twoD[lightSamp][2*sampleNum];

@@ -242,7 +242,11 @@ Shape* TriangleMesh::CreateShape(const Transform &o2w,
 	const Point *P = params.FindPoint("P", &npi);
 	const float *uvs = params.FindFloat("uv", &nuvi);
 	if (!uvs) uvs = params.FindFloat("st", &nuvi);
-	// XXX should complain if uvs aren't an array of 2...
+	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
+	if (uvs && nuvi != npi * 2) {
+		luxError(LUX_CONSISTENCY,LUX_ERROR,"Number of \"uv\"s for triangle mesh must match \"P\"s");
+		uvs = NULL;
+	}
 	if (!vi || !P) return NULL;
 	const Vector *S = params.FindVector("S", &nsi);
 	if (S && nsi != npi) {
