@@ -25,7 +25,7 @@
 // light.h*
 #include "lux.h"
 #include "geometry.h"
-#include "transform.h"
+//#include "transform.h"
 #include "color.h"
 #include "paramset.h"
 #include "mc.h"

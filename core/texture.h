@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "color.h"
 #include "geometry.h"
-#include "transform.h"
+//#include "transform.h"
 
 // Texture Declarations
 class  TextureMapping2D {

@@ -158,6 +158,7 @@ Transform Transform::operator*(const Transform &t2) const {
 	Matrix4x4Ptr m2 = Matrix4x4::Mul(t2.mInv, mInv);
 	return Transform(m1, m2);
 }
+/*
 #ifndef LUX_USE_SSE
 bool Transform::SwapsHandedness() const {
 	float det = ((m->m[0][0] *
@@ -187,7 +188,7 @@ bool Transform::SwapsHandedness() const {
 	//std::cout<<"Det:"<<det<<std::endl;
 	return det < 0.f;
 }
-#endif
+#endif*/
 Transform  Orthographic(float znear, float zfar) {
 	return Scale(1.f, 1.f, 1.f / (zfar-znear)) *
 		Translate(Vector(0.f, 0.f, -znear));

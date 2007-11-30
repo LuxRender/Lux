@@ -23,7 +23,7 @@
 
 
 #ifndef LUX_BBOX_H
-#define LUX_BBOX_H_
+#define LUX_BBOX_H
 
 #include <iostream>
 #include "vector.h"

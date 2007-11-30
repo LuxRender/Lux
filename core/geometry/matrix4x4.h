@@ -1,3 +1,4 @@
+
 /***************************************************************************
  *   Copyright (C) 1998-2007 by authors (see AUTHORS.txt )                 *
  *                                                                         *
@@ -20,43 +21,50 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef LUX_CAMERA_H
-#define LUX_CAMERA_H
-// camera.h*
-#include "lux.h"
-#include "color.h"
-#include "sampling.h"
-#include "geometry.h"
-//#include "transform.h"
-// Camera Declarations
-class  Camera {
-public:
-	// Camera Interface
-	virtual float GenerateRay(const Sample &sample,
-		                      Ray *ray) const = 0;
-	virtual ~Camera();
-	Camera(const Transform &world2cam, float hither, float yon,
-		float sopen, float sclose, Film *film);
-	// Camera Public Data
-	Film *film;
-protected:
-	// Camera Protected Data
-	Transform WorldToCamera, CameraToWorld;
-	float ClipHither, ClipYon;
-	float ShutterOpen, ShutterClose;
+#ifndef LUX_MATRIX4X4_H
+#define LUX_MATRIX4X4_H
+
+struct  Matrix4x4 {
+	// Matrix4x4 Public Methods
+	Matrix4x4() {
+		for (int i = 0; i < 4; ++i)
+			for (int j = 0; j < 4; ++j)
+				if (i == j) m[i][j] = 1.;
+				else m[i][j] = 0.;
+	}
+	Matrix4x4(float mat[4][4]);
+	Matrix4x4(float t00, float t01, float t02, float t03,
+	          float t10, float t11, float t12, float t13,
+	          float t20, float t21, float t22, float t23,
+	          float t30, float t31, float t32, float t33);
+	Matrix4x4Ptr Transpose() const;
+	void Print(ostream &os) const {
+		os << "[ ";
+		for (int i = 0; i < 4; ++i) {
+			os << "[ ";
+			for (int j = 0; j < 4; ++j)  {
+				os << m[i][j];
+				if (j != 3) os << ", ";
+			}
+			os << " ] ";
+		}
+		os << " ] ";
+	}
+	static Matrix4x4Ptr
+		Mul(const Matrix4x4Ptr &m1,
+	        const Matrix4x4Ptr &m2) {
+		float r[4][4];
+		for (int i = 0; i < 4; ++i)
+			for (int j = 0; j < 4; ++j)
+				r[i][j] = m1->m[i][0] * m2->m[0][j] +
+				          m1->m[i][1] * m2->m[1][j] +
+				          m1->m[i][2] * m2->m[2][j] +
+				          m1->m[i][3] * m2->m[3][j];
+		Matrix4x4Ptr o (new Matrix4x4(r));
+		return o;
+	}
+	Matrix4x4Ptr Inverse() const;
+	float m[4][4];
 };
-class  ProjectiveCamera : public Camera {
-public:
-	// ProjectiveCamera Public Methods
-	ProjectiveCamera(const Transform &world2cam,
-	    const Transform &proj, const float Screen[4],
-		float hither, float yon,
-		float sopen, float sclose,
-		float lensr, float focald, Film *film);
-protected:
-	// ProjectiveCamera Protected Data
-	Transform CameraToScreen, WorldToScreen, RasterToCamera;
-	Transform ScreenToRaster, RasterToScreen;
-	float LensRadius, FocalDistance;
-};
-#endif // LUX_CAMERA_H
+
+#endif //LUX_MATRIX4X4_H

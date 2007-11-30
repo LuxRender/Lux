@@ -25,7 +25,7 @@
 // shape.h*
 #include "lux.h"
 #include "geometry.h"
-#include "transform.h"
+//#include "transform.h"
 #include "paramset.h"
 #include "error.h"
 // DifferentialGeometry Declarations
