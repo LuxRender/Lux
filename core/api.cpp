@@ -753,6 +753,7 @@ void luxErrorPrint (int code, int severity, const char *message)
 {
     luxLastError=code;
     std::cerr<<std::endl<<"[";
+#ifndef WIN32 //windows does not support ANSI escape codes
     //set the color
     switch (severity)
         {
@@ -769,6 +770,7 @@ void luxErrorPrint (int code, int severity, const char *message)
             std::cerr<<"\033[0;31m";
             break;
         }
+#endif
     std::cerr<<"Lux ";
     std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
     switch (severity)
@@ -786,7 +788,11 @@ void luxErrorPrint (int code, int severity, const char *message)
         std::cerr<<"SEVERE ERROR";
         break;
     }
-    std::cerr<<" : "<<code<<"\033[0m"<<"] "<<message<<std::endl;
+    std::cerr<<" : "<<code;
+#ifndef WIN32 //windows does not support ANSI escape codes
+    std::cerr<<"\033[0m";
+#endif
+    std::cerr<<"] "<<message<<std::endl;
 }
 
 
