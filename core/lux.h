@@ -21,7 +21,10 @@
  ***************************************************************************/
 
 #include <cmath>
-#include <math.h>
+#include <boost/pool/pool.hpp>
+#include <boost/pool/object_pool.hpp>
+
+//#include <math.h>
 
 #ifndef LUX_LUX_H
 #define LUX_LUX_H
@@ -398,7 +401,7 @@ private:
 	T *ptr;
 };
 */
-
+/*
 template <class T> class ObjectArena {
 public:
 	// ObjectArena Public Methods
@@ -426,12 +429,15 @@ public:
 		toDelete.erase(toDelete.begin(), toDelete.end());
 		nAvailable = 0;
 	}
+
+
 private:
 	// ObjectArena Private Data
 	T *mem;
 	int nAvailable;
 	vector<T *> toDelete;
-};
+};*/
+
 class  MemoryArena {
 public:
 	// MemoryArena Public Methods

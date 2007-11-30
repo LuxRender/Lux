@@ -114,22 +114,22 @@ LoopSubdiv::Refine(vector<ShapePtr > &refined)
 const {
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;
-	ObjectArena<SDVertex> vertexArena;
-	ObjectArena<SDFace> faceArena;
+	boost::object_pool<SDVertex> vertexArena;
+	boost::object_pool<SDFace> faceArena;
 	for (int i = 0; i < nLevels; ++i) {
 		// Update _f_ and _v_ for next level of subdivision
 		vector<SDFace *> newFaces;
 		vector<SDVertex *> newVertices;
 		// Allocate next level of children in mesh tree
 		for (u_int j = 0; j < v.size(); ++j) {
-			v[j]->child = new (vertexArena) SDVertex;
+			v[j]->child = vertexArena.malloc();//new (vertexArena) SDVertex;
 			v[j]->child->regular = v[j]->regular;
 			v[j]->child->boundary = v[j]->boundary;
 			newVertices.push_back(v[j]->child);
 		}
 		for (u_int j = 0; j < f.size(); ++j)
 			for (int k = 0; k < 4; ++k) {
-				f[j]->children[k] = new (faceArena) SDFace;
+				f[j]->children[k] = faceArena.malloc();//new (faceArena) SDFace;
 				newFaces.push_back(f[j]->children[k]);
 			}
 		// Update vertex positions and create new edge vertices
@@ -158,7 +158,7 @@ const {
 				SDVertex *vert = edgeVerts[edge];
 				if (!vert) {
 					// Create and initialize new odd vertex
-					vert = new (vertexArena) SDVertex;
+					vert = vertexArena.malloc();//new (vertexArena) SDVertex;
 					newVertices.push_back(vert);
 					vert->regular = true;
 					vert->boundary = (face->f[k] == NULL);

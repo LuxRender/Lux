@@ -84,7 +84,7 @@ GridAccel::GridAccel(const vector<Primitive* > &p,
 					int offset = Offset(x, y, z);
 					if (!voxels[offset]) {
 						// Allocate new voxel and store primitive in it
-						voxels[offset] = new (voxelArena) Voxel(&mailboxes[i]);
+						voxels[offset] = voxelArena.construct(&mailboxes[i]);//new (voxelArena) Voxel(&mailboxes[i]);
 					}
 					else {
 						// Add primitive to already-allocated voxel

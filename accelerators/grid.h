@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 // grid.cpp*
+
 #include "lux.h"
 #include "primitive.h"
 
@@ -119,6 +120,8 @@ private:
 	BBox bounds;
 	Vector Width, InvWidth;
 	Voxel **voxels;
-	ObjectArena<Voxel> voxelArena;
+	//ObjectArena<Voxel> voxelArena;
+	//boost::pool<> p(sizeof(int));
+	boost::object_pool<Voxel> voxelArena;
 	static int curMailboxId;
 };
