@@ -106,7 +106,7 @@ int main (int ac, char *av[])
 // config file
     po::options_description config ("Configuration");
     config.add_options ()
-      ("threads", po::value < int >(),
+      ("threads,t", po::value < int >(),
        "Specify the number of threads that Lux will run in parallel.");
 
 // Hidden options, will be allowed both on command line and
