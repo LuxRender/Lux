@@ -74,17 +74,16 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, 
   MicrofacetDistribution *md2 = BSDF_ALLOC(arena, Blinn)((2.0 * M_PI / (m2 * m2)) - 1.0);
   MicrofacetDistribution *md3 = BSDF_ALLOC(arena, Blinn)((2.0 * M_PI / (m3 * m3)) - 1.0);
 
+  /*MicrofacetDistribution *md1 = BSDF_ALLOC(arena, WardIsotropic)(m1);
+  MicrofacetDistribution *md2 = BSDF_ALLOC(arena, WardIsotropic)(m2);
+  MicrofacetDistribution *md3 = BSDF_ALLOC(arena, WardIsotropic)(m3);*/
+
   // The Slick approximation is much faster and visually almost the same
-//  Fresnel *sfr1 = BSDF_ALLOC(arena, FresnelSlick)(r1);
-//  Fresnel *sfr2 = BSDF_ALLOC(arena, FresnelSlick)(r2);
-//  Fresnel *sfr3 = BSDF_ALLOC(arena, FresnelSlick)(r3);
+  Fresnel *fr1 = BSDF_ALLOC(arena, FresnelSlick)(r1);
+  Fresnel *fr2 = BSDF_ALLOC(arena, FresnelSlick)(r2);
+  Fresnel *fr3 = BSDF_ALLOC(arena, FresnelSlick)(r3);
 
-  Spectrum k = 0.0;
-  Fresnel *fr1 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r1), k);
-  Fresnel *fr2 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r2), k);
-  Fresnel *fr3 = BSDF_ALLOC(arena, FresnelConductor)(FresnelApproxEta(r3), k);
-
-  // The Carpaint BRDF is really a Multi-lobe Cook-Torrance model with a Lambertian base
+  // The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 
   Spectrum *lobe_ks = (Spectrum *)arena.Alloc(3 * sizeof(Spectrum));
   lobe_ks[0] = ks1;
@@ -101,7 +100,15 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, 
   lobe_fres[1] = fr2;
   lobe_fres[2] = fr3;
 
-  bsdf->Add(BSDF_ALLOC(arena, CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
+  // Broad gloss layers
+  for (int i = 0; i < 2; i++) {
+    bsdf->Add(BSDF_ALLOC(arena, Microfacet)(lobe_ks[i], lobe_fres[i], lobe_dist[i]));
+  }
+
+  // Clear coat and lambertian base
+  bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(kd, lobe_ks[2], lobe_dist[2]));
+
+  //bsdf->Add(BSDF_ALLOC(arena, CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
 
   return bsdf;
 }
