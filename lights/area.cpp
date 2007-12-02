@@ -46,12 +46,6 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 		}
 		if (done.size() == 1) shape = done[0];
 		else {
-			if (done.size() > 16)
-			{
-				std::stringstream ss;
-				ss<<"Area light geometry turned into "<<(int)done.size()<<" may be very inefficient.";
-				luxError(LUX_NOERROR,LUX_WARNING,ss.str().c_str());
-			}
 			ShapePtr o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
 			shape = o;
 		}

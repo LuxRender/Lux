@@ -22,6 +22,7 @@
 
 // shape.cpp*
 #include "shape.h"
+#include "primitive.h"
 // Shape Method Definitions
 Shape::Shape(const Transform &o2w, bool ro)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
@@ -30,6 +31,69 @@ Shape::Shape(const Transform &o2w, bool ro)
 	// Update shape creation statistics
 	// radiance - disabled for threading // static StatsCounter nShapesMade("Geometry","Total shapes created");
 	// radiance - disabled for threading // ++nShapesMade;
+}
+// ShapeSet Method Definitions
+ShapeSet::ShapeSet(const vector<ShapePtr > &s,
+	const Transform &o2w, bool ro)
+	: Shape(o2w, ro) {
+	shapes = s;
+	area = 0;
+	vector<float> areas;
+	for (u_int i = 0; i < shapes.size(); ++i) {
+		float a = shapes[i]->Area();
+		area += a;
+		areas.push_back(a);
+	}
+	float prevCDF = 0;
+	for (u_int i = 0; i < shapes.size(); ++i) {
+		areaCDF.push_back(prevCDF + areas[i] / area);
+		prevCDF = areaCDF[i];
+	}
+
+	// NOTE - ratow - Use accelerator for complex lights.
+	if(shapes.size() <= 16) {
+		accelerator = NULL;
+		worldbound = WorldBound();
+		// NOTE - ratow - Correctly expands bounds when pMin is not negative or pMax is not positive.
+		worldbound.pMin -= (worldbound.pMax-worldbound.pMin)*0.01f;
+		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
+	} else {
+		vector<Primitive*> primitives;
+		for (u_int i = 0; i < shapes.size(); ++i) {
+			MaterialPtr emptyMtl;
+			Primitive* prim (new GeometricPrimitive(shapes[i], emptyMtl, NULL));
+			primitives.push_back(prim);
+		}
+		accelerator = MakeAccelerator("kdtree", primitives, ParamSet());
+		if (!accelerator)
+			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
+	}
+}
+bool ShapeSet::Intersect(const Ray &ray, float *t_hitp,
+		DifferentialGeometry *dg) const {
+	Ray bray = ray;
+	if(accelerator) {
+		Intersection isect;
+		if (!accelerator->Intersect(bray, &isect))
+			return false;
+
+		*t_hitp = bray.maxt;
+		*dg = isect.dg;
+		return true;
+	} else if(worldbound.IntersectP(bray)) {
+		// NOTE - ratow - Testing each shape for intersections again because the _ShapeSet_ can be non-planar.
+		// _t_hitp_ and _dg_ are now set according to the nearest intersection.
+		bool anyHit = false;
+		for (u_int i = 0; i < shapes.size(); ++i) {
+			if (shapes[i]->Intersect(bray, t_hitp, dg)) {
+				bray.maxt = *t_hitp;
+				anyHit = true;
+			}
+		}
+		return anyHit;
+	} else {
+		return false;
+	}
 }
 // DifferentialGeometry Method Definitions
 DifferentialGeometry::DifferentialGeometry(const Point &P,

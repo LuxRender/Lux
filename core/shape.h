@@ -27,6 +27,7 @@
 #include "geometry.h"
 //#include "transform.h"
 #include "paramset.h"
+#include "dynload.h"
 #include "error.h"
 // DifferentialGeometry Declarations
 class  DifferentialGeometry {
@@ -123,26 +124,7 @@ public:
 		return shapes[sn]->Sample(u1, u2, Ns);
 	}
 	ShapeSet(const vector<ShapePtr > &s,
-		const Transform &o2w, bool ro)
-		: Shape(o2w, ro) {
-		shapes = s;
-		area = 0;
-		vector<float> areas;
-		for (u_int i = 0; i < shapes.size(); ++i) {
-			float a = shapes[i]->Area();
-			area += a;
-			areas.push_back(a);
-		}
-		float prevCDF = 0;
-		for (u_int i = 0; i < shapes.size(); ++i) {
-			areaCDF.push_back(prevCDF + areas[i] / area);
-			prevCDF = areaCDF[i];
-		}
-		worldbound = WorldBound();
-		// NOTE - ratow - Correctly enpands bounds when pMin is not negative or pMax is not positive;
-		worldbound.pMin -= (worldbound.pMax-worldbound.pMin)*0.01f;
-		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
-	}
+		const Transform &o2w, bool ro);
 	BBox ObjectBound() const {
 		BBox ob;
 		for (u_int i = 0; i < shapes.size(); ++i)
@@ -155,21 +137,7 @@ public:
 		return true;
 	}
 	bool Intersect(const Ray &ray, float *t_hitp,
-			DifferentialGeometry *dg) const {
-		bool anyHit = false;
-		Ray bray = ray;
-		if(worldbound.IntersectP(bray)) {
-			// NOTE - ratow - Testing each shape for intersections again because the _ShapeSet_ can be non-planar.
-			// _t_hitp_ and _dg_ are now set according to the nearest intersection.
-			for (u_int i = 0; i < shapes.size(); ++i) {
-				if (shapes[i]->Intersect(bray, t_hitp, dg)) {
-					bray.maxt = *t_hitp;
-					anyHit = true;
-				}
-			}
-		}
-		return anyHit;
-	}
+			DifferentialGeometry *dg) const;
 	void Refine(vector<ShapePtr > &refined) const {
 		for (u_int i = 0; i < shapes.size(); ++i) {
 			if (shapes[i]->CanIntersect())
@@ -185,5 +153,6 @@ private:
 	vector<float> areaCDF;
 	vector<ShapePtr > shapes;
 	BBox worldbound;
+	Primitive *accelerator;
 };
 #endif // LUX_SHAPE_H
