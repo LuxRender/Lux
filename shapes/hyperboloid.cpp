@@ -30,9 +30,9 @@ Hyperboloid::Hyperboloid(const Transform &o2w, bool ro,
 	p1 = point1;
 	p2 = point2;
 	phiMax = Radians(Clamp(tm, 0.0f, 360.0f));
-	float rad1 = sqrtf(p1.x*p1.x + p1.y*p1.y);
-	float rad2 = sqrtf(p2.x*p2.x + p2.y*p2.y);
-	rmax = max(rad1,rad2);
+	float rad_1 = sqrtf(p1.x*p1.x + p1.y*p1.y);
+	float rad_2 = sqrtf(p2.x*p2.x + p2.y*p2.y);
+	rmax = max(rad_1,rad_2);
 	zmin = min(p1.z,p2.z);
 	zmax = max(p1.z,p2.z);
 	// Compute implicit function coefficients for hyperboloid
