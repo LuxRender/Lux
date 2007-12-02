@@ -1,6 +1,6 @@
 #!BPY
 """Registration info for Blender menus:
-Name: 'LuxBlend-v0.1-alpha12...'
+Name: 'LuxBlend-v0.1-alpha13...'
 Blender: 240
 Group: 'Export'
 Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
@@ -9,7 +9,7 @@ Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # --------------------------------------------------------------------------
-# LuxBlend v0.1 alpha12 exporter
+# LuxBlend v0.1 alpha13 exporter
 # --------------------------------------------------------------------------
 #
 # Authors:
@@ -41,6 +41,7 @@ Tooltip: 'Export to LuxRender v0.1 scene format (.lxs)'
 
 import math
 import os
+import sys as osys
 import Blender
 from Blender import Mesh, Scene, Object, Material, Texture, Window, sys, Draw, BGL, Mathutils
 
@@ -282,11 +283,20 @@ def getTextureforChannel(mat, channel):
 #
 # 100 = emissive (area light source / trianglemesh)
 
+###### RGC ##########################
+def rg(col):
+	if RGC.val == True:
+		gamma = OutputGamma.val
+	else:
+		gamma = 1.0
+	ncol = col**gamma
+	return ncol
+
 def exportMaterial(mat):
 	str = "# Material '%s'\n" %mat.name
 
 	def write_color_constant( chan, name, r, g, b ):
-		return "Texture \"%s-%s\" \"color\" \"constant\" \"color value\" [%.3f %.3f %.3f]\n" %(chan, name, r, g, b)
+		return "Texture \"%s-%s\" \"color\" \"constant\" \"color value\" [%.3f %.3f %.3f]\n" %(chan, name, rg(r), rg(g), rg(b))
 
 	def write_color_imagemap( chan, name, filename, scaleR, scaleG, scaleB ):
 		om = "Texture \"%s-map-%s\" \"color\" \"imagemap\" \"string filename\" [\"%s\"] \"float vscale\" [-1.0]\n" %(chan, name, filename)
@@ -776,8 +786,9 @@ def save_lux(filename, unindexedname):
 	time1 = Blender.sys.time()
 
 	##### Determine/open files
-	print("Exporting scene to '" + filename + "'...\n")
-	file = open(filename, 'w')
+	if ExportScene.val == True:
+		print("Exporting scene to '" + filename + "'...\n")
+		file = open(filename, 'w')
 
 	filepath = os.path.dirname(filename)
 	print filename
@@ -789,191 +800,187 @@ def save_lux(filename, unindexedname):
 
 	mat_filename = os.path.join(filepath, filebase + "-mat.lxm")
 	mat_pfilename = filebase + "-mat.lxm"
-
-	print("Exporting materials to '" + mat_filename + "'...\n")
-	print("Exporting geometry to '" + geom_filename + "'...\n")
-	geom_file = open(geom_filename, 'w')
-	mat_file = open(mat_filename, 'w')
-
-
-	##### Write Header ######
-	file.write("# Lux Render v0.1 Scene File\n")
-	file.write("# Exported by LuxBlend_01_alpha12\n")
-
-	file.write("\n")
-
-	##### Write camera ######
-	currentscene = Scene.GetCurrent()
-	camObj = currentscene.getCurrentCamera()
-	if camObj:
-		print "processing Camera..."
-		matrix = camObj.getMatrix()
-		pos = matrix[3]
-		forwards = -matrix[2]
-		target = pos + forwards
-		up = matrix[1]
-		lens = camObj.data.getLens() 
-    		context = Blender.Scene.getCurrent().getRenderingContext()
-    		ratio = float(context.imageSizeY())/float(context.imageSizeX())
-		if (ratio < 1.0):
-			fov = 2*math.atan(16/lens*ratio) * (180 / 3.141592653)
-		else:
-			fov = 2*math.atan(16/lens/ratio) * (180 / 3.141592653)
-		file.write("LookAt %f %f %f   %f %f %f %f %f %f\n" % ( pos[0], pos[1], pos[2], target[0], target[1], target[2], up[0], up[1], up[2] ))
-		file.write("Camera \"perspective\" \"float fov\" [%f] \"float lensradius\" [%f] \"float focaldistance\" [%f] \n" % (fov,LensRadius.val,FocalDistance.val))
-	file.write("\n")
-
-	##### Write film ######
-	file.write("Film \"multiimage\"\n") 
-	file.write("     \"integer xresolution\" [%d] \"integer yresolution\" [%d]\n" % (SizeX.val*ScaleSize.val/100, SizeY.val*ScaleSize.val/100) )
-	if(SaveIGI.val == 1):
-		file.write("	 \"string igi_filename\" [\"out.igi\"]\n")
-		file.write("	 	\"integer igi_writeinterval\" [%i]\n" %(SaveIGIint.val))
-	if(SaveEXR.val == 1):
-		file.write("	 \"string hdr_filename\" [\"out.exr\"]\n")
-		file.write("	 	\"integer hdr_writeinterval\" [%i]\n" %(SaveEXRint.val))
-	if(SaveTGA.val == 1):
-		file.write("	 \"string ldr_filename\" [\"out.tga\"]\n")
-		file.write("		\"integer ldr_writeinterval\" [%i]\n" %(SaveTGAint.val))
-	file.write("		\"integer ldr_displayinterval\" [%i]\n" %(Displayint.val))
-	file.write("		\"string tonemapper\" [\"reinhard\"]\n")
-	file.write("			\"float reinhard_prescale\" [%f]\n" %(ToneMapPreScale.val))
-	file.write("			\"float reinhard_postscale\" [%f]\n" %(ToneMapPostScale.val))
-	file.write("			\"float reinhard_burn\" [%f]\n" %(ToneMapBurn.val))
-	file.write("		\"float gamma\" [%f]\n" %(OutputGamma.val))
-	file.write("		\"float dither\" [%f]\n\n" %(OutputDither.val))
-	if(Bloom.val == 1):
-		file.write("		\"float bloomwidth\" [%f]\n" %(BloomWidth.val))
-		file.write("		\"float bloomradius\" [%f]\n" %(BloomRadius.val))
-
-	if(FilterType.val == 1):
-		file.write("PixelFilter \"mitchell\" \"float xwidth\" [%f] \"float ywidth\" [%f]\n" %(Filterxwidth.val, Filterywidth.val))
-	else:
-		file.write("PixelFilter \"gaussian\" \"float xwidth\" [%f] \"float ywidth\" [%f]\n" %(Filterxwidth.val, Filterywidth.val))
-	file.write("\n")
-
-	##### Write Pixel Sampler ######
-	if(SamplerType.val == 1):
-		file.write("Sampler \"random\" ")
-	else:
-		file.write("Sampler \"lowdiscrepancy\" ")
-
-	if(SamplerProgressive.val == 1):
-		file.write("\"bool progressive\" [\"true\"] ")
-	else:
-		file.write("\"bool progressive\" [\"false\"] ")
 	
-	file.write("\"integer pixelsamples\" [%i]\n" %(SamplerPixelsamples.val))
-	file.write("\n")
-
-	##### Write Integrator ######
-	file.write("SurfaceIntegrator \"path\" \"integer maxdepth\" [%i] " %(pathMaxDepth.val))
-
-	if(pathMetropolis.val == 1):
-		file.write("\"bool metropolis\" [\"true\"] ")
-	else:
-		file.write("\"bool metropolis\" [\"false\"] ")
-
-	file.write("\"integer maxconsecrejects\" [%f] " %(pathMetropolisMaxRejects.val))
-	file.write("\"float largemutationprob\" [%f] " %(pathMetropolisLMProb.val))
-
-	if(pathRRforcetransmit.val == 1):
-		file.write("\"bool rrforcetransmit\" [\"true\"] ")
-	else:
-		file.write("\"bool rrforcetransmit\" [\"false\"] ")
-
-	file.write("\"float rrcontinueprob\" [%f]\n" %(pathRRcontinueprob.val))
-	file.write("\n")
-
-	##### Write Acceleration ######
-	file.write("Accelerator \"kdtree\"\n")
-	file.write("\n")
-
-
-	########## BEGIN World
-	file.write("\n")
-	file.write("WorldBegin\n")
-
-	file.write("\n")
-
-
-### Zuegs: initialization for export class
+	### Zuegs: initialization for export class
 	export = luxExport(Blender.Scene.GetCurrent())
-	export.analyseScene()
-
-
-
-	##### Write World Background, Sunsky or Env map ######
-	if EnvType.val == 0:
-		worldcolor = Blender.World.Get('World').getHor()
-		file.write("AttributeBegin\n")
-		file.write("LightSource \"infinite\" \"color L\" [%g %g %g] \"integer nsamples\" [1]\n" %(worldcolor[0], worldcolor[1], worldcolor[2]))
-
-		# file.write("%s" %portalstr)
-		export.exportPortals(file)
-
-
-		file.write("AttributeEnd\n")
-	if EnvType.val == 1:
-		for obj in currentscene.objects:
-			if obj.getType() == "Lamp":
-				if obj.data.getType() == 1: # sun object
-					invmatrix = Mathutils.Matrix(obj.getInverseMatrix())
-					file.write("AttributeBegin\n")
-					file.write("LightSource \"sunsky\" \"integer nsamples\" [1]\n")
-					file.write("            \"vector sundir\" [%f %f %f]\n" %(invmatrix[0][2], invmatrix[1][2], invmatrix[2][2]))
-					file.write("		\"color L\" [%f %f %f]\n" %(SkyGain.val, SkyGain.val, SkyGain.val))
-					file.write("		\"float turbidity\" [%f]\n" %(Turbidity.val))
-
-					# file.write("%s" %portalstr)
-					export.exportPortals(file)
-
-
-					file.write("AttributeEnd\n")
-	if EnvType.val == 2:
-		if EnvFile.val != "none" and EnvFile.val != "":
+	
+	if ExportScene.val == True:
+		##### Write Header ######
+		file.write("# Lux Render v0.1 Scene File\n")
+		file.write("# Exported by LuxBlend_01_alpha12\n")
+	
+		file.write("\n")
+	
+		##### Write camera ######
+		currentscene = Scene.GetCurrent()
+		camObj = currentscene.getCurrentCamera()
+		if camObj:
+			print "processing Camera..."
+			matrix = camObj.getMatrix()
+			pos = matrix[3]
+			forwards = -matrix[2]
+			target = pos + forwards
+			up = matrix[1]
+			lens = camObj.data.getLens() 
+	    		context = Blender.Scene.getCurrent().getRenderingContext()
+	    		ratio = float(context.imageSizeY())/float(context.imageSizeX())
+			if (ratio < 1.0):
+				fov = 2*math.atan(16/lens*ratio) * (180 / 3.141592653)
+			else:
+				fov = 2*math.atan(16/lens/ratio) * (180 / 3.141592653)
+			file.write("LookAt %f %f %f   %f %f %f %f %f %f\n" % ( pos[0], pos[1], pos[2], target[0], target[1], target[2], up[0], up[1], up[2] ))
+			file.write("Camera \"perspective\" \"float fov\" [%f] \"float lensradius\" [%f] \"float focaldistance\" [%f] \n" % (fov,LensRadius.val,FocalDistance.val))
+		file.write("\n")
+	
+		##### Write film ######
+		file.write("Film \"multiimage\"\n") 
+		file.write("     \"integer xresolution\" [%d] \"integer yresolution\" [%d]\n" % (SizeX.val*ScaleSize.val/100, SizeY.val*ScaleSize.val/100) )
+		if(SaveIGI.val == 1):
+			file.write("	 \"string igi_filename\" [\"out.igi\"]\n")
+			file.write("	 	\"integer igi_writeinterval\" [%i]\n" %(SaveIGIint.val))
+		if(SaveEXR.val == 1):
+			file.write("	 \"string hdr_filename\" [\"out.exr\"]\n")
+			file.write("	 	\"integer hdr_writeinterval\" [%i]\n" %(SaveEXRint.val))
+		if(SaveTGA.val == 1):
+			file.write("	 \"string ldr_filename\" [\"out.tga\"]\n")
+			file.write("		\"integer ldr_writeinterval\" [%i]\n" %(SaveTGAint.val))
+		file.write("		\"integer ldr_displayinterval\" [%i]\n" %(Displayint.val))
+		file.write("		\"string tonemapper\" [\"reinhard\"]\n")
+		file.write("			\"float reinhard_prescale\" [%f]\n" %(ToneMapPreScale.val))
+		file.write("			\"float reinhard_postscale\" [%f]\n" %(ToneMapPostScale.val))
+		file.write("			\"float reinhard_burn\" [%f]\n" %(ToneMapBurn.val))
+		file.write("		\"float gamma\" [%f]\n" %(OutputGamma.val))
+		file.write("		\"float dither\" [%f]\n\n" %(OutputDither.val))
+		if(Bloom.val == 1):
+			file.write("		\"float bloomwidth\" [%f]\n" %(BloomWidth.val))
+			file.write("		\"float bloomradius\" [%f]\n" %(BloomRadius.val))
+	
+		if(FilterType.val == 1):
+			file.write("PixelFilter \"mitchell\" \"float xwidth\" [%f] \"float ywidth\" [%f]\n" %(Filterxwidth.val, Filterywidth.val))
+		else:
+			file.write("PixelFilter \"gaussian\" \"float xwidth\" [%f] \"float ywidth\" [%f]\n" %(Filterxwidth.val, Filterywidth.val))
+		file.write("\n")
+	
+		##### Write Pixel Sampler ######
+		if(SamplerType.val == 1):
+			file.write("Sampler \"random\" ")
+		else:
+			file.write("Sampler \"lowdiscrepancy\" ")
+	
+		if(SamplerProgressive.val == 1):
+			file.write("\"bool progressive\" [\"true\"] ")
+		else:
+			file.write("\"bool progressive\" [\"false\"] ")
+		
+		file.write("\"integer pixelsamples\" [%i]\n" %(SamplerPixelsamples.val))
+		file.write("\n")
+	
+		##### Write Integrator ######
+		file.write("SurfaceIntegrator \"path\" \"integer maxdepth\" [%i] " %(pathMaxDepth.val))
+	
+		if(pathMetropolis.val == 1):
+			file.write("\"bool metropolis\" [\"true\"] ")
+		else:
+			file.write("\"bool metropolis\" [\"false\"] ")
+	
+		file.write("\"integer maxconsecrejects\" [%f] " %(pathMetropolisMaxRejects.val))
+		file.write("\"float largemutationprob\" [%f] " %(pathMetropolisLMProb.val))
+	
+		if(pathRRforcetransmit.val == 1):
+			file.write("\"bool rrforcetransmit\" [\"true\"] ")
+		else:
+			file.write("\"bool rrforcetransmit\" [\"false\"] ")
+	
+		file.write("\"float rrcontinueprob\" [%f]\n" %(pathRRcontinueprob.val))
+		file.write("\n")
+	
+		##### Write Acceleration ######
+		file.write("Accelerator \"kdtree\"\n")
+		file.write("\n")
+	
+	
+		########## BEGIN World
+		file.write("\n")
+		file.write("WorldBegin\n")
+	
+		file.write("\n")
+	
+		export.analyseScene()
+	
+		##### Write World Background, Sunsky or Env map ######
+		if EnvType.val == 0:
+			worldcolor = Blender.World.Get('World').getHor()
 			file.write("AttributeBegin\n")
-			file.write("LightSource \"infinite\" \"integer nsamples\" [1]\n")
-			file.write("            \"string mapname\" [\"%s\"]\n" %(EnvFile.val) )
-
+			file.write("LightSource \"infinite\" \"color L\" [%g %g %g] \"integer nsamples\" [1]\n" %(worldcolor[0], worldcolor[1], worldcolor[2]))
+	
 			# file.write("%s" %portalstr)
 			export.exportPortals(file)
-
+	
+	
 			file.write("AttributeEnd\n")
-	file.write("\n")
-
-
-	#### Write material & geometry file includes in scene file
-	file.write("Include \"%s\"\n\n" %(mat_pfilename))
-	file.write("Include \"%s\"\n\n" %(geom_pfilename))
-
-	##### Write Material file #####
-	mat_file.write("")
-	mat_file.write("# Dummy Material 'Default'\n")
-	mat_file.write("Texture \"Kd-Default\" \"color\" \"constant\" \"color value\" [0.5 0.5 0.5]\n\n")
-
-	export.exportMaterials(mat_file)
-
-
-	##### Write Geometry file #####
-	meshlist = []
-	geom_file.write("")
-
-
-	export.exportMeshes(geom_file)
-	export.exportObjects(geom_file)
-	del export
-
-
-	##### END World & Close files
-	geom_file.write("")
-	geom_file.close()
-	mat_file.write("")
-	mat_file.close()
-	file.write("WorldEnd\n\n")
-	file.close()
+		if EnvType.val == 1:
+			for obj in currentscene.objects:
+				if obj.getType() == "Lamp":
+					if obj.data.getType() == 1: # sun object
+						invmatrix = Mathutils.Matrix(obj.getInverseMatrix())
+						file.write("AttributeBegin\n")
+						file.write("LightSource \"sunsky\" \"integer nsamples\" [1]\n")
+						file.write("            \"vector sundir\" [%f %f %f]\n" %(invmatrix[0][2], invmatrix[1][2], invmatrix[2][2]))
+						file.write("		\"color L\" [%f %f %f]\n" %(SkyGain.val, SkyGain.val, SkyGain.val))
+						file.write("		\"float turbidity\" [%f]\n" %(Turbidity.val))
+	
+						# file.write("%s" %portalstr)
+						export.exportPortals(file)
+	
+	
+						file.write("AttributeEnd\n")
+		if EnvType.val == 2:
+			if EnvFile.val != "none" and EnvFile.val != "":
+				file.write("AttributeBegin\n")
+				file.write("LightSource \"infinite\" \"integer nsamples\" [1]\n")
+				file.write("            \"string mapname\" [\"%s\"]\n" %(EnvFile.val) )
+	
+				# file.write("%s" %portalstr)
+				export.exportPortals(file)
+	
+				file.write("AttributeEnd\n")
+		file.write("\n")
+	
+	
+		#### Write material & geometry file includes in scene file
+		file.write("Include \"%s\"\n\n" %(mat_pfilename))
+		file.write("Include \"%s\"\n\n" %(geom_pfilename))
+		
+		#### Write End Tag
+		file.write("WorldEnd\n\n")
+		file.close()
+		
+	if ExportMat.val == True:
+		##### Write Material file #####
+		print("Exporting materials to '" + mat_filename + "'...\n")
+		mat_file = open(mat_filename, 'w')
+		mat_file.write("")
+		mat_file.write("# Dummy Material 'Default'\n")
+		mat_file.write("Texture \"Kd-Default\" \"color\" \"constant\" \"color value\" [0.5 0.5 0.5]\n\n")
+	
+		export.exportMaterials(mat_file)
+		mat_file.write("")
+		mat_file.close()
+	
+	if ExportGeom.val == True:
+		##### Write Geometry file #####
+		print("Exporting geometry to '" + geom_filename + "'...\n")
+		geom_file = open(geom_filename, 'w')
+		meshlist = []
+		geom_file.write("")
+	
+		export.exportMeshes(geom_file)
+		export.exportObjects(geom_file)
+		geom_file.write("")
+		geom_file.close()
 
 	print("Finished.\n")
+	del export
 
 	time2 = Blender.sys.time()
 	print("Processing time: %f\n" %(time2-time1))
@@ -982,27 +989,42 @@ def save_lux(filename, unindexedname):
 
 
 #########################################################################
-###	 LAUNCH LuxRender AND RENDER CURRENT SCENE (WINDOWS ONLY)
+###	 LAUNCH LuxRender AND RENDER CURRENT SCENE (WINDOWS AND MACOS)
 #########################################################################
 
 def launchLux(filename):
-	# get blenders 'bpydata' directory
-	#datadir=Blender.Get("datadir")
+	ostype = osys.platform
+	#get blenders 'bpydata' directory
+	datadir=Blender.Get("datadir")
 	
-	# open 'LuxWrapper.conf' and read the first line
-	#f = open(datadir + '/LuxWrapper.conf', 'r+')
-	#ic=f.readline()
-	#f.close()
-	
-	# create 'LuxWrapper.cmd' and write two lines of code into it
-	#f = open(datadir + "\LuxWrapper.cmd", 'w')
-	#f.write("cd /d " + ic + "\n")
-	#f.write("start /b /belownormal Lux.exe %1 -t " + str(Threads.val) + "\n")
-	#f.close()
-	
-	# call external shell script to start Lux
-	#cmd= "\"" + datadir + "\LuxWrapper.cmd " + filename + "\""
-	cmd= "lux \"" + filename + "\""
+	#open 'LuxWrapper.conf' and read the first line
+	f = open(datadir + '/LuxWrapper.conf', 'r+')
+	ic=f.readline()
+	f.close()
+		
+	if ostype == "win32":
+		
+		# create 'LuxWrapper.cmd' and write two lines of code into it
+		f = open(datadir + "\LuxWrapper.cmd", 'w')
+		f.write("cd /d " + ic + "\n")
+		f.write("start /b /belownormal Lux.exe %1 \n")
+		f.close()
+		
+		# call external shell script to start Lux
+		cmd= "\"" + datadir + "\LuxWrapper.cmd " + filename + "\""
+		
+	if ostype == "darwin":
+		
+		#create 'LuxWrapper.cmd' and write two lines of code into it
+		f = open(datadir + "/LuxWrapper.command", 'w')
+		f.write("cd " + ic + "\n")
+		f.write("./luxrender " + filename +"\n")
+		f.close()
+		com = "chmod 775 " + datadir + "/LuxWrapper.command"
+		os.system(com)
+		
+		cmd	= datadir + "/LuxWrapper.command"
+	# call external shell script to start Lux	
 	print("Running Luxrender:\n"+cmd)
 	os.system(cmd)
 
@@ -1040,6 +1062,9 @@ def save_still(filename):
 
 ExecuteLux = Draw.Create(0)
 DefaultExport = Draw.Create(0)
+ExportScene = Draw.Create(1)
+ExportGeom = Draw.Create(1)
+ExportMat = Draw.Create(1)
 
 # Assign event numbers to buttons
 evtNoEvt	= 0
@@ -1064,17 +1089,13 @@ SizeY = Draw.Create(sceneSizeY)
 strScaleSize = "Scale Size %t | 100 % %x100 | 75 % %x75 | 50 % %x50 | 25 % %x25"
 ScaleSize = Draw.Create(100)
 
-#ExpotGeom
-ExportGeom = Draw.Create(1)
-geom_pfilename = ""
-
 # lens radius/focal distance
 LensRadius = Draw.Create(0.0)
 FocalDistance = Draw.Create(2.0)
 
 ## Environment Type
 strEnvType = "Env Type %t | Background Color %x0 | Physical Sky %x1 | Texture Map %x2 | None %x3"
-EnvType = Draw.Create(0)
+EnvType = Draw.Create(3)
 
 ##  <turbidity>2.0</turbidity>
 Turbidity = Draw.Create(2.0)
@@ -1122,7 +1143,7 @@ pathRRcontinueprob = Draw.Create(0.5)
 pathMaxDepth = Draw.Create(512)
 
 ## Tonemapping
-strToneMapType = "ToneMap type %t | None %x0 | Reinhard %x1"
+strToneMapType = "ToneMap type %t | Reinhard %x1"
 ToneMapType = Draw.Create(1)
 ToneMapPreScale = Draw.Create(1.0)
 ToneMapPostScale = Draw.Create(1.0)
@@ -1130,6 +1151,7 @@ ToneMapBurn = Draw.Create(6.0)
 
 # output gamma
 OutputGamma = Draw.Create(2.2)
+RGC = Draw.Create(1)
 
 # output dither
 OutputDither = Draw.Create(0.0)
@@ -1150,7 +1172,6 @@ BloomRadius = Draw.Create(0.1)
 
 # text color fix
 textcol = [0, 0, 0]
-geom_pfilename = ""
 
 ## Registry
 def update_Registry():
@@ -1171,6 +1192,7 @@ def update_Registry():
 	d['tonemapprescale'] = ToneMapPreScale.val
 	d['tonemappostscale'] = ToneMapPostScale.val
 	d['outputgamma'] = OutputGamma.val
+	d['reversegamma'] = RGC.val
 	d['outputdither'] = OutputDither.val
 	d['tonemapburn'] = ToneMapBurn.val
 	d['envtype'] = EnvType.val
@@ -1205,6 +1227,7 @@ if rdict:
 		ToneMapPreScale.val = rdict['tonemapprescale']
 		ToneMapPostScale.val = rdict['tonemappostscale']
 		OutputGamma.val = rdict['outputgamma']
+		RGC.val = rdict['reversegamma']
 		OutputDither.val = rdict['outputdither']
 		ToneMapBurn.val = rdict['tonemapburn']
 		EnvType.val = rdict['envtype']
@@ -1232,15 +1255,16 @@ def drawCamera():
 	BGL.glRectf(10,182,90,183)
 	BGL.glColor3f(0.9,0.9,0.9)
 
-	LensRadius = Draw.Number("Lens Radius: ", evtNoEvt, 10, 130, 200, 18, LensRadius.val, 0.0, 3.0, "Defines the lens radius. Values higher than 0. enable DOF and control the amount")
-	FocalDistance = Draw.Number("Focal Distance: ", evtNoEvt, 10, 90, 200, 18, FocalDistance.val, 0.0, 100, "Distance from the camera at which objects will be in focus. Has no effect if Lens Radius is 0.")
-	Draw.Button("S", evtFocusS, 215, 90, 20, 18, "Get the distance from the selected object")
-	Draw.Button("C", evtFocusC, 235, 90, 20, 18, "Get the distance from the 3d cursor")
+	BGL.glColor3f(0.9,0.9,0.9) ; BGL.glRasterPos2i(10,165) ; Draw.Text("Dof Settings:")
+	LensRadius = Draw.Number("Lens Radius: ", evtNoEvt, 10, 140, 200, 18, LensRadius.val, 0.0, 3.0, "Defines the lens radius. Values higher than 0. enable DOF and control the amount")
+	FocalDistance = Draw.Number("Focal Distance: ", evtNoEvt, 10, 120, 200, 18, FocalDistance.val, 0.0, 100, "Distance from the camera at which objects will be in focus. Has no effect if Lens Radius is 0.")
+	Draw.Button("S", evtFocusS, 215, 120, 20, 18, "Get the distance from the selected object")
+	Draw.Button("C", evtFocusC, 235, 120, 20, 18, "Get the distance from the 3d cursor")
 
-	BGL.glColor3f(0.9,0.9,0.9) ; BGL.glRasterPos2i(10,65) ; Draw.Text("Size:")
-	SizeX = Draw.Number("X: ", evtchangesize, 45, 60, 75, 18, SizeX.val, 1, 4096, "Width of the render")
-	SizeY = Draw.Number("Y: ", evtchangesize, 130, 60, 75, 18, SizeY.val, 1, 3072, "Height of the render")
-	ScaleSize = Draw.Menu(strScaleSize, evtNoEvt, 210, 60, 65, 18, ScaleSize.val, "Scale Image Size of ...")
+	BGL.glColor3f(0.9,0.9,0.9) ; BGL.glRasterPos2i(10,100) ; Draw.Text("Size:")
+	SizeX = Draw.Number("X: ", evtchangesize, 10, 75, 95, 18, SizeX.val, 1, 4096, "Width of the render")
+	SizeY = Draw.Number("Y: ", evtchangesize, 115, 75, 95, 18, SizeY.val, 1, 3072, "Height of the render")
+	ScaleSize = Draw.Menu(strScaleSize, evtNoEvt, 215, 75, 65, 18, ScaleSize.val, "Scale Image Size of ...")
 
 ##############  Draw Environment  #######################################
 def drawEnv():
@@ -1258,9 +1282,9 @@ def drawEnv():
 	
 	EnvType = Draw.Menu(strEnvType, evtNoEvt, 10, 150, 150, 18, EnvType.val, "Set the Enviroment type")
 	if EnvType.val == 2:
-		EnvFile = Draw.String("Probe: ", evtNoEvt, 10, 130, 255, 18, EnvFile.val, 50, "the file name of the EXR latlong map")
+		EnvFile = Draw.String("Image: ", evtNoEvt, 10, 130, 255, 18, EnvFile.val, 50, "the file name of the EXR latlong map")
 		EnvMapType = Draw.Menu(strEnvMapType, evtNoEvt, 10, 110, 100, 18, EnvMapType.val, "Set the map type of the probe")
-		Draw.Button("Load", evtloadimg, 235, 110, 30,18,"Load Env Map")
+		Draw.Button("Load", evtloadimg, 225, 110, 40,18,"Load Env Map")
 	if EnvType.val == 1:
 		Turbidity = Draw.Number("Sky Turbidity", evtNoEvt, 10, 130, 150, 18, Turbidity.val, 1.5, 5.0, "Sky Turbidity")
 		SkyGain = Draw.Number("Sky Gain", evtNoEvt, 10, 110, 150, 18, SkyGain.val, 0.0, 5.0, "Sky Gain")
@@ -1298,7 +1322,7 @@ def drawSettings():
 
 ##################  Draw RSettings  #########################	
 def drawSystem():
-	global OutputGamma, SaveEXR, SaveEXRint, SaveIGI, SaveIGIint, SaveTGA, SaveTGAint, Displayint, OutputDither
+	global OutputGamma, RGC, SaveEXR, SaveEXRint, SaveIGI, SaveIGIint, SaveTGA, SaveTGAint, Displayint, OutputDither
 	
 	drawButtons()
 	
@@ -1315,8 +1339,9 @@ def drawSystem():
 
 	Displayint = Draw.Number("Display Interval", evtNoEvt,10,90,150,18, Displayint.val,5,10000, "Set Interval for Display (seconds)")
 
-	OutputGamma = Draw.Number("Output Gamma: ", evtNoEvt, 10, 60, 200, 18, OutputGamma.val, 0.0, 6.0, "Output Image Gamma")
-	OutputDither = Draw.Number("Output Dither: ", evtNoEvt, 210, 60, 150, 18, OutputDither.val, 0.0, 1.0, "Output Image Dither")
+	OutputGamma = Draw.Number("Output Gamma: ", evtNoEvt, 10, 60, 170, 18, OutputGamma.val, 0.0, 6.0, "Output and RGC Gamma")
+	RGC = Draw.Toggle("RGC", evtNoEvt, 180, 60, 30, 18, RGC.val, "Use reverse gamma correction for rgb values")
+	OutputDither = Draw.Number("Output Dither: ", evtNoEvt, 220, 60, 150, 18, OutputDither.val, 0.0, 1.0, "Output Image Dither")
 
 #################  Draw Tonemapping  #########################
 def drawTonemap():
@@ -1364,23 +1389,26 @@ def drawButtons():
 ##################
 
       ## buttons
-	global evtExport, evtExportAnim, openCamera, openEnv, openRSet, openSSet, openTmap, evtNoEvt, ExecuteLux, DefaultExport, ExportGeom
+	global evtExport, evtExportAnim, openCamera, openEnv, openRSet, openSSet, openTmap, evtNoEvt, ExecuteLux, DefaultExport, ExportScene, ExportGeom, ExportMat
 	
 	BGL.glColor3f(0.2,0.2,0.2)
 	BGL.glRectf(0,0,440,230)
-	BGL.glColor3f(0.9,0.9,0.9);BGL.glRasterPos2i(10,205) ; Draw.Text("LuxBlend v0.1alpha12", "small")
+	BGL.glColor3f(0.9,0.9,0.9);BGL.glRasterPos2i(10,205) ; Draw.Text("LuxBlend v0.1alpha13", "small")
 	
-	Draw.Button("Render", evtExport, 10, 19, 100, 30, "Open file dialog and export")
-	Draw.Button("Export Anim", evtExportAnim, 112, 19, 100, 30, "Open file dialog and export animation (careful: takes a lot of diskspace!!!)")
+	Draw.Button("Render", evtExport, 10, 25, 100, 30, "Open file dialog and export")
+	if ExecuteLux.val == 0:
+		Draw.Button("Export Anim", evtExportAnim, 112, 25, 100, 30, "Open file dialog and export animation (careful: takes a lot of diskspace!!!)")
 	Draw.Button("Camera", openCamera, 10, 185, 80, 13, "Open Camera Dialog")
 	Draw.Button("Environment", openEnv, 90, 185, 80, 13, "Open Environment Dialog")
 	Draw.Button("Renderer", openRSet, 170, 185, 80, 13, "Open Rendersettings Dialog")
 	Draw.Button("Tonemap", openTmap, 250, 185, 80, 13, "open Tonemap Settings")
 	Draw.Button("System", openSSet, 330, 185, 80, 13, "open System Settings")
 	
-	ExecuteLux = Draw.Toggle("Run", evtNoEvt, 10, 5, 30, 10, ExecuteLux.val, "Execute Lux after saving")
-	DefaultExport = Draw.Toggle("def",evtNoEvt,40,5,30,10, DefaultExport.val, "Save as default.lxs to a temporary directory")
-	
+	ExecuteLux = Draw.Toggle("Run", evtNoEvt, 10, 5, 30, 13, ExecuteLux.val, "Execute Lux after saving")
+	DefaultExport = Draw.Toggle("def",evtNoEvt,41,5,30,13, DefaultExport.val, "Save as default.lxs to a temporary directory")
+	ExportScene = Draw.Toggle(".lxs" ,evtNoEvt,77,5,30,13, ExportScene.val, "Export Scenefile")
+	ExportGeom = Draw.Toggle(".lxo" ,evtNoEvt,107,5,30,13, ExportGeom.val, "Export Geometryfile")
+	ExportMat = Draw.Toggle(".lxm" ,evtNoEvt,137,5,30,13, ExportMat.val, "Export Materialfile")
 	BGL.glColor3f(0.9, 0.9, 0.9) ; BGL.glRasterPos2i(340,7) ; Draw.Text("Press Q or ESC to quit.", "tiny")
 	
 		
@@ -1403,10 +1431,6 @@ def buttonEvt(evt):  # function that handles button events
 			Blender.Window.FileSelector(save_still, "Export", newFName('lxs'))
 		else:
 			datadir=Blender.Get("datadir")
-		#	f = open(datadir + '/LuxWrapper.conf', 'r+')
-		#	ic=f.readline()
-		#	f.close()
-		#	filename = ic + "\default.lxs"
 			filename = datadir + "/default.lxs"
 			save_still(filename)
 	
