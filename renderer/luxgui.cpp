@@ -346,17 +346,11 @@ void restart_cb(Fl_Widget *, void *) {
 }
 
 void Engine_Thread() {
-	//printf("GUI: Initializing Parser\n");
 	luxInit();
-
-	//printf("GUI: Parsing scenefile '%s'...\n", gui_current_scenefile);
 	std::stringstream ss;
 	ss << "GUI: Parsing scenefile '" << gui_current_scenefile << "'";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str ().c_str());
-
 	ParseFile(gui_current_scenefile);
-	//printf("GUI: Finished parsing scenefile.\n");
-
 	luxCleanup();
 	/*
 	 #ifdef WIN32
@@ -543,12 +537,6 @@ void check_SceneReady(void *) {
 
 // main program
 int main(int ac, char *av[]) {
-	// Print welcome banner
-	/*printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
-	 printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
-	 printf("This is free software, covered by the GNU General Public License V3\n");
-	 printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");  */
-
 	GuiSceneReady = false;
 	framebufferUpdate = 10.0f;
 	strcpy(gui_current_scenefile, "");
@@ -564,38 +552,6 @@ int main(int ac, char *av[]) {
 
 	// set timeouts
 	Fl::add_timeout(0.25, check_SceneReady);
-
-	// load a file if provided in command line
-	/*
-	 if(argc>=2)
-	 {
-	 printf("loading file : %s \n",argv[1]);      
-
-	 //change directory
-	 boost::filesystem::path fullPath( boost::filesystem::initial_path() );
-	 fullPath = boost::filesystem::system_complete( boost::filesystem::path( argv[1], boost::filesystem::native ) );
-	 strcpy(gui_current_scenefile, fullPath.leaf().c_str());
-	 chdir (fullPath.branch_path().string().c_str());     
-
-	 #ifdef WIN32
-	 _chdir(fullPath.branch_path().string().c_str());
-	 #else
-	 chdir(fullPath.branch_path().string().c_str());
-	 #endif
-
-	 //launch rendering
-	 RenderScenefile();
-	 } */
-
-	/*
-	 // run gui
-	 Fl::run();
-
-
-
-
-	 // TODO stop everything
-	 return 0; */
 
 	try
 	{
@@ -687,7 +643,8 @@ int main(int ac, char *av[]) {
 			RenderScenefile ();}
 
 		// run gui
-		Fl::run ();}
+		Fl::run ();
+	}
 	catch (std::exception & e)
 	{
 		std::cout << e.what () << std::endl; return 1;}
