@@ -46,6 +46,7 @@
 #endif
 
 #include "luxgui.h"
+#include "renderwindow.h"
 #include "icons.h"		// Include GUI icon data
 namespace po = boost::program_options;
 static int threads;
@@ -66,7 +67,7 @@ Fl_Menu_Item menu_[] = { { "+ Add Thread", 0, (Fl_Callback *) addthread_cb, 0,
 
 // main window
 Fl_Double_Window * make_MainWindow(int width, int height,
-		Fl_RGB_Image * rgb_buffer) {
+		Fl_RGB_Image * rgb_buffer, bool opengl_enabled) {
 	Fl_Color col_back = fl_rgb_color(212, 208, 200);
 	Fl_Color col_activeback = fl_rgb_color(255, 170, 20);
 	Fl_Color col_renderback = fl_rgb_color(128, 128, 128);
@@ -83,25 +84,10 @@ Fl_Double_Window * make_MainWindow(int width, int height,
 			{
 				Fl_Tabs * o = new Fl_Tabs (0, 20, width, height - 20);
 				o->labelsize(12);
-				{
-					Fl_Group * o = new Fl_Group (0, 40, width, height - 40, "Film"); // Film tab
-					o->box(FL_FLAT_BOX);
-					o->color(col_back);
-					o->labelsize(11);
-					o->align(FL_ALIGN_CENTER | FL_ALIGN_INSIDE);
-					{
-						Fl_Group * o = new Fl_Group (0, 40, width, height - 40, ""); // Renderdisplay
-						o->box(FL_FLAT_BOX);
-						o->color(col_renderback);
-						//o->image(rgb_buffer);
-						o->labelsize(10);
-						o->align(FL_ALIGN_CENTER);
-						o->end();
-						renderview = o;
-						Fl_Group::current ()->resizable(o);
-					} // Fl_Group* o
-					o->end();
-				} // Fl_Group* o
+				{	//Film tab
+					RenderWindow* o = new RenderWindow(0, 40, width, height-40, col_back, col_renderback, "Film", opengl_enabled);
+					renderview = o;
+				} // RenderWindow* o
 				/* { Fl_Group* o = new Fl_Group(0, 40, width, height-40, "Console"); // NOTE - radiance - disabled GUI console tab for now
 				 o->box(FL_FLAT_BOX);
 				 o->color((Fl_Color)24);
@@ -380,7 +366,7 @@ void merge_FrameBuffer(void *) {
 	Fl::unlock();
 #endif
 
-	rgb_image->uncache();
+	renderview->update_image();
 	sprintf(ittxt, "(1) Idle.");
 	info_tonemap->label(txttp);
 	Fl::redraw();
@@ -483,7 +469,7 @@ void bindFrameBuffer() {
 
 		// update display
 		rgb_image->uncache();
-		renderview->image(rgb_image);
+		renderview->set_image(rgb_image);
 		Fl::redraw();
 
 		Fl::add_timeout(framebufferUpdate, merge_FrameBuffer);
@@ -540,41 +526,39 @@ int main(int ac, char *av[]) {
 	GuiSceneReady = false;
 	framebufferUpdate = 10.0f;
 	strcpy(gui_current_scenefile, "");
-
 	status_render = STATUS_RENDER_NONE;
-
-	// create render window
-	int width = 800;
-	int height = 600;
-	window = make_MainWindow(width, height, rgb_image);
-	setInfo_render();
-	window->show();
-
-	// set timeouts
-	Fl::add_timeout(0.25, check_SceneReady);
+	bool opengl_enabled = false;
 
 	try
 	{
-
 		// Declare a group of options that will be
 		// allowed only on command line
 		po::options_description generic ("Generic options");
 		generic.add_options ()
-		("version,v", "print version string") ("help", "produce help message");
+			("version,v", "print version string")
+			("help", "produce help message");
 
 		// Declare a group of options that will be
 		// allowed both on command line and in
 		// config file
 		po::options_description config ("Configuration");
 		config.add_options ()
-		("threads,t", po::value < int >(),
+			("threads,t", po::value < int >(),
 				"Specify the number of threads that Lux will run in parallel.");
 
 		// Hidden options, will be allowed both on command line and
 		// in config file, but will not be shown to the user.
 		po::options_description hidden ("Hidden options");
 		hidden.add_options ()
-		("input-file", po::value < vector < string > >(), "input file");
+			("input-file", po::value < vector < string > >(), "input file");
+
+		#ifdef LUX_USE_OPENGL
+			generic.add_options ()
+				("opengl", "use OpenGL to display the image");
+		#else
+			hidden.add_options ()
+				("opengl", "use OpenGL to display the image");
+		#endif // LUX_USE_OPENGL
 
 		po::options_description cmdline_options;
 		cmdline_options.add (generic).add (config).add (hidden);
@@ -621,13 +605,28 @@ int main(int ac, char *av[]) {
 			threads = 1;;
 		}
 
+		if (vm.count ("opengl"))
+		{
+			#ifdef LUX_USE_OPENGL
+				opengl_enabled = true;
+			#else
+				opengl_enabled = false;
+				luxError(LUX_NOERROR, LUX_INFO, "GUI: OpenGL support was not compiled in - will not be used.");
+			#endif // LUX_USE_OPENGL
+		}
+		else
+		{
+			opengl_enabled = false;
+		}
+
 		if (vm.count ("input-file"))
 		{
 			const std::vector < std::string > &v = vm["input-file"].as < vector < string > >();
 			if (v.size() > 1)
 			{
 				luxError (LUX_SYSTEM, LUX_SEVERE,
-						"More than one file passed on command line : rendering the first one.");}
+						"More than one file passed on command line : rendering the first one.");
+			}
 
 			//change the working directory
 			boost::filesystem::path fullPath (boost::filesystem::
@@ -640,14 +639,26 @@ int main(int ac, char *av[]) {
 							native));
 			strcpy (gui_current_scenefile, fullPath.leaf ().c_str ());
 			chdir (fullPath.branch_path ().string ().c_str ());
-			RenderScenefile ();}
+			RenderScenefile ();
+		}
+
+		// create render window
+		int width = 800;
+		int height = 600;
+		window = make_MainWindow(width, height, rgb_image, opengl_enabled);
+		setInfo_render();
+		window->show();
+
+		// set timeouts
+		Fl::add_timeout(0.25, check_SceneReady);
 
 		// run gui
 		Fl::run ();
 	}
 	catch (std::exception & e)
 	{
-		std::cout << e.what () << std::endl; return 1;}
+		std::cout << e.what () << std::endl; return 1;
+	}
 
 	// TODO stop everything
 	return 0;

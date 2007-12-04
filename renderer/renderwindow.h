@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2007 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2007 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of Lux Renderer.                                    *
  *                                                                         *
@@ -20,65 +20,67 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef LUX_GUI_H
-#define LUX_GUI_H
+#ifndef RENDER_WINDOW_H
+#define RENDER_WINDOW_H
 
 #include <FL/Fl.H>
-#include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Tabs.H>
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Menu_Button.H>
-#include <FL/Fl_Button.H>
-#include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl_Choice.H>
-#include <FL/Fl_Value_Slider.H>
-#include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Image.H>
+#include <FL/fl_draw.H>
 
-#include "renderwindow.h"
+#ifdef LUX_USE_OPENGL
+#include <FL/Fl_Gl_Window.h>
+#include <FL/gl.h>
+#endif // LUX_USE_OPENGL
 
-bool GuiSceneReady = false;
-float framebufferUpdate;
-Fl_RGB_Image* rgb_image;
-Fl_Window* window;
-//Fl_Thread e_thr;
 
-RenderWindow *renderview;
-Fl_Group *info_render;
-Fl_Group *info_render_group;
-Fl_Group *info_tonemap;
-Fl_Group *info_tonemap_group;
-Fl_Group *info_statistics;
-Fl_Group *info_statistics_group;
+#ifdef LUX_USE_OPENGL
 
-Fl_Button *button_play;
-Fl_Button *button_pause;
-Fl_Button *button_restart;
+class GlWindow : public Fl_Gl_Window {
+	int image_w, image_h;
+	int tiles_x, tiles_y, tiles_nr;
+	bool image_changed;
+	const int texture_w;
+	const int texture_h;
+	int offset_x, offset_y, scale_xo2, scale_yo2, scale_xo, scale_yo, lastx, lasty;
+	float scale;
+	float scale_exp;
+	Fl_RGB_Image *image_ptr;
 
-boost::thread *engine_thread;
-int gui_nrthreads = 1;
-char gui_current_scenefile[256];
+ public:
+	GlWindow(int x,int y,int w,int h,const char *lab=0);
+	~GlWindow();
+	void update_image();
+	void set_image(Fl_RGB_Image *img);
+	int handle(int event);
+	void draw(void);
+};
 
-#define STATUS_RENDER_NONE 0
-#define STATUS_RENDER_IDLE 1
-#define STATUS_RENDER_RENDER 2
+#else // LUX_USE_OPENGL
 
-int status_render = STATUS_RENDER_NONE;
+//dummy class
+class GlWindow {
+ public:
+	 GlWindow(int x,int y,int w,int h,const char *lab=0){};
+	~GlWindow(){};
+	void update_image(){};
+	void set_image(Fl_RGB_Image *img){};
+	int handle(int event){};
+	void draw(void){};
+};
 
-// functions
-void AddThread();
-void RemoveThread();
-void RenderStart();
-void RenderPause();
-int RenderScenefile();
-// callbacks
-void open_cb(Fl_Widget*, void*);
-void exit_cb(Fl_Widget*, void*);
-void addthread_cb(Fl_Widget*, void*);
-void removethread_cb(Fl_Widget*, void*);
-void start_cb(Fl_Widget*, void*);
-void stop_cb(Fl_Widget*, void*);
-void restart_cb(Fl_Widget*, void*);
+#endif // LUX_USE_OPENGL
 
-#endif // LUX_GUI_H
+class RenderWindow: public Fl_Group{
+	GlWindow *glwin;
+	Fl_Group *groupwin;
+	Fl_RGB_Image *image_ptr;
+	const bool opengl_enabled;
+
+ public:
+	RenderWindow(int x,int y,int w,int h,Fl_Color col_back,Fl_Color col_renderback,const char *lab=0,bool opengl_enabled=false);
+	void update_image();
+	void set_image(Fl_RGB_Image *img);
+};
+
+#endif // RENDER_WINDOW_H

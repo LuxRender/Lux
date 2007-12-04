@@ -1,6 +1,7 @@
 Authors:
 
-PHARR Matt <authors@pbrt.org>
-HUMPHREYS Greg <authors@pbrt.org>
-VERGAUWEN Terrence <terrence27@gmail.com>
-ROMANG Jean-Francois <jeanfrancois.romang@laposte.net>
+PHARR Matt <authors.at.pbrt.org>
+HUMPHREYS Greg <authors.at.pbrt.org>
+VERGAUWEN Terrence <terrence27.at.gmail.com>
+ROMANG Jean-Francois <jeanfrancois.romang.at.laposte.net>
+BIENKOWSKI Peter <zcott.at.o2.pl>
