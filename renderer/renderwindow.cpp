@@ -151,6 +151,7 @@ void GlWindow::draw(void){
         glLoadIdentity();
         glViewport(0,0,w(),h());
         glOrtho(0,w(),0,h(),-1,1);
+		glClearColor(0.5,0.5,0.5,1.0); //gray background
 	}
 
     glClear(GL_COLOR_BUFFER_BIT);
@@ -171,8 +172,7 @@ void GlWindow::draw(void){
 			glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);//GL_LINEAR); //'linear' causes seams to show on my ati card - zcott
 			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, texture_w, texture_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-			//TODO: doesn't clear the texture!
+			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, texture_w, texture_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); //warning: the texture isn't initialized, don't display before uploading
 		}
 		image_changed=true;
 		//move to center of window
@@ -191,20 +191,22 @@ void GlWindow::draw(void){
 		glEnable (GL_TEXTURE_2D);
 		//draw the texture tiles
 		for(int i=0; i<tiles_nr; i++){
+			int tile_w = i%tiles_x==tiles_x-1?image_w%texture_w:texture_w;
+			int tile_h = i/tiles_x==tiles_y-1?image_h%texture_h:texture_h;
 			glBindTexture (GL_TEXTURE_2D, i+1);
 			if(image_changed)	//upload the textures only when needed (takes long...)
-				for(int j=0; j<(i/tiles_x==tiles_y-1?image_h%texture_h:texture_h); j++)
-					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, j, i%tiles_x==tiles_x-1?image_w%texture_w:texture_w, 1, GL_RGB, GL_UNSIGNED_BYTE, *image_ptr->data()+(((i%tiles_x)*texture_w)*3 + ((tiles_y-1-i/tiles_x)*texture_h+(texture_h-1-j)-(tiles_y*texture_h-image_h))*image_w*3));
+				for(int j=0; j<tile_h; j++) //line by line
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, j, tile_w, 1, GL_RGB, GL_UNSIGNED_BYTE, *image_ptr->data()+(((i%tiles_x)*texture_w)*3 + ((tiles_y-1-i/tiles_x)*texture_h+(texture_h-1-j)-(tiles_y*texture_h-image_h))*image_w*3));
 
 			glBegin (GL_QUADS);
-			glTexCoord2f (0.0f, 0.0f);
-			glVertex3f (      0.0f + (i%tiles_x)*texture_w,      0.0f + (i/tiles_x)*texture_h, 0.0f);
-			glTexCoord2f (1.0f, 0.0f);
-			glVertex3f ( texture_w + (i%tiles_x)*texture_w,      0.0f + (i/tiles_x)*texture_h, 0.0f);
-			glTexCoord2f (1.0f, 1.0f);
-			glVertex3f ( texture_w + (i%tiles_x)*texture_w, texture_h + (i/tiles_x)*texture_h, 0.0f);
-			glTexCoord2f (0.0f, 1.0f);
-			glVertex3f (      0.0f + (i%tiles_x)*texture_w, texture_h + (i/tiles_x)*texture_h, 0.0f);
+			glTexCoord2f (                           0.0f,                           0.0f );
+			glVertex3f (   (i%tiles_x)*texture_w +   0.0f, (i/tiles_x)*texture_h +   0.0f, 0.0f );
+			glTexCoord2f (          1.0f*tile_w/texture_w,                           0.0f );
+			glVertex3f (   (i%tiles_x)*texture_w + tile_w, (i/tiles_x)*texture_h +   0.0f, 0.0f );
+			glTexCoord2f (          1.0f*tile_w/texture_w,          1.0f*tile_h/texture_h );
+			glVertex3f (   (i%tiles_x)*texture_w + tile_w, (i/tiles_x)*texture_h + tile_h, 0.0f );
+			glTexCoord2f (                           0.0f,          1.0f*tile_h/texture_h );
+			glVertex3f (   (i%tiles_x)*texture_w +   0.0f, (i/tiles_x)*texture_h + tile_h, 0.0f );
 			glEnd ();
 		}
 		glDisable (GL_TEXTURE_2D);
