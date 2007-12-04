@@ -68,8 +68,21 @@ int GlWindow::handle(int event){
 		lasty=Fl::event_y();
 		int button=Fl::event_button();
 		if(button==3){	//set scale to 100%
-			scale=1.0f;
+			//calculate the scaling point in image space
+			scale_xo=       Fl::event_x() /scale-scale_xo2/scale-offset_x/scale+scale_xo;
+			scale_yo=(h()-1-Fl::event_y())/scale-scale_yo2/scale-offset_y/scale+scale_yo;
+			//make sure the scaling point is in bounds
+			if(scale_xo<0) scale_xo=0;
+			if(scale_xo>image_w-1) scale_xo=image_w-1;
+			if(scale_yo<0) scale_yo=0;
+			if(scale_yo>image_h-1) scale_yo=image_h-1;
+			//new scale
 			scale_exp=0;
+			scale=1.0f;
+			//get the scaling point in window space
+			scale_xo2=Fl::event_x();
+			scale_yo2=h()-1-Fl::event_y();
+			offset_x=offset_y=0;
 			redraw();
 		}
 		if(button==2){	//fit image to window
