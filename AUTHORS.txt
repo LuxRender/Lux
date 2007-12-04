@@ -5,3 +5,4 @@ HUMPHREYS Greg <authors.at.pbrt.org>
 VERGAUWEN Terrence <terrence27.at.gmail.com>
 ROMANG Jean-Francois <jeanfrancois.romang.at.laposte.net>
 BIENKOWSKI Peter <zcott.at.o2.pl>
+BECH Tom <tom.bech.at.gmail.com>
