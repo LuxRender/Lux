@@ -442,7 +442,7 @@ void RenderPause() {
 
 void AddThread() {
 	gui_nrthreads++;
-	setInfo_render();
+	//setInfo_render();
 	if (luxAddThread() == 1) {
 		gui_nrthreads--;
 		setInfo_render();
