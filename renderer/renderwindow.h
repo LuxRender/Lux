@@ -29,7 +29,7 @@
 #include <FL/fl_draw.H>
 
 #ifdef LUX_USE_OPENGL
-#include <FL/Fl_Gl_Window.h>
+#include <FL/Fl_Gl_Window.H>
 #include <FL/gl.h>
 #endif // LUX_USE_OPENGL
 
