@@ -372,7 +372,7 @@ TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${P
 ENDIF(APPLE)
 
 #Here we build the GUI executable
-ADD_EXECUTABLE(luxrender renderer/luxgui.cpp)
+ADD_EXECUTABLE(luxrender renderer/luxgui.cpp renderer/renderwindow.cpp)
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include)
 
 IF(APPLE)
