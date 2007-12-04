@@ -48,6 +48,6 @@ private:
     int xPos, yPos, xPixelSamples, yPixelSamples;
     float *imageSamples, *lensSamples, *timeSamples;
     int samplePos;
-	u_int TotalPixels;
-	PixelSampler* PixelSampler;
+  u_int TotalPixels;
+  PixelSampler* pixelSampler;
 };

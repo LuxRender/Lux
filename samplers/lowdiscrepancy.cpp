@@ -40,13 +40,13 @@ LDSampler::LDSampler(int xstart, int xend,
 
 	// Initialize PixelSampler
 	if(pixelsampler == "vegas")
-		PixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "random")
-		PixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
+		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
 	else
-		PixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 
-	TotalPixels = PixelSampler->GetTotalPixels();
+	TotalPixels = pixelSampler->GetTotalPixels();
 
 	// check/round pixelsamples to power of 2
 	if (!IsPowerOf2(ps)) {
@@ -84,7 +84,7 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	}
 	if (samplePos == pixelSamples) {
 		// fetch next pixel from pixelsampler
-		if(!PixelSampler->GetNextPixel(xPos, yPos, use_pos))
+		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
 			return false;
 		// reset so scene knows to increment
 		*use_pos = 0;

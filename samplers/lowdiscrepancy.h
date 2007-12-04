@@ -24,6 +24,7 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
+
 // LDSampler Declarations
 class LDSampler : public Sampler {
 public:
@@ -56,5 +57,5 @@ private:
 	float **oneDSamples, **twoDSamples;
 	int n1D, n2D;
 	u_int TotalPixels;
-	PixelSampler* PixelSampler;
+	PixelSampler* pixelSampler;
 };

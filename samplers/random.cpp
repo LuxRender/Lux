@@ -41,13 +41,13 @@ RandomSampler::RandomSampler(int xstart, int xend,
 
 	// Initialize PixelSampler
 	if(pixelsampler == "vegas")
-		PixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "random")
-		PixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
+		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
 	else
-		PixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 
-	TotalPixels = PixelSampler->GetTotalPixels();
+	TotalPixels = pixelSampler->GetTotalPixels();
 
     // Get storage for a pixel's worth of stratified samples
     imageSamples = (float *)AllocAligned(5 * xPixelSamples *
@@ -86,7 +86,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
     if (samplePos == xPixelSamples * yPixelSamples)
     {
 		// fetch next pixel from pixelsampler
-		if(!PixelSampler->GetNextPixel(xPos, yPos, use_pos))
+		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
 			return false;
 		// reset so scene knows to increment
 		*use_pos = 0;

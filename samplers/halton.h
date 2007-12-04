@@ -56,5 +56,5 @@ private:
 	float **oneDSamples, **twoDSamples;
 	int n1D, n2D;
 	u_int TotalPixels;
-	PixelSampler* PixelSampler;
+	PixelSampler* pixelSampler;
 };
