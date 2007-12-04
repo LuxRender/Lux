@@ -101,7 +101,8 @@ Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
 				rd.ry.d = wi -
 				          dwody + 2 * Vector(Dot(wo, n) * dndy +
 						  dDNdy * n);
-				L += scene->Li(rd, sample) * f * AbsDot(wi, n);
+				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
+				L += Li(arena, scene, rd, sample, alpha) * f * AbsDot(wi, n);
 			}
 			f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
@@ -129,7 +130,8 @@ Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
 				
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
-				L += scene->Li(rd, sample) * f * AbsDot(wi, n);
+				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
+				L += Li(arena, scene, rd, sample, alpha) * f * AbsDot(wi, n);
 			}
 		}
 		--rayDepth;

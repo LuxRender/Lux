@@ -19,46 +19,26 @@
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
-
-// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
-
-/*
-// bestcandidate.cpp*
+ 
+// linear.cpp*
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
-// BestCandidate Sampling Constants
-#define SQRT_SAMPLE_TABLE_SIZE 64
-#define SAMPLE_TABLE_SIZE (SQRT_SAMPLE_TABLE_SIZE * \
-                           SQRT_SAMPLE_TABLE_SIZE)
-// BestCandidateSampler Declarations
-class BestCandidateSampler : public Sampler {
-public:
-	// BestCandidateSampler Public Methods
-	BestCandidateSampler(int xstart, int xend,
-	                     int ystart, int yend,
-						 int pixelsamples);
-	~BestCandidateSampler() {
-		delete[] strat2D;
-		// so we leak on the individual elements of these arrays.  so it goes...
-		delete[] oneDSamples;
-		delete[] twoDSamples;
-	}
-	int RoundSize(int size) const {
-		int root = Ceil2Int(sqrtf((float)size - .5f));
-		return root*root;
-	}
-	bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual BestCandidateSampler* clone() const; // Lux (copy) constructor for multithreading
 
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+// LinearPixelSampler Declarations
+class LinearPixelSampler : public PixelSampler {
+public:
+	// LinearPixelSampler Public Methods
+	LinearPixelSampler(int xstart, int xend,
+	          int ystart, int yend);
+	~LinearPixelSampler() {
+	}
+
+	u_int GetTotalPixels();
+	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
+
 private:
-	// BestCandidateSampler Private Data
-	int tableOffset;
-	float xTableCorner, yTableCorner, tableWidth;
-	static const float sampleTable[SAMPLE_TABLE_SIZE][5];
-	float **oneDSamples, **twoDSamples;
-	int *strat2D;
-	float sampleOffsets[3];
+	// LinearPixelSampler Private Data
+	u_int TotalPx;
+	vector<PxLoc> Pxa; // pixel coordinate cache
 };
-*/

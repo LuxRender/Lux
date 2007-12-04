@@ -34,12 +34,12 @@ public:
 	        int ystart, int yend,
 			int spp);
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
+	virtual u_int GetTotalSamplePos() = 0;
 	int TotalSamples() const {
 		return samplesPerPixel *
 			(xPixelEnd - xPixelStart) *
 			(yPixelEnd - yPixelStart);
 	}
-	virtual void setSeed( u_int s ) = 0;
 	virtual int RoundSize(int size) const = 0;
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 	// Sampler Public Data
@@ -233,5 +233,17 @@ public:
 	virtual void GetNext(float& bs1, float& bs2, float& bcs, int pathLength) = 0;
 	virtual void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha, Film *film) = 0;
+};
+// PxLoc X and Y pixel coordinate struct
+struct PxLoc {
+	unsigned short x;
+	unsigned short y;
+};
+class PixelSampler {
+public:
+	PixelSampler() {}
+	virtual ~PixelSampler() {}
+	virtual u_int GetTotalPixels() = 0;
+	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos) = 0;
 };
 #endif // LUX_SAMPLING_H

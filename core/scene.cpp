@@ -121,7 +121,6 @@ void Scene::SignalThreads(int signal)
 {
 	for(unsigned int i=0;i<renderThreads.size();i++)
 	{
-		//std::cout<<"signaling thread "<<i<<" message:"<<signal<<std::endl;
 		renderThreads[i]->signal=signal;
 	}	
 	CurThreadSignal = signal;
@@ -134,7 +133,8 @@ void RenderThread::render(RenderThread *myThread)
 	
 	// allocate sample pos
 	u_int *useSampPos = new u_int();
-	*useSampPos = 1;
+	*useSampPos = 0;
+	u_int maxSampPos = myThread->sampler->GetTotalSamplePos();
 
 	// Trace rays: The main loop
 	while (true) {
@@ -156,8 +156,6 @@ void RenderThread::render(RenderThread *myThread)
 			boost::xtime_get(&xt, boost::TIME_UTC);
 			xt.sec += 1;
 			boost::thread::sleep(xt);
-			
-			//std::cout<<"thread "<<myThread->n<<" paused"<<std::endl;
 		}
 		if(myThread->signal== RenderThread::SIG_EXIT)
 			break;
@@ -178,8 +176,6 @@ void RenderThread::render(RenderThread *myThread)
 			// Evaluate radiance along camera ray
 			float alpha;
 			Spectrum Ls = 0.f;
-
-			//Ls = rayWeight * scene->Li(ray, sample, &alpha); don't use
 			Spectrum Lo = myThread->surfaceIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
@@ -204,10 +200,10 @@ void RenderThread::render(RenderThread *myThread)
 		// update samples statistics
 		myThread->stat_Samples++;
 
-		// increment (locked) global sample pos if necessary
-		if(*useSampPos == 0) {
+		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
+		if(*useSampPos == 0 && maxSampPos != 0) {
 			boost::mutex::scoped_lock lock(sampPosMutex);
-			if( sampPos >= 4294967295 ) // u_int size -1
+			if( sampPos == maxSampPos )
 				sampPos = 0;
 			sampPos++;
 			*useSampPos = sampPos;
@@ -215,14 +211,11 @@ void RenderThread::render(RenderThread *myThread)
 	}
 
 	delete useSampPos;
-	//printf("THR%i: Exiting.\n", myThread->n+1);
     return;
 }
 
 int Scene::CreateRenderThread()
 {
-		//printf("CTL: Adding thread...\n");	
-		//std::cout<<CurThreadSignal<<std::endl;
 		RenderThread *rt=new  RenderThread (renderThreads.size(),
 										CurThreadSignal,
 										(SurfaceIntegrator*)surfaceIntegrator->clone(), 
@@ -234,9 +227,7 @@ int Scene::CreateRenderThread()
 		
 		renderThreads.push_back(rt);									
 		rt->thread=new boost::thread(boost::bind(RenderThread::render,rt));
-		//threadGroup.add_thread(rt->thread);
-		
-		//printf("CTL: Done.\n");
+
 		return 0;
 }
 
@@ -259,7 +250,6 @@ void Scene::RemoveRenderThread()
 
 void Scene::Render() {
 	// integrator preprocessing
-	//printf("CTL: Preprocessing integrators...\n");
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
@@ -277,28 +267,11 @@ void Scene::Render() {
 	//add a thread
 	CreateRenderThread();
 	
-	//launch the render
-	
-/*
-	//while(true)
-	while(renderThreads.size()==0) //wait for at least a thread to start
-	{
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		xt.sec += 1;
-		boost::thread::sleep(xt);
-	}
-	
-	std::cout<<"waiting fro threads to join..."<<std::endl;*/
-	//threadGroup.join_all();
-	
 	//wait all threads to finish their job
 	for(unsigned int i=0;i<renderThreads.size();i++)
 	{
 		renderThreads[i]->thread->join();
 	}
-	//std::cout<<"all threads joined"<<std::endl;
-
 
 	// Store final image
 	camera->film->WriteImage();
@@ -341,7 +314,7 @@ const BBox &Scene::WorldBound() const {
 }
 Spectrum Scene::Li(const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
-//  NOTE - radiance - leave these off for now, should'nt be used
+//  NOTE - radiance - leave these off for now, should'nt be used (broken with multithreading)
 //  TODO - radiance - cleanup / reimplement into integrators
 //	Spectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
 //	Spectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);

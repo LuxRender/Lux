@@ -23,6 +23,9 @@
 // halton.cpp*
 #include "halton.h"
 #include "error.h"
+#include "vegas.h"
+#include "randompx.h"
+#include "linear.h"
 // Lux (copy) constructor
 HaltonSampler* HaltonSampler::clone() const
  {
@@ -30,15 +33,22 @@ HaltonSampler* HaltonSampler::clone() const
  }
 // HaltonSampler Method Definitions
 HaltonSampler::HaltonSampler(int xstart, int xend,
-		int ystart, int yend, int ps, bool prog)
+		int ystart, int yend, int ps, string pixelsampler)
 	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
 
-	fs_progressive = prog;
-	fs_scrambleX = lux::random::uintValue();
-	fs_scrambleY = lux::random::uintValue();
+	// Initialize PixelSampler
+	if(pixelsampler == "vegas")
+		PixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+	else if(pixelsampler == "random")
+		PixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
+	else
+		PixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 
+	TotalPixels = PixelSampler->GetTotalPixels();
+
+	// check/round pixelsamples to power of 2
 	if (!IsPowerOf2(ps)) {
 		luxError(LUX_CONSISTENCY,LUX_WARNING,"Pixel samples being rounded up to power of 2");
 		pixelSamples = RoundUpPow2(ps);
@@ -51,6 +61,11 @@ HaltonSampler::HaltonSampler(int xstart, int xend,
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
 	n1D = n2D = 0;
+}
+
+// return TotalPixels so scene shared thread increment knows total sample positions
+u_int HaltonSampler::GetTotalSamplePos() {
+	return TotalPixels;
 }
 
 bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
@@ -68,29 +83,12 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		                               pixelSamples];
 	}
 	if (samplePos == pixelSamples) {
-		if(fs_progressive) {
-			// Progressive film sampling (Halton-zaremba sequence)
-			// shuffle
-			u_int shuffle = Floor2Int(lux::random::floatValue() * 2 * pixelSamples);
+		// fetch next pixel from pixelsampler
+		if(!PixelSampler->GetNextPixel(xPos, yPos, use_pos))
+			return false;
+		// reset so scene knows to increment
+		*use_pos = 0;
 
-			// generate film pixel coordinates
-			xPos = xPixelStart + 
-				Ceil2Int( FoldedRadicalInverse( *use_pos + shuffle, 2 ) * xPixelEnd );
-			yPos = yPixelStart + 
-				Ceil2Int( FoldedRadicalInverse( *use_pos + shuffle, 3 ) * yPixelEnd );
-
-			// reset so scene knows to increment
-			*use_pos = 0;
-		} else {
-			// Linear/finite film sampling
-			// Advance to next pixel for low-discrepancy sampling
-			if (++xPos == xPixelEnd) {
-				xPos = xPixelStart;
-				++yPos;
-			}
-			if (yPos == yPixelEnd)
-				return false;
-		}
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
 		HaltonShuffleScrambled2D(1, pixelSamples, imageSamples);
@@ -126,7 +124,7 @@ Sampler* HaltonSampler::CreateSampler(const ParamSet &params, const Film *film) 
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	bool prog = params.FindOneBool("progressive", false);
+	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
 	int nsamp = params.FindOneInt("pixelsamples", 4);
-	return new HaltonSampler(xstart, xend, ystart, yend, nsamp, prog);
+	return new HaltonSampler(xstart, xend, ystart, yend, nsamp, pixelsampler);
 }

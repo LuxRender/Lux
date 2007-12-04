@@ -19,46 +19,53 @@
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
+ 
+// vegas.cpp*
+#include "vegas.h"
+#include "error.h"
+// VegasPixelSampler Method Definitions
+VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
+		int ystart, int yend) {
+	u_int xPos = xstart - 1;
+	u_int yPos = ystart;
 
-// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
-
-/*
-// bestcandidate.cpp*
-#include "sampling.h"
-#include "paramset.h"
-#include "film.h"
-// BestCandidate Sampling Constants
-#define SQRT_SAMPLE_TABLE_SIZE 64
-#define SAMPLE_TABLE_SIZE (SQRT_SAMPLE_TABLE_SIZE * \
-                           SQRT_SAMPLE_TABLE_SIZE)
-// BestCandidateSampler Declarations
-class BestCandidateSampler : public Sampler {
-public:
-	// BestCandidateSampler Public Methods
-	BestCandidateSampler(int xstart, int xend,
-	                     int ystart, int yend,
-						 int pixelsamples);
-	~BestCandidateSampler() {
-		delete[] strat2D;
-		// so we leak on the individual elements of these arrays.  so it goes...
-		delete[] oneDSamples;
-		delete[] twoDSamples;
+	printf("VegasPixelSampler: Shuffling...\n");
+	// fill Pxa array in film pixel order
+	unsigned short int x = (unsigned short int) xPos;
+	unsigned short int y = (unsigned short int) yPos;
+	TotalPx = 0;
+	while(true) {
+		PxLoc px;
+		px.x = x; px.y = y;
+		Pxa.push_back(px);
+		x++;
+		if(x == xend) {
+			x = 0;
+			y++;
+			if(y == yend) break;
+		}
+		TotalPx++;
 	}
-	int RoundSize(int size) const {
-		int root = Ceil2Int(sqrtf((float)size - .5f));
-		return root*root;
-	}
-	bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual BestCandidateSampler* clone() const; // Lux (copy) constructor for multithreading
 
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-private:
-	// BestCandidateSampler Private Data
-	int tableOffset;
-	float xTableCorner, yTableCorner, tableWidth;
-	static const float sampleTable[SAMPLE_TABLE_SIZE][5];
-	float **oneDSamples, **twoDSamples;
-	int *strat2D;
-	float sampleOffsets[3];
-};
-*/
+	printf("VegasPixelSampler: elements = %i\n", TotalPx);
+
+	// Shuffle elements by randomly exchanging each with one other.
+    for (u_int i=0; i<TotalPx; i++) {
+		u_int r = Ceil2Int( lux::random::floatValue() * TotalPx );
+		// swap
+		unsigned short int temp = Pxa[i].x; Pxa[i].x = Pxa[r].x; Pxa[r].x = temp;
+		temp = Pxa[i].y; Pxa[i].y = Pxa[r].y; Pxa[r].y = temp;
+    } 
+
+	printf("VegasPixelSampler: Done shuffling...\n");
+}
+
+u_int VegasPixelSampler::GetTotalPixels() {
+	return TotalPx;
+}
+
+bool VegasPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
+	xPos = Pxa[*use_pos].x;
+	yPos = Pxa[*use_pos].y;
+	return true;
+}

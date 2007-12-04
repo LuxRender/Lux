@@ -22,13 +22,16 @@
 
 // random.cpp*
 #include "random.h"
+#include "vegas.h"
+#include "randompx.h"
+#include "linear.h"
 // Lux (copy) constructor
 RandomSampler* RandomSampler::clone() const
  {
    return new RandomSampler(*this);
  }
 RandomSampler::RandomSampler(int xstart, int xend,
-                             int ystart, int yend, int xs, int ys, bool prog)
+                             int ystart, int yend, int xs, int ys, string pixelsampler)
         : Sampler(xstart, xend, ystart, yend, xs * ys)
 {
     xPos = xPixelStart;
@@ -36,7 +39,15 @@ RandomSampler::RandomSampler(int xstart, int xend,
     xPixelSamples = xs;
     yPixelSamples = ys;
 
-	fs_progressive = prog;
+	// Initialize PixelSampler
+	if(pixelsampler == "vegas")
+		PixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+	else if(pixelsampler == "random")
+		PixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
+	else
+		PixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+
+	TotalPixels = PixelSampler->GetTotalPixels();
 
     // Get storage for a pixel's worth of stratified samples
     imageSamples = (float *)AllocAligned(5 * xPixelSamples *
@@ -64,27 +75,21 @@ RandomSampler::RandomSampler(int xstart, int xend,
     samplePos = 0;
 }
 
+// return TotalPixels so scene shared thread increment knows total sample positions
+u_int RandomSampler::GetTotalSamplePos() {
+	return TotalPixels;
+}
+
 bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
     // Compute new set of samples if needed for next pixel
     if (samplePos == xPixelSamples * yPixelSamples)
     {
-		if(fs_progressive) {
-			// Progressive film sampling (random)
-			xPos = xPixelStart + 
-				Ceil2Int( lux::random::floatValue() * xPixelEnd );
-			yPos = yPixelStart + 
-				Ceil2Int( lux::random::floatValue() * yPixelEnd );
-		} else {
-			// Linear/finite film sampling
-			// Advance to next pixel for stratified sampling
-			if (++xPos == xPixelEnd) {
-				xPos = xPixelStart;
-				++yPos;
-			}
-			if (yPos == yPixelEnd)
-				return false;
-		}
+		// fetch next pixel from pixelsampler
+		if(!PixelSampler->GetNextPixel(xPos, yPos, use_pos))
+			return false;
+		// reset so scene knows to increment
+		*use_pos = 0;
 
         for (int i = 0;
                 i < 5 * xPixelSamples * yPixelSamples;
@@ -124,10 +129,10 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
     int xsamp = params.FindOneInt("xsamples", 2);
     int ysamp = params.FindOneInt("ysamples", 2);
-	bool prog = params.FindOneBool("progressive", false);
+	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,
                              ystart, yend,
-                             xsamp, ysamp, prog);
+                             xsamp, ysamp, pixelsampler);
 }

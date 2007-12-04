@@ -30,7 +30,7 @@ public:
 	// HaltonSampler Public Methods
 	HaltonSampler(int xstart, int xend,
 	          int ystart, int yend,
-			  int nsamp, bool prog);
+			  int nsamp, string pixelsampler);
 	~HaltonSampler() {
 		delete[] imageSamples;
 		for (int i = 0; i < n1D; ++i)
@@ -40,10 +40,10 @@ public:
 		delete[] oneDSamples;
 		delete[] twoDSamples;
 	}
-	void setSeed( u_int s ) { /* TODO add different seeds and new backend random generator for threads - radiance */ }
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
 	}
+	u_int GetTotalSamplePos();
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual HaltonSampler* clone() const; // Lux (copy) constructor for multithreading
 
@@ -55,6 +55,6 @@ private:
 	float *imageSamples, *lensSamples, *timeSamples;
 	float **oneDSamples, **twoDSamples;
 	int n1D, n2D;
-	bool fs_progressive;
-	u_int fs_pos, fs_scrambleX, fs_scrambleY;
+	u_int TotalPixels;
+	PixelSampler* PixelSampler;
 };

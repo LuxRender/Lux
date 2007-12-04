@@ -28,17 +28,17 @@ class RandomSampler : public Sampler
 {
 public:
     RandomSampler(int xstart, int xend, int ystart,
-                  int yend, int xs, int ys, bool prog);
+                  int yend, int xs, int ys, string pixelsampler);
     ~RandomSampler()
     {
         FreeAligned(imageSamples);
     }
+	u_int GetTotalSamplePos();
     bool GetNextSample(Sample *sample, u_int *use_pos);
     int RoundSize(int sz) const
     {
         return sz;
     }
-	void setSeed( u_int s ) { /* TODO add different seeds and new backend random generator for threads - radiance */ }
     virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
     static Sampler *CreateSampler(const ParamSet &params, const Film *film);
@@ -48,5 +48,6 @@ private:
     int xPos, yPos, xPixelSamples, yPixelSamples;
     float *imageSamples, *lensSamples, *timeSamples;
     int samplePos;
-	bool fs_progressive;
+	u_int TotalPixels;
+	PixelSampler* PixelSampler;
 };

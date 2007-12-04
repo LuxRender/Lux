@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
+
+/*
 // stratified.cpp*
 #include "sampling.h"
 #include "paramset.h"
@@ -37,7 +40,6 @@ public:
 	~StratifiedSampler() {
 		FreeAligned(imageSamples);
 	}
-	void setSeed( u_int s ) { /* TODO add different seeds and new backend random generator for threads - radiance */ }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual StratifiedSampler* clone() const; // Lux (copy) constructor for multithreading
 
@@ -51,3 +53,4 @@ private:
 	int samplePos;
 	bool fs_progressive;
 };
+*/

@@ -20,8 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
+
+/*
 // bestcandidate.cpp*
 #include "bestcandidate.h"
+#include "vegas.h"
 // Lux (copy) constructor
 BestCandidateSampler* BestCandidateSampler::clone() const
  {
@@ -41,10 +45,6 @@ BestCandidateSampler::
 	// _BestCandidateSampler_ constructor implementation
 	oneDSamples = twoDSamples = NULL;
 	strat2D = NULL;
-}
-void BestCandidateSampler::setSeed( u_int s )
-{
-    //fs_scramble = s;
 }
 
 #include "sampledata.h"
@@ -138,3 +138,4 @@ Sampler* BestCandidateSampler::CreateSampler(const ParamSet &params, const Film 
 	int nsamp = params.FindOneInt("pixelsamples", 4);
 	return new BestCandidateSampler(xstart, xend, ystart, yend, nsamp);
 }
+*/

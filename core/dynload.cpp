@@ -51,11 +51,11 @@
 #include "sphere.h"
 #include "trianglemesh.h"
 
-#include "bestcandidate.h"
+//#include "bestcandidate.h"
 #include "lowdiscrepancy.h"
 #include "halton.h"
 #include "random.h"
-#include "stratified.h"
+//#include "stratified.h"
 
 #include "environment.h"
 #include "orthographic.h"
@@ -1132,21 +1132,9 @@ static string SearchPath(const string &searchpath,
 }*/
     //Sampler *ret;
 
-    if(name=="bestcandidate")
-    {
-        Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
-        paramSet.ReportUnused();
-        return ret;
-    }
     if(name=="lowdiscrepancy")
     {
         Sampler *ret=LDSampler::CreateSampler(paramSet, film);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="halton")
-    {
-        Sampler *ret=HaltonSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
@@ -1156,12 +1144,27 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
+    if(name=="halton")
+    {
+        Sampler *ret=HaltonSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
+	// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
+/*
+    if(name=="bestcandidate")
+    {
+        Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    } 
     if(name=="stratified")
     {
         Sampler *ret=StratifiedSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
-    }
+    } */
 
     //Error("Static loading of sampler '%s' failed.",name.c_str());
     std::stringstream ss;

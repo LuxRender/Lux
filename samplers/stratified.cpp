@@ -20,8 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
+
+/*
 // stratified.cpp*
 #include "stratified.h"
+#include "vegas.h"
 // Lux (copy) constructor
 StratifiedSampler* StratifiedSampler::clone() const
  {
@@ -29,7 +33,7 @@ StratifiedSampler* StratifiedSampler::clone() const
  }
 // StratifiedSampler Method Definitions
 StratifiedSampler::StratifiedSampler(int xstart, int xend,
-		int ystart, int yend, int xs, int ys, bool jitter, bool prog)
+		int ystart, int yend, int xs, int ys, bool jitter, string pixelsampler)
 	: Sampler(xstart, xend, ystart, yend, xs * ys) {
 	jitterSamples = jitter;
 	xPos = xPixelStart;
@@ -133,3 +137,4 @@ Sampler* StratifiedSampler::CreateSampler(const ParamSet &params, const Film *fi
 	return new StratifiedSampler(xstart, xend, ystart, yend, xsamp, ysamp,
 		jitter, prog);
 }
+*/
