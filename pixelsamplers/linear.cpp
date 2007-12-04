@@ -29,7 +29,6 @@ LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 	u_int xPos = xstart - 1;
 	u_int yPos = ystart;
 
-	printf("VegasPixelSampler: Shuffling...\n");
 	// fill Pxa array in film pixel order
 	unsigned short int x = (unsigned short int) xPos;
 	unsigned short int y = (unsigned short int) yPos;

@@ -29,7 +29,6 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 	u_int xPos = xstart - 1;
 	u_int yPos = ystart;
 
-	printf("VegasPixelSampler: Shuffling...\n");
 	// fill Pxa array in film pixel order
 	unsigned short int x = (unsigned short int) xPos;
 	unsigned short int y = (unsigned short int) yPos;
@@ -47,8 +46,6 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		TotalPx++;
 	}
 
-	printf("VegasPixelSampler: elements = %i\n", TotalPx);
-
 	// Shuffle elements by randomly exchanging each with one other.
     for (u_int i=0; i<TotalPx; i++) {
 		u_int r = Ceil2Int( lux::random::floatValue() * TotalPx );
@@ -56,8 +53,6 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		unsigned short int temp = Pxa[i].x; Pxa[i].x = Pxa[r].x; Pxa[r].x = temp;
 		temp = Pxa[i].y; Pxa[i].y = Pxa[r].y; Pxa[r].y = temp;
     } 
-
-	printf("VegasPixelSampler: Done shuffling...\n");
 }
 
 u_int VegasPixelSampler::GetTotalPixels() {
