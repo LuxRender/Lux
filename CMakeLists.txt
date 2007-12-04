@@ -68,7 +68,7 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 IF( FLTK_INCLUDE_DIR )
-	SET(FLTK_LIBRARIES fltk)
+	SET(FLTK_LIBRARIES fltk fltk_gl GL)
 ELSE( FLTK_INCLUDE_DIR )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
 ENDIF( FLTK_INCLUDE_DIR )
@@ -228,7 +228,7 @@ ENDIF(APPLE)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
-ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H -DLUX_USE_OPENGL)
 #ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 #ICC definitions
