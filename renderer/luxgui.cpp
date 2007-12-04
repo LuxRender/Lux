@@ -442,7 +442,7 @@ void RenderPause() {
 
 void AddThread() {
 	gui_nrthreads++;
-	//setInfo_render();
+	setInfo_render();
 	if (luxAddThread() == 1) {
 		gui_nrthreads--;
 		setInfo_render();
@@ -629,17 +629,12 @@ int main(int ac, char *av[]) {
 			}
 
 			//change the working directory
-			boost::filesystem::path fullPath (boost::filesystem::
-					initial_path ());
+			boost::filesystem::path fullPath (boost::filesystem::initial_path ());
 			fullPath =
 			boost::filesystem::system_complete (boost::filesystem::
-					path (v[0],
-							boost::
-							filesystem::
-							native));
+					path (v[0],	boost::filesystem::native));
 			strcpy (gui_current_scenefile, fullPath.leaf ().c_str ());
 			chdir (fullPath.branch_path ().string ().c_str ());
-			RenderScenefile ();
 		}
 
 		// create render window
@@ -648,6 +643,8 @@ int main(int ac, char *av[]) {
 		window = make_MainWindow(width, height, rgb_image, opengl_enabled);
 		setInfo_render();
 		window->show();
+
+		RenderScenefile();
 
 		// set timeouts
 		Fl::add_timeout(0.25, check_SceneReady);
