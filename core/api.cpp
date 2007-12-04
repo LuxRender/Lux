@@ -752,7 +752,7 @@ void luxErrorIgnore (int code, int severity, const char *message)
 void luxErrorPrint (int code, int severity, const char *message)
 {
     luxLastError=code;
-    std::cerr<<std::endl<<"[";
+    std::cerr<<"[";
 #ifndef WIN32 //windows does not support ANSI escape codes
     //set the color
     switch (severity)
