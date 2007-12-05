@@ -644,7 +644,8 @@ int main(int ac, char *av[]) {
 		setInfo_render();
 		window->show();
 
-		RenderScenefile();
+		if(gui_current_scenefile[0]!=0) //if we have a scene file
+			RenderScenefile();
 
 		// set timeouts
 		Fl::add_timeout(0.25, check_SceneReady);
