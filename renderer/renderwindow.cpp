@@ -53,6 +53,22 @@ void GlWindow::set_image(Fl_RGB_Image *img){
 	image_ptr = img;
 }
 
+void GlWindow::resize(int X,int Y,int W,int H){
+	//calculate new offset
+	offset_x+=(W-w())/2;
+	offset_y+=(H-h())/2;
+	//make sure new offset is in bounds
+	if((image_w-scale_xo)*scale+scale_xo2+offset_x-10<0)
+		offset_x=10-scale_xo2-(image_w-scale_xo)*scale;	
+	if((0-scale_xo)*scale+scale_xo2+offset_x+10>W-1)
+		offset_x=W-1-10-scale_xo2-(0-scale_xo)*scale;
+	if((image_h-scale_yo)*scale+scale_yo2+offset_y-10<0)
+		offset_y=10-scale_yo2-(image_h-scale_yo)*scale;
+	if((0-scale_yo)*scale+scale_yo2+offset_y+10>H-1)
+		offset_y=H-1-10-scale_yo2-(0-scale_yo)*scale;
+	Fl_Gl_Window::resize(X,Y,W,H);
+}
+
 int GlWindow::handle(int event){
 	if(event==FL_ENTER){
 		fl_cursor(FL_CURSOR_CROSS);

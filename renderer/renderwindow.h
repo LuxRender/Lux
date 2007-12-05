@@ -52,6 +52,7 @@ class GlWindow : public Fl_Gl_Window {
 	~GlWindow();
 	void update_image();
 	void set_image(Fl_RGB_Image *img);
+	void resize(int X,int Y,int W,int H);
 	int handle(int event);
 	void draw(void);
 };
@@ -65,7 +66,6 @@ class GlWindow {
 	~GlWindow(){};
 	void update_image(){};
 	void set_image(Fl_RGB_Image *img){};
-	int handle(int event){};
 	void draw(void){};
 };
 
