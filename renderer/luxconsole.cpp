@@ -21,6 +21,8 @@
  ***************************************************************************/
 
 //// luxgui.cpp*
+#define NDEBUG 1
+
 #include "lux.h"
 #include "api.h"
 #include "error.h"
@@ -29,6 +31,8 @@
 #include <fstream>
 #include <string>
 #include <exception>
+#include <ctime>
+#include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/xtime.hpp>
@@ -36,11 +40,25 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
+#include "include/asio.hpp"
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+#include "../core/paramset.h"
+#include <fstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+//#include <boost/archive/xml_oarchive.hpp>
+//#include <boost/archive/xml_iarchive.hpp>
+#include <boost/serialization/split_member.hpp>
+
+#include <iomanip>
+
 #ifdef WIN32
 #include "direct.h"
 #define chdir _chdir
 #endif
 
+using asio::ip::tcp;
 namespace po = boost::program_options;
 
 std::string sceneFileName;
@@ -73,6 +91,69 @@ void infoThread() {
 	}
 }
 
+
+void startServer() {
+	std::cout<<"luxconsole: launching server mode..."<<std::endl;
+	try
+	{
+		asio::io_service io_service;
+
+		tcp::endpoint endpoint(tcp::v4(), 18018);
+		tcp::acceptor acceptor(io_service, endpoint);
+
+		for (;;)
+		{
+			tcp::iostream stream;
+			acceptor.accept(*stream.rdbuf());
+
+			//reading the command
+			std::string command;
+			while(std::getline(stream, command))
+			{
+				std::cout<<"server processing command :"<<command<<std::endl;
+				//processing the command
+				if(command=="luxInit")
+				{
+					luxInit();
+				}
+				else if(command=="luxLookAt")
+				{
+					float ex, ey, ez, lx, ly, lz, ux, uy, uz;
+					stream>>ex;
+					stream>>ey;
+					stream>>ez;
+					stream>>lx;
+					stream>>ly;
+					stream>>lz;
+					stream>>ux;
+					stream>>uy;
+					stream>>uz;
+					std::cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<std::endl;
+					luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
+				}
+				else if(command=="luxCamera") //luxCamera(const string &, const ParamSet &cameraParams)
+				{
+					std::string type;
+					ParamSet cameraParams;
+					stream>>type;
+					boost::archive::text_iarchive ia(stream);
+					ia>>cameraParams;
+					std::cout<<"params :"<<type<<", "<<cameraParams.ToString()<<std::endl;
+					luxCamera(type,cameraParams);
+				}
+
+				std::cout<<"command processed"<<std::endl;
+				//END OF COMMAND PROCESSING
+			}
+		}
+
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+}
+
 int main(int ac, char *av[]) {
 	/*
 	 // Print welcome banner
@@ -82,6 +163,45 @@ int main(int ac, char *av[]) {
 	 printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");    
 	 fflush(stdout);
 	 */
+	
+	/*
+	ParamSet p;
+	bool j=true;
+	int i=45;
+	std::string s("yeyooolooo");
+
+	//Point p(3,4.121212545454548787878787,5);
+
+	//std::cout<<p.y<<std::endl;
+
+	p.AddBool("monbooleen", &j);
+	p.AddInt("monint", &i);
+
+	//std::cout<<p.ToString()<<std::endl;
+
+	const ParamSetItem<std::string> pi("mystring", &s, 1);
+
+	std::ofstream ofs("filename");
+	//save to archive
+	{
+		const ParamSet cp(p);
+		ofs.setf(std::ios::scientific, std::ios::floatfield);
+		ofs.precision(16);
+		boost::archive::text_oarchive oa(ofs);
+		oa<<cp;
+	}
+
+	Point q;
+
+	//read from archive
+
+	//ParamSetItem<std::string> rpsi;
+	ParamSet rpsi;
+	std::ifstream ifs("filename", std::ios::binary);
+	boost::archive::text_iarchive ia(ifs);
+	ia>>rpsi;
+	//std::cout.precision(24);
+	std::cout<<"read "<<rpsi.ToString()<<std::endl;*/
 
 	try
 	{
@@ -90,15 +210,16 @@ int main(int ac, char *av[]) {
 		// allowed only on command line
 		po::options_description generic ("Generic options");
 		generic.add_options ()
-		("version,v", "print version string") ("help", "produce help message");
+		("version,v", "print version string") ("help", "produce help message") ("server","Launch in server mode");
 
 		// Declare a group of options that will be
 		// allowed both on command line and in
 		// config file
 		po::options_description config ("Configuration");
 		config.add_options ()
-		("threads,t", po::value < int >(),
-				"Specify the number of threads that Lux will run in parallel.");
+		("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
+		("useserver,u", po::value < std::string >(), "Specify the adress of a rendering server to use.")
+		;
 
 		// Hidden options, will be allowed both on command line and
 		// in config file, but will not be shown to the user.
@@ -150,6 +271,40 @@ int main(int ac, char *av[]) {
 			threads=1;;
 		}
 
+		if (vm.count("useserver"))
+		{
+			std::string name=vm["useserver"].as<std::string>();
+			std::cout<<"connecting to "<<name<<std::endl;
+			try {
+
+				tcp::iostream s(name.c_str(), "18018");
+				/*
+				 std::string line;
+				 std::getline(s, line);
+				 std::cout << line << std::endl;*/
+
+				//send the command
+				s<<"luxInit"<<std::endl;
+				s<<"luxLookAt"<<std::endl<<0<<' '<<10<<' '<<100<<' '<<0<<' '<<-1<<' '<<0<<' '<<0<<' '<<1<<' '<<0;
+
+				{
+					ParamSet p;
+					float f=30;
+					p.AddFloat("fov",&f,1);
+					const ParamSet cp(p);
+					s<<"luxCamera"<<std::endl<<"perspective ";
+					boost::archive::text_oarchive oa(s);
+					oa<<cp;
+				}
+
+			}
+			catch (std::exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+			}
+
+		}
+
 		if (vm.count ("input-file"))
 		{
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
@@ -189,6 +344,10 @@ int main(int ac, char *av[]) {
 				t.join();
 			}
 
+		}
+		else if (vm.count ("server"))
+		{
+			startServer();
 		}
 		else
 		{
