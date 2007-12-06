@@ -35,6 +35,14 @@ public:
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = v;
 	}
+	
+	template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+			for (int i = 0; i < COLOR_SAMPLES; ++i)
+				ar & c[i];
+		}
+	
 	Spectrum(float cs[COLOR_SAMPLES]) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = cs[i];

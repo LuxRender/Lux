@@ -89,6 +89,14 @@ public:
 	explicit Vector(const Normal &n);
 	// Vector Public Data
 	float x, y, z;
+	
+	template<class Archive>
+			void serialize(Archive & ar, const unsigned int version)
+			{
+				ar & x;
+				ar & y;
+				ar & z;
+			}
 };
 
 inline ostream &operator<<(ostream &os, const Vector &v) {

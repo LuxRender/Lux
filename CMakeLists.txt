@@ -102,7 +102,7 @@ ELSE(APPLE)
 	IF(Boost_FOUND)
 		MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
 		MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
-		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt)
+		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt)
 	ELSE(Boost_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find Boost")
 	ENDIF(Boost_FOUND)
@@ -228,8 +228,8 @@ ENDIF(APPLE)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
-ADD_DEFINITIONS(-O3 -Wall -DHAVE_PTHREAD_H -DLUX_USE_OPENGL)
-#ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS( -O3 -Wall -msse -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 #ICC definitions
 #ADD_DEFINITIONS(-O3 -ipo -no-prec-div -static -fp-model fast=2 -rcd)
@@ -345,6 +345,7 @@ INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
 					${CMAKE_SOURCE_DIR}/shapes ${CMAKE_SOURCE_DIR}/textures ${CMAKE_SOURCE_DIR}/tonemaps
 					${CMAKE_SOURCE_DIR}/volumes ${CMAKE_SOURCE_DIR}/integrationsamplers ${CMAKE_SOURCE_DIR}/pixelsamplers
+					${CMAKE_SOURCE_DIR}/renderer/include
 					${CMAKE_BINARY_DIR}
 					)
 

@@ -23,6 +23,13 @@
 #ifndef LUX_PARAMSET_H
 #define LUX_PARAMSET_H
 // paramset.h*
+#include <fstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/split_member.hpp>
+
 #include "lux.h"
 #include "geometry.h"
 #include "texture.h"
@@ -57,6 +64,8 @@ using std::map;
 	return d
 // ParamSet Declarations
 class  ParamSet {
+	friend class boost::serialization::access;
+	
 public:
 	// ParamSet Public Methods
 	ParamSet() { }
@@ -121,6 +130,21 @@ public:
 	}
 	void Clear();
 	string ToString() const;
+	
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & ints;
+		ar & bools;
+		ar & floats;
+		ar & points;
+		ar & vectors;
+		ar & normals;
+		ar & spectra;
+		ar & strings;
+		ar & textures;
+	}
+	
 private:
 	// ParamSet Data
 	vector<ParamSetItem<int> *> ints;
@@ -135,15 +159,46 @@ private:
 };
 template <class T> struct ParamSetItem {
 	// ParamSetItem Public Methods
+	
 	ParamSetItem<T> *Clone() const {
 		return new ParamSetItem<T>(name, data, nItems);
 	}
+	ParamSetItem() { data=0; }
 	ParamSetItem(const string &name, const T *val, int nItems = 1);
 	~ParamSetItem() {
 
+		if(data!=0)
 	delete[] data;
 
 	}
+	
+	template<class Archive>
+				void save(Archive & ar, const unsigned int version) const
+				{
+					ar & name;
+					ar & nItems;
+								
+					for(int i=0;i<nItems;i++)
+							ar & data[i];
+								
+					ar & lookedUp;
+				}
+		
+		template<class Archive>
+					void load(Archive & ar, const unsigned int version)
+					{
+			
+						ar & name;
+						ar & nItems;
+						if(data!=0) delete[] data;
+						data=new T[nItems];
+						for(int i=0;i<nItems;i++)
+								ar & data[i];
+									
+						ar & lookedUp;
+					}
+		BOOST_SERIALIZATION_SPLIT_MEMBER()
+	
 	// ParamSetItem Data
 	string name;
 	int nItems;
@@ -153,6 +208,17 @@ template <class T> struct ParamSetItem {
 
 };
 // ParamSetItem Methods
+/*
+template<>
+template<class Archive>
+		void ParamSetItem<int>::serialize(Archive & ar, const unsigned int version)
+		{
+			ar & name;
+			ar & nItems;
+			//ar & data;
+			ar & lookedUp;
+		}*/
+
 template <class T>
 inline ParamSetItem<T>::ParamSetItem(const string &n,
 							  const T *v,

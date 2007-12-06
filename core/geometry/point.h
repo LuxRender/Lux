@@ -79,6 +79,14 @@ public:
 	float &operator[](int i) { return (&x)[i]; }
 	// Point Public Data
 	float x,y,z;
+	
+	template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & x;
+			ar & y;
+			ar & z;
+		}
 };
 
 inline Vector::Vector(const Point &p)
