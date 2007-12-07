@@ -41,8 +41,6 @@
 #include <boost/filesystem/operations.hpp>
 
 #include "include/asio.hpp"
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/string.hpp>
 #include "../core/paramset.h"
 #include <fstream>
 #include <boost/archive/text_oarchive.hpp>
@@ -50,6 +48,8 @@
 //#include <boost/archive/xml_oarchive.hpp>
 //#include <boost/archive/xml_iarchive.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
 
 #include <iomanip>
 
@@ -260,7 +260,113 @@ void startServer() {
 	}
 }
 
+/*
+void test()
+{
+	//send the command
+	luxInit();
+	//LookAt 0 10 100   0 -1 0 0 1 0
+	luxLookAt(0,10,100,0,-1,0,0,1,0);
+	//Camera "perspective" "float fov" [30]
+	{
+		ParamSet p;
+		float f=30;
+		p.AddFloat("fov",&f,1);
+		const ParamSet cp(p);
+		luxCamera("perspective",cp);
+	}
+	//PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
+	{
+		ParamSet p;
+		float f=2;
+		p.AddFloat("xwidth",&f,1);
+		p.AddFloat("ywidth",&f,1);
+		const ParamSet cp(p);
+		luxPixelFilter("mitchell",cp);
+	}
+	//Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
+	{
+		ParamSet p;
+		bool prog=true;
+		int ps=4;
+		p.AddBool("progressive",&prog,1);
+		p.AddInt("pixelsamples",&ps,1);
+		const ParamSet cp(p);
+		luxSampler("lowdiscrepancy",cp);
+
+	}
+	//Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
+	{
+		ParamSet p;
+		int r=200;
+		p.AddInt("xresolution",&r,1);
+		p.AddInt("yresolution",&r,1);
+		const ParamSet cp(p);
+		luxFilm("multiimage",cp);
+
+	}
+	//
+	luxWorldBegin();
+	luxAttributeBegin();
+	luxCoordSysTransform("camera");
+
+	//LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
+	{
+		ParamSet p;
+		Point from(0,0,0),to(0,0,1);
+		float cs[]= {3,3,3};
+		Spectrum color(cs);
+		p.AddPoint("from",&from,1);
+		p.AddPoint("to",&to,1);
+		p.AddSpectrum("L",&color,1);
+		const ParamSet cp(p);
+		luxLightSource("distant",cp);
+
+	}
+
+	luxRotate(135,1,0,0);
+
+	//Texture "checks" "color" "checkerboard" 
+	//         "float uscale" [4] "float vscale" [4] 
+	//        "color tex1" [1 0 0] "color tex2" [0 0 1]
+	{
+		ParamSet p;
+		float scale=4;
+		float t1[]= {1,0,0},t2[]= {0,0,1};
+		Spectrum c1(t1),c2(t2);
+		p.AddFloat("uscale",&scale,1);
+		p.AddFloat("vscale",&scale,1);
+		p.AddSpectrum("tex1",&c1,1);
+		p.AddSpectrum("tex2",&c2,1);
+		const ParamSet cp(p);
+		luxTexture("checks", "color", "checkerboard",cp);
+
+	}
+	//Material "matte" 
+	//           "texture Kd" "checks"
+	{
+		ParamSet p;
+		p.AddTexture(std::string("Kd"),std::string("checks"));
+		const ParamSet cp(p);
+		luxMaterial("matte",cp);
+	}
+	//Shape "disk" "float radius" [20] "float height" [-1]
+	{
+		ParamSet p;
+		float r=20,h=-1;
+		p.AddFloat("radius",&r,1);
+		p.AddFloat("height",&h,1);
+		const ParamSet cp(p);
+		luxShape("disk",cp);
+
+	}
+	luxAttributeEnd();
+	luxWorldEnd();
+}*/
+
 int main(int ac, char *av[]) {
+	
+	//test();
 	/*
 	 // Print welcome banner
 	 printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
