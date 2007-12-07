@@ -3,3 +3,4 @@ luxlex.cpp
 luxparse.cpp
 luxparse.h
 luxparse.output
+luxparse.hpp
