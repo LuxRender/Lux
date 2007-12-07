@@ -228,7 +228,7 @@ ENDIF(APPLE)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
-ADD_DEFINITIONS( -O3 -Wall -msse -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+ADD_DEFINITIONS( -O3 -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 #ADD_DEFINITIONS(-O3 -Wall -msse -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 #ICC definitions
