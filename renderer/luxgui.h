@@ -35,6 +35,7 @@
 #include <FL/Fl_Value_Slider.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Image.H>
+#include <FL/x.H>
 
 #include "renderwindow.h"
 

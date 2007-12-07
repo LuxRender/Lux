@@ -42,6 +42,7 @@
 
 #ifdef WIN32
 #include "direct.h"
+#include "resource.h"
 #define chdir _chdir
 #endif
 
@@ -642,6 +643,10 @@ int main(int ac, char *av[]) {
 		int height = 600;
 		window = make_MainWindow(width, height, rgb_image, opengl_enabled);
 		setInfo_render();
+		#ifdef WIN32
+			//grab the icon resource and assign it to the window
+			window->icon((char *)LoadIcon(fl_display, MAKEINTRESOURCE(IDI_ICON1)));
+		#endif
 		window->show();
 
 		if(gui_current_scenefile[0]!=0) //if we have a scene file
