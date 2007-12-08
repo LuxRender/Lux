@@ -50,9 +50,131 @@ using std::map;
 
 using asio::ip::tcp;
 
-//jromang : here is the 'current' scene (we will need to replace that by a context
+//jromang : here is the 'current' scene (we will need to replace that by a context)
 Scene *luxCurrentScene=NULL;
-std::vector<std::string> luxServerList;
+static std::vector<std::string> luxServerList;
+
+void networkSend(const std::string &command)
+{
+	//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server != luxServerList.end(); ++server)
+	{
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl;
+		}
+		catch (std::exception& e)
+		{
+			luxError(LUX_SYSTEM,LUX_ERROR,e.what());
+		}
+	}
+}
+
+void networkSend(const std::string &command, const std::string &name, const ParamSet &params)
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl<<name<<' ';
+			boost::archive::text_oarchive oa(stream);
+			oa<<params;
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
+
+void networkSend(const std::string &command, const std::string &name)
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl<<name<<' ';
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
+
+void networkSend(const std::string &command, float x, float y, float z)
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl<<x<<' '<<y<<' '<<z<<' ';
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
+
+void networkSend(const std::string &command, float a, float x, float y, float z)
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl<<a<<' '<<x<<' '<<y<<' '<<z<<' ';
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
+
+void networkSend(const std::string &command, float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz)
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl<<ex<<' '<<ey<<' '<<ez<<' '<<lx<<' '<<ly<<' '<<lz<<' '<<ux<<' '<<uy<<' '<<uz<<' ';
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
+
+void networkSend(const std::string &command, float tr[16])
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl;//<<x<<' '<<y<<' '<<z<<' ';
+			for(int i=0;i<16;i++)
+				stream<<tr[i]<<' ';
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
+
+void networkSend(const std::string &command, const string &name, const string &type, const string &texname,
+		const ParamSet &params)
+{
+//Send command to the render servers
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			tcp::iostream stream((*server).c_str(), "18018");
+			stream<<command<<std::endl<<name<<' '<<type<<' '<<texname<<' ';
+			boost::archive::text_oarchive oa(stream);
+			oa<<params;
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}
+}
 
 // API Local Classes
 struct RenderOptions {
@@ -167,6 +289,8 @@ void luxAddServer(const string &name) {
 }
 
 void luxInit() {
+	networkSend("luxInit");
+	/*
 	//Send command to the render servers
 	for (vector<string>::iterator server = luxServerList.begin(); server
 			!= luxServerList.end(); ++server) {
@@ -180,7 +304,7 @@ void luxInit() {
 			//std::cerr << e.what() << std::endl;
 			luxError(LUX_SYSTEM,LUX_ERROR,e.what());
 		}
-	}
+	}*/
 
 	// System-wide initialization
 
@@ -208,20 +332,7 @@ void luxInit() {
 	graphicsState = GraphicsState();
 }
 void luxCleanup() {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			tcp::iostream stream((*server).c_str(), "18018");
-			stream<<"luxCleanup"<<std::endl;
-		}
-		catch (std::exception& e)
-		{
-			//std::cerr << e.what() << std::endl;
-			luxError(LUX_SYSTEM,LUX_ERROR,e.what());
-		}
-	}
+	networkSend("luxCleanup");
 
 	StatsCleanup();
 	// API Cleanup
@@ -235,14 +346,17 @@ void luxCleanup() {
 }
 void luxIdentity() {
 	VERIFY_INITIALIZED("Identity");
+	networkSend("luxIdentity");
 	curTransform = Transform();
 }
 void luxTranslate(float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Translate");
+	networkSend("luxTranslate",dx,dy,dz);
 	curTransform = curTransform * Translate(Vector(dx, dy, dz));
 }
 void luxTransform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
+	networkSend("luxTransform",tr);
 	Matrix4x4Ptr o(new Matrix4x4(
 			tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
@@ -252,6 +366,7 @@ void luxTransform(float tr[16]) {
 }
 void luxConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
+	networkSend("luxConcatTransform",tr);
 	Matrix4x4Ptr o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
@@ -260,94 +375,78 @@ void luxConcatTransform(float tr[16]) {
 }
 void luxRotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Rotate");
+	networkSend("luxRotate",angle,dx,dy,dz);
 	curTransform = curTransform * Rotate(angle, Vector(dx, dy, dz));
 }
 void luxScale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED("Scale");
+	networkSend("luxScale",sx,sy,sz);
 	curTransform = curTransform * Scale(sx, sy, sz);
 }
 void luxLookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 		float ux, float uy, float uz) {
 	VERIFY_INITIALIZED("LookAt");
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			tcp::iostream stream((*server).c_str(), "18018");
-			stream<<"luxLookAt"<<std::endl<<ex<<' '<<ey<<' '<<ez<<' '<<lx<<' '<<ly<<' '<<lz<<' '<<ux<<' '<<uy<<' '<<uz;
-		}
-		catch (std::exception& e)
-		{
-			//std::cerr << e.what() << std::endl;
-			luxError(LUX_SYSTEM,LUX_ERROR,e.what());
-		}
-	}
+	networkSend("luxLookAt",ex,ey,ez,lx,ly,lz,ux,uy,uz);
 
 	curTransform = curTransform * LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
 			Vector(ux, uy, uz));
 }
 void luxCoordinateSystem(const string &name) {
 	VERIFY_INITIALIZED("CoordinateSystem");
+	networkSend("luxCoordinateSystem",name);
 	namedCoordinateSystems[name] = curTransform;
 }
 void luxCoordSysTransform(const string &name) {
 	VERIFY_INITIALIZED("CoordSysTransform");
+	networkSend("luxCoordSysTransform",name);
 	if (namedCoordinateSystems.find(name) != namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[name];
 }
 void luxPixelFilter(const string &name, const ParamSet &params) {
-	VERIFY_OPTIONS("PixelFilter")
-	;
+	VERIFY_OPTIONS("PixelFilter");
+	networkSend("luxPixelFilter",name,params);
 	renderOptions->FilterName = name;
 	renderOptions->FilterParams = params;
 }
 void luxFilm(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film")
 	;
+	networkSend("luxFilm",type,params);
 	renderOptions->FilmParams = params;
 	renderOptions->FilmName = type;
 }
 void luxSampler(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Sampler")
 	;
+	networkSend("luxSampler",name,params);
 	renderOptions->SamplerName = name;
 	renderOptions->SamplerParams = params;
 }
 void luxAccelerator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Accelerator")
 	;
+	networkSend("luxAccelerator",name,params);
 	renderOptions->AcceleratorName = name;
 	renderOptions->AcceleratorParams = params;
 }
 void luxSurfaceIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("SurfaceIntegrator")
 	;
+	networkSend("luxSurfaceIntegrator",name,params);
 	renderOptions->SurfIntegratorName = name;
 	renderOptions->SurfIntegratorParams = params;
 }
 void luxVolumeIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("VolumeIntegrator")
 	;
+	networkSend("luxVolumeIntegrator",name,params);
 	renderOptions->VolIntegratorName = name;
 	renderOptions->VolIntegratorParams = params;
 }
 void luxCamera(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Camera")
 	;
-
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server != luxServerList.end(); ++server)
-	{
-		try
-		{
-			tcp::iostream stream((*server).c_str(), "18018");
-			stream<<"luxCamera"<<std::endl<<name<<' ';
-			boost::archive::text_oarchive oa(stream);
-			oa<<params;
-		}
-		catch (std::exception& e) { luxError(LUX_SYSTEM,LUX_ERROR,e.what()); }
-	}
+	networkSend("luxCamera",name,params);
 
 	renderOptions->CameraName = name;
 	renderOptions->CameraParams = params;
@@ -357,6 +456,7 @@ void luxCamera(const string &name, const ParamSet &params) {
 void luxWorldBegin() {
 	VERIFY_OPTIONS("WorldBegin")
 	;
+	networkSend("luxWorldBegin");
 	currentApiState = STATE_WORLD_BLOCK;
 	curTransform = Transform();
 	namedCoordinateSystems["world"] = curTransform;
@@ -364,12 +464,14 @@ void luxWorldBegin() {
 void luxAttributeBegin() {
 	VERIFY_WORLD("AttributeBegin")
 	;
+	networkSend("luxAttributeBegin");
 	pushedGraphicsStates.push_back(graphicsState);
 	pushedTransforms.push_back(curTransform);
 }
 void luxAttributeEnd() {
 	VERIFY_WORLD("AttributeEnd")
 	;
+	networkSend("luxAttributeEnd");
 	if (!pushedGraphicsStates.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxAttributeEnd() encountered. Ignoring it.");
 		return;
@@ -382,11 +484,13 @@ void luxAttributeEnd() {
 void luxTransformBegin() {
 	VERIFY_WORLD("TransformBegin")
 	;
+	networkSend("luxTransformBegin");
 	pushedTransforms.push_back(curTransform);
 }
 void luxTransformEnd() {
 	VERIFY_WORLD("TransformEnd")
 	;
+	networkSend("luxTransformEnd");
 	if (!pushedTransforms.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxTransformEnd() encountered. Ignoring it.");
 		return;
@@ -398,6 +502,8 @@ void luxTexture(const string &name, const string &type, const string &texname,
 		const ParamSet &params) {
 	VERIFY_WORLD("Texture")
 	;
+	networkSend("luxTexture",name, type, texname, params);
+	
 	TextureParams tp(params, params, graphicsState.floatTextures,
 			graphicsState.spectrumTextures);
 	if (type == "float") {
@@ -437,12 +543,14 @@ void luxTexture(const string &name, const string &type, const string &texname,
 void luxMaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Material")
 	;
+	networkSend("luxMaterial",name, params);
 	graphicsState.material = name;
 	graphicsState.materialParams = params;
 }
 void luxLightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("LightSource")
 	;
+	networkSend("luxLightSource",name, params);
 
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
@@ -518,6 +626,8 @@ void luxLightSource(const string &name, const ParamSet &params) {
 void luxAreaLightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("AreaLightSource")
 	;
+	networkSend("luxAreaLightSource",name, params);
+	
 	graphicsState.areaLight = name;
 	graphicsState.areaLightParams = params;
 }
@@ -525,6 +635,8 @@ void luxAreaLightSource(const string &name, const ParamSet &params) {
 void luxPortalShape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("PortalShape")
 	;
+	networkSend("luxPortalShape",name, params);
+	
 	ShapePtr shape = MakeShape(name, curTransform,
 			graphicsState.reverseOrientation, params);
 	if (!shape)
@@ -563,6 +675,8 @@ void luxPortalShape(const string &name, const ParamSet &params) {
 void luxShape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Shape")
 	;
+	networkSend("luxShape",name, params);
+	
 	ShapePtr shape = MakeShape(name, curTransform,
 			graphicsState.reverseOrientation, params);
 	if (!shape)
@@ -599,11 +713,13 @@ void luxShape(const string &name, const ParamSet &params) {
 void luxReverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation")
 	;
+	networkSend("luxReverseOrientation");
 	graphicsState.reverseOrientation = !graphicsState.reverseOrientation;
 }
 void luxVolume(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Volume")
 	;
+	networkSend("luxVolume",name, params);
 	VolumeRegion *vr = MakeVolumeRegion(name, curTransform, params);
 	if (vr)
 		renderOptions->volumeRegions.push_back(vr);
@@ -611,6 +727,7 @@ void luxVolume(const string &name, const ParamSet &params) {
 void luxObjectBegin(const string &name) {
 	VERIFY_WORLD("ObjectBegin")
 	;
+	networkSend("luxObjectBegin",name);
 	luxAttributeBegin();
 	if (renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectBegin called inside of instance definition");
@@ -620,6 +737,7 @@ void luxObjectBegin(const string &name) {
 void luxObjectEnd() {
 	VERIFY_WORLD("ObjectEnd")
 	;
+	networkSend("luxObjectEnd");
 	if (!renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectEnd called outside of instance definition");
 	renderOptions->currentInstance = NULL;
@@ -628,6 +746,7 @@ void luxObjectEnd() {
 void luxObjectInstance(const string &name) {
 	VERIFY_WORLD("ObjectInstance")
 	;
+	networkSend("luxObjectInstance",name);
 	// Object instance error checking
 	if (renderOptions->currentInstance) {
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectInstance can't be called inside instance definition");
@@ -661,6 +780,8 @@ void luxObjectInstance(const string &name) {
 void luxWorldEnd() {
 	VERIFY_WORLD("WorldEnd")
 	;
+	networkSend("luxWorldEnd");
+	
 	// Ensure the search path was set
 	/*if (!renderOptions->gotSearchPath)
 	 Severe("LUX_SEARCHPATH environment variable "

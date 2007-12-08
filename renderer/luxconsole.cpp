@@ -97,14 +97,14 @@ void processCommand(void (&f)(const string &, const ParamSet &), tcp::iostream &
 	stream>>type;
 	boost::archive::text_iarchive ia(stream);
 	ia>>params;
-	std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
+	//std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
 	f(type, params);
 }
 
 void processCommand(void (&f)(const string &), tcp::iostream &stream) {
 	std::string type;
 	stream>>type;
-	std::cout<<"params :"<<type<<std::endl;
+	//std::cout<<"params :"<<type<<std::endl;
 	f(type);
 }
 
@@ -113,7 +113,7 @@ void processCommand(void (&f)(float,float,float), tcp::iostream &stream) {
 	stream>>ax;
 	stream>>ay;
 	stream>>az;
-	std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
+	//std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
 	f(ax, ay, az);
 }
 
