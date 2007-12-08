@@ -108,6 +108,7 @@ extern int luxFilmYres();
 //statistics
 extern double luxStatistics(char *statName);
 
+extern void luxAddServer(const string &name);
 
 //Error Handlers
 extern int luxLastError; //!< Keeps track of the last error code

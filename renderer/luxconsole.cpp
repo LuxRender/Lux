@@ -91,6 +91,40 @@ void infoThread() {
 	}
 }
 
+void processCommand(void (&f)(const string &, const ParamSet &), tcp::iostream &stream) {
+	std::string type;
+	ParamSet params;
+	stream>>type;
+	boost::archive::text_iarchive ia(stream);
+	ia>>params;
+	std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
+	f(type, params);
+}
+
+void processCommand(void (&f)(const string &), tcp::iostream &stream) {
+	std::string type;
+	stream>>type;
+	std::cout<<"params :"<<type<<std::endl;
+	f(type);
+}
+
+void processCommand(void (&f)(float,float,float), tcp::iostream &stream) {
+	float ax, ay, az;
+	stream>>ax;
+	stream>>ay;
+	stream>>az;
+	std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
+	f(ax, ay, az);
+}
+
+void processCommand(void (&f)(float[16]), tcp::iostream &stream) {
+	float t[16];
+	for (int i=0; i<16; i++)
+		stream>>t[i];
+	//std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
+	f(t);
+}
+
 void startServer() {
 	std::cout<<"luxconsole: launching server mode..."<<std::endl;
 	try
@@ -109,12 +143,22 @@ void startServer() {
 			std::string command;
 			while(std::getline(stream, command))
 			{
-				std::cout<<"server processing command :"<<command<<std::endl;
+				std::cout<<"server processing command : '"<<command<<"'"<<std::endl;
 				//processing the command
-				if(command=="luxInit")
+				if(command==""); //skip
+				else if(command=="luxInit") luxInit();
+				else if(command=="luxTranslate") processCommand(luxTranslate,stream);
+				else if(command=="luxRotate")
 				{
-					luxInit();
+					float angle, ax, ay, az;
+					stream>>angle;
+					stream>>ax;
+					stream>>ay;
+					stream>>az;
+					std::cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<std::endl;
+					luxRotate(angle,ax,ay,az);
 				}
+				else if(command=="luxScale") processCommand(luxScale,stream);
 				else if(command=="luxLookAt")
 				{
 					float ex, ey, ez, lx, ly, lz, ux, uy, uz;
@@ -130,91 +174,24 @@ void startServer() {
 					std::cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<std::endl;
 					luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
 				}
-				else if(command=="luxCamera") //luxCamera(const string &, const ParamSet &cameraParams)
-				{
-					std::string type;
-					ParamSet cameraParams;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>cameraParams;
-					std::cout<<"params :"<<type<<", "<<cameraParams.ToString()<<std::endl;
-					luxCamera(type,cameraParams);
-				}
-				else if(command=="luxPixelFilter")
-				{
-					std::string type;
-					ParamSet pfParams;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>pfParams;
-					std::cout<<"params :"<<type<<", "<<pfParams.ToString()<<std::endl;
-					luxPixelFilter(type,pfParams);
-				}
-				else if(command=="luxSampler")
-				{
-					std::string type;
-					ParamSet params;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>params;
-					std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-					luxSampler(type,params);
-				}
-				else if(command=="luxFilm")
-				{
-					std::string type;
-					ParamSet params;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>params;
-					std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-					luxFilm(type,params);
-				}
-				else if (command=="luxWorldBegin")
-				{
-					luxWorldBegin();
-				}
-				else if (command=="luxWorldEnd")
-				{
-					boost::thread t(&luxWorldEnd);
-					boost::thread j(&infoThread);
-				}
-				else if (command=="luxAttributeBegin")
-				{
-					luxAttributeBegin();
-				}
-				else if (command=="luxAttributeEnd")
-				{
-					luxAttributeEnd();
-				}
-				else if (command=="luxCoordSysTransform")
-				{
-					std::string type;
-					stream>>type;
-					std::cout<<"params :"<<type<<std::endl;
-					luxCoordSysTransform(type);
-				}
-				else if(command=="luxLightSource")
-				{
-					std::cout<<"*in lightsource*"<<std::endl;
-					std::string type;
-					ParamSet params;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>params;
-					std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-					luxLightSource(type,params);
-				}
-				else if(command=="luxRotate")
-				{
-					float angle, ax, ay, az;
-					stream>>angle;
-					stream>>ax;
-					stream>>ay;
-					stream>>az;
-					std::cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<std::endl;
-					luxRotate(angle,ax,ay,az);
-				}
+				else if(command=="luxConcatTransform") processCommand(luxConcatTransform,stream);
+				else if(command=="luxTransform") processCommand(luxTransform,stream);
+				else if(command=="luxIdentity") luxIdentity();
+				else if(command=="luxCoordinateSystem") processCommand(luxCoordinateSystem,stream);
+				else if(command=="luxCoordSysTransform") processCommand(luxCoordSysTransform,stream);
+				else if(command=="luxPixelFilter") processCommand(luxPixelFilter,stream);
+				else if(command=="luxFilm") processCommand(luxFilm,stream);
+				else if(command=="luxSampler") processCommand(luxSampler,stream);
+				else if(command=="luxAccelerator") processCommand(luxAccelerator,stream);
+				else if(command=="luxSurfaceIntegrator") processCommand(luxSurfaceIntegrator,stream);
+				else if(command=="luxVolumeIntegrator") processCommand(luxVolumeIntegrator,stream);
+				else if(command=="luxCamera") processCommand(luxCamera,stream);
+				//else if(command=="luxSearchPath") processCommand(luxSearchPath,stream);
+				else if(command=="luxWorldBegin") luxWorldBegin();
+				else if(command=="luxAttributeBegin") luxAttributeBegin();
+				else if(command=="luxAttributeEnd") luxAttributeEnd();
+				else if(command=="luxTransformBegin") luxTransformBegin();
+				else if(command=="luxTransformEnd") luxTransformEnd();
 				else if(command=="luxTexture")
 				{
 					std::string name,type,texname;
@@ -227,25 +204,24 @@ void startServer() {
 					std::cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<std::endl;
 					luxTexture(name,type,texname,params);
 				}
-				else if(command=="luxMaterial")
+				else if(command=="luxMaterial") processCommand(luxMaterial,stream);
+				else if(command=="luxLightSource") processCommand(luxLightSource,stream);
+				else if(command=="luxAreaLightSource") processCommand(luxAreaLightSource,stream);
+				else if(command=="luxPortalShape") processCommand(luxPortalShape,stream);
+				else if(command=="luxShape") processCommand(luxShape,stream);
+				else if(command=="luxReverseOrientation") luxReverseOrientation();
+				else if(command=="luxVolume") processCommand(luxVolume,stream);
+				else if(command=="luxObjectBegin") processCommand(luxObjectBegin,stream);
+				else if(command=="luxObjectEnd") luxObjectEnd();
+				else if(command=="luxObjectInstance") processCommand(luxObjectInstance,stream);
+				else if(command=="luxWorldEnd")
 				{
-					std::string type;
-					ParamSet params;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>params;
-					std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-					luxMaterial(type,params);
+					boost::thread t(&luxWorldEnd);
+					boost::thread j(&infoThread);
 				}
-				else if(command=="luxShape")
-				{
-					std::string type;
-					ParamSet params;
-					stream>>type;
-					boost::archive::text_iarchive ia(stream);
-					ia>>params;
-					std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-					luxShape(type,params);
+				else
+				{	
+					std::cout<<"unknown command!"<<std::endl;
 				}
 
 				std::cout<<"command processed"<<std::endl;
@@ -261,111 +237,111 @@ void startServer() {
 }
 
 /*
-void test()
-{
-	//send the command
-	luxInit();
-	//LookAt 0 10 100   0 -1 0 0 1 0
-	luxLookAt(0,10,100,0,-1,0,0,1,0);
-	//Camera "perspective" "float fov" [30]
-	{
-		ParamSet p;
-		float f=30;
-		p.AddFloat("fov",&f,1);
-		const ParamSet cp(p);
-		luxCamera("perspective",cp);
-	}
-	//PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
-	{
-		ParamSet p;
-		float f=2;
-		p.AddFloat("xwidth",&f,1);
-		p.AddFloat("ywidth",&f,1);
-		const ParamSet cp(p);
-		luxPixelFilter("mitchell",cp);
-	}
-	//Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
-	{
-		ParamSet p;
-		bool prog=true;
-		int ps=4;
-		p.AddBool("progressive",&prog,1);
-		p.AddInt("pixelsamples",&ps,1);
-		const ParamSet cp(p);
-		luxSampler("lowdiscrepancy",cp);
+ void test()
+ {
+ //send the command
+ luxInit();
+ //LookAt 0 10 100   0 -1 0 0 1 0
+ luxLookAt(0,10,100,0,-1,0,0,1,0);
+ //Camera "perspective" "float fov" [30]
+ {
+ ParamSet p;
+ float f=30;
+ p.AddFloat("fov",&f,1);
+ const ParamSet cp(p);
+ luxCamera("perspective",cp);
+ }
+ //PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
+ {
+ ParamSet p;
+ float f=2;
+ p.AddFloat("xwidth",&f,1);
+ p.AddFloat("ywidth",&f,1);
+ const ParamSet cp(p);
+ luxPixelFilter("mitchell",cp);
+ }
+ //Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
+ {
+ ParamSet p;
+ bool prog=true;
+ int ps=4;
+ p.AddBool("progressive",&prog,1);
+ p.AddInt("pixelsamples",&ps,1);
+ const ParamSet cp(p);
+ luxSampler("lowdiscrepancy",cp);
 
-	}
-	//Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
-	{
-		ParamSet p;
-		int r=200;
-		p.AddInt("xresolution",&r,1);
-		p.AddInt("yresolution",&r,1);
-		const ParamSet cp(p);
-		luxFilm("multiimage",cp);
+ }
+ //Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
+ {
+ ParamSet p;
+ int r=200;
+ p.AddInt("xresolution",&r,1);
+ p.AddInt("yresolution",&r,1);
+ const ParamSet cp(p);
+ luxFilm("multiimage",cp);
 
-	}
-	//
-	luxWorldBegin();
-	luxAttributeBegin();
-	luxCoordSysTransform("camera");
+ }
+ //
+ luxWorldBegin();
+ luxAttributeBegin();
+ luxCoordSysTransform("camera");
 
-	//LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
-	{
-		ParamSet p;
-		Point from(0,0,0),to(0,0,1);
-		float cs[]= {3,3,3};
-		Spectrum color(cs);
-		p.AddPoint("from",&from,1);
-		p.AddPoint("to",&to,1);
-		p.AddSpectrum("L",&color,1);
-		const ParamSet cp(p);
-		luxLightSource("distant",cp);
+ //LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
+ {
+ ParamSet p;
+ Point from(0,0,0),to(0,0,1);
+ float cs[]= {3,3,3};
+ Spectrum color(cs);
+ p.AddPoint("from",&from,1);
+ p.AddPoint("to",&to,1);
+ p.AddSpectrum("L",&color,1);
+ const ParamSet cp(p);
+ luxLightSource("distant",cp);
 
-	}
+ }
 
-	luxRotate(135,1,0,0);
+ luxRotate(135,1,0,0);
 
-	//Texture "checks" "color" "checkerboard" 
-	//         "float uscale" [4] "float vscale" [4] 
-	//        "color tex1" [1 0 0] "color tex2" [0 0 1]
-	{
-		ParamSet p;
-		float scale=4;
-		float t1[]= {1,0,0},t2[]= {0,0,1};
-		Spectrum c1(t1),c2(t2);
-		p.AddFloat("uscale",&scale,1);
-		p.AddFloat("vscale",&scale,1);
-		p.AddSpectrum("tex1",&c1,1);
-		p.AddSpectrum("tex2",&c2,1);
-		const ParamSet cp(p);
-		luxTexture("checks", "color", "checkerboard",cp);
+ //Texture "checks" "color" "checkerboard" 
+ //         "float uscale" [4] "float vscale" [4] 
+ //        "color tex1" [1 0 0] "color tex2" [0 0 1]
+ {
+ ParamSet p;
+ float scale=4;
+ float t1[]= {1,0,0},t2[]= {0,0,1};
+ Spectrum c1(t1),c2(t2);
+ p.AddFloat("uscale",&scale,1);
+ p.AddFloat("vscale",&scale,1);
+ p.AddSpectrum("tex1",&c1,1);
+ p.AddSpectrum("tex2",&c2,1);
+ const ParamSet cp(p);
+ luxTexture("checks", "color", "checkerboard",cp);
 
-	}
-	//Material "matte" 
-	//           "texture Kd" "checks"
-	{
-		ParamSet p;
-		p.AddTexture(std::string("Kd"),std::string("checks"));
-		const ParamSet cp(p);
-		luxMaterial("matte",cp);
-	}
-	//Shape "disk" "float radius" [20] "float height" [-1]
-	{
-		ParamSet p;
-		float r=20,h=-1;
-		p.AddFloat("radius",&r,1);
-		p.AddFloat("height",&h,1);
-		const ParamSet cp(p);
-		luxShape("disk",cp);
+ }
+ //Material "matte" 
+ //           "texture Kd" "checks"
+ {
+ ParamSet p;
+ p.AddTexture(std::string("Kd"),std::string("checks"));
+ const ParamSet cp(p);
+ luxMaterial("matte",cp);
+ }
+ //Shape "disk" "float radius" [20] "float height" [-1]
+ {
+ ParamSet p;
+ float r=20,h=-1;
+ p.AddFloat("radius",&r,1);
+ p.AddFloat("height",&h,1);
+ const ParamSet cp(p);
+ luxShape("disk",cp);
 
-	}
-	luxAttributeEnd();
-	luxWorldEnd();
-}*/
+ }
+ luxAttributeEnd();
+ luxWorldEnd();
+ }*/
 
 int main(int ac, char *av[]) {
-	
+
 	//test();
 	/*
 	 // Print welcome banner
@@ -487,127 +463,132 @@ int main(int ac, char *av[]) {
 		{
 			std::string name=vm["useserver"].as<std::string>();
 			std::cout<<"connecting to "<<name<<std::endl;
-			try {
 
-				tcp::iostream s(name.c_str(), "18018");
-				/*
-				 std::string line;
-				 std::getline(s, line);
-				 std::cout << line << std::endl;*/
+			//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
+			luxAddServer(name);
 
-				//send the command
-				s<<"luxInit"<<std::endl;
-				//LookAt 0 10 100   0 -1 0 0 1 0
-				s<<"luxLookAt"<<std::endl<<0<<' '<<10<<' '<<100<<' '<<0<<' '<<-1<<' '<<0<<' '<<0<<' '<<1<<' '<<0;
-				//Camera "perspective" "float fov" [30]
-				{
-					ParamSet p;
-					float f=30;
-					p.AddFloat("fov",&f,1);
-					const ParamSet cp(p);
-					s<<"luxCamera"<<std::endl<<"perspective ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				//PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
-				{
-					ParamSet p;
-					float f=2;
-					p.AddFloat("xwidth",&f,1);
-					p.AddFloat("ywidth",&f,1);
-					const ParamSet cp(p);
-					s<<"luxPixelFilter"<<std::endl<<"mitchell ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				//Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
-				{
-					ParamSet p;
-					bool prog=true;
-					int ps=4;
-					p.AddBool("progressive",&prog,1);
-					p.AddInt("pixelsamples",&ps,1);
-					const ParamSet cp(p);
-					s<<"luxSampler"<<std::endl<<"lowdiscrepancy ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				//Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
-				{
-					ParamSet p;
-					int r=200;
-					p.AddInt("xresolution",&r,1);
-					p.AddInt("yresolution",&r,1);
-					const ParamSet cp(p);
-					s<<"luxFilm"<<std::endl<<"multiimage ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				//
-				s<<"luxWorldBegin"<<std::endl<<"luxAttributeBegin"<<std::endl<<"luxCoordSysTransform"<<std::endl<<"camera"<<std::endl;
+			/*
+			 std::string name=vm["useserver"].as<std::string>();
+			 std::cout<<"connecting to "<<name<<std::endl;
+			 try {
 
-				//LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
-				{
-					ParamSet p;
-					Point from(0,0,0),to(0,0,1);
-					float cs[]= {3,3,3};
-					Spectrum color(cs);
-					p.AddPoint("from",&from,1);
-					p.AddPoint("to",&to,1);
-					p.AddSpectrum("L",&color,1);
-					const ParamSet cp(p);
-					s<<"luxLightSource"<<std::endl<<"distant ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
+			 tcp::iostream s(name.c_str(), "18018");
+			 
 
-				s<<"luxRotate"<<std::endl<<135<<' '<<1<<' '<<0<<' '<<0<<std::endl;
+			 //send the command
+			 s<<"luxInit"<<std::endl;
+			 //LookAt 0 10 100   0 -1 0 0 1 0
+			 s<<"luxLookAt"<<std::endl<<0<<' '<<10<<' '<<100<<' '<<0<<' '<<-1<<' '<<0<<' '<<0<<' '<<1<<' '<<0;
+			 //Camera "perspective" "float fov" [30]
+			 {
+			 ParamSet p;
+			 float f=30;
+			 p.AddFloat("fov",&f,1);
+			 const ParamSet cp(p);
+			 s<<"luxCamera"<<std::endl<<"perspective ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 //PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
+			 {
+			 ParamSet p;
+			 float f=2;
+			 p.AddFloat("xwidth",&f,1);
+			 p.AddFloat("ywidth",&f,1);
+			 const ParamSet cp(p);
+			 s<<"luxPixelFilter"<<std::endl<<"mitchell ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 //Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
+			 {
+			 ParamSet p;
+			 bool prog=true;
+			 int ps=4;
+			 p.AddBool("progressive",&prog,1);
+			 p.AddInt("pixelsamples",&ps,1);
+			 const ParamSet cp(p);
+			 s<<"luxSampler"<<std::endl<<"lowdiscrepancy ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 //Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
+			 {
+			 ParamSet p;
+			 int r=200;
+			 p.AddInt("xresolution",&r,1);
+			 p.AddInt("yresolution",&r,1);
+			 const ParamSet cp(p);
+			 s<<"luxFilm"<<std::endl<<"multiimage ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 //
+			 s<<"luxWorldBegin"<<std::endl<<"luxAttributeBegin"<<std::endl<<"luxCoordSysTransform"<<std::endl<<"camera"<<std::endl;
 
-				//Texture "checks" "color" "checkerboard" 
-				//         "float uscale" [4] "float vscale" [4] 
-				//        "color tex1" [1 0 0] "color tex2" [0 0 1]
-				{
-					ParamSet p;
-					float scale=4;
-					float t1[]= {1,0,0},t2[]= {0,0,1};
-					Spectrum c1(t1),c2(t2);
-					p.AddFloat("uscale",&scale,1);
-					p.AddFloat("vscale",&scale,1);
-					p.AddSpectrum("tex1",&c1,1);
-					p.AddSpectrum("tex2",&c2,1);
-					const ParamSet cp(p);
-					s<<"luxTexture"<<std::endl<<"checks color checkerboard ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				//Material "matte" 
-				//           "texture Kd" "checks"
-				{
-					ParamSet p;
-					p.AddTexture(std::string("Kd"),std::string("checks"));
-					const ParamSet cp(p);
-					s<<"luxMaterial"<<std::endl<<"matte ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				//Shape "disk" "float radius" [20] "float height" [-1]
-				{
-					ParamSet p;
-					float r=20,h=-1;
-					p.AddFloat("radius",&r,1);
-					p.AddFloat("height",&h,1);
-					const ParamSet cp(p);
-					s<<"luxShape"<<std::endl<<"disk ";
-					boost::archive::text_oarchive oa(s);
-					oa<<cp;
-				}
-				s<<"luxAttributeEnd"<<std::endl<<"luxWorldEnd"<<std::endl;
+			 //LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
+			 {
+			 ParamSet p;
+			 Point from(0,0,0),to(0,0,1);
+			 float cs[]= {3,3,3};
+			 Spectrum color(cs);
+			 p.AddPoint("from",&from,1);
+			 p.AddPoint("to",&to,1);
+			 p.AddSpectrum("L",&color,1);
+			 const ParamSet cp(p);
+			 s<<"luxLightSource"<<std::endl<<"distant ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
 
-			}
-			catch (std::exception& e)
-			{
-				std::cerr << e.what() << std::endl;
-			}
+			 s<<"luxRotate"<<std::endl<<135<<' '<<1<<' '<<0<<' '<<0<<std::endl;
+
+			 //Texture "checks" "color" "checkerboard" 
+			 //         "float uscale" [4] "float vscale" [4] 
+			 //        "color tex1" [1 0 0] "color tex2" [0 0 1]
+			 {
+			 ParamSet p;
+			 float scale=4;
+			 float t1[]= {1,0,0},t2[]= {0,0,1};
+			 Spectrum c1(t1),c2(t2);
+			 p.AddFloat("uscale",&scale,1);
+			 p.AddFloat("vscale",&scale,1);
+			 p.AddSpectrum("tex1",&c1,1);
+			 p.AddSpectrum("tex2",&c2,1);
+			 const ParamSet cp(p);
+			 s<<"luxTexture"<<std::endl<<"checks color checkerboard ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 //Material "matte" 
+			 //           "texture Kd" "checks"
+			 {
+			 ParamSet p;
+			 p.AddTexture(std::string("Kd"),std::string("checks"));
+			 const ParamSet cp(p);
+			 s<<"luxMaterial"<<std::endl<<"matte ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 //Shape "disk" "float radius" [20] "float height" [-1]
+			 {
+			 ParamSet p;
+			 float r=20,h=-1;
+			 p.AddFloat("radius",&r,1);
+			 p.AddFloat("height",&h,1);
+			 const ParamSet cp(p);
+			 s<<"luxShape"<<std::endl<<"disk ";
+			 boost::archive::text_oarchive oa(s);
+			 oa<<cp;
+			 }
+			 s<<"luxAttributeEnd"<<std::endl<<"luxWorldEnd"<<std::endl;
+
+			 }
+			 catch (std::exception& e)
+			 {
+			 std::cerr << e.what() << std::endl;
+			 }
+			 */
 
 		}
 
