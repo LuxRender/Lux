@@ -22,6 +22,7 @@
 
 // parser.cpp*
 #include "lux.h"
+#include "error.h"
 // Parsing Global Interface
  bool ParseFile(const char *filename) {
 	extern FILE *yyin;
@@ -43,7 +44,12 @@
 		line_num = 1;
 		yyparse();
 		if (yyin != stdin) fclose(yyin);
+	} else {
+		std::stringstream ss;
+		ss<<"Unable to read scenefile '"<<filename<<"'";
+		luxError(LUX_NOFILE, LUX_SEVERE, ss.str ().c_str());
 	}
+
 	current_file = "";
 	line_num = 0;
 	return (yyin != NULL);

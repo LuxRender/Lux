@@ -63,11 +63,14 @@ namespace po = boost::program_options;
 
 std::string sceneFileName;
 int threads;
+bool parseError;
 
 void engineThread() {
 
 	luxInit();
-	ParseFile(sceneFileName.c_str() );
+	ParseFile(sceneFileName.c_str());
+	if (luxStatistics("sceneIsReady") == false)
+		parseError = true;
 	luxCleanup();
 }
 
@@ -220,7 +223,7 @@ void startServer() {
 					boost::thread j(&infoThread);
 				}
 				else
-				{	
+				{
 					std::cout<<"unknown command!"<<std::endl;
 				}
 
@@ -302,8 +305,8 @@ void startServer() {
 
  luxRotate(135,1,0,0);
 
- //Texture "checks" "color" "checkerboard" 
- //         "float uscale" [4] "float vscale" [4] 
+ //Texture "checks" "color" "checkerboard"
+ //         "float uscale" [4] "float vscale" [4]
  //        "color tex1" [1 0 0] "color tex2" [0 0 1]
  {
  ParamSet p;
@@ -318,7 +321,7 @@ void startServer() {
  luxTexture("checks", "color", "checkerboard",cp);
 
  }
- //Material "matte" 
+ //Material "matte"
  //           "texture Kd" "checks"
  {
  ParamSet p;
@@ -345,10 +348,10 @@ int main(int ac, char *av[]) {
 	//test();
 	/*
 	 // Print welcome banner
-	 printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);     
+	 printf("Lux Renderer version %1.3f of %s at %s\n", LUX_VERSION, __DATE__, __TIME__);
 	 printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
 	 printf("This is free software, covered by the GNU General Public License V3\n");
-	 printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");    
+	 printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");
 	 fflush(stdout);
 	 */
 
@@ -473,7 +476,7 @@ int main(int ac, char *av[]) {
 			 try {
 
 			 tcp::iostream s(name.c_str(), "18018");
-			 
+
 
 			 //send the command
 			 s<<"luxInit"<<std::endl;
@@ -543,8 +546,8 @@ int main(int ac, char *av[]) {
 
 			 s<<"luxRotate"<<std::endl<<135<<' '<<1<<' '<<0<<' '<<0<<std::endl;
 
-			 //Texture "checks" "color" "checkerboard" 
-			 //         "float uscale" [4] "float vscale" [4] 
+			 //Texture "checks" "color" "checkerboard"
+			 //         "float uscale" [4] "float vscale" [4]
 			 //        "color tex1" [1 0 0] "color tex2" [0 0 1]
 			 {
 			 ParamSet p;
@@ -560,7 +563,7 @@ int main(int ac, char *av[]) {
 			 boost::archive::text_oarchive oa(s);
 			 oa<<cp;
 			 }
-			 //Material "matte" 
+			 //Material "matte"
 			 //           "texture Kd" "checks"
 			 {
 			 ParamSet p;
@@ -597,23 +600,39 @@ int main(int ac, char *av[]) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++)
 			{
-				//sceneFileName=v[i];
-
 				//change the working directory
 				boost::filesystem::path fullPath( boost::filesystem::initial_path() );
 				fullPath = boost::filesystem::system_complete( boost::filesystem::path( v[i], boost::filesystem::native ) );
+
+				if(!boost::filesystem::exists(fullPath) && v[i] != "-")
+				{
+					std::stringstream ss;
+					ss<<"Unable to open scenefile '"<<fullPath.string()<<"'";
+					luxError(LUX_NOFILE, LUX_SEVERE, ss.str ().c_str());
+					continue;
+				}
+
 				sceneFileName=fullPath.leaf();
 				chdir (fullPath.branch_path().string().c_str());
 
+				parseError = false;
 				boost::thread t(&engineThread);
 
 				//wait the scene parsing to finish
-				while(!luxStatistics("sceneIsReady"))
+				while(!luxStatistics("sceneIsReady") && !parseError)
 				{
 					boost::xtime xt;
 					boost::xtime_get(&xt, boost::TIME_UTC);
 					xt.sec += 1;
 					boost::thread::sleep(xt);
+				}
+
+				if(parseError)
+				{
+					std::stringstream ss;
+					ss<<"Skipping invalid scenefile '"<<fullPath.string()<<"'";
+					luxError(LUX_BADFILE, LUX_SEVERE, ss.str ().c_str());
+					continue;
 				}
 
 				//add rendering threads
@@ -624,7 +643,7 @@ int main(int ac, char *av[]) {
 				}
 
 				//launch info printing thread
-				//boost::thread *j=new 
+				//boost::thread *j=new
 				boost::thread j(&infoThread);
 
 				//wait for threads to finish

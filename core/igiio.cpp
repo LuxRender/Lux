@@ -57,14 +57,18 @@
     }
 
 	std::ofstream file(name.c_str(), std::ios::binary);
-	if(!file)
-		printf("Failed to open IGI file for writing.\n");
+	if(!file) {
+		std::stringstream ss;
+	 	ss<< "Cannot open file '"<<name<<"' for output";
+		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		return;
+	}
 
 	// set header
 	memset(&header, 0, sizeof(header));
 	header.magic_number = INDIGO_IMAGE_MAGIC_NUMBER;
 	header.format_version = 1;
-	
+
 	header.num_samples = 1.; // TODO add samples from film
 	header.width = xRes;
 	header.height = yRes;
@@ -77,8 +81,12 @@
 	// write xyz data
 	file.write((const char*)&xyz[0], header.image_data_size);
 
-	if(!file.good())
-		printf("Error writing IGI output file.\n");
+	if(!file.good()) {
+		std::stringstream ss;
+	 	ss<< "Error writing IGI output file '"<<name<<"'";
+		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		return;
+	}
 
 	file.close();
 	delete xyz;

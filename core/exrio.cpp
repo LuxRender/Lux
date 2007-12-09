@@ -28,10 +28,14 @@
 //#endif
 #include <algorithm>
 
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/convenience.hpp>
+
 #define cimg_display_type  0
 #define cimg_use_png 1
 //#define cimg_use_tiff 1
 #define cimg_use_jpeg 1
+#define cimg_debug 0     // Disable modal window in CImg exceptions.
 #include "cimg.h"
 using namespace cimg_library;
 
@@ -102,20 +106,20 @@ using namespace Imath;
 		*width  = image.dimx();
  		*height = image.dimy();
  		int pixels=*width * *height;
-	 	
+
  		Spectrum *ret = new Spectrum[*width * *height];
-	 	
+
  		// XXX should do real RGB -> Spectrum conversion here
 		for (int i = 0; i < *width * *height; ++i) {
 			float c[3] = { image[i]/255.0, image[i+pixels]/255.0, image[i+pixels*2]/255.0 };
 			ret[i] = Spectrum(c);
 		}
-	 	
+
 		printf("Done.\n");
  		return ret;
-	} catch (CImgIOException) {
+	} catch (CImgIOException &e) {
 		std::stringstream ss;
-		ss<<"Unable to read Cimg image file '"<<name<<"'";
+		ss<<"Unable to read Cimg image file '"<<name<<"' : "<<e.message;
 		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
@@ -123,9 +127,15 @@ using namespace Imath;
 
  Spectrum *ReadImage(const string &name, int *width, int *height)
  {
-	int p = name.find_last_of('.',name.size());
-	//string fileName = name.substr(0, p);
-	std::string extension = name.substr(p+1, name.size()-p-1);
+	boost::filesystem::path imagePath( name );
+	if(!boost::filesystem::exists(imagePath)) {
+		std::stringstream ss;
+		ss<<"Unable to open image file '"<<imagePath.string()<<"'";
+		luxError(LUX_NOFILE, LUX_ERROR, ss.str().c_str());
+		return NULL;
+	}
+
+	std::string extension = boost::filesystem::extension(imagePath).substr(1);
 	//transform extension to lowercase
 	#ifdef WIN32
 	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower );
@@ -134,7 +144,7 @@ using namespace Imath;
  	#endif
 
  	if(extension=="exr") return ReadExrImage(name, width, height);
- 	
+
  	/*
  	The CImg Library can NATIVELY handle the following file formats :
     * RAW : consists in a very simple header (in ascii), then the image data.
@@ -161,13 +171,14 @@ using namespace Imath;
     if(extension=="tiff") return ReadCimgImage(name, width, height);
     if(extension=="jpg") return ReadCimgImage(name, width, height);
     if(extension=="jpeg") return ReadCimgImage(name, width, height);
-    
- 	
- 	std::string errorMessage="Cannot recognise file format for file : "+name;
- 	luxError(LUX_ERROR,LUX_BADFILE,errorMessage.c_str());
+
+
+	std::stringstream ss;
+ 	ss<<"Cannot recognise file format for image '"<<name<<"'";
+	luxError(LUX_BADFILE, LUX_ERROR, ss.str ().c_str());
  	return NULL;
  }
- 
+
  void WriteRGBAImage(const string &name, float *pixels,
 		float *alpha, int xRes, int yRes,
 		int totalXRes, int totalYRes,
@@ -199,9 +210,9 @@ using namespace Imath;
 		3*xRes*sizeof(half)));
 	fb.insert("A", Slice(HALF, (char *)ha, sizeof(half), xRes*sizeof(half)));
 
-	OutputFile file(name.c_str(), header);
-	file.setFrameBuffer(fb);
 	try {
+		OutputFile file(name.c_str(), header);
+		file.setFrameBuffer(fb);
 		file.writePixels(yRes);
 	}
 	catch (const std::exception &e) {
@@ -209,7 +220,7 @@ using namespace Imath;
 		//	e.what());
 		std::stringstream ss;
 		ss<<"Unable to write image file '"<<name<<"' : "<<e.what();
-		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+		luxError(LUX_BUG,LUX_SEVERE,ss.str().c_str());
 	}
 
 	delete[] (hrgb + 3 * (xOffset + yOffset * xRes));

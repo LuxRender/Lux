@@ -51,6 +51,7 @@
 #include "icons.h"		// Include GUI icon data
 namespace po = boost::program_options;
 static int threads;
+bool parseError;
 void AddThread();
 
 // menu items
@@ -338,6 +339,8 @@ void Engine_Thread() {
 	ss << "GUI: Parsing scenefile '" << gui_current_scenefile << "'";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str ().c_str());
 	ParseFile(gui_current_scenefile);
+	if (luxStatistics("sceneIsReady") == false)
+		parseError = true;
 	luxCleanup();
 	/*
 	 #ifdef WIN32
@@ -376,14 +379,22 @@ void merge_FrameBuffer(void *) {
 
 int RenderScenefile() {
 	fflush(stdout);
+	parseError = false;
 	engine_thread = new boost::thread (&Engine_Thread);
 
 	//wait the scene parsing to finish
-	while (!luxStatistics("sceneIsReady")) {
+	while (!luxStatistics("sceneIsReady") && !parseError) {
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		xt.sec += 1;
 		boost::thread::sleep(xt);
+	}
+
+	if(parseError) {
+		std::stringstream ss;
+		ss<<"Skipping invalid scenefile '"<<gui_current_scenefile<<"'";
+		luxError(LUX_BADFILE, LUX_SEVERE, ss.str ().c_str());
+		return 1;
 	}
 
 	//add rendering threads
@@ -634,8 +645,17 @@ int main(int ac, char *av[]) {
 			fullPath =
 			boost::filesystem::system_complete (boost::filesystem::
 					path (v[0],	boost::filesystem::native));
-			strcpy (gui_current_scenefile, fullPath.leaf ().c_str ());
-			chdir (fullPath.branch_path ().string ().c_str ());
+			if(!boost::filesystem::exists(fullPath))
+			{
+				std::stringstream ss;
+				ss<<"Unable to open scenefile '"<<fullPath.string()<<"'";
+				luxError(LUX_NOFILE, LUX_SEVERE, ss.str ().c_str());
+			}
+			else
+			{
+				strcpy (gui_current_scenefile, fullPath.leaf ().c_str ());
+				chdir (fullPath.branch_path ().string ().c_str ());
+			}
 		}
 
 		// create render window

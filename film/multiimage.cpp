@@ -37,7 +37,7 @@
 
 // MultiImageFilm Method Definitions
 MultiImageFilm::MultiImageFilm(int xres, int yres,
-	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
+	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out,
 		             const string &hdr_filename, const string &igi_filename, const string &ldr_filename, bool premult,
 		             int hdr_wI, int igi_wI, int ldr_wI, int ldr_dI,
 					 const string &tm, float c_dY, float n_MY,
@@ -70,11 +70,11 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	bloomWidth = bw;
 	bloomRadius = br;
 	gamma = g;
-	dither = d;	
+	dither = d;
 
 	framebuffer = NULL;
 
-	// Set tonemapper params	
+	// Set tonemapper params
 	if( toneMapper == "contrast" ) {
 		string st = "displayadaptationY";
 		toneParams.AddFloat(st, &contrastDisplayAdaptationY, 1);
@@ -126,9 +126,9 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	}
 }
 void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alpha) {
-			
+
 			boost::mutex::scoped_lock lock(addSampleMutex);
-			
+
 	// Issue warning if unexpected radiance value returned
 	if (L.IsNaN()) {
 		//std::stringstream error;
@@ -148,7 +148,7 @@ void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alph
 		//luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
 		//L = Spectrum(0.f);
 		return;
-	} 
+	}
 
 	// Compute sample's raster extent
 	float dImageX = sX - 0.5f;
@@ -286,17 +286,17 @@ void MultiImageFilm::WriteImage(int oType) {
 	}
 
 	switch ( oType ) {
-		case WI_HDR : 
+		case WI_HDR :
 			// Write hdr EXR file
 			WriteEXRImage(rgb, alpha, hdrFilename);
 			break;
 
-		case WI_IGI : 
+		case WI_IGI :
 			// Write hdr IGI file
 			WriteIGIImage(rgb, alpha, igiFilename);
 			break;
 
-		case WI_LDR : 
+		case WI_LDR :
 			// Write tonemapped ldr TGA file
 		    ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
 			  bloomRadius,bloomWidth,toneMapper.c_str(),
@@ -304,7 +304,7 @@ void MultiImageFilm::WriteImage(int oType) {
 			WriteTGAImage(rgb, alpha, ldrFilename);
 			break;
 
-		case WI_FRAMEBUFFER : 
+		case WI_FRAMEBUFFER :
 			// Update gui film display
 			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
 			  bloomRadius,bloomWidth,toneMapper.c_str(),
@@ -325,36 +325,37 @@ void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filen
 {
 	//printf("\nWriting Tonemapped TGA image to file \"%s\"...\n", filename.c_str());
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped TGA image to file ")+filename).c_str());
-	
+
 	// Open file
 	FILE* tgaFile = fopen(filename.c_str(),"wb");
 	if (!tgaFile) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Cannot open file for output");
-		//std::cout << "Error: Cannot open file for output" << std::endl;
-		//return;	
+		std::stringstream ss;
+	 	ss<< "Cannot open file '"<<filename<<"' for output";
+		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		return;
 	}
-	
+
 	// write the header
 	// make sure its platform independent of little endian and big endian
 	char header[18];
 	memset(header, 0,sizeof(char)*18);
-	
+
 	header[2] = 2;							// set the data type of the targa (2 = uncompressed)
 	short xResShort = xResolution;			// set the resolution and make sure the bytes are in the right order
 	header[13] = (char) (xResShort >> 8);
-	header[12] = xResShort;	
+	header[12] = xResShort;
 	short yResShort = yResolution;
 	header[15] = (char) (yResShort >> 8);
 	header[14] = yResShort;
 	header[16] = 32;						// set the bitdepth
-	
+
 	// put the header data into the file
 	for (int i=0; i < 18; i++)
 		fputc(header[i],tgaFile);
-	
+
 	// write the bytes of data out
 	for (int i=yPixelCount-1;  i >= 0 ; i--) {
-		for (int j=0;  j < xPixelCount; j++) {	
+		for (int j=0;  j < xPixelCount; j++) {
 			fputc((int) rgb[(i*xPixelCount+j)*3+2], tgaFile);
 			fputc((int) rgb[(i*xPixelCount+j)*3+1], tgaFile);
 			fputc((int) rgb[(i*xPixelCount+j)*3+0], tgaFile);
@@ -363,7 +364,7 @@ void MultiImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filen
 			//fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
 		}
 	}
-		
+
 	fclose(tgaFile);
 	//printf("Done.\n");
 }
@@ -411,7 +412,7 @@ unsigned char* MultiImageFilm::getFrameBuffer()
 {
 	if(!framebuffer)
 		createFrameBuffer();
-	
+
 	return framebuffer;
 }
 
@@ -420,7 +421,7 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	bool hdr_out, igi_out, ldr_out;
 
 	// General
-	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);	
+	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);
 	int xres = params.FindOneInt("xresolution", 800);
 	int yres = params.FindOneInt("yresolution", 600);
 	float crop[4] = { 0, 1, 0, 1 };
