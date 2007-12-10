@@ -59,13 +59,13 @@ void GlWindow::resize(int X,int Y,int W,int H){
 	offset_y+=(H-h())/2;
 	//make sure new offset is in bounds
 	if((image_w-scale_xo)*scale+scale_xo2+offset_x-10<0)
-		offset_x=10-scale_xo2-(image_w-scale_xo)*scale;	
+		offset_x = (int)(     10-scale_xo2-(image_w-scale_xo)*scale );
 	if((0-scale_xo)*scale+scale_xo2+offset_x+10>W-1)
-		offset_x=W-1-10-scale_xo2-(0-scale_xo)*scale;
+		offset_x = (int)( W-1-10-scale_xo2-(0-scale_xo)*scale );
 	if((image_h-scale_yo)*scale+scale_yo2+offset_y-10<0)
-		offset_y=10-scale_yo2-(image_h-scale_yo)*scale;
+		offset_y = (int)(     10-scale_yo2-(image_h-scale_yo)*scale );
 	if((0-scale_yo)*scale+scale_yo2+offset_y+10>H-1)
-		offset_y=H-1-10-scale_yo2-(0-scale_yo)*scale;
+		offset_y = (int)( H-1-10-scale_yo2-(0-scale_yo)*scale );
 	Fl_Gl_Window::resize(X,Y,W,H);
 }
 
@@ -85,8 +85,8 @@ int GlWindow::handle(int event){
 		int button=Fl::event_button();
 		if(button==3){	//set scale to 100%
 			//calculate the scaling point in image space
-			scale_xo=       Fl::event_x() /scale-scale_xo2/scale-offset_x/scale+scale_xo;
-			scale_yo=(h()-1-Fl::event_y())/scale-scale_yo2/scale-offset_y/scale+scale_yo;
+			scale_xo = (int)(        Fl::event_x() /scale-scale_xo2/scale-offset_x/scale+scale_xo );
+			scale_yo = (int)( (h()-1-Fl::event_y())/scale-scale_yo2/scale-offset_y/scale+scale_yo );
 			//make sure the scaling point is in bounds
 			if(scale_xo<0) scale_xo=0;
 			if(scale_xo>image_w-1) scale_xo=image_w-1;
@@ -141,8 +141,8 @@ int GlWindow::handle(int event){
 				return 1;
 		}
 		//calculate the scaling point in image space
-		scale_xo=       Fl::event_x() /scale-scale_xo2/scale-offset_x/scale+scale_xo;
-		scale_yo=(h()-1-Fl::event_y())/scale-scale_yo2/scale-offset_y/scale+scale_yo;
+		scale_xo = (int)(        Fl::event_x() /scale-scale_xo2/scale-offset_x/scale+scale_xo );
+		scale_yo = (int)( (h()-1-Fl::event_y())/scale-scale_yo2/scale-offset_y/scale+scale_yo );
 		//make sure the scaling point is in bounds
 		if(scale_xo<0) scale_xo=0;
 		if(scale_xo>image_w-1) scale_xo=image_w-1;
