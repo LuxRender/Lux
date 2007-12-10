@@ -658,7 +658,7 @@ int main(int ac, char *av[]) {
 			}
 		}
 
-		// create render window
+		// create main window
 		int width = 800;
 		int height = 600;
 		window = make_MainWindow(width, height, rgb_image, opengl_enabled);
@@ -666,8 +666,26 @@ int main(int ac, char *av[]) {
 		#ifdef WIN32
 			//grab the icon resource and assign it to the window
 			window->icon((char *)LoadIcon(fl_display, MAKEINTRESOURCE(IDI_ICON1)));
+		#elif !defined(__APPLE__)
+			//create an icon from the included bitmap (without transparency)
+			fl_open_display();
+			Pixmap icon_pixmap=XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display), (char*)lux_icon_bitmap, 32, 32);
+			window->icon((char *)icon_pixmap);
 		#endif
-		window->show();
+		//set basic colors so they don't get overridden by system defaults
+		Fl::foreground(0,0,0);
+		Fl::background(200,200,200);
+		Fl::background2(255,255,255);
+
+		window->show(1,av);
+		#if !defined(WIN32) && !defined(__APPLE__)
+			//(FLTK workaround) to make the icon transparent we have to tell X directly about the mask
+			XWMHints *hints  = XGetWMHints(fl_display, fl_xid(window));
+			hints->icon_mask = XCreateBitmapFromData(fl_display, fl_xid(window), (char*)lux_icon_mask, 32, 32);
+			hints->flags    |= IconMaskHint;
+			XSetWMHints(fl_display, fl_xid(window), hints);
+			XFree(hints);
+		#endif
 
 		if(gui_current_scenefile[0]!=0) //if we have a scene file
 			RenderScenefile();
