@@ -89,10 +89,10 @@ void infoThread() {
 		boost::posix_time::time_duration td(0, 0,
 				(int)luxStatistics("secElapsed"), 0);
 
-		std::cout<<'\r' <<progress[(pc++)%4] <<'['<<threads<<']' <<td <<" "
+		std::cout<<'\r' <<' '<<progress[(pc++)%4] <<'['<<threads<<']' <<td <<" "
 				<<(int)luxStatistics("samplesSec")<<" samples/sec " <<" "
 				<<(float)luxStatistics("samplesPx")<<" samples/pix" <<"    "
-				<<std::flush;
+				<<'\r'<<std::flush;
 	}
 }
 
