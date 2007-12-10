@@ -72,7 +72,7 @@ using std::max;
 using std::swap;
 using std::sort;
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
+//#define WIN32_LEAN_AND_MEAN //defined in project properties
 #include <windows.h>
 #endif
 #include <assert.h>
