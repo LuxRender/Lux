@@ -58,6 +58,8 @@
 #define chdir _chdir
 #endif
 
+#include "multiimage.h"
+
 using asio::ip::tcp;
 namespace po = boost::program_options;
 
@@ -221,6 +223,12 @@ void startServer() {
 				{
 					boost::thread t(&luxWorldEnd);
 					boost::thread j(&infoThread);
+				}
+				else if(command=="luxFilm")
+				{
+					std::cout<<"transmitting film...."<<std::endl;
+					luxFilm(stream);
+					std::cout<<"...ok"<<std::endl;
 				}
 				else
 				{
@@ -416,7 +424,7 @@ int main(int ac, char *av[]) {
 		// in config file, but will not be shown to the user.
 		po::options_description hidden ("Hidden options");
 		hidden.add_options ()
-		("input-file", po::value< vector<string> >(), "input file");
+		("input-file", po::value< vector<string> >(), "input file") ("test","debug test mode");
 
 		po::options_description cmdline_options;
 		cmdline_options.add (generic).add (config).add (hidden);
@@ -439,6 +447,19 @@ int main(int ac, char *av[]) {
 		ifs ("luxconsole.cfg");
 		store (parse_config_file (ifs, config_file_options), vm);
 		notify (vm);
+
+		if (vm.count ("test"))
+		{
+			std::cout << "getting film..."<<std::endl;
+			tcp::iostream stream("127.0.0.1", "18018");
+			std::cout << "connected"<<std::endl;
+			stream<<"luxFilm"<<std::endl;
+			boost::archive::text_iarchive ia(stream);
+			MultiImageFilm m(320,200);
+			Point p;
+			ia>>m;
+			return 0;
+		}
 
 		if (vm.count ("help"))
 		{

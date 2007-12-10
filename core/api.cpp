@@ -149,7 +149,8 @@ void networkSend(const std::string &command, float tr[16]) {
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl;//<<x<<' '<<y<<' '<<z<<' ';
 			for(int i=0;i<16;i++)
-			netBuffer<<tr[i]<<' ';
+				netBuffer<<tr[i]<<' ';
+			netBuffer<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
 	}
@@ -971,5 +972,11 @@ void luxErrorPrint(int code, int severity, const char *message) {
 	std::cerr<<"\033[0m";
 #endif
 	std::cerr<<"] "<<message<<std::endl;
+}
+
+void luxFilm(tcp::iostream &stream)
+{
+	boost::archive::text_oarchive oa(stream);
+	oa<<(*const_cast<const Film *>(luxCurrentScene->camera->film));
 }
 

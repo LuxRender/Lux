@@ -27,6 +27,9 @@
 #include <string>
 using std::string;
 class ParamSet;
+#include "../include/asio.hpp"
+using asio::ip::tcp;
+
 // API Function Declarations
 extern  void luxIdentity();
 extern  void luxTranslate(float dx, float dy, float dz);
@@ -104,6 +107,9 @@ extern unsigned char* luxFramebuffer();
 extern int luxDisplayInterval();
 extern int luxFilmXres();
 extern int luxFilmYres();
+
+//film access (networking)
+extern void luxFilm(tcp::iostream &stream);
 
 //statistics
 extern double luxStatistics(char *statName);

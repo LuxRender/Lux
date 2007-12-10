@@ -31,6 +31,8 @@
 #include <boost/timer.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <boost/serialization/base_object.hpp>
+
 #define WI_HDR 0
 #define WI_LDR 1
 #define WI_IGI 3
@@ -38,8 +40,10 @@
 
 // ImageFilm Declarations
 class MultiImageFilm : public Film {
+	friend class boost::serialization::access;
 public:
 	// MultiImageFilm Public Methods
+	MultiImageFilm(int xres, int yres) : Film(xres,yres) {}; 
 	MultiImageFilm(int xres, int yres,
 	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
 		             const string &hdr_filename, const string &igi_filename, const string &ldr_filename, bool premult,
@@ -67,6 +71,20 @@ public:
 	void updateFrameBuffer();
 	unsigned char* getFrameBuffer();
 	float getldrDisplayInterval() { return ldrDisplayInterval; }
+	
+	template<class Archive>
+			void serialize(Archive & ar, const unsigned int version)
+			{
+				// serialize base class information
+				ar & boost::serialization::base_object<Film>(*this);
+				ar & cropWindow;
+				ar & xPixelStart;
+				ar & yPixelStart;
+				ar & xPixelCount;
+				ar & yPixelCount;
+				//ar & pixels;
+				//new BlockedArray<Pixel>(xPixelCount, yPixelCount);
+			}
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 private:
@@ -85,6 +103,14 @@ private:
 		}
 		Spectrum L;
 		float alpha, weightSum;
+		
+		template<class Archive>
+					void serialize(Archive & ar, const unsigned int version)
+					{
+						ar & L;
+						ar & alpha;
+						ar & weightSum;
+					}
 	};
 	BlockedArray<Pixel> *pixels;
 	float *filterTable;

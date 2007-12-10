@@ -24,6 +24,13 @@
 #include <boost/pool/pool.hpp>
 #include <boost/pool/object_pool.hpp>
 
+#include <fstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/split_member.hpp>
+
 //#include <math.h>
 
 #ifndef LUX_LUX_H
@@ -491,6 +498,7 @@ private:
 template<class T, int logBlockSize> class BlockedArray {
 public:
 	// BlockedArray Public Methods
+	BlockedArray () {}
 	BlockedArray(int nu, int nv, const T *d = NULL) {
 		uRes = nu;
 		vRes = nv;
@@ -537,6 +545,33 @@ public:
 			for (int u = 0; u < uRes; ++u)
 				*a++ = (*this)(u, v);
 	}
+	
+	template<class Archive>
+					void save(Archive & ar, const unsigned int version) const
+					{
+						ar & uRes;
+						ar & vRes;
+						ar & uBlocks;
+						
+						int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+						for (int i = 0; i < nAlloc; ++i)
+							ar & data[i];
+					}
+			
+	template<class Archive>
+						void load(Archive & ar, const unsigned int version)
+						{
+							ar & uRes;
+							ar & vRes;
+							ar & uBlocks;
+				
+							int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+							data = (T *)AllocAligned(nAlloc * sizeof(T));
+							for (int i = 0; i < nAlloc; ++i)
+								ar & data[i];
+						}
+	BOOST_SERIALIZATION_SPLIT_MEMBER()
+	
 private:
 	// BlockedArray Private Data
 	T *data;

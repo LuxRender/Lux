@@ -24,8 +24,10 @@
 #define LUX_FILM_H
 // film.h*
 #include "lux.h"
+#include "error.h"
 // Film Declarations
 class Film {
+	friend class boost::serialization::access;
 public:
 	// Film Interface
 	Film(int xres, int yres)
@@ -41,8 +43,20 @@ public:
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual float getldrDisplayInterval() = 0;
+	
+
+
 	// Film Public Data
 	const int xResolution, yResolution;
+	
+private :
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+		//ar & xResolution;
+		//ar & yResolution;
+	}
+	
 };
 // Image Pipeline Declarations
 extern  void ApplyImagingPipeline(float *rgb,
