@@ -40,12 +40,21 @@ BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom
 	float vrough = vroughness->Evaluate(dgs);
 	if (!R.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(ior, 1.);
-		bsdf->Add(BSDF_ALLOC(arena, Microfacet)(R *.5, fresnel,
+		if(urough == vrough)
+			bsdf->Add(BSDF_ALLOC(arena, Microfacet)(R *.5, fresnel,
+				BSDF_ALLOC(arena, Blinn)(1.f/urough)));
+		else
+			bsdf->Add(BSDF_ALLOC(arena, Microfacet)(R *.5, fresnel,
 				BSDF_ALLOC(arena, Anisotropic)(1.f/urough, 1.f/vrough)));
 	}
 	if (!T.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(ior, 1.);
-		bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(T *.5, fresnel,
+		// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
+		if(urough == vrough)
+			bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(T *.5, fresnel,
+				BSDF_ALLOC(arena, Blinn)(1.f/urough))));
+		else
+			bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(T *.5, fresnel,
 				BSDF_ALLOC(arena, Anisotropic)(1.f/urough, 1.f/vrough))));
 	}
 	return bsdf;

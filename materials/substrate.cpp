@@ -37,7 +37,12 @@ BSDF *Substrate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
 
-	bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(d, s, BSDF_ALLOC(arena, Anisotropic)(1.f/u, 1.f/v)));
+	// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
+	if(u == v)
+		bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(d, s, BSDF_ALLOC(arena, Blinn)(1.f/u)));
+	else
+		bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(d, s, BSDF_ALLOC(arena, Anisotropic)(1.f/u, 1.f/v)));
+
 	return bsdf;
 }
 Material* Substrate::CreateMaterial(const Transform &xform,
