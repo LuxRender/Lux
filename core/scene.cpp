@@ -84,6 +84,8 @@ double Scene::Statistics(char *statName) {
 		return Statistics_SamplesPSec(); 
 	if(std::string(statName)=="samplesPx")
 		return Statistics_SamplesPPx(); 
+	if(std::string(statName)=="efficiency")
+		return Statistics_Efficiency();
 	
 	return 0.;
 }
@@ -115,6 +117,20 @@ double Scene::Statistics_SamplesPSec()
 
 	// return current samples / sec total
 	return dif_samples / elapsed;
+}
+
+double Scene::Statistics_Efficiency()
+{
+	// collect samples from all threads
+	double samples = 0.;
+	double drops = 0.;
+	for(unsigned int i=0;i<renderThreads.size();i++) {
+		samples +=renderThreads[i]->stat_Samples; 	
+		drops +=renderThreads[i]->stat_blackSamples; 	
+	}
+
+	// return efficiency percentage
+	return 100. - (drops * (100/samples));
 }
 
 void Scene::SignalThreads(int signal)
@@ -180,6 +196,9 @@ void RenderThread::render(RenderThread *myThread)
 			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
+
+			if( Ls == Spectrum(0.f) )
+				myThread->stat_blackSamples++;
 
 			// Radiance - Add sample contribution to image using integrationsampler if necessary
 			// the integration sampler might want to add the sample in a different way.

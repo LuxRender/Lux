@@ -492,6 +492,7 @@ void update_Statistics(void *) {
 	int samplessec = Floor2Int(luxStatistics("samplesSec"));
 	int secelapsed = Floor2Int(luxStatistics("secElapsed"));
 	double samplespx = luxStatistics("samplesPx");
+	int efficiency = Floor2Int(luxStatistics("efficiency"));
 
 	char t[] = "00:00";
 	int secs = (secelapsed) % 60;
@@ -503,8 +504,8 @@ void update_Statistics(void *) {
 	t[0] = ((mins / 10) % 10) + '0';
 
 	static char istxt[256];
-	sprintf(istxt, "%i:%s - %i S/s - %.2f S/px", hours, t, samplessec,
-			samplespx);
+	sprintf(istxt, "%i:%s - %i S/s - %.2f S/px - %i%% eff", hours, t, samplessec,
+			samplespx, efficiency);
 	static const char * txts = istxt;
 	info_statistics->label(txts);
 	Fl::redraw();

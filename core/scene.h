@@ -45,6 +45,7 @@ class RenderThread : public boost::noncopyable
 			: n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi), sampler(_Splr), camera(_Cam), scene(_Scn)
 		{
 			stat_Samples=0;
+			stat_blackSamples=0;
 			sample=new Sample( surfaceIntegrator, volumeIntegrator, scene);
 
 			// Radiance - hand the sample struct to the integrationsampler if used by the surfaceintegrator
@@ -66,7 +67,7 @@ class RenderThread : public boost::noncopyable
 		static void render(RenderThread *r);
 		
 		int  n, signal;
-		double stat_Samples;
+		double stat_Samples, stat_blackSamples;
 		SurfaceIntegrator *surfaceIntegrator;
 		VolumeIntegrator *volumeIntegrator;
 		IntegrationSampler *integrationSampler;
@@ -109,6 +110,7 @@ public:
 	int AddThread(); //returns the thread ID
 	void RemoveThread();
 	double Statistics_SamplesPSec();
+	double Statistics_Efficiency();
 	double Statistics_SamplesPPx();
 	//framebuffer access
 	void UpdateFramebuffer();
