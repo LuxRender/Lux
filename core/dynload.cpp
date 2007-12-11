@@ -50,6 +50,7 @@
 #include "paraboloid.h"
 #include "sphere.h"
 #include "trianglemesh.h"
+#include "plymesh.h"
 
 //#include "bestcandidate.h"
 #include "lowdiscrepancy.h"
@@ -441,6 +442,8 @@ public:
         return ShapePtr(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="trianglemesh")
         return ShapePtr(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
+    if(name=="plymesh")
+        return ShapePtr(PlyMesh::CreateShape(object2world, reverseOrientation, paramSet));
     //Error("Static loading of shape '%s' failed.",name.c_str());
 	std::stringstream ss;
 	ss<<"Static loading of shape '"<<name<<"' failed.";

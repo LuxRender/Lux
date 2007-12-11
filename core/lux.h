@@ -199,6 +199,7 @@ class PlanarMapping2D;
 class TextureMapping3D;
 class IdentityMapping3D;
 class TriangleMesh;
+class PlyMesh;
 template <class T> class Texture;
  float Noise(float x, float y = .5f, float z = .5f);
  float Noise(const Point &P);
