@@ -27,7 +27,9 @@
 #include <string>
 using std::string;
 class ParamSet;
-#include "../include/asio.hpp"
+
+#include "../renderer/include/asio.hpp"
+
 using asio::ip::tcp;
 
 // API Function Declarations
