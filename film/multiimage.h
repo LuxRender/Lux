@@ -43,7 +43,7 @@ class MultiImageFilm : public Film {
 	friend class boost::serialization::access;
 public:
 	// MultiImageFilm Public Methods
-	MultiImageFilm(int xres, int yres) : Film(xres,yres) {}; 
+	MultiImageFilm(int xres, int yres) : Film(xres,yres) { pixels=NULL; filter=NULL; filterTable=NULL; }; 
 	MultiImageFilm(int xres, int yres,
 	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
 		             const string &hdr_filename, const string &igi_filename, const string &ldr_filename, bool premult,
@@ -52,9 +52,9 @@ public:
 					 float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
 					 float bloomWidth, float bloomRadius, float gamma, float dither);
 	~MultiImageFilm() {
-		delete pixels;
-		delete filter;
-		delete[] filterTable;
+		if(pixels!=NULL) delete pixels;
+		if(filter!=NULL)delete filter;
+		if(filterTable!=NULL)delete[] filterTable;
 	}
 	void AddSample(float sX, float sY, 
 	               const Spectrum &L, float alpha);
@@ -72,22 +72,30 @@ public:
 	unsigned char* getFrameBuffer();
 	float getldrDisplayInterval() { return ldrDisplayInterval; }
 	
-	template<class Archive>
-			void serialize(Archive & ar, const unsigned int version)
-			{
-				// serialize base class information
-				ar & boost::serialization::base_object<Film>(*this);
-				ar & cropWindow;
-				ar & xPixelStart;
-				ar & yPixelStart;
-				ar & xPixelCount;
-				ar & yPixelCount;
-				//ar & pixels;
-				//new BlockedArray<Pixel>(xPixelCount, yPixelCount);
-			}
+	void merge(MultiImageFilm &f);
+void clean();
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 private:
+	template<class Archive>
+				void serialize(Archive & ar, const unsigned int version)
+				{
+					boost::mutex::scoped_lock lock(addSampleMutex);
+					// serialize base class information
+					ar & boost::serialization::base_object<Film>(*this);
+					//ar & xResolution;
+					//ar & yResolution;
+					
+					//ar & cropWindow;
+					ar & xPixelStart;
+					ar & yPixelStart;
+					ar & xPixelCount;
+					ar & yPixelCount;
+					ar & pixels;
+					//new BlockedArray<Pixel>(xPixelCount, yPixelCount);
+				}
+	
+	
 	// MultiImageFilm Private Data
 	Filter *filter;
 	int hdrWriteInterval, igiWriteInterval, ldrWriteInterval, ldrDisplayInterval, sampleCount;

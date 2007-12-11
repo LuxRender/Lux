@@ -28,6 +28,7 @@
 #include "film.h"
 #include "dynload.h"
 #include "volume.h"
+#include "../film/multiimage.h"
 #include "error.h"
 #include <vector>
 #include <string>
@@ -134,7 +135,7 @@ void networkSend(const std::string &command, float ex, float ey, float ez,
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<ex<<' '<<ey<<' '<<ez<<' '<<lx<<' '<<ly<<' '<<lz<<' '<<ux<<' '<<uy<<' '<<uz<<' ';
+			netBuffer<<command<<std::endl<<ex<<' '<<ey<<' '<<ez<<' '<<lx<<' '<<ly<<' '<<lz<<' '<<ux<<' '<<uy<<' '<<uz<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
 	}
@@ -974,9 +975,34 @@ void luxErrorPrint(int code, int severity, const char *message) {
 	std::cerr<<"] "<<message<<std::endl;
 }
 
-void luxFilm(tcp::iostream &stream)
+void luxGetFilm(tcp::iostream &stream)
 {
+	
 	boost::archive::text_oarchive oa(stream);
-	oa<<(*const_cast<const Film *>(luxCurrentScene->camera->film));
+	//boost::archive::text_oarchive ob(std::cout);
+	//jromang TODO : fix this hack !
+	//ob<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	oa<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	((MultiImageFilm *)(luxCurrentScene->camera->film))->clean();
 }
 
+void luxUpdateFilmFromNetwork()
+{
+	for (vector<string>::iterator server = luxServerList.begin(); server
+				!= luxServerList.end(); ++server) {
+			try
+			{
+				std::cout << "getting film from "<<*server<<std::endl;
+				tcp::iostream stream((*server).c_str(), "18018");
+				std::cout << "connected"<<std::endl;
+				stream<<"luxGetFilm"<<std::endl;
+				boost::archive::text_iarchive ia(stream);
+				MultiImageFilm m(320,200);
+				ia>>m;
+				std::cout<<"ok, i got the film! merging...";
+				((MultiImageFilm *)(luxCurrentScene->camera->film))->merge(m);
+				std::cout<<"merged!"<<std::endl;
+			}
+			catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+		}
+}

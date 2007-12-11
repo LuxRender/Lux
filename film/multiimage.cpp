@@ -475,4 +475,28 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		bloomWidth, bloomRadius, gamma, dither);
 }
 
+void MultiImageFilm::clean() {
+	boost::mutex::scoped_lock lock(addSampleMutex);
+	std::cout<<"cleaning film"<<::std::endl;
+       for (int y = 0; y < yPixelCount; ++y) {
+          for (int x = 0; x < xPixelCount; ++x) {
+             (*pixels)(x, y).L = 0.;
+             (*pixels)(x, y).alpha = 0.;
+             (*pixels)(x, y).weightSum = 0.;
+          }
+       }
+    }
+
+void MultiImageFilm::merge(MultiImageFilm &f) {
+	boost::mutex::scoped_lock lock(addSampleMutex);
+	std::cout<<"merging film"<<::std::endl;
+       for (int y = 0; y < yPixelCount; ++y) {
+          for (int x = 0; x < xPixelCount; ++x) {
+             (*pixels)(x, y).L += (*f.pixels)(x, y).L;
+             (*pixels)(x, y).alpha += (*f.pixels)(x, y).alpha;
+             (*pixels)(x, y).weightSum += (*f.pixels)(x, y).weightSum;
+          }
+       }
+    }
+
 

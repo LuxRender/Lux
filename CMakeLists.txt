@@ -309,7 +309,8 @@ SET(lux_lib_src
         core/geometry/transform.cpp
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
-        shapes/paraboloid.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
+        shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
+        shapes/plymesh/rply.c
         samplers/bestcandidate.cpp samplers/lowdiscrepancy.cpp
         samplers/random.cpp samplers/stratified.cpp samplers/halton.cpp
         accelerators/grid.cpp accelerators/kdtree.cpp accelerators/bruteforce.cpp

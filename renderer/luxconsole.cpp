@@ -30,6 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <exception>
 #include <ctime>
 #include <boost/bind.hpp>
@@ -96,6 +97,22 @@ void infoThread() {
 	}
 }
 
+void networkFilmUpdateThread()
+{
+	while (true) {
+
+			boost::xtime xt;
+			boost::xtime_get(&xt, boost::TIME_UTC);
+			xt.sec += 59;
+			boost::thread::sleep(xt);
+
+			boost::posix_time::time_duration td(0, 0,
+					(int)luxStatistics("secElapsed"), 0);
+
+			luxUpdateFilmFromNetwork();
+		}
+}
+
 void processCommand(void (&f)(const string &, const ParamSet &), tcp::iostream &stream) {
 	std::string type;
 	ParamSet params;
@@ -143,14 +160,17 @@ void startServer() {
 		{
 			tcp::iostream stream;
 			acceptor.accept(*stream.rdbuf());
+			stream.setf(std::ios::scientific, std::ios::floatfield);
+			stream.precision(16);
 
 			//reading the command
 			std::string command;
 			while(std::getline(stream, command))
 			{
-				std::cout<<"server processing command : '"<<command<<"'"<<std::endl;
+				if((command!="")&&(command!=" ")) std::cout<<"server processing command : '"<<command<<"'"<<std::endl;
 				//processing the command
 				if(command==""); //skip
+				else if(command==" "); //skip
 				else if(command=="luxInit") luxInit();
 				else if(command=="luxTranslate") processCommand(luxTranslate,stream);
 				else if(command=="luxRotate")
@@ -224,15 +244,17 @@ void startServer() {
 					boost::thread t(&luxWorldEnd);
 					boost::thread j(&infoThread);
 				}
-				else if(command=="luxFilm")
+				else if(command=="luxGetFilm")
 				{
 					std::cout<<"transmitting film...."<<std::endl;
-					luxFilm(stream);
+					luxGetFilm(stream);
 					std::cout<<"...ok"<<std::endl;
 				}
 				else
 				{
-					std::cout<<"unknown command!"<<std::endl;
+					std::stringstream ss;
+					ss<<"Unknown command '"<<command<<"'. Ignoring.";
+					luxError(LUX_BUG,LUX_SEVERE,ss.str().c_str());
 				}
 
 				std::cout<<"command processed"<<std::endl;
@@ -247,112 +269,10 @@ void startServer() {
 	}
 }
 
-/*
- void test()
- {
- //send the command
- luxInit();
- //LookAt 0 10 100   0 -1 0 0 1 0
- luxLookAt(0,10,100,0,-1,0,0,1,0);
- //Camera "perspective" "float fov" [30]
- {
- ParamSet p;
- float f=30;
- p.AddFloat("fov",&f,1);
- const ParamSet cp(p);
- luxCamera("perspective",cp);
- }
- //PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
- {
- ParamSet p;
- float f=2;
- p.AddFloat("xwidth",&f,1);
- p.AddFloat("ywidth",&f,1);
- const ParamSet cp(p);
- luxPixelFilter("mitchell",cp);
- }
- //Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
- {
- ParamSet p;
- bool prog=true;
- int ps=4;
- p.AddBool("progressive",&prog,1);
- p.AddInt("pixelsamples",&ps,1);
- const ParamSet cp(p);
- luxSampler("lowdiscrepancy",cp);
-
- }
- //Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
- {
- ParamSet p;
- int r=200;
- p.AddInt("xresolution",&r,1);
- p.AddInt("yresolution",&r,1);
- const ParamSet cp(p);
- luxFilm("multiimage",cp);
-
- }
- //
- luxWorldBegin();
- luxAttributeBegin();
- luxCoordSysTransform("camera");
-
- //LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
- {
- ParamSet p;
- Point from(0,0,0),to(0,0,1);
- float cs[]= {3,3,3};
- Spectrum color(cs);
- p.AddPoint("from",&from,1);
- p.AddPoint("to",&to,1);
- p.AddSpectrum("L",&color,1);
- const ParamSet cp(p);
- luxLightSource("distant",cp);
-
- }
-
- luxRotate(135,1,0,0);
-
- //Texture "checks" "color" "checkerboard"
- //         "float uscale" [4] "float vscale" [4]
- //        "color tex1" [1 0 0] "color tex2" [0 0 1]
- {
- ParamSet p;
- float scale=4;
- float t1[]= {1,0,0},t2[]= {0,0,1};
- Spectrum c1(t1),c2(t2);
- p.AddFloat("uscale",&scale,1);
- p.AddFloat("vscale",&scale,1);
- p.AddSpectrum("tex1",&c1,1);
- p.AddSpectrum("tex2",&c2,1);
- const ParamSet cp(p);
- luxTexture("checks", "color", "checkerboard",cp);
-
- }
- //Material "matte"
- //           "texture Kd" "checks"
- {
- ParamSet p;
- p.AddTexture(std::string("Kd"),std::string("checks"));
- const ParamSet cp(p);
- luxMaterial("matte",cp);
- }
- //Shape "disk" "float radius" [20] "float height" [-1]
- {
- ParamSet p;
- float r=20,h=-1;
- p.AddFloat("radius",&r,1);
- p.AddFloat("height",&h,1);
- const ParamSet cp(p);
- luxShape("disk",cp);
-
- }
- luxAttributeEnd();
- luxWorldEnd();
- }*/
 
 int main(int ac, char *av[]) {
 
+	bool useServer=false;
 	//test();
 	/*
 	 // Print welcome banner
@@ -453,11 +373,13 @@ int main(int ac, char *av[]) {
 			std::cout << "getting film..."<<std::endl;
 			tcp::iostream stream("127.0.0.1", "18018");
 			std::cout << "connected"<<std::endl;
-			stream<<"luxFilm"<<std::endl;
+			stream<<"luxGetFilm"<<std::endl;
 			boost::archive::text_iarchive ia(stream);
 			MultiImageFilm m(320,200);
 			Point p;
 			ia>>m;
+			std::cout<<"ok, i got the film!";
+			//m.WriteImage();
 			return 0;
 		}
 
@@ -490,130 +412,8 @@ int main(int ac, char *av[]) {
 
 			//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
 			luxAddServer(name);
-
-			/*
-			 std::string name=vm["useserver"].as<std::string>();
-			 std::cout<<"connecting to "<<name<<std::endl;
-			 try {
-
-			 tcp::iostream s(name.c_str(), "18018");
-
-
-			 //send the command
-			 s<<"luxInit"<<std::endl;
-			 //LookAt 0 10 100   0 -1 0 0 1 0
-			 s<<"luxLookAt"<<std::endl<<0<<' '<<10<<' '<<100<<' '<<0<<' '<<-1<<' '<<0<<' '<<0<<' '<<1<<' '<<0;
-			 //Camera "perspective" "float fov" [30]
-			 {
-			 ParamSet p;
-			 float f=30;
-			 p.AddFloat("fov",&f,1);
-			 const ParamSet cp(p);
-			 s<<"luxCamera"<<std::endl<<"perspective ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 //PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
-			 {
-			 ParamSet p;
-			 float f=2;
-			 p.AddFloat("xwidth",&f,1);
-			 p.AddFloat("ywidth",&f,1);
-			 const ParamSet cp(p);
-			 s<<"luxPixelFilter"<<std::endl<<"mitchell ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 //Sampler "lowdiscrepancy" "bool progressive" ["true"] "integer pixelsamples" [4]
-			 {
-			 ParamSet p;
-			 bool prog=true;
-			 int ps=4;
-			 p.AddBool("progressive",&prog,1);
-			 p.AddInt("pixelsamples",&ps,1);
-			 const ParamSet cp(p);
-			 s<<"luxSampler"<<std::endl<<"lowdiscrepancy ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 //Film "multiimage" "integer xresolution" [200] "integer yresolution" [200]
-			 {
-			 ParamSet p;
-			 int r=200;
-			 p.AddInt("xresolution",&r,1);
-			 p.AddInt("yresolution",&r,1);
-			 const ParamSet cp(p);
-			 s<<"luxFilm"<<std::endl<<"multiimage ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 //
-			 s<<"luxWorldBegin"<<std::endl<<"luxAttributeBegin"<<std::endl<<"luxCoordSysTransform"<<std::endl<<"camera"<<std::endl;
-
-			 //LightSource "distant"  "point from" [0 0 0] "point to"   [0 0 1] "color L"    [3 3 3]
-			 {
-			 ParamSet p;
-			 Point from(0,0,0),to(0,0,1);
-			 float cs[]= {3,3,3};
-			 Spectrum color(cs);
-			 p.AddPoint("from",&from,1);
-			 p.AddPoint("to",&to,1);
-			 p.AddSpectrum("L",&color,1);
-			 const ParamSet cp(p);
-			 s<<"luxLightSource"<<std::endl<<"distant ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-
-			 s<<"luxRotate"<<std::endl<<135<<' '<<1<<' '<<0<<' '<<0<<std::endl;
-
-			 //Texture "checks" "color" "checkerboard"
-			 //         "float uscale" [4] "float vscale" [4]
-			 //        "color tex1" [1 0 0] "color tex2" [0 0 1]
-			 {
-			 ParamSet p;
-			 float scale=4;
-			 float t1[]= {1,0,0},t2[]= {0,0,1};
-			 Spectrum c1(t1),c2(t2);
-			 p.AddFloat("uscale",&scale,1);
-			 p.AddFloat("vscale",&scale,1);
-			 p.AddSpectrum("tex1",&c1,1);
-			 p.AddSpectrum("tex2",&c2,1);
-			 const ParamSet cp(p);
-			 s<<"luxTexture"<<std::endl<<"checks color checkerboard ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 //Material "matte"
-			 //           "texture Kd" "checks"
-			 {
-			 ParamSet p;
-			 p.AddTexture(std::string("Kd"),std::string("checks"));
-			 const ParamSet cp(p);
-			 s<<"luxMaterial"<<std::endl<<"matte ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 //Shape "disk" "float radius" [20] "float height" [-1]
-			 {
-			 ParamSet p;
-			 float r=20,h=-1;
-			 p.AddFloat("radius",&r,1);
-			 p.AddFloat("height",&h,1);
-			 const ParamSet cp(p);
-			 s<<"luxShape"<<std::endl<<"disk ";
-			 boost::archive::text_oarchive oa(s);
-			 oa<<cp;
-			 }
-			 s<<"luxAttributeEnd"<<std::endl<<"luxWorldEnd"<<std::endl;
-
-			 }
-			 catch (std::exception& e)
-			 {
-			 std::cerr << e.what() << std::endl;
-			 }
-			 */
-
+			
+			useServer=true;
 		}
 
 		if (vm.count ("input-file"))
@@ -666,6 +466,7 @@ int main(int ac, char *av[]) {
 				//launch info printing thread
 				//boost::thread *j=new
 				boost::thread j(&infoThread);
+				if(useServer) boost::thread k(&networkFilmUpdateThread);
 
 				//wait for threads to finish
 				t.join();

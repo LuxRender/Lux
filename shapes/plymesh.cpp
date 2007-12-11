@@ -23,7 +23,7 @@
 #include "plymesh.h"
 
 #include "trianglemesh.h"
-#include "plymesh/rply.h"
+#include "./plymesh/rply.h"
 
 // rply vertex callback
 static int VertexCB(p_ply_argument argument) 

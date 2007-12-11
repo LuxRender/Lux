@@ -47,14 +47,14 @@ public:
 
 
 	// Film Public Data
-	const int xResolution, yResolution;
+	int xResolution, yResolution;
 	
 private :
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version)
 	{
-		//ar & xResolution;
-		//ar & yResolution;
+		ar & xResolution;
+		ar & yResolution;
 	}
 	
 };
