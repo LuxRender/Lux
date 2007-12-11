@@ -55,7 +55,6 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		float *alpha) const {
 	// Declare common path integration variables
 	Spectrum pathThroughput = 1., L = 0.;
-	int transmissionBounces = 0;
 	RayDifferential ray(r);
 	bool specularBounce = false;
 	for (int pathLength = 0; ; ++pathLength) {
@@ -64,9 +63,10 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		if (!scene->Intersect(ray, &isect)) {
 			// Stop path sampling since no intersection was found
 			// Possibly add emitted light
-			if (pathLength == 0 || specularBounce)
+			if(useMlt || (pathLength == 0 || specularBounce) ) {
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					L += pathThroughput * scene->lights[i]->Le(ray); 
+			}
 			// Set alpha channel NOTE - RADIANCE - disabled for now
 			/*if (pathLength == 0 && alpha) {
 				if (L != 0.) *alpha = 1.;
@@ -81,6 +81,9 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		else
 			pathThroughput *= scene->Transmittance(ray);
 		// Possibly add emitted light at path vertex
+		if(useMlt) {
+			L += pathThroughput * isect.Le(-ray.d);
+		} else
 		if (pathLength == 0 || specularBounce)
 			L += pathThroughput * isect.Le(-ray.d);
 		// Evaluate BSDF at hit point
@@ -89,22 +92,24 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
-		if (pathLength < SAMPLE_DEPTH && !useMlt)
-			L += pathThroughput *
-				UniformSampleOneLight(scene, p, n,
-					wo, bsdf, sample,
-					lightPositionOffset[pathLength],
-					lightNumOffset[pathLength],
-					bsdfDirectionOffset[pathLength],
-					bsdfComponentOffset[pathLength]);
-		else 
-			L += pathThroughput *
-				UniformSampleOneLight(scene, p, n,
-					wo, bsdf, sample);
+		if(!useMlt) {
+			if (pathLength < SAMPLE_DEPTH)
+				L += pathThroughput *
+					UniformSampleOneLight(scene, p, n,
+						wo, bsdf, sample,
+						lightPositionOffset[pathLength],
+						lightNumOffset[pathLength],
+						bsdfDirectionOffset[pathLength],
+						bsdfComponentOffset[pathLength]);
+			else 
+				L += pathThroughput *
+					UniformSampleOneLight(scene, p, n,
+						wo, bsdf, sample);
+		}
 		// Sample BSDF to get new path direction
 		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
 		float bs1, bs2, bcs;
-		if (pathLength < SAMPLE_DEPTH) {
+		if (pathLength < SAMPLE_DEPTH && !useMlt) {
 			bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
 			bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
 			bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
@@ -115,9 +120,9 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 			bcs = lux::random::floatValue();
 		}
 		if(useMlt) {
-			// use metropolis integration sampler to possible mutate samples
+			// use metropolis integration sampler to possibly mutate samples
 			mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
-		} 
+		}
 		Vector wi;
 		float pdf;
 		BxDFType flags;
@@ -131,31 +136,34 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		ray = RayDifferential(p, wi);
 
 		// Possibly terminate the path
-		if(forceTransmit)
-		    if((flags & BSDF_TRANSMISSION) != 0)
-				transmissionBounces++;
-
-		if ((pathLength - transmissionBounces) > 3) {
-			if (lux::random::floatValue() > continueProbability)
+		if (pathLength > 3) {
+			if (lux::random::floatValue() > continueProbability) {
+				if(useMlt) L += pathThroughput *
+					UniformSampleOneLight(scene, p, n,
+						wo, bsdf, sample);
 				break;
+			}
 
 			// increase path contribution
 			pathThroughput /= continueProbability;
 		}
-		if (pathLength == maxDepth)
+		if (pathLength == maxDepth) {
+			if(useMlt) L += pathThroughput *
+					UniformSampleOneLight(scene, p, n,
+						wo, bsdf, sample);
 			break;
+		}
 	}
 	return L;
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
 	// general
-	int maxDepth = params.FindOneInt("maxdepth", 512);
+	int maxDepth = params.FindOneInt("maxdepth", 16);
 	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .5f);			// continueprobability for RR (0.0-1.0)
-	bool RRforceTransmit = params.FindOneBool("rrforcetransmit", false);		// forces RR to ignore transmission bounces (don't use, causes bias)
 	// MLT
 	bool mlt = params.FindOneBool("metropolis", true);							// enables use of metropolis integrationsampler
-	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 128);          // number of consecutive rejects before a new mutation is forced
+	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);          // number of consecutive rejects before a new mutation is forced
 	float LargeMutationProb = params.FindOneFloat("largemutationprob", .25f);	// probability of generation a large sample (mutation)
 
-	return new PathIntegrator(maxDepth, RRcontinueProb, RRforceTransmit, mlt, MaxConsecRejects, LargeMutationProb);
+	return new PathIntegrator(maxDepth, RRcontinueProb, mlt, MaxConsecRejects, LargeMutationProb);
 }
