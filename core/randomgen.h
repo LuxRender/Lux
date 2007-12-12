@@ -28,6 +28,7 @@
 
 #include <ctime>
 #include <climits>
+#include <string>
 #define MEXP 216091
 #include "./SFMT/SFMT.h"
 
@@ -36,6 +37,8 @@
 #include <boost/random/mersenne_twister.hpp>
 #endif //LUX_USE_BOOST_RANDOM 
 
+#include "../renderer/include/asio.hpp"
+
 namespace lux
 {
 
@@ -43,10 +46,24 @@ namespace lux
 namespace random
 {
 
+inline unsigned int seed()
+{
+	int dummy;
+	unsigned int seed=static_cast<unsigned int>(std::time(0));
+	//if two copies run on the same machine, dummy adress will make the seed unique
+	seed=seed^(unsigned int)((unsigned long)(&dummy)); 
+	//also use the hostname to make the seed unique
+	std::string s=asio::ip::host_name();
+	for(unsigned int i=0;i<s.size();i++)
+		seed=seed^(((unsigned int)s.at(i))<<((i%4)*8));
+	//std::cout<<"using seed :"<<seed<<std::endl;
+	return seed;
+}
+
 #ifndef LUX_USE_BOOST_RANDOM 
 	inline void init()
 	{
-		init_gen_rand(std::clock());
+		init_gen_rand(seed());
 	}
 
 	inline float floatValue()
@@ -92,7 +109,7 @@ namespace random
 	
 	inline void init ()
 	{
-		init_gen_rand(std::clock());
+		init_gen_rand(seed());
 		myGen=new RandomGenerator();
 	}
 	
@@ -114,4 +131,3 @@ namespace random
 }
 
 #endif //LUX_RANDOM_H
-
