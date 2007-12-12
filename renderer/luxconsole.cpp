@@ -97,20 +97,19 @@ void infoThread() {
 	}
 }
 
-void networkFilmUpdateThread()
-{
+void networkFilmUpdateThread() {
 	while (true) {
 
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 59;
-			boost::thread::sleep(xt);
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 59;
+		boost::thread::sleep(xt);
 
-			boost::posix_time::time_duration td(0, 0,
-					(int)luxStatistics("secElapsed"), 0);
+		boost::posix_time::time_duration td(0, 0,
+				(int)luxStatistics("secElapsed"), 0);
 
-			luxUpdateFilmFromNetwork();
-		}
+		luxUpdateFilmFromNetwork();
+	}
 }
 
 void processCommand(void (&f)(const string &, const ParamSet &), tcp::iostream &stream) {
@@ -147,13 +146,18 @@ void processCommand(void (&f)(float[16]), tcp::iostream &stream) {
 	f(t);
 }
 
-void startServer() {
-	std::cout<<"luxconsole: launching server mode..."<<std::endl;
+void startServer(int listenPort=18018) {
+	//std::cout<<"luxconsole: launching server mode..."<<std::endl;
+	{
+	std::stringstream ss;
+	ss<<"Launching server mode on port '"<<listenPort<<"'.";
+	luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+	}
+	
 	try
 	{
 		asio::io_service io_service;
-
-		tcp::endpoint endpoint(tcp::v4(), 18018);
+		tcp::endpoint endpoint(tcp::v4(), listenPort);
 		tcp::acceptor acceptor(io_service, endpoint);
 
 		for (;;)
@@ -243,6 +247,22 @@ void startServer() {
 				{
 					boost::thread t(&luxWorldEnd);
 					boost::thread j(&infoThread);
+
+					//wait the scene parsing to finish
+					while(!luxStatistics("sceneIsReady") && !parseError)
+					{
+						boost::xtime xt;
+						boost::xtime_get(&xt, boost::TIME_UTC);
+						xt.sec += 1;
+						boost::thread::sleep(xt);
+					}
+
+					//add rendering threads
+					int threadsToAdd=threads;
+					while(--threadsToAdd)
+					{
+						luxAddThread();
+					}
 				}
 				else if(command=="luxGetFilm")
 				{
@@ -265,13 +285,14 @@ void startServer() {
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		luxError(LUX_BUG,LUX_ERROR,e.what());
+		//std::cerr << e.what() << std::endl;
 	}
 }
 
-
 int main(int ac, char *av[]) {
-
+	
+	
 	bool useServer=false;
 	//test();
 	/*
@@ -402,7 +423,7 @@ int main(int ac, char *av[]) {
 		}
 		else
 		{
-			threads=1;;
+			threads=1;
 		}
 
 		if (vm.count("useserver"))
@@ -412,7 +433,7 @@ int main(int ac, char *av[]) {
 
 			//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
 			luxAddServer(name);
-			
+
 			useServer=true;
 		}
 
