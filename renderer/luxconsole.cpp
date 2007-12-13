@@ -149,11 +149,11 @@ void processCommand(void (&f)(float[16]), tcp::iostream &stream) {
 void startServer(int listenPort=18018) {
 	//std::cout<<"luxconsole: launching server mode..."<<std::endl;
 	{
-	std::stringstream ss;
-	ss<<"Launching server mode on port '"<<listenPort<<"'.";
-	luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+		std::stringstream ss;
+		ss<<"Launching server mode on port '"<<listenPort<<"'.";
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 	}
-	
+
 	try
 	{
 		asio::io_service io_service;
@@ -231,6 +231,24 @@ void startServer(int listenPort=18018) {
 					boost::archive::text_iarchive ia(stream);
 					ia>>params;
 					std::cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<std::endl;
+
+					std::string file="";
+					file=params.FindOneString(std::string("filename"),file);
+					if(file.size())
+					{
+						std::cout<<"receiving file..."<<file<<std::endl;
+						bool first=true;
+						std::string s;
+						std::ofstream out(file.c_str(),std::ios::out|std::ios::binary);
+						while(getline(stream,s) && s!="LUX_END_FILE")
+						{
+							if(!first)out<<"\n";
+							first=false;
+							out<<s;
+						}
+						out.flush();
+					}
+
 					luxTexture(name,type,texname,params);
 				}
 				else if(command=="luxMaterial") processCommand(luxMaterial,stream);
@@ -291,8 +309,7 @@ void startServer(int listenPort=18018) {
 }
 
 int main(int ac, char *av[]) {
-	
-	
+
 	bool useServer=false;
 	//test();
 	/*
