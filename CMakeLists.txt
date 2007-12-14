@@ -403,3 +403,19 @@ ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ENDIF(APPLE)
 
+#Install target
+INSTALL(TARGETS luxrender luxconsole
+        RUNTIME DESTINATION bin
+)
+
+#Source package target
+SET(VERSION 0.1)
+ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
+	COMMAND cp -R ${CMAKE_SOURCE_DIR}/* lux-${VERSION}
+	COMMAND tar -cf ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar lux-${VERSION}
+	COMMAND bzip2 --best ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	DEPENDS ${lux_lib_src}
+	COMMENT Building source package
+)
+
