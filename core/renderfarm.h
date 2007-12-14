@@ -44,7 +44,7 @@ public:
 	void send(const std::string &command, const string &name, const string &type, const string &texname, const ParamSet &params);
 	
 	void flush(); //!< Sends immediately all commands in the buffer to the servers
-	void updateFilm(MultiImageFilm *film); //Gets the films from the network, and merge them to the film given in parameter
+	void updateFilm(MultiImageFilm *film); //!<Gets the films from the network, and merge them to the film given in parameter
 
 private:
 	std::vector<std::string> serverList;

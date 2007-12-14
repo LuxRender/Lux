@@ -1003,9 +1003,12 @@ void luxGetFilm(tcp::iostream &stream) {
 	//boost::archive::text_oarchive ob(std::cout);
 	//jromang TODO : fix this hack !
 	//ob<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	oa
-			<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	((MultiImageFilm *)(luxCurrentScene->camera->film))->clean();
+	const MultiImageFilm m(*((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	luxCurrentScene->camera->film->clean();
+	oa<<m;
+	
+	//oa<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	//((MultiImageFilm *)(luxCurrentScene->camera->film))->clean();
 }
 
 void luxUpdateFilmFromNetwork() {

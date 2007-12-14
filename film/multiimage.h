@@ -48,6 +48,14 @@ class MultiImageFilm : public Film {
 public:
 	// MultiImageFilm Public Methods
 	MultiImageFilm(int xres, int yres) : Film(xres,yres) { pixels=NULL; filter=NULL; filterTable=NULL; }; 
+	//Copy constructor
+	MultiImageFilm(const MultiImageFilm &m) : Film(m.xResolution,m.yResolution)
+	{
+		boost::mutex::scoped_lock lock(m.addSampleMutex);
+		pixels=new BlockedArray<Pixel>(*(m.pixels));
+		filter=NULL;
+		filterTable=NULL;
+	}
 	MultiImageFilm(int xres, int yres,
 	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
 		             const string &hdr_filename, const string &igi_filename, const string &ldr_filename, bool premult,
@@ -135,7 +143,7 @@ private:
 		bloomWidth, bloomRadius, gamma, dither;
 	unsigned char *framebuffer;
 
-	boost::mutex addSampleMutex;
+	mutable boost::mutex addSampleMutex;
 };
 
 #endif //LUX_MULTIIMAGE_H

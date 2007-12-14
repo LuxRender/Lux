@@ -131,19 +131,6 @@ public:
 	void Clear();
 	string ToString() const;
 	
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & ints;
-		ar & bools;
-		ar & floats;
-		ar & points;
-		ar & vectors;
-		ar & normals;
-		ar & spectra;
-		ar & strings;
-		ar & textures;
-	}
 	
 private:
 	// ParamSet Data
@@ -156,6 +143,20 @@ private:
 	vector<ParamSetItem<Spectrum> *> spectra;
 	vector<ParamSetItem<string> *> strings;
 	vector<ParamSetItem<string> *> textures;
+	
+	template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & ints;
+			ar & bools;
+			ar & floats;
+			ar & points;
+			ar & vectors;
+			ar & normals;
+			ar & spectra;
+			ar & strings;
+			ar & textures;
+		}
 };
 template <class T> struct ParamSetItem {
 	// ParamSetItem Public Methods

@@ -27,6 +27,7 @@
 #include "vector.h"
 
 class  Point {
+	friend class boost::serialization::access;
 public:
 	// Point Methods
 	Point(float _x=0, float _y=0, float _z=0)
@@ -80,6 +81,7 @@ public:
 	// Point Public Data
 	float x,y,z;
 	
+private:
 	template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
 		{

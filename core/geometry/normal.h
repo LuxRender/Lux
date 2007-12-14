@@ -29,6 +29,7 @@
 
 
 class  Normal {
+	friend class boost::serialization::access;
 public:
 	// Normal Methods
 	Normal(float _x=0, float _y=0, float _z=0)
@@ -79,7 +80,8 @@ public:
 	float &operator[](int i) { return (&x)[i]; }
 	// Normal Public Data
 	float x,y,z;
-	
+
+private:
 	template<class Archive>
 			void serialize(Archive & ar, const unsigned int version)
 			{

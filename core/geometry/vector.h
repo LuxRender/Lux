@@ -27,6 +27,7 @@
 
 
 class  Vector {
+	friend class boost::serialization::access;
 public:
 	// Vector Public Methods
 	Vector(float _x=0, float _y=0, float _z=0)
@@ -90,6 +91,7 @@ public:
 	// Vector Public Data
 	float x, y, z;
 	
+private:
 	template<class Archive>
 			void serialize(Archive & ar, const unsigned int version)
 			{

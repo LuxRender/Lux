@@ -502,8 +502,23 @@ private:
 };
 template<class T, int logBlockSize> class BlockedArray {
 public:
+	friend class boost::serialization::access;
 	// BlockedArray Public Methods
 	BlockedArray () {}
+	BlockedArray(const BlockedArray &b, const T *d = NULL)
+	{
+		uRes = b.uRes;
+		vRes = b.vRes;
+		uBlocks = RoundUp(uRes) >> logBlockSize;
+		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+		data = (T *)AllocAligned(nAlloc * sizeof(T));
+		for (int i = 0; i < nAlloc; ++i)
+			new (&data[i]) T(b.data[i]);
+		if (d)
+			for (int v = 0; v < b.vRes; ++v)
+				for (int u = 0; u < b.uRes; ++u)
+					(*this)(u, v) = d[v * uRes + u];
+	}
 	BlockedArray(int nu, int nv, const T *d = NULL) {
 		uRes = nu;
 		vRes = nv;
@@ -551,36 +566,38 @@ public:
 				*a++ = (*this)(u, v);
 	}
 	
-	template<class Archive>
-					void save(Archive & ar, const unsigned int version) const
-					{
-						ar & uRes;
-						ar & vRes;
-						ar & uBlocks;
-						
-						int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-						for (int i = 0; i < nAlloc; ++i)
-							ar & data[i];
-					}
-			
-	template<class Archive>
-						void load(Archive & ar, const unsigned int version)
-						{
-							ar & uRes;
-							ar & vRes;
-							ar & uBlocks;
-				
-							int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-							data = (T *)AllocAligned(nAlloc * sizeof(T));
-							for (int i = 0; i < nAlloc; ++i)
-								ar & data[i];
-						}
-	BOOST_SERIALIZATION_SPLIT_MEMBER()
+	
 	
 private:
 	// BlockedArray Private Data
 	T *data;
 	int uRes, vRes, uBlocks;
+	
+	template<class Archive>
+						void save(Archive & ar, const unsigned int version) const
+						{
+							ar & uRes;
+							ar & vRes;
+							ar & uBlocks;
+							
+							int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+							for (int i = 0; i < nAlloc; ++i)
+								ar & data[i];
+						}
+				
+		template<class Archive>
+							void load(Archive & ar, const unsigned int version)
+							{
+								ar & uRes;
+								ar & vRes;
+								ar & uBlocks;
+					
+								int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+								data = (T *)AllocAligned(nAlloc * sizeof(T));
+								for (int i = 0; i < nAlloc; ++i)
+									ar & data[i];
+							}
+		BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 /*
 struct  Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
