@@ -30,6 +30,7 @@
 #include "volume.h"
 #include "../film/multiimage.h"
 #include "error.h"
+#include "renderfarm.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -55,9 +56,12 @@ using asio::ip::tcp;
 
 //jromang : here is the 'current' scene (we will need to replace that by a context)
 Scene *luxCurrentScene=NULL;
-static std::vector<std::string> luxServerList;
-static std::stringstream netBuffer;
+static RenderFarm renderFarm;
 
+//static std::vector<std::string> luxServerList;
+//static std::stringstream netBuffer;
+
+/*
 void networkSend(const std::string &command) {
 	//Send command to the render servers
 	for (vector<string>::iterator server = luxServerList.begin(); server
@@ -186,7 +190,7 @@ void networkSend(const std::string &command, const string &name,
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
 	}
-}
+}*/
 
 // API Local Classes
 struct RenderOptions {
@@ -297,11 +301,12 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 // API Function Definitions
 
 void luxAddServer(const string &name) {
-	luxServerList.push_back(std::string(name));
+	//luxServerList.push_back(std::string(name));
+	renderFarm.connect(name);
 }
 
 void luxInit() {
-	networkSend("luxInit");
+	renderFarm.send("luxInit");
 	/*
 	 //Send command to the render servers
 	 for (vector<string>::iterator server = luxServerList.begin(); server
@@ -344,7 +349,7 @@ void luxInit() {
 	graphicsState = GraphicsState();
 }
 void luxCleanup() {
-	networkSend("luxCleanup");
+	renderFarm.send("luxCleanup");
 
 	StatsCleanup();
 	// API Cleanup
@@ -358,17 +363,17 @@ void luxCleanup() {
 }
 void luxIdentity() {
 	VERIFY_INITIALIZED("Identity");
-	networkSend("luxIdentity");
+	renderFarm.send("luxIdentity");
 	curTransform = Transform();
 }
 void luxTranslate(float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Translate");
-	networkSend("luxTranslate", dx, dy, dz);
+	renderFarm.send("luxTranslate", dx, dy, dz);
 	curTransform = curTransform * Translate(Vector(dx, dy, dz));
 }
 void luxTransform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
-	networkSend("luxTransform", tr);
+	renderFarm.send("luxTransform", tr);
 	Matrix4x4Ptr o(new Matrix4x4(
 			tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
@@ -378,7 +383,7 @@ void luxTransform(float tr[16]) {
 }
 void luxConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
-	networkSend("luxConcatTransform", tr);
+	renderFarm.send("luxConcatTransform", tr);
 	Matrix4x4Ptr o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
@@ -387,79 +392,79 @@ void luxConcatTransform(float tr[16]) {
 }
 void luxRotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Rotate");
-	networkSend("luxRotate", angle, dx, dy, dz);
+	renderFarm.send("luxRotate", angle, dx, dy, dz);
 	curTransform = curTransform * Rotate(angle, Vector(dx, dy, dz));
 }
 void luxScale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED("Scale");
-	networkSend("luxScale", sx, sy, sz);
+	renderFarm.send("luxScale", sx, sy, sz);
 	curTransform = curTransform * Scale(sx, sy, sz);
 }
 void luxLookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 		float ux, float uy, float uz) {
 	VERIFY_INITIALIZED("LookAt");
-	networkSend("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
+	renderFarm.send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
 
 	curTransform = curTransform * LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
 			Vector(ux, uy, uz));
 }
 void luxCoordinateSystem(const string &name) {
 	VERIFY_INITIALIZED("CoordinateSystem");
-	networkSend("luxCoordinateSystem", name);
+	renderFarm.send("luxCoordinateSystem", name);
 	namedCoordinateSystems[name] = curTransform;
 }
 void luxCoordSysTransform(const string &name) {
 	VERIFY_INITIALIZED("CoordSysTransform");
-	networkSend("luxCoordSysTransform", name);
+	renderFarm.send("luxCoordSysTransform", name);
 	if (namedCoordinateSystems.find(name) != namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[name];
 }
 void luxPixelFilter(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("PixelFilter")
 	;
-	networkSend("luxPixelFilter", name, params);
+	renderFarm.send("luxPixelFilter", name, params);
 	renderOptions->FilterName = name;
 	renderOptions->FilterParams = params;
 }
 void luxFilm(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film")
 	;
-	networkSend("luxFilm", type, params);
+	renderFarm.send("luxFilm", type, params);
 	renderOptions->FilmParams = params;
 	renderOptions->FilmName = type;
 }
 void luxSampler(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Sampler")
 	;
-	networkSend("luxSampler", name, params);
+	renderFarm.send("luxSampler", name, params);
 	renderOptions->SamplerName = name;
 	renderOptions->SamplerParams = params;
 }
 void luxAccelerator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Accelerator")
 	;
-	networkSend("luxAccelerator", name, params);
+	renderFarm.send("luxAccelerator", name, params);
 	renderOptions->AcceleratorName = name;
 	renderOptions->AcceleratorParams = params;
 }
 void luxSurfaceIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("SurfaceIntegrator")
 	;
-	networkSend("luxSurfaceIntegrator", name, params);
+	renderFarm.send("luxSurfaceIntegrator", name, params);
 	renderOptions->SurfIntegratorName = name;
 	renderOptions->SurfIntegratorParams = params;
 }
 void luxVolumeIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("VolumeIntegrator")
 	;
-	networkSend("luxVolumeIntegrator", name, params);
+	renderFarm.send("luxVolumeIntegrator", name, params);
 	renderOptions->VolIntegratorName = name;
 	renderOptions->VolIntegratorParams = params;
 }
 void luxCamera(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Camera")
 	;
-	networkSend("luxCamera", name, params);
+	renderFarm.send("luxCamera", name, params);
 
 	renderOptions->CameraName = name;
 	renderOptions->CameraParams = params;
@@ -469,7 +474,7 @@ void luxCamera(const string &name, const ParamSet &params) {
 void luxWorldBegin() {
 	VERIFY_OPTIONS("WorldBegin")
 	;
-	networkSend("luxWorldBegin");
+	renderFarm.send("luxWorldBegin");
 	currentApiState = STATE_WORLD_BLOCK;
 	curTransform = Transform();
 	namedCoordinateSystems["world"] = curTransform;
@@ -477,14 +482,14 @@ void luxWorldBegin() {
 void luxAttributeBegin() {
 	VERIFY_WORLD("AttributeBegin")
 	;
-	networkSend("luxAttributeBegin");
+	renderFarm.send("luxAttributeBegin");
 	pushedGraphicsStates.push_back(graphicsState);
 	pushedTransforms.push_back(curTransform);
 }
 void luxAttributeEnd() {
 	VERIFY_WORLD("AttributeEnd")
 	;
-	networkSend("luxAttributeEnd");
+	renderFarm.send("luxAttributeEnd");
 	if (!pushedGraphicsStates.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxAttributeEnd() encountered. Ignoring it.");
 		return;
@@ -497,13 +502,13 @@ void luxAttributeEnd() {
 void luxTransformBegin() {
 	VERIFY_WORLD("TransformBegin")
 	;
-	networkSend("luxTransformBegin");
+	renderFarm.send("luxTransformBegin");
 	pushedTransforms.push_back(curTransform);
 }
 void luxTransformEnd() {
 	VERIFY_WORLD("TransformEnd")
 	;
-	networkSend("luxTransformEnd");
+	renderFarm.send("luxTransformEnd");
 	if (!pushedTransforms.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxTransformEnd() encountered. Ignoring it.");
 		return;
@@ -515,7 +520,7 @@ void luxTexture(const string &name, const string &type, const string &texname,
 		const ParamSet &params) {
 	VERIFY_WORLD("Texture")
 	;
-	networkSend("luxTexture", name, type, texname, params);
+	renderFarm.send("luxTexture", name, type, texname, params);
 
 	TextureParams tp(params, params, graphicsState.floatTextures,
 			graphicsState.spectrumTextures);
@@ -556,14 +561,14 @@ void luxTexture(const string &name, const string &type, const string &texname,
 void luxMaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Material")
 	;
-	networkSend("luxMaterial", name, params);
+	renderFarm.send("luxMaterial", name, params);
 	graphicsState.material = name;
 	graphicsState.materialParams = params;
 }
 void luxLightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("LightSource")
 	;
-	networkSend("luxLightSource", name, params);
+	renderFarm.send("luxLightSource", name, params);
 
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
@@ -639,7 +644,7 @@ void luxLightSource(const string &name, const ParamSet &params) {
 void luxAreaLightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("AreaLightSource")
 	;
-	networkSend("luxAreaLightSource", name, params);
+	renderFarm.send("luxAreaLightSource", name, params);
 
 	graphicsState.areaLight = name;
 	graphicsState.areaLightParams = params;
@@ -648,7 +653,7 @@ void luxAreaLightSource(const string &name, const ParamSet &params) {
 void luxPortalShape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("PortalShape")
 	;
-	networkSend("luxPortalShape", name, params);
+	renderFarm.send("luxPortalShape", name, params);
 
 	ShapePtr shape = MakeShape(name, curTransform,
 			graphicsState.reverseOrientation, params);
@@ -688,7 +693,7 @@ void luxPortalShape(const string &name, const ParamSet &params) {
 void luxShape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Shape")
 	;
-	networkSend("luxShape", name, params);
+	renderFarm.send("luxShape", name, params);
 
 	ShapePtr shape = MakeShape(name, curTransform,
 			graphicsState.reverseOrientation, params);
@@ -726,13 +731,13 @@ void luxShape(const string &name, const ParamSet &params) {
 void luxReverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation")
 	;
-	networkSend("luxReverseOrientation");
+	renderFarm.send("luxReverseOrientation");
 	graphicsState.reverseOrientation = !graphicsState.reverseOrientation;
 }
 void luxVolume(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Volume")
 	;
-	networkSend("luxVolume", name, params);
+	renderFarm.send("luxVolume", name, params);
 	VolumeRegion *vr = MakeVolumeRegion(name, curTransform, params);
 	if (vr)
 		renderOptions->volumeRegions.push_back(vr);
@@ -740,7 +745,7 @@ void luxVolume(const string &name, const ParamSet &params) {
 void luxObjectBegin(const string &name) {
 	VERIFY_WORLD("ObjectBegin")
 	;
-	networkSend("luxObjectBegin", name);
+	renderFarm.send("luxObjectBegin", name);
 	luxAttributeBegin();
 	if (renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectBegin called inside of instance definition");
@@ -750,7 +755,7 @@ void luxObjectBegin(const string &name) {
 void luxObjectEnd() {
 	VERIFY_WORLD("ObjectEnd")
 	;
-	networkSend("luxObjectEnd");
+	renderFarm.send("luxObjectEnd");
 	if (!renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectEnd called outside of instance definition");
 	renderOptions->currentInstance = NULL;
@@ -759,7 +764,7 @@ void luxObjectEnd() {
 void luxObjectInstance(const string &name) {
 	VERIFY_WORLD("ObjectInstance")
 	;
-	networkSend("luxObjectInstance", name);
+	renderFarm.send("luxObjectInstance", name);
 	// Object instance error checking
 	if (renderOptions->currentInstance) {
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectInstance can't be called inside instance definition");
@@ -793,7 +798,9 @@ void luxObjectInstance(const string &name) {
 void luxWorldEnd() {
 	VERIFY_WORLD("WorldEnd")
 	;
-	networkSend("luxWorldEnd");
+	renderFarm.send("luxWorldEnd");
+	renderFarm.flush();
+	/*
 	//flush network buffer
 	for (vector<string>::iterator server = luxServerList.begin(); server
 			!= luxServerList.end(); ++server) {
@@ -803,7 +810,7 @@ void luxWorldEnd() {
 			stream<<netBuffer.str()<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	}*/
 
 	// Ensure the search path was set
 	/*if (!renderOptions->gotSearchPath)
@@ -1002,6 +1009,8 @@ void luxGetFilm(tcp::iostream &stream) {
 }
 
 void luxUpdateFilmFromNetwork() {
+	renderFarm.updateFilm((MultiImageFilm *)(luxCurrentScene->camera->film));
+	/*
 	for (vector<string>::iterator server = luxServerList.begin(); server
 			!= luxServerList.end(); ++server) {
 		try
@@ -1018,5 +1027,5 @@ void luxUpdateFilmFromNetwork() {
 			std::cout<<"merged!"<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	}*/
 }

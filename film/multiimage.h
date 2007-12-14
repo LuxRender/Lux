@@ -20,6 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+#ifndef LUX_MULTIIMAGE_H
+#define LUX_MULTIIMAGE_H
+
+
 #include "lux.h"
 #include "film.h"
 #include "color.h"
@@ -133,3 +137,6 @@ private:
 
 	boost::mutex addSampleMutex;
 };
+
+#endif //LUX_MULTIIMAGE_H
+
