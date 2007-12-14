@@ -160,6 +160,10 @@ IF(APPLE)
 	SET(PNG_LIBRARIES png png12)
 ELSE(APPLE)
 INCLUDE(FindPNG)
+IF(PNG_FOUND)
+ELSE(PNG_FOUND)
+	MESSAGE( STATUS "Warning : could not find PNG - building without png support")
+ENDIF(PNG_FOUND)
 ENDIF(APPLE)
 #FIND_PACKAGE(PNG REQUIRED)
 
@@ -188,7 +192,7 @@ ELSE(APPLE)
 	IF(TIFF_FOUND)
 		MESSAGE( STATUS "Found TIFF" )
 	ELSE(TIFF_FOUND)
-		MESSAGE(FATAL_ERROR "Could not find TIFF")
+		MESSAGE( STATUS "Warning : could not find TIFF - building without tiff support")
 	ENDIF(TIFF_FOUND)
 ENDIF(APPLE)
 
@@ -215,14 +219,19 @@ ELSE(APPLE)
 	INCLUDE(FindJPEG)
 	#FIND_PACKAGE(JPEG REQUIRED)
 	IF(JPEG_FOUND)
-		#MESSAGE( STATUS "Found JPEG" )
+		MESSAGE( STATUS ${JPEG_INCLUDE_DIR} )
 	ELSE(JPEG_FOUND)
-		MESSAGE(FATAL_ERROR "Could not find JPEG")
+		MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
 	ENDIF(JPEG_FOUND)
 ENDIF(APPLE)
 
 
 #All dependencies OK !
+
+#Generate the config.h file
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
+ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
+
 #############################################################################
 #############################################################################
 #########################      COMPILER FLAGS     ###########################

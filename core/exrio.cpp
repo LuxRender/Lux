@@ -32,9 +32,30 @@
 #include <boost/filesystem/convenience.hpp>
 
 #define cimg_display_type  0
+
+#ifdef LUX_USE_CONFIG_H
+#include "config.h"
+
+#ifdef PNG_FOUND
+#define cimg_use_png 1
+#endif
+
+#ifdef JPEG_FOUND
+#define cimg_use_jpeg 1
+#endif
+
+#ifdef TIFF_FOUND
+#define cimg_use_tiff 1
+#endif
+
+
+#else //LUX_USE_CONFIG_H
 #define cimg_use_png 1
 //#define cimg_use_tiff 1
 #define cimg_use_jpeg 1
+#endif //LUX_USE_CONFIG_H
+
+
 #define cimg_debug 0     // Disable modal window in CImg exceptions.
 #include "cimg.h"
 using namespace cimg_library;
