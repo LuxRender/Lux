@@ -61,6 +61,10 @@
 #pragma warning(disable : 4244) // conversion from double to float (VS2005) - Radiance
 #pragma warning(disable : 4305) // truncation from double to float (VS2005) - Radiance
 #pragma warning(disable : 4996) // deprecated functions (VS2005) - Radiance
+#pragma warning(disable : 4267) // conversion from 'size_t' [asio\detail\socket_ops.hpp; boost\serialization\collections_save_imp.hpp] - zcott
+#pragma warning(disable : 4311) // pointer truncation from 'void *' to 'long' [Fl_Widget.H; Fl_Menu_Item.H;; asio\detail\win_iocp_socket_service.hpp] - zcott
+#pragma warning(disable : 4312) // conversion from 'long' to 'void *' of greater size [Fl_Widget.H; Fl_Menu_Item.H; asio\detail\win_iocp_socket_service.hpp] - zcott
+//note: the above are duplicated in compiler options, kept here for reference only - zcott
 #endif
 #include <math.h>
 #include <stdlib.h>
