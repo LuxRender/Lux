@@ -37,7 +37,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc
+%doc AUTHORS.txt COPYING.txt
+%{_bindir}/luxconsole
+%{_bindir}/luxrender
 
 
 

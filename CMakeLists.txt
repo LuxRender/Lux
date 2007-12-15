@@ -405,7 +405,7 @@ ENDIF(APPLE)
 
 #Install target
 INSTALL(TARGETS luxrender luxconsole
-        RUNTIME DESTINATION bin
+        RUNTIME DESTINATION /usr/bin
 )
 
 #Source package target
