@@ -345,15 +345,14 @@ void about_cb(Fl_Widget *, void *) {
 
 	//create the window (top level, modal)
 	unsigned int about_window_w = 10+lux_logo_w+10;
-	unsigned int about_window_h = 10+lux_logo_h+100;
+	unsigned int about_window_h = 10+lux_logo_h+140;
 	Fl_Window *about_window = new Fl_Double_Window(window->x()+window->w()/2-about_window_w/2,window->y()+window->h()/2-about_window_h/2,about_window_w, about_window_h, "About: LuxRender");
 	about_window->color(FL_BLACK);
-	{	Fl_Return_Button *o = new Fl_Return_Button(about_window_w/2-100/2, about_window_h-35, 100, 25, "OK");
-		o->color(FL_LIGHT2);
-		o->labelcolor(FL_LIGHT2);
-		o->box(FL_SHADOW_FRAME);
+	{	Fl_Box* o = new Fl_Box(10, 10, lux_logo_w, lux_logo_h);
+		o->box(FL_NO_BOX);
+		o->image(*logo_image);
 	}
-	{	Fl_Box *o = new Fl_Box(about_window_w/2-lux_logo_w/2, about_window_h-90, lux_logo_w, 50);
+	{	Fl_Box *o = new Fl_Box(about_window_w/2-lux_logo_w/2, 10+lux_logo_h+10, lux_logo_w, 40);
 		std::ostringstream oss;
 		oss<<"LuxRender v"<<LUX_VERSION_STRING<<"\n(built on: "<<__DATE__<<")";
 		o->copy_label(oss.str().c_str());
@@ -362,9 +361,41 @@ void about_cb(Fl_Widget *, void *) {
 		o->labelsize(14); 
 		o->color(FL_WHITE);
 	}
-	{	Fl_Box* o = new Fl_Box(10, 10, lux_logo_w, lux_logo_h);//+4
+	{	Fl_Box *o = new Fl_Box(30, about_window_h-85, 125, 20, "Home page:");
+		o->labelfont(FL_HELVETICA);
+		o->labelcolor(FL_DARK1);
+		o->labelsize(14);
+		o->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+	}
+	Fl_Widget *link1;
+	{	Fl_Button *o = new Fl_Button(150, about_window_h-85, 130, 20, "www.luxrender2.org");
+		o->color(FL_BLACK);
+		o->labelcolor(FL_BLUE);
+		o->labelsize(14);
+		o->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
 		o->box(FL_NO_BOX);
-		o->image(*logo_image);
+		link1=o;
+	}
+	{	Fl_Box *o = new Fl_Box(30, about_window_h-65, 125, 20, "Based on PBRT:");
+		o->labelfont(FL_HELVETICA);
+		o->labelcolor(FL_DARK1);
+		o->labelsize(14);
+		o->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+	}
+	Fl_Widget *link2;
+	{	Fl_Button *o = new Fl_Button(150, about_window_h-65, 88, 20, "www.pbrt.org");
+		o->color(FL_BLACK);
+		o->labelcolor(FL_BLUE);
+		o->labelsize(14);
+		o->align(FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+		o->box(FL_NO_BOX);
+		link2=o;
+	}
+	{	Fl_Return_Button *o = new Fl_Return_Button(about_window_w/2-100/2, about_window_h-35, 100, 25, "OK");
+		o->color(FL_LIGHT2);
+		o->labelcolor(FL_LIGHT2);
+		o->box(FL_SHADOW_FRAME);
+		o->take_focus();
 	}
 	about_window->end();
 	about_window->set_modal();
@@ -391,7 +422,10 @@ void about_cb(Fl_Widget *, void *) {
 			logo_image->uncache();
 			about_window->redraw();
 			steps++;
-		}else break;
+		}
+		else	if(o==link1) fl_open_uri("http://www.luxrender2.org");
+		else	if(o==link2) fl_open_uri("http://www.pbrt.org");
+		else	break;
 	}
 	//remove the window and clean up
 	about_window->hide();
