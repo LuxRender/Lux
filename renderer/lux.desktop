@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Lux
+GenericName=Lux Renderer
+Comment=Open .lxs & .pbrt files
+Exec=luxrender
+Icon=/usr/share/pixmaps/lux.png
+Terminal=false
+Type=Application
+Categories=Application;Graphics;
+
+

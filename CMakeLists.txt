@@ -408,6 +408,8 @@ INSTALL(TARGETS luxrender luxconsole
         RUNTIME DESTINATION /usr/bin
 )
 
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/lux.png DESTINATION /usr/share/pixmaps/)
+
 #Source package target
 SET(VERSION 0.1)
 ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
@@ -418,4 +420,3 @@ ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
 	DEPENDS ${lux_lib_src}
 	COMMENT Building source package
 )
-
