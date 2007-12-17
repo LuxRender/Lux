@@ -74,6 +74,8 @@ void RemoveThread();
 void RenderStart();
 void RenderPause();
 int RenderScenefile();
+void message_window(const char *label, const char *msg);
+
 // callbacks
 void open_cb(Fl_Widget*, void*);
 void exit_cb(Fl_Widget*, void*);

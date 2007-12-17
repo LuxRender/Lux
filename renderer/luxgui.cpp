@@ -502,23 +502,47 @@ void merge_FrameBuffer(void *) {
 }
 
 int RenderScenefile() {
+	//create and show an info window
+	unsigned int parsing_window_w = 300;
+	unsigned int parsing_window_h = 40;
+	Fl_Window *parsing_window = new Fl_Window(window->x()+window->w()/2-parsing_window_w/2,window->y()+window->h()/2-parsing_window_h/2,parsing_window_w, parsing_window_h, "Processing...");
+	{	Fl_Box *o = new Fl_Box(10, 10, parsing_window_w-20, parsing_window_h-20, "Parsing scene file, please wait...");
+		o->labelsize(16);
+	}
+	parsing_window->end();
+	parsing_window->set_modal();
+	parsing_window->show();
+
 	fflush(stdout);
 	parseError = false;
+	//create parsing thread
 	engine_thread = new boost::thread (&Engine_Thread);
 
 	//wait the scene parsing to finish
 	while (!luxStatistics("sceneIsReady") && !parseError) {
-		boost::xtime xt;
+/*		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		xt.sec += 1;
 		boost::thread::sleep(xt);
+*/		
+		Fl::wait(0.5);
 	}
 
 	if(parseError) {
 		std::stringstream ss;
 		ss<<"Skipping invalid scenefile '"<<gui_current_scenefile<<"'";
 		luxError(LUX_BADFILE, LUX_SEVERE, ss.str ().c_str());
-		return 1;
+
+		//destroy the info window
+		parsing_window->hide();
+		delete parsing_window;
+		//show an error message
+		message_window("Error","Invalid scenefile!");
+
+		//return 1;
+
+		//note: something's wrong here, the next scene file won't load properly, have to quit! - zcott
+		exit(1);
 	}
 
 	//add rendering threads
@@ -526,6 +550,10 @@ int RenderScenefile() {
 	while (--threadsToAdd) {
 		AddThread();
 	}
+
+	//destroy the info window
+	parsing_window->hide();
+	delete parsing_window;
 
 	return 0;
 }
@@ -656,6 +684,32 @@ void check_SceneReady(void *) {
 		bindFrameBuffer();
 	} else
 		Fl::repeat_timeout(0.25, check_SceneReady);
+}
+
+void message_window(const char *label, const char *msg){
+	//very simple modal message window
+	//todo: resize to fit text
+	unsigned int message_window_w = 300;
+	unsigned int message_window_h = 100;
+	Fl_Window *message_window = new Fl_Window(window->x()+window->w()/2-message_window_w/2,window->y()+window->h()/2-message_window_h/2,message_window_w, message_window_h, label);
+	if(msg!=NULL){
+		Fl_Box *o = new Fl_Box(10, 10, message_window_w-20, message_window_h-10-45, msg);
+		o->labelsize(16);
+	}
+	{	Fl_Return_Button *o = new Fl_Return_Button(message_window_w/2-100/2, message_window_h-35, 100, 25, "OK");
+		o->take_focus();
+	}
+	message_window->end();
+	message_window->set_modal();
+	message_window->show();
+	while(Fl::readqueue());
+	while(1){
+		Fl_Widget *o = Fl::readqueue();
+		if (!o) Fl::wait();
+		else break;
+	}
+	message_window->hide();
+	delete message_window;
 }
 
 // main program
