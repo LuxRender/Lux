@@ -234,6 +234,7 @@ class VolumeIntegrator;
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
 #define LUX_VERSION 0.1
+#define LUX_VERSION_STRING "0.1 RC4 (CVS)"
 #define RAY_EPSILON 1e-3f
 #define COLOR_SAMPLES 3
 // Global Function Declarations

@@ -32,6 +32,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <zlib.h>
 
 #include "lux.h"
 #include "api.h"
@@ -55,17 +56,22 @@ bool parseError;
 void AddThread();
 
 // menu items
-Fl_Menu_Item menu_1[] = { { "File", 0, 0, 0, 64, FL_NORMAL_LABEL, 0, 11, 0 }, {
-		"    Open scenefile...", 0x4006f, (Fl_Callback
-*) open_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0 }, { "    Exit", 0x40071,
-		(Fl_Callback *) exit_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 }, { 0, 0, 0,
-		0, 0, 0, 0, 0, 0 }, { "Help", 0, 0, 0, 65, FL_NORMAL_LABEL, 0, 11, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+Fl_Menu_Item menu_bar[] = {
+	{ "&File", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 11, 0 },
+		{"    &Open scenefile...", FL_CTRL + 'o', (Fl_Callback*) open_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0 },
+		{"    &Exit", FL_CTRL + 'q', (Fl_Callback *) exit_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 },
+		{ 0 },
+	{ "&Help", 0, 0, 0, FL_SUBMENU, FL_NORMAL_LABEL, 0, 11, 0 },
+		{"    &About...", 0, (Fl_Callback *) about_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 },
+		{ 0 },
+	{ 0 }
+};
 
-Fl_Menu_Item menu_[] = { { "+ Add Thread", 0, (Fl_Callback *) addthread_cb, 0,
-		0, FL_NORMAL_LABEL, 0, 11, 0 }, { "- Remove Thread", 0,
-		(Fl_Callback *) removethread_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 }, {
-		0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+Fl_Menu_Item menu_threads[] = {
+	{ "+ Add Thread", 0, (Fl_Callback *) addthread_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 },
+	{ "- Remove Thread", 0, (Fl_Callback *) removethread_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+};
 
 // main window
 Fl_Double_Window * make_MainWindow(int width, int height,
@@ -170,7 +176,7 @@ Fl_Double_Window * make_MainWindow(int width, int height,
 						o->deimage(image_render1);
 						o->labelsize(11);
 						o->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-						o->menu(menu_);
+						o->menu(menu_threads);
 					} // Fl_Menu_Button* o
 					{
 						Fl_Group * o = new Fl_Group (590, 20, 65, 20, "(0)");
@@ -258,7 +264,7 @@ Fl_Double_Window * make_MainWindow(int width, int height,
 			Fl_Menu_Bar * o = new Fl_Menu_Bar (0, 0, 800, 20);
 			o->box(FL_THIN_UP_BOX);
 			o->color(col_back);
-			o->menu(menu_1);
+			o->menu(menu_bar);
 
 		} // Fl_Menu_Bar* o
 		o->end();
@@ -310,6 +316,90 @@ void exit_cb(Fl_Widget *, void *) {
 		engine_thread->join();
 	}
 	exit(0);
+}
+
+void about_cb(Fl_Widget *, void *) {
+	unsigned long logo_size = lux_logo_w*lux_logo_h;
+	unsigned long starting_color = 0;
+
+	//unpack logo data to memory
+	unsigned char *logo_data_bw = new unsigned char[logo_size];
+	if(uncompress((Bytef *)logo_data_bw, &logo_size, (Bytef *)lux_logo_dataz, lux_logo_dataz_size) != Z_OK){
+		delete logo_data_bw;
+		return;
+	}
+	//make the logo colorful (base color: 212,127,0)
+	unsigned char *logo_data = new unsigned char[logo_size*3];
+	for(unsigned int i=0;i<logo_size;i++){
+		logo_data[i*3+0]=212*(255-logo_data_bw[i])/255;
+		logo_data[i*3+1]=127*(255-logo_data_bw[i])/255;
+		logo_data[i*3+2]=  0*(255-logo_data_bw[i])/255;
+	}
+	delete logo_data_bw;
+	//prepare the output image buffer
+	unsigned char *logo_data_out = new unsigned char[logo_size*3];
+	for(unsigned int i=0;i<logo_size*3;i++){
+		logo_data_out[i]=starting_color;
+	}
+	Fl_RGB_Image *logo_image = new Fl_RGB_Image(logo_data_out, lux_logo_w, lux_logo_h, 3, 0);
+
+	//create the window (top level, modal)
+	unsigned int about_window_w = 10+lux_logo_w+10;
+	unsigned int about_window_h = 10+lux_logo_h+100;
+	Fl_Window *about_window = new Fl_Double_Window(window->x()+window->w()/2-about_window_w/2,window->y()+window->h()/2-about_window_h/2,about_window_w, about_window_h, "About: LuxRender");
+	about_window->color(FL_BLACK);
+	{	Fl_Return_Button *o = new Fl_Return_Button(about_window_w/2-100/2, about_window_h-35, 100, 25, "OK");
+		o->color(FL_LIGHT2);
+		o->labelcolor(FL_LIGHT2);
+		o->box(FL_SHADOW_FRAME);
+	}
+	{	Fl_Box *o = new Fl_Box(about_window_w/2-lux_logo_w/2, about_window_h-90, lux_logo_w, 50);
+		std::ostringstream oss;
+		oss<<"LuxRender v"<<LUX_VERSION_STRING<<"\n(built on: "<<__DATE__<<")";
+		o->copy_label(oss.str().c_str());
+		o->labelfont(FL_HELVETICA);
+		o->labelcolor(FL_LIGHT2);
+		o->labelsize(14); 
+		o->color(FL_WHITE);
+	}
+	{	Fl_Box* o = new Fl_Box(10, 10, lux_logo_w, lux_logo_h);//+4
+		o->box(FL_NO_BOX);
+		o->image(*logo_image);
+	}
+	about_window->end();
+	about_window->set_modal();
+	about_window->show();
+
+	//the fancy fade-in routine
+	const unsigned int r_vector_size=logo_size/4;
+	float *r_vector = new float[r_vector_size];
+	for(unsigned int i=0;i<r_vector_size;i++) r_vector[i]=0;
+	int steps=0;
+	while(Fl::readqueue());	//clear the queue
+	while(1){
+		Fl_Widget *o = Fl::readqueue();
+		if (!o) {
+			Fl::wait();
+			Fl::wait(0.1);
+			if(steps%2) for(unsigned int i=0;i<r_vector_size;i++) r_vector[i]+=(1-r_vector[i])* 1.0f/(rand()%255+1);
+			for(unsigned int i=(steps%2)?0:1;i<logo_size;i+=2){
+				float scale=r_vector[((steps%2)?((i/r_vector_size)%2):(1-(i/r_vector_size)%2))?(i%r_vector_size):(r_vector_size-1-i%r_vector_size)];
+				logo_data_out[i*3+0]=starting_color+(logo_data[i*3+0]-starting_color)*scale;
+				logo_data_out[i*3+1]=starting_color+(logo_data[i*3+1]-starting_color)*scale;
+				logo_data_out[i*3+2]=starting_color+(logo_data[i*3+2]-starting_color)*scale;
+			}
+			logo_image->uncache();
+			about_window->redraw();
+			steps++;
+		}else break;
+	}
+	//remove the window and clean up
+	about_window->hide();
+	delete r_vector;
+	delete logo_data;
+	delete logo_data_out;
+	delete logo_image;
+	delete about_window;
 }
 
 void addthread_cb(Fl_Widget *, void *) {
@@ -604,7 +694,7 @@ int main(int ac, char *av[]) {
 		if (vm.count ("version"))
 		{
 			std::
-			cout << "Lux version " << LUX_VERSION << " of " << __DATE__ <<
+			cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ <<
 			" at " << __TIME__ << std::endl;
 			return 0;
 		}

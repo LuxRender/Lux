@@ -76,6 +76,7 @@ int RenderScenefile();
 // callbacks
 void open_cb(Fl_Widget*, void*);
 void exit_cb(Fl_Widget*, void*);
+void about_cb(Fl_Widget*, void*);
 void addthread_cb(Fl_Widget*, void*);
 void removethread_cb(Fl_Widget*, void*);
 void start_cb(Fl_Widget*, void*);
