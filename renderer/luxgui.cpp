@@ -318,6 +318,38 @@ void exit_cb(Fl_Widget *, void *) {
 	exit(0);
 }
 
+// NOTE - radiance - added simple about window for RC4 release, will need to add compression of image stored in splash.h
+#include "splash.h"
+void about_cb(Fl_Widget *, void *) {
+	unsigned int about_window_w = 500;
+	unsigned int about_window_h = 270;
+	Fl_Window *about_window = new Fl_Double_Window(window->x()+window->w()/2-about_window_w/2,window->y()+window->h()/2-about_window_h/2,about_window_w, about_window_h, "About: LuxRender");
+		{ Fl_Button* o = new Fl_Button(0, 0, 500, 270);
+		  o->image(image_splash);
+		  o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
+		}
+	about_window->end();
+	about_window->set_modal();
+	about_window->show();
+
+	while(1){
+		Fl_Widget *o = Fl::readqueue();
+		if (!o) {
+			Fl::wait();
+			Fl::wait(0.1);
+		}
+		else	break;
+	}
+
+	about_window->hide();
+	delete about_window;
+}
+
+
+/*
+
+// NOTE - radiance - disabled zcott's horrid monstrosity 'about window' for PR reasons...
+
 void about_cb(Fl_Widget *, void *) {
 	unsigned long logo_size = lux_logo_w*lux_logo_h;
 	unsigned long starting_color = 0;
@@ -331,6 +363,9 @@ void about_cb(Fl_Widget *, void *) {
 	//make the logo colorful (base color: 212,127,0)
 	unsigned char *logo_data = new unsigned char[logo_size*3];
 	for(unsigned int i=0;i<logo_size;i++){
+		//logo_data[i*3+0]=212*(255-logo_data_bw[i])/255;
+		//logo_data[i*3+1]=127*(255-logo_data_bw[i])/255;
+		//logo_data[i*3+2]=  0*(255-logo_data_bw[i])/255;
 		logo_data[i*3+0]=212*(255-logo_data_bw[i])/255;
 		logo_data[i*3+1]=127*(255-logo_data_bw[i])/255;
 		logo_data[i*3+2]=  0*(255-logo_data_bw[i])/255;
@@ -435,6 +470,7 @@ void about_cb(Fl_Widget *, void *) {
 	delete logo_image;
 	delete about_window;
 }
+*/
 
 void addthread_cb(Fl_Widget *, void *) {
 	AddThread();
@@ -718,7 +754,7 @@ int main(int ac, char *av[]) {
 	framebufferUpdate = 10.0f;
 	strcpy(gui_current_scenefile, "");
 	status_render = STATUS_RENDER_NONE;
-	bool opengl_enabled = false;
+	bool opengl_enabled = true;
 
 	try
 	{
@@ -745,10 +781,10 @@ int main(int ac, char *av[]) {
 
 		#ifdef LUX_USE_OPENGL
 			generic.add_options ()
-				("opengl", "use OpenGL to display the image");
+				("noopengl", "Disable OpenGL to display the image");
 		#else
 			hidden.add_options ()
-				("opengl", "use OpenGL to display the image");
+				("noopengl", "Disable OpenGL to display the image");
 		#endif // LUX_USE_OPENGL
 
 		po::options_description cmdline_options;
@@ -796,7 +832,11 @@ int main(int ac, char *av[]) {
 			threads = 1;;
 		}
 
-		if (vm.count ("opengl"))
+		if (vm.count ("noopengl"))
+		{
+			opengl_enabled = false;
+		}
+		else
 		{
 			#ifdef LUX_USE_OPENGL
 				opengl_enabled = true;
@@ -804,10 +844,6 @@ int main(int ac, char *av[]) {
 				opengl_enabled = false;
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: OpenGL support was not compiled in - will not be used.");
 			#endif // LUX_USE_OPENGL
-		}
-		else
-		{
-			opengl_enabled = false;
 		}
 
 		if (vm.count ("input-file"))
