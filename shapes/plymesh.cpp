@@ -71,7 +71,7 @@ static int FaceCB(p_ply_argument argument)
 }
 
 // PlyMesh Method Definitions
-PlyMesh::PlyMesh(const Transform &o2w, bool ro, string filename)
+PlyMesh::PlyMesh(const Transform &o2w, bool ro, string filename, bool smooth)
 	: Shape(o2w, ro) {
 
 	printf("Loading PLY mesh file: '%s'...\n", filename.c_str());
@@ -116,11 +116,64 @@ PlyMesh::PlyMesh(const Transform &o2w, bool ro, string filename)
 
     ply_close(plyfile);
 
-	printf("Done.\n");
-
 	// Transform mesh vertices to world space
 	for (int i  = 0; i < nverts; ++i)
 		p[i] = ObjectToWorld(p[i]);
+
+	if(!smooth) return;
+
+
+	// NOTE - radiance - normal generation unfinished, does not work correctly yet !
+
+
+	// generate face normals if 'smooth' = true
+	n = new Normal[nverts];
+	int *nf = new int[nverts];
+	for(int i=0; i < nverts; i++) {
+		n[i] = Normal(0., 0., 0.);
+		nf[i] = 0;
+	}
+
+	for(int tri=0; tri < ntris; tri++) {
+		/* Compute edge vectors */
+		float x10 = p[vertexIndex[(3*tri)+1]].x - p[vertexIndex[(3*tri)]].x;
+		float y10 = p[vertexIndex[(3*tri)+1]].y - p[vertexIndex[(3*tri)]].y;
+		float z10 = p[vertexIndex[(3*tri)+1]].z - p[vertexIndex[(3*tri)]].z;
+		float x12 = p[vertexIndex[(3*tri)+1]].x - p[vertexIndex[(3*tri)+2]].x;
+		float y12 = p[vertexIndex[(3*tri)+1]].y - p[vertexIndex[(3*tri)+2]].y;
+		float z12 = p[vertexIndex[(3*tri)+1]].z - p[vertexIndex[(3*tri)+2]].z;
+
+		/* Compute the cross product */
+		float cpx = (z10 * y12) - (y10 * z12);
+		float cpy = (x10 * z12) - (z10 * x12);
+		float cpz = (y10 * x12) - (x10 * y12);
+
+		/* Normalize the result to get the unit-length facet normal */
+		float r = sqrtf(cpx * cpx + cpy * cpy + cpz * cpz);
+		float nx = cpx / r;
+		float ny = cpy / r;
+		float nz = cpz / r;
+		Normal fn = Normal(nx, ny, nz);
+
+		// add to face normal of triangle's vertex normals
+		n[vertexIndex[3*tri]] += fn;
+		n[vertexIndex[(3*tri)+1]] += fn;
+		n[vertexIndex[(3*tri)+2]] += fn;
+
+		// increment contributions
+		nf[vertexIndex[3*tri]]++;
+		nf[vertexIndex[(3*tri)+1]]++;
+		nf[vertexIndex[(3*tri)+2]]++;
+	}
+
+	// divide by contributions
+	for(int i=0; i < nverts; i++) {
+		n[i] /= nf[i];
+	}
+
+	delete[] nf;
+
+	printf("Done.\n");
 }
 PlyMesh::~PlyMesh() {
 	delete[] vertexIndex;
@@ -157,5 +210,6 @@ const {
 Shape* PlyMesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	string filename = params.FindOneString("filename", "none");
-	return new PlyMesh(o2w, reverseOrientation, filename);
+	bool smooth = params.FindOneBool("smooth", false);
+	return new PlyMesh(o2w, reverseOrientation, filename, smooth);
 }

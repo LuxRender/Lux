@@ -27,7 +27,7 @@
 class PlyMesh : public Shape {
 public:
 	// PlyMesh Public Methods
-	PlyMesh(const Transform &o2w, bool ro, string filename);
+	PlyMesh(const Transform &o2w, bool ro, string filename, bool smooth);
 	~PlyMesh();
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
