@@ -1,6 +1,6 @@
 Name:           lux
 Version:        0.1
-Release:        rc4%{?dist}
+Release:        rc4.1%{?dist}
 Summary:        Lux Renderer, an unbiased rendering system
 
 Group:          Applications/Multimedia
