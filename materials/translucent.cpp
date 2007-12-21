@@ -23,6 +23,8 @@
 // translucent.cpp*
 #include "translucent.h"
 
+using namespace lux;
+
 // Translucent Method Definitions
 BSDF *Translucent::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_

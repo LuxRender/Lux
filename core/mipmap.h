@@ -25,6 +25,10 @@
 // mipmap.h*
 #include "lux.h"
 #include "color.h"
+
+namespace lux
+{
+
 // MIPMap Declarations
 typedef enum {
 	TEXTURE_REPEAT,
@@ -311,4 +315,7 @@ T MIPMap<T>::EWA(float s, float t, float ds0, float dt0,
 	return num / den;
 }
 template <class T> float *MIPMap<T>::weightLut = NULL;
+
+}//namespace lux
+
 #endif // LUX_MIPMAP_H

@@ -23,6 +23,10 @@
 // contrast.cpp*
 #include "tonemap.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // ContrastOp Declarations
 class ContrastOp : public ToneMap {
 public:
@@ -34,3 +38,5 @@ public:
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 };
+
+}//namespace lux

@@ -62,6 +62,10 @@ using std::map;
 			return *((vec)[i]->data); \
 }		} \
 	return d
+
+namespace lux
+{
+
 // ParamSet Declarations
 class  ParamSet {
 	friend class boost::serialization::access;
@@ -308,4 +312,7 @@ private:
 	map<string,
 	    boost::shared_ptr<Texture<Spectrum> > > &spectrumTextures;
 };
+
+}//namespace lux
+
 #endif // LUX_PARAMSET_H

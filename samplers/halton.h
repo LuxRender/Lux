@@ -24,6 +24,10 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
+
+namespace lux
+{
+
 // HaltonSampler Declarations
 class HaltonSampler : public Sampler {
 public:
@@ -58,3 +62,5 @@ private:
 	u_int TotalPixels;
 	PixelSampler* pixelSampler;
 };
+
+}//namespace lux

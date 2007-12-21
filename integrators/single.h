@@ -24,6 +24,10 @@
 #include "volume.h"
 #include "transport.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // SingleScattering Declarations
 class SingleScattering : public VolumeIntegrator {
 public:
@@ -41,3 +45,6 @@ private:
 	float stepSize;
 	int tauSampleOffset, scatterSampleOffset;
 };
+
+}//namespace lux
+

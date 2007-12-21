@@ -23,6 +23,8 @@
 // disk.cpp*
 #include "disk.h"
 
+using namespace lux;
+
 // Disk Method Definitions
 Disk::Disk(const Transform &o2w, bool ro, float ht,
            float r, float ri, float tmax)

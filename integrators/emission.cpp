@@ -22,6 +22,9 @@
 
 // emission.cpp*
 #include "emission.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 EmissionIntegrator* EmissionIntegrator::clone() const
  {

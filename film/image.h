@@ -29,6 +29,9 @@
 #include "sampling.h"
 #include <boost/timer.hpp>
 
+namespace lux
+{
+
 // ImageFilm Declarations
 class ImageFilm : public Film {
 public:
@@ -74,4 +77,7 @@ private:
 	float *filterTable;
 	boost::timer Timer;
 };
+
+}//namespace lux
+
 

@@ -26,6 +26,10 @@
 // sinc.cpp*
 #include "sampling.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // Sinc Filter Declarations
 class LanczosSincFilter : public Filter {
 public:
@@ -41,6 +45,8 @@ public:
 private:
 	float tau;
 };
+
+}//namespace lux
 
 #endif
 

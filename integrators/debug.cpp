@@ -26,6 +26,9 @@
 // debug.cpp*
 
 #include "debug.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 DebugIntegrator* DebugIntegrator::clone() const
  {

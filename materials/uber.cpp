@@ -23,6 +23,8 @@
 // uber.cpp*
 #include "uber.h"
 
+using namespace lux;
+
 // UberMaterial Method Definitions
 BSDF *UberMaterial::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_

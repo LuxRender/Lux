@@ -25,6 +25,9 @@
 #include "lux.h"
 #include "primitive.h"
 
+namespace lux
+{
+
 // BruteForceAccel Declarations
 class  BruteForceAccel : public Aggregate {
 public:
@@ -43,3 +46,6 @@ private:
 	vector<Primitive* > prims;
 	BBox bounds;
 };
+
+}//namespace lux
+

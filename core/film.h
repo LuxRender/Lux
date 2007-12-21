@@ -27,6 +27,10 @@
 #include "error.h"
 
 #include <boost/serialization/split_member.hpp>
+
+namespace lux
+{
+
 class MultiImageFilm;
 
 // Film Declarations
@@ -86,4 +90,7 @@ extern void ApplyImagingPipeline(float *rgb, int xResolution, int yResolution,
 		float bloomWeight = 0.f, const char *tonemap = NULL,
 		const ParamSet *toneMapParams = NULL, float gamma = 2.2,
 		float dither = 0.5f, int maxDisplayValue = 255);
+
+}//namespace lux;
+
 #endif // LUX_FILM_H

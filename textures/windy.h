@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // WindyTexture Declarations
 template <class T> class WindyTexture : public Texture<T> {
 public:
@@ -66,3 +70,4 @@ template <class T> inline Texture<Spectrum> * WindyTexture<T>::CreateSpectrumTex
 	return new WindyTexture<Spectrum>(map);
 }
 
+}//namespace lux

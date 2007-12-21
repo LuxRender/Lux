@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // UVTexture Declarations
 class UVTexture : public Texture<Spectrum> {
 public:
@@ -49,3 +53,6 @@ public:
 private:
 	TextureMapping2D *mapping;
 };
+
+}//namespace lux
+

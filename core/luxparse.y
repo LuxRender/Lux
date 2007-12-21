@@ -29,6 +29,8 @@
 #include <stdarg.h>
 #include <sstream>
 
+using namespace lux;
+
 extern int yylex( void );
 int line_num = 0;
 string current_file;

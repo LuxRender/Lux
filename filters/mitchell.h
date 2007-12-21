@@ -26,6 +26,10 @@
 // mitchell.cpp*
 #include "sampling.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // Mitchell Filter Declarations
 class MitchellFilter : public Filter {
 public:
@@ -48,6 +52,8 @@ public:
 private:
 	float B, C;
 };
+
+}//namespace lux
 
 #endif
 

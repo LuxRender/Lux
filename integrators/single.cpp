@@ -22,6 +22,9 @@
 
 // single.cpp*
 #include "single.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 SingleScattering* SingleScattering::clone() const
  {

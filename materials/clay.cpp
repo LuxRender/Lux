@@ -23,6 +23,8 @@
 // clay.cpp*
 #include "clay.h"
 
+using namespace lux;
+
 // Clay Method Definitions
 BSDF *Clay::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare clay coefficients

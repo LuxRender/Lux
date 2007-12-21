@@ -23,6 +23,8 @@
 // cylinder.cpp*
 #include "cylinder.h"
 
+using namespace lux;
+
 // Cylinder Method Definitions
 Cylinder::Cylinder(const Transform &o2w, bool ro, float rad,
 		   float z0, float z1, float pm)

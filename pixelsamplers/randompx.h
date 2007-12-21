@@ -25,6 +25,9 @@
 #include "paramset.h"
 #include "film.h"
 
+namespace lux
+{
+
 // RandomPixelSampler Declarations
 class RandomPixelSampler : public PixelSampler {
 public:
@@ -41,3 +44,5 @@ private:
 	// RandomPixelSampler Private Data
 	int xPixelStart, yPixelStart, xPixelEnd, yPixelEnd;
 };
+
+}//namespace lux

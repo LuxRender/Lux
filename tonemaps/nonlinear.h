@@ -23,6 +23,10 @@
 // nonlinear.cpp*
 #include "tonemap.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // NonLinearOp Declarations
 class NonLinearOp : public ToneMap {
 public:
@@ -52,3 +56,6 @@ public:
 private:
 	float maxY;
 };
+
+}//namespace lux
+

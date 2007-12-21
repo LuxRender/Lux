@@ -23,6 +23,9 @@
 // linear.cpp*
 #include "linear.h"
 #include "error.h"
+
+using namespace lux;
+
 // LinearPixelSampler Method Definitions
 LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 		int ystart, int yend) {

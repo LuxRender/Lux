@@ -22,6 +22,9 @@
 
 // material.cpp*
 #include "material.h"
+
+using namespace lux;
+
 // Material Method Definitions
 Material::~Material() {
 }

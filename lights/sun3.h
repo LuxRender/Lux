@@ -29,6 +29,9 @@
 #include "shape.h"
 #include "primitive.h"
 
+namespace lux
+{
+
 class Sun3Light : public Light {
 public:
   // Sun3Light Interface
@@ -56,10 +59,12 @@ protected:
   Spectrum computeAttenuatedSunlight(float theta, float turbidity);
 
   Spectrum Lemit;
-  ShapePtr shape;
+  boost::shared_ptr<Shape> shape;
   float area;
   Vector sunDir;
   float turbidity;
 };
+
+}//namespace lux
 
 #endif

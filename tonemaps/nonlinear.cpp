@@ -23,6 +23,8 @@
 // nonlinear.cpp*
 #include "nonlinear.h"
 
+using namespace lux;
+
 // NonLinearOp Method Definitions
 ToneMap* NonLinearOp::CreateToneMap(const ParamSet &ps) {
 	float maxy = ps.FindOneFloat("maxY", 0.f);

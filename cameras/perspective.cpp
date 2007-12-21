@@ -23,6 +23,8 @@
 // perspective.cpp*
 #include "perspective.h"
 
+using namespace lux;
+
 // PerspectiveCamera Method Definitions
 PerspectiveCamera::
     PerspectiveCamera(const Transform &world2cam,

@@ -23,6 +23,10 @@
 // cone.cpp*
 #include "shape.h"
 // Cone Declarations
+
+namespace lux
+{
+
 class Cone: public Shape {
 public:
 	// Cone Public Methods
@@ -40,4 +44,6 @@ protected:
 	// Cone Data
 	float radius, height, phiMax;
 };
+
+}//namespace lux
 

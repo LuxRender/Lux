@@ -29,6 +29,10 @@
 #include "paramset.h"
 //#include "transform.h"
 #include "transport.h"
+
+namespace lux
+{
+
 // Volume Scattering Declarations
  float PhaseIsotropic(const Vector &w, const Vector &wp);
 
@@ -111,4 +115,7 @@ public:
 		const Ray &ray, const Sample *sample,
 		float *alpha) const = 0;
 };
+
+}//namespace lux
+
 #endif // LUX_VOLUME_H

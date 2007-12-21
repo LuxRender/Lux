@@ -25,6 +25,8 @@
 #include "sphere.h"
 #include "shape.h"
 
+using namespace lux;
+
 #define SUN_DIST 1000.0f
 #define SUN_RAD 20.0f
 
@@ -39,7 +41,7 @@ Sun3Light::Sun3Light(const Transform &light2world, const Spectrum &le, int ns, V
 
   Transform l2w = Translate (SUN_DIST * sundir) * light2world;
 
-  shape = ShapePtr(new Sphere(l2w, false, SUN_RAD, -SUN_RAD, SUN_RAD, 360.0));
+  shape = boost::shared_ptr<Shape>(new Sphere(l2w, false, SUN_RAD, -SUN_RAD, SUN_RAD, 360.0));
 
   area = shape->Area();
 

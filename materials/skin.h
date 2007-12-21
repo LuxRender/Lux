@@ -23,6 +23,10 @@
 // skin.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Skin Class Declarations
 class Skin : public Material {
 public:
@@ -32,3 +36,5 @@ public:
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };
+
+}//namespace lux

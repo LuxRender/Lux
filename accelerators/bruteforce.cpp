@@ -27,6 +27,8 @@
 // bruteforce.cpp*
 #include "bruteforce.h"
 
+using namespace lux;
+
 // BruteForceAccel Method Definitions
 BruteForceAccel::BruteForceAccel(const vector<Primitive* > &p) {
 	for (u_int i = 0; i < p.size(); ++i)

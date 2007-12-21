@@ -22,6 +22,10 @@
 
 // volumegrid.cpp*
 #include "volume.h"
+
+namespace lux
+{
+
 // VolumeGrid Declarations
 class VolumeGrid : public DensityRegion {
 public:
@@ -50,3 +54,6 @@ private:
 	const int nx, ny, nz;
 	const BBox extent;
 };
+
+}//namespace lux
+

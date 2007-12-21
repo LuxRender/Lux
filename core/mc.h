@@ -24,6 +24,9 @@
 #define LUX_MC_H
 // mc.h*
 // MC Utility Declarations
+namespace lux
+{
+
 extern  void RejectionSampleDisk(float u1, float u2, float *x, float *y);
  Vector UniformSampleHemisphere(float u1, float u2);
  float  UniformHemispherePdf(float theta, float phi);
@@ -56,4 +59,7 @@ inline float PowerHeuristic(int nf, float fPdf, int ng,
 	float f = nf * fPdf, g = ng * gPdf;
 	return (f*f) / (f*f + g*g);
 }
+
+}//namespace lux
+
 #endif // LUX_MC_H

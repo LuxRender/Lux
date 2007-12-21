@@ -61,6 +61,7 @@
 
 #include "multiimage.h"
 
+using namespace lux;
 using asio::ip::tcp;
 namespace po = boost::program_options;
 

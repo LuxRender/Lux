@@ -23,6 +23,8 @@
 // bluepaint.cpp*
 #include "bluepaint.h"
 
+using namespace lux;
+
 // BluePaint Method Definitions
 BSDF *BluePaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare bluepaint coefficients

@@ -26,6 +26,8 @@
 
 #include "carpaint.h"
 
+using namespace lux;
+
 CarPaint::CarPaint(boost::shared_ptr<Texture<Spectrum> > kd,
                    boost::shared_ptr<Texture<Spectrum> > ks1, boost::shared_ptr<Texture<Spectrum> > ks2, boost::shared_ptr<Texture<Spectrum> > ks3,
                    boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,

@@ -23,6 +23,8 @@
 // brushedmetal.cpp*
 #include "brushedmetal.h"
 
+using namespace lux;
+
 // BrushedMetal Method Definitions
 BSDF *BrushedMetal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare brushedmetal coefficients

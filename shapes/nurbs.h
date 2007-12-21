@@ -26,6 +26,10 @@
 #include "geometry.h"
 #include "dynload.h"
 #include "texture.h"
+
+namespace lux
+{
+
 // NURBS Declarations
 class NURBS : public Shape {
 public:
@@ -38,7 +42,7 @@ public:
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return false; }
-	virtual void Refine(vector<ShapePtr > &refined) const;
+	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 private:
@@ -50,3 +54,4 @@ private:
 	float *P;
 };
 
+}//namespace lux

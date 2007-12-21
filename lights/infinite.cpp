@@ -23,6 +23,8 @@
 // infinite.cpp*
 #include "infinite.h"
 
+using namespace lux;
+
 // InfiniteAreaLight Method Definitions
 InfiniteAreaLight::~InfiniteAreaLight() {
 	delete radianceMap;

@@ -25,6 +25,10 @@
 #include "transport.h"
 #include "metropolis.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // PathIntegrator Declarations
 class PathIntegrator : public SurfaceIntegrator {
 public:
@@ -54,4 +58,6 @@ private:
 	int outgoingDirectionOffset[SAMPLE_DEPTH];
 	int outgoingComponentOffset[SAMPLE_DEPTH];
 };
+
+}//namespace lux
 

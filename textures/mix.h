@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // MixTexture Declarations
 template <class T>
 class MixTexture : public Texture<T> {
@@ -65,4 +69,6 @@ template <class T> Texture<Spectrum> * MixTexture<T>::CreateSpectrumTexture(cons
 		tp.GetSpectrumTexture("tex2", 1.f),
 		tp.GetFloatTexture("amount", 0.5f));
 }
+
+}//namespace lux
 

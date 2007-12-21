@@ -23,6 +23,9 @@
 // vegas.cpp*
 #include "vegas.h"
 #include "error.h"
+
+using namespace lux;
+
 // VegasPixelSampler Method Definitions
 VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		int ystart, int yend) {

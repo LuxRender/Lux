@@ -26,6 +26,9 @@
 #include "film.h"
 #include "mc.h"
 #include "error.h"
+
+using namespace lux;
+
 // Camera Method Definitions
 Camera::~Camera() {
 	delete film;

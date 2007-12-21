@@ -25,6 +25,10 @@
 #include "light.h"
 #include "shape.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // SunLight Declarations
 class SunLight : public Light {
 public:
@@ -59,3 +63,4 @@ private:
 	Spectrum L;
 };
 
+}//namespace lux

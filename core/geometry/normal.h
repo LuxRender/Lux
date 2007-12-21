@@ -26,6 +26,8 @@
 #include <iostream>
 #include "vector.h"
 
+namespace lux
+{
 
 
 class  Normal {
@@ -103,6 +105,6 @@ inline ostream &operator<<(ostream &os, const Normal &v) {
 	return os;
 }
 
-
+}//namespace lux
 
 #endif //LUX_NORMAL_H

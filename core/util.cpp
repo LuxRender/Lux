@@ -40,6 +40,10 @@ const _MM_ALIGN16 __int32 _Sign_PNNP[4] = { 0x00000000, 0x80000000, 0x80000000, 
 using std::map;
 // Error Reporting Includes
 #include <stdarg.h>
+
+
+using namespace lux;
+
 // Error Reporting Definitions
 #define LUX_ERROR_IGNORE 0
 #define LUX_ERROR_CONTINUE 1
@@ -156,15 +160,15 @@ Matrix4x4::Matrix4x4(float f11, float f12, float f13, float f14,
 
 
 #ifndef LUX_USE_SSE
-Matrix4x4Ptr Matrix4x4::Transpose() const {
-	Matrix4x4Ptr o(new Matrix4x4(m[0][0], m[1][0], m[2][0], m[3][0],
+boost::shared_ptr<Matrix4x4> Matrix4x4::Transpose() const {
+	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(m[0][0], m[1][0], m[2][0], m[3][0],
 	                    m[0][1], m[1][1], m[2][1], m[3][1],
 	                    m[0][2], m[1][2], m[2][2], m[3][2],
 	                    m[0][3], m[1][3], m[2][3], m[3][3]));
 	return o;
 }
 #else
-Matrix4x4Ptr Matrix4x4::Transpose() const {
+boost::shared_ptr<Matrix4x4> Matrix4x4::Transpose() const {
       __m128  xmm0 = _mm_unpacklo_ps(_L1,_L2),
                      xmm1 = _mm_unpacklo_ps(_L3,_L4),
                             xmm2 = _mm_unpackhi_ps(_L1,_L2),
@@ -176,7 +180,7 @@ Matrix4x4Ptr Matrix4x4::Transpose() const {
       L3 = _mm_movelh_ps(xmm2,xmm3);
       L4 = _mm_movehl_ps(xmm3,xmm2);
 
-	Matrix4x4Ptr o (new Matrix4x4(L1, L2, L3, L4));
+	boost::shared_ptr<Matrix4x4> o (new Matrix4x4(L1, L2, L3, L4));
       return o;
 }
 #endif
@@ -184,7 +188,7 @@ Matrix4x4Ptr Matrix4x4::Transpose() const {
 
 
 #ifndef LUX_USE_SSE
-Matrix4x4Ptr Matrix4x4::Inverse() const {
+boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const {
 	int indxc[4], indxr[4];
 	int ipiv[4] = { 0, 0, 0, 0 };
 	float minv[4][4];
@@ -241,11 +245,11 @@ Matrix4x4Ptr Matrix4x4::Inverse() const {
 		}
 	}
 	//return new Matrix4x4(minv);
-	Matrix4x4Ptr o (new Matrix4x4(minv));
+	boost::shared_ptr<Matrix4x4> o (new Matrix4x4(minv));
 	return o;
 }
 #else
-Matrix4x4Ptr Matrix4x4::Inverse() const {
+boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const {
 
     __m128 A = _mm_movelh_ps(_L1, _L2),    // the four sub-matrices
                B = _mm_movehl_ps(_L2, _L1),
@@ -331,7 +335,7 @@ Matrix4x4Ptr Matrix4x4::Inverse() const {
 
     //return new Matrix4x4(_mm_shuffle_ps(iA,iB,0x77),_mm_shuffle_ps(iA,iB,0x22),_mm_shuffle_ps(iC,iD,0x77),_mm_shuffle_ps(iC,iD,0x22));
     
-    Matrix4x4Ptr o (new Matrix4x4(_mm_shuffle_ps(iA,iB,0x77),_mm_shuffle_ps(iA,iB,0x22),_mm_shuffle_ps(iC,iD,0x77),_mm_shuffle_ps(iC,iD,0x22)));
+    boost::shared_ptr<Matrix4x4> o (new Matrix4x4(_mm_shuffle_ps(iA,iB,0x77),_mm_shuffle_ps(iA,iB,0x22),_mm_shuffle_ps(iC,iD,0x77),_mm_shuffle_ps(iC,iD,0x22)));
 	return o;
 }
 #endif

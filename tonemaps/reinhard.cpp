@@ -30,6 +30,8 @@
 
 #include "reinhard.h"
 
+using namespace lux;
+
 // ReinhardOp Method Definitions
 ReinhardOp::ReinhardOp(float prS, float poS, float b)
 {

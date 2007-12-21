@@ -26,6 +26,12 @@
 #include <iostream>
 
 
+namespace lux
+{
+
+class Point;
+class Normal;
+
 class  Vector {
 	friend class boost::serialization::access;
 public:
@@ -109,5 +115,6 @@ inline Vector operator*(float f, const Vector &v) {
 	return v*f;
 }
 
+}//namespace lux
 
 #endif //LUX_VECTOR_H

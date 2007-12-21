@@ -23,6 +23,8 @@
 // paraboloid.cpp*
 #include "paraboloid.h"
 
+using namespace lux;
+
 // Paraboloid Method Definitions
 Paraboloid::Paraboloid(const Transform &o2w, bool ro,
                        float rad, float z0, float z1,

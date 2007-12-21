@@ -25,6 +25,9 @@
 #include "paramset.h"
 #include "film.h"
 
+namespace lux
+{
+
 // LDSampler Declarations
 class LDSampler : public Sampler {
 public:
@@ -59,3 +62,6 @@ private:
 	u_int TotalPixels;
 	PixelSampler* pixelSampler;
 };
+
+}//namespace lux
+

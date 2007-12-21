@@ -25,6 +25,9 @@
 #include "paramset.h"
 #include "film.h"
 
+namespace lux
+{
+
 // LinearPixelSampler Declarations
 class LinearPixelSampler : public PixelSampler {
 public:
@@ -42,3 +45,5 @@ private:
 	u_int TotalPx;
 	vector<PxLoc> Pxa; // pixel coordinate cache
 };
+
+}//namespace lux

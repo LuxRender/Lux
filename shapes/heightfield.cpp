@@ -23,6 +23,8 @@
 // heightfield.cpp*
 #include "heightfield.h"
 
+using namespace lux;
+
 // Heightfield Method Definitions
 Heightfield::Heightfield(const Transform &o2w, bool ro, int x, int y,
 		const float *zs)
@@ -46,7 +48,7 @@ BBox Heightfield::ObjectBound() const {
 bool Heightfield::CanIntersect() const {
 	return false;
 }
-void Heightfield::Refine(vector<ShapePtr > &refined) const {
+void Heightfield::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	int ntris = 2*(nx-1)*(ny-1);
 	refined.reserve(ntris);
 	int *verts = new int[3*ntris];

@@ -28,6 +28,9 @@
 #include "geometry.h"
 //#include "transform.h"
 
+namespace lux
+{
+
 // Texture Declarations
 class  TextureMapping2D {
 public:
@@ -123,6 +126,6 @@ private:
 	T value;
 };
 
-
+}//namespace lux
 
 #endif // LUX_TEXTURE_H

@@ -23,6 +23,8 @@
 // primer.cpp*
 #include "primer.h"
 
+using namespace lux;
+
 // Primer Method Definitions
 BSDF *Primer::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare primer coefficients

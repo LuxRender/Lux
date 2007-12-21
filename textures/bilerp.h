@@ -25,6 +25,10 @@
 #include "texture.h"
 #include "paramset.h"
 #include "error.h"
+
+namespace lux
+{
+
 // BilerpTexture Declarations
 template <class T>
 class BilerpTexture : public Texture<T> {
@@ -120,4 +124,6 @@ template <class T> Texture<Spectrum>* BilerpTexture<T>::CreateSpectrumTexture(co
 		tp.FindSpectrum("v00", 0.f), tp.FindSpectrum("v01", 1.f),
 		tp.FindSpectrum("v10", 0.f), tp.FindSpectrum("v11", 1.f));
 }
+
+}//namespace lux
 

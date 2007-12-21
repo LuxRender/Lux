@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // MarbleTexture Declarations
 class MarbleTexture : public Texture<Spectrum> {
 public:
@@ -73,3 +77,6 @@ private:
 	float omega, scale, variation;
 	TextureMapping3D *mapping;
 };
+
+}//namespace lux
+

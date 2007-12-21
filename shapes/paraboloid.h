@@ -22,6 +22,10 @@
 
 // paraboloid.cpp*
 #include "shape.h"
+
+namespace lux
+{
+
 // Paraboloid Declarations
 class Paraboloid: public Shape {
 public:
@@ -41,3 +45,5 @@ protected:
 	float zmin, zmax;
 	float phiMax;
 };
+
+}//namespace lux

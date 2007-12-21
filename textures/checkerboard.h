@@ -30,6 +30,9 @@
 #include "sampling.h"
 #include "shape.h"
 #include "error.h"
+
+namespace lux
+{
 // Checkerboard2D Private Types
 //enum { NONE, SUPERSAMPLE, CLOSEDFORM } aaMethod;
 typedef enum { NONE, SUPERSAMPLE, CLOSEDFORM } MethodType;
@@ -187,6 +190,8 @@ namespace Checkerboard
 Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 }
+
+}//namespace lux
 
 #endif
 

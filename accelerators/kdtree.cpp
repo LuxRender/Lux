@@ -23,6 +23,8 @@
 // kdtree.cpp*
 #include "kdtreeaccel.h"
 
+using namespace lux;
+
 // KdTreeAccel Method Definitions
 KdTreeAccel::
     KdTreeAccel(const vector<Primitive* > &p,

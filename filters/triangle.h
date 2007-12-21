@@ -26,6 +26,10 @@
 // triangle.cpp*
 #include "sampling.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // Triangle Filter Declarations
 class TriangleFilter : public Filter {
 public:
@@ -34,6 +38,8 @@ public:
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 };
+
+}//namespace lux
 
 #endif
 

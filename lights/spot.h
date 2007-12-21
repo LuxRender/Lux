@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "light.h"
 #include "shape.h"
+
+namespace lux
+{
+
 // SpotLight Declarations
 class SpotLight : public Light {
 public:
@@ -50,3 +54,6 @@ private:
 	Point lightPos;
 	Spectrum Intensity;
 };
+
+}//namespace lux
+

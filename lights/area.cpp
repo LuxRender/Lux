@@ -23,21 +23,24 @@
 // area.cpp*
 #include "light.h"
 #include "primitive.h"
+
+using namespace lux;
+
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - add portal implementation
 		const Spectrum &le, int ns,
-		const ShapePtr &s)
+		const boost::shared_ptr<Shape> &s)
 	: Light(light2world, ns) {
 	Lemit = le;
 	if (s->CanIntersect())
 		shape = s;
 	else {
 		// Create _ShapeSet_ for _Shape_
-		ShapePtr shapeSet = s;
-		vector<ShapePtr > todo, done;
+		boost::shared_ptr<Shape> shapeSet = s;
+		vector<boost::shared_ptr<Shape> > todo, done;
 		todo.push_back(shapeSet);
 		while (todo.size()) {
-			ShapePtr sh = todo.back();
+			boost::shared_ptr<Shape> sh = todo.back();
 			todo.pop_back();
 			if (sh->CanIntersect())
 				done.push_back(sh);
@@ -46,7 +49,7 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 		}
 		if (done.size() == 1) shape = done[0];
 		else {
-			ShapePtr o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
+			boost::shared_ptr<Shape> o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
 			shape = o;
 		}
 	}
@@ -101,7 +104,7 @@ Spectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 	return L(P, Ns, -*wo) /	pdf;
 }
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
-		const ShapePtr &shape) {
+		const boost::shared_ptr<Shape> &shape) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	return new AreaLight(light2world, L, nSamples, shape);

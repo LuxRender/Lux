@@ -22,6 +22,9 @@
 
 // igi.cpp*
 #include "igi.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 IGIIntegrator* IGIIntegrator::clone() const
  {

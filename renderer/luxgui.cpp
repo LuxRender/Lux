@@ -50,6 +50,8 @@
 #include "luxgui.h"
 #include "renderwindow.h"
 #include "icons.h"		// Include GUI icon data
+
+using namespace lux;
 namespace po = boost::program_options;
 static int threads;
 bool parseError;

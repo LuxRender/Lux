@@ -26,6 +26,8 @@
 #include "paramset.h"
 #include "renderfarm.h"
 
+using namespace lux;
+
 bool RenderFarm::connect(const string &serverName) {
 	serverList.push_back(std::string(serverName));
 

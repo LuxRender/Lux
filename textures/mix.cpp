@@ -23,4 +23,4 @@
 // mix.cpp*
 #include "mix.h"
 
-
+using namespace lux;

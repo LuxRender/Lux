@@ -23,6 +23,10 @@
 // mirror.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Mirror Class Declarations
 class Mirror : public Material {
 public:
@@ -39,3 +43,5 @@ private:
 	boost::shared_ptr<Texture<Spectrum> > Kr;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux

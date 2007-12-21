@@ -22,6 +22,10 @@
 
 // geometry.cpp*
 #include "geometry.h"
+
+namespace lux
+{
+
 // BBox Method Definitions
  BBox Union(const BBox &b, const Point &p) {
 	BBox ret = b;
@@ -43,6 +47,11 @@
 	ret.pMax.z = max(b.pMax.z, b2.pMax.z);
 	return ret;
 }
+ 
+}
+ 
+using namespace lux;
+ 
 void BBox::BoundingSphere(Point *c, float *rad) const {
 	*c = .5f * pMin + .5f * pMax;
 	*rad = Inside(*c) ? Distance(*c, pMax) : 0.f;

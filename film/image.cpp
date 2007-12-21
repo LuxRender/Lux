@@ -24,6 +24,8 @@
 #include "image.h"
 #include "error.h"
 
+using namespace lux;
+
 // ImageFilm Method Definitions
 ImageFilm::ImageFilm(int xres, int yres,
                      Filter *filt, const float crop[4],

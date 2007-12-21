@@ -28,6 +28,10 @@
 #include "error.h"
 #include <map>
 using std::map;
+
+namespace lux
+{
+
 // ImageMapTexture Declarations
 template <class T>
 class ImageTexture : public Texture<T> {
@@ -206,3 +210,4 @@ T ImageTexture<T>::Evaluate(
 	return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
 }
 
+}//namespace lux

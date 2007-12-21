@@ -23,6 +23,10 @@
 // sphere.cpp*
 #include "shape.h"
 #include "mc.h"
+
+namespace lux
+{
+
 // Sphere Declarations
 class Sphere: public Shape {
 public:
@@ -87,3 +91,5 @@ private:
 	float zmin, zmax;
 	float thetaMin, thetaMax;
 };
+
+}//namespace lux

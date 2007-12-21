@@ -27,6 +27,10 @@
 
 #include "sampling.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // Box Filter Declarations
 class BoxFilter : public Filter {
 public:
@@ -35,6 +39,8 @@ public:
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 };
+
+}//namespace lux
 
 #endif
 

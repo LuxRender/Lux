@@ -22,6 +22,9 @@
 
 // triangle.cpp*
 #include "triangle.h"
+
+using namespace lux;
+
 // Triangle Filter Method Definitions
 float TriangleFilter::Evaluate(float x, float y) const {
 	return max(0.f, xWidth - fabsf(x)) *

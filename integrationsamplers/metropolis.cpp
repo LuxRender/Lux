@@ -28,6 +28,8 @@
 // metropolis.cpp*
 #include "metropolis.h"
 
+using namespace lux;
+
 // mutate a value in the metrosample vector
 float MetroSample::mutate (const float x) const {
 	static const float s1 = 1/1024., s2 = 1/16.;

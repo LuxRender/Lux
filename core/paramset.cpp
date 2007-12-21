@@ -24,6 +24,9 @@
 #include "paramset.h"
 #include "error.h"
 #include <sstream>
+
+using namespace lux;
+
 // ParamSet Methods
 ParamSet::ParamSet(const ParamSet &p2) {
 	*this = p2;

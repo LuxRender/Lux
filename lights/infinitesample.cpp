@@ -23,6 +23,8 @@
 // infinitesample.cpp*
 #include "infinitesample.h"
 
+using namespace lux;
+
 // InfiniteAreaLightIS Method Definitions
 InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 	delete radianceMap;

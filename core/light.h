@@ -31,6 +31,10 @@
 #include "mc.h"
 #include "error.h"
 // Light Declarations
+
+namespace lux
+{
+
 class  Light {
 public:
 	// Light Interface
@@ -67,12 +71,12 @@ public:
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
 
-	void AddPortalShape(ShapePtr shape);
+	void AddPortalShape(boost::shared_ptr<Shape> shape);
 	// Light Public Data
 	const int nSamples;
 	bool havePortalShape;
 	int nrPortalShapes;
-	vector<ShapePtr > PortalShapes;
+	vector<boost::shared_ptr<Shape> > PortalShapes;
 	float PortalArea;
 protected:
 	// Light Protected Data
@@ -94,7 +98,7 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		const Spectrum &power, int ns, const ShapePtr &shape);
+		const Spectrum &power, int ns, const boost::shared_ptr<Shape> &shape);
 	virtual Spectrum L(const Point &p, const Normal &n,
 			const Vector &w) const {
 		return Dot(n, w) > 0 ? Lemit : 0.;
@@ -115,11 +119,14 @@ public:
 			float u3, float u4, Ray *ray, float *pdf) const;
 			
 	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
-		const ShapePtr &shape);
+		const boost::shared_ptr<Shape> &shape);
 protected:
 	// AreaLight Protected Data
 	Spectrum Lemit;
-	ShapePtr shape;
+	boost::shared_ptr<Shape> shape;
 	float area;
 };
+
+}//namespace lux
+
 #endif // LUX_LIGHT_H

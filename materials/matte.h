@@ -23,6 +23,10 @@
 // matte.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Matte Class Declarations
 class Matte : public Material {
 public:
@@ -43,3 +47,6 @@ private:
 	boost::shared_ptr<Texture<Spectrum> > Kd;
 	boost::shared_ptr<Texture<float> > sigma, bumpMap;
 };
+
+}//namespace lux
+

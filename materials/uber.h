@@ -23,6 +23,10 @@
 // uber.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // UberMaterial Class Declarations
 class UberMaterial : public Material {
 public:
@@ -49,3 +53,5 @@ private:
 	boost::shared_ptr<Texture<float> > roughness;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux

@@ -24,6 +24,9 @@
 #include "lux.h"
 #include "material.h"
 
+namespace lux
+{
+
 // CarPaint Class Declarations
 
 class CarPaint : public Material {
@@ -113,3 +116,6 @@ static CarPaintData carpaintdata[] = {
     1.0000f, 0.0460f, 0.1700f,
     0.1600f, 0.0750f, 0.0340f}
 };
+
+}//namespace lux
+

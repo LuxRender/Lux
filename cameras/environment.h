@@ -24,6 +24,10 @@
 #include "camera.h"
 #include "film.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // EnvironmentCamera Declarations
 class EnvironmentCamera : public Camera {
 public:
@@ -37,3 +41,5 @@ private:
 	// EnvironmentCamera Private Data
 	Point rayOrigin;
 };
+
+}//namespace lux

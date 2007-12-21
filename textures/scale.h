@@ -25,6 +25,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // ScaleTexture Declarations
 template <class T1, class T2>
 class ScaleTexture : public Texture<T2> {
@@ -61,4 +65,5 @@ template <class T,class U> inline Texture<Spectrum> * ScaleTexture<T,U>::CreateS
 		tp.GetSpectrumTexture("tex2", Spectrum(1.f)));
 }
 
+}//namespace lux
 

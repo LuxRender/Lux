@@ -23,6 +23,8 @@
 // homogeneous.cpp*
 #include "homogeneous.h"
 
+using namespace lux;
+
 // HomogeneousVolume Method Definitions
 VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {

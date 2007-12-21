@@ -25,6 +25,10 @@
 #include "transport.h"
 #include "scene.h"
 #include "mc.h"
+
+namespace lux
+{
+
 // Bidirectional Local Declarations
 struct BidirVertex;
 class BidirIntegrator : public SurfaceIntegrator {
@@ -63,3 +67,6 @@ struct BidirVertex {
 	float bsdfWeight, dAWeight, rrWeight;
 	BxDFType flags;
 };
+
+}//namespace lux
+

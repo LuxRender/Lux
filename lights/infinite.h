@@ -27,6 +27,11 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+
+namespace lux
+{
+
+
 // InfiniteAreaLight Declarations
 class InfiniteAreaLight : public Light {
 public:
@@ -64,3 +69,5 @@ private:
 	Spectrum Lbase;
 	MIPMap<Spectrum> *radianceMap;
 };
+
+}//namespace lux

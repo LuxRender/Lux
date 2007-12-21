@@ -29,6 +29,9 @@
 #include "transport.h"
 #include "scene.h"
 
+namespace lux
+{
+
 typedef enum {
 	DEBUG_U, DEBUG_V,
 	DEBUG_GEOM_NORMAL_X,
@@ -59,3 +62,6 @@ public:
 private:
 	DebugVariable debug_variable[3];
 };
+
+}//namespace lux
+

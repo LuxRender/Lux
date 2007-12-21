@@ -23,6 +23,8 @@
 // spot.cpp*
 #include "spot.h"
 
+using namespace lux;
+
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &light2world,
 		const Spectrum &intensity, float width, float fall)
@@ -78,7 +80,7 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	Vector dir = Normalize(to - from);
 	Vector du, dv;
 	CoordinateSystem(dir, &du, &dv);
-	Matrix4x4Ptr o (new Matrix4x4( du.x,  du.y,  du.z, 0.,
+	boost::shared_ptr<Matrix4x4> o (new Matrix4x4( du.x,  du.y,  du.z, 0.,
 	                                 dv.x,  dv.y,  dv.z, 0.,
 	                                dir.x, dir.y, dir.z, 0.,
 	                                    0,     0,     0, 1.));

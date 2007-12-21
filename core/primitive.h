@@ -26,6 +26,10 @@
 #include "lux.h"
 #include "shape.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Primitive Declarations
 class  Primitive {
 public:
@@ -67,16 +71,16 @@ public:
 	virtual bool Intersect(const Ray &r,
 	                       Intersection *isect) const;
 	virtual bool IntersectP(const Ray &r) const;
-	GeometricPrimitive(const ShapePtr &s,
-	                   const MaterialPtr &m,
+	GeometricPrimitive(const boost::shared_ptr<Shape> &s,
+	                   const boost::shared_ptr<Material> &m,
 	                   AreaLight *a);
 	const AreaLight *GetAreaLight() const;
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 	              const Transform &WorldToObject) const;
 private:
 	// GeometricPrimitive Private Data
-	ShapePtr shape;
-	MaterialPtr material;
+	boost::shared_ptr<Shape> shape;
+	boost::shared_ptr<Material> material;
 	AreaLight *areaLight;
 };
 class  InstancePrimitive : public Primitive {
@@ -110,4 +114,7 @@ public:
 	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
 	              const Transform &) const;
 };
+
+}//namespace lux
+
 #endif // LUX_PRIMITIVE_H

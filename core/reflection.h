@@ -26,6 +26,10 @@
 #include "lux.h"
 #include "geometry.h"
 #include "shape.h"
+
+namespace lux
+{
+
 // BSDF Inline Functions
 inline float CosTheta(const Vector &w) { return w.z; }
 inline float SinTheta(const Vector &w) {
@@ -459,4 +463,7 @@ inline int BSDF::NumComponents(BxDFType flags) const {
 		if (bxdfs[i]->MatchesFlags(flags)) ++num;
 	return num;
 }
+
+}//namespace lux
+
 #endif // LUX_REFLECTION_H

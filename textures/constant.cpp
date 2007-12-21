@@ -23,6 +23,8 @@
 // constant.cpp*
 #include "constant.h"
 
+using namespace lux;
+
 // ConstantTexture Method Definitions
 Texture<float> * Constant::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {

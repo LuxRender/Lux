@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 // api.cpp*
+
 #include "api.h"
 #include "paramset.h"
 #include "color.h"
@@ -52,145 +53,16 @@ using std::map;
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
 
+
 using asio::ip::tcp;
+
+using namespace lux;
+
 
 //jromang : here is the 'current' scene (we will need to replace that by a context)
 Scene *luxCurrentScene=NULL;
 static RenderFarm renderFarm;
 
-//static std::vector<std::string> luxServerList;
-//static std::stringstream netBuffer;
-
-/*
-void networkSend(const std::string &command) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl;
-		}
-		catch (std::exception& e)
-		{
-			luxError(LUX_SYSTEM,LUX_ERROR,e.what());
-		}
-	}
-}
-
-void networkSend(const std::string &command, const std::string &name,
-		const ParamSet &params) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<name<<' ';
-			boost::archive::text_oarchive oa(netBuffer);
-			oa<<params;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}
-
-void networkSend(const std::string &command, const std::string &name) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<name<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}
-
-void networkSend(const std::string &command, float x, float y, float z) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<x<<' '<<y<<' '<<z<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}
-
-void networkSend(const std::string &command, float a, float x, float y, float z) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<a<<' '<<x<<' '<<y<<' '<<z<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}
-
-void networkSend(const std::string &command, float ex, float ey, float ez,
-		float lx, float ly, float lz, float ux, float uy, float uz) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<ex<<' '<<ey<<' '<<ez<<' '<<lx<<' '<<ly<<' '<<lz<<' '<<ux<<' '<<uy<<' '<<uz<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}
-
-void networkSend(const std::string &command, float tr[16]) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl;//<<x<<' '<<y<<' '<<z<<' ';
-			for(int i=0;i<16;i++)
-			netBuffer<<tr[i]<<' ';
-			netBuffer<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}
-
-void networkSend(const std::string &command, const string &name,
-		const string &type, const string &texname, const ParamSet &params) {
-	//Send command to the render servers
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			//tcp::iostream stream((*server).c_str(), "18018");
-			netBuffer<<command<<std::endl<<name<<' '<<type<<' '<<texname<<' ';
-			boost::archive::text_oarchive oa(netBuffer);
-			oa<<params;
-
-			//send the file
-			std::string file="";
-			file=params.FindOneString(std::string("filename"),file);
-			if(file.size())
-			{
-				std::string s;
-				std::ifstream in(file.c_str(),std::ios::out|std::ios::binary);
-				while(getline(in,s))
-					netBuffer<<s<<"\n";
-				netBuffer<<"LUX_END_FILE\n";
-			}
-
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
-}*/
 
 // API Local Classes
 struct RenderOptions {
@@ -305,49 +177,6 @@ void luxAddServer(const string &name) {
 	renderFarm.connect(name);
 }
 
-void luxInit() {
-	renderFarm.send("luxInit");
-	/*
-	 //Send command to the render servers
-	 for (vector<string>::iterator server = luxServerList.begin(); server
-	 != luxServerList.end(); ++server) {
-	 try
-	 {
-	 tcp::iostream stream((*server).c_str(), "18018");
-	 stream<<"luxInit"<<std::endl;
-	 }
-	 catch (std::exception& e)
-	 {
-	 //std::cerr << e.what() << std::endl;
-	 luxError(LUX_SYSTEM,LUX_ERROR,e.what());
-	 }
-	 }*/
-
-	// System-wide initialization
-
-	//random number init
-	lux::random::init();
-
-	// Make sure floating point unit's rounding stuff is set
-	// as is expected by the fast FP-conversion routines.  In particular,
-	// we want double precision on Linux, not extended precision!
-#ifdef FAST_INT
-#if defined(__linux__) && defined(__i386__)
-	int cword = _FPU_MASK_DM | _FPU_MASK_ZM | _FPU_MASK_OM | _FPU_MASK_PM |
-	_FPU_MASK_UM | _FPU_MASK_IM | _FPU_DOUBLE | _FPU_RC_NEAREST;
-	_FPU_SETCW(cword);
-#endif
-#if defined(WIN32)
-	_control87(_PC_53, MCW_PC);
-#endif
-#endif // FAST_INT
-	// API Initialization
-	if (currentApiState != STATE_UNINITIALIZED)
-		luxError(LUX_ILLSTATE,LUX_ERROR,"luxInit() has already been called.");
-	currentApiState = STATE_OPTIONS_BLOCK;
-	renderOptions = new RenderOptions;
-	graphicsState = GraphicsState();
-}
 void luxCleanup() {
 	renderFarm.send("luxCleanup");
 
@@ -374,7 +203,7 @@ void luxTranslate(float dx, float dy, float dz) {
 void luxTransform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
 	renderFarm.send("luxTransform", tr);
-	Matrix4x4Ptr o(new Matrix4x4(
+	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(
 			tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
@@ -384,7 +213,7 @@ void luxTransform(float tr[16]) {
 void luxConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
 	renderFarm.send("luxConcatTransform", tr);
-	Matrix4x4Ptr o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
 			tr[3], tr[7], tr[11], tr[15]));
@@ -655,7 +484,7 @@ void luxPortalShape(const string &name, const ParamSet &params) {
 	;
 	renderFarm.send("luxPortalShape", name, params);
 
-	ShapePtr shape = MakeShape(name, curTransform,
+	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
 			graphicsState.reverseOrientation, params);
 	if (!shape)
 		return;
@@ -684,7 +513,7 @@ void luxPortalShape(const string &name, const ParamSet &params) {
 	TextureParams mp(params, graphicsState.materialParams,
 			graphicsState.floatTextures, graphicsState.spectrumTextures);
 	boost::shared_ptr<Texture<float> > bump;
-	MaterialPtr mtl = MakeMaterial("matte", curTransform, mp);
+	boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
 
 	// Create primitive (for refining) (dummy)
 	Primitive* prim(new GeometricPrimitive(shape, mtl, area));
@@ -695,7 +524,7 @@ void luxShape(const string &name, const ParamSet &params) {
 	;
 	renderFarm.send("luxShape", name, params);
 
-	ShapePtr shape = MakeShape(name, curTransform,
+	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
 			graphicsState.reverseOrientation, params);
 	if (!shape)
 		return;
@@ -709,7 +538,7 @@ void luxShape(const string &name, const ParamSet &params) {
 	TextureParams mp(params, graphicsState.materialParams,
 			graphicsState.floatTextures, graphicsState.spectrumTextures);
 	boost::shared_ptr<Texture<float> > bump;
-	MaterialPtr mtl = MakeMaterial(graphicsState.material, curTransform, mp);
+	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState.material, curTransform, mp);
 	if (!mtl)
 		mtl = MakeMaterial("matte", curTransform, mp);
 	if (!mtl)
@@ -936,6 +765,88 @@ double luxStatistics(char *statName) {
 		return luxCurrentScene->Statistics(statName);
 }
 
+void luxGetFilm(tcp::iostream &stream) {
+
+	boost::archive::text_oarchive oa(stream);
+	//boost::archive::text_oarchive ob(std::cout);
+	//jromang TODO : fix this hack !
+	//ob<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	const MultiImageFilm m(*((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	luxCurrentScene->camera->film->clean();
+	oa<<m;
+	
+	//oa<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	//((MultiImageFilm *)(luxCurrentScene->camera->film))->clean();
+}
+
+void luxUpdateFilmFromNetwork() {
+	renderFarm.updateFilm((MultiImageFilm *)(luxCurrentScene->camera->film));
+	/*
+	for (vector<string>::iterator server = luxServerList.begin(); server
+			!= luxServerList.end(); ++server) {
+		try
+		{
+			std::cout << "getting film from "<<*server<<std::endl;
+			tcp::iostream stream((*server).c_str(), "18018");
+			std::cout << "connected"<<std::endl;
+			stream<<"luxGetFilm"<<std::endl;
+			boost::archive::text_iarchive ia(stream);
+			MultiImageFilm m(320,200);
+			ia>>m;
+			std::cout<<"ok, i got the film! merging...";
+			((MultiImageFilm *)(luxCurrentScene->camera->film))->merge(m);
+			std::cout<<"merged!"<<std::endl;
+		}
+		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
+	}*/
+}
+
+
+
+void luxInit() {
+	renderFarm.send("luxInit");
+	/*
+	 //Send command to the render servers
+	 for (vector<string>::iterator server = luxServerList.begin(); server
+	 != luxServerList.end(); ++server) {
+	 try
+	 {
+	 tcp::iostream stream((*server).c_str(), "18018");
+	 stream<<"luxInit"<<std::endl;
+	 }
+	 catch (std::exception& e)
+	 {
+	 //std::cerr << e.what() << std::endl;
+	 luxError(LUX_SYSTEM,LUX_ERROR,e.what());
+	 }
+	 }*/
+
+	// System-wide initialization
+
+	//random number init
+	lux::random::init();
+
+	// Make sure floating point unit's rounding stuff is set
+	// as is expected by the fast FP-conversion routines.  In particular,
+	// we want double precision on Linux, not extended precision!
+#ifdef FAST_INT
+#if defined(__linux__) && defined(__i386__)
+	int cword = _FPU_MASK_DM | _FPU_MASK_ZM | _FPU_MASK_OM | _FPU_MASK_PM |
+	_FPU_MASK_UM | _FPU_MASK_IM | _FPU_DOUBLE | _FPU_RC_NEAREST;
+	_FPU_SETCW(cword);
+#endif
+#if defined(WIN32)
+	_control87(_PC_53, MCW_PC);
+#endif
+#endif // FAST_INT
+	// API Initialization
+	if (currentApiState != STATE_UNINITIALIZED)
+		luxError(LUX_ILLSTATE,LUX_ERROR,"luxInit() has already been called.");
+	currentApiState = STATE_OPTIONS_BLOCK;
+	renderOptions = new RenderOptions;
+	graphicsState = GraphicsState();
+}
+
 //error handling
 LuxErrorHandler luxError=luxErrorPrint;
 int luxLastError=LUX_NOERROR;
@@ -997,38 +908,3 @@ void luxErrorPrint(int code, int severity, const char *message) {
 	std::cerr<<"] "<<message<<std::endl;
 }
 
-void luxGetFilm(tcp::iostream &stream) {
-
-	boost::archive::text_oarchive oa(stream);
-	//boost::archive::text_oarchive ob(std::cout);
-	//jromang TODO : fix this hack !
-	//ob<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	const MultiImageFilm m(*((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	luxCurrentScene->camera->film->clean();
-	oa<<m;
-	
-	//oa<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	//((MultiImageFilm *)(luxCurrentScene->camera->film))->clean();
-}
-
-void luxUpdateFilmFromNetwork() {
-	renderFarm.updateFilm((MultiImageFilm *)(luxCurrentScene->camera->film));
-	/*
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			std::cout << "getting film from "<<*server<<std::endl;
-			tcp::iostream stream((*server).c_str(), "18018");
-			std::cout << "connected"<<std::endl;
-			stream<<"luxGetFilm"<<std::endl;
-			boost::archive::text_iarchive ia(stream);
-			MultiImageFilm m(320,200);
-			ia>>m;
-			std::cout<<"ok, i got the film! merging...";
-			((MultiImageFilm *)(luxCurrentScene->camera->film))->merge(m);
-			std::cout<<"merged!"<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}*/
-}

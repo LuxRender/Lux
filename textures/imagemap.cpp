@@ -22,3 +22,5 @@
 
 // imagemap.cpp*
 #include "imagemap.h"
+
+using namespace lux;

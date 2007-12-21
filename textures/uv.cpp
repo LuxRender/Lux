@@ -24,6 +24,8 @@
 #include "uv.h"
 #include "error.h"
 
+using namespace lux;
+
 // UVTexture Method Definitions
 Texture<float> * UVTexture::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {

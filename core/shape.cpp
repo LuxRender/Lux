@@ -23,6 +23,9 @@
 // shape.cpp*
 #include "shape.h"
 #include "primitive.h"
+
+using namespace lux;
+
 // Shape Method Definitions
 Shape::Shape(const Transform &o2w, bool ro)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
@@ -33,7 +36,7 @@ Shape::Shape(const Transform &o2w, bool ro)
 	// radiance - disabled for threading // ++nShapesMade;
 }
 // ShapeSet Method Definitions
-ShapeSet::ShapeSet(const vector<ShapePtr > &s,
+ShapeSet::ShapeSet(const vector<boost::shared_ptr<Shape> > &s,
 	const Transform &o2w, bool ro)
 	: Shape(o2w, ro) {
 	shapes = s;
@@ -60,7 +63,7 @@ ShapeSet::ShapeSet(const vector<ShapePtr > &s,
 	} else {
 		vector<Primitive*> primitives;
 		for (u_int i = 0; i < shapes.size(); ++i) {
-			MaterialPtr emptyMtl;
+			boost::shared_ptr<Material> emptyMtl;
 			Primitive* prim (new GeometricPrimitive(shapes[i], emptyMtl, NULL));
 			primitives.push_back(prim);
 		}

@@ -22,6 +22,9 @@
 
 // volume.cpp*
 #include "volume.h"
+
+namespace lux
+{
 // Volume Scattering Definitions
 
 float PhaseIsotropic(const Vector &, const Vector &) {
@@ -150,3 +153,6 @@ Spectrum DensityRegion::Tau(const Ray &r,
 	}
 	return tau * stepSize;
 }
+
+}//namespace lux
+

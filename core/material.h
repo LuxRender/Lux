@@ -28,6 +28,10 @@
 #include "texture.h"
 #include "color.h"
 #include "reflection.h"
+
+namespace lux
+{
+
 // Material Class Declarations
 class  Material  {
 public:
@@ -38,4 +42,7 @@ public:
 	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
 };
+
+}//namespace lux
+
 #endif // LUX_MATERIAL_H

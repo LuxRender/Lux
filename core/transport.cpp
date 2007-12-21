@@ -23,6 +23,10 @@
 // transport.cpp*
 #include "transport.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // Integrator Method Definitions
 Integrator::~Integrator() {
 }
@@ -207,3 +211,6 @@ Spectrum EstimateDirect(const Scene *scene,
 	
 	return Ld;
 }
+
+}//namespace lux
+

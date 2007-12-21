@@ -23,6 +23,8 @@
 // volumegrid.cpp*
 #include "volumegrid.h"
 
+using namespace lux;
+
 // VolumeGrid Method Definitions
 VolumeGrid::VolumeGrid(const Spectrum &sa,
 		const Spectrum &ss, float gg,

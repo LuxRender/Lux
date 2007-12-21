@@ -25,6 +25,9 @@
 #include "paramset.h"
 #include "film.h"
 
+namespace lux
+{
+
 class SampleVector {
 public:
 	mutable int i;
@@ -60,3 +63,5 @@ public:
 	bool large;
 	float pLarge;
 };
+
+}//namespace lux

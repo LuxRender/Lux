@@ -23,6 +23,8 @@
 // contrast.cpp*
 #include "contrast.h"
 
+using namespace lux;
+
 // ContrastOp Method Definitions
 void ContrastOp::Map(const float *y, int xRes, int yRes,
 		float maxDisplayY, float *scale) const {

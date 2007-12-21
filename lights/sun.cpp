@@ -23,6 +23,8 @@
 // sun.cpp*
 #include "sun.h"
 
+using namespace lux;
+
 // SunLight Method Definitions
 SunLight::SunLight(const Transform &light2world,
 		const Spectrum &radiance, const Vector &dir, float turb)

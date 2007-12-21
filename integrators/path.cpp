@@ -22,6 +22,9 @@
 
 // path.cpp*
 #include "path.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 PathIntegrator* PathIntegrator::clone() const
  {

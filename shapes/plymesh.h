@@ -23,6 +23,10 @@
 // plymesh.cpp*
 #include "shape.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // PlyMesh Declarations
 class PlyMesh : public Shape {
 public:
@@ -32,7 +36,7 @@ public:
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	bool CanIntersect() const { return false; }
-	void Refine(vector<ShapePtr > &refined) const;
+	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
 	friend class Triangle;
 	template <class T> friend class VertexTexture;
 	
@@ -45,5 +49,8 @@ public:
 	Normal *n;
 	Vector *s;
 	float *uvs;
-	vector<ShapePtr > triPtrs;
+	vector<boost::shared_ptr<Shape> > triPtrs;
 };
+
+}//namespace lux
+

@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // WrinkledTexture Declarations
 template <class T> class WrinkledTexture : public Texture<T> {
 public:
@@ -68,3 +72,6 @@ template <class T> inline Texture<Spectrum> * WrinkledTexture<T>::CreateSpectrum
 	return new WrinkledTexture<Spectrum>(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f), map);
 }
+
+}//namespace lux
+

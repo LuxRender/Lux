@@ -23,4 +23,4 @@
 // scale.cpp*
 #include "scale.h"
 
-
+using namespace lux;

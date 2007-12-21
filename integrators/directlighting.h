@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "transport.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // DirectLighting Declarations
 enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 	SAMPLE_ONE_WEIGHTED  // NOBOOK
@@ -77,3 +81,6 @@ private:
 	mutable float *avgY, *avgYsample, *cdf;
 	mutable float overallAvgY;
 };
+
+}//namespace lux
+

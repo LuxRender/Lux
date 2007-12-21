@@ -23,6 +23,8 @@
 // exponential.cpp*
 #include "exponential.h"
 
+using namespace lux;
+
 // ExponentialDensity Method Definitions
 VolumeRegion * ExponentialDensity::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {

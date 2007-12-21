@@ -23,6 +23,8 @@
 
 #include "trianglemesh.h"
 
+using namespace lux;
+
 // TriangleMesh Method Definitions
 TriangleMesh::TriangleMesh(const Transform &o2w, bool ro,
 		int nt, int nv, const int *vi, const Point *P,
@@ -74,10 +76,10 @@ BBox TriangleMesh::WorldBound() const {
 }
 
 void
-TriangleMesh::Refine(vector<ShapePtr > &refined)
+TriangleMesh::Refine(vector<boost::shared_ptr<Shape> > &refined)
 const {
 	for (int i = 0; i < ntris; ++i) {
-		ShapePtr o (new Triangle(ObjectToWorld,
+		boost::shared_ptr<Shape> o (new Triangle(ObjectToWorld,
 		                               reverseOrientation,
                                        (TriangleMesh *)this,
 									   i));

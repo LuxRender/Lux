@@ -28,6 +28,8 @@
 #include "vector.h"
 #include "point.h"
 
+namespace lux
+{
 
 class  Ray {
 public:
@@ -51,6 +53,6 @@ inline ostream &operator<<(ostream &os, Ray &r) {
 	return os;
 }
 
-
+}//namespace lux
 
 #endif //LUX_RAY_H

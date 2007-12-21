@@ -31,6 +31,8 @@
 #include "volume.h"
 #include "error.h"
 
+using namespace lux;
+
 // global sample pos/mutex
 u_int sampPos;
 boost::mutex sampPosMutex;

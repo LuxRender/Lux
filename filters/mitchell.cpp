@@ -23,6 +23,8 @@
 // mitchell.cpp*
 #include "mitchell.h"
 
+using namespace lux;
+
 // Mitchell Filter Method Definitions
 float MitchellFilter::Evaluate(float x, float y) const {
 	return Mitchell1D(x * invXWidth) *
@@ -36,3 +38,4 @@ Filter* MitchellFilter::CreateFilter(const ParamSet &ps) {
 	float C = ps.FindOneFloat("C", 1.f/3.f);
 	return new MitchellFilter(B, C, xw, yw);
 }
+

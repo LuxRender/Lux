@@ -23,6 +23,9 @@
 // light.cpp*
 #include "light.h"
 #include "scene.h"
+
+using namespace lux;
+
 // Light Method Definitions
 Light::~Light() {
 }
@@ -40,18 +43,18 @@ Spectrum Light::Le(const RayDifferential &) const {
 	return Spectrum(0.);
 }
 
-void Light::AddPortalShape(ShapePtr s) {
-	ShapePtr PortalShape;
+void Light::AddPortalShape(boost::shared_ptr<Shape> s) {
+	boost::shared_ptr<Shape> PortalShape;
 
 	if (s->CanIntersect())
 		PortalShape = s;
 	else {
 		// Create _ShapeSet_ for _Shape_
-		ShapePtr shapeSet = s;
-		vector<ShapePtr > todo, done;
+		boost::shared_ptr<Shape> shapeSet = s;
+		vector<boost::shared_ptr<Shape> > todo, done;
 		todo.push_back(shapeSet);
 		while (todo.size()) {
-			ShapePtr sh = todo.back();
+			boost::shared_ptr<Shape> sh = todo.back();
 			todo.pop_back();
 			if (sh->CanIntersect())
 				done.push_back(sh);
@@ -60,7 +63,7 @@ void Light::AddPortalShape(ShapePtr s) {
 		}
 		if (done.size() == 1) PortalShape = done[0];
 		else {
-			ShapePtr o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
+			boost::shared_ptr<Shape> o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
 			PortalShape = o;
 			havePortalShape = true; 
 			// store

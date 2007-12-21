@@ -23,6 +23,8 @@
 // felt.cpp*
 #include "felt.h"
 
+using namespace lux;
+
 // Felt Method Definitions
 BSDF *Felt::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare felt coefficients

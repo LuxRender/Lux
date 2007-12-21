@@ -151,12 +151,12 @@ typedef unsigned long u_long;
 // Global Forward Declarations
 class Timer;
 template<class T, int logBlockSize = 2> class BlockedArray;
+
+namespace lux
+{
 struct Matrix4x4;
 class ParamSet;
 template <class T> struct ParamSetItem;
-class TextureParams;
-class Shape;
-class Scene;
 class Vector;
 class Point;
 class Normal;
@@ -165,21 +165,33 @@ class RayDifferential;
 class BBox;
 class Transform;
 class DifferentialGeometry;
+class TextureParams;
+class Shape;
+class Scene;
 class Primitive;
 class Intersection;
 class GeometricPrimitive;
+}
 class Spectrum;
+namespace lux
+{
 class Camera;
 class ProjectiveCamera;
 class Sampler;
 class IntegrationSampler;
 class Sample;
+}
 #define BC_GRID_SIZE 40
 typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 #define GRID(v) (int((v) * BC_GRID_SIZE))
+namespace lux
+{
 class Filter;
 class Film;
+}
 class ToneMap;
+namespace lux
+{
 class BxDF;
 class BRDF;
 class BTDF;
@@ -195,6 +207,8 @@ class Microfacet;
 class MicrofacetDistribution;
 class BSDF;
 class Material;
+
+
 class TextureMapping2D;
 class UVMapping2D;
 class SphericalMapping2D;
@@ -202,8 +216,14 @@ class CylindricalMapping2D;
 class PlanarMapping2D;
 class TextureMapping3D;
 class IdentityMapping3D;
+}
+
+
+namespace lux
+{
 class TriangleMesh;
 class PlyMesh;
+
 template <class T> class Texture;
  float Noise(float x, float y = .5f, float z = .5f);
  float Noise(const Point &P);
@@ -219,6 +239,8 @@ class ShapeSet;
 class SurfaceIntegrator;
 class Integrator;
 class VolumeIntegrator;
+}
+
 // Global Constants
 #ifdef WIN32
 #define alloca _alloca
@@ -270,6 +292,9 @@ extern void StatsCleanup();
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
  void luxInit();
  void luxCleanup();
+ 
+namespace lux
+{
  Transform Translate(const Vector &delta);
  Transform Scale(float x, float y, float z);
 extern  Transform RotateX(float angle);
@@ -281,6 +306,7 @@ extern  Transform LookAt(const Point &pos, const Point &look,
  Transform Orthographic(float znear, float zfar);
 
 Transform Perspective(float fov, float znear, float zfar);
+}
  Spectrum FrDiel(float cosi, float cost,
                         const Spectrum &etai,
 						const Spectrum &etat);
@@ -291,16 +317,21 @@ Transform Perspective(float fov, float znear, float zfar);
 	Spectrum FresnelApproxEta(const Spectrum &intensity);
 
 	Spectrum FresnelApproxK(const Spectrum &intensity);
+ 
+ namespace lux
+ {
  float Lanczos(float, float tau=2);
  Spectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSamp, int bsdfSamp,
 	int bsdfComponent, u_int sampleNum);
+ 
 extern  void ComputeStep1dCDF(float *f, int nValues, float *c, float *cdf);
 extern  float SampleStep1d(float *f, float *cdf, float c,
 	int nSteps, float u, float *weight);
  void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
  void UniformSampleTriangle(float ud1, float ud2, float *u, float *v);
+ }
  bool ParseFile(const char *filename);
 // Global Classes
 struct  ProgressReporter {
@@ -360,12 +391,12 @@ private:
 //#define Reference boost::shared_ptr
 //#define ReferenceCounted boost::enable_shared_from_this
 
-typedef boost::shared_ptr<Matrix4x4> Matrix4x4Ptr;
+//typedef boost::shared_ptr<Matrix4x4> Matrix4x4Ptr;
 //typedef boost::shared_ptr<Texture<float> > TexturePtr<float>;
 
-typedef boost::shared_ptr<Shape> ShapePtr;
+//typedef boost::shared_ptr<Shape> ShapePtr;
 //typedef boost::shared_ptr<Primitive> PrimitivePtr;
-typedef boost::shared_ptr<Material> MaterialPtr;
+//typedef boost::shared_ptr<Material> MaterialPtr;
 //typedef boost::shared_ptr<TriangleMesh> TriangleMesh*;
 
 /* class  ReferenceCounted {
@@ -614,7 +645,7 @@ struct  Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 	          float t10, float t11, float t12, float t13,
 	          float t20, float t21, float t22, float t23,
 	          float t30, float t31, float t32, float t33);
-	Matrix4x4Ptr Transpose() const;
+	boost::shared_ptr<Matrix4x4> Transpose() const;
 	void Print(ostream &os) const {
 		os << "[ ";
 		for (int i = 0; i < 4; ++i) {
@@ -627,9 +658,9 @@ struct  Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 		}
 		os << " ] ";
 	}
-	static Matrix4x4Ptr
-		Mul(const Matrix4x4Ptr &m1,
-	        const Matrix4x4Ptr &m2) {
+	static boost::shared_ptr<Matrix4x4>
+		Mul(const boost::shared_ptr<Matrix4x4> &m1,
+	        const boost::shared_ptr<Matrix4x4> &m2) {
 		float r[4][4];
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
@@ -637,10 +668,10 @@ struct  Matrix4x4 : public ReferenceCounted<Matrix4x4>  {
 				          m1->m[i][1] * m2->m[1][j] +
 				          m1->m[i][2] * m2->m[2][j] +
 				          m1->m[i][3] * m2->m[3][j];
-		Matrix4x4Ptr o (new Matrix4x4(r));
+		boost::shared_ptr<Matrix4x4> o (new Matrix4x4(r));
 		return o;
 	}
-	Matrix4x4Ptr Inverse() const;
+	boost::shared_ptr<Matrix4x4> Inverse() const;
 	float m[4][4];
 };*/
 

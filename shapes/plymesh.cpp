@@ -25,6 +25,9 @@
 #include "trianglemesh.h"
 #include "./plymesh/rply.h"
 
+namespace lux
+{
+
 // rply vertex callback
 static int VertexCB(p_ply_argument argument) 
 {
@@ -196,10 +199,10 @@ BBox PlyMesh::WorldBound() const {
 }
 
 void
-PlyMesh::Refine(vector<ShapePtr > &refined)
+PlyMesh::Refine(vector<boost::shared_ptr<Shape> > &refined)
 const {
 	for (int i = 0; i < ntris; ++i) {
-		ShapePtr o (new Triangle(ObjectToWorld,
+		boost::shared_ptr<Shape> o (new Triangle(ObjectToWorld,
 		                               reverseOrientation,
                                        (TriangleMesh *)this,
 									   i));
@@ -213,3 +216,6 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	bool smooth = params.FindOneBool("smooth", false);
 	return new PlyMesh(o2w, reverseOrientation, filename, smooth);
 }
+
+}//namespace lux
+

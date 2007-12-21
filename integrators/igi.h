@@ -27,6 +27,9 @@
 #include "mc.h"
 #include "sampling.h"
 
+namespace lux
+{
+
 // IGI Local Structures
 struct VirtualLight {
 	VirtualLight() { }
@@ -60,3 +63,6 @@ private:
 	int *lightSampleOffset, lightNumOffset;
 	int *bsdfSampleOffset, *bsdfComponentOffset;
 };
+
+}//namespace lux
+

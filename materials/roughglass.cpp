@@ -23,6 +23,8 @@
 // roughglass.cpp*
 #include "roughglass.h"
 
+using namespace lux;
+
 // RoughGlass Method Definitions
 BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_

@@ -32,6 +32,9 @@
 #include "mc.h"
 #include "sampling.h"
 
+namespace lux
+{
+
 struct EClosePhoton;
 
 // Local Declarations
@@ -146,5 +149,7 @@ private:
 	mutable KdTree<EPhoton, EPhotonProcess> *indirectMap;
 	mutable KdTree<ERadiancePhoton, ERadiancePhotonProcess> *radianceMap;
 };
+
+}//namespace lux
 
 #endif

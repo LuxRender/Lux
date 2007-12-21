@@ -23,6 +23,10 @@
 // primer.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Primer Class Declarations
 class Primer : public Material {
 public:
@@ -31,3 +35,6 @@ public:
 	boost::shared_ptr<Texture<float> > bumpMap;
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };
+
+}//namespace lux
+

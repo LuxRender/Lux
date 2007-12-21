@@ -23,4 +23,5 @@
 // fbm.cpp*
 #include "fbm.h"
 
+using namespace lux;
 

@@ -23,6 +23,8 @@
 // sinc.cpp*
 #include "sinc.h"
 
+using namespace lux;
+
 // Sinc Filter Method Definitions
 float LanczosSincFilter::Evaluate(float x, float y) const{
 	return Sinc1D(x * invXWidth) * Sinc1D(y * invYWidth);

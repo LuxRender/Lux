@@ -23,6 +23,8 @@
 // shinymetal.cpp*
 #include "shinymetal.h"
 
+using namespace lux;
+
 // ShinyMetal Method Definitions
 BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_

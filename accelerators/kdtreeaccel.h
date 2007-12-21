@@ -27,6 +27,10 @@
 #include "lux.h"
 #include "primitive.h"
 
+
+namespace lux
+{
+
 // KdAccelNode Declarations
 
 struct MailboxPrim {
@@ -147,6 +151,8 @@ struct KdToDo {
 	const KdAccelNode *node;
 	float tmin, tmax;
 };
+
+}//namespace lux
 
 #endif
 

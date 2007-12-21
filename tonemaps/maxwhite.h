@@ -22,6 +22,10 @@
 
 // maxwhite.cpp*
 #include "tonemap.h"
+
+namespace lux
+{
+
 // MaxWhiteOp Declarations
 class MaxWhiteOp : public ToneMap {
 public:
@@ -39,4 +43,6 @@ public:
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 };
+
+}//namespace lux
 

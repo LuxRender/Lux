@@ -26,6 +26,10 @@
 #include "shape.h"
 #include "mc.h"
 #include "volume.h"
+
+namespace lux
+{
+
 // MC Function Definitions
 void ComputeStep1dCDF(float *f, int nSteps, float *c,
 		float *cdf) {
@@ -179,3 +183,6 @@ Vector UniformSampleCone(float u1, float u2,
 		float g) {
 	return PhaseHG(w, wp, g);
 }
+ 
+}//namespace lux
+

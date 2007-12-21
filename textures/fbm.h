@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // FBmTexture Declarations
 template <class T> class FBmTexture : public Texture<T> {
 public:
@@ -69,3 +73,4 @@ template <class T> Texture<Spectrum> * FBmTexture<T>::CreateSpectrumTexture(cons
 		tp.FindFloat("roughness", .5f), map);
 }
 
+}//namespace lux

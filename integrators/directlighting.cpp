@@ -22,6 +22,9 @@
 
 // directlighting.cpp*
 #include "directlighting.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 DirectLighting* DirectLighting::clone() const
  {

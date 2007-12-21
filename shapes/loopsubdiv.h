@@ -33,6 +33,10 @@ using std::map;
 // LoopSubdiv Macros
 #define NEXT(i) (((i)+1)%3)
 #define PREV(i) (((i)+2)%3)
+
+namespace lux
+{
+
 // LoopSubdiv Local Structures
 struct SDFace;
 struct SDFace;
@@ -117,7 +121,7 @@ public:
 	           const Point *P, int nlevels);
 	~LoopSubdiv();
 	bool CanIntersect() const;
-	void Refine(vector<ShapePtr > &refined) const;
+	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	
@@ -159,3 +163,6 @@ inline int SDVertex::valence() {
 		return nf+1;
 	}
 }
+
+}//namespace lux
+

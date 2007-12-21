@@ -26,6 +26,9 @@
 #include "lux.h"
 #include "primitive.h"
 
+namespace lux
+{
+
 // GridAccel Forward Declarations
 struct GMailboxPrim;
 struct Voxel;
@@ -125,3 +128,6 @@ private:
 	boost::object_pool<Voxel> voxelArena;
 	static int curMailboxId;
 };
+
+}//namespace lux
+

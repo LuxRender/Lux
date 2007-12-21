@@ -23,6 +23,10 @@
 // plastic.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Plastic Class Declarations
 class Plastic : public Material {
 public:
@@ -45,3 +49,6 @@ private:
 	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
 	boost::shared_ptr<Texture<float> > roughness, bumpMap;
 };
+
+}//namespace lux
+

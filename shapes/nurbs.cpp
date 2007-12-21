@@ -23,6 +23,8 @@
 // nurbs.cpp*
 #include "nurbs.h"
 
+using namespace lux;
+
 // NURBS Evaluation Functions
 static int KnotOffset(const float *knot, int order, int np, float t) {
     int firstKnot = order - 1;
@@ -196,7 +198,7 @@ BBox NURBS::WorldBound() const {
 	}
 }
 
-void NURBS::Refine(vector<ShapePtr > &refined) const {
+void NURBS::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	// Compute NURBS dicing rates
 	int diceu = 30, dicev = 30;
 	float *ueval = new float[diceu];

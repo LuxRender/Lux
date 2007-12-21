@@ -25,6 +25,10 @@
 // sampling.h*
 #include "lux.h"
 #include "geometry.h"
+
+namespace lux
+{
+
 // Sampling Declarations
 class  Sampler {
 public:
@@ -246,4 +250,7 @@ public:
 	virtual u_int GetTotalPixels() = 0;
 	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos) = 0;
 };
+
+}//namespace lux
+
 #endif // LUX_SAMPLING_H

@@ -41,6 +41,8 @@
 
 
 
+namespace lux
+{
 
 // Geometry Inline Functions
 
@@ -140,5 +142,6 @@ inline float SphericalPhi(const Vector &v) {
 	return (p < 0.f) ? p + 2.f*M_PI : p;
 }
 
+}//namespace lux
 
 #endif // LUX_GEOMETRY_H

@@ -24,6 +24,10 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
+
+namespace lux
+{
+
 class RandomSampler : public Sampler
 {
 public:
@@ -51,3 +55,5 @@ private:
   u_int TotalPixels;
   PixelSampler* pixelSampler;
 };
+
+}//namespace lux

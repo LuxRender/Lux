@@ -23,6 +23,8 @@
 // box.cpp*
 #include "box.h"
 
+using namespace lux;
+
 // Box Filter Method Definitions
 float BoxFilter::Evaluate(float x, float y) const {
 	return 1.;

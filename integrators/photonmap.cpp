@@ -22,6 +22,9 @@
 
 // photonmap.cpp*
 #include "photonmap.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 PhotonIntegrator* PhotonIntegrator::clone() const
  {

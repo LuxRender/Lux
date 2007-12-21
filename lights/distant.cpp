@@ -23,6 +23,8 @@
 // distant.cpp*
 #include "distant.h"
 
+using namespace lux;
+
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
 		const Spectrum &radiance, const Vector &dir)

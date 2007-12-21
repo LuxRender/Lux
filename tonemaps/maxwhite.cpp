@@ -23,6 +23,8 @@
 // maxwhite.cpp*
 #include "maxwhite.h"
 
+using namespace lux;
+
 // MaxWhiteOp Method Definitions
 ToneMap * MaxWhiteOp::CreateToneMap(const ParamSet &ps) {
 	return new MaxWhiteOp;

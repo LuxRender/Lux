@@ -29,6 +29,9 @@
 #include "point.h"
 #include "ray.h"
 
+namespace lux
+{
+
 class  RayDifferential : public Ray {
 public:
 	// RayDifferential Methods
@@ -48,6 +51,6 @@ public:
 
 };
 
-
+}//namespace lux
 
 #endif //LUX_RAYDIFFERENTIAL_H

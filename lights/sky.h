@@ -27,6 +27,10 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+
+namespace lux
+{
+
 // SkyLight Declarations
 class SkyLight : public Light {
 public:
@@ -96,3 +100,6 @@ private:
     float	V;
     bool atmInited;
 };
+
+}//namespace lux
+

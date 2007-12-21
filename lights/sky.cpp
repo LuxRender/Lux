@@ -23,6 +23,8 @@
 // sky.cpp*
 #include "sky.h"
 
+using namespace lux;
+
 // SkyLight Method Definitions
 SkyLight::~SkyLight() {
 }

@@ -23,6 +23,8 @@
 // cone.cpp*
 #include "cone.h"
 
+using namespace lux;
+
 // Cone Method Definitions
 Cone::Cone(const Transform &o2w, bool ro,
            float ht, float rad, float tm )

@@ -37,6 +37,9 @@
 
 #include <boost/serialization/base_object.hpp>
 
+namespace lux
+{
+
 #define WI_HDR 0
 #define WI_LDR 1
 #define WI_IGI 3
@@ -145,6 +148,8 @@ private:
 
 	mutable boost::mutex addSampleMutex;
 };
+
+}//namespace lux
 
 #endif //LUX_MULTIIMAGE_H
 

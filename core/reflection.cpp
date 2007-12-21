@@ -26,6 +26,9 @@
 #include "mc.h"
 #include "sampling.h"
 #include <stdarg.h>
+
+using namespace lux;
+
 // BxDF Utility Functions
  Spectrum FrDiel(float cosi, float cost,
                         const Spectrum &etai,

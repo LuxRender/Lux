@@ -35,6 +35,8 @@
 #include "multiimage.h"
 #include "error.h"
 
+using namespace lux;
+
 // MultiImageFilm Method Definitions
 MultiImageFilm::MultiImageFilm(int xres, int yres,
 	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out,

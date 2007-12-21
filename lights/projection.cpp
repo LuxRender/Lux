@@ -23,6 +23,8 @@
 // projection.cpp*
 #include "projection.h"
 
+using namespace lux;
+
 // ProjectionLight Method Definitions
 ProjectionLight::
 	ProjectionLight(const Transform &light2world,

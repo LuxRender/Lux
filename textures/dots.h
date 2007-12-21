@@ -25,6 +25,10 @@
 #include "texture.h"
 #include "paramset.h"
 #include "error.h"
+
+namespace lux
+{
+
 // DotsTexture Declarations
 template <class T> class DotsTexture : public Texture<T> {
 public:
@@ -127,4 +131,6 @@ template <class T> inline Texture<Spectrum> * DotsTexture<T>::CreateSpectrumText
 		tp.GetSpectrumTexture("inside", 1.f),
 		tp.GetSpectrumTexture("outside", 0.f));
 }
+
+}//namespace lux
 

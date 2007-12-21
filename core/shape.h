@@ -29,6 +29,10 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "error.h"
+
+namespace lux
+{
+
 // DifferentialGeometry Declarations
 class  DifferentialGeometry {
 	public:
@@ -64,7 +68,7 @@ public:
 	}
 	virtual bool CanIntersect() const { return true; }
 	virtual void
-		Refine(vector<ShapePtr > &refined) const {
+		Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		//Severe("Unimplemented Shape::Refine() method called");
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Refine() method called");
 	}
@@ -123,7 +127,7 @@ public:
 			if (ls < areaCDF[sn]) break;
 		return shapes[sn]->Sample(u1, u2, Ns);
 	}
-	ShapeSet(const vector<ShapePtr > &s,
+	ShapeSet(const vector<boost::shared_ptr<Shape> > &s,
 		const Transform &o2w, bool ro);
 	BBox ObjectBound() const {
 		BBox ob;
@@ -138,7 +142,7 @@ public:
 	}
 	bool Intersect(const Ray &ray, float *t_hitp,
 			DifferentialGeometry *dg) const;
-	void Refine(vector<ShapePtr > &refined) const {
+	void Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		for (u_int i = 0; i < shapes.size(); ++i) {
 			if (shapes[i]->CanIntersect())
 				refined.push_back(shapes[i]);
@@ -151,8 +155,11 @@ private:
 	// ShapeSet Private Data
 	float area;
 	vector<float> areaCDF;
-	vector<ShapePtr > shapes;
+	vector<boost::shared_ptr<Shape> > shapes;
 	BBox worldbound;
 	Primitive *accelerator;
 };
+
+}//namespace lux
+
 #endif // LUX_SHAPE_H

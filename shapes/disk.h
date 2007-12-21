@@ -21,6 +21,10 @@
  ***************************************************************************/
 
 #include "shape.h"
+
+namespace lux
+{
+
 // Disk Declarations
 class Disk : public Shape {
 public:
@@ -48,3 +52,6 @@ private:
 	// Disk Private Data
 	float height, radius, innerRadius, phiMax;
 };
+
+}//namespace lux
+

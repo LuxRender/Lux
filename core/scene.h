@@ -38,6 +38,9 @@
 #include <boost/bind.hpp>
 //#include <boost/thread/mutex.hpp>
 
+namespace lux
+{
+
 class RenderThread : public boost::noncopyable
 {
 	public:
@@ -143,4 +146,7 @@ public:
 		//boost::thread_group threadGroup;
 		int CurThreadSignal;
 };
+
+}//namespace lux
+
 #endif // LUX_SCENE_H

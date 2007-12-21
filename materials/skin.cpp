@@ -23,6 +23,8 @@
 // skin.cpp*
 #include "skin.h"
 
+using namespace lux;
+
 // Skin Method Definitions
 BSDF *Skin::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare skin coefficients

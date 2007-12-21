@@ -22,6 +22,9 @@
 
 // irradiancecache.cpp*
 #include "irradiancecache.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 IrradianceCache* IrradianceCache::clone() const
  {

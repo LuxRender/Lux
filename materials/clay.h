@@ -23,6 +23,10 @@
 // clay.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Clay Class Declarations
 class Clay : public Material {
 public:
@@ -33,3 +37,6 @@ public:
 private:
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux
+

@@ -25,6 +25,10 @@
 #include "light.h"
 #include "shape.h"
 #include "mipmap.h"
+
+namespace lux
+{
+
 // ProjectionLight Declarations
 class ProjectionLight : public Light {
 public:
@@ -57,3 +61,5 @@ private:
 	float screenX0, screenX1, screenY0, screenY1;
 	float cosTotalWidth;
 };
+
+}//namespace lux

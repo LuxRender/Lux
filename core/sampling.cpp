@@ -25,6 +25,9 @@
 #include "sampling.h"
 #include "transport.h"
 #include "volume.h"
+
+using namespace lux;
+
 // Sampler Method Definitions
 Sampler::~Sampler() {
 }
@@ -67,6 +70,10 @@ Sample::Sample(SurfaceIntegrator *surf,
 		mem += 2 * n2D[i];
 	}
 }
+
+namespace lux
+{
+
 // Sampling Function Definitions
  void StratifiedSample1D(float *samp, int nSamples,
 		bool jitter) {
@@ -110,3 +117,6 @@ Sample::Sample(SurfaceIntegrator *surf,
 		}
 	}
 }
+ 
+}//namespace lux
+

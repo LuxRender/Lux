@@ -23,6 +23,8 @@
 // gaussian.cpp*
 #include "gaussian.h"
 
+using namespace lux;
+
 // Gaussian Filter Method Definitions
 float GaussianFilter::Evaluate(float x, float y) const {
 	return Gaussian(x, expX) * Gaussian(y, expY);
@@ -34,3 +36,4 @@ Filter* GaussianFilter::CreateFilter(const ParamSet &ps) {
 	float alpha = ps.FindOneFloat("alpha", 2.f);
 	return new GaussianFilter(xw, yw, alpha);
 }
+

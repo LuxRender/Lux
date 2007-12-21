@@ -26,6 +26,10 @@
 #include "scene.h"
 #include "mc.h"
 #include "octree.h"
+
+namespace lux
+{
+
 // IrradianceCache Forward Declarations
 struct IrradianceSample;
 struct IrradProcess;
@@ -90,3 +94,6 @@ struct IrradProcess {
 	mutable float sumWt;
 	mutable Spectrum E;
 };
+
+}//namespace lux
+

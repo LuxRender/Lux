@@ -23,6 +23,10 @@
 // translucent.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Translucent Class Declarations
 class Translucent : public Material {
 public:
@@ -55,3 +59,5 @@ private:
 	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux

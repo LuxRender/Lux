@@ -26,6 +26,9 @@
 #include <iostream>
 #include "vector.h"
 
+namespace lux
+{
+
 class  Point {
 	friend class boost::serialization::access;
 public:
@@ -91,6 +94,7 @@ private:
 		}
 };
 
+
 inline Vector::Vector(const Point &p)
 	: x(p.x), y(p.y), z(p.z) {
 }
@@ -103,6 +107,7 @@ inline Point operator*(float f, const Point &p) {
 	return p*f;
 }
 
+}//namespace lux
 
 
 #endif //LUX_POINT_H

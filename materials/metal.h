@@ -24,6 +24,9 @@
 #include "lux.h"
 #include "material.h"
 
+namespace lux
+{
+
 // Metal Class Declarations
 
 class Metal : public Material {
@@ -71,3 +74,5 @@ static MetalIOR metalIORs[] = {
   { "tungsten", {3.587545f, 3.476418f, 3.321998f}, {2.861609f, 2.740650f, 2.515569f} },
   { "vanadium", {3.603907f, 3.623065f, 3.076576f}, {2.946438f, 3.069547f, 3.378471f} } 
 };
+
+}//namespace lux

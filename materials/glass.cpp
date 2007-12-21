@@ -23,6 +23,8 @@
 // glass.cpp*
 #include "glass.h"
 
+using namespace lux;
+
 // Glass Method Definitions
 BSDF *Glass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_

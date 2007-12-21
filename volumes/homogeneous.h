@@ -22,6 +22,10 @@
 
 // homogeneous.cpp*
 #include "volume.h"
+
+namespace lux
+{
+
 // HomogeneousVolume Declarations
 class HomogeneousVolume : public VolumeRegion {
 public:
@@ -73,3 +77,5 @@ private:
 	BBox extent;
 	Transform WorldToVolume;
 };
+
+}//namespace lux

@@ -25,6 +25,9 @@
 #include "transport.h"
 #include "scene.h"
 
+namespace lux
+{
+
 // WhittedIntegrator Declarations
 class WhittedIntegrator : public SurfaceIntegrator {
 public:
@@ -43,3 +46,6 @@ private:
 	int maxDepth;
 	mutable int rayDepth;
 };
+
+}//namespace lux
+

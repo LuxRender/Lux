@@ -29,6 +29,8 @@
 #include "vector.h"
 #include "point.h"
 
+namespace lux
+{
 
 class  BBox {
 public:
@@ -95,5 +97,6 @@ inline ostream &operator<<(ostream &os, const BBox &b) {
 }
 
 
+}//namespace lux
 
 #endif //LUX_BBOX_H

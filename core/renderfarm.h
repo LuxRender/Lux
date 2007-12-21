@@ -28,6 +28,9 @@
 #include <sstream>
 #include "../film/multiimage.h"
 
+namespace lux
+{
+
 class RenderFarm {
 public:
 	RenderFarm()
@@ -50,5 +53,7 @@ private:
 	std::vector<std::string> serverList;
 	std::stringstream netBuffer;
 };
+
+}//namespace lux
 
 #endif //LUX_ERROR_H

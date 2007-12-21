@@ -24,6 +24,10 @@
 #include "shape.h"
 #include "paramset.h"
 #include "dynload.h"
+
+namespace lux
+{
+
 // Heightfield Declarations
 class Heightfield : public Shape {
 public:
@@ -31,7 +35,7 @@ public:
 	Heightfield(const Transform &o2w, bool ro, int nu, int nv, const float *zs);
 	~Heightfield();
 	bool CanIntersect() const;
-	void Refine(vector<ShapePtr > &refined) const;
+	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
 	BBox ObjectBound() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
@@ -40,3 +44,6 @@ private:
 	float *z;
 	int nx, ny;
 };
+
+}//namespace lux
+

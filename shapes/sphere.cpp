@@ -23,6 +23,8 @@
 // sphere.cpp*
 #include "sphere.h"
 
+using namespace lux;
+
 // Sphere Method Definitions
 Sphere::Sphere(const Transform &o2w, bool ro, float rad,
                float z0, float z1, float pm)

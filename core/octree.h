@@ -25,6 +25,10 @@
 // octree.h*
 #include "lux.h"
 #include "geometry.h"
+
+namespace lux
+{
+
 // Octree Declarations
 template <class NodeData> struct OctNode {
 	OctNode() {
@@ -143,4 +147,7 @@ void Octree<NodeData, LookupProc>::lookupPrivate(
 			process);
 	}
 }
+
+}//namespace lux
+
 #endif // LUX_OCTREE_H

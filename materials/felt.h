@@ -23,6 +23,10 @@
 // felt.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Felt Class Declarations
 class Felt : public Material {
 public:
@@ -32,3 +36,5 @@ public:
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };
+
+}//namespace lux

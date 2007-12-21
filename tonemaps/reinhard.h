@@ -22,6 +22,10 @@
 
 #include "tonemap.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // ReinhardOp Declarations
 class ReinhardOp : public ToneMap {
 public:
@@ -36,3 +40,6 @@ public:
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 };
+
+}//namespace lux
+

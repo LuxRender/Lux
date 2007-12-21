@@ -25,6 +25,9 @@
 #include "light.h"
 #include "shape.h"
 
+namespace lux
+{
+
 #define SUN_DIST 1.5E11
 
 class NSunLight : public Light {
@@ -249,3 +252,6 @@ static float solAmplitudes[401] = {
   1.2520, 1.1657, 1.2434, 1.2478, 1.2299, 1.1960, 1.2383, 1.2298, 1.1848, 1.2306, 1.1457,
   1.2212, 1.2230, 1.2159, 1.1926, 1.1680
 };
+
+}//namespace lux
+

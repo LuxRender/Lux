@@ -22,6 +22,10 @@
 
 // exponential.cpp*
 #include "volume.h"
+
+namespace lux
+{
+
 // ExponentialDensity Declarations
 class ExponentialDensity : public DensityRegion {
 public:
@@ -52,3 +56,6 @@ private:
 	float a, b;
 	Vector upDir;
 };
+
+}//namespace lux
+

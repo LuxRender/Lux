@@ -25,6 +25,9 @@
 #include "vegas.h"
 #include "randompx.h"
 #include "linear.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 RandomSampler* RandomSampler::clone() const
  {

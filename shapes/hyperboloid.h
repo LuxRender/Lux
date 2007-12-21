@@ -22,6 +22,10 @@
 
 // hyperboloid.cpp*
 #include "shape.h"
+
+namespace lux
+{
+
 // Hyperboloid Declarations
 class Hyperboloid: public Shape {
 public:
@@ -44,3 +48,5 @@ protected:
 	float rmax;
 	float a, c;
 };
+
+}//namespace lux

@@ -31,6 +31,10 @@
 #include "scene.h"
 #include "mc.h"
 #include "sampling.h"
+
+namespace lux
+{
+
 // Photonmap Local Declarations
 struct Photon;
 struct ClosePhoton;
@@ -110,5 +114,7 @@ struct ClosePhoton {
 	const Photon *photon;
 	float distanceSquared;
 };
+
+}//namespace lux
 
 #endif

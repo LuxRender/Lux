@@ -23,6 +23,8 @@
 // goniometric.cpp*
 #include "goniometric.h"
 
+using namespace lux;
+
 // GonioPhotometricLight Method Definitions
 Spectrum GonioPhotometricLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {

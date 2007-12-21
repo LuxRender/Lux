@@ -23,6 +23,8 @@
 // point.cpp*
 #include "sun2.h"
 
+using namespace lux;
+
 // Derived from PointLight Method Definitions
 NSunLight::NSunLight (const Transform &light2world, const Spectrum &intensity, Vector sundir, float turb) : Light (light2world) {
   lightPos = LightToWorld (Point (0.0, 0.0, 0.0));

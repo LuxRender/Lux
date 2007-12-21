@@ -23,6 +23,8 @@
 // hyperboloid.cpp*
 #include "hyperboloid.h"
 
+using namespace lux;
+
 // Hyperboloid Method Definitions
 Hyperboloid::Hyperboloid(const Transform &o2w, bool ro,
 		const Point &point1, const Point &point2, float tm)

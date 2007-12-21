@@ -30,6 +30,10 @@
 #include "reflection.h"
 #include "sampling.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Integrator Declarations
 class  Integrator {
 public:
@@ -65,4 +69,7 @@ class SurfaceIntegrator : public Integrator {
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,
 	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,
 	float *&avgYsample, float *&cdf, float &overallAvgY);
+ 
+}//namespace lux
+ 
 #endif // LUX_TRANSPORT_H

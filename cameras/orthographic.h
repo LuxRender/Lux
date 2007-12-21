@@ -24,6 +24,10 @@
 #include "camera.h"
 #include "film.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // OrthographicCamera Declarations
 class OrthoCamera : public ProjectiveCamera {
 public:
@@ -37,3 +41,5 @@ public:
 	
 	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
 };
+
+}//namespace lux

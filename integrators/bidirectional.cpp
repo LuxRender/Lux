@@ -22,6 +22,9 @@
 
 // bidirectional.cpp*
 #include "bidirectional.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 BidirIntegrator* BidirIntegrator::clone() const
  {

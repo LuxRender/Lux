@@ -26,6 +26,10 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+
+namespace lux
+{
+
 // GonioPhotometricLight Declarations
 class GonioPhotometricLight : public Light {
 public:
@@ -62,3 +66,6 @@ private:
 	MIPMap<Spectrum> *mipmap;
 
 };
+
+}//namespace lux
+

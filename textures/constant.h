@@ -25,8 +25,14 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace lux
+{
+
 namespace Constant
 {
 Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 }
+
+}//namespace lux
+

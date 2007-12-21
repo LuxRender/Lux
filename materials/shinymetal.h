@@ -23,6 +23,10 @@
 // shinymetal.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // ShinyMetal Class Declarations
 class ShinyMetal : public Material {
 public:
@@ -43,3 +47,6 @@ private:
 	boost::shared_ptr<Texture<float> > roughness;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux
+

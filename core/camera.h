@@ -28,6 +28,10 @@
 #include "sampling.h"
 #include "geometry.h"
 //#include "transform.h"
+
+namespace lux
+{
+
 // Camera Declarations
 class  Camera {
 public:
@@ -59,4 +63,7 @@ protected:
 	Transform ScreenToRaster, RasterToScreen;
 	float LensRadius, FocalDistance;
 };
+
+}//namespace lux
+
 #endif // LUX_CAMERA_H

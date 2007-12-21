@@ -22,6 +22,9 @@
 
 // exphotonmap.cpp*
 #include "exphotonmap.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 ExPhotonIntegrator* ExPhotonIntegrator::clone() const
  {

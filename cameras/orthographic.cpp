@@ -23,6 +23,8 @@
 // orthographic.cpp*
 #include "orthographic.h"
 
+using namespace lux;
+
 // OrthographicCamera Definitions
 OrthoCamera::OrthoCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,

@@ -23,6 +23,8 @@
 // environment.cpp*
 #include "environment.h"
 
+using namespace lux;
+
 // EnvironmentCamera Method Definitions
 EnvironmentCamera::
     EnvironmentCamera(const Transform &world2cam,

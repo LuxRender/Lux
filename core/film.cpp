@@ -26,6 +26,9 @@
 #include "paramset.h"
 #include "tonemap.h"
 
+namespace lux
+{
+
 /*
 template<class Archive>
 void Film::serialize(Archive & ar, const unsigned int version)
@@ -142,3 +145,6 @@ void ApplyImagingPipeline(float *rgb, int xResolution,
 		for (int i = 0; i < 3*nPix; ++i)
 			rgb[i] += 2.f * dither * (lux::random::floatValue() - .5f);
 }
+
+}//namespace lux
+

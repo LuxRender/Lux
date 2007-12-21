@@ -23,6 +23,10 @@
 // roughglass.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // RoughGlassGlass Class Declarations
 class RoughGlass : public Material {
 public:
@@ -48,3 +52,6 @@ private:
 	boost::shared_ptr<Texture<float> > vroughness;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux
+

@@ -22,3 +22,5 @@
 
 // dots.cpp*
 #include "dots.h"
+
+using namespace lux;

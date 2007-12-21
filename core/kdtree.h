@@ -26,6 +26,10 @@
 #include "lux.h"
 #include "geometry.h"
 // KdTree Declarations
+
+namespace lux
+{
+
 struct KdNode {
 	void init(float p, u_int a) {
 		splitPos = p;
@@ -167,4 +171,7 @@ KdTree<NodeData, LookupProc>::privateLookup(u_int nodeNum,
 	if (dist2 < maxDistSquared)
 		process(nodeData[nodeNum], dist2, maxDistSquared);
 }
+
+}//namespace lux
+
 #endif // LUX_KDTREE_H

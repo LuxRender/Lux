@@ -25,6 +25,10 @@
 #include "light.h"
 #include "shape.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // DistantLight Declarations
 class DistantLight : public Light {
 public:
@@ -53,3 +57,4 @@ private:
 	Spectrum L;
 };
 
+}//namespace lux

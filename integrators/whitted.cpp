@@ -22,6 +22,9 @@
 
 // whitted.cpp*
 #include "whitted.h"
+
+using namespace lux;
+
 // Lux (copy) constructor
 WhittedIntegrator* WhittedIntegrator::clone() const
  {

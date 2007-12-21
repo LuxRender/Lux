@@ -27,6 +27,10 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+
+namespace lux
+{
+
 // Utility Classes and Functions
 struct Distribution1D {
 	// Distribution1D Methods
@@ -86,3 +90,6 @@ private:
 	MIPMap<Spectrum> *radianceMap;
 	Distribution1D *uDistrib, **vDistribs;
 };
+
+}
+

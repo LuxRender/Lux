@@ -23,6 +23,8 @@
 // substrate.cpp*
 #include "substrate.h"
 
+using namespace lux;
+
 // Substrate Method Definitions
 BSDF *Substrate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_

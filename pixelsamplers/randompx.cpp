@@ -23,6 +23,9 @@
 // randompx.cpp*
 #include "randompx.h"
 #include "error.h"
+
+using namespace lux;
+
 // RandomPixelSampler Method Definitions
 RandomPixelSampler::RandomPixelSampler(int xstart, int xend,
 		int ystart, int yend) {

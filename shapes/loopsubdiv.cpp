@@ -23,6 +23,8 @@
 // loopsubdiv.cpp*
 #include "loopsubdiv.h"
 
+using namespace lux;
+
 // LoopSubdiv Method Definitions
 LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
         int nfaces, int nvertices,
@@ -110,7 +112,7 @@ bool LoopSubdiv::CanIntersect() const {
 	return false;
 }
 void
-LoopSubdiv::Refine(vector<ShapePtr > &refined)
+LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined)
 const {
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;

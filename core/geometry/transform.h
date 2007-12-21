@@ -26,29 +26,31 @@
 #include "lux.h"
 #include "geometry.h"
 
+namespace lux
+{
 
 // Transform Declarations
 class  Transform {
 public:
 	// Transform Public Methods
 	Transform() {
-		Matrix4x4Ptr o (new Matrix4x4());
+		boost::shared_ptr<Matrix4x4> o (new Matrix4x4());
 		m = mInv = o;
 	}
 	Transform(float mat[4][4]) {
-		Matrix4x4Ptr o (new Matrix4x4(mat[0][0],mat[0][1],mat[0][2],mat[0][3],
+		boost::shared_ptr<Matrix4x4> o (new Matrix4x4(mat[0][0],mat[0][1],mat[0][2],mat[0][3],
 	                	mat[1][0],mat[1][1],mat[1][2],mat[1][3],
 	                	mat[2][0],mat[2][1],mat[2][2],mat[2][3],
 	                	mat[3][0],mat[3][1],mat[3][2],mat[3][3]));
 		m = o;
 		mInv = m->Inverse();
 	}
-	Transform(const Matrix4x4Ptr &mat) {
+	Transform(const boost::shared_ptr<Matrix4x4> &mat) {
 		m = mat;
 		mInv = m->Inverse();
 	}
-	Transform(const Matrix4x4Ptr &mat,
-	          const Matrix4x4Ptr &minv) {
+	Transform(const boost::shared_ptr<Matrix4x4> &mat,
+	          const boost::shared_ptr<Matrix4x4> &minv) {
 		m = mat;
 		mInv = minv;
 	}
@@ -70,7 +72,7 @@ public:
 	bool SwapsHandedness() const;
 private:
 	// Transform Private Data
-	Matrix4x4Ptr m, mInv;
+	boost::shared_ptr<Matrix4x4> m, mInv;
 };
 // Transform Inline Functions
 #ifdef LUX_USE_SSE
@@ -97,6 +99,7 @@ inline void Transform::operator()(const Ray &r,
 	rt->time = r.time;
 }
 
+}//namespace lux
 
 
 #endif // LUX_TRANSFORM_H

@@ -26,6 +26,10 @@
 // gaussian.cpp*
 #include "sampling.h"
 #include "paramset.h"
+
+namespace lux
+{
+
 // Gaussian Filter Declarations
 class GaussianFilter : public Filter {
 public:
@@ -48,5 +52,7 @@ private:
 		return max(0.f, float(expf(-alpha * d * d) - expv));
 	}
 };
+
+}//namespace lux
 
 #endif

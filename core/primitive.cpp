@@ -23,6 +23,9 @@
 // primitive.cpp*
 #include "primitive.h"
 #include "light.h"
+
+using namespace lux;
+
 // Primitive Method Definitions
 Primitive::~Primitive() { }
 
@@ -120,7 +123,7 @@ bool GeometricPrimitive::CanIntersect() const {
 void GeometricPrimitive::
         Refine(vector<Primitive* > &refined)
         const {
-	vector<ShapePtr > r;
+	vector<boost::shared_ptr<Shape> > r;
 	shape->Refine(r);
 	for (u_int i = 0; i < r.size(); ++i) {
 		//GeometricPrimitive *gp =
@@ -132,8 +135,8 @@ void GeometricPrimitive::
 	}
 }
 GeometricPrimitive::
-    GeometricPrimitive(const ShapePtr &s,
-		const MaterialPtr &m, AreaLight *a)
+    GeometricPrimitive(const boost::shared_ptr<Shape> &s,
+		const boost::shared_ptr<Material> &m, AreaLight *a)
 	: shape(s), material(m), areaLight(a) {
 }
 bool GeometricPrimitive::Intersect(const Ray &r,

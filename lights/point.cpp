@@ -23,6 +23,8 @@
 // point.cpp*
 #include "point.h"
 
+using namespace lux;
+
 // PointLight Method Definitions
 PointLight::PointLight(const Transform &light2world,
 		const Spectrum &intensity)

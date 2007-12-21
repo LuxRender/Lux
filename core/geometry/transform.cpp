@@ -23,28 +23,32 @@
 // transform.cpp*
 #include "transform.h"
 #include "shape.h"
+
+namespace lux
+{
+
 // Transform Method Definitions
 ostream &operator<<(ostream &os, const Transform &t) {
 	t.m->Print(os);
 	return os;
 }
  Transform Translate(const Vector &delta) {
-	Matrix4x4Ptr m (new Matrix4x4(1, 0, 0, delta.x,
+	boost::shared_ptr<Matrix4x4> m (new Matrix4x4(1, 0, 0, delta.x,
                       0, 1, 0, delta.y,
                       0, 0, 1, delta.z,
                       0, 0, 0,       1));
-	Matrix4x4Ptr minv (new Matrix4x4(1, 0, 0, -delta.x,
+	boost::shared_ptr<Matrix4x4> minv (new Matrix4x4(1, 0, 0, -delta.x,
                          0, 1, 0, -delta.y,
                          0, 0, 1, -delta.z,
                          0, 0, 0,        1));
 	return Transform(m, minv);
 }
  Transform Scale(float x, float y, float z) {
-	Matrix4x4Ptr m (new Matrix4x4(x, 0, 0, 0,
+	boost::shared_ptr<Matrix4x4> m (new Matrix4x4(x, 0, 0, 0,
                       0, y, 0, 0,
                       0, 0, z, 0,
                       0, 0, 0, 1));
-	Matrix4x4Ptr minv (new Matrix4x4(1.f/x,     0,     0, 0,
+	boost::shared_ptr<Matrix4x4> minv (new Matrix4x4(1.f/x,     0,     0, 0,
                              0, 1.f/y,     0, 0,
                              0,     0, 1.f/z, 0,
                              0,     0,     0, 1));
@@ -53,7 +57,7 @@ ostream &operator<<(ostream &os, const Transform &t) {
 Transform RotateX(float angle) {
 	float sin_t = sinf(Radians(angle));
 	float cos_t = cosf(Radians(angle));
-	Matrix4x4Ptr m (new Matrix4x4(1,     0,      0, 0,
+	boost::shared_ptr<Matrix4x4> m (new Matrix4x4(1,     0,      0, 0,
                                  0, cos_t, -sin_t, 0,
                                  0, sin_t,  cos_t, 0,
                                  0,     0,      0, 1));
@@ -62,7 +66,7 @@ Transform RotateX(float angle) {
 Transform RotateY(float angle) {
 	float sin_t = sinf(Radians(angle));
 	float cos_t = cosf(Radians(angle));
-	Matrix4x4Ptr m (new Matrix4x4( cos_t,   0, sin_t, 0,
+	boost::shared_ptr<Matrix4x4> m (new Matrix4x4( cos_t,   0, sin_t, 0,
                                       0,   1,     0, 0,
                                  -sin_t,   0, cos_t, 0,
                                       0,   0,     0, 1));
@@ -72,7 +76,7 @@ Transform RotateY(float angle) {
 Transform RotateZ(float angle) {
 	float sin_t = sinf(Radians(angle));
 	float cos_t = cosf(Radians(angle));
-	Matrix4x4Ptr m (new Matrix4x4(cos_t, -sin_t, 0, 0,
+	boost::shared_ptr<Matrix4x4> m (new Matrix4x4(cos_t, -sin_t, 0, 0,
                                  sin_t,  cos_t, 0, 0,
                                  0,      0, 1, 0,
                                  0,      0, 0, 1));
@@ -104,7 +108,7 @@ Transform Rotate(float angle, const Vector &axis) {
 	m[3][2] = 0;
 	m[3][3] = 1;
 
-	Matrix4x4Ptr o (new Matrix4x4(m));
+	boost::shared_ptr<Matrix4x4> o (new Matrix4x4(m));
 	return Transform(o, o->Transpose());
 }
 Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
@@ -129,7 +133,7 @@ Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
 	m[1][2] = dir.y;
 	m[2][2] = dir.z;
 	m[3][2] = 0.;
-	Matrix4x4Ptr camToWorld (new Matrix4x4(m));
+	boost::shared_ptr<Matrix4x4> camToWorld (new Matrix4x4(m));
 	return Transform(camToWorld->Inverse(), camToWorld);
 }
 bool Transform::HasScale() const {
@@ -154,8 +158,8 @@ BBox Transform::operator()(const BBox &b) const {
 	return ret;
 }
 Transform Transform::operator*(const Transform &t2) const {
-	Matrix4x4Ptr m1 = Matrix4x4::Mul(m, t2.m);
-	Matrix4x4Ptr m2 = Matrix4x4::Mul(t2.mInv, mInv);
+	boost::shared_ptr<Matrix4x4> m1 = Matrix4x4::Mul(m, t2.m);
+	boost::shared_ptr<Matrix4x4> m2 = Matrix4x4::Mul(t2.mInv, mInv);
 	return Transform(m1, m2);
 }
 /*
@@ -197,7 +201,7 @@ Transform  Orthographic(float znear, float zfar) {
 Transform Perspective(float fov, float n, float f) {
 	// Perform projective divide
 	float inv_denom = 1.f/(f-n);
-	Matrix4x4Ptr persp (
+	boost::shared_ptr<Matrix4x4> persp (
 	    new Matrix4x4(1, 0,       0,          0,
 	                  0, 1,       0,          0,
 	                  0, 0, f*inv_denom, -f*n*inv_denom,
@@ -207,3 +211,6 @@ Transform Perspective(float fov, float n, float f) {
 	return Scale(invTanAng, invTanAng, 1) *
 	       Transform(persp);
 }
+
+}//namespace lux
+

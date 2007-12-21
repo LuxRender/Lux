@@ -23,6 +23,10 @@
 // highcontrast.cpp*
 #include "tonemap.h"
 #include "mipmap.h"
+
+namespace lux
+{
+
 // HighContrastOp Declarations
 class HighContrastOp : public ToneMap {
 public:
@@ -48,3 +52,6 @@ private:
 		return maxDisplayY * (C(y) - CYmin) / (CYmax - CYmin);
 	}
 };
+
+}//namespace lux
+

@@ -23,6 +23,10 @@
 // substrate.cpp*
 #include "lux.h"
 #include "material.h"
+
+namespace lux
+{
+
 // Substrate Class Declarations
 class Substrate : public Material {
 public:
@@ -45,3 +49,5 @@ private:
 	boost::shared_ptr<Texture<float> > nu, nv;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
+
+}//namespace lux

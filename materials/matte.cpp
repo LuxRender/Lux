@@ -23,6 +23,8 @@
 // matte.cpp*
 #include "matte.h"
 
+using namespace lux;
+
 // Matte Method Definitions
 BSDF *Matte::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const {

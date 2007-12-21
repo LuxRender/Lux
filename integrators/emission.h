@@ -24,6 +24,10 @@
 #include "volume.h"
 #include "transport.h"
 #include "scene.h"
+
+namespace lux
+{
+
 // EmissionIntegrator Declarations
 class EmissionIntegrator : public VolumeIntegrator {
 public:
@@ -40,3 +44,6 @@ private:
 	float stepSize;
 	int tauSampleOffset, scatterSampleOffset;
 };
+
+}//namespace lux
+

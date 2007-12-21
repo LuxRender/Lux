@@ -23,6 +23,8 @@
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "metal.h"
 
+using namespace lux;
+
 Metal::Metal(boost::shared_ptr<Texture<Spectrum> > n, boost::shared_ptr<Texture<Spectrum> > k, boost::shared_ptr<Texture<float> > rough, boost::shared_ptr<Texture<float> > bump) {
   N = n;
   K = k;

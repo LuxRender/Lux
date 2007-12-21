@@ -23,6 +23,10 @@
 // texture.cpp*
 #include "texture.h"
 #include "shape.h"
+
+namespace lux
+{
+
 // Texture Forward Declarations
 inline float Grad(int x, int y, int z, float dx, float dy, float dz);
 inline float NoiseWeight(float t);
@@ -246,3 +250,6 @@ inline float NoiseWeight(float t) {
 	float lanczos = sinf(x) / x;
 	return s * lanczos;
 }
+ 
+}//namespace lux
+

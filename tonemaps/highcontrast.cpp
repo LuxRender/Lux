@@ -23,6 +23,8 @@
 // highcontrast.cpp*
 #include "highcontrast.h"
 
+using namespace lux;
+
 // HighContrastOp Method Definitions
 void HighContrastOp::Map(const float *y, int xRes, int yRes,
 		float maxDisplayY, float *scale) const {

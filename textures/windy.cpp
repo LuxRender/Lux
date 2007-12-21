@@ -23,4 +23,5 @@
 // windy.cpp*
 #include "windy.h"
 
+using namespace lux;
 

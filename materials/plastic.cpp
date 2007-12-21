@@ -23,6 +23,8 @@
 // plastic.cpp*
 #include "plastic.h"
 
+using namespace lux;
+
 // Plastic Method Definitions
 BSDF *Plastic::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const {

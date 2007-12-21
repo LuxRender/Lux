@@ -23,6 +23,8 @@
 // marble.cpp*
 #include "marble.h"
 
+using namespace lux;
+
 // MarbleTexture Method Definitions
 Texture<float> * MarbleTexture::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {

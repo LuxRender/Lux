@@ -23,7 +23,13 @@
 // checkerboard.cpp*
 #include "checkerboard.h"
 
+
+namespace lux
+{
 MethodType aaMethod;
+}
+
+using namespace lux;
 
 // CheckerboardTexture Method Definitions
 Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,

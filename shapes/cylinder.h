@@ -23,6 +23,10 @@
 // cylinder.cpp*
 #include "shape.h"
 // Cylinder Declarations
+
+namespace lux
+{
+
 class Cylinder: public Shape {
 public:
 	// Cylinder Public Methods
@@ -51,3 +55,4 @@ protected:
 	float phiMax;
 };
 
+}//namespace lux

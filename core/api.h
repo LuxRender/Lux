@@ -25,12 +25,16 @@
 // api.h*
 //#include "lux.h"
 #include <string>
-using std::string;
-class ParamSet;
-
 #include "../renderer/include/asio.hpp"
 
+using std::string;
 using asio::ip::tcp;
+
+namespace lux
+{
+class ParamSet;
+}//namespace lux
+using namespace lux;
 
 // API Function Declarations
 extern  void luxIdentity();
@@ -119,6 +123,8 @@ extern double luxStatistics(char *statName);
 
 extern void luxAddServer(const string &name);
 
+
+
 //Error Handlers
 extern int luxLastError; //!< Keeps track of the last error code
 typedef void  (*LuxErrorHandler)(int code, int severity, const char *msg);
@@ -176,6 +182,8 @@ extern void luxErrorPrint (int code, int severity, const char *message);
 #define LUX_WARNING         1       /* Something seems wrong, maybe okay */
 #define LUX_ERROR           2       /* Problem.  Results may be wrong */
 #define LUX_SEVERE          3       /* So bad you should probably abort */
+
+
 
 
 #endif // LUX_API_H

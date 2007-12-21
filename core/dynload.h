@@ -25,11 +25,15 @@
 // dynload.h*
 #include "lux.h"
 #include "texture.h"
+
+namespace lux
+{
+
 // Runtime Loading Declarations
  void UpdatePluginPath(const string &newpath);
- ShapePtr MakeShape(const string &name,
+ boost::shared_ptr<Shape> MakeShape(const string &name,
 	const Transform &object2world, bool reverseOrientation, const ParamSet &paramSet);
- MaterialPtr MakeMaterial(const string &name,
+ boost::shared_ptr<Material> MakeMaterial(const string &name,
 	const Transform &mtl2world, const TextureParams &mp);
  boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
@@ -39,7 +43,7 @@
 	const Transform &light2world, const ParamSet &paramSet);
  AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world,
-	const ParamSet &paramSet, const ShapePtr &shape);
+	const ParamSet &paramSet, const boost::shared_ptr<Shape> &shape);
  VolumeRegion *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
  SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
@@ -59,4 +63,7 @@
 	const ParamSet &paramSet);
  Film *MakeFilm(const string &name,
 	const ParamSet &paramSet, Filter *filt);
+ 
+}//namespace lux
+ 
 #endif // LUX_DYNLOAD_H

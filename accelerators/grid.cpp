@@ -24,6 +24,8 @@
 // grid.cpp*
 #include "grid.h"
 
+using namespace lux;
+
 //static StatsRatio rayTests("Grid Accelerator", "Intersection tests per ray"); // NOBOOK
 //static StatsRatio rayHits("Grid Accelerator", "Intersections found per ray"); // NOBOOK
 

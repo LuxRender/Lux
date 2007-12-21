@@ -24,6 +24,10 @@
 #include "lux.h"
 #include "light.h"
 #include "shape.h"
+
+namespace lux
+{
+
 // PointLight Classes
 class PointLight : public Light {
 public:
@@ -47,3 +51,6 @@ private:
 	Point lightPos;
 	Spectrum Intensity;
 };
+
+}//namespace lux
+

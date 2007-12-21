@@ -24,6 +24,8 @@
 #ifndef LUX_MATRIX4X4_H
 #define LUX_MATRIX4X4_H
 
+namespace lux
+{
 
 struct /*_MM_ALIGN16*/  Matrix4x4  {
 	// Matrix4x4 Public Methods
@@ -50,7 +52,7 @@ struct /*_MM_ALIGN16*/  Matrix4x4  {
 	          float t10, float t11, float t12, float t13,
 	          float t20, float t21, float t22, float t23,
 	          float t30, float t31, float t32, float t33);
-	Matrix4x4Ptr Transpose() const;
+	boost::shared_ptr<Matrix4x4> Transpose() const;
 	void Print(ostream &os) const {
 		os<<"[ ";
     for(int i=0;i<4;i++)
@@ -65,9 +67,9 @@ struct /*_MM_ALIGN16*/  Matrix4x4  {
     }
     os<<"]";
 	}
-	static Matrix4x4Ptr
-		Mul(const Matrix4x4Ptr &A,
-	        const Matrix4x4Ptr &B) {
+	static boost::shared_ptr<Matrix4x4>
+		Mul(const boost::shared_ptr<Matrix4x4> &A,
+	        const boost::shared_ptr<Matrix4x4> &B) {
       __m128 r1, r2,r3,r4;
       __m128 B1 = A->_L1, B2 = A->_L2, B3 = A->_L3, B4 = A->_L4;
 
@@ -95,10 +97,10 @@ struct /*_MM_ALIGN16*/  Matrix4x4  {
 
       //return new Matrix4x4(r1,r2,r3,r4);
       
-      Matrix4x4Ptr o (new Matrix4x4(r1,r2,r3,r4));
+      boost::shared_ptr<Matrix4x4> o (new Matrix4x4(r1,r2,r3,r4));
 		return o;
 	}
-	Matrix4x4Ptr Inverse() const;
+	boost::shared_ptr<Matrix4x4> Inverse() const;
 	//float m[4][4];
 
 	union
@@ -136,5 +138,7 @@ struct /*_MM_ALIGN16*/  Matrix4x4  {
       return (float*)((&_L1)+i);
     }
 };
+
+}//namespace lux
 
 #endif //LUX_MATRIX4X4_H
