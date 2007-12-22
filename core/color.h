@@ -176,7 +176,7 @@ public:
 	bool operator<(const Spectrum &s2) const {
 		return y() < s2.y();
 	}
-	friend class ParamSet;
+	friend class lux::ParamSet;
 	
 	// Spectrum Public Data
 	float c[COLOR_SAMPLES];
