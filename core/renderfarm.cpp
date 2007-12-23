@@ -26,6 +26,11 @@
 #include "paramset.h"
 #include "renderfarm.h"
 
+#include <boost/iostreams/filtering_stream.hpp>
+//#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+
+using namespace boost::iostreams;
 using namespace lux;
 
 bool RenderFarm::connect(const string &serverName) {
@@ -55,9 +60,21 @@ void RenderFarm::updateFilm(MultiImageFilm *film) {
 			std::cout << "getting film from "<<*server<<std::endl;
 			tcp::iostream stream((*server).c_str(), "18018");
 			std::cout << "connected"<<std::endl;
+			
 			stream<<"luxGetFilm"<<std::endl;
-			boost::archive::text_iarchive ia(stream);
+			
+			//std::cout<<"getfilm"<<std::endl;
+			
+			filtering_stream<input> in;
+			in.push(zlib_decompressor());
+			in.push(stream);
+			
+			//std::cout<<"in"<<std::endl;
+			
+			boost::archive::text_iarchive ia(in);
 			MultiImageFilm m(320,200);
+			
+			//std::cout<<"before ia>>m"<<std::endl;
 			ia>>m;
 			std::cout<<"ok, i got the film! merging...";
 			film->merge(m);

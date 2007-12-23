@@ -52,6 +52,10 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
 
+#include <boost/iostreams/filtering_stream.hpp>
+//#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+
 #include <iomanip>
 
 #ifdef WIN32
@@ -61,6 +65,7 @@
 
 #include "multiimage.h"
 
+using namespace boost::iostreams;
 using namespace lux;
 using asio::ip::tcp;
 namespace po = boost::program_options;
@@ -113,7 +118,7 @@ void networkFilmUpdateThread() {
 	}
 }
 
-void processCommand(void (&f)(const string &, const ParamSet &), tcp::iostream &stream) {
+void processCommand(void (&f)(const string &, const ParamSet &), std::basic_istream<char> &stream) {
 	std::string type;
 	ParamSet params;
 	stream>>type;
@@ -123,14 +128,14 @@ void processCommand(void (&f)(const string &, const ParamSet &), tcp::iostream &
 	f(type, params);
 }
 
-void processCommand(void (&f)(const string &), tcp::iostream &stream) {
+void processCommand(void (&f)(const string &), std::basic_istream<char> &stream) {
 	std::string type;
 	stream>>type;
 	//std::cout<<"params :"<<type<<std::endl;
 	f(type);
 }
 
-void processCommand(void (&f)(float,float,float), tcp::iostream &stream) {
+void processCommand(void (&f)(float,float,float), std::basic_istream<char> &stream) {
 	float ax, ay, az;
 	stream>>ax;
 	stream>>ay;
@@ -139,7 +144,7 @@ void processCommand(void (&f)(float,float,float), tcp::iostream &stream) {
 	f(ax, ay, az);
 }
 
-void processCommand(void (&f)(float[16]), tcp::iostream &stream) {
+void processCommand(void (&f)(float[16]), std::basic_istream<char> &stream) {
 	float t[16];
 	for (int i=0; i<16; i++)
 		stream>>t[i];
@@ -168,6 +173,10 @@ void startServer(int listenPort=18018) {
 			stream.setf(std::ios::scientific, std::ios::floatfield);
 			stream.precision(16);
 
+			//filtering_stream<bidirectional> stream;
+			//stream.push(zlib_decompressor());
+			//stream.push(tcpStream);
+			
 			//reading the command
 			std::string command;
 			while(std::getline(stream, command))
@@ -287,6 +296,7 @@ void startServer(int listenPort=18018) {
 				{
 					std::cout<<"transmitting film...."<<std::endl;
 					luxGetFilm(stream);
+					stream.close();
 					std::cout<<"...ok"<<std::endl;
 				}
 				else

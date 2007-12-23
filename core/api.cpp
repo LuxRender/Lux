@@ -54,8 +54,13 @@ using std::map;
 #include <boost/serialization/string.hpp>
 
 
-using asio::ip::tcp;
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
+using asio::ip::tcp;
+using namespace boost::iostreams;
 using namespace lux;
 
 
@@ -765,18 +770,20 @@ double luxStatistics(char *statName) {
 		return luxCurrentScene->Statistics(statName);
 }
 
-void luxGetFilm(tcp::iostream &stream) {
+void luxGetFilm(std::basic_ostream<char> &stream) {
+	std::stringstream s;
+	boost::archive::text_oarchive oa(s);
 
-	boost::archive::text_oarchive oa(stream);
-	//boost::archive::text_oarchive ob(std::cout);
 	//jromang TODO : fix this hack !
 	//ob<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
 	const MultiImageFilm m(*((MultiImageFilm *)(luxCurrentScene->camera->film)));
 	luxCurrentScene->camera->film->clean();
 	oa<<m;
 	
-	//oa<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	//((MultiImageFilm *)(luxCurrentScene->camera->film))->clean();
+	filtering_streambuf<input> in;
+	in.push(basic_zlib_compressor<>(9));
+	in.push(s);
+	boost::iostreams::copy(in, stream);
 }
 
 void luxUpdateFilmFromNetwork() {
