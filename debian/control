@@ -1,0 +1,12 @@
+Source: luxrender
+Section: graphics
+Priority: extra
+Maintainer: Ricardo Lipas Augusto <ricardo.lipas@cubemine.com>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: luxrender
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Lux Renderer, an unbiased rendering system
+ LuxRender is a rendering system for physically correct image synthesis.
