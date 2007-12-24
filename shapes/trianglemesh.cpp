@@ -211,9 +211,12 @@ void Triangle::GetUVs(float uv[3][2]) const {
 		uv[2][0] = mesh->uvs[2*v[2]];
 		uv[2][1] = mesh->uvs[2*v[2]+1];
 	} else {
-		uv[0][0] = 0.; uv[0][1] = 0.;
-		uv[1][0] = 1.; uv[1][1] = 0.;
-		uv[2][0] = 1.; uv[2][1] = 1.;
+		uv[0][0] = mesh->p[v[0]].x;
+		uv[0][1] = mesh->p[v[0]].y;
+		uv[1][0] = mesh->p[v[1]].x;
+		uv[1][1] = mesh->p[v[1]].y;
+		uv[2][0] = mesh->p[v[2]].x;
+		uv[2][1] = mesh->p[v[2]].y;
 	}
 }
 float Triangle::Area() const {

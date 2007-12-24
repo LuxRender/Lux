@@ -30,8 +30,7 @@ namespace lux
 
 class SampleVector {
 public:
-	mutable int i;
-	SampleVector () : i(0) {}
+	SampleVector () {}
 	virtual ~SampleVector() {}
 	virtual float value (const int i, float defval) const = 0;
 };

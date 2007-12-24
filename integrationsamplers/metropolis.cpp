@@ -74,9 +74,10 @@ MetroSample MetroSample::next () const {
 // interface for retrieving from integrators
 void Metropolis::GetNext(float& bs1, float& bs2, float& bcs, int pathLength)
 {
-	bs1 = newsamp.value(5+pathLength, bs1);
-	bs2 = newsamp.value(5+pathLength+1, bs2);
-	bcs = newsamp.value(5+pathLength+2, bcs);
+	// NOTE - Ratow - Mutiplying _pathLength_ by 3 so that no overlapping occurs
+	bs1 = newsamp.value(5+(3*pathLength), bs1);
+	bs2 = newsamp.value(5+(3*pathLength)+1, bs2);
+	bcs = newsamp.value(5+(3*pathLength)+2, bcs);
 }
 
 // interface for new ray/samples from scene
@@ -108,9 +109,6 @@ bool Metropolis::GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos)
 		sample->lensV = newsamp.value(3, -1.);
 		sample->time = newsamp.value(4, -1.);
 	}
-
-	// set increment
-	newsamp.i = 5;
 
     return true;
 }
