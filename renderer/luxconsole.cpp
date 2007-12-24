@@ -274,7 +274,7 @@ void startServer(int listenPort=18018) {
 				else if(command=="luxWorldEnd")
 				{
 					boost::thread t(&luxWorldEnd);
-					boost::thread j(&infoThread);
+					
 
 					//wait the scene parsing to finish
 					while(!luxStatistics("sceneIsReady") && !parseError)
@@ -285,6 +285,8 @@ void startServer(int listenPort=18018) {
 						boost::thread::sleep(xt);
 					}
 
+					boost::thread j(&infoThread);
+					
 					//add rendering threads
 					int threadsToAdd=threads;
 					while(--threadsToAdd)
