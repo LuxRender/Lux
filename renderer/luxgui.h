@@ -59,6 +59,7 @@ Fl_Button *button_pause;
 Fl_Button *button_restart;
 
 boost::thread *engine_thread;
+boost::thread *fb_update_thread;
 int gui_nrthreads = 1;
 char gui_current_scenefile[256];
 

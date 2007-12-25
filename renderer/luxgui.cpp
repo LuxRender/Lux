@@ -313,6 +313,8 @@ void open_cb(Fl_Widget *, void *) {
 }
 
 void exit_cb(Fl_Widget *, void *) {
+	if (fb_update_thread)
+		fb_update_thread->join();
 	if (engine_thread) {
 		luxExit();
 		engine_thread->join();
@@ -513,8 +515,15 @@ void Engine_Thread() {
 	 return 0; */
 }
 
+void merge_FrameBuffer_Thread(bool *threadDone){
+	luxUpdateFramebuffer();
+	*threadDone = true;
+}
+
 // GUI functions
 void merge_FrameBuffer(void *) {
+	if(fb_update_thread) return; //update already in progress
+
 	static char ittxt[256];
 	sprintf(ittxt, "(1) Tonemapping...");
 	static const char * txttp = ittxt;
@@ -523,16 +532,14 @@ void merge_FrameBuffer(void *) {
 	info_tonemap->label(txttp);
 	Fl::redraw();
 
-#ifndef __APPLE__
-	Fl::lock();
-#endif
-	luxUpdateFramebuffer();
-	luxError(LUX_NOERROR, LUX_INFO, "GUI: Framebuffer update done.");
-#ifndef __APPLE__
-	Fl::unlock();
-#endif
-
+	bool threadDone = false;
+	fb_update_thread = new boost::thread(boost::bind(&merge_FrameBuffer_Thread, &threadDone));
+	while(!threadDone)	Fl::wait(0.5);
+	fb_update_thread->join();
+	fb_update_thread = NULL;
 	renderview->update_image();
+
+	luxError(LUX_NOERROR, LUX_INFO, "GUI: Framebuffer update done.");
 	sprintf(ittxt, "(1) Idle.");
 	info_tonemap->label(txttp);
 	Fl::redraw();
@@ -757,6 +764,8 @@ int main(int ac, char *av[]) {
 	strcpy(gui_current_scenefile, "");
 	status_render = STATUS_RENDER_NONE;
 	bool opengl_enabled = true;
+	engine_thread = NULL;
+	fb_update_thread = NULL;
 
 	try
 	{
