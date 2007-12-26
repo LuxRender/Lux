@@ -64,6 +64,7 @@
 #endif
 
 #include "multiimage.h"
+#include "context.h"
 
 using namespace boost::iostreams;
 using namespace lux;
@@ -153,6 +154,8 @@ void processCommand(void (&f)(float[16]), std::basic_istream<char> &stream) {
 }
 
 void startServer(int listenPort=18018) {
+	
+	luxInit();
 	//std::cout<<"luxconsole: launching server mode..."<<std::endl;
 	{
 		std::stringstream ss;
@@ -185,7 +188,7 @@ void startServer(int listenPort=18018) {
 				//processing the command
 				if(command==""); //skip
 				else if(command==" "); //skip
-				else if(command=="luxInit") luxInit();
+				else if(command=="luxInit") luxError(LUX_BUG,LUX_SEVERE,"Server already initialized");//luxInit();
 				else if(command=="luxTranslate") processCommand(luxTranslate,stream);
 				else if(command=="luxRotate")
 				{
@@ -297,7 +300,7 @@ void startServer(int listenPort=18018) {
 				else if(command=="luxGetFilm")
 				{
 					std::cout<<"transmitting film...."<<std::endl;
-					luxGetFilm(stream);
+					Context::getActive()->getFilm(stream);
 					stream.close();
 					std::cout<<"...ok"<<std::endl;
 				}
@@ -324,6 +327,7 @@ void startServer(int listenPort=18018) {
 int main(int ac, char *av[]) {
 
 	bool useServer=false;
+	luxInit();
 	//test();
 	/*
 	 // Print welcome banner
@@ -462,7 +466,7 @@ int main(int ac, char *av[]) {
 			std::cout<<"connecting to "<<name<<std::endl;
 
 			//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
-			luxAddServer(name);
+			luxAddServer(name.c_str());
 
 			useServer=true;
 		}

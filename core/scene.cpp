@@ -30,6 +30,7 @@
 #include "dynload.h"
 #include "volume.h"
 #include "error.h"
+#include "context.h"
 
 using namespace lux;
 
@@ -38,7 +39,7 @@ u_int sampPos;
 boost::mutex sampPosMutex;
 
 // Control Methods -------------------------------
-extern Scene *luxCurrentScene;
+//extern Scene *luxCurrentScene;
 
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
@@ -283,7 +284,7 @@ void Scene::Render() {
 	CurThreadSignal = RenderThread::SIG_RUN;
 
     // set current scene pointer
-	luxCurrentScene = (Scene*) this;
+	//luxCurrentScene = (Scene*) this;
 	
 	//add a thread
 	CreateRenderThread();

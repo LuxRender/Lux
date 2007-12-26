@@ -115,13 +115,13 @@ extern int luxFilmXres();
 extern int luxFilmYres();
 
 //film access (networking)
-extern void luxGetFilm(std::basic_ostream<char> &stream);
+//extern void luxGetFilm(std::basic_ostream<char> &stream);
 extern void luxUpdateFilmFromNetwork();
 
 //statistics
 extern double luxStatistics(char *statName);
 
-extern void luxAddServer(const string &name);
+extern void luxAddServer(const char * name);
 
 
 

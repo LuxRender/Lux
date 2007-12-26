@@ -85,11 +85,13 @@ void RenderFarm::updateFilm(MultiImageFilm *film) {
 }
 
 void RenderFarm::send(const std::string &command) {
+	//std::cout<<"sending "<<command<<std::endl;
 	//Send command to the render servers
 	for (vector<string>::iterator server = serverList.begin(); server
 			!= serverList.end(); ++server) {
 		try
 		{
+			//std::cout<<(*server)<<std::endl;
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl;
 		}

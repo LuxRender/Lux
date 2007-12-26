@@ -916,6 +916,9 @@ int main(int ac, char *av[]) {
 		if(gui_current_scenefile[0]!=0) //if we have a scene file
 			RenderScenefile();
 
+		//jromang : we have to call luxInit before luxStatistics (in check_SceneReady) - luxInit will be called twice because of parsing, and parsing should'nt call luxInit !
+		luxInit();
+		
 		// set timeouts
 		Fl::add_timeout(0.25, check_SceneReady);
 
