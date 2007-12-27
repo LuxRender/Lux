@@ -498,7 +498,7 @@ void restart_cb(Fl_Widget *, void *) {
 }
 
 void Engine_Thread() {
-	luxInit();
+	//luxInit();
 	std::stringstream ss;
 	ss << "GUI: Parsing scenefile '" << gui_current_scenefile << "'";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str ().c_str());
@@ -913,12 +913,12 @@ int main(int ac, char *av[]) {
 			XFree(hints);
 		#endif
 
+		//jromang : we have to call luxInit before luxStatistics (in check_SceneReady)
+		luxInit();
+		
 		if(gui_current_scenefile[0]!=0) //if we have a scene file
 			RenderScenefile();
 
-		//jromang : we have to call luxInit before luxStatistics (in check_SceneReady) - luxInit will be called twice because of parsing, and parsing should'nt call luxInit !
-		luxInit();
-		
 		// set timeouts
 		Fl::add_timeout(0.25, check_SceneReady);
 
