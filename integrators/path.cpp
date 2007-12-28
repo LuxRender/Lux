@@ -58,7 +58,6 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		float *alpha) const {
 	// Declare common path integration variables
 	Spectrum pathThroughput = 1., L = 0.;
-	int transmissionBounces = 0;
 	RayDifferential ray(r);
 	bool specularBounce = false;
 	for (int pathLength = 0; ; ++pathLength) {
@@ -135,11 +134,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		ray = RayDifferential(p, wi);
 
 		// Possibly terminate the path
-		if(forceTransmit)
-		    if((flags & BSDF_TRANSMISSION) != 0)
-				transmissionBounces++;
-
-		if ((pathLength - transmissionBounces) > 3) {
+		if (pathLength > 3) {
 			if (lux::random::floatValue() > continueProbability)
 				break;
 
@@ -153,14 +148,13 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
 	// general
-	int maxDepth = params.FindOneInt("maxdepth", 512);
-	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .5f);			// continueprobability for RR (0.0-1.0)
-	bool RRforceTransmit = params.FindOneBool("rrforcetransmit", false);		// forces RR to ignore transmission bounces (don't use, causes bias)
+	int maxDepth = params.FindOneInt("maxdepth", 16);
+	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for RR (0.0-1.0)
 	// MLT
 	bool mlt = params.FindOneBool("metropolis", true);							// enables use of metropolis integrationsampler
-	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 128);          // number of consecutive rejects before a new mutation is forced
-	float LargeMutationProb = params.FindOneFloat("largemutationprob", .25f);	// probability of generation a large sample (mutation)
+	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);          // number of consecutive rejects before a new mutation is forced
+	float LargeMutationProb = params.FindOneFloat("largemutationprob", .4f);	// probability of generation a large sample (mutation)
 
-	return new PathIntegrator(maxDepth, RRcontinueProb, RRforceTransmit, mlt, MaxConsecRejects, LargeMutationProb);
+	return new PathIntegrator(maxDepth, RRcontinueProb, mlt, MaxConsecRejects, LargeMutationProb);
 
 }
