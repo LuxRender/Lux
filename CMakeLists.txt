@@ -327,7 +327,7 @@ SET(lux_lib_src
         film/image.cpp film/multiimage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/directlighting.cpp integrators/emission.cpp integrators/irradiancecache.cpp
-        integrators/path.cpp integrators/photonmap.cpp integrators/single.cpp
+        integrators/path.cpp integrators/mltpath.cpp integrators/photonmap.cpp integrators/single.cpp
         integrators/whitted.cpp integrators/igi.cpp
         integrators/debug.cpp integrators/exphotonmap.cpp integrators/bidirectional.cpp integrationsamplers/metropolis.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
