@@ -20,53 +20,35 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// metropolis.h*
-
-#ifndef LUX_METROPOLIS_H
-#define LUX_METROPOLIS_H
-
-#include "sampling.h"
-#include "paramset.h"
-#include "film.h"
+// mltpath.cpp*
+#include "lux.h"
+#include "transport.h"
+#include "metropolis.h"
+#include "scene.h"
 
 namespace lux
 {
 
-class SampleVector {
+// MLTPathIntegrator Declarations
+class MLTPathIntegrator : public SurfaceIntegrator {
 public:
-	SampleVector () {}
-	virtual ~SampleVector() {}
-	virtual float value (const int i, float defval) const = 0;
-};
-
-class MetroSample : public SampleVector {
-public:
-	mutable vector<float> values;
-	mutable vector<int> modify;
-	int time;
-	MetroSample () : time(0) {}
-	float mutate (const float x) const;
-	float value (const int i, float defval) const;
-	MetroSample next () const;
-};
-
-class Metropolis : public IntegrationSampler {
-public:
-	Metropolis() { L = 0.f; consec_rejects = 0; }
-	void SetParams(int mR, float pL) { maxReject = mR; pLarge = pL; }
-	void SetFilmRes(int fX, int fY) { xRes = fX, yRes = fY; }
-	bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos);
-	void GetNext(float& bs1, float& bs2, float& bcs, int pathLength);
-	void AddSample(const Sample &sample, const Ray &ray,
-		const Spectrum &L, float alpha, Film *film);
-
-	MetroSample msamp, newsamp;
-	Spectrum L;
-	int xRes, yRes, maxReject, consec_rejects;
-	bool large;
+	// MLTPathIntegrator Public Methods
+	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	MLTPathIntegrator(int md, float cp, int maxreject, float plarge) { 
+			maxDepth = md; continueProbability = cp; 
+			maxReject = maxreject; pLarge = plarge; }
+	Spectrum Next(MemoryArena &arena, RayDifferential ray, const Scene *scene, int pathLength) const;
+	virtual MLTPathIntegrator* clone() const; // Lux (copy) constructor for multithreading
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+private:
+	// MLTPathIntegrator Private Data
+	int maxDepth;
+	float continueProbability;
+	int maxReject;
 	float pLarge;
+	IntegrationSampler *mltIntegrationSampler;
 };
 
 }//namespace lux
 
-#endif // LUX_METROPOLIS_H

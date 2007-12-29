@@ -79,6 +79,7 @@
 #include "igi.h"
 #include "irradiancecache.h"
 #include "path.h"
+#include "mltpath.h"
 #include "photonmap.h"
 #include "single.h"
 #include "whitted.h"
@@ -725,6 +726,12 @@ static string SearchPath(const string &searchpath,
     if(name=="path")
     {
         SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="mltpath")
+    {
+        SurfaceIntegrator *ret=MLTPathIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
