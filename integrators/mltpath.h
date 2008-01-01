@@ -34,10 +34,10 @@ class MLTPathIntegrator : public SurfaceIntegrator {
 public:
 	// MLTPathIntegrator Public Methods
 	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-	MLTPathIntegrator(int md, float cp, int maxreject, float plarge) { 
-			maxDepth = md; continueProbability = cp; 
+	MLTPathIntegrator(int md, float cp, int maxreject, float plarge) {
+			maxDepth = md; continueProbability = cp;
 			maxReject = maxreject; pLarge = plarge; }
-	Spectrum Next(MemoryArena &arena, RayDifferential ray, const Scene *scene, int pathLength) const;
+	void RequestSamples(Sample *sample, const Scene *scene);
 	virtual MLTPathIntegrator* clone() const; // Lux (copy) constructor for multithreading
 	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
@@ -48,6 +48,7 @@ private:
 	int maxReject;
 	float pLarge;
 	IntegrationSampler *mltIntegrationSampler;
+	int lightNumOffset, lightSampOffset;
 };
 
 }//namespace lux

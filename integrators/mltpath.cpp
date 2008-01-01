@@ -42,65 +42,96 @@ IntegrationSampler* MLTPathIntegrator::HasIntegrationSampler(IntegrationSampler 
     return isa;
 }
 
-Spectrum MLTPathIntegrator::Next(MemoryArena &arena, RayDifferential ray, 
-		const Scene *scene, int pathLength) const {
-	if (pathLength == maxDepth)
-		return 0.;
-
-	// TODO add russian roulette path termination and weighting
-
-	// Find next vertex of path
-	Intersection isect;
-	if (!scene->Intersect(ray, &isect)) {
-		Spectrum L = 0.;
-		for (u_int i = 0; i < scene->lights.size(); ++i)
-			L += scene->lights[i]->Le(ray); 
-		return L;
-	}
-
-	// Evaluate BSDF at hit point
-	BSDF *bsdf = isect.GetBSDF(arena, ray);
-	const Point &p = bsdf->dgShading.p;
-	const Normal &n = bsdf->dgShading.nn;
-	Vector wo = -ray.d;
-	Spectrum emittance = isect.Le(-ray.d);
-
-	// pick new direction for outgoing ray 
-	// using metropolis integration sampler
-	float bs1, bs2, bcs;
-	bs1 = bs2 = bcs = -1.;
-	mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
-
-	Vector wi;
-	float pdf;
-	Spectrum f;
-	BxDFType flags;
-
-	if(emittance != 0.) {
-		// white BSDF for area light
-		f = 1.; pdf = 1.;
-	} else {
-		// material, sample BSDF
-		f = bsdf->Sample_f(wo, &wi, bs1, bs2, bcs,
-			&pdf, BSDF_ALL, &flags);
-		if (f.Black() || pdf == 0.)
-			return 0.;
-	}
-
-	// trace reflected
-	ray = RayDifferential(p, wi);
-	Spectrum reflected = Next(arena, ray, scene, pathLength+1);
-
-	// return total
-	return emittance + (f * AbsDot(wi, n) / pdf) * reflected;
+void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
+	lightNumOffset = sample->Add1D(1);
+	lightSampOffset = sample->Add2D(1);
+	/* Other offsets handled by mlt getNext */
 }
 
 Spectrum MLTPathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const {
 	RayDifferential ray(r);
+	Spectrum pathThroughput = 1., L = 0., Le;
+	int lightNum;
+	Light *light;
+	Vector wi;
+	float lightWeight, lightPdf, ls1, ls2;
+	VisibilityTester visibility;
+
+	// Setup light params for this path
+	lightNum = Floor2Int(sample->oneD[lightNumOffset][0] * scene->lights.size());
+	lightNum = min(lightNum, (int)scene->lights.size() - 1);
+	light = scene->lights[lightNum];
+	lightWeight = float(scene->lights.size());
+	ls1 = sample->twoD[lightSampOffset][0];
+	ls2 = sample->twoD[lightSampOffset][1];
+
 	if (alpha) *alpha = 1.;
-	return Next(arena, ray, scene, 0);
+	// NOTE - Ratow - Removed recursion: looping gives me an ~8% speed up.
+	for (int pathLength = 0; ; ++pathLength) {
+		// Find next vertex of path
+		Intersection isect;
+		if (!scene->Intersect(ray, &isect)) {
+			for (u_int i = 0; i < scene->lights.size(); ++i)
+				L += pathThroughput * scene->lights[i]->Le(ray);
+			break;
+		}
+
+		// Evaluate BSDF at hit point
+		BSDF *bsdf = isect.GetBSDF(arena, ray);
+		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
+		Vector wo = -ray.d;
+		Spectrum emittance = isect.Le(wo);
+
+		pathThroughput *= scene->Transmittance(ray);
+
+		if (emittance != 0.) {
+			// Implicity light path
+			L += pathThroughput * isect.Le(-ray.d);
+		}	else {
+			// Explicit light path: always connect to the same light
+			Le = light->Sample_L(p, n,	ls1, ls2, &wi, &lightPdf, &visibility);
+			Spectrum f = bsdf->f(wo, wi);
+			if(lightPdf > 0. && !Le.Black() && !f.Black() && visibility.Unoccluded(scene))
+				L += pathThroughput * lightWeight * f * Le * AbsDot(wi, n) / lightPdf;
+		}
+
+		if (pathLength == maxDepth)
+			break;
+
+		// Possibly terminate the path
+		if (pathLength > 3) {
+			// NOTE - Ratow - should the path length be the same after a small mutation?
+			if (lux::random::floatValue() > continueProbability)
+				break;
+			// increase path contribution
+			pathThroughput /= continueProbability;
+		}
+
+		// pick new direction for outgoing ray
+		// using metropolis integration sampler
+		float bs1, bs2, bcs;
+		bs1 = bs2 = bcs = -1.;
+		mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
+
+		Vector wi;
+		float pdf;
+		Spectrum f;
+		BxDFType flags;
+
+		// material, sample BSDF
+		f = bsdf->Sample_f(wo, &wi, bs1, bs2, bcs, &pdf, BSDF_ALL, &flags);
+		if (f.Black() || pdf == 0.)
+			break;
+
+		// trace reflected
+		ray = RayDifferential(p, wi);
+
+		pathThroughput *= f * AbsDot(wi, n) / pdf;
+	}
+	return L;
 }
 
 SurfaceIntegrator* MLTPathIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
