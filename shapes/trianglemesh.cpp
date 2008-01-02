@@ -151,13 +151,14 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	float determinant = du1 * dv2 - dv1 * du2;
 	if (determinant == 0.f) {
 		// Handle zero determinant for triangle partial derivative matrix
-		CoordinateSystem(Normalize(Cross(e2, e1)), &dpdu, &dpdv);
+		CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
 	}
 	else {
 		float invdet = 1.f / determinant;
 		dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
 		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
 	}
+
 	// Interpolate $(u,v)$ triangle parametric coordinates
 	float b0 = 1 - b1 - b2;
 	float tu = b0*uvs[0][0] + b1*uvs[1][0] + b2*uvs[2][0];
@@ -165,6 +166,18 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	*dg = DifferentialGeometry(ray(t), dpdu, dpdv,
 	                           Vector(0,0,0), Vector(0,0,0),
 							   tu, tv, this);
+
+	// NOTE - ratow - Invert generated normal in case it falls on the wrong side.
+	if(!mesh->uvs)
+		if(mesh->n) {
+			if(Dot(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]], dg->nn) < 0)
+				dg->nn *= -1;
+		} else {
+			if(Dot(Cross(e1, e2), dg->nn) < 0)
+				dg->nn *= -1;
+		}
+
+
 	*tHit = t;
 	return true;
 }
