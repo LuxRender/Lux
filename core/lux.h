@@ -290,8 +290,8 @@ extern void StatsCleanup();
   void WriteIgiImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
- void luxInit();
- void luxCleanup();
+ extern "C" void luxInit();
+ extern "C" void luxCleanup();
  
 namespace lux
 {

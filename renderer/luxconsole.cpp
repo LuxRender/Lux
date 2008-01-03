@@ -126,14 +126,14 @@ void processCommand(void (&f)(const string &, const ParamSet &), std::basic_istr
 	boost::archive::text_iarchive ia(stream);
 	ia>>params;
 	//std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-	f(type, params);
+	f(type.c_str(), params);
 }
 
 void processCommand(void (&f)(const string &), std::basic_istream<char> &stream) {
 	std::string type;
 	stream>>type;
 	//std::cout<<"params :"<<type<<std::endl;
-	f(type);
+	f(type.c_str());
 }
 
 void processCommand(void (&f)(float,float,float), std::basic_istream<char> &stream) {
@@ -152,6 +152,17 @@ void processCommand(void (&f)(float[16]), std::basic_istream<char> &stream) {
 	//std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
 	f(t);
 }
+
+/*
+void processCommand(void (&f)(const char *, ...), std::basic_istream<char> &stream) {
+	std::string type;
+	ParamSet params;
+	stream>>type;
+	boost::archive::text_iarchive ia(stream);
+	ia>>params;
+	//std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
+	f(type.c_str(), params);
+}*/
 
 void startServer(int listenPort=18018) {
 	
@@ -189,7 +200,7 @@ void startServer(int listenPort=18018) {
 				if(command==""); //skip
 				else if(command==" "); //skip
 				else if(command=="luxInit") luxError(LUX_BUG,LUX_SEVERE,"Server already initialized");//luxInit();
-				else if(command=="luxTranslate") processCommand(luxTranslate,stream);
+				else if(command=="luxTranslate") processCommand(Context::luxTranslate,stream);
 				else if(command=="luxRotate")
 				{
 					float angle, ax, ay, az;
@@ -200,7 +211,7 @@ void startServer(int listenPort=18018) {
 					std::cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<std::endl;
 					luxRotate(angle,ax,ay,az);
 				}
-				else if(command=="luxScale") processCommand(luxScale,stream);
+				else if(command=="luxScale") processCommand(Context::luxScale,stream);
 				else if(command=="luxLookAt")
 				{
 					float ex, ey, ez, lx, ly, lz, ux, uy, uz;
@@ -216,24 +227,24 @@ void startServer(int listenPort=18018) {
 					std::cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<std::endl;
 					luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
 				}
-				else if(command=="luxConcatTransform") processCommand(luxConcatTransform,stream);
-				else if(command=="luxTransform") processCommand(luxTransform,stream);
-				else if(command=="luxIdentity") luxIdentity();
-				else if(command=="luxCoordinateSystem") processCommand(luxCoordinateSystem,stream);
-				else if(command=="luxCoordSysTransform") processCommand(luxCoordSysTransform,stream);
-				else if(command=="luxPixelFilter") processCommand(luxPixelFilter,stream);
-				else if(command=="luxFilm") processCommand(luxFilm,stream);
-				else if(command=="luxSampler") processCommand(luxSampler,stream);
-				else if(command=="luxAccelerator") processCommand(luxAccelerator,stream);
-				else if(command=="luxSurfaceIntegrator") processCommand(luxSurfaceIntegrator,stream);
-				else if(command=="luxVolumeIntegrator") processCommand(luxVolumeIntegrator,stream);
-				else if(command=="luxCamera") processCommand(luxCamera,stream);
+				else if(command=="luxConcatTransform") processCommand(Context::luxConcatTransform,stream);
+				else if(command=="luxTransform") processCommand(Context::luxTransform,stream);
+				else if(command=="luxIdentity") Context::luxIdentity();
+				else if(command=="luxCoordinateSystem") processCommand(Context::luxCoordinateSystem,stream);
+				else if(command=="luxCoordSysTransform") processCommand(Context::luxCoordSysTransform,stream);
+				else if(command=="luxPixelFilter") processCommand(Context::luxPixelFilter,stream);
+				else if(command=="luxFilm") processCommand(Context::luxFilm,stream);
+				else if(command=="luxSampler") processCommand(Context::luxSampler,stream);
+				else if(command=="luxAccelerator") processCommand(Context::luxAccelerator,stream);
+				else if(command=="luxSurfaceIntegrator") processCommand(Context::luxSurfaceIntegrator,stream);
+				else if(command=="luxVolumeIntegrator") processCommand(Context::luxVolumeIntegrator,stream);
+				else if(command=="luxCamera") processCommand(Context::luxCamera,stream);
 				//else if(command=="luxSearchPath") processCommand(luxSearchPath,stream);
-				else if(command=="luxWorldBegin") luxWorldBegin();
-				else if(command=="luxAttributeBegin") luxAttributeBegin();
-				else if(command=="luxAttributeEnd") luxAttributeEnd();
-				else if(command=="luxTransformBegin") luxTransformBegin();
-				else if(command=="luxTransformEnd") luxTransformEnd();
+				else if(command=="luxWorldBegin") Context::luxWorldBegin();
+				else if(command=="luxAttributeBegin") Context::luxAttributeBegin();
+				else if(command=="luxAttributeEnd") Context::luxAttributeEnd();
+				else if(command=="luxTransformBegin") Context::luxTransformBegin();
+				else if(command=="luxTransformEnd") Context::luxTransformEnd();
 				else if(command=="luxTexture")
 				{
 					std::string name,type,texname;
@@ -262,18 +273,18 @@ void startServer(int listenPort=18018) {
 						out.flush();
 					}
 
-					luxTexture(name,type,texname,params);
+					Context::luxTexture(name.c_str(),type.c_str(),texname.c_str(),params);
 				}
-				else if(command=="luxMaterial") processCommand(luxMaterial,stream);
-				else if(command=="luxLightSource") processCommand(luxLightSource,stream);
-				else if(command=="luxAreaLightSource") processCommand(luxAreaLightSource,stream);
-				else if(command=="luxPortalShape") processCommand(luxPortalShape,stream);
-				else if(command=="luxShape") processCommand(luxShape,stream);
-				else if(command=="luxReverseOrientation") luxReverseOrientation();
-				else if(command=="luxVolume") processCommand(luxVolume,stream);
-				else if(command=="luxObjectBegin") processCommand(luxObjectBegin,stream);
-				else if(command=="luxObjectEnd") luxObjectEnd();
-				else if(command=="luxObjectInstance") processCommand(luxObjectInstance,stream);
+				else if(command=="luxMaterial") processCommand(Context::luxMaterial,stream);
+				else if(command=="luxLightSource") processCommand(Context::luxLightSource,stream);
+				else if(command=="luxAreaLightSource") processCommand(Context::luxAreaLightSource,stream);
+				else if(command=="luxPortalShape") processCommand(Context::luxPortalShape,stream);
+				else if(command=="luxShape") processCommand(Context::luxShape,stream);
+				else if(command=="luxReverseOrientation") Context::luxReverseOrientation();
+				else if(command=="luxVolume") processCommand(Context::luxVolume,stream);
+				else if(command=="luxObjectBegin") processCommand(Context::luxObjectBegin,stream);
+				else if(command=="luxObjectEnd") Context::luxObjectEnd();
+				else if(command=="luxObjectInstance") processCommand(Context::luxObjectInstance,stream);
 				else if(command=="luxWorldEnd")
 				{
 					boost::thread t(&luxWorldEnd);
@@ -294,7 +305,7 @@ void startServer(int listenPort=18018) {
 					int threadsToAdd=threads;
 					while(--threadsToAdd)
 					{
-						luxAddThread();
+						Context::luxAddThread();
 					}
 				}
 				else if(command=="luxGetFilm")

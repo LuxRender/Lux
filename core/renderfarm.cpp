@@ -32,6 +32,7 @@
 
 using namespace boost::iostreams;
 using namespace lux;
+using asio::ip::tcp;
 
 bool RenderFarm::connect(const string &serverName) {
 	serverList.push_back(std::string(serverName));

@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "error.h"
 #include "paramset.h"
+#include "context.h"
 #include <stdarg.h>
 #include <sstream>
 
@@ -305,111 +306,111 @@ ri_stmt: ACCELERATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxAccelerator($2, params);
+	Context::luxAccelerator($2, params);
 	FreeArgs();
 }
 | AREALIGHTSOURCE STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxAreaLightSource($2, params);
+	Context::luxAreaLightSource($2, params);
 	FreeArgs();
 }
 | ATTRIBUTEBEGIN
 {
-	luxAttributeBegin();
+	Context::luxAttributeBegin();
 }
 | ATTRIBUTEEND
 {
-	luxAttributeEnd();
+	Context::luxAttributeEnd();
 }
 | CAMERA STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxCamera($2, params);
+	Context::luxCamera($2, params);
 	FreeArgs();
 }
 | CONCATTRANSFORM num_array
 {
 	if (VerifyArrayLength( $2, 16, "ConcatTransform" ))
-		luxConcatTransform( (float *) $2->array );
+		Context::luxConcatTransform( (float *) $2->array );
 	ArrayFree( $2 );
 }
 | COORDINATESYSTEM STRING
 {
-	luxCoordinateSystem( $2 );
+	Context::luxCoordinateSystem( $2 );
 }
 | COORDSYSTRANSFORM STRING
 {
-	luxCoordSysTransform( $2 );
+	Context::luxCoordSysTransform( $2 );
 }
 | FILM STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxFilm($2, params);
+	Context::luxFilm($2, params);
 	FreeArgs();
 }
 | IDENTITY
 {
-	luxIdentity();
+	Context::luxIdentity();
 }
 | LIGHTSOURCE STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxLightSource($2, params);
+	Context::luxLightSource($2, params);
 	FreeArgs();
 }
 | LOOKAT NUM NUM NUM NUM NUM NUM NUM NUM NUM
 {
-	luxLookAt($2, $3, $4, $5, $6, $7, $8, $9, $10);
+	Context::luxLookAt($2, $3, $4, $5, $6, $7, $8, $9, $10);
 }
 | MATERIAL STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxMaterial($2, params);
+	Context::luxMaterial($2, params);
 	FreeArgs();
 }
 | OBJECTBEGIN STRING
 {
-	luxObjectBegin($2);
+	Context::luxObjectBegin($2);
 }
 | OBJECTEND
 {
-	luxObjectEnd();
+	Context::luxObjectEnd();
 }
 | OBJECTINSTANCE STRING
 {
-	luxObjectInstance($2);
+	Context::luxObjectInstance($2);
 }
 | PIXELFILTER STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxPixelFilter($2, params);
+	Context::luxPixelFilter($2, params);
 	FreeArgs();
 }
 | REVERSEORIENTATION
 {
-	luxReverseOrientation();
+	Context::luxReverseOrientation();
 }
 | ROTATE NUM NUM NUM NUM
 {
-	luxRotate($2, $3, $4, $5);
+	Context::luxRotate($2, $3, $4, $5);
 }
 | SAMPLER STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxSampler($2, params);
+	Context::luxSampler($2, params);
 	FreeArgs();
 }
 | SCALE NUM NUM NUM
 {
-	luxScale($2, $3, $4);
+	Context::luxScale($2, $3, $4);
 }
 | SEARCHPATH STRING
 {
@@ -419,42 +420,42 @@ ri_stmt: ACCELERATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxShape($2, params);
+	Context::luxShape($2, params);
 	FreeArgs();
 }
 | PORTALSHAPE STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxPortalShape($2, params);
+	Context::luxPortalShape($2, params);
 	FreeArgs();
 }
 | SURFACEINTEGRATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxSurfaceIntegrator($2, params);
+	Context::luxSurfaceIntegrator($2, params);
 	FreeArgs();
 }
 | TEXTURE STRING STRING STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxTexture($2, $3, $4, params);
+	Context::luxTexture($2, $3, $4, params);
 	FreeArgs();
 }
 | TRANSFORMBEGIN
 {
-	luxTransformBegin();
+	Context::luxTransformBegin();
 }
 | TRANSFORMEND
 {
-	luxTransformEnd();
+	Context::luxTransformEnd();
 }
 | TRANSFORM real_num_array
 {
 	if (VerifyArrayLength( $2, 16, "Transform" ))
-		luxTransform( (float *) $2->array );
+		Context::luxTransform( (float *) $2->array );
 	ArrayFree( $2 );
 }
 | TRANSLATE NUM NUM NUM
@@ -465,23 +466,23 @@ ri_stmt: ACCELERATOR STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxVolumeIntegrator($2, params);
+	Context::luxVolumeIntegrator($2, params);
 	FreeArgs();
 }
 | VOLUME STRING paramlist
 {
 	ParamSet params;
 	InitParamSet(params, CPS, CPT, CPA, CPSZ, CPTH);
-	luxVolume($2, params);
+	Context::luxVolume($2, params);
 	FreeArgs();
 }
 | WORLDBEGIN
 {
-	luxWorldBegin();
+	Context::luxWorldBegin();
 }
 | WORLDEND
 {
-	luxWorldEnd();
+	Context::luxWorldEnd();
 };
 %%
 static void InitParamSet(ParamSet &ps, int count, const char **tokens,

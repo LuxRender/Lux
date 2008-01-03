@@ -21,127 +21,107 @@
  ***************************************************************************/
 
 #ifndef LUX_API_H
-#define LUX_API_H
-// api.h*
-//#include "lux.h"
-#include <string>
-#include "../renderer/include/asio.hpp"
+#define LUX_API_H 1
 
-using std::string;
-using asio::ip::tcp;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace lux
-{
-class ParamSet;
-}//namespace lux
-using namespace lux;
+typedef char *LuxToken;
+typedef char *LuxPointer;
+#define LUX_NULL NULL
 
-// API Function Declarations
-extern  void luxIdentity();
-extern  void luxTranslate(float dx, float dy, float dz);
-extern  void luxRotate(float angle,
-                               float ax,
-							   float ay,
-							   float az);
-extern  void luxScale(float sx,
-                              float sy,
-							  float sz);
-extern  void luxLookAt(float ex,
-                               float ey,
-							   float ez,
-							   float lx,
-							   float ly,
-							   float lz,
-							   float ux,
-							   float uy,
-							   float uz);
-extern 
-	void luxConcatTransform(float transform[16]);
-extern 
-	void luxTransform(float transform[16]);
-extern  void luxCoordinateSystem(const string &);
-extern  void luxCoordSysTransform(const string &);
-extern  void luxPixelFilter(const string &name, const ParamSet &params);
-extern  void luxFilm(const string &type,
-                            const ParamSet &params);
-extern  void luxSampler(const string &name,
-                               const ParamSet &params);
-extern  void luxAccelerator(const string &name,
-	                               const ParamSet &params);
-extern 
-	void luxSurfaceIntegrator(const string &name,
-							  const ParamSet &params);
-extern 
-	void luxVolumeIntegrator(const string &name,
-							 const ParamSet &params);
-extern  void luxCamera(const string &, const ParamSet &cameraParams);
-extern  void luxSearchPath(const string &path);
-extern  void luxWorldBegin();
-extern  void luxAttributeBegin();
-extern  void luxAttributeEnd();
-extern  void luxTransformBegin();
-extern  void luxTransformEnd();
-extern  void luxTexture(const string &name, const string &type,
-	const string &texname, const ParamSet &params);
-extern  void luxMaterial(const string &name,
-                               const ParamSet &params);
-extern  void luxLightSource(const string &name, const ParamSet &params);
-extern  void luxAreaLightSource(const string &name, const ParamSet &params);
-extern  void luxPortalShape(const string &name, const ParamSet &params);
-extern  void luxShape(const string &name, const ParamSet &params);
-extern  void luxReverseOrientation();
-extern  void luxVolume(const string &name, const ParamSet &params);
-extern  void luxObjectBegin(const string &name);
-extern  void luxObjectEnd();
-extern  void luxObjectInstance(const string &name);
-extern  void luxWorldEnd();
+/* Basic control flow, scoping, stacks */
+void luxIdentity();
+void luxTranslate(float dx, float dy, float dz);
+void luxRotate(float angle, float ax, float ay, float az);
+void luxScale(float sx, float sy, float sz);
+void luxLookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz);
+void luxConcatTransform(float transform[16]);
+void luxTransform(float transform[16]);
+void luxCoordinateSystem(const char *);
+void luxCoordSysTransform(const char *);
+void luxPixelFilter(const char *name, ...);
+void luxPixelFilterV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxFilm(const char *name, ...);
+void luxFilmV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxSampler(const char *name, ...); 
+void luxSamplerV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxAccelerator(const char *name, ...);
+void luxAcceleratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxSurfaceIntegrator(const char *name, ...);
+void luxSurfaceIntegratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxVolumeIntegrator(const char *name, ...);
+void luxVolumeIntegratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxCamera(const char *name, ...);
+void luxCameraV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxWorldBegin();
+void luxAttributeBegin();
+void luxAttributeEnd();
+void luxTransformBegin();
+void luxTransformEnd();
+void luxTexture(const char *name, const char *type, const char *texname, ...);
+void luxTextureV(const char *name, const char *type, const char *texname, int n, LuxToken tokens[], LuxPointer params[]);
+void luxMaterial(const char *name, ...);
+void luxMaterialV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxLightSource(const char *name, ...);
+void luxLightSourceV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxAreaLightSource(const char *name, ...);
+void luxAreaLightSourceV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxPortalShape(const char *name, ...);
+void luxPortalShapeV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxShape(const char *name, ...);
+void luxShapeV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxReverseOrientation();
+void luxVolume(const char *name, ...);
+void luxVolumeV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
+void luxObjectBegin(const char *name);
+void luxObjectEnd();
+void luxObjectInstance(const char *name);//const string &name);
+void luxWorldEnd();
 
+/* User interactive thread functions */
+void luxStart();
+void luxPause();
+void luxExit();
 
-//CORE engine control
-//user interactive thread functions
-extern void luxStart();
-extern void luxPause();
-extern void luxExit();
+/* Controlling number of threads */
+int luxAddThread();
+void luxRemoveThread();
 
-//controlling number of threads
-extern int luxAddThread();
-extern void luxRemoveThread();
+/* Framebuffer access */
+void luxUpdateFramebuffer();
+unsigned char* luxFramebuffer();
+int luxDisplayInterval();
 
-//framebuffer access
-extern void luxUpdateFramebuffer();
-extern unsigned char* luxFramebuffer();
-extern int luxDisplayInterval();
-extern int luxFilmXres();
-extern int luxFilmYres();
+/* Networking */
+void luxAddServer(const char * name);
+void luxUpdateFilmFromNetwork();
 
-//film access (networking)
-//extern void luxGetFilm(std::basic_ostream<char> &stream);
-extern void luxUpdateFilmFromNetwork();
-
-//statistics
-extern double luxStatistics(char *statName);
-
-extern void luxAddServer(const char * name);
+/* Informations and statistics */
+double luxStatistics(char *statName);
+int luxFilmXres(); //TODO jromang - remove that
+int luxFilmYres(); //TODO jromang - remove that
 
 
 
 //Error Handlers
 extern int luxLastError; //!< Keeps track of the last error code
-typedef void  (*LuxErrorHandler)(int code, int severity, const char *msg);
-extern void luxErrorHandler (LuxErrorHandler handler);
-extern void luxErrorAbort (int code, int severity, const char *message);
-extern void luxErrorIgnore (int code, int severity, const char *message);
-extern void luxErrorPrint (int code, int severity, const char *message);
+typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
+extern void luxErrorHandler(LuxErrorHandler handler);
+extern void luxErrorAbort(int code, int severity, const char *message);
+extern void luxErrorIgnore(int code, int severity, const char *message);
+extern void luxErrorPrint(int code, int severity, const char *message);
 
 /*
-    Error codes
+ Error codes
 
-     1 - 10     System and File errors
-    11 - 20     Program Limitations
-    21 - 40     State Errors
-    41 - 60     Parameter and Protocol Errors
-    61 - 80     Execution Errors
-*/
+ 1 - 10     System and File errors
+ 11 - 20     Program Limitations
+ 21 - 40     State Errors
+ 41 - 60     Parameter and Protocol Errors
+ 61 - 80     Execution Errors
+ */
 
 #define LUX_NOERROR         0
 
@@ -175,7 +155,6 @@ extern void luxErrorPrint (int code, int severity, const char *message);
 
 #define LUX_MATH           61       /* Zerodivide, noninvert matrix, etc. */
 
-
 /* Error severity levels */
 
 #define LUX_INFO            0       /* Rendering stats & other info */
@@ -183,7 +162,8 @@ extern void luxErrorPrint (int code, int severity, const char *message);
 #define LUX_ERROR           2       /* Problem.  Results may be wrong */
 #define LUX_SEVERE          3       /* So bad you should probably abort */
 
-
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LUX_API_H

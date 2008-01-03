@@ -75,6 +75,8 @@ public:
 	ParamSet() { }
 	ParamSet &operator=(const ParamSet &p2);
 	ParamSet(const ParamSet &p2);
+	ParamSet(int n, const char * pluginName,char* tokens[], char* params[]);
+	
 	void AddFloat(const string &, const float *, int nItems = 1);
 	void AddInt(const string &,
 	            const int *,
