@@ -99,7 +99,7 @@ double Scene::Statistics(char *statName) {
 	{
 		std::string eString("luxStatistics - requested an invalid data : ");
 		eString+=statName;
-		luxError(LUX_SYSTEM,LUX_ERROR,eString.c_str());
+		luxError(LUX_BADTOKEN,LUX_ERROR,eString.c_str());
 		return 0.;
 	}
 }
