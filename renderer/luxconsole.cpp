@@ -557,7 +557,9 @@ int main(int ac, char *av[]) {
 	}
 	catch (std::exception & e)
 	{
-		std::cout << e.what () << std::endl;
+		std::stringstream ss;
+		ss << "Command line argument parsing failed with error '" <<e.what ()<< "', please use the --help option to view the allowed syntax.";
+		luxError(LUX_SYNTAX, LUX_SEVERE, ss.str ().c_str());
 		return 1;
 	}
 	return 0;
