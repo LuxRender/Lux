@@ -138,9 +138,9 @@ public:
 	//framebuffer access
 	static void luxUpdateFramebuffer() { activeContext->updateFramebuffer(); }
 	static unsigned char* luxFramebuffer() { return activeContext->framebuffer(); }
-	static int luxDisplayInterval() { return activeContext->displayInterval(); }
-	static int luxFilmXres() { return activeContext->filmXres(); }
-	static int luxFilmYres() { return activeContext->filmYres(); }
+	//static int luxDisplayInterval() { return activeContext->displayInterval(); }
+	//static int luxFilmXres() { return activeContext->filmXres(); }
+	//static int luxFilmYres() { return activeContext->filmYres(); }
 
 	//film access (networking)
 	//static void getFilm(std::basic_ostream<char> &stream);
@@ -212,9 +212,10 @@ private:
 	//framebuffer access
 	void updateFramebuffer();
 	unsigned char* framebuffer();
+	/*
 	int displayInterval();
 	int filmXres();
-	int filmYres();
+	int filmYres();*/
 
 	
 	void updateFilmFromNetwork();

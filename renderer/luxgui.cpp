@@ -668,9 +668,9 @@ void RemoveThread() {
 void bindFrameBuffer() {
 	if (GuiSceneReady) {
 		// fetch camera settings
-		u_int xRes = luxFilmXres();
-		u_int yRes = luxFilmYres();
-		framebufferUpdate = luxDisplayInterval();
+		u_int xRes = (u_int)luxStatistics("filmXres");//luxFilmXres();
+		u_int yRes = (u_int)luxStatistics("filmYres");//luxFilmYres();
+		framebufferUpdate = (float)luxStatistics("displayInterval");//luxDisplayInterval();
 
 		// bind frame- to rgb buffer
 		uchar * fbP = luxFramebuffer();

@@ -487,12 +487,13 @@ extern "C" unsigned char* luxFramebuffer() {
 	//return luxCurrentScene->GetFramebuffer();
 }
 
-
+/*
 //TODO - jromang : remove & replace by luxstatistics
 extern "C" int luxDisplayInterval() {
 	return Context::luxDisplayInterval();
 	//return luxCurrentScene->DisplayInterval();
 }
+
 
 //TODO - jromang : remove & replace by luxstatistics
 extern "C" int luxFilmXres() {
@@ -504,7 +505,7 @@ extern "C" int luxFilmXres() {
 extern "C" int luxFilmYres() {
 	return Context::luxFilmYres();
 	//return luxCurrentScene->FilmYres();
-}
+}*/
 
 extern "C" double luxStatistics(char *statName) {
 	if(initialized) return Context::luxStatistics(statName);

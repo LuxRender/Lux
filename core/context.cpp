@@ -637,9 +637,11 @@ unsigned char* Context::framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
 }
 
+/*
 int Context::displayInterval() {
 	return luxCurrentScene->DisplayInterval();
 }
+
 
 int Context::filmXres() {
 	return luxCurrentScene->FilmXres();
@@ -647,7 +649,7 @@ int Context::filmXres() {
 
 int Context::filmYres() {
 	return luxCurrentScene->FilmYres();
-}
+}*/
 
 double Context::statistics(char *statName) {
 	if (std::string(statName)=="sceneIsReady")

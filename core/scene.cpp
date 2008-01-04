@@ -83,14 +83,25 @@ int Scene::FilmYres() {
 double Scene::Statistics(char *statName) {
 	if(std::string(statName)=="secElapsed")
 		return s_Timer.Time();
-	if(std::string(statName)=="samplesSec")
+	else if(std::string(statName)=="samplesSec")
 		return Statistics_SamplesPSec(); 
-	if(std::string(statName)=="samplesPx")
+	else if(std::string(statName)=="samplesPx")
 		return Statistics_SamplesPPx(); 
-	if(std::string(statName)=="efficiency")
+	else if(std::string(statName)=="efficiency")
 		return Statistics_Efficiency();
-	
-	return 0.;
+	else if(std::string(statName)=="filmXres")
+		return FilmXres();
+	else if(std::string(statName)=="filmYres")
+		return FilmYres();
+	else if(std::string(statName)=="displayInterval")
+		return DisplayInterval();
+	else
+	{
+		std::string eString("luxStatistics - requested an invalid data : ");
+		eString+=statName;
+		luxError(LUX_SYSTEM,LUX_ERROR,eString.c_str());
+		return 0.;
+	}
 }
 
 // Control Implementations in Scene::

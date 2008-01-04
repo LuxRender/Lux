@@ -77,7 +77,7 @@ void luxVolume(const char *name, ...);
 void luxVolumeV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
 void luxObjectBegin(const char *name);
 void luxObjectEnd();
-void luxObjectInstance(const char *name);//const string &name);
+void luxObjectInstance(const char *name);
 void luxWorldEnd();
 
 /* User interactive thread functions */
@@ -92,7 +92,6 @@ void luxRemoveThread();
 /* Framebuffer access */
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();
-int luxDisplayInterval();
 
 /* Networking */
 void luxAddServer(const char * name);
@@ -100,13 +99,9 @@ void luxUpdateFilmFromNetwork();
 
 /* Informations and statistics */
 double luxStatistics(char *statName);
-int luxFilmXres(); //TODO jromang - remove that
-int luxFilmYres(); //TODO jromang - remove that
 
-
-
-//Error Handlers
-extern int luxLastError; //!< Keeps track of the last error code
+/* Error Handlers */
+extern int luxLastError; /*  Keeps track of the last error code */
 typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
 extern void luxErrorHandler(LuxErrorHandler handler);
 extern void luxErrorAbort(int code, int severity, const char *message);
@@ -166,4 +161,4 @@ extern void luxErrorPrint(int code, int severity, const char *message);
 }
 #endif
 
-#endif // LUX_API_H
+#endif /* LUX_API_H */
