@@ -32,6 +32,7 @@
 #include <string>
 #include <sstream>
 #include <exception>
+#include <vector>
 #include <ctime>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
@@ -403,7 +404,7 @@ int main(int ac, char *av[]) {
 		po::options_description config ("Configuration");
 		config.add_options ()
 		("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
-		("useserver,u", po::value < std::string >(), "Specify the adress of a rendering server to use.")
+		("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
 		;
 
 		// Hidden options, will be allowed both on command line and
@@ -473,11 +474,16 @@ int main(int ac, char *av[]) {
 
 		if (vm.count("useserver"))
 		{
-			std::string name=vm["useserver"].as<std::string>();
-			std::cout<<"connecting to "<<name<<std::endl;
+			std::vector<std::string> names=vm["useserver"].as<std::vector<std::string> >();
+			//std::cout<<"connecting to "<<name<<std::endl;
 
-			//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
-			luxAddServer(name.c_str());
+			for(std::vector<std::string>::iterator i=names.begin();i<names.end();i++)
+			{
+				std::cout<<"connecting to "<<(*i)<<std::endl;
+				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull		
+				luxAddServer((*i).c_str());
+			}
+			
 
 			useServer=true;
 		}
