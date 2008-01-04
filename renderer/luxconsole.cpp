@@ -47,14 +47,11 @@
 #include <fstream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-//#include <boost/archive/xml_oarchive.hpp>
-//#include <boost/archive/xml_iarchive.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
 
 #include <boost/iostreams/filtering_stream.hpp>
-//#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 
 #include <iomanip>
@@ -78,7 +75,7 @@ bool parseError;
 
 void engineThread() {
 
-	luxInit();
+	//luxInit();
 	ParseFile(sceneFileName.c_str());
 	if (luxStatistics("sceneIsReady") == false)
 		parseError = true;
@@ -126,14 +123,12 @@ void processCommand(void (&f)(const string &, const ParamSet &), std::basic_istr
 	stream>>type;
 	boost::archive::text_iarchive ia(stream);
 	ia>>params;
-	//std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
 	f(type.c_str(), params);
 }
 
 void processCommand(void (&f)(const string &), std::basic_istream<char> &stream) {
 	std::string type;
 	stream>>type;
-	//std::cout<<"params :"<<type<<std::endl;
 	f(type.c_str());
 }
 
@@ -142,7 +137,6 @@ void processCommand(void (&f)(float,float,float), std::basic_istream<char> &stre
 	stream>>ax;
 	stream>>ay;
 	stream>>az;
-	//std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
 	f(ax, ay, az);
 }
 
@@ -150,25 +144,14 @@ void processCommand(void (&f)(float[16]), std::basic_istream<char> &stream) {
 	float t[16];
 	for (int i=0; i<16; i++)
 		stream>>t[i];
-	//std::cout<<"params :"<<ax<<", "<<ay<<", "<<az<<std::endl;
 	f(t);
 }
 
-/*
-void processCommand(void (&f)(const char *, ...), std::basic_istream<char> &stream) {
-	std::string type;
-	ParamSet params;
-	stream>>type;
-	boost::archive::text_iarchive ia(stream);
-	ia>>params;
-	//std::cout<<"params :"<<type<<", "<<params.ToString()<<std::endl;
-	f(type.c_str(), params);
-}*/
+
 
 void startServer(int listenPort=18018) {
 	
-	luxInit();
-	//std::cout<<"luxconsole: launching server mode..."<<std::endl;
+	//luxInit();
 	{
 		std::stringstream ss;
 		ss<<"Launching server mode on port '"<<listenPort<<"'.";
@@ -187,16 +170,17 @@ void startServer(int listenPort=18018) {
 			acceptor.accept(*stream.rdbuf());
 			stream.setf(std::ios::scientific, std::ios::floatfield);
 			stream.precision(16);
-
-			//filtering_stream<bidirectional> stream;
-			//stream.push(zlib_decompressor());
-			//stream.push(tcpStream);
 			
 			//reading the command
 			std::string command;
 			while(std::getline(stream, command))
 			{
-				if((command!="")&&(command!=" ")) std::cout<<"server processing command : '"<<command<<"'"<<std::endl;
+				if((command!="")&&(command!=" "))
+				{
+					std::stringstream ss;
+					ss << "Server processing command : '" <<command<< "'";
+					luxError(LUX_NOERROR, LUX_INFO, ss.str ().c_str());
+				}
 				//processing the command
 				if(command==""); //skip
 				else if(command==" "); //skip
@@ -209,7 +193,7 @@ void startServer(int listenPort=18018) {
 					stream>>ax;
 					stream>>ay;
 					stream>>az;
-					std::cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<std::endl;
+					//std::cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<std::endl;
 					luxRotate(angle,ax,ay,az);
 				}
 				else if(command=="luxScale") processCommand(Context::luxScale,stream);
@@ -225,7 +209,7 @@ void startServer(int listenPort=18018) {
 					stream>>ux;
 					stream>>uy;
 					stream>>uz;
-					std::cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<std::endl;
+					//std::cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<std::endl;
 					luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
 				}
 				else if(command=="luxConcatTransform") processCommand(Context::luxConcatTransform,stream);
@@ -240,7 +224,6 @@ void startServer(int listenPort=18018) {
 				else if(command=="luxSurfaceIntegrator") processCommand(Context::luxSurfaceIntegrator,stream);
 				else if(command=="luxVolumeIntegrator") processCommand(Context::luxVolumeIntegrator,stream);
 				else if(command=="luxCamera") processCommand(Context::luxCamera,stream);
-				//else if(command=="luxSearchPath") processCommand(luxSearchPath,stream);
 				else if(command=="luxWorldBegin") Context::luxWorldBegin();
 				else if(command=="luxAttributeBegin") Context::luxAttributeBegin();
 				else if(command=="luxAttributeEnd") Context::luxAttributeEnd();
@@ -255,13 +238,19 @@ void startServer(int listenPort=18018) {
 					stream>>texname;
 					boost::archive::text_iarchive ia(stream);
 					ia>>params;
-					std::cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<std::endl;
+					//std::cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<std::endl;
 
 					std::string file="";
 					file=params.FindOneString(std::string("filename"),file);
 					if(file.size())
 					{
-						std::cout<<"receiving file..."<<file<<std::endl;
+						//std::cout<<"receiving file..."<<file<<std::endl;
+						{
+							std::stringstream ss;
+							ss << "Receiving file : '" <<file<< "'";
+							luxError(LUX_NOERROR, LUX_INFO, ss.str ().c_str());
+						}
+						
 						bool first=true;
 						std::string s;
 						std::ofstream out(file.c_str(),std::ios::out|std::ios::binary);
@@ -311,10 +300,13 @@ void startServer(int listenPort=18018) {
 				}
 				else if(command=="luxGetFilm")
 				{
-					std::cout<<"transmitting film...."<<std::endl;
+					//std::cout<<"transmitting film...."<<std::endl;
+					luxError(LUX_NOERROR, LUX_INFO, "Transmitting film.");
+
 					Context::getActive()->getFilm(stream);
 					stream.close();
-					std::cout<<"...ok"<<std::endl;
+					//std::cout<<"...ok"<<std::endl;
+					luxError(LUX_NOERROR, LUX_INFO, "Finished film transmission.");
 				}
 				else
 				{
@@ -323,7 +315,7 @@ void startServer(int listenPort=18018) {
 					luxError(LUX_BUG,LUX_SEVERE,ss.str().c_str());
 				}
 
-				std::cout<<"command processed"<<std::endl;
+				//std::cout<<"command processed"<<std::endl;
 				//END OF COMMAND PROCESSING
 			}
 		}
@@ -332,7 +324,6 @@ void startServer(int listenPort=18018) {
 	catch (std::exception& e)
 	{
 		luxError(LUX_BUG,LUX_ERROR,e.what());
-		//std::cerr << e.what() << std::endl;
 	}
 }
 
@@ -349,45 +340,6 @@ int main(int ac, char *av[]) {
 	 printf("You are welcome to redistribute it under certain conditions,\nsee COPYING.TXT for details.\n");
 	 fflush(stdout);
 	 */
-
-	/*
-	 ParamSet p;
-	 bool j=true;
-	 int i=45;
-	 std::string s("yeyooolooo");
-
-	 //Point p(3,4.121212545454548787878787,5);
-
-	 //std::cout<<p.y<<std::endl;
-
-	 p.AddBool("monbooleen", &j);
-	 p.AddInt("monint", &i);
-
-	 //std::cout<<p.ToString()<<std::endl;
-
-	 const ParamSetItem<std::string> pi("mystring", &s, 1);
-
-	 std::ofstream ofs("filename");
-	 //save to archive
-	 {
-	 const ParamSet cp(p);
-	 ofs.setf(std::ios::scientific, std::ios::floatfield);
-	 ofs.precision(16);
-	 boost::archive::text_oarchive oa(ofs);
-	 oa<<cp;
-	 }
-
-	 Point q;
-
-	 //read from archive
-
-	 //ParamSetItem<std::string> rpsi;
-	 ParamSet rpsi;
-	 std::ifstream ifs("filename", std::ios::binary);
-	 boost::archive::text_iarchive ia(ifs);
-	 ia>>rpsi;
-	 //std::cout.precision(24);
-	 std::cout<<"read "<<rpsi.ToString()<<std::endl;*/
 
 	try
 	{
@@ -475,16 +427,18 @@ int main(int ac, char *av[]) {
 		if (vm.count("useserver"))
 		{
 			std::vector<std::string> names=vm["useserver"].as<std::vector<std::string> >();
-			//std::cout<<"connecting to "<<name<<std::endl;
 
 			for(std::vector<std::string>::iterator i=names.begin();i<names.end();i++)
 			{
-				std::cout<<"connecting to "<<(*i)<<std::endl;
+				//std::cout<<"connecting to "<<(*i)<<std::endl;
+				std::stringstream ss;
+				ss<<"Connecting to server '"<<(*i)<<"'";
+				luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+				
 				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull		
 				luxAddServer((*i).c_str());
 			}
 			
-
 			useServer=true;
 		}
 
@@ -536,7 +490,6 @@ int main(int ac, char *av[]) {
 				}
 
 				//launch info printing thread
-				//boost::thread *j=new
 				boost::thread j(&infoThread);
 				if(useServer) boost::thread k(&networkFilmUpdateThread);
 

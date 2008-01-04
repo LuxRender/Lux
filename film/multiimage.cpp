@@ -479,7 +479,7 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 void MultiImageFilm::clean() {
 	boost::mutex::scoped_lock lock(addSampleMutex);
-	std::cout<<"cleaning film"<<::std::endl;
+	//std::cout<<"cleaning film"<<::std::endl;
        for (int y = 0; y < yPixelCount; ++y) {
           for (int x = 0; x < xPixelCount; ++x) {
              (*pixels)(x, y).L = 0.;
@@ -491,7 +491,7 @@ void MultiImageFilm::clean() {
 
 void MultiImageFilm::merge(MultiImageFilm &f) {
 	boost::mutex::scoped_lock lock(addSampleMutex);
-	std::cout<<"merging film"<<::std::endl;
+	//std::cout<<"merging film"<<::std::endl;
        for (int y = 0; y < yPixelCount; ++y) {
           for (int x = 0; x < xPixelCount; ++x) {
              (*pixels)(x, y).L += (*f.pixels)(x, y).L;

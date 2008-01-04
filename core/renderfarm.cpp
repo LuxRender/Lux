@@ -58,9 +58,15 @@ void RenderFarm::updateFilm(MultiImageFilm *film) {
 			!= serverList.end(); ++server) {
 		try
 		{
-			std::cout << "getting film from "<<*server<<std::endl;
+			//std::cout << "getting film from "<<*server<<std::endl;
+			{
+				std::stringstream ss;
+				ss<<"Getting film from from '"<<(*server)<<"'";
+				luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+			}
+			
 			tcp::iostream stream((*server).c_str(), "18018");
-			std::cout << "connected"<<std::endl;
+			//std::cout << "connected"<<std::endl;
 			
 			stream<<"luxGetFilm"<<std::endl;
 			
@@ -77,9 +83,16 @@ void RenderFarm::updateFilm(MultiImageFilm *film) {
 			
 			//std::cout<<"before ia>>m"<<std::endl;
 			ia>>m;
-			std::cout<<"ok, i got the film! merging...";
+			
+			//std::cout<<"ok, i got the film! merging...";
+			{
+				std::stringstream ss;
+				ss<<"Recieved film from '"<<(*server)<<"'";
+				luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+			}
+			
 			film->merge(m);
-			std::cout<<"merged!"<<std::endl;
+			//std::cout<<"merged!"<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
 	}
