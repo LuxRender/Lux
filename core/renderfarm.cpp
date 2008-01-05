@@ -101,26 +101,26 @@ void RenderFarm::updateFilm(MultiImageFilm *film) {
 void RenderFarm::send(const std::string &command) {
 	//std::cout<<"sending "<<command<<std::endl;
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
-		try
-		{
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
+	//	try
+	//	{
 			//std::cout<<(*server)<<std::endl;
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl;
-		}
-		catch (std::exception& e)
-		{
-			luxError(LUX_SYSTEM,LUX_ERROR,e.what());
-		}
-	}
+	//	}
+	//	catch (std::exception& e)
+	//	{
+	//		luxError(LUX_SYSTEM,LUX_ERROR,e.what());
+	//	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, const std::string &name,
 		const ParamSet &params) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
@@ -129,67 +129,67 @@ void RenderFarm::send(const std::string &command, const std::string &name,
 			oa<<params;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, const std::string &name) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl<<name<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, float x, float y, float z) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl<<x<<' '<<y<<' '<<z<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, float a, float x, float y,
 		float z) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl<<a<<' '<<x<<' '<<y<<' '<<z<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, float ex, float ey, float ez,
 		float lx, float ly, float lz, float ux, float uy, float uz) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
 			netBuffer<<command<<std::endl<<ex<<' '<<ey<<' '<<ez<<' '<<lx<<' '<<ly<<' '<<lz<<' '<<ux<<' '<<uy<<' '<<uz<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, float tr[16]) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
@@ -199,14 +199,14 @@ void RenderFarm::send(const std::string &command, float tr[16]) {
 			netBuffer<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
 
 void RenderFarm::send(const std::string &command, const string &name,
 		const string &type, const string &texname, const ParamSet &params) {
 	//Send command to the render servers
-	for (vector<string>::iterator server = serverList.begin(); server
-			!= serverList.end(); ++server) {
+	//for (vector<string>::iterator server = serverList.begin(); server
+	//		!= serverList.end(); ++server) {
 		try
 		{
 			//tcp::iostream stream((*server).c_str(), "18018");
@@ -228,5 +228,5 @@ void RenderFarm::send(const std::string &command, const string &name,
 
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}
+	//}
 }
