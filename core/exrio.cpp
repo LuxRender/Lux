@@ -192,6 +192,7 @@ using namespace Imath;
     if(extension=="tiff") return ReadCimgImage(name, width, height);
     if(extension=="jpg") return ReadCimgImage(name, width, height);
     if(extension=="jpeg") return ReadCimgImage(name, width, height);
+    if(extension=="tga") return ReadCimgImage(name, width, height);
 
 
 	std::stringstream ss;
