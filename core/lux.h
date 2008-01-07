@@ -88,6 +88,12 @@ using std::sort;
 #endif
 #include <assert.h>
 
+namespace lux
+{
+//string hashing function
+unsigned int DJBHash(const std::string& str);
+}
+
 #include "randomgen.h"
 
 // Platform-specific definitions
@@ -811,6 +817,8 @@ inline float ExponentialAverage(float avg,
                               float val, float alpha) {
 	return (1.f - alpha) * val + alpha * avg;
 }
+
+
 
 
 #endif // LUX_LUX_H

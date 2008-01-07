@@ -163,6 +163,29 @@ private:
 			ar & strings;
 			ar & textures;
 		}
+	
+/*	enum StringValue
+	{
+	evNotDefined,
+	evStringValue1,
+	evStringValue2,
+	evStringValue3,
+	evEnd,
+	evNumVals // list terminator
+	};
+
+	//typedef std::map<std::string, StringValue> StringMap;
+	//typedef StringMap::value_type StringMapValue;
+
+	static const std::map<std::string, StringValue>::value_type stringMapEntries[] =
+	{
+		std::map<std::string, StringValue>::value_type( "First Value", evStringValue1 ),
+		std::map<std::string, StringValue>::value_type( "Second Value", evStringValue2 ),
+		std::map<std::string, StringValue>::value_type( "Third Value", evStringValue3 ),
+		std::map<std::string, StringValue>::value_type( "end", evEnd ),
+	};
+
+	static const std::map<std::string, StringValue> s_mapStringValues( &stringMapEntries[evStringValue1], &stringMapEntries[evNumVals] ); */
 };
 template <class T> struct ParamSetItem {
 	// ParamSetItem Public Methods

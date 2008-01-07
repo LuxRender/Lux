@@ -37,6 +37,7 @@ ParamSet::ParamSet(const ParamSet &p2) {
  */
 ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[])
 {
+	
 	std::string p(pluginName);
 	
 	for(int i=0;i<n;i++)

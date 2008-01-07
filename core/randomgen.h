@@ -53,9 +53,10 @@ inline unsigned int seed()
 	//if two copies run on the same machine, dummy adress will make the seed unique
 	seed=seed^(unsigned int)((unsigned long)(&dummy)); 
 	//also use the hostname to make the seed unique
-	std::string s=asio::ip::host_name();
+	/*std::string s=asio::ip::host_name();
 	for(unsigned int i=0;i<s.size();i++)
-		seed=seed^(((unsigned int)s.at(i))<<((i%4)*8));
+		seed=seed^(((unsigned int)s.at(i))<<((i%4)*8));*/
+	seed=seed^DJBHash(asio::ip::host_name());
 	//std::cout<<"using seed :"<<seed<<std::endl;
 	return seed;
 }

@@ -525,4 +525,20 @@ namespace random
 #endif
 
 
+namespace lux
+{
+/* string hashing function
+ * An algorithm produced by Professor Daniel J. Bernstein and shown first to the world on the usenet newsgroup comp.lang.c. It is one of the most efficient hash functions ever published.
+ */
+unsigned int DJBHash(const std::string& str)
+{
+   unsigned int hash = 5381;
 
+   for(std::size_t i = 0; i < str.length(); i++)
+   {
+      hash = ((hash << 5) + hash) + str[i];
+   }
+
+   return hash;
+}
+}
