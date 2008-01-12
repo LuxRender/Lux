@@ -26,7 +26,7 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Glass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -35,14 +35,14 @@ BSDF *Glass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, con
 		dgs = dgShading;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn, ior);
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
 	Spectrum R = Kr->Evaluate(dgs).Clamp();
 	Spectrum T = Kt->Evaluate(dgs).Clamp();
 	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R,
-			BSDF_ALLOC(arena, FresnelDielectric)(1., ior)));
+		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
+			BSDF_ALLOC( FresnelDielectric)(1., ior)));
 	if (!T.Black())
-		bsdf->Add(BSDF_ALLOC(arena, SpecularTransmission)(T, 1., ior));
+		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior));
 	return bsdf;
 }
 Material* Glass::CreateMaterial(const Transform &xform,

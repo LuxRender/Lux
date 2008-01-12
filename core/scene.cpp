@@ -159,6 +159,7 @@ void Scene::SignalThreads(int signal)
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread)
 {
+	BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
 	myThread->stat_Samples = 0.;
 	
 	// allocate sample pos
@@ -206,9 +207,9 @@ void RenderThread::render(RenderThread *myThread)
 			// Evaluate radiance along camera ray
 			float alpha;
 			Spectrum Ls = 0.f;
-			Spectrum Lo = myThread->surfaceIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
+			Spectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
-			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
+			Spectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
 
 			if( Ls == Spectrum(0.f) )
@@ -227,7 +228,7 @@ void RenderThread::render(RenderThread *myThread)
 				}
 
 			// Free BSDF memory from computing image sample value
-			myThread->arena->FreeAll();
+			BSDF::FreeAll();
 		}
 
 		// update samples statistics

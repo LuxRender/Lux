@@ -48,7 +48,7 @@ typedef enum {
 class DebugIntegrator : public SurfaceIntegrator {
 public:
 	// DebugIntegrator Public Methods
-	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
+	Spectrum Li(const Scene *scene, const RayDifferential &ray,
 			const Sample *sample, float *alpha) const;
 	DebugIntegrator( DebugVariable v[3] )
 	{

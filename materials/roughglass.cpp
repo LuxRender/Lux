@@ -26,7 +26,7 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -35,29 +35,29 @@ BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom
 		dgs = dgShading;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn, ior);
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
 	Spectrum R = Kr->Evaluate(dgs).Clamp();
 	Spectrum T = Kt->Evaluate(dgs).Clamp();
 	float urough = uroughness->Evaluate(dgs);
 	float vrough = vroughness->Evaluate(dgs);
 	if (!R.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(ior, 1.);
+		Fresnel *fresnel = BSDF_ALLOC( FresnelDielectric)(ior, 1.);
 		if(urough == vrough)
-			bsdf->Add(BSDF_ALLOC(arena, Microfacet)(R *.5, fresnel,
-				BSDF_ALLOC(arena, Blinn)(1.f/urough)));
+			bsdf->Add(BSDF_ALLOC( Microfacet)(R *.5, fresnel,
+				BSDF_ALLOC( Blinn)(1.f/urough)));
 		else
-			bsdf->Add(BSDF_ALLOC(arena, Microfacet)(R *.5, fresnel,
-				BSDF_ALLOC(arena, Anisotropic)(1.f/urough, 1.f/vrough)));
+			bsdf->Add(BSDF_ALLOC( Microfacet)(R *.5, fresnel,
+				BSDF_ALLOC( Anisotropic)(1.f/urough, 1.f/vrough)));
 	}
 	if (!T.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(ior, 1.);
+		Fresnel *fresnel = BSDF_ALLOC( FresnelDielectric)(ior, 1.);
 		// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 		if(urough == vrough)
-			bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(T *.5, fresnel,
-				BSDF_ALLOC(arena, Blinn)(1.f/urough))));
+			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC( Microfacet)(T *.5, fresnel,
+				BSDF_ALLOC( Blinn)(1.f/urough))));
 		else
-			bsdf->Add(BSDF_ALLOC(arena, BRDFToBTDF)(BSDF_ALLOC(arena, Microfacet)(T *.5, fresnel,
-				BSDF_ALLOC(arena, Anisotropic)(1.f/urough, 1.f/vrough))));
+			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC( Microfacet)(T *.5, fresnel,
+				BSDF_ALLOC( Anisotropic)(1.f/urough, 1.f/vrough))));
 	}
 	return bsdf;
 }

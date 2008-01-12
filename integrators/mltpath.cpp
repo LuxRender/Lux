@@ -48,7 +48,7 @@ void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	/* Other offsets handled by mlt getNext */
 }
 
-Spectrum MLTPathIntegrator::Li(MemoryArena &arena, const Scene *scene,
+Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const {
 	RayDifferential ray(r);
@@ -79,7 +79,7 @@ Spectrum MLTPathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		}
 
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(arena, ray);
+		BSDF *bsdf = isect.GetBSDF(ray);
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;

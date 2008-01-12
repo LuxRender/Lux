@@ -84,7 +84,7 @@ const AreaLight *Aggregate::GetAreaLight() const {
 	luxError(LUX_BUG,LUX_SEVERE,"Aggregate::GetAreaLight() method called; should have gone to GeometricPrimitive");
 	return NULL;
 }
-BSDF *Aggregate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &,
+BSDF *Aggregate::GetBSDF(const DifferentialGeometry &,
 		const Transform &) const {
 	luxError(LUX_BUG,LUX_SEVERE,"Aggregate::GetBSDF() method called; should have gone to GeometricPrimitive");
 	return NULL;
@@ -153,20 +153,20 @@ const AreaLight *GeometricPrimitive::GetAreaLight() const {
 	return areaLight;
 }
 BSDF *
-GeometricPrimitive::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
+GeometricPrimitive::GetBSDF(const DifferentialGeometry &dg,
 		const Transform &WorldToObject) const {
 	DifferentialGeometry dgs;
 	shape->GetShadingGeometry(WorldToObject.GetInverse(),
 		dg, &dgs);
-	return material->GetBSDF(arena, dg, dgs);
+	return material->GetBSDF(dg, dgs);
 }
 // Intersection Method Definitions
-BSDF *Intersection::GetBSDF(MemoryArena &arena, const RayDifferential &ray)
+BSDF *Intersection::GetBSDF(const RayDifferential &ray)
 		const {
 	// radiance - disabled for threading // static StatsCounter pointsShaded("Shading", "Number of points shaded"); // NOBOOK
 	// radiance - disabled for threading // ++pointsShaded; // NOBOOK
 	dg.ComputeDifferentials(ray);
-	return primitive->GetBSDF(arena, dg, WorldToObject);
+	return primitive->GetBSDF(dg, WorldToObject);
 }
 Spectrum Intersection::Le(const Vector &w) const {
 	const AreaLight *area = primitive->GetAreaLight();

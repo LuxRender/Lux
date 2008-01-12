@@ -26,7 +26,7 @@
 using namespace lux;
 
 // Primer Method Definitions
-BSDF *Primer::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Primer::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare primer coefficients
 	static float diffuse[3] = {  0.118230f,  0.121218f,  0.133209f};
 	static float xy0[3] =     { -0.399286f, -1.033473f, -1.058104f};
@@ -47,8 +47,8 @@ BSDF *Primer::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, co
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
-	bsdf->Add(BSDF_ALLOC(arena, Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+	bsdf->Add(BSDF_ALLOC( Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }

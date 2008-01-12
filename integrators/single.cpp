@@ -45,7 +45,7 @@ Spectrum SingleScattering::Transmittance(const Scene *scene,
 	Spectrum tau = scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
 }
-Spectrum SingleScattering::Li(MemoryArena &arena, const Scene *scene,
+Spectrum SingleScattering::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;

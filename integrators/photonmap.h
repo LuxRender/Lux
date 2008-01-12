@@ -49,7 +49,7 @@ public:
 		float maxdist, bool finalGather, int gatherSamples,
 		bool directWithPhotons);
 	~PhotonIntegrator();
-	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
+	Spectrum Li(const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const Scene *);

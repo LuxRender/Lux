@@ -26,7 +26,7 @@
 using namespace lux;
 
 // Plastic Method Definitions
-BSDF *Plastic::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
+BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
@@ -34,15 +34,15 @@ BSDF *Plastic::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 	Spectrum kd = Kd->Evaluate(dgs).Clamp();
-	BxDF *diff = BSDF_ALLOC(arena, Lambertian)(kd);
+	BxDF *diff = BSDF_ALLOC( Lambertian)(kd);
 	Fresnel *fresnel =
-		BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+		BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
 	Spectrum ks = Ks->Evaluate(dgs).Clamp();
 	float rough = roughness->Evaluate(dgs);
-	BxDF *spec = BSDF_ALLOC(arena, Microfacet)(ks, fresnel,
-		BSDF_ALLOC(arena, Blinn)(1.f / rough));
+	BxDF *spec = BSDF_ALLOC( Microfacet)(ks, fresnel,
+		BSDF_ALLOC( Blinn)(1.f / rough));
 	bsdf->Add(diff);
 	bsdf->Add(spec);
 	return bsdf;

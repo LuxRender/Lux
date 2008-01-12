@@ -31,7 +31,7 @@ namespace lux
 class Clay : public Material {
 public:
 	Clay(boost::shared_ptr<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const; // NOBOOK
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const; // NOBOOK
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

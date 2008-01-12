@@ -43,7 +43,7 @@ DirectLighting::DirectLighting(LightStrategy st, int md) {
 	avgY = avgYsample = cdf = NULL;
 	overallAvgY = 0.;
 }
-Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
+Spectrum DirectLighting::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	Intersection isect;
@@ -51,7 +51,7 @@ Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
 	if (scene->Intersect(ray, &isect)) {
 		if (alpha) *alpha = 1.;
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(arena, ray);
+		BSDF *bsdf = isect.GetBSDF(ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -105,7 +105,7 @@ Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
 				          dwody + 2 * Vector(Dot(wo, n) * dndy +
 						  dDNdy * n);
 				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
-				L += Li(arena, scene, rd, sample, alpha) * f * AbsDot(wi, n);
+				L += Li(scene, rd, sample, alpha) * f * AbsDot(wi, n);
 			}
 			f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
@@ -134,7 +134,7 @@ Spectrum DirectLighting::Li(MemoryArena &arena, const Scene *scene,
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
 				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
-				L += Li(arena, scene, rd, sample, alpha) * f * AbsDot(wi, n);
+				L += Li(scene, rd, sample, alpha) * f * AbsDot(wi, n);
 			}
 		}
 		--rayDepth;

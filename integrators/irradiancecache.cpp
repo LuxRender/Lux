@@ -56,14 +56,14 @@ void IrradianceCache::RequestSamples(Sample *sample,
 	}
 	lightNumOffset = -1;
 }
-Spectrum IrradianceCache::Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
+Spectrum IrradianceCache::Li(const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
 	Intersection isect;
 	Spectrum L(0.);
 	if (scene->Intersect(ray, &isect)) {
 		if (alpha) *alpha = 1.;
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(arena, ray);
+		BSDF *bsdf = isect.GetBSDF(ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -192,7 +192,7 @@ Spectrum IrradianceCache::IndirectLo(const Point &p,
 					L += pathThroughput * isect.Le(-ray.d);
 				// Evaluate BSDF at hit point
 				MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
-				BSDF *bsdf = isect.GetBSDF(arena, ray);
+				BSDF *bsdf = isect.GetBSDF(ray);
 				// Sample illumination from lights to find path contribution
 				const Point &p = bsdf->dgShading.p;
 				const Normal &n = bsdf->dgShading.nn;

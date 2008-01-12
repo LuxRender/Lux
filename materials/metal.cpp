@@ -32,7 +32,7 @@ Metal::Metal(boost::shared_ptr<Texture<Spectrum> > n, boost::shared_ptr<Texture<
   bumpMap = bump;
 }
 
-BSDF *Metal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Metal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
   // Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
   DifferentialGeometry dgs;
   if (bumpMap)
@@ -40,15 +40,15 @@ BSDF *Metal::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, con
   else
     dgs = dgShading;
 
-  BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+  BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
   Spectrum n = N->Evaluate(dgs);
   Spectrum k = K->Evaluate(dgs);
   float rough = roughness->Evaluate(dgs);
 
-  MicrofacetDistribution *md = BSDF_ALLOC(arena, Blinn)(1.f / rough);
+  MicrofacetDistribution *md = BSDF_ALLOC( Blinn)(1.f / rough);
 
-  Fresnel *fresnel = BSDF_ALLOC(arena, FresnelConductor)(n, k);
-  bsdf->Add(BSDF_ALLOC(arena, Microfacet)(1., fresnel, md));
+  Fresnel *fresnel = BSDF_ALLOC( FresnelConductor)(n, k);
+  bsdf->Add(BSDF_ALLOC( Microfacet)(1., fresnel, md));
 
   return bsdf;
 }

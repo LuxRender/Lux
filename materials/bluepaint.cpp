@@ -26,7 +26,7 @@
 using namespace lux;
 
 // BluePaint Method Definitions
-BSDF *BluePaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *BluePaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Declare bluepaint coefficients
 	static float diffuse[3] = {  0.3094f,    0.39667f,   0.70837f  };
 	static float xy0[3] =     {  0.870567f,  0.857255f,  0.670982f };
@@ -47,8 +47,8 @@ BSDF *BluePaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
-	bsdf->Add(BSDF_ALLOC(arena, Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+	bsdf->Add(BSDF_ALLOC( Lafortune)(Spectrum(diffuse), 3, xy, xy, z, e,
 		BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)));
 	return bsdf;
 }

@@ -49,7 +49,7 @@ Spectrum
 		scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
 }
-Spectrum EmissionIntegrator::Li(MemoryArena &arena, const Scene *scene,
+Spectrum EmissionIntegrator::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;

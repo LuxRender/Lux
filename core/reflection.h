@@ -27,6 +27,9 @@
 #include "geometry.h"
 #include "shape.h"
 
+
+#include <boost/thread/tss.hpp>
+
 namespace lux
 {
 
@@ -99,11 +102,14 @@ public:
 	Spectrum rho(BxDFType flags = BSDF_ALL) const;
 	Spectrum rho(const Vector &wo,
 	             BxDFType flags = BSDF_ALL) const;
-	static void *Alloc(MemoryArena &u_arena, u_int sz) { return u_arena.Alloc(sz); }		// TODO remove original memory arena
-	static void FreeAll(MemoryArena &u_arena) { u_arena.FreeAll(); }
+	static void *Alloc( u_int sz) { return arena.get()->Alloc(sz); }		// TODO remove original memory arena
+	static void FreeAll() { arena->FreeAll(); }
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
+	
+	friend class RenderThread;
+	
 private:
 	// BSDF Private Methods
 	~BSDF() { }
@@ -115,8 +121,10 @@ private:
 	#define MAX_BxDFS 8
 	BxDF * bxdfs[MAX_BxDFS];
 	//static MemoryArena arena;
+	static boost::thread_specific_ptr<MemoryArena> arena; //TODO make private and friend from renderthread - jromang
+	
 };
-#define BSDF_ALLOC(A, T)  new (BSDF::Alloc(A, sizeof(T))) T
+#define BSDF_ALLOC(T)  new (BSDF::Alloc(sizeof(T))) T
 // BxDF Declarations
 class  BxDF {
 public:

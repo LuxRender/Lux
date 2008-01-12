@@ -707,3 +707,5 @@ Spectrum BSDF::rho(const Vector &wo, BxDFType flags) const {
 	return ret;
 }
 //MemoryArena BSDF::arena;
+boost::thread_specific_ptr<MemoryArena> BSDF::arena;
+

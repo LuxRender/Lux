@@ -26,18 +26,18 @@
 using namespace lux;
 
 // Mirror Method Definitions
-BSDF *Mirror::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 	Spectrum R = Kr->Evaluate(dgs).Clamp();
 	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R,
-			BSDF_ALLOC(arena, FresnelNoOp)()));
+		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
+			BSDF_ALLOC( FresnelNoOp)()));
 	return bsdf;
 }
 Material* Mirror::CreateMaterial(const Transform &xform,

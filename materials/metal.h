@@ -35,7 +35,7 @@ public:
   Metal(boost::shared_ptr<Texture<Spectrum> > n, boost::shared_ptr<Texture<Spectrum> > k,
     boost::shared_ptr<Texture<float> > rough, boost::shared_ptr<Texture<float> > bump);
 
-  BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+  BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
 
   static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 

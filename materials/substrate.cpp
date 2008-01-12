@@ -26,14 +26,14 @@
 using namespace lux;
 
 // Substrate Method Definitions
-BSDF *Substrate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 	Spectrum d = Kd->Evaluate(dgs).Clamp();
 	Spectrum s = Ks->Evaluate(dgs).Clamp();
 	float u = nu->Evaluate(dgs);
@@ -41,9 +41,9 @@ BSDF *Substrate::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 
 	// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 	if(u == v)
-		bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(d, s, BSDF_ALLOC(arena, Blinn)(1.f/u)));
+		bsdf->Add(BSDF_ALLOC( FresnelBlend)(d, s, BSDF_ALLOC( Blinn)(1.f/u)));
 	else
-		bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(d, s, BSDF_ALLOC(arena, Anisotropic)(1.f/u, 1.f/v)));
+		bsdf->Add(BSDF_ALLOC( FresnelBlend)(d, s, BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v)));
 
 	return bsdf;
 }

@@ -26,7 +26,7 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *Matte::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
+BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
@@ -34,14 +34,14 @@ BSDF *Matte::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
 	// Evaluate textures for _Matte_ material and allocate BRDF
 	Spectrum r = Kd->Evaluate(dgs).Clamp();
 	float sig = Clamp(sigma->Evaluate(dgs), 0.f, 90.f);
 	if (sig == 0.)
-		bsdf->Add(BSDF_ALLOC(arena, Lambertian)(r));
+		bsdf->Add(BSDF_ALLOC(Lambertian)(r));
 	else
-		bsdf->Add(BSDF_ALLOC(arena, OrenNayar)(r, sig));
+		bsdf->Add(BSDF_ALLOC(OrenNayar)(r, sig));
 	return bsdf;
 	return bsdf;
 }

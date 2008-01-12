@@ -32,7 +32,7 @@ namespace lux
 class WhittedIntegrator : public SurfaceIntegrator {
 public:
 	// WhittedIntegrator Public Methods
-	Spectrum Li(MemoryArena &arena, const Scene *scene, const RayDifferential &ray,
+	Spectrum Li(const Scene *scene, const RayDifferential &ray,
 			const Sample *sample, float *alpha) const;
 	WhittedIntegrator(int md) {
 		maxDepth = md;

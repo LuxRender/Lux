@@ -31,7 +31,7 @@ namespace lux
 class Primer : public Material {
 public:
 	Primer(boost::shared_ptr<Texture<float> > bump) : bumpMap(bump) { }
-	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
 	boost::shared_ptr<Texture<float> > bumpMap;
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 };

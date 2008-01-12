@@ -34,7 +34,7 @@ DebugIntegrator* DebugIntegrator::clone() const
  {
    return new DebugIntegrator(*this);
  }
-Spectrum DebugIntegrator::Li(MemoryArena &arena, const Scene *scene,
+Spectrum DebugIntegrator::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	Intersection isect;
@@ -46,7 +46,7 @@ Spectrum DebugIntegrator::Li(MemoryArena &arena, const Scene *scene,
 
 	hitSomething = scene->Intersect(ray, &isect);
 	if (hitSomething) {
-		bsdf = isect.GetBSDF(arena, ray);
+		bsdf = isect.GetBSDF( ray);
 	}
 
 	float color[3] = {0,0,0};

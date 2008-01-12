@@ -39,8 +39,7 @@ class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
-	virtual Spectrum Li(MemoryArena &arena,
-						const Scene *scene,
+	virtual Spectrum Li(const Scene *scene,
 					    const RayDifferential &ray,
 					    const Sample *sample,
 					    float *alpha) const = 0;

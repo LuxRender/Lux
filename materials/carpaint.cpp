@@ -47,7 +47,7 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<Spectrum> > kd,
 }
 
 // CarPaint Method Definitions
-BSDF *CarPaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 
   // Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
   DifferentialGeometry dgs;
@@ -57,7 +57,7 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, 
   else
     dgs = dgShading;
 
-  BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
+  BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 
   Spectrum kd = Kd->Evaluate(dgs).Clamp();
   Spectrum ks1 = Ks1->Evaluate(dgs).Clamp();
@@ -72,45 +72,45 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom, 
   float m2 = M2->Evaluate(dgs);
   float m3 = M3->Evaluate(dgs);
 
-  MicrofacetDistribution *md1 = BSDF_ALLOC(arena, Blinn)((2.0 * M_PI / (m1 * m1)) - 1.0);
-  MicrofacetDistribution *md2 = BSDF_ALLOC(arena, Blinn)((2.0 * M_PI / (m2 * m2)) - 1.0);
-  MicrofacetDistribution *md3 = BSDF_ALLOC(arena, Blinn)((2.0 * M_PI / (m3 * m3)) - 1.0);
+  MicrofacetDistribution *md1 = BSDF_ALLOC( Blinn)((2.0 * M_PI / (m1 * m1)) - 1.0);
+  MicrofacetDistribution *md2 = BSDF_ALLOC( Blinn)((2.0 * M_PI / (m2 * m2)) - 1.0);
+  MicrofacetDistribution *md3 = BSDF_ALLOC( Blinn)((2.0 * M_PI / (m3 * m3)) - 1.0);
 
-  /*MicrofacetDistribution *md1 = BSDF_ALLOC(arena, WardIsotropic)(m1);
-  MicrofacetDistribution *md2 = BSDF_ALLOC(arena, WardIsotropic)(m2);
-  MicrofacetDistribution *md3 = BSDF_ALLOC(arena, WardIsotropic)(m3);*/
+  /*MicrofacetDistribution *md1 = BSDF_ALLOC( WardIsotropic)(m1);
+  MicrofacetDistribution *md2 = BSDF_ALLOC( WardIsotropic)(m2);
+  MicrofacetDistribution *md3 = BSDF_ALLOC( WardIsotropic)(m3);*/
 
   // The Slick approximation is much faster and visually almost the same
-  Fresnel *fr1 = BSDF_ALLOC(arena, FresnelSlick)(r1);
-  Fresnel *fr2 = BSDF_ALLOC(arena, FresnelSlick)(r2);
-  Fresnel *fr3 = BSDF_ALLOC(arena, FresnelSlick)(r3);
+  Fresnel *fr1 = BSDF_ALLOC( FresnelSlick)(r1);
+  Fresnel *fr2 = BSDF_ALLOC( FresnelSlick)(r2);
+  Fresnel *fr3 = BSDF_ALLOC( FresnelSlick)(r3);
 
   // The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 
-  Spectrum *lobe_ks = (Spectrum *)arena.Alloc(3 * sizeof(Spectrum));
+  Spectrum *lobe_ks = (Spectrum *)BSDF::Alloc(3 * sizeof(Spectrum));
   lobe_ks[0] = ks1;
   lobe_ks[1] = ks2;
   lobe_ks[2] = ks3;
 
-  MicrofacetDistribution **lobe_dist = (MicrofacetDistribution **)arena.Alloc(3 * sizeof(MicrofacetDistribution *));
+  MicrofacetDistribution **lobe_dist = (MicrofacetDistribution **)BSDF::Alloc(3 * sizeof(MicrofacetDistribution *));
   lobe_dist[0] = md1;
   lobe_dist[1] = md2;
   lobe_dist[2] = md3;
 
-  Fresnel **lobe_fres = (Fresnel **)arena.Alloc(3 * sizeof(Fresnel *));
+  Fresnel **lobe_fres = (Fresnel **)BSDF::Alloc(3 * sizeof(Fresnel *));
   lobe_fres[0] = fr1;
   lobe_fres[1] = fr2;
   lobe_fres[2] = fr3;
 
   // Broad gloss layers
   for (int i = 0; i < 2; i++) {
-    bsdf->Add(BSDF_ALLOC(arena, Microfacet)(lobe_ks[i], lobe_fres[i], lobe_dist[i]));
+    bsdf->Add(BSDF_ALLOC( Microfacet)(lobe_ks[i], lobe_fres[i], lobe_dist[i]));
   }
 
   // Clear coat and lambertian base
-  bsdf->Add(BSDF_ALLOC(arena, FresnelBlend)(kd, lobe_ks[2], lobe_dist[2]));
+  bsdf->Add(BSDF_ALLOC( FresnelBlend)(kd, lobe_ks[2], lobe_dist[2]));
 
-  //bsdf->Add(BSDF_ALLOC(arena, CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
+  //bsdf->Add(BSDF_ALLOC( CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
 
   return bsdf;
 }

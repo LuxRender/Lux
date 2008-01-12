@@ -29,6 +29,7 @@
 #include "timer.h"
 #include "camera.h"
 #include "film.h"
+#include "reflection.h"
 
 #include <iostream>
 #include <vector>
@@ -36,6 +37,7 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread/tss.hpp>
 //#include <boost/thread/mutex.hpp>
 
 namespace lux
@@ -56,14 +58,16 @@ class RenderThread : public boost::noncopyable
 			if(integrationSampler)
 				integrationSampler->SetFilmRes(_Cam->film->xResolution, _Cam->film->yResolution);
 
-			arena=new MemoryArena();
+			//std::cout<<"Initializing the thread's memoryarena"<<std::endl;
+			//BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
+			//std::cout<<
 			//std::cout<<"yepeee, creating thread"<<std::endl;
 		}
 	
 		~RenderThread()
 		{
 			delete sample;
-			delete arena;	
+			//delete arena;	
 			delete thread;
 		}
 		
@@ -78,10 +82,19 @@ class RenderThread : public boost::noncopyable
 		Sampler *sampler;
 		Camera *camera;
 		Scene *scene;
-		MemoryArena* arena;
+		//MemoryArena* arena;
 		boost::thread *thread; //keep pointer the delete the thread object
 		
 		static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
+		
+		/*
+		static MemoryArena& getArena()
+		{
+			return *(arena.get());
+		}*/
+		
+	//private:
+		//static boost::thread_specific_ptr<MemoryArena> arena;
 };
 
 // Scene Declarations

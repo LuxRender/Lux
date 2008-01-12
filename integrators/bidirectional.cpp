@@ -46,7 +46,7 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	lightPosOffset = sample->Add2D(1);
 	lightDirOffset = sample->Add2D(1);
 }
-Spectrum BidirIntegrator::Li(MemoryArena &arena, const Scene *scene,
+Spectrum BidirIntegrator::Li(const Scene *scene,
 		const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
 	Spectrum L(0.);
@@ -111,7 +111,7 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 			break;
 		BidirVertex &v = vertices[nVerts];
 		MemoryArena arena;											// DUMMY ARENA TODO FIX THESE
-		v.bsdf = isect.GetBSDF(arena, ray); // do before Ns is set!
+		v.bsdf = isect.GetBSDF( ray); // do before Ns is set!
 		v.p = isect.dg.p;
 		v.ng = isect.dg.nn;
 		v.ns = v.bsdf->dgShading.nn;

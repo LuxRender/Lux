@@ -53,7 +53,7 @@ IntegrationSampler* PathIntegrator::HasIntegrationSampler(IntegrationSampler *is
     return isa;
 }
 
-Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
+Spectrum PathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const {
 	// Declare common path integration variables
@@ -87,7 +87,7 @@ Spectrum PathIntegrator::Li(MemoryArena &arena, const Scene *scene,
 		if (pathLength == 0 || specularBounce)
 			L += pathThroughput * isect.Le(-ray.d);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(arena, ray);
+		BSDF *bsdf = isect.GetBSDF(ray);
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

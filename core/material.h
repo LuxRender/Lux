@@ -36,7 +36,7 @@ namespace lux
 class  Material  {
 public:
 	// Material Interface
-	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dgGeom,
+	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading) const = 0;
 	virtual ~Material();
 	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,

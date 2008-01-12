@@ -45,14 +45,14 @@ public:
 	void FullyRefine(vector<Primitive* > &refined)
 	const;
 	virtual const AreaLight *GetAreaLight() const = 0;
-	virtual BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
+	virtual BSDF *GetBSDF(const DifferentialGeometry &dg,
 		const Transform &WorldToObject) const = 0;
 };
 class  Intersection {
 	public:
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
-	BSDF *GetBSDF(MemoryArena &arena, const RayDifferential &ray) const;
+	BSDF *GetBSDF(const RayDifferential &ray) const;
 	Spectrum Le(const Vector &wo) const;
 
 
@@ -75,7 +75,7 @@ public:
 	                   const boost::shared_ptr<Material> &m,
 	                   AreaLight *a);
 	const AreaLight *GetAreaLight() const;
-	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
+	BSDF *GetBSDF(const DifferentialGeometry &dg,
 	              const Transform &WorldToObject) const;
 private:
 	// GeometricPrimitive Private Data
@@ -95,7 +95,7 @@ public:
 	bool Intersect(const Ray &r, Intersection *in) const;
 	bool IntersectP(const Ray &r) const;
 	const AreaLight *GetAreaLight() const { return NULL; }
-	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
+	BSDF *GetBSDF(const DifferentialGeometry &dg,
 	              const Transform &WorldToObject) const {
 		return NULL;
 	}
@@ -111,7 +111,7 @@ class  Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	const AreaLight *GetAreaLight() const;
-	BSDF *GetBSDF(MemoryArena &arena, const DifferentialGeometry &dg,
+	BSDF *GetBSDF(const DifferentialGeometry &dg,
 	              const Transform &) const;
 };
 
