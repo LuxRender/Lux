@@ -652,10 +652,9 @@ int Context::filmYres() {
 }*/
 
 double Context::statistics(char *statName) {
-	if (std::string(statName)=="sceneIsReady")
-		return (luxCurrentScene!=NULL);
-	else
-		return luxCurrentScene->Statistics(statName);
+	if (std::string(statName)=="sceneIsReady") return (luxCurrentScene!=NULL);
+	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);
+	else return 0;
 }
 
 void Context::getFilm(std::basic_ostream<char> &stream) {

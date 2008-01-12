@@ -766,6 +766,9 @@ int main(int ac, char *av[]) {
 	bool opengl_enabled = true;
 	engine_thread = NULL;
 	fb_update_thread = NULL;
+	
+	//jromang : we have to call luxInit before luxStatistics (in check_SceneReady)
+	luxInit();
 
 	try
 	{
@@ -913,8 +916,7 @@ int main(int ac, char *av[]) {
 			XFree(hints);
 		#endif
 
-		//jromang : we have to call luxInit before luxStatistics (in check_SceneReady)
-		luxInit();
+		
 		
 		if(gui_current_scenefile[0]!=0) //if we have a scene file
 			RenderScenefile();
