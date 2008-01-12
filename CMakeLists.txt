@@ -320,16 +320,15 @@ SET(lux_lib_src
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
         shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
         shapes/plymesh/rply.c
-        samplers/bestcandidate.cpp samplers/lowdiscrepancy.cpp
-        samplers/random.cpp samplers/stratified.cpp samplers/halton.cpp
+        samplers/lowdiscrepancy.cpp
+        samplers/random.cpp samplers/halton.cpp
         accelerators/grid.cpp accelerators/kdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp
-        film/image.cpp film/multiimage.cpp
+        film/multiimage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
-        integrators/directlighting.cpp integrators/emission.cpp integrators/irradiancecache.cpp
-        integrators/path.cpp integrators/mltpath.cpp integrators/photonmap.cpp integrators/single.cpp
-        integrators/whitted.cpp integrators/igi.cpp
-        integrators/debug.cpp integrators/exphotonmap.cpp integrators/bidirectional.cpp integrationsamplers/metropolis.cpp
+        integrators/directlighting.cpp integrators/emission.cpp
+        integrators/path.cpp integrators/mltpath.cpp integrators/single.cpp
+        integrationsamplers/metropolis.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp lights/sun2.cpp lights/sun3.cpp

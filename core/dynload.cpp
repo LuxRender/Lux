@@ -52,17 +52,14 @@
 #include "trianglemesh.h"
 #include "plymesh.h"
 
-//#include "bestcandidate.h"
 #include "lowdiscrepancy.h"
 #include "halton.h"
 #include "random.h"
-//#include "stratified.h"
 
 #include "environment.h"
 #include "orthographic.h"
 #include "perspective.h"
 
-#include "image.h"
 #include "multiimage.h"
 
 #include "box.h"
@@ -71,18 +68,9 @@
 #include "sinc.h"
 #include "triangle.h"
 
-#include "bidirectional.h"
-#include "debug.h"
 #include "directlighting.h"
-#include "emission.h"
-#include "exphotonmap.h"
-#include "igi.h"
-#include "irradiancecache.h"
 #include "path.h"
 #include "mltpath.h"
-#include "photonmap.h"
-#include "single.h"
-#include "whitted.h"
 
 #include "distant.h"
 #include "goniometric.h"
@@ -140,6 +128,26 @@
 #include "grid.h"
 #include "kdtreeaccel.h"
 #include "bruteforce.h"
+
+//
+// Radiance - The following plugins are currently retired to /PBRT_Attic
+// 
+/*
+#include "debug.h"
+#include "emission.h"
+#include "exphotonmap.h"
+#include "igi.h"
+#include "irradiancecache.h"
+#include "photonmap.h"
+#include "single.h"
+#include "whitted.h"
+#include "bidirectional.h"
+
+#include "image.h"
+
+#include "stratified.h"
+#include "bestcandidate.h"
+*/
 
 using std::map;
 
@@ -681,6 +689,47 @@ static string SearchPath(const string &searchpath,
         return ret;
     }*/
     
+    if(name=="directlighting")
+    {
+        SurfaceIntegrator *ret=DirectLighting::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="path")
+    {
+        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="mltpath")
+    {
+        SurfaceIntegrator *ret=MLTPathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
+    //
+    // Radiance - Volume integrators currently disabled 
+    // due to multithreading implementation which is in progress.
+    // 
+    /*if(name=="single")
+    {
+        SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }*/
+    /*if(name=="emission")
+    {
+        SurfaceIntegrator *ret=EmissionIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }*/
+  
+
+    //
+    // Radiance - The following integrators are currently retired to /PBRT_Attic
+    //
+    /*
     if(name=="bidirectional")
     {
         SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
@@ -692,19 +741,13 @@ static string SearchPath(const string &searchpath,
         SurfaceIntegrator *ret=DebugIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
-    }
-    if(name=="directlighting")
+    }    
+    if(name=="whitted")
     {
-        SurfaceIntegrator *ret=DirectLighting::CreateSurfaceIntegrator(paramSet);
+        SurfaceIntegrator *ret=WhittedIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    /*if(name=="emission")
-    {
-        SurfaceIntegrator *ret=EmissionIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
     if(name=="exphotonmap")
     {
         SurfaceIntegrator *ret=ExPhotonIntegrator::CreateSurfaceIntegrator(paramSet);
@@ -723,37 +766,15 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="path")
-    {
-        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="mltpath")
-    {
-        SurfaceIntegrator *ret=MLTPathIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
     if(name=="photonmap")
     {
         SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     } 
-    /*if(name=="single")
-    {
-        SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    if(name=="whitted")
-    {
-        SurfaceIntegrator *ret=WhittedIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    
+	*/
+    // End 
+
     //Error("Static loading of surface integrator '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of surface integrator '"<<name<<"' failed.";
@@ -900,8 +921,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
 
-	// NOTE - Radiance - currently disabled due to reimplementation of pixelsampling, will fix
-/*
+    //
+    // Radiance - The following samplers are currently retired to /PBRT_Attic
+    //
+    /*
     if(name=="bestcandidate")
     {
         Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
@@ -1031,20 +1054,24 @@ static string SearchPath(const string &searchpath,
         return ret;
     }*/
     
-    if(name=="image")
-    {
-        Film *ret=ImageFilm::CreateFilm(paramSet, filter);
-        paramSet.ReportUnused();
-        return ret;
-    }
-
-	if(name=="multiimage")
+    if(name=="multiimage")
     {
 		Film *ret=MultiImageFilm::CreateFilm(paramSet, filter);
         paramSet.ReportUnused();
         return ret;
     }
 
+    //
+    // Radiance - The following films are currently retired to /PBRT_Attic
+    //
+    /*
+    if(name=="image")
+    {
+        Film *ret=ImageFilm::CreateFilm(paramSet, filter);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    */    
     //Error("Static loading of film '%s' failed.",name.c_str());
 	std::stringstream ss;
 	ss<<"Static loading of film '"<<name<<"' failed.";

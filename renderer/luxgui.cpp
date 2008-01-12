@@ -280,7 +280,7 @@ void open_cb(Fl_Widget *, void *) {
 	if (status_render == STATUS_RENDER_NONE) {
 		// Create the file chooser, and show it
 		Fl_File_Chooser chooser(".", // directory
-				"LuxRender Scenes (*.lxs)\tPBRT Scenes (*.pbrt)", // filter
+				"LuxRender Scenes (*.lxs)", // filter
 				Fl_File_Chooser::SINGLE, // chooser type
 				"Open Scenefile..."); // title
 		chooser.preview(0);
