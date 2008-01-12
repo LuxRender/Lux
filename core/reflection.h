@@ -102,7 +102,7 @@ public:
 	Spectrum rho(BxDFType flags = BSDF_ALL) const;
 	Spectrum rho(const Vector &wo,
 	             BxDFType flags = BSDF_ALL) const;
-	static void *Alloc( u_int sz) { return arena.get()->Alloc(sz); }		// TODO remove original memory arena
+	static void *Alloc( u_int sz) { return arena->Alloc(sz); }		// TODO remove original memory arena
 	static void FreeAll() { arena->FreeAll(); }
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
@@ -121,7 +121,7 @@ private:
 	#define MAX_BxDFS 8
 	BxDF * bxdfs[MAX_BxDFS];
 	//static MemoryArena arena;
-	static boost::thread_specific_ptr<MemoryArena> arena; //TODO make private and friend from renderthread - jromang
+	static boost::thread_specific_ptr<MemoryArena> arena;
 	
 };
 #define BSDF_ALLOC(T)  new (BSDF::Alloc(sizeof(T))) T
