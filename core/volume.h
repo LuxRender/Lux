@@ -25,6 +25,7 @@
 // volume.h*
 #include "lux.h"
 #include "color.h"
+#include "spectrum.h"
 #include "geometry.h"
 #include "paramset.h"
 //#include "transform.h"

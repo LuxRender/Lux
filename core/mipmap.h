@@ -25,6 +25,7 @@
 // mipmap.h*
 #include "lux.h"
 #include "color.h"
+#include "spectrum.h"
 
 namespace lux
 {

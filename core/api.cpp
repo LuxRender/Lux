@@ -25,6 +25,7 @@
 #include "api.h"
 #include "paramset.h"
 #include "color.h"
+#include "spectrum.h"
 #include "scene.h"
 #include "film.h"
 #include "dynload.h"

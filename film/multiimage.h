@@ -27,6 +27,7 @@
 #include "lux.h"
 #include "film.h"
 #include "color.h"
+#include "spectrum.h"
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"

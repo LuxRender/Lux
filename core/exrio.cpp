@@ -25,6 +25,7 @@
 #include "lux.h"
 #include "error.h"
 #include "color.h"
+#include "spectrum.h"
 //#endif
 #include <algorithm>
 
@@ -73,6 +74,7 @@ using namespace cimg_library;
 #include "lux.h"
 #include "error.h"
 #include "color.h"
+#include "spectrum.h"
 #endif*/
 using namespace Imf;
 using namespace Imath;

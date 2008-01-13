@@ -27,6 +27,7 @@
 #include "lux.h"
 #include "error.h"
 #include "color.h"
+#include "spectrum.h"
 
 #include "igiio.h"
 

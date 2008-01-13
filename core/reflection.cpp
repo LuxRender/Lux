@@ -23,6 +23,7 @@
 // reflection.cpp*
 #include "reflection.h"
 #include "color.h"
+#include "spectrum.h"
 #include "mc.h"
 #include "sampling.h"
 #include <stdarg.h>

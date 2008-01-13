@@ -179,6 +179,9 @@ class Intersection;
 class GeometricPrimitive;
 }
 class Spectrum;
+class Color;
+class RGBColor;
+class XYZColor;
 namespace lux
 {
 class Camera;
