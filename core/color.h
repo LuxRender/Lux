@@ -227,7 +227,7 @@ public:
 		b =  0.055648f * c[0] + -0.204043f * c[1] +  1.057311f * c[2];
 	}
 	void ToRGB(float rgb[3]) const {
-		RGB(rgb[0], rgb[1], rgb[2]);
+		ToRGB(rgb[0], rgb[1], rgb[2]);
 	}
 	void ToRGB(RGBColor rgb) const;
 	RGBColor ToRGB() const;
