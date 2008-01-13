@@ -107,8 +107,6 @@ public:
 			c[i] = v;
 	}
 	
-	
-	
 	Spectrum(float cs[COLOR_SAMPLES]) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = cs[i];
@@ -229,7 +227,7 @@ public:
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			fprintf(f, "%f ", c[i]);
 	}
-	void XYZ(float xyz[3]) const {
+	void ToXYZ(float xyz[3]) const {
 		xyz[0] = xyz[1] = xyz[2] = 0.;
 		for (int i = 0; i < COLOR_SAMPLES; ++i) {
 			xyz[0] += XWeight[i] * c[i];

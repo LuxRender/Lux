@@ -43,7 +43,7 @@ NSunLight::NSunLight (const Transform &light2world, const Spectrum &intensity, V
 
   float xyz[3];
 
-  Intensity.XYZ(xyz);
+  Intensity.ToXYZ(xyz);
 
   float sum = xyz[0] + xyz[1] + xyz[2];
 

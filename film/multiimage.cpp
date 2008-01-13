@@ -247,7 +247,7 @@ void MultiImageFilm::WriteImage(int oType) {
 		for (int x = 0; x < xPixelCount; ++x) {
 			// Convert pixel spectral radiance to RGB
 			float xyz[3];
-			(*pixels)(x, y).L.XYZ(xyz);
+			(*pixels)(x, y).L.ToXYZ(xyz);
 			const float
 				rWeight[3] = { 3.240479f, -1.537150f, -0.498535f };
 			const float

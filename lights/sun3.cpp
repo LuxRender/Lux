@@ -59,7 +59,7 @@ Sun3Light::Sun3Light(const Transform &light2world, const Spectrum &le, int ns, V
 
   float xyz[3];
 
-  Lemit.XYZ(xyz);
+  Lemit.ToXYZ(xyz);
 
   float sum = xyz[0] + xyz[1] + xyz[2];
 
