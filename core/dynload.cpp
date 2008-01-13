@@ -72,6 +72,9 @@
 #include "path.h"
 #include "mltpath.h"
 
+#include "emission.h"
+#include "single.h"
+
 #include "distant.h"
 #include "goniometric.h"
 #include "infinitesample.h"
@@ -134,12 +137,10 @@
 // 
 /*
 #include "debug.h"
-#include "emission.h"
 #include "exphotonmap.h"
 #include "igi.h"
 #include "irradiancecache.h"
 #include "photonmap.h"
-#include "single.h"
 #include "whitted.h"
 #include "bidirectional.h"
 
