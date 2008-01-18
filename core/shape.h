@@ -110,7 +110,7 @@ public:
 		// Convert light sample weight to solid angle measure
 		float pdf = DistanceSquared(p, ray(thit)) /
 			(AbsDot(dgLight.nn, -wi) * Area());
-		if (AbsDot(dgLight.nn, -wi) == 0.f) pdf = 1.; // NOTE - radiance - modified pdf from INFINITY to 1.
+		if (AbsDot(dgLight.nn, -wi) == 0.f) pdf = INFINITY;
 		return pdf;
 	}
 	// Shape Public Data
