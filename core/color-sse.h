@@ -1,4 +1,4 @@
-/***************************************************************************
+/******************************************************(*********************
  *   Copyright (C) 1998-2007 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of Lux Renderer.                                    *
@@ -20,14 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-#ifndef LUX_COLOR_H
-#define LUX_COLOR_H
-// color.h*
-#include "lux.h"
-
-#ifdef LUX_USE_SSE
-#include "color-sse.h"
-#else //LUX_USE_SSE
+#include <xmmintrin.h>
 
 namespace lux
 {
@@ -41,24 +34,27 @@ public:
 //			c[0] = v; c[1] = v; c[2] = v;
 //	}
 	Color() {};
-	Color(float cs[3]) {
+	Color(float cs[3])
+	{
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
+	Color(__m128 _vec)
+	        : vec(_vec)
+	    {}
+
 
 	friend ostream &operator<<(ostream &, const Color &);
+	
 	Color &operator+=(const Color &s2) {
-			c[0] += s2.c[0]; c[1] += s2.c[1]; c[2] += s2.c[2];
+		vec=_mm_add_ps(vec,s2.vec);
 		return *this;
 	}
+	
 	Color operator+(const Color &s2) const {
-		Color ret = *this;
-			ret.c[0] += s2.c[0]; ret.c[1] += s2.c[1]; ret.c[2] += s2.c[2];
-		return ret;
+		return Color(_mm_add_ps(vec,s2.vec));
 	}
 	Color operator-(const Color &s2) const {
-		Color ret = *this;
-			ret.c[0] -= s2.c[0]; ret.c[1] -= s2.c[1]; ret.c[2] -= s2.c[2];
-		return ret;
+		return Color(_mm_sub_ps(vec,s2.vec));
 	}
 	Color operator/(const Color &s2) const {
 		Color ret = *this;
@@ -66,21 +62,26 @@ public:
 		return ret;
 	}
 	Color operator*(const Color &sp) const {
-		Color ret = *this;
-			ret.c[0] *= sp.c[0]; ret.c[1] *= sp.c[1]; ret.c[2] *= sp.c[2];
-		return ret;
+		
+		return Color(_mm_mul_ps(vec,sp.vec));
+		//Color ret = *this;
+		//	ret.c[0] *= sp.c[0]; ret.c[1] *= sp.c[1]; ret.c[2] *= sp.c[2];
+		//return ret;
 	}
 	Color &operator*=(const Color &sp) {
-			c[0] *= sp.c[0]; c[1] *= sp.c[1]; c[2] *= sp.c[2];
+		vec=_mm_mul_ps(vec,sp.vec);
+	
+			//c[0] *= sp.c[0]; c[1] *= sp.c[1]; c[2] *= sp.c[2];
 		return *this;
 	}
 	Color operator*(float a) const {
-		Color ret = *this;
-			ret.c[0] *= a; ret.c[1] *= a; ret.c[2] *= a;
-		return ret;
+		//Color ret = *this;
+		//	ret.c[0] *= a; ret.c[1] *= a; ret.c[2] *= a;
+		//	return ret;
+		return Color(_mm_mul_ps(vec,_mm_set_ps1(a)));
 	}
 	Color &operator*=(float a) {
-			c[0] *= a; c[1] *= a; c[2] *= a;
+		vec=_mm_mul_ps(vec,_mm_set_ps1(a));
 		return *this;
 	}
 	friend inline
@@ -170,7 +171,12 @@ public:
 	friend class lux::ParamSet;
 	
 	// Color Public Data
-	float c[3];
+	//float c[3];
+	
+	union {
+	      __m128 vec;
+	        float c[4];
+	    };
 	
 private:
 	template<class Archive>
@@ -311,12 +317,3 @@ inline void XYZColor::FromRGB(RGBColor rgb) {
 	FromRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
 }
 
-
-#endif //LUX_USE_SSE
-
-}//namespace lux
-
-
-
-
-#endif // LUX_COLOR_H
