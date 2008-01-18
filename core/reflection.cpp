@@ -30,6 +30,8 @@
 
 using namespace lux;
 
+namespace lux
+{
 // BxDF Utility Functions
  Spectrum FrDiel(float cosi, float cost,
                         const Spectrum &etai,
@@ -62,6 +64,9 @@ using namespace lux;
 	return 2.f * (reflectance /
 	              (Spectrum(1.) - reflectance)).Sqrt();
 }
+ 
+}//namespace lux
+
 // BxDF Method Definitions
 Spectrum BRDFToBTDF::f(const Vector &wo,
                        const Vector &wi) const {

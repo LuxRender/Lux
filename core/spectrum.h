@@ -26,6 +26,8 @@
 #include "lux.h"
 #include "color.h"
 
+namespace lux
+{
 
 #define WAVELENGTH_SAMPLES 16
 static const float inv_WAVELENGTH_SAMPLES = 1. / WAVELENGTH_SAMPLES;
@@ -571,5 +573,7 @@ public:
 		return FromXYZ(X,Y,Z);
 	}
 };
+
+}//namespace lux
 
 #endif // LUX_SPECTRUM_H

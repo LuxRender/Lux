@@ -177,11 +177,11 @@ class Scene;
 class Primitive;
 class Intersection;
 class GeometricPrimitive;
-}
 class Spectrum;
 class Color;
 class RGBColor;
 class XYZColor;
+}
 namespace lux
 {
 class Camera;
@@ -291,7 +291,7 @@ extern void StatsCleanup();
  unsigned long genrand_int32(void);
  //extern float genrand_real1(void);
  //extern float genrand_real2(void);
- Spectrum *ReadImage(const string &name, int *xSize,
+ lux::Spectrum *ReadImage(const string &name, int *xSize,
 	int *ySize);
  void WriteRGBAImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
@@ -315,7 +315,7 @@ extern  Transform LookAt(const Point &pos, const Point &look,
  Transform Orthographic(float znear, float zfar);
 
 Transform Perspective(float fov, float znear, float zfar);
-}
+
  Spectrum FrDiel(float cosi, float cost,
                         const Spectrum &etai,
 						const Spectrum &etat);
@@ -326,6 +326,7 @@ Transform Perspective(float fov, float znear, float zfar);
 	Spectrum FresnelApproxEta(const Spectrum &intensity);
 
 	Spectrum FresnelApproxK(const Spectrum &intensity);
+}
  
  namespace lux
  {

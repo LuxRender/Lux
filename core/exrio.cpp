@@ -78,6 +78,8 @@ using namespace cimg_library;
 #endif*/
 using namespace Imf;
 using namespace Imath;
+using namespace lux;
+
 // EXR Function Definitions
  Spectrum *ReadExrImage(const string &name, int *width, int *height) {
 	try {

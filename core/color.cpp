@@ -23,6 +23,8 @@
 // color.cpp*
 #include "color.h"
 
+using namespace lux;
+
 // RGBColor Method Definitions
 ostream &operator<<(ostream &os, const RGBColor &s) {
 	for (int i = 0; i < 3; ++i) {

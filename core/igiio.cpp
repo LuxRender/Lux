@@ -31,6 +31,8 @@
 
 #include "igiio.h"
 
+
+using namespace lux;
 // Indigo Image File Format IO - Based on code from GPL Violet Tonemapper.
 
 // IGI Function Definitions

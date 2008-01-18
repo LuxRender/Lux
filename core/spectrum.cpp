@@ -23,6 +23,8 @@
 // spectrum.cpp*
 #include "spectrum.h"
 
+using namespace lux;
+
 // Spectrum Method Definitions
 ostream &operator<<(ostream &os, const Spectrum &s) {
 	for (int i = 0; i < COLOR_SAMPLES; ++i) {
@@ -41,7 +43,7 @@ float Spectrum::YWeight[COLOR_SAMPLES] = {
 float Spectrum::ZWeight[COLOR_SAMPLES] = {
 	0.019334f, 0.119193f, 0.950227f
 };
-Spectrum FromXYZ(float x, float y, float z) {
+Spectrum lux::FromXYZ(float x, float y, float z) {
 	float c[3];
 	c[0] =  3.240479f * x + -1.537150f * y + -0.498535f * z;
 	c[1] = -0.969256f * x +  1.875991f * y +  0.041556f * z;

@@ -25,6 +25,10 @@
 // color.h*
 #include "lux.h"
 
+
+namespace lux
+{
+
 // Color Declarations
 class  Color {
 	friend class boost::serialization::access;
@@ -247,5 +251,7 @@ public:
 		return c[1];
 	}
 };
+
+}//namespace lux
 
 #endif // LUX_COLOR_H
