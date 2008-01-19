@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2006, 2007 Mutsuo Saito, Makoto Matsumoto and Hiroshima
+ * University. All rights reserved.
+ *
+ * The new BSD License is applied to this software, see LICENSE.txt
+ */
+
 #ifndef SFMT_PARAMS19937_H
 #define SFMT_PARAMS19937_H
 
