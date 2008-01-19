@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Lux
+GenericName=Lux Renderer
+Comment=Open .lxs files
+Exec=luxrender
+Icon=/usr/share/pixmaps/luxrender.png
+Terminal=false
+Type=Application
+Categories=Application;Graphics;3DGraphics
+
+

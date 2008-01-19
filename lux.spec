@@ -39,8 +39,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS.txt COPYING.txt
 %{_bindir}/luxconsole
 %{_bindir}/luxrender
-%{_datadir}/pixmaps/lux.png
-%{_datadir}/applications/lux.desktop
+%{_datadir}/pixmaps/luxrender.png
+%{_datadir}/applications/luxrender.desktop
 
 
 %changelog
