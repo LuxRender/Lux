@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Lux
 GenericName=Lux Renderer
-Comment=Open .lxs files
+Comment=LuxRender unbiased rendering system
 Exec=luxrender
 Icon=/usr/share/pixmaps/luxrender.png
 Terminal=false
