@@ -404,18 +404,18 @@ ENDIF(APPLE)
 
 #Install target
 INSTALL(TARGETS luxrender luxconsole
-        RUNTIME DESTINATION /usr/bin
+        RUNTIME DESTINATION bin
 )
 
 #Install API/Library
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION /usr/include/luxrender/)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
 INSTALL(TARGETS lux
-	ARCHIVE DESTINATION /usr/lib/
+	ARCHIVE DESTINATION lib/
 )
 
 #Install Desktop files
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.png DESTINATION /usr/share/pixmaps/)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.desktop DESTINATION /usr/share/applications/)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.png DESTINATION share/pixmaps/)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.desktop DESTINATION share/applications/)
 
 #Source package target
 SET(VERSION 0.1)
