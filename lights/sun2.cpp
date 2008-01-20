@@ -41,14 +41,10 @@ NSunLight::NSunLight (const Transform &light2world, const Spectrum &intensity, V
 
   printf("sunspectralrad luminance: %f\n", Intensity.y() );
 
-  float xyz[3];
-
-  Intensity.ToXYZ(xyz);
-
-  float sum = xyz[0] + xyz[1] + xyz[2];
-
-  printf("sun xyY:: %f %f %f\n", xyz[0] / sum, xyz[1] / sum, xyz[1] );
-
+  //float xyz[3];
+  //Intensity.ToXYZ(xyz);
+  //float sum = xyz[0] + xyz[1] + xyz[2];
+  //printf("sun xyY:: %f %f %f\n", xyz[0] / sum, xyz[1] / sum, xyz[1] );
 }
 
 Spectrum NSunLight::Power(const Scene *) const {

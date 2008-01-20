@@ -131,22 +131,25 @@ void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alph
 
 			boost::mutex::scoped_lock lock(addSampleMutex);
 
+	// Convert to XYZ Color
+	XYZColor xyz = L.ToXYZ();
+
 	// Issue warning if unexpected radiance value returned
-	if (L.IsNaN()) {
+	if (xyz.IsNaN()) {
 		//std::stringstream error;
 		//error<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
 		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
 		//L = Spectrum(0.f);
 		return;
 	}
-	else if (L.y() < -1e-5) {
+	else if (xyz.y() < -1e-5) {
 		//std::stringstream error;
 		//error<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
 		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
 		//L = Spectrum(0.f);
 		return;
 	}
-	else if (isinf(L.y())) {
+	else if (isinf(xyz.y())) {
 		//luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
 		//L = Spectrum(0.f);
 		return;
@@ -185,7 +188,7 @@ void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alph
 			float filterWt = filterTable[offset];
 			// Update pixel values with filtered sample contribution
 			Pixel &pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
-			pixel.L.AddWeighted(filterWt, L);
+			pixel.L.AddWeighted(filterWt, xyz);
 			pixel.alpha += alpha * filterWt;
 			pixel.weightSum += filterWt;
 		}
@@ -245,9 +248,11 @@ void MultiImageFilm::WriteImage(int oType) {
 	int offset = 0;
 	for (int y = 0; y < yPixelCount; ++y) {
 		for (int x = 0; x < xPixelCount; ++x) {
-			// Convert pixel spectral radiance to RGB
+			// Convert pixel XYZ radiance to RGB
 			float xyz[3];
-			(*pixels)(x, y).L.ToXYZ(xyz);
+			xyz[0] = (*pixels)(x, y).L.c[0];
+			xyz[1] = (*pixels)(x, y).L.c[1];
+			xyz[2] = (*pixels)(x, y).L.c[2];
 			const float
 				rWeight[3] = { 3.240479f, -1.537150f, -0.498535f };
 			const float

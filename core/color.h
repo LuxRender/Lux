@@ -34,13 +34,7 @@ class  Color {
 	friend class boost::serialization::access;
 public:
 	// Color Public Methods
-//	Color(float v = 0.f) {
-//			c[0] = v; c[1] = v; c[2] = v;
-//	}
 	Color() {};
-	Color(float cs[3]) {
-			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
-	}
 
 	friend ostream &operator<<(ostream &, const Color &);
 	Color &operator+=(const Color &s2) {
@@ -182,8 +176,11 @@ private:
 class  RGBColor : public Color {
 public:
 	// RGBColor Public Methods
-	RGBColor() {
-		c[0] = c[1] = c[2] = 0.;
+	RGBColor(float v = 0.f) {
+			c[0] = v; c[1] = v; c[2] = v;
+	}
+	RGBColor(float cs[3]) {
+			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
 	RGBColor(XYZColor xyz);
 
@@ -219,8 +216,11 @@ public:
 class  XYZColor : public Color {
 public:
 	// XYZColor Public Methods
-	XYZColor() {
-		c[0] = c[1] = c[2] = 0.;
+	XYZColor(float v = 0.f) {
+			c[0] = v; c[1] = v; c[2] = v;
+	}
+	XYZColor(float cs[3]) {
+			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
 	XYZColor(RGBColor rgb);
 
@@ -307,9 +307,6 @@ inline RGBColor XYZColor::ToRGB() const {
 inline void XYZColor::FromRGB(RGBColor rgb) {
 	FromRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
 }
-
-
-#endif //LUX_USE_SSE
 
 }//namespace lux
 

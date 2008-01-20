@@ -229,13 +229,15 @@ public:
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			fprintf(f, "%f ", c[i]);
 	}
-	void ToXYZ(float xyz[3]) const {
+	XYZColor ToXYZ() const {
+		float xyz[3];
 		xyz[0] = xyz[1] = xyz[2] = 0.;
 		for (int i = 0; i < COLOR_SAMPLES; ++i) {
 			xyz[0] += XWeight[i] * c[i];
 			xyz[1] += YWeight[i] * c[i];
 			xyz[2] += ZWeight[i] * c[i];
 		}
+		return XYZColor(xyz);
 	}
 	float y() const {
 		float v = 0.;

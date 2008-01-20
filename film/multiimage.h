@@ -125,7 +125,7 @@ private:
 			alpha = 0.f;
 			weightSum = 0.f;
 		}
-		Spectrum L;
+		XYZColor L;
 		float alpha, weightSum;
 		
 		template<class Archive>

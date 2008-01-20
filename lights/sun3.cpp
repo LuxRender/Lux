@@ -57,13 +57,10 @@ Sun3Light::Sun3Light(const Transform &light2world, const Spectrum &le, int ns, V
 
   printf("sunspectralrad luminance: %f\n", Lemit.y() );
 
-  float xyz[3];
-
-  Lemit.ToXYZ(xyz);
-
-  float sum = xyz[0] + xyz[1] + xyz[2];
-
-  printf("sun xyY:: %f %f %f\n", xyz[0] / sum, xyz[1] / sum, xyz[1] );
+//  float xyz[3];
+//  Lemit.ToXYZ(xyz);
+//  float sum = xyz[0] + xyz[1] + xyz[2];
+//  printf("sun xyY:: %f %f %f\n", xyz[0] / sum, xyz[1] / sum, xyz[1] );
 }
 
 Spectrum Sun3Light::Sample_L(const Point &p, const Normal &n, float u1, float u2, Vector *wi, float *pdf, VisibilityTester *visibility) const {
