@@ -39,7 +39,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS.txt COPYING.txt
 %{_bindir}/luxconsole
 %{_bindir}/luxrender
-%{_datadir}/pixmaps/luxrender.png
+%{_datadir}/pixmaps/luxrender.svg
 %{_datadir}/applications/luxrender.desktop
 
 

@@ -414,7 +414,7 @@ INSTALL(TARGETS lux
 )
 
 #Install Desktop files
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.png DESTINATION share/pixmaps/)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.svg DESTINATION share/pixmaps/)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.desktop DESTINATION share/applications/)
 
 #Source package target
