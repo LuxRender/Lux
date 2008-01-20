@@ -25,9 +25,6 @@
 // color.h*
 #include "lux.h"
 
-#ifdef LUX_USE_SSE
-#include "color-sse.h"
-#else //LUX_USE_SSE
 
 namespace lux
 {
