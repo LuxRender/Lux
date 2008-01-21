@@ -42,7 +42,7 @@ public:
     FD_SET(descriptor, &fd_set_);
   }
 
-  bool is_set(socket_type descriptor) const
+  bool is_set(socket_type descriptor)
   {
     return FD_ISSET(descriptor, &fd_set_) != 0;
   }

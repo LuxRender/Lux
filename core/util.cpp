@@ -87,6 +87,10 @@ static void processError(const char *format, va_list args,
 	free(errorBuf);
 #endif
 }
+
+namespace lux
+{
+
  void Info(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
@@ -122,6 +126,9 @@ static void processError(const char *format, va_list args,
 	x[1] = (A[0][0]*B[1] - A[1][0]*B[0]) * invDet;
 	return true;
 }
+
+}
+
 #ifndef LUX_USE_SSE
 Matrix4x4::Matrix4x4(float mat[4][4]) {
 	memcpy(m, mat, 16*sizeof(float));
@@ -361,8 +368,10 @@ static void addTracker(StatTracker *newTracker) {
 	}
 	trackers[s] = newTracker;
 }
+namespace lux {
 static void StatsPrintVal(FILE *f, StatsCounterType v);
 static void StatsPrintVal(FILE *f, StatsCounterType v1, StatsCounterType v2);
+}
 // Statistics Functions
 StatTracker::StatTracker(const string &cat, const string &n,
                          StatsCounterType *pa, StatsCounterType *pb, bool p) {
@@ -384,6 +393,9 @@ StatsPercentage::StatsPercentage(const string &category, const string &name) {
 	na = nb = 0;
 	addTracker(new StatTracker(category, name, &na, &nb, true));
 }
+
+namespace lux {
+
 void StatsPrint(FILE *dest) {
 	fprintf(dest, "Statistics:\n");
 	TrackerMap::iterator iter = trackers.begin();
@@ -457,6 +469,9 @@ void StatsCleanup() {
 	free(ptr);
 #endif // NOBOOK
 }
+
+}
+
 // ProgressReporter Method Definitions
 ProgressReporter::ProgressReporter(int totalWork, const string &title, int bar_length)
 	: totalPlusses(bar_length - title.size()) {

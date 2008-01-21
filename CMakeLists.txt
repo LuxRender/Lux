@@ -17,6 +17,7 @@ ENDIF(APPLE)
 
 #OPTION(WITH_GUI "Enable the GUI." OFF)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
+SET(VERSION 0.1)
 
 
 #############################################################################
@@ -68,7 +69,7 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 IF( FLTK_INCLUDE_DIR )
-	SET(FLTK_LIBRARIES fltk fltk_gl GL)
+	SET(FLTK_LIBRARIES fltk fltk_gl)
 ELSE( FLTK_INCLUDE_DIR )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
 ENDIF( FLTK_INCLUDE_DIR )
@@ -96,7 +97,7 @@ IF(APPLE)
 	ELSE(APPLE_64)
 		SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/../macos/boost/lib/x86)
 	ENDIF(APPLE_64)
-	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1)
+	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1)
 ELSE(APPLE)
 	FIND_PACKAGE(Boost REQUIRED)
 	IF(Boost_FOUND)
@@ -296,9 +297,13 @@ IF(APPLE)
 	TARGET dist POST_BUILD
 	COMMAND rm -rf LuxRender.app 
 	COMMAND mkdir LuxRender.app 
-	COMMAND mkdir LuxRender.app/MacOS 
-	COMMAND mkdir LuxRender.app/Resource 
-	COMMAND cp luxrender LuxRender.app/MacOS)
+	COMMAND mkdir LuxRender.app/Contents 
+	COMMAND mkdir LuxRender.app/Contents/MacOS 
+	COMMAND mkdir LuxRender.app/Contents/Resource 
+	COMMAND cp ../macos/Info.plist LuxRender.app/Contents
+	COMMAND cp ../macos/LuxRender.icns LuxRender.app/Contents/Resource
+	COMMAND echo APPLnone > LuxRender.app/Contents/PkgInfo
+	COMMAND cp luxrender LuxRender.app/Contents/MacOS/LuxRender)
 ENDIF(APPLE)
 
 
@@ -382,25 +387,48 @@ ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ENDIF(APPLE)
 
+IF(APPLE)
+	SET(GUI_TYPE MACOSX_BUNDLE)
+	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
+	# Short Version is the "marketing version". It is the version
+	# the user sees in an information panel.
+	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
+	# Bundle version is the version the OS looks at.
+	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
+	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
+	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
+	# SET(MACOSX_BUNDLE_ICON_FILE "myicon.icns")
+	# SET(MACOSX_BUNDLE_COPYRIGHT "")
+	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
+ENDIF(APPLE)
+
 #Here we build the GUI executable
-ADD_EXECUTABLE(luxrender renderer/luxgui.cpp renderer/renderwindow.cpp)
+ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/luxgui.cpp renderer/renderwindow.cpp)
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include)
 
 IF(APPLE)
-SET(GUI_TYPE MACOSX_BUNDLE)
 INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
 FIND_LIBRARY(CARBON_LIBRARY Carbon)
 FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
+FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
+FIND_LIBRARY(AGL_LIBRARY AGL )
 FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
+
 MESSAGE(STATUS ${CARBON_LIBRARY})
 MARK_AS_ADVANCED (CARBON_LIBRARY)
 MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
+MARK_AS_ADVANCED (OPENGL_LIBRARY)
+MARK_AS_ADVANCED (AGL_LIBRARY)
 MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
 TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ENDIF(APPLE)
+
+#IF(APPLE AND !APPLE_64)
+#SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "-mmacosx-version-min=10.4")
+#ENDIF(APPLE AND !APPLE_64)
 
 #Install target
 INSTALL(TARGETS luxrender luxconsole
@@ -418,7 +446,6 @@ INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.svg DESTINATION share/pixma
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.desktop DESTINATION share/applications/)
 
 #Source package target
-SET(VERSION 0.1)
 ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
 	COMMAND cp -R ${CMAKE_SOURCE_DIR}/* lux-${VERSION}
 	COMMAND tar -cf ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar lux-${VERSION}

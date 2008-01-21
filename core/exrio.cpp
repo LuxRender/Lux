@@ -81,6 +81,8 @@ using namespace Imath;
 using namespace lux;
 
 // EXR Function Definitions
+namespace lux
+{
  Spectrum *ReadExrImage(const string &name, int *width, int *height) {
 	try {
     printf("Loading OpenEXR Texture: '%s'...\n", name.c_str());
@@ -251,4 +253,5 @@ using namespace lux;
 
 	delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
 	delete[] (ha + (xOffset + yOffset * xRes));
+}
 }

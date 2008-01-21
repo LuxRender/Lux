@@ -38,6 +38,8 @@
 #include <FL/x.H>
 #include <FL/filename.H>
 
+#include <boost/thread.hpp>
+
 #include "renderwindow.h"
 
 bool GuiSceneReady = false;

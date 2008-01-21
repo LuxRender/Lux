@@ -21,6 +21,10 @@
  ***************************************************************************/
 
 // luxgui.cpp*
+#include "luxgui.h"
+#include "renderwindow.h"
+#include "icons.h"		// Include GUI icon data
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -33,6 +37,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <zlib.h>
+
 
 #include "lux.h"
 #include "api.h"
@@ -47,9 +52,6 @@
 #define chdir _chdir
 #endif
 
-#include "luxgui.h"
-#include "renderwindow.h"
-#include "icons.h"		// Include GUI icon data
 
 using namespace lux;
 namespace po = boost::program_options;

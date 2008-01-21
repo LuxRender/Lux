@@ -282,15 +282,21 @@ extern  void Info(const char *, ...) PRINTF_FUNC;
 extern  void Warning(const char *, ...) PRINTF_FUNC;
 extern  void Error(const char *, ...) PRINTF_FUNC;
 extern  void Severe(const char *, ...) PRINTF_FUNC;*/
+namespace lux
+{
 extern void StatsPrint(FILE *dest);
 extern void StatsCleanup();
  void *AllocAligned(size_t size);
  void FreeAligned(void *);
+
  bool SolveLinearSystem2x2(const float A[2][2], const float B[2],
 	float x[2]);
+}
  unsigned long genrand_int32(void);
  //extern float genrand_real1(void);
  //extern float genrand_real2(void);
+ namespace lux
+ {
  lux::Spectrum *ReadImage(const string &name, int *xSize,
 	int *ySize);
  void WriteRGBAImage(const string &name,
@@ -299,6 +305,7 @@ extern void StatsCleanup();
   void WriteIgiImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
+ }
  extern "C" void luxInit();
  extern "C" void luxCleanup();
  
@@ -498,14 +505,14 @@ public:
 	MemoryArena(u_int bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
-		currentBlock = (char *)AllocAligned(blockSize);
+		currentBlock = (char *)lux::AllocAligned(blockSize);
 	}
 	~MemoryArena() {
-		FreeAligned(currentBlock);
+		lux::FreeAligned(currentBlock);
 		for (u_int i = 0; i < usedBlocks.size(); ++i)
-			FreeAligned(usedBlocks[i]);
+			lux::FreeAligned(usedBlocks[i]);
 		for (u_int i = 0; i < availableBlocks.size(); ++i)
-			FreeAligned(availableBlocks[i]);
+			lux::FreeAligned(availableBlocks[i]);
 	}
 	void *Alloc(u_int sz) {
 		// Round up _sz_ to minimum machine alignment
@@ -522,7 +529,7 @@ public:
 				availableBlocks.pop_back();
 			}
 			else
-				currentBlock = (char *)AllocAligned(max(sz, blockSize));
+				currentBlock = (char *)lux::AllocAligned(max(sz, blockSize));
 			curBlockPos = 0;
 		}
 		void *ret = currentBlock + curBlockPos;
@@ -553,7 +560,7 @@ public:
 		vRes = b.vRes;
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-		data = (T *)AllocAligned(nAlloc * sizeof(T));
+		data = (T *)lux::AllocAligned(nAlloc * sizeof(T));
 		for (int i = 0; i < nAlloc; ++i)
 			new (&data[i]) T(b.data[i]);
 		if (d)
@@ -566,7 +573,7 @@ public:
 		vRes = nv;
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-		data = (T *)AllocAligned(nAlloc * sizeof(T));
+		data = (T *)lux::AllocAligned(nAlloc * sizeof(T));
 		for (int i = 0; i < nAlloc; ++i)
 			new (&data[i]) T();
 		if (d)
@@ -583,7 +590,7 @@ public:
 	~BlockedArray() {
 		for (int i = 0; i < uRes * vRes; ++i)
 			data[i].~T();
-		FreeAligned(data);
+		lux::FreeAligned(data);
 	}
 	int Block(int a) const { return a >> logBlockSize; }
 	int Offset(int a) const { return (a & (BlockSize() - 1)); }
@@ -635,7 +642,7 @@ private:
 								ar & uBlocks;
 					
 								int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-								data = (T *)AllocAligned(nAlloc * sizeof(T));
+								data = (T *)lux::AllocAligned(nAlloc * sizeof(T));
 								for (int i = 0; i < nAlloc; ++i)
 									ar & data[i];
 							}

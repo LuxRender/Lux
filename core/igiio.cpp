@@ -35,6 +35,7 @@
 using namespace lux;
 // Indigo Image File Format IO - Based on code from GPL Violet Tonemapper.
 
+namespace lux {
 // IGI Function Definitions
  Spectrum *ReadIgiImage(const string &name, int *width, int *height) {
 	// radiance - NOTE - unimplemented yet
@@ -93,4 +94,6 @@ using namespace lux;
 
 	file.close();
 	delete xyz;
+}
+
 }

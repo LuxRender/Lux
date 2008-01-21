@@ -22,6 +22,9 @@
 
 // igiio.h*
 
+namespace lux
+{
+
 // Based on code from GPL Violet Tonemapper.
 static const int INDIGO_IMAGE_MAGIC_NUMBER = 66613373;
 
@@ -52,3 +55,5 @@ public:
 	//left to right across the row.
 	//3 32 bit floats per pixel.
 };
+
+}
