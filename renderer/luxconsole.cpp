@@ -409,17 +409,69 @@ int main(int ac, char *av[]) {
 
 		if (vm.count ("test"))
 		{
-			std::cout << "getting film..."<<std::endl;
-			tcp::iostream stream("127.0.0.1", "18018");
-			std::cout << "connected"<<std::endl;
-			stream<<"luxGetFilm"<<std::endl;
-			boost::archive::text_iarchive ia(stream);
-			MultiImageFilm m(320,200);
-			Point p;
-			ia>>m;
-			std::cout<<"ok, i got the film!";
-			//m.WriteImage();
-			return 0;
+			std::cout<<"Testing..."<<std::endl;
+						/*
+						LookAt 0 10 100   0 -1 0 0 1 0
+						Camera "perspective" "float fov" [30]
+						PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]
+						Sampler "bestcandidate"
+						Film "image" "string filename" ["simple.exr"]
+						     "integer xresolution" [200] "integer yresolution" [200]
+						
+						WorldBegin
+						
+						AttributeBegin
+						  CoordSysTransform "camera"
+						  LightSource "distant" 
+						              "point from" [0 0 0] "point to"   [0 0 1]
+						              "color L"    [3 3 3]
+						AttributeEnd
+						
+						AttributeBegin
+						  Rotate 135 1 0 0
+						  
+						  Texture "checks" "color" "checkerboard" 
+						          "float uscale" [4] "float vscale" [4] 
+						          "color tex1" [1 0 0] "color tex2" [0 0 1]
+						  
+						  Material "matte" 
+						           "texture Kd" "checks"
+						  Shape "disk" "float radius" [20] "float height" [-1]
+						AttributeEnd
+						WorldEnd
+						*/
+						
+						
+						luxLookAt(0,10,100,0,-1,0,0,1,0);
+						float fov=30;
+						float size=2, radius=20, height=-1;
+						int resolution=200;
+						float from[3]= {0,0,0};
+						float to[3]= {0,0,1};
+						float color1[3]={1,0,0},color2[3]={0,0,1};
+						float scale=4;
+						char *filename="simple.png";
+						luxCamera("perspective","fov",&fov,LUX_NULL);
+						luxPixelFilter("mitchell","xwidth", &size, "ywidth" , &size,LUX_NULL);
+						luxSampler("random",LUX_NULL);
+						luxFilm("multiimage","filename",filename,"xresolution",&resolution,"yresolution",&resolution,LUX_NULL);
+						luxWorldBegin();
+						
+						luxAttributeBegin();
+						luxCoordSysTransform("camera");
+						luxLightSource("distant" ,"from",from,"to",to,LUX_NULL);
+						luxAttributeEnd();
+						
+						luxAttributeBegin();
+						luxRotate(135,1,0,0);
+						
+						luxTexture("checks","color","checkerboard" ,"uscale",&scale,"vscale",&scale,"tex1",&color1, "tex2",&color2,LUX_NULL);
+						luxMaterial("matte","Kd","checks",LUX_NULL);
+						luxShape("disk","radius",&radius,"height",&height,LUX_NULL);
+						luxAttributeEnd();
+						luxWorldEnd();
+						
+						return 0;
 		}
 
 		if (vm.count ("help"))

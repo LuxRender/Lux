@@ -37,175 +37,180 @@ ParamSet::ParamSet(const ParamSet &p2) {
  */
 ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[])
 {
-	/*
+	//TODO - jromang : implement this using a std::map or string hashing
 	std::string p(pluginName);
 	
 	for(int i=0;i<n;i++)
 	{
 		std::string s(tokens[i]);
 		//float parameters
-		if(s=="xwidth") AddFloat(s,(float*)(params[i]));
-		else if(s=="ywidth") AddFloat(s,(float*)(params[i]));
-		else if(s=="aplha") AddFloat(s,(float*)(params[i]));
-		else if(s=="B") AddFloat(s,(float*)(params[i]));
-		else if(s=="C") AddFloat(s,(float*)(params[i]));
-		else if(s=="tau") AddFloat(s,(float*)(params[i]));
-		else if(s=="hither") AddFloat(s,(float*)(params[i]));
-		else if(s=="yon") AddFloat(s,(float*)(params[i]));
-		else if(s=="shutteropen") AddFloat(s,(float*)(params[i]));
-		else if(s=="shutterclose") AddFloat(s,(float*)(params[i]));
-		else if(s=="lensradius") AddFloat(s,(float*)(params[i]));
-		else if(s=="focaldistance") AddFloat(s,(float*)(params[i]));
-		else if(s=="frameaspectratio") AddFloat(s,(float*)(params[i]));
-		else if(s=="screenwindow") AddFloat(s,(float*)(params[i]),4);
-		else if(s=="fov") AddFloat(s,(float*)(params[i]));
-		else if(s=="cropwindow") AddFloat(s,(float*)(params[i]),4);
-		else if(s=="radius") AddFloat(s,(float*)(params[i]));
-		else if(s=="height") AddFloat(s,(float*)(params[i]));
-		else if(s=="phimax") AddFloat(s,(float*)(params[i]));
-		else if(s=="zmin") AddFloat(s,(float*)(params[i]));
-		else if(s=="zmax") AddFloat(s,(float*)(params[i]));
-		else if(s=="innerradius") AddFloat(s,(float*)(params[i]));
-		else if(s=="uknots") AddFloat(s,(float*)(params[i]),FindOneInt("nu", i)+FindOneInt("uorder", i));
-		else if(s=="vknots") AddFloat(s,(float*)(params[i]),FindOneInt("nv", i)+FindOneInt("vorder", i));
-		else if(s=="u0") AddFloat(s,(float*)(params[i]));
-		else if(s=="v0") AddFloat(s,(float*)(params[i]));
-		else if(s=="u1") AddFloat(s,(float*)(params[i]));
-		else if(s=="v1") AddFloat(s,(float*)(params[i]));
-		else if(s=="Pw") AddFloat(s,(float*)(params[i]),4*FindOneInt("nu", i)*FindOneInt("nv", i));
-		else if(s=="st") AddFloat(s,(float*)(params[i]),2*FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		else if(s=="uv") AddFloat(s,(float*)(params[i]),2*FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		else if(s=="emptybonus") AddInt(s,(int*)(params[i]));
-		else if(s=="uscale") AddFloat(s,(float*)(params[i]));
-		else if(s=="vscale") AddFloat(s,(float*)(params[i]));
-		else if(s=="udelta") AddFloat(s,(float*)(params[i]));
-		else if(s=="vdelta") AddFloat(s,(float*)(params[i]));
-		else if(s=="v00") AddFloat(s,(float*)(params[i]));
-		else if(s=="v01") AddFloat(s,(float*)(params[i]));
-		else if(s=="v10") AddFloat(s,(float*)(params[i]));
-		else if(s=="v11") AddFloat(s,(float*)(params[i]));
-		else if(s=="maxanisotropy") AddFloat(s,(float*)(params[i]));
-		else if(s=="roughness" && p=="fbm") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="wrinkled") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="marble") AddTexture(s,std::string(params[i]));
-		else if(s=="variation") AddFloat(s,(float*)(params[i]));
-		else if(s=="g") AddFloat(s,(float*)(params[i]));
-		else if(s=="a") AddFloat(s,(float*)(params[i]));
-		else if(s=="b") AddFloat(s,(float*)(params[i]));
-		else if(s=="density") AddFloat(s,(float*)(params[i]),FindOneInt("nx", i)*FindOneInt("ny", i)*FindOneInt("ny", i));
-		else if(s=="coneangle") AddFloat(s,(float*)(params[i]));
-		else if(s=="conedeltaangle") AddFloat(s,(float*)(params[i]));
-		else if(s=="maxdist") AddFloat(s,(float*)(params[i]));
-		else if(s=="maxerror") AddFloat(s,(float*)(params[i]));
-		else if(s=="stepsize") AddFloat(s,(float*)(params[i]));
+		if(s=="xwidth") { std::cout<<*(float*)params[i]<<std::endl; AddFloat(s,(float*)(params[i])); }
+		if(s=="ywidth") AddFloat(s,(float*)(params[i]));
+		if(s=="aplha") AddFloat(s,(float*)(params[i]));
+		if(s=="B") AddFloat(s,(float*)(params[i]));
+		if(s=="C") AddFloat(s,(float*)(params[i]));
+		if(s=="tau") AddFloat(s,(float*)(params[i]));
+		if(s=="hither") AddFloat(s,(float*)(params[i]));
+		if(s=="yon") AddFloat(s,(float*)(params[i]));
+		if(s=="shutteropen") AddFloat(s,(float*)(params[i]));
+		if(s=="shutterclose") AddFloat(s,(float*)(params[i]));
+		if(s=="lensradius") AddFloat(s,(float*)(params[i]));
+		if(s=="focaldistance") AddFloat(s,(float*)(params[i]));
+		if(s=="frameaspectratio") AddFloat(s,(float*)(params[i]));
+		if(s=="screenwindow") AddFloat(s,(float*)(params[i]),4);
+		if(s=="fov") AddFloat(s,(float*)(params[i]));
+		if(s=="cropwindow") AddFloat(s,(float*)(params[i]),4);
+		if(s=="radius") AddFloat(s,(float*)(params[i]));
+		if(s=="height") AddFloat(s,(float*)(params[i]));
+		if(s=="phimax") AddFloat(s,(float*)(params[i]));
+		if(s=="zmin") AddFloat(s,(float*)(params[i]));
+		if(s=="zmax") AddFloat(s,(float*)(params[i]));
+		if(s=="innerradius") AddFloat(s,(float*)(params[i]));
+		if(s=="uknots") AddFloat(s,(float*)(params[i]),FindOneInt("nu", i)+FindOneInt("uorder", i));
+		if(s=="vknots") AddFloat(s,(float*)(params[i]),FindOneInt("nv", i)+FindOneInt("vorder", i));
+		if(s=="u0") AddFloat(s,(float*)(params[i]));
+		if(s=="v0") AddFloat(s,(float*)(params[i]));
+		if(s=="u1") AddFloat(s,(float*)(params[i]));
+		if(s=="v1") AddFloat(s,(float*)(params[i]));
+		if(s=="Pw") AddFloat(s,(float*)(params[i]),4*FindOneInt("nu", i)*FindOneInt("nv", i));
+		if(s=="st") AddFloat(s,(float*)(params[i]),2*FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="uv") AddFloat(s,(float*)(params[i]),2*FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="emptybonus") AddInt(s,(int*)(params[i]));
+		if(s=="uscale") AddFloat(s,(float*)(params[i]));
+		if(s=="vscale") AddFloat(s,(float*)(params[i]));
+		if(s=="udelta") AddFloat(s,(float*)(params[i]));
+		if(s=="vdelta") AddFloat(s,(float*)(params[i]));
+		if(s=="v00") AddFloat(s,(float*)(params[i]));
+		if(s=="v01") AddFloat(s,(float*)(params[i]));
+		if(s=="v10") AddFloat(s,(float*)(params[i]));
+		if(s=="v11") AddFloat(s,(float*)(params[i]));
+		if(s=="maxanisotropy") AddFloat(s,(float*)(params[i]));
+		if(s=="roughness" && p=="fbm") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="wrinkled") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="marble") AddTexture(s,std::string(params[i]));
+		if(s=="variation") AddFloat(s,(float*)(params[i]));
+		if(s=="g") AddFloat(s,(float*)(params[i]));
+		if(s=="a") AddFloat(s,(float*)(params[i]));
+		if(s=="b") AddFloat(s,(float*)(params[i]));
+		if(s=="density") AddFloat(s,(float*)(params[i]),FindOneInt("nx", i)*FindOneInt("ny", i)*FindOneInt("ny", i));
+		if(s=="coneangle") AddFloat(s,(float*)(params[i]));
+		if(s=="conedeltaangle") AddFloat(s,(float*)(params[i]));
+		if(s=="maxdist") AddFloat(s,(float*)(params[i]));
+		if(s=="maxerror") AddFloat(s,(float*)(params[i]));
+		if(s=="stepsize") AddFloat(s,(float*)(params[i]));
 		
 		//int parameters
-		else if(s=="pixelsamples") AddInt(s,(int*)(params[i]));
-		else if(s=="xsamples") AddInt(s,(int*)(params[i]));
-		else if(s=="ysamples") AddInt(s,(int*)(params[i]));
-		else if(s=="xresolution") AddInt(s,(int*)(params[i]));
-		else if(s=="yresolution") AddInt(s,(int*)(params[i]));
-		else if(s=="writefrequency") AddInt(s,(int*)(params[i]));
-		else if(s=="premultiplyalpha") AddInt(s,(int*)(params[i]));
-		else if(s=="nu") AddInt(s,(int*)(params[i]));
-		else if(s=="nv") AddInt(s,(int*)(params[i]));
-		else if(s=="uorder") AddInt(s,(int*)(params[i]));
-		else if(s=="vorder") AddInt(s,(int*)(params[i]));
-		else if(s=="nlevels") AddInt(s,(int*)(params[i]));
-		else if(s=="indices") AddInt(s,(int*)(params[i]),FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		else if(s=="intersectcost") AddInt(s,(int*)(params[i]));
-		else if(s=="traversalcost") AddInt(s,(int*)(params[i]));
-		else if(s=="maxprims") AddInt(s,(int*)(params[i]));
-		else if(s=="maxdepth") AddInt(s,(int*)(params[i]));
-		else if(s=="dimension") AddInt(s,(int*)(params[i]));
-		else if(s=="octaves") AddInt(s,(int*)(params[i]));
-		else if(s=="nx") AddInt(s,(int*)(params[i]));
-		else if(s=="ny") AddInt(s,(int*)(params[i]));
-		else if(s=="nz") AddInt(s,(int*)(params[i]));
-		else if(s=="nsamples") AddInt(s,(int*)(params[i]));
-		else if(s=="causticphotons") AddInt(s,(int*)(params[i]));
-		else if(s=="indirectphotons") AddInt(s,(int*)(params[i]));
-		else if(s=="directphotons") AddInt(s,(int*)(params[i]));
-		else if(s=="nused") AddInt(s,(int*)(params[i]));
-		else if(s=="finalgathersamples") AddInt(s,(int*)(params[i]));
-		else if(s=="maxspeculardepth") AddInt(s,(int*)(params[i]));
-		else if(s=="maxindirectdepth") AddInt(s,(int*)(params[i]));
+		if(s=="pixelsamples") AddInt(s,(int*)(params[i]));
+		if(s=="xsamples") AddInt(s,(int*)(params[i]));
+		if(s=="ysamples") AddInt(s,(int*)(params[i]));
+		if(s=="xresolution") AddInt(s,(int*)(params[i]));
+		if(s=="yresolution") AddInt(s,(int*)(params[i]));
+		if(s=="writefrequency") AddInt(s,(int*)(params[i]));
+		if(s=="premultiplyalpha") AddInt(s,(int*)(params[i]));
+		if(s=="nu") AddInt(s,(int*)(params[i]));
+		if(s=="nv") AddInt(s,(int*)(params[i]));
+		if(s=="uorder") AddInt(s,(int*)(params[i]));
+		if(s=="vorder") AddInt(s,(int*)(params[i]));
+		if(s=="nlevels") AddInt(s,(int*)(params[i]));
+		if(s=="indices") AddInt(s,(int*)(params[i]),FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="intersectcost") AddInt(s,(int*)(params[i]));
+		if(s=="traversalcost") AddInt(s,(int*)(params[i]));
+		if(s=="maxprims") AddInt(s,(int*)(params[i]));
+		if(s=="maxdepth") AddInt(s,(int*)(params[i]));
+		if(s=="dimension") AddInt(s,(int*)(params[i]));
+		if(s=="octaves") AddInt(s,(int*)(params[i]));
+		if(s=="nx") AddInt(s,(int*)(params[i]));
+		if(s=="ny") AddInt(s,(int*)(params[i]));
+		if(s=="nz") AddInt(s,(int*)(params[i]));
+		if(s=="nsamples") AddInt(s,(int*)(params[i]));
+		if(s=="causticphotons") AddInt(s,(int*)(params[i]));
+		if(s=="indirectphotons") AddInt(s,(int*)(params[i]));
+		if(s=="directphotons") AddInt(s,(int*)(params[i]));
+		if(s=="nused") AddInt(s,(int*)(params[i]));
+		if(s=="finalgathersamples") AddInt(s,(int*)(params[i]));
+		if(s=="maxspeculardepth") AddInt(s,(int*)(params[i]));
+		if(s=="maxindirectdepth") AddInt(s,(int*)(params[i]));
 		
 		
 		//bool parameters
-		else if(s=="jitter") AddBool(s,(bool*)(params[i]));
-		else if(s=="refineimmediately") AddBool(s,(bool*)(params[i]));
-		else if(s=="trilinear") AddBool(s,(bool*)(params[i]));
-		else if(s=="finalgather") AddBool(s,(bool*)(params[i]));
-		else if(s=="directwithphotons") AddBool(s,(bool*)(params[i]));
+		if(s=="jitter") AddBool(s,(bool*)(params[i]));
+		if(s=="refineimmediately") AddBool(s,(bool*)(params[i]));
+		if(s=="trilinear") AddBool(s,(bool*)(params[i]));
+		if(s=="finalgather") AddBool(s,(bool*)(params[i]));
+		if(s=="directwithphotons") AddBool(s,(bool*)(params[i]));
 		
 		//string parameters
-		else if(s=="filename") AddString(s,(string*)(params[i]));
-		else if(s=="mapping") AddString(s,(string*)(params[i]));
-		else if(s=="wrap") AddString(s,(string*)(params[i]));
-		else if(s=="aamode") AddString(s,(string*)(params[i]));
-		else if(s=="mapname") AddString(s,(string*)(params[i]));
-		else if(s=="strategy") AddString(s,(string*)(params[i]));
+		if(s=="filename") { string *str=new string(params[i]); std::cout<<*str<<std::endl; AddString(s,str); delete str; }
+		if(s=="mapping") AddString(s,(string*)(params[i]));
+		if(s=="wrap") AddString(s,(string*)(params[i]));
+		if(s=="aamode") AddString(s,(string*)(params[i]));
+		if(s=="mapname") AddString(s,(string*)(params[i]));
+		if(s=="strategy") AddString(s,(string*)(params[i]));
 		
 		//point parameters
-		else if(s=="p1") AddPoint(s,(Point*)(params[i]));
-		else if(s=="p2") AddPoint(s,(Point*)(params[i]));
-		else if(s=="P" && p=="nurbs") AddPoint(s,(Point*)(params[i]),FindOneInt("nu", i)*FindOneInt("nv", i));
-		else if(s=="P" && p=="trianglemesh") AddPoint(s,(Point*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		else if(s=="p0") AddPoint(s,(Point*)(params[i]));
-		else if(s=="from") AddPoint(s,(Point*)(params[i]));
-		else if(s=="to") AddPoint(s,(Point*)(params[i]));
+		if(s=="p1") AddPoint(s,(Point*)(params[i]));
+		if(s=="p2") AddPoint(s,(Point*)(params[i]));
+		if(s=="P" && p=="nurbs") AddPoint(s,(Point*)(params[i]),FindOneInt("nu", i)*FindOneInt("nv", i));
+		if(s=="P" && p=="trianglemesh") AddPoint(s,(Point*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="p0") AddPoint(s,(Point*)(params[i]));
+		//if(s=="from") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
+		//if(s=="to") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
+		if(s=="from") { Point *p=new Point((float*)params[i]); AddPoint(s,p); delete p; }
+		if(s=="to") { Point *p=new Point((float*)params[i]); AddPoint(s,p); delete p; }
+				
 		
 		//normal paraneters
-		else if(s=="N") AddNormal(s,(Normal*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="N") AddNormal(s,(Normal*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
 		
 		//vector parameters
-		else if(s=="S") AddVector(s,(Vector*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		else if(s=="v1") AddVector(s,(Vector*)(params[i]));
-		else if(s=="v2") AddVector(s,(Vector*)(params[i]));
-		else if(s=="updir") AddVector(s,(Vector*)(params[i]));
+		if(s=="S") AddVector(s,(Vector*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="v1") AddVector(s,(Vector*)(params[i]));
+		if(s=="v2") AddVector(s,(Vector*)(params[i]));
+		if(s=="updir") AddVector(s,(Vector*)(params[i]));
 		
 		//texture parameters
-		else if(s=="bumpmap") AddTexture(s,std::string(params[i]));
-		else if(s=="Kd") AddTexture(s,std::string(params[i]));
-		else if(s=="sigma") AddTexture(s,std::string(params[i]));
-		else if(s=="Ks") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="plastic") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="translucent") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="shinymetal") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="substrate") AddTexture(s,std::string(params[i]));
-		else if(s=="roughness" && p=="uber") AddTexture(s,std::string(params[i]));
-		else if(s=="reflect") AddTexture(s,std::string(params[i]));
-		else if(s=="transmit") AddTexture(s,std::string(params[i]));
-		else if(s=="Kr") AddTexture(s,std::string(params[i]));
-		else if(s=="Kt") AddTexture(s,std::string(params[i]));
-		else if(s=="index") AddTexture(s,std::string(params[i]));
-		else if(s=="uroughness") AddTexture(s,std::string(params[i]));
-		else if(s=="vroughness") AddTexture(s,std::string(params[i]));
-		else if(s=="opacity") AddTexture(s,std::string(params[i]));
-		else if(s=="value") AddTexture(s,std::string(params[i]));
-		else if(s=="tex1") AddTexture(s,std::string(params[i]));
-		else if(s=="tex2") AddTexture(s,std::string(params[i]));
-		else if(s=="amount") AddTexture(s,std::string(params[i]));
-		else if(s=="inside") AddTexture(s,std::string(params[i]));
-		else if(s=="outside") AddTexture(s,std::string(params[i]));
+		if(s=="bumpmap") AddTexture(s,std::string(params[i]));
+		if(s=="Kd") AddTexture(s,std::string(params[i]));
+		if(s=="sigma") AddTexture(s,std::string(params[i]));
+		if(s=="Ks") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="plastic") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="translucent") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="shinymetal") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="substrate") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="uber") AddTexture(s,std::string(params[i]));
+		if(s=="reflect") AddTexture(s,std::string(params[i]));
+		if(s=="transmit") AddTexture(s,std::string(params[i]));
+		if(s=="Kr") AddTexture(s,std::string(params[i]));
+		if(s=="Kt") AddTexture(s,std::string(params[i]));
+		if(s=="index") AddTexture(s,std::string(params[i]));
+		if(s=="uroughness") AddTexture(s,std::string(params[i]));
+		if(s=="vroughness") AddTexture(s,std::string(params[i]));
+		if(s=="opacity") AddTexture(s,std::string(params[i]));
+		if(s=="value") AddTexture(s,std::string(params[i]));
+		if(s=="tex1") AddTexture(s,std::string(params[i]));
+		if(s=="tex2") AddTexture(s,std::string(params[i]));
+		if(s=="amount") AddTexture(s,std::string(params[i]));
+		if(s=="inside") AddTexture(s,std::string(params[i]));
+		if(s=="outside") AddTexture(s,std::string(params[i]));
 		
 		//color (spectrum) parameters
-		else if(s=="sigma_a") AddSpectrum(s, new Spectrum((float*)params[i]));
-		else if(s=="sigma_s") AddSpectrum(s, new Spectrum((float*)params[i]));
-		else if(s=="Le") AddSpectrum(s, new Spectrum((float*)params[i]));
-		else if(s=="L") AddSpectrum(s, new Spectrum((float*)params[i]));
-		else if(s=="I") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="sigma_a") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="sigma_s") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="Le") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="L") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="I") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="tex1") AddSpectrum(s, new Spectrum((float*)params[i]));
+		if(s=="tex2") AddSpectrum(s, new Spectrum((float*)params[i]));
 		
 		//unknown parameter
+		/*
 		else
 		{
 			std::stringstream ss;
 			ss<<"Unknown parameter '"<<p<<":"<<s<<"', Ignoring.";
 			luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
-		}
+		}*/
 	}
-	*/
 }
 
 ParamSet &ParamSet::operator=(const ParamSet &p2) {
