@@ -25,6 +25,7 @@
 #include "sampling.h"
 #include "transport.h"
 #include "volume.h"
+#include "film.h"
 
 using namespace lux;
 
@@ -38,6 +39,12 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	yPixelStart = ystart;
 	yPixelEnd = yend;
 	samplesPerPixel = spp;
+}
+void Sampler::AddSample(const Sample &sample, const Ray &ray,
+	const Spectrum &L, float alpha, Film *film)
+{
+	if (L != Spectrum(0.))
+		film->AddSample(sample.imageX, sample.imageY, L, alpha);
 }
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf,

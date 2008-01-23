@@ -55,6 +55,7 @@
 #include "lowdiscrepancy.h"
 #include "halton.h"
 #include "random.h"
+#include "metrosampler.h"
 
 #include "environment.h"
 #include "orthographic.h"
@@ -918,6 +919,12 @@ static string SearchPath(const string &searchpath,
     if(name=="halton")
     {
         Sampler *ret=HaltonSampler::CreateSampler(paramSet, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="metropolis")
+    {
+        Sampler *ret=MetropolisSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }

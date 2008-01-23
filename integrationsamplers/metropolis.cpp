@@ -93,8 +93,8 @@ bool Metropolis::GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos)
 			return false;
 
 		// store in first 5 positions
-		newsamp.value(0, sample->imageX / xRes);
-		newsamp.value(1, sample->imageY / yRes);
+		newsamp.value(0, (sample->imageX - xStart) / (xEnd - xStart));
+		newsamp.value(1, (sample->imageY - yStart) / (yEnd - yStart));
 		newsamp.value(2, sample->lensU);
 		newsamp.value(3, sample->lensV);
 		newsamp.value(4, sample->time);
@@ -103,8 +103,8 @@ bool Metropolis::GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos)
 		newsamp = msamp.next();
 
 		// mutate current sample
-		sample->imageX = newsamp.value(0, -1.) * xRes;
-		sample->imageY = newsamp.value(1, -1.) * yRes;
+		sample->imageX = newsamp.value(0, -1.) * (xEnd - xStart) + xStart;
+		sample->imageY = newsamp.value(1, -1.) * (yEnd - yStart) + yStart;
 		sample->lensU = newsamp.value(2, -1.);
 		sample->lensV = newsamp.value(3, -1.);
 		sample->time = newsamp.value(4, -1.);
@@ -122,13 +122,15 @@ void Metropolis::AddSample(const Sample &sample, const Ray &ray,
 
 	// add old sample
 	if (L.y() > 0.f && L != Spectrum(0.f))
-		film->AddSample(msamp.value(0, -1.)*xRes, 
-			msamp.value(1, -1.)*yRes, L*(1/L.y())*(1-accprob), alpha);
+		film->AddSample(msamp.value(0, -1.) * (xEnd - xStart) + xStart, 
+			msamp.value(1, -1.) * (yEnd - yStart) + yStart,
+			L * (1. / L.y()) * (1. - accprob), alpha);
 
 	// add new sample
 	if (newL.y() > 0.f && newL != Spectrum(0.f))
-		film->AddSample(newsamp.value(0, -1.)*xRes, 
-			newsamp.value(1, -1.)*yRes, newL*(1/newL.y())*accprob, alpha);
+		film->AddSample(newsamp.value(0, -1.) * (xEnd - xStart) + xStart, 
+			newsamp.value(1, -1.) * (yEnd - yStart) + yStart,
+			newL * (1. / newL.y()) * accprob, alpha);
 
 	// try or force accepting of the new sample
 	if (lux::random::floatValue() < accprob || consec_rejects > maxReject) {

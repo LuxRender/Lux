@@ -20,10 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// metropolis.h*
+// metrosampler.h*
 
-#ifndef LUX_METROPOLIS_H
-#define LUX_METROPOLIS_H
+#ifndef LUX_METROSAMPLER_H
+#define LUX_METROSAMPLER_H
 
 #include "sampling.h"
 #include "paramset.h"
@@ -32,43 +32,26 @@
 namespace lux
 {
 
-class SampleVector {
+class MetropolisSampler : public Sampler {
 public:
-	SampleVector () {}
-	virtual ~SampleVector() {}
-	virtual float value (const int i, float defval) const = 0;
-};
-
-class MetroSample : public SampleVector {
-public:
-	mutable vector<float> values;
-	mutable vector<int> modify;
-	int time;
-	MetroSample () : time(0) {}
-	float mutate (const float x) const;
-	float value (const int i, float defval) const;
-	MetroSample next () const;
-};
-
-class Metropolis : public IntegrationSampler {
-public:
-	Metropolis() { L = 0.f; consec_rejects = 0; }
-	void SetParams(int mR, float pL) { maxReject = mR; pLarge = pL; }
-	void SetFilmRes(int fX0, int fX1, int fY0, int fY1) {
-		xStart = fX0; xEnd = fX1; yStart = fY0; yEnd = fY1; }
-	bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos);
-	void GetNext(float& bs1, float& bs2, float& bcs, int pathLength);
+	MetropolisSampler(Sampler *baseSampler, int maxRej, float largeProb);
+	virtual MetropolisSampler* clone() const;
+	u_int GetTotalSamplePos() { return sampler->GetTotalSamplePos(); }
+	int RoundSize(int size) const { return sampler->RoundSize(size); }
+	bool GetNextSample(Sample *sample, u_int *use_pos);
 	void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha, Film *film);
+	~MetropolisSampler() { delete sampler; delete[] sampleImage; }
+	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	MetroSample msamp, newsamp;
+	Sampler *sampler;
 	Spectrum L;
-	int xStart, xEnd, yStart, yEnd, maxReject, consec_rejects;
-	bool large;
+	int totalSamples, maxRejects, consecRejects;
 	float pLarge;
+	float *sampleImage;
 };
 
 }//namespace lux
 
-#endif // LUX_METROPOLIS_H
+#endif // LUX_METROSAMPLER_H
 

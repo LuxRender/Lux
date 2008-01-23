@@ -221,11 +221,13 @@ void RenderThread::render(RenderThread *myThread)
 				myThread->integrationSampler->AddSample(*(myThread->sample), 
 					ray, Ls, alpha, myThread->camera->film);
 			else
-				if( Ls != Spectrum(0.f) ) {
+				myThread->sampler->AddSample(*(myThread->sample),
+					ray, Ls, alpha, myThread->camera->film);
+/*				if( Ls != Spectrum(0.f) ) {
 					float sX = myThread->sample->imageX;
 					float sY = myThread->sample->imageY;
 					myThread->camera->film->AddSample(sX, sY, Ls, alpha);
-				}
+				}*/
 
 			// Free BSDF memory from computing image sample value
 			BSDF::FreeAll();

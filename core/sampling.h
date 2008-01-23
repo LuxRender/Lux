@@ -45,6 +45,8 @@ public:
 			(yPixelEnd - yPixelStart);
 	}
 	virtual int RoundSize(int size) const = 0;
+	virtual void AddSample(const Sample &sample, const Ray &ray,
+		const Spectrum &L, float alpha, Film *film);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
@@ -232,7 +234,7 @@ public:
 	IntegrationSampler() {}
 	virtual ~IntegrationSampler() {}
 	virtual void SetParams(int mR, float pL) = 0;
-	virtual void SetFilmRes(int fX, int fY) = 0;
+	virtual void SetFilmRes(int fX0, int fX1, int fY0, int fY1) = 0;
 	virtual bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos) = 0;
 	virtual void GetNext(float& bs1, float& bs2, float& bcs, int pathLength) = 0;
 	virtual void AddSample(const Sample &sample, const Ray &ray,

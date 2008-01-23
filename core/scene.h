@@ -56,7 +56,7 @@ class RenderThread : public boost::noncopyable
 			// Radiance - hand the sample struct to the integrationsampler if used by the surfaceintegrator
 			integrationSampler = surfaceIntegrator->HasIntegrationSampler(NULL);
 			if(integrationSampler)
-				integrationSampler->SetFilmRes(_Cam->film->xResolution, _Cam->film->yResolution);
+				integrationSampler->SetFilmRes(_Splr->xPixelStart, _Splr->xPixelEnd, _Splr->yPixelStart, _Splr->yPixelEnd);
 
 			//std::cout<<"Initializing the thread's memoryarena"<<std::endl;
 			//BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
