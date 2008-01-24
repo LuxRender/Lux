@@ -20,46 +20,38 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// path.cpp*
-#include "lux.h"
-#include "transport.h"
-#include "metropolis.h"
-#include "scene.h"
+// erpt.h*
+
+#ifndef LUX_ERPT_H
+#define LUX_ERPT_H
+
+#include "sampling.h"
+#include "paramset.h"
+#include "film.h"
 
 namespace lux
 {
 
-// PathIntegrator Declarations
-class PathIntegrator : public SurfaceIntegrator {
+class ERPTSampler : public Sampler {
 public:
-	// PathIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	PathIntegrator(int md, float cp, bool mlt, int maxreject, float plarge) { 
-			maxDepth = md; continueProbability = cp; 
-			useMlt = mlt; maxReject = maxreject; pLarge = plarge;
-			outgoingDirectionOffset = new int[maxDepth];
-			outgoingComponentOffset = new int[maxDepth]; }
-	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	virtual ~PathIntegrator() { delete[] outgoingDirectionOffset; delete[] outgoingComponentOffset; }
-	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
-	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
-private:
-	// PathIntegrator Private Data
-	int maxDepth;
-	float continueProbability;
-	bool useMlt;
-	int maxReject;
-	float pLarge;
-	IntegrationSampler *mltIntegrationSampler;
-	#define SAMPLE_DEPTH 3
-	int lightPositionOffset[SAMPLE_DEPTH];
-	int lightNumOffset[SAMPLE_DEPTH];
-	int bsdfDirectionOffset[SAMPLE_DEPTH];
-	int bsdfComponentOffset[SAMPLE_DEPTH];
-	int *outgoingDirectionOffset;
-	int *outgoingComponentOffset;
+	ERPTSampler(Sampler *baseSampler, int totMut, int maxRej, float rng);
+	virtual ERPTSampler* clone() const;
+	u_int GetTotalSamplePos() { return sampler->GetTotalSamplePos(); }
+	int RoundSize(int size) const { return sampler->RoundSize(size); }
+	bool GetNextSample(Sample *sample, u_int *use_pos);
+	void AddSample(const Sample &sample, const Ray &ray,
+		const Spectrum &L, float alpha, Film *film);
+	~ERPTSampler() { delete sampler; delete[] sampleImage; }
+	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+
+	Sampler *sampler;
+	Spectrum L, Ld;
+	int totalSamples, totalMutations, maxRejects, mutations, rejects;
+	float range, sampleImageX, sampleImageY;
+	float *sampleImage;
 };
 
 }//namespace lux
+
+#endif // LUX_ERPT_H
 

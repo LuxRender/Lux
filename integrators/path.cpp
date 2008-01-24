@@ -27,9 +27,17 @@ using namespace lux;
 
 // Lux (copy) constructor
 PathIntegrator* PathIntegrator::clone() const
- {
-   return new PathIntegrator(*this);
- }
+{
+	PathIntegrator *path = new PathIntegrator(*this);
+	path->outgoingDirectionOffset = new int[maxDepth];
+	path->outgoingComponentOffset = new int[maxDepth];
+	for (int i = 0; i < maxDepth; ++i) {
+		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
+		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
+		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
+	}
+	return path;
+}
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample,
 		const Scene *scene) {
@@ -38,6 +46,8 @@ void PathIntegrator::RequestSamples(Sample *sample,
 		lightNumOffset[i] = sample->Add1D(1);
 		bsdfDirectionOffset[i] = sample->Add2D(1);
 		bsdfComponentOffset[i] = sample->Add1D(1);
+	}
+	for (int i = 0; i < maxDepth; ++i) {
 		outgoingDirectionOffset[i] = sample->Add2D(1);
 		outgoingComponentOffset[i] = sample->Add1D(1);
 	}
@@ -104,10 +114,21 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample);
+
+		// Possibly terminate the path
+		if (pathLength == maxDepth)
+			break;
+		if (pathLength > 3) {
+			if (lux::random::floatValue() > continueProbability)
+				break;
+
+			// increase path contribution
+			pathThroughput /= continueProbability;
+		}
 		// Sample BSDF to get new path direction
 		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
 		float bs1, bs2, bcs;
-		if (pathLength < SAMPLE_DEPTH && !useMlt) {
+		if (pathLength < maxDepth && !useMlt) {
 			bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
 			bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
 			bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
@@ -132,17 +153,6 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		pathThroughput *= f * AbsDot(wi, n) / pdf;
 
 		ray = RayDifferential(p, wi);
-
-		// Possibly terminate the path
-		if (pathLength > 3) {
-			if (lux::random::floatValue() > continueProbability)
-				break;
-
-			// increase path contribution
-			pathThroughput /= continueProbability;
-		}
-		if (pathLength == maxDepth)
-			break;
 	}
 	return L;
 }

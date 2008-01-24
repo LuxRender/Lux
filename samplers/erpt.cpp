@@ -20,13 +20,10 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// initial metropolis light transport sample integrator
-// by radiance
-
 // TODO: add scaling of output image samples
 
-// metrosampler.cpp*
-#include "metrosampler.h"
+// erpt.cpp*
+#include "erpt.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -46,24 +43,25 @@ static float mutate(const float x)
 }
 
 // mutate a value in the range [min-max]
-static float mutateScaled(const float x, const float min, const float max)
+static float mutateImage(const float x, const float range)
 {
-	return mutate((x - min) / (max - min)) * (max - min) + min;
+	return x + (2. * lux::random::floatValue() - 1.) * range;
 }
 
 // Metropolis method definitions
-MetropolisSampler::MetropolisSampler(Sampler *baseSampler, int maxRej, float largeProb) :
+ERPTSampler::ERPTSampler(Sampler *baseSampler, int totMut, int maxRej, float rng) :
  Sampler(baseSampler->xPixelStart, baseSampler->xPixelEnd,
  baseSampler->yPixelStart, baseSampler->yPixelEnd,
- baseSampler->samplesPerPixel), sampler(baseSampler), L(0.), totalSamples(0),
- maxRejects(maxRej), consecRejects(0), pLarge(largeProb), sampleImage(NULL)
+ baseSampler->samplesPerPixel), sampler(baseSampler), L(0.), Ld(0.),
+ totalSamples(0), totalMutations(totMut), maxRejects(maxRej), mutations(0), rejects(0), range(rng),
+ sampleImage(NULL)
 {
 }
 
 // Copy
-MetropolisSampler* MetropolisSampler::clone() const
+ERPTSampler* ERPTSampler::clone() const
 {
-	MetropolisSampler *newSampler = new MetropolisSampler(*this);
+	ERPTSampler *newSampler = new ERPTSampler(*this);
 	newSampler->sampler = sampler->clone();
 	if (totalSamples > 0)
 		newSampler->sampleImage = (float *)AllocAligned(totalSamples * sizeof(float));
@@ -71,9 +69,8 @@ MetropolisSampler* MetropolisSampler::clone() const
 }
 
 // interface for new ray/samples from scene
-bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
+bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
-	bool large = (lux::random::floatValue() < pLarge);
 	if (sampleImage == NULL) {
 		unsigned int i;
 		totalSamples = 5;
@@ -82,9 +79,8 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		for (i = 0; i < sample->n2D.size(); ++i)
 			totalSamples += 2 * sample->n2D[i];
 		sampleImage = (float *)AllocAligned(totalSamples * sizeof(float));
-		large = true;
 	}
-	if (large) {
+	if (mutations == 0) {
 		// *** large mutation ***
 		// fetch samples from sampler
 		if(!sampler->GetNextSample(sample, use_pos))
@@ -92,8 +88,8 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	} else {
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(sampleImage[0], xPixelStart, xPixelEnd);
-		sample->imageY = mutateScaled(sampleImage[1], yPixelStart, yPixelEnd);
+		sample->imageX = mutateImage(sampleImageX, range);
+		sample->imageY = mutateImage(sampleImageY, range);
 		sample->lensU = mutate(sampleImage[2]);
 		sample->lensV = mutate(sampleImage[3]);
 		sample->time = mutate(sampleImage[4]);
@@ -105,25 +101,26 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 }
 
 // interface for adding/accepting a new image sample.
-void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
+void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 			   const Spectrum &newL, float alpha, Film *film)
 {
 	// calculate accept probability from old and new image sample
 	float newLY = newL.y(), LY = L.y();
 	float accprob = min(1.0f, newLY / LY);
 
-	// add old sample
-	if (LY > 0.f)
-		film->AddSample(sampleImage[0], sampleImage[1],
-		        L * (1. / LY) * (1. - accprob), alpha);
+	if (mutations == 0) {
+		Ld = newL / totalMutations;
+		sampleImageX = sample.imageX;
+		sampleImageY = sample.imageY;
+	}
 
 	// add new sample
 	if (newLY > 0.f)
 		film->AddSample(sample.imageX, sample.imageY,
-			newL * (1. / newLY) * accprob, alpha);
+		        newL * Ld * (accprob / newLY), alpha);
 
 	// try or force accepting of the new sample
-	if (lux::random::floatValue() < accprob || consecRejects > maxRejects) {
+	if (lux::random::floatValue() < accprob || mutations == 0 || rejects == maxRejects) {
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
 		sampleImage[2] = sample.lensU;
@@ -132,20 +129,28 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 		for (int i = 5; i < totalSamples; ++i)
 			sampleImage[i] = sample.oneD[0][i - 5];
 		L = newL;
-		consecRejects = 0;
+		rejects = 0;
 	} else {
-		consecRejects++;
+		++rejects;
 	}
+	LY = L.y();
+	if (LY > 0)
+		film->AddSample(sampleImage[0], sampleImage[1],
+			L * Ld * ((1. - accprob) / LY), alpha);
+	mutations++;
+	if (mutations == totalMutations)
+		mutations = 0;
 }
 
-Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *film)
+Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
-	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a nex mutation is forced
-	float LargeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
+	int totalMutations = params.FindOneInt("totalmutations", 128);	// number of mutations before a next sample is taken
+	int maxRejects = params.FindOneInt("maxconsecutiverejects", 10);	// number of consecutive rejects before a next mutation is accepted
+	float range = params.FindOneFloat("range", 5.f);	// probability of generating a large sample mutation
 	string samplername = params.FindOneString("basesampler", "random");
 	Sampler *baseSampler = MakeSampler(samplername, params, film);
 	if (baseSampler == NULL)
 		return NULL;
-	return new MetropolisSampler(baseSampler, MaxConsecRejects, LargeMutationProb);
+	return new ERPTSampler(baseSampler, totalMutations, maxRejects, range);
 }
 
