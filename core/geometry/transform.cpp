@@ -118,9 +118,11 @@ Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
 	m[1][3] = pos.y;
 	m[2][3] = pos.z;
 	m[3][3] = 1;
+	// NOTE - mljack - correct the LookAt transformation - bug #21640 
+	// LookAt(Point(0,0,0), Point(0,0,1), Vector(0,1,0)) should return a identity Matrix4x4. 
 	Vector dir = Normalize(look - pos);
-	Vector right = Normalize(Cross(dir, up));
-	Vector newUp = Cross(right, dir);
+	Vector right = Cross(Normalize(up), dir);
+	Vector newUp = Cross(dir, right);
 	m[0][0] = right.x;
 	m[1][0] = right.y;
 	m[2][0] = right.z;
