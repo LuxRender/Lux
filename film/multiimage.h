@@ -27,6 +27,7 @@
 #include "lux.h"
 #include "film.h"
 #include "color.h"
+#include "spectrum.h"
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
@@ -75,7 +76,7 @@ public:
 	               const Spectrum &L, float alpha);
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;
-	void WriteImage() {};
+	void WriteImage() {WriteImage(WI_HDR);};
 	void WriteImage(int oType);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
@@ -124,7 +125,7 @@ private:
 			alpha = 0.f;
 			weightSum = 0.f;
 		}
-		Spectrum L;
+		XYZColor L;
 		float alpha, weightSum;
 		
 		template<class Archive>
