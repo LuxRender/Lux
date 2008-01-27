@@ -29,9 +29,8 @@ using namespace lux;
 // LinearPixelSampler Method Definitions
 LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 		int ystart, int yend) {
-	u_int xPos = xstart - 1;
+	u_int xPos = xstart;
 	u_int yPos = ystart;
-
 	// fill Pxa array in film pixel order
 	unsigned short int x = (unsigned short int) xPos;
 	unsigned short int y = (unsigned short int) yPos;
@@ -41,12 +40,13 @@ LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 		px.x = x; px.y = y;
 		Pxa.push_back(px);
 		x++;
-		if(x == xend) {
-			x = 0;
-			y++;
-			if(y == yend) break;
-		}
 		TotalPx++;
+		if(x == xend) {
+			x = xstart;
+			y++;
+			if(y == yend)
+				break;
+		}
 	}
 }
 
@@ -55,7 +55,8 @@ u_int LinearPixelSampler::GetTotalPixels() {
 }
 
 bool LinearPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	if(*use_pos >= TotalPx) return false;
+	if(*use_pos >= TotalPx)
+		return false;
 	xPos = Pxa[*use_pos].x;
 	yPos = Pxa[*use_pos].y;
 	return true;

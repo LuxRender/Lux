@@ -30,6 +30,7 @@
 #include "dynload.h"
 #include "volume.h"
 #include "error.h"
+#include "context.h"
 
 using namespace lux;
 
@@ -38,7 +39,7 @@ u_int sampPos;
 boost::mutex sampPosMutex;
 
 // Control Methods -------------------------------
-extern Scene *luxCurrentScene;
+//extern Scene *luxCurrentScene;
 
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
@@ -82,14 +83,25 @@ int Scene::FilmYres() {
 double Scene::Statistics(char *statName) {
 	if(std::string(statName)=="secElapsed")
 		return s_Timer.Time();
-	if(std::string(statName)=="samplesSec")
+	else if(std::string(statName)=="samplesSec")
 		return Statistics_SamplesPSec(); 
-	if(std::string(statName)=="samplesPx")
+	else if(std::string(statName)=="samplesPx")
 		return Statistics_SamplesPPx(); 
-	if(std::string(statName)=="efficiency")
+	else if(std::string(statName)=="efficiency")
 		return Statistics_Efficiency();
-	
-	return 0.;
+	else if(std::string(statName)=="filmXres")
+		return FilmXres();
+	else if(std::string(statName)=="filmYres")
+		return FilmYres();
+	else if(std::string(statName)=="displayInterval")
+		return DisplayInterval();
+	else
+	{
+		std::string eString("luxStatistics - requested an invalid data : ");
+		eString+=statName;
+		luxError(LUX_BADTOKEN,LUX_ERROR,eString.c_str());
+		return 0.;
+	}
 }
 
 // Control Implementations in Scene::
@@ -101,7 +113,9 @@ double Scene::Statistics_SamplesPPx()
 		samples +=renderThreads[i]->stat_Samples;
 
 	// divide by total pixels
-	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
+	int xstart,xend,ystart,yend;
+	camera->film->GetSampleExtent(&xstart,&xend,&ystart,&yend);
+	return samples / (double) ((xend-xstart)*(yend-ystart));
 }
 
 double Scene::Statistics_SamplesPSec()
@@ -147,6 +161,7 @@ void Scene::SignalThreads(int signal)
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread)
 {
+	BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
 	myThread->stat_Samples = 0.;
 	
 	// allocate sample pos
@@ -194,9 +209,9 @@ void RenderThread::render(RenderThread *myThread)
 			// Evaluate radiance along camera ray
 			float alpha;
 			Spectrum Ls = 0.f;
-			Spectrum Lo = myThread->surfaceIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
+			Spectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
 			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
-			Spectrum Lv = myThread->volumeIntegrator->Li(*(myThread->arena), myThread->scene, ray, myThread->sample, &alpha);
+			Spectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
 
 			if( Ls == Spectrum(0.f) )
@@ -208,14 +223,16 @@ void RenderThread::render(RenderThread *myThread)
 				myThread->integrationSampler->AddSample(*(myThread->sample), 
 					ray, Ls, alpha, myThread->camera->film);
 			else
-				if( Ls != Spectrum(0.f) ) {
+				myThread->sampler->AddSample(*(myThread->sample),
+					ray, Ls, alpha, myThread->camera->film);
+/*				if( Ls != Spectrum(0.f) ) {
 					float sX = myThread->sample->imageX;
 					float sY = myThread->sample->imageY;
 					myThread->camera->film->AddSample(sX, sY, Ls, alpha);
-				}
+				}*/
 
 			// Free BSDF memory from computing image sample value
-			myThread->arena->FreeAll();
+			BSDF::FreeAll();
 		}
 
 		// update samples statistics
@@ -274,7 +291,7 @@ void Scene::Render() {
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
-	sampPos = 1;
+	sampPos = 0;
 
 	//start the timer
 	s_Timer.Start();
@@ -283,7 +300,7 @@ void Scene::Render() {
 	CurThreadSignal = RenderThread::SIG_RUN;
 
     // set current scene pointer
-	luxCurrentScene = (Scene*) this;
+	//luxCurrentScene = (Scene*) this;
 	
 	//add a thread
 	CreateRenderThread();
@@ -296,6 +313,9 @@ void Scene::Render() {
 
 	// Store final image
 	camera->film->WriteImage();
+	std::cout<<(int)luxStatistics("samplesSec")<<" samples/sec " <<" "
+		<<(float)luxStatistics("samplesPx")<<" samples/pix\n";
+
 	return; // everything worked fine! Have a great day :) 
 }
 Scene::~Scene() {

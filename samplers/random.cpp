@@ -60,22 +60,7 @@ RandomSampler::RandomSampler(int xstart, int xend,
     timeSamples = lensSamples +
                   2 * xPixelSamples * yPixelSamples;
 
-    for (int i = 0;
-            i < 5 * xPixelSamples * yPixelSamples;
-            ++i)
-    {
-        imageSamples[i] = lux::random::floatValue();
-    }
-
-    // Shift image samples to pixel coordinates
-    for (int o = 0;
-            o < 2 * xPixelSamples * yPixelSamples;
-            o += 2)
-    {
-        imageSamples[o]   += xPos;
-        imageSamples[o+1] += yPos;
-    }
-    samplePos = 0;
+    samplePos = xPixelSamples * yPixelSamples;
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions
