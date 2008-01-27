@@ -39,7 +39,7 @@ class Film {
 public:
 	// Film Interface
 	Film(int xres, int yres) :
-		xResolution(xres), yResolution(yres) {
+		xResolution(xres), yResolution(yres), scaleFactor(-1.0) {
 	}
 	virtual ~Film() {
 	}
@@ -55,8 +55,10 @@ public:
 
 	virtual void merge(MultiImageFilm &f) {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::merge()");}
 	virtual void clean() {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::clean()");}
+	void setScaleFactor(double sF) {scaleFactor=sF;}
 	// Film Public Data
 	int xResolution, yResolution;
+	double scaleFactor;
 
 private:
 

@@ -312,6 +312,7 @@ void Scene::Render() {
 	}
 
 	// Store final image
+	camera->film->setScaleFactor(1.0/luxStatistics("samplesPx"));
 	camera->film->WriteImage();
 	std::cout<<(int)luxStatistics("samplesSec")<<" samples/sec " <<" "
 		<<(float)luxStatistics("samplesPx")<<" samples/pix\n";
