@@ -43,9 +43,18 @@ static float mutate(const float x)
 }
 
 // mutate a value in the range [min-max]
-static float mutateImage(const float x, const float range)
+static float mutateImage(const float x, const float mini, const float maxi, const float range)
 {
-	return x + (2. * lux::random::floatValue() - 1.) * range;
+//	return x + (2. * lux::random::floatValue() - 1.) * range;
+	static const float s1 = 1/1024., s2 = 1/16.;
+	float dx = min(maxi - mini, range) * s2 * exp(-log(s2/s1) * lux::random::floatValue());
+	if (lux::random::floatValue() < 0.5) {
+		float x1 = x + dx;
+		return (x1 > maxi) ? 2 * maxi - x1 : x1;
+	} else {
+		float x1 = x - dx;
+		return (x1 < mini) ? 2 * mini - x1 : x1;
+	}
 }
 
 // Metropolis method definitions
@@ -53,7 +62,7 @@ ERPTSampler::ERPTSampler(Sampler *baseSampler, int totMut, int maxRej, float rng
  Sampler(baseSampler->xPixelStart, baseSampler->xPixelEnd,
  baseSampler->yPixelStart, baseSampler->yPixelEnd,
  baseSampler->samplesPerPixel), sampler(baseSampler), L(0.), Ld(0.),
- totalSamples(0), totalMutations(totMut), maxRejects(maxRej), mutations(0), rejects(0), range(rng),
+ totalSamples(0), totalMutations(totMut), maxRejects(maxRej), mutations(0), rejects(0), count(0), range(rng),
  sampleImage(NULL)
 {
 }
@@ -88,8 +97,8 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	} else {
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateImage(sampleImageX, range);
-		sample->imageY = mutateImage(sampleImageY, range);
+		sample->imageX = mutateImage(sampleImageX, xPixelStart, xPixelEnd, range);
+		sample->imageY = mutateImage(sampleImageY, yPixelStart, yPixelEnd, range);
 		sample->lensU = mutate(sampleImage[2]);
 		sample->lensV = mutate(sampleImage[3]);
 		sample->time = mutate(sampleImage[4]);
@@ -105,14 +114,26 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 			   const Spectrum &newL, float alpha, Film *film)
 {
 	// calculate accept probability from old and new image sample
+	// TODO take path density into account
 	float newLY = newL.y(), LY = L.y();
 	float accprob = min(1.0f, newLY / LY);
 
-	if (mutations == 0) {
-		Ld = newL / totalMutations;
-		sampleImageX = sample.imageX;
-		sampleImageY = sample.imageY;
+	if (count == 0) {
+		Ld = Spectrum(0.);
+		sampleImageX = sampleImageY = 0.;
 	}
+
+	if (mutations == 0) {
+		Ld += newL / (sampler->samplesPerPixel * totalMutations);
+		sampleImage[0] = sampleImageX += sample.imageX / sampler->samplesPerPixel;
+		sampleImage[1] = sampleImageY += sample.imageY / sampler->samplesPerPixel;
+		++count;
+	}
+
+	if (count == sampler->samplesPerPixel)
+		++mutations;
+	if (mutations == 0)
+		return;
 
 	// add new sample
 	if (newLY > 0.f)
@@ -120,9 +141,9 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 		        newL * Ld * (accprob / newLY), alpha);
 
 	// try or force accepting of the new sample
-	if (lux::random::floatValue() < accprob || mutations == 0 || rejects == maxRejects) {
-		sampleImage[0] = sample.imageX;
-		sampleImage[1] = sample.imageY;
+	if (lux::random::floatValue() < accprob || mutations == 1 || rejects == maxRejects) {
+		sampleImage[0] = sampleImageX = sample.imageX;
+		sampleImage[1] = sampleImageY = sample.imageY;
 		sampleImage[2] = sample.lensU;
 		sampleImage[3] = sample.lensV;
 		sampleImage[4] = sample.time;
@@ -137,16 +158,17 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 	if (LY > 0)
 		film->AddSample(sampleImage[0], sampleImage[1],
 			L * Ld * ((1. - accprob) / LY), alpha);
-	mutations++;
-	if (mutations == totalMutations)
+	if (mutations == totalMutations) {
 		mutations = 0;
+		count = 0;
+	}
 }
 
 Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
 	int totalMutations = params.FindOneInt("totalmutations", 128);	// number of mutations before a next sample is taken
 	int maxRejects = params.FindOneInt("maxconsecutiverejects", 10);	// number of consecutive rejects before a next mutation is accepted
-	float range = params.FindOneFloat("range", 5.f);	// probability of generating a large sample mutation
+	float range = params.FindOneFloat("range", 80.f);	// probability of generating a large sample mutation
 	string samplername = params.FindOneString("basesampler", "random");
 	Sampler *baseSampler = MakeSampler(samplername, params, film);
 	if (baseSampler == NULL)

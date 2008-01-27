@@ -46,7 +46,7 @@ public:
 
 	Sampler *sampler;
 	Spectrum L, Ld;
-	int totalSamples, totalMutations, maxRejects, mutations, rejects;
+	int totalSamples, totalMutations, maxRejects, mutations, rejects, count;
 	float range, sampleImageX, sampleImageY;
 	float *sampleImage;
 };
