@@ -34,20 +34,19 @@ namespace lux
 
 class MetropolisSampler : public Sampler {
 public:
-	MetropolisSampler(Sampler *baseSampler, int maxRej, float largeProb);
+	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng);
 	virtual MetropolisSampler* clone() const;
-	u_int GetTotalSamplePos() { return sampler->GetTotalSamplePos(); }
-	int RoundSize(int size) const { return sampler->RoundSize(size); }
+	u_int GetTotalSamplePos() { return 0; }
+	int RoundSize(int size) const { return size; }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha, Film *film);
-	~MetropolisSampler() { delete sampler; delete[] sampleImage; }
+	~MetropolisSampler() { delete[] sampleImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	Sampler *sampler;
 	Spectrum L;
 	int totalSamples, maxRejects, consecRejects;
-	float pLarge;
+	float pLarge, range;
 	float *sampleImage;
 };
 

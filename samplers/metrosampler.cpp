@@ -46,17 +46,23 @@ static float mutate(const float x)
 }
 
 // mutate a value in the range [min-max]
-static float mutateScaled(const float x, const float min, const float max)
+static float mutateScaled(const float x, const float mini, const float maxi, const float range)
 {
-	return mutate((x - min) / (max - min)) * (max - min) + min;
+	static const float s1 = 64.;
+	float dx = range * exp(-log(s1) * lux::random::floatValue());
+	if (lux::random::floatValue() < 0.5) {
+		float x1 = x + dx;
+		return (x1 > maxi) ? x1 - maxi + mini : x1;
+	} else {
+		float x1 = x - dx;
+		return (x1 < mini) ? x1 - mini + maxi : x1;
+	}
 }
 
 // Metropolis method definitions
-MetropolisSampler::MetropolisSampler(Sampler *baseSampler, int maxRej, float largeProb) :
- Sampler(baseSampler->xPixelStart, baseSampler->xPixelEnd,
- baseSampler->yPixelStart, baseSampler->yPixelEnd,
- baseSampler->samplesPerPixel), sampler(baseSampler), L(0.), totalSamples(0),
- maxRejects(maxRej), consecRejects(0), pLarge(largeProb), sampleImage(NULL)
+MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
+ Sampler(xStart, xEnd, yStart, yEnd, 0), L(0.), totalSamples(0),
+ maxRejects(maxRej), consecRejects(0), pLarge(largeProb), range(rng), sampleImage(NULL)
 {
 }
 
@@ -64,9 +70,8 @@ MetropolisSampler::MetropolisSampler(Sampler *baseSampler, int maxRej, float lar
 MetropolisSampler* MetropolisSampler::clone() const
 {
 	MetropolisSampler *newSampler = new MetropolisSampler(*this);
-	newSampler->sampler = sampler->clone();
-	if (totalSamples > 0)
-		newSampler->sampleImage = (float *)AllocAligned(totalSamples * sizeof(float));
+	newSampler->totalSamples = 0;
+	newSampler->sampleImage = NULL;
 	return newSampler;
 }
 
@@ -86,14 +91,18 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	}
 	if (large) {
 		// *** large mutation ***
-		// fetch samples from sampler
-		if(!sampler->GetNextSample(sample, use_pos))
-			return false;
+		sample->imageX = lux::random::floatValue() * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = lux::random::floatValue() * (yPixelEnd - yPixelStart) + yPixelStart;
+		sample->lensU = lux::random::floatValue();
+		sample->lensV = lux::random::floatValue();
+		sample->time = lux::random::floatValue();
+		for (int i = 5; i < totalSamples; ++i)
+			sample->oneD[0][i - 5] = lux::random::floatValue();
 	} else {
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(sampleImage[0], xPixelStart, xPixelEnd);
-		sample->imageY = mutateScaled(sampleImage[1], yPixelStart, yPixelEnd);
+		sample->imageX = mutateScaled(sampleImage[0], xPixelStart, xPixelEnd, range);
+		sample->imageY = mutateScaled(sampleImage[1], yPixelStart, yPixelEnd, range);
 		sample->lensU = mutate(sampleImage[2]);
 		sample->lensV = mutate(sampleImage[3]);
 		sample->time = mutate(sampleImage[4]);
@@ -123,7 +132,7 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 			newL * (1. / newLY) * accprob, alpha);
 
 	// try or force accepting of the new sample
-	if (lux::random::floatValue() < accprob || consecRejects > maxRejects) {
+	if (consecRejects > maxRejects || lux::random::floatValue() < accprob ) {
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
 		sampleImage[2] = sample.lensU;
@@ -140,12 +149,11 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 
 Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
-	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a nex mutation is forced
+	int xStart, xEnd, yStart, yEnd;
+	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
+	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
 	float LargeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
-	string samplername = params.FindOneString("basesampler", "random");
-	Sampler *baseSampler = MakeSampler(samplername, params, film);
-	if (baseSampler == NULL)
-		return NULL;
-	return new MetropolisSampler(baseSampler, MaxConsecRejects, LargeMutationProb);
+	float Range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
+	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, MaxConsecRejects, LargeMutationProb, Range);
 }
 
