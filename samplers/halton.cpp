@@ -25,6 +25,7 @@
 #include "error.h"
 #include "vegas.h"
 #include "randompx.h"
+#include "lowdiscrepancypx.h"
 #include "linear.h"
 
 using namespace lux;
@@ -44,6 +45,8 @@ HaltonSampler::HaltonSampler(int xstart, int xend,
 	// Initialize PixelSampler
 	if(pixelsampler == "vegas")
 		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+	else if(pixelsampler == "lowdiscrepancy")
+		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "random")
 		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
 	else

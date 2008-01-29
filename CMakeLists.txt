@@ -346,7 +346,7 @@ SET(lux_lib_src
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
-        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp
+        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsampkers/lowdiscrepancy.cpp
 	)
 
 INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
