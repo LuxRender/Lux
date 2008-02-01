@@ -319,7 +319,7 @@ const float CIE_B[nRGB] = {
 };
 
 // returns < 0 if file not found, 0 if error, 1 if ok
-int IORFromFile(const string filename, const string fileformat, Spectrum *n, Spectrum *k) {
+int IORFromFile(const string filename, Spectrum *n, Spectrum *k) {
 
   std::ifstream f;
 
@@ -330,13 +330,10 @@ int IORFromFile(const string filename, const string fileformat, Spectrum *n, Spe
 
   vector<struct IORSample>data;
 
-  if (fileformat.length() > 0 && fileformat == "luxpop") {
+  // read file, by trying each parser in turn
+  if (!ReadSOPRAData(f, data))
     if (!ReadLuxpopData(f, data))
       return 0;
-  }
-  // SOPRA format is used as default
-  else if (!ReadSOPRAData(f, data))
-    return 0;
 
   // integrate nk data to create a spectrum
   // rgb color matching functions give better results, it seems
@@ -419,7 +416,6 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
     Spectrum s_k;
 
     // NOTE - lordcrc - added loading nk data from file
-    string fileformat = tp.FindString("fileformat");
 	// try name as a filename first, else use internal db
     int result = IORFromFile(metalname, fileformat, &s_n, &s_k);
     switch (result) {
