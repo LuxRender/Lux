@@ -90,19 +90,16 @@ void IORFromName(const string name, Spectrum *n, Spectrum *k) {
 struct IOR {
   IOR() : n(0), k(0) {}
   IOR(float nn, float kk) : n(nn), k(kk) {}
-  IOR operator+(IOR &other);
+  const IOR operator+(const IOR &other) const {
+    return IOR(n + other.n, k + other.k);
+  }
+  const IOR operator*(float s) const {
+    return IOR(n * s, k * s);
+  }
 
   float n;
   float k;
 };
-
-IOR IOR::operator+(IOR &other) {
-   return IOR(n + other.n, k + other.k);
-}
-
-IOR operator*(const IOR ior, float s) {
-   return IOR(ior.n * s, ior.k * s);
-}
 
 struct IORSample {
   float lambda; // in nm
