@@ -61,8 +61,9 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
- Sampler(xStart, xEnd, yStart, yEnd, 0), L(0.), totalSamples(0),
- maxRejects(maxRej), consecRejects(0), pLarge(largeProb), range(rng), sampleImage(NULL)
+ Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), L(0.),
+ totalSamples(0), maxRejects(maxRej), consecRejects(0),
+ pLarge(largeProb), range(rng), weight(0.), sampleImage(NULL)
 {
 }
 
@@ -78,7 +79,7 @@ MetropolisSampler* MetropolisSampler::clone() const
 // interface for new ray/samples from scene
 bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
-	bool large = (lux::random::floatValue() < pLarge);
+	large = (lux::random::floatValue() < pLarge) || initCount < initSamples;
 	if (sampleImage == NULL) {
 		unsigned int i;
 		totalSamples = 5;
@@ -117,22 +118,26 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 			   const Spectrum &newL, float alpha, Film *film)
 {
+	float newLY = newL.y();
+	// calculate meanIntensity
+	if (initCount < initSamples) {
+		meanIntensity += newLY / initSamples;
+		++(initCount);
+		if (initCount < initSamples)
+			return;
+		if (meanIntensity == 0.) meanIntensity = 1.;
+	}
 	// calculate accept probability from old and new image sample
-	float newLY = newL.y(), LY = L.y();
-	float accprob = min(1.0f, newLY / LY);
-
-	// add old sample
-	if (LY > 0.f)
-		film->AddSample(sampleImage[0], sampleImage[1],
-		        L * (1. / LY) * (1. - accprob), alpha);
-
-	// add new sample
-	if (newLY > 0.f)
-		film->AddSample(sample.imageX, sample.imageY,
-			newL * (1. / newLY) * accprob, alpha);
+	float LY = L.y();
+	float accProb = min(1.0f, newLY / LY);
+	float newWeight = (accProb + large ? 1. : 0.) / (newLY / meanIntensity + pLarge);
+	weight += (1. - accProb) / (LY / meanIntensity + pLarge);
 
 	// try or force accepting of the new sample
-	if (consecRejects > maxRejects || lux::random::floatValue() < accprob ) {
+	if (consecRejects > maxRejects || lux::random::floatValue() < accProb ) {
+		film->AddSample(sampleImage[0], sampleImage[1], L * weight, alpha);
+		weight = newWeight;
+		L = newL;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
 		sampleImage[2] = sample.lensU;
@@ -140,9 +145,9 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 		sampleImage[4] = sample.time;
 		for (int i = 5; i < totalSamples; ++i)
 			sampleImage[i] = sample.oneD[0][i - 5];
-		L = newL;
 		consecRejects = 0;
 	} else {
+		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, alpha);
 		consecRejects++;
 	}
 }
@@ -151,9 +156,14 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 {
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
-	float LargeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
-	float Range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
-	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, MaxConsecRejects, LargeMutationProb, Range);
+	initSamples = params.FindOneInt("initsamples", 100000);
+	initCount = 0;
+	meanIntensity = 0.;
+	int maxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
+	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
+	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
+	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects, largeMutationProb, range);
 }
 
+int MetropolisSampler::initCount, MetropolisSampler::initSamples;
+float MetropolisSampler::meanIntensity;

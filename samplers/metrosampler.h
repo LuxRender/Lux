@@ -43,11 +43,13 @@ public:
 		const Spectrum &L, float alpha, Film *film);
 	~MetropolisSampler() { delete[] sampleImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-
+	bool large;
 	Spectrum L;
 	int totalSamples, maxRejects, consecRejects;
-	float pLarge, range;
+	float pLarge, range, weight;
 	float *sampleImage;
+	static int initCount, initSamples;
+	static float meanIntensity;
 };
 
 }//namespace lux
