@@ -417,7 +417,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
 
     // NOTE - lordcrc - added loading nk data from file
 	// try name as a filename first, else use internal db
-    int result = IORFromFile(metalname, fileformat, &s_n, &s_k);
+    int result = IORFromFile(metalname, &s_n, &s_k);
     switch (result) {
       case 0: {
         string msg = "Error loading data file '" + metalname + "'. Using default (" + metalIORs[0].name + ").";
