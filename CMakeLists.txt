@@ -97,13 +97,13 @@ IF(APPLE)
 	ELSE(APPLE_64)
 		SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/../macos/boost/lib/x86)
 	ENDIF(APPLE_64)
-	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1)
+	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1 boost_regex-mt-1_34_1)
 ELSE(APPLE)
 	FIND_PACKAGE(Boost REQUIRED)
 	IF(Boost_FOUND)
 		MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
 		MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
-		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt)
+		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
 	ELSE(Boost_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find Boost")
 	ENDIF(Boost_FOUND)
@@ -346,7 +346,7 @@ SET(lux_lib_src
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
-        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsampkers/lowdiscrepancypx.cpp
+        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
 	)
 
 INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
