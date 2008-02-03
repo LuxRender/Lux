@@ -46,7 +46,7 @@ public:
 	bool large;
 	Spectrum L;
 	int totalSamples, maxRejects, consecRejects;
-	float pLarge, range, weight;
+	float pLarge, range, weight, alpha;
 	float *sampleImage;
 	static int initCount, initSamples;
 	static float meanIntensity;

@@ -63,7 +63,7 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
  Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), L(0.),
  totalSamples(0), maxRejects(maxRej), consecRejects(0),
- pLarge(largeProb), range(rng), weight(0.), sampleImage(NULL)
+ pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL)
 {
 }
 
@@ -116,7 +116,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 
 // interface for adding/accepting a new image sample.
 void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
-			   const Spectrum &newL, float alpha, Film *film)
+			   const Spectrum &newL, float newAlpha, Film *film)
 {
 	float newLY = newL.y();
 	// calculate meanIntensity
@@ -138,6 +138,7 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 		film->AddSample(sampleImage[0], sampleImage[1], L * weight, alpha);
 		weight = newWeight;
 		L = newL;
+		alpha = newAlpha;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
 		sampleImage[2] = sample.lensU;
@@ -147,7 +148,7 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 			sampleImage[i] = sample.oneD[0][i - 5];
 		consecRejects = 0;
 	} else {
-		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, alpha);
+		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, newAlpha);
 		consecRejects++;
 	}
 }
