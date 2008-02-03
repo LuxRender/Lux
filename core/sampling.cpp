@@ -40,6 +40,10 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	yPixelEnd = yend;
 	samplesPerPixel = spp;
 }
+float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+{
+	return sample->xD[num] + pos * sample->dxD[num];
+}
 void Sampler::AddSample(const Sample &sample, const Ray &ray,
 	const Spectrum &L, float alpha, Film *film)
 {
@@ -49,25 +53,30 @@ void Sampler::AddSample(const Sample &sample, const Ray &ray,
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf,
 		VolumeIntegrator *vol, const Scene *scene) {
+	stamp = 0;
 	surf->RequestSamples(this, scene);
 	vol->RequestSamples(this, scene);
 	// Allocate storage for sample pointers
-	int nPtrs = n1D.size() + n2D.size();
+	int nPtrs = n1D.size() + n2D.size() + nxD.size();
 	if (!nPtrs) {
-		oneD = twoD = NULL;
+		oneD = twoD = xD = NULL;
 		return;
 	}
 	oneD = (float **)AllocAligned(nPtrs * sizeof(float *));
 	twoD = oneD + n1D.size();
+	xD = twoD + n2D.size();
 	// Compute total number of sample values needed
 	int totSamples = 0;
 	for (u_int i = 0; i < n1D.size(); ++i)
 		totSamples += n1D[i];
 	for (u_int i = 0; i < n2D.size(); ++i)
 		totSamples += 2 * n2D[i];
+	for (u_int i = 0; i < nxD.size(); ++i)
+		totSamples += dxD[i] * nxD[i];
 	// Allocate storage for sample values
 	float *mem = (float *)AllocAligned(totSamples *
 		sizeof(float));
+	int *tmem = (int *)AllocAligned(nxD.size() * sizeof(int));
 	for (u_int i = 0; i < n1D.size(); ++i) {
 		oneD[i] = mem;
 		mem += n1D[i];
@@ -75,6 +84,12 @@ Sample::Sample(SurfaceIntegrator *surf,
 	for (u_int i = 0; i < n2D.size(); ++i) {
 		twoD[i] = mem;
 		mem += 2 * n2D[i];
+	}
+	for (u_int i = 0; i < nxD.size(); ++i) {
+		xD[i] = mem;
+		mem += dxD[i] * nxD[i];
+		timexD[i] = tmem;
+		tmem += nxD[i];
 	}
 }
 

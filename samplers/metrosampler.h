@@ -39,15 +39,17 @@ public:
 	u_int GetTotalSamplePos() { return 0; }
 	int RoundSize(int size) const { return size; }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
+	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha, Film *film);
 	~MetropolisSampler() { delete[] sampleImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	bool large;
 	Spectrum L;
-	int totalSamples, maxRejects, consecRejects;
+	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;
+	int *timeImage, *offset;
 	static int initCount, initSamples;
 	static float meanIntensity;
 };

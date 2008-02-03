@@ -62,8 +62,9 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
  Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), L(0.),
- totalSamples(0), maxRejects(maxRej), consecRejects(0),
- pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL)
+ totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0),
+ pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
+ timeImage(NULL)
 {
 }
 
@@ -81,13 +82,22 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	large = (lux::random::floatValue() < pLarge) || initCount < initSamples;
 	if (sampleImage == NULL) {
-		unsigned int i;
-		totalSamples = 5;
+		u_int i;
+		normalSamples = 5;
 		for (i = 0; i < sample->n1D.size(); ++i)
-			totalSamples += sample->n1D[i];
+			normalSamples += sample->n1D[i];
 		for (i = 0; i < sample->n2D.size(); ++i)
-			totalSamples += 2 * sample->n2D[i];
+			normalSamples += 2 * sample->n2D[i];
+		totalSamples = normalSamples;
+		offset = new int[sample->nxD.size()];
+		totalTimes = 0;
+		for (i = 0; i < sample->nxD.size(); ++i) {
+			offset[i] = totalSamples;
+			totalTimes += sample->nxD[i];
+			totalSamples += sample->dxD[i] * sample->nxD[i];
+		}
 		sampleImage = (float *)AllocAligned(totalSamples * sizeof(float));
+		timeImage = (int *)AllocAligned(totalTimes * sizeof(int));
 		large = true;
 	}
 	if (large) {
@@ -97,8 +107,11 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->lensU = lux::random::floatValue();
 		sample->lensV = lux::random::floatValue();
 		sample->time = lux::random::floatValue();
-		for (int i = 5; i < totalSamples; ++i)
+		for (int i = 5; i < normalSamples; ++i)
 			sample->oneD[0][i - 5] = lux::random::floatValue();
+		for (u_int i = 0; i < sample->nxD.size(); ++i)
+			for (u_int j = 0; j < sample->nxD[i]; ++j)
+				sample->timexD[i][j] = -1;
 	} else {
 		// *** small mutation ***
 		// mutate current sample
@@ -107,11 +120,34 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->lensU = mutate(sampleImage[2]);
 		sample->lensV = mutate(sampleImage[3]);
 		sample->time = mutate(sampleImage[4]);
-		for (int i = 5; i < totalSamples; ++i)
+		for (int i = 5; i < normalSamples; ++i)
 			sample->oneD[0][i - 5] = mutate(sampleImage[i]);
+		for (int i = 0; i < totalTimes; ++i)
+			sample->timexD[0][i] = timeImage[i];
 	}
 
     return true;
+}
+
+float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+{
+	float *data = sample->xD[num] + pos * sample->dxD[num];
+	if (sample->timexD[num][pos] != sample->stamp) {
+		if (sample->timexD[num][pos] == -1) {
+			for (u_int i = 0; i < sample->dxD[num]; ++i)
+				data[i] = lux::random::floatValue();
+			sample->timexD[num][pos] = 0;
+			return data;
+		}
+		for (u_int i = 0; i < sample->dxD[i]; ++i)
+			data[i] = sampleImage[offset[num] +
+				pos * sample->dxD[num] + i];
+		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
+			for (u_int i = 0; i < sample->dxD[i]; ++i)
+				data[i] = mutate(data[i]);
+		}
+	}
+	return data;
 }
 
 // interface for adding/accepting a new image sample.
@@ -146,9 +182,16 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 		sampleImage[4] = sample.time;
 		for (int i = 5; i < totalSamples; ++i)
 			sampleImage[i] = sample.oneD[0][i - 5];
+		for (int i = 0 ; i < totalTimes; ++i)
+			timeImage[i] = sample.timexD[0][i];
+		if (large)
+			sample.stamp = 0;
+		++sample.stamp;
 		consecRejects = 0;
 	} else {
 		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, newAlpha);
+		for (int i = 0; i < totalTimes; ++i)
+			sample.timexD[0][i] = timeImage[i];
 		consecRejects++;
 	}
 }
@@ -168,3 +211,4 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;
 float MetropolisSampler::meanIntensity;
+

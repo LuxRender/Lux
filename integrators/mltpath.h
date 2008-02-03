@@ -23,7 +23,6 @@
 // mltpath.cpp*
 #include "lux.h"
 #include "transport.h"
-#include "metropolis.h"
 #include "scene.h"
 
 namespace lux

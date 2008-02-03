@@ -39,6 +39,7 @@ public:
 	u_int GetTotalSamplePos() { return sampler->GetTotalSamplePos(); }
 	int RoundSize(int size) const { return sampler->RoundSize(size); }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
+	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha, Film *film);
 	~ERPTSampler() { delete sampler; delete[] sampleImage; }
@@ -46,8 +47,9 @@ public:
 
 	Sampler *sampler;
 	Spectrum L, Ld;
-	int totalSamples, totalMutations, maxRejects, mutations, rejects, count;
+	int normalSamples, totalSamples, totalMutations, maxRejects, mutations, rejects, count;
 	float range, sampleImageX, sampleImageY;
+	u_int *offset;
 	float *sampleImage;
 };
 

@@ -127,8 +127,19 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
     for (u_int i = 0; i < sample->n2D.size(); ++i)
         for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
             sample->twoD[i][j] = lux::random::floatValue();
+    for (u_int i = 0; i < sample->nxD.size(); ++i)
+        for (u_int j = 0; j < sample->dxD[i] * sample->nxD[i]; ++j)
+            sample->xD[i][j] = lux::random::floatValue();
     ++samplePos;
     return true;
+}
+
+float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+{
+	float *data = sample->xD[num] + pos * sample->dxD[num];
+	for (int i = 0; i < sample->dxD[num]; ++i)
+		data[i] = lux::random::floatValue();
+	return data;
 }
 
 Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
@@ -142,3 +153,4 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
                              ystart, yend,
                              xsamp, ysamp, pixelsampler);
 }
+

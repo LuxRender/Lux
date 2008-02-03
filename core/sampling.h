@@ -38,6 +38,7 @@ public:
 	        int ystart, int yend,
 			int spp);
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
+	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	virtual u_int GetTotalSamplePos() = 0;
 	int TotalSamples() const {
 		return samplesPerPixel *
@@ -66,10 +67,23 @@ public:
 		n2D.push_back(num);
 		return n2D.size()-1;
 	}
+	u_int AddxD(vector<u_int> &structure, u_int num) {
+		nxD.push_back(num);
+		sxD.push_back(structure);
+		u_int d = 0;
+		for (u_int i = 0; i < structure.size(); ++i)
+			d += structure[i];
+		dxD.push_back(d);
+		return nxD.size()-1;
+	}
 	~Sample() {
 		if (oneD != NULL) {
 			FreeAligned(oneD[0]);
 			FreeAligned(oneD);
+		}
+		if (timexD != NULL) {
+			FreeAligned(timexD[0]);
+			FreeAligned(timexD);
 		}
 	}
 	// Camera _Sample_ Data
@@ -77,8 +91,11 @@ public:
 	float lensU, lensV;
 	float time;
 	// Integrator _Sample_ Data
-	vector<u_int> n1D, n2D;
-	float **oneD, **twoD;
+	mutable int stamp;
+	vector<u_int> n1D, n2D, nxD, dxD;
+	vector<vector<u_int> > sxD;
+	float **oneD, **twoD, **xD;
+	int **timexD;
 };
  void StratifiedSample1D(float *samples,
 					            int nsamples,
@@ -229,17 +246,6 @@ inline void HaltonShuffleScrambled2D(int nSamples,
 		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(samples, nPixel, 2 * nSamples);
 }
-class IntegrationSampler {
-public:
-	IntegrationSampler() {}
-	virtual ~IntegrationSampler() {}
-	virtual void SetParams(int mR, float pL) = 0;
-	virtual void SetFilmRes(int fX0, int fX1, int fY0, int fY1) = 0;
-	virtual bool GetNextSample(Sampler *sampler, Sample *sample, u_int *use_pos) = 0;
-	virtual void GetNext(float& bs1, float& bs2, float& bcs, int pathLength) = 0;
-	virtual void AddSample(const Sample &sample, const Ray &ray,
-		const Spectrum &L, float alpha, Film *film) = 0;
-};
 // PxLoc X and Y pixel coordinate struct
 struct PxLoc {
 	unsigned short x;

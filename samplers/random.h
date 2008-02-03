@@ -39,6 +39,7 @@ public:
     }
 	u_int GetTotalSamplePos();
     bool GetNextSample(Sample *sample, u_int *use_pos);
+    float *GetLazyValues(Sample *sample, u_int num, u_int pos);
     int RoundSize(int sz) const
     {
         return sz;

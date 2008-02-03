@@ -41,8 +41,11 @@ public:
 			delete[] oneDSamples[i];
 		for (int i = 0; i < n2D; ++i)
 			delete[] twoDSamples[i];
+		for (int i = 0; i < nxD; ++i)
+			delete[] xDSamples[i];
 		delete[] oneDSamples;
 		delete[] twoDSamples;
+		delete[] xDSamples;
 	}
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
@@ -57,8 +60,8 @@ private:
 	int xPos, yPos, pixelSamples;
 	int samplePos;
 	float *imageSamples, *lensSamples, *timeSamples;
-	float **oneDSamples, **twoDSamples;
-	int n1D, n2D;
+	float **oneDSamples, **twoDSamples, **xDSamples;
+	int n1D, n2D, nxD;
 	u_int TotalPixels;
 	PixelSampler* pixelSampler;
 };

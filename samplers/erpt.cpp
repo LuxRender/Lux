@@ -63,7 +63,7 @@ ERPTSampler::ERPTSampler(Sampler *baseSampler, int totMut, int maxRej, float rng
  baseSampler->yPixelStart, baseSampler->yPixelEnd,
  baseSampler->samplesPerPixel), sampler(baseSampler), L(0.), Ld(0.),
  totalSamples(0), totalMutations(totMut), maxRejects(maxRej), mutations(0), rejects(0), count(0), range(rng),
- sampleImage(NULL)
+ offset(NULL), sampleImage(NULL)
 {
 }
 
@@ -82,11 +82,17 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	if (sampleImage == NULL) {
 		unsigned int i;
-		totalSamples = 5;
+		normalSamples = 5;
 		for (i = 0; i < sample->n1D.size(); ++i)
-			totalSamples += sample->n1D[i];
+			normalSamples += sample->n1D[i];
 		for (i = 0; i < sample->n2D.size(); ++i)
-			totalSamples += 2 * sample->n2D[i];
+			normalSamples += 2 * sample->n2D[i];
+		totalSamples = normalSamples;
+		offset = new u_int[sample->nxD.size()];
+		for (i = 0; i < sample->nxD.size(); ++i) {
+			offset[i] = totalSamples;
+			totalSamples += sample->dxD[i] * sample->nxD[i];
+		}
 		sampleImage = (float *)AllocAligned(totalSamples * sizeof(float));
 	}
 	if (mutations == 0) {
@@ -102,11 +108,25 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->lensU = mutate(sampleImage[2]);
 		sample->lensV = mutate(sampleImage[3]);
 		sample->time = mutate(sampleImage[4]);
-		for (int i = 5; i < totalSamples; ++i)
+		for (int i = 5; i < normalSamples; ++i)
 			sample->oneD[0][i - 5] = mutate(sampleImage[i]);
 	}
 
     return true;
+}
+
+float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+{
+	float *data = sample->xD[num] + pos * sample->dxD[num];
+	if (sample->timexD[num][pos] == -1) {
+		sampler->GetLazyValues(sample, num, pos);
+		sample->timexD[num][pos] = 0;
+	}
+	float *imageData = sampleImage + offset[num] + pos * sample->dxD[num];
+	for (;sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos]))
+		for (u_int i = 0; i < sample->dxD[i]; ++i)
+			data[i] = mutate(imageData[i]);
+	return data;
 }
 
 // interface for adding/accepting a new image sample.

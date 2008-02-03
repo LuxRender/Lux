@@ -62,11 +62,11 @@ LDSampler::LDSampler(int xstart, int xend,
 	else
 		pixelSamples = ps;
 	samplePos = pixelSamples;
-	oneDSamples = twoDSamples = NULL;
+	oneDSamples = twoDSamples = xDSamples = NULL;
 	imageSamples = new float[5*pixelSamples];
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
-	n1D = n2D = 0;
+	n1D = n2D = nxD = 0;
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions
@@ -87,6 +87,11 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
 			twoDSamples[i] = new float[2 * sample->n2D[i] *
 		                               pixelSamples];
+		xDSamples = new float *[sample->nxD.size()];
+		nxD = sample->nxD.size();
+		for (u_int i = 0; i < sample->nxD.size(); ++i)
+			xDSamples[i] = new float[sample->dxD[i] * sample->nxD[i] *
+		                               pixelSamples];
 	}
 	if (samplePos == pixelSamples) {
 		// fetch next pixel from pixelsampler
@@ -106,6 +111,38 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
 			LDShuffleScrambled2D(sample->n2D[i], pixelSamples,
 				twoDSamples[i]);
+		for (u_int i = 0; i < sample->nxD.size(); ++i) {
+			u_int off;
+			off = 0;
+			for (u_int j = 0; j < sample->sxD[i].size(); ++j) {
+				switch (sample->sxD[i][j]) {
+				case 1: {
+					float *buf = new float[sample->nxD[i] * pixelSamples];
+					LDShuffleScrambled1D(sample->nxD[i], pixelSamples,
+						buf);
+					for (u_int k = 0; k < sample->nxD[i]; ++k)
+						for (int l = 0; l < pixelSamples; ++l)
+							sample->xD[i][(k * pixelSamples + l) * sample->dxD[i] + off] = buf[l * pixelSamples + k];
+					delete[] buf;
+					break; }
+				case 2: {
+					float *buf = new float[2 * sample->nxD[i] * pixelSamples];
+					LDShuffleScrambled2D(sample->nxD[i], pixelSamples,
+						buf);
+					for (u_int k = 0; k < sample->nxD[i]; ++k) {
+						for (int l = 0; l < pixelSamples; ++l) {
+							sample->xD[i][(k * pixelSamples + l) * sample->dxD[i] + off] = buf[2 * (l * pixelSamples + k)];
+							sample->xD[i][(k * pixelSamples + l) * sample->dxD[i] + off + 1] = buf[2 * (l * pixelSamples + k) + 1];
+						}
+					}
+					delete[] buf;
+					break; }
+				default:
+					break;
+				}
+				off += sample->sxD[i][j];
+			}
+		}
 	}
 	// Copy low-discrepancy samples from tables
 	sample->imageX = xPos + imageSamples[2*samplePos];
@@ -122,6 +159,11 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		int startSamp = 2 * sample->n2D[i] * samplePos;
 		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
 			sample->twoD[i][j] = twoDSamples[i][startSamp+j];
+	}
+	for (u_int i = 0; i < sample->nxD.size(); ++i) {
+		int startSamp = sample->dxD[i] * sample->nxD[i] * samplePos;
+		for (u_int j = 0; j < sample->dxD[i] * sample->nxD[i]; ++j)
+			sample->xD[i][j] = xDSamples[i][startSamp+j];
 	}
 	++samplePos;
 	return true;
