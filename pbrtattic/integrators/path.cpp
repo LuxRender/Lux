@@ -48,8 +48,8 @@ PathIntegrator* PathIntegrator::clone() const
 	return path;
 }
 // PathIntegrator Method Definitions
-void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
-{
+void PathIntegrator::RequestSamples(Sample *sample,
+		const Scene *scene) {
 	for (int i = 0; i < maxDepth; ++i) {
 		lightPositionOffset[i] = sample->Add2D(1);
 		lightNumOffset[i] = sample->Add1D(1);
@@ -61,10 +61,19 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	}
 }
 
+IntegrationSampler* PathIntegrator::HasIntegrationSampler(IntegrationSampler *is) {
+	IntegrationSampler *isa = NULL;
+	if(useMlt) {
+		isa = new Metropolis();	// TODO - radiance - delete afterwards in renderthread
+		isa->SetParams(maxReject, pLarge);
+		mltIntegrationSampler = isa;
+	}
+    return isa;
+}
+
 Spectrum PathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
-		float *alpha) const
-{
+		float *alpha) const {
 	// Declare common path integration variables
 	Spectrum pathThroughput = 1., L = 0.;
 	RayDifferential ray(r);
@@ -101,7 +110,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
-		if (pathLength < maxDepth)
+		if (pathLength < maxDepth && !useMlt)
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample,
@@ -127,9 +136,18 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		// Sample BSDF to get new path direction
 		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
 		float bs1, bs2, bcs;
-		bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
-		bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
-		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
+		if (!useMlt) {
+			bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
+			bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
+			bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
+		}
+		else {
+			bs1 = lux::random::floatValue();
+			bs2 = lux::random::floatValue();
+			bcs = lux::random::floatValue();
+			// use metropolis integration sampler to possible mutate samples
+			mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
+		} 
 		Vector wi;
 		float pdf;
 		BxDFType flags;
@@ -144,13 +162,15 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 	}
 	return L;
 }
-SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
-{
+SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
 	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for RR (0.0-1.0)
+	// MLT
+	bool mlt = params.FindOneBool("metropolis", true);							// enables use of metropolis integrationsampler
+	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);          // number of consecutive rejects before a new mutation is forced
+	float LargeMutationProb = params.FindOneFloat("largemutationprob", .4f);	// probability of generation a large sample (mutation)
 
-	return new PathIntegrator(maxDepth, RRcontinueProb);
+	return new PathIntegrator(maxDepth, RRcontinueProb, mlt, MaxConsecRejects, LargeMutationProb);
 
 }
-

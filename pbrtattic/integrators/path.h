@@ -20,28 +20,50 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// emission.cpp*
-#include "volume.h"
+// path.cpp*
+#include "lux.h"
 #include "transport.h"
+#include "metropolis.h"
 #include "scene.h"
 
 namespace lux
 {
 
-// EmissionIntegrator Declarations
-class EmissionIntegrator : public VolumeIntegrator {
+// PathIntegrator Declarations
+class PathIntegrator : public SurfaceIntegrator {
 public:
-	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss) { stepSize = ss; }
+	// PathIntegrator Public Methods
+	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	Spectrum Transmittance(const Scene *, const Ray &ray, const Sample *sample, float *alpha) const;
-	Spectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-	virtual EmissionIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
+	PathIntegrator(int md, float cp, bool mlt, int maxreject, float plarge) { 
+			maxDepth = md; continueProbability = cp; 
+			useMlt = mlt; maxReject = maxreject; pLarge = plarge;
+			lightPositionOffset = new int[maxDepth];
+			lightNumOffset = new int[maxDepth];
+			bsdfDirectionOffset = new int[maxDepth];
+			bsdfComponentOffset = new int[maxDepth];
+			continueOffset = new int[maxDepth];
+			outgoingDirectionOffset = new int[maxDepth];
+			outgoingComponentOffset = new int[maxDepth]; }
+	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
+	virtual ~PathIntegrator() { delete[] outgoingDirectionOffset; delete[] outgoingComponentOffset; }
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
-	// EmissionIntegrator Private Data
-	float stepSize;
-	int tauSampleOffset, scatterSampleOffset;
+	// PathIntegrator Private Data
+	int maxDepth;
+	float continueProbability;
+	bool useMlt;
+	int maxReject;
+	float pLarge;
+	IntegrationSampler *mltIntegrationSampler;
+	int *lightPositionOffset;
+	int *lightNumOffset;
+	int *bsdfDirectionOffset;
+	int *bsdfComponentOffset;
+	int *continueOffset;
+	int *outgoingDirectionOffset;
+	int *outgoingComponentOffset;
 };
 
 }//namespace lux

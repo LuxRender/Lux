@@ -51,12 +51,7 @@ class RenderThread : public boost::noncopyable
 		{
 			stat_Samples=0;
 			stat_blackSamples=0;
-			sample=new Sample( surfaceIntegrator, volumeIntegrator, scene);
-
-			// Radiance - hand the sample struct to the integrationsampler if used by the surfaceintegrator
-			integrationSampler = surfaceIntegrator->HasIntegrationSampler(NULL);
-			if(integrationSampler)
-				integrationSampler->SetFilmRes(_Splr->xPixelStart, _Splr->xPixelEnd, _Splr->yPixelStart, _Splr->yPixelEnd);
+			sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
 
 			//std::cout<<"Initializing the thread's memoryarena"<<std::endl;
 			//BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
@@ -77,7 +72,6 @@ class RenderThread : public boost::noncopyable
 		double stat_Samples, stat_blackSamples;
 		SurfaceIntegrator *surfaceIntegrator;
 		VolumeIntegrator *volumeIntegrator;
-		IntegrationSampler *integrationSampler;
 		Sample *sample;
 		Sampler *sampler;
 		Camera *camera;

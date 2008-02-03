@@ -34,21 +34,19 @@ class MLTPathIntegrator : public SurfaceIntegrator {
 public:
 	// MLTPathIntegrator Public Methods
 	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-	MLTPathIntegrator(int md, float cp, int maxreject, float plarge) {
-			maxDepth = md; continueProbability = cp;
-			maxReject = maxreject; pLarge = plarge; }
+	MLTPathIntegrator(int md, float cp) {
+			maxDepth = md; continueProbability = cp; }
 	void RequestSamples(Sample *sample, const Scene *scene);
 	virtual MLTPathIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// MLTPathIntegrator Private Data
 	int maxDepth;
 	float continueProbability;
-	int maxReject;
-	float pLarge;
-	IntegrationSampler *mltIntegrationSampler;
 	int lightNumOffset, lightSampOffset;
+	int *continueOffset;
+	int *outgoingDirectionOffset;
+	int *outgoingComponentOffset;
 };
 
 }//namespace lux

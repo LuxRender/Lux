@@ -169,17 +169,8 @@ void RenderThread::render(RenderThread *myThread)
 
 	// Trace rays: The main loop
 	while (true) {
-		// NOTE - ratow - Integration sampler might try to mutate the first sample (which
-		// is not initialized) so we must use the traditional sampler. (bug #21544)
-		if(myThread->integrationSampler && myThread->stat_Samples != 0.) {
-			// use integration sampler, it might want to mutate them etc...
-			if(!myThread->integrationSampler->GetNextSample(myThread->sampler, myThread->sample, useSampPos))
-				break;
-		} else {
-			// use traditional sampler
-			if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
-				break;
-		}
+		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
+			break;
 
 		while(myThread->signal == RenderThread::SIG_PAUSE)
 		{ 
@@ -215,19 +206,9 @@ void RenderThread::render(RenderThread *myThread)
 			if( Ls == Spectrum(0.f) )
 				myThread->stat_blackSamples++;
 
-			// Radiance - Add sample contribution to image using integrationsampler if necessary
-			// the integration sampler might want to add the sample in a different way.
-			if(myThread->integrationSampler)
-				myThread->integrationSampler->AddSample(*(myThread->sample), 
-					ray, Ls, alpha, myThread->camera->film);
-			else
-				myThread->sampler->AddSample(*(myThread->sample),
-					ray, Ls, alpha, myThread->camera->film);
-/*				if( Ls != Spectrum(0.f) ) {
-					float sX = myThread->sample->imageX;
-					float sY = myThread->sample->imageY;
-					myThread->camera->film->AddSample(sX, sY, Ls, alpha);
-				}*/
+			// Radiance - Add sample contribution to image
+			myThread->sampler->AddSample(*(myThread->sample),
+				ray, Ls, alpha, myThread->camera->film);
 
 			// Free BSDF memory from computing image sample value
 			BSDF::FreeAll();
@@ -252,26 +233,23 @@ void RenderThread::render(RenderThread *myThread)
 
 int Scene::CreateRenderThread()
 {
-		RenderThread *rt=new  RenderThread (renderThreads.size(),
-										CurThreadSignal,
-										(SurfaceIntegrator*)surfaceIntegrator->clone(), 
-										(VolumeIntegrator*)volumeIntegrator->clone(),
-										sampler->clone(),
-										camera,
-										this
-										);
-		
-		renderThreads.push_back(rt);									
-		rt->thread=new boost::thread(boost::bind(RenderThread::render,rt));
+	RenderThread *rt = new  RenderThread(renderThreads.size(),
+		CurThreadSignal,
+		(SurfaceIntegrator*)surfaceIntegrator->clone(),
+		(VolumeIntegrator*)volumeIntegrator->clone(),
+		sampler->clone(), camera, this);
 
-		return 0;
+	renderThreads.push_back(rt);
+	rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
+
+	return 0;
 }
 
 void Scene::RemoveRenderThread()
 {
 	//printf("CTL: Removing thread...\n");
 	//thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
-	renderThreads.back()->signal=RenderThread::SIG_EXIT;
+	renderThreads.back()->signal = RenderThread::SIG_EXIT;
 	renderThreads.pop_back();
 	//delete thr_dat_ptrs[thr_nr -1]->Si;				// TODO deleting thread pack data deletes too much (shared_ptr?) - radiance
 	//delete thr_dat_ptrs[thr_nr -1]->Vi;				// leave off for now. (creates slight memory leak when removing threads (~5kb))
@@ -304,14 +282,13 @@ void Scene::Render() {
 	CreateRenderThread();
 	
 	//wait all threads to finish their job
-	for(unsigned int i=0;i<renderThreads.size();i++)
+	for(unsigned int i = 0; i < renderThreads.size(); i++)
 	{
 		renderThreads[i]->thread->join();
 	}
 
 	// Store final image
 	camera->film->WriteImage();
-	return; // everything worked fine! Have a great day :) 
 }
 Scene::~Scene() {
 	delete camera;

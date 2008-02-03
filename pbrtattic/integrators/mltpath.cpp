@@ -30,34 +30,27 @@ using namespace lux;
 
 // Lux (copy) constructor
 MLTPathIntegrator* MLTPathIntegrator::clone() const
-{
-	MLTPathIntegrator *path = new MLTPathIntegrator(*this);
-	path->continueOffset = new int[maxDepth];
-	path->outgoingDirectionOffset = new int[maxDepth];
-	path->outgoingComponentOffset = new int[maxDepth];
-	for (int i = 0; i < maxDepth; ++i) {
-		path->continueOffset[i] = continueOffset[i];
-		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
-		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
-	}
-	return path;
+ {
+   return new MLTPathIntegrator(*this);
  }
 // MLTPathIntegrator Method Definitions
-void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
-{
+IntegrationSampler* MLTPathIntegrator::HasIntegrationSampler(IntegrationSampler *is) {
+	IntegrationSampler *isa = NULL;
+	isa = new Metropolis();	// TODO - radiance - delete afterwards in renderthread
+	isa->SetParams(maxReject, pLarge);
+	mltIntegrationSampler = isa;
+    return isa;
+}
+
+void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	lightNumOffset = sample->Add1D(1);
 	lightSampOffset = sample->Add2D(1);
-	for (int i = 0; i < maxDepth; ++i) {
-		continueOffset[i] = sample->Add1D(1);
-		outgoingDirectionOffset[i] = sample->Add2D(1);
-		outgoingComponentOffset[i] = sample->Add1D(1);
-	}
+	/* Other offsets handled by mlt getNext */
 }
 
 Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
-		float *alpha) const
-{
+		float *alpha) const {
 	RayDifferential ray(r);
 	Spectrum pathThroughput = 1., L = 0., Le;
 	int lightNum;
@@ -120,9 +113,9 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		// pick new direction for outgoing ray
 		// using metropolis integration sampler
 		float bs1, bs2, bcs;
-		bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
-		bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
-		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
+		bs1 = bs2 = bcs = -1.;
+		mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
+
 		Vector wi;
 		float pdf;
 		Spectrum f;
@@ -141,12 +134,14 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 	return L;
 }
 
-SurfaceIntegrator* MLTPathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
-{
+SurfaceIntegrator* MLTPathIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 32);
 	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for RR (0.0-1.0)
-	return new MLTPathIntegrator(maxDepth, RRcontinueProb);
+	// MLT
+	int MaxConsecRejects = params.FindOneInt("maxconsecrejects", 512);          // number of consecutive rejects before a new mutation is forced
+	float LargeMutationProb = params.FindOneFloat("largemutationprob", .4f);	// probability of generation a large sample (mutation)
+
+	return new MLTPathIntegrator(maxDepth, RRcontinueProb, MaxConsecRejects, LargeMutationProb);
 
 }
-

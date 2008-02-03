@@ -33,11 +33,10 @@ namespace lux
 class PathIntegrator : public SurfaceIntegrator {
 public:
 	// PathIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	PathIntegrator(int md, float cp, bool mlt, int maxreject, float plarge) { 
+	PathIntegrator(int md, float cp) { 
 			maxDepth = md; continueProbability = cp; 
-			useMlt = mlt; maxReject = maxreject; pLarge = plarge;
 			lightPositionOffset = new int[maxDepth];
 			lightNumOffset = new int[maxDepth];
 			bsdfDirectionOffset = new int[maxDepth];
@@ -46,17 +45,16 @@ public:
 			outgoingDirectionOffset = new int[maxDepth];
 			outgoingComponentOffset = new int[maxDepth]; }
 	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	virtual ~PathIntegrator() { delete[] outgoingDirectionOffset; delete[] outgoingComponentOffset; }
-	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
+	virtual ~PathIntegrator() {
+		delete[] lightPositionOffset; delete[] lightNumOffset;
+		delete[] bsdfDirectionOffset; delete[] bsdfComponentOffset;
+		delete[] continueOffset; delete[] outgoingDirectionOffset;
+		delete[] outgoingComponentOffset; }
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data
 	int maxDepth;
 	float continueProbability;
-	bool useMlt;
-	int maxReject;
-	float pLarge;
-	IntegrationSampler *mltIntegrationSampler;
 	int *lightPositionOffset;
 	int *lightNumOffset;
 	int *bsdfDirectionOffset;

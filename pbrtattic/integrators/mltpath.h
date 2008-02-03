@@ -20,28 +20,35 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// emission.cpp*
-#include "volume.h"
+// mltpath.cpp*
+#include "lux.h"
 #include "transport.h"
+#include "metropolis.h"
 #include "scene.h"
 
 namespace lux
 {
 
-// EmissionIntegrator Declarations
-class EmissionIntegrator : public VolumeIntegrator {
+// MLTPathIntegrator Declarations
+class MLTPathIntegrator : public SurfaceIntegrator {
 public:
-	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss) { stepSize = ss; }
+	// MLTPathIntegrator Public Methods
+	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	MLTPathIntegrator(int md, float cp, int maxreject, float plarge) {
+			maxDepth = md; continueProbability = cp;
+			maxReject = maxreject; pLarge = plarge; }
 	void RequestSamples(Sample *sample, const Scene *scene);
-	Spectrum Transmittance(const Scene *, const Ray &ray, const Sample *sample, float *alpha) const;
-	Spectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
-	virtual EmissionIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
+	virtual MLTPathIntegrator* clone() const; // Lux (copy) constructor for multithreading
+	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *isa);
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
-	// EmissionIntegrator Private Data
-	float stepSize;
-	int tauSampleOffset, scatterSampleOffset;
+	// MLTPathIntegrator Private Data
+	int maxDepth;
+	float continueProbability;
+	int maxReject;
+	float pLarge;
+	IntegrationSampler *mltIntegrationSampler;
+	int lightNumOffset, lightSampOffset;
 };
 
 }//namespace lux
