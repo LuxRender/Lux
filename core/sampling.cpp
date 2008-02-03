@@ -67,16 +67,19 @@ Sample::Sample(SurfaceIntegrator *surf,
 	xD = twoD + n2D.size();
 	// Compute total number of sample values needed
 	int totSamples = 0;
+	int totTime = 0;
 	for (u_int i = 0; i < n1D.size(); ++i)
 		totSamples += n1D[i];
 	for (u_int i = 0; i < n2D.size(); ++i)
 		totSamples += 2 * n2D[i];
-	for (u_int i = 0; i < nxD.size(); ++i)
+	for (u_int i = 0; i < nxD.size(); ++i) {
 		totSamples += dxD[i] * nxD[i];
+		totTime += nxD[i];
+	}
 	// Allocate storage for sample values
 	float *mem = (float *)AllocAligned(totSamples *
 		sizeof(float));
-	int *tmem = (int *)AllocAligned(nxD.size() * sizeof(int));
+	int *tmem = (int *)AllocAligned(totTime * sizeof(int));
 	for (u_int i = 0; i < n1D.size(); ++i) {
 		oneD[i] = mem;
 		mem += n1D[i];

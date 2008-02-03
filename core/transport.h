@@ -60,9 +60,14 @@ class SurfaceIntegrator : public Integrator {
 	int *bsdfComponentOffset);
  Spectrum UniformSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, int lightSampleOffset = -1,
-	int lightNumOffset = -1, int bsdfSampleOffset = -1,
-	int bsdfComponentOffset = -1);
+	const Sample *sample, int lightSampleOffset,
+	int lightNumOffset, int bsdfSampleOffset,
+	int bsdfComponentOffset);
+ Spectrum UniformSampleOneLight(const Scene *scene, const Point &p,
+	const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, float *lightSampleOffset = NULL,
+	float *lightNumOffset = NULL, float *bsdfSampleOffset = NULL,
+	float *bsdfComponentOffset = NULL);
  Spectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,

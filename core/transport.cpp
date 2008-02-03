@@ -31,6 +31,10 @@ namespace lux
 Integrator::~Integrator() {
 }
 // Integrator Utility Functions
+ Spectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
+	const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, float *lightSamp, float *bsdfSamp,
+	float *bsdfComponent, u_int sampleNum);
  Spectrum UniformSampleAllLights(const Scene *scene,
 		const Point &p, const Normal &n, const Vector &wo,
 		BSDF *bsdf, const Sample *sample,
@@ -44,12 +48,12 @@ Integrator::~Integrator() {
 		// Estimate direct lighting from _light_ samples
 		Spectrum Ld(0.);
 		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
-		int curLightSampleOffset = (lightSampleOffset) ? 
-			lightSampleOffset[i] : -1;
-		int curBsdfSampleOffset = (lightSampleOffset) ? 
-			lightSampleOffset[i] : -1;
-		int curBsdfComponentOffset = (bsdfComponentOffset) ? 
-			bsdfComponentOffset[i] : -1;
+		float *curLightSampleOffset = (sample && lightSampleOffset) ? 
+			sample->twoD[lightSampleOffset[i]] : NULL;
+		float *curBsdfSampleOffset = (sample && lightSampleOffset) ? 
+			sample->twoD[lightSampleOffset[i]] : NULL;
+		float *curBsdfComponentOffset = (sample && bsdfComponentOffset) ? 
+			sample->oneD[bsdfComponentOffset[i]] : NULL;
 		for (int j = 0; j < nSamples; ++j)
 			Ld += EstimateDirect(scene, light, p, n, wo, bsdf,
 				sample, curLightSampleOffset,
@@ -63,23 +67,38 @@ Integrator::~Integrator() {
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		int lightSampleOffset, int lightNumOffset,
 		int bsdfSampleOffset, int bsdfComponentOffset) {
+	float *lightSample = (sample && lightSampleOffset != -1) ?
+		sample->twoD[lightSampleOffset] : NULL;
+	float *lightNum = (sample && lightNumOffset != -1) ?
+		sample->oneD[lightNumOffset] : NULL;
+	float *bsdfSample = (sample && bsdfSampleOffset != -1) ?
+		sample->twoD[bsdfSampleOffset] : NULL;
+	float *bsdfComponent = (sample && bsdfComponentOffset != -1) ?
+		sample->oneD[bsdfComponentOffset] : NULL;
+	return UniformSampleOneLight(scene, p, n, wo, bsdf, sample,
+		lightSample, lightNum, bsdfSample, bsdfComponent);
+}
+ Spectrum UniformSampleOneLight(const Scene *scene,
+		const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		float *lightSample, float *lightNum,
+		float *bsdfSample, float *bsdfComponent) {
 	// Randomly choose a single light to sample, _light_
 	int nLights = int(scene->lights.size());
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
 	if (nLights == 0) 
 		return Spectrum(0.f);
-	int lightNum;
-	if (lightNumOffset != -1)
-		lightNum = Floor2Int(sample->oneD[lightNumOffset][0] *
-							 nLights);
+	int lightNumber;
+	if (lightNum != NULL)
+		lightNumber = Floor2Int(*lightNum * nLights);
 	else
-		lightNum = Floor2Int(lux::random::floatValue() * nLights);
-	lightNum = min(lightNum, nLights-1);
-	Light *light = scene->lights[lightNum];
+		lightNumber = Floor2Int(lux::random::floatValue() * nLights);
+	lightNumber = min(lightNumber, nLights - 1);
+	Light *light = scene->lights[lightNumber];
 	return (float)nLights *
 		EstimateDirect(scene, light, p, n, wo, bsdf, sample,
-			lightSampleOffset, bsdfSampleOffset,
-			bsdfComponentOffset, 0);
+			lightSample, bsdfSample,
+			bsdfComponent, 0);
 }
  Spectrum WeightedSampleOneLight(const Scene *scene,
 		const Point &p, const Normal &n,
@@ -114,22 +133,30 @@ Integrator::~Integrator() {
 			avgY[i] = luminance;
 	}
 	else {
+		float *lightSample = (sample && lightSampleOffset != -1) ?
+			sample->twoD[lightSampleOffset] : NULL;
+		float *lightNum = (sample && lightNumOffset != -1) ?
+			sample->oneD[lightNumOffset] : NULL;
+		float *bsdfSample = (sample && bsdfSampleOffset != -1) ?
+			sample->twoD[bsdfSampleOffset] : NULL;
+		float *bsdfComponent = (sample && bsdfComponentOffset != -1) ?
+			sample->oneD[bsdfComponentOffset] : NULL;
 		// Choose _light_ according to average reflected luminance
 		float c, lightSampleWeight;
 		for (int i = 0; i < nLights; ++i)
 			avgYsample[i] = max(avgY[i], .1f * overallAvgY);
 		ComputeStep1dCDF(avgYsample, nLights, &c, cdf);
 		float t = SampleStep1d(avgYsample, cdf, c, nLights,
-			sample->oneD[lightNumOffset][0], &lightSampleWeight);
-		int lightNum = min(Float2Int(nLights * t), nLights-1);
-		Light *light = scene->lights[lightNum];
+			lightNum ? *lightNum : lux::random::floatValue(), &lightSampleWeight);
+		int lightNumber = min(Float2Int(nLights * t), nLights-1);
+		Light *light = scene->lights[lightNumber];
 		L = EstimateDirect(scene, light, p, n, wo, bsdf,
-			sample, lightSampleOffset, bsdfSampleOffset,
-			bsdfComponentOffset, 0);
+			sample, lightSample, bsdfSample,
+			bsdfComponent, 0);
 		// Update _avgY_ array with reflected radiance due to light
 		float luminance = L.y();
-		avgY[lightNum] =
-			ExponentialAverage(avgY[lightNum], luminance, .99f);
+		avgY[lightNumber] =
+			ExponentialAverage(avgY[lightNumber], luminance, .99f);
 		overallAvgY =
 			ExponentialAverage(overallAvgY, luminance, .999f);
 		L /= lightSampleWeight;
@@ -139,20 +166,20 @@ Integrator::~Integrator() {
 Spectrum EstimateDirect(const Scene *scene,
         const Light *light, const Point &p,
 		const Normal &n, const Vector &wo,
-		BSDF *bsdf, const Sample *sample, int lightSamp,
-		int bsdfSamp, int bsdfComponent, u_int sampleNum) {
+		BSDF *bsdf, const Sample *sample, float *lightSamp,
+		float *bsdfSamp, float *bsdfComponent, u_int sampleNum) {
 	Spectrum Ld(0.);
 	// Find light and BSDF sample values for direct lighting estimate
 	float ls1, ls2, bs1, bs2, bcs;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
-	if (lightSamp != -1 && bsdfSamp != -1 && bsdfComponent != -1 &&
+	if (lightSamp != NULL && bsdfSamp != NULL && bsdfComponent != NULL /*&&
 		sampleNum < sample->n2D[lightSamp] &&
-		sampleNum < sample->n2D[bsdfSamp]) {
-		ls1 = sample->twoD[lightSamp][2*sampleNum];
-		ls2 = sample->twoD[lightSamp][2*sampleNum+1];
-		bs1 = sample->twoD[bsdfSamp][2*sampleNum];
-		bs2 = sample->twoD[bsdfSamp][2*sampleNum+1];
-		bcs = sample->oneD[bsdfComponent][sampleNum];
+		sampleNum < sample->n2D[bsdfSamp]*/) {
+		ls1 = lightSamp/*sample->twoD[lightSamp]*/[2*sampleNum];
+		ls2 = lightSamp/*sample->twoD[lightSamp]*/[2*sampleNum+1];
+		bs1 = bsdfSamp/*sample->twoD[bsdfSamp]*/[2*sampleNum];
+		bs2 = bsdfSamp/*sample->twoD[bsdfSamp]*/[2*sampleNum+1];
+		bcs = bsdfComponent/*sample->oneD[bsdfComponent]*/[sampleNum];
 	}
 	else {
 		ls1 = lux::random::floatValue();

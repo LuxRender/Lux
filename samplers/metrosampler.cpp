@@ -139,11 +139,11 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 			sample->timexD[num][pos] = 0;
 			return data;
 		}
-		for (u_int i = 0; i < sample->dxD[i]; ++i)
+		for (u_int i = 0; i < sample->dxD[num]; ++i)
 			data[i] = sampleImage[offset[num] +
 				pos * sample->dxD[num] + i];
 		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
-			for (u_int i = 0; i < sample->dxD[i]; ++i)
+			for (u_int i = 0; i < sample->dxD[num]; ++i)
 				data[i] = mutate(data[i]);
 		}
 	}
