@@ -29,10 +29,19 @@ using namespace lux;
 PathIntegrator* PathIntegrator::clone() const
 {
 	PathIntegrator *path = new PathIntegrator(*this);
+	path->lightPositionOffset = new int[maxDepth];
+	path->lightNumOffset = new int[maxDepth];
+	path->bsdfDirectionOffset = new int[maxDepth];
+	path->bsdfComponentOffset = new int[maxDepth];
+	path->continueOffset = new int[maxDepth];
 	path->outgoingDirectionOffset = new int[maxDepth];
 	path->outgoingComponentOffset = new int[maxDepth];
 	for (int i = 0; i < maxDepth; ++i) {
-		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
+		path->lightPositionOffset[i] = lightPositionOffset[i];
+		path->lightNumOffset[i] = lightNumOffset[i];
+		path->bsdfDirectionOffset[i] = bsdfDirectionOffset[i];
+		path->bsdfComponentOffset[i] = bsdfComponentOffset[i];
+		path->continueOffset[i] = continueOffset[i];
 		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
 		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
 	}
@@ -41,13 +50,12 @@ PathIntegrator* PathIntegrator::clone() const
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample,
 		const Scene *scene) {
-	for (int i = 0; i < SAMPLE_DEPTH; ++i) {
+	for (int i = 0; i < maxDepth; ++i) {
 		lightPositionOffset[i] = sample->Add2D(1);
 		lightNumOffset[i] = sample->Add1D(1);
 		bsdfDirectionOffset[i] = sample->Add2D(1);
 		bsdfComponentOffset[i] = sample->Add1D(1);
-	}
-	for (int i = 0; i < maxDepth; ++i) {
+		continueOffset[i] = sample->Add1D(1);
 		outgoingDirectionOffset[i] = sample->Add2D(1);
 		outgoingComponentOffset[i] = sample->Add1D(1);
 	}
@@ -102,7 +110,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
-		if (pathLength < SAMPLE_DEPTH && !useMlt)
+		if (pathLength < maxDepth && !useMlt)
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample,
@@ -119,7 +127,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 		if (pathLength > 3) {
-			if (lux::random::floatValue() > continueProbability)
+			if (sample->oneD[continueOffset[pathLength]][0] > continueProbability)
 				break;
 
 			// increase path contribution
@@ -128,7 +136,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		// Sample BSDF to get new path direction
 		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
 		float bs1, bs2, bcs;
-		if (pathLength < maxDepth && !useMlt) {
+		if (!useMlt) {
 			bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
 			bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
 			bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
@@ -137,8 +145,6 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 			bs1 = lux::random::floatValue();
 			bs2 = lux::random::floatValue();
 			bcs = lux::random::floatValue();
-		}
-		if(useMlt) {
 			// use metropolis integration sampler to possible mutate samples
 			mltIntegrationSampler->GetNext(bs1, bs2, bcs, pathLength);
 		} 

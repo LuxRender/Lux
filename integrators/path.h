@@ -38,6 +38,11 @@ public:
 	PathIntegrator(int md, float cp, bool mlt, int maxreject, float plarge) { 
 			maxDepth = md; continueProbability = cp; 
 			useMlt = mlt; maxReject = maxreject; pLarge = plarge;
+			lightPositionOffset = new int[maxDepth];
+			lightNumOffset = new int[maxDepth];
+			bsdfDirectionOffset = new int[maxDepth];
+			bsdfComponentOffset = new int[maxDepth];
+			continueOffset = new int[maxDepth];
 			outgoingDirectionOffset = new int[maxDepth];
 			outgoingComponentOffset = new int[maxDepth]; }
 	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
@@ -52,11 +57,11 @@ private:
 	int maxReject;
 	float pLarge;
 	IntegrationSampler *mltIntegrationSampler;
-	#define SAMPLE_DEPTH 3
-	int lightPositionOffset[SAMPLE_DEPTH];
-	int lightNumOffset[SAMPLE_DEPTH];
-	int bsdfDirectionOffset[SAMPLE_DEPTH];
-	int bsdfComponentOffset[SAMPLE_DEPTH];
+	int *lightPositionOffset;
+	int *lightNumOffset;
+	int *bsdfDirectionOffset;
+	int *bsdfComponentOffset;
+	int *continueOffset;
 	int *outgoingDirectionOffset;
 	int *outgoingComponentOffset;
 };
