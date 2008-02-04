@@ -76,7 +76,7 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 
 	if (alpha) *alpha = 1.;
 	// NOTE - Ratow - Removed recursion: looping gives me an ~8% speed up.
-	for (int pathLength = 0; ; ++pathLength) {
+	for (int pathLength = 1; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
@@ -108,15 +108,6 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 
-		// Possibly terminate the path
-		if (pathLength > 3) {
-			// NOTE - Ratow - should the path length be the same after a small mutation?
-			if (lux::random::floatValue() > continueProbability)
-				break;
-			// increase path contribution
-			pathThroughput /= continueProbability;
-		}
-
 		// pick new direction for outgoing ray
 		// using metropolis integration sampler
 		float bs1, bs2, bcs;
@@ -133,9 +124,18 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		if (f.Black() || pdf == 0.)
 			break;
 
+		// Possibly terminate the path
+		if (pathLength > 3) {
+			float q = min(1.0f, f.y()/pdf);
+			if (q < sample->oneD[continueOffset[pathLength]][0])
+				break;
+			pathThroughput /= q;
+		}
+
 		// trace reflected
 		ray = RayDifferential(p, wi);
 
+		// increase path contribution
 		pathThroughput *= f * AbsDot(wi, n) / pdf;
 	}
 	return L;
@@ -145,8 +145,7 @@ SurfaceIntegrator* MLTPathIntegrator::CreateSurfaceIntegrator(const ParamSet &pa
 {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 32);
-	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for RR (0.0-1.0)
-	return new MLTPathIntegrator(maxDepth, RRcontinueProb);
+	return new MLTPathIntegrator(maxDepth);
 
 }
 
