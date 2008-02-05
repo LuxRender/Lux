@@ -62,7 +62,7 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
  Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), L(0.),
- totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0),
+ totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
  timeImage(NULL)
 {
@@ -117,6 +117,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->oneD[0][i - 5] = lux::random::floatValue();
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
+		sample->stamp = 0;
 	} else {
 		// *** small mutation ***
 		// mutate current sample
@@ -129,6 +130,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->oneD[0][i - 5] = mutate(sampleImage[i]);
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = timeImage[i];
+		++(sample->stamp);
 	}
 
     return true;
@@ -190,14 +192,13 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 			sampleImage[i] = sample.oneD[0][i - 5];
 		for (int i = 0 ; i < totalTimes; ++i)
 			timeImage[i] = sample.timexD[0][i];
-		if (large)
-			sample.stamp = 0;
-		++(sample.stamp);
+		stamp = sample.stamp;
 		consecRejects = 0;
 	} else {
 		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, newAlpha);
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
+		sample.stamp = stamp;
 		consecRejects++;
 	}
 }

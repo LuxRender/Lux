@@ -46,7 +46,7 @@ public:
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	bool large;
 	Spectrum L;
-	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
+	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;
 	int *timeImage, *offset;
