@@ -77,27 +77,33 @@ MetropolisSampler* MetropolisSampler::clone() const
 	return newSampler;
 }
 
+static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
+{
+	u_int i;
+	sampler->normalSamples = 5;
+	for (i = 0; i < sample->n1D.size(); ++i)
+		sampler->normalSamples += sample->n1D[i];
+	for (i = 0; i < sample->n2D.size(); ++i)
+		sampler->normalSamples += 2 * sample->n2D[i];
+	sampler->totalSamples = sampler->normalSamples;
+	sampler->offset = new int[sample->nxD.size()];
+	sampler->totalTimes = 0;
+	for (i = 0; i < sample->nxD.size(); ++i) {
+		sampler->offset[i] = sampler->totalSamples;
+		sampler->totalTimes += sample->nxD[i];
+		sampler->totalSamples += sample->dxD[i] * sample->nxD[i];
+	}
+	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
+	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
+}
+
 // interface for new ray/samples from scene
 bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
+	sample->sampler = this;
 	large = (lux::random::floatValue() < pLarge) || initCount < initSamples;
 	if (sampleImage == NULL) {
-		u_int i;
-		normalSamples = 5;
-		for (i = 0; i < sample->n1D.size(); ++i)
-			normalSamples += sample->n1D[i];
-		for (i = 0; i < sample->n2D.size(); ++i)
-			normalSamples += 2 * sample->n2D[i];
-		totalSamples = normalSamples;
-		offset = new int[sample->nxD.size()];
-		totalTimes = 0;
-		for (i = 0; i < sample->nxD.size(); ++i) {
-			offset[i] = totalSamples;
-			totalTimes += sample->nxD[i];
-			totalSamples += sample->dxD[i] * sample->nxD[i];
-		}
-		sampleImage = (float *)AllocAligned(totalSamples * sizeof(float));
-		timeImage = (int *)AllocAligned(totalTimes * sizeof(int));
+		initMetropolis(this, sample);
 		large = true;
 	}
 	if (large) {
@@ -109,9 +115,8 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->time = lux::random::floatValue();
 		for (int i = 5; i < normalSamples; ++i)
 			sample->oneD[0][i - 5] = lux::random::floatValue();
-		for (u_int i = 0; i < sample->nxD.size(); ++i)
-			for (u_int j = 0; j < sample->nxD[i]; ++j)
-				sample->timexD[i][j] = -1;
+		for (int i = 0; i < totalTimes; ++i)
+			sample->timexD[0][i] = -1;
 	} else {
 		// *** small mutation ***
 		// mutate current sample
@@ -137,11 +142,12 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
 				data[i] = lux::random::floatValue();
 			sample->timexD[num][pos] = 0;
-			return data;
+		} else {
+			for (u_int i = 0; i < sample->dxD[num]; ++i){
+				data[i] = sampleImage[offset[num] +
+					pos * sample->dxD[num] + i];
+			}
 		}
-		for (u_int i = 0; i < sample->dxD[num]; ++i)
-			data[i] = sampleImage[offset[num] +
-				pos * sample->dxD[num] + i];
 		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
 				data[i] = mutate(data[i]);
@@ -186,7 +192,7 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 			timeImage[i] = sample.timexD[0][i];
 		if (large)
 			sample.stamp = 0;
-		++sample.stamp;
+		++(sample.stamp);
 		consecRejects = 0;
 	} else {
 		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, newAlpha);

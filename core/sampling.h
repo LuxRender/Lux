@@ -86,6 +86,8 @@ public:
 			FreeAligned(timexD);
 		}
 	}
+	// Reference to the sampler for lazy evaluation
+	Sampler *sampler;
 	// Camera _Sample_ Data
 	float imageX, imageY;
 	float lensU, lensV;

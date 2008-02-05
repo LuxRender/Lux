@@ -54,6 +54,7 @@ void Sampler::AddSample(const Sample &sample, const Ray &ray,
 Sample::Sample(SurfaceIntegrator *surf,
 		VolumeIntegrator *vol, const Scene *scene) {
 	stamp = 0;
+	sampler = NULL;
 	surf->RequestSamples(this, scene);
 	vol->RequestSamples(this, scene);
 	// Allocate storage for sample pointers

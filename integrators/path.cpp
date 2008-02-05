@@ -29,7 +29,7 @@ using namespace lux;
 PathIntegrator* PathIntegrator::clone() const
 {
 	PathIntegrator *path = new PathIntegrator(*this);
-	path->lightPositionOffset = new int[maxDepth];
+/*	path->lightPositionOffset = new int[maxDepth];
 	path->lightNumOffset = new int[maxDepth];
 	path->bsdfDirectionOffset = new int[maxDepth];
 	path->bsdfComponentOffset = new int[maxDepth];
@@ -44,13 +44,22 @@ PathIntegrator* PathIntegrator::clone() const
 		path->continueOffset[i] = continueOffset[i];
 		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
 		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
-	}
+	}*/
 	return path;
 }
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
-	for (int i = 0; i < maxDepth; ++i) {
+	vector<u_int> structure;
+	structure.push_back(2);
+	structure.push_back(1);
+	structure.push_back(2);
+	structure.push_back(1);
+	structure.push_back(1);
+	structure.push_back(2);
+	structure.push_back(1);
+	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+/*	for (int i = 0; i < maxDepth; ++i) {
 		lightPositionOffset[i] = sample->Add2D(1);
 		lightNumOffset[i] = sample->Add1D(1);
 		bsdfDirectionOffset[i] = sample->Add2D(1);
@@ -58,7 +67,7 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		continueOffset[i] = sample->Add1D(1);
 		outgoingDirectionOffset[i] = sample->Add2D(1);
 		outgoingComponentOffset[i] = sample->Add1D(1);
-	}
+	}*/
 }
 
 Spectrum PathIntegrator::Li(const Scene *scene,
@@ -101,14 +110,16 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
+		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 		if (pathLength < maxDepth)
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample,
-					lightPositionOffset[pathLength],
+					data, data + 2, data + 3, data + 5);
+/*					lightPositionOffset[pathLength],
 					lightNumOffset[pathLength],
 					bsdfDirectionOffset[pathLength],
-					bsdfComponentOffset[pathLength]);
+					bsdfComponentOffset[pathLength]);*/
 		else 
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
@@ -118,7 +129,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 		if (pathLength > 3) {
-			if (sample->oneD[continueOffset[pathLength]][0] > continueProbability)
+			if (data[6]/*sample->oneD[continueOffset[pathLength]][0]*/ > continueProbability)
 				break;
 
 			// increase path contribution
@@ -126,14 +137,14 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		}
 		// Sample BSDF to get new path direction
 		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
-		float bs1, bs2, bcs;
+/*		float bs1, bs2, bcs;
 		bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
 		bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
-		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
+		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];*/
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		Spectrum f = bsdf->Sample_f(wo, &wi, bs1, bs2, bcs,
+		Spectrum f = bsdf->Sample_f(wo, &wi, data[7]/*bs1*/, data[8]/*bs2*/, data[9]/*bcs*/,
 			&pdf, BSDF_ALL, &flags);
 		if (f.Black() || pdf == 0.)
 			break;
