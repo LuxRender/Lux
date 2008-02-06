@@ -126,7 +126,7 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
-			float q = min(1.0f, f.y()/pdf);
+			float q = min(1., f.y()/pdf);
 			if (q < sample->oneD[continueOffset[pathLength]][0])
 				break;
 			pathThroughput /= q;

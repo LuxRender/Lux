@@ -47,7 +47,7 @@ float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 void Sampler::AddSample(const Sample &sample, const Ray &ray,
 	const SWCSpectrum &L, float alpha, Film *film)
 {
-	if (L != Spectrum(0.))
+	if (!L.Black())
 		film->AddSample(sample.imageX, sample.imageY, L, alpha);
 }
 // Sample Method Definitions
@@ -82,7 +82,6 @@ Sample::Sample(SurfaceIntegrator *surf,
 	float *mem = (float *)AllocAligned(totSamples *
 		sizeof(float));
 	int *tmem = (int *)AllocAligned(totTime * sizeof(int));
-	timexD = (int **)AllocAligned(nxD.size() * sizeof(int *));
 	for (u_int i = 0; i < n1D.size(); ++i) {
 		oneD[i] = mem;
 		mem += n1D[i];

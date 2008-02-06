@@ -132,6 +132,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 				if (sample->timexD[0][i] != -1)
 					sample->timexD[0][i] = 0;
 			}
+			sample->stamp = 0;
 		}
 		// *** small mutation ***
 		// mutate current sample
@@ -179,12 +180,12 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 	float newLY = newL.y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
-		meanIntensity += newLY / initSamples;
+		meanIntensity += newLY;
 		++(initCount);
 		if (initCount < initSamples)
 			return;
 		if (meanIntensity == 0.) meanIntensity = 1.;
-		meanIntensity /= totalMutations;
+		meanIntensity /= initSamples * totalMutations;
 	}
 	// calculate the number of chains on a new seed
 	if (chain == 0 && mutation == 0)
@@ -192,16 +193,15 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 	// calculate accept probability from old and new image sample
 	float LY = L.y();
 	float accProb = min(1.0f, newLY / LY);
-	float newWeight = accProb * meanIntensity / newLY;
-	weight += (1. - accProb) * meanIntensity / LY;
+	float newWeight = accProb * meanIntensity;
+	weight += (1. - accProb) * meanIntensity;
 	if (mutation == 0)
 		accProb = 1.;
 
 	// try accepting of the new sample
 	if (accProb == 1. || lux::random::floatValue() < accProb /*|| consecRejects > totalMutations / 10*/) {
-		XYZColor Lw = L;
-		Lw *= weight;
-		film->AddSample(sampleImage[0], sampleImage[1], Lw, alpha);
+		L *= weight / LY;
+		film->AddSample(sampleImage[0], sampleImage[1], L, alpha);
 		weight = newWeight;
 		L = newL.ToXYZ();
 		alpha = newAlpha;
@@ -221,7 +221,7 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 		}
 		consecRejects = 0;
 	} else {
-		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, newAlpha);
+		film->AddSample(sample.imageX, sample.imageY, newL * (newWeight / newLY), newAlpha);
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
 		sample.stamp = stamp;
