@@ -34,26 +34,26 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
-	ERPTSampler(Sampler *baseSampler, int totMut, int maxRej, float rng);
+	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng);
 	virtual ERPTSampler* clone() const;
-	u_int GetTotalSamplePos() { return sampler->GetTotalSamplePos(); }
-	int RoundSize(int size) const { return sampler->RoundSize(size); }
+	u_int GetTotalSamplePos() { return 0; }
+	int RoundSize(int size) const { return size; }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(const Sample &sample, const Ray &ray,
 		const Spectrum &L, float alpha, Film *film);
-	~ERPTSampler() { delete sampler; delete[] sampleImage; }
+	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-
-	Sampler *sampler;
-	Spectrum L, Ld;
-	int normalSamples, totalSamples, totalMutations, maxRejects, mutations, rejects, count;
-	float range, sampleImageX, sampleImageY;
-	u_int *offset;
-	float *sampleImage;
+	Spectrum L;
+	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
+	float range, weight, alpha;
+	float *baseImage, *sampleImage;
+	int *timeImage, *offset;
+	static int initCount, initSamples;
+	static float meanIntensity;
 };
 
 }//namespace lux
 
-#endif // LUX_ERPT_H
+#endif // LUX_METROSAMPLER_H
 
