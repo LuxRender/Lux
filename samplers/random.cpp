@@ -137,7 +137,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	float *data = sample->xD[num] + pos * sample->dxD[num];
-	for (int i = 0; i < sample->dxD[num]; ++i)
+	for (u_int i = 0; i < sample->dxD[num]; ++i)
 		data[i] = lux::random::floatValue();
 	return data;
 }

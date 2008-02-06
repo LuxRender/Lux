@@ -35,17 +35,17 @@ public:
 	// DistantLight Public Methods
 	DistantLight(const Transform &light2world, const Spectrum &radiance, const Vector &dir);
 	bool IsDeltaLight() const { return true; }
-	Spectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *) const;
-	Spectrum Power(const Scene *scene) const {
+	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *) const;
+	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                   &worldRadius);
 		return L * M_PI * worldRadius * worldRadius;
 	}
-	Spectrum Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf,
+	SWCSpectrum Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
 	

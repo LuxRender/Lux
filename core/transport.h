@@ -40,7 +40,7 @@ class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
-	virtual Spectrum Li(const Scene *scene,
+	virtual SWCSpectrum Li(const Scene *scene,
 					    const RayDifferential &ray,
 					    const Sample *sample,
 					    float *alpha) const = 0;
@@ -53,22 +53,22 @@ public:
 };
 class SurfaceIntegrator : public Integrator {
 };
- Spectrum UniformSampleAllLights(const Scene *scene,
+ SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo,
 	BSDF *bsdf, const Sample *sample,
 	int *lightSampleOffset, int *bsdfSampleOffset,
 	int *bsdfComponentOffset);
- Spectrum UniformSampleOneLight(const Scene *scene, const Point &p,
+ SWCSpectrum UniformSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset,
 	int lightNumOffset, int bsdfSampleOffset,
 	int bsdfComponentOffset);
- Spectrum UniformSampleOneLight(const Scene *scene, const Point &p,
+ SWCSpectrum UniformSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, float *lightSampleOffset = NULL,
 	float *lightNumOffset = NULL, float *bsdfSampleOffset = NULL,
 	float *bsdfComponentOffset = NULL);
- Spectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
+ SWCSpectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,
 	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,

@@ -37,7 +37,7 @@ public:
 	// SkyLight Public Methods
 	SkyLight(const Transform &light2world,	const Spectrum &power, int ns, Vector sd, float turb, bool atm);
 	~SkyLight();
-	Spectrum Power(const Scene *scene) const {
+	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
@@ -46,17 +46,17 @@ public:
 		return Lbase * M_PI * worldRadius * worldRadius;
 	}
 	bool IsDeltaLight() const { return false; }
-	Spectrum Le(const RayDifferential &r) const;
-	Spectrum Sample_L(const Point &p, const Normal &n,
+	SWCSpectrum Le(const RayDifferential &r) const;
+	SWCSpectrum Sample_L(const Point &p, const Normal &n,
 		float u1, float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf,
+	SWCSpectrum Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Normal &, const Vector &) const;
 	float Pdf(const Point &, const Vector &) const;
-	Spectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
+	SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

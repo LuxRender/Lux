@@ -34,7 +34,7 @@ SpotLight::SpotLight(const Transform &light2world,
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
 }
-Spectrum SpotLight::Sample_L(const Point &p, Vector *wi,
+SWCSpectrum SpotLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	visibility->SetSegment(p, lightPos);
@@ -53,7 +53,7 @@ float SpotLight::Falloff(const Vector &w) const {
 		(cosFalloffStart - cosTotalWidth);
 	return delta*delta*delta*delta;
 }
-Spectrum SpotLight::Sample_L(const Point &p, float u1, float u2,
+SWCSpectrum SpotLight::Sample_L(const Point &p, float u1, float u2,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	return Sample_L(p, wi, visibility);
@@ -61,7 +61,7 @@ Spectrum SpotLight::Sample_L(const Point &p, float u1, float u2,
 float SpotLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-Spectrum SpotLight::Sample_L(const Scene *scene, float u1,
+SWCSpectrum SpotLight::Sample_L(const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	ray->o = lightPos;

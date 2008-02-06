@@ -53,7 +53,7 @@ class  Intersection {
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
 	BSDF *GetBSDF(const RayDifferential &ray) const;
-	Spectrum Le(const Vector &wo) const;
+	SWCSpectrum Le(const Vector &wo) const;
 
 
 	

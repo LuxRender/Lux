@@ -35,12 +35,12 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	// radiance - disabled for threading // ++nShadowRays;
 	return !scene->IntersectP(r);
 }
-Spectrum VisibilityTester::
+SWCSpectrum VisibilityTester::
 	Transmittance(const Scene *scene) const {
 	return scene->Transmittance(r);
 }
-Spectrum Light::Le(const RayDifferential &) const {
-	return Spectrum(0.);
+SWCSpectrum Light::Le(const RayDifferential &) const {
+	return SWCSpectrum(0.);
 }
 
 void Light::AddPortalShape(boost::shared_ptr<Shape> s) {

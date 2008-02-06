@@ -35,14 +35,15 @@ BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
 		dgs = dgShading;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
+	float cb = cauchyb->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
-	Spectrum T = Kt->Evaluate(dgs).Clamp();
+	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
+	SWCSpectrum T(Kt->Evaluate(dgs).Clamp());
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
 			BSDF_ALLOC( FresnelDielectric)(1., ior)));
 	if (!T.Black())
-		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior));
+		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior, cb));
 	return bsdf;
 }
 Material* Glass::CreateMaterial(const Transform &xform,
@@ -50,6 +51,7 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
 	boost::shared_ptr<Texture<Spectrum> > Kt = mp.GetSpectrumTexture("Kt", Spectrum(1.f));
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
+	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.0001f);				// Cauchy B coefficient
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Glass(Kr, Kt, index, bumpMap);
+	return new Glass(Kr, Kt, index, cbf, bumpMap);
 }

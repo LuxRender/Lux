@@ -70,12 +70,12 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	}*/
 }
 
-Spectrum PathIntegrator::Li(const Scene *scene,
+SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
 	// Declare common path integration variables
-	Spectrum pathThroughput = 1., L = 0.;
+	SWCSpectrum pathThroughput = 1., L = 0.;
 	RayDifferential ray(r);
 	bool specularBounce = false;
 	for (int pathLength = 0; ; ++pathLength) {
@@ -123,7 +123,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		else 
 			L += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
-					wo, bsdf, sample);
+					wo, bsdf, sample); 
 
 		// Possibly terminate the path
 		if (pathLength == maxDepth)
@@ -144,7 +144,7 @@ Spectrum PathIntegrator::Li(const Scene *scene,
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		Spectrum f = bsdf->Sample_f(wo, &wi, data[7]/*bs1*/, data[8]/*bs2*/, data[9]/*bcs*/,
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7]/*bs1*/, data[8]/*bs2*/, data[9]/*bcs*/,
 			&pdf, BSDF_ALL, &flags);
 		if (f.Black() || pdf == 0.)
 			break;

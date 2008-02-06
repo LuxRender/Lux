@@ -32,13 +32,13 @@ PointLight::PointLight(const Transform &light2world,
 	lightPos = LightToWorld(Point(0,0,0));
 	Intensity = intensity;
 }
-Spectrum PointLight::Sample_L(const Point &p, Vector *wi,
+SWCSpectrum PointLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	visibility->SetSegment(p, lightPos);
 	return Intensity / DistanceSquared(lightPos, p);
 }
-Spectrum PointLight::Sample_L(const Point &p, float u1,
+SWCSpectrum PointLight::Sample_L(const Point &p, float u1,
 		float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	*pdf = 1.f;
@@ -47,7 +47,7 @@ Spectrum PointLight::Sample_L(const Point &p, float u1,
 float PointLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-Spectrum PointLight::Sample_L(const Scene *scene, float u1,
+SWCSpectrum PointLight::Sample_L(const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	ray->o = lightPos;

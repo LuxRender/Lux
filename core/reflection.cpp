@@ -33,56 +33,56 @@ using namespace lux;
 namespace lux
 {
 // BxDF Utility Functions
- Spectrum FrDiel(float cosi, float cost,
-                        const Spectrum &etai,
-						const Spectrum &etat) {
-        Spectrum Rparl = ((etat * cosi) - (etai * cost)) /
+ SWCSpectrum FrDiel(float cosi, float cost,
+                        const SWCSpectrum &etai,
+						const SWCSpectrum &etat) {
+        SWCSpectrum Rparl = ((etat * cosi) - (etai * cost)) /
                          ((etat * cosi) + (etai * cost));
-        Spectrum Rperp = ((etai * cosi) - (etat * cost)) /
+        SWCSpectrum Rperp = ((etai * cosi) - (etat * cost)) /
                          ((etai * cosi) + (etat * cost));
 	return (Rparl*Rparl + Rperp*Rperp) / 2.f;
 }
- Spectrum FrCond(float cosi,
-                         const Spectrum &eta,
-					     const Spectrum &k) {
-    Spectrum tmp = (eta*eta + k*k) * cosi*cosi;
-    Spectrum Rparl2 = (tmp - (2.f * eta * cosi) + 1) /
+ SWCSpectrum FrCond(float cosi,
+                         const SWCSpectrum &eta,
+					     const SWCSpectrum &k) {
+    SWCSpectrum tmp = (eta*eta + k*k) * cosi*cosi;
+    SWCSpectrum Rparl2 = (tmp - (2.f * eta * cosi) + 1) /
     	(tmp + (2.f * eta * cosi) + 1);
-    Spectrum tmp_f = eta*eta + k*k;
-    Spectrum Rperp2 =
+    SWCSpectrum tmp_f = eta*eta + k*k;
+    SWCSpectrum Rperp2 =
 		(tmp_f - (2.f * eta * cosi) + cosi*cosi) /
 	    (tmp_f + (2.f * eta * cosi) + cosi*cosi);
     return (Rparl2 + Rperp2) / 2.f;
 }
- Spectrum FresnelApproxEta(const Spectrum &Fr) {
-	Spectrum reflectance = Fr.Clamp(0.f, .999f);
-	return (Spectrum(1.) + reflectance.Sqrt()) /
-		(Spectrum(1.) - reflectance.Sqrt());
+ SWCSpectrum FresnelApproxEta(const SWCSpectrum &Fr) {
+	SWCSpectrum reflectance = Fr.Clamp(0.f, .999f);
+	return (SWCSpectrum(1.) + reflectance.Sqrt()) /
+		(SWCSpectrum(1.) - reflectance.Sqrt());
 }
- Spectrum FresnelApproxK(const Spectrum &Fr) {
-	Spectrum reflectance = Fr.Clamp(0.f, .999f);
+ SWCSpectrum FresnelApproxK(const SWCSpectrum &Fr) {
+	SWCSpectrum reflectance = Fr.Clamp(0.f, .999f);
 	return 2.f * (reflectance /
-	              (Spectrum(1.) - reflectance)).Sqrt();
+	              (SWCSpectrum(1.) - reflectance)).Sqrt();
 }
  
 }//namespace lux
 
 // BxDF Method Definitions
-Spectrum BRDFToBTDF::f(const Vector &wo,
+SWCSpectrum BRDFToBTDF::f(const Vector &wo,
                        const Vector &wi) const {
 	return brdf->f(wo, otherHemisphere(wi));
 }
-Spectrum BRDFToBTDF::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum BRDFToBTDF::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
-	Spectrum f = brdf->Sample_f(wo, wi, u1, u2, pdf);
+	SWCSpectrum f = brdf->Sample_f(wo, wi, u1, u2, pdf);
 	*wi = otherHemisphere(*wi);
 	return f;
 }
 Fresnel::~Fresnel() { }
-Spectrum FresnelConductor::Evaluate(float cosi) const {
+SWCSpectrum FresnelConductor::Evaluate(float cosi) const {
 	return FrCond(fabsf(cosi), eta, k);
 }
-Spectrum FresnelDielectric::Evaluate(float cosi) const {
+SWCSpectrum FresnelDielectric::Evaluate(float cosi) const {
 	// Compute Fresnel reflectance for dielectric
 	cosi = Clamp(cosi, -1.f, 1.f);
 	// Compute indices of refraction for dielectric
@@ -102,7 +102,7 @@ Spectrum FresnelDielectric::Evaluate(float cosi) const {
 	}
 }
 
-Spectrum FresnelSlick::Evaluate(float cosi) const {
+SWCSpectrum FresnelSlick::Evaluate(float cosi) const {
   return normal_incidence + (1.0f - normal_incidence) * powf (1.0 - cosi, 5.0f);
 }
 
@@ -110,7 +110,7 @@ FresnelSlick::FresnelSlick (float ni) {
   normal_incidence = ni;
 }
 
-Spectrum SpecularReflection::Sample_f(const Vector &wo,
+SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
 		Vector *wi, float u1, float u2, float *pdf) const {
 	// Compute perfect specular reflection direction
 	*wi = Vector(-wo.x, -wo.y, wo.z);
@@ -118,11 +118,21 @@ Spectrum SpecularReflection::Sample_f(const Vector &wo,
 	return fresnel->Evaluate(CosTheta(wo)) * R /
 		fabsf(CosTheta(*wi));
 }
-Spectrum SpecularTransmission::Sample_f(const Vector &wo,
+
+extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
+
+SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 		Vector *wi, float u1, float u2, float *pdf) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	bool entering = CosTheta(wo) > 0.;
 	float ei = etai, et = etat;
+
+	if(cb != 0.) {
+		// Handle dispersion using cauchy formula
+		float w = thread_wavelengths->SampleSingle();
+		et = etat + (cb * 1000000) / (w*w);
+	}
+
 	if (!entering)
 		swap(ei, et);
 	// Compute transmitted ray direction
@@ -138,16 +148,16 @@ Spectrum SpecularTransmission::Sample_f(const Vector &wo,
 	             sintOverSini * -wo.y,
 				 cost);
 	*pdf = 1.f;
-	Spectrum F = fresnel.Evaluate(CosTheta(wo));
-	return (et*et)/(ei*ei) * (Spectrum(1.)-F) * T /
+	SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
+	return (et*et)/(ei*ei) * (SWCSpectrum(1.)-F) * T /
 		fabsf(CosTheta(*wi));
 }
 
-Spectrum Lambertian::f(const Vector &wo,
+SWCSpectrum Lambertian::f(const Vector &wo,
 		const Vector &wi) const {
 	return RoverPI;
 }
-Spectrum OrenNayar::f(const Vector &wo,
+SWCSpectrum OrenNayar::f(const Vector &wo,
 		const Vector &wi) const {
 	float sinthetai = SinTheta(wi);
 	float sinthetao = SinTheta(wo);
@@ -172,27 +182,27 @@ Spectrum OrenNayar::f(const Vector &wo,
 	return R * INV_PI *
 	       (A + B * maxcos * sinalpha * tanbeta);
 }
-Microfacet::Microfacet(const Spectrum &reflectance,
+Microfacet::Microfacet(const SWCSpectrum &reflectance,
                        Fresnel *f,
 					   MicrofacetDistribution *d)
 	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
 	 R(reflectance), distribution(d), fresnel(f) {
 }
-Spectrum Microfacet::f(const Vector &wo,
+SWCSpectrum Microfacet::f(const Vector &wo,
                        const Vector &wi) const {
 	float cosThetaO = fabsf(CosTheta(wo));
 	float cosThetaI = fabsf(CosTheta(wi));
 	Vector wh = Normalize(wi + wo);
 	float cosThetaH = Dot(wi, wh);
-	Spectrum F = fresnel->Evaluate(cosThetaH);
+	SWCSpectrum F = fresnel->Evaluate(cosThetaH);
 	return R * distribution->D(wh) * G(wo, wi, wh) * F /
 		 (4.f * cosThetaI * cosThetaO);
 }
-Lafortune::Lafortune(const Spectrum &r, u_int nl,
-	const Spectrum *xx,
-	const Spectrum *yy,
-	const Spectrum *zz,
-	const Spectrum *e, BxDFType t)
+Lafortune::Lafortune(const SWCSpectrum &r, u_int nl,
+	const SWCSpectrum *xx,
+	const SWCSpectrum *yy,
+	const SWCSpectrum *zz,
+	const SWCSpectrum *e, BxDFType t)
 	: BxDF(t), R(r) {
 	nLobes = nl;
 	x = xx;
@@ -200,40 +210,40 @@ Lafortune::Lafortune(const Spectrum &r, u_int nl,
 	z = zz;
 	exponent = e;
 }
-Spectrum Lafortune::f(const Vector &wo,
+SWCSpectrum Lafortune::f(const Vector &wo,
                       const Vector &wi) const {
-	Spectrum ret = R * INV_PI;
+	SWCSpectrum ret = R * INV_PI;
 	for (u_int i = 0; i < nLobes; ++i) {
 		// Add contribution for $i$th Phong lobe
-		Spectrum v = x[i] * wo.x * wi.x + y[i] * wo.y * wi.y +
+		SWCSpectrum v = x[i] * wo.x * wi.x + y[i] * wo.y * wi.y +
 			z[i] * wo.z * wi.z;
 		ret += v.Pow(exponent[i]);
 	}
 	return ret;
 }
-FresnelBlend::FresnelBlend(const Spectrum &d,
-                           const Spectrum &s,
+FresnelBlend::FresnelBlend(const SWCSpectrum &d,
+                           const SWCSpectrum &s,
 						   MicrofacetDistribution *dist)
 	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
 	  Rd(d), Rs(s) {
 	distribution = dist;
 }
-Spectrum FresnelBlend::f(const Vector &wo,
+SWCSpectrum FresnelBlend::f(const Vector &wo,
                          const Vector &wi) const {
-	Spectrum diffuse = (28.f/(23.f*M_PI)) * Rd *
-		(Spectrum(1.) - Rs) *
+	SWCSpectrum diffuse = (28.f/(23.f*M_PI)) * Rd *
+		(SWCSpectrum(1.) - Rs) *
 		(1 - powf(1 - .5f * fabsf(CosTheta(wi)), 5)) *
 		(1 - powf(1 - .5f * fabsf(CosTheta(wo)), 5));
 	Vector H = Normalize(wi + wo);
-	Spectrum specular = distribution->D(H) /
+	SWCSpectrum specular = distribution->D(H) /
 		(4.f * AbsDot(wi, H) *
 		max(fabsf(CosTheta(wi)), fabsf(CosTheta(wo)))) *
 		SchlickFresnel(Dot(wi, H));
 	return diffuse + specular;
 }
 
-CookTorrance::CookTorrance(const Spectrum &kd, u_int nl,
-                           const Spectrum *ks,
+CookTorrance::CookTorrance(const SWCSpectrum &kd, u_int nl,
+                           const SWCSpectrum *ks,
                            MicrofacetDistribution **dist, Fresnel **fres) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)) {
   KD = kd;
   KS = ks;
@@ -242,8 +252,8 @@ CookTorrance::CookTorrance(const Spectrum &kd, u_int nl,
   fresnel = fres;
 }
 
-Spectrum CookTorrance::f(const Vector &wo, const Vector &wi) const {
-  Spectrum ret = KD * INV_PI;
+SWCSpectrum CookTorrance::f(const Vector &wo, const Vector &wi) const {
+  SWCSpectrum ret = KD * INV_PI;
 
   float cosThetaO = fabsf(CosTheta(wo));
   float cosThetaI = fabsf(CosTheta(wi));
@@ -267,7 +277,7 @@ float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) cons
   return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));
 }
 
-Spectrum BxDF::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum BxDF::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
@@ -283,10 +293,10 @@ float BRDFToBTDF::Pdf(const Vector &wo,
 		const Vector &wi) const {
 	return brdf->Pdf(wo, -wi);
 }
-Spectrum Microfacet::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum Microfacet::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
-	if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
+	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
 	return f(wo, *wi);
 }
 float Microfacet::Pdf(const Vector &wo,
@@ -464,7 +474,7 @@ float Anisotropic::Pdf(const Vector &wo,
 	float anisotropic_pdf = D(H) / (4.f * Dot(wo, H));
 	return anisotropic_pdf;
 }
-Spectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const {
 	u_int comp = lux::random::uintValue() % (nLobes+1);
 	if (comp == nLobes) {
@@ -486,7 +496,7 @@ Spectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
 		*wi = SphericalDirection(sintheta, costheta, phi, lobeX, lobeY,
 			lobeCenter);
 	}
-	if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
+	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
 	*pdf = Pdf(wo, *wi);
 	return f(wo, *wi);
 }
@@ -504,7 +514,7 @@ float Lafortune::Pdf(const Vector &wo, const Vector &wi) const {
 	}
 	return pdfSum / (1.f + nLobes);
 }
-Spectrum FresnelBlend::Sample_f(const Vector &wo,
+SWCSpectrum FresnelBlend::Sample_f(const Vector &wo,
 		Vector *wi, float u1, float u2, float *pdf) const {
 	if (u1 < .5) {
 		u1 = 2.f * u1;
@@ -515,7 +525,7 @@ Spectrum FresnelBlend::Sample_f(const Vector &wo,
 	else {
 		u1 = 2.f * (u1 - .5f);
 		distribution->Sample_f(wo, wi, u1, u2, pdf);
-		if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
+		if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
 	}
 	*pdf = Pdf(wo, *wi);
 	return f(wo, *wi);
@@ -527,7 +537,7 @@ float FresnelBlend::Pdf(const Vector &wo,
 		distribution->Pdf(wo, wi));
 }
 
-Spectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
+SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
   // Pick a random component
   u_int comp = lux::random::uintValue() % (nLobes+1);
 
@@ -543,7 +553,7 @@ Spectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2
   }
   // If outgoing and incoming is in different hemispheres, return None
   if (!SameHemisphere(wo, *wi))
-    return Spectrum(0.f);
+    return SWCSpectrum(0.f);
 
   *pdf = Pdf(wo, *wi);
   return f(wo, *wi);
@@ -562,37 +572,37 @@ float CookTorrance::Pdf(const Vector &wo, const Vector &wi) const {
   return pdfSum / (1.f + nLobes);
 }
 
-Spectrum BxDF::rho(const Vector &w, int nSamples,
+SWCSpectrum BxDF::rho(const Vector &w, int nSamples,
 		float *samples) const {
 	if (!samples) {
 		samples =
 			(float *)alloca(2 * nSamples * sizeof(float));
 		LatinHypercube(samples, nSamples, 2);
 	}
-	Spectrum r = 0.;
+	SWCSpectrum r = 0.;
 	for (int i = 0; i < nSamples; ++i) {
 		// Estimate one term of $\rho_{dh}$
 		Vector wi;
 		float pdf = 0.f;
-		Spectrum f =
+		SWCSpectrum f =
 			Sample_f(w, &wi, samples[2*i], samples[2*i+1], &pdf);
 		if (pdf > 0.) r += f * fabsf(wi.z) / pdf;
 	}
 	return r / nSamples;
 }
-Spectrum BxDF::rho(int nSamples, float *samples) const {
+SWCSpectrum BxDF::rho(int nSamples, float *samples) const {
 	if (!samples) {
 		samples =
 			(float *)alloca(4 * nSamples * sizeof(float));
 		LatinHypercube(samples, nSamples, 4);
 	}
-	Spectrum r = 0.;
+	SWCSpectrum r = 0.;
 	for (int i = 0; i < nSamples; ++i) {
 		// Estimate one term of $\rho_{hh}$
 		Vector wo, wi;
 		wo = UniformSampleHemisphere(samples[4*i], samples[4*i+1]);
 		float pdf_o = INV_TWOPI, pdf_i = 0.f;
-		Spectrum f =
+		SWCSpectrum f =
 			Sample_f(wo, &wi, samples[4*i+2], samples[4*i+3],
 				&pdf_i);
 		if (pdf_i > 0.)
@@ -601,22 +611,22 @@ Spectrum BxDF::rho(int nSamples, float *samples) const {
 	return r / (M_PI*nSamples);
 }
 // BSDF Method Definitions
-Spectrum BSDF::Sample_f(const Vector &wo, Vector *wi, BxDFType flags,
+SWCSpectrum BSDF::Sample_f(const Vector &wo, Vector *wi, BxDFType flags,
 	BxDFType *sampledType) const {
 	float pdf;
-	Spectrum f = Sample_f(wo, wi, lux::random::floatValue(), lux::random::floatValue(),
+	SWCSpectrum f = Sample_f(wo, wi, lux::random::floatValue(), lux::random::floatValue(),
 		lux::random::floatValue(), &pdf, flags, sampledType);
 	if (!f.Black() && pdf > 0.) f /= pdf;
 	return f;
 }
-Spectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
+SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 		float u1, float u2, float u3, float *pdf,
 		BxDFType flags, BxDFType *sampledType) const {
 	// Choose which _BxDF_ to sample
 	int matchingComps = NumComponents(flags);
 	if (matchingComps == 0) {
 		*pdf = 0.f;
-		return Spectrum(0.f);
+		return SWCSpectrum(0.f);
 	}
 	int which = min(Floor2Int(u3 * matchingComps),
 		matchingComps-1);
@@ -633,7 +643,7 @@ Spectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 	Vector wi;
 	Vector wo = WorldToLocal(woW);
 	*pdf = 0.f;
-	Spectrum f = bxdf->Sample_f(wo, &wi, u1, u2, pdf);
+	SWCSpectrum f = bxdf->Sample_f(wo, &wi, u1, u2, pdf);
 	if (*pdf == 0.f) return 0.f;
 	if (sampledType) *sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
@@ -683,7 +693,7 @@ BSDF::BSDF(const DifferentialGeometry &dg,
 	tn = Cross(nn, sn);
 	nBxDFs = 0;
 }
-Spectrum BSDF::f(const Vector &woW,
+SWCSpectrum BSDF::f(const Vector &woW,
 		const Vector &wiW, BxDFType flags) const {
 	Vector wi = WorldToLocal(wiW), wo = WorldToLocal(woW);
 	if (Dot(wiW, ng) * Dot(woW, ng) > 0)
@@ -692,21 +702,21 @@ Spectrum BSDF::f(const Vector &woW,
 	else
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
-	Spectrum f = 0.;
+	SWCSpectrum f = 0.;
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
 			f += bxdfs[i]->f(wo, wi);
 	return f;
 }
-Spectrum BSDF::rho(BxDFType flags) const {
-	Spectrum ret(0.);
+SWCSpectrum BSDF::rho(BxDFType flags) const {
+	SWCSpectrum ret(0.);
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
 			ret += bxdfs[i]->rho();
 	return ret;
 }
-Spectrum BSDF::rho(const Vector &wo, BxDFType flags) const {
-	Spectrum ret(0.);
+SWCSpectrum BSDF::rho(const Vector &wo, BxDFType flags) const {
+	SWCSpectrum ret(0.);
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
 			ret += bxdfs[i]->rho(wo);

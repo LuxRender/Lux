@@ -26,74 +26,13 @@
 #include "lux.h"
 #include "color.h"
 
+#include <boost/thread/tss.hpp>
+
 namespace lux
 {
 
-#define WAVELENGTH_SAMPLES 16
+#define WAVELENGTH_SAMPLES 8
 static const float inv_WAVELENGTH_SAMPLES = 1. / WAVELENGTH_SAMPLES;
-
-class	SpectrumWavelengths {
-public:
-
-	// SpectrumWavelengths Public Methods
-	SpectrumWavelengths() {
-	}
-
-	void Sample() {
-		float width = 1. * inv_WAVELENGTH_SAMPLES;
-		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-			// create stratified random wavelengths
-			// from left (CIEstart) to right (CIEend)
-			float base = width * i;
-			float r = base + (lux::random::floatValue() * inv_WAVELENGTH_SAMPLES);
-			w[i] = Lerp(r, CIEstart, CIEend);
-
-			// precompute XYZ weights for fast conversion
-			CIEXYZ(w[i], XWeight[i], YWeight[i], ZWeight[i]);
-		}
-	}
-
-	void CIEXYZ(float wl, float &X, float &Y, float &Z) {
-		int lw = Floor2Int(wl);
-		if(lw > CIEend) lw = CIEend;
-		float d = wl - lw;
-		lw -= CIEstart;
-
-		if(lw == CIEend) {
-			X = CIE_X[lw];
-			Y = CIE_Y[lw];
-			Z = CIE_Z[lw];
-		} else {
-			X = Lerp(d, CIE_X[lw], CIE_X[lw+1]);
-			Y = Lerp(d, CIE_Y[lw], CIE_Y[lw+1]);
-			Z = Lerp(d, CIE_Z[lw], CIE_Z[lw+1]);
-		}
-	}
-
-	// Wavelength in nm
-	float w[WAVELENGTH_SAMPLES];	
-
-	// RGB Color input spectrum values
-	float white[WAVELENGTH_SAMPLES];
-	float cyan[WAVELENGTH_SAMPLES];
-	float magenta[WAVELENGTH_SAMPLES];
-	float yellow[WAVELENGTH_SAMPLES];
-	float red[WAVELENGTH_SAMPLES];
-	float green[WAVELENGTH_SAMPLES];
-	float blue[WAVELENGTH_SAMPLES];
-
-	// XYZ Color output weights
-	float XWeight[WAVELENGTH_SAMPLES];
-	float YWeight[WAVELENGTH_SAMPLES];
-	float ZWeight[WAVELENGTH_SAMPLES];
-
-	static const int CIEstart = 360;
-	static const int CIEend = 830;
-	static const int nCIE = CIEend-CIEstart+1;
-	static const float CIE_X[nCIE];
-	static const float CIE_Y[nCIE];
-	static const float CIE_Z[nCIE];
-};
 
 
 // Spectrum Declarations
@@ -490,6 +429,8 @@ protected:
 
 Spectrum FromXYZ(float x, float y, float z);
 
+
+
 class RegularSpectrum : public Spectrum {
 public:
 	float *wavelengths;
@@ -497,6 +438,8 @@ public:
     float delta, invDelta;
 	int sWa;
     
+	RegularSpectrum();
+
     RegularSpectrum(float *wl, float lMin, float lMax, int n) {
         lambdaMin = lMin;
         lambdaMax = lMax;
@@ -528,6 +471,169 @@ public:
 		}
 		return FromXYZ(X,Y,Z);
 	}
+
+};
+
+class  SWCSpectrum {
+	friend class boost::serialization::access;
+public:
+	// Spectrum Public Methods
+	SWCSpectrum(double v = 0.f) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] = v;
+	}
+	SWCSpectrum(Spectrum s) {
+		FromSpectrum(s);
+	}	
+	SWCSpectrum(RegularSpectrum* s) {
+		FromRegularSpectrum(s);
+	}	
+	SWCSpectrum(double cs[WAVELENGTH_SAMPLES]) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] = cs[i];
+	}
+	friend ostream &operator<<(ostream &, const SWCSpectrum &);
+	SWCSpectrum &operator+=(const SWCSpectrum &s2) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] += s2.c[i];
+		return *this;
+	}
+	SWCSpectrum operator+(const SWCSpectrum &s2) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] += s2.c[i];
+		return ret;
+	}
+	SWCSpectrum operator-(const SWCSpectrum &s2) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] -= s2.c[i];
+		return ret;
+	}
+	SWCSpectrum operator/(const SWCSpectrum &s2) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] /= s2.c[i];
+		return ret;
+	}
+	SWCSpectrum operator*(const SWCSpectrum &sp) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] *= sp.c[i];
+		return ret;
+	}
+	SWCSpectrum &operator*=(const SWCSpectrum &sp) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] *= sp.c[i];
+		return *this;
+	}
+	SWCSpectrum operator*(double a) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] *= a;
+		return ret;
+	}
+	SWCSpectrum &operator*=(double a) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] *= a;
+		return *this;
+	}
+	friend inline
+	SWCSpectrum operator*(double a, const SWCSpectrum &s) {
+		return s * a;
+	}
+	SWCSpectrum operator/(double a) const {
+		return *this * (1.f / a);
+	}
+	SWCSpectrum &operator/=(double a) {
+		double inv = 1.f / a;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] *= inv;
+		return *this;
+	}
+	void AddWeighted(double w, const SWCSpectrum &s) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] += w * s.c[i];
+	}
+	bool operator==(const SWCSpectrum &sp) const {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			if (c[i] != sp.c[i]) return false;
+		return true;
+	}
+	bool operator!=(const SWCSpectrum &sp) const {
+		return !(*this == sp);
+	}
+	bool Black() const {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			if (c[i] != 0.) return false;
+		return true;
+	}
+	SWCSpectrum Sqrt() const {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = sqrtf(c[i]);
+		return ret;
+	}
+	SWCSpectrum Pow(const SWCSpectrum &e) const {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = c[i] > 0 ? powf(c[i], e.c[i]) : 0.f;
+		return ret;
+	}
+	SWCSpectrum operator-() const {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = -c[i];
+		return ret;
+	}
+	friend SWCSpectrum Exp(const SWCSpectrum &s) {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = expf(s.c[i]);
+		return ret;
+	}
+	SWCSpectrum Clamp(double low = 0.f,
+	               double high = INFINITY) const {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = ::Clamp(c[i], low, high);
+		return ret;
+	}
+	bool IsNaN() const {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			if (isnan(c[i])) return true;
+		return false;
+	}
+	void Print(FILE *f) const {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			fprintf(f, "%f ", c[i]);
+	}
+	XYZColor ToXYZ() const;
+	void FromSpectrum(Spectrum s);
+	void FromRegularSpectrum(RegularSpectrum* s);
+
+	double y() const;
+	bool operator<(const SWCSpectrum &s2) const {
+		return y() < s2.y();
+	}
+	friend class lux::ParamSet;
+	
+	// SWCSpectrum Public Data
+	double c[WAVELENGTH_SAMPLES];
+	static const int CIEstart = 360;
+	static const int CIEend = 830;
+	static const int nCIE = CIEend-CIEstart+1;
+	static const float CIE_X[nCIE];
+	static const float CIE_Y[nCIE];
+	static const float CIE_Z[nCIE];
+	
+private:
+	template<class Archive>
+			void serialize(Archive & ar, const unsigned int version)
+			{
+				for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+					ar & c[i];
+			}
 };
 
 class IrregularSpectrum : public Spectrum {
@@ -575,6 +681,68 @@ public:
 		return FromXYZ(X,Y,Z);
 	}
 };
+
+// 380 to 720 nm, 34nm spacing, 10 values
+ static float rgb2spect_white[] =	{ 1.0000, 1.0000, 0.9999, 0.9993, 0.9992, 0.9998, 1.0000, 1.0000, 1.0000, 1.0000 };
+ static float rgb2spect_cyan[] =		{ 0.9710, 0.9426, 1.0007, 1.0007, 1.0007, 1.0007, 0.1564, 0.0000, 0.0000, 0.0000 };
+ static float rgb2spect_magenta[] =	{ 1.0000, 1.0000, 0.9685, 0.2229, 0.0000, 0.0458, 0.8369, 1.0000, 1.0000, 0.0000 };
+ static float rgb2spect_yellow[] =	{ 0.0001, 0.0000, 0.1088, 0.6651, 1.0000, 1.0000, 0.9996, 0.9586, 0.9685, 0.9959 };
+ static float rgb2spect_red[] =		{ 0.1012, 0.0515, 0.0000, 0.0000, 0.0000, 0.0000, 0.8325, 1.0149, 1.0149, 0.9840 };
+ static float rgb2spect_green[] =	{ 0.0000, 0.0000, 0.0273, 0.7937, 1.0000, 0.9418, 0.1719, 0.0000, 0.0000, 1.0149 };
+ static float rgb2spect_blue[] =		{ 1.0000, 1.0000, 0.8916, 0.3323, 0.0000, 0.0000, 0.0003, 0.0369, 0.0483, 0.0496 };
+
+class	SpectrumWavelengths {
+public:
+
+	// SpectrumWavelengths Public Methods
+	SpectrumWavelengths() { single = false; single_w = 0; }
+
+	void Sample(float u1) {
+		single = false; single_w = 0;
+
+		const float offset = float(CIEend - CIEstart) * inv_WAVELENGTH_SAMPLES;
+		float waveln = CIEstart + u1 * offset;
+		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
+			// create stratified random wavelengths
+			// from left (CIEstart) to right (CIEend)
+			w[i] = waveln;
+			waveln += offset; 
+		} 
+
+		ComputeRGBConversionSpectra();
+	}
+
+	void CreateSpectrum(SWCSpectrum &spectrum, RegularSpectrum &rgbspectrum);
+	void ComputeRGBConversionSpectra();
+
+	float SampleSingle() {
+		if(!single) {
+			int i = Floor2Int(lux::random::floatValue() * WAVELENGTH_SAMPLES);
+			single = true;
+			single_w = i;
+		}
+		return w[single_w];
+	}
+
+	// Wavelength in nm
+	float w[WAVELENGTH_SAMPLES];	
+
+	bool single;
+	int  single_w;
+
+	SWCSpectrum spect_w;	// white
+	SWCSpectrum spect_c;	// cyan
+	SWCSpectrum spect_m;	// magenta
+	SWCSpectrum spect_y;	// yellow
+	SWCSpectrum spect_r;	// red
+	SWCSpectrum spect_g;	// green
+	SWCSpectrum spect_b;	// blue
+
+	static const int CIEstart = 360;
+	static const int CIEend = 830;
+	static const int nCIE = CIEend-CIEstart+1;
+};
+
 
 }//namespace lux
 

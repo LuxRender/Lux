@@ -41,10 +41,10 @@ public:
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(const Sample &sample, const Ray &ray,
-		const Spectrum &L, float alpha, Film *film);
+		const SWCSpectrum &L, float alpha, Film *film);
 	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	Spectrum L;
+	XYZColor L;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
 	float range, weight, alpha;
 	float *baseImage, *sampleImage;

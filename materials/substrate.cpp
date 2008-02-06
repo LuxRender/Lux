@@ -34,8 +34,8 @@ BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialG
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-	Spectrum d = Kd->Evaluate(dgs).Clamp();
-	Spectrum s = Ks->Evaluate(dgs).Clamp();
+	SWCSpectrum d(Kd->Evaluate(dgs).Clamp());
+	SWCSpectrum s(Ks->Evaluate(dgs).Clamp());
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
 

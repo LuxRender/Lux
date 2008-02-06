@@ -47,7 +47,7 @@ public:
 	}
 	virtual int RoundSize(int size) const = 0;
 	virtual void AddSample(const Sample &sample, const Ray &ray,
-		const Spectrum &L, float alpha, Film *film);
+		const SWCSpectrum &L, float alpha, Film *film);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;

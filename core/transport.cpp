@@ -31,22 +31,22 @@ namespace lux
 Integrator::~Integrator() {
 }
 // Integrator Utility Functions
- Spectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
+ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, float *lightSamp, float *bsdfSamp,
 	float *bsdfComponent, u_int sampleNum);
- Spectrum UniformSampleAllLights(const Scene *scene,
+ SWCSpectrum UniformSampleAllLights(const Scene *scene,
 		const Point &p, const Normal &n, const Vector &wo,
 		BSDF *bsdf, const Sample *sample,
 		int *lightSampleOffset, int *bsdfSampleOffset,
 		int *bsdfComponentOffset) {
-	Spectrum L(0.);
+	SWCSpectrum L(0.);
 	for (u_int i = 0; i < scene->lights.size(); ++i) {
 		Light *light = scene->lights[i];
 		int nSamples = (sample && lightSampleOffset) ?
 			sample->n2D[lightSampleOffset[i]] : 1;
 		// Estimate direct lighting from _light_ samples
-		Spectrum Ld(0.);
+		SWCSpectrum Ld(0.);
 		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
 		float *curLightSampleOffset = (sample && lightSampleOffset) ? 
 			sample->twoD[lightSampleOffset[i]] : NULL;
@@ -62,7 +62,7 @@ Integrator::~Integrator() {
 	}
 	return L;
 }
- Spectrum UniformSampleOneLight(const Scene *scene,
+ SWCSpectrum UniformSampleOneLight(const Scene *scene,
 		const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		int lightSampleOffset, int lightNumOffset,
@@ -78,7 +78,7 @@ Integrator::~Integrator() {
 	return UniformSampleOneLight(scene, p, n, wo, bsdf, sample,
 		lightSample, lightNum, bsdfSample, bsdfComponent);
 }
- Spectrum UniformSampleOneLight(const Scene *scene,
+ SWCSpectrum UniformSampleOneLight(const Scene *scene,
 		const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		float *lightSample, float *lightNum,
@@ -87,7 +87,7 @@ Integrator::~Integrator() {
 	int nLights = int(scene->lights.size());
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
 	if (nLights == 0) 
-		return Spectrum(0.f);
+		return SWCSpectrum(0.f);
 	int lightNumber;
 	if (lightNum != NULL)
 		lightNumber = Floor2Int(*lightNum * nLights);
@@ -100,7 +100,7 @@ Integrator::~Integrator() {
 			lightSample, bsdfSample,
 			bsdfComponent, 0);
 }
- Spectrum WeightedSampleOneLight(const Scene *scene,
+ SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 		const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf,
 		const Sample *sample, int lightSampleOffset,
@@ -111,7 +111,7 @@ Integrator::~Integrator() {
 	int nLights = int(scene->lights.size());
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
 	if (nLights == 0) 
-		return Spectrum(0.f);
+		return SWCSpectrum(0.f);
 	// Initialize _avgY_ array if necessary
 	if (!avgY) {
 		avgY = new float[nLights];
@@ -120,7 +120,7 @@ Integrator::~Integrator() {
 		for (int i = 0; i < nLights; ++i)
 			avgY[i] = avgYsample[i] = 0.;
 	}
-	Spectrum L(0.);
+	SWCSpectrum L(0.);
 	if (overallAvgY == 0.) {
 		// Sample one light uniformly and initialize luminance arrays
 		L = UniformSampleOneLight(scene, p, n,
@@ -163,12 +163,12 @@ Integrator::~Integrator() {
 	}
 	return L;
 }
-Spectrum EstimateDirect(const Scene *scene,
+SWCSpectrum EstimateDirect(const Scene *scene,
         const Light *light, const Point &p,
 		const Normal &n, const Vector &wo,
 		BSDF *bsdf, const Sample *sample, float *lightSamp,
 		float *bsdfSamp, float *bsdfComponent, u_int sampleNum) {
-	Spectrum Ld(0.);
+	SWCSpectrum Ld(0.);
 	// Find light and BSDF sample values for direct lighting estimate
 	float ls1, ls2, bs1, bs2, bcs;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
@@ -192,10 +192,10 @@ Spectrum EstimateDirect(const Scene *scene,
 	Vector wi;
 	float lightPdf, bsdfPdf;
 	VisibilityTester visibility;
-	Spectrum Li = light->Sample_L(p, n,
+	SWCSpectrum Li = light->Sample_L(p, n,
 		ls1, ls2, &wi, &lightPdf, &visibility);
 	if (lightPdf > 0. && !Li.Black()) {
-		Spectrum f = bsdf->f(wo, wi);
+		SWCSpectrum f = bsdf->f(wo, wi);
 		if (!f.Black() && visibility.Unoccluded(scene)) {
 			// Add light's contribution to reflected radiance
 			Li *= visibility.Transmittance(scene);
@@ -212,7 +212,7 @@ Spectrum EstimateDirect(const Scene *scene,
 	// Sample BSDF with multiple importance sampling
 	if (!light->IsDeltaLight()) {
 		BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
-		Spectrum f = bsdf->Sample_f(wo, &wi,
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi,
 			bs1, bs2, bcs, &bsdfPdf, flags);
 		if (!f.Black() && bsdfPdf > 0.) {
 			lightPdf = light->Pdf(p, n, wi);
@@ -220,7 +220,7 @@ Spectrum EstimateDirect(const Scene *scene,
 				// Add light contribution from BSDF sampling
 				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
 				Intersection lightIsect;
-				Spectrum Li(0.f);
+				SWCSpectrum Li(0.f);
 				RayDifferential ray(p, wi);
 				if (scene->Intersect(ray, &lightIsect)) {
 					if (lightIsect.primitive->GetAreaLight() == light)

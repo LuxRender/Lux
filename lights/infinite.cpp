@@ -46,7 +46,7 @@ InfiniteAreaLight
 	}
 	Lbase = L;
 }
-Spectrum
+SWCSpectrum
 	InfiniteAreaLight::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
@@ -59,7 +59,7 @@ Spectrum
 	}
 	return L;
 }
-Spectrum InfiniteAreaLight::Sample_L(const Point &p,
+SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		const Normal &n, float u1, float u2,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
@@ -95,7 +95,7 @@ float InfiniteAreaLight::Pdf(const Point &, const Normal &n,
 		const Vector &wi) const {
 	return AbsDot(n, wi) * INV_TWOPI;
 }
-Spectrum InfiniteAreaLight::Sample_L(const Point &p,
+SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		float u1, float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	if(!havePortalShape) {
@@ -117,7 +117,7 @@ Spectrum InfiniteAreaLight::Sample_L(const Point &p,
 float InfiniteAreaLight::Pdf(const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
-Spectrum InfiniteAreaLight::Sample_L(const Scene *scene,			// TODO - radiance - add portal implementation
+SWCSpectrum InfiniteAreaLight::Sample_L(const Scene *scene,			// TODO - radiance - add portal implementation
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	// Choose two points _p1_ and _p2_ on scene bounding sphere
@@ -140,12 +140,12 @@ Spectrum InfiniteAreaLight::Sample_L(const Scene *scene,			// TODO - radiance - 
 		costheta / ((4.f * M_PI * worldRadius * worldRadius));
 	return Le(RayDifferential(ray->o, -ray->d));
 }
-Spectrum InfiniteAreaLight::Sample_L(const Point &p,
+SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	float pdf;
-	Spectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
+	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
 		wi, &pdf, visibility);
-	if (pdf == 0.f) return Spectrum(0.f);
+	if (pdf == 0.f) return SWCSpectrum(0.f);
 	return L / pdf;
 }
 Light* InfiniteAreaLight::CreateLight(const Transform &light2world,

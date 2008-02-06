@@ -54,12 +54,12 @@ void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	}
 }
 
-Spectrum MLTPathIntegrator::Li(const Scene *scene,
+SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
 	RayDifferential ray(r);
-	Spectrum pathThroughput = 1., L = 0., Le;
+	SWCSpectrum pathThroughput = 1., L = 0., Le;
 	int lightNum;
 	Light *light;
 	Vector wi;
@@ -90,7 +90,7 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
-		Spectrum emittance = isect.Le(wo);
+		SWCSpectrum emittance = isect.Le(wo);
 
 		pathThroughput *= scene->Transmittance(ray);
 
@@ -100,7 +100,7 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		}	else {
 			// Explicit light path: always connect to the same light
 			Le = light->Sample_L(p, n,	ls1, ls2, &wi, &lightPdf, &visibility);
-			Spectrum f = bsdf->f(wo, wi);
+			SWCSpectrum f = bsdf->f(wo, wi);
 			if(lightPdf > 0. && !Le.Black() && !f.Black() && visibility.Unoccluded(scene))
 				L += pathThroughput * lightWeight * f * Le * AbsDot(wi, n) / lightPdf;
 		}
@@ -116,7 +116,7 @@ Spectrum MLTPathIntegrator::Li(const Scene *scene,
 		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
 		Vector wi;
 		float pdf;
-		Spectrum f;
+		SWCSpectrum f;
 		BxDFType flags;
 
 		// material, sample BSDF

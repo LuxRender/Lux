@@ -36,27 +36,27 @@ void SingleScattering::RequestSamples(Sample *sample,
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
-Spectrum SingleScattering::Transmittance(const Scene *scene,
+SWCSpectrum SingleScattering::Transmittance(const Scene *scene,
 		const Ray &ray, const Sample *sample, float *alpha) const {
-	if (!scene->volumeRegion) return Spectrum(1.f);
+	if (!scene->volumeRegion) return SWCSpectrum(1.f);
 	float step = sample ? stepSize : 4.f * stepSize;
 	float offset = sample ? sample->oneD[tauSampleOffset][0] :
 		lux::random::floatValue();
-	Spectrum tau = scene->volumeRegion->Tau(ray, step, offset);
+	SWCSpectrum tau = scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
 }
-Spectrum SingleScattering::Li(const Scene *scene,
+SWCSpectrum SingleScattering::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;
 	float t0, t1;
 	if (!vr || !vr->IntersectP(ray, &t0, &t1)) return 0.f;
 	// Do single scattering volume integration in _vr_
-	Spectrum Lv(0.);
+	SWCSpectrum Lv(0.);
 	// Prepare for volume integration stepping
 	int N = Ceil2Int((t1-t0) / stepSize);
 	float step = (t1 - t0) / N;
-	Spectrum Tr(1.f);
+	SWCSpectrum Tr(1.f);
 	Point p = ray(t0), pPrev;
 	Vector w = -ray.d;
 	if (sample)
@@ -71,7 +71,7 @@ Spectrum SingleScattering::Li(const Scene *scene,
 		// Advance to sample at _t0_ and update _T_
 		pPrev = p;
 		p = ray(t0);
-		Spectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
+		SWCSpectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
 			.5f * stepSize, lux::random::floatValue());
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
@@ -82,7 +82,7 @@ Spectrum SingleScattering::Li(const Scene *scene,
 		}
 		// Compute single-scattering source term at _p_
 		Lv += Tr * vr->Lve(p, w);
-		Spectrum ss = vr->sigma_s(p, w);
+		SWCSpectrum ss = vr->sigma_s(p, w);
 		if (!ss.Black() && scene->lights.size() > 0) {
 			int nLights = scene->lights.size();
 			int lightNum =
@@ -94,9 +94,9 @@ Spectrum SingleScattering::Li(const Scene *scene,
 			VisibilityTester vis;
 			Vector wo;
 			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2];
-			Spectrum L = light->Sample_L(p, u1, u2, &wo, &pdf, &vis);
+			SWCSpectrum L = light->Sample_L(p, u1, u2, &wo, &pdf, &vis);
 			if (!L.Black() && pdf > 0.f && vis.Unoccluded(scene)) {
-				Spectrum Ld = L * vis.Transmittance(scene);
+				SWCSpectrum Ld = L * vis.Transmittance(scene);
 				Lv += Tr * ss * vr->p(p, w, -wo) *
 				      Ld * float(nLights) / pdf;
 			}

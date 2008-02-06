@@ -43,11 +43,11 @@ DirectLighting::DirectLighting(LightStrategy st, int md) {
 	avgY = avgYsample = cdf = NULL;
 	overallAvgY = 0.;
 }
-Spectrum DirectLighting::Li(const Scene *scene,
+SWCSpectrum DirectLighting::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	Intersection isect;
-	Spectrum L(0.);
+	SWCSpectrum L(0.);
 	if (scene->Intersect(ray, &isect)) {
 		if (alpha) *alpha = 1.;
 		// Evaluate BSDF at hit point
@@ -82,7 +82,7 @@ Spectrum DirectLighting::Li(const Scene *scene,
 		if (rayDepth++ < maxDepth) {
 			Vector wi;
 			// Trace rays for specular reflection and refraction
-			Spectrum f = bsdf->Sample_f(wo, &wi,
+			SWCSpectrum f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
 			if (!f.Black()) {
 				// Compute ray differential _rd_ for specular reflection

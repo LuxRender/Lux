@@ -160,7 +160,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 
 // interface for adding/accepting a new image sample.
 void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
-			   const Spectrum &newL, float newAlpha, Film *film)
+			   const SWCSpectrum &newL, float newAlpha, Film *film)
 {
 	float newLY = newL.y();
 	// calculate meanIntensity
@@ -179,9 +179,11 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 
 	// try or force accepting of the new sample
 	if (consecRejects > maxRejects || lux::random::floatValue() < accProb ) {
-		film->AddSample(sampleImage[0], sampleImage[1], L * weight, alpha);
+		XYZColor Lw = L;
+		Lw *= weight;
+		film->AddSample(sampleImage[0], sampleImage[1], Lw, alpha);
 		weight = newWeight;
-		L = newL;
+		L = newL.ToXYZ(); // note - radiance - store as XYZ color since SWCSpectrum wavelength are not persistent!
 		alpha = newAlpha;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;

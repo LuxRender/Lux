@@ -63,7 +63,7 @@ Sun3Light::Sun3Light(const Transform &light2world, const Spectrum &le, int ns, V
 //  printf("sun xyY:: %f %f %f\n", xyz[0] / sum, xyz[1] / sum, xyz[1] );
 }
 
-Spectrum Sun3Light::Sample_L(const Point &p, const Normal &n, float u1, float u2, Vector *wi, float *pdf, VisibilityTester *visibility) const {
+SWCSpectrum Sun3Light::Sample_L(const Point &p, const Normal &n, float u1, float u2, Vector *wi, float *pdf, VisibilityTester *visibility) const {
   Normal ns;
 
   Point ps = shape->Sample(p, u1, u2, &ns);
@@ -80,7 +80,7 @@ float Sun3Light::Pdf(const Point &p, const Normal &N, const Vector &wi) const {
   return shape->Pdf(p, wi);
 }
 
-Spectrum Sun3Light::Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf, VisibilityTester *visibility) const {
+SWCSpectrum Sun3Light::Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf, VisibilityTester *visibility) const {
   Normal Ns;
 
   Point Ps = shape->Sample(P, u1, u2, &Ns);
@@ -93,7 +93,7 @@ Spectrum Sun3Light::Sample_L(const Point &P, float u1, float u2, Vector *wo, flo
   return L(Ps, Ns, -*wo);
 }
 
-Spectrum Sun3Light::Sample_L(const Scene *scene, float u1, float u2, float u3, float u4, Ray *ray, float *pdf) const {
+SWCSpectrum Sun3Light::Sample_L(const Scene *scene, float u1, float u2, float u3, float u4, Ray *ray, float *pdf) const {
   Normal ns;
 
   ray->o = shape->Sample(u1, u2, &ns);
@@ -111,7 +111,7 @@ float Sun3Light::Pdf(const Point &P, const Vector &w) const {
   return shape->Pdf(P, w);
 }
 
-Spectrum Sun3Light::Sample_L(const Point &P, Vector *wo, VisibilityTester *visibility) const {
+SWCSpectrum Sun3Light::Sample_L(const Point &P, Vector *wo, VisibilityTester *visibility) const {
   Normal Ns;
 
   Point Ps = shape->Sample(P, lux::random::floatValue(), lux::random::floatValue(), &Ns);
@@ -122,16 +122,16 @@ Spectrum Sun3Light::Sample_L(const Point &P, Vector *wo, VisibilityTester *visib
   float pdf = shape->Pdf(P, *wo);
 
   if (pdf == 0.f)
-    return Spectrum(0.f);
+    return SWCSpectrum(0.f);
 
   return L(P, Ns, -*wo) / pdf;
 }
 
-Spectrum Sun3Light::L(const Point &p, const Normal &n, const Vector &w) const {
+SWCSpectrum Sun3Light::L(const Point &p, const Normal &n, const Vector &w) const {
   return Dot(n, w) > 0 ? Lemit : 0.;
 }
 
-Spectrum Sun3Light::Power(const Scene *) const {
+SWCSpectrum Sun3Light::Power(const Scene *) const {
   return Lemit * area * M_PI;
 }
 

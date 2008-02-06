@@ -71,10 +71,10 @@ enum BxDFType {
 class  BSDF {
 public:
 	// BSDF Public Methods
-	Spectrum Sample_f(const Vector &o, Vector *wi, float u1, float u2,
+	SWCSpectrum Sample_f(const Vector &o, Vector *wi, float u1, float u2,
 		float u3, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL) const;
-	Spectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 		BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL) const;
 	float Pdf(const Vector &wo,
@@ -97,10 +97,10 @@ public:
 		              sn.y * v.x + tn.y * v.y + nn.y * v.z,
 		              sn.z * v.x + tn.z * v.y + nn.z * v.z);
 	}
-	Spectrum f(const Vector &woW, const Vector &wiW,
+	SWCSpectrum f(const Vector &woW, const Vector &wiW,
 		BxDFType flags = BSDF_ALL) const;
-	Spectrum rho(BxDFType flags = BSDF_ALL) const;
-	Spectrum rho(const Vector &wo,
+	SWCSpectrum rho(BxDFType flags = BSDF_ALL) const;
+	SWCSpectrum rho(const Vector &wo,
 	             BxDFType flags = BSDF_ALL) const;
 	static void *Alloc( u_int sz) { return arena->Alloc(sz); }		// TODO remove original memory arena
 	static void FreeAll() { arena->FreeAll(); }
@@ -134,14 +134,14 @@ public:
 	bool MatchesFlags(BxDFType flags) const {
 		return (type & flags) == type;
 	}
-	virtual Spectrum f(const Vector &wo,
+	virtual SWCSpectrum f(const Vector &wo,
 	                   const Vector &wi) const = 0;
-	virtual Spectrum Sample_f(const Vector &wo, Vector *wi,
+	virtual SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const;
-	virtual Spectrum rho(const Vector &wo,
+	virtual SWCSpectrum rho(const Vector &wo,
 	                     int nSamples = 16,
 		                 float *samples = NULL) const;
-	virtual Spectrum rho(int nSamples = 16,
+	virtual SWCSpectrum rho(int nSamples = 16,
 	                     float *samples = NULL) const;
 	virtual float Pdf(const Vector &wi, const Vector &wo) const;
 	// BxDF Public Data
@@ -158,15 +158,15 @@ public:
 	static Vector otherHemisphere(const Vector &w) {
 		return Vector(w.x, w.y, -w.z);
 	}
-	Spectrum rho(const Vector &w, int nSamples,
+	SWCSpectrum rho(const Vector &w, int nSamples,
 			float *samples) const {
 		return brdf->rho(otherHemisphere(w), nSamples, samples);
 	}
-	Spectrum rho(int nSamples, float *samples) const {
+	SWCSpectrum rho(int nSamples, float *samples) const {
 		return brdf->rho(nSamples, samples);
 	}
-	Spectrum f(const Vector &wo, const Vector &wi) const;
-	Spectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wo, const Vector &wi) const;
 private:
@@ -176,23 +176,23 @@ class  Fresnel {
 public:
 	// Fresnel Interface
 	virtual ~Fresnel();
-	virtual Spectrum Evaluate(float cosi) const = 0;
+	virtual SWCSpectrum Evaluate(float cosi) const = 0;
 };
 class  FresnelConductor : public Fresnel {
 public:
 	// FresnelConductor Public Methods
-	Spectrum Evaluate(float cosi) const;
-	FresnelConductor(const Spectrum &e, const Spectrum &kk)
+	SWCSpectrum Evaluate(float cosi) const;
+	FresnelConductor(const SWCSpectrum &e, const SWCSpectrum &kk)
 		: eta(e), k(kk) {
 	}
 private:
 	// FresnelConductor Private Data
-	Spectrum eta, k;
+	SWCSpectrum eta, k;
 };
 class  FresnelDielectric : public Fresnel {
 public:
 	// FresnelDielectric Public Methods
-	Spectrum Evaluate(float cosi) const;
+	SWCSpectrum Evaluate(float cosi) const;
 	FresnelDielectric(float ei, float et) {
 		eta_i = ei;
 		eta_t = et;
@@ -203,12 +203,12 @@ private:
 };
 class  FresnelNoOp : public Fresnel {
 public:
-	Spectrum Evaluate(float) const { return Spectrum(1.); }
+	SWCSpectrum Evaluate(float) const { return SWCSpectrum(1.); }
 };
 
 class  FresnelSlick : public Fresnel {
 public:
-  Spectrum Evaluate(float cosi) const;
+  SWCSpectrum Evaluate(float cosi) const;
   FresnelSlick (float r);
 private:
   float normal_incidence;
@@ -217,68 +217,69 @@ private:
 class  SpecularReflection : public BxDF {
 public:
 	// SpecularReflection Public Methods
-	SpecularReflection(const Spectrum &r, Fresnel *f)
+	SpecularReflection(const SWCSpectrum &r, Fresnel *f)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
 		  R(r), fresnel(f) {
 	}
-	Spectrum f(const Vector &, const Vector &) const {
-		return Spectrum(0.);
+	SWCSpectrum f(const Vector &, const Vector &) const {
+		return SWCSpectrum(0.);
 	}
-	Spectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 	                  float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {
 		return 0.;
 	}
 private:
 	// SpecularReflection Private Data
-	Spectrum R;
+	SWCSpectrum R;
 	Fresnel *fresnel;
 };
 class  SpecularTransmission : public BxDF {
 public:
 	// SpecularTransmission Public Methods
-	SpecularTransmission(const Spectrum &t, float ei, float et)
+	SpecularTransmission(const SWCSpectrum &t, float ei, float et, float cbf)
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		  fresnel(ei, et) {
 		T = t;
 		etai = ei;
 		etat = et;
+		cb = cbf;
 	}
-	Spectrum f(const Vector &, const Vector &) const {
-		return Spectrum(0.);
+	SWCSpectrum f(const Vector &, const Vector &) const {
+		return SWCSpectrum(0.);
 	}
-	Spectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {
 		return 0.;
 	}
 private:
 	// SpecularTransmission Private Data
-	Spectrum T;
-	float etai, etat;
+	SWCSpectrum T;
+	float etai, etat, cb;
 	FresnelDielectric fresnel;
 };
 
 class  Lambertian : public BxDF {
 public:
 	// Lambertian Public Methods
-	Lambertian(const Spectrum &reflectance)
+	Lambertian(const SWCSpectrum &reflectance)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance), RoverPI(reflectance * INV_PI) {
 	}
-	Spectrum f(const Vector &wo, const Vector &wi) const;
-	Spectrum rho(const Vector &, int, float *) const {
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+	SWCSpectrum rho(const Vector &, int, float *) const {
 		return R;
 	}
-	Spectrum rho(int, float *) const { return R; }
+	SWCSpectrum rho(int, float *) const { return R; }
 private:
 	// Lambertian Private Data
-	Spectrum R, RoverPI;
+	SWCSpectrum R, RoverPI;
 };
 class  OrenNayar : public BxDF {
 public:
 	// OrenNayar Public Methods
-	Spectrum f(const Vector &wo, const Vector &wi) const;
-	OrenNayar(const Spectrum &reflectance, float sig)
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+	OrenNayar(const SWCSpectrum &reflectance, float sig)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance) {
 		float sigma = Radians(sig);
@@ -288,7 +289,7 @@ public:
 	}
 private:
 	// OrenNayar Private Data
-	Spectrum R;
+	SWCSpectrum R;
 	float A, B;
 };
 class  MicrofacetDistribution {
@@ -304,9 +305,9 @@ public:
 class  Microfacet : public BxDF {
 public:
 	// Microfacet Public Methods
-	Microfacet(const Spectrum &reflectance, Fresnel *f,
+	Microfacet(const SWCSpectrum &reflectance, Fresnel *f,
 		MicrofacetDistribution *d);
-	Spectrum f(const Vector &wo, const Vector &wi) const;
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
 	float G(const Vector &wo, const Vector &wi,
 			const Vector &wh) const {
 		float NdotWh = fabsf(CosTheta(wh));
@@ -316,12 +317,12 @@ public:
 		return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh),
 		                (2.f * NdotWh * NdotWi / WOdotWh)));
 	}
-	Spectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wo, const Vector &wi) const;
 private:
 	// Microfacet Private Data
-	Spectrum R;
+	SWCSpectrum R;
 	MicrofacetDistribution *distribution;
 	Fresnel *fresnel;
 };
@@ -330,17 +331,17 @@ private:
 class  CookTorrance : public BxDF {
 public:
   // CookTorrance Public Methods
-  CookTorrance(const Spectrum &kd, u_int nl,
-               const Spectrum *ks, MicrofacetDistribution **dist, Fresnel **fres);
-  Spectrum f(const Vector &wo, const Vector &wi) const;
+  CookTorrance(const SWCSpectrum &kd, u_int nl,
+               const SWCSpectrum *ks, MicrofacetDistribution **dist, Fresnel **fres);
+  SWCSpectrum f(const Vector &wo, const Vector &wi) const;
   float G(const Vector &wo, const Vector &wi, const Vector &wh) const;
-  Spectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
+  SWCSpectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
   float Pdf(const Vector &wi, const Vector &wo) const;
 private:
   // Cook-Torrance Private Data
-  Spectrum KD;
+  SWCSpectrum KD;
   u_int nLobes;
-  const Spectrum *KS;
+  const SWCSpectrum *KS;
   MicrofacetDistribution **distribution;
   Fresnel **fresnel;
 };
@@ -414,18 +415,18 @@ private:
 class  Lafortune : public BxDF {
 public:
 	// Lafortune Public Methods
-	Lafortune(const Spectrum &r, u_int nl,
-	          const Spectrum *x, const Spectrum *y, const Spectrum *z,
-			  const Spectrum *e, BxDFType t);
-	Spectrum f(const Vector &wo, const Vector &wi) const;
-	Spectrum Sample_f(const Vector &wi, Vector *sampled_f,
+	Lafortune(const SWCSpectrum &r, u_int nl,
+	          const SWCSpectrum *x, const SWCSpectrum *y, const SWCSpectrum *z,
+			  const SWCSpectrum *e, BxDFType t);
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+	SWCSpectrum Sample_f(const Vector &wi, Vector *sampled_f,
 		float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wi, const Vector &wo) const;
 private:
 	// Lafortune Private Data
-	Spectrum R;
+	SWCSpectrum R;
 	u_int nLobes;
-	const Spectrum *x, *y, *z, *exponent;
+	const SWCSpectrum *x, *y, *z, *exponent;
 };
 
 //#ifndef LUX_USE_SSE
@@ -436,15 +437,15 @@ class  FresnelBlend : public BxDF
 {
 public:
 	// FresnelBlend Public Methods
-	FresnelBlend(const Spectrum &Rd,
-	             const Spectrum &Rs,
+	FresnelBlend(const SWCSpectrum &Rd,
+	             const SWCSpectrum &Rs,
 				 MicrofacetDistribution *dist);
-	Spectrum f(const Vector &wo, const Vector &wi) const;
-	Spectrum SchlickFresnel(float costheta) const {
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+	SWCSpectrum SchlickFresnel(float costheta) const {
 		return
-			Rs + powf(1 - costheta, 5.f) * (Spectrum(1.) - Rs);
+			Rs + powf(1 - costheta, 5.f) * (SWCSpectrum(1.) - Rs);
 	}
-	Spectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
+	SWCSpectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
 	float Pdf(const Vector &wi, const Vector &wo) const;
 /*
 #ifdef LUX_USE_SSE	
@@ -457,7 +458,7 @@ public:
 	
 private:
 	// FresnelBlend Private Data
-	Spectrum Rd, Rs;
+	SWCSpectrum Rd, Rs;
 	MicrofacetDistribution *distribution;
 };
 // BSDF Inline Method Definitions

@@ -32,7 +32,7 @@ namespace lux
 class MLTPathIntegrator : public SurfaceIntegrator {
 public:
 	// MLTPathIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	MLTPathIntegrator(int md) {
 			maxDepth = md;
 			continueOffset = new int[maxDepth];

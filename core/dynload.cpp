@@ -63,6 +63,7 @@
 #include "perspective.h"
 
 #include "multiimage.h"
+//#include "fleximage.h"
 
 #include "box.h"
 #include "gaussian.h"
@@ -1075,6 +1076,13 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
+
+/*    if(name=="fleximage")
+    {
+		Film *ret=FlexImageFilm::CreateFilm(paramSet, filter);
+        paramSet.ReportUnused();
+        return ret;
+    } */
 
     //
     // Radiance - The following films are currently retired to /PBRT_Attic

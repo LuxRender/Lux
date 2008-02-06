@@ -168,7 +168,7 @@ BSDF *Intersection::GetBSDF(const RayDifferential &ray)
 	dg.ComputeDifferentials(ray);
 	return primitive->GetBSDF(dg, WorldToObject);
 }
-Spectrum Intersection::Le(const Vector &w) const {
+SWCSpectrum Intersection::Le(const Vector &w) const {
 	const AreaLight *area = primitive->GetAreaLight();
-	return area ? area->L(dg.p, dg.nn, w) : Spectrum(0.);
+	return area ? area->L(dg.p, dg.nn, w) : SWCSpectrum(0.);
 }

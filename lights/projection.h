@@ -36,16 +36,16 @@ public:
 	ProjectionLight(const Transform &light2world, const Spectrum &intensity,
 		const string &texname, float fov);
 	~ProjectionLight();
-	Spectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
+	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
 	bool IsDeltaLight() const { return true; }
 	Spectrum Projection(const Vector &w) const;
-	Spectrum Power(const Scene *) const {
+	SWCSpectrum Power(const Scene *) const {
 		return Intensity * 2.f * M_PI * (1.f - cosTotalWidth) *
 			projectionMap->Lookup(.5f, .5f, .5f);
 	}
-	Spectrum Sample_L(const Point &P, float u1, float u2, Vector *wo,
+	SWCSpectrum Sample_L(const Point &P, float u1, float u2, Vector *wo,
 		float *pdf, VisibilityTester *visibility) const;
-	Spectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
 	

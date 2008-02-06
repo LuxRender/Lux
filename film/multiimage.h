@@ -72,8 +72,10 @@ public:
 		if(filter!=NULL)delete filter;
 		if(filterTable!=NULL)delete[] filterTable;
 	}
-	void AddSample(float sX, float sY, 
-	               const Spectrum &L, float alpha);
+
+	void AddSample(float sX, float sY, const SWCSpectrum &L, float alpha);
+	void AddSample(float sX, float sY, const XYZColor &L, float alpha);
+
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;
 	void WriteImage() {};

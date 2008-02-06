@@ -47,7 +47,7 @@ NSunLight::NSunLight (const Transform &light2world, const Spectrum &intensity, V
   //printf("sun xyY:: %f %f %f\n", xyz[0] / sum, xyz[1] / sum, xyz[1] );
 }
 
-Spectrum NSunLight::Power(const Scene *) const {
+SWCSpectrum NSunLight::Power(const Scene *) const {
   return Intensity * 4.0f * M_PI;
 }
 
@@ -55,14 +55,14 @@ bool NSunLight::IsDeltaLight() const {
   return true;
 }
 
-Spectrum NSunLight::Sample_L (const Point &p, Vector *wi, VisibilityTester *visibility) const {
+SWCSpectrum NSunLight::Sample_L (const Point &p, Vector *wi, VisibilityTester *visibility) const {
   *wi = sunDir;
   visibility->SetRay(p, *wi);
 
   return Intensity;
 }
 
-Spectrum NSunLight::Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf, VisibilityTester *visibility) const {
+SWCSpectrum NSunLight::Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf, VisibilityTester *visibility) const {
   *pdf = 1.0f;
 
   return Sample_L (p, wi, visibility);
@@ -72,7 +72,7 @@ float NSunLight::Pdf (const Point &, const Vector &) const {
   return 0.0f;
 }
 
-Spectrum NSunLight::Sample_L (const Scene *scene, float u1, float u2, float u3, float u4, Ray *ray, float *pdf) const {
+SWCSpectrum NSunLight::Sample_L (const Scene *scene, float u1, float u2, float u3, float u4, Ray *ray, float *pdf) const {
   ray->o = lightPos;
   ray->d = UniformSampleSphere (u1, u2);
   *pdf = UniformSpherePdf ();

@@ -34,12 +34,12 @@ BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-	Spectrum spec = Ks->Evaluate(dgs).Clamp();
+	SWCSpectrum spec(Ks->Evaluate(dgs).Clamp());
 	float rough = roughness->Evaluate(dgs);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
+	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
 
 	MicrofacetDistribution *md = BSDF_ALLOC( Blinn)(1.f / rough);
-	Spectrum k = 0.;
+	SWCSpectrum k = 0.;
 	Fresnel *frMf = BSDF_ALLOC( FresnelConductor)(FresnelApproxEta(spec), k);
 	Fresnel *frSr = BSDF_ALLOC( FresnelConductor)(FresnelApproxEta(R), k);
 	bsdf->Add(BSDF_ALLOC( Microfacet)(1., frMf, md));

@@ -127,31 +127,37 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 		}
 	}
 }
-void MultiImageFilm::AddSample(float sX, float sY, const Spectrum &L, float alpha) {
 
-			boost::mutex::scoped_lock lock(addSampleMutex);
-
+void MultiImageFilm::AddSample(float sX, float sY, const SWCSpectrum &L, float alpha) { int bufferId = 0;
 	// Convert to XYZ Color
 	XYZColor xyz = L.ToXYZ();
+
+	AddSample(sX, sY, xyz, alpha);
+}
+
+void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alpha) {
+			boost::mutex::scoped_lock lock(addSampleMutex);
+
+	XYZColor xyz = L;
 
 	// Issue warning if unexpected radiance value returned
 	if (xyz.IsNaN()) {
 		//std::stringstream error;
 		//error<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
 		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
-		//L = Spectrum(0.f);
+		//L = SWCSpectrum(0.f);
 		return;
 	}
 	else if (xyz.y() < -1e-5) {
 		//std::stringstream error;
 		//error<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
 		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
-		//L = Spectrum(0.f);
+		//L = SWCSpectrum(0.f);
 		return;
 	}
 	else if (isinf(xyz.y())) {
 		//luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
-		//L = Spectrum(0.f);
+		//L = SWCSpectrum(0.f);
 		return;
 	}
 
@@ -274,11 +280,11 @@ void MultiImageFilm::WriteImage(int oType) {
 			if (weightSum != 0.f) {
 				float invWt = 1.f / weightSum;
 				rgb[3*offset  ] =
-					Clamp(rgb[3*offset  ] * invWt, 0.f, INFINITY);
+					Clampf(rgb[3*offset  ] * invWt, 0.f, INFINITY);
 				rgb[3*offset+1] =
-					Clamp(rgb[3*offset+1] * invWt, 0.f, INFINITY);
+					Clampf(rgb[3*offset+1] * invWt, 0.f, INFINITY);
 				rgb[3*offset+2] =
-					Clamp(rgb[3*offset+2] * invWt, 0.f, INFINITY);
+					Clampf(rgb[3*offset+2] * invWt, 0.f, INFINITY);
 				// NOTE - radiance - leave off for now, creates rounding error and square filter blocks/artifacts
 				//alpha[offset] = Clamp(alpha[offset] * invWt, 0.f, 1.f);
 			}
@@ -435,10 +441,10 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	int cwi;
 	const float *cr = params.FindFloat("cropwindow", &cwi);
 	if (cr && cwi == 4) {
-		crop[0] = Clamp(min(cr[0], cr[1]), 0., 1.);
-		crop[1] = Clamp(max(cr[0], cr[1]), 0., 1.);
-		crop[2] = Clamp(min(cr[2], cr[3]), 0., 1.);
-		crop[3] = Clamp(max(cr[2], cr[3]), 0., 1.);
+		crop[0] = Clampf(min(cr[0], cr[1]), 0., 1.);
+		crop[1] = Clampf(max(cr[0], cr[1]), 0., 1.);
+		crop[2] = Clampf(min(cr[2], cr[3]), 0., 1.);
+		crop[3] = Clampf(max(cr[2], cr[3]), 0., 1.);
 	}
 
 	// output filenames

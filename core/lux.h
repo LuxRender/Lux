@@ -178,6 +178,7 @@ class Primitive;
 class Intersection;
 class GeometricPrimitive;
 class Spectrum;
+class SWCSpectrum;
 class Color;
 class RGBColor;
 class XYZColor;
@@ -323,22 +324,22 @@ extern  Transform LookAt(const Point &pos, const Point &look,
 
 Transform Perspective(float fov, float znear, float zfar);
 
- Spectrum FrDiel(float cosi, float cost,
-                        const Spectrum &etai,
-						const Spectrum &etat);
- Spectrum FrCond(float cosi,
-                        const Spectrum &n,
-						const Spectrum &k);
+ SWCSpectrum FrDiel(float cosi, float cost,
+                        const SWCSpectrum &etai,
+						const SWCSpectrum &etat);
+ SWCSpectrum FrCond(float cosi,
+                        const SWCSpectrum &n,
+						const SWCSpectrum &k);
 
-	Spectrum FresnelApproxEta(const Spectrum &intensity);
+	SWCSpectrum FresnelApproxEta(const SWCSpectrum &intensity);
 
-	Spectrum FresnelApproxK(const Spectrum &intensity);
+	SWCSpectrum FresnelApproxK(const SWCSpectrum &intensity);
 }
  
  namespace lux
  {
  float Lanczos(float, float tau=2);
- Spectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
+ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSamp, int bsdfSamp,
 	int bsdfComponent, u_int sampleNum);
@@ -712,6 +713,16 @@ inline float Lerp(float t, float v1, float v2) {
 	return (1.f - t) * v1 + t * v2;
 }
 inline float Clamp(float val, float low, float high) {
+	if (val < low) return low;
+	else if (val > high) return high;
+	else return val;
+}
+inline float Clampf(float val, float low, float high) {
+	if (val < low) return low;
+	else if (val > high) return high;
+	else return val;
+}
+inline double Clamp(double val, double low, double high) {
 	if (val < low) return low;
 	else if (val > high) return high;
 	else return val;

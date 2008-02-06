@@ -45,7 +45,7 @@ float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	return sample->xD[num] + pos * sample->dxD[num];
 }
 void Sampler::AddSample(const Sample &sample, const Ray &ray,
-	const Spectrum &L, float alpha, Film *film)
+	const SWCSpectrum &L, float alpha, Film *film)
 {
 	if (L != Spectrum(0.))
 		film->AddSample(sample.imageX, sample.imageY, L, alpha);

@@ -108,9 +108,9 @@ public:
 		return aggregate->IntersectP(ray);
 	}
 	const BBox &WorldBound() const;
-	Spectrum Li(const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
 		float *alpha = NULL) const;
-	Spectrum Transmittance(const Ray &ray) const;
+	SWCSpectrum Transmittance(const Ray &ray) const;
 	
 	//Control methods
 	void Start();

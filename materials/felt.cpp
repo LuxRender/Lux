@@ -38,9 +38,9 @@ BSDF *Felt::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeomet
 	static float xy2[3] =     {  1.004921f,  1.004921f,  1.004921f};
 	static float z2[3] =      { -0.205529f, -0.205529f, -0.205529f};
 	static float e2[3] =      { 94.117332f, 94.117332f, 94.117332f};
-	static Spectrum xy[3] = { Spectrum(xy0), Spectrum(xy1), Spectrum(xy2) };
-	static Spectrum z[3] = { Spectrum(z0), Spectrum(z1), Spectrum(z2) };
-	static Spectrum e[3] = { Spectrum(e0), Spectrum(e1), Spectrum(e2) };
+	static SWCSpectrum xy[3] = { SWCSpectrum(Spectrum(xy0)), SWCSpectrum(Spectrum(xy1)), SWCSpectrum(Spectrum(xy2)) };
+	static SWCSpectrum z[3] = { SWCSpectrum(Spectrum(z0)), SWCSpectrum(Spectrum(z1)), SWCSpectrum(Spectrum(z2)) };
+	static SWCSpectrum e[3] = { SWCSpectrum(Spectrum(e0)), SWCSpectrum(Spectrum(e1)), SWCSpectrum(Spectrum(e2)) };
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)

@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
+#ifndef LUX_IGIIO_H
+#define LUX_IGIIO_H
 // igiio.h*
 
 namespace lux
@@ -57,3 +59,5 @@ public:
 };
 
 }
+
+#endif // LUX_IGGIO_H

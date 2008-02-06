@@ -156,11 +156,18 @@ void Scene::SignalThreads(int signal)
 	CurThreadSignal = signal;
 }
 
+// thread specific wavelengths
+extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
+
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread)
 {
-	BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
+	 // initialize the thread's arena
+	BSDF::arena.reset(new MemoryArena());
 	myThread->stat_Samples = 0.;
+
+	// initialize the thread's spectral wavelengths
+	thread_wavelengths.reset(new SpectrumWavelengths());
 	
 	// allocate sample pos
 	u_int *useSampPos = new u_int();
@@ -171,6 +178,9 @@ void RenderThread::render(RenderThread *myThread)
 	while (true) {
 		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
 			break;
+
+		// Sample new SWC thread wavelengths
+		thread_wavelengths->Sample(myThread->sample->time);
 
 		while(myThread->signal == RenderThread::SIG_PAUSE)
 		{ 
@@ -197,13 +207,13 @@ void RenderThread::render(RenderThread *myThread)
 
 			// Evaluate radiance along camera ray
 			float alpha;
-			Spectrum Ls = 0.f;
-			Spectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
-			Spectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
+			SWCSpectrum Ls = 0.f;
+			SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
+			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
+			SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
 			Ls = rayWeight * ( T * Lo + Lv );
 
-			if( Ls == Spectrum(0.f) )
+			if( Ls == SWCSpectrum(0.f) )
 				myThread->stat_blackSamples++;
 
 			// Radiance - Add sample contribution to image
@@ -325,16 +335,16 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 const BBox &Scene::WorldBound() const {
 	return bound;
 }
-Spectrum Scene::Li(const RayDifferential &ray,
+SWCSpectrum Scene::Li(const RayDifferential &ray,
 		const Sample *sample, float *alpha) const {
 //  NOTE - radiance - leave these off for now, should'nt be used (broken with multithreading)
 //  TODO - radiance - cleanup / reimplement into integrators
-//	Spectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
-//	Spectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
-//	Spectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
+//	SWCSpectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
+//	SWCSpectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
+//	SWCSpectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
 //	return T * Lo + Lv;
 	return 0.;
 }
-Spectrum Scene::Transmittance(const Ray &ray) const {
+SWCSpectrum Scene::Transmittance(const Ray &ray) const {
 	return volumeIntegrator->Transmittance(this, ray, NULL, NULL);
 }

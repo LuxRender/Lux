@@ -32,7 +32,7 @@ namespace lux
 class PathIntegrator : public SurfaceIntegrator {
 public:
 	// PathIntegrator Public Methods
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
+	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	PathIntegrator(int md, float cp) { 
 			maxDepth = md; continueProbability = cp; 

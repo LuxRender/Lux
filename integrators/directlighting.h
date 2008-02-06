@@ -37,7 +37,7 @@ public:
 	// DirectLighting Public Methods
 	DirectLighting(LightStrategy ls, int md);
 	~DirectLighting();
-	Spectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene) {
 		if (strategy == SAMPLE_ALL_UNIFORM) {

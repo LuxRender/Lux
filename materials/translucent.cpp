@@ -36,16 +36,16 @@ BSDF *Translucent::GetBSDF(const DifferentialGeometry &dgGeom, const Differentia
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
-	Spectrum r = reflect->Evaluate(dgs).Clamp();
-	Spectrum t = transmit->Evaluate(dgs).Clamp();
+	SWCSpectrum r(reflect->Evaluate(dgs).Clamp());
+	SWCSpectrum t(transmit->Evaluate(dgs).Clamp());
 	if (r.Black() && t.Black()) return bsdf;
 
-	Spectrum kd = Kd->Evaluate(dgs).Clamp();
+	SWCSpectrum kd(Kd->Evaluate(dgs).Clamp());
 	if (!kd.Black()) {
 		if (!r.Black()) bsdf->Add(BSDF_ALLOC( Lambertian)(r * kd));
 		if (!t.Black()) bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC( Lambertian)(t * kd)));
 	}
-	Spectrum ks = Ks->Evaluate(dgs).Clamp();
+	SWCSpectrum ks(Ks->Evaluate(dgs).Clamp());
 	if (!ks.Black()) {
 		float rough = roughness->Evaluate(dgs);
 		if (!r.Black()) {

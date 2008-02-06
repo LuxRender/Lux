@@ -41,11 +41,11 @@ public:
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(const Sample &sample, const Ray &ray,
-		const Spectrum &L, float alpha, Film *film);
+		const SWCSpectrum &L, float alpha, Film *film);
 	~MetropolisSampler() { delete[] sampleImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	bool large;
-	Spectrum L;
+	XYZColor L;
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;

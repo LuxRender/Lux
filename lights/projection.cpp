@@ -61,7 +61,7 @@ ProjectionLight::
 	cosTotalWidth = cosf(atanf(tanDiag));
 }
 ProjectionLight::~ProjectionLight() { delete projectionMap; }
-Spectrum ProjectionLight::Sample_L(const Point &p, Vector *wi,
+SWCSpectrum ProjectionLight::Sample_L(const Point &p, Vector *wi,
 	 	VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	visibility->SetSegment(p, lightPos);
@@ -81,7 +81,7 @@ Spectrum ProjectionLight::Projection(const Vector &w) const {
 	float t = (Pl.y - screenY0) / (screenY1 - screenY0);
 	return projectionMap->Lookup(s, t);
 }
-Spectrum ProjectionLight::Sample_L(const Point &p, float u1, float u2,
+SWCSpectrum ProjectionLight::Sample_L(const Point &p, float u1, float u2,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
@@ -89,7 +89,7 @@ Spectrum ProjectionLight::Sample_L(const Point &p, float u1, float u2,
 	visibility->SetSegment(p, lightPos);
 	return Intensity * Projection(-*wi) / DistanceSquared(lightPos, p);
 }
-Spectrum ProjectionLight::Sample_L(const Scene *scene, float u1, float u2,
+SWCSpectrum ProjectionLight::Sample_L(const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
 	ray->o = lightPos;
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);

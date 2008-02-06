@@ -55,7 +55,7 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 	}
 	area = shape->Area();
 }
-Spectrum AreaLight::Sample_L(const Point &p,
+SWCSpectrum AreaLight::Sample_L(const Point &p,
 		const Normal &n, float u1, float u2,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
@@ -70,7 +70,7 @@ float AreaLight::Pdf(const Point &p, const Normal &N,
 		const Vector &wi) const {
 	return shape->Pdf(p, wi);
 }
-Spectrum AreaLight::Sample_L(const Point &P,
+SWCSpectrum AreaLight::Sample_L(const Point &P,
 		float u1, float u2, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal Ns;
@@ -80,7 +80,7 @@ Spectrum AreaLight::Sample_L(const Point &P,
 	visibility->SetSegment(P, Ps);
 	return L(Ps, Ns, -*wo);
 }
-Spectrum AreaLight::Sample_L(const Scene *scene, float u1,
+SWCSpectrum AreaLight::Sample_L(const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	Normal ns;
@@ -93,14 +93,14 @@ Spectrum AreaLight::Sample_L(const Scene *scene, float u1,
 float AreaLight::Pdf(const Point &P, const Vector &w) const {
 	return shape->Pdf(P, w);
 }
-Spectrum AreaLight::Sample_L(const Point &P, Vector *wo,
+SWCSpectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 		VisibilityTester *visibility) const {
 	Normal Ns;
 	Point Ps = shape->Sample(P, lux::random::floatValue(), lux::random::floatValue(), &Ns);
 	*wo = Normalize(Ps - P);
 	visibility->SetSegment(P, Ps);
 	float pdf = shape->Pdf(P, *wo);
-	if (pdf == 0.f) return Spectrum(0.f);
+	if (pdf == 0.f) return SWCSpectrum(0.f);
 	return L(P, Ns, -*wo) /	pdf;
 }
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,

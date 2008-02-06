@@ -42,8 +42,8 @@ BSDF *Metal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
     dgs = dgShading;
 
   BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-  Spectrum n = N->Evaluate(dgs);
-  Spectrum k = K->Evaluate(dgs);
+  SWCSpectrum n(N->Evaluate(dgs));
+  SWCSpectrum k(K->Evaluate(dgs));
   float rough = roughness->Evaluate(dgs);
 
   MicrofacetDistribution *md = BSDF_ALLOC( Blinn)(1.f / rough);

@@ -112,7 +112,7 @@ private:
 };
 class VolumeIntegrator : public Integrator {
 public:
-	virtual Spectrum Transmittance(const Scene *scene,
+	virtual SWCSpectrum Transmittance(const Scene *scene,
 		const Ray &ray, const Sample *sample,
 		float *alpha) const = 0;
 };

@@ -59,10 +59,10 @@ BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGe
 
   BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 
-  Spectrum kd = Kd->Evaluate(dgs).Clamp();
-  Spectrum ks1 = Ks1->Evaluate(dgs).Clamp();
-  Spectrum ks2 = Ks2->Evaluate(dgs).Clamp();
-  Spectrum ks3 = Ks3->Evaluate(dgs).Clamp();
+  SWCSpectrum kd(Kd->Evaluate(dgs).Clamp());
+  SWCSpectrum ks1(Ks1->Evaluate(dgs).Clamp());
+  SWCSpectrum ks2(Ks2->Evaluate(dgs).Clamp());
+  SWCSpectrum ks3(Ks3->Evaluate(dgs).Clamp());
 
   float r1 = R1->Evaluate(dgs);
   float r2 = R2->Evaluate(dgs);
@@ -87,7 +87,7 @@ BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGe
 
   // The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 
-  Spectrum *lobe_ks = (Spectrum *)BSDF::Alloc(3 * sizeof(Spectrum));
+  SWCSpectrum *lobe_ks = (SWCSpectrum *)BSDF::Alloc(3 * sizeof(SWCSpectrum));
   lobe_ks[0] = ks1;
   lobe_ks[1] = ks2;
   lobe_ks[2] = ks3;

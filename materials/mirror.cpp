@@ -34,7 +34,7 @@ BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeom
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-	Spectrum R = Kr->Evaluate(dgs).Clamp();
+	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
 			BSDF_ALLOC( FresnelNoOp)()));

@@ -37,19 +37,19 @@ public:
   // Sun3Light Interface
   Sun3Light(const Transform &light2world, const Spectrum &power, int ns, Vector sundir, float turb);
 
-  virtual Spectrum L(const Point &p, const Normal &n, const Vector &w) const;
+  virtual SWCSpectrum L(const Point &p, const Normal &n, const Vector &w) const;
 
-  Spectrum Power(const Scene *) const;
+  SWCSpectrum Power(const Scene *) const;
 
   bool IsDeltaLight() const;
 
   float Pdf(const Point &, const Vector &) const;
   float Pdf(const Point &, const Normal &, const Vector &) const;
-  Spectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
+  SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
 
-  virtual Spectrum Sample_L(const Point &P, const Normal &N, float u1, float u2, Vector *wo, float *pdf, VisibilityTester *visibility) const;
-  virtual Spectrum Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf, VisibilityTester *visibility) const;
-  Spectrum Sample_L(const Scene *scene, float u1, float u2, float u3, float u4, Ray *ray, float *pdf) const;
+  virtual SWCSpectrum Sample_L(const Point &P, const Normal &N, float u1, float u2, Vector *wo, float *pdf, VisibilityTester *visibility) const;
+  virtual SWCSpectrum Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf, VisibilityTester *visibility) const;
+  SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, float u3, float u4, Ray *ray, float *pdf) const;
 
   static Sun3Light *CreateLight(const Transform &light2world, const ParamSet &paramSet);
 

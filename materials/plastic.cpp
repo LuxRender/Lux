@@ -35,11 +35,11 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-	Spectrum kd = Kd->Evaluate(dgs).Clamp();
+	SWCSpectrum kd(Kd->Evaluate(dgs).Clamp());
 	BxDF *diff = BSDF_ALLOC( Lambertian)(kd);
 	Fresnel *fresnel =
 		BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
-	Spectrum ks = Ks->Evaluate(dgs).Clamp();
+	SWCSpectrum ks(Ks->Evaluate(dgs).Clamp());
 	float rough = roughness->Evaluate(dgs);
 	BxDF *spec = BSDF_ALLOC( Microfacet)(ks, fresnel,
 		BSDF_ALLOC( Blinn)(1.f / rough));

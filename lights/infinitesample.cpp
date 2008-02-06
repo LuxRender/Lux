@@ -75,7 +75,7 @@ InfiniteAreaLightIS
 	}
 	Lbase = L;
 }
-Spectrum
+SWCSpectrum
 	InfiniteAreaLightIS::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
@@ -88,7 +88,7 @@ Spectrum
 	}
 	return L;
 }
-Spectrum InfiniteAreaLightIS::Sample_L(const Point &p, float u1,
+SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p, float u1,
 		float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	// Find floating-point $(u,v)$ sample coordinates
@@ -122,7 +122,7 @@ float InfiniteAreaLightIS::Pdf(const Point &,
            (uDistrib->funcInt * vDistribs[u]->funcInt) *
            1.f / (2.f * M_PI * M_PI * sin(theta));
 }
-Spectrum InfiniteAreaLightIS::Sample_L(const Scene *scene,
+SWCSpectrum InfiniteAreaLightIS::Sample_L(const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	// Choose two points _p1_ and _p2_ on scene bounding sphere
@@ -145,12 +145,12 @@ Spectrum InfiniteAreaLightIS::Sample_L(const Scene *scene,
 		costheta / ((4.f * M_PI * worldRadius * worldRadius));
 	return Le(RayDifferential(ray->o, -ray->d));
 }
-Spectrum InfiniteAreaLightIS::Sample_L(const Point &p,
+SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	float pdf;
-	Spectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
+	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
 		wi, &pdf, visibility);
-	if (pdf == 0.) return Spectrum(0.);
+	if (pdf == 0.) return SWCSpectrum(0.);
 	return L / pdf;
 }
 

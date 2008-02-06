@@ -26,7 +26,7 @@
 using namespace lux;
 
 // GonioPhotometricLight Method Definitions
-Spectrum GonioPhotometricLight::Sample_L(const Point &p, Vector *wi,
+SWCSpectrum GonioPhotometricLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	visibility->SetSegment(p, lightPos);
@@ -47,7 +47,7 @@ GonioPhotometricLight::GonioPhotometricLight(
 	}
 	else mipmap = NULL;
 }
-Spectrum GonioPhotometricLight::Sample_L(const Point &P, float u1, float u2,
+SWCSpectrum GonioPhotometricLight::Sample_L(const Point &P, float u1, float u2,
 		Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	*wo = Normalize(lightPos - P);
@@ -55,7 +55,7 @@ Spectrum GonioPhotometricLight::Sample_L(const Point &P, float u1, float u2,
 	visibility->SetSegment(P, lightPos);
 	return Intensity * Scale(-*wo) / DistanceSquared(lightPos, P);
 }
-Spectrum GonioPhotometricLight::Sample_L(const Scene *scene, float u1, float u2,
+SWCSpectrum GonioPhotometricLight::Sample_L(const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
 	ray->o = lightPos;
 	ray->d = UniformSampleSphere(u1, u2);
