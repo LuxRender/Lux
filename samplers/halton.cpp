@@ -75,6 +75,7 @@ u_int HaltonSampler::GetTotalSamplePos() {
 }
 
 bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
+	sample->sampler = this;
 	if (!oneDSamples) {
 		// Allocate space for pixel's low-discrepancy sample tables
 		oneDSamples = new float *[sample->n1D.size()];
@@ -90,7 +91,7 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		xDSamples = new float *[sample->nxD.size()];
 		nxD = sample->nxD.size();
 		for (int i = 0; i < nxD; ++i)
-			xDSamples[i] = new float[sample->dxD[i] * sample->n2D[i] *
+			xDSamples[i] = new float[sample->dxD[i] * sample->nxD[i] *
 						pixelSamples];
 	}
 	if (samplePos == pixelSamples) {
@@ -111,36 +112,26 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
 			HaltonShuffleScrambled2D(sample->n2D[i], pixelSamples,
 				twoDSamples[i]);
+		float *xDSamp;
 		for (u_int i = 0; i < sample->nxD.size(); ++i) {
-			u_int off;
-			off = 0;
+			xDSamp = xDSamples[i];
 			for (u_int j = 0; j < sample->sxD[i].size(); ++j) {
 				switch (sample->sxD[i][j]) {
 				case 1: {
-					float *buf = new float[sample->nxD[i] * pixelSamples];
-					HaltonShuffleScrambled1D(sample->nxD[i], pixelSamples,
-						buf);
-					for (u_int k = 0; k < sample->nxD[i]; ++k)
-						for (int l = 0; l < pixelSamples; ++l)
-							sample->xD[i][(k * pixelSamples + l) * sample->dxD[i] + off] = buf[l * pixelSamples + k];
-					delete[] buf;
+					HaltonShuffleScrambled1D(sample->nxD[i],
+						pixelSamples, xDSamp);
+					xDSamp += sample->nxD[i] * pixelSamples;
 					break; }
 				case 2: {
-					float *buf = new float[2 * sample->nxD[i] * pixelSamples];
-					HaltonShuffleScrambled2D(sample->nxD[i], pixelSamples,
-						buf);
-					for (u_int k = 0; k < sample->nxD[i]; ++k) {
-						for (int l = 0; l < pixelSamples; ++l) {
-							sample->xD[i][(k * pixelSamples + l) * sample->dxD[i] + off] = buf[2 * (l * pixelSamples + k)];
-							sample->xD[i][(k * pixelSamples + l) * sample->dxD[i] + off + 1] = buf[2 * (l * pixelSamples + k) + 1];
-						}
-					}
-					delete[] buf;
+					HaltonShuffleScrambled2D(sample->nxD[i],
+						pixelSamples, xDSamp);
+					xDSamp += 2 * sample->nxD[i] * pixelSamples;
 					break; }
 				default:
+					printf("Unsupported dimension\n");
+					xDSamp += sample->sxD[i][j] * sample->nxD[i] * pixelSamples;
 					break;
 				}
-				off += sample->sxD[i][j];
 			}
 		}
 	}
@@ -160,13 +151,25 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
 			sample->twoD[i][j] = twoDSamples[i][startSamp+j];
 	}
-	for (u_int i = 0; i < sample->nxD.size(); ++i) {
-		int startSamp = sample->dxD[i] * sample->nxD[i] * samplePos;
-		for (u_int j = 0; j < sample->dxD[i] * sample->nxD[i]; ++j)
-			sample->xD[i][j] = xDSamples[i][startSamp+j];
-	}
 	++samplePos;
 	return true;
+}
+float *HaltonSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+{
+	float *data = sample->xD[num] + pos * sample->dxD[num];
+	float *xDSamp = xDSamples[num];
+	int offset = 0;
+	for (u_int i = 0; i < sample->sxD[i].size(); ++i) {
+		if (sample->sxD[num][i] == 1) {
+			data[offset] = xDSamp[sample->nxD[num] * (samplePos - 1) + pos];
+		} else if (sample->sxD[num][i] == 2) {
+			data[offset] = xDSamp[2 * (sample->nxD[num] * (samplePos - 1) + pos)];
+			data[offset + 1] = xDSamp[2 * (sample->nxD[num] * (samplePos - 1) + pos) + 1];
+		}
+		xDSamp += sample->sxD[num][i] * sample->nxD[num] * pixelSamples;
+		offset += sample->sxD[num][i];
+	}
+	return data;
 }
 Sampler* HaltonSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters

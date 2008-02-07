@@ -48,7 +48,7 @@ void Sampler::AddSample(const Sample &sample, const Ray &ray,
 	const SWCSpectrum &L, float alpha, Film *film)
 {
 	if (!L.Black())
-		film->AddSample(sample.imageX, sample.imageY, L, alpha);
+		film->AddSample(sample.imageX, sample.imageY, L.ToXYZ(), alpha);
 }
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf,

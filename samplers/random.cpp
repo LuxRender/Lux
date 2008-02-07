@@ -88,9 +88,10 @@ u_int RandomSampler::GetTotalSamplePos() {
 
 bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
-    // Compute new set of samples if needed for next pixel
-    if (samplePos == xPixelSamples * yPixelSamples)
-    {
+	sample->sampler = this;
+	// Compute new set of samples if needed for next pixel
+	if (samplePos == xPixelSamples * yPixelSamples)
+	{
 		// fetch next pixel from pixelsampler
 		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
 			return false;
