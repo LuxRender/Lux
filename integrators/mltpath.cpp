@@ -32,14 +32,6 @@ using namespace lux;
 MLTPathIntegrator* MLTPathIntegrator::clone() const
 {
 	MLTPathIntegrator *path = new MLTPathIntegrator(*this);
-	path->continueOffset = new int[maxDepth];
-	path->outgoingDirectionOffset = new int[maxDepth];
-	path->outgoingComponentOffset = new int[maxDepth];
-	for (int i = 0; i < maxDepth; ++i) {
-		path->continueOffset[i] = continueOffset[i];
-		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
-		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
-	}
 	return path;
  }
 // MLTPathIntegrator Method Definitions
@@ -47,11 +39,11 @@ void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
 	lightNumOffset = sample->Add1D(1);
 	lightSampOffset = sample->Add2D(1);
-	for (int i = 0; i < maxDepth; ++i) {
-		continueOffset[i] = sample->Add1D(1);
-		outgoingDirectionOffset[i] = sample->Add2D(1);
-		outgoingComponentOffset[i] = sample->Add1D(1);
-	}
+	vector<u_int> offsets;
+	offsets.push_back(2);	//outgoingDirectionOffset
+	offsets.push_back(1);	//outgoingComponentOffset
+	offsets.push_back(1);	//continueOffset
+	sampleOffset = sample->AddxD(offsets, maxDepth);
 }
 
 SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
@@ -110,24 +102,22 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 
 		// pick new direction for outgoing ray
 		// using metropolis integration sampler
-		float bs1, bs2, bcs;
-		bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
-		bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
-		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];
 		Vector wi;
 		float pdf;
 		SWCSpectrum f;
 		BxDFType flags;
+		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 
 		// material, sample BSDF
-		f = bsdf->Sample_f(wo, &wi, bs1, bs2, bcs, &pdf, BSDF_ALL, &flags);
+		f = bsdf->Sample_f(wo, &wi, data[0]/*outgoingDirectionOffset[0]*/, data[1]/*outgoingDirectionOffset[1]*/,
+					data[2]/*outgoingComponentOffset*/, &pdf, BSDF_ALL, &flags);
 		if (f.Black() || pdf == 0.)
 			break;
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
-			float q = min(1., f.y()/pdf);
-			if (q < sample->oneD[continueOffset[pathLength]][0])
+			float q = min(1., f.y()*AbsDot(wi, n)/pdf);
+			if (q < data[3]/*continueOffset[pathLength*/)
 				break;
 			pathThroughput /= q;
 		}
