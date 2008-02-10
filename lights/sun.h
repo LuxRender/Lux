@@ -61,6 +61,7 @@ private:
 	float turbidity;
 	float thetaS, phiS, V;
 	float cosThetaMax;
+	float Ldata[91];
 	RegularSpectrum* L;
 };
 

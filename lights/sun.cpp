@@ -309,7 +309,6 @@ SunLight::SunLight(const Transform &light2world,
 
 	int i;
 	float lambda;
-	float Ldata[91];
 	for(i = 0, lambda = 350; i < 91; i++, lambda+=5) {
 			// Rayleigh Scattering
 		tauR = exp( -m * 0.008735 * pow(lambda/1000, float(-4.08)));
