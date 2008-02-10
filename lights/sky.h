@@ -35,7 +35,7 @@ namespace lux
 class SkyLight : public Light {
 public:
 	// SkyLight Public Methods
-	SkyLight(const Transform &light2world,	const Spectrum &power, int ns, Vector sd, float turb, bool atm);
+	SkyLight(const Transform &light2world,	const Spectrum &power, int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
 	~SkyLight();
 	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
@@ -53,52 +53,38 @@ public:
 	SWCSpectrum Sample_L(const Point &p, float u1, float u2, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
+		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Normal &, const Vector &) const;
 	float Pdf(const Point &, const Vector &) const;
 	SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
-	
+
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
 		// internal methods
 	Vector  	GetSunPosition() const;
-	void 	SunThetaPhi(float &theta, float &phi) const;  
+	void 	SunThetaPhi(float &theta, float &phi) const;
 	Spectrum 	GetSunSpectralRadiance() const;
 	float	GetSunSolidAngle() const;
-	Spectrum  GetSkySpectralRadiance(const Vector &v) const;
-	Spectrum  GetSkySpectralRadiance(float theta, float phi) const;
+	SWCSpectrum  GetSkySpectralRadiance(const Vector &v) const;
+	SWCSpectrum  GetSkySpectralRadiance(float theta, float phi) const;
 	void GetAtmosphericEffects(const Vector &viewer,
 			       const Vector &source,
 			       Spectrum &atmAttenuation,
 			       Spectrum &atmInscatter ) const;
 
-    void 	InitSunThetaPhi();
-    Spectrum ComputeAttenuatedSunlight(float theta, float turbidity);
-    Spectrum ChromaticityToSpectrum(float x, float y) const;
-    Spectrum AttenuationFactor(float h0, float thetav, float s) const;
-    Spectrum InscatteredRadiance(float h0, float thetav, float
-				   phiv, float s) const;
-    Spectrum GetNeta(float theta, float v) const;
-    void CalculateA0(float thetav, float phiv, Spectrum& A0_1, Spectrum& A0_2) const;
-    void CreateConstants();
-    void InitA0() const;
-    float PerezFunction(const float *lam, float theta, float phi, float lvz) const;
+	void 	InitSunThetaPhi();
+	SWCSpectrum ChromaticityToSpectrum(float x, float y) const;
+	float PerezFunction(const float *lam, float theta, float phi, float lvz) const;
 
 private:
 	// SkyLight Private Data
 	Spectrum Lbase;
 	Vector  sundir;
-    float 	turbidity;
-    Vector 	toSun;
-    float	thetaS, phiS;
-    Spectrum 	sunSpectralRad;
-    float 	sunSolidAngle;
-    float zenith_Y, zenith_x, zenith_y;
-    float perez_Y[6], perez_x[6], perez_y[6];
-    Spectrum beta_m, beta_p, beta_m_ang_prefix,  beta_p_ang_prefix;
-    float	V;
-    bool atmInited;
+	float 	turbidity;
+	float	thetaS, phiS;
+	float zenith_Y, zenith_x, zenith_y;
+	float perez_Y[6], perez_x[6], perez_y[6];
 };
 
 }//namespace lux

@@ -336,7 +336,7 @@ SET(lux_lib_src
         integrators/path.cpp integrators/mltpath.cpp integrators/single.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
-        lights/sun.cpp lights/sky.cpp lights/sun2.cpp lights/sun3.cpp
+        lights/sun.cpp lights/sky.cpp
         materials/bluepaint.cpp materials/brushedmetal.cpp materials/clay.cpp materials/felt.cpp
         materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp materials/primer.cpp
         materials/shinymetal.cpp materials/skin.cpp materials/substrate.cpp

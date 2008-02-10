@@ -86,8 +86,6 @@
 #include "projection.h"
 #include "spot.h"
 #include "sun.h"
-#include "sun2.h"
-#include "sun3.h"
 #include "sky.h"
 
 #include "bluepaint.h"
@@ -591,18 +589,6 @@ static string SearchPath(const string &searchpath,
     if(name=="sun")
     {
     	Light *ret = SunLight::CreateLight(light2world, paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="sun2")
-    {
-    	Light *ret = NSunLight::CreateLight(light2world, paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="sun3")
-    {
-    	Light *ret = Sun3Light::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
