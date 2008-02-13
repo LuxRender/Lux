@@ -159,7 +159,7 @@ float *HaltonSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	float *data = sample->xD[num] + pos * sample->dxD[num];
 	float *xDSamp = xDSamples[num];
 	int offset = 0;
-	for (u_int i = 0; i < sample->sxD[i].size(); ++i) {
+	for (u_int i = 0; i < sample->sxD[num].size(); ++i) {
 		if (sample->sxD[num][i] == 1) {
 			data[offset] = xDSamp[sample->nxD[num] * (samplePos - 1) + pos];
 		} else if (sample->sxD[num][i] == 2) {
