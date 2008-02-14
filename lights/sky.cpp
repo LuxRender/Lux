@@ -77,19 +77,22 @@ SkyLight::SkyLight(const Transform &light2world,
 	perez_y[5] =  (-0.01092 *T  + 0.05291)*econst;
 }
 
-SWCSpectrum
-	SkyLight::Le(const RayDifferential &r) const {
+SWCSpectrum SkyLight::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute sky light radiance for direction
-	SWCSpectrum L = Lbase;
+	SWCSpectrum L;// = Lbase;
 
 	Vector wh = Normalize(WorldToLight(w));
-	float phi = SphericalPhi(wh);
-	float theta = SphericalTheta(wh);
-	L *= GetSkySpectralRadiance(theta, phi);
+	const float phi = SphericalPhi(wh);
+	const float theta = SphericalTheta(wh);
+
+	//L *= GetSkySpectralRadiance(theta, phi);
+	GetSkySpectralRadiance(theta,phi,(SWCSpectrum * const)&L);
+	L *= SWCSpectrum(Lbase);
 
 	return L;
 }
+
 SWCSpectrum SkyLight::Sample_L(const Point &p,
 		const Normal &n, float u1, float u2,
 		Vector *wi, float *pdf,
@@ -223,19 +226,6 @@ void SkyLight::InitSunThetaPhi()
 //
 // ********************************************************/
 
-SWCSpectrum SkyLight::GetSkySpectralRadiance(const Vector &varg) const // Don't use for now - radiance
-{
-	float theta, phi;
-	Vector v = varg;
-	if (v.z < 0) return Spectrum(0.);
-	if (v.z < 0.001)
-	  v = Vector(v.x,v.y,.001 );
-
-	theta = acos(v.z);
-	if (fabs(theta)< 1e-5) phi = 0;
-	else  phi = atan2(v.y,v.x);
-	return GetSkySpectralRadiance(theta,phi);
-}
 
 inline float SkyLight::PerezFunction(const float *lam, float theta, float gamma, float lvz) const
 {
@@ -246,22 +236,20 @@ inline float SkyLight::PerezFunction(const float *lam, float theta, float gamma,
 	return lvz* num/den;
 }
 
-SWCSpectrum SkyLight::GetSkySpectralRadiance(float theta, float phi) const
+// note - lyc - optimised return call to not create temporaries, passed in scale factor
+void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpectrum * const dst_spect) const
 {
 	// add bottom half of hemisphere with horizon colour
-	if( theta > (M_PI/2)-0.001 ) theta = M_PI/2-0.001;
+	//if( theta > (M_PI/2)-0.001 ) theta = M_PI/2-0.001;
+	const float theta_fin = min(theta,(M_PI * 0.5f) - 0.001f);
+	const float gamma = RiAngleBetween(theta,phi,thetaS,phiS);
 
-	float gamma = RiAngleBetween(theta,phi,thetaS,phiS);
 	// Compute xyY values
-	float x = PerezFunction(perez_x, theta, gamma, zenith_x);
-	float y = PerezFunction(perez_y, theta, gamma, zenith_y);
-	float Y = PerezFunction(perez_Y, theta, gamma, zenith_Y);
+	const float x = PerezFunction(perez_x, theta_fin, gamma, zenith_x);
+	const float y = PerezFunction(perez_y, theta_fin, gamma, zenith_y);
+	const float Y = PerezFunction(perez_Y, theta_fin, gamma, zenith_Y);
 
-	SWCSpectrum spect = ChromaticityToSpectrum(x,y);
-	// TODO - Ratow - Find proper conversion constant
-	SWCSpectrum o = 1./100000. * Y * spect / spect.y();
-
-	return o;
+	ChromaticityToSpectrum(x,y,Y,dst_spect);
 }
 
 //300-830 10nm
@@ -307,15 +295,29 @@ static float S2Amplitudes[54] = {
 6.4,5.5,6.1,6.5
 };
 
-SWCSpectrum SkyLight::ChromaticityToSpectrum(float x, float y) const
+// thread specific wavelengths
+extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
+
+// note - lyc - removed redundant computations and optimised
+void SkyLight::ChromaticityToSpectrum(const float x, const float y, const float Y, SWCSpectrum * const dst_spect) const
 {
-	float data[54];
-	float M1 = (-1.3515 - 1.7703*x +  5.9114*y)/(0.0241 + 0.2562*x - 0.7341*y);
-	float M2 = ( 0.03   -31.4424*x + 30.0717*y)/(0.0241 + 0.2562*x - 0.7341*y);
+	const float den = 1.0f / (0.0241f + 0.2562f * x - 0.7341f * y);
+	const float M1 = (-1.3515f - 1.7703 * x +  5.9114f * y) * den;
+	const float M2 = ( 0.03f   -31.4424 * x + 30.0717f * y) * den;
 
-	for(int i = 0; i < 54; i++)
-		data[i] = S0Amplitudes[i] + M1 * S1Amplitudes[i] + M2 * S2Amplitudes[i];
+	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
+	{
+		const float w = (thread_wavelengths->w[j] - 300.0f) * 0.1018867f;
+		const int i  = Floor2Int(w);
+		const int i1 = i + 1;
 
-	RegularSpectrum SD(data,300,830,54);
-	return SWCSpectrum(&SD);
+		const float b = w - float(i);
+		const float a = 1.0f - b;
+
+		const float t0 = S0Amplitudes[i] * a + S0Amplitudes[i1] * b;
+		const float t1 = S1Amplitudes[i] * a + S1Amplitudes[i1] * b;
+		const float t2 = S2Amplitudes[i] * a + S2Amplitudes[i1] * b;
+
+		dst_spect->c[j] = (t0 + M1 * t1 + M2 * t2) * Y;
+	}
 }

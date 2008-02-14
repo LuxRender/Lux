@@ -796,8 +796,6 @@ boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 			const float w0 = thread_wavelengths->w[j] - 360.0f;
 			int i0 = Floor2Int(w0);
 
-			//printf("waveln: xyz idx: %i - %f\n", j, thread_wavelengths->w[j]);
-
 			const float
 				b0 = w0 - float(i0),
 				a0 = 1.0f - b0,
