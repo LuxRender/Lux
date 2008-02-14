@@ -331,7 +331,7 @@ SunLight::SunLight(const Transform &light2world,
 
 		// NOTE - Ratow - Transform unit to W*m^-2*nm^-1*sr-1
 		const float unitConv = 1./(solidAngle*1000000000.);
-		Ldata[i] = solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv * 100000;
+		Ldata[i] = solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv;
 	}
 	L = new RegularSpectrum(Ldata, 350,800,91);
 }
