@@ -84,7 +84,9 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 		Vector wo = -ray.d;
 		SWCSpectrum emittance = isect.Le(wo);
 
-		pathThroughput *= scene->Transmittance(ray);
+		// Note - Ratow - first ray transmittance is accounted in scene.cpp
+		if (pathLength > 1)
+			pathThroughput *= scene->Transmittance(ray);
 
 		if (emittance != 0.) {
 			// Implicity light path
