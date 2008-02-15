@@ -27,6 +27,7 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+#include "spd.h"
 
 namespace lux
 {
