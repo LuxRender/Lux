@@ -240,7 +240,6 @@ inline float SkyLight::PerezFunction(const float *lam, float theta, float gamma,
 void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpectrum * const dst_spect) const
 {
 	// add bottom half of hemisphere with horizon colour
-	//if( theta > (M_PI/2)-0.001 ) theta = M_PI/2-0.001;
 	const float theta_fin = min(theta,(M_PI * 0.5f) - 0.001f);
 	const float gamma = RiAngleBetween(theta,phi,thetaS,phiS);
 
@@ -249,7 +248,8 @@ void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpe
 	const float y = PerezFunction(perez_y, theta_fin, gamma, zenith_y);
 	const float Y = PerezFunction(perez_Y, theta_fin, gamma, zenith_Y);
 
-	ChromaticityToSpectrum(x,y,Y,dst_spect);
+	ChromaticityToSpectrum(x,y,dst_spect);
+	*dst_spect *= (Y / dst_spect->y() * 0.00000165f); // lyc - nasty scaling factor :(
 }
 
 //300-830 10nm
@@ -299,11 +299,11 @@ static float S2Amplitudes[54] = {
 extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 // note - lyc - removed redundant computations and optimised
-void SkyLight::ChromaticityToSpectrum(const float x, const float y, const float Y, SWCSpectrum * const dst_spect) const
+void SkyLight::ChromaticityToSpectrum(const float x, const float y, SWCSpectrum * const dst_spect) const
 {
 	const float den = 1.0f / (0.0241f + 0.2562f * x - 0.7341f * y);
-	const float M1 = (-1.3515f - 1.7703 * x +  5.9114f * y) * den;
-	const float M2 = ( 0.03f   -31.4424 * x + 30.0717f * y) * den;
+	const float M1 = (-1.3515f -  1.7703f * x +  5.9114f * y) * den;
+	const float M2 = ( 0.03f   - 31.4424f * x + 30.0717f * y) * den;
 
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
 	{
@@ -318,6 +318,6 @@ void SkyLight::ChromaticityToSpectrum(const float x, const float y, const float 
 		const float t1 = S1Amplitudes[i] * a + S1Amplitudes[i1] * b;
 		const float t2 = S2Amplitudes[i] * a + S2Amplitudes[i1] * b;
 
-		dst_spect->c[j] = (t0 + M1 * t1 + M2 * t2) * Y;
+		dst_spect->c[j] = t0 + M1 * t1 + M2 * t2;
 	}
 }

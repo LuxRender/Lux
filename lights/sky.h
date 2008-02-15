@@ -62,17 +62,17 @@ public:
 		const ParamSet &paramSet);
 
 		// internal methods
-	Vector			GetSunPosition() const;
-	void			SunThetaPhi(float &theta, float &phi) const;
-	Spectrum		GetSunSpectralRadiance() const;
-	float			GetSunSolidAngle() const;
-	void			GetSkySpectralRadiance(const float theta, const float phi, SWCSpectrum * const dst_spect) const;
-	void			GetAtmosphericEffects(const Vector &viewer, const Vector &source,
-										Spectrum &atmAttenuation, Spectrum &atmInscatter ) const;
+	Vector		GetSunPosition() const;
+	void		SunThetaPhi(float &theta, float &phi) const;
+	Spectrum	GetSunSpectralRadiance() const;
+	float		GetSunSolidAngle() const;
+	void		GetSkySpectralRadiance(const float theta, const float phi, SWCSpectrum * const dst_spect) const;
+	void		GetAtmosphericEffects(const Vector &viewer, const Vector &source,
+									Spectrum &atmAttenuation, Spectrum &atmInscatter ) const;
 
-	void			InitSunThetaPhi();
-	void			ChromaticityToSpectrum(const float x, const float y, const float Y, SWCSpectrum * const dst_spect) const;
-	float			PerezFunction(const float *lam, float theta, float phi, float lvz) const;
+	void		InitSunThetaPhi();
+	void		ChromaticityToSpectrum(const float x, const float y, SWCSpectrum * const dst_spect) const;
+	float		PerezFunction(const float *lam, float theta, float phi, float lvz) const;
 
 private:
 	// SkyLight Private Data
