@@ -22,6 +22,7 @@
 
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "lux.h"
+#include "spd.h"
 #include "material.h"
 
 namespace lux
@@ -32,7 +33,7 @@ namespace lux
 class Metal : public Material {
 public:
   // Metal Public Methods
-  Metal(boost::shared_ptr<Texture<Spectrum> > n, boost::shared_ptr<Texture<Spectrum> > k,
+  Metal(boost::shared_ptr<Texture<SPD*> > n, boost::shared_ptr<Texture<SPD*> > k,
     boost::shared_ptr<Texture<float> > rough, boost::shared_ptr<Texture<float> > bump);
 
   BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
@@ -41,7 +42,7 @@ public:
 
 private:
   // Metal Private Data
-  boost::shared_ptr<Texture<Spectrum> > N, K;
+  boost::shared_ptr<Texture<SPD*> > N, K;
   boost::shared_ptr<Texture<float> > roughness;
   boost::shared_ptr<Texture<float> > bumpMap;
 };

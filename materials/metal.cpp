@@ -26,7 +26,7 @@
 
 using namespace lux;
 
-Metal::Metal(boost::shared_ptr<Texture<Spectrum> > n, boost::shared_ptr<Texture<Spectrum> > k, boost::shared_ptr<Texture<float> > rough, boost::shared_ptr<Texture<float> > bump) {
+Metal::Metal(boost::shared_ptr<Texture<SPD*> > n, boost::shared_ptr<Texture<SPD*> > k, boost::shared_ptr<Texture<float> > rough, boost::shared_ptr<Texture<float> > bump) {
   N = n;
   K = k;
   roughness = rough;
@@ -232,91 +232,8 @@ bool ReadLuxpopData(std::ifstream &fs, vector<struct IORSample> &data) {
   return fs.eof();
 }
 
-const int RGBstart = 390;
-const int RGBend = 730;
-const int RGBinc = 5;
-const int nRGB = 69;
-
-const float CIE_R[nRGB] = {  
-  1.83970e-003f,  4.61530e-003f,  9.62640e-003f,
-  1.89790e-002f,  3.08030e-002f,  4.24590e-002f,
-  5.16620e-002f,  5.28370e-002f,  4.42870e-002f,
-  3.22200e-002f,  1.47630e-002f,  -2.33920e-003f,
-  -2.91300e-002f,  -6.06770e-002f,  -9.62240e-002f,
-  -1.37590e-001f,  -1.74860e-001f,  -2.12600e-001f,
-  -2.37800e-001f,  -2.56740e-001f,  -2.77270e-001f,
-  -2.91250e-001f,  -2.95000e-001f,  -2.97060e-001f,
-  -2.67590e-001f,  -2.17250e-001f,  -1.47680e-001f,
-  -3.51840e-002f,  1.06140e-001f,  2.59810e-001f,
-  4.19760e-001f,  5.92590e-001f,  7.90040e-001f,
-  1.00780e+000f,  1.22830e+000f,  1.47270e+000f,
-  1.74760e+000f,  2.02140e+000f,  2.27240e+000f,
-  2.48960e+000f,  2.67250e+000f,  2.80930e+000f,
-  2.87170e+000f,  2.85250e+000f,  2.76010e+000f,
-  2.59890e+000f,  2.37430e+000f,  2.10540e+000f,
-  1.81450e+000f,  1.52470e+000f,  1.25430e+000f,
-  1.00760e+000f,  7.86420e-001f,  5.96590e-001f,
-  4.43200e-001f,  3.24100e-001f,  2.34550e-001f,
-  1.68840e-001f,  1.20860e-001f,  8.58110e-002f,
-  6.02600e-002f,  4.14800e-002f,  2.81140e-002f,
-  1.91170e-002f,  1.33050e-002f,  9.40920e-003f,
-  6.51770e-003f,  4.53770e-003f,  3.17420e-003f,
-};
-
-const float CIE_G[nRGB] = {
-  -4.53930e-004f, -1.04640e-003f, -2.16890e-003f,
-  -4.43040e-003f, -7.20480e-003f, -1.25790e-002f,
-  -1.66510e-002f, -2.12400e-002f, -1.99360e-002f,
-  -1.60970e-002f, -7.34570e-003f, 1.36900e-003f,
-  1.96100e-002f, 4.34640e-002f, 7.09540e-002f,
-  1.10220e-001f, 1.50880e-001f, 1.97940e-001f,
-  2.40420e-001f, 2.79930e-001f, 3.33530e-001f,
-  4.05210e-001f, 4.90600e-001f, 5.96730e-001f,
-  7.01840e-001f, 8.08520e-001f, 9.10760e-001f,
-  9.84820e-001f, 1.03390e+000f, 1.05380e+000f,
-  1.05120e+000f, 1.04980e+000f, 1.03680e+000f,
-  9.98260e-001f, 9.37830e-001f, 8.80390e-001f,
-  8.28350e-001f, 7.46860e-001f, 6.49300e-001f,
-  5.63170e-001f, 4.76750e-001f, 3.84840e-001f,
-  3.00690e-001f, 2.28530e-001f, 1.65750e-001f,
-  1.13730e-001f, 7.46820e-002f, 4.65040e-002f,
-  2.63330e-002f, 1.27240e-002f, 4.50330e-003f,
-  9.66110e-005f, -1.96450e-003f, -2.63270e-003f,
-  -2.62620e-003f, -2.30270e-003f, -1.87000e-003f,
-  -1.44240e-003f, -1.07550e-003f, -7.90040e-004f,
-  -5.67650e-004f, -3.92740e-004f, -2.62310e-004f,
-  -1.75120e-004f, -1.21400e-004f, -8.57600e-005f,
-  -5.76770e-005f, -3.90030e-005f, -2.65110e-005f,
-};
-
-const float CIE_B[nRGB] = {  
-  1.21520e-002f, 3.11100e-002f, 6.23710e-002f,
-  1.31610e-001f, 2.27500e-001f, 3.58970e-001f,
-  5.23960e-001f, 6.85860e-001f, 7.96040e-001f,
-  8.94590e-001f, 9.63950e-001f, 9.98140e-001f,
-  9.18750e-001f, 8.24870e-001f, 7.85540e-001f,
-  6.67230e-001f, 6.10980e-001f, 4.88290e-001f,
-  3.61950e-001f, 2.66340e-001f, 1.95930e-001f,
-  1.47300e-001f, 1.07490e-001f, 7.67140e-002f,
-  5.02480e-002f, 2.87810e-002f, 1.33090e-002f,
-  2.11700e-003f, -4.15740e-003f, -8.30320e-003f,
-  -1.21910e-002f, -1.40390e-002f, -1.46810e-002f,
-  -1.49470e-002f, -1.46130e-002f, -1.37820e-002f,
-  -1.26500e-002f, -1.13560e-002f, -9.93170e-003f,
-  -8.41480e-003f, -7.02100e-003f, -5.74370e-003f,
-  -4.27430e-003f, -2.91320e-003f, -2.26930e-003f,
-  -1.99660e-003f, -1.50690e-003f, -9.38220e-004f,
-  -5.53160e-004f, -3.16680e-004f, -1.43190e-004f,
-  -4.08310e-006f, 1.10810e-004f, 1.91750e-004f,
-  2.26560e-004f, 2.15200e-004f, 1.63610e-004f,
-  9.71640e-005f, 5.10330e-005f, 3.52710e-005f,
-  3.12110e-005f, 2.45080e-005f, 1.65210e-005f,
-  1.11240e-005f, 8.69650e-006f, 7.43510e-006f,
-  6.10570e-006f, 5.02770e-006f, 4.12510e-006f,
-};
-
 // returns < 0 if file not found, 0 if error, 1 if ok
-int IORFromFile(const string filename, Spectrum *n, Spectrum *k) {
+int IORFromFile(const string filename, SPD* &n, SPD* &k) {
 
   std::ifstream f;
 
@@ -332,65 +249,27 @@ int IORFromFile(const string filename, Spectrum *n, Spectrum *k) {
     if (!ReadLuxpopData(f, data))
       return 0;
 
-  // integrate nk data to create a spectrum
-  // rgb color matching functions give better results, it seems
-  float wr, wg, wb;
-  wr = wg = wb = 0;
-  
-  IOR r, g, b;
-
-  int usedsamples = 0;
-
-  for (int i = 0; i < nRGB; i++) {
-
-    float lambda = RGBstart + RGBinc * i;
-    IOR ior;
-    
-    if (InterpolatedIOR(lambda, data, &ior)) {
-
-      r = r + ior * CIE_R[i];
-      wr += CIE_R[i];
-
-      g = g + ior * CIE_G[i];
-      wg += CIE_G[i];
-
-      b = b + ior * CIE_B[i];
-      wb += CIE_B[i];
-
-      usedsamples++;
-    }
-  }
-
-  if (usedsamples == 0) {
-    string msg = "Metal IOR data file " + filename + " might not contain data in visible range. Using default (" + metalIORs[0].name + ").";
-
-    luxError(LUX_NOERROR, LUX_WARNING, msg.c_str());
-
-    *n = Spectrum(metalIORs[0].n);
-    *k = Spectrum(metalIORs[0].k);
-  }
-  else {
-
-    if (usedsamples < nRGB) {
-      string msg = "Metal IOR data file " + filename + " doesn't contain data for the entire visible range. This may lead to strange results.";
-      luxError(LUX_NOERROR, LUX_WARNING, msg.c_str());
-    }
-
-    r = r * (1 / wr);
-    g = g * (1 / wg);
-    b = b * (1 / wb);
-
-    // convert RGB data to XYZ
-    IOR x = r * 0.41245329f  + g * 0.35757986f + b * 0.18042259f;
-    IOR y = r * 0.21267128f  + g * 0.71515971f + b * 0.072168820f;
-    IOR z = r * 0.019333841f + g * 0.11919361f + b * 0.95022678f;
-
-    // create spectrum from XYZ data
-    *n = FromXYZ(x.n, y.n, z.n);
-    *k = FromXYZ(x.k, y.k, z.k);
-  }
-
   f.close();
+
+  // copy data into arrays for SPD creation
+  // can probably be avoided with pointer voodoo
+  int sn = data.size();
+  float *wl = new float[sn];
+  float *an = new float[sn];
+  float *ak = new float[sn];
+
+  for (int i = 0; i < sn; i++) {
+    wl[i] = data[i].lambda;
+    an[i] = data[i].ior.n;
+    ak[i] = data[i].ior.k;
+  }
+
+  n = new IrregularSPD(wl, an, sn);
+  k = new IrregularSPD(wl, ak, sn);
+
+  delete[] wl;
+  delete[] an;
+  delete[] ak;
 
   return 1;
 }
@@ -399,22 +278,33 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
 
   string metalname = tp.FindString("name");
 
-  boost::shared_ptr<Texture<Spectrum> > n;
-  boost::shared_ptr<Texture<Spectrum> > k;
+  boost::shared_ptr<Texture<SPD*> > n;
+  boost::shared_ptr<Texture<SPD*> > k;
 
   if (metalname.length() < 1) {
     // we got no name, so try to read IOR directly
-    n = tp.GetSpectrumTexture("n", Spectrum(metalIORs[0].n));
-    k = tp.GetSpectrumTexture("k", Spectrum(metalIORs[0].k));
+    //n = tp.GetSpectrumTexture("n", Spectrum(metalIORs[0].n));
+    //k = tp.GetSpectrumTexture("k", Spectrum(metalIORs[0].k));
+    float w[1] = { 0.f };
+    float an[1] = { 1.f };
+    float ak[1] = { 0.f };
+
+    SPD* s_n = new IrregularSPD(w, an, 1);
+    SPD* s_k = new IrregularSPD(w, ak, 1);
+
+    boost::shared_ptr<Texture<SPD*> > n_n (new ConstantTexture<SPD*>(s_n));
+    boost::shared_ptr<Texture<SPD*> > n_k (new ConstantTexture<SPD*>(s_k));
+    n = n_n;
+    k = n_k;
   }
   else {
     // we got a name, try to look it up
-    Spectrum s_n;
-    Spectrum s_k;
+    SPD* s_n;
+    SPD* s_k;
 
     // NOTE - lordcrc - added loading nk data from file
 	// try name as a filename first, else use internal db
-    int result = IORFromFile(metalname, &s_n, &s_k);
+    int result = IORFromFile(metalname, s_n, s_k);
     switch (result) {
       case 0: {
         string msg = "Error loading data file '" + metalname + "'. Using default (" + metalIORs[0].name + ").";
@@ -422,14 +312,15 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
         metalname = metalIORs[0].name;
       }
       case -1:
-        IORFromName(metalname, &s_n, &s_k);
+        luxError(LUX_UNIMPLEMENT, LUX_SEVERE, "Only .nk files supported for now.");        
+        //IORFromName(metalname, &s_n, &s_k);
         break;
       case 1:
         break;
     }
 
-    boost::shared_ptr<Texture<Spectrum> > n_n (new ConstantTexture<Spectrum>(s_n));
-    boost::shared_ptr<Texture<Spectrum> > n_k (new ConstantTexture<Spectrum>(s_k));
+    boost::shared_ptr<Texture<SPD*> > n_n (new ConstantTexture<SPD*>(s_n));
+    boost::shared_ptr<Texture<SPD*> > n_k (new ConstantTexture<SPD*>(s_k));
     n = n_n;
     k = n_k;
   }
