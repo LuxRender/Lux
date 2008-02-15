@@ -22,6 +22,7 @@
 
 // spectrum.cpp*
 #include "spectrum.h"
+#include "spd.h"
 
 using namespace lux;
 
@@ -840,15 +841,15 @@ boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 		return v;
 	}
 
- static RegularSpectrum   rgbspect_white(rgb2spect_white, 380, 720, 10);
- static RegularSpectrum   rgbspect_cyan(rgb2spect_cyan, 380, 720, 10);
- static RegularSpectrum   rgbspect_magenta(rgb2spect_magenta, 380, 720, 10);
- static RegularSpectrum   rgbspect_yellow(rgb2spect_yellow, 380, 720, 10);
- static RegularSpectrum   rgbspect_red(rgb2spect_red, 380, 720, 10);
- static RegularSpectrum   rgbspect_green(rgb2spect_green, 380, 720, 10);
- static RegularSpectrum   rgbspect_blue(rgb2spect_blue, 380, 720, 10);
+ static RegularSPD   rgbspect_white(rgb2spect_white, 380, 720, 10);
+ static RegularSPD   rgbspect_cyan(rgb2spect_cyan, 380, 720, 10);
+ static RegularSPD   rgbspect_magenta(rgb2spect_magenta, 380, 720, 10);
+ static RegularSPD   rgbspect_yellow(rgb2spect_yellow, 380, 720, 10);
+ static RegularSPD   rgbspect_red(rgb2spect_red, 380, 720, 10);
+ static RegularSPD   rgbspect_green(rgb2spect_green, 380, 720, 10);
+ static RegularSPD   rgbspect_blue(rgb2spect_blue, 380, 720, 10);
 
-void SpectrumWavelengths::CreateSpectrum(SWCSpectrum &spectrum, RegularSpectrum &rgbspectrum) {
+void SpectrumWavelengths::CreateSpectrum(SWCSpectrum &spectrum, SPD &rgbspectrum) {
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
 		spectrum.c[j] = (double) rgbspectrum.sample(w[j]);
 	}
@@ -922,8 +923,8 @@ void SWCSpectrum::FromSpectrum(Spectrum s) {
 		}
 }
 
-void SWCSpectrum::FromRegularSpectrum(RegularSpectrum* s) {
+void SWCSpectrum::FromSPD(const SPD *s) {
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-		c[j] = (double) s->sample(thread_wavelengths->w[j]);
+		s->sample(thread_wavelengths->w[j], c[j]);
 	}
 }

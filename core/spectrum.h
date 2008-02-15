@@ -430,50 +430,6 @@ protected:
 Spectrum FromXYZ(float x, float y, float z);
 
 
-
-class RegularSpectrum : public Spectrum {
-public:
-	float *wavelengths;
-    float lambdaMin, lambdaMax;
-    float delta, invDelta;
-	int sWa;
-    
-	RegularSpectrum();
-
-    RegularSpectrum(float *wl, float lMin, float lMax, int n) {
-        lambdaMin = lMin;
-        lambdaMax = lMax;
-        wavelengths = wl;
-		sWa = n;
-        delta = (lambdaMax - lambdaMin) / (sWa-1);
-        invDelta = 1 / delta;
-    }
-    
-    inline float sample(float lambda) {
-        // reject wavelengths outside the valid range
-        if (lambda < lambdaMin || lambda > lambdaMax)
-            return 0.;
-        // interpolate the two closest samples linearly
-        float x = (lambda - lambdaMin) * invDelta;
-        int b0 = (int) x;
-        int b1 = min(b0+1, sWa-1);
-        float dx = x - b0;
-        return (1. -dx) * wavelengths[b0] + dx * wavelengths[b1];
-    }
-
-	inline Spectrum toSpectrum() {
-		float X = 0, Y = 0, Z = 0;
-		for(int i=0,w=CIEstart; i < nCIE; i++, w++) {
-			float s = sample(w);
-			X += s * CIE_X[i];
-			Y += s * CIE_Y[i];
-			Z += s * CIE_Z[i];
-		}
-		return FromXYZ(X,Y,Z);
-	}
-
-};
-
 class  SWCSpectrum {
 	friend class boost::serialization::access;
 public:
@@ -485,8 +441,8 @@ public:
 	SWCSpectrum(Spectrum s) {
 		FromSpectrum(s);
 	}	
-	SWCSpectrum(RegularSpectrum* s) {
-		FromRegularSpectrum(s);
+	SWCSpectrum(const SPD *s) {
+		FromSPD(s);
 	}	
 	SWCSpectrum(double cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
@@ -610,7 +566,7 @@ public:
 	}
 	XYZColor ToXYZ() const;
 	void FromSpectrum(Spectrum s);
-	void FromRegularSpectrum(RegularSpectrum* s);
+	void FromSPD(const SPD *s);
 
 	double y() const;
 	bool operator<(const SWCSpectrum &s2) const {
@@ -634,52 +590,6 @@ private:
 				for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 					ar & c[i];
 			}
-};
-
-class IrregularSpectrum : public Spectrum {
-public:
-    float *wavelengths;
-    float *amplitudes;
-	int sWa, sAm;
-
-    IrregularSpectrum(float *wl, float *am, int n)
-	{
-        wavelengths = wl;
-        amplitudes = am;
-		sWa = n;
-		sAm = n;
-    }
-
-    inline float sample(float lambda)
-	{
-		if (lambda < wavelengths[0])
-			return amplitudes[0];
-		if (lambda > wavelengths[sWa-1])
-			return amplitudes[sWa - 1];
- 
-		int index = 0;
-		for (; index < sWa; ++index)
-			if (wavelengths[index] >= lambda)
-				break;
- 
-		if (wavelengths[index] == lambda)
-			return amplitudes[index];
- 
-		float intervalWidth = wavelengths[index] - wavelengths[index - 1];
-		float u = (lambda - wavelengths[index - 1]) / intervalWidth;
-		return ((1. - u) * amplitudes[index - 1]) + (u * amplitudes[index]);
-    }
-
-	inline Spectrum toSpectrum() {
-		float X = 0, Y = 0, Z = 0;
-		for(int i=0,w=CIEstart; i < nCIE; i++, w++) {
-			float s = sample(w);
-			X += s * CIE_X[i];
-			Y += s * CIE_Y[i];
-			Z += s * CIE_Z[i];
-		}
-		return FromXYZ(X,Y,Z);
-	}
 };
 
 // 380 to 720 nm, 34nm spacing, 10 values
@@ -712,7 +622,7 @@ public:
 		ComputeRGBConversionSpectra();
 	}
 
-	void CreateSpectrum(SWCSpectrum &spectrum, RegularSpectrum &rgbspectrum);
+	void CreateSpectrum(SWCSpectrum &spectrum, SPD &rgbspectrum);
 	void ComputeRGBConversionSpectra();
 
 	float SampleSingle() {
