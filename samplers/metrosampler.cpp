@@ -128,8 +128,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->time = mutate(sampleImage[4]);
 		for (int i = 5; i < normalSamples; ++i)
 			sample->oneD[0][i - 5] = mutate(sampleImage[i]);
-		for (int i = 0; i < totalTimes; ++i)
-			sample->timexD[0][i] = timeImage[i];
 		++(sample->stamp);
 	}
 
@@ -174,14 +172,13 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 	// calculate accept probability from old and new image sample
 	float LY = L.y();
 	float accProb = min(1.0f, newLY / LY);
-	float newWeight = (accProb + large ? 1. : 0.) / (newLY / meanIntensity + pLarge);
+	float newWeight = (accProb + (large ? 1. : 0.)) / (newLY / meanIntensity + pLarge);
 	weight += (1. - accProb) / (LY / meanIntensity + pLarge);
 
 	// try or force accepting of the new sample
 	if (consecRejects > maxRejects || lux::random::floatValue() < accProb ) {
-		XYZColor Lw = L;
-		Lw *= weight;
-		film->AddSample(sampleImage[0], sampleImage[1], Lw, alpha);
+		L *= weight;
+		film->AddSample(sampleImage[0], sampleImage[1], L, alpha);
 		weight = newWeight;
 		L = newL.ToXYZ(); // note - radiance - store as XYZ color since SWCSpectrum wavelength are not persistent!
 		alpha = newAlpha;
@@ -197,7 +194,9 @@ void MetropolisSampler::AddSample(const Sample &sample, const Ray &ray,
 		stamp = sample.stamp;
 		consecRejects = 0;
 	} else {
-		film->AddSample(sample.imageX, sample.imageY, newL * newWeight, newAlpha);
+		XYZColor Lw(newL.ToXYZ());
+		Lw *= newWeight;
+		film->AddSample(sample.imageX, sample.imageY, Lw, newAlpha);
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
 		sample.stamp = stamp;
