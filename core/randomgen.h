@@ -24,24 +24,14 @@
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
-#ifndef LUX_USE_BOOST_RANDOM 
-
-#include <ctime>
-#include <climits>
-#include <string>
-#define MEXP 216091
-#include "./SFMT/SFMT.h"
-
-#else //LUX_USE_BOOST_RANDOM 
 #include <boost/random.hpp>
 #include <boost/random/mersenne_twister.hpp>
-#endif //LUX_USE_BOOST_RANDOM 
 
 #include "../renderer/include/asio.hpp"
+#include <boost/thread/tss.hpp>
 
 namespace lux
 {
-
 
 namespace random
 {
@@ -60,24 +50,6 @@ inline unsigned int seed()
 	//std::cout<<"using seed :"<<seed<<std::endl;
 	return seed;
 }
-
-#ifndef LUX_USE_BOOST_RANDOM 
-	inline void init()
-	{
-		init_gen_rand(seed());
-	}
-
-	inline float floatValue()
-	{
-		//return genrand_real2();
-		return gen_rand32()*(1.f/4294967296.f);
-	}
-		
-	inline unsigned long uintValue()
-	{
-		return gen_rand32();
-	}
-#else
 
 	class RandomGenerator
 	{
@@ -103,30 +75,29 @@ inline unsigned int seed()
 		
 		boost::uniform_int<> intdist;
 		boost::variate_generator<boost::mt19937, boost::uniform_int<> > intgen;
-		
 	};
 	
-	extern RandomGenerator *myGen;
+	// thread local pointer to boost random generator
+	extern boost::thread_specific_ptr<RandomGenerator> myGen;
 	
 	inline void init ()
 	{
-		init_gen_rand(seed());
-		myGen=new RandomGenerator();
+		myGen.reset(new RandomGenerator);
 	}
 	
 	inline float floatValue()
 	{ 
+		if(!myGen.get())
+			init();
 		return myGen->generateFloat();
 	}
 	inline unsigned long uintValue()
 	{ 
+		if(!myGen.get())
+			init();
 		return myGen->generateUInt();
 	}
 	
-	
-#endif //LUX_USE_BOOST_RANDOM */
-	
-
 }
 
 }

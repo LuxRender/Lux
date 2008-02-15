@@ -418,8 +418,6 @@ extern "C" void luxWorldEnd() {
 extern "C" void luxInit() {
 
 	// System-wide initialization
-	//random number init
-	lux::random::init();
 
 	// Make sure floating point unit's rounding stuff is set
 	// as is expected by the fast FP-conversion routines.  In particular,

@@ -527,17 +527,16 @@ void ProgressReporter::Done() const {
 	fflush(outFile);
 }
 
-//jromang - this is just for debugging purposes, i will remove this ugly definition soon ;-)
-#ifdef LUX_USE_BOOST_RANDOM 
+// radiance - leave this here, it defines the main myGen thread local pointer
 #include "randomgen.h"
 namespace lux
 {
 namespace random
 {
-	RandomGenerator *myGen;
+	// thread local pointer to boost random generator
+	boost::thread_specific_ptr<RandomGenerator> myGen;
 }
 }
-#endif
 
 
 namespace lux
