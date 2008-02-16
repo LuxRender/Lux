@@ -85,6 +85,9 @@ namespace lux
   private:   
   };
 
+  // only use spline for regular data
+  enum SPDResamplingMethod { Linear, Spline };
+
   // Irregularly sampled SPD
   // Resampled to a fixed resolution (at construction)
   // using cubic spline interpolation
@@ -100,7 +103,7 @@ namespace lux
     //  samples       array of sample values at the given wavelengths
     //  n             number of samples
     //  resolution    resampling resolution (in nm)
-    IrregularSPD(const float* const wavelengths, const float* const samples, int n, int resolution = 5) 
+    IrregularSPD(const float* const wavelengths, const float* const samples, int n, int resolution = 5, SPDResamplingMethod resamplignMethod = Linear) 
       : RegularSPD() {
 
       int lambdaMin = Ceil2Int(wavelengths[0] / resolution) * resolution;
@@ -109,29 +112,57 @@ namespace lux
       int sn = (lambdaMax - lambdaMin) / resolution + 1;
 
       float *sam = new float[sn];
-      float *sd  = new float[sn];
+      float *sd  = NULL;
 
-      calc_spline_data(wavelengths, samples, n, sd);
+      if (resamplignMethod == Linear) {
+        int k = 0;
+        for (int i = 0; i < sn; i++) {
 
-      int k = 0;
-      for (int i = 0; i < sn; i++) {
+          float lambda = lambdaMin + i * resolution;
 
-        float lambda = lambdaMin + i * resolution;
+          if (lambda < wavelengths[0] || lambda > wavelengths[n-1]) {
+            sam[i] = 0.0;
+            continue;
+          }
 
-        if (lambda < wavelengths[0] || lambda > wavelengths[n-1]) {
-          sam[i] = 0.0;
-          continue;
+		  for (; k < n; ++k)
+			  if (wavelengths[k] >= lambda)
+				  break;
+   
+		  if (wavelengths[k] == lambda)
+			  sam[i] = samples[k];
+          else { 
+		    float intervalWidth = wavelengths[k] - wavelengths[k - 1];
+		    float u = (lambda - wavelengths[k - 1]) / intervalWidth;
+		    sam[i] = ((1. - u) * samples[k - 1]) + (u * samples[k]);
+          }
         }
+      }
+      else {
+        sd  = new float[sn];
 
-        while (lambda > wavelengths[k+1])
-          k++;
+        calc_spline_data(wavelengths, samples, n, sd);
 
-        float h = wavelengths[k+1] - wavelengths[k];
-        float a = (wavelengths[k+1] - lambda) / h;
-        float b = (lambda - wavelengths[k]) / h;
+        int k = 0;
+        for (int i = 0; i < sn; i++) {
 
-        sam[i] = a*samples[k] + b*samples[k+1]+
-          ((a*a*a-a)*sd[k] + (b*b*b-b)*sd[k+1])*(h*h)/6.0;
+          float lambda = lambdaMin + i * resolution;
+
+          if (lambda < wavelengths[0] || lambda > wavelengths[n-1]) {
+            sam[i] = 0.0;
+            continue;
+          }
+
+          while (lambda > wavelengths[k+1])
+            k++;
+
+          float h = wavelengths[k+1] - wavelengths[k];
+          float a = (wavelengths[k+1] - lambda) / h;
+          float b = (lambda - wavelengths[k]) / h;
+
+          sam[i] = max(a*samples[k] + b*samples[k+1]+
+            ((a*a*a-a)*sd[k] + (b*b*b-b)*sd[k+1])*(h*h)/6.0, 0);
+        }
       }
 
       init(lambdaMin, lambdaMax, sam, sn);
