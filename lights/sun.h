@@ -61,8 +61,8 @@ private:
 	float turbidity;
 	float thetaS, phiS, V;
 	float cosThetaMax;
-	float Ldata[91];
-	RegularSpectrum* L;
+    // NOTE - lordcrc - moved Ldata to constructor
+	SPD* L;
 };
 
 }//namespace lux

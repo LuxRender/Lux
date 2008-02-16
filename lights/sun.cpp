@@ -22,6 +22,8 @@
 
 // sun.cpp*
 #include "sun.h"
+#include "spd.h"
+
 
 using namespace lux;
 
@@ -296,11 +298,12 @@ SunLight::SunLight(const Transform &light2world,
 	phiS = SphericalPhi(wh);
 	thetaS = SphericalTheta(wh);
 
-	IrregularSpectrum k_oCurve(sun_k_oWavelengths,sun_k_oAmplitudes,  65);
-	IrregularSpectrum k_gCurve(sun_k_gWavelengths, sun_k_gAmplitudes, 4);
-	IrregularSpectrum k_waCurve(sun_k_waWavelengths,sun_k_waAmplitudes,  13);
+    // NOTE - lordcrc - sun_k_oWavelengths contains 64 elements, while sun_k_oAmplitudes contains 65?!?
+	SPD *k_oCurve  = new IrregularSPD(sun_k_oWavelengths,sun_k_oAmplitudes,  64);
+	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 4, 1); // force 1nm resolution
+	SPD *k_waCurve = new IrregularSPD(sun_k_waWavelengths,sun_k_waAmplitudes,  13);
 
-	RegularSpectrum   solCurve(sun_sun_irradiance, 380, 770, 79);  // every 5 nm
+	SPD *solCurve = new RegularSPD(sun_sun_irradiance, 380, 770, 79);  // every 5 nm
 
 	float beta = 0.04608365822050 * turbidity - 0.04586025928522;
 	float tauR, tauA, tauO, tauG, tauWA;
@@ -309,6 +312,8 @@ SunLight::SunLight(const Transform &light2world,
 
 	int i;
 	float lambda;
+    // NOTE - lordcrc - SPD stores data internally, no need for Ldata to stick around
+    float Ldata[91];
 	for(i = 0, lambda = 350; i < 91; i++, lambda+=5) {
 			// Rayleigh Scattering
 		tauR = exp( -m * 0.008735 * pow(lambda/1000, float(-4.08)));
@@ -320,25 +325,30 @@ SunLight::SunLight(const Transform &light2world,
 			// Attenuation due to ozone absorption
 			// lOzone - amount of ozone in cm(NTP)
 		const float lOzone = .35;
-		tauO = exp(-m * k_oCurve.sample(lambda) * lOzone);
+		tauO = exp(-m * k_oCurve->sample(lambda) * lOzone);
 			// Attenuation due to mixed gases absorption
-		tauG = exp(-1.41 * k_gCurve.sample(lambda) * m / pow(1 + 118.93 * k_gCurve.sample(lambda) * m, 0.45));
+		tauG = exp(-1.41 * k_gCurve->sample(lambda) * m / pow(1 + 118.93 * k_gCurve->sample(lambda) * m, 0.45));
 			// Attenuation due to water vapor absorbtion
 			// w - precipitable water vapor in centimeters (standard = 2)
 		const float w = 2.0;
-		tauWA = exp(-0.2385 * k_waCurve.sample(lambda) * w * m /
-		pow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
+		tauWA = exp(-0.2385 * k_waCurve->sample(lambda) * w * m /
+		pow(1 + 20.07 * k_waCurve->sample(lambda) * w * m, 0.45));
 
 		// NOTE - Ratow - Transform unit to W*m^-2*nm^-1*sr-1
 		const float unitConv = 1./(solidAngle*1000000000.);
-		Ldata[i] = solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv;
+		Ldata[i] = solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv;
 	}
-	L = new RegularSpectrum(Ldata, 350,800,91);
+	L = new RegularSPD(Ldata, 350,800,91);
+
+    delete k_oCurve;
+    delete k_gCurve;
+    delete k_waCurve;
+    delete solCurve;
 }
 SWCSpectrum SunLight::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	if(cosThetaMax < 1.0f && Dot(w,sundir) > cosThetaMax)
-		return L;
+		return SWCSpectrum(L);
 	else
 		return SWCSpectrum(0.);
 }
@@ -352,7 +362,7 @@ SWCSpectrum SunLight::Sample_L(const Point &p, float u1, float u2,
 		*wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
 		*pdf = UniformConePdf(cosThetaMax);
 		visibility->SetRay(p, *wi);
-		return L;
+		return SWCSpectrum(L);
 	}
 }
 SWCSpectrum SunLight::Sample_L(const Point &p,
@@ -360,7 +370,7 @@ SWCSpectrum SunLight::Sample_L(const Point &p,
 	if(cosThetaMax == 1) {
 		*wi = sundir;
 		visibility->SetRay(p, *wi);
-		return L;
+		return SWCSpectrum(L);
 	} else {
 		float pdf;
 		SWCSpectrum Le = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
@@ -391,7 +401,7 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene,											// TODO - radiance 
 	ray->o = Pdisk + worldRadius * sundir;
 	ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
 	*pdf = UniformConePdf(cosThetaMax) / (M_PI * worldRadius * worldRadius);
-	return L;
+	return SWCSpectrum(L);
 }
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
