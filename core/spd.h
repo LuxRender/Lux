@@ -161,7 +161,7 @@ namespace lux
           float b = (lambda - wavelengths[k]) / h;
 
           sam[i] = max(a*samples[k] + b*samples[k+1]+
-            ((a*a*a-a)*sd[k] + (b*b*b-b)*sd[k+1])*(h*h)/6.0, 0);
+            ((a*a*a-a)*sd[k] + (b*b*b-b)*sd[k+1])*(h*h)/6.0, 0.);
         }
       }
 
