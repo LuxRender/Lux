@@ -128,18 +128,14 @@ static float sun_k_oAmplitudes[65] = {
 };
 
 // k_g Spectrum table from pg 130, MI.
-static float sun_k_gWavelengths[4] = {
-  759,
+static float sun_k_gWavelengths[2] = {
   760,
   770,
-  771
 };
 
-static float sun_k_gAmplitudes[4] = {
-  0,
+static float sun_k_gAmplitudes[2] = {
   3.0,
   0.210,
-  0
 };
 
 // k_wa Spectrum table from pg 130, MI.
@@ -300,7 +296,7 @@ SunLight::SunLight(const Transform &light2world,
 
     // NOTE - lordcrc - sun_k_oWavelengths contains 64 elements, while sun_k_oAmplitudes contains 65?!?
 	SPD *k_oCurve  = new IrregularSPD(sun_k_oWavelengths,sun_k_oAmplitudes,  64);
-	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 4, 1); // force 1nm resolution
+	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 2);
 	SPD *k_waCurve = new IrregularSPD(sun_k_waWavelengths,sun_k_waAmplitudes,  13);
 
 	SPD *solCurve = new RegularSPD(sun_sun_irradiance, 380, 770, 79);  // every 5 nm
