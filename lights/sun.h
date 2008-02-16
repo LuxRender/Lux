@@ -33,7 +33,7 @@ namespace lux
 class SunLight : public Light {
 public:
 	// SunLight Public Methods
-	SunLight(const Transform &light2world, const Spectrum &radiance, const Vector &dir, float turb, float relSize, int ns);
+	SunLight(const Transform &light2world, const float sunscale, const Vector &dir, float turb, float relSize, int ns);
 	bool IsDeltaLight() const { return cosThetaMax == 1.0 ? true : false; }
 	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *) const;
 	SWCSpectrum Power(const Scene *scene) const {

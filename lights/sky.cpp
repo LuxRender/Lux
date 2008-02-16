@@ -30,10 +30,10 @@ SkyLight::~SkyLight() {
 }
 
 SkyLight::SkyLight(const Transform &light2world,
-		                const Spectrum &L, int ns, Vector sd, float turb,
+		                const float skyscale, int ns, Vector sd, float turb,
 										float aconst, float bconst, float cconst, float dconst, float econst)
 	: Light(light2world, ns) {
-	Lbase = L;
+	skyScale = skyscale;
 	sundir = sd;
 	turbidity = turb;
 
@@ -80,15 +80,14 @@ SkyLight::SkyLight(const Transform &light2world,
 SWCSpectrum SkyLight::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute sky light radiance for direction
-	SWCSpectrum L;// = Lbase;
+	SWCSpectrum L;
 
 	Vector wh = Normalize(WorldToLight(w));
 	const float phi = SphericalPhi(wh);
 	const float theta = SphericalTheta(wh);
 
-	//L *= GetSkySpectralRadiance(theta, phi);
 	GetSkySpectralRadiance(theta,phi,(SWCSpectrum * const)&L);
-	L *= SWCSpectrum(Lbase);
+	L *= skyScale;
 
 	return L;
 }
@@ -184,7 +183,7 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 }
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.000));
+	float scale = paramSet.FindOneFloat("gain", 0.005f);				// gain (aka scale) factor to apply to sun/skylight (0.005)
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,1));	// direction vector of the sun
 	Normalize(sundir);
@@ -195,7 +194,7 @@ Light* SkyLight::CreateLight(const Transform &light2world,
 	float dconst = paramSet.FindOneFloat("dconst", 1.0f);
 	float econst = paramSet.FindOneFloat("econst", 1.0f);
 
-	return new SkyLight(light2world, L, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
+	return new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
 }
 
 /* All angles in radians, theta angles measured from normal */

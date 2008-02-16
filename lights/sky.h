@@ -36,7 +36,7 @@ namespace lux
 class SkyLight : public Light {
 public:
 	// SkyLight Public Methods
-	SkyLight(const Transform &light2world,	const Spectrum &power, int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
+	SkyLight(const Transform &light2world,	const float skyscale, int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
 	~SkyLight();
 	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
@@ -44,7 +44,7 @@ public:
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                    &worldRadius);
 		//return Lbase * GetSkySpectralRadiance(.0, .0) * M_PI * worldRadius * worldRadius;
-		return Lbase * M_PI * worldRadius * worldRadius;
+		return skyScale * M_PI * worldRadius * worldRadius;
 	}
 	bool IsDeltaLight() const { return false; }
 	SWCSpectrum Le(const RayDifferential &r) const;
@@ -77,7 +77,7 @@ public:
 
 private:
 	// SkyLight Private Data
-	Spectrum Lbase;
+	float skyScale;
 	Vector  sundir;
 	float 	turbidity;
 	float	thetaS, phiS;

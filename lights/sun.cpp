@@ -268,7 +268,7 @@ static float sun_sun_irradiance[79] = {
 
 // SunLight Method Definitions
 SunLight::SunLight(const Transform &light2world,
-		const Spectrum &radiance, const Vector &dir, float turb , float relSize, int ns)
+		const float sunscale, const Vector &dir, float turb , float relSize, int ns)
 	: Light(light2world, ns) {
 	sundir = Normalize(LightToWorld(dir));
 	turbidity = turb;
@@ -332,7 +332,7 @@ SunLight::SunLight(const Transform &light2world,
 
 		// NOTE - Ratow - Transform unit to W*m^-2*nm^-1*sr-1
 		const float unitConv = 1./(solidAngle*1000000000.);
-		Ldata[i] = solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv;
+		Ldata[i] = (solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv) * sunscale;
 	}
 	L = new RegularSPD(Ldata, 350,800,91);
 
@@ -402,10 +402,10 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene,											// TODO - radiance 
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	//NOTE - Ratow - Added relsize param and reactivated nsamples
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.000));
+	float scale = paramSet.FindOneFloat("gain", 0.005f);				// gain (aka scale) factor to apply to sun/skylight (0.005)
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	float turb = paramSet.FindOneFloat("turbidity", 2.0f);				// [in] turb  Turbidity (1.0,30+) 2-6 are most useful for clear days.
 	float relSize = paramSet.FindOneFloat("relsize", 1.0f);				// relative size to the sun. Set to 0 for old behavior.
-	return new SunLight(light2world, L, sundir, turb, relSize, nSamples);
+	return new SunLight(light2world, scale, sundir, turb, relSize, nSamples);
 }
