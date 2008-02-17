@@ -31,7 +31,7 @@ namespace lux
   // regularly sampled SPD, reconstructed using linear interpolation
   class RegularSPD : public SPD {
   public:
-    RegularSPD() : nSamples(0), SPD() {
+    RegularSPD() : SPD(), nSamples(0) {
     }
 
     // creates a regularly sampled SPD

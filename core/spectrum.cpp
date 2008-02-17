@@ -787,27 +787,28 @@ boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 	XYZColor SWCSpectrum::ToXYZ() const {
 		float xyz[3];
 		xyz[0] = xyz[1] = xyz[2] = 0.;
-
-		for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
-		{
-			if(thread_wavelengths->single)
-				if(thread_wavelengths->single_w != j)
-					continue;
-
+		if (thread_wavelengths->single) {
+			int j = thread_wavelengths->single_w;
 			const float w0 = thread_wavelengths->w[j] - 360.0f;
 			int i0 = Floor2Int(w0);
+			xyz[0] = Lerp(w0 - i0, CIE_X[i0], CIE_X[i0 + 1]) * c[j];
+			xyz[1] = Lerp(w0 - i0, CIE_Y[i0], CIE_Y[i0 + 1]) * c[j];
+			xyz[2] = Lerp(w0 - i0, CIE_Z[i0], CIE_Z[i0 + 1]) * c[j];
+		} else {
+			for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
+				const float w0 = thread_wavelengths->w[j] - 360.0f;
+				int i0 = Floor2Int(w0);
 
-			const float
-				b0 = w0 - float(i0),
-				a0 = 1.0f - b0,
-				p0 = c[j];
+				const float
+					b0 = w0 - float(i0),
+					a0 = 1.0f - b0,
+					p0 = c[j];
 
-			xyz[0] += (float) (CIE_X[i0] * a0 + CIE_X[i0+1] * b0) * p0;
-			xyz[1] += (float) (CIE_Y[i0] * a0 + CIE_Y[i0+1] * b0) * p0;
-			xyz[2] += (float) (CIE_Z[i0] * a0 + CIE_Z[i0+1] * b0) * p0;
-		} 
+				xyz[0] += (float) (CIE_X[i0] * a0 + CIE_X[i0+1] * b0) * p0;
+				xyz[1] += (float) (CIE_Y[i0] * a0 + CIE_Y[i0+1] * b0) * p0;
+				xyz[2] += (float) (CIE_Z[i0] * a0 + CIE_Z[i0+1] * b0) * p0;
+			}
 
-		if(!thread_wavelengths->single) {
 			xyz[0] *= inv_WAVELENGTH_SAMPLES;
 			xyz[1] *= inv_WAVELENGTH_SAMPLES;
 			xyz[2] *= inv_WAVELENGTH_SAMPLES;
@@ -819,27 +820,37 @@ boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 	double SWCSpectrum::y() const {
 		double v = 0.;
 
-		for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
-		{
-			if(thread_wavelengths->single)
-				if(thread_wavelengths->single_w != j)
-					continue;
-
+		if (thread_wavelengths->single) {
+			int j = thread_wavelengths->single_w;
 			const float w0 = thread_wavelengths->w[j] - 360.0f;
-			const int i0 = Floor2Int(w0);
+			int i0 = Floor2Int(w0);
+			v = Lerp(w0 - i0, CIE_Y[i0], CIE_Y[i0 + 1]) * c[j];
+		} else {
+			for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
+				const float w0 = thread_wavelengths->w[j] - 360.0f;
+				const int i0 = Floor2Int(w0);
 
-			const float
-				b0 = w0 - float(i0),
-				a0 = 1.0f - b0,
-				p0 = c[j];
+				const float
+					b0 = w0 - float(i0),
+					a0 = 1.0f - b0,
+					p0 = c[j];
 
-			v += (CIE_Y[i0] * a0 + CIE_Y[i0+1] * b0) * p0;
-		}
-		if(!thread_wavelengths->single)
+				v += (CIE_Y[i0] * a0 + CIE_Y[i0+1] * b0) * p0;
+			}
 			v *= inv_WAVELENGTH_SAMPLES;
+		}
 
 		return v;
 	}
+
+// 380 to 720 nm, 34nm spacing, 10 values
+ static float rgb2spect_white[] =	{ 1.0000, 1.0000, 0.9999, 0.9993, 0.9992, 0.9998, 1.0000, 1.0000, 1.0000, 1.0000 };
+ static float rgb2spect_cyan[] =		{ 0.9710, 0.9426, 1.0007, 1.0007, 1.0007, 1.0007, 0.1564, 0.0000, 0.0000, 0.0000 };
+ static float rgb2spect_magenta[] =	{ 1.0000, 1.0000, 0.9685, 0.2229, 0.0000, 0.0458, 0.8369, 1.0000, 1.0000, 0.0000 };
+ static float rgb2spect_yellow[] =	{ 0.0001, 0.0000, 0.1088, 0.6651, 1.0000, 1.0000, 0.9996, 0.9586, 0.9685, 0.9959 };
+ static float rgb2spect_red[] =		{ 0.1012, 0.0515, 0.0000, 0.0000, 0.0000, 0.0000, 0.8325, 1.0149, 1.0149, 0.9840 };
+ static float rgb2spect_green[] =	{ 0.0000, 0.0000, 0.0273, 0.7937, 1.0000, 0.9418, 0.1719, 0.0000, 0.0000, 1.0149 };
+ static float rgb2spect_blue[] =		{ 1.0000, 1.0000, 0.8916, 0.3323, 0.0000, 0.0000, 0.0003, 0.0369, 0.0483, 0.0496 };
 
  static RegularSPD   rgbspect_white(rgb2spect_white, 380, 720, 10);
  static RegularSPD   rgbspect_cyan(rgb2spect_cyan, 380, 720, 10);

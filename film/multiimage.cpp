@@ -128,7 +128,7 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	}
 }
 
-void MultiImageFilm::AddSample(float sX, float sY, const SWCSpectrum &L, float alpha) { int bufferId = 0;
+void MultiImageFilm::AddSample(float sX, float sY, const SWCSpectrum &L, float alpha) {
 	// Convert to XYZ Color
 	XYZColor xyz = L.ToXYZ();
 
