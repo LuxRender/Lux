@@ -128,9 +128,6 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
     for (u_int i = 0; i < sample->n2D.size(); ++i)
         for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
             sample->twoD[i][j] = lux::random::floatValue();
-    for (u_int i = 0; i < sample->nxD.size(); ++i)
-        for (u_int j = 0; j < sample->dxD[i] * sample->nxD[i]; ++j)
-            sample->xD[i][j] = lux::random::floatValue();
     ++samplePos;
     return true;
 }
