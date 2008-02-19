@@ -36,7 +36,8 @@ BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
 	// Evaluate textures for _Matte_ material and allocate BRDF
-	SWCSpectrum r(Kd->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum r(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
 	float sig = Clamp(sigma->Evaluate(dgs), 0.f, 90.f);
 	if (sig == 0.)
 		bsdf->Add(BSDF_ALLOC(Lambertian)(r));

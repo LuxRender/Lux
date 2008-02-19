@@ -37,8 +37,9 @@ BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
 	float ior = index->Evaluate(dgs);
 	float cb = cauchyb->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
-	SWCSpectrum T(Kt->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum T(Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
 			BSDF_ALLOC( FresnelDielectric)(1., ior)));

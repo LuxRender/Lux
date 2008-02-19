@@ -36,8 +36,9 @@ BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
-	SWCSpectrum T(Kt->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum T(Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	float urough = uroughness->Evaluate(dgs);
 	float vrough = vroughness->Evaluate(dgs);
 	if (!R.Black()) {

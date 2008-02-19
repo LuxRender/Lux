@@ -59,14 +59,16 @@ BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGe
 
   BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 
-  SWCSpectrum kd(Kd->Evaluate(dgs).Clamp());
-  SWCSpectrum ks1(Ks1->Evaluate(dgs).Clamp());
-  SWCSpectrum ks2(Ks2->Evaluate(dgs).Clamp());
-  SWCSpectrum ks3(Ks3->Evaluate(dgs).Clamp());
+  // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+  SWCSpectrum kd(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum ks1(Ks1->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum ks2(Ks2->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum ks3(Ks3->Evaluate(dgs).Clamp(0.f, 1.f));
 
-  float r1 = R1->Evaluate(dgs);
-  float r2 = R2->Evaluate(dgs);
-  float r3 = R3->Evaluate(dgs);
+  // NOTE - lordcrc - added clamping to 0..1 to avoid >1 reflection
+  float r1 = Clampf(R1->Evaluate(dgs), 0.f, 1.f);
+  float r2 = Clampf(R2->Evaluate(dgs), 0.f, 1.f);
+  float r3 = Clampf(R3->Evaluate(dgs), 0.f, 1.f);
 
   float m1 = M1->Evaluate(dgs);
   float m2 = M2->Evaluate(dgs);

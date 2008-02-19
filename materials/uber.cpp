@@ -35,19 +35,22 @@ BSDF *UberMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const Differenti
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 
-	SWCSpectrum op(opacity->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum op(opacity->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (op != Spectrum(1.)) {
 	    BxDF *tr = BSDF_ALLOC( SpecularTransmission)(-op + Spectrum(1.), 1., 1., 0.);
 	    bsdf->Add(tr);
 	}
 
-	SWCSpectrum kd(op * Kd->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum kd(op * Kd->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!kd.Black()) {
 	    BxDF *diff = BSDF_ALLOC( Lambertian)(kd);
 	    bsdf->Add(diff);
 	}
 
-	SWCSpectrum ks(op * Ks->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum ks(op * Ks->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!ks.Black()) {
 	    Fresnel *fresnel = BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
 	    float rough = roughness->Evaluate(dgs);
@@ -55,7 +58,8 @@ BSDF *UberMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const Differenti
 	    bsdf->Add(spec);
 	}
 
-	SWCSpectrum kr(op * Kr->Evaluate(dgs).Clamp());
+    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum kr(op * Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!kr.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
 		bsdf->Add(BSDF_ALLOC( SpecularReflection)(kr, fresnel));
