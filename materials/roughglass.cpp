@@ -35,6 +35,7 @@ BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 		dgs = dgShading;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
+	float cb = cauchyb->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
@@ -51,7 +52,7 @@ BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 				BSDF_ALLOC( Anisotropic)(1.f/urough, 1.f/vrough)));
 	}
 	if (!T.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC( FresnelDielectric)(ior, 1.);
+		Fresnel *fresnel = BSDF_ALLOC( FresnelDielectric)(ior, 1., cb);
 		// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 		if(urough == vrough)
 			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC( Microfacet)(T *.5, fresnel,
@@ -69,6 +70,7 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .001f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .001f);
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
+	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.f);				// Cauchy B coefficient
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, bumpMap);
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap);
 }

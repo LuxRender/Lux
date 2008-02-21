@@ -193,13 +193,14 @@ class  FresnelDielectric : public Fresnel {
 public:
 	// FresnelDielectric Public Methods
 	SWCSpectrum Evaluate(float cosi) const;
-	FresnelDielectric(float ei, float et) {
+	FresnelDielectric(float ei, float et, float cB = 0.f) {
 		eta_i = ei;
 		eta_t = et;
+		cb = cB;
 	}
 private:
 	// FresnelDielectric Private Data
-	float eta_i, eta_t;
+	float eta_i, eta_t, cb;
 };
 class  FresnelNoOp : public Fresnel {
 public:

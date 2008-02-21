@@ -82,12 +82,22 @@ Fresnel::~Fresnel() { }
 SWCSpectrum FresnelConductor::Evaluate(float cosi) const {
 	return FrCond(fabsf(cosi), eta, k);
 }
+
+extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
+
 SWCSpectrum FresnelDielectric::Evaluate(float cosi) const {
 	// Compute Fresnel reflectance for dielectric
 	cosi = Clamp(cosi, -1.f, 1.f);
 	// Compute indices of refraction for dielectric
 	bool entering = cosi > 0.;
 	float ei = eta_i, et = eta_t;
+
+	if(cb != 0.) {
+		// Handle dispersion using cauchy formula
+		float w = thread_wavelengths->SampleSingle();
+		et = eta_t + (cb * 1000000) / (w*w);
+	}
+
 	if (!entering)
 		swap(ei, et);
 	// Compute _sint_ using Snell's law
@@ -118,8 +128,6 @@ SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
 	return fresnel->Evaluate(CosTheta(wo)) * R /
 		fabsf(CosTheta(*wi));
 }
-
-extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 		Vector *wi, float u1, float u2, float *pdf) const {
