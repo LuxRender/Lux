@@ -207,12 +207,20 @@ void RenderThread::render(RenderThread *myThread)
 			--(myThread->sample->imageY);
 
 			// Evaluate radiance along camera ray
+
 			float alpha;
 			Spectrum Ls = 0.f;
-			Spectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-			Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
-			Spectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-			Ls = rayWeight * ( T * Lo + Lv );
+			if (myThread->surfaceIntegrator->IsCombinedIntegrator())
+			{
+				Ls = rayWeight * myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
+			}
+			else
+			{
+				Spectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
+				Spectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
+				Spectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
+				Ls = rayWeight * ( T * Lo + Lv );
+			}
 
 			if( Ls == Spectrum(0.f) )
 				myThread->stat_blackSamples++;
@@ -314,7 +322,7 @@ void Scene::Render() {
 	// Store final image
 	camera->film->setScaleFactor(1.0/luxStatistics("samplesPx"));
 	camera->film->WriteImage();
-	std::cout<<(int)luxStatistics("samplesSec")<<" samples/sec " <<" "
+	std::cout<<"\n"<<luxStatistics("secElapsed")<<"s\t"<<(int)luxStatistics("samplesSec")<<" samples/sec\t"
 		<<(float)luxStatistics("samplesPx")<<" samples/pix\n";
 
 	return; // everything worked fine! Have a great day :) 
@@ -365,5 +373,7 @@ Spectrum Scene::Li(const RayDifferential &ray,
 	return 0.;
 }
 Spectrum Scene::Transmittance(const Ray &ray) const {
-	return volumeIntegrator->Transmittance(this, ray, NULL, NULL);
+	return surfaceIntegrator->IsCombinedIntegrator() ?
+		surfaceIntegrator->Transmittance(ray) : 
+		volumeIntegrator->Transmittance(this, ray, NULL, NULL);
 }

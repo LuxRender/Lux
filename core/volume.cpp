@@ -136,6 +136,19 @@ AggregateVolume::~AggregateVolume() {
 BBox AggregateVolume::WorldBound() const {
 	return bound;
 }
+float AggregateVolume::GetSmallScaleSize() const
+{
+	float s,ret;
+	ret = FLT_MAX;
+	for (u_int i = 0; i < regions.size(); ++i)
+	{
+		s = regions[i]->GetSmallScaleSize();
+		if (s<0)
+			return -1.0f;
+		ret = min(ret,s);
+	}
+	return ret;
+}
 Spectrum DensityRegion::Tau(const Ray &r,
 		float stepSize, float u) const {
 	float t0, t1;

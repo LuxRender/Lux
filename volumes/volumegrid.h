@@ -46,7 +46,11 @@ public:
 		z = Clamp(z, 0, nz-1);
 		return density[z*nx*ny + y*nx + x];
 	}
-	
+	float GetSmallScaleSize() const
+	{
+		return ((Vector)(extent.pMax-extent.pMin)).Length()/max(max(nx,ny),nz);
+	}
+
 	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 private:
 	// VolumeGrid Private Data

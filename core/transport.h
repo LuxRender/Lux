@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "primitive.h"
 #include "color.h"
+#include "spectrum.h"
 #include "light.h"
 #include "reflection.h"
 #include "sampling.h"
@@ -39,8 +40,7 @@ class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
-	virtual Spectrum Li(MemoryArena &arena,
-						const Scene *scene,
+	virtual Spectrum Li(const Scene *scene,
 					    const RayDifferential &ray,
 					    const Sample *sample,
 					    float *alpha) const = 0;
@@ -53,6 +53,13 @@ public:
 	virtual Integrator* clone() const = 0;   // Lux Virtual (Copy) Constructor for multithreading
 };
 class SurfaceIntegrator : public Integrator {
+public:
+	virtual bool IsCustomizedRenderingLoop() {return false;}
+	virtual bool IsCombinedIntegrator() {return false;}
+	virtual Spectrum Transmittance(const Ray &ray) const
+	{
+		return Spectrum(1.0f);
+	}
 };
  Spectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo,

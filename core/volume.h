@@ -25,6 +25,7 @@
 // volume.h*
 #include "lux.h"
 #include "color.h"
+#include "spectrum.h"
 #include "geometry.h"
 #include "paramset.h"
 //#include "transform.h"
@@ -61,6 +62,10 @@ public:
 	virtual Spectrum sigma_t(const Point &, const Vector &) const;
 	virtual Spectrum Tau(const Ray &ray,
 		float step = 1.f, float offset = 0.5) const = 0;
+	virtual float GetSmallScaleSize() const
+	{
+		return -1.0f;
+	}
 };
 class  DensityRegion : public VolumeRegion {
 public:
@@ -104,6 +109,7 @@ public:
 	float p(const Point &, const Vector &, const Vector &) const;
 	Spectrum sigma_t(const Point &, const Vector &) const;
 	Spectrum Tau(const Ray &ray, float, float) const;
+	float GetSmallScaleSize() const;
 private:
 	// AggregateVolume Private Data
 	vector<VolumeRegion *> regions;
