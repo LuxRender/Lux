@@ -51,6 +51,7 @@
 #include "sphere.h"
 #include "trianglemesh.h"
 #include "plymesh.h"
+#include "lenscomponent.h"
 
 #include "lowdiscrepancy.h"
 #include "halton.h"
@@ -61,6 +62,7 @@
 #include "environment.h"
 #include "orthographic.h"
 #include "perspective.h"
+#include "realistic.h"
 
 #include "multiimage.h"
 //#include "fleximage.h"
@@ -194,6 +196,8 @@ namespace lux
         return boost::shared_ptr<Shape>(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="plymesh")
         return boost::shared_ptr<Shape>(PlyMesh::CreateShape(object2world, reverseOrientation, paramSet));
+    if(name=="lenscomponent")
+        return boost::shared_ptr<Shape>(LensComponent::CreateShape(object2world, reverseOrientation, paramSet));
     //Error("Static loading of shape '%s' failed.",name.c_str());
 	std::stringstream ss;
 	ss<<"Static loading of shape '"<<name<<"' failed.";
@@ -873,7 +877,13 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
-    
+    if(name=="realistic")
+    {
+        Camera *ret=RealisticCamera::CreateCamera(paramSet, world2cam, film);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
     //Error("Static loading of camera '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of camera '"<<name<<"' failed.";
