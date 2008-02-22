@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2007 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2008 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of Lux Renderer.                                    *
  *                                                                         *

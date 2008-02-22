@@ -1,7 +1,7 @@
 /***************************************************************************
- *   Copyright (C) 1998-2007 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2008 by authors (see AUTHORS.txt )                 *
  *                                                                         *
- *   This file is part of Lux Renderer.                                    *
+ *   This file is part of LuxRender.                                       *
  *                                                                         *
  *   Lux Renderer is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -17,7 +17,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
- *   Lux Renderer website : http://www.luxrender.org                       *
+ *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
 #include "plymesh.h"
