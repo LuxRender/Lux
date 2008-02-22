@@ -322,6 +322,14 @@ SET(lux_lib_src
         core/transport.cpp core/util.cpp core/volume.cpp
         core/SFMT/SFMT.cpp
         core/geometry/transform.cpp
+				core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
+				core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
+				core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
+				core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp
+				core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
+				core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp
+				core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
+				core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
         shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/trianglemesh.cpp
