@@ -33,3 +33,4 @@ using namespace lux;
 SWCSpectrum FresnelConductor::Evaluate(float cosi) const {
 	return FrCond(fabsf(cosi), eta, k);
 }
+

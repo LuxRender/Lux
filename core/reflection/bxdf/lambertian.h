@@ -50,3 +50,4 @@ private:
 }//namespace lux
 
 #endif // LUX_LAMBERTIAN_H
+

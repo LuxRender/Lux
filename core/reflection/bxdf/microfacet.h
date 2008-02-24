@@ -59,3 +59,4 @@ private:
 }//namespace lux
 
 #endif // LUX_MICROFACET_H
+

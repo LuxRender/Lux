@@ -54,3 +54,4 @@ private:
 }//namespace lux
 
 #endif // LUX_SPECULARREFLECTION_H
+

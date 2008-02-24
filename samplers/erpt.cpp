@@ -241,8 +241,8 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	initSamples = params.FindOneInt("initsamples", 100000);
 	initCount = 0;
 	meanIntensity = 0.;
-	int totMutations = params.FindOneInt("chainlength", 512);	// number of mutations from a given seed
-	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
+	int totMutations = params.FindOneInt("chainlength", 2000);	// number of mutations from a given seed
+	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 50.);	// maximum distance in pixel for a small mutation
 	return new ERPTSampler(xStart, xEnd, yStart, yEnd, totMutations, range);
 }
 

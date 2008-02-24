@@ -22,6 +22,7 @@
 
 // loopsubdiv.cpp*
 #include "loopsubdiv.h"
+#include <boost/pool/object_pool.hpp>
 
 using namespace lux;
 

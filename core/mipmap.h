@@ -26,6 +26,8 @@
 #include "lux.h"
 #include "color.h"
 #include "spectrum.h"
+#include "memory.h"
+#include "texture.h"
 
 namespace lux
 {
@@ -68,7 +70,7 @@ private:
 		}
 		return wt;
 	}
-	float clamp(float v) { return Clampf(v, 0.f, INFINITY); }
+	float clamp(float v) { return Clamp(v, 0.f, INFINITY); }
 	Spectrum clamp(const Spectrum &v) { return v.Clamp(0.f, INFINITY); }
 	const T &texel(int level, int s, int t) const;
 	T triangle(int level, float s, float t) const;

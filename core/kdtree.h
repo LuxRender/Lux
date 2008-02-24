@@ -25,6 +25,7 @@
 // kdtree.h*
 #include "lux.h"
 #include "geometry.h"
+#include "memory.h"
 // KdTree Declarations
 
 namespace lux

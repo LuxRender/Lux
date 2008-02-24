@@ -61,3 +61,4 @@ float Microfacet::Pdf(const Vector &wo,
 	if (!SameHemisphere(wo, wi)) return 0.f;
 	return distribution->Pdf(wo, wi);
 }
+

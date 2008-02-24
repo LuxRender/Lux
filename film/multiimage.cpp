@@ -280,11 +280,11 @@ void MultiImageFilm::WriteImage(int oType) {
 			if (weightSum != 0.f) {
 				float invWt = 1.f / weightSum;
 				rgb[3*offset  ] =
-					Clampf(rgb[3*offset  ] * invWt, 0.f, INFINITY);
+					Clamp(rgb[3*offset  ] * invWt, 0.f, INFINITY);
 				rgb[3*offset+1] =
-					Clampf(rgb[3*offset+1] * invWt, 0.f, INFINITY);
+					Clamp(rgb[3*offset+1] * invWt, 0.f, INFINITY);
 				rgb[3*offset+2] =
-					Clampf(rgb[3*offset+2] * invWt, 0.f, INFINITY);
+					Clamp(rgb[3*offset+2] * invWt, 0.f, INFINITY);
 				// NOTE - radiance - leave off for now, creates rounding error and square filter blocks/artifacts
 				//alpha[offset] = Clamp(alpha[offset] * invWt, 0.f, 1.f);
 			}
@@ -441,10 +441,10 @@ Film* MultiImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	int cwi;
 	const float *cr = params.FindFloat("cropwindow", &cwi);
 	if (cr && cwi == 4) {
-		crop[0] = Clampf(min(cr[0], cr[1]), 0., 1.);
-		crop[1] = Clampf(max(cr[0], cr[1]), 0., 1.);
-		crop[2] = Clampf(min(cr[2], cr[3]), 0., 1.);
-		crop[3] = Clampf(max(cr[2], cr[3]), 0., 1.);
+		crop[0] = Clamp(min(cr[0], cr[1]), 0.f, 1.f);
+		crop[1] = Clamp(max(cr[0], cr[1]), 0.f, 1.f);
+		crop[2] = Clamp(min(cr[2], cr[3]), 0.f, 1.f);
+		crop[3] = Clamp(max(cr[2], cr[3]), 0.f, 1.f);
 	}
 
 	// output filenames

@@ -99,6 +99,16 @@ inline void Transform::operator()(const Ray &r,
 	rt->time = r.time;
 }
 
+  Transform Translate(const Vector &delta);
+  Transform Scale(float x, float y, float z);
+  Transform RotateX(float angle);
+  Transform RotateY(float angle);
+  Transform RotateZ(float angle);
+  Transform Rotate(float angle, const Vector &axis);
+  Transform LookAt(const Point &pos, const Point &look, const Vector &up);
+  Transform Orthographic(float znear, float zfar);
+  Transform Perspective(float fov, float znear, float zfar);
+
 }//namespace lux
 
 

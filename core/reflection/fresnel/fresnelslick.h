@@ -40,3 +40,4 @@ private:
 }//namespace lux
 
 #endif // LUX_FRESNELSLICK_H
+

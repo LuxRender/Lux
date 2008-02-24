@@ -60,3 +60,4 @@ SWCSpectrum FresnelDielectric::Evaluate(float cosi) const {
 		return FrDiel(fabsf(cosi), cost, ei, et);
 	}
 }
+

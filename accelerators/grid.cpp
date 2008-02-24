@@ -23,6 +23,8 @@
 
 // grid.cpp*
 #include "grid.h"
+#include "stats.h"
+#include "memory.h"
 
 using namespace lux;
 

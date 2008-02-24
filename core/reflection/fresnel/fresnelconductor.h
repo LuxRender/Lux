@@ -44,3 +44,4 @@ private:
 }//namespace lux
 
 #endif // LUX_FRESNELCONDUCTOR_H
+

@@ -27,6 +27,20 @@
 
 namespace lux
 {
+  class SPD {
+  public:
+    inline SPD() {}
+    inline ~SPD() {}
+
+    // lambda - wavelength in nm
+    virtual void sample(const float lambda, double& p) const = 0;
+
+    virtual double sample(const float lambda) const {
+      double p;
+      this->sample(lambda, p);
+      return p;
+    }
+  };
 
   // regularly sampled SPD, reconstructed using linear interpolation
   class RegularSPD : public SPD {

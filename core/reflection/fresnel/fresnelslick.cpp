@@ -37,3 +37,4 @@ SWCSpectrum FresnelSlick::Evaluate(float cosi) const {
 FresnelSlick::FresnelSlick (float ni) {
   normal_incidence = ni;
 }
+

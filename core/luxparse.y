@@ -27,6 +27,7 @@
 #include "error.h"
 #include "paramset.h"
 #include "context.h"
+#include "memory.h"
 #include <stdarg.h>
 #include <sstream>
 

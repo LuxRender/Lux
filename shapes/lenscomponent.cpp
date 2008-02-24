@@ -27,6 +27,7 @@
 
 // lenscomponent.cpp*
 #include "lenscomponent.h"
+#include "mc.h"
 
 using namespace lux;
 
@@ -193,3 +194,4 @@ Shape* LensComponent::CreateShape(const Transform &o2w,
     return new LensComponent(o2w, reverseOrientation, radius,
         zmin, zmax, phimax, aperture);
 }
+

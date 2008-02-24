@@ -36,6 +36,13 @@ public:
 	virtual SWCSpectrum Evaluate(float cosi) const = 0;
 };
 
+  SWCSpectrum FrDiel(float cosi, float cost,
+	const SWCSpectrum &etai, const SWCSpectrum &etat);
+  SWCSpectrum FrCond(float cosi, const SWCSpectrum &n, const SWCSpectrum &k);
+  SWCSpectrum FresnelApproxEta(const SWCSpectrum &intensity);
+  SWCSpectrum FresnelApproxK(const SWCSpectrum &intensity);
+
 }//namespace lux
 
 #endif // LUX_FRESNEL_H
+

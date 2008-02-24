@@ -22,6 +22,7 @@
 
 // orthographic.cpp*
 #include "orthographic.h"
+#include "mc.h"
 
 using namespace lux;
 

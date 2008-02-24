@@ -26,7 +26,7 @@
 // kdtree.cpp*
 #include "lux.h"
 #include "primitive.h"
-
+#include "memory.h"
 
 namespace lux
 {

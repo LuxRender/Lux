@@ -25,6 +25,7 @@
 #include "dynload.h"
 #include "paramset.h"
 #include "tonemap.h"
+#include "stats.h"
 
 namespace lux
 {

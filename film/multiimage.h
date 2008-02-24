@@ -32,6 +32,7 @@
 #include "tonemap.h"
 #include "sampling.h"
 #include "igiio.h"
+#include "memory.h"
 #include <stdio.h>
 #include <boost/timer.hpp>
 #include <boost/thread/mutex.hpp>

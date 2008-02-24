@@ -156,10 +156,8 @@ Integrator::~Integrator() {
 			bsdfComponent, 0);
 		// Update _avgY_ array with reflected radiance due to light
 		float luminance = L.y();
-		avgY[lightNumber] =
-			ExponentialAverage(avgY[lightNumber], luminance, .99f);
-		overallAvgY =
-			ExponentialAverage(overallAvgY, luminance, .999f);
+		avgY[lightNumber] = Lerp(.99f, luminance, avgY[lightNumber]);
+		overallAvgY = Lerp(.999f, luminance, overallAvgY);
 		L /= lightSampleWeight;
 	}
 	return L;

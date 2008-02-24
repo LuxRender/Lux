@@ -22,6 +22,7 @@
 
 // highcontrast.cpp*
 #include "highcontrast.h"
+#include "stats.h"
 
 using namespace lux;
 

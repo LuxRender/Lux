@@ -25,6 +25,7 @@
 
 #include "lux.h"
 #include "primitive.h"
+#include <boost/pool/object_pool.hpp>
 
 namespace lux
 {

@@ -39,3 +39,4 @@ SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
 	return fresnel->Evaluate(CosTheta(wo)) * R /
 		fabsf(CosTheta(*wi));
 }
+

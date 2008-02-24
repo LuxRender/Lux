@@ -127,6 +127,14 @@ private:
 	T value;
 };
 
+  float Noise(float x, float y = .5f, float z = .5f);
+  float Noise(const Point &P);
+  float FBm(const Point &P, const Vector &dpdx, const Vector &dpdy,
+	float omega, int octaves);
+  float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
+	float omega, int octaves);
+  float Lanczos(float, float tau=2);
+
 }//namespace lux
 
 #endif // LUX_TEXTURE_H

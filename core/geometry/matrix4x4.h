@@ -27,7 +27,8 @@
 namespace lux
 {
 
-struct  Matrix4x4 {
+class  Matrix4x4 {
+public:
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
 		for (int i = 0; i < 4; ++i)

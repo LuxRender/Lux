@@ -34,12 +34,15 @@
 #include "geometry/vector.h"
 #include "geometry/point.h"
 #include "geometry/normal.h"
+#ifndef LUX_USE_SSE
+#include "geometry/matrix4x4.h"
+#else
+#include "geometry/matrix4x4-sse.h"
+#endif
 #include "geometry/ray.h"
 #include "geometry/raydifferential.h"
 #include "geometry/bbox.h"
 #include "geometry/transform.h"
-
-
 
 namespace lux
 {

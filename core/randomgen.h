@@ -35,7 +35,7 @@ namespace lux
 
 namespace random
 {
-
+#if 0
 inline unsigned int seed()
 {
 	int dummy;
@@ -50,7 +50,7 @@ inline unsigned int seed()
 	//std::cout<<"using seed :"<<seed<<std::endl;
 	return seed;
 }
-
+#endif
 	class RandomGenerator
 	{
 	public:

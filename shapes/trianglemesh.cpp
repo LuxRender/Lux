@@ -22,6 +22,7 @@
 
 
 #include "trianglemesh.h"
+#include "mc.h"
 
 using namespace lux;
 

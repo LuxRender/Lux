@@ -27,6 +27,7 @@
 
 // realistic.ccp
 #include "realistic.h"
+#include "mc.h"
 
 #include "shape.h"
 #include <fstream>

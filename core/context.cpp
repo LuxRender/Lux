@@ -23,6 +23,7 @@
 #include "lux.h"
 #include "api.h"
 #include "context.h"
+#include "stats.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>

@@ -239,7 +239,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 ADD_DEFINITIONS( -O2 -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
-#ADD_DEFINITIONS( -O3 -march=athlon-xp -msse -m3dnow -mfpmath=sse,387 -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS( -O3 -march=athlon-xp -msse -m3dnow -mfpmath=sse -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 #ADD_DEFINITIONS(-O3 -Wall -msse -msse2 -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 #ICC definitions
@@ -320,8 +320,7 @@ SET(lux_lib_src
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/renderfarm.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp
         core/transport.cpp core/util.cpp core/volume.cpp
-        core/SFMT/SFMT.cpp
-        core/geometry/transform.cpp
+        core/geometry/transform.cpp core/geometry/matrix4x4.cpp
 				core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
 				core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
 				core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp

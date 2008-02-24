@@ -27,7 +27,8 @@
 namespace lux
 {
 
-struct /*_MM_ALIGN16*/  Matrix4x4  {
+class /*_MM_ALIGN16*/  Matrix4x4  {
+public:
 	// Matrix4x4 Public Methods
 	Matrix4x4() {
       __m128 zerone = _mm_set_ps(1.f,0.f,0.f,1.f);//_V1001;

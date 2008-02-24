@@ -22,6 +22,7 @@
 
 // perspective.cpp*
 #include "perspective.h"
+#include "mc.h"
 
 using namespace lux;
 

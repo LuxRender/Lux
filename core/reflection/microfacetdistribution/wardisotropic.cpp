@@ -77,3 +77,4 @@ float WardIsotropic::Pdf(const Vector &wo, const Vector &wi) const {
 
   return ward_pdf;
 }
+

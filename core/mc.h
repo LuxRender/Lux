@@ -30,7 +30,7 @@
 namespace lux
 {
 
-extern  void RejectionSampleDisk(float u1, float u2, float *x, float *y);
+  void RejectionSampleDisk(float u1, float u2, float *x, float *y);
  Vector UniformSampleHemisphere(float u1, float u2);
  float  UniformHemispherePdf(float theta, float phi);
  Vector UniformSampleSphere(float u1, float u2);
@@ -40,27 +40,33 @@ extern  void RejectionSampleDisk(float u1, float u2, float *x, float *y);
 	const Vector &x, const Vector &y, const Vector &z);
  float  UniformConePdf(float costhetamax);
  void UniformSampleDisk(float u1, float u2, float *x, float *y);
-inline Vector CosineSampleHemisphere(float u1, float u2) {
+  void UniformSampleTriangle(float ud1, float ud2, float *u, float *v);
+  Vector SampleHG(const Vector &w, float g, float u1, float u2);
+  float HGPdf(const Vector &w, const Vector &wp, float g);
+  void ComputeStep1dCDF(float *f, int nValues, float *c, float *cdf);
+  float SampleStep1d(float *f, float *cdf, float c, int nSteps, float u,
+	float *weight);
+  void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
+
+// MC Inline Functions
+inline Vector CosineSampleHemisphere(float u1, float u2)
+{
 	Vector ret;
 	ConcentricSampleDisk(u1, u2, &ret.x, &ret.y);
-	ret.z = sqrtf(max(0.f,
-	                  1.f - ret.x*ret.x - ret.y*ret.y));
+	ret.z = sqrtf(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y));
 	return ret;
 }
 inline float CosineHemispherePdf(float costheta, float phi) {
 	return costheta * INV_PI;
 }
-extern  Vector SampleHG(const Vector &w, float g, float u1, float u2);
-extern  float HGPdf(const Vector &w, const Vector &wp, float g);
-// MC Inline Functions
-inline float BalanceHeuristic(int nf, float fPdf, int ng,
-		float gPdf) {
+inline float BalanceHeuristic(int nf, float fPdf, int ng, float gPdf)
+{
 	return (nf * fPdf) / (nf * fPdf + ng * gPdf);
 }
-inline float PowerHeuristic(int nf, float fPdf, int ng,
-		float gPdf) {
+inline float PowerHeuristic(int nf, float fPdf, int ng,	float gPdf)
+{
 	float f = nf * fPdf, g = ng * gPdf;
-	return (f*f) / (f*f + g*g);
+	return (f * f) / (f * f + g * g);
 }
 
 }//namespace lux

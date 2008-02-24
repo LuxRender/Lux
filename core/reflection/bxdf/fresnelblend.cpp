@@ -74,3 +74,4 @@ float FresnelBlend::Pdf(const Vector &wo,
 	return .5f * (fabsf(wi.z) * INV_PI +
 		distribution->Pdf(wo, wi));
 }
+

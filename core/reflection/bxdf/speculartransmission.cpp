@@ -65,3 +65,4 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 	return (et*et)/(ei*ei) * (SWCSpectrum(1.)-F) * T /
 		fabsf(CosTheta(*wi));
 }
+

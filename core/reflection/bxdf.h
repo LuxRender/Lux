@@ -27,6 +27,7 @@
 #include "geometry.h"
 #include "shape.h"
 #include "spectrum.h"
+#include "memory.h"
 
 namespace lux
 {
@@ -186,3 +187,4 @@ inline int BSDF::NumComponents(BxDFType flags) const {
 }//namespace lux
 
 #endif // LUX_BXDF_H
+

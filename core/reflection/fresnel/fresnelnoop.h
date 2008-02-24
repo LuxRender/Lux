@@ -37,3 +37,4 @@ public:
 }//namespace lux
 
 #endif // LUX_FRESNELNOOP_H
+

@@ -49,3 +49,4 @@ private:
 }//namespace lux
 
 #endif // LUX_BECKMANN_H
+

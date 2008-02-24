@@ -94,3 +94,4 @@ float Lafortune::Pdf(const Vector &wo, const Vector &wi) const {
 	}
 	return pdfSum / (1.f + nLobes);
 }
+

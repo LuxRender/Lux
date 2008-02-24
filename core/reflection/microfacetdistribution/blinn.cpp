@@ -56,3 +56,4 @@ float Blinn::Pdf(const Vector &wo, const Vector &wi) const {
 		(2.f * M_PI * 4.f * Dot(wo, H));
 	return blinn_pdf;
 }
+

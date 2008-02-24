@@ -71,9 +71,9 @@ BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGe
   SWCSpectrum ks3(Ks3->Evaluate(dgs).Clamp(0.f, 1.f));
 
   // NOTE - lordcrc - added clamping to 0..1 to avoid >1 reflection
-  float r1 = Clampf(R1->Evaluate(dgs), 0.f, 1.f);
-  float r2 = Clampf(R2->Evaluate(dgs), 0.f, 1.f);
-  float r3 = Clampf(R3->Evaluate(dgs), 0.f, 1.f);
+  float r1 = Clamp(R1->Evaluate(dgs), 0.f, 1.f);
+  float r2 = Clamp(R2->Evaluate(dgs), 0.f, 1.f);
+  float r3 = Clamp(R3->Evaluate(dgs), 0.f, 1.f);
 
   float m1 = M1->Evaluate(dgs);
   float m2 = M2->Evaluate(dgs);

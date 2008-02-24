@@ -25,6 +25,7 @@
 // sampling.h*
 #include "lux.h"
 #include "geometry.h"
+#include "memory.h"
 
 namespace lux
 {

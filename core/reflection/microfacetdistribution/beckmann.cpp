@@ -80,3 +80,4 @@ float Beckmann::Pdf(const Vector &wo, const Vector &wi) const {
 
   return beckmann_pdf;
 }
+

@@ -34,3 +34,4 @@ SWCSpectrum Lambertian::f(const Vector &wo,
 		const Vector &wi) const {
 	return RoverPI;
 }
+

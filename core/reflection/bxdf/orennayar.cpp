@@ -55,3 +55,4 @@ SWCSpectrum OrenNayar::f(const Vector &wo,
 	return R * INV_PI *
 	       (A + B * maxcos * sinalpha * tanbeta);
 }
+

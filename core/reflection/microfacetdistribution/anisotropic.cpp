@@ -76,3 +76,4 @@ float Anisotropic::Pdf(const Vector &wo,
 	float anisotropic_pdf = D(H) / (4.f * Dot(wo, H));
 	return anisotropic_pdf;
 }
+
