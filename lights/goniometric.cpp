@@ -22,6 +22,7 @@
 
 // goniometric.cpp*
 #include "goniometric.h"
+#include "imagereader.h"
 
 using namespace lux;
 
@@ -39,13 +40,12 @@ GonioPhotometricLight::GonioPhotometricLight(
 	lightPos = LightToWorld(Point(0,0,0));
 	Intensity = intensity;
 	// Create _mipmap_ for _GonioPhotometricLight_
-	int width, height;
-	Spectrum *texels = ReadImage(texname, &width, &height);
-	if (texels) {
-		mipmap = new MIPMap<Spectrum>(width, height, texels);
-		delete[] texels;
+	auto_ptr<ImageData> imgdata(ReadImage(texname));
+	if (imgdata.get()!=NULL) {
+		mipmap = imgdata->createMIPMap<Spectrum>();
 	}
-	else mipmap = NULL;
+	else 
+		mipmap = NULL;
 }
 SWCSpectrum GonioPhotometricLight::Sample_L(const Point &P, float u1, float u2,
 		Vector *wo, float *pdf,

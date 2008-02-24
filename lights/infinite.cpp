@@ -22,7 +22,7 @@
 
 // infinite.cpp*
 #include "infinite.h"
-
+#include "imagereader.h"
 using namespace lux;
 
 // InfiniteAreaLight Method Definitions
@@ -36,13 +36,13 @@ InfiniteAreaLight
 	: Light(light2world, ns) {
 	radianceMap = NULL;
 	if (texmap != "") {
-		int width, height;
-		Spectrum *texels =
-			ReadImage(texmap, &width, &height);
-		if (texels)
-			radianceMap =
-				new MIPMap<Spectrum>(width, height, texels);
-		delete[] texels;
+		auto_ptr<ImageData> imgdata(ReadImage(texmap));
+		if(imgdata.get()!=NULL)
+		{
+			radianceMap = imgdata->createMIPMap<Spectrum>();
+		}
+		else
+			radianceMap=NULL;
 	}
 	Lbase = L;
 }

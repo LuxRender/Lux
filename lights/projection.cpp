@@ -22,6 +22,7 @@
 
 // projection.cpp*
 #include "projection.h"
+#include "imagereader.h"
 
 using namespace lux;
 
@@ -34,14 +35,16 @@ ProjectionLight::
 	lightPos = LightToWorld(Point(0,0,0));
 	Intensity = intensity;
 	// Create _ProjectionLight_ MIP-map
-	int width, height;
-	Spectrum *texels = ReadImage(texname, &width, &height);
-	if (texels)
-		projectionMap =
-			new MIPMap<Spectrum>(width, height, texels);
-	else
+	int width = 0, height = 0;
+	auto_ptr<ImageData> imgdata(ReadImage(texname));
+	if (imgdata.get()!=NULL) {
+		width=imgdata->getWidth();
+		height=imgdata->getHeight();
+		projectionMap =imgdata->createMIPMap<Spectrum>();
+	}
+	else 
 		projectionMap = NULL;
-	delete[] texels;
+
 	// Initialize _ProjectionLight_ projection matrix
 	float aspect = float(width) / float(height);
 	if (aspect > 1.f)  {

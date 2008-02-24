@@ -22,7 +22,7 @@
  
 // infinitesample.cpp*
 #include "infinitesample.h"
-
+#include "imagereader.h"
 using namespace lux;
 
 // InfiniteAreaLightIS Method Definitions
@@ -35,14 +35,18 @@ InfiniteAreaLightIS
 				const string &texmap)
 	: Light(light2world, ns)
 {
+	int width, height;
 	radianceMap = NULL;
 	if (texmap != "") {
-	int width, height;
-	Spectrum *texels =
-		ReadImage(texmap, &width, &height);
-	if (texels)
-		radianceMap =
-		new MIPMap<Spectrum>(width, height, texels);
+		auto_ptr<ImageData> imgdata(ReadImage(texmap));
+		if(imgdata.get() !=NULL)
+		{
+			width=imgdata->getWidth();
+			height=imgdata->getHeight();
+			radianceMap = imgdata->createMIPMap<Spectrum>();
+		}
+		else 
+			radianceMap = NULL;
 	// Compute scalar-valued image from environment map
 	float filter = 1.f / max(width, height);
 	int nu = width, nv = height;
@@ -71,7 +75,6 @@ InfiniteAreaLightIS
 		func[u] = vDistribs[u]->funcInt;
 	uDistrib = new Distribution1D(func, nu);
 	delete[] img;
-	delete[] texels;
 	}
 	Lbase = L;
 }

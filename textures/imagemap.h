@@ -24,6 +24,7 @@
 #include "lux.h"
 #include "texture.h"
 #include "mipmap.h"
+#include "imagereader.h"
 #include "paramset.h"
 #include "error.h"
 #include <map>
@@ -179,24 +180,20 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	// radiance - disabled for threading // static StatsCounter texLoaded("Texture", "Number of image maps loaded"); // NOBOOK
 	// radiance - disabled for threading // ++texLoaded; // NOBOOK
 	int width, height;
-	Spectrum *texels = ReadImage(filename, &width, &height);
+	//auto_ptr<ImageData> imgdata(ReadImage(filename));
+	ImageData *imgdata = ReadImage(filename);
 	MIPMap<T> *ret = NULL;
-	if (texels) {
-		// Convert texels to type _T_ and create _MIPMap_
-		T *convertedTexels = new T[width*height];
-		for (int i = 0; i < width*height; ++i)
-			convert(texels[i], &convertedTexels[i]);
-		ret = new MIPMap<T>(width, height,
-							convertedTexels, doTrilinear,
-							maxAniso, wrap);
-		delete[] texels;
-		delete[] convertedTexels;
+	//if (imgdata.get()!=NULL) {
+	if (imgdata!=NULL) {
+		width=imgdata->getWidth();
+		height=imgdata->getHeight();
+		ret = imgdata->createMIPMap<T>(doTrilinear,maxAniso, wrap);
 	}
 	else {
 		// Create one-valued _MIPMap_
 		T *oneVal = new T[1];
 		oneVal[0] = 1.;
-		ret = new MIPMap<T>(1, 1, oneVal);
+		ret = new MIPMapImpl<T,T>(1, 1, oneVal);
 		delete[] oneVal;
 	}
 	textures[texInfo] = ret;

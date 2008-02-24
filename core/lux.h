@@ -144,6 +144,7 @@ namespace lux
   class Intersection;
   class GeometricPrimitive;
   class Spectrum;
+	class ImageData;
   class SWCSpectrum;
   class Color;
   class RGBColor;
@@ -223,15 +224,13 @@ namespace lux
 
   bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
-  lux::Spectrum *ReadImage(const string &name, int *xSize,
-	int *ySize);
+	ImageData *ReadImage(const string &name);
   void WriteRGBAImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
   void WriteIgiImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
-
 }
 
 // Global Classes
@@ -286,7 +285,7 @@ public:
 	~Reference() {
 		if (ptr && --ptr->nReferences == 0)
 			delete ptr;
-	} 
+	}
 	T *operator->() { return ptr; }
 	const T *operator->() const { return ptr; }
 	operator bool() const { return ptr != NULL; }

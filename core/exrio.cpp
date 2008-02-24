@@ -26,6 +26,7 @@
 #include "error.h"
 #include "color.h"
 #include "spectrum.h"
+#include "imagereader.h"
 //#endif
 #include <algorithm>
 
@@ -80,41 +81,52 @@ using namespace Imf;
 using namespace Imath;
 using namespace lux;
 
-// EXR Function Definitions
 namespace lux
 {
- Spectrum *ReadExrImage(const string &name, int *width, int *height) {
+	template <class T >
+	class StandardImageReader : public ImageReader {
+	public:
+		StandardImageReader(){};
+		ImageData* read(const string &name);
+	};
+
+	// EXR Function Definitions
+	ImageData* ExrImageReader::read(const string &name) {
 	try {
     printf("Loading OpenEXR Texture: '%s'...\n", name.c_str());
 	InputFile file(name.c_str());
 	Box2i dw = file.header().dataWindow();
-	*width  = dw.max.x - dw.min.x + 1;
-	*height = dw.max.y - dw.min.y + 1;
+	int width  = dw.max.x - dw.min.x + 1;
+	int height = dw.max.y - dw.min.y + 1;
+	//todo: verify if this is always correct
+	int noChannels=3;
 
-	half *rgb = new half[3 * *width * *height];
+	half *rgb = new half[noChannels* width * height];
 
 	FrameBuffer frameBuffer;
 	frameBuffer.insert("R", Slice(HALF, (char *)rgb,
-		3*sizeof(half), *width * 3 * sizeof(half), 1, 1, 0.0));
+		3*sizeof(half), width * 3 * sizeof(half), 1, 1, 0.0));
 	frameBuffer.insert("G", Slice(HALF, (char *)rgb+sizeof(half),
-		3*sizeof(half), *width * 3 * sizeof(half), 1, 1, 0.0));
+		3*sizeof(half), width * 3 * sizeof(half), 1, 1, 0.0));
 	frameBuffer.insert("B", Slice(HALF, (char *)rgb+2*sizeof(half),
-		3*sizeof(half), *width * 3 * sizeof(half), 1, 1, 0.0));
+		3*sizeof(half), width * 3 * sizeof(half), 1, 1, 0.0));
 
 	file.setFrameBuffer(frameBuffer);
 	file.readPixels(dw.min.y, dw.max.y);
+	TextureColorBase*ret = new TextureColor<float,3>[width * height];
+	ImageData* data= new ImageData(width,height,ImageData::FLOAT_TYPE,noChannels,ret);
 
-	Spectrum *ret = new Spectrum[*width * *height];
 	// XXX should do real RGB -> Spectrum conversion here
-	for (int i = 0; i < *width * *height; ++i) {
-		float c[3] = { rgb[3*i], rgb[3*i+1], rgb[3*i+2] };
-		//if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
-		ret[i] = Spectrum(c);
+	for (int i = 0; i < width * height; ++i) {
+			//if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
+		float c[3] = {rgb[(3*i)],rgb[(3*i)+1],rgb[(3*i)+2] };
+		    ret[i] = TextureColor<float,3>(c);
 	}
+
 
 	delete[] rgb;
 	printf("Done.\n");
-	return ret;
+	return data;
 	} catch (const std::exception &e) {
 		std::stringstream ss;
 		ss<<"Unable to read EXR image file '"<<name<<"' : "<<e.what();
@@ -124,134 +136,197 @@ namespace lux
 }
 
 
- Spectrum *ReadCimgImage(const string &name, int *width, int *height)
- {
+template <typename T> ImageData * StandardImageReader<T>::read(const string &name)
+{
 	try {
 		printf("Loading Cimg Texture: '%s'...\n", name.c_str());
-		CImg<float> image(name.c_str());
+		CImg<T> image(name.c_str());
+        size_t size=sizeof(T);
 
-		*width  = image.dimx();
- 		*height = image.dimy();
- 		int pixels=*width * *height;
+		ImageData::PixelDataType type;
+		if(size==1)
+			type=ImageData::UNSIGNED_CHAR_TYPE ;
+		if(size==2)
+			type=ImageData::UNSIGNED_SHORT_TYPE ;
+		if(size==4)
+			type=ImageData::FLOAT_TYPE;
 
- 		Spectrum *ret = new Spectrum[*width * *height];
+		int width  = image.dimx();
+		int height = image.dimy();
+		int noChannels = image.dimv();
+		int pixels= width * height;
 
- 		// XXX should do real RGB -> Spectrum conversion here
-		for (int i = 0; i < *width * *height; ++i) {
-			float c[3] = { image[i]/255.0, image[i+pixels]/255.0, image[i+pixels*2]/255.0 };
-			ret[i] = Spectrum(c);
-		}
+		TextureColorBase* ret;
+		if(noChannels==3)
+			ret= new TextureColor<T,3>[width * height];
+		else
+			ret= new TextureColor<T,4>[width * height];
 
+		ImageData* data= new ImageData(width,height,type,noChannels,ret);
+		T *c= new T[noChannels];
+		c[0]=0;
+		// XXX should do real RGB -> Spectrum conversion here
+		for (int i = 0; i < width; ++i)
+			for (int j = 0; j < height; ++j)
+			{
+				for (int k = 0; k < noChannels; ++k)
+				{
+					//assuming that cimg depth is 1, single image layer
+					unsigned long off= i + (j*width)  + (k*pixels);
+					//c[k]= image[off];
+					if(noChannels==3)
+						((TextureColor<T,3>*)ret)[i+(j*width)].c[k] = image[off];
+					else
+						((TextureColor<T,4>*)ret)[i+(j*width)].c[k] = image[off];
+				}
+				/*
+				if(noChannels==3)
+					ret[i+(j*width)] = TextureColor<T,3>(c);
+				else {
+					ret[i+(j*width)] = TextureColor<T,4>(c);
+					std::cout <<  TextureColor<T,4>(c).c[3] << std::endl;
+					std::cout << ((TextureColor<T,4>*)ret)[i+(j*width)].c[3] << std::endl;
+				}
+				*/
+			}
+		delete [] c;
 		printf("Done.\n");
- 		return ret;
+		return data;
 	} catch (CImgIOException &e) {
 		std::stringstream ss;
 		ss<<"Unable to read Cimg image file '"<<name<<"' : "<<e.message;
 		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
- }
-
- Spectrum *ReadImage(const string &name, int *width, int *height)
- {
-	boost::filesystem::path imagePath( name );
-	if(!boost::filesystem::exists(imagePath)) {
-		std::stringstream ss;
-		ss<<"Unable to open image file '"<<imagePath.string()<<"'";
-		luxError(LUX_NOFILE, LUX_ERROR, ss.str().c_str());
-		return NULL;
-	}
-
-	std::string extension = boost::filesystem::extension(imagePath).substr(1);
-	//transform extension to lowercase
-	#ifdef WIN32
-	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower );
-	#else
-	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower );
- 	#endif
-
- 	if(extension=="exr") return ReadExrImage(name, width, height);
-
- 	/*
- 	The CImg Library can NATIVELY handle the following file formats :
-    * RAW : consists in a very simple header (in ascii), then the image data.
-    * ASC (Ascii)
-    * HDR (Analyze 7.5)
-    * INR (Inrimage)
-    * PPM/PGM (Portable Pixmap)
-    * BMP (uncompressed)
-    * PAN (Pandore-5)
-    * DLM (Matlab ASCII)*/
-    if(extension=="raw") return ReadCimgImage(name, width, height);
-    if(extension=="asc") return ReadCimgImage(name, width, height);
-    if(extension=="hdr") return ReadCimgImage(name, width, height);
-    if(extension=="inr") return ReadCimgImage(name, width, height);
-    if(extension=="ppm") return ReadCimgImage(name, width, height);
-    if(extension=="pgm") return ReadCimgImage(name, width, height);
-    if(extension=="bmp") return ReadCimgImage(name, width, height);
-    if(extension=="pan") return ReadCimgImage(name, width, height);
-    if(extension=="dlm") return ReadCimgImage(name, width, height);
-
-	// linked formats
-    if(extension=="png") return ReadCimgImage(name, width, height);
-    if(extension=="tif") return ReadCimgImage(name, width, height);
-    if(extension=="tiff") return ReadCimgImage(name, width, height);
-    if(extension=="jpg") return ReadCimgImage(name, width, height);
-    if(extension=="jpeg") return ReadCimgImage(name, width, height);
-    if(extension=="tga") return ReadCimgImage(name, width, height);
+	return NULL;
+}
 
 
-	std::stringstream ss;
- 	ss<<"Cannot recognise file format for image '"<<name<<"'";
-	luxError(LUX_BADFILE, LUX_ERROR, ss.str ().c_str());
- 	return NULL;
+ ImageData *ReadImage(const string &name)
+  {
+ 	boost::filesystem::path imagePath( name );
+ 	if(!boost::filesystem::exists(imagePath)) {
+ 		std::stringstream ss;
+ 		ss<<"Unable to open image file '"<<imagePath.string()<<"'";
+ 		luxError(LUX_NOFILE, LUX_ERROR, ss.str().c_str());
+ 		return NULL;
+ 	}
+
+ 	std::string extension = boost::filesystem::extension(imagePath).substr(1);
+ 	//transform extension to lowercase
+ 	#ifdef WIN32
+ 	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower );
+ 	#else
+ 	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower );
+  	#endif
+
+  	if(extension=="exr")
+ 	{
+ 		ExrImageReader exrReader;
+ 		ImageData* data=exrReader.read(name);
+ 		data->setIsExrImage(true);
+ 		return data;
+ 	}
+  	/*
+  	The CImg Library can NATIVELY handle the following file formats :
+     * RAW : consists in a very simple header (in ascii), then the image data.
+     * ASC (Ascii)
+     * HDR (Analyze 7.5)
+     * INR (Inrimage)
+     * PPM/PGM (Portable Pixmap)
+     * BMP (uncompressed)
+     * PAN (Pandore-5)
+     * DLM (Matlab ASCII)*/
+     if( (extension=="raw") ||
+ 		(extension=="asc") ||
+ 		(extension=="hdr") ||
+ 		(extension=="inr") ||
+ 		(extension=="ppm") ||
+ 		(extension=="pgm") ||
+ 		(extension=="bmp") ||
+ 		(extension=="pan") ||
+ 		(extension=="dlm") )
+ 	{
+ 		//StandardImageReader stdImageReader;
+ 		StandardImageReader<unsigned char> stdImageReader;
+ 		return stdImageReader.read(name);
+ 	}
+ 	// linked formats
+     if( (extension=="png") ||
+ 		(extension=="jpg") ||
+ 		(extension=="jpeg"))
+ 	{
+ 		//StandardImageReader stdImageReader;
+ 		StandardImageReader<unsigned char> stdImageReader;
+ 		return stdImageReader.read(name);
+ 	}
+
+ 	//todo: handle 16 bit tiffs here
+ 	//(but how do we know when a tiff is 16 bit??)
+     if((extension=="tif") || (extension=="tiff"))
+ 	{
+ 		//StandardImageReader stdImageReader;
+ 		StandardImageReader<unsigned char> stdImageReader;
+ 		return stdImageReader.read(name);
+ 	}
+ 	if(extension=="tga")
+	{
+ 		//StandardImageReader stdImageReader;
+ 		StandardImageReader<unsigned char> stdImageReader;
+ 		return stdImageReader.read(name);
+ 	}
+
+ 	std::stringstream ss;
+  	ss<<"Cannot recognise file format for image '"<<name<<"'";
+ 	luxError(LUX_BADFILE, LUX_ERROR, ss.str ().c_str());
+  	return NULL;
  }
 
  void WriteRGBAImage(const string &name, float *pixels,
-		float *alpha, int xRes, int yRes,
-		int totalXRes, int totalYRes,
-		int xOffset, int yOffset) {
-	Header header(totalXRes, totalYRes);
-	Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
-	header.dataWindow() = dataWindow;
-	header.channels().insert("R", Channel (HALF));
-	header.channels().insert("G", Channel (HALF));
-	header.channels().insert("B", Channel (HALF));
-	header.channels().insert("A", Channel (HALF));
+ 		float *alpha, int xRes, int yRes,
+ 		int totalXRes, int totalYRes,
+ 		int xOffset, int yOffset) {
+ 	Header header(totalXRes, totalYRes);
+ 	Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
+ 	header.dataWindow() = dataWindow;
+ 	header.channels().insert("R", Channel (HALF));
+ 	header.channels().insert("G", Channel (HALF));
+ 	header.channels().insert("B", Channel (HALF));
+ 	header.channels().insert("A", Channel (HALF));
 
-	half *hrgb = new half[3 * xRes * yRes];
-	for (int i = 0; i < 3 * xRes * yRes; ++i)
-		hrgb[i] = pixels[i];
-	half *ha = new half[xRes * yRes];
-	for (int i = 0; i < xRes * yRes; ++i)
-		ha[i] = alpha[i];
+ 	half *hrgb = new half[3 * xRes * yRes];
+ 	for (int i = 0; i < 3 * xRes * yRes; ++i)
+ 		hrgb[i] = pixels[i];
+ 	half *ha = new half[xRes * yRes];
+ 	for (int i = 0; i < xRes * yRes; ++i)
+ 		ha[i] = alpha[i];
 
-	hrgb -= 3 * (xOffset + yOffset * xRes);
-	ha -= (xOffset + yOffset * xRes);
+ 	hrgb -= 3 * (xOffset + yOffset * xRes);
+ 	ha -= (xOffset + yOffset * xRes);
 
-	FrameBuffer fb;
-	fb.insert("R", Slice(HALF, (char *)hrgb, 3*sizeof(half),
-		3*xRes*sizeof(half)));
-	fb.insert("G", Slice(HALF, (char *)hrgb+sizeof(half), 3*sizeof(half),
-		3*xRes*sizeof(half)));
-	fb.insert("B", Slice(HALF, (char *)hrgb+2*sizeof(half), 3*sizeof(half),
-		3*xRes*sizeof(half)));
-	fb.insert("A", Slice(HALF, (char *)ha, sizeof(half), xRes*sizeof(half)));
+ 	FrameBuffer fb;
+ 	fb.insert("R", Slice(HALF, (char *)hrgb, 3*sizeof(half),
+ 		3*xRes*sizeof(half)));
+ 	fb.insert("G", Slice(HALF, (char *)hrgb+sizeof(half), 3*sizeof(half),
+ 		3*xRes*sizeof(half)));
+ 	fb.insert("B", Slice(HALF, (char *)hrgb+2*sizeof(half), 3*sizeof(half),
+ 		3*xRes*sizeof(half)));
+ 	fb.insert("A", Slice(HALF, (char *)ha, sizeof(half), xRes*sizeof(half)));
 
-	try {
-		OutputFile file(name.c_str(), header);
-		file.setFrameBuffer(fb);
-		file.writePixels(yRes);
-	}
-	catch (const std::exception &e) {
-		//Error("Unable to write image file \"%s\": %s", name.c_str(),
-		//	e.what());
-		std::stringstream ss;
-		ss<<"Unable to write image file '"<<name<<"' : "<<e.what();
-		luxError(LUX_BUG,LUX_SEVERE,ss.str().c_str());
-	}
+ 	try {
+ 		OutputFile file(name.c_str(), header);
+ 		file.setFrameBuffer(fb);
+ 		file.writePixels(yRes);
+ 	}
+ 	catch (const std::exception &e) {
+ 		//Error("Unable to write image file \"%s\": %s", name.c_str(),
+ 		//	e.what());
+ 		std::stringstream ss;
+ 		ss<<"Unable to write image file '"<<name<<"' : "<<e.what();
+ 		luxError(LUX_BUG,LUX_SEVERE,ss.str().c_str());
+ 	}
 
-	delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
-	delete[] (ha + (xOffset + yOffset * xRes));
+ 	delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
+ 	delete[] (ha + (xOffset + yOffset * xRes));
 }
 }

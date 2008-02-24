@@ -140,6 +140,12 @@ public:
 			ret.c[i] = c[i] > 0 ? powf(c[i], e.c[i]) : 0.f;
 		return ret;
 	}
+	Spectrum Pow(const float e) const {
+		Spectrum ret;
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			ret.c[i] = c[i] > 0 ? powf(c[i], e) : 0.f;
+		return ret;
+	}
 	Spectrum operator-() const {
 		Spectrum ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
