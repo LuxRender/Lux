@@ -63,9 +63,11 @@ HaltonSampler::HaltonSampler(int xstart, int xend,
 		pixelSamples = ps;
 	samplePos = pixelSamples;
 	oneDSamples = twoDSamples = xDSamples = NULL;
-	imageSamples = new float[5*pixelSamples];
+	imageSamples = new float[7*pixelSamples];
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
+	wavelengthsSamples = imageSamples + 5*pixelSamples;
+	singleWavelengthSamples = imageSamples + 6*pixelSamples;
 	n1D = n2D = nxD = 0;
 }
 
@@ -138,9 +140,11 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	// Copy low-discrepancy samples from tables
 	sample->imageX = xPos + imageSamples[2*samplePos];
 	sample->imageY = yPos + imageSamples[2*samplePos+1];
-	sample->time = timeSamples[samplePos];
 	sample->lensU = lensSamples[2*samplePos];
 	sample->lensV = lensSamples[2*samplePos+1];
+	sample->time = timeSamples[samplePos];
+	sample->wavelengths = wavelengthsSamples[samplePos];
+	sample->singleWavelength = lux::random::floatValue();//singleWavelengthSamples[samplePos]
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		int startSamp = sample->n1D[i] * samplePos;
 		for (u_int j = 0; j < sample->n1D[i]; ++j)

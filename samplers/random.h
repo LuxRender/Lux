@@ -31,30 +31,31 @@ namespace lux
 class RandomSampler : public Sampler
 {
 public:
-    RandomSampler(int xstart, int xend, int ystart,
-                  int yend, int xs, int ys, string pixelsampler);
-    ~RandomSampler()
-    {
-        FreeAligned(imageSamples);
-    }
+	RandomSampler(int xstart, int xend, int ystart, int yend,
+		int xs, int ys, string pixelsampler);
+	~RandomSampler()
+	{
+		FreeAligned(imageSamples);
+	}
 	u_int GetTotalSamplePos();
-    bool GetNextSample(Sample *sample, u_int *use_pos);
-    float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-    int RoundSize(int sz) const
-    {
-        return sz;
-    }
-    virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
+	bool GetNextSample(Sample *sample, u_int *use_pos);
+	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	int RoundSize(int sz) const
+	{
+		return sz;
+	}
+	virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
-    static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
-    // RandomSampler Private Data
-    bool jitterSamples;
-    int xPos, yPos, xPixelSamples, yPixelSamples;
-    float *imageSamples, *lensSamples, *timeSamples;
-    int samplePos;
-  u_int TotalPixels;
-  PixelSampler* pixelSampler;
+	// RandomSampler Private Data
+	bool jitterSamples;
+	int xPos, yPos, xPixelSamples, yPixelSamples;
+	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
+		*singleWavelengthSamples;
+	int samplePos;
+	u_int TotalPixels;
+	PixelSampler* pixelSampler;
 };
 
 }//namespace lux

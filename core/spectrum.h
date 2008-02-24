@@ -598,8 +598,9 @@ public:
 	// SpectrumWavelengths Public Methods
 	SpectrumWavelengths() { single = false; single_w = 0; }
 
-	void Sample(float u1) {
-		single = false; single_w = 0;
+	void Sample(float u1, float u2) {
+		single = false;
+		single_w = Floor2Int(u2 * WAVELENGTH_SAMPLES);
 
 		const float offset = float(CIEend - CIEstart) * inv_WAVELENGTH_SAMPLES;
 		float waveln = CIEstart + u1 * offset;
@@ -617,11 +618,7 @@ public:
 	void ComputeRGBConversionSpectra();
 
 	float SampleSingle() {
-		if(!single) {
-			int i = Floor2Int(lux::random::floatValue() * WAVELENGTH_SAMPLES);
-			single = true;
-			single_w = i;
-		}
+		single = true;
 		return w[single_w];
 	}
 

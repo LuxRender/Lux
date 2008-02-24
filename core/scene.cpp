@@ -181,7 +181,8 @@ void RenderThread::render(RenderThread *myThread)
 			break;
 
 		// Sample new SWC thread wavelengths
-		thread_wavelengths->Sample(myThread->sample->time);
+		thread_wavelengths->Sample(myThread->sample->wavelengths,
+			myThread->sample->singleWavelength);
 
 		while(myThread->signal == RenderThread::SIG_PAUSE)
 		{ 

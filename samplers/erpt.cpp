@@ -31,6 +31,8 @@
 
 using namespace lux;
 
+#define SAMPLE_FLOATS 7
+
 // mutate a value in the range [0-1]
 static float mutate(const float x)
 {
@@ -81,7 +83,7 @@ ERPTSampler* ERPTSampler::clone() const
 static void initERPT(ERPTSampler *sampler, const Sample *sample)
 {
 	u_int i;
-	sampler->normalSamples = 5;
+	sampler->normalSamples = SAMPLE_FLOATS;
 	for (i = 0; i < sample->n1D.size(); ++i)
 		sampler->normalSamples += sample->n1D[i];
 	for (i = 0; i < sample->n2D.size(); ++i)
@@ -113,8 +115,10 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->lensU = lux::random::floatValue();
 		sample->lensV = lux::random::floatValue();
 		sample->time = lux::random::floatValue();
-		for (int i = 5; i < normalSamples; ++i)
-			sample->oneD[0][i - 5] = lux::random::floatValue();
+		sample->wavelengths = lux::random::floatValue();
+		sample->singleWavelength = lux::random::floatValue();
+		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
+			sample->oneD[0][i - SAMPLE_FLOATS] = lux::random::floatValue();
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -126,8 +130,10 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->lensU = baseImage[2];
 			sample->lensV = baseImage[3];
 			sample->time = baseImage[4];
-			for (int i = 5; i < totalSamples; ++i)
-				sample->oneD[0][i - 5] = baseImage[i];
+			sample->wavelengths = baseImage[5];
+			sample->singleWavelength = lux::random::floatValue();//baseImage[6];
+			for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
+				sample->oneD[0][i - SAMPLE_FLOATS] = baseImage[i];
 			for (int i = 0; i < totalTimes; ++i) {
 				if (sample->timexD[0][i] != -1)
 					sample->timexD[0][i] = 0;
@@ -141,8 +147,10 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->lensU = mutate(sampleImage[2]);
 		sample->lensV = mutate(sampleImage[3]);
 		sample->time = mutate(sampleImage[4]);
-		for (int i = 5; i < normalSamples; ++i)
-			sample->oneD[0][i - 5] = mutate(sampleImage[i]);
+		sample->wavelengths = mutate(sampleImage[5]);
+		sample->singleWavelength = lux::random::floatValue();//mutate(sampleImage[6]);
+		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
+			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i]);
 		++(sample->stamp);
 	}
 
@@ -210,8 +218,10 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 		sampleImage[2] = sample.lensU;
 		sampleImage[3] = sample.lensV;
 		sampleImage[4] = sample.time;
-		for (int i = 5; i < totalSamples; ++i)
-			sampleImage[i] = sample.oneD[0][i - 5];
+		sampleImage[5] = sample.wavelengths;
+		sampleImage[6] = sample.singleWavelength;
+		for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
+			sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
 		for (int i = 0 ; i < totalTimes; ++i)
 			timeImage[i] = sample.timexD[0][i];
 		stamp = sample.stamp;

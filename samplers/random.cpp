@@ -55,34 +55,29 @@ RandomSampler::RandomSampler(int xstart, int xend,
 
 	TotalPixels = pixelSampler->GetTotalPixels();
 
-    // Get storage for a pixel's worth of stratified samples
-    imageSamples = (float *)AllocAligned(5 * xPixelSamples *
-                                         yPixelSamples * sizeof(float));
-    lensSamples = imageSamples +
-                  2 * xPixelSamples * yPixelSamples;
-    timeSamples = lensSamples +
-                  2 * xPixelSamples * yPixelSamples;
+	// Get storage for a pixel's worth of stratified samples
+	imageSamples = (float *)AllocAligned(7 * xPixelSamples * yPixelSamples *
+		sizeof(float));
+	lensSamples = imageSamples + 2 * xPixelSamples * yPixelSamples;
+	timeSamples = lensSamples +  2 * xPixelSamples * yPixelSamples;
+	wavelengthsSamples = timeSamples + xPixelSamples * yPixelSamples;
+	singleWavelengthSamples = wavelengthsSamples + xPixelSamples * yPixelSamples;
 
-    for (int i = 0;
-            i < 5 * xPixelSamples * yPixelSamples;
-            ++i)
-    {
-        imageSamples[i] = lux::random::floatValue();
-    }
+	for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
+		imageSamples[i] = lux::random::floatValue();
+	}
 
-    // Shift image samples to pixel coordinates
-    for (int o = 0;
-            o < 2 * xPixelSamples * yPixelSamples;
-            o += 2)
-    {
-        imageSamples[o]   += xPos;
-        imageSamples[o+1] += yPos;
-    }
-    samplePos = 0;
+	// Shift image samples to pixel coordinates
+	for (int o = 0; o < 2 * xPixelSamples * yPixelSamples; o += 2) {
+		imageSamples[o] += xPos;
+		imageSamples[o + 1] += yPos;
+	}
+	samplePos = 0;
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions
-u_int RandomSampler::GetTotalSamplePos() {
+u_int RandomSampler::GetTotalSamplePos()
+{
 	return TotalPixels;
 }
 
@@ -98,38 +93,36 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		// reset so scene knows to increment
 		*use_pos = 0;
 
-        for (int i = 0;
-                i < 5 * xPixelSamples * yPixelSamples;
-                ++i)
-        {
-            imageSamples[i] = lux::random::floatValue();
-        }
+		for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
+			imageSamples[i] = lux::random::floatValue();
+		}
 
-        // Shift image samples to pixel coordinates
-        for (int o = 0;
-                o < 2 * xPixelSamples * yPixelSamples;
-                o += 2)
-        {
-            imageSamples[o]   += xPos;
-            imageSamples[o+1] += yPos;
-        }
-        samplePos = 0;
-    }
-    // Return next \mono{RandomSampler} sample point
-    sample->imageX = imageSamples[2*samplePos];
-    sample->imageY = imageSamples[2*samplePos+1];
-    sample->lensU = lensSamples[2*samplePos];
-    sample->lensV = lensSamples[2*samplePos+1];
-    sample->time = timeSamples[samplePos];
-    // Generate stratified samples for integrators
-    for (u_int i = 0; i < sample->n1D.size(); ++i)
-        for (u_int j = 0; j < sample->n1D[i]; ++j)
-            sample->oneD[i][j] = lux::random::floatValue();
-    for (u_int i = 0; i < sample->n2D.size(); ++i)
-        for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-            sample->twoD[i][j] = lux::random::floatValue();
-    ++samplePos;
-    return true;
+		// Shift image samples to pixel coordinates
+		for (int o = 0; o < 2 * xPixelSamples * yPixelSamples; o += 2) {
+			imageSamples[o] += xPos;
+			imageSamples[o + 1] += yPos;
+		}
+		samplePos = 0;
+	}
+	// Return next \mono{RandomSampler} sample point
+	sample->imageX = imageSamples[2*samplePos];
+	sample->imageY = imageSamples[2*samplePos+1];
+	sample->lensU = lensSamples[2*samplePos];
+	sample->lensV = lensSamples[2*samplePos+1];
+	sample->time = timeSamples[samplePos];
+	sample->wavelengths = wavelengthsSamples[samplePos];
+	sample->singleWavelength = singleWavelengthSamples[samplePos];
+	// Generate stratified samples for integrators
+	for (u_int i = 0; i < sample->n1D.size(); ++i) {
+		for (u_int j = 0; j < sample->n1D[i]; ++j)
+			sample->oneD[i][j] = lux::random::floatValue();
+	}
+	for (u_int i = 0; i < sample->n2D.size(); ++i) {
+		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
+			sample->twoD[i][j] = lux::random::floatValue();
+	}
+	++samplePos;
+	return true;
 }
 
 float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)

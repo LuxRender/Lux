@@ -60,7 +60,8 @@ private:
 	// LDSampler Private Data
 	int xPos, yPos, pixelSamples;
 	int samplePos;
-	float *imageSamples, *lensSamples, *timeSamples;
+	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
+		*singleWavelengthSamples;
 	float **oneDSamples, **twoDSamples, **xDSamples;
 	int n1D, n2D, nxD;
 	u_int TotalPixels;
