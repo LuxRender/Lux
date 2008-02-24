@@ -280,11 +280,11 @@ void MultiImageFilm::WriteImage(int oType) {
 			if (weightSum != 0.f) {
 				float invWt = 1.f / weightSum;
 				rgb[3*offset  ] =
-					Clamp(rgb[3*offset  ] * invWt, 0.f, INFINITY);
+					max(rgb[3*offset  ] * invWt, 0.f);
 				rgb[3*offset+1] =
-					Clamp(rgb[3*offset+1] * invWt, 0.f, INFINITY);
+					max(rgb[3*offset+1] * invWt, 0.f);
 				rgb[3*offset+2] =
-					Clamp(rgb[3*offset+2] * invWt, 0.f, INFINITY);
+					max(rgb[3*offset+2] * invWt, 0.f);
 				// NOTE - radiance - leave off for now, creates rounding error and square filter blocks/artifacts
 				//alpha[offset] = Clamp(alpha[offset] * invWt, 0.f, 1.f);
 			}
