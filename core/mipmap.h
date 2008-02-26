@@ -214,8 +214,8 @@ template <class T,class U> class MIPMapImpl : public MIPMap<T> {
 public:
 
 	// MIPMap Public Methods
-	MIPMapImpl(int xres, int yres, const U *data, bool doTri,
-		   float maxAniso, ImageWrap wrapMode, float gain, float gamma);
+	MIPMapImpl(int xres, int yres, const U *data, bool doTri=false,
+		   float maxAniso=8.f, ImageWrap wrapMode=TEXTURE_REPEAT, float gain=1.f, float gamma=1.0f);
 	~MIPMapImpl();
 
 private:
@@ -314,9 +314,9 @@ MIPMapImpl<T,U>::~MIPMapImpl() {
 
 template <class T,class U>
 MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres,
-                  const U *img, bool doTri=false,
-				  float maxAniso=8.f, ImageWrap wm=TEXTURE_REPEAT,
-				  float gn=1.f,float gma=1.0f) {
+                  const U *img, bool doTri,
+				  float maxAniso, ImageWrap wm,
+				  float gn,float gma) {
 	this->doTrilinear = doTri;
 	this->maxAnisotropy = maxAniso;
 	this->wrapMode = wm;
