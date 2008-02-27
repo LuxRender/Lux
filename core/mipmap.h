@@ -396,10 +396,10 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres,
 			for (int s = 0; s < sRes; ++s) {
 				/* NOTE - Ratow - multiplying before summing all TextureColors because they can overflow */
 				(*pyramid[i])(s, t) =
-					0.25*texelInternal(i-1, 2*s, 2*t) +
-					0.25*texelInternal(i-1, 2*s+1, 2*t) +
-					0.25*texelInternal(i-1, 2*s, 2*t+1) +
-					0.25*texelInternal(i-1, 2*s+1, 2*t+1);
+					0.25f*texelInternal(i-1, 2*s, 2*t) +
+					0.25f*texelInternal(i-1, 2*s+1, 2*t) +
+					0.25f*texelInternal(i-1, 2*s, 2*t+1) +
+					0.25f*texelInternal(i-1, 2*s+1, 2*t+1);
 			}
 	}
 	if (resampledImage) delete[] resampledImage;
