@@ -7,6 +7,10 @@
 
 using namespace lux;
 
+VolumeRegion* MultipleScatteringPathIntegrator::vr = NULL;
+float MultipleScatteringPathIntegrator::dMin = 0.01f;
+float MultipleScatteringPathIntegrator::dMax = 0.04f;
+
 void MultipleScatteringPathIntegrator::RequestSamples(Sample *sample,const Scene *scene)
 {
 	vr = scene->volumeRegion;
@@ -26,7 +30,7 @@ Spectrum MultipleScatteringPathIntegrator::Transmittance(const Ray &r) const
 		r.mint * length,
 		r.maxt * length);
 	float t0, t1;
-	if (!vr->IntersectP(ray, &t0, &t1))
+	if (!vr || !vr->IntersectP(ray, &t0, &t1))
 		return Spectrum(1.0f);
 	Spectrum tau(0.0f);
 	if (isHomogeneous)

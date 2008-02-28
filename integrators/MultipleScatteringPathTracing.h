@@ -28,6 +28,7 @@ public:
 		return new MultipleScatteringPathIntegrator(*this);
 	}
 	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) { return NULL; }; // Not implemented
+	bool IsCombinedIntegrator() {return true;}
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	int maxDepth;
@@ -36,10 +37,10 @@ private:
 	bool isHomogeneous;
 	int stepRatio;
 	float stepMultiplier;
-	float dMin;
-	float dMax;
 	float stepSize;
-	VolumeRegion *vr;
+	static float dMin;
+	static float dMax;
+	static VolumeRegion *vr;
 };
 
 }
