@@ -316,6 +316,10 @@ template<class T> inline T Clamp(T val, T low, T high) {
 	else return val;
 }
 inline int Mod(int a, int b) {
+	// note - radiance - added 0 check to prevent divide by zero error(s)
+	if(a==0) a=1;
+	if(b==0) b=1;
+
     int n = int(a/b);
     a -= n*b;
     if (a < 0)

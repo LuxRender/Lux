@@ -24,7 +24,15 @@
 #define LUX_COLORBASE_H
 // color.h*
 #include "lux.h"
+
+#ifdef WIN32
+#undef max
+#undef min
+#include <limits>
+#else
 #include <limits.h>
+#endif // WIN32
+
 namespace lux
 {
 	class TextureColorBase
