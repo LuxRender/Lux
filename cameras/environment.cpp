@@ -22,6 +22,7 @@
 
 // environment.cpp*
 #include "environment.h"
+#include "scene.h" // for struct Intersection
 
 using namespace lux;
 
@@ -47,6 +48,56 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 	ray->mint = ClipHither;
 	ray->maxt = ClipYon;
 	return 1.f;
+}
+bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
+{
+	Vector dir_world(p-rayOrigin);
+	Vector dir_camera;
+	WorldToCamera(dir_world, &dir_camera);
+	dir_camera = Normalize(dir_camera);
+	float theta, phi;
+	theta = acosf(dir_camera.y);
+	phi = acosf(dir_camera.x/sinf(theta));
+	if (_isnan(phi))
+		phi=atanf(dir_camera.z/dir_camera.x);
+	if (dir_camera.z<0)
+		phi = M_PI * 2 - phi;
+
+	sample->imageX = min (phi * INV_TWOPI, 1.0f) * film->xResolution ;
+	sample->imageY = min (theta * INV_PI, 1.0f) * film->yResolution ;
+	//static float mm=0;
+	//if (phi*INV_TWOPI>1)
+	//	printf("\n%f,%f\n",mm=max(phi*INV_TWOPI,mm),theta*INV_PI);
+
+	return true;
+}
+bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+{
+	bool isVisible;
+	if (GenerateSample(p, (Sample *)sample_gen))
+	{
+		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
+		isVisible = !scene->IntersectP(*ray_gen);
+	}
+	else
+		isVisible = false;
+	return isVisible;
+}
+float EnvironmentCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+{
+	return AbsDot(wo, n)/DistanceSquared(rayOrigin, p);
+}
+void EnvironmentCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
+{
+	float Apixel,R = 100.0f;
+	int x,y;
+	for (y = 0; y < yPixelCount; ++y) {
+		for (x = 0; x < xPixelCount; ++x) {
+			Apixel = 2*M_PI/film->xResolution*R*sinf(M_PI*(y+0.5f)/film->yResolution) * M_PI/film->yResolution*R;
+			film->flux2radiance[x+y*xPixelCount] =  R*R / Apixel;
+		}
+	}
 }
 Camera* EnvironmentCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {

@@ -23,6 +23,7 @@
 // orthographic.cpp*
 #include "orthographic.h"
 #include "mc.h"
+#include "scene.h" // for struct Intersection
 
 using namespace lux;
 
@@ -34,6 +35,8 @@ OrthoCamera::OrthoCamera(const Transform &world2cam,
 	: ProjectiveCamera(world2cam, Orthographic(hither, yon),
 		 Screen, hither, yon, sopen, sclose,
 		 lensr, focald, f) {
+	 screenDx = Screen[1] - Screen[0];
+	 screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
 }
 float OrthoCamera::GenerateRay(const Sample &sample,
                                Ray *ray) const {
@@ -45,6 +48,10 @@ float OrthoCamera::GenerateRay(const Sample &sample,
 	ray->d = Vector(0,0,1);
 	// Set ray time value
 	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
+
+	/*
+	// TODO: Why orthographic camera have DOF?
+
 	// Modify ray for depth of field
 	if (LensRadius > 0.) {
 		// Sample point on lens
@@ -61,11 +68,41 @@ float OrthoCamera::GenerateRay(const Sample &sample,
 		ray->o.y += lensV;
 		ray->d = Pfocus - ray->o;
 	}
+	*/
 	ray->mint = 0.;
 	ray->maxt = ClipYon - ClipHither;
 	ray->d = Normalize(ray->d);
 	CameraToWorld(*ray, ray);
 	return 1.f;
+}
+bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+{
+	bool isVisible = false;
+	if (GenerateSample(p, (Sample *)sample_gen))
+	{
+		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		if (WorldToCamera(p).z>0)
+		{
+			ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
+			isVisible = !scene->IntersectP(*ray_gen);
+		}
+	}
+	return isVisible;
+}
+float OrthoCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+{
+	return AbsDot(wo, n);
+}
+void OrthoCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
+{
+	float Apixel = (screenDx*screenDy/(film->xResolution*film->yResolution));
+	int x,y;
+	float invApixel = 1/Apixel;
+	for (y = 0; y < yPixelCount; ++y) {
+		for (x = 0; x < xPixelCount; ++x) {
+			film->flux2radiance[x+y*xPixelCount] =  invApixel;
+		}
+	}
 }
 Camera* OrthoCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {

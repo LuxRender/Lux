@@ -35,9 +35,16 @@ public:
 	EnvironmentCamera(const Transform &world2cam, float hither,
 		float yon, float sopen, float sclose, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
-	
+	bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen);
+	float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n);
+	void GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount);
+	bool IsDelta() const
+	{
+		return true;
+	}
 	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
 private:
+	bool GenerateSample(const Point &p, Sample *sample) const;
 	// EnvironmentCamera Private Data
 	Point rayOrigin;
 };

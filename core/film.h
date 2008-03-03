@@ -55,9 +55,13 @@ public:
 
 	virtual void merge(MultiImageFilm &f) {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::merge()");}
 	virtual void clean() {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::clean()");}
+	void SetScene(Scene *scene1){scene=scene1;}
 	// Film Public Data
 	int xResolution, yResolution;
+	float* flux2radiance;
 
+protected:
+	Scene *scene;
 private:
 
 	//template<class Archive>

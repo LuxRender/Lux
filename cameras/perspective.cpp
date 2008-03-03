@@ -23,6 +23,7 @@
 // perspective.cpp*
 #include "perspective.h"
 #include "mc.h"
+#include "scene.h" // for struct Intersection
 
 using namespace lux;
 
@@ -32,11 +33,14 @@ PerspectiveCamera::
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose,
 		float lensr, float focald,
-		float fov, Film *f)
+		float fov1, Film *f)
 	: ProjectiveCamera(world2cam,
-	    Perspective(fov, hither, yon),
+	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose,
 		lensr, focald, f) {
+	pos = CameraToWorld(Point(0,0,0));
+	normal = CameraToWorld(Normal(0,0,1));
+	fov = Radians(fov1);
 }
 float PerspectiveCamera::GenerateRay(const Sample &sample,
 		Ray *ray) const {
@@ -69,6 +73,71 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	ray->maxt = (ClipYon - ClipHither) / ray->d.z;
 	CameraToWorld(*ray, ray);
 	return 1.f;
+}
+bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+{
+	//TODO: check whether IsVisibleFromEyes() can alway return correct answer.
+	bool isVisible;
+	if (GenerateSample(p, (Sample *)sample_gen))
+	{
+		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		Vector dd(pos-p);
+		Ray ray1(p, -ray_gen->d);
+
+		if (Dot(dd,normal)<0)
+		{
+			Intersection isect1;
+			if (scene->Intersect(ray1,&isect1))
+				isVisible = WorldToCamera(isect1.dg.p).z<0 ;
+			else
+				isVisible = true;
+		}
+		else
+			isVisible = false;
+	}
+	else
+		isVisible = false;
+	return isVisible;
+}
+float PerspectiveCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+{
+	return AbsDot(wo, normal)*AbsDot(wo, n)/DistanceSquared(pos, p);
+}
+void PerspectiveCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
+{
+	float templength, frameaspectratio;
+	float xWidth, yHeight, xPixelWidth, yPixelHeight, Apixel;
+	float R,d2,cos2,cos4,detaX,detaY;
+	int x,y;
+	R = 100;
+	templength=R * tan(fov*0.5)*2;	
+	frameaspectratio=float(film->xResolution)/float(film->yResolution);
+
+	if (frameaspectratio > 1.f)
+	{
+		xWidth=templength*frameaspectratio;
+		yHeight=templength;
+	}
+	else
+	{
+		xWidth=templength;
+		yHeight=templength / frameaspectratio;
+	}
+	xPixelWidth = xWidth / film->xResolution;
+	yPixelHeight = yHeight / film->yResolution;
+	Apixel = xPixelWidth * yPixelHeight;
+
+
+	for (y = 0; y < yPixelCount; ++y) {
+		for (x = 0; x < xPixelCount; ++x) {
+			detaX = 0.5*xWidth - (x+0.5)*xPixelWidth;
+			detaY = 0.5*yHeight - (y+0.5)*yPixelHeight;
+			d2 = detaX*detaX + detaY*detaY + R*R;
+			cos2 = R*R / d2;
+			cos4 = cos2 * cos2;
+			film->flux2radiance[x+y*xPixelCount] =  R*R / (Apixel*cos4);
+		}
+	}
 }
 Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {

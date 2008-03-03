@@ -66,4 +66,19 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
 	RasterToScreen = ScreenToRaster.GetInverse();
 	RasterToCamera =
 		CameraToScreen.GetInverse() * RasterToScreen;
+	WorldToRaster = ScreenToRaster * WorldToScreen;
+}
+bool ProjectiveCamera::GenerateSample(const Point &p, Sample *sample) const
+{
+	Point p_raster = WorldToRaster(p);
+	sample->imageX = p_raster.x;
+	sample->imageY = p_raster.y;
+
+	if (sample->imageX>=0 && sample->imageX<film->xResolution &&
+		sample->imageY>=0 && sample->imageY<film->yResolution )
+		return true;
+	else
+		return false;
+
+	return true;
 }

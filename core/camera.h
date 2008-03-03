@@ -29,9 +29,25 @@
 #include "sampling.h"
 #include "geometry.h"
 //#include "transform.h"
+#include "error.h"
 
 namespace lux
 {
+	struct Sample_stub {
+		// Reference to the sampler for lazy evaluation
+		Sampler *sampler;
+		// Camera _Sample_ Data
+		float imageX, imageY;
+		float lensU, lensV;
+		float time;
+		float wavelengths, singleWavelength;
+		// Integrator _Sample_ Data
+		mutable int stamp;
+		vector<u_int> n1D, n2D, nxD, dxD;
+		vector<vector<u_int> > sxD;
+		float **oneD, **twoD, **xD;
+		int **timexD;
+	};
 
 // Camera Declarations
 class  Camera {
@@ -39,6 +55,25 @@ public:
 	// Camera Interface
 	virtual float GenerateRay(const Sample &sample,
 		                      Ray *ray) const = 0;
+	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsVisibleFromEyes() method called");
+		return false;
+	}
+	virtual float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetConnectingFactor() method called");
+		return 0;
+	}
+	virtual void GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetFlux2RadianceFactor() method called");
+	}
+	virtual bool IsDelta() const
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
+		return true;
+	}
 	virtual ~Camera();
 	Camera(const Transform &world2cam, float hither, float yon,
 		float sopen, float sclose, Film *film);
@@ -59,9 +94,11 @@ public:
 		float sopen, float sclose,
 		float lensr, float focald, Film *film);
 protected:
+	bool GenerateSample(const Point &p, Sample *sample) const;
 	// ProjectiveCamera Protected Data
 	Transform CameraToScreen, WorldToScreen, RasterToCamera;
 	Transform ScreenToRaster, RasterToScreen;
+	Transform WorldToRaster;
 	float LensRadius, FocalDistance;
 };
 
