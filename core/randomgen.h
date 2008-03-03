@@ -27,7 +27,6 @@
 #include <boost/random.hpp>
 #include <boost/random/mersenne_twister.hpp>
 
-#include "../renderer/include/asio.hpp"
 #include <boost/thread/tss.hpp>
 
 namespace lux

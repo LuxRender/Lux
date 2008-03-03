@@ -24,11 +24,10 @@
 #define LUX_MIPMAP_H
 // mipmap.h*
 #include "lux.h"
-#include "color.h"
 #include "spectrum.h"
+#include "texture.h"
 #include "texturecolor.h"
 #include "memory.h"
-#include "texture.h"
 
 namespace lux
 {

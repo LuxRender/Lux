@@ -22,6 +22,8 @@
 
 // point.cpp*
 #include "point.h"
+#include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

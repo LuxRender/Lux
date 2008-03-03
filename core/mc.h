@@ -24,7 +24,7 @@
 #define LUX_MC_H
 // mc.h*
 
-#include "geometry.h"
+#include "geometry/vector.h"
 
 // MC Utility Declarations
 namespace lux

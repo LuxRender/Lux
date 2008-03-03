@@ -26,6 +26,7 @@
 #include "specularreflection.h"
 #include "speculartransmission.h"
 #include "fresneldielectric.h"
+#include "paramset.h"
 
 using namespace lux;
 

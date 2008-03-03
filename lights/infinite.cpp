@@ -23,6 +23,8 @@
 // infinite.cpp*
 #include "infinite.h"
 #include "imagereader.h"
+#include "mc.h"
+#include "paramset.h"
 using namespace lux;
 
 // InfiniteAreaLight Method Definitions

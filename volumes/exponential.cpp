@@ -22,6 +22,7 @@
 
 // exponential.cpp*
 #include "exponential.h"
+#include "paramset.h"
 
 using namespace lux;
 

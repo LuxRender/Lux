@@ -22,6 +22,7 @@
 
 // perspective.cpp*
 #include "perspective.h"
+#include "sampling.h"
 #include "mc.h"
 #include "scene.h" // for struct Intersection
 

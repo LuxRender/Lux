@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "plymesh.h"
+#include "paramset.h"
 
 #include "trianglemesh.h"
 #include "./plymesh/rply.h"

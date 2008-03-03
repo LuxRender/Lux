@@ -22,6 +22,7 @@
 
 // hyperboloid.cpp*
 #include "hyperboloid.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -29,6 +29,7 @@
 #include "fresneldielectric.h"
 #include "microfacet.h"
 #include "blinn.h"
+#include "paramset.h"
 
 using namespace lux;
 

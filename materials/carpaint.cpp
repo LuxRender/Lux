@@ -30,6 +30,7 @@
 #include "fresnelslick.h"
 #include "microfacet.h"
 #include "fresnelblend.h"
+#include "paramset.h"
 
 using namespace lux;
 

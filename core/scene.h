@@ -25,20 +25,11 @@
 // scene.h*
 #include "lux.h"
 #include "primitive.h"
-#include "transport.h"
+#include "sampling.h"
 #include "timer.h"
-#include "camera.h"
-#include "film.h"
-#include "reflection.h"
 
-#include <iostream>
-#include <vector>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/xtime.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/bind.hpp>
-#include <boost/thread/tss.hpp>
-//#include <boost/thread/mutex.hpp>
 
 namespace lux
 {

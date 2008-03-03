@@ -26,8 +26,11 @@
 #include "fresnelconductor.h"
 #include "microfacet.h"
 #include "blinn.h"
+#include "paramset.h"
 
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
+#include <fstream>
 
 using namespace lux;
 

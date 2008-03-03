@@ -23,7 +23,8 @@
 #ifndef LUX_ERROR_H
 #define LUX_ERROR_H
 
-#include <iostream>
+#include "api.h"
+
 #include <sstream>
 #include <string>
 
@@ -31,8 +32,6 @@
 #define BOOST_ENABLE_ASSERTS
 //#define BOOST_DISABLE_ASSERTS
 #include <boost/assert.hpp>
-
-#include "api.h"
 
 extern LuxErrorHandler luxError;
 

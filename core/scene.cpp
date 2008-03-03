@@ -32,6 +32,10 @@
 #include "error.h"
 #include "context.h"
 #include "bxdf.h"
+#include "light.h"
+
+#include <boost/thread/xtime.hpp>
+#include <boost/bind.hpp>
 
 using namespace lux;
 

@@ -22,6 +22,7 @@
 
 // cone.cpp*
 #include "cone.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -22,6 +22,7 @@
 
 // kdtree.cpp*
 #include "kdtreeaccel.h"
+#include "paramset.h"
 
 using namespace lux;
 

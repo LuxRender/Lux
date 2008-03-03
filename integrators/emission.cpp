@@ -22,6 +22,7 @@
 
 // emission.cpp*
 #include "emission.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -23,6 +23,8 @@
 // shape.cpp*
 #include "shape.h"
 #include "primitive.h"
+#include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 

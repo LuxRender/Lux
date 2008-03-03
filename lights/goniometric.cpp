@@ -23,6 +23,8 @@
 // goniometric.cpp*
 #include "goniometric.h"
 #include "imagereader.h"
+#include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

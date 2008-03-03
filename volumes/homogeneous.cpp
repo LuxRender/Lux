@@ -22,6 +22,7 @@
 
 // homogeneous.cpp*
 #include "homogeneous.h"
+#include "paramset.h"
 
 using namespace lux;
 

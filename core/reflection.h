@@ -23,12 +23,6 @@
 #ifndef LUX_REFLECTION_H
 #define LUX_REFLECTION_H
 // reflection.h*
-#include "lux.h"
-#include "geometry.h"
-#include "shape.h"
-
-
-#include <boost/thread/tss.hpp>
 
 namespace lux
 {

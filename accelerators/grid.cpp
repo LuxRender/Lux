@@ -25,6 +25,7 @@
 #include "grid.h"
 #include "stats.h"
 #include "memory.h"
+#include "paramset.h"
 
 using namespace lux;
 

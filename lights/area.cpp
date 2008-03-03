@@ -22,7 +22,9 @@
 
 // area.cpp*
 #include "light.h"
+#include "mc.h"
 #include "primitive.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -22,6 +22,7 @@
 
 // maxwhite.cpp*
 #include "maxwhite.h"
+#include "paramset.h"
 
 using namespace lux;
 

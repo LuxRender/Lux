@@ -27,9 +27,11 @@
 
 // realistic.ccp
 #include "realistic.h"
-#include "mc.h"
-
+#include "sampling.h"
 #include "shape.h"
+#include "mc.h"
+#include "dynload.h"
+
 #include <fstream>
 using std::ifstream;
 

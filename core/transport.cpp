@@ -24,6 +24,8 @@
 #include "transport.h"
 #include "scene.h"
 #include "bxdf.h"
+#include "light.h"
+#include "mc.h"
 
 namespace lux
 {

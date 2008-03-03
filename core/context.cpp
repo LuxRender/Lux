@@ -23,6 +23,8 @@
 #include "lux.h"
 #include "api.h"
 #include "context.h"
+#include "camera.h"
+#include "light.h"
 #include "stats.h"
 
 #include <boost/iostreams/filtering_stream.hpp>

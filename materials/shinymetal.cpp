@@ -27,6 +27,7 @@
 #include "blinn.h"
 #include "microfacet.h"
 #include "specularreflection.h"
+#include "paramset.h"
 
 using namespace lux;
 

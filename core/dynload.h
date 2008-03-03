@@ -24,7 +24,6 @@
 #define LUX_DYNLOAD_H
 // dynload.h*
 #include "lux.h"
-#include "texture.h"
 
 namespace lux
 {

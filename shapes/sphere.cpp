@@ -22,6 +22,7 @@
 
 // sphere.cpp*
 #include "sphere.h"
+#include "paramset.h"
 
 using namespace lux;
 

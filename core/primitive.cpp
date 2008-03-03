@@ -23,6 +23,7 @@
 // primitive.cpp*
 #include "primitive.h"
 #include "light.h"
+#include "material.h"
 
 using namespace lux;
 

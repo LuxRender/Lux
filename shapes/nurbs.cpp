@@ -22,6 +22,7 @@
 
 // nurbs.cpp*
 #include "nurbs.h"
+#include "paramset.h"
 
 using namespace lux;
 

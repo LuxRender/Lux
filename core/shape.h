@@ -25,9 +25,6 @@
 // shape.h*
 #include "lux.h"
 #include "geometry.h"
-//#include "transform.h"
-#include "paramset.h"
-#include "dynload.h"
 #include "error.h"
 
 namespace lux

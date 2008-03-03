@@ -25,6 +25,7 @@
 #include "bxdf.h"
 #include "specularreflection.h"
 #include "fresnelnoop.h"
+#include "paramset.h"
 
 using namespace lux;
 

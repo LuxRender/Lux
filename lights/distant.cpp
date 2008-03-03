@@ -22,6 +22,8 @@
 
 // distant.cpp*
 #include "distant.h"
+#include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

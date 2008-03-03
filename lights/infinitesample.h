@@ -23,6 +23,7 @@
 // infinitesample.cpp*
 #include "lux.h"
 #include "light.h"
+#include "mc.h"
 #include "texture.h"
 #include "shape.h"
 #include "scene.h"

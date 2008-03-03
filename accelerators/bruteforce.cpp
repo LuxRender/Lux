@@ -26,6 +26,7 @@
 
 // bruteforce.cpp*
 #include "bruteforce.h"
+#include "paramset.h"
 
 using namespace lux;
 

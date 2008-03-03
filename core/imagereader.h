@@ -24,7 +24,6 @@
 #define LUX_IMAGEREADER_H
 #include <memory>
 #include "lux.h"
-#include "color.h"
 #include "texturecolor.h"
 #include "mipmap.h"
 using namespace std;

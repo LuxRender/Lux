@@ -24,11 +24,6 @@
 #define LUX_MATERIAL_H
 // material.h*
 #include "lux.h"
-#include "primitive.h"
-#include "texture.h"
-#include "color.h"
-#include "spectrum.h"
-#include "reflection.h"
 
 namespace lux
 {

@@ -27,6 +27,7 @@
 #include "microfacet.h"
 #include "blinn.h"
 #include "anisotropic.h"
+#include "paramset.h"
 
 using namespace lux;
 

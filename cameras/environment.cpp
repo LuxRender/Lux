@@ -22,6 +22,7 @@
 
 // environment.cpp*
 #include "environment.h"
+#include "sampling.h"
 #include "scene.h" // for struct Intersection
 
 using namespace lux;
@@ -58,7 +59,7 @@ bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
 	float theta, phi;
 	theta = acosf(dir_camera.y);
 	phi = acosf(dir_camera.x/sinf(theta));
-	if (_isnan(phi))
+	if (isnan(phi))
 		phi=atanf(dir_camera.z/dir_camera.x);
 	if (dir_camera.z<0)
 		phi = M_PI * 2 - phi;

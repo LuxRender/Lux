@@ -23,8 +23,6 @@
 #ifndef LUX_TONEMAP_H
 #define LUX_TONEMAP_H
 // tonemap.h*
-#include "lux.h"
-#include "film.h"
 // ToneMap Declarations
 class ToneMap {
 public:

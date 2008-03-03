@@ -25,7 +25,7 @@
 // primitive.h*
 #include "lux.h"
 #include "shape.h"
-#include "material.h"
+#include "geometry/transform.h"
 
 namespace lux
 {

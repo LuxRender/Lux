@@ -23,6 +23,8 @@
 // projection.cpp*
 #include "projection.h"
 #include "imagereader.h"
+#include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

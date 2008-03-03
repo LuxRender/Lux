@@ -22,6 +22,8 @@
 
 // single.cpp*
 #include "single.h"
+#include "light.h"
+#include "paramset.h"
 
 using namespace lux;
 

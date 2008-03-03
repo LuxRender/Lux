@@ -26,6 +26,9 @@
 #include "paramset.h"
 #include "renderfarm.h"
 
+#include "../renderer/include/asio.hpp"
+
+#include <fstream>
 #include <boost/iostreams/filtering_stream.hpp>
 //#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>

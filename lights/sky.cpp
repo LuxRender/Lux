@@ -22,6 +22,8 @@
 
 // sky.cpp*
 #include "sky.h"
+#include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

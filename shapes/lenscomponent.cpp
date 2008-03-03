@@ -28,6 +28,7 @@
 // lenscomponent.cpp*
 #include "lenscomponent.h"
 #include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

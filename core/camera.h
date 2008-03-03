@@ -24,11 +24,7 @@
 #define LUX_CAMERA_H
 // camera.h*
 #include "lux.h"
-#include "color.h"
-#include "spectrum.h"
-#include "sampling.h"
-#include "geometry.h"
-//#include "transform.h"
+#include "geometry/transform.h"
 #include "error.h"
 
 namespace lux

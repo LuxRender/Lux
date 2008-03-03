@@ -22,6 +22,7 @@
 
 // cylinder.cpp*
 #include "cylinder.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -23,17 +23,9 @@
 #ifndef LUX_PARAMSET_H
 #define LUX_PARAMSET_H
 // paramset.h*
-#include <fstream>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/split_member.hpp>
-
 #include "lux.h"
 #include "geometry.h"
 #include "texture.h"
-#include "color.h"
 #include "spectrum.h"
 
 

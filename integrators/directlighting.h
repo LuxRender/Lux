@@ -22,6 +22,7 @@
 
 // directlighting.cpp*
 #include "lux.h"
+#include "light.h"
 #include "transport.h"
 #include "scene.h"
 

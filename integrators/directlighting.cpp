@@ -23,6 +23,7 @@
 // directlighting.cpp*
 #include "directlighting.h"
 #include "bxdf.h"
+#include "paramset.h"
 
 using namespace lux;
 

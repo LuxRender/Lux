@@ -23,7 +23,6 @@
 #ifndef LUX_CIE_H
 #define LUX_CIE_H
 // cie.h*
-#include "spectrum.h"
 #include "spd.h"
 #include <assert.h>
 

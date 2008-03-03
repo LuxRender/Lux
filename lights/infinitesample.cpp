@@ -23,6 +23,7 @@
 // infinitesample.cpp*
 #include "infinitesample.h"
 #include "imagereader.h"
+#include "paramset.h"
 using namespace lux;
 
 // InfiniteAreaLightIS Method Definitions

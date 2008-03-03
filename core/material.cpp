@@ -22,6 +22,9 @@
 
 // material.cpp*
 #include "material.h"
+#include "shape.h"
+#include "texture.h"
+#include "geometry.h"
 
 using namespace lux;
 

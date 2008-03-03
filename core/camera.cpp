@@ -25,6 +25,7 @@
 #include "camera.h"
 #include "film.h"
 #include "mc.h"
+#include "sampling.h"
 #include "error.h"
 
 using namespace lux;

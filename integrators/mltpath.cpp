@@ -26,6 +26,8 @@
 // mltpath.cpp*
 #include "mltpath.h"
 #include "bxdf.h"
+#include "light.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -22,6 +22,7 @@
 
 // heightfield.cpp*
 #include "heightfield.h"
+#include "paramset.h"
 
 using namespace lux;
 

@@ -23,6 +23,8 @@
 // path.cpp*
 #include "path.h"
 #include "bxdf.h"
+#include "light.h"
+#include "paramset.h"
 
 using namespace lux;
 

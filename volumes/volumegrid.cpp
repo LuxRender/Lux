@@ -22,6 +22,8 @@
 
 // volumegrid.cpp*
 #include "volumegrid.h"
+#include "paramset.h"
+#include "error.h"
 
 using namespace lux;
 

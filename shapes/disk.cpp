@@ -22,6 +22,7 @@
 
 // disk.cpp*
 #include "disk.h"
+#include "paramset.h"
 
 using namespace lux;
 

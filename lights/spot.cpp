@@ -22,6 +22,8 @@
 
 // spot.cpp*
 #include "spot.h"
+#include "mc.h"
+#include "paramset.h"
 
 using namespace lux;
 

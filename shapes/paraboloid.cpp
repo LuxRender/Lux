@@ -22,6 +22,7 @@
 
 // paraboloid.cpp*
 #include "paraboloid.h"
+#include "paramset.h"
 
 using namespace lux;
 

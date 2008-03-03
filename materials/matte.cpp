@@ -25,6 +25,7 @@
 #include "bxdf.h"
 #include "lambertian.h"
 #include "orennayar.h"
+#include "paramset.h"
 
 using namespace lux;
 

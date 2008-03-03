@@ -25,6 +25,7 @@
 
 #include "dynload.h"
 #include "paramset.h"
+#include "light.h"
 #include "shape.h"
 #include "material.h"
 #include "texture.h"

@@ -24,13 +24,7 @@
 #define LUX_TRANSPORT_H
 // transport.h*
 #include "lux.h"
-#include "primitive.h"
-#include "color.h"
 #include "spectrum.h"
-#include "light.h"
-#include "reflection.h"
-#include "sampling.h"
-#include "material.h"
 
 namespace lux
 {

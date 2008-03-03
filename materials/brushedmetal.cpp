@@ -24,6 +24,7 @@
 #include "brushedmetal.h"
 #include "bxdf.h"
 #include "lafortune.h"
+#include "paramset.h"
 
 using namespace lux;
 

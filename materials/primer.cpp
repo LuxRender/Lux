@@ -24,6 +24,7 @@
 #include "primer.h"
 #include "bxdf.h"
 #include "lafortune.h"
+#include "paramset.h"
 
 using namespace lux;
 
