@@ -107,6 +107,8 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		// Possibly add emitted light at path vertex
 		if (pathLength == 0 || specularBounce)
 			L += pathThroughput * isect.Le(-ray.d);
+		if (pathLength == maxDepth)
+			break;
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(ray);
 		// Sample illumination from lights to find path contribution
@@ -129,8 +131,6 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 					wo, bsdf, sample); 
 
 		// Possibly terminate the path
-		if (pathLength == maxDepth)
-			break;
 		if (pathLength > 3) {
 			if (data[6]/*sample->oneD[continueOffset[pathLength]][0]*/ > continueProbability)
 				break;
