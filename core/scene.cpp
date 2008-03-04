@@ -118,7 +118,9 @@ double Scene::Statistics_SamplesPPx()
 		samples +=renderThreads[i]->stat_Samples;
 
 	// divide by total pixels
-	return samples / (double) (camera->film->xResolution * camera->film->yResolution);
+	int xstart,xend,ystart,yend;
+	camera->film->GetSampleExtent(&xstart,&xend,&ystart,&yend);
+	return samples / (double) ((xend-xstart)*(yend-ystart));
 }
 
 double Scene::Statistics_SamplesPSec()
@@ -283,7 +285,7 @@ void Scene::Render() {
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
-	sampPos = 1;
+	sampPos = 0;
 
 	//start the timer
 	s_Timer.Start();

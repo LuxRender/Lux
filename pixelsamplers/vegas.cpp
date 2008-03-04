@@ -29,9 +29,8 @@ using namespace lux;
 // VegasPixelSampler Method Definitions
 VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		int ystart, int yend) {
-	u_int xPos = xstart - 1;
+	u_int xPos = xstart;
 	u_int yPos = ystart;
-
 	// fill Pxa array in film pixel order
 	unsigned short int x = (unsigned short int) xPos;
 	unsigned short int y = (unsigned short int) yPos;
@@ -41,12 +40,13 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		px.x = x; px.y = y;
 		Pxa.push_back(px);
 		x++;
-		if(x == xend) {
-			x = 0;
-			y++;
-			if(y == yend) break;
-		}
 		TotalPx++;
+		if(x == xend) {
+			x = xstart;
+			y++;
+			if(y == yend)
+				break;
+		}
 	}
 
 	// Shuffle elements by randomly exchanging each with one other.

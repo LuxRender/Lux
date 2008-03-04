@@ -79,7 +79,7 @@ public:
 
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;
-	void WriteImage() {};
+	void WriteImage() {WriteImage( WI_HDR );};
 	void WriteImage(int oType);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
