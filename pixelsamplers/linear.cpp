@@ -29,11 +29,11 @@ using namespace lux;
 // LinearPixelSampler Method Definitions
 LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 		int ystart, int yend) {
-	u_int xPos = xstart;
-	u_int yPos = ystart;
+	int xPos = xstart;
+	int yPos = ystart;
 	// fill Pxa array in film pixel order
-	unsigned short int x = (unsigned short int) xPos;
-	unsigned short int y = (unsigned short int) yPos;
+	short int x = (unsigned short int) xPos;
+	short int y = (unsigned short int) yPos;
 	TotalPx = 0;
 	while(true) {
 		PxLoc px;

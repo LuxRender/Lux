@@ -91,6 +91,9 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			if (pathLength == 0 || specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					L += pathThroughput * scene->lights[i]->Le(ray); 
+			// NOTE - MLJack - Initialize the variable alpha
+			// (Sometimes alpha is a QNAN.)
+			if (alpha) *alpha = 1.;
 			// Set alpha channel NOTE - RADIANCE - disabled for now
 			/*if (pathLength == 0 && alpha) {
 				if (L != 0.) *alpha = 1.;

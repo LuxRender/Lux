@@ -29,11 +29,11 @@ using namespace lux;
 // VegasPixelSampler Method Definitions
 VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		int ystart, int yend) {
-	u_int xPos = xstart;
-	u_int yPos = ystart;
+	int xPos = xstart;
+	int yPos = ystart;
 	// fill Pxa array in film pixel order
-	unsigned short int x = (unsigned short int) xPos;
-	unsigned short int y = (unsigned short int) yPos;
+	short int x = (unsigned short int) xPos;
+	short int y = (unsigned short int) yPos;
 	TotalPx = 0;
 	while(true) {
 		PxLoc px;
@@ -53,7 +53,7 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
     for (u_int i=0; i<TotalPx; i++) {
 		u_int r = Ceil2Int( lux::random::floatValue() * TotalPx );
 		// swap
-		unsigned short int temp = Pxa[i].x; Pxa[i].x = Pxa[r].x; Pxa[r].x = temp;
+		short int temp = Pxa[i].x; Pxa[i].x = Pxa[r].x; Pxa[r].x = temp;
 		temp = Pxa[i].y; Pxa[i].y = Pxa[r].y; Pxa[r].y = temp;
     } 
 }

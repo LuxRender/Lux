@@ -251,8 +251,8 @@ inline void HaltonShuffleScrambled2D(int nSamples,
 }
 // PxLoc X and Y pixel coordinate struct
 struct PxLoc {
-	unsigned short x;
-	unsigned short y;
+	short x;
+	short y;
 };
 class PixelSampler {
 public:

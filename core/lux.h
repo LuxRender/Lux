@@ -228,6 +228,9 @@ namespace lux
   void WriteRGBAImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
+  void WriteRGBAImageFloat(const string &name,
+	  float *pixels, float *alpha, int XRes, int YRes,
+	  int totalXRes, int totalYRes, int xOffset, int yOffset);
   void WriteIgiImage(const string &name,
 	float *pixels, float *alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
