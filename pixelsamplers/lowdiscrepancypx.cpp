@@ -42,9 +42,7 @@ u_int LowdiscrepancyPixelSampler::GetTotalPixels() {
 }
 
 bool LowdiscrepancyPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-		xPos = xPixelStart + 
-				Ceil2Int( VanDerCorput( *use_pos, xSeed ) * xPixelEnd );
-			yPos = yPixelStart + 
-				Ceil2Int( Sobol2( *use_pos, ySeed ) * yPixelEnd );
+	xPos = xPixelStart + Floor2Int( VanDerCorput( *use_pos, xSeed ) * (xPixelEnd - xPixelStart) );
+	yPos = yPixelStart + Floor2Int( Sobol2( *use_pos, ySeed ) * (yPixelEnd - yPixelStart) );
 	return true;
 }

@@ -40,9 +40,7 @@ u_int RandomPixelSampler::GetTotalPixels() {
 }
 
 bool RandomPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	xPos = xPixelStart + 
-				Ceil2Int( lux::random::floatValue() * (xPixelEnd - xPixelStart));
-	yPos = yPixelStart + 
-				Ceil2Int( lux::random::floatValue() * (yPixelEnd - yPixelStart)); 
+	xPos = xPixelStart + Floor2Int( lux::random::floatValue() * (xPixelEnd - xPixelStart) );
+	yPos = yPixelStart + Floor2Int( lux::random::floatValue() * (yPixelEnd - yPixelStart) ); 
 	return true;
 }
