@@ -55,8 +55,10 @@ u_int LinearPixelSampler::GetTotalPixels() {
 }
 
 bool LinearPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	if(*use_pos >= TotalPx)
+	static u_int counter = 0;
+	if(counter == TotalPx)
 		return false;
+	counter++;
 	xPos = Pxa[*use_pos].x;
 	yPos = Pxa[*use_pos].y;
 	return true;
