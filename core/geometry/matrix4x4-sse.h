@@ -24,6 +24,8 @@
 #ifndef LUX_MATRIX4X4_H
 #define LUX_MATRIX4X4_H
 
+#include <xmmintrin.h>
+
 namespace lux
 {
 
