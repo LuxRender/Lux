@@ -845,12 +845,12 @@ boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 // 380 to 720 nm, 34nm spacing, 10 values
  static float rgb2spect_white[] =	{ 1.0000, 1.0000, 0.9999, 0.9993, 0.9992, 0.9998, 1.0000, 1.0000, 1.0000, 1.0000 };
- static float rgb2spect_cyan[] =		{ 0.9710, 0.9426, 1.0007, 1.0007, 1.0007, 1.0007, 0.1564, 0.0000, 0.0000, 0.0000 };
- static float rgb2spect_magenta[] =	{ 1.0000, 1.0000, 0.9685, 0.2229, 0.0000, 0.0458, 0.8369, 1.0000, 1.0000, 0.0000 };
- static float rgb2spect_yellow[] =	{ 0.0001, 0.0000, 0.1088, 0.6651, 1.0000, 1.0000, 0.9996, 0.9586, 0.9685, 0.9959 };
- static float rgb2spect_red[] =		{ 0.1012, 0.0515, 0.0000, 0.0000, 0.0000, 0.0000, 0.8325, 1.0149, 1.0149, 0.9840 };
- static float rgb2spect_green[] =	{ 0.0000, 0.0000, 0.0273, 0.7937, 1.0000, 0.9418, 0.1719, 0.0000, 0.0000, 1.0149 };
- static float rgb2spect_blue[] =		{ 1.0000, 1.0000, 0.8916, 0.3323, 0.0000, 0.0000, 0.0003, 0.0369, 0.0483, 0.0496 };
+ static float rgb2spect_cyan[] =	{ 0.9710, 0.9426, 1.0007, 1.0007, 1.0007, 1.0007, 0.1564, 0.0000, 0.0000, 0.0000 };
+ static float rgb2spect_magenta[] =	{ 1.0000, 1.0000, 0.9685, 0.2229, 0.0000, 0.0458, 0.8369, 1.0000, 1.0000, 0.9959 };
+ static float rgb2spect_yellow[] =	{ 0.0001, 0.0000, 0.1088, 0.6651, 1.0000, 1.0000, 0.9996, 0.9586, 0.9685, 0.9840 };
+ static float rgb2spect_red[] =		{ 0.1012, 0.0515, 0.0000, 0.0000, 0.0000, 0.0000, 0.8325, 1.0149, 1.0149, 1.0149 };
+ static float rgb2spect_green[] =	{ 0.0000, 0.0000, 0.0273, 0.7937, 1.0000, 0.9418, 0.1719, 0.0000, 0.0000, 0.0025 };
+ static float rgb2spect_blue[] =	{ 1.0000, 1.0000, 0.8916, 0.3323, 0.0000, 0.0000, 0.0003, 0.0369, 0.0483, 0.0496 };
 
  static RegularSPD   rgbspect_white(rgb2spect_white, 380, 720, 10);
  static RegularSPD   rgbspect_cyan(rgb2spect_cyan, 380, 720, 10);
@@ -887,51 +887,51 @@ void SWCSpectrum::FromSpectrum(Spectrum s) {
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
 		c[j] = 0.;
 
-		if (r <= g && r <= b)
-		{
-			AddWeighted(r, thread_wavelengths->spect_w);
+	if (r <= g && r <= b)
+	{
+		AddWeighted(r, thread_wavelengths->spect_w);
 
-			if (g <= b)
-			{
-				AddWeighted(g - r, thread_wavelengths->spect_c);
-				AddWeighted(b - g, thread_wavelengths->spect_b);
-			}
-			else
-			{
-				AddWeighted(b - r, thread_wavelengths->spect_c);
-				AddWeighted(g - b, thread_wavelengths->spect_g);
-			}
-		}
-		else if (g <= r && g <= b)
+		if (g <= b)
 		{
-			AddWeighted(g, thread_wavelengths->spect_w);
-
-			if (r <= b)
-			{
-				AddWeighted(r - g, thread_wavelengths->spect_m);
-				AddWeighted(b - r, thread_wavelengths->spect_b);
-			}
-			else
-			{
-				AddWeighted(b - g, thread_wavelengths->spect_m);
-				AddWeighted(r - b, thread_wavelengths->spect_r);
-			}
+			AddWeighted(g - r, thread_wavelengths->spect_c);
+			AddWeighted(b - g, thread_wavelengths->spect_b);
 		}
-		else // blue <= red && blue <= green
+		else
 		{
-			AddWeighted(b, thread_wavelengths->spect_w);
-
-			if (r <= g)
-			{
-				AddWeighted(r - b, thread_wavelengths->spect_y);
-				AddWeighted(g - r, thread_wavelengths->spect_g);
-			}
-			else
-			{
-				AddWeighted(g - b, thread_wavelengths->spect_y);
-				AddWeighted(r - g, thread_wavelengths->spect_r);
-			}
+			AddWeighted(b - r, thread_wavelengths->spect_c);
+			AddWeighted(g - b, thread_wavelengths->spect_g);
 		}
+	}
+	else if (g <= r && g <= b)
+	{
+		AddWeighted(g, thread_wavelengths->spect_w);
+
+		if (r <= b)
+		{
+			AddWeighted(r - g, thread_wavelengths->spect_m);
+			AddWeighted(b - r, thread_wavelengths->spect_b);
+		}
+		else
+		{
+			AddWeighted(b - g, thread_wavelengths->spect_m);
+			AddWeighted(r - b, thread_wavelengths->spect_r);
+		}
+	}
+	else // blue <= red && blue <= green
+	{
+		AddWeighted(b, thread_wavelengths->spect_w);
+
+		if (r <= g)
+		{
+			AddWeighted(r - b, thread_wavelengths->spect_y);
+			AddWeighted(g - r, thread_wavelengths->spect_g);
+		}
+		else
+		{
+			AddWeighted(g - b, thread_wavelengths->spect_y);
+			AddWeighted(r - g, thread_wavelengths->spect_r);
+		}
+	}
 }
 
 void SWCSpectrum::FromSPD(const SPD *s) {
