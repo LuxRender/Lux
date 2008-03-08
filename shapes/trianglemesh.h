@@ -23,7 +23,7 @@
 // trianglemesh.cpp*
 #include "shape.h"
 #include "paramset.h"
-#include "core/mc.h"
+#include "mc.h"
 
 namespace lux
 {
