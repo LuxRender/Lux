@@ -234,9 +234,8 @@ void RenderThread::render(RenderThread *myThread)
 
 		// update samples statistics
 		myThread->stat_Samples++;
-
 		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
-		if(*useSampPos == 0 && maxSampPos != 0) {
+		if(*useSampPos == -1 && maxSampPos != 0) {
 			boost::mutex::scoped_lock lock(sampPosMutex);
 			sampPos++;
 			if( sampPos == maxSampPos )

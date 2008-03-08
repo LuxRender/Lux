@@ -81,8 +81,6 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		// fetch next pixel from pixelsampler
 		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
 			return false;
-		// reset so scene knows to increment
-		*use_pos = 0;
 
 		for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
 			imageSamples[i] = lux::random::floatValue();
@@ -95,6 +93,9 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		}
 		samplePos = 0;
 	}
+	// reset so scene knows to increment
+	if (samplePos >= xPixelSamples * yPixelSamples-1)
+		*use_pos = -1;
 	// Return next \mono{RandomSampler} sample point
 	sample->imageX = imageSamples[2*samplePos];
 	sample->imageY = imageSamples[2*samplePos+1];

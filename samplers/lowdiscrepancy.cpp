@@ -100,8 +100,6 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		// fetch next pixel from pixelsampler
 		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
 			return false;
-		// reset so scene knows to increment
-		*use_pos = 0;
 
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
@@ -138,6 +136,9 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			}
 		}
 	}
+	// reset so scene knows to increment
+	if (samplePos >= pixelSamples-1)
+		*use_pos = -1;
 	// Copy low-discrepancy samples from tables
 	sample->imageX = xPos + imageSamples[2*samplePos];
 	sample->imageY = yPos + imageSamples[2*samplePos+1];
