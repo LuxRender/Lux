@@ -48,7 +48,7 @@ public:
 			c[i] = v;
 	}
 	
-	Spectrum(float cs[COLOR_SAMPLES]) {
+	Spectrum(const float cs[COLOR_SAMPLES]) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = cs[i];
 	}
@@ -56,6 +56,11 @@ public:
 	Spectrum &operator+=(const Spectrum &s2) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] += s2.c[i];
+		return *this;
+	}
+	Spectrum &operator-=(const Spectrum &s2) {
+		for (int i = 0; i < COLOR_SAMPLES; ++i)
+			c[i] -= s2.c[i];
 		return *this;
 	}
 	Spectrum operator+(const Spectrum &s2) const {

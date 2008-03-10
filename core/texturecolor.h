@@ -61,6 +61,14 @@ namespace lux
 					c[i] += s2.c[i];
 			return *this;
 			}
+			TextureColor<T,colorSamples> &operator-=(const TextureColor<T,colorSamples> &s2) {
+			for (int i = 0; i < colorSamples; ++i)
+				if (c[i] < std::numeric_limits<T>::min() + s2.c[i])
+					c[i] = std::numeric_limits<T>::min();
+				else
+					c[i] -= s2.c[i];
+			return *this;
+			}
 			TextureColor<T,colorSamples> operator+(const TextureColor<T,colorSamples>  &s2) const {
 				TextureColor<T,colorSamples> ret = *this;
 				for (int i = 0; i < colorSamples; ++i)
