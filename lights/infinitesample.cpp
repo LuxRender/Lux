@@ -46,8 +46,8 @@ InfiniteAreaLightIS
 			height=imgdata->getHeight();
 			radianceMap = imgdata->createMIPMap<Spectrum>();
 		}
-		else 
-			radianceMap = NULL;
+	}
+	if (radianceMap != NULL) {
 	// Compute scalar-valued image from environment map
 	float filter = 1.f / max(width, height);
 	int nu = width, nv = height;
