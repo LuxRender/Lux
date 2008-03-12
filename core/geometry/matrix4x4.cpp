@@ -122,6 +122,16 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const
 
 #include "matrix4x4-sse.h"
 
+typedef long int32; //!Jeanphi: replaced int by long. Should use POSIX types
+#ifdef __GNUC__
+const float __attribute__ ((aligned(16))) _F1001[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+const int32 __attribute__ ((aligned(16))) _Sign_PNNP[4] = { 0x00000000, 0x80000000, 0x80000000, 0x00000000 };
+#else //intel compiler
+const _MM_ALIGN16 float _F1001[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+const _MM_ALIGN16 __int32 _Sign_PNNP[4] = { 0x00000000, 0x80000000, 0x80000000, 0x00000000 };
+#endif
+#define Sign_PNNP   (*(__m128*)&_Sign_PNNP)        // + - - +
+
 namespace lux
 {
 
