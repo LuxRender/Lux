@@ -257,18 +257,16 @@ T MIPMapImpl<T, U>::EWA(float s, float t, float ds0, float dt0,
 	float A = dt0 * dt0 + dt1 * dt1 + 1.;
 	float B = -2.f * (ds0 * dt0 + ds1 * dt1);
 	float C = ds0 * ds0 + ds1 * ds1 + 1.;
-	float invF = 1.f / (A * C - B * B * 0.25f);
-	A *= invF;
-	B *= invF;
-	C *= invF;
+	float F = A * C - B * B * 0.25f;
 	// Compute the ellipse's $(s,t)$ bounding box in texture space
-	float det = -B * B + 4.f * A * C;
-	float invDet = 1.f / det;
-	float uSqrt = sqrtf(det * C), vSqrt = sqrtf(A * det);
-	int s0 = Ceil2Int (s - 2.f * invDet * uSqrt);
-	int s1 = Floor2Int(s + 2.f * invDet * uSqrt);
-	int t0 = Ceil2Int (t - 2.f * invDet * vSqrt);
-	int t1 = Floor2Int(t + 2.f * invDet * vSqrt);
+	float du = sqrt(C), dv = sqrt(A);
+	int s0 = Ceil2Int(s - du);
+	int s1 = Floor2Int(s + du);
+	int t0 = Ceil2Int(t - dv);
+	int t1 = Floor2Int(t + dv);
+	A /= F;
+	B /= F;
+	C /= F;
 	// radiance - disabled for threading // static StatsRatio ewaTexels("Texture", "Texels per EWA lookup"); // NOBOOK
 	// radiance - disabled for threading // ewaTexels.Add((1+s1-s0) * (1+t1-t0), 1); // NOBOOK
 	// Scan over ellipse bound and compute quadratic equation
