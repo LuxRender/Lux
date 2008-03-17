@@ -201,14 +201,14 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 	// calculate accept probability from old and new image sample
 	float LY = L.y();
 	float accProb = min(1.0f, newLY / LY);
-	float newWeight = accProb * meanIntensity;
-	weight += (1. - accProb) * meanIntensity;
+	float newWeight = accProb;
+	weight += 1. - accProb;
 	if (mutation == 0)
 		accProb = 1.;
 
 	// try accepting of the new sample
-	if (accProb == 1. || lux::random::floatValue() < accProb /*|| consecRejects > totalMutations / 10*/) {
-		L *= weight / LY;
+	if (accProb == 1. || lux::random::floatValue() < accProb) {
+		L *= weight * meanIntensity / LY;
 		film->AddSample(sampleImage[0], sampleImage[1], L, alpha);
 		weight = newWeight;
 		L = newL.ToXYZ();
@@ -231,7 +231,7 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 		}
 		consecRejects = 0;
 	} else {
-		film->AddSample(sample.imageX, sample.imageY, newL * (newWeight / newLY), newAlpha);
+		film->AddSample(sample.imageX, sample.imageY, newL * (newWeight * meanIntensity / newLY), newAlpha);
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
 		sample.stamp = stamp;
