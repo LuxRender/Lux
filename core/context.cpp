@@ -21,10 +21,14 @@
  ***************************************************************************/
 
 #include "lux.h"
-#include "api.h"
 #include "context.h"
+#include "dynload.h"
+#include "api.h"
 #include "camera.h"
 #include "light.h"
+#include "primitive.h"
+#include "scene.h"
+#include "volume.h"
 #include "stats.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -32,7 +36,6 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 
-using asio::ip::tcp;
 using namespace boost::iostreams;
 using namespace lux;
 

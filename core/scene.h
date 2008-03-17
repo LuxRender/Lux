@@ -36,50 +36,48 @@ namespace lux
 
 class RenderThread : public boost::noncopyable
 {
-	public:
-		RenderThread( int _n, int _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam, Scene* _Scn)
-			: n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi), sampler(_Splr), camera(_Cam), scene(_Scn)
-		{
-			stat_Samples=0;
-			stat_blackSamples=0;
-			sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
+public:
+	RenderThread( int _n, int _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam, Scene* _Scn)
+		: n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi), sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn), thread(NULL) {
+		stat_Samples=0;
+		stat_blackSamples=0;
+		sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
 
-			//std::cout<<"Initializing the thread's memoryarena"<<std::endl;
-			//BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
-			//std::cout<<
-			//std::cout<<"yepeee, creating thread"<<std::endl;
-		}
-	
-		~RenderThread()
-		{
-			delete sample;
-			//delete arena;	
-			delete thread;
-		}
-		
-		static void render(RenderThread *r);
-		
-		int  n, signal;
-		double stat_Samples, stat_blackSamples;
-		SurfaceIntegrator *surfaceIntegrator;
-		VolumeIntegrator *volumeIntegrator;
-		Sample *sample;
-		Sampler *sampler;
-		Camera *camera;
-		Scene *scene;
-		//MemoryArena* arena;
-		boost::thread *thread; //keep pointer the delete the thread object
-		
-		static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
-		
-		/*
-		static MemoryArena& getArena()
-		{
-			return *(arena.get());
-		}*/
-		
-	//private:
-		//static boost::thread_specific_ptr<MemoryArena> arena;
+		//std::cout<<"Initializing the thread's memoryarena"<<std::endl;
+		//BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
+		//std::cout<<
+		//std::cout<<"yepeee, creating thread"<<std::endl;
+	}
+
+	~RenderThread()	{
+		delete sample;
+		//delete arena;	
+		delete thread;
+	}
+
+	static void render(RenderThread *r);
+
+	int  n, signal;
+	double stat_Samples, stat_blackSamples;
+	SurfaceIntegrator *surfaceIntegrator;
+	VolumeIntegrator *volumeIntegrator;
+	Sample *sample;
+	Sampler *sampler;
+	Camera *camera;
+	Scene *scene;
+	//MemoryArena* arena;
+	boost::thread *thread; //keep pointer the delete the thread object
+
+	static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
+
+	/*
+	static MemoryArena& getArena()
+	{
+		return *(arena.get());
+	}*/
+
+//private:
+	//static boost::thread_specific_ptr<MemoryArena> arena;
 };
 
 // Scene Declarations

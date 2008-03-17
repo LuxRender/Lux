@@ -46,6 +46,15 @@ public:
 	virtual Integrator* clone() const = 0;   // Lux Virtual (Copy) Constructor for multithreading
 };
 class SurfaceIntegrator : public Integrator {
+public:
+	virtual SurfaceIntegrator* clone() const = 0;
+};
+class VolumeIntegrator : public Integrator {
+public:
+	virtual SWCSpectrum Transmittance(const Scene *scene,
+		const Ray &ray, const Sample *sample,
+		float *alpha) const = 0;
+	virtual VolumeIntegrator* clone() const = 0;
 };
  SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo,

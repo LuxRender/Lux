@@ -936,6 +936,6 @@ void SWCSpectrum::FromSpectrum(Spectrum s) {
 
 void SWCSpectrum::FromSPD(const SPD *s) {
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-		s->sample(thread_wavelengths->w[j], c[j]);
+		c[j] = s->sample(thread_wavelengths->w[j]);
 	}
 }

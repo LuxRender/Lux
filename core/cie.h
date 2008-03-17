@@ -24,7 +24,7 @@
 #define LUX_CIE_H
 // cie.h*
 #include "spd.h"
-#include <assert.h>
+#include <cassert>
 
 namespace lux
 {

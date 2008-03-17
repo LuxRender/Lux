@@ -24,7 +24,7 @@
 #define LUX_TRIANGLE_H
 
 // triangle.cpp*
-#include "sampling.h"
+#include "filter.h"
 #include "paramset.h"
 
 namespace lux

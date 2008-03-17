@@ -24,7 +24,7 @@
 #define LUX_MITCHELL_H
 
 // mitchell.cpp*
-#include "sampling.h"
+#include "filter.h"
 #include "paramset.h"
 
 namespace lux
@@ -40,12 +40,12 @@ public:
 	float Mitchell1D(float x) const {
 		x = fabsf(2.f * x);
 		if (x > 1.f)
-			return ((-B - 6*C) * x*x*x + (6*B + 30*C) * x*x +
-				(-12*B - 48*C) * x + (8*B + 24*C)) * (1.f/6.f);
+			return (((-B/6.f - C) * x + (B + 5.f*C)) * x +
+				(-2.f*B - 8.f*C)) * x + (4.f/3.f*B + 4.f*C);
 		else
-			return ((12 - 9*B - 6*C) * x*x*x +
-				(-18 + 12*B + 6*C) * x*x +
-				(6 - 2*B)) * (1.f/6.f);
+			return ((2.f - 1.5f*B - C) * x +
+				(-3.f + 2.f*B + C)) * x*x +
+				(1.f - B/3.f);
 	}
 	
 	static Filter *CreateFilter(const ParamSet &ps);

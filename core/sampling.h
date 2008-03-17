@@ -33,10 +33,8 @@ namespace lux
 class  Sampler {
 public:
 	// Sampler Interface
-	virtual ~Sampler();
-	Sampler(int xstart, int xend,
-	        int ystart, int yend,
-			int spp);
+	virtual ~Sampler() {}
+	Sampler(int xstart, int xend, int ystart, int yend, int spp);
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	virtual u_int GetTotalSamplePos() = 0;
@@ -100,17 +98,28 @@ public:
 	float **oneD, **twoD, **xD;
 	int **timexD;
 };
- void StratifiedSample1D(float *samples,
-					            int nsamples,
-						        bool jitter = true);
- void StratifiedSample2D(float *samples,
-                                int nx, int ny,
-								bool jitter = true);
- void Shuffle(float *samp, int count, int dims);
+// PxLoc X and Y pixel coordinate struct
+struct PxLoc {
+	short x;
+	short y;
+};
+class PixelSampler {
+public:
+	PixelSampler() {}
+	virtual ~PixelSampler() {}
+	virtual u_int GetTotalPixels() = 0;
+	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos) = 0;
+};
 
+void StratifiedSample1D(float *samples, int nsamples, bool jitter = true);
+void StratifiedSample2D(float *samples, int nx, int ny, bool jitter = true);
+void Shuffle(float *samp, int count, int dims);
 void LatinHypercube(float *samples, int nSamples, int nDim);
-inline double RadicalInverse(int n, int base) {
-	double val = 0;
+
+// Sampling Inline Functions
+inline double RadicalInverse(int n, int base)
+{
+	double val = 0.;
 	double invBase = 1. / base, invBi = invBase;
 	while (n > 0) {
 		// Compute next digit of radical inverse
@@ -121,13 +130,14 @@ inline double RadicalInverse(int n, int base) {
 	}
 	return val;
 }
-inline double FoldedRadicalInverse(int n, int base) {
-	double val = 0;
-	double invBase = 1.f/base, invBi = invBase;
+inline double FoldedRadicalInverse(int n, int base)
+{
+	double val = 0.;
+	double invBase = 1. / base, invBi = invBase;
 	int modOffset = 0;
 	while (val + base * invBi != val) {
 		// Compute next digit of folded radical inverse
-		int digit = ((n+modOffset) % base);
+		int digit = ((n + modOffset) % base);
 		val += digit * invBi;
 		n /= base;
 		invBi *= invBase;
@@ -135,43 +145,44 @@ inline double FoldedRadicalInverse(int n, int base) {
 	}
 	return val;
 }
-inline float
-	VanDerCorput(u_int n, u_int scramble = 0);
-inline float
-	Sobol2(u_int n, u_int scramble = 0);
-inline float
-	LarcherPillichshammer2(u_int n, u_int scramble = 0);
-inline float 
-	Halton(u_int n, u_int scramble = 0);
-inline float 
-	Halton2(u_int n, u_int scramble = 0);
-inline void
-	Sample02(u_int n,
-	            u_int scramble[2], float sample[2]);
-inline void
-	SampleHalton(u_int n,
-	            u_int scramble[2], float sample[2]);
-class Filter {
-public:
-	// Filter Interface
-	virtual ~Filter() { }
-	Filter(float xw, float yw)
-		: xWidth(xw), yWidth(yw), invXWidth(1.f/xw),
-			invYWidth(1.f/yw) {
-	}
-	virtual float Evaluate(float x, float y) const = 0;
-	// Filter Public Data
-	const float xWidth, yWidth;
-	const float invXWidth, invYWidth;
-};
-// Sampling Inline Functions
-inline void Sample02(u_int n, u_int scramble[2],
-                                  float sample[2]) {
-	sample[0] = VanDerCorput(n, scramble[0]);
-	sample[1] = Sobol2(n, scramble[1]);
+inline float VanDerCorput(u_int n, u_int scramble = 0)
+{
+	n = (n << 16) | (n >> 16);
+	n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8);
+	n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4);
+	n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
+	n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
+	n ^= scramble;
+	return (float)n / (float)0x100000000LL;
 }
-inline void SampleHalton(u_int n, u_int scramble[2],
-                                  float sample[2]) {
+inline float Sobol2(u_int n, u_int scramble = 0)
+{
+	for (u_int v = 1u << 31; n != 0; n >>= 1, v ^= v >> 1)
+		if (n & 0x1) scramble ^= v;
+	return (float)scramble / (float)0x100000000LL;
+}
+inline float LarcherPillichshammer2(u_int n, u_int scramble = 0)
+{
+	for (u_int v = 1u << 31; n != 0; n >>= 1, v |= v >> 1)
+		if (n & 0x1) scramble ^= v;
+	return (float)scramble / (float)0x100000000LL;
+}
+inline float Halton(u_int n, u_int scramble = 0)
+{
+	float s = FoldedRadicalInverse(n, 2);
+	u_int s0 = (u_int) (s * (float)0x100000000LL);
+	s0 ^= scramble;
+	return (float)s0 / (float)0x100000000LL;
+}
+inline float Halton2(u_int n, u_int scramble = 0)
+{
+	float s = FoldedRadicalInverse(n, 3);
+	u_int s0 = (u_int) (s * (float)0x100000000LL);
+	s0 ^= scramble;
+	return (float)s0 / (float)0x100000000LL;
+}
+inline void SampleHalton(u_int n, u_int scramble[2], float sample[2])
+{
 	sample[0] = FoldedRadicalInverse(n, 2);
 	sample[1] = FoldedRadicalInverse(n, 3);
 	u_int s0 = (u_int) (sample[0] * (float)0x100000000LL);
@@ -181,38 +192,12 @@ inline void SampleHalton(u_int n, u_int scramble[2],
 	sample[0] = (float)s0 / (float)0x100000000LL;
 	sample[1] = (float)s1 / (float)0x100000000LL;
 }
-inline float VanDerCorput(u_int n, u_int scramble) {
-	n = (n << 16) | (n >> 16);
-	n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8);
-	n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4);
-	n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
-	n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
-	n ^= scramble;
-	return (float)n / (float)0x100000000LL;
+inline void Sample02(u_int n, u_int scramble[2], float sample[2])
+{
+	sample[0] = VanDerCorput(n, scramble[0]);
+	sample[1] = Sobol2(n, scramble[1]);
 }
-inline float Halton(u_int n, u_int scramble) {
-	float s = FoldedRadicalInverse(n, 2);
-	u_int s0 = (u_int) (s * (float)0x100000000LL);
-	s0 ^= scramble;
-	return (float)s0 / (float)0x100000000LL;
-}
-inline float Halton2(u_int n, u_int scramble) {
-	float s = FoldedRadicalInverse(n, 3);
-	u_int s0 = (u_int) (s * (float)0x100000000LL);
-	s0 ^= scramble;
-	return (float)s0 / (float)0x100000000LL;
-}
-inline float Sobol2(u_int n, u_int scramble) {
-	for (u_int v = 1u << 31; n != 0; n >>= 1, v ^= v >> 1)
-		if (n & 0x1) scramble ^= v;
-	return (float)scramble / (float)0x100000000LL;
-}
-inline float
-LarcherPillichshammer2(u_int n, u_int scramble) {
-	for (u_int v = 1u << 31; n != 0; n >>= 1, v |= v >> 1)
-		if (n & 0x1) scramble ^= v;
-	return (float)scramble / (float)0x100000000LL;
-}
+
 inline void LDShuffleScrambled1D(int nSamples,
 		int nPixel, float *samples) {
 	u_int scramble = lux::random::uintValue();
@@ -249,18 +234,6 @@ inline void HaltonShuffleScrambled2D(int nSamples,
 		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(samples, nPixel, 2 * nSamples);
 }
-// PxLoc X and Y pixel coordinate struct
-struct PxLoc {
-	short x;
-	short y;
-};
-class PixelSampler {
-public:
-	PixelSampler() {}
-	virtual ~PixelSampler() {}
-	virtual u_int GetTotalPixels() = 0;
-	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos) = 0;
-};
 
 }//namespace lux
 

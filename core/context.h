@@ -23,39 +23,8 @@
 #ifndef LUX_CONTEXT_H
 #define LUX_CONTEXT_H
 
-#include "api.h"
-#include "paramset.h"
-#include "color.h"
-#include "spectrum.h"
-#include "scene.h"
-#include "film.h"
-#include "dynload.h"
-#include "volume.h"
-#include "../film/multiimage.h"
-#include "error.h"
+#include "lux.h"
 #include "renderfarm.h"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <map>
-#include <boost/date_time/posix_time/posix_time.hpp>
-using std::map;
-#if (_MSC_VER >= 1400) // NOBOOK
-#include <stdio.h>     // NOBOOK
-#define snprintf _snprintf // NOBOOK
-#endif // NOBOOK
-#include "../renderer/include/asio.hpp"
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
 
 //TODO - jromang : convert to enum
 #define STATE_UNINITIALIZED  0

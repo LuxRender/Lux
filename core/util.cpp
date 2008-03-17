@@ -28,7 +28,7 @@
 #include <map>
 using std::map;
 // Error Reporting Includes
-#include <stdarg.h>
+#include <cstdarg>
 
 
 using namespace lux;

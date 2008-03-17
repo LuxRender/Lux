@@ -23,8 +23,9 @@
 // orthographic.cpp*
 #include "orthographic.h"
 #include "sampling.h"
-#include "mc.h"
+#include "film.h"
 #include "scene.h" // for struct Intersection
+#include "paramset.h"
 
 using namespace lux;
 
@@ -76,16 +77,16 @@ float OrthoCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray)
 {
 	bool isVisible = false;
-	if (GenerateSample(p, (Sample *)sample_gen))
+	if (GenerateSample(p, sample))
 	{
-		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		GenerateRay(*sample, ray);
 		if (WorldToCamera(p).z>0)
 		{
-			ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
-			isVisible = !scene->IntersectP(*ray_gen);
+			ray->maxt = Distance(ray->o, p) * (1.f - RAY_EPSILON);
+			isVisible = !scene->IntersectP(*ray);
 		}
 	}
 	return isVisible;
@@ -96,12 +97,10 @@ float OrthoCamera::GetConnectingFactor(const Point &p, const Vector &wo, const N
 }
 void OrthoCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
 {
-	float Apixel = (screenDx*screenDy/(film->xResolution*film->yResolution));
-	int x,y;
-	float invApixel = 1/Apixel;
-	for (y = 0; y < yPixelCount; ++y) {
-		for (x = 0; x < xPixelCount; ++x) {
-			film->flux2radiance[x+y*xPixelCount] =  invApixel;
+	float invApixel = (film->xResolution * film->yResolution) / (screenDx * screenDy);
+	for (int y = 0; y < yPixelCount; ++y) {
+		for (int x = 0; x < xPixelCount; ++x) {
+			film->flux2radiance[x + y * xPixelCount] =  invApixel;
 		}
 	}
 }

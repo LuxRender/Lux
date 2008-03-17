@@ -30,7 +30,9 @@
 #include "sampling.h"
 #include "shape.h"
 #include "mc.h"
+#include "film.h"
 #include "dynload.h"
+#include "paramset.h"
 
 #include <fstream>
 using std::ifstream;

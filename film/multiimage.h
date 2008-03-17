@@ -26,6 +26,7 @@
 
 #include "lux.h"
 #include "film.h"
+#include "filter.h"
 #include "color.h"
 #include "spectrum.h"
 #include "paramset.h"

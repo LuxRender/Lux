@@ -23,7 +23,9 @@
 // environment.cpp*
 #include "environment.h"
 #include "sampling.h"
+#include "film.h"
 #include "scene.h" // for struct Intersection
+#include "paramset.h"
 
 using namespace lux;
 
@@ -72,14 +74,14 @@ bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
 
 	return true;
 }
-bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray)
 {
 	bool isVisible;
-	if (GenerateSample(p, (Sample *)sample_gen))
+	if (GenerateSample(p, sample))
 	{
-		GenerateRay(*(Sample *)sample_gen, ray_gen);
-		ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
-		isVisible = !scene->IntersectP(*ray_gen);
+		GenerateRay(*sample, ray);
+		ray->maxt = Distance(ray->o, p)*(1.f - RAY_EPSILON);
+		isVisible = !scene->IntersectP(*ray);
 	}
 	else
 		isVisible = false;
@@ -87,16 +89,18 @@ bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sa
 }
 float EnvironmentCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
 {
-	return AbsDot(wo, n)/DistanceSquared(rayOrigin, p);
+	return AbsDot(wo, n) / DistanceSquared(rayOrigin, p);
 }
 void EnvironmentCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
 {
-	float Apixel,R = 100.0f;
-	int x,y;
+	float Apixel;
+	int x, y;
 	for (y = 0; y < yPixelCount; ++y) {
 		for (x = 0; x < xPixelCount; ++x) {
-			Apixel = 2*M_PI/film->xResolution*R*sinf(M_PI*(y+0.5f)/film->yResolution) * M_PI/film->yResolution*R;
-			film->flux2radiance[x+y*xPixelCount] =  R*R / Apixel;
+			Apixel = (film->xResolution * film->yResolution) /
+				(2.f * M_PI * M_PI *
+				sin(M_PI * (y + 0.5f) / film->yResolution));
+			film->flux2radiance[x+y*xPixelCount] = Apixel;
 		}
 	}
 }

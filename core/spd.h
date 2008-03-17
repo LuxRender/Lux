@@ -33,13 +33,8 @@ namespace lux
     inline ~SPD() {}
 
     // lambda - wavelength in nm
-    virtual void sample(const float lambda, double& p) const = 0;
-
-    virtual double sample(const float lambda) const {
-      double p;
-      this->sample(lambda, p);
-      return p;
-    }
+    virtual float sample(const float lambda) const = 0;
+    virtual void sample(u_int n, const float lambda[], float *p) const = 0;
   };
 
   // regularly sampled SPD, reconstructed using linear interpolation
@@ -61,19 +56,29 @@ namespace lux
     }
 
     // samples the SPD by performing a linear interpolation on the data
-    virtual void sample(const float lambda, double& p) const {
-
-      if (nSamples < 1 || lambda < lambdaMin || lambda > lambdaMax) {
-        p = 0.0;
-        return;
-      }
+    virtual float sample(const float lambda) const {
+      if (nSamples < 1 || lambda < lambdaMin || lambda > lambdaMax)
+        return 0.f;
 
       // interpolate the two closest samples linearly
       float x = (lambda - lambdaMin) * invDelta;
-      int b0 = max((int)x, 0);
-      int b1 = min(b0+1, nSamples-1);
+      int b0 = Floor2Int(x);
+      int b1 = min(b0 + 1, nSamples - 1);
       float dx = x - b0;
-      p = ((1. - dx) * samples[b0]) + (dx * samples[b1]);
+      return Lerp(dx, samples[b0], samples[b1]);
+    }
+    virtual void sample(u_int n, const float lambda[], float *p) const {
+      for (u_int i = 0; i < n; ++i) {
+        if (nSamples < 1 || lambda[i] < lambdaMin || lambda[i] > lambdaMax)
+          p[i] = 0.f;
+
+        // interpolate the two closest samples linearly
+        float x = (lambda[i] - lambdaMin) * invDelta;
+        int b0 = Floor2Int(x);
+        int b1 = min(b0 + 1, nSamples - 1);
+        float dx = x - b0;
+        p[i] = Lerp(dx, samples[b0], samples[b1]);
+      }
     }
 
   protected:

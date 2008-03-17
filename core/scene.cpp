@@ -210,18 +210,17 @@ void RenderThread::render(RenderThread *myThread)
 			--(myThread->sample->imageX);
 			++(myThread->sample->imageY);
 			float wt2 = myThread->camera->GenerateRay(*(myThread->sample), &ray.ry);
-			if (wt1 > 0 && wt2 > 0) ray.hasDifferentials = true;
+			ray.hasDifferentials = wt1 > 0.f && wt2 > 0.f;
 			--(myThread->sample->imageY);
 
 			// Evaluate radiance along camera ray
 			float alpha;
-			SWCSpectrum Ls = 0.f;
 			SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
 			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
 			SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-			Ls = rayWeight * ( T * Lo + Lv );
+			SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );
 
-			if( Ls == SWCSpectrum(0.f) )
+			if (Ls.Black())
 				myThread->stat_blackSamples++;
 
 			// Radiance - Add sample contribution to image
@@ -252,8 +251,8 @@ int Scene::CreateRenderThread()
 {
 	RenderThread *rt = new  RenderThread(renderThreads.size(),
 		CurThreadSignal,
-		(SurfaceIntegrator*)surfaceIntegrator->clone(),
-		(VolumeIntegrator*)volumeIntegrator->clone(),
+		surfaceIntegrator->clone(),
+		volumeIntegrator->clone(),
 		sampler->clone(), camera, this);
 
 	renderThreads.push_back(rt);

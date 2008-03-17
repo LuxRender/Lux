@@ -24,7 +24,9 @@
 #include "perspective.h"
 #include "sampling.h"
 #include "mc.h"
+#include "film.h"
 #include "scene.h" // for struct Intersection
+#include "paramset.h"
 
 using namespace lux;
 
@@ -75,21 +77,21 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub * sample_gen, Ray *ray_gen)
+bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray)
 {
 	//TODO: check whether IsVisibleFromEyes() can alway return correct answer.
 	bool isVisible;
-	if (GenerateSample(p, (Sample *)sample_gen))
+	if (GenerateSample(p, sample))
 	{
-		GenerateRay(*(Sample *)sample_gen, ray_gen);
-		Vector dd(pos-p);
-		Ray ray1(p, -ray_gen->d);
+		GenerateRay(*sample, ray);
+		Vector dd(pos - p);
+		Ray ray1(p, -ray->d);
 
-		if (Dot(dd,normal)<0)
+		if (Dot(dd, normal) < 0.f)
 		{
 			Intersection isect1;
-			if (scene->Intersect(ray1,&isect1))
-				isVisible = WorldToCamera(isect1.dg.p).z<0 ;
+			if (scene->Intersect(ray1, &isect1))
+				isVisible = WorldToCamera(isect1.dg.p).z < 0.f;
 			else
 				isVisible = true;
 		}
@@ -102,41 +104,37 @@ bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sa
 }
 float PerspectiveCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
 {
-	return AbsDot(wo, normal)*AbsDot(wo, n)/DistanceSquared(pos, p);
+	return AbsDot(wo, normal) * AbsDot(wo, n) / DistanceSquared(pos, p);
 }
 void PerspectiveCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
 {
-	float templength, frameaspectratio;
-	float xWidth, yHeight, xPixelWidth, yPixelHeight, Apixel;
-	float R,d2,cos2,cos4,detaX,detaY;
-	int x,y;
-	R = 100;
-	templength=R * tan(fov*0.5)*2;	
-	frameaspectratio=float(film->xResolution)/float(film->yResolution);
+	float xWidth, yHeight;
+	const float R = 100.f;
+	const float templength = R * tan(fov * 0.5f) * 2.f;	
+	const float frameaspectratio = static_cast<float>(film->xResolution) / static_cast<float>(film->yResolution);
 
 	if (frameaspectratio > 1.f)
 	{
-		xWidth=templength*frameaspectratio;
-		yHeight=templength;
+		xWidth = templength * frameaspectratio;
+		yHeight = templength;
 	}
 	else
 	{
-		xWidth=templength;
-		yHeight=templength / frameaspectratio;
+		xWidth = templength;
+		yHeight = templength / frameaspectratio;
 	}
-	xPixelWidth = xWidth / film->xResolution;
-	yPixelHeight = yHeight / film->yResolution;
-	Apixel = xPixelWidth * yPixelHeight;
+	const float xPixelWidth = xWidth / film->xResolution;
+	const float yPixelHeight = yHeight / film->yResolution;
+	const float Apixel = xPixelWidth * yPixelHeight;
 
-
-	for (y = 0; y < yPixelCount; ++y) {
-		for (x = 0; x < xPixelCount; ++x) {
-			detaX = 0.5*xWidth - (x+0.5)*xPixelWidth;
-			detaY = 0.5*yHeight - (y+0.5)*yPixelHeight;
-			d2 = detaX*detaX + detaY*detaY + R*R;
-			cos2 = R*R / d2;
-			cos4 = cos2 * cos2;
-			film->flux2radiance[x+y*xPixelCount] =  R*R / (Apixel*cos4);
+	for (int y = 0; y < yPixelCount; ++y) {
+		for (int x = 0; x < xPixelCount; ++x) {
+			float detaX = 0.5f * xWidth - (x + 0.5f) * xPixelWidth;
+			float detaY = 0.5f * yHeight - (y + 0.5f) * yPixelHeight;
+			float d2 = detaX * detaX + detaY * detaY + R * R;
+			float cos2 = R * R / d2;
+			float cos4 = cos2 * cos2;
+			film->flux2radiance[x + y * xPixelCount] =  R * R / (Apixel * cos4);
 		}
 	}
 }

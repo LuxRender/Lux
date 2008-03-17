@@ -24,7 +24,7 @@
 #define LUX_SINC_H
 
 // sinc.cpp*
-#include "sampling.h"
+#include "filter.h"
 #include "paramset.h"
 
 namespace lux
@@ -33,17 +33,14 @@ namespace lux
 // Sinc Filter Declarations
 class LanczosSincFilter : public Filter {
 public:
-	LanczosSincFilter(float xw,
-	                  float yw,
-					  float t) : Filter(xw, yw) {
-		tau = t;
-	}
+	LanczosSincFilter(float xw, float yw, float t) : Filter(xw, yw), tau(t)
+	{}
 	float Evaluate(float x, float y) const;
-	float Sinc1D(float x) const;
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 private:
 	float tau;
+	float Sinc1D(float x) const;
 };
 
 }//namespace lux

@@ -107,12 +107,6 @@ private:
 	vector<VolumeRegion *> regions;
 	BBox bound;
 };
-class VolumeIntegrator : public Integrator {
-public:
-	virtual SWCSpectrum Transmittance(const Scene *scene,
-		const Ray &ray, const Sample *sample,
-		float *alpha) const = 0;
-};
 
 }//namespace lux
 

@@ -30,8 +30,6 @@
 using namespace lux;
 
 // Sampler Method Definitions
-Sampler::~Sampler() {
-}
 Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 		int spp) {
 	xPixelStart = xstart;
@@ -51,8 +49,9 @@ void Sampler::AddSample(const Sample &sample, const Ray &ray,
 		film->AddSample(sample.imageX, sample.imageY, L.ToXYZ(), alpha);
 }
 // Sample Method Definitions
-Sample::Sample(SurfaceIntegrator *surf,
-		VolumeIntegrator *vol, const Scene *scene) {
+Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
+	const Scene *scene)
+{
 	stamp = 0;
 	sampler = NULL;
 	surf->RequestSamples(this, scene);

@@ -22,8 +22,6 @@
 
 // realistic.cpp*
 #include "camera.h"
-#include "film.h"
-#include "paramset.h"
 
 namespace lux
 {

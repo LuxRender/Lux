@@ -24,7 +24,7 @@
 #define LUX_GAUSSIAN_H
 
 // gaussian.cpp*
-#include "sampling.h"
+#include "filter.h"
 #include "paramset.h"
 
 namespace lux
@@ -49,7 +49,7 @@ private:
 	float expX, expY;
 	// GaussianFilter Utility Functions
 	float Gaussian(float d, float expv) const {
-		return max(0.f, float(expf(-alpha * d * d) - expv));
+		return max(0.f, expf(-alpha * d * d) - expv);
 	}
 };
 

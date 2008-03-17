@@ -25,7 +25,7 @@
 #ifndef LUX_BOX_H
 #define LUX_BOX_H
 
-#include "sampling.h"
+#include "filter.h"
 #include "paramset.h"
 
 namespace lux
