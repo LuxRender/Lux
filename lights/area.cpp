@@ -105,6 +105,36 @@ SWCSpectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 	if (pdf == 0.f) return SWCSpectrum(0.f);
 	return L(P, Ns, -*wo) /	pdf;
 }
+
+void AreaLight::SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const
+{
+	*p = shape->Sample(u1, u2, n);
+	*pdf = shape->Pdf(*p);
+}
+void AreaLight::SampleDirection(float u1, float u2,const Normal &nn, Vector *wo, float *pdf) const
+{
+	//*wo = UniformSampleSphere(u1, u2);
+	//if (Dot(*wo, nn) < 0.) *wo *= -1;
+	//*pdf = INV_TWOPI;
+
+	Vector v;
+	v = CosineSampleHemisphere(u1, u2);
+	TransformAccordingNormal(nn, v, wo);
+	*pdf = INV_PI * AbsDot(*wo,nn);
+}
+float AreaLight::EvalPositionPdf(const Point p, const Normal &n, const Vector &w) const
+{
+	return Dot(n, w) > 0 ? shape->Pdf(p) : 0.;
+}
+float AreaLight::EvalDirectionPdf(const Point p, const Normal &n, const Vector &w) const
+{
+	return Dot(n, w) > 0 ? INV_PI * AbsDot(w,n) : 0.;
+}
+SWCSpectrum AreaLight::Eval(const Normal &n, const Vector &w) const
+{
+	return Dot(n, w) > 0 ? Lemit : 0.;
+}
+
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
 		const boost::shared_ptr<Shape> &shape) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));

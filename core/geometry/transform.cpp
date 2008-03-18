@@ -193,6 +193,28 @@ bool Transform::SwapsHandedness() const {
 	return det < 0.f;
 }
 #endif*/
+
+void TransformAccordingNormal(const Normal &nn, const Vector &woL, Vector *woW)
+{
+	Vector sn,tn;
+	float zz=sqrt(1-nn.z*nn.z);
+	sn.z = 0;
+	if (fabs(zz)<1e-6)
+	{
+		sn.x = 1;
+		sn.y = 0;
+	}
+	else
+	{
+		sn.x = nn.y/zz;
+		sn.y = -nn.x/zz;
+	}
+	tn = Cross(nn, sn);	
+	woW->x = sn.x * woL.x + tn.x * woL.y + nn.x * woL.z;
+	woW->y = sn.y * woL.x + tn.y * woL.y + nn.y * woL.z;
+	woW->z = sn.z * woL.x + tn.z * woL.y + nn.z * woL.z;
+};
+
 Transform  Orthographic(float znear, float zfar) {
 	return Scale(1.f, 1.f, 1.f / (zfar-znear)) *
 		Translate(Vector(0.f, 0.f, -znear));

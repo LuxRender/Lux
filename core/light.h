@@ -69,6 +69,31 @@ public:
 		Ray *ray, float *pdf) const = 0;
 
 	void AddPortalShape(boost::shared_ptr<Shape> shape);
+
+	virtual void SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Light::SamplePosition() method called");
+	}
+	virtual void SampleDirection(float u1, float u2,const Normal &nn, Vector *wo, float *pdf) const
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Light::SampleDirection() method called");
+	}
+	virtual float EvalPositionPdf(const Point p, const Normal &n, const Vector &w) const
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Light::EvalPositionPdf() method called");
+		return 0;
+	}
+	virtual float EvalDirectionPdf(const Point p, const Normal &n, const Vector &w) const
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Light::EvalDirectionPdf() method called");
+		return 0;
+	}
+	virtual SWCSpectrum Eval(const Normal &n,	const Vector &w) const
+	{
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Light::Eval() method called");
+		return SWCSpectrum(0.);
+	}
+
 	// Light Public Data
 	const int nSamples;
 	bool havePortalShape;
@@ -114,6 +139,11 @@ public:
 		float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
+	void SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const;
+	void SampleDirection(float u1, float u2,const Normal &nn, Vector *wo, float *pdf) const;
+	float EvalPositionPdf(const Point p, const Normal &n, const Vector &w) const;
+	float EvalDirectionPdf(const Point p, const Normal &n, const Vector &w) const;
+	SWCSpectrum Eval(const Normal &n,	const Vector &w) const;
 			
 	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
 		const boost::shared_ptr<Shape> &shape);

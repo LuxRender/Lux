@@ -108,6 +108,7 @@ inline void Transform::operator()(const Ray &r,
   Transform LookAt(const Point &pos, const Point &look, const Vector &up);
   Transform Orthographic(float znear, float zfar);
   Transform Perspective(float fov, float znear, float zfar);
+  void TransformAccordingNormal(const Normal &nn, const Vector &woL, Vector *woW);
 
 }//namespace lux
 
