@@ -24,11 +24,11 @@
 #define LUX_SAMPLING_H
 // sampling.h*
 #include "lux.h"
+#include "film.h"
 #include "memory.h"
 
 namespace lux
 {
-enum BufferType;
 
 // Sampling Declarations
 class  Sampler {

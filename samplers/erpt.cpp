@@ -232,7 +232,9 @@ void ERPTSampler::AddSample(float imageX, float imageY, const Sample &sample, co
 		}
 		consecRejects = 0;
 	} else {
-		film->AddSample(sample.imageX, sample.imageY, (XYZColor&)(newL * (newWeight * meanIntensity / newLY)), newAlpha);
+		XYZColor temp(newL);
+		temp *= newWeight * meanIntensity / newLY;
+		film->AddSample(sample.imageX, sample.imageY, temp, newAlpha);
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
 		sample.stamp = stamp;

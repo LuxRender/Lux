@@ -205,14 +205,13 @@ public:
 	BufferGroup() {
 	}
 	~BufferGroup() {
-		for(int i=0; i < buffers.size(); i++)
+		for(u_int i=0; i < buffers.size(); i++)
 			delete buffers[i];
 	}
 
 	void CreateBuffers(const std::vector<BufferConfig> & config, int x, int y) {
-		int i;
 		Buffer* buf;
-		for(i=0;i<config.size();++i)
+		for(u_int i=0;i<config.size();++i)
 		{
 			if (config[i].type==BUF_TYPE_PER_PIXEL)
 				buf = new PerPixelNormalizedBuffer(x,y);
@@ -239,7 +238,7 @@ public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) : Film(xres,yres) { filter=NULL; filterTable=NULL; }; 
 
-	FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
+	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		bool outhdr, bool outldr,
 		const string &filename1, bool premult, int wI,
 		const string &tm, float c_dY, float n_MY,
