@@ -37,8 +37,9 @@ using namespace lux;
 static float mutate(const float x)
 {
 	static const float s1 = 1/1024., s2 = 1/16.;
-	float dx = s2 * exp(-log(s2/s1) * lux::random::floatValue());
-	if (lux::random::floatValue() < 0.5) {
+	float randomValue = lux::random::floatValue();
+	float dx = s2 * powf(s1 / s2, fabsf(2.f * randomValue - 1.f));//exp(-log(s2/s1) * lux::random::floatValue());
+	if (randomValue/*lux::random::floatValue()*/ < 0.5) {
 		float x1 = x + dx;
 		return (x1 > 1) ? x1 - 1 : x1;
 	} else {
@@ -162,18 +163,19 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	float *data = sample->xD[num] + pos * sample->dxD[num];
 	if (sample->timexD[num][pos] != sample->stamp) {
 		if (sample->timexD[num][pos] == -1) {
+			float *image = baseImage + offset[num] + pos * sample->dxD[num];
 			for (u_int i = 0; i < sample->dxD[num]; ++i) {
 				data[i] = lux::random::floatValue();
-				baseImage[offset[num] + pos * sample->dxD[num] + i] = data[i];
+				image[i] = data[i];
 			}
 			sample->timexD[num][pos] = 0;
 		} else {
+			float *image = sampleImage + offset[num] + pos * sample->dxD[num];
 			for (u_int i = 0; i < sample->dxD[num]; ++i){
-				data[i] = sampleImage[offset[num] +
-					pos * sample->dxD[num] + i];
+				data[i] = image[i];
 			}
 		}
-		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
+		for (int &time = sample->timexD[num][pos]; time < sample->stamp; ++time) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
 				data[i] = mutate(data[i]);
 		}

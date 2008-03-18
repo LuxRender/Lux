@@ -80,7 +80,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 	// Declare common path integration variables
 	SWCSpectrum pathThroughput = 1., L = 0.;
 	RayDifferential ray(r);
-	bool specularBounce = false;
+	bool specularBounce = true;
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
@@ -88,9 +88,12 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			// Stop path sampling since no intersection was found
 			// Possibly add emitted light
 			// NOTE - Added by radiance - adds horizon in render & reflections
-			if (pathLength == 0 || specularBounce)
+			SWCSpectrum Le(0.f);
+			if (specularBounce)
 				for (u_int i = 0; i < scene->lights.size(); ++i)
-					L += pathThroughput * scene->lights[i]->Le(ray); 
+					Le += scene->lights[i]->Le(ray);
+			Le *= pathThroughput;
+			L += Le;
 			// NOTE - MLJack - Initialize the variable alpha
 			// (Sometimes alpha is a QNAN.)
 			if (alpha) *alpha = 1.;
@@ -108,7 +111,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		else
 			pathThroughput *= scene->Transmittance(ray);
 		// Possibly add emitted light at path vertex
-		if (pathLength == 0 || specularBounce)
+		if (specularBounce)
 			L += pathThroughput * isect.Le(-ray.d);
 		if (pathLength == maxDepth)
 			break;
@@ -119,19 +122,14 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		const Normal &n = bsdf->dgShading.nn;
 		Vector wo = -ray.d;
 		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
-		if (pathLength < maxDepth)
-			L += pathThroughput *
-				UniformSampleOneLight(scene, p, n,
-					wo, bsdf, sample,
-					data, data + 2, data + 3, data + 5);
+		L += pathThroughput *
+			UniformSampleOneLight(scene, p, n,
+				wo, bsdf, sample,
+				data, data + 2, data + 3, data + 5);
 /*					lightPositionOffset[pathLength],
 					lightNumOffset[pathLength],
 					bsdfDirectionOffset[pathLength],
 					bsdfComponentOffset[pathLength]);*/
-		else 
-			L += pathThroughput *
-				UniformSampleOneLight(scene, p, n,
-					wo, bsdf, sample); 
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
@@ -152,10 +150,11 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		BxDFType flags;
 		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7]/*bs1*/, data[8]/*bs2*/, data[9]/*bcs*/,
 			&pdf, BSDF_ALL, &flags);
-		if (f.Black() || pdf == 0.)
+		if (pdf == .0f || f.Black())
 			break;
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
-		pathThroughput *= f * AbsDot(wi, n) / pdf;
+		pathThroughput *= f;
+		pathThroughput *= AbsDot(wi, n) / pdf;
 
 		ray = RayDifferential(p, wi);
 	}
