@@ -28,6 +28,7 @@
 
 namespace lux
 {
+enum BufferType;
 
 // Sampling Declarations
 class  Sampler {
@@ -39,18 +40,47 @@ public:
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	virtual u_int GetTotalSamplePos() = 0;
 	int TotalSamples() const {
-		return samplesPerPixel *
-			(xPixelEnd - xPixelStart) *
-			(yPixelEnd - yPixelStart);
+		return samplesPerPixel * (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart);
 	}
 	virtual int RoundSize(int size) const = 0;
-	virtual void AddSample(const Sample &sample, const Ray &ray,
-		const SWCSpectrum &L, float alpha, Film *film);
+	virtual void SampleBegin()
+	{
+		isSampleEnd=false;
+	}
+	virtual void SampleEnd()
+	{
+		isSampleEnd=true;
+	}
+	void SetFilm(Film* f)
+	{
+		film = f;
+	}
+	virtual void GetBufferType(BufferType *t)
+	{}
+	virtual void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	int samplesPerPixel;
+	Film *film;
+	bool isSampleEnd;
 };
+class SampleGuard
+{
+public:
+	SampleGuard(Sampler* s)
+	{
+		sampler = s;
+		sampler->SampleBegin();
+	}
+	~SampleGuard()
+	{
+		sampler->SampleEnd();
+	}
+private:
+	Sampler *sampler;
+};
+
 class Sample {
 public:
 	// Sample Public Methods

@@ -46,7 +46,7 @@ Camera::Camera(const Transform &world2cam,
 	if (WorldToCamera.HasScale())
 		luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-camera transformation!\n The system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 }
-bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray)
+bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen)
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsVisibleFromEyes() method called");
 	return false;
@@ -56,9 +56,9 @@ float Camera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetConnectingFactor() method called");
 	return 0;
 }
-void Camera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
+void Camera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount)
 {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetFlux2RadianceFactor() method called");
+	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetFlux2RadianceFactors() method called");
 }
 bool Camera::IsDelta() const
 {

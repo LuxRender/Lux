@@ -108,6 +108,7 @@ public:
 	//controlling number of threads
 	int AddThread(); //returns the thread ID
 	void RemoveThread();
+	double GetNumberOfSamples();
 	double Statistics_SamplesPSec();
 	double Statistics_Efficiency();
 	double Statistics_SamplesPPx();

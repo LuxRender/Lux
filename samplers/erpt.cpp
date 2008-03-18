@@ -184,8 +184,7 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 }
 
 // interface for adding/accepting a new image sample.
-void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
-			   const SWCSpectrum &newL, float newAlpha, Film *film)
+void ERPTSampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &newL, float newAlpha, int id)
 {
 	float newLY = newL.y();
 	// calculate meanIntensity
@@ -213,7 +212,7 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 		L *= weight * meanIntensity / LY;
 		film->AddSample(sampleImage[0], sampleImage[1], L, alpha);
 		weight = newWeight;
-		L = newL.ToXYZ();
+		L = newL;
 		alpha = newAlpha;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
@@ -233,7 +232,7 @@ void ERPTSampler::AddSample(const Sample &sample, const Ray &ray,
 		}
 		consecRejects = 0;
 	} else {
-		film->AddSample(sample.imageX, sample.imageY, newL * (newWeight * meanIntensity / newLY), newAlpha);
+		film->AddSample(sample.imageX, sample.imageY, (XYZColor&)(newL * (newWeight * meanIntensity / newLY)), newAlpha);
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
 		sample.stamp = stamp;

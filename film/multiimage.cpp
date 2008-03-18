@@ -128,15 +128,9 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	}
 }
 
-void MultiImageFilm::AddSample(float sX, float sY, const SWCSpectrum &L, float alpha) {
-	// Convert to XYZ Color
-	XYZColor xyz = L.ToXYZ();
-
-	AddSample(sX, sY, xyz, alpha);
-}
-
-void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alpha) {
-			boost::mutex::scoped_lock lock(addSampleMutex);
+void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alpha, int id)
+{
+	boost::mutex::scoped_lock lock(addSampleMutex);
 
 	XYZColor xyz = L;
 
@@ -205,7 +199,7 @@ void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alph
 	if(ldrDisplayOut && !ldrDisplayLock)
 		if(Floor2Int(ldrDisplayTimer.elapsed()) > ldrDisplayInterval) {
 			ldrDisplayLock = true;
-			WriteImage( WI_FRAMEBUFFER );
+			WriteImage( IMAGE_FRAMEBUFFER );
 			ldrDisplayTimer.restart();
 			ldrDisplayLock = false;
 		} */
@@ -214,7 +208,7 @@ void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alph
 	if(ldrOut && !ldrLock)
 		if(Floor2Int(ldrTimer.elapsed()) > ldrWriteInterval) {
 			ldrLock = true;
-			WriteImage( WI_LDR );
+			WriteImage( IMAGE_LDR );
 			ldrTimer.restart();
 			ldrLock = false;
 		}
@@ -223,18 +217,18 @@ void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alph
 	if(hdrOut && !hdrLock)
 	    if (Floor2Int(hdrTimer.elapsed()) > hdrWriteInterval) {
 			hdrLock = true;
-			WriteImage( WI_HDR );
+			WriteImage( IMAGE_HDR );
 			hdrTimer.restart();
 			hdrLock = false;
 		}
-	// IGI File output
-	if(igiOut && !igiLock)
-	    if (Floor2Int(igiTimer.elapsed()) > igiWriteInterval) {
-			igiLock = true;
-			WriteImage( WI_IGI );
-			igiTimer.restart();
-			igiLock = false;
-		}
+	//// IGI File output
+	//if(igiOut && !igiLock)
+	//    if (Floor2Int(igiTimer.elapsed()) > igiWriteInterval) {
+	//		igiLock = true;
+	//		WriteImage( WI_IGI );
+	//		igiTimer.restart();
+	//		igiLock = false;
+	//	}
 }
 
 void MultiImageFilm::GetSampleExtent(int *xstart,
@@ -247,7 +241,7 @@ void MultiImageFilm::GetSampleExtent(int *xstart,
 		filter->yWidth);
 }
 
-void MultiImageFilm::WriteImage(int oType) {
+void MultiImageFilm::WriteImage(ImageType type) {
 	// Convert image to RGB and compute final pixel values
 	int nPix = xPixelCount * yPixelCount;
 	float *rgb = new float[3*nPix], *alpha = new float[nPix];
@@ -298,35 +292,26 @@ void MultiImageFilm::WriteImage(int oType) {
 		}
 	}
 
-	switch ( oType ) {
-		case WI_HDR :
-			// Write hdr EXR file
-			WriteEXRImage(rgb, alpha, hdrFilename);
-			break;
-
-		case WI_IGI :
-			// Write hdr IGI file
-			WriteIGIImage(rgb, alpha, igiFilename);
-			break;
-
-		case WI_LDR :
-			// Write tonemapped ldr TGA file
-		    ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-			  bloomRadius,bloomWidth,toneMapper.c_str(),
-			  &toneParams,gamma,dither,255);
-			WriteTGAImage(rgb, alpha, ldrFilename);
-			break;
-
-		case WI_FRAMEBUFFER :
-			// Update gui film display
-			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-			  bloomRadius,bloomWidth,toneMapper.c_str(),
-			  &toneParams,gamma,dither,255);
-			// Copy to framebuffer pixels
-			u_int nPix = xPixelCount * yPixelCount;
-			for (u_int i=0;  i < nPix*3 ; i++) {
-					framebuffer[i] = (unsigned char) rgb[i];
-			}
+	if (type & IMAGE_HDR) // Write hdr EXR file
+		WriteEXRImage(rgb, alpha, hdrFilename);
+	if (type & IMAGE_LDR) // Write tonemapped ldr TGA file
+	{
+	    ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
+		  bloomRadius,bloomWidth,toneMapper.c_str(),
+		  &toneParams,gamma,dither,255);
+		WriteTGAImage(rgb, alpha, ldrFilename);
+	}
+	if (type & IMAGE_FRAMEBUFFER)
+	{
+		// Update gui film display
+		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
+		  bloomRadius,bloomWidth,toneMapper.c_str(),
+		  &toneParams,gamma,dither,255);
+		// Copy to framebuffer pixels
+		u_int nPix = xPixelCount * yPixelCount;
+		for (u_int i=0;  i < nPix*3 ; i++) {
+				framebuffer[i] = (unsigned char) rgb[i];
+		}
 	}
 
 	// Release temporary image memory
@@ -418,7 +403,7 @@ void MultiImageFilm::updateFrameBuffer()
 	if(!framebuffer)
 		createFrameBuffer();
 
-	WriteImage(WI_FRAMEBUFFER);
+	WriteImage(IMAGE_FRAMEBUFFER);
 }
 
 unsigned char* MultiImageFilm::getFrameBuffer()

@@ -66,7 +66,7 @@
 #include "realistic.h"
 
 #include "multiimage.h"
-//#include "fleximage.h"
+#include "fleximage.h"
 
 #include "box.h"
 #include "gaussian.h"
@@ -77,6 +77,8 @@
 #include "directlighting.h"
 #include "path.h"
 #include "mltpath.h"
+#include "pathn.h"
+#include "particletracing.h"
 
 #include "emission.h"
 #include "single.h"
@@ -690,18 +692,30 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="path")
-    {
-        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="mltpath")
+	if(name=="path")
+	{
+		SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+	if(name=="mltpath")
     {
         SurfaceIntegrator *ret=MLTPathIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
+	if(name=="pathn")
+	{
+		SurfaceIntegrator *ret=PathnIntegrator::CreateSurfaceIntegrator(paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+	if(name=="particletracing")
+	{
+		SurfaceIntegrator *ret=ParticleTracingIntegrator::CreateSurfaceIntegrator(paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
 
     //
     // Radiance - Volume integrators currently disabled 
@@ -1074,12 +1088,12 @@ static string SearchPath(const string &searchpath,
         return ret;
     }
 
-/*    if(name=="fleximage")
+    if(name=="fleximage")
     {
 		Film *ret=FlexImageFilm::CreateFilm(paramSet, filter);
         paramSet.ReportUnused();
         return ret;
-    } */
+    }
 
     //
     // Radiance - The following films are currently retired to /PBRT_Attic

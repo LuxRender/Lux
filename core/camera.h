@@ -28,6 +28,21 @@
 
 namespace lux
 {
+	struct Sample_stub {
+		// Reference to the sampler for lazy evaluation
+		Sampler *sampler;
+		// Camera _Sample_ Data
+		float imageX, imageY;
+		float lensU, lensV;
+		float time;
+		float wavelengths, singleWavelength;
+		// Integrator _Sample_ Data
+		mutable int stamp;
+		vector<u_int> n1D, n2D, nxD, dxD;
+		vector<vector<u_int> > sxD;
+		float **oneD, **twoD, **xD;
+		int **timexD;
+	};
 
 // Camera Declarations
 class  Camera {
@@ -38,9 +53,9 @@ public:
 	virtual ~Camera();
 	virtual float GenerateRay(const Sample &sample,
 		                      Ray *ray) const = 0;
-	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray);
+	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray);
 	virtual float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n);
-	virtual void GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount);
+	virtual void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount);
 	virtual bool IsDelta() const;
 	// Camera Public Data
 	Film *film;

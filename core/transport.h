@@ -48,6 +48,16 @@ public:
 class SurfaceIntegrator : public Integrator {
 public:
 	virtual SurfaceIntegrator* clone() const = 0;
+	virtual bool IsFluxBased() {
+		return false;
+	}
+	virtual bool NeedAddSampleInRender() {
+		return true;
+	}
+	void SetSampler(Sampler *s)	{
+		sampler = s;
+	}
+	Sampler *sampler;
 };
 class VolumeIntegrator : public Integrator {
 public:

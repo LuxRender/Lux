@@ -24,8 +24,8 @@
 #include "perspective.h"
 #include "sampling.h"
 #include "mc.h"
-#include "film.h"
-#include "scene.h" // for struct Intersection
+#include "scene.h" // for Intersection
+#include "film.h" // for Film
 #include "paramset.h"
 
 using namespace lux;
@@ -44,6 +44,25 @@ PerspectiveCamera::
 	pos = CameraToWorld(Point(0,0,0));
 	normal = CameraToWorld(Normal(0,0,1));
 	fov = Radians(fov1);
+
+	posPdf = 1.0f/(M_PI*LensRadius*LensRadius);
+	R = 100;
+	float templength=R * tan(fov*0.5)*2;	
+	float frameaspectratio=float(f->xResolution)/float(f->yResolution);
+	if (frameaspectratio > 1.f)
+	{
+		xWidth=templength*frameaspectratio;
+		yHeight=templength;
+	}
+	else
+	{
+		xWidth=templength;
+		yHeight=templength / frameaspectratio;
+	}
+	xPixelWidth = xWidth / f->xResolution;
+	yPixelHeight = yHeight / f->yResolution;
+	Apixel = xPixelWidth * yPixelHeight;
+
 }
 float PerspectiveCamera::GenerateRay(const Sample &sample,
 		Ray *ray) const {
@@ -77,21 +96,21 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray)
+bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen)
 {
 	//TODO: check whether IsVisibleFromEyes() can alway return correct answer.
 	bool isVisible;
-	if (GenerateSample(p, sample))
+	if (GenerateSample(p, (Sample *)sample_gen))
 	{
-		GenerateRay(*sample, ray);
-		Vector dd(pos - p);
-		Ray ray1(p, -ray->d);
+		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		Vector dd(pos-p);
+		Ray ray1(p, -ray_gen->d);
 
-		if (Dot(dd, normal) < 0.f)
+		if (Dot(dd,normal)<0)
 		{
 			Intersection isect1;
-			if (scene->Intersect(ray1, &isect1))
-				isVisible = WorldToCamera(isect1.dg.p).z < 0.f;
+			if (scene->Intersect(ray1,&isect1))
+				isVisible = WorldToCamera(isect1.dg.p).z<0 ;
 			else
 				isVisible = true;
 		}
@@ -104,37 +123,21 @@ bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sa
 }
 float PerspectiveCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
 {
-	return AbsDot(wo, normal) * AbsDot(wo, n) / DistanceSquared(pos, p);
+	return AbsDot(wo, normal)*AbsDot(wo, n)/DistanceSquared(pos, p);
 }
-void PerspectiveCamera::GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount)
+void PerspectiveCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount)
 {
-	float xWidth, yHeight;
-	const float R = 100.f;
-	const float templength = R * tan(fov * 0.5f) * 2.f;	
-	const float frameaspectratio = static_cast<float>(film->xResolution) / static_cast<float>(film->yResolution);
+	float d2,cos2,cos4,detaX,detaY;
+	int x,y;
 
-	if (frameaspectratio > 1.f)
-	{
-		xWidth = templength * frameaspectratio;
-		yHeight = templength;
-	}
-	else
-	{
-		xWidth = templength;
-		yHeight = templength / frameaspectratio;
-	}
-	const float xPixelWidth = xWidth / film->xResolution;
-	const float yPixelHeight = yHeight / film->yResolution;
-	const float Apixel = xPixelWidth * yPixelHeight;
-
-	for (int y = 0; y < yPixelCount; ++y) {
-		for (int x = 0; x < xPixelCount; ++x) {
-			float detaX = 0.5f * xWidth - (x + 0.5f) * xPixelWidth;
-			float detaY = 0.5f * yHeight - (y + 0.5f) * yPixelHeight;
-			float d2 = detaX * detaX + detaY * detaY + R * R;
-			float cos2 = R * R / d2;
-			float cos4 = cos2 * cos2;
-			film->flux2radiance[x + y * xPixelCount] =  R * R / (Apixel * cos4);
+	for (y = 0; y < yPixelCount; ++y) {
+		for (x = 0; x < xPixelCount; ++x) {
+			detaX = 0.5*xWidth - (x+0.5)*xPixelWidth;
+			detaY = 0.5*yHeight - (y+0.5)*yPixelHeight;
+			d2 = detaX*detaX + detaY*detaY + R*R;
+			cos2 = R*R / d2;
+			cos4 = cos2 * cos2;
+			factors[x+y*xPixelCount] =  R*R / (Apixel*cos4);
 		}
 	}
 }

@@ -75,13 +75,12 @@ public:
 		if(filterTable!=NULL)delete[] filterTable;
 	}
 
-	void AddSample(float sX, float sY, const SWCSpectrum &L, float alpha);
-	void AddSample(float sX, float sY, const XYZColor &L, float alpha);
+	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int id=0);
 
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;
-	void WriteImage() {WriteImage( WI_HDR );};
-	void WriteImage(int oType);
+	//void WriteImage() {WriteImage( IMAGE_HDR );};
+	void WriteImage(ImageType type);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
 	void WriteIGIImage(float *rgb, float *alpha, const string &filename);

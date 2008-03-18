@@ -36,9 +36,9 @@ public:
 				float sopen, float sclose,
 				float lensr, float focald, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
-	bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample, Ray *ray);
+	bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen);;
 	float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n);
-	void GetFlux2RadianceFactor(Film *film, int xPixelCount, int yPixelCount);
+	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount);
 	bool IsDelta() const
 	{
 		return true;

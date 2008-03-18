@@ -32,26 +32,46 @@
 namespace lux
 {
 
+class PackedSample
+{
+public :
+	PackedSample(float x, float y, const Sample *s, const Ray &r, const XYZColor &L1, float a, int id1):
+	imageX(x),imageY(y),sample(s),ray(r),L(L1),alpha(a),id(id1){}
+	float imageX,imageY;
+	const Sample *sample;
+	Ray ray;
+	XYZColor L;
+	float alpha;
+	int id;
+};
 class MetropolisSampler : public Sampler {
 public:
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng);
+	~MetropolisSampler() { delete[] sampleImage; }
 	virtual MetropolisSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }
 	int RoundSize(int size) const { return size; }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	void AddSample(const Sample &sample, const Ray &ray,
-		const SWCSpectrum &L, float alpha, Film *film);
-	~MetropolisSampler() { delete[] sampleImage; }
+	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
+	void AddSample(const XYZColor &newL, float newAlpha);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	void SampleBegin();
+	void SampleEnd();
+	void GetBufferType(BufferType *t)
+	{
+		*t = BUF_TYPE_PER_SCREEN;
+	}
 	bool large;
-	XYZColor L;
+	XYZColor oldL, newL;
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;
 	int *timeImage, *offset;
 	static int initCount, initSamples;
 	static float meanIntensity;
+	vector <PackedSample> newSamples;
+	vector <PackedSample> oldSamples;
 };
 
 }//namespace lux

@@ -109,27 +109,26 @@ double Scene::Statistics(char *statName) {
 	}
 }
 
-// Control Implementations in Scene::
-double Scene::Statistics_SamplesPPx()
+// Control Implementations in Scene:
+double Scene::GetNumberOfSamples()
 {
 	// collect samples from all threads
 	double samples = 0.;
 	for(unsigned int i=0;i<renderThreads.size();i++)
 		samples +=renderThreads[i]->stat_Samples;
-
+	return samples;
+}
+double Scene::Statistics_SamplesPPx()
+{
 	// divide by total pixels
 	int xstart,xend,ystart,yend;
 	camera->film->GetSampleExtent(&xstart,&xend,&ystart,&yend);
-	return samples / (double) ((xend-xstart)*(yend-ystart));
+	return GetNumberOfSamples() / (double) ((xend-xstart)*(yend-ystart));
 }
 
 double Scene::Statistics_SamplesPSec()
 {
-	// collect samples from all threads
-	double samples = 0.;
-	for(unsigned int i=0;i<renderThreads.size();i++)
-		samples +=renderThreads[i]->stat_Samples; 
-
+	double samples = GetNumberOfSamples();
 	double time = s_Timer.Time();
 	double dif_samples = samples - lastSamples;
 	double elapsed = time - lastTime;
@@ -180,7 +179,8 @@ void RenderThread::render(RenderThread *myThread)
 	u_int *useSampPos = new u_int();
 	*useSampPos = 0;
 	u_int maxSampPos = myThread->sampler->GetTotalSamplePos();
-
+	myThread->surfaceIntegrator->SetSampler(myThread->sampler);
+	
 	// Trace rays: The main loop
 	while (true) {
 		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
@@ -223,9 +223,11 @@ void RenderThread::render(RenderThread *myThread)
 			if (Ls.Black())
 				myThread->stat_blackSamples++;
 
-			// Radiance - Add sample contribution to image
-			myThread->sampler->AddSample(*(myThread->sample),
-				ray, Ls, alpha, myThread->camera->film);
+			if (myThread->surfaceIntegrator->NeedAddSampleInRender())
+			{
+				// Radiance - Add sample contribution to image
+				myThread->sampler->AddSample(myThread->sample->imageX, myThread->sample->imageY, *(myThread->sample), ray, Ls.ToXYZ(), alpha);
+			}
 
 			// Free BSDF memory from computing image sample value
 			BSDF::FreeAll();
@@ -280,6 +282,9 @@ void Scene::RemoveRenderThread()
 
 void Scene::Render() {
 	// integrator preprocessing
+	camera->film->SetScene(this);
+	sampler->SetFilm(camera->film);
+	surfaceIntegrator->SetSampler(sampler);
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
@@ -304,7 +309,7 @@ void Scene::Render() {
 	}
 
 	// Store final image
-	camera->film->WriteImage();
+	camera->film->WriteImage((ImageType)(IMAGE_HDR|IMAGE_FRAMEBUFFER));
 }
 Scene::~Scene() {
 	delete camera;

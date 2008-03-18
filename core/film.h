@@ -31,6 +31,29 @@
 namespace lux
 {
 
+enum ImageType {
+	IMAGE_NONE        = 0,
+	IMAGE_HDR         = 1<<0,
+	IMAGE_LDR         = 1<<1,
+	IMAGE_FRAMEBUFFER = 1<<2,
+	IMAGE_FILEOUTPUT  = IMAGE_HDR | IMAGE_LDR,
+	IMAGE_ALL         = IMAGE_HDR | IMAGE_LDR | IMAGE_FRAMEBUFFER
+};
+
+// Buffer types
+enum BufferType{
+	BUF_TYPE_PER_PIXEL = 0,	// Per pixel normalized
+	BUF_TYPE_PER_SCREEN,	// Per screen normalized
+	BUF_TYPE_RAW,		// 
+	NUM_OF_BUFFER_TYPES
+};
+
+enum BufferOutputConfig {
+	BUF_FRAMEBUFFER   = 1<<0,
+	BUF_STANDALONE    = 1<<1,
+	BUF_RAWDATA       = 1<<2
+};
+
 class MultiImageFilm;
 
 // Film Declarations
@@ -43,12 +66,16 @@ public:
 	}
 	virtual ~Film() {
 	}
-	virtual void AddSample(float sX, float sY, const SWCSpectrum &L, float alpha) = 0;
-	virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha) = 0;
-	virtual void WriteImage() = 0;
-	virtual void WriteImage(int oType) = 0;
-	virtual void
-			GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
+	virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int id=0) = 0;
+	virtual void WriteImage(ImageType type) = 0;
+	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
+	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix)
+	{
+		return 0;
+	}
+	virtual void CreateBuffers()
+	{
+	}
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual float getldrDisplayInterval() = 0;

@@ -20,39 +20,56 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// erpt.h*
-
-#ifndef LUX_ERPT_H
-#define LUX_ERPT_H
-
-#include "sampling.h"
-#include "paramset.h"
-#include "film.h"
+// path.cpp*
+#include "lux.h"
+#include "transport.h"
+#include "scene.h"
 
 namespace lux
 {
 
-class ERPTSampler : public Sampler {
+// PathnIntegrator Declarations
+class PathnIntegrator : public SurfaceIntegrator {
 public:
-	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng);
-	virtual ERPTSampler* clone() const;
-	u_int GetTotalSamplePos() { return 0; }
-	int RoundSize(int size) const { return size; }
-	bool GetNextSample(Sample *sample, u_int *use_pos);
-	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
-	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	XYZColor L;
-	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
-	float range, weight, alpha;
-	float *baseImage, *sampleImage;
-	int *timeImage, *offset;
-	static int initCount, initSamples;
-	static float meanIntensity;
+	// PathnIntegrator Public Methods
+	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
+	void RequestSamples(Sample *sample, const Scene *scene);
+	void Preprocess(const Scene* scene);
+	bool NeedAddSampleInRender() {
+		return false;
+	}
+	PathnIntegrator(int md, float cp) { 
+			maxDepth = md; continueProbability = cp;
+			L.resize(maxDepth+1);
+/*			lightPositionOffset = new int[maxDepth];
+			lightNumOffset = new int[maxDepth];
+			bsdfDirectionOffset = new int[maxDepth];
+			bsdfComponentOffset = new int[maxDepth];
+			continueOffset = new int[maxDepth];
+			outgoingDirectionOffset = new int[maxDepth];
+			outgoingComponentOffset = new int[maxDepth];*/
+	}
+	virtual PathnIntegrator* clone() const; // Lux (copy) constructor for multithreading
+	virtual ~PathnIntegrator() {
+/*		delete[] lightPositionOffset; delete[] lightNumOffset;
+		delete[] bsdfDirectionOffset; delete[] bsdfComponentOffset;
+		delete[] continueOffset; delete[] outgoingDirectionOffset;
+		delete[] outgoingComponentOffset;*/ }
+	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+private:
+	// PathnIntegrator Private Data
+	int maxDepth, sampleOffset;
+	float continueProbability;
+/*	int *lightPositionOffset;
+	int *lightNumOffset;
+	int *bsdfDirectionOffset;
+	int *bsdfComponentOffset;
+	int *continueOffset;
+	int *outgoingDirectionOffset;
+	int *outgoingComponentOffset;*/
+	vector <int> bufferIds;
+	mutable vector <SWCSpectrum> L;
 };
 
 }//namespace lux
-
-#endif // LUX_METROSAMPLER_H
 

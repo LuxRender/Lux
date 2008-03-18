@@ -37,16 +37,18 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	yPixelStart = ystart;
 	yPixelEnd = yend;
 	samplesPerPixel = spp;
+	isSampleEnd = true;
 }
 float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	return sample->xD[num] + pos * sample->dxD[num];
 }
-void Sampler::AddSample(const Sample &sample, const Ray &ray,
-	const SWCSpectrum &L, float alpha, Film *film)
+void Sampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id)
 {
-	if (!L.Black())
-		film->AddSample(sample.imageX, sample.imageY, L.ToXYZ(), alpha);
+	//Early returns introduce bias in penumbra for per-pixel normalization
+	//if (!L.Black())
+
+	film->AddSample(imageX, imageY, L, alpha, id);
 }
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,

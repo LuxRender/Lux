@@ -84,7 +84,7 @@ namespace lux
     }
 
     void sample(const float lambda, double& p) const {
-      SD.sample(lambda, p);
+      p = SD.sample(lambda);
       p *= invSD_560;
     }
     
