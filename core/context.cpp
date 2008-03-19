@@ -657,8 +657,8 @@ int Context::filmYres() {
 	return luxCurrentScene->FilmYres();
 }*/
 
-double Context::statistics(char *statName) {
-	if (std::string(statName)=="sceneIsReady") return (luxCurrentScene!=NULL);
+double Context::statistics(const string &statName) {
+	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL);
 	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);
 	else return 0;
 }

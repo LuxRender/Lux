@@ -85,20 +85,20 @@ int Scene::FilmYres() {
 }
 
 // Statistics Access
-double Scene::Statistics(char *statName) {
-	if(std::string(statName)=="secElapsed")
+double Scene::Statistics(const string &statName) {
+	if(statName=="secElapsed")
 		return s_Timer.Time();
-	else if(std::string(statName)=="samplesSec")
+	else if(statName=="samplesSec")
 		return Statistics_SamplesPSec(); 
-	else if(std::string(statName)=="samplesPx")
+	else if(statName=="samplesPx")
 		return Statistics_SamplesPPx(); 
-	else if(std::string(statName)=="efficiency")
+	else if(statName=="efficiency")
 		return Statistics_Efficiency();
-	else if(std::string(statName)=="filmXres")
+	else if(statName=="filmXres")
 		return FilmXres();
-	else if(std::string(statName)=="filmYres")
+	else if(statName=="filmYres")
 		return FilmYres();
-	else if(std::string(statName)=="displayInterval")
+	else if(statName=="displayInterval")
 		return DisplayInterval();
 	else
 	{

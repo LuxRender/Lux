@@ -169,9 +169,8 @@ void MetropolisSampler::SampleBegin()
 void MetropolisSampler::SampleEnd()
 {
 	Sampler::SampleEnd();
-	int i;
 	newL = 0.0f;
-	for(i=0; i<newSamples.size(); i++)
+	for(u_int i=0; i<newSamples.size(); i++)
 		newL += newSamples[i].L;
 	AddSample(newL, 1.0f);
 }
@@ -194,7 +193,6 @@ void MetropolisSampler::AddSample(float imageX, float imageY, const Sample &samp
 
 void MetropolisSampler::AddSample(const XYZColor &newL, float newAlpha)
 {
-	int i;
 	XYZColor c;
 	const Sample &sample = *(newSamples[0].sample);
 	float newLY = newL.y();
@@ -214,7 +212,7 @@ void MetropolisSampler::AddSample(const XYZColor &newL, float newAlpha)
 	// try or force accepting of the new sample
 	if (consecRejects > maxRejects || lux::random::floatValue() < accProb ) {
 		oldL *= weight;
-		for(i=0; i<oldSamples.size(); ++i)
+		for(u_int i=0; i<oldSamples.size(); ++i)
 		{
 			c = oldSamples[i].L;
 			c *= weight;
@@ -241,7 +239,7 @@ void MetropolisSampler::AddSample(const XYZColor &newL, float newAlpha)
 	} else {
 		XYZColor Lw(newL);
 		Lw *= newWeight;
-		for(i=0; i<newSamples.size(); ++i)
+		for(u_int i=0; i<newSamples.size(); ++i)
 		{
 			c = newSamples[i].L;
 			c *= weight;

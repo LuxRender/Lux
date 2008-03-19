@@ -39,7 +39,7 @@ string current_file;
 
 #define YYMAXDEPTH 100000000
 
-void yyerror( char *str ) {
+void yyerror( const char *str ) {
 	std::stringstream ss;
 	ss<<"Parsing error: "<<str;
 	luxError( LUX_SYNTAX,LUX_SEVERE,ss.str().c_str());

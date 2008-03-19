@@ -85,18 +85,16 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	Vector lightDir;
 	float lightPdf1,lightPdf2,lightPdf;
 
-	lightPdf = 1 / numOfLights;
 	light->SamplePosition(u[0], u[1], &lightPoint, &lightNormal, &lightPdf1);
-	lightPdf *= lightPdf1;
+	lightPdf = lightPdf1 / numOfLights;
 
 	if (scene->camera->IsVisibleFromEyes(scene, lightPoint, &sample_gen, &ray_gen))
 	{
 		//Vector wi1 = Normalize(wi);
 		Vector wo1 = Normalize(-ray_gen.d);
 		Le = light->Eval(lightNormal,wo1);
-		Le /= lightPdf;
 		G = scene->camera->GetConnectingFactor(lightPoint,wo1,lightNormal);
-		Le *= G;
+		Le *= G / lightPdf;
 
 		assert(!Le.IsNaN());
 		sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, Le.ToXYZ(), 1.0f, 0);

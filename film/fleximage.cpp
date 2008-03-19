@@ -141,7 +141,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 	// TODO: Find a group
 	if (bufferGroups.size()==0)
 	{
-		RequestBuffer(BUF_TYPE_PER_PIXEL,BUF_FRAMEBUFFER,"");
+		RequestBuffer(BUF_TYPE_PER_SCREEN,BUF_FRAMEBUFFER,"");
 		CreateBuffers();
 	}
 
@@ -249,7 +249,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 {
 	boost::mutex::scoped_lock lock(addSampleMutex);
 
-	int i,j,x,y,offset;
+	int x,y,offset;
 	int nPix = xPixelCount * yPixelCount;
 	float *rgb0 = new float[3*nPix], *alpha0 = new float[nPix];
 	float *rgb = new float[3*nPix], *alpha = new float[nPix];
@@ -261,9 +261,9 @@ void FlexImageFilm::WriteImage(ImageType type)
 	memset(rgb0,0,nPix*3*sizeof(*rgb0));
 	memset(alpha0,0,nPix*sizeof(*alpha0));
 
-	for(j=0;j<bufferGroups.size();++j)
+	for(u_int j=0;j<bufferGroups.size();++j)
 	{
-		for(i=0;i<bufferConfigs.size();++i)
+		for(u_int i=0;i<bufferConfigs.size();++i)
 		{
 			bufferGroups[j].buffers[i]->GetData(rgb, alpha);
 			if (bufferConfigs[i].output & BUF_FRAMEBUFFER)

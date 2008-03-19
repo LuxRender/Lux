@@ -35,12 +35,12 @@ struct KdNode {
 	void init(float p, u_int a) {
 		splitPos = p;
 		splitAxis = a;
-		rightChild = ~(0U);
+		rightChild = ~0;
 		hasLeftChild = 0;
 	}
 	void initLeaf() {
 		splitAxis = 3;
-		rightChild = ~(0U);
+		rightChild = ~0;
 		hasLeftChild = 0;
 	}
 	// KdNode Data

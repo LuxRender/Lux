@@ -36,7 +36,8 @@ InfiniteAreaLightIS
 				const string &texmap)
 	: Light(light2world, ns)
 {
-	int width, height;
+	int width = 0, height = 0;
+	Lbase = L;
 	radianceMap = NULL;
 	if (texmap != "") {
 		auto_ptr<ImageData> imgdata(ReadImage(texmap));
@@ -47,7 +48,8 @@ InfiniteAreaLightIS
 			radianceMap = imgdata->createMIPMap<Spectrum>();
 		}
 	}
-	if (radianceMap != NULL) {
+	if (radianceMap == NULL)
+		return;
 	// Compute scalar-valued image from environment map
 	float filter = 1.f / max(width, height);
 	int nu = width, nv = height;
@@ -76,8 +78,6 @@ InfiniteAreaLightIS
 		func[u] = vDistribs[u]->funcInt;
 	uDistrib = new Distribution1D(func, nu);
 	delete[] img;
-	}
-	Lbase = L;
 }
 SWCSpectrum
 	InfiniteAreaLightIS::Le(const RayDifferential &r) const {

@@ -450,7 +450,7 @@ int main(int ac, char *av[]) {
 						float to[3]= {0,0,1};
 						float color1[3]={1,0,0},color2[3]={0,0,1};
 						float scale=4;
-						char *filename="simple.png";
+						const char filename[]="simple.png";
 						luxCamera("perspective","fov",&fov,LUX_NULL);
 						luxPixelFilter("mitchell","xwidth", &size, "ywidth" , &size,LUX_NULL);
 						luxSampler("random",LUX_NULL);

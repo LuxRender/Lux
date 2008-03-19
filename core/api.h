@@ -98,7 +98,7 @@ void luxAddServer(const char * name);
 void luxUpdateFilmFromNetwork();
 
 /* Informations and statistics */
-double luxStatistics(char *statName);
+double luxStatistics(const char *statName);
 
 /* Error Handlers */
 extern int luxLastError; /*  Keeps track of the last error code */

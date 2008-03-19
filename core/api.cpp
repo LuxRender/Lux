@@ -469,7 +469,7 @@ extern "C" int luxFilmYres() {
 	//return luxCurrentScene->FilmYres();
 }*/
 
-extern "C" double luxStatistics(char *statName) {
+extern "C" double luxStatistics(const char *statName) {
 	if(initialized) return Context::luxStatistics(statName);
 	else 
 		{

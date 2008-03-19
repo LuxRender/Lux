@@ -117,7 +117,7 @@ public:
 	static void luxUpdateFilmFromNetwork() { activeContext->updateFilmFromNetwork() ; }
 
 	//statistics
-	static double luxStatistics(char *statName) { return activeContext->statistics(statName); }
+	static double luxStatistics(const string &statName) { return activeContext->statistics(statName); }
 	static void luxAddServer(const string &name) { activeContext->addServer(name); }
 	
 	
@@ -191,7 +191,7 @@ private:
 	void updateFilmFromNetwork();
 
 	//statistics
-	double statistics(char *statName);
+	double statistics(const string &statName);
 	void addServer(const string &name);
 
 	// API Local Classes

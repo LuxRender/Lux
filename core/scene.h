@@ -121,7 +121,7 @@ public:
 	Timer s_Timer;
 	double lastSamples, lastTime;
 	//statistics
-	double Statistics(char *statName);
+	double Statistics(const string &statName);
 
 	void SignalThreads(int signal);
 	int CreateRenderThread();
