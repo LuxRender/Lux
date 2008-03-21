@@ -49,6 +49,7 @@ public:
 private:
 	// ParticleTracingIntegrator Private Data
 	int maxDepth;
+	int sampleOffset;
 	float continueProbability;
 	int numOfLights;
 	mutable Sample_stub sample_gen;

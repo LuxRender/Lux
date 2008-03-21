@@ -36,7 +36,16 @@ using namespace lux;
 // ParticleTracingIntegrator Method Definitions
 void ParticleTracingIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
+	// TODO: Add another 2 random numbers for Lens UV
+	vector<u_int> structure;
+	// TODO: Light sampling is done only once
+	structure.push_back(1);	// Select a light
+	structure.push_back(2);	// Select a position in the light
+	structure.push_back(2);	// Select a direction in the light
 
+	structure.push_back(2);	// Select a direction by BxDF
+	structure.push_back(1);	// Select a BxDF
+	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
 void ParticleTracingIntegrator::Preprocess(const Scene *scene)
 {
@@ -63,20 +72,17 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	Point p;
 	Normal n;
 	Vector wi;
+	float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, 0);
+
 	// Choose light for bidirectional path
-	int lightNum = Floor2Int(random::floatValue() * numOfLights);
+	int lightNum = Floor2Int(data[0] * numOfLights);
 	lightNum = min(lightNum, numOfLights - 1);
 	Light *light = scene->lights[lightNum];
-	// Sample ray from light source to start light path
-	float u[4];
-	u[0] = random::floatValue();
-	u[1] = random::floatValue();
-	u[2] = random::floatValue();
-	u[3] = random::floatValue();
 
+	// Sample ray from light source to start light path
 	SWCSpectrum F;
 	double G,pdf,g;
-	Point lastPoint;
+	//Point lastPoint;
 	Normal lastNormal;
 
 	SWCSpectrum Le;
@@ -85,7 +91,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	Vector lightDir;
 	float lightPdf1,lightPdf2,lightPdf;
 
-	light->SamplePosition(u[0], u[1], &lightPoint, &lightNormal, &lightPdf1);
+	light->SamplePosition(data[1], data[2], &lightPoint, &lightNormal, &lightPdf1);
 	lightPdf = lightPdf1 / numOfLights;
 
 	if (scene->camera->IsVisibleFromEyes(scene, lightPoint, &sample_gen, &ray_gen))
@@ -100,7 +106,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, Le.ToXYZ(), 1.0f, 0);
 	}
 
-	light->SampleDirection(u[2],u[3],lightNormal,&lightDir,&lightPdf2);
+	light->SampleDirection(data[3],data[4],lightNormal,&lightDir,&lightPdf2);
 	lightPdf *= lightPdf2;
 	if (lightPdf == 0.)
 	{
@@ -115,12 +121,15 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	Intersection isect;
 
 	F = Le;
-	lastPoint = lightPoint;
+	//lastPoint = lightPoint;
 	lastNormal = lightNormal;
 	pdf = lightPdf;
 
 	for (int pathLength = 0; pathLength < maxDepth; ++pathLength)
 	{
+		if (pathLength!=0)
+			data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		
 		// Find next vertex of path
 		// Stop path sampling since no intersection was found
 		if (!scene->Intersect(ray, &isect))
@@ -140,13 +149,6 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		pdf *= g;
 		F *= G;
 
-		// Sample BSDF to get new path direction
-		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
-		float bs1, bs2, bcs;
-		bs1 = random::floatValue();
-		bs2 = random::floatValue();
-		bcs = random::floatValue();
-
 		if (scene->camera->IsVisibleFromEyes(scene, p, &sample_gen, &ray_gen))
 		{
 			Vector wo1 = Normalize(-ray_gen.d);
@@ -160,7 +162,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		Vector wo;
 		float bsdf_pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(wi, &wo, bs1, bs2, bcs,
+		SWCSpectrum f = bsdf->Sample_f(wi, &wo, data[5], data[6], data[7],
 			&bsdf_pdf, BSDF_ALL, &flags);
 		if (f.Black() || bsdf_pdf == 0.)
 			break;
@@ -179,7 +181,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 
 		ray = RayDifferential(p, wo);
 
-		lastPoint = p;
+		//lastPoint = p;
 		lastNormal = n;
 	}
 
