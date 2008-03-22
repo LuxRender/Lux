@@ -250,7 +250,7 @@ void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpe
 	const float Y = PerezFunction(perez_Y, theta_fin, gamma, zenith_Y);
 
 	ChromaticityToSpectrum(x,y,dst_spect);
-	*dst_spect *= (Y / dst_spect->y() * 0.00000165f); // lyc - nasty scaling factor :(
+	*dst_spect *= (Y / dst_spect->y() * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
 }
 
 //300-830 10nm
