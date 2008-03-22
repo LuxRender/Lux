@@ -124,6 +124,7 @@ void ApplyImagingPipeline(float *rgb, int xResolution,
 		}
 		delete[] scale;
 		delete[] lum;
+		delete toneMap;
 	}
 	// Handle out-of-gamut RGB values
 	for (int i = 0; i < nPix; ++i) {

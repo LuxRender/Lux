@@ -115,8 +115,15 @@ void ArrayFree( ParamArray *ra )
 
 void FreeArgs()
 {
-	for (int i = 0; i < cur_paramlist_size; ++i)
+	for (int i = 0; i < cur_paramlist_size; ++i) {
+		// NOTE - Ratow - freeing up strings inside string type args
+		if(memcmp("string", cur_paramlist_tokens[i], 6) == 0 ||
+				memcmp("texture", cur_paramlist_tokens[i], 6) == 0) {
+			for (int j = 0; j < cur_paramlist_sizes[i]; ++j)
+				free(((char **)cur_paramlist_args[i])[j]);
+		}
 		delete[] ((char *)cur_paramlist_args[i]);
+	}
 }
 
 static bool VerifyArrayLength( ParamArray *arr, int required,

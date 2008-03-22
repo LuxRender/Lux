@@ -44,17 +44,20 @@ namespace lux
 			height_=height;
 			pixel_type_=type;
 			noChannels_=noChannels;
-			//auto_ptr<TextureColorBase>p(data);
-			//data_=p;
+			// NOTE - Ratow - Not using auto_ptr here because of undefined behavior when deleting array data
 			data_=data;
 			isExrImage_=false;
 
 		}
+		~ImageData()
+		{
+			delete[] data_;
+		}
+
 		int getWidth()		{	return width_; }
 		int getHeight()		{	return height_; }
 		int getChannels()	{	return noChannels_; }
 		PixelDataType  getPixelDataType() { return pixel_type_;}
-		//TextureColorBase * getData()	{	return data_.get(); }
 		TextureColorBase * getData()	{	return data_; }
 		bool isExrImage() { return isExrImage_;}
 		void setIsExrImage(bool isExrImage) {isExrImage_= isExrImage;}
@@ -68,21 +71,18 @@ namespace lux
 			{
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					//mipmap = new MIPMapImpl<T, TextureColor<unsigned char,3> >(width_, height_,(TextureColor<unsigned char,3>*)data_.get(),
 					mipmap = new MIPMapImpl<T, TextureColor<unsigned char,3> >(width_, height_,(TextureColor<unsigned char,3>*)data_,
 						doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					//mipmap = new MIPMapImpl<T, TextureColor<float,3> >(width_, height_,(TextureColor<float,3>*)data_.get(),
 					mipmap = new MIPMapImpl<T, TextureColor<float,3> >(width_, height_,(TextureColor<float,3>*)data_,
 						doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					//mipmap = new MIPMapImpl<T, TextureColor<unsigned short,3> >(width_, height_,( TextureColor<unsigned short,3>*)data_.get(),
 					mipmap = new MIPMapImpl<T, TextureColor<unsigned short,3> >(width_, height_,( TextureColor<unsigned short,3>*)data_,
 						doTri,maxAniso,wrapMode);
 				}
@@ -92,19 +92,16 @@ namespace lux
 			{
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					//mipmap = new MIPMapImpl<T, TextureColor<float,4> >(width_, height_,( TextureColor<float,4>*)data_.get(),
 					mipmap = new MIPMapImpl<T, TextureColor<float,4> >(width_, height_,( TextureColor<float,4>*)data_,
 						doTri,maxAniso,wrapMode);
 				}
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					//mipmap = new MIPMapImpl<T, TextureColor<unsigned char,4> >(width_, height_,static_cast< TextureColor<unsigned char,4>* >(data_.get()),
 					mipmap = new MIPMapImpl<T, TextureColor<unsigned char,4> >(width_, height_,static_cast< TextureColor<unsigned char,4>* >(data_),
 						doTri,maxAniso,wrapMode);
 				}
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					//mipmap = new MIPMapImpl<T, TextureColor<unsigned short,4> >(width_, height_,static_cast< TextureColor<unsigned short,4>* >(data_.get()),
 					mipmap = new MIPMapImpl<T, TextureColor<unsigned short,4> >(width_, height_,static_cast< TextureColor<unsigned short,4>* >(data_),
 						doTri,maxAniso,wrapMode);
 				}
@@ -115,7 +112,6 @@ namespace lux
 	int width_;
 	int height_;
 	int noChannels_;
-	//auto_ptr<TextureColorBase> data_;
 	TextureColorBase *data_;
 	PixelDataType pixel_type_;
 	bool isExrImage_;

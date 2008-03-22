@@ -539,6 +539,7 @@ void merge_FrameBuffer(void *) {
 	fb_update_thread = new boost::thread(boost::bind(&merge_FrameBuffer_Thread, &threadDone));
 	while(!threadDone)	Fl::wait(0.5);
 	fb_update_thread->join();
+	delete fb_update_thread;
 	fb_update_thread = NULL;
 	renderview->update_image();
 
@@ -769,7 +770,7 @@ int main(int ac, char *av[]) {
 	bool opengl_enabled = true;
 	engine_thread = NULL;
 	fb_update_thread = NULL;
-	
+
 	//jromang : we have to call luxInit before luxStatistics (in check_SceneReady)
 	luxInit();
 

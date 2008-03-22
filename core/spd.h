@@ -30,7 +30,7 @@ namespace lux
   class SPD {
   public:
     inline SPD() {}
-    inline ~SPD() {}
+    virtual inline ~SPD() {}
 
     // lambda - wavelength in nm
     virtual float sample(const float lambda) const = 0;
@@ -50,9 +50,9 @@ namespace lux
     //  n          number of samples
     RegularSPD(const float* const samples, float lambdaMin, float lambdaMax, int n) : SPD() {
       init(lambdaMin, lambdaMax, samples, n);
-    }  
+    }
 
-    ~RegularSPD() {
+    virtual ~RegularSPD() {
     }
 
     // samples the SPD by performing a linear interpolation on the data
@@ -190,7 +190,7 @@ namespace lux
       delete[] sd;
     }
 
-    ~IrregularSPD() {
+    virtual ~IrregularSPD() {
     }
 
   private:

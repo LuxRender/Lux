@@ -180,11 +180,9 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	// radiance - disabled for threading // static StatsCounter texLoaded("Texture", "Number of image maps loaded"); // NOBOOK
 	// radiance - disabled for threading // ++texLoaded; // NOBOOK
 	int width, height;
-	//auto_ptr<ImageData> imgdata(ReadImage(filename));
-	ImageData *imgdata = ReadImage(filename);
+	auto_ptr<ImageData> imgdata(ReadImage(filename));
 	MIPMap<T> *ret = NULL;
-	//if (imgdata.get()!=NULL) {
-	if (imgdata!=NULL) {
+	if (imgdata.get()!=NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
 		ret = imgdata->createMIPMap<T>(doTrilinear,maxAniso, wrap);
