@@ -93,21 +93,13 @@
 #include "sun.h"
 #include "sky.h"
 
-#include "bluepaint.h"
-#include "brushedmetal.h"
-#include "clay.h"
-#include "felt.h"
 #include "glass.h"
 #include "roughglass.h"
 #include "matte.h"
 #include "mirror.h"
 #include "plastic.h"
-#include "primer.h"
 #include "shinymetal.h"
-#include "skin.h"
 #include "substrate.h"
-#include "translucent.h"
-#include "uber.h"
 #include "carpaint.h"
 #include "metal.h"
 
@@ -246,30 +238,6 @@ static string SearchPath(const string &searchpath,
         mp.ReportUnused();
         return ret;
     }*/
-    if(name=="bluepaint")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(BluePaint::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
-    if(name=="brushedmetal")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(BrushedMetal::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
-    if(name=="clay")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Clay::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
-    if(name=="felt")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Felt::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
     if(name=="glass")
     {
     	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Glass::CreateMaterial(mtl2world, mp));
@@ -300,39 +268,15 @@ static string SearchPath(const string &searchpath,
         mp.ReportUnused();
         return ret;
     }
-    if(name=="primer")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Primer::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
     if(name=="shinymetal")
     {
     	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(ShinyMetal::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="skin")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Skin::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
     if(name=="substrate")
     {
     	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Substrate::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
-    if(name=="translucent")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Translucent::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
-    if(name=="uber")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(UberMaterial::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }

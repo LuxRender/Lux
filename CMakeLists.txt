@@ -345,10 +345,9 @@ SET(lux_lib_src
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp
-        materials/bluepaint.cpp materials/brushedmetal.cpp materials/clay.cpp materials/felt.cpp
-        materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp materials/primer.cpp
-        materials/shinymetal.cpp materials/skin.cpp materials/substrate.cpp
-        materials/translucent.cpp materials/uber.cpp materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
+        materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp 
+        materials/shinymetal.cpp materials/substrate.cpp
+        materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
