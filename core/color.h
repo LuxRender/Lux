@@ -183,6 +183,9 @@ public:
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
 	RGBColor(XYZColor xyz);
+	RGBColor(const Color &color) { // so that operators work
+		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
+	}
 
 	// XYZ Color output methods
 	void ToXYZ(float &x, float &y, float &z) const {
@@ -252,6 +255,46 @@ public:
 	}
 };
 
+//!
+//! A colour system is defined by the CIE x and y coordinates of its
+//! three primary illuminants and the x and y coordinates of the white
+//! point.
+//! The additional definition of the white point intensity allow for
+//! intensity adaptation
+//!
+class ColorSystem
+{
+public:
+	ColorSystem(float xR, float yR, float xG, float yG, float xB, float yB,
+		float xW, float yW, float lum = 1.);
+//!
+//! \param[in] color A color in XYZ space
+//! \return The color converted in RGB space
+//!
+//! Determine the contribution of each primary in a linear combination
+//! which sums to the desired chromaticity. If the requested
+//! chromaticity falls outside the Maxwell triangle (colour gamut) formed
+//! by the three primaries, one of the R, G, or B weights will be
+//! negative. Use Constrain() to desaturate an outside-gamut colour to
+//! the closest representation within the available gamut.
+//! \sa Constrain
+//!
+	RGBColor Convert(XYZColor &color) const {
+		float c[3];
+		c[0] = conversion[0][0] * color.c[0] + conversion[0][1] * color.c[1] + conversion[0][2] * color.c[2];
+		c[1] = conversion[1][0] * color.c[0] + conversion[1][1] * color.c[1] + conversion[1][2] * color.c[2];
+		c[2] = conversion[2][0] * color.c[0] + conversion[2][1] * color.c[1] + conversion[2][2] * color.c[2];
+		return RGBColor(c);
+	}
+	bool Constrain(const XYZColor &xyz, RGBColor &rgb) const;
+protected:
+	float xRed, yRed; //!<Red coordinates
+	float xGreen, yGreen; //!<Green coordinates
+	float xBlue, yBlue; //!<Blue coordinates
+	float xWhite, yWhite; //!<White coordinates
+	float luminance; //!<White intensity
+	float conversion[3][3]; //!<Corresponding conversion matrix from XYZ to RGB
+};
 
 // RGBColor Method Definitions
 inline ostream &operator<<(ostream &os, const RGBColor &s) {
