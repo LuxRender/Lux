@@ -54,7 +54,7 @@ public:
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
-	void AddSample(const XYZColor &newL, float newAlpha);
+	void AddSample(float newLY, float newAlpha);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	void SampleBegin();
 	void SampleEnd();
@@ -63,7 +63,7 @@ public:
 		*t = BUF_TYPE_PER_SCREEN;
 	}
 	bool large;
-	XYZColor oldL, newL;
+	float LY;
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;

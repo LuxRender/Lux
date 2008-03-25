@@ -37,8 +37,9 @@ using namespace lux;
 static float mutate(const float x)
 {
 	static const float s1 = 1/1024., s2 = 1/16.;
-	float dx = s2 * exp(-log(s2/s1) * lux::random::floatValue());
-	if (lux::random::floatValue() < 0.5) {
+	float randomValue = lux::random::floatValue();
+	float dx = s2 * exp(-log(s2/s1) * fabsf(2.f * randomValue - 1.f));
+	if (randomValue < 0.5) {
 		float x1 = x + dx;
 		return (x1 > 1) ? x1 - 1 : x1;
 	} else {
@@ -51,8 +52,9 @@ static float mutate(const float x)
 static float mutateScaled(const float x, const float mini, const float maxi, const float range)
 {
 	static const float s1 = 64.;
-	float dx = range * exp(-log(s1) * lux::random::floatValue());
-	if (lux::random::floatValue() < 0.5) {
+	float randomValue = lux::random::floatValue();
+	float dx = range * exp(-log(s1) * fabsf(2.f * randomValue - 1.f));
+	if (randomValue < 0.5) {
 		float x1 = x + dx;
 		return (x1 > maxi) ? x1 - maxi + mini : x1;
 	} else {
@@ -63,7 +65,7 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
- Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), oldL(0.),
+ Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), LY(0.),
  totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
  timeImage(NULL)
@@ -169,10 +171,10 @@ void MetropolisSampler::SampleBegin()
 void MetropolisSampler::SampleEnd()
 {
 	Sampler::SampleEnd();
-	newL = 0.0f;
+	float newLY = 0.0f;
 	for(u_int i=0; i<newSamples.size(); i++)
-		newL += newSamples[i].L;
-	AddSample(newL, 1.0f);
+		newLY += newSamples[i].L.y();
+	AddSample(newLY, 1.0f);
 }
 
 // interface for adding/accepting a new image sample.
@@ -187,15 +189,13 @@ void MetropolisSampler::AddSample(float imageX, float imageY, const Sample &samp
 	{	// backward compatible with multiimage.cpp and path.cpp
 		newSamples.clear();
 		newSamples.push_back(PackedSample(imageX,imageY,&sample,ray,newL,newAlpha,id));
-		AddSample(newL, newAlpha);
+		AddSample(newL.y(), newAlpha);
 	}
 }
 
-void MetropolisSampler::AddSample(const XYZColor &newL, float newAlpha)
+void MetropolisSampler::AddSample(float newLY, float newAlpha)
 {
-	XYZColor c;
 	const Sample &sample = *(newSamples[0].sample);
-	float newLY = newL.y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
 		meanIntensity += newLY / initSamples;
@@ -205,22 +205,20 @@ void MetropolisSampler::AddSample(const XYZColor &newL, float newAlpha)
 		if (meanIntensity == 0.) meanIntensity = 1.;
 	}
 	// calculate accept probability from old and new image sample
-	float LY = oldL.y();
 	float accProb = min(1.0f, newLY / LY);
 	float newWeight = (accProb + (large ? 1. : 0.)) / (newLY / meanIntensity + pLarge);
 	weight += (1. - accProb) / (LY / meanIntensity + pLarge);
 	// try or force accepting of the new sample
-	if (consecRejects > maxRejects || lux::random::floatValue() < accProb ) {
-		oldL *= weight;
+	if (consecRejects >= maxRejects || lux::random::floatValue() < accProb ) {
 		for(u_int i=0; i<oldSamples.size(); ++i)
 		{
-			c = oldSamples[i].L;
+			XYZColor c = oldSamples[i].L;
 			c *= weight;
 			film->AddSample(oldSamples[i].imageX, oldSamples[i].imageY, c, oldSamples[i].alpha, oldSamples[i].id);
 		}
 //		film->AddSample(sampleImage[0], sampleImage[1], oldL, alpha);
 		weight = newWeight;
-		oldL = newL; // note - radiance - store as XYZ color since SWCSpectrum wavelength are not persistent!
+		LY = newLY; // note - radiance - store as XYZ color since SWCSpectrum wavelength are not persistent!
 		oldSamples = newSamples;
 		alpha = newAlpha;
 		sampleImage[0] = sample.imageX;
@@ -237,11 +235,9 @@ void MetropolisSampler::AddSample(const XYZColor &newL, float newAlpha)
 		stamp = sample.stamp;
 		consecRejects = 0;
 	} else {
-		XYZColor Lw(newL);
-		Lw *= newWeight;
 		for(u_int i=0; i<newSamples.size(); ++i)
 		{
-			c = newSamples[i].L;
+			XYZColor c = newSamples[i].L;
 			c *= weight;
 			film->AddSample(newSamples[i].imageX, newSamples[i].imageY, c, newSamples[i].alpha, newSamples[i].id);
 		}
