@@ -199,6 +199,8 @@ void ERPTSampler::AddSample(float imageX, float imageY, const Sample &sample, co
 	// calculate the number of chains on a new seed
 	if (chain == 0 && mutation == 0)
 		numChains = Floor2Int(lux::random::floatValue() + newLY / (meanIntensity * totalSamples));
+	if (numChains == 0)
+		return;
 	// calculate accept probability from old and new image sample
 	float LY = L.y();
 	float accProb = min(1.0f, newLY / LY);
