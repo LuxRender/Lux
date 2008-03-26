@@ -133,7 +133,7 @@ void FlexImageFilm::CreateBuffers()
 	bufferGroups.back().CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
 	Buffer::scene=scene;
 }
-void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int id)
+void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
 	// Issue warning if unexpected radiance value returned
 	assert(!xyz.IsNaN() && xyz.y() >= -1e-5 && !isinf(xyz.y()));
@@ -145,8 +145,8 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 		CreateBuffers();
 	}
 
-	BufferGroup & currentGroup = bufferGroups.back();
-	Buffer* buffer = currentGroup.getBuffer(id);
+	BufferGroup &currentGroup = bufferGroups[bufferGroup];
+	Buffer *buffer = currentGroup.getBuffer(buf_id);
 
 	// Compute sample's raster extent
 	float dImageX = sX - 0.5f;
@@ -196,6 +196,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 	// Possibly write out in-progress image
 	// File output
 	// TODO: Use only a output timer.
+	// TODO: use a real lock
 	if( outputType && !imageLock && Floor2Int(timer.elapsed()) > writeInterval)
 	{
 		imageLock = true;

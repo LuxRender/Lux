@@ -78,12 +78,12 @@ float OrthoCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen)
+bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
 {
 	bool isVisible = false;
-	if (GenerateSample(p, (Sample *)sample_gen))
+	if (GenerateSample(p, sample_gen))
 	{
-		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		GenerateRay(*sample_gen, ray_gen);
 		if (WorldToCamera(p).z>0)
 		{
 			ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);

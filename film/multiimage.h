@@ -75,7 +75,7 @@ public:
 		if(filterTable!=NULL)delete[] filterTable;
 	}
 
-	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int id=0);
+	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 
 	void GetSampleExtent(int *xstart, int *xend,
 	                     int *ystart, int *yend) const;

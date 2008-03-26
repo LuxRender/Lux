@@ -25,60 +25,19 @@
 // sampling.h*
 #include "lux.h"
 #include "film.h"
+#include "color.h"
 #include "memory.h"
 
 namespace lux
 {
 
 // Sampling Declarations
-class  Sampler {
-public:
-	// Sampler Interface
-	virtual ~Sampler() {}
-	Sampler(int xstart, int xend, int ystart, int yend, int spp);
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
-	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	virtual u_int GetTotalSamplePos() = 0;
-	int TotalSamples() const {
-		return samplesPerPixel * (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart);
-	}
-	virtual int RoundSize(int size) const = 0;
-	virtual void SampleBegin()
-	{
-		isSampleEnd=false;
-	}
-	virtual void SampleEnd()
-	{
-		isSampleEnd=true;
-	}
-	void SetFilm(Film* f)
-	{
-		film = f;
-	}
-	virtual void GetBufferType(BufferType *t)
-	{}
-	virtual void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
-	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
-	// Sampler Public Data
-	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
-	int samplesPerPixel;
-	Film *film;
-	bool isSampleEnd;
-};
-class SampleGuard
-{
-public:
-	SampleGuard(Sampler* s)
-	{
-		sampler = s;
-		sampler->SampleBegin();
-	}
-	~SampleGuard()
-	{
-		sampler->SampleEnd();
-	}
-private:
-	Sampler *sampler;
+enum SamplingType {
+	SAMPLING_DIRECT = 1 << 0,
+	SAMPLING_INDIRECT = 1 << 1,
+	SAMPLING_EYETOLIGHT = 1 << 2,
+	SAMPLING_LIGHTTOEYE = 1 << 3,
+	SAMPLING_ALL = (1 << 4) - 1
 };
 
 class Sample {
@@ -104,6 +63,10 @@ public:
 		dxD.push_back(d);
 		return nxD.size()-1;
 	}
+	void AddContribution(float x, float y, const XYZColor &c, float a,
+		int b = 0, int g = 0) const {
+		contributions.push_back(Contribution(x, y, c, a, b, g));
+	}
 	~Sample() {
 		if (oneD != NULL) {
 			FreeAligned(oneD[0]);
@@ -114,8 +77,24 @@ public:
 			FreeAligned(timexD);
 		}
 	}
+
+	// Sample internal public type
+	class Contribution {
+	public:
+		Contribution(float x, float y, const XYZColor &c, float a, int b, int g) :
+			imageX(x), imageY(y), color(c), alpha(a), buffer(b), 
+			bufferGroup(g) { }
+
+		float imageX, imageY;
+		XYZColor color;
+		float alpha;
+		int buffer, bufferGroup;
+	};
+
+	//Sample public data
 	// Reference to the sampler for lazy evaluation
 	Sampler *sampler;
+	SamplingType sampling;
 	// Camera _Sample_ Data
 	float imageX, imageY;
 	float lensU, lensV;
@@ -127,7 +106,62 @@ public:
 	vector<vector<u_int> > sxD;
 	float **oneD, **twoD, **xD;
 	int **timexD;
+	mutable vector<Contribution> contributions;
 };
+
+class  Sampler {
+public:
+	// Sampler Interface
+	virtual ~Sampler() {}
+	Sampler(int xstart, int xend, int ystart, int yend, int spp);
+	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
+	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual u_int GetTotalSamplePos() = 0;
+	int TotalSamples() const {
+		return samplesPerPixel * (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart);
+	}
+	virtual int RoundSize(int size) const = 0;
+	virtual void SampleBegin(const Sample *sample)
+	{
+		isSampleEnd = false;
+		sample->contributions.clear();
+	}
+	virtual void SampleEnd()
+	{
+		isSampleEnd = true;
+	}
+	void SetFilm(Film* f)
+	{
+		film = f;
+	}
+	virtual void GetBufferType(BufferType *t)
+	{}
+	virtual void AddSample(float imageX, float imageY, const Sample &sample,
+		const Ray &ray, const XYZColor &L, float alpha, int id = 0);
+	virtual void AddSample(const Sample &sample);
+	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
+	// Sampler Public Data
+	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
+	int samplesPerPixel;
+	Film *film;
+	bool isSampleEnd;
+};
+class SampleGuard
+{
+public:
+	SampleGuard(Sampler *s, const Sample *sample)
+	{
+		sampler = s;
+		sampler->SampleBegin(sample);
+	}
+	~SampleGuard()
+	{
+		sampler->SampleEnd();
+	}
+private:
+	Sampler *sampler;
+};
+
 // PxLoc X and Y pixel coordinate struct
 struct PxLoc {
 	short x;

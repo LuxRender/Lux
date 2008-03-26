@@ -46,7 +46,7 @@ Camera::Camera(const Transform &world2cam,
 	if (WorldToCamera.HasScale())
 		luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-camera transformation!\n The system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 }
-bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen)
+bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsVisibleFromEyes() method called");
 	return false;

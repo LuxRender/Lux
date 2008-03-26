@@ -96,13 +96,13 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen)
+bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
 {
 	//TODO: check whether IsVisibleFromEyes() can alway return correct answer.
 	bool isVisible;
-	if (GenerateSample(p, (Sample *)sample_gen))
+	if (GenerateSample(p, sample_gen))
 	{
-		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		GenerateRay(*sample_gen, ray_gen);
 		Vector dd(pos-p);
 		Ray ray1(p, -ray_gen->d);
 

@@ -66,7 +66,8 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
-	SampleGuard guard(sampler);
+	SampleGuard guard(sampler, sample);
+	Sample &sample_gen = const_cast<Sample &>(*sample);
 
 	SWCSpectrum pathThroughput(1.0f);
 	Point p;
@@ -103,7 +104,8 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		Le *= G / lightPdf;
 
 		assert(!Le.IsNaN());
-		sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, Le.ToXYZ(), 1.0f, 0);
+//		sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, Le.ToXYZ(), 1.0f, 0);
+		sample->AddContribution(sample_gen.imageX, sample_gen.imageY, Le.ToXYZ(), 1.f, 0);
 	}
 
 	light->SampleDirection(data[3],data[4],lightNormal,&lightDir,&lightPdf2);
@@ -156,7 +158,8 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 			SWCSpectrum F1 = F;
 			G = scene->camera->GetConnectingFactor(lightPoint,wo1,n);
 			F1 *= bsdf->f(wo1,wi1)*(G / pdf);
-			sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, F1.ToXYZ(), 1.0f, pathLength+1);
+//			sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, F1.ToXYZ(), 1.0f, pathLength+1);
+			sample->AddContribution(sample_gen.imageX, sample_gen.imageY, F1.ToXYZ(), 1.f, pathLength + 1);
 		}
 
 		Vector wo;

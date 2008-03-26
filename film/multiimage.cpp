@@ -128,7 +128,7 @@ MultiImageFilm::MultiImageFilm(int xres, int yres,
 	}
 }
 
-void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alpha, int id)
+void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id, int bufferGroup)
 {
 	boost::mutex::scoped_lock lock(addSampleMutex);
 

@@ -96,7 +96,7 @@ SWCSpectrum PathnIntegrator::Li(const Scene *scene,
 		float *alpha) const
 {
 	int pathLength;
-	SampleGuard guard(sampler);
+	SampleGuard guard(sampler, sample);
 	for (pathLength=0; pathLength<=maxDepth; ++pathLength)
 		L[pathLength] = 0.0f;
 
@@ -185,7 +185,8 @@ SWCSpectrum PathnIntegrator::Li(const Scene *scene,
 	SWCSpectrum LL = 0.0f;
 	for (pathLength=0; pathLength<=maxDepth; ++pathLength)
 	{
-		sampler->AddSample(sample->imageX,sample->imageY,*sample,r,L[pathLength].ToXYZ(),*alpha,bufferIds[pathLength]);
+//		sampler->AddSample(sample->imageX,sample->imageY,*sample,r,L[pathLength].ToXYZ(),*alpha,bufferIds[pathLength]);
+		sample->AddContribution(sample->imageX, sample->imageY, L[pathLength].ToXYZ(), *alpha, bufferIds[pathLength]);
 		//LL+=L[pathLength];
 	}
 	//sampler->AddSample(*sample,r,LL.ToXYZ(),*alpha,bufferIds[0]);

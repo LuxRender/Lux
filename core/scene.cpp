@@ -228,6 +228,7 @@ void RenderThread::render(RenderThread *myThread)
 				// Radiance - Add sample contribution to image
 				myThread->sampler->AddSample(myThread->sample->imageX, myThread->sample->imageY, *(myThread->sample), ray, Ls.ToXYZ(), alpha);
 			}
+			myThread->sampler->AddSample(*(myThread->sample));
 
 			// Free BSDF memory from computing image sample value
 			BSDF::FreeAll();

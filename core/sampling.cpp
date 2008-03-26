@@ -50,6 +50,17 @@ void Sampler::AddSample(float imageX, float imageY, const Sample &sample, const 
 
 	film->AddSample(imageX, imageY, L, alpha, id);
 }
+void Sampler::AddSample(const Sample &sample)
+{
+	for (u_int i = 0; i < sample.contributions.size(); ++i)
+		film->AddSample(sample.contributions[i].imageX,
+			sample.contributions[i].imageY,
+			sample.contributions[i].color,
+			sample.contributions[i].alpha,
+			sample.contributions[i].buffer,
+			sample.contributions[i].bufferGroup);
+}
+
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 	const Scene *scene)

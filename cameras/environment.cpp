@@ -74,12 +74,12 @@ bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
 
 	return true;
 }
-bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample_stub* sample_gen, Ray *ray_gen)
+bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
 {
 	bool isVisible;
-	if (GenerateSample(p, (Sample *)sample_gen))
+	if (GenerateSample(p, sample_gen))
 	{
-		GenerateRay(*(Sample *)sample_gen, ray_gen);
+		GenerateRay(*sample_gen, ray_gen);
 		ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
 		isVisible = !scene->IntersectP(*ray_gen);
 	}

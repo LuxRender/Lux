@@ -52,7 +52,6 @@ private:
 	int sampleOffset;
 	float continueProbability;
 	int numOfLights;
-	mutable Sample_stub sample_gen;
 	mutable Ray ray_gen;
 	vector <int> bufferIds;
 };

@@ -66,7 +66,7 @@ public:
 	}
 	virtual ~Film() {
 	}
-	virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int id=0) = 0;
+	virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buffer = 0, int bufferGroup = 0) = 0;
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
 	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix)

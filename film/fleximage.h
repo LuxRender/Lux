@@ -256,7 +256,7 @@ public:
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
-	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int id=0);
+	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 	void WriteImage(ImageType type);
 	void WriteImage2(ImageType type, float* rgb, float* alpha, string postfix);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);

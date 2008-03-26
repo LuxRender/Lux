@@ -163,39 +163,24 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	}
 	return data;
 }
-void MetropolisSampler::SampleBegin()
-{
-	Sampler::SampleBegin();
-	newSamples.clear();
-}
-void MetropolisSampler::SampleEnd()
-{
-	Sampler::SampleEnd();
-	float newLY = 0.0f;
-	for(u_int i=0; i<newSamples.size(); i++)
-		newLY += newSamples[i].L.y();
-	AddSample(newLY, 1.0f);
-}
 
 // interface for adding/accepting a new image sample.
 void MetropolisSampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &newL, float newAlpha, int id)
 {
-	if (!isSampleEnd)
-	{
-		newSamples.push_back(PackedSample(imageX,imageY,&sample,ray,newL,newAlpha,id));
-		return;
-	}
-	else
-	{	// backward compatible with multiimage.cpp and path.cpp
-		newSamples.clear();
-		newSamples.push_back(PackedSample(imageX,imageY,&sample,ray,newL,newAlpha,id));
-		AddSample(newL.y(), newAlpha);
+	if (!isSampleEnd) {
+		sample.AddContribution(imageX, imageY, newL, newAlpha, id);
+	} else {	// backward compatible with multiimage.cpp and path.cpp
+		sample.contributions.clear();
+		sample.AddContribution(imageX, imageY, newL, newAlpha, id);
 	}
 }
 
-void MetropolisSampler::AddSample(float newLY, float newAlpha)
+void MetropolisSampler::AddSample(const Sample &sample)
 {
-	const Sample &sample = *(newSamples[0].sample);
+	vector<Sample::Contribution> &newContributions(sample.contributions);
+	float newLY = 0.0f;
+	for(u_int i = 0; i < newContributions.size(); i++)
+		newLY += newContributions[i].color.y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
 		meanIntensity += newLY / initSamples;
@@ -206,21 +191,22 @@ void MetropolisSampler::AddSample(float newLY, float newAlpha)
 	}
 	// calculate accept probability from old and new image sample
 	float accProb = min(1.0f, newLY / LY);
-	float newWeight = (accProb + (large ? 1. : 0.)) / (newLY / meanIntensity + pLarge);
+	float newWeight = (accProb + (large ? 1.f : 0.f)) / (newLY / meanIntensity + pLarge);
 	weight += (1. - accProb) / (LY / meanIntensity + pLarge);
 	// try or force accepting of the new sample
 	if (consecRejects >= maxRejects || lux::random::floatValue() < accProb ) {
-		for(u_int i=0; i<oldSamples.size(); ++i)
-		{
-			XYZColor c = oldSamples[i].L;
-			c *= weight;
-			film->AddSample(oldSamples[i].imageX, oldSamples[i].imageY, c, oldSamples[i].alpha, oldSamples[i].id);
+		// Add accumulated contribution of previous reference sample
+		for(u_int i = 0; i < oldContributions.size(); ++i) {
+			XYZColor color = oldContributions[i].color;
+			color *= weight;
+			film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
+				color, oldContributions[i].alpha,
+				oldContributions[i].buffer, oldContributions[i].bufferGroup);
 		}
-//		film->AddSample(sampleImage[0], sampleImage[1], oldL, alpha);
+		// Save new contributions for reference
 		weight = newWeight;
-		LY = newLY; // note - radiance - store as XYZ color since SWCSpectrum wavelength are not persistent!
-		oldSamples = newSamples;
-		alpha = newAlpha;
+		LY = newLY;
+		oldContributions = newContributions;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
 		sampleImage[2] = sample.lensU;
@@ -233,18 +219,22 @@ void MetropolisSampler::AddSample(float newLY, float newAlpha)
 		for (int i = 0 ; i < totalTimes; ++i)
 			timeImage[i] = sample.timexD[0][i];
 		stamp = sample.stamp;
+
 		consecRejects = 0;
 	} else {
-		for(u_int i=0; i<newSamples.size(); ++i)
-		{
-			XYZColor c = newSamples[i].L;
-			c *= weight;
-			film->AddSample(newSamples[i].imageX, newSamples[i].imageY, c, newSamples[i].alpha, newSamples[i].id);
+		// Add contribution of new sample before rejecting it
+		for(u_int i = 0; i < newContributions.size(); ++i) {
+			XYZColor color = newContributions[i].color;
+			color *= weight;
+			film->AddSample(newContributions[i].imageX, newContributions[i].imageY,
+				color, newContributions[i].alpha,
+				newContributions[i].buffer, newContributions[i].bufferGroup);
 		}
-//		film->AddSample(sample.imageX, sample.imageY, Lw, newAlpha);
+		// Restart from previous reference
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
 		sample.stamp = stamp;
+
 		consecRejects++;
 	}
 }
