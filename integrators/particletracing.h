@@ -36,15 +36,12 @@ public:
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const Scene *);
-	ParticleTracingIntegrator* clone() const {
-		return new ParticleTracingIntegrator(*this);
-	}
 	bool IsFluxBased() {
 		return true;
 	}
-	bool NeedAddSampleInRender() {
+/*	bool NeedAddSampleInRender() {
 		return false;
-	}
+	}*/
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// ParticleTracingIntegrator Private Data
@@ -52,8 +49,7 @@ private:
 	int sampleOffset;
 	float continueProbability;
 	int numOfLights;
-	mutable Ray ray_gen;
-	vector <int> bufferIds;
+	vector<int> bufferIds;
 };
 
 }//namespace lux

@@ -179,7 +179,7 @@ void RenderThread::render(RenderThread *myThread)
 	u_int *useSampPos = new u_int();
 	*useSampPos = 0;
 	u_int maxSampPos = myThread->sampler->GetTotalSamplePos();
-	myThread->surfaceIntegrator->SetSampler(myThread->sampler);
+//	myThread->surfaceIntegrator->SetSampler(myThread->sampler);
 	
 	// Trace rays: The main loop
 	while (true) {
@@ -216,18 +216,19 @@ void RenderThread::render(RenderThread *myThread)
 			// Evaluate radiance along camera ray
 			float alpha;
 			SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
+/*			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
 			SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-			SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );
+			SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );*/
 
-			if (Ls.Black())
+			if (Lo.Black())
 				myThread->stat_blackSamples++;
 
-			if (myThread->surfaceIntegrator->NeedAddSampleInRender())
+/*			if (myThread->surfaceIntegrator->NeedAddSampleInRender())
 			{
 				// Radiance - Add sample contribution to image
 				myThread->sampler->AddSample(myThread->sample->imageX, myThread->sample->imageY, *(myThread->sample), ray, Ls.ToXYZ(), alpha);
-			}
+			}*/
+			// TODO: what about rayWeight?
 			myThread->sampler->AddSample(*(myThread->sample));
 
 			// Free BSDF memory from computing image sample value
@@ -254,8 +255,8 @@ int Scene::CreateRenderThread()
 {
 	RenderThread *rt = new  RenderThread(renderThreads.size(),
 		CurThreadSignal,
-		surfaceIntegrator->clone(),
-		volumeIntegrator->clone(),
+		surfaceIntegrator,
+		volumeIntegrator,
 		sampler->clone(), camera, this);
 
 	renderThreads.push_back(rt);
@@ -285,7 +286,7 @@ void Scene::Render() {
 	// integrator preprocessing
 	camera->film->SetScene(this);
 	sampler->SetFilm(camera->film);
-	surfaceIntegrator->SetSampler(sampler);
+//	surfaceIntegrator->SetSampler(sampler);
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 

@@ -31,12 +31,6 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-MLTPathIntegrator* MLTPathIntegrator::clone() const
-{
-	MLTPathIntegrator *path = new MLTPathIntegrator(*this);
-	return path;
- }
 // MLTPathIntegrator Method Definitions
 void MLTPathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
@@ -53,6 +47,7 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
+	SampleGuard guard(sample->sampler, sample);
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput = 1., L = 0., Le;
 	int lightNum;
@@ -133,6 +128,10 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 		// increase path contribution
 		pathThroughput *= f * AbsDot(wi, n) / pdf;
 	}
+	L *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+	L += scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+	sample->AddContribution(sample->imageX, sample->imageY,
+		L.ToXYZ(), alpha ? *alpha : 1.f);
 	return L;
 }
 

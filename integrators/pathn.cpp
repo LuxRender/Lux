@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// path.cpp*
+// pathn.cpp*
 #include "pathn.h"
 #include "bxdf.h"
 #include "light.h"
@@ -30,28 +30,6 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-PathnIntegrator* PathnIntegrator::clone() const
-{
-	PathnIntegrator *path = new PathnIntegrator(*this);
-/*	path->lightPositionOffset = new int[maxDepth];
-	path->lightNumOffset = new int[maxDepth];
-	path->bsdfDirectionOffset = new int[maxDepth];
-	path->bsdfComponentOffset = new int[maxDepth];
-	path->continueOffset = new int[maxDepth];
-	path->outgoingDirectionOffset = new int[maxDepth];
-	path->outgoingComponentOffset = new int[maxDepth];
-	for (int i = 0; i < maxDepth; ++i) {
-		path->lightPositionOffset[i] = lightPositionOffset[i];
-		path->lightNumOffset[i] = lightNumOffset[i];
-		path->bsdfDirectionOffset[i] = bsdfDirectionOffset[i];
-		path->bsdfComponentOffset[i] = bsdfComponentOffset[i];
-		path->continueOffset[i] = continueOffset[i];
-		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
-		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
-	}*/
-	return path;
-}
 // PathnIntegrator Method Definitions
 void PathnIntegrator::Preprocess(const Scene* scene)
 {
@@ -59,7 +37,7 @@ void PathnIntegrator::Preprocess(const Scene* scene)
 	char postfix[64];
 	bufferIds.clear();
 	BufferType type = BUF_TYPE_PER_PIXEL;
-	sampler->GetBufferType(&type);
+	scene->sampler->GetBufferType(&type);
 	for(i=0; i<=maxDepth; ++i)
 	{
 		sprintf(postfix,"_%02d",i);
@@ -79,16 +57,6 @@ void PathnIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(2);
 	structure.push_back(1);
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
-
-	/*	for (i = 0; i < maxDepth; ++i) {
-		lightPositionOffset[i] = sample->Add2D(1);
-		lightNumOffset[i] = sample->Add1D(1);
-		bsdfDirectionOffset[i] = sample->Add2D(1);
-		bsdfComponentOffset[i] = sample->Add1D(1);
-		continueOffset[i] = sample->Add1D(1);
-		outgoingDirectionOffset[i] = sample->Add2D(1);
-		outgoingComponentOffset[i] = sample->Add1D(1);
-	}*/
 }
 
 SWCSpectrum PathnIntegrator::Li(const Scene *scene,
@@ -96,9 +64,8 @@ SWCSpectrum PathnIntegrator::Li(const Scene *scene,
 		float *alpha) const
 {
 	int pathLength;
-	SampleGuard guard(sampler, sample);
-	for (pathLength=0; pathLength<=maxDepth; ++pathLength)
-		L[pathLength] = 0.0f;
+	SampleGuard guard(sample->sampler, sample);
+	vector<SWCSpectrum> L(maxDepth + 1);
 
 	// Declare common path integration variables
 	SWCSpectrum pathThroughput = 1.;

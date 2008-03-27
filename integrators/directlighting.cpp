@@ -27,11 +27,6 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-DirectLighting* DirectLighting::clone() const
- {
-   return new DirectLighting(*this);
- }
 // DirectLighting Method Definitions
 DirectLighting::~DirectLighting() {
 	delete[] avgY;
@@ -40,18 +35,17 @@ DirectLighting::~DirectLighting() {
 }
 DirectLighting::DirectLighting(LightStrategy st, int md) {
 	maxDepth = md;
-	rayDepth = 0;
 	strategy = st;
 	avgY = avgYsample = cdf = NULL;
 	overallAvgY = 0.;
 }
-SWCSpectrum DirectLighting::Li(const Scene *scene,
+SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha) const {
+		float *alpha, int rayDepth) const {
 	Intersection isect;
 	SWCSpectrum L(0.);
+	if (alpha) *alpha = 1.;
 	if (scene->Intersect(ray, &isect)) {
-		if (alpha) *alpha = 1.;
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(ray);
 		Vector wo = -ray.d;
@@ -81,7 +75,7 @@ SWCSpectrum DirectLighting::Li(const Scene *scene,
 					break;
 			}
 		}
-		if (rayDepth++ < maxDepth) {
+		if (rayDepth < maxDepth) {
 			Vector wi;
 			// Trace rays for specular reflection and refraction
 			SWCSpectrum f = bsdf->Sample_f(wo, &wi,
@@ -107,7 +101,7 @@ SWCSpectrum DirectLighting::Li(const Scene *scene,
 				          dwody + 2 * Vector(Dot(wo, n) * dndy +
 						  dDNdy * n);
 				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
-				L += Li(scene, rd, sample, alpha) * f * AbsDot(wi, n);
+				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
 			}
 			f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
@@ -136,20 +130,26 @@ SWCSpectrum DirectLighting::Li(const Scene *scene,
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
 				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
-				L += Li(scene, rd, sample, alpha) * f * AbsDot(wi, n);
+				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
 			}
 		}
-		--rayDepth;
 	}
 	else {
 		// Handle ray with no intersection
-		if (alpha) *alpha = 0.;
 		for (u_int i = 0; i < scene->lights.size(); ++i)
 			L += scene->lights[i]->Le(ray);
-		if (alpha && !L.Black()) *alpha = 1.;
-		return L;
+		if (alpha && L.Black()) *alpha = 0.;
 	}
-	return L;
+	return L * scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha) + scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+}
+SWCSpectrum DirectLighting::Li(const Scene *scene,
+		const RayDifferential &ray, const Sample *sample,
+		float *alpha) const {
+	SampleGuard guard(sample->sampler, sample);
+	sample->AddContribution(sample->imageX, sample->imageY,
+		LiInternal(scene, ray, sample, alpha, 0).ToXYZ(),
+		alpha ? *alpha : 1.f);
+	return SWCSpectrum(-1.f);
 }
 SurfaceIntegrator* DirectLighting::CreateSurfaceIntegrator(const ParamSet &params) {
 	int maxDepth = params.FindOneInt("maxdepth", 5);

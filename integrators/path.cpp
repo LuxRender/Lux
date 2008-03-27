@@ -28,12 +28,6 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-PathIntegrator* PathIntegrator::clone() const
-{
-	PathIntegrator *path = new PathIntegrator(*this);
-	return path;
-}
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
@@ -52,6 +46,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
+	SampleGuard guard(sample->sampler, sample);
 	// Declare common path integration variables
 	SWCSpectrum pathThroughput = 1., L = 0.;
 	RayDifferential ray(r);
@@ -120,6 +115,10 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 
 		ray = RayDifferential(p, wi);
 	}
+	L *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+	L += scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+	sample->AddContribution(sample->imageX, sample->imageY,
+		L.ToXYZ(), alpha ? *alpha : 1.f);
 	return L;
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)

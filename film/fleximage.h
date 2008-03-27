@@ -212,7 +212,8 @@ public:
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 	void AddSampleCount(float count, int bufferGroup = 0) {
-		bufferGroups[bufferGroup].numberOfSamples += count;
+		if (!bufferGroups.empty())
+			bufferGroups[bufferGroup].numberOfSamples += count;
 	}
 
 	void WriteImage(ImageType type);

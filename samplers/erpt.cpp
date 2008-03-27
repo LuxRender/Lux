@@ -226,13 +226,15 @@ void ERPTSampler::AddSample(const Sample &sample)
 	// try accepting of the new sample
 	if (accProb == 1.f || lux::random::floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		weight *= meanIntensity / LY;
-		for(u_int i = 0; i < oldContributions.size(); ++i) {
-			XYZColor color = oldContributions[i].color;
-			color *= weight;
-			film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
-				color, oldContributions[i].alpha,
-				oldContributions[i].buffer, oldContributions[i].bufferGroup);
+		if (LY > 0.f) {
+			weight *= meanIntensity / LY;
+			for(u_int i = 0; i < oldContributions.size(); ++i) {
+				XYZColor color = oldContributions[i].color;
+				color *= weight;
+				film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
+					color, oldContributions[i].alpha,
+					oldContributions[i].buffer, oldContributions[i].bufferGroup);
+			}
 		}
 		// Save new contributions for reference
 		weight = newWeight;
@@ -257,13 +259,15 @@ void ERPTSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		newWeight *= meanIntensity / newLY;
-		for(u_int i = 0; i < newContributions.size(); ++i) {
-			XYZColor color = newContributions[i].color;
-			color *= newWeight;
-			film->AddSample(newContributions[i].imageX, newContributions[i].imageY,
-				color, newContributions[i].alpha,
-				newContributions[i].buffer, newContributions[i].bufferGroup);
+		if (newLY > 0.f) {
+			newWeight *= meanIntensity / newLY;
+			for(u_int i = 0; i < newContributions.size(); ++i) {
+				XYZColor color = newContributions[i].color;
+				color *= newWeight;
+				film->AddSample(newContributions[i].imageX, newContributions[i].imageY,
+					color, newContributions[i].alpha,
+					newContributions[i].buffer, newContributions[i].bufferGroup);
+			}
 		}
 		// Restart from previous reference
 		for (int i = 0; i < totalTimes; ++i)

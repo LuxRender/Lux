@@ -136,8 +136,8 @@ public:
 	}
 	virtual void GetBufferType(BufferType *t)
 	{}
-	virtual void AddSample(float imageX, float imageY, const Sample &sample,
-		const Ray &ray, const XYZColor &L, float alpha, int id = 0);
+/*	virtual void AddSample(float imageX, float imageY, const Sample &sample,
+		const Ray &ray, const XYZColor &L, float alpha, int id = 0);*/
 	virtual void AddSample(const Sample &sample);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 	// Sampler Public Data

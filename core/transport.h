@@ -43,28 +43,25 @@ public:
 	virtual void RequestSamples(Sample *sample,
 	                            const Scene *scene) {
 	}
-	virtual Integrator* clone() const = 0;   // Lux Virtual (Copy) Constructor for multithreading
 };
 class SurfaceIntegrator : public Integrator {
 public:
-	virtual SurfaceIntegrator* clone() const = 0;
 	virtual bool IsFluxBased() {
 		return false;
 	}
-	virtual bool NeedAddSampleInRender() {
+/*	virtual bool NeedAddSampleInRender() {
 		return true;
 	}
 	void SetSampler(Sampler *s)	{
 		sampler = s;
 	}
-	Sampler *sampler;
+	Sampler *sampler;*/
 };
 class VolumeIntegrator : public Integrator {
 public:
 	virtual SWCSpectrum Transmittance(const Scene *scene,
 		const Ray &ray, const Sample *sample,
 		float *alpha) const = 0;
-	virtual VolumeIntegrator* clone() const = 0;
 };
  SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo,

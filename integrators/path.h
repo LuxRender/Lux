@@ -35,32 +35,14 @@ public:
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	PathIntegrator(int md, float cp) { 
-			maxDepth = md; continueProbability = cp; 
-/*			lightPositionOffset = new int[maxDepth];
-			lightNumOffset = new int[maxDepth];
-			bsdfDirectionOffset = new int[maxDepth];
-			bsdfComponentOffset = new int[maxDepth];
-			continueOffset = new int[maxDepth];
-			outgoingDirectionOffset = new int[maxDepth];
-			outgoingComponentOffset = new int[maxDepth];*/ }
-	virtual PathIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	virtual ~PathIntegrator() {
-/*		delete[] lightPositionOffset; delete[] lightNumOffset;
-		delete[] bsdfDirectionOffset; delete[] bsdfComponentOffset;
-		delete[] continueOffset; delete[] outgoingDirectionOffset;
-		delete[] outgoingComponentOffset;*/ }
+		maxDepth = md; continueProbability = cp; 
+	}
+	virtual ~PathIntegrator() { }
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data
 	int maxDepth, sampleOffset;
 	float continueProbability;
-/*	int *lightPositionOffset;
-	int *lightNumOffset;
-	int *bsdfDirectionOffset;
-	int *bsdfComponentOffset;
-	int *continueOffset;
-	int *outgoingDirectionOffset;
-	int *outgoingComponentOffset;*/
 };
 
 }//namespace lux

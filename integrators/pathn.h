@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// path.cpp*
+// pathn.cpp*
 #include "lux.h"
 #include "transport.h"
 #include "scene.h"
@@ -35,40 +35,19 @@ public:
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const Scene* scene);
-	bool NeedAddSampleInRender() {
+/*	bool NeedAddSampleInRender() {
 		return false;
-	}
+	}*/
 	PathnIntegrator(int md, float cp) { 
 			maxDepth = md; continueProbability = cp;
-			L.resize(maxDepth+1);
-/*			lightPositionOffset = new int[maxDepth];
-			lightNumOffset = new int[maxDepth];
-			bsdfDirectionOffset = new int[maxDepth];
-			bsdfComponentOffset = new int[maxDepth];
-			continueOffset = new int[maxDepth];
-			outgoingDirectionOffset = new int[maxDepth];
-			outgoingComponentOffset = new int[maxDepth];*/
 	}
-	virtual PathnIntegrator* clone() const; // Lux (copy) constructor for multithreading
-	virtual ~PathnIntegrator() {
-/*		delete[] lightPositionOffset; delete[] lightNumOffset;
-		delete[] bsdfDirectionOffset; delete[] bsdfComponentOffset;
-		delete[] continueOffset; delete[] outgoingDirectionOffset;
-		delete[] outgoingComponentOffset;*/ }
+	virtual ~PathnIntegrator() { }
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathnIntegrator Private Data
 	int maxDepth, sampleOffset;
 	float continueProbability;
-/*	int *lightPositionOffset;
-	int *lightNumOffset;
-	int *bsdfDirectionOffset;
-	int *bsdfComponentOffset;
-	int *continueOffset;
-	int *outgoingDirectionOffset;
-	int *outgoingComponentOffset;*/
-	vector <int> bufferIds;
-	mutable vector <SWCSpectrum> L;
+	vector<int> bufferIds;
 };
 
 }//namespace lux

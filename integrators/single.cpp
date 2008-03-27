@@ -27,11 +27,6 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-SingleScattering* SingleScattering::clone() const
- {
-   return new SingleScattering(*this);
- }
 // SingleScattering Method Definitions
 void SingleScattering::RequestSamples(Sample *sample,
 		const Scene *scene) {

@@ -35,7 +35,6 @@ public:
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	MLTPathIntegrator(int md) { maxDepth = md; }
 	void RequestSamples(Sample *sample, const Scene *scene);
-	virtual MLTPathIntegrator* clone() const; // Lux (copy) constructor for multithreading
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// MLTPathIntegrator Private Data

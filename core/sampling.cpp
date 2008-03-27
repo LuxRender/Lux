@@ -43,22 +43,24 @@ float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	return sample->xD[num] + pos * sample->dxD[num];
 }
-void Sampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id)
+/*void Sampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id)
 {
-	//Early returns introduce bias in penumbra for per-pixel normalization
-	//if (!L.Black())
-
-	film->AddSample(imageX, imageY, L, alpha, id);
-}
+	if (!L.Black())
+		film->AddSample(imageX, imageY, L, alpha, id);
+	film->AddSampleCount(1.); // TODO: add to correct buffer group
+}*/
 void Sampler::AddSample(const Sample &sample)
 {
-	for (u_int i = 0; i < sample.contributions.size(); ++i)
-		film->AddSample(sample.contributions[i].imageX,
-			sample.contributions[i].imageY,
-			sample.contributions[i].color,
-			sample.contributions[i].alpha,
-			sample.contributions[i].buffer,
-			sample.contributions[i].bufferGroup);
+	film->AddSampleCount(1.f); // TODO: add to correct buffer group
+	for (vector<Sample::Contribution>::const_iterator contribution = sample.contributions.begin(); contribution != sample.contributions.end(); ++contribution) {
+		if (!(*contribution).color.Black())
+			film->AddSample((*contribution).imageX,
+				(*contribution).imageY,
+				(*contribution).color,
+				(*contribution).alpha,
+				(*contribution).buffer,
+				(*contribution).bufferGroup);
+	}
 }
 
 // Sample Method Definitions

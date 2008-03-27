@@ -26,11 +26,6 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-EmissionIntegrator* EmissionIntegrator::clone() const
- {
-   return new EmissionIntegrator(*this);
- }
 // EmissionIntegrator Method Definitions
 void EmissionIntegrator::RequestSamples(Sample *sample,
 		const Scene *scene) {

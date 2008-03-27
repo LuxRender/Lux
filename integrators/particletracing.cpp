@@ -66,8 +66,9 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
-	SampleGuard guard(sampler, sample);
+	SampleGuard guard(sample->sampler, sample);
 	Sample &sample_gen = const_cast<Sample &>(*sample);
+	Ray ray_gen;
 
 	SWCSpectrum pathThroughput(1.0f);
 	Point p;

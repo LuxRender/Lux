@@ -68,16 +68,18 @@ public:
 			bsdfComponentOffset[0] = sample->Add1D(1);
 		}
 	}
-	virtual DirectLighting* clone() const; // Lux (copy) constructor for multithreading
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
+	SWCSpectrum LiInternal(const Scene *scene, const RayDifferential &ray,
+		const Sample *sample, float *alpha, int rayDepth) const;
 	// DirectLighting Private Data
 	LightStrategy strategy;
-	mutable int rayDepth; // NOBOOK
 	int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
 	int *lightSampleOffset, lightNumOffset;
 	int *bsdfSampleOffset, *bsdfComponentOffset;
+	// Those are shared amongst all threads and updated concurrently
+	// without locking.
 	mutable float *avgY, *avgYsample, *cdf;
 	mutable float overallAvgY;
 };
