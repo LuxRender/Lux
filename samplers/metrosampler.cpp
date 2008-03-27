@@ -189,6 +189,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			return;
 		if (meanIntensity == 0.) meanIntensity = 1.;
 	}
+	film->AddSampleCount(1.f); // TODO: add to the correct buffer groups
 	// calculate accept probability from old and new image sample
 	float accProb = min(1.0f, newLY / LY);
 	float newWeight = (accProb + (large ? 1.f : 0.f)) / (newLY / meanIntensity + pLarge);
@@ -225,7 +226,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		// Add contribution of new sample before rejecting it
 		for(u_int i = 0; i < newContributions.size(); ++i) {
 			XYZColor color = newContributions[i].color;
-			color *= weight;
+			color *= newWeight;
 			film->AddSample(newContributions[i].imageX, newContributions[i].imageY,
 				color, newContributions[i].alpha,
 				newContributions[i].buffer, newContributions[i].bufferGroup);

@@ -103,7 +103,11 @@ ELSE(APPLE)
 	IF(Boost_FOUND)
 		MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
 		MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
-		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
+		IF(CYGWIN)
+			SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
+		ELSE(CYGWIN)
+			SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
+		ENDIF(CYGWIN)
 	ELSE(Boost_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find Boost")
 	ENDIF(Boost_FOUND)
@@ -225,6 +229,20 @@ ELSE(APPLE)
 		MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
 	ENDIF(JPEG_FOUND)
 ENDIF(APPLE)
+
+#############################################################################
+#############################################################################
+###########################   SYSTEM LIBRARIES    ###########################
+#############################################################################
+#############################################################################
+
+IF(APPLE)
+	SET(SYS_LIBRARIES z)
+ENDIF(APPLE)
+IF(CYGWIN)
+	SET(SYS_LIBRARIES wsock32 ws2_32)
+	ADD_DEFINITIONS(-D_WIN32_WINNT=0x0551 -D__USE_W32_SOCKETS -D_GLIBCXX__PTHREADS)
+ENDIF(CYGWIN)
 
 
 #All dependencies OK !
@@ -393,7 +411,7 @@ ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
 TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -432,7 +450,7 @@ MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 #IF(APPLE AND !APPLE_64)

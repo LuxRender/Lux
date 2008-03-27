@@ -42,7 +42,7 @@ struct ParamArray;
 #include "luxparse.h"
 #endif*/
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #pragma warning ( disable: 4244 )
 #endif
 

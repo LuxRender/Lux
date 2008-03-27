@@ -62,7 +62,7 @@
 #include "cimg.h"
 using namespace cimg_library;
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #define hypotf hypot // For the OpenEXR headers
 #endif
 
@@ -214,7 +214,7 @@ template <typename T> ImageData * StandardImageReader<T>::read(const string &nam
 
  	std::string extension = boost::filesystem::extension(imagePath).substr(1);
  	//transform extension to lowercase
- 	#ifdef WIN32
+ 	#if defined(WIN32) && !defined(__CYGWIN__)
  	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower );
  	#else
  	std::transform ( extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower );

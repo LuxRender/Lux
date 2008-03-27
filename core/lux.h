@@ -26,6 +26,9 @@
 // lux.h*
 // Global Include Files
 #include <cmath>
+#ifdef __CYGWIN__
+#include <ieeefp.h>
+#endif
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -35,11 +38,11 @@
 
 #if !defined(__APPLE__) && !defined(__OpenBSD__)
 #  include <malloc.h> // for _alloca, memalign
-#  if !defined(WIN32)
+#  if !defined(WIN32) || defined(__CYGWIN__)
 #    include <alloca.h>
 #  endif
 #endif
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
@@ -73,7 +76,7 @@ using std::sort;
 #include "randomgen.h"
 
 // Platform-specific definitions
-#if defined(WIN32)
+#if defined(WIN32) && !defined(__CYGWIN__)
 #  define memalign(a,b) _aligned_malloc(b, a)
 #  define alloca _alloca
 #  define isnan _isnan
@@ -207,7 +210,7 @@ namespace lux
 #define LUX_VERSION_STRING "0.1 RC4 (CVS)"
 #define RAY_EPSILON 1e-3f
 #define COLOR_SAMPLES 3
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else
 #  define LUX_PATH_SEP ":"

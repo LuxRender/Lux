@@ -32,22 +32,6 @@ using namespace lux;
 PathIntegrator* PathIntegrator::clone() const
 {
 	PathIntegrator *path = new PathIntegrator(*this);
-/*	path->lightPositionOffset = new int[maxDepth];
-	path->lightNumOffset = new int[maxDepth];
-	path->bsdfDirectionOffset = new int[maxDepth];
-	path->bsdfComponentOffset = new int[maxDepth];
-	path->continueOffset = new int[maxDepth];
-	path->outgoingDirectionOffset = new int[maxDepth];
-	path->outgoingComponentOffset = new int[maxDepth];
-	for (int i = 0; i < maxDepth; ++i) {
-		path->lightPositionOffset[i] = lightPositionOffset[i];
-		path->lightNumOffset[i] = lightNumOffset[i];
-		path->bsdfDirectionOffset[i] = bsdfDirectionOffset[i];
-		path->bsdfComponentOffset[i] = bsdfComponentOffset[i];
-		path->continueOffset[i] = continueOffset[i];
-		path->outgoingDirectionOffset[i] = outgoingDirectionOffset[i];
-		path->outgoingComponentOffset[i] = outgoingComponentOffset[i];
-	}*/
 	return path;
 }
 // PathIntegrator Method Definitions
@@ -62,15 +46,6 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(2);
 	structure.push_back(1);
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
-/*	for (int i = 0; i < maxDepth; ++i) {
-		lightPositionOffset[i] = sample->Add2D(1);
-		lightNumOffset[i] = sample->Add1D(1);
-		bsdfDirectionOffset[i] = sample->Add2D(1);
-		bsdfComponentOffset[i] = sample->Add1D(1);
-		continueOffset[i] = sample->Add1D(1);
-		outgoingDirectionOffset[i] = sample->Add2D(1);
-		outgoingComponentOffset[i] = sample->Add1D(1);
-	}*/
 }
 
 SWCSpectrum PathIntegrator::Li(const Scene *scene,
@@ -81,6 +56,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 	SWCSpectrum pathThroughput = 1., L = 0.;
 	RayDifferential ray(r);
 	bool specularBounce = true;
+	if (alpha) *alpha = 1.;
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
@@ -88,25 +64,20 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			// Stop path sampling since no intersection was found
 			// Possibly add emitted light
 			// NOTE - Added by radiance - adds horizon in render & reflections
-			SWCSpectrum Le(0.f);
-			if (specularBounce)
+			if (specularBounce) {
+				SWCSpectrum Le(0.f);
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					Le += scene->lights[i]->Le(ray);
-			Le *= pathThroughput;
-			L += Le;
-			// NOTE - MLJack - Initialize the variable alpha
-			// (Sometimes alpha is a QNAN.)
-			if (alpha) *alpha = 1.;
-			// Set alpha channel NOTE - RADIANCE - disabled for now
-			/*if (pathLength == 0 && alpha) {
-				if (L != 0.) *alpha = 1.;
-				else *alpha = 0.;
-			} */
+				Le *= pathThroughput;
+				L += Le;
+			}
+			// Set alpha channel
+			if (pathLength == 0 && alpha && L.Black())
+				*alpha = 0.;
 			break;
 		}
 		if (pathLength == 0) {
 			r.maxt = ray.maxt;
-			if (alpha) *alpha = 1.;
 		}
 		else
 			pathThroughput *= scene->Transmittance(ray);
@@ -126,29 +97,20 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			UniformSampleOneLight(scene, p, n,
 				wo, bsdf, sample,
 				data, data + 2, data + 3, data + 5);
-/*					lightPositionOffset[pathLength],
-					lightNumOffset[pathLength],
-					bsdfDirectionOffset[pathLength],
-					bsdfComponentOffset[pathLength]);*/
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
-			if (data[6]/*sample->oneD[continueOffset[pathLength]][0]*/ > continueProbability)
+			if (data[6] > continueProbability)
 				break;
 
 			// increase path contribution
 			pathThroughput /= continueProbability;
 		}
 		// Sample BSDF to get new path direction
-		// Get random numbers for sampling new direction, _bs1_, _bs2_, and _bcs_
-/*		float bs1, bs2, bcs;
-		bs1 = sample->twoD[outgoingDirectionOffset[pathLength]][0];
-		bs2 = sample->twoD[outgoingDirectionOffset[pathLength]][1];
-		bcs = sample->oneD[outgoingComponentOffset[pathLength]][0];*/
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7]/*bs1*/, data[8]/*bs2*/, data[9]/*bcs*/,
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7], data[8], data[9],
 			&pdf, BSDF_ALL, &flags);
 		if (pdf == .0f || f.Black())
 			break;

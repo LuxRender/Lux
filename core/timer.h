@@ -24,7 +24,7 @@
 #define LUX_TIMER_H
 // timer.h*
 #include "lux.h"
-#if defined ( WIN32 )
+#if defined ( WIN32 ) || defined(__CYGWIN__)
 #include <windows.h>
 #else
 #include <sys/time.h>
@@ -64,7 +64,7 @@ private:
 	
 	void *unmapLocation;
 	int unmapSize;
-#elif defined( WIN32 )
+#elif defined( WIN32 ) || defined(__CYGWIN__)
 	// Private Windows Timer Data
 	LARGE_INTEGER performance_counter, performance_frequency;
 	double one_over_frequency;

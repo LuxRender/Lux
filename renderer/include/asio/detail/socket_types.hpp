@@ -75,7 +75,9 @@
 # include <winsock2.h>
 # include <ws2tcpip.h>
 // NOTE - lordcrc - include wspiapi.h for compatibility with win2k
+#ifndef __CYGWIN__
 # include <wspiapi.h>
+#endif
 # include <mswsock.h>
 # if defined(ASIO_WSPIAPI_H_DEFINED)
 #  undef _WSPIAPI_H_

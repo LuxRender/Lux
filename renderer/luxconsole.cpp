@@ -26,6 +26,8 @@
 #include "lux.h"
 #include "api.h"
 #include "error.h"
+#include "paramset.h"
+#include "include/asio.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -42,8 +44,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include "include/asio.hpp"
-#include "../core/paramset.h"
 #include <fstream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -56,7 +56,7 @@
 
 #include <iomanip>
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
 #define chdir _chdir
 #endif

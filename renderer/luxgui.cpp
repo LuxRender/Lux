@@ -21,6 +21,12 @@
  ***************************************************************************/
 
 // luxgui.cpp*
+#include "lux.h"
+#include "api.h"
+#include "scene.h"
+#include "camera.h"
+#include "film.h"
+#include "error.h"
 #include "luxgui.h"
 #include "renderwindow.h"
 #include "icons.h"		// Include GUI icon data
@@ -40,14 +46,8 @@
 #include <zlib.h>
 
 
-#include "lux.h"
-#include "api.h"
-#include "scene.h"
-#include "camera.h"
-#include "film.h"
-#include "error.h"
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
 #include "resource.h"
 #define chdir _chdir
@@ -896,10 +896,10 @@ int main(int ac, char *av[]) {
 		int height = 600;
 		window = make_MainWindow(width, height, rgb_image, opengl_enabled);
 		setInfo_render();
-		#ifdef WIN32
+		#if defined(WIN32) && !defined(__CYGWIN__)
 			//grab the icon resource and assign it to the window
 			window->icon((char *)LoadIcon(fl_display, MAKEINTRESOURCE(IDI_ICON1)));
-		#elif !defined(__APPLE__)
+		#elif !defined(__APPLE__) && !defined(__CYGWIN__)
 			//create an icon from the included bitmap (without transparency)
 			fl_open_display();
 			Pixmap icon_pixmap=XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display), (char*)lux_icon_bitmap, 32, 32);

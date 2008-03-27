@@ -62,27 +62,25 @@ class Film {
 public:
 	// Film Interface
 	Film(int xres, int yres) :
-		xResolution(xres), yResolution(yres) {
-	}
-	virtual ~Film() {
-	}
+		xResolution(xres), yResolution(yres) { }
+	virtual ~Film() { }
 	virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buffer = 0, int bufferGroup = 0) = 0;
+	virtual void AddSampleCount(float count, int bufferGroup = 0) { }
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
-	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix)
-	{
+	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) {
 		return 0;
 	}
-	virtual void CreateBuffers()
-	{
-	}
+	virtual void CreateBuffers() { }
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual float getldrDisplayInterval() = 0;
 
 	virtual void merge(MultiImageFilm &f) {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::merge()");}
 	virtual void clean() {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::clean()");}
-	void SetScene(Scene *scene1){scene=scene1;}
+	void SetScene(Scene *scene1) {
+		scene = scene1;
+	}
 	// Film Public Data
 	int xResolution, yResolution;
 	float* flux2radiance;

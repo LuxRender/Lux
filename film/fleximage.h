@@ -25,9 +25,7 @@
 
 #include "lux.h"
 #include "film.h"
-#include "scene.h"	// for Scene::GetNumberofSamples()
 #include "color.h"
-#include "spectrum.h"
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
@@ -35,208 +33,162 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/serialization/base_object.hpp>
 
-#include <stdio.h>
-
-namespace lux{
+namespace lux {
 
 class BufferConfig {
 public:
-	BufferConfig(BufferType t, BufferOutputConfig o, const string& s):
-		type(t),output(o),postfix(s){}
+	BufferConfig(BufferType t, BufferOutputConfig o, const string& s) :
+		type(t), output(o), postfix(s) { }
 	BufferType type;
 	BufferOutputConfig output;
 	string postfix;
 };
 struct Pixel {
-	Pixel(): L(0.f)	{
-		alpha = 0.f;
-		weightSum = 0.f;
-	}
+	Pixel(): L(0.f), alpha(0.f), weightSum(0.f) { }
 	XYZColor L;
 	float alpha, weightSum;
 };
 class Buffer {
 public:
-	Buffer(int x, int y)
-	{
-		xPixelCount = x; yPixelCount = y;
+	Buffer(int x, int y) {
+		xPixelCount = x;
+		yPixelCount = y;
 		pixels = new BlockedArray<Pixel>(x, y);
 	}
-	virtual ~Buffer()
-	{
+	virtual ~Buffer() {
 		delete pixels; 
 	}
-	virtual void Add(int x, int y, XYZColor L, float alpha, float wt) = 0;
-	virtual void Clean() = 0;
-	virtual void GetData(float *rgb, float *alpha) = 0;
-	bool isFramebuffer;
-	int xPixelCount, yPixelCount;
-	BlockedArray<Pixel> *pixels;
-	float scaleFactor;
-
-	static Scene *scene;
-};
-
-// Per pixel normalized buffer
-class RawBuffer : public Buffer {
-public:
-
-	RawBuffer(int x, int y): Buffer(x,y) {
-	}
-
-	~RawBuffer() {}
-
 	void Add(int x, int y, XYZColor L, float alpha, float wt) {
 		Pixel &pixel = (*pixels)(x, y);
 		pixel.L.AddWeighted(wt, L);
 		pixel.alpha += alpha * wt;
 		pixel.weightSum += wt;
 	}
-	void GetData(float *rgb, float *alpha)
-	{
-		int x,y;
-		int offset = 0;
-		for (y = 0; y < yPixelCount; ++y)
-		{
-			for (x = 0; x < xPixelCount; ++x,++offset)
-			{
-				rgb[3*offset  ] = (*pixels)(x, y).L.c[0];
-				rgb[3*offset+1] = (*pixels)(x, y).L.c[1];
-				rgb[3*offset+2] = (*pixels)(x, y).L.c[2];
-				alpha[offset] = (*pixels)(x, y).alpha;
+	void Clean() { }
+	virtual void GetData(float *rgb, float *alpha) = 0;
+	bool isFramebuffer;
+	int xPixelCount, yPixelCount;
+	float scaleFactor;
+	BlockedArray<Pixel> *pixels;
+};
+
+// Per pixel normalized buffer
+class RawBuffer : public Buffer {
+public:
+	RawBuffer(int x, int y) : Buffer(x, y) { }
+
+	~RawBuffer() { }
+
+	void GetData(float *rgb, float *alpha) {
+		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+				Pixel &pixel = (*pixels)(x, y);
+				rgb[3*offset  ] = pixel.L.c[0];
+				rgb[3*offset+1] = pixel.L.c[1];
+				rgb[3*offset+2] = pixel.L.c[2];
+				alpha[offset] = pixel.alpha;
 			}
 		}
-	}
-
-	void Clean() {
 	}
 };
 
 // Per pixel normalized buffer
 class PerPixelNormalizedBuffer : public Buffer {
 public:
+	PerPixelNormalizedBuffer(int x, int y) : Buffer(x, y) { }
 
-	PerPixelNormalizedBuffer(int x, int y): Buffer(x,y) {
-	}
+	~PerPixelNormalizedBuffer() { }
 
-	~PerPixelNormalizedBuffer() {}
-
-	void Add(int x, int y, XYZColor L, float alpha, float wt) {
-		Pixel &pixel = (*pixels)(x, y);
-		pixel.L.AddWeighted(wt, L);
-		pixel.alpha += alpha * wt;
-		pixel.weightSum += wt;
-		//L.Print(stdout);printf("\n");
-	}
-	void GetData(float *rgb, float *alpha)
-	{
-		int x,y;
-		float inv;
-		int offset = 0;
-		for (y = 0; y < yPixelCount; ++y)
-		{
-			for (x = 0; x < xPixelCount; ++x,++offset)
-			{
-				//printf("%f ",(*pixels)(x, y).weightSum);
-				inv = 1.0f / (*pixels)(x, y).weightSum;
-				if (isinf(inv))
-				{
-					alpha[offset] = 0;
-					rgb[3*offset  ] = 0;
-					rgb[3*offset+1] = 0;
-					rgb[3*offset+2] = 0;
-				}
-				else
-				{
+	void GetData(float *rgb, float *alpha) {
+		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+				Pixel &pixel = (*pixels)(x, y);
+				if (pixel.weightSum == 0.f) {
+					alpha[offset] = 0.f;
+					rgb[3*offset  ] = 0.f;
+					rgb[3*offset+1] = 0.f;
+					rgb[3*offset+2] = 0.f;
+				} else {
+					float inv = 1.f / pixel.weightSum;
 					// Convert pixel XYZ radiance to RGB
-					(*pixels)(x, y).L.ToRGB(rgb+3*offset);
-					alpha[offset] = (*pixels)(x, y).alpha;
+					pixel.L.ToRGB(rgb + 3 * offset);
 					rgb[3*offset  ] *= inv;
 					rgb[3*offset+1] *= inv;
 					rgb[3*offset+2] *= inv;
+					alpha[offset] = pixel.alpha;
 				}
 			}
 		}
-	}
-	void Clean() {
 	}
 };
 
 // Per screen normalized  buffer
 class PerScreenNormalizedBuffer : public Buffer {
 public:
+	PerScreenNormalizedBuffer(int x, int y, const float *samples) :
+		Buffer(x, y), numberOfSamples_(samples) { }
 
-	PerScreenNormalizedBuffer(int x, int y): Buffer(x,y) {
-	}
+	~PerScreenNormalizedBuffer() { }
 
-	~PerScreenNormalizedBuffer() {}
-
-	void Add(int x, int y, XYZColor L, float alpha, float wt) {
-		Pixel &pixel = (*pixels)(x, y);
-		pixel.L.AddWeighted(wt, L);
-		pixel.alpha += alpha * wt;
-	}
-	void GetData(float *rgb, float *alpha)
-	{
-		int x,y;
-		assert(scene);
-		float inv = 1.0f / scene->GetNumberOfSamples();
-		int offset = 0;
-		for (y = 0; y < yPixelCount; ++y)
-		{
-			for (x = 0; x < xPixelCount; ++x,++offset)
-			{
+	void GetData(float *rgb, float *alpha) {
+		float inv = xPixelCount * yPixelCount / *numberOfSamples_;
+		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+				Pixel &pixel = (*pixels)(x, y);
 				// Convert pixel XYZ radiance to RGB
-				(*pixels)(x, y).L.ToRGB(rgb+3*offset);
-				alpha[offset] = (*pixels)(x, y).alpha;
+				pixel.L.ToRGB(rgb + 3 * offset);
 				rgb[3*offset  ] *= inv;
 				rgb[3*offset+1] *= inv;
 				rgb[3*offset+2] *= inv;
+				alpha[offset] = pixel.alpha;
 			}
 		}
 	}
-	void Clean() {
-	}
+private:
+	const float *numberOfSamples_;
 };
 
 
 class BufferGroup {
 public:
-	BufferGroup() {
-	}
+	BufferGroup() : numberOfSamples(0.f) { }
 	~BufferGroup() {
-		for(u_int i=0; i < buffers.size(); i++)
-			delete buffers[i];
+		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
+			delete *buffer;
 	}
 
-	void CreateBuffers(const std::vector<BufferConfig> & config, int x, int y) {
-		Buffer* buf;
-		for(u_int i=0;i<config.size();++i)
-		{
-			if (config[i].type==BUF_TYPE_PER_PIXEL)
-				buf = new PerPixelNormalizedBuffer(x,y);
-			else if (config[i].type==BUF_TYPE_PER_SCREEN)
-				buf = new PerScreenNormalizedBuffer(x,y);
-			else if (config[i].type==BUF_TYPE_RAW)
-				buf = new RawBuffer(x,y);
-			else
+	void CreateBuffers(const vector<BufferConfig> &configs, int x, int y) {
+		for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
+			switch ((*config).type) {
+			case BUF_TYPE_PER_PIXEL:
+				buffers.push_back(new PerPixelNormalizedBuffer(x, y));
+				break;
+			case BUF_TYPE_PER_SCREEN:
+				buffers.push_back(new PerScreenNormalizedBuffer(x, y, &numberOfSamples));
+				break;
+			case BUF_TYPE_RAW:
+				buffers.push_back(new RawBuffer(x, y));
+				break;
+			default:
 				assert(0);
-			buffers.push_back(buf);
+			}
 		}
 	}
 
-	Buffer* getBuffer(int index)
-	{
+	Buffer *getBuffer(int index) {
 		return buffers[index];
 	}
-	std::vector<Buffer *> buffers;
+	float numberOfSamples;
+	vector<Buffer *> buffers;
 };
 
 // FlexImageFilm Declarations
 class FlexImageFilm : public Film {
 public:
 	// FlexImageFilm Public Methods
-	FlexImageFilm(int xres, int yres) : Film(xres,yres) { filter=NULL; filterTable=NULL; }; 
+	FlexImageFilm(int xres, int yres) :
+		Film(xres, yres), filter(NULL), filterTable(NULL),
+		framebuffer(NULL), factor(NULL) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		bool outhdr, bool outldr,
@@ -244,7 +196,7 @@ public:
 		const string &tm, float c_dY, float n_MY,
 		float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
 		float bw, float br, float g, float d);
-	~FlexImageFilm(){
+	~FlexImageFilm() {
 		delete[] framebuffer;
 		delete[] factor;
 		//while(buffers.size()>0)
@@ -253,10 +205,16 @@ public:
 		//	buffers.pop_back();
 		//}
 	}
+
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
+
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
+	void AddSampleCount(float count, int bufferGroup = 0) {
+		bufferGroups[bufferGroup].numberOfSamples += count;
+	}
+
 	void WriteImage(ImageType type);
 	void WriteImage2(ImageType type, float* rgb, float* alpha, string postfix);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
@@ -269,11 +227,9 @@ public:
 	void clean();
 	void merge(FlexImageFilm &f);
 	void createFrameBuffer();
-	float getldrDisplayInterval()
-	{
+	float getldrDisplayInterval() {
 		return writeInterval;
 	}
-
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 
@@ -286,11 +242,9 @@ private:
 	bool premultiplyAlpha, buffersInited;
 	float cropWindow[4], *filterTable;
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
-	string toneMapper;
+	const string toneMapper;
 	ParamSet toneParams;
-	float contrastDisplayAdaptationY, nonlinearMaxY,
-		reinhardPrescale, reinhardPostscale, reinhardBurn,
-		bloomWidth, bloomRadius, gamma, dither;
+	float bloomWidth, bloomRadius, gamma, dither;
 
 	unsigned char *framebuffer;
 	boost::timer timer;

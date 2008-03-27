@@ -34,69 +34,43 @@
 
 using namespace lux;
 
-Scene * Buffer::scene = NULL;
-
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
-					 bool outhdr, bool outldr,
-		             const string &filename1, bool premult, int wI,
-					 const string &tm, float c_dY, float n_MY,
-					 float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
-					 float bw, float br, float g, float d)
-	: Film(xres, yres) {
-	buffersInited = false;
-
-	filter = filt;
+	bool outhdr, bool outldr,
+	const string &filename1, bool premult, int wI,
+	const string &tm, float c_dY, float n_MY,
+	float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
+	float bw, float br, float g, float d) :
+	Film(xres, yres), filter(filt), writeInterval(wI), filename(filename1),
+	outputType(IMAGE_NONE), premultiplyAlpha(premult), buffersInited(false),
+	toneMapper(tm), bloomWidth(bw), bloomRadius(br), gamma(g), dither(d),
+	framebuffer(NULL), imageLock(false), factor(NULL)
+{
+	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
+	xPixelStart = Ceil2Int(xResolution * cropWindow[0]);
+	xPixelCount = max(1, Ceil2Int(xResolution * cropWindow[1]) - xPixelStart);
+	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
+	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
 
-	filename = filename1;
-	premultiplyAlpha = premult;
-	writeInterval = wI;
-	outputType = IMAGE_NONE;
 	if (outhdr)
 		outputType = (ImageType)(outputType | IMAGE_HDR);
 	if (outldr)
 		outputType = (ImageType)(outputType | IMAGE_LDR);
 
-	contrastDisplayAdaptationY = c_dY;
-	nonlinearMaxY = n_MY;
-	reinhardPrescale = reinhard_prescale;
-	reinhardPostscale = reinhard_postscale;
-	reinhardBurn = reinhard_burn;
-	toneMapper = tm;
-	bloomWidth = bw;
-	bloomRadius = br;
-	gamma = g;
-	dither = d;
-
-	framebuffer = NULL;
-	factor = NULL;
-
 	// Set tonemapper params
-	if( toneMapper == "contrast" ) {
-		string st = "displayadaptationY";
-		toneParams.AddFloat(st, &contrastDisplayAdaptationY, 1);
-	} else if( toneMapper == "nonlinear" ) {
-		string st = "maxY";
-		toneParams.AddFloat(st, &nonlinearMaxY, 1);
-	} else if( toneMapper == "reinhard" ) {
-		string st = "prescale";
-		toneParams.AddFloat(st, &reinhardPrescale, 1);
-		string st2 = "postscale";
-		toneParams.AddFloat(st2, &reinhardPostscale, 1);
-		string st3 = "burn";
-		toneParams.AddFloat(st3, &reinhardBurn, 1);
+	if (toneMapper == "contrast") {
+		toneParams.AddFloat("displayadaptationY", &c_dY, 1);
+	} else if (toneMapper == "nonlinear") {
+		toneParams.AddFloat("maxY", &n_MY, 1);
+	} else if (toneMapper == "reinhard") {
+		toneParams.AddFloat("prescale", &reinhard_prescale, 1);
+		toneParams.AddFloat("postscale", &reinhard_postscale, 1);
+		toneParams.AddFloat("burn", &reinhard_burn, 1);
 	}
 
-	// init locks and timers
-	imageLock = false;
+	// init timer
 	timer.restart();
-
-	// Compute film image extent
-	xPixelStart = Ceil2Int(xResolution * cropWindow[0]);
-	xPixelCount = max(1, Ceil2Int(xResolution * cropWindow[1]) - xPixelStart);
-	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
-	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
 
 	// Precompute filter weight table
 	#define FILTER_TABLE_SIZE 16
@@ -109,21 +83,22 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 			*ftp++ = filter->Evaluate(fx, fy);
 		}
 	}
-
 }
 
-void FlexImageFilm::GetSampleExtent(int *xstart,
-		int *xend, int *ystart, int *yend) const {
+void FlexImageFilm::GetSampleExtent(int *xstart, int *xend,
+	int *ystart, int *yend) const
+{
 	*xstart = Floor2Int(xPixelStart + .5f - filter->xWidth);
 	*xend   = Floor2Int(xPixelStart + .5f + xPixelCount + filter->xWidth);
 	*ystart = Floor2Int(yPixelStart + .5f - filter->yWidth);
 	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth);
 }
 
-int FlexImageFilm::RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix)
+int FlexImageFilm::RequestBuffer(BufferType type, BufferOutputConfig output,
+	const string& filePostfix)
 {
-	bufferConfigs.push_back(BufferConfig(type, output ,filePostfix));
-	return bufferConfigs.size()-1;
+	bufferConfigs.push_back(BufferConfig(type, output, filePostfix));
+	return bufferConfigs.size() - 1;
 }
 
 void FlexImageFilm::CreateBuffers()
@@ -131,17 +106,16 @@ void FlexImageFilm::CreateBuffers()
 	// TODO: more groups for multilight
 	bufferGroups.push_back(BufferGroup());
 	bufferGroups.back().CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
-	Buffer::scene=scene;
 }
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
 	// Issue warning if unexpected radiance value returned
-	assert(!xyz.IsNaN() && xyz.y() >= -1e-5 && !isinf(xyz.y()));
+	assert(!xyz.IsNaN() && xyz.y() >= -1e-5f && !isinf(xyz.y()));
 
 	// TODO: Find a group
-	if (bufferGroups.size()==0)
+	if (bufferGroups.empty())
 	{
-		RequestBuffer(BUF_TYPE_PER_SCREEN,BUF_FRAMEBUFFER,"");
+		RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
 		CreateBuffers();
 	}
 
@@ -159,7 +133,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 	x1 = min(x1, xPixelStart + xPixelCount - 1);
 	y0 = max(y0, yPixelStart);
 	y1 = min(y1, yPixelStart + yPixelCount - 1);
-	if ((x1-x0) < 0 || (y1-y0) < 0) return;
+	if (x1 < x0 || y1 < y0) return;
 	// Loop over filter support and add sample to pixel arrays
 	// Precompute $x$ and $y$ filter table offsets
 	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
@@ -177,19 +151,14 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 
 	{
 		boost::mutex::scoped_lock lock(addSampleMutex);
-		for (int y = y0; y <= y1; ++y)
-		{
-			for (int x = x0; x <= x1; ++x)
-			{
+		for (int y = y0; y <= y1; ++y) {
+			for (int x = x0; x <= x1; ++x) {
 				// Evaluate filter value at $(x,y)$ pixel
 				int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
 				float filterWt = filterTable[offset];
 				// Update pixel values with filtered sample contribution
-				//buffer->Add(x - xPixelStart,y - yPixelStart,xyz,alpha,filterWt);
-				Pixel &pixel = (*(buffer->pixels))(x - xPixelStart, y - yPixelStart);
-				pixel.L.AddWeighted(filterWt, xyz);
-				pixel.alpha += alpha * filterWt;
-				pixel.weightSum += filterWt;
+				buffer->Add(x - xPixelStart,y - yPixelStart,
+					xyz, alpha, filterWt);
 			}
 		}
 	}

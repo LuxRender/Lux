@@ -41,15 +41,17 @@ public:
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
+	void AddSample(const Sample &sample);
 	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	XYZColor L;
+	float LY;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
 	float range, weight, alpha;
 	float *baseImage, *sampleImage;
 	int *timeImage, *offset;
 	static int initCount, initSamples;
 	static float meanIntensity;
+	vector<Sample::Contribution> oldContributions;
 };
 
 }//namespace lux

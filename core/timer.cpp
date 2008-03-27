@@ -60,7 +60,7 @@ Timer::Timer()
 	else {
 		Severe( "Fatal timer init error" );
 	}
-#elif defined( WIN32 )
+#elif defined( WIN32 ) || defined(__CYGWIN__)
 	// Windows Timer Initialization
 	QueryPerformanceFrequency( &performance_frequency );
 	one_over_frequency = 1.0/((double)performance_frequency.QuadPart);
@@ -84,7 +84,7 @@ double Timer::GetTime()
 		counter_value = *(iotimer_addr32);
 		return ((double) counter_value * .000000000001) * (double) cycleval;
 	}
-#elif defined( WIN32 )
+#elif defined( WIN32 ) || defined(__CYGWIN__)
 	// Windows GetTime
 	QueryPerformanceCounter( &performance_counter );
 	return (double) performance_counter.QuadPart * one_over_frequency;

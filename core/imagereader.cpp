@@ -51,7 +51,7 @@
 #include "cimg.h"
 using namespace cimg_library;
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #define hypotf hypot // For the OpenEXR headers
 #endif
 

@@ -236,7 +236,7 @@ void StatsCleanup() {
 	return memalign(L1_CACHE_LINE_SIZE, size);
 }
  void FreeAligned(void *ptr) {
-#ifdef WIN32 // NOBOOK
+#if defined(WIN32) && !defined(__CYGWIN__) // NOBOOK
 	_aligned_free(ptr);
 #else // NOBOOK
 	free(ptr);
