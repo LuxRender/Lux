@@ -226,8 +226,8 @@ void ERPTSampler::AddSample(const Sample &sample)
 	// try accepting of the new sample
 	if (accProb == 1.f || lux::random::floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		if (LY > 0.f) {
-			weight *= meanIntensity / LY;
+		weight *= meanIntensity / LY;
+		if (!isinf(weight) && LY > 0.f) {
 			for(u_int i = 0; i < oldContributions.size(); ++i) {
 				XYZColor color = oldContributions[i].color;
 				color *= weight;
@@ -259,8 +259,8 @@ void ERPTSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		if (newLY > 0.f) {
-			newWeight *= meanIntensity / newLY;
+		newWeight *= meanIntensity / newLY;
+		if (!isinf(newWeight) && newLY > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				XYZColor color = newContributions[i].color;
 				color *= newWeight;

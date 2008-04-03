@@ -187,7 +187,7 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 			color /= totalWeight;
 		if (isinf(color.y()))
 			continue;
-		if (i == 0 || (weight[i] > 0.f && color.y() > 0.f))
+		if ((i == 0 || weight[i] > 0.f) && color.y() >= -1e-5f)
 			sample->AddContribution(imageX[i], imageY[i],
 				color, alpha ? *alpha : 1.f);
 	}
