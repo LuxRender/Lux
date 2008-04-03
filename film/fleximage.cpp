@@ -110,7 +110,14 @@ void FlexImageFilm::CreateBuffers()
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
 	// Issue warning if unexpected radiance value returned
-	assert(!xyz.IsNaN() && xyz.y() >= -1e-5f && !isinf(xyz.y()));
+//	assert(!xyz.IsNaN() && xyz.y() >= -1e-5f && !isinf(xyz.y()));
+	if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
+		std::stringstream ss;
+		ss << "Out of bound intensity in FlexImageFilm::AddSample: "
+		   << xyz.y() << ", sample discarded";
+		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+		return;
+	}
 
 	// TODO: Find a group
 	if (bufferGroups.empty())
@@ -179,24 +186,22 @@ void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string
 {
 	if (type & IMAGE_HDR)
 		WriteEXRImage(rgb, alpha, filename+postfix+".exr");
-	if (type & IMAGE_LDR)
+	if ((type & IMAGE_LDR) || (type & IMAGE_FRAMEBUFFER && framebuffer))
 	{
+		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
+			bloomRadius,bloomWidth,toneMapper.c_str(),
+			&toneParams,gamma,dither,255);
 		// Write tonemapped ldr TGA file
-		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-			bloomRadius,bloomWidth,toneMapper.c_str(),
-			&toneParams,gamma,dither,255);
-		WriteTGAImage(rgb, alpha, filename+postfix+".tga");
-	}
-	if (type & IMAGE_FRAMEBUFFER && framebuffer)
-	{
+		if (type & IMAGE_LDR)
+			WriteTGAImage(rgb, alpha, filename+postfix+".tga");
 		// Update gui film display
-		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-			bloomRadius,bloomWidth,toneMapper.c_str(),
-			&toneParams,gamma,dither,255);
-		// Copy to framebuffer pixels
-		u_int nPix = xPixelCount * yPixelCount;
-		for (u_int i=0;  i < nPix*3 ; i++)
-			framebuffer[i] = (unsigned char) rgb[i];
+		if (type & IMAGE_FRAMEBUFFER && framebuffer)
+		{
+			// Copy to framebuffer pixels
+			u_int nPix = xPixelCount * yPixelCount;
+			for (u_int i=0;  i < nPix*3 ; i++)
+				framebuffer[i] = (unsigned char) rgb[i];
+		}
 	}
 }
 
