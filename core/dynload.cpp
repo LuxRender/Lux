@@ -76,6 +76,7 @@
 
 #include "directlighting.h"
 #include "path.h"
+#include "path2.h"
 #include "mltpath.h"
 #include "pathn.h"
 #include "particletracing.h"
@@ -639,6 +640,12 @@ static string SearchPath(const string &searchpath,
 	if(name=="path")
 	{
 		SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+	if(name=="path2")
+	{
+		SurfaceIntegrator *ret=Path2Integrator::CreateSurfaceIntegrator(paramSet);
 		paramSet.ReportUnused();
 		return ret;
 	}

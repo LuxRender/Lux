@@ -295,5 +295,5 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 }
 
 int ERPTSampler::initCount, ERPTSampler::initSamples;
-float ERPTSampler::meanIntensity;
+float ERPTSampler::meanIntensity = 0.f;
 
