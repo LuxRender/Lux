@@ -157,7 +157,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 			Vector wo1 = Normalize(-ray_gen.d);
 			Vector wi1 = Normalize(wi);
 			SWCSpectrum F1 = F;
-			G = scene->camera->GetConnectingFactor(lightPoint,wo1,n);
+			G = scene->camera->GetConnectingFactor(p,wo1,n);
 			F1 *= bsdf->f(wo1,wi1)*(G / pdf);
 //			sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, F1.ToXYZ(), 1.0f, pathLength+1);
 			sample->AddContribution(sample_gen.imageX, sample_gen.imageY, F1.ToXYZ(), 1.f, pathLength + 1);
