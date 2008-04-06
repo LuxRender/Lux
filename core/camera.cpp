@@ -46,17 +46,17 @@ Camera::Camera(const Transform &world2cam,
 	if (WorldToCamera.HasScale())
 		luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-camera transformation!\n The system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 }
-bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
+bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsVisibleFromEyes() method called");
 	return false;
 }
-float Camera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+float Camera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetConnectingFactor() method called");
 	return 0;
 }
-void Camera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount)
+void Camera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetFlux2RadianceFactors() method called");
 }
@@ -65,6 +65,21 @@ bool Camera::IsDelta() const
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
 	return true;
 }
+void Camera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+{
+	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::SamplePosition() method called");
+}
+float Camera::EvalPositionPdf() const
+{
+	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::EvalPositionPdf() method called");
+	return 0;
+}
+bool Camera::Intersect(const Ray &ray, Intersection *isect) const
+{
+	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::Intersect() method called");
+	return false;
+}
+
 ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
 		const Transform &proj, const float Screen[4],
 		float hither, float yon, float sopen,
@@ -83,9 +98,9 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
 				1.f / (Screen[2] - Screen[3]), 1.f) *
 		 Translate(Vector(-Screen[0], -Screen[3], 0.f));
 	RasterToScreen = ScreenToRaster.GetInverse();
-	RasterToCamera =
-		CameraToScreen.GetInverse() * RasterToScreen;
+	RasterToCamera = CameraToScreen.GetInverse() * RasterToScreen;
 	WorldToRaster = ScreenToRaster * WorldToScreen;
+	RasterToWorld = WorldToRaster.GetInverse();
 }
 bool ProjectiveCamera::GenerateSample(const Point &p, Sample *sample) const
 {
@@ -93,6 +108,8 @@ bool ProjectiveCamera::GenerateSample(const Point &p, Sample *sample) const
 	sample->imageX = p_raster.x;
 	sample->imageY = p_raster.y;
 
+	//if (sample->imageX>=film->xPixelStart && sample->imageX<film->xPixelStart+film->xPixelCount &&
+	//	sample->imageY>=film->yPixelStart && sample->imageY<film->yPixelStart+film->yPixelCount )
 	if (sample->imageX>=0 && sample->imageX<film->xResolution &&
 		sample->imageY>=0 && sample->imageY<film->yResolution )
 		return true;

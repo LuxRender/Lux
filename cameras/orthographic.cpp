@@ -41,8 +41,8 @@ OrthoCamera::OrthoCamera(const Transform &world2cam,
 	 screenDx = Screen[1] - Screen[0];
 	 screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
 }
-float OrthoCamera::GenerateRay(const Sample &sample,
-                               Ray *ray) const {
+float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
+{
 	// Generate raster and camera samples
 	Point Pras(sample.imageX, sample.imageY, 0);
 	Point Pcamera;
@@ -78,25 +78,25 @@ float OrthoCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
+bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
 {
 	bool isVisible = false;
-	if (GenerateSample(p, sample_gen))
+	if (GenerateSample(worldP, sample_gen))
 	{
 		GenerateRay(*sample_gen, ray_gen);
-		if (WorldToCamera(p).z>0)
+		if (WorldToCamera(worldP).z>0)
 		{
-			ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
+			ray_gen->maxt = Distance(ray_gen->o, worldP)*(1-RAY_EPSILON);
 			isVisible = !scene->IntersectP(*ray_gen);
 		}
 	}
 	return isVisible;
 }
-float OrthoCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+float OrthoCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
 {
 	return AbsDot(wo, n);
 }
-void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount)
+void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
 {
 	float Apixel = (screenDx*screenDy/(film->xResolution*film->yResolution));
 	int x,y;
@@ -107,6 +107,16 @@ void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixel
 		}
 	}
 }
+void OrthoCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+{
+	// orthographic camera is composed of many parallel pinhole cameras with little fov.
+	*pdf = 1.0f;
+}
+float OrthoCamera::EvalPositionPdf() const
+{
+	return 1.0f/(screenDx*screenDy);
+}
+
 Camera* OrthoCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {
 	// Extract common camera parameters from _ParamSet_

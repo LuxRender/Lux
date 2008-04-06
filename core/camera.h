@@ -35,12 +35,14 @@ public:
 	Camera(const Transform &world2cam, float hither, float yon,
 		float sopen, float sclose, Film *film);
 	virtual ~Camera();
-	virtual float GenerateRay(const Sample &sample,
-		                      Ray *ray) const = 0;
-	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray);
-	virtual float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n);
-	virtual void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount);
+	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
+	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
+	virtual float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
+	virtual void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
 	virtual bool IsDelta() const;
+	virtual void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
+	virtual float EvalPositionPdf() const;
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	// Camera Public Data
 	Film *film;
 protected:
@@ -62,7 +64,7 @@ protected:
 	// ProjectiveCamera Protected Data
 	Transform CameraToScreen, WorldToScreen, RasterToCamera;
 	Transform ScreenToRaster, RasterToScreen;
-	Transform WorldToRaster;
+	Transform WorldToRaster, RasterToWorld;
 	float LensRadius, FocalDistance;
 };
 

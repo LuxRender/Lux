@@ -50,6 +50,8 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 	SampleGuard guard(sample->sampler, sample);
 	// Declare common path integration variables
 	RayDifferential ray(r);
+	Point lenP;
+	float lenPdf;
 //	SWCSpectrum pathThroughput = 1., L = 0.;
 	vector<SWCSpectrum> pathThroughput(maxDepth + 1), L(maxDepth + 1);
 	vector<float> imageX(maxDepth + 1), imageY(maxDepth  + 1);
@@ -58,6 +60,7 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 	L[0] = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 	imageX[0] = sample->imageX;
 	imageY[0] = sample->imageY;
+	scene->camera->SamplePosition(sample->lensU, sample->lensV, &lenP, &lenPdf);
 	RayDifferential ray_gen;
 	Sample &sample_gen = const_cast<Sample &>(*sample);
 	bool specularBounce = true, specular0 = false;
@@ -138,7 +141,7 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 			pathThroughput[i] *= factor;
 		}
 		if (pathLength == 0) {
-			weight[0] = scene->camera->GetConnectingFactor(p, wo, n);
+			weight[0] = scene->camera->GetConnectingFactor(lenP, p, wo, n);
 			specular0 = specularBounce;
 			if (specular0) {
 				totalWeight = 0.f;
@@ -146,10 +149,10 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 			}
 		}
 		if (pathLength > 0) {
-			if (scene->camera->IsVisibleFromEyes(scene, p, &sample_gen, &ray_gen)) {
+			if (scene->camera->IsVisibleFromEyes(scene, lenP, p, &sample_gen, &ray_gen)) {
 				wo = -ray_gen.d;
 				bsdf = isect.GetBSDF(ray_gen);
-				weight[pathLength] = scene->camera->GetConnectingFactor(bsdf->dgShading.p, wo, bsdf->dgShading.nn);
+				weight[pathLength] = scene->camera->GetConnectingFactor(lenP, bsdf->dgShading.p, wo, bsdf->dgShading.nn);
 				pathThroughput[pathLength] = scene->Transmittance(ray_gen) * (weight[pathLength] / weight[0]);
 				imageX[pathLength] = sample_gen.imageX;
 				imageY[pathLength] = sample_gen.imageY;

@@ -27,6 +27,7 @@
 #include "scene.h" // for Intersection
 #include "film.h" // for Film
 #include "paramset.h"
+#include "disk.h"
 
 using namespace lux;
 
@@ -45,9 +46,23 @@ PerspectiveCamera::
 	normal = CameraToWorld(Normal(0,0,1));
 	fov = Radians(fov1);
 
+	ParamSet paramSet;
+	paramSet.AddFloat("radius", &LensRadius);
+	lens = boost::shared_ptr<Shape>(Disk::CreateShape(CameraToWorld, false, paramSet));
+
 	posPdf = 1.0f/(M_PI*LensRadius*LensRadius);
+
+	//screen[0]=Screen[0];
+	//screen[1]=Screen[1];
+	//screen[2]=Screen[2];
+	//screen[3]=Screen[3];
+	//R = 1/tan(fov*0.5f);
+	//xPixelWidth = (screen[1]-screen[0]) / f->xResolution;
+	//yPixelHeight = (screen[3]-screen[2]) / f->yResolution;
+	//Apixel = xPixelWidth * yPixelHeight;
+
 	R = 100;
-	float templength=R * tan(fov*0.5)*2;	
+	float templength=R * tan(fov*0.5f)*2;	
 	float frameaspectratio=float(f->xResolution)/float(f->yResolution);
 	if (frameaspectratio > 1.f)
 	{
@@ -64,8 +79,8 @@ PerspectiveCamera::
 	Apixel = xPixelWidth * yPixelHeight;
 
 }
-float PerspectiveCamera::GenerateRay(const Sample &sample,
-		Ray *ray) const {
+float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
+{
 	// Generate raster and camera samples
 	Point Pras(sample.imageX, sample.imageY, 0);
 	Point Pcamera;
@@ -75,13 +90,15 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	// Set ray time value
 	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
 	// Modify ray for depth of field
-	if (LensRadius > 0.) {
+	if (LensRadius > 0.)
+	{
+		Point lenP;
+		float lenPdf;
 		// Sample point on lens
-		float lensU, lensV;
-		ConcentricSampleDisk(sample.lensU, sample.lensV,
-		                     &lensU, &lensV);
-		lensU *= LensRadius;
-		lensV *= LensRadius;
+		SamplePosition(sample.lensU, sample.lensV, &lenP, &lenPdf);
+		Point lenPCamera(WorldToCamera(lenP));
+		float lensU = lenPCamera.x;
+		float lensV = lenPCamera.y;;
 		// Compute point on plane of focus
 		float ft = (FocalDistance - ClipHither) / ray->d.z;
 		Point Pfocus = (*ray)(ft);
@@ -96,50 +113,102 @@ float PerspectiveCamera::GenerateRay(const Sample &sample,
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
-bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
+bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
 {
-	//TODO: check whether IsVisibleFromEyes() can alway return correct answer.
+	//TODO: check whether IsVisibleFromEyes() can always return correct answer.
 	bool isVisible;
-	if (GenerateSample(p, sample_gen))
+	Point point;
+	if (LensRadius > 0)
+	{
+		Ray r(WorldToCamera(Ray(lenP, worldP - lenP)));
+		float ft = FocalDistance / r.d.z;
+		point = CameraToWorld(r(ft));
+	}
+	else
+	{
+		point = worldP;
+	}
+
+	if (GenerateSample(point, sample_gen))
 	{
 		GenerateRay(*sample_gen, ray_gen);
-		Vector dd(pos-p);
-		Ray ray1(p, -ray_gen->d);
+		//Ray ray1(worldP, -ray_gen->d);
+		Ray ray1(worldP, lenP-worldP, RAY_EPSILON, 1.f - RAY_EPSILON);
 
-		if (Dot(dd,normal)<0)
+		//if (Dot(ray_gen->d,normal)<0)
 		{
 			Intersection isect1;
 			if (scene->Intersect(ray1,&isect1))
-				isVisible = WorldToCamera(isect1.dg.p).z<0 ;
+			{
+				float z = WorldToCamera(isect1.dg.p).z;
+				isVisible = z<ClipHither || z>ClipYon;
+			}
 			else
 				isVisible = true;
 		}
-		else
-			isVisible = false;
+		//else
+		//	isVisible = false;
 	}
 	else
 		isVisible = false;
 	return isVisible;
 }
-float PerspectiveCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+float PerspectiveCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
 {
-	return AbsDot(wo, normal)*AbsDot(wo, n)/DistanceSquared(pos, p);
+	return AbsDot(wo, normal)*AbsDot(wo, n)/DistanceSquared(lenP, worldP);
 }
-void PerspectiveCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount)
+void PerspectiveCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
 {
 	float d2,cos2,cos4,detaX,detaY;
 	int x,y;
+	for (y = 0; y < yPixelCount; ++y)
+	{
+		for (x = 0; x < xPixelCount; ++x)
+		{
+			//detaX = screen[0] - (x + 0.5f) * xPixelWidth;
+			//detaY = screen[2] - (y + 0.5f) * yPixelHeight;
 
-	for (y = 0; y < yPixelCount; ++y) {
-		for (x = 0; x < xPixelCount; ++x) {
-			detaX = 0.5*xWidth - (x+0.5)*xPixelWidth;
-			detaY = 0.5*yHeight - (y+0.5)*yPixelHeight;
+			detaX = 0.5f * xWidth - (x+ 0.5f) * xPixelWidth;
+			detaY = 0.5f * yHeight - (y + 0.5f) * yPixelHeight;
 			d2 = detaX*detaX + detaY*detaY + R*R;
 			cos2 = R*R / d2;
 			cos4 = cos2 * cos2;
 			factors[x+y*xPixelCount] =  R*R / (Apixel*cos4);
 		}
 	}
+}
+void PerspectiveCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+{
+	if (LensRadius==0.0f)
+	{
+		*p = pos;
+		*pdf = 1.0f;
+	}
+	ConcentricSampleDisk(u1, u2, &(p->x), &(p->y));
+	p->x *= LensRadius;
+	p->y *= LensRadius;
+	p->z = 0;
+	*p = CameraToWorld(*p);
+	*pdf = posPdf;
+}
+float  PerspectiveCamera::EvalPositionPdf() const
+{
+	return LensRadius==0.0f ? 0 : posPdf;
+}
+bool PerspectiveCamera::Intersect(const Ray &ray, Intersection *isect) const
+{
+	// Backface culling
+	if (WorldToCamera(ray.d).z>0)
+		return false;
+	// Copy from GeometricPrimitive::Intersect()
+	float thit;
+	if (!lens->Intersect(ray, &thit, &isect->dg))
+		return false;
+	// no primitive, only a disk shape
+	isect->primitive = NULL;
+	isect->WorldToObject = lens->WorldToObject;
+	ray.maxt = thit;
+	return true;
 }
 Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {

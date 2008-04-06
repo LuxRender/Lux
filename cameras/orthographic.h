@@ -36,14 +36,33 @@ public:
 				float sopen, float sclose,
 				float lensr, float focald, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
-	bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen);;
-	float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n);
-	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount);
+	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
+	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
+	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
 	bool IsDelta() const
 	{
 		return true;
 	}
-	
+	void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
+	float EvalPositionPdf() const;
+	//float SampleDirection(const Sample &sample, Ray *ray)
+	//{
+	//	Point Pras(sample.imageX, sample.imageY, 0);
+	//	RasterToCamera(Pras, &(ray->o));
+	//	ray->d = Vector(0,0,1);
+	//	ray->mint = 0.;
+	//	ray->maxt = ClipYon - ClipHither;
+	//	CameraToWorld(*ray, ray);
+	//	return 1.0f;
+	//}
+	//float EvalDirectionPdf(Film *film, const Vector& wo, const Sample &sample, const Point& p)
+	//{
+	//	return 1.0f;
+	//}
+	//SWCSpectrum EvalValue()
+	//{
+	//	return SWCSpectrum(1.0f);
+	//}
 	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
 private:
 	float screenDx,screenDy;

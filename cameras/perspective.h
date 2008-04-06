@@ -39,69 +39,55 @@ public:
 		float lensr, float focald, float fov,
 		Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
-	bool IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen);;
-	float GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n);
-	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount);
+	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
+	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
+	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
 	bool IsDelta() const
 	{
 		return LensRadius==0.0f;
 	}
-	float SamplePosition(const Sample &sample, Point *p)
-	{
-		if (LensRadius==0.0f)
-		{
-			*p = pos;
-			return 1.0f;
-		}
-		ConcentricSampleDisk(sample.lensU,sample.lensV,&(p->x),&(p->y));
-		p->x *= LensRadius;
-		p->y *= LensRadius;
-		p->z = 0;
-		*p = CameraToWorld(*p);
-		return posPdf;
-	}
-	float SampleDirection(const Sample &sample, Ray *ray)
-	{
-		GenerateRay(sample,ray);
-		//return EvalDirectionPdf((Film*)NULL, ray->d, sample, Point(0,0,0))			
-		return -1.0f;
-	}
-	float EvalPositionPdf()
-	{
-		return LensRadius==0.0f ? 0 : posPdf;
-	}
-	float EvalDirectionPdf(Film *film, const Vector& wo, const Sample &sample, const Point& p)
-	{
-		float detaX = 0.5f * xWidth - sample.imageX * xPixelWidth;
-		float detaY = 0.5f * yHeight - sample.imageY * yPixelHeight;
-		float distPixel2 = detaX * detaX + detaY * detaY + R * R;
-		float cosPixel = Dot(wo, normal);
-		float pdf = 1 / Apixel * distPixel2/cosPixel;
+	bool Intersect(const Ray &ray, Intersection *isect) const;
+	void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
+	float EvalPositionPdf() const;
+	//float SampleDirection(const Sample &sample, Ray *ray)
+	//{
+	//	GenerateRay(sample,ray);
+	//	//return EvalDirectionPdf((Film*)NULL, ray->d, sample, Point(0,0,0))			
+	//	return -1.0f;
+	//}
+	//float EvalDirectionPdf(Film *film, const Vector& wo, const Sample &sample, const Point& p)
+	//{
+	//	float detaX = 0.5f * xWidth - sample.imageX * xPixelWidth;
+	//	float detaY = 0.5f * yHeight - sample.imageY * yPixelHeight;
+	//	float distPixel2 = detaX * detaX + detaY * detaY + R * R;
+	//	float cosPixel = Dot(wo, normal);
+	//	float pdf = 1 / Apixel * distPixel2/cosPixel;
 
-		if ( LensRadius != 0.0f )
-		{
-			float cos1 = Dot(wo,normal);
-			Vector ProjectedDir = wo-(Vector)(cos1*normal)+(p-pos);
-			// TODO: FocalDistance or FocalDistance - ClipHither
-			float cos2 = FocalDistance / sqrt(FocalDistance*FocalDistance+ProjectedDir.LengthSquared());
-			float t = cos1/cos2;
-			pdf *= t*t*t;
-		}
-		return pdf;
-		
-	}
-	SWCSpectrum EvalValue()
-	{
-		return SWCSpectrum(1.0f);
-	}
-
+	//	if ( LensRadius != 0.0f )
+	//	{
+	//		float cos1 = Dot(wo,normal);
+	//		Vector ProjectedDir = wo-(Vector)(cos1*normal)+(p-pos);
+	//		// TODO: FocalDistance or FocalDistance - ClipHither
+	//		float cos2 = FocalDistance / sqrt(FocalDistance*FocalDistance+ProjectedDir.LengthSquared());
+	//		float t = cos1/cos2;
+	//		pdf *= t*t*t;
+	//	}
+	//	return pdf;
+	//	
+	//}
+	//SWCSpectrum EvalValue()
+	//{
+	//	return SWCSpectrum(1.0f);
+	//}
 	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
 private:
 	Point pos;
 	Normal normal;
 	float fov;
 	float posPdf;
+	float screen[4];
 	float R,xWidth,yHeight,xPixelWidth,yPixelHeight,Apixel;
+	boost::shared_ptr<Shape> lens;
 };
 
 }//namespace lux

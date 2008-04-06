@@ -68,30 +68,35 @@ bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
 
 	sample->imageX = min (phi * INV_TWOPI, 1.0f) * film->xResolution ;
 	sample->imageY = min (theta * INV_PI, 1.0f) * film->yResolution ;
+	//return (sample->imageX>=film->xPixelStart &&
+	//	sample->imageX<film->xPixelStart+film->xPixelCount &&
+	//	sample->imageY>=film->yPixelStart &&
+	//	sample->imageY<film->yPixelStart+film->yPixelCount);
+
 	//static float mm=0;
 	//if (phi*INV_TWOPI>1)
 	//	printf("\n%f,%f\n",mm=max(phi*INV_TWOPI,mm),theta*INV_PI);
 
 	return true;
 }
-bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &p, Sample *sample_gen, Ray *ray_gen)
+bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
 {
 	bool isVisible;
-	if (GenerateSample(p, sample_gen))
+	if (GenerateSample(worldP, sample_gen))
 	{
 		GenerateRay(*sample_gen, ray_gen);
-		ray_gen->maxt = Distance(ray_gen->o, p)*(1-RAY_EPSILON);
+		ray_gen->maxt = Distance(ray_gen->o, worldP)*(1-RAY_EPSILON);
 		isVisible = !scene->IntersectP(*ray_gen);
 	}
 	else
 		isVisible = false;
 	return isVisible;
 }
-float EnvironmentCamera::GetConnectingFactor(const Point &p, const Vector &wo, const Normal &n)
+float EnvironmentCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
 {
-	return AbsDot(wo, n) / DistanceSquared(rayOrigin, p);
+	return AbsDot(wo, n) / DistanceSquared(lenP, worldP);
 }
-void EnvironmentCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount)
+void EnvironmentCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
 {
 	float Apixel,R = 100.0f;
 	int x,y;
@@ -102,6 +107,16 @@ void EnvironmentCamera::GetFlux2RadianceFactors(Film *film, float *factors, int 
 		}
 	}
 }
+void EnvironmentCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+{
+	*p = rayOrigin;
+	*pdf = 1.0f;
+}
+float EnvironmentCamera::EvalPositionPdf() const
+{
+	return 1.0f;
+}
+	
 Camera* EnvironmentCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {
 	// Extract common camera parameters from _ParamSet_

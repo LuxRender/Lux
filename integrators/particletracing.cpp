@@ -70,10 +70,14 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	Sample &sample_gen = const_cast<Sample &>(*sample);
 	Ray ray_gen;
 
+	bool isDeltaCamera = scene->camera->IsDelta();
+	bool specularBounce = false;	// hardcode for area lights
 	SWCSpectrum pathThroughput(1.0f);
 	Point p;
 	Normal n;
 	Vector wi;
+	Point lenP;
+	float lenPdf;
 	float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, 0);
 
 	// Choose light for bidirectional path
@@ -96,12 +100,14 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	light->SamplePosition(data[1], data[2], &lightPoint, &lightNormal, &lightPdf1);
 	lightPdf = lightPdf1 / numOfLights;
 
-	if (scene->camera->IsVisibleFromEyes(scene, lightPoint, &sample_gen, &ray_gen))
+	scene->camera->SamplePosition(sample->lensU, sample->lensV, &lenP, &lenPdf);
+	if (scene->camera->IsVisibleFromEyes(scene, lenP, lightPoint, &sample_gen, &ray_gen))
 	{
 		//Vector wi1 = Normalize(wi);
 		Vector wo1 = Normalize(-ray_gen.d);
 		Le = light->Eval(lightNormal,wo1);
-		G = scene->camera->GetConnectingFactor(lightPoint,wo1,lightNormal);
+
+		G = scene->camera->GetConnectingFactor(lenP, lightPoint, wo1, lightNormal);
 		Le *= G / lightPdf;
 
 		assert(!Le.IsNaN());
@@ -124,18 +130,55 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 	Intersection isect;
 
 	F = Le;
+	wi = -ray.d;
 	//lastPoint = lightPoint;
 	lastNormal = lightNormal;
 	pdf = lightPdf;
 
-	for (int pathLength = 0; pathLength < maxDepth; ++pathLength)
+	bool lensIntersected, objectsIntersected;
+	for (int pathLength = 0; ; ++pathLength)
 	{
 		if (pathLength!=0)
 			data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 		
+		lensIntersected = !isDeltaCamera && specularBounce && scene->camera->Intersect(ray, &isect);
+
 		// Find next vertex of path
 		// Stop path sampling since no intersection was found
-		if (!scene->Intersect(ray, &isect))
+		objectsIntersected = scene->Intersect(ray, &isect);
+		if (!objectsIntersected && lensIntersected)
+		{
+			float selectPdf = 0.9f;
+			if (random::floatValue() < selectPdf)
+			{
+				pdf *= selectPdf;
+				lenP = isect.dg.p;
+				if (scene->camera->IsVisibleFromEyes(scene, lenP, ray.o, &sample_gen, &ray_gen))
+				{
+					Vector wo1 = Normalize(-ray_gen.d);
+					Vector wi1 = Normalize(wi);
+					//g = AbsDot(wi,n)/DistanceSquared(lastPoint,lenP);
+					//G = scene->camera->GetConnectingFactor(lenP, ray.o, wo1, n);
+					g = 1.0;
+					G = AbsDot(wi1,lastNormal)*g;
+					pdf *= g;
+					SWCSpectrum F1 = F;
+					F1 *= G / pdf;	// TODO: Camera::Eval()
+
+					// special compensation to keep the result similar with path tracing with DOF and particle tracing without DOF
+					F1 *= lenPdf;
+
+					//sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, F1.ToXYZ(), 1.0f, pathLength);
+					sample->AddContribution(sample_gen.imageX, sample_gen.imageY, F1.ToXYZ(), 1.f, pathLength);
+				}
+				return SWCSpectrum(-1.0f);
+			}
+			lensIntersected = false;
+			pdf *= 1 - selectPdf	;
+		}
+		if (!objectsIntersected)
+			break;
+		if (pathLength == maxDepth)
 			break;
 //		pathThroughput *= scene->Transmittance(ray);
 
@@ -152,12 +195,13 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 		pdf *= g;
 		F *= G;
 
-		if (scene->camera->IsVisibleFromEyes(scene, p, &sample_gen, &ray_gen))
+		scene->camera->SamplePosition(sample->lensU, sample->lensV, &lenP, &lenPdf);
+		if (scene->camera->IsVisibleFromEyes(scene, lenP, p, &sample_gen, &ray_gen))
 		{
 			Vector wo1 = Normalize(-ray_gen.d);
 			Vector wi1 = Normalize(wi);
 			SWCSpectrum F1 = F;
-			G = scene->camera->GetConnectingFactor(p,wo1,n);
+			G = scene->camera->GetConnectingFactor(lenP, p, wo1, n);
 			F1 *= bsdf->f(wo1,wi1)*(G / pdf);
 //			sampler->AddSample(sample_gen.imageX, sample_gen.imageY, *sample, ray_gen, F1.ToXYZ(), 1.0f, pathLength+1);
 			sample->AddContribution(sample_gen.imageX, sample_gen.imageY, F1.ToXYZ(), 1.f, pathLength + 1);
@@ -170,6 +214,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 			&bsdf_pdf, BSDF_ALL, &flags);
 		if (f.Black() || bsdf_pdf == 0.)
 			break;
+		specularBounce = (flags & BSDF_SPECULAR) != 0;
 		F *= f;
 		pdf *= bsdf_pdf;
 
@@ -180,7 +225,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 			{
 				break;
 			}
-			F /= continueProbability;
+			pdf *= continueProbability;
 		}
 
 		ray = RayDifferential(p, wo);
