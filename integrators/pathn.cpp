@@ -51,6 +51,7 @@ void PathnIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	vector<u_int> structure;
 	structure.push_back(2);
 	structure.push_back(1);
+	structure.push_back(1);
 	structure.push_back(2);
 	structure.push_back(1);
 	structure.push_back(1);
@@ -113,7 +114,7 @@ SWCSpectrum PathnIntegrator::Li(const Scene *scene,
 			L[pathLength+1] += pathThroughput *
 				UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample,
-					data, data + 2, data + 3, data + 5);
+					data, data + 3, data + 4, data + 6);
 /*					lightPositionOffset[pathLength],
 					lightNumOffset[pathLength],
 					bsdfDirectionOffset[pathLength],
@@ -125,7 +126,7 @@ SWCSpectrum PathnIntegrator::Li(const Scene *scene,
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
-			if (data[6]/*sample->oneD[continueOffset[pathLength]][0]*/ > continueProbability)
+			if (data[7]/*sample->oneD[continueOffset[pathLength]][0]*/ > continueProbability)
 				break;
 			// increase path contribution
 			pathThroughput /= continueProbability;
@@ -140,7 +141,7 @@ SWCSpectrum PathnIntegrator::Li(const Scene *scene,
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7]/*bs1*/, data[8]/*bs2*/, data[9]/*bcs*/,
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[8]/*bs1*/, data[9]/*bs2*/, data[10]/*bcs*/,
 			&pdf, BSDF_ALL, &flags);
 		if (f.Black() || pdf == 0.)
 			break;

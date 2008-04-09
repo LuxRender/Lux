@@ -70,14 +70,9 @@ public:
 	int *bsdfComponentOffset);
  SWCSpectrum UniformSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, int lightSampleOffset,
-	int lightNumOffset, int bsdfSampleOffset,
-	int bsdfComponentOffset);
- SWCSpectrum UniformSampleOneLight(const Scene *scene, const Point &p,
-	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, float *lightSampleOffset = NULL,
-	float *lightNumOffset = NULL, float *bsdfSampleOffset = NULL,
-	float *bsdfComponentOffset = NULL);
+	const Sample *sample, float *lightSample = NULL,
+	float *lightNum = NULL, float *bsdfSample = NULL,
+	float *bsdfComponent = NULL);
  SWCSpectrum WeightedSampleOneLight(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,

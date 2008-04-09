@@ -38,7 +38,7 @@ public:
 		return Intensity * 4.f * M_PI;
 	}
 	bool IsDeltaLight() const { return true; }
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2,
+	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
 			Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;

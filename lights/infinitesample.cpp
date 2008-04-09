@@ -93,7 +93,7 @@ SWCSpectrum
 	return L;
 }
 SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p, float u1,
-		float u2, Vector *wi, float *pdf,
+		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	// Find floating-point $(u,v)$ sample coordinates
 	float pdfs[2];
@@ -153,7 +153,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	float pdf;
 	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
-		wi, &pdf, visibility);
+		lux::random::floatValue(), wi, &pdf, visibility);
 	if (pdf == 0.) return SWCSpectrum(0.);
 	return L / pdf;
 }

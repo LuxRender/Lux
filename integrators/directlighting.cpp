@@ -64,8 +64,8 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 					break;
 				case SAMPLE_ONE_UNIFORM:
 					L += UniformSampleOneLight(scene, p, n, wo, bsdf,
-						sample, lightSampleOffset[0], lightNumOffset,
-						bsdfSampleOffset[0], bsdfComponentOffset[0]);
+						sample, sample->twoD[lightSampleOffset[0]], sample->oneD[lightNumOffset],
+						sample->twoD[bsdfSampleOffset[0]], sample->oneD[bsdfComponentOffset[0]]);
 					break;
 				case SAMPLE_ONE_WEIGHTED:
 					L += WeightedSampleOneLight(scene, p, n, wo, bsdf,

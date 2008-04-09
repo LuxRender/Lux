@@ -87,7 +87,7 @@ Spectrum ProjectionLight::Projection(const Vector &w) const {
 	return projectionMap->Lookup(s, t);
 }
 SWCSpectrum ProjectionLight::Sample_L(const Point &p, float u1, float u2,
-		Vector *wi, float *pdf,
+		float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;

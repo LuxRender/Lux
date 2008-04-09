@@ -41,7 +41,7 @@ SWCSpectrum PointLight::Sample_L(const Point &p, Vector *wi,
 	return Intensity / DistanceSquared(lightPos, p);
 }
 SWCSpectrum PointLight::Sample_L(const Point &p, float u1,
-		float u2, Vector *wi, float *pdf,
+		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	return Sample_L(p, wi, visibility);

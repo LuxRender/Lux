@@ -51,14 +51,14 @@ public:
 	virtual bool IsDeltaLight() const = 0;
 	virtual SWCSpectrum Le(const RayDifferential &r) const;
 	virtual SWCSpectrum Sample_L(const Point &p, float u1,
-		float u2, Vector *wi, float *pdf,
+		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *vis) const = 0;
 	virtual float Pdf(const Point &p,
 	                  const Vector &wi) const = 0;
 	virtual SWCSpectrum Sample_L(const Point &p, const Normal &n,
-			float u1, float u2, Vector *wi, float *pdf,
+			float u1, float u2, float u3, Vector *wi, float *pdf,
 			VisibilityTester *visibility) const {
-		return Sample_L(p, u1, u2, wi, pdf, visibility);
+		return Sample_L(p, u1, u2, u3, wi, pdf, visibility);
 	}
 	virtual float Pdf(const Point &p, const Normal &n,
 			const Vector &wi) const {
@@ -133,10 +133,10 @@ public:
 	float Pdf(const Point &, const Normal &, const Vector &) const;
 	SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const Point &P, const Normal &N,
-		float u1, float u2, Vector *wo, float *pdf,
+		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const Point &P, float u1, float u2, Vector *wo,
-		float *pdf, VisibilityTester *visibility) const;
+	virtual SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
+		Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	void SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const;

@@ -40,7 +40,7 @@ SWCSpectrum DistantLight::Sample_L(const Point &p,
 	visibility->SetRay(p, *wi);
 	return L;
 }
-SWCSpectrum DistantLight::Sample_L(const Point &p, float u1, float u2,
+SWCSpectrum DistantLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	return Sample_L(p, wi, visibility);

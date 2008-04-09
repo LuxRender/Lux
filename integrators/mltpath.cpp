@@ -53,7 +53,7 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 	int lightNum;
 	Light *light;
 	Vector wi;
-	float lightWeight, lightPdf, ls1, ls2;
+	float lightWeight, lightPdf, ls1, ls2, ls3;
 	VisibilityTester visibility;
 
 	// Setup light params for this path
@@ -63,6 +63,7 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 	lightWeight = float(scene->lights.size());
 	ls1 = sample->twoD[lightSampOffset][0];
 	ls2 = sample->twoD[lightSampOffset][1];
+	ls3 = sample->oneD[lightNumOffset][0] * scene->lights.size() - lightNum;
 
 	if (alpha) *alpha = 1.;
 	// NOTE - Ratow - Removed recursion: looping gives me an ~8% speed up.
@@ -91,7 +92,7 @@ SWCSpectrum MLTPathIntegrator::Li(const Scene *scene,
 			L += pathThroughput * isect.Le(-ray.d);
 		}	else {
 			// Explicit light path: always connect to the same light
-			Le = light->Sample_L(p, n,	ls1, ls2, &wi, &lightPdf, &visibility);
+			Le = light->Sample_L(p, n,	ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 			SWCSpectrum f = bsdf->f(wo, wi);
 			if(lightPdf > 0. && !Le.Black() && !f.Black() && visibility.Unoccluded(scene))
 				L += pathThroughput * lightWeight * f * Le * AbsDot(wi, n) / lightPdf;

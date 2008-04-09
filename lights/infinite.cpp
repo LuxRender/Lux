@@ -62,7 +62,7 @@ SWCSpectrum
 	return L;
 }
 SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
-		const Normal &n, float u1, float u2,
+		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	if(!havePortalShape) {
@@ -70,7 +70,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		float x, y, z;
 		ConcentricSampleDisk(u1, u2, &x, &y);
 		z = sqrtf(max(0.f, 1.f - x*x - y*y));
-		if (lux::random::floatValue() < .5) z *= -1;
+		if (u3 < .5) z *= -1;
 		*wi = Vector(x, y, z);
 		// Compute _pdf_ for cosine-weighted infinite light direction
 		*pdf = fabsf(wi->z) * INV_TWOPI;
@@ -84,11 +84,21 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 	    // Sample a random Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = Floor2Int(lux::random::floatValue() * nrPortalShapes);
+			shapeidx = Floor2Int(u3 * nrPortalShapes);
 		Normal ns;
-		Point ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
-		*wi = Normalize(ps - p);
-		*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+		Point ps;
+		bool exit = false;
+		for (int i = 0; i < nrPortalShapes && !exit; ++i) {
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			*wi = Normalize(ps - p);
+			exit = (Dot(*wi, ns) < 0.f);
+		}
+		if (exit)
+			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+		else {
+			*pdf = 0.f;
+			return SWCSpectrum(0.f);
+		}
 	}
 	visibility->SetRay(p, *wi);
 	return Le(RayDifferential(p, *wi));
@@ -98,7 +108,7 @@ float InfiniteAreaLight::Pdf(const Point &, const Normal &n,
 	return AbsDot(n, wi) * INV_TWOPI;
 }
 SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
-		float u1, float u2, Vector *wi, float *pdf,
+		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	if(!havePortalShape) {
 		*wi = UniformSampleSphere(u1, u2);
@@ -109,9 +119,19 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		if(nrPortalShapes > 1) 
 			shapeidx = Floor2Int(lux::random::floatValue() * nrPortalShapes);
 		Normal ns;
-		Point ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
-		*wi = Normalize(ps - p);
-		*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+		Point ps;
+		bool exit = false;
+		for (int i = 0; i < nrPortalShapes && !exit; ++i) {
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			*wi = Normalize(ps - p);
+			exit = (Dot(*wi, ns) < 0.f);
+		}
+		if (exit)
+			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+		else {
+			*pdf = 0.f;
+			return SWCSpectrum(0.f);
+		}
 	}
 	visibility->SetRay(p, *wi);
 	return Le(RayDifferential(p, *wi));
@@ -146,7 +166,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	float pdf;
 	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
-		wi, &pdf, visibility);
+		lux::random::floatValue(), wi, &pdf, visibility);
 	if (pdf == 0.f) return SWCSpectrum(0.f);
 	return L / pdf;
 }

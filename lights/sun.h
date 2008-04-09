@@ -44,8 +44,8 @@ public:
 		return SWCSpectrum(L) * M_PI * worldRadius * worldRadius;
 	}
 	SWCSpectrum Le(const RayDifferential &r) const;
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const;
+	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
+		Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;

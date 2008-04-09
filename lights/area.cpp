@@ -58,7 +58,7 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 	area = shape->Area();
 }
 SWCSpectrum AreaLight::Sample_L(const Point &p,
-		const Normal &n, float u1, float u2,
+		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal ns;
@@ -73,7 +73,7 @@ float AreaLight::Pdf(const Point &p, const Normal &N,
 	return shape->Pdf(p, wi);
 }
 SWCSpectrum AreaLight::Sample_L(const Point &P,
-		float u1, float u2, Vector *wo, float *pdf,
+		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal Ns;
 	Point Ps = shape->Sample(P, u1, u2, &Ns);

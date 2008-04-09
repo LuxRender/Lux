@@ -50,7 +50,7 @@ GonioPhotometricLight::GonioPhotometricLight(
 		mipmap = NULL;
 }
 SWCSpectrum GonioPhotometricLight::Sample_L(const Point &P, float u1, float u2,
-		Vector *wo, float *pdf,
+		float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	*wo = Normalize(lightPos - P);
 	*pdf = 1.f;

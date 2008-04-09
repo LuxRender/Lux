@@ -55,7 +55,7 @@ float SpotLight::Falloff(const Vector &w) const {
 		(cosFalloffStart - cosTotalWidth);
 	return delta*delta*delta*delta;
 }
-SWCSpectrum SpotLight::Sample_L(const Point &p, float u1, float u2,
+SWCSpectrum SpotLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	return Sample_L(p, wi, visibility);

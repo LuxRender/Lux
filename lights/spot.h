@@ -40,7 +40,7 @@ public:
 		return Intensity * 2.f * M_PI *
 			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
 	}
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2,
+	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
 			Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;

@@ -61,8 +61,8 @@ SWCSpectrum SingleScattering::Li(const Scene *scene,
 	else
 		t0 += lux::random::floatValue() * step;
 	// Compute sample patterns for single scattering samples
-	float *samp = (float *)alloca(3 * N * sizeof(float));
-	LatinHypercube(samp, N, 3);
+	float *samp = (float *)alloca(4 * N * sizeof(float));
+	LatinHypercube(samp, N, 4);
 	int sampOffset = 0;
 	for (int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
@@ -90,8 +90,8 @@ SWCSpectrum SingleScattering::Li(const Scene *scene,
 			float pdf;
 			VisibilityTester vis;
 			Vector wo;
-			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2];
-			SWCSpectrum L = light->Sample_L(p, u1, u2, &wo, &pdf, &vis);
+			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2], u3 = samp[sampOffset+3];
+			SWCSpectrum L = light->Sample_L(p, u1, u2, u3, &wo, &pdf, &vis);
 			if (!L.Black() && pdf > 0.f && vis.Unoccluded(scene)) {
 				SWCSpectrum Ld = L * vis.Transmittance(scene);
 				Lv += Tr * ss * vr->p(p, w, -wo) *

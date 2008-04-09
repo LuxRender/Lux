@@ -351,7 +351,7 @@ SWCSpectrum SunLight::Le(const RayDifferential &r) const {
 		return SWCSpectrum(0.);
 }
 
-SWCSpectrum SunLight::Sample_L(const Point &p, float u1, float u2,
+SWCSpectrum SunLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	if(cosThetaMax == 1) {
 		*pdf = 1.f;
@@ -372,7 +372,7 @@ SWCSpectrum SunLight::Sample_L(const Point &p,
 	} else {
 		float pdf;
 		SWCSpectrum Le = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
-			wi, &pdf, visibility);
+			lux::random::floatValue(), wi, &pdf, visibility);
 		if (pdf == 0.f) return Spectrum(0.f);
 		return Le / pdf;
 	}
