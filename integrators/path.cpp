@@ -33,7 +33,6 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
 	vector<u_int> structure;
 	structure.push_back(2);	//light position
-	structure.push_back(1); //light portal
 	structure.push_back(1);	//light number
 	structure.push_back(2);	//bsdf sampling for light
 	structure.push_back(1);	//bsdf component for light
@@ -92,11 +91,11 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		L += pathThroughput *
 			UniformSampleOneLight(scene, p, n,
 				wo, bsdf, sample,
-				data, data + 3, data + 4, data + 6);
+				data, data + 2, data + 3, data + 5);
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
-			if (data[7] > continueProbability)
+			if (data[6] > continueProbability)
 				break;
 
 			// increase path contribution
@@ -106,7 +105,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[8], data[9], data[10],
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7], data[8], data[9],
 			&pdf, BSDF_ALL, &flags);
 		if (pdf == .0f || f.Black())
 			break;

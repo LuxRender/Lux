@@ -90,21 +90,20 @@ SWCSpectrum UniformSampleOneLight(const Scene *scene,
 	if (nLights == 0) 
 		return SWCSpectrum(0.f);
 	int lightNumber;
-	if (lightNum)
-		lightNumber = Floor2Int(*lightNum * nLights);
-	else
-		lightNumber = Floor2Int(lux::random::floatValue() * nLights);
-	lightNumber = min(lightNumber, nLights - 1);
-	Light *light = scene->lights[lightNumber];
 	float ls1, ls2, ls3, bs1, bs2, bcs;
+	if (lightNum)
+		ls3 = *lightNum * nLights;
+	else
+		ls3 = lux::random::floatValue() * nLights;
+	lightNumber = min(Floor2Int(ls3), nLights - 1);
+	ls3 -= lightNumber;
+	Light *light = scene->lights[lightNumber];
 	if (lightSample) {
 		ls1 = lightSample[0];
 		ls2 = lightSample[1];
-		ls3 = lightSample[2];
 	} else {
 		ls1 = lux::random::floatValue();
 		ls2 = lux::random::floatValue();
-		ls3 = lux::random::floatValue();
 	}
 	if (bsdfSample) {
 		bs1 = bsdfSample[0];
@@ -148,7 +147,6 @@ SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 		ls1 = lux::random::floatValue();
 		ls2 = lux::random::floatValue();
 	}
-	ls3 = lux::random::floatValue(); //FIXME: use sample
 	if (sample && lightNumOffset != -1)
 		lightNum = sample->oneD[lightNumOffset][0];
 	else
@@ -167,6 +165,7 @@ SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 	SWCSpectrum L(0.);
 	if (overallAvgY == 0.) {
 		int lightNumber = min(Float2Int(nLights * lightNum), nLights-1);
+		ls3 = nLights * lightNum - lightNumber;
 		Light *light = scene->lights[lightNumber];
 		// Sample one light uniformly and initialize luminance arrays
 		L = EstimateDirect(scene, light, p, n, wo, bsdf,
@@ -185,6 +184,7 @@ SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 		float t = SampleStep1d(avgYsample, cdf, c, nLights,
 			lightNum, &lightSampleWeight);
 		int lightNumber = min(Float2Int(nLights * t), nLights-1);
+		ls3 = nLights * t - lightNumber;
 		Light *light = scene->lights[lightNumber];
 		L = EstimateDirect(scene, light, p, n, wo, bsdf,
 			ls1, ls2, ls3, bs1, bs2, bcs);
