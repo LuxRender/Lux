@@ -20,85 +20,117 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+// Tausworthe (taus113) random numbergenerator by radiance
+// Based on code from GSL (GNU Scientific Library)
+// MASK assures 64bit safety
+
+// Usage in luxrender:
+// lux::random::floatValue() returns a random float
+// lux::random::uintValue() returns a random uint
+// NOTE: calling random values outside of a renderthread will result in a crash
+// thread safety/uniqueness using thread specific ptr (boost)
 
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
-#include <boost/random.hpp>
-#include <boost/random/mersenne_twister.hpp>
-
 #include <boost/thread/tss.hpp>
+
+#define LCG(n) ((69069UL * n) & 0xffffffffUL)
+#define MASK 0xffffffffUL
 
 namespace lux
 {
 
 namespace random
 {
-#if 0
-inline unsigned int seed()
+
+#define MAX_SEEDS 64
+static int newseed = 0;
+static float seeds[64] = { 
+0.8147236705f, 0.1354770064f, 0.0000925521f, 0.4019474089f,
+0.9057919383f, 0.8350085616f, 0.0003553750f, 0.0861424059f,
+0.5407393575f, 0.2690643370f, 0.0006090801f, 0.6007867455f,
+0.2601301968f, 0.6379706860f, 0.0009086037f, 0.7664164901f,
+0.3190678060f, 0.9074092507f, 0.0011911630f, 0.9212453961f,
+0.7451665998f, 0.5743905902f, 0.0013162681f, 0.9683164358f,
+0.4001524150f, 0.5284244418f, 0.0016778698f, 0.6921809912f,
+0.1100450456f, 0.1057574451f, 0.0018501711f, 0.0146250632f,
+0.8948429227f, 0.2533296347f, 0.0020738356f, 0.4565072358f,
+0.2674683630f, 0.5533290505f, 0.0023895311f, 0.1681169569f,
+0.3942572773f, 0.2532950938f, 0.0026231781f, 0.2203403264f,
+0.4852786958f, 0.3545391560f, 0.0028830934f, 0.3188484907f,
+0.6586979032f, 0.8418058157f, 0.0030069787f, 0.7844486237f,
+0.9411987066f, 0.5897576213f, 0.0033880144f, 0.8060938716f,
+0.5399997830f, 0.9201279879f, 0.0034516300f, 0.7110665441f,
+0.7044532299f, 0.3615645170f, 0.0038146735f, 0.3312333524f
+};
+
+class RandomGenerator
 {
-	int dummy;
-	unsigned int seed=static_cast<unsigned int>(std::time(0));
-	//if two copies run on the same machine, dummy adress will make the seed unique
-	seed=seed^(unsigned int)((unsigned long)(&dummy)); 
-	//also use the hostname to make the seed unique
-	/*std::string s=asio::ip::host_name();
-	for(unsigned int i=0;i<s.size();i++)
-		seed=seed^(((unsigned int)s.at(i))<<((i%4)*8));*/
-	seed=seed^DJBHash(asio::ip::host_name());
-	//std::cout<<"using seed :"<<seed<<std::endl;
-	return seed;
-}
-#endif
-	class RandomGenerator
-	{
-	public:
-		RandomGenerator() : engine(static_cast<unsigned int>(std::time(0))), uni_dist(0,1), uni(engine, uni_dist), intdist(0,INT_MAX), intgen(engine, intdist)
-		{ }
-		
-		inline float generateFloat()
-		{
-			return uni();
-		}
-		
-		inline unsigned long generateUInt()
-		{
-			return intgen();
-		}
-		
-	private:
-		boost::mt19937 engine;
-		
-		boost::uniform_real<> uni_dist;
-		boost::variate_generator<boost::mt19937, boost::uniform_real<> > uni;
-		
-		boost::uniform_int<> intdist;
-		boost::variate_generator<boost::mt19937, boost::uniform_int<> > intgen;
-	};
+public:
+	RandomGenerator() { invUL = 1./4294967296.0; }
+
+	void taus113_set(unsigned long int s) {
+	  if (!s) s = 1UL; // default seed is 1
+
+	  z1 = LCG (s); if (z1 < 2UL) z1 += 2UL;
+	  z2 = LCG (z1); if (z2 < 8UL) z2 += 8UL;
+	  z3 = LCG (z2); if (z3 < 16UL) z3 += 16UL;
+	  z4 = LCG (z3); if (z4 < 128UL) z4 += 128UL;
+
+	  // Calling RNG ten times to satify recurrence condition
+	  for(int i=0; i<10; i++) generateUInt();
+	}
+
+	inline unsigned long generateUInt() {
+	  unsigned long b1, b2, b3, b4;
+
+	  b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
+	  z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
+
+	  b2 = ((((z2 << 2UL) & MASK) ^ z2) >> 27UL);
+	  z2 = ((((z2 & 4294967288UL) << 2UL) & MASK) ^ b2);
+
+	  b3 = ((((z3 << 13UL) & MASK) ^ z3) >> 21UL);
+	  z3 = ((((z3 & 4294967280UL) << 7UL) & MASK) ^ b3);
+
+	  b4 = ((((z4 << 3UL) & MASK) ^ z4) >> 12UL);
+	  z4 = ((((z4 & 4294967168UL) << 13UL) & MASK) ^ b4);
+
+	  return (z1 ^ z2 ^ z3 ^ z4);
+	}
+
+	inline float generateFloat() {
+		return generateUInt() * invUL;
+	}
 	
-	// thread local pointer to boost random generator
-	extern boost::thread_specific_ptr<RandomGenerator> myGen;
-	
-	inline void init ()
-	{
+private:
+	double invUL;
+	unsigned long int z1, z2, z3, z4;
+};
+
+// thread local pointer to boost random generator
+extern boost::thread_specific_ptr<RandomGenerator> myGen;
+
+inline void init(int tn) {
+	if(!myGen.get())
 		myGen.reset(new RandomGenerator);
-	}
-	
-	inline float floatValue()
-	{ 
-		if(!myGen.get())
-			init();
-		return myGen->generateFloat();
-	}
-	inline unsigned long uintValue()
-	{ 
-		if(!myGen.get())
-			init();
-		return myGen->generateUInt();
-	}
-	
+
+	if(newseed >= MAX_SEEDS) newseed = 1; // 0 is always used by 1st thr
+	unsigned long seed = (unsigned long) (seeds[newseed] * 4294967296.0);
+	newseed++;
+
+	myGen->taus113_set(seed);
 }
 
+inline float floatValue() { 
+	return myGen->generateFloat();
 }
+inline unsigned long uintValue() { 
+	return myGen->generateUInt();
+}
+
+} // random
+} // lux
 
 #endif //LUX_RANDOM_H

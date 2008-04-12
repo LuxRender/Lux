@@ -42,16 +42,10 @@ public:
 		stat_Samples=0;
 		stat_blackSamples=0;
 		sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
-
-		//std::cout<<"Initializing the thread's memoryarena"<<std::endl;
-		//BSDF::arena.reset(new MemoryArena()); // initialize the thread's arena
-		//std::cout<<
-		//std::cout<<"yepeee, creating thread"<<std::endl;
 	}
 
 	~RenderThread()	{
 		delete sample;
-		//delete arena;	
 		delete thread;
 	}
 
@@ -65,19 +59,9 @@ public:
 	Sampler *sampler;
 	Camera *camera;
 	Scene *scene;
-	//MemoryArena* arena;
-	boost::thread *thread; //keep pointer the delete the thread object
+	boost::thread *thread; // keep pointer to delete the thread object
 
 	static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
-
-	/*
-	static MemoryArena& getArena()
-	{
-		return *(arena.get());
-	}*/
-
-//private:
-	//static boost::thread_specific_ptr<MemoryArena> arena;
 };
 
 // Scene Declarations

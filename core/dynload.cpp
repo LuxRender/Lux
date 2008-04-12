@@ -77,8 +77,6 @@
 #include "directlighting.h"
 #include "path.h"
 #include "path2.h"
-#include "mltpath.h"
-#include "pathn.h"
 #include "particletracing.h"
 
 #include "emission.h"
@@ -649,18 +647,6 @@ static string SearchPath(const string &searchpath,
 		paramSet.ReportUnused();
 		return ret;
 	}
-	if(name=="mltpath")
-    {
-        SurfaceIntegrator *ret=MLTPathIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-	if(name=="pathn")
-	{
-		SurfaceIntegrator *ret=PathnIntegrator::CreateSurfaceIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
 	if(name=="particletracing")
 	{
 		SurfaceIntegrator *ret=ParticleTracingIntegrator::CreateSurfaceIntegrator(paramSet);
@@ -684,56 +670,6 @@ static string SearchPath(const string &searchpath,
         paramSet.ReportUnused();
         return ret;
     }*/
-  
-
-    //
-    // Radiance - The following integrators are currently retired to /PBRT_Attic
-    //
-    /*
-    if(name=="bidirectional")
-    {
-        SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="debug")
-    {
-        SurfaceIntegrator *ret=DebugIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }    
-    if(name=="whitted")
-    {
-        SurfaceIntegrator *ret=WhittedIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="exphotonmap")
-    {
-        SurfaceIntegrator *ret=ExPhotonIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    } 
-    if(name=="igi")
-    {
-        SurfaceIntegrator *ret=IGIIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="irradiancecache")
-    {
-        SurfaceIntegrator *ret=IrradianceCache::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="photonmap")
-    {
-        SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    } 
-	*/
-    // End 
 
     //Error("Static loading of surface integrator '%s' failed.",name.c_str());
     std::stringstream ss;

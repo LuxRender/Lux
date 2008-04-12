@@ -34,6 +34,8 @@
 #include "bxdf.h"
 #include "light.h"
 
+#include "randomgen.h"
+
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
@@ -168,9 +170,15 @@ extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread)
 {
-	 // initialize the thread's arena
+	// initialize the thread's arena
 	BSDF::arena.reset(new MemoryArena());
 	myThread->stat_Samples = 0.;
+
+	// initialize the thread's rangen
+	// thread local pointer to boost random generator
+//	extern boost::thread_specific_ptr<lux::random::RandomGenerator> myGen;
+//	myGen.reset(new lux::random::RandomGenerator);
+	lux::random::init(myThread->n);
 
 	// initialize the thread's spectral wavelengths
 	thread_wavelengths.reset(new SpectrumWavelengths());
