@@ -78,6 +78,16 @@ Fl_Menu_Item menu_threads[] = {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
+void exit_cb(Fl_Widget *, void *) {
+	if (fb_update_thread)
+		fb_update_thread->join();
+	if (engine_thread) {
+		luxExit();
+		engine_thread->join();
+	}
+	exit(0);
+}
+
 // main window
 Fl_Double_Window * make_MainWindow(int width, int height,
 		Fl_RGB_Image * rgb_buffer, bool opengl_enabled) {
@@ -89,6 +99,7 @@ Fl_Double_Window * make_MainWindow(int width, int height,
 	{
 		Fl_Double_Window * o = new Fl_Double_Window (width, height, "LuxRender");
 		w = o;
+		o->callback(exit_cb);
 		o->color(col_back);
 		{
 			Fl_Group * o = new Fl_Group (0, 20, width, height - 20);
@@ -313,16 +324,6 @@ void open_cb(Fl_Widget *, void *) {
 		// start engine thread
 		RenderScenefile();
 	}
-}
-
-void exit_cb(Fl_Widget *, void *) {
-	if (fb_update_thread)
-		fb_update_thread->join();
-	if (engine_thread) {
-		luxExit();
-		engine_thread->join();
-	}
-	exit(0);
 }
 
 // NOTE - radiance - added simple about window for RC4 release, will need to add compression of image stored in splash.h
