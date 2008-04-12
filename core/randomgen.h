@@ -27,8 +27,10 @@
 // Usage in luxrender:
 // lux::random::floatValue() returns a random float
 // lux::random::uintValue() returns a random uint
+//
 // NOTE: calling random values outside of a renderthread will result in a crash
 // thread safety/uniqueness using thread specific ptr (boost)
+// Before renderthreads execute, use floatValueP() and uintValueP() instead.
 
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
@@ -68,7 +70,7 @@ static float seeds[64] = {
 class RandomGenerator
 {
 public:
-	RandomGenerator() { invUL = 1./4294967296.0; }
+	RandomGenerator() {}
 
 	void taus113_set(unsigned long int s) {
 	  if (!s) s = 1UL; // default seed is 1
@@ -101,11 +103,10 @@ public:
 	}
 
 	inline float generateFloat() {
-		return generateUInt() * invUL;
+		return generateUInt() *((float)1.0/(float)4294967296.0);
 	}
 	
 private:
-	double invUL;
 	unsigned long int z1, z2, z3, z4;
 };
 
@@ -116,18 +117,36 @@ inline void init(int tn) {
 	if(!myGen.get())
 		myGen.reset(new RandomGenerator);
 
-	if(newseed >= MAX_SEEDS) newseed = 1; // 0 is always used by 1st thr
+	if(newseed >= MAX_SEEDS) newseed = 1; // 0 always used by 1st thr
 	unsigned long seed = (unsigned long) (seeds[newseed] * 4294967296.0);
 	newseed++;
 
 	myGen->taus113_set(seed);
 }
 
+// request RN's during render threads (uses per thread rangen/seed)
 inline float floatValue() { 
 	return myGen->generateFloat();
 }
 inline unsigned long uintValue() { 
 	return myGen->generateUInt();
+}
+
+static RandomGenerator* PGen;
+// request RN's during engine initialization (pre threads)
+inline float floatValueP() { 
+	if(!PGen) {
+		PGen = new RandomGenerator();
+		PGen->taus113_set(1);
+	}
+	return PGen->generateFloat();
+}
+inline unsigned long uintValueP() { 
+	if(!PGen) {
+		PGen = new RandomGenerator();
+		PGen->taus113_set(1);
+	}
+	return PGen->generateUInt();
 }
 
 } // random

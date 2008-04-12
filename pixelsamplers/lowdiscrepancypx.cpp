@@ -33,8 +33,8 @@ LowdiscrepancyPixelSampler::LowdiscrepancyPixelSampler(int xstart, int xend,
 	yPixelStart = ystart;
 	xPixelEnd = xend;
 	yPixelEnd = yend;
-	xSeed = lux::random::uintValue();
-	ySeed = lux::random::uintValue();
+	xSeed = lux::random::uintValueP();
+	ySeed = lux::random::uintValueP();
 }
 
 u_int LowdiscrepancyPixelSampler::GetTotalPixels() {
