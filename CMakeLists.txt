@@ -358,12 +358,12 @@ SET(lux_lib_src
         film/multiimage.cpp film/fleximage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/directlighting.cpp integrators/emission.cpp
-        integrators/path.cpp integrators/path2.cpp integrators/mltpath.cpp integrators/single.cpp
-	integrators/pathn.cpp integrators/particletracing.cpp
+        integrators/path.cpp integrators/path2.cpp integrators/single.cpp
+	integrators/particletracing.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp
-        materials/glass.cpp materials/matte.cpp materials/mirror.cpp materials/plastic.cpp 
+        materials/glass.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp materials/plastic.cpp
         materials/shinymetal.cpp materials/substrate.cpp
         materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
