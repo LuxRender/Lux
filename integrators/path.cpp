@@ -93,14 +93,6 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 				wo, bsdf, sample,
 				data, data + 2, data + 3, data + 5);
 
-		// Possibly terminate the path
-		if (pathLength > 3) {
-			if (data[6] > continueProbability)
-				break;
-
-			// increase path contribution
-			pathThroughput /= continueProbability;
-		}
 		// Sample BSDF to get new path direction
 		Vector wi;
 		float pdf;
@@ -109,9 +101,20 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			&pdf, BSDF_ALL, &flags);
 		if (pdf == .0f || f.Black())
 			break;
+
+		const float dp = AbsDot(wi, n)/pdf;
+
+		// Possibly terminate the path - note - radiance - added effiency optimized RR
+		if (pathLength > 3) {
+			float q = min(1., f.y()*dp);
+			if (q < data[6])
+				break;
+			pathThroughput /= q;
+		}
+
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
 		pathThroughput *= f;
-		pathThroughput *= AbsDot(wi, n) / pdf;
+		pathThroughput *= dp;
 
 		ray = RayDifferential(p, wi);
 	}
@@ -125,9 +128,6 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
-	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for RR (0.0-1.0)
-
-	return new PathIntegrator(maxDepth, RRcontinueProb);
-
+	return new PathIntegrator(maxDepth);
 }
 

@@ -34,15 +34,14 @@ public:
 	// PathIntegrator Public Methods
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	PathIntegrator(int md, float cp) { 
-		maxDepth = md; continueProbability = cp; 
+	PathIntegrator(int md) { 
+		maxDepth = md; 
 	}
 	virtual ~PathIntegrator() { }
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data
 	int maxDepth, sampleOffset;
-	float continueProbability;
 };
 
 }//namespace lux
