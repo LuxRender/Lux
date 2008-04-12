@@ -34,8 +34,8 @@ namespace lux
 
 class MetropolisSampler : public Sampler {
 public:
-	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng);
-	~MetropolisSampler() { delete[] sampleImage; }
+	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw);
+	~MetropolisSampler() { delete[] sampleImage; delete[] strataSamples; }
 	virtual MetropolisSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }
 	int RoundSize(int size) const { return size; }
@@ -57,6 +57,8 @@ public:
 	static int initCount, initSamples;
 	static float meanIntensity;
 	vector <Sample::Contribution> oldContributions;
+	float *strataSamples;
+	int strataWidth, strataSqr, currentStrata;
 };
 
 }//namespace lux

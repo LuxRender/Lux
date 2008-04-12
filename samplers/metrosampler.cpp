@@ -64,12 +64,16 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 }
 
 // Metropolis method definitions
-MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng) :
+MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw) :
  Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), LY(0.),
  totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
- timeImage(NULL)
+ timeImage(NULL), strataWidth(sw)
 {
+	// Allocate storage for image stratified samples
+	strataSamples = (float *)AllocAligned(2 * sw * sw * sizeof(float));
+	strataSqr = sw*sw;
+	currentStrata = strataSqr;
 }
 
 // Copy
@@ -111,9 +115,18 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		large = true;
 	}
 	if (large) {
+		if(currentStrata == strataSqr) {
+			// Generate shuffled stratified image samples
+			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
+			Shuffle(strataSamples, strataSqr, 2);
+			currentStrata = 0;
+		}
+
 		// *** large mutation ***
-		sample->imageX = lux::random::floatValue() * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = lux::random::floatValue() * (yPixelEnd - yPixelStart) + yPixelStart;
+		sample->imageX = strataSamples[currentStrata*2] * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
+		currentStrata++;
+
 		sample->lensU = lux::random::floatValue();
 		sample->lensV = lux::random::floatValue();
 		sample->time = lux::random::floatValue();
@@ -250,7 +263,8 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	int maxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
-	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects, largeMutationProb, range);
+	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
+	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects, largeMutationProb, range, stratawidth);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;
