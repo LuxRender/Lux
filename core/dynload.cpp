@@ -95,6 +95,7 @@
 #include "glass.h"
 #include "roughglass.h"
 #include "matte.h"
+#include "mattetranslucent.h"
 #include "mirror.h"
 #include "plastic.h"
 #include "shinymetal.h"
@@ -252,6 +253,12 @@ static string SearchPath(const string &searchpath,
     if(name=="matte")
     {
     	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Matte::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }
+    if(name=="mattetranslucent")
+    {
+    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(MatteTranslucent::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
