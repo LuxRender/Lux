@@ -172,7 +172,7 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	// NOTE - ratow - Invert generated normal in case it falls on the wrong side.
 	if(!mesh->uvs) {
 		if(mesh->n) {
-			if(Dot(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]], dg->nn) < 0)
+			if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), dg->nn) < 0)
 				dg->nn *= -1;
 		} else {
 			if(Dot(Cross(e1, e2), dg->nn) < 0)
