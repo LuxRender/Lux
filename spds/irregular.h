@@ -18,42 +18,49 @@
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
- ***************************************************************************/
+ ***************************************************************************/  
 
-// spd.cpp*
-#include "spd.h"
-#include "memory.h"
+#ifndef LUX_IRREGULARSPD_H
+#define LUX_IRREGULARSPD_H
+// irregular.h*
+#include "lux.h"
+#include "spectrum.h"
+#include "regular.h"
 
-using namespace lux;
+namespace lux
+{
+  // only use spline for regular data
+  enum SPDResamplingMethod { Linear, Spline };
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+  // Irregularly sampled SPD
+  // Resampled to a fixed resolution (at construction)
+  // using cubic spline interpolation
+  class IrregularSPD : public SPD {
+  public:
 
-void SPD::Normalize() {
-	float max = 0.f;
+    IrregularSPD() : SPD() {}
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+    // creates an irregularly sampled SPD
+    // may "truncate" the edges to fit the new resolution
+    //  wavelengths   array containing the wavelength of each sample
+    //  samples       array of sample values at the given wavelengths
+    //  n             number of samples
+    //  resolution    resampling resolution (in nm)
+    IrregularSPD(const float* const wavelengths, const float* const samples,
+			int n, int resolution = 5, SPDResamplingMethod resamplignMethod = Linear);
 
-	float scale = 1.f/max;
+    ~IrregularSPD() {}
 
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
+  protected:
+	  void init(float lMin, float lMax, const float* const s, int n);
 
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
-	}
-}
+  private:
+    // computes data for natural spline interpolation
+    // from Numerical Recipes in C
+    void calc_spline_data(const float* const wavelengths,
+			const float* const amplitudes, int n, float *spline_data);
+  };
 
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
-}
+}//namespace lux
 
+#endif // LUX_IRREGULARSPD_H

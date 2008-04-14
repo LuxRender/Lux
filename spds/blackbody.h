@@ -20,40 +20,40 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// spd.cpp*
+#ifndef LUX_BLACKBODYSPD_H
+#define LUX_BLACKBODYSPD_H
+// blackbody.h*
+#include "lux.h"
+#include "spectrum.h"
 #include "spd.h"
-#include "memory.h"
 
-using namespace lux;
+#define BB_CACHE_START   380. // precomputed cache starts at wavelength,
+#define BB_CACHE_END     720. // and ends at wavelength
+#define BB_CACHE_SAMPLES 256  // total number of cache samples 
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+namespace lux
+{
 
-void SPD::Normalize() {
-	float max = 0.f;
+  class BlackbodySPD : public SPD {
+  public:
+    BlackbodySPD() : SPD() {
+		init(6500.f); // default to D65 temperature
+    }
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+    BlackbodySPD(float t) : SPD() {
+		init(t);
+    }
 
-	float scale = 1.f/max;
+    ~BlackbodySPD() {}
 
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
+	void init(float t);
 
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
-	}
-}
+  protected:
+    float temp;
 
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
-}
+  };
+
+}//namespace lux
+
+#endif // LUX_BLACKBODYSPD_H
 

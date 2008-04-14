@@ -25,15 +25,21 @@
 #include "mc.h"
 #include "primitive.h"
 #include "paramset.h"
+#include "rgbillum.h"
+#include "blackbody.h"
 
 using namespace lux;
 
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - add portal implementation
-		const Spectrum &le, int ns,
+		const Spectrum &le, float g, int ns,
 		const boost::shared_ptr<Shape> &s)
 	: Light(light2world, ns) {
-	Lemit = le;
+	// Create SPD
+	LSPD = new RGBIllumSPD(le);
+	// Set gain (scale)
+	LSPD->Scale(g);
+
 	if (s->CanIntersect())
 		shape = s;
 	else {
@@ -132,12 +138,15 @@ float AreaLight::EvalDirectionPdf(const Point p, const Normal &n, const Vector &
 }
 SWCSpectrum AreaLight::Eval(const Normal &n, const Vector &w) const
 {
-	return Dot(n, w) > 0 ? Lemit : 0.;
+	return Dot(n, w) > 0 ? SWCSpectrum(LSPD) : 0.;
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
 		const boost::shared_ptr<Shape> &shape) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	float g = paramSet.FindOneFloat("gain", 1.f);
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new AreaLight(light2world, L, nSamples, shape);
+	return new AreaLight(light2world, L, g, nSamples, shape);
 }
+
+

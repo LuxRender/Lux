@@ -18,42 +18,40 @@
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
- ***************************************************************************/
+ ***************************************************************************/  
 
-// spd.cpp*
+#ifndef LUX_REGULARSPD_H
+#define LUX_REGULARSPD_H
+// regular.h*
+#include "lux.h"
+#include "spectrum.h"
 #include "spd.h"
-#include "memory.h"
 
-using namespace lux;
+namespace lux
+{
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+// regularly sampled SPD, reconstructed using linear interpolation
+class RegularSPD : public SPD {
+  public:
+    RegularSPD() : SPD() {}
 
-void SPD::Normalize() {
-	float max = 0.f;
+    //  creates a regularly sampled SPD
+    //  samples    array of sample values
+    //  lambdaMin  wavelength (nm) of first sample
+    //  lambdaMax  wavelength (nm) of last sample
+    //  n          number of samples
+    RegularSPD(const float* const samples, float lambdaMin, float lambdaMax, int n) : SPD() {
+      init(lambdaMin, lambdaMax, samples, n);
+    }
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+    ~RegularSPD() {}
 
-	float scale = 1.f/max;
+  protected:
+    void init(float lMin, float lMax, const float* const s, int n);
 
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
+  private:   
+  };
 
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
-	}
-}
+  }//namespace lux
 
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
-}
-
+#endif // LUX_REGULARSPD_H

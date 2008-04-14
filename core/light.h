@@ -27,6 +27,7 @@
 #include "geometry.h"
 #include "spectrum.h"
 #include "error.h"
+#include "rgbillum.h"
 // Light Declarations
 
 namespace lux
@@ -120,13 +121,13 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		const Spectrum &power, int ns, const boost::shared_ptr<Shape> &shape);
+		const Spectrum &power, float g, int ns, const boost::shared_ptr<Shape> &shape);
 	virtual SWCSpectrum L(const Point &p, const Normal &n,
 			const Vector &w) const {
-		return Dot(n, w) > 0 ? Lemit : 0.;
+		return Dot(n, w) > 0 ? SWCSpectrum(LSPD) : 0.;
 	}
 	SWCSpectrum Power(const Scene *) const {
-		return Lemit * area * M_PI;
+		return SWCSpectrum(LSPD) * area * M_PI;
 	}
 	bool IsDeltaLight() const { return false; }
 	float Pdf(const Point &, const Vector &) const;
@@ -149,7 +150,7 @@ public:
 		const boost::shared_ptr<Shape> &shape);
 protected:
 	// AreaLight Protected Data
-	Spectrum Lemit;
+	SPD *LSPD;
 	boost::shared_ptr<Shape> shape;
 	float area;
 };

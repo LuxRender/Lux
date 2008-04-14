@@ -372,6 +372,8 @@ SET(lux_lib_src
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
+	spds/backbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
+	core/spectrumwavelengths.cpp
 	)
 
 INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
@@ -380,7 +382,7 @@ INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
 					${OPENEXR_INCLUDE_DIRS}
 					${Boost_INCLUDE_DIRS} ${FLTK_INCLUDE_DIR}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
-					${CMAKE_SOURCE_DIR}/core/reflection ${CMAKE_SOURCE_DIR}/core/reflection/bxdf
+					${CMAKE_SOURCE_DIR}/core/reflection ${CMAKE_SOURCE_DIR}/core/reflection/bxdf ${CMAKE_SOURCE_DIR}/spds
 					${CMAKE_SOURCE_DIR}/core/reflection/fresnel ${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
 					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
 					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers

@@ -24,15 +24,16 @@
 #define LUX_SPECTRUM_H
 // spectrum.h*
 #include "lux.h"
+#include "spd.h"
 #include "color.h"
-
-#include <boost/thread/tss.hpp>
 
 namespace lux
 {
 
 #define WAVELENGTH_SAMPLES 8
-static const float inv_WAVELENGTH_SAMPLES = 1. / WAVELENGTH_SAMPLES;
+#define WAVELENGTH_START 380.
+#define WAVELENGTH_END   720.
+static const float inv_WAVELENGTH_SAMPLES = 1.f / WAVELENGTH_SAMPLES;
 
 
 // Spectrum Declarations
@@ -202,12 +203,6 @@ public:
 	
 	// Spectrum Public Data
 	float c[COLOR_SAMPLES];
-	static const int CIEstart = 360;
-	static const int CIEend = 830;
-	static const int nCIE = CIEend-CIEstart+1;
-	static const float CIE_X[nCIE];
-	static const float CIE_Y[nCIE];
-	static const float CIE_Z[nCIE];
 	
 protected:
 	// Spectrum Private Data
@@ -411,14 +406,6 @@ public:
      	__m128  cvec[COLOR_VECTORS];
       float c[COLOR_SAMPLES];
     };
-	
-	
-	static const int CIEstart = 360;
-	static const int CIEend = 830;
-	static const int nCIE = CIEend-CIEstart+1;
-	static const float CIE_X[nCIE];
-	static const float CIE_Y[nCIE];
-	static const float CIE_Z[nCIE];
 
 /*	
 	void* operator new(size_t t) { return _mm_malloc(t,16); }
@@ -449,12 +436,10 @@ public:
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = v;
 	}
-	SWCSpectrum(Spectrum s) {
-		FromSpectrum(s);
-	}	
-	SWCSpectrum(const SPD *s) {
-		FromSPD(s);
-	}	
+	SWCSpectrum(Spectrum s);
+
+	SWCSpectrum(const SPD *s);
+
 	SWCSpectrum(double cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = cs[i];
@@ -576,10 +561,8 @@ public:
 			fprintf(f, "%f ", c[i]);
 	}
 	XYZColor ToXYZ() const;
-	void FromSpectrum(Spectrum s);
-	void FromSPD(const SPD *s);
-
 	double y() const;
+
 	bool operator<(const SWCSpectrum &s2) const {
 		return y() < s2.y();
 	}
@@ -587,12 +570,6 @@ public:
 	
 	// SWCSpectrum Public Data
 	double c[WAVELENGTH_SAMPLES];
-	static const int CIEstart = 360;
-	static const int CIEend = 830;
-	static const int nCIE = CIEend-CIEstart+1;
-	static const float CIE_X[nCIE];
-	static const float CIE_Y[nCIE];
-	static const float CIE_Z[nCIE];
 	
 private:
 	template<class Archive>
@@ -602,56 +579,6 @@ private:
 					ar & c[i];
 			}
 };
-
-class	SpectrumWavelengths {
-public:
-
-	// SpectrumWavelengths Public Methods
-	SpectrumWavelengths() { single = false; single_w = 0; }
-
-	void Sample(float u1, float u2) {
-		single = false;
-		single_w = Floor2Int(u2 * WAVELENGTH_SAMPLES);
-
-		const float offset = float(CIEend - CIEstart) * inv_WAVELENGTH_SAMPLES;
-		float waveln = CIEstart + u1 * offset;
-		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-			// create stratified random wavelengths
-			// from left (CIEstart) to right (CIEend)
-			w[i] = waveln;
-			waveln += offset; 
-		} 
-
-		ComputeRGBConversionSpectra();
-	}
-
-	void CreateSpectrum(SWCSpectrum &spectrum, SPD &rgbspectrum);
-	void ComputeRGBConversionSpectra();
-
-	float SampleSingle() {
-		single = true;
-		return w[single_w];
-	}
-
-	// Wavelength in nm
-	float w[WAVELENGTH_SAMPLES];	
-
-	bool single;
-	int  single_w;
-
-	SWCSpectrum spect_w;	// white
-	SWCSpectrum spect_c;	// cyan
-	SWCSpectrum spect_m;	// magenta
-	SWCSpectrum spect_y;	// yellow
-	SWCSpectrum spect_r;	// red
-	SWCSpectrum spect_g;	// green
-	SWCSpectrum spect_b;	// blue
-
-	static const int CIEstart = 360;
-	static const int CIEend = 830;
-	static const int nCIE = CIEend-CIEstart+1;
-};
-
 
 }//namespace lux
 

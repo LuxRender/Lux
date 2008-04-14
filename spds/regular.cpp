@@ -18,42 +18,27 @@
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
- ***************************************************************************/
+ ***************************************************************************/  
 
-// spd.cpp*
-#include "spd.h"
+// regular.cpp*
+#include "regular.h"
 #include "memory.h"
 
 using namespace lux;
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+void RegularSPD::init(float lMin, float lMax, const float* const s, int n) {
+  lambdaMin = lMin;
+  lambdaMax = lMax;
+  delta = (lambdaMax - lambdaMin) / (n-1);
+  invDelta = 1.f / delta;
+  nSamples = n;
 
-void SPD::Normalize() {
-	float max = 0.f;
+  AllocateSamples(n);
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+  // Copy samples
+  for (int i = 0; i < n; i++)
+    samples[i] = s[i];
 
-	float scale = 1.f/max;
-
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
-
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
-	}
-}
-
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
+  Clamp();
 }
 

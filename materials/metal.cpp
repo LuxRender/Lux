@@ -28,6 +28,8 @@
 #include "blinn.h"
 #include "paramset.h"
 
+#include "irregular.h"
+
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 #include <fstream>

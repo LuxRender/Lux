@@ -18,42 +18,43 @@
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
- ***************************************************************************/
+ ***************************************************************************/  
 
-// spd.cpp*
+#ifndef LUX_RGBILLUMSPD_H
+#define LUX_RGBILLUMSPD_H
+// rgbillum.h*
+#include "lux.h"
+#include "spectrum.h"
 #include "spd.h"
-#include "memory.h"
 
-using namespace lux;
+namespace lux
+{
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+// illuminant SPD, from RGB color, using smits conversion, reconstructed using linear interpolation
+  class RGBIllumSPD : public SPD {
+  public:
+    RGBIllumSPD() : SPD() {
+	  init(Spectrum(1.f));
+    }
 
-void SPD::Normalize() {
-	float max = 0.f;
+    RGBIllumSPD(Spectrum s) : SPD() {
+      init(s);
+    }
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+    ~RGBIllumSPD() {}
 
-	float scale = 1.f/max;
+  protected:
+	  void AddWeighted(float w, float *c) {
+		  for(int i=0; i<nSamples; i++) {
+			samples[i] += c[i] * w;
+		  }
+	  }
 
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
+	void init(Spectrum s);
 
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
-	}
-}
+  private:   
+  };
 
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
-}
+}//namespace lux
 
+#endif // LUX_RGBILLUMSPD_H

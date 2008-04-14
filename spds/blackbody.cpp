@@ -18,42 +18,32 @@
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
- ***************************************************************************/
+ ***************************************************************************/  
 
-// spd.cpp*
-#include "spd.h"
-#include "memory.h"
+// blackbody.cpp*
+#include "blackbody.h"
 
 using namespace lux;
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+void BlackbodySPD::init(float t) {
+	temp = t;
 
-void SPD::Normalize() {
-	float max = 0.f;
+	lambdaMin = BB_CACHE_START;
+	lambdaMax = BB_CACHE_END;
+	delta = (BB_CACHE_END - BB_CACHE_START) / (BB_CACHE_SAMPLES-1);
+    invDelta = 1.f / delta;
+	nSamples = BB_CACHE_SAMPLES;
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+	AllocateSamples(BB_CACHE_SAMPLES);
 
-	float scale = 1.f/max;
-
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
-
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
+	// Fill samples with BB curve
+	for(int i=0; i<BB_CACHE_SAMPLES; i++) {
+		double w = 1e-9 * (BB_CACHE_START + (delta*i));
+		// Compute blackbody power for wavelength w and temperature temp
+		samples[i] = float(0.4e-9 * (3.74183e-16 * pow(w,-5.0))
+				/ (exp(1.4388e-2 / (w * temp)) - 1.0));
 	}
-}
 
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
+	Normalize();
+	Clamp();
 }
-

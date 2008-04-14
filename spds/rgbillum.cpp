@@ -18,42 +18,81 @@
  *                                                                         *
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.org                       *
- ***************************************************************************/
+ ***************************************************************************/  
 
-// spd.cpp*
-#include "spd.h"
+// rgbillum.cpp*
+#include "rgbillum.h"
 #include "memory.h"
 
 using namespace lux;
 
-void SPD::AllocateSamples(int n) {
-	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
-}
+#include "data/rgbD65_32.h"
 
-void SPD::Normalize() {
-	float max = 0.f;
+void RGBIllumSPD::init(Spectrum s) {
+	lambdaMin = illumrgb2spect_start;
+	lambdaMax = illumrgb2spect_end;
+	int n = illumrgb2spect_bins;
+	delta = (lambdaMax - lambdaMin) / (n-1);
+	invDelta = 1.f / delta;
+	nSamples = n;
 
-	for(int i=0; i<nSamples; i++)
-		if(samples[i] > max)
-			max = samples[i];
+	AllocateSamples(n);
 
-	float scale = 1.f/max;
+    // Zero out
+	for (int i = 0; i < n; i++)
+		samples[i] = 0.f;
 
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= scale;
-}
+	float r = s.c[0];
+	float g = s.c[1];
+	float b = s.c[2];
 
-void SPD::Clamp() {
-	for(int i=0; i<nSamples; i++) {
-		if(samples[i] < 0.f) samples[i] = 0.f;
-		if(samples[i] > INFINITY) samples[i] = INFINITY;
+	if (r <= g && r <= b)
+	{
+		AddWeighted(r, illumrgb2spect_white);
+
+		if (g <= b)
+		{
+			AddWeighted(g - r, illumrgb2spect_cyan);
+			AddWeighted(b - g, illumrgb2spect_blue);
+		}
+		else
+		{
+			AddWeighted(b - r, illumrgb2spect_cyan);
+			AddWeighted(g - b, illumrgb2spect_green);
+		}
 	}
-}
+	else if (g <= r && g <= b)
+	{
+		AddWeighted(g, illumrgb2spect_white);
 
-void SPD::Scale(float s) {
-	for(int i=0; i<nSamples; i++)
-		samples[i] *= s;
+		if (r <= b)
+		{
+			AddWeighted(r - g, illumrgb2spect_magenta);
+			AddWeighted(b - r, illumrgb2spect_blue);
+		}
+		else
+		{
+			AddWeighted(b - g, illumrgb2spect_magenta);
+			AddWeighted(r - b, illumrgb2spect_red);
+		}
+	}
+	else // blue <= red && blue <= green
+	{
+		AddWeighted(b, illumrgb2spect_white);
+
+		if (r <= g)
+		{
+			AddWeighted(r - b, illumrgb2spect_yellow);
+			AddWeighted(g - r, illumrgb2spect_green);
+		}
+		else
+		{
+			AddWeighted(g - b, illumrgb2spect_yellow);
+			AddWeighted(r - g, illumrgb2spect_red);
+		}
+	}
+
+	Scale(illumrgb2spect_scale);
+	Clamp();
 }
 

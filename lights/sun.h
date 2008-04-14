@@ -41,7 +41,7 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                   &worldRadius);
-		return SWCSpectrum(L) * M_PI * worldRadius * worldRadius;
+		return SWCSpectrum(LSPD) * M_PI * worldRadius * worldRadius;
 	}
 	SWCSpectrum Le(const RayDifferential &r) const;
 	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
@@ -61,8 +61,7 @@ private:
 	float turbidity;
 	float thetaS, phiS, V;
 	float cosThetaMax;
-    // NOTE - lordcrc - moved Ldata to constructor
-	SPD* L;
+	SPD *LSPD;
 };
 
 }//namespace lux

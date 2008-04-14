@@ -33,6 +33,7 @@
 #include "context.h"
 #include "bxdf.h"
 #include "light.h"
+#include "spectrumwavelengths.h"
 
 #include "randomgen.h"
 
@@ -179,6 +180,7 @@ void RenderThread::render(RenderThread *myThread)
 
 	// initialize the thread's spectral wavelengths
 	thread_wavelengths.reset(new SpectrumWavelengths());
+	SpectrumWavelengths *thr_wl = thread_wavelengths.get();
 	
 	// allocate sample pos
 	u_int *useSampPos = new u_int();
@@ -191,7 +193,7 @@ void RenderThread::render(RenderThread *myThread)
 			break;
 
 		// Sample new SWC thread wavelengths
-		thread_wavelengths->Sample(myThread->sample->wavelengths,
+		thr_wl->Sample(myThread->sample->wavelengths,
 			myThread->sample->singleWavelength);
 
 		while(myThread->signal == RenderThread::SIG_PAUSE)
@@ -266,26 +268,14 @@ int Scene::CreateRenderThread()
 
 void Scene::RemoveRenderThread()
 {
-	//printf("CTL: Removing thread...\n");
-	//thr_dat_ptrs[thr_nr -1]->Sig = THR_SIG_EXIT;
 	renderThreads.back()->signal = RenderThread::SIG_EXIT;
 	renderThreads.pop_back();
-	//delete thr_dat_ptrs[thr_nr -1]->Si;				// TODO deleting thread pack data deletes too much (shared_ptr?) - radiance
-	//delete thr_dat_ptrs[thr_nr -1]->Vi;				// leave off for now. (creates slight memory leak when removing threads (~5kb))
-	//delete thr_dat_ptrs[thr_nr -1]->Spl;
-	//delete thr_dat_ptrs[thr_nr -1]->Splr;
-	//delete thr_dat_ptrs[thr_nr -1]->arena;
-	//delete thr_dat_ptrs[thr_nr -1];
-	//delete thr_ptrs[thr_nr -1];
-	//thr_nr--;
-	//printf("CTL: Done.\n");
 }
 
 void Scene::Render() {
 	// integrator preprocessing
 	camera->film->SetScene(this);
 	sampler->SetFilm(camera->film);
-//	surfaceIntegrator->SetSampler(sampler);
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
 
@@ -296,9 +286,6 @@ void Scene::Render() {
 
 	// initial thread signal is paused
 	CurThreadSignal = RenderThread::SIG_RUN;
-
-    // set current scene pointer
-	//luxCurrentScene = (Scene*) this;
 	
 	//add a thread
 	CreateRenderThread();
