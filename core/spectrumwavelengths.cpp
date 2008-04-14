@@ -23,6 +23,7 @@
 // spectrumwavelengths.cpp*
 #include "spectrumwavelengths.h"
 #include "regular.h"
+#include "spd.h"
 #include "memory.h"
 
 using namespace lux;
