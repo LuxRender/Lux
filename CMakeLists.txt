@@ -372,8 +372,8 @@ SET(lux_lib_src
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
-	spds/backbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
-	core/spectrumwavelengths.cpp
+	spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
+	core/spectrumwavelengths.cpp core/spd.cpp
 	)
 
 INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
