@@ -120,22 +120,22 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	e1 = p2 - p1;
 	e2 = p3 - p1;
 	s1 = Cross(ray.d, e2);
-	float divisor = Dot(s1, e1);
+	const float divisor = Dot(s1, e1);
 	if (divisor == 0.)
 		return false;
-	float invDivisor = 1.f / divisor;
+	const float invDivisor = 1.f / divisor;
 	// Compute first barycentric coordinate
-	Vector d = ray.o - p1;
-	float b1 = Dot(d, s1) * invDivisor;
+	const Vector d = ray.o - p1;
+	const float b1 = Dot(d, s1) * invDivisor;
 	if (b1 < 0. || b1 > 1.)
 		return false;
 	// Compute second barycentric coordinate
-	Vector s2 = Cross(d, e1);
-	float b2 = Dot(ray.d, s2) * invDivisor;
+	const Vector s2 = Cross(d, e1);
+	const float b2 = Dot(ray.d, s2) * invDivisor;
 	if (b2 < 0. || b1 + b2 > 1.)
 		return false;
 	// Compute _t_ to intersection point
-	float t = Dot(e2, s2) * invDivisor;
+	const float t = Dot(e2, s2) * invDivisor;
 	if (t < ray.mint || t > ray.maxt)
 		return false;
 	// radiance - disabled for threading // triangleHits.Add(1, 0); //NOBOOK
@@ -145,26 +145,26 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	float uvs[3][2];
 	GetUVs(uvs);
 	// Compute deltas for triangle partial derivatives
-	float du1 = uvs[0][0] - uvs[2][0];
-	float du2 = uvs[1][0] - uvs[2][0];
-	float dv1 = uvs[0][1] - uvs[2][1];
-	float dv2 = uvs[1][1] - uvs[2][1];
-	Vector dp1 = p1 - p3, dp2 = p2 - p3;
-	float determinant = du1 * dv2 - dv1 * du2;
+	const float du1 = uvs[0][0] - uvs[2][0];
+	const float du2 = uvs[1][0] - uvs[2][0];
+	const float dv1 = uvs[0][1] - uvs[2][1];
+	const float dv2 = uvs[1][1] - uvs[2][1];
+	const Vector dp1 = p1 - p3, dp2 = p2 - p3;
+	const float determinant = du1 * dv2 - dv1 * du2;
 	if (determinant == 0.f) {
 		// Handle zero determinant for triangle partial derivative matrix
 		CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
 	}
 	else {
-		float invdet = 1.f / determinant;
+		const float invdet = 1.f / determinant;
 		dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
 		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
 	}
 
 	// Interpolate $(u,v)$ triangle parametric coordinates
-	float b0 = 1 - b1 - b2;
-	float tu = b0*uvs[0][0] + b1*uvs[1][0] + b2*uvs[2][0];
-	float tv = b0*uvs[0][1] + b1*uvs[1][1] + b2*uvs[2][1];
+	const float b0 = 1 - b1 - b2;
+	const float tu = b0*uvs[0][0] + b1*uvs[1][0] + b2*uvs[2][0];
+	const float tv = b0*uvs[0][1] + b1*uvs[1][1] + b2*uvs[2][1];
 	*dg = DifferentialGeometry(ray(t), dpdu, dpdv,
 	                           Vector(0,0,0), Vector(0,0,0),
 							   tu, tv, this);

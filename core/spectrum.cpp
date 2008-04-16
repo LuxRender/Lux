@@ -61,18 +61,19 @@ Spectrum lux::FromXYZ(float x, float y, float z) {
 boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 XYZColor SWCSpectrum::ToXYZ() const {
+	SpectrumWavelengths *sw = thread_wavelengths.get();
 	float xyz[3];
 	xyz[0] = xyz[1] = xyz[2] = 0.;
-	if (thread_wavelengths->single) {
-		int j = thread_wavelengths->single_w;
-		xyz[0] += thread_wavelengths->cie_X[j] * c[j];
-		xyz[1] += thread_wavelengths->cie_Y[j] * c[j];
-		xyz[2] += thread_wavelengths->cie_Z[j] * c[j];
+	if (sw->single) {
+		int j = sw->single_w;
+		xyz[0] = sw->cie_X[j] * c[j];
+		xyz[1] = sw->cie_Y[j] * c[j];
+		xyz[2] = sw->cie_Z[j] * c[j];
 	} else {
 		for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-			xyz[0] += thread_wavelengths->cie_X[j] * c[j];
-			xyz[1] += thread_wavelengths->cie_Y[j] * c[j];
-			xyz[2] += thread_wavelengths->cie_Z[j] * c[j];
+			xyz[0] += sw->cie_X[j] * c[j];
+			xyz[1] += sw->cie_Y[j] * c[j];
+			xyz[2] += sw->cie_Z[j] * c[j];
 		}
 		xyz[0] *= inv_WAVELENGTH_SAMPLES;
 		xyz[1] *= inv_WAVELENGTH_SAMPLES;
@@ -83,14 +84,15 @@ XYZColor SWCSpectrum::ToXYZ() const {
 }
 
 double SWCSpectrum::y() const {
+	SpectrumWavelengths *sw = thread_wavelengths.get();
 	double y = 0.;
 
-	if (thread_wavelengths->single) {
-		int j = thread_wavelengths->single_w;
-		y += thread_wavelengths->cie_Y[j] * c[j];
+	if (sw->single) {
+		int j = sw->single_w;
+		y = sw->cie_Y[j] * c[j];
 	} else {
 		for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-			y += thread_wavelengths->cie_Y[j] * c[j];
+			y += sw->cie_Y[j] * c[j];
 		}
 		y *= inv_WAVELENGTH_SAMPLES;
 	}
@@ -99,12 +101,14 @@ double SWCSpectrum::y() const {
 }
 
 SWCSpectrum::SWCSpectrum(const SPD *s) {
+	SpectrumWavelengths *sw = thread_wavelengths.get();
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-		c[j] = (double) s->sample(thread_wavelengths->w[j]);
+		c[j] = (double) s->sample(sw->w[j]);
 	}
 }
 
 SWCSpectrum::SWCSpectrum(Spectrum s) {
+	SpectrumWavelengths *sw = thread_wavelengths.get();
 	const float r = s.c[0];
 	const float g = s.c[1];
 	const float b = s.c[2];
@@ -114,47 +118,47 @@ SWCSpectrum::SWCSpectrum(Spectrum s) {
 
 	if (r <= g && r <= b)
 	{
-		AddWeighted(r, thread_wavelengths->spect_w);
+		AddWeighted(r, sw->spect_w);
 
 		if (g <= b)
 		{
-			AddWeighted(g - r, thread_wavelengths->spect_c);
-			AddWeighted(b - g, thread_wavelengths->spect_b);
+			AddWeighted(g - r, sw->spect_c);
+			AddWeighted(b - g, sw->spect_b);
 		}
 		else
 		{
-			AddWeighted(b - r, thread_wavelengths->spect_c);
-			AddWeighted(g - b, thread_wavelengths->spect_g);
+			AddWeighted(b - r, sw->spect_c);
+			AddWeighted(g - b, sw->spect_g);
 		}
 	}
 	else if (g <= r && g <= b)
 	{
-		AddWeighted(g, thread_wavelengths->spect_w);
+		AddWeighted(g, sw->spect_w);
 
 		if (r <= b)
 		{
-			AddWeighted(r - g, thread_wavelengths->spect_m);
-			AddWeighted(b - r, thread_wavelengths->spect_b);
+			AddWeighted(r - g, sw->spect_m);
+			AddWeighted(b - r, sw->spect_b);
 		}
 		else
 		{
-			AddWeighted(b - g, thread_wavelengths->spect_m);
-			AddWeighted(r - b, thread_wavelengths->spect_r);
+			AddWeighted(b - g, sw->spect_m);
+			AddWeighted(r - b, sw->spect_r);
 		}
 	}
 	else // blue <= red && blue <= green
 	{
-		AddWeighted(b, thread_wavelengths->spect_w);
+		AddWeighted(b, sw->spect_w);
 
 		if (r <= g)
 		{
-			AddWeighted(r - b, thread_wavelengths->spect_y);
-			AddWeighted(g - r, thread_wavelengths->spect_g);
+			AddWeighted(r - b, sw->spect_y);
+			AddWeighted(g - r, sw->spect_g);
 		}
 		else
 		{
-			AddWeighted(g - b, thread_wavelengths->spect_y);
-			AddWeighted(r - g, thread_wavelengths->spect_r);
+			AddWeighted(g - b, sw->spect_y);
+			AddWeighted(r - g, sw->spect_r);
 		}
 	}
 }

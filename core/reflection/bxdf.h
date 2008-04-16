@@ -119,7 +119,6 @@ private:
 	int nBxDFs;
 	#define MAX_BxDFS 8
 	BxDF * bxdfs[MAX_BxDFS];
-	//static MemoryArena arena;
 	static boost::thread_specific_ptr<MemoryArena> arena;
 	
 };
