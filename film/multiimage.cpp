@@ -221,14 +221,14 @@ void MultiImageFilm::AddSample(float sX, float sY, const XYZColor &L, float alph
 			hdrTimer.restart();
 			hdrLock = false;
 		}
-	//// IGI File output
-	//if(igiOut && !igiLock)
-	//    if (Floor2Int(igiTimer.elapsed()) > igiWriteInterval) {
-	//		igiLock = true;
-	//		WriteImage( WI_IGI );
-	//		igiTimer.restart();
-	//		igiLock = false;
-	//	}
+	// IGI File output
+	if(igiOut && !igiLock)
+	    if (Floor2Int(igiTimer.elapsed()) > igiWriteInterval) {
+			igiLock = true;
+			WriteImage( IMAGE_IGI );
+			igiTimer.restart();
+			igiLock = false;
+		}
 }
 
 void MultiImageFilm::GetSampleExtent(int *xstart,
@@ -294,6 +294,8 @@ void MultiImageFilm::WriteImage(ImageType type) {
 
 	if (type & IMAGE_HDR) // Write hdr EXR file
 		WriteEXRImage(rgb, alpha, hdrFilename);
+	if (type & IMAGE_IGI) // Write hdr IGI file
+		WriteIGIImage(rgb, alpha, igiFilename);
 	if (type & IMAGE_LDR) // Write tonemapped ldr TGA file
 	{
 	    ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
