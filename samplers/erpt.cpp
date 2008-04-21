@@ -63,13 +63,17 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 }
 
 // Metropolis method definitions
-ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng) :
+ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng, int sw) :
  Sampler(xStart, xEnd, yStart, yEnd, 0), LY(0.),
  totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
  numChains(0), mutation(0), consecRejects(0), stamp(0),
  range(rng), weight(0.), alpha(0.), baseImage(NULL), sampleImage(NULL),
- timeImage(NULL)
+ timeImage(NULL), strataWidth(sw)
 {
+	// Allocate storage for image stratified samples
+	strataSamples = (float *)AllocAligned(2 * sw * sw * sizeof(float));
+	strataSqr = sw*sw;
+	currentStrata = strataSqr;
 }
 
 // Copy
@@ -110,9 +114,17 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		initERPT(this, sample);
 	}
 	if ((chain == 0 && mutation == 0) || initCount < initSamples) {
+		if(currentStrata == strataSqr) {
+			// Generate shuffled stratified image samples
+			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
+			Shuffle(strataSamples, strataSqr, 2);
+			currentStrata = 0;
+		}
 		// *** new seed ***
-		sample->imageX = lux::random::floatValue() * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = lux::random::floatValue() * (yPixelEnd - yPixelStart) + yPixelStart;
+		sample->imageX = strataSamples[currentStrata*2] * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
+		currentStrata++;
+
 		sample->lensU = lux::random::floatValue();
 		sample->lensV = lux::random::floatValue();
 		sample->time = lux::random::floatValue();
@@ -291,7 +303,8 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	meanIntensity = 0.;
 	int totMutations = params.FindOneInt("chainlength", 2000);	// number of mutations from a given seed
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 50.);	// maximum distance in pixel for a small mutation
-	return new ERPTSampler(xStart, xEnd, yStart, yEnd, totMutations, range);
+	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
+	return new ERPTSampler(xStart, xEnd, yStart, yEnd, totMutations, range, stratawidth);
 }
 
 int ERPTSampler::initCount, ERPTSampler::initSamples;

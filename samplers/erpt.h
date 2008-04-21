@@ -34,7 +34,7 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
-	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng);
+	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng, int sw);
 	virtual ERPTSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }
 	int RoundSize(int size) const { return size; }
@@ -52,6 +52,8 @@ public:
 	static int initCount, initSamples;
 	static float meanIntensity;
 	vector<Sample::Contribution> oldContributions;
+	float *strataSamples;
+	int strataWidth, strataSqr, currentStrata;
 };
 
 }//namespace lux
