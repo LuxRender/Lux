@@ -195,7 +195,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	for(u_int i = 0; i < newContributions.size(); ++i) {
 		newLY += newContributions[i].color.y();
 		if (newContributions[i].color.y() > 0.f)
-			newV += newContributions[i].variance;
+			newV += newContributions[i].color.y() * newContributions[i].variance;
 	}
 	// calculate meanIntensity
 	if (initCount < initSamples) {
@@ -205,14 +205,14 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			return;
 		if (meanIntensity <= 0.f) meanIntensity = 1.f;
 	}
-	newV = min(newLY / meanIntensity, newV);
+//	newV = min(newLY / meanIntensity, newV);
 	film->AddSampleCount(1.f); // TODO: add to the correct buffer groups
 	// calculate accept probability from old and new image sample
 	float accProb, accProb2, factor;
 	if (LY > 0.f) {
 		accProb = min(1.f, newLY / LY);
-		if (useVariance && V > 0.f && newV > 0.f)
-			factor = newV / V;
+		if (useVariance && V > 0.f && newV > 0.f && newLY > 0.f)
+			factor = newV / (V * accProb);
 		else
 			factor = 1.f;
 	} else {
