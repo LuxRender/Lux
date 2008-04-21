@@ -64,11 +64,11 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 }
 
 // Metropolis method definitions
-MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw) :
- Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), LY(0.),
+MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw, bool useV) :
+ Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), LY(0.), V(0.),
  totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
- timeImage(NULL), strataWidth(sw)
+ timeImage(NULL), strataWidth(sw), useVariance(useV)
 {
 	// Allocate storage for image stratified samples
 	strataSamples = (float *)AllocAligned(2 * sw * sw * sizeof(float));
@@ -191,24 +191,39 @@ void MetropolisSampler::AddSample(float imageX, float imageY, const Sample &samp
 void MetropolisSampler::AddSample(const Sample &sample)
 {
 	vector<Sample::Contribution> &newContributions(sample.contributions);
-	float newLY = 0.0f;
-	for(u_int i = 0; i < newContributions.size(); i++)
+	float newLY = 0.f, newV = 0.f;
+	for(u_int i = 0; i < newContributions.size(); ++i) {
 		newLY += newContributions[i].color.y();
+		if (newContributions[i].color.y() > 0.f)
+			newV += newContributions[i].variance;
+	}
 	// calculate meanIntensity
 	if (initCount < initSamples) {
 		meanIntensity += newLY / initSamples;
 		++(initCount);
 		if (initCount < initSamples)
 			return;
-		if (meanIntensity == 0.) meanIntensity = 1.;
+		if (meanIntensity <= 0.f) meanIntensity = 1.f;
 	}
+	newV = min(newLY / meanIntensity, newV);
 	film->AddSampleCount(1.f); // TODO: add to the correct buffer groups
 	// calculate accept probability from old and new image sample
-	float accProb = min(1.0f, newLY / LY);
-	float newWeight = (accProb + (large ? 1.f : 0.f)) / (newLY / meanIntensity + pLarge);
-	weight += (1. - accProb) / (LY / meanIntensity + pLarge);
+	float accProb, accProb2, factor;
+	if (LY > 0.f) {
+		accProb = min(1.f, newLY / LY);
+		if (useVariance && V > 0.f && newV > 0.f)
+			factor = newV / V;
+		else
+			factor = 1.f;
+	} else {
+		accProb = 1.f;
+		factor = 1.f;
+	}
+	accProb2 = accProb * factor;
+	float newWeight = (accProb + (large ? 1.f : 0.f)) / (factor * newLY / meanIntensity + pLarge);
+	weight += (1.f - accProb) / (LY / (factor * meanIntensity) + pLarge);
 	// try or force accepting of the new sample
-	if (consecRejects >= maxRejects || lux::random::floatValue() < accProb ) {
+	if (accProb2 == 1.f || consecRejects >= maxRejects || lux::random::floatValue() < accProb2) {
 		// Add accumulated contribution of previous reference sample
 		for(u_int i = 0; i < oldContributions.size(); ++i) {
 			XYZColor color = oldContributions[i].color;
@@ -220,6 +235,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		// Save new contributions for reference
 		weight = newWeight;
 		LY = newLY;
+		V = newV;
 		oldContributions = newContributions;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
@@ -264,7 +280,8 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
-	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects, largeMutationProb, range, stratawidth);
+	bool useVariance = params.FindOneBool("usevariance", false);
+	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects, largeMutationProb, range, stratawidth, useVariance);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;

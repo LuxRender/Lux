@@ -65,7 +65,11 @@ public:
 	}
 	void AddContribution(float x, float y, const XYZColor &c, float a,
 		int b = 0, int g = 0) const {
-		contributions.push_back(Contribution(x, y, c, a, b, g));
+		contributions.push_back(Contribution(x, y, c, a, 0.f, b, g));
+	}
+	void AddContribution(float x, float y, const XYZColor &c, float a,
+		float v, int b = 0, int g = 0) const {
+		contributions.push_back(Contribution(x, y, c, a, v, b, g));
 	}
 	~Sample() {
 		if (oneD != NULL) {
@@ -81,13 +85,14 @@ public:
 	// Sample internal public type
 	class Contribution {
 	public:
-		Contribution(float x, float y, const XYZColor &c, float a, int b, int g) :
-			imageX(x), imageY(y), color(c), alpha(a), buffer(b), 
-			bufferGroup(g) { }
+		Contribution(float x, float y, const XYZColor &c, float a,
+			float v, int b, int g) :
+			imageX(x), imageY(y), color(c), alpha(a), variance(v),
+			buffer(b), bufferGroup(g) { }
 
 		float imageX, imageY;
 		XYZColor color;
-		float alpha;
+		float alpha, variance;
 		int buffer, bufferGroup;
 	};
 

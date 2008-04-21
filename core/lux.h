@@ -317,9 +317,7 @@ template<class T> inline T Lerp(float t, T v1, T v2) {
 	return (1.f - t) * v1 + t * v2;
 }
 template<class T> inline T Clamp(T val, T low, T high) {
-	if (val < low) return low;
-	else if (val > high) return high;
-	else return val;
+	return val > low ? (val < high ? val : high) : low;
 }
 inline int Mod(int a, int b) {
 	// note - radiance - added 0 check to prevent divide by zero error(s)

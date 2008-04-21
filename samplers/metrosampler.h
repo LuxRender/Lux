@@ -34,7 +34,7 @@ namespace lux
 
 class MetropolisSampler : public Sampler {
 public:
-	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw);
+	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw, bool useV);
 	~MetropolisSampler() { delete[] sampleImage; delete[] strataSamples; }
 	virtual MetropolisSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }
@@ -49,7 +49,7 @@ public:
 		*t = BUF_TYPE_PER_SCREEN;
 	}
 	bool large;
-	float LY;
+	float LY, V;
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;
@@ -59,6 +59,7 @@ public:
 	vector <Sample::Contribution> oldContributions;
 	float *strataSamples;
 	int strataWidth, strataSqr, currentStrata;
+	bool useVariance;
 };
 
 }//namespace lux

@@ -49,6 +49,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 	SampleGuard guard(sample->sampler, sample);
 	// Declare common path integration variables
 	SWCSpectrum pathThroughput = 1., L = 0.;
+	float V = .1f;
 	RayDifferential ray(r);
 	bool specularBounce = true;
 	if (alpha) *alpha = 1.;
@@ -115,13 +116,16 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
 		pathThroughput *= f;
 		pathThroughput *= dp;
+		V += dp;
 
 		ray = RayDifferential(p, wi);
 	}
 	L *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
 	L += scene->volumeIntegrator->Li(scene, ray, sample, alpha);
-	sample->AddContribution(sample->imageX, sample->imageY,
-		L.ToXYZ(), alpha ? *alpha : 1.f);
+	XYZColor color(L.ToXYZ());
+	if (color.y() > 0.f)
+		sample->AddContribution(sample->imageX, sample->imageY,
+			color, alpha ? *alpha : 1.f, V);
 	return L;
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
