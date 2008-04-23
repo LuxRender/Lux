@@ -78,6 +78,7 @@
 #include "path.h"
 #include "path2.h"
 #include "particletracing.h"
+#include "bidirectional.h"
 
 #include "emission.h"
 #include "single.h"
@@ -657,6 +658,12 @@ static string SearchPath(const string &searchpath,
 	if(name=="particletracing")
 	{
 		SurfaceIntegrator *ret=ParticleTracingIntegrator::CreateSurfaceIntegrator(paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+	if(name=="bidirectional")
+	{
+		SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
 		paramSet.ReportUnused();
 		return ret;
 	}
