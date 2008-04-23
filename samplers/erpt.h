@@ -44,7 +44,7 @@ public:
 	void AddSample(const Sample &sample);
 	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	float LY;
+	float LY, gain;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
 	float range, weight, alpha;
 	float *baseImage, *sampleImage;

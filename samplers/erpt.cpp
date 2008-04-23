@@ -64,7 +64,7 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 
 // Metropolis method definitions
 ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng, int sw) :
- Sampler(xStart, xEnd, yStart, yEnd, 0), LY(0.),
+ Sampler(xStart, xEnd, yStart, yEnd, 0), LY(0.), gain(0.f),
  totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
  numChains(0), mutation(0), consecRejects(0), stamp(0),
  range(rng), weight(0.), alpha(0.), baseImage(NULL), sampleImage(NULL),
@@ -210,7 +210,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 {
 	vector<Sample::Contribution> &newContributions(sample.contributions);
 	float newLY = 0.0f;
-	for(u_int i = 0; i < newContributions.size(); i++)
+	for(u_int i = 0; i < newContributions.size(); ++i)
 		newLY += newContributions[i].color.y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
@@ -223,11 +223,16 @@ void ERPTSampler::AddSample(const Sample &sample)
 	}
 	// calculate the number of chains on a new seed
 	if (chain == 0 && mutation == 0) {
-		numChains = Floor2Int(lux::random::floatValue() + newLY / (meanIntensity * totalSamples));
+		gain = newLY / (meanIntensity * totalSamples);
+		if (gain < 1.f)
+			numChains = Floor2Int(lux::random::floatValue() + gain);
+		else
+			numChains = Floor2Int(gain);
+		if (numChains == 0)
+			return;
+		gain /= numChains;
 		film->AddSampleCount(1.f); // TODO: add to correct buffer groups
 	}
-	if (numChains == 0)
-		return;
 	// calculate accept probability from old and new image sample
 	float accProb = min(1.0f, newLY / LY);
 	if (mutation == 0)
@@ -238,7 +243,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	// try accepting of the new sample
 	if (accProb == 1.f || lux::random::floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		weight *= meanIntensity / LY;
+		weight *= gain * meanIntensity / LY;
 		if (!isinf(weight) && LY > 0.f) {
 			for(u_int i = 0; i < oldContributions.size(); ++i) {
 				XYZColor color = oldContributions[i].color;
@@ -271,7 +276,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		newWeight *= meanIntensity / newLY;
+		newWeight *= gain * meanIntensity / newLY;
 		if (!isinf(newWeight) && newLY > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				XYZColor color = newContributions[i].color;
