@@ -99,22 +99,26 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	// Connect bidirectional path prefixes and evaluate throughput
 	SWCSpectrum directWt(1.f);
 	bool specular = true;
+	int consecDiffuse = 0;
 	for (int i = 0; i < nEye; ++i) {
 		// Handle direct lighting for bidirectional integrator
-		directWt /= eyePath[i].rrWeight;
-		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
-		L += directWt *
-			UniformSampleOneLight(scene, eyePath[i].p,
-				eyePath[i].ns, eyePath[i].wi, eyePath[i].bsdf,
-				sample, data, data + 2, data + 3, data + 5) /
-			weightPath(eyePath, i + 1, lightPath, 0);
-		if (specular)
-			L += directWt * eyePath[i].Le /
-				weightPath(eyePath, i + 1, lightPath, 0);
-		specular = specular && (eyePath[i].flags & BSDF_SPECULAR);
+		if ((eyePath[i].flags & BSDF_SPECULAR) == 0)
+			++consecDiffuse;
+		else if (consecDiffuse < 2)
+			consecDiffuse = 0;
+		if (consecDiffuse < 2) {
+			float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
+			L += directWt *
+				UniformSampleOneLight(scene, eyePath[i].p,
+					eyePath[i].ns, eyePath[i].wi, eyePath[i].bsdf,
+					sample, data, data + 2, data + 3, data + 5);
+			if (specular)
+				L += directWt * eyePath[i].Le;
+		}
+		specular = (eyePath[i].flags & BSDF_SPECULAR) != 0;
 		directWt *= eyePath[i].f *
 			(AbsDot(eyePath[i].wo, eyePath[i].ns) /
-			eyePath[i].bsdfWeight);
+			(eyePath[i].bsdfWeight * eyePath[i].rrWeight));
 		for (int j = 1; j <= nLight; ++j)
 			L += Le * evalPath(scene, eyePath, i + 1, lightPath, j) /
 				weightPath(eyePath, i + 1, lightPath, j);
@@ -141,7 +145,7 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 			if (nVerts > 0 && !Le.Black())
 				Le *= vertices[nVerts - 1].f *
 					(AbsDot(vertices[nVerts - 1].wo, vertices[nVerts - 1].ns) /
-					vertices[nVerts - 1].bsdfWeight);
+					(vertices[nVerts - 1].bsdfWeight * vertices[nVerts - 1].rrWeight));
 			vertices[max(0, nVerts - 1)].Le += Le;
 			break;
 		}
@@ -172,7 +176,7 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 	}
 	// Initialize additional values in _vertices_
 	for (int i = 0; i < nVerts - 1; ++i)
-		vertices[i].dAWeight = vertices[i].bsdfWeight *
+		vertices[i].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
 			AbsDot(-vertices[i].wo, vertices[i + 1].ng) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 	return nVerts;
@@ -184,9 +188,17 @@ float BidirIntegrator::weightPath(BidirVertex *eye, int nEye,
 	float weight = 1.f, p = 1.f;
 	if (nEye > 1 && nLight > 0) {
 		Vector w = light[nLight - 1].p - eye[nEye - 1].p;
-		p *= eye[nEye - 1].bsdf->Pdf(eye[nEye - 1].wi, w) *
-			AbsDot(-eye[nEye - 1].wo, light[nLight - 1].ng) /
-			DistanceSquared(eye[nEye - 1].p, light[nLight - 1].p);
+		float squaredDistance = Dot(w, w);
+		w /= sqrtf(squaredDistance);
+		float pdf = light[nLight - 1].bsdf->Pdf(light[nLight - 1].wi, -w);
+		p *= pdf * AbsDot(eye[nEye - 1].ns, w) / squaredDistance;
+		if (nLight > 3) {
+			float f = light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w).y();
+			if (f > 0.f)
+				p *= max(1.f, pdf / (f * AbsDot(light[nLight - 1].ns, -w)));
+			else
+				p = 0.f;
+		}
 		p /= eye[nEye - 2].dAWeight;
 		if ((eye[nEye - 2].flags & BSDF_SPECULAR) == 0)
 			weight += p;
@@ -200,9 +212,17 @@ float BidirIntegrator::weightPath(BidirVertex *eye, int nEye,
 	p = 1.f;
 	if (nEye > 0 && nLight > 1) {
 		Vector w = eye[nEye - 1].p - light[nLight - 1].p;
-		p *= light[nLight - 1].bsdf->Pdf(light[nLight - 1].wi, w) *
-			AbsDot(-light[nLight - 1].wo, eye[nEye - 1].ng) /
-			DistanceSquared(eye[nEye - 1].p, light[nLight - 1].p);
+		float squaredDistance = Dot(w, w);
+		w /= sqrtf(squaredDistance);
+		float pdf = eye[nEye - 1].bsdf->Pdf(eye[nEye - 1].wi, -w);
+		p *= pdf * AbsDot(light[nLight - 1].ns, w) / squaredDistance;
+		if (nEye > 3) {
+			float f = eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, -w).y();
+			if (f > 0.f)
+				p *= max(1.f, pdf / (f * AbsDot(eye[nEye - 1].ns, -w)));
+			else
+				p = 0.f;
+		}
 		p /= light[nLight - 2].dAWeight;
 		if ((light[nLight - 2].flags & BSDF_SPECULAR) == 0)
 			weight += p;
