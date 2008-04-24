@@ -51,6 +51,7 @@
 #include "paraboloid.h"
 #include "sphere.h"
 #include "trianglemesh.h"
+#include "waldtrianglemesh.h"
 #include "plymesh.h"
 #include "lenscomponent.h"
 
@@ -190,6 +191,8 @@ namespace lux
         return boost::shared_ptr<Shape>(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="trianglemesh")
         return boost::shared_ptr<Shape>(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
+    if(name=="waldtrianglemesh")
+        return boost::shared_ptr<Shape>(WaldTriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="plymesh")
         return boost::shared_ptr<Shape>(PlyMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="lenscomponent")
