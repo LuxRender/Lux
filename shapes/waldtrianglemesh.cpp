@@ -125,10 +125,11 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     else
         intersectionType = DOMINANT_Z;
 
-    float ax, ay, bx, by, cx, cy, invNormal;
+    float ax, ay, bx, by, cx, cy;
     switch (intersectionType) {
     case DOMINANT_X:
-        invNormal = 1.0f / normal.x;
+    {
+    	const float invNormal = 1.0f / normal.x;
         nu = normal.y * invNormal;
         nv = normal.z * invNormal;
         nd = v0.x + nu*v0.y + nv * v0.z;
@@ -139,8 +140,10 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
         cx = v1.y - ax;
         cy = v1.z - ay;
         break;
+    }
     case DOMINANT_Y:
-        invNormal = 1.0f / normal.y;
+    {
+    	const float invNormal = 1.0f / normal.y;
         nu = normal.z * invNormal;
         nv = normal.x * invNormal;
         nd = nv * v0.x + v0.y + nu * v0.z;
@@ -151,8 +154,10 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
         cx = v1.z - ax;
         cy = v1.x - ay;
         break;
+    }
     case DOMINANT_Z:
-        invNormal = 1.0f / normal.z;
+    {
+    	const float invNormal = 1.0f / normal.z;
         nu = normal.x * invNormal;
         nv = normal.y * invNormal;
         nd = nu * v0.x + nv*v0.y + v0.z;
@@ -163,6 +168,7 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
         cx = v1.x - ax;
         cy = v1.y - ay;
         break;
+    }
     case ORTHOGONAL_X:
         nu = 0.0f;
         nv = 0.0f;
@@ -448,21 +454,22 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
 	return true;
 }
 bool WaldTriangle::IntersectP(const Ray &ray) const {
-	float t, uu, vv, det, invDet, hu, hv;
+	float uu, vv, t;
     switch (intersectionType) {
     case DOMINANT_X:
-    	det = ray.d.x + nu * ray.d.y + nv * ray.d.z;
-        if(det == 0.0f)
+	{
+    	const float det = ray.d.x + nu * ray.d.y + nv * ray.d.z;
+        if(det==0.0f)
         	return false;
 
-        invDet = 1.0f / det;
+        const float invDet = 1.0f / det;
         t = (nd - ray.o.x - nu * ray.o.y - nv * ray.o.z) * invDet;
- 
+
         if (t < ray.mint || t > ray.maxt)
         	return false;
 
-        hu = ray.o.y + t * ray.d.y;
-        hv = ray.o.z + t * ray.d.z;
+        const float hu = ray.o.y + t * ray.d.y;
+        const float hv = ray.o.z + t * ray.d.z;
         uu = hu * bnu + hv * bnv + bnd;
 
         if (uu < 0.0f)
@@ -475,19 +482,21 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
         if (uu + vv > 1.0f)
             return false;
         break;
+	}
     case DOMINANT_Y:
-        det = ray.d.y + nu * ray.d.z + nv * ray.d.x;
-        if(det == 0.0f)
+	{
+        const float det = ray.d.y + nu * ray.d.z + nv * ray.d.x;
+        if(det==0.0f)
         	return false;
 
-        invDet = 1.0f / det;
+        const float invDet = 1.0f / det;
         t = (nd - ray.o.y - nu * ray.o.z - nv * ray.o.x) * invDet;
 
         if (t < ray.mint || t > ray.maxt)
         	return false;
 
-        hu = ray.o.z + t * ray.d.z;
-        hv = ray.o.x + t * ray.d.x;
+        const float hu = ray.o.z + t * ray.d.z;
+        const float hv = ray.o.x + t * ray.d.x;
         uu = hu * bnu + hv * bnv + bnd;
 
         if (uu < 0.0f)
@@ -500,19 +509,21 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
         if (uu + vv > 1.0f)
             return false;
     	break;
+	}
     case DOMINANT_Z:
-        det = ray.d.z + nu * ray.d.x + nv * ray.d.y;
-        if(det == 0.0f)
+	{
+        const float det = ray.d.z + nu * ray.d.x + nv * ray.d.y;
+        if(det==0.0f)
         	return false;
 
-        invDet = 1.0f / det;
+        const float invDet = 1.0f / det;
         t = (nd - ray.o.z - nu * ray.o.x - nv * ray.o.y) * invDet;
 
         if (t < ray.mint || t > ray.maxt)
         	return false;
 
-        hu = ray.o.x + t * ray.d.x;
-        hv = ray.o.y + t * ray.d.y;
+        const float hu = ray.o.x + t * ray.d.x;
+        const float hv = ray.o.y + t * ray.d.y;
 
         uu = hu * bnu + hv * bnv + bnd;
 
@@ -526,18 +537,20 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
         if (uu + vv > 1.0f)
             return false;
         break;
+	}
     case ORTHOGONAL_X:
+	{
     	if(ray.d.x == 0.0f)
     		return false;
 
-    	det = 1.0f / ray.d.x;
-        t = (nd - ray.o.x) * det;
+    	const float invDet = 1.0f / ray.d.x;
+        t = (nd - ray.o.x) * invDet;
 
         if (t < ray.mint || t > ray.maxt)
         	return false;
 
-        hu = ray.o.y + t * ray.d.y;
-        hv = ray.o.z + t * ray.d.z;
+        const float hu = ray.o.y + t * ray.d.y;
+        const float hv = ray.o.z + t * ray.d.z;
         uu = hu * bnu + hv * bnv + bnd;
 
         if (uu < 0.0f)
@@ -550,18 +563,20 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
         if (uu + vv > 1.0f)
             return false;
         break;
+	}
     case ORTHOGONAL_Y:
+	{
     	if(ray.d.y == 0.0f)
     		return false;
 
-    	det = 1.0f / ray.d.y;
-        t = (nd - ray.o.y) * det;
+    	const float invDet = 1.0f / ray.d.y;
+        t = (nd - ray.o.y) * invDet;
 
         if (t < ray.mint || t > ray.maxt)
         	return false;
 
-        hu = ray.o.z + t * ray.d.z;
-        hv = ray.o.x + t * ray.d.x;
+        const float hu = ray.o.z + t * ray.d.z;
+        const float hv = ray.o.x + t * ray.d.x;
         uu = hu * bnu + hv * bnv + bnd;
 
         if (uu < 0.0f)
@@ -574,18 +589,20 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
         if (uu + vv > 1.0f)
             return false;
     	break;
+	}
     case ORTHOGONAL_Z:
+	{
     	if(ray.d.z == 0.0f)
     		return false;
 
-    	det = 1.0f / ray.d.z;
-        t = (nd - ray.o.z) * det;
+    	const float invDet = 1.0f / ray.d.z;
+        t = (nd - ray.o.z) * invDet;
 
         if (t < ray.mint || t > ray.maxt)
         	return false;
 
-        hu = ray.o.x + t * ray.d.x;
-        hv = ray.o.y + t * ray.d.y;
+        const float hu = ray.o.x + t * ray.d.x;
+        const float hv = ray.o.y + t * ray.d.y;
 
         uu = hu * bnu + hv * bnv + bnd;
 
@@ -599,6 +616,7 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
         if (uu + vv > 1.0f)
             return false;
         break;
+	}
     default:
     	BOOST_ASSERT(false);
     	// Dade - how can I report internal errors ?
