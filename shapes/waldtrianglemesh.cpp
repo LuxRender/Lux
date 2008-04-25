@@ -88,7 +88,6 @@ const {
 		refined.push_back(o);
 	}
 }
-#include <iostream>
 WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
         WaldTriangleMesh *m, int n)
         : Shape(o2w, ro) {
@@ -235,6 +234,11 @@ BBox WaldTriangle::WorldBound() const {
 }
 bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
 	DifferentialGeometry *dg) const {
+	// Dade - debugging code
+	//std::stringstream ss;
+	//ss<<"ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
+    //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+
     float uu, vv, t;
     switch (intersectionType) {
     case DOMINANT_X:
@@ -245,6 +249,11 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
 
         const float invDet = 1.0f / det;
         t = (nd - ray.o.x - nu * ray.o.y - nv * ray.o.z) * invDet;
+    	
+        // Dade - debugging code
+        //std::stringstream ss;
+    	//ss<<"t = "<<t<<" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
+        //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (t < ray.mint || t > ray.maxt)
         	return false;

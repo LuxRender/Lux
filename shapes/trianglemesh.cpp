@@ -121,18 +121,18 @@ bool Triangle::Intersect(const Ray &ray, float *tHit,
 	e2 = p3 - p1;
 	s1 = Cross(ray.d, e2);
 	const float divisor = Dot(s1, e1);
-	if (divisor == 0.)
+	if (divisor == 0.f)
 		return false;
 	const float invDivisor = 1.f / divisor;
 	// Compute first barycentric coordinate
 	const Vector d = ray.o - p1;
 	const float b1 = Dot(d, s1) * invDivisor;
-	if (b1 < 0. || b1 > 1.)
+	if (b1 < 0.f || b1 > 1.f)
 		return false;
 	// Compute second barycentric coordinate
 	const Vector s2 = Cross(d, e1);
 	const float b2 = Dot(ray.d, s2) * invDivisor;
-	if (b2 < 0. || b1 + b2 > 1.)
+	if (b2 < 0.f || b1 + b2 > 1.f)
 		return false;
 	// Compute _t_ to intersection point
 	const float t = Dot(e2, s2) * invDivisor;
@@ -197,18 +197,18 @@ bool Triangle::IntersectP(const Ray &ray) const {
 	Vector e2 = p3 - p1;
 	Vector s1 = Cross(ray.d, e2);
 	float divisor = Dot(s1, e1);
-	if (divisor == 0.)
+	if (divisor == 0.f)
 		return false;
 	float invDivisor = 1.f / divisor;
 	// Compute first barycentric coordinate
 	Vector d = ray.o - p1;
 	float b1 = Dot(d, s1) * invDivisor;
-	if (b1 < 0. || b1 > 1.)
+	if (b1 < 0.f || b1 > 1.f)
 		return false;
 	// Compute second barycentric coordinate
 	Vector s2 = Cross(d, e1);
 	float b2 = Dot(ray.d, s2) * invDivisor;
-	if (b2 < 0. || b1 + b2 > 1.)
+	if (b2 < 0.f || b1 + b2 > 1.f)
 		return false;
 	// Compute _t_ to intersection point
 	float t = Dot(e2, s2) * invDivisor;

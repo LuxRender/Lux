@@ -130,6 +130,7 @@
 
 #include "grid.h"
 #include "kdtreeaccel.h"
+#include "safekdtreeaccel.h"
 #include "bruteforce.h"
 
 //
@@ -743,6 +744,12 @@ static string SearchPath(const string &searchpath,
     if(name=="kdtree")
     {
         Primitive* ret=KdTreeAccel::CreateAccelerator(prims, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="safekdtree")
+    {
+        Primitive* ret=SafeKdTreeAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
