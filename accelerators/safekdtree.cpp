@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// kdtree.cpp*
+// safekdtree.cpp*
 #include "safekdtreeaccel.h"
 #include "paramset.h"
 
@@ -33,25 +33,26 @@ SafeKdTreeAccel::
 		float ebonus, int maxp, int maxDepth)
 	: isectCost(icost), traversalCost(tcost),
 	maxPrims(maxp), emptyBonus(ebonus) {
-	vector<Primitive* > prims;
+	vector<Primitive* > vPrims;
 	for (u_int i = 0; i < p.size(); ++i)
-		p[i]->FullyRefine(prims);
-	// Initialize mailboxes for _SafeKdTreeAccel_
-	curMailboxId = 0;
-	nMailboxes = prims.size();
-	mailboxPrims = (MailboxPrim *)AllocAligned(nMailboxes *
-		sizeof(MailboxPrim));
-	for (u_int i = 0; i < nMailboxes; ++i)
-		new (&mailboxPrims[i]) MailboxPrim((const Primitive*&)prims[i]);
+		p[i]->FullyRefine(vPrims);
+
+	// Initialize primitives for _SafeKdTreeAccel_
+	nPrims = vPrims.size();
+	prims = (Primitive **)AllocAligned(nPrims *
+		sizeof(Primitive **));
+	for (u_int i = 0; i < nPrims; ++i)
+		prims[i] = vPrims[i];
+
 	// Build kd-tree for accelerator
 	nextFreeNode = nAllocedNodes = 0;
 	if (maxDepth <= 0)
 		maxDepth =
-		    Round2Int(8 + 1.3f * Log2Int(float(prims.size())));
+		    Round2Int(8 + 1.3f * Log2Int(float(vPrims.size())));
 	// Compute bounds for kd-tree construction
 	vector<BBox> primBounds;
-	primBounds.reserve(prims.size());
-	for (u_int i = 0; i < prims.size(); ++i) {
+	primBounds.reserve(vPrims.size());
+	for (u_int i = 0; i < vPrims.size(); ++i) {
 		BBox b = prims[i]->WorldBound();
 		bounds = Union(bounds, b);
 		primBounds.push_back(b);
@@ -59,16 +60,16 @@ SafeKdTreeAccel::
 	// Allocate working memory for kd-tree construction
 	BoundEdge *edges[3];
 	for (int i = 0; i < 3; ++i)
-		edges[i] = new BoundEdge[2*prims.size()];
-	int *prims0 = new int[prims.size()];
-	int *prims1 = new int[(maxDepth+1) * prims.size()];
+		edges[i] = new BoundEdge[2*vPrims.size()];
+	int *prims0 = new int[vPrims.size()];
+	int *prims1 = new int[(maxDepth+1) * vPrims.size()];
 	// Initialize _primNums_ for kd-tree construction
-	int *primNums = new int[prims.size()];
-	for (u_int i = 0; i < prims.size(); ++i)
+	int *primNums = new int[vPrims.size()];
+	for (u_int i = 0; i < vPrims.size(); ++i)
 		primNums[i] = i;
 	// Start recursive construction of kd-tree
 	buildTree(0, bounds, primBounds, primNums,
-	          prims.size(), maxDepth, edges,
+			vPrims.size(), maxDepth, edges,
 			  prims0, prims1);
 	// Free working memory for kd-tree construction
 	delete[] primNums;
@@ -78,9 +79,7 @@ SafeKdTreeAccel::
 	delete[] prims1;
 }
 SafeKdTreeAccel::~SafeKdTreeAccel() {
-	for (u_int i = 0; i < nMailboxes; ++i)
-		mailboxPrims[i].~MailboxPrim();
-	FreeAligned(mailboxPrims);
+	FreeAligned(prims);
 	FreeAligned(nodes);
 }
 void SafeKdTreeAccel::buildTree(int nodeNum,
@@ -92,11 +91,11 @@ void SafeKdTreeAccel::buildTree(int nodeNum,
 	// Get next free node from _nodes_ array
 	if (nextFreeNode == nAllocedNodes) {
 		int nAlloc = max(2 * nAllocedNodes, 512);
-		KdAccelNode *n = (KdAccelNode *)AllocAligned(nAlloc *
-			sizeof(KdAccelNode));
+		SafeKdAccelNode *n = (SafeKdAccelNode *)AllocAligned(nAlloc *
+			sizeof(SafeKdAccelNode));
 		if (nAllocedNodes > 0) {
 			memcpy(n, nodes,
-			       nAllocedNodes * sizeof(KdAccelNode));
+			       nAllocedNodes * sizeof(SafeKdAccelNode));
 			FreeAligned(nodes);
 		}
 		nodes = n;
@@ -105,8 +104,7 @@ void SafeKdTreeAccel::buildTree(int nodeNum,
 	++nextFreeNode;
 	// Initialize leaf node if termination criteria met
 	if (nPrims <= maxPrims || depth == 0) {
-		nodes[nodeNum].initLeaf(primNums, nPrims,
-		                       mailboxPrims, arena);
+		nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
 		return;
 	}
 	// Initialize interior node and continue recursion
@@ -174,8 +172,7 @@ void SafeKdTreeAccel::buildTree(int nodeNum,
 	if (bestCost > oldCost) ++badRefines;
 	if ((bestCost > 4.f * oldCost && nPrims < 16) ||
 		bestAxis == -1 || badRefines == 3) {
-		nodes[nodeNum].initLeaf(primNums, nPrims,
-		                     mailboxPrims, arena);
+		nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
 		return;
 	}
 	// Classify primitives with respect to split
@@ -206,20 +203,22 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 	if (!bounds.IntersectP(ray, &tmin, &tmax))
 		return false;
 
-	// Dade - save the original ray mint and maxt. I could use a copy of ray instead.
-	const double originalRayMint = ray.mint;
-	const double originalRayMaxt = ray.maxt;
-	
+	// Dade - Prepare the local Mailboxes. I'm going to use an inverse mailbox
+	// in order to be thread-safe
+	Mailbox mailboxes;
+	// Dade - debugging code
+	//int mailboxesHit = 0;
+	//int mailboxesMiss = 0;
+
 	// Prepare to traverse kd-tree for ray
-	int rayId = curMailboxId++;
 	Vector invDir(1.f/ray.d.x, 1.f/ray.d.y, 1.f/ray.d.z);
 	#define MAX_TODO 64
-	KdToDo todo[MAX_TODO];
+	SafeKdToDo todo[MAX_TODO];
 	int todoPos = 0;
 
 	// Traverse kd-tree nodes in order for ray
 	bool hit = false;
-	const KdAccelNode *node = &nodes[0];
+	const SafeKdAccelNode *node = &nodes[0];
 	while (node != NULL) {
 		// Bail out if we found a hit closer than the current node
 		if (ray.maxt < tmin) break;
@@ -233,7 +232,7 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 			float tplane = (node->SplitPos() - ray.o[axis]) *
 				invDir[axis];
 			// Get node children pointers for ray
-			const KdAccelNode *firstChild, *secondChild;
+			const SafeKdAccelNode *firstChild, *secondChild;
 			// NOTE - ratow - added direction test for when ray origin is in split plane (fixes bands/artifacts)
 			int belowFirst = (ray.o[axis] < node->SplitPos()) ||
 				(ray.o[axis] == node->SplitPos() && ray.d[axis] < 0);
@@ -263,42 +262,53 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 			}
 		}
 		else {
-			// Dade - update the ray mint/maxt with the limits of
-			// the current leaf
-
-			ray.mint = tmin;
-			if(!hit)
-				ray.maxt = tmax;
+			// Check for intersections inside leaf node
+			u_int nPrimitives = node->nPrimitives();
 
 			// Dade - debugging code
 			//std::stringstream ss;
-			//ss<<"hit = "<<hit<<" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt<<
-			//	" maxt = "<<tmax;
+			//ss<<"\n-----------------------------------------------------\n"<<
+			//	"nPrims = "<<nPrimitives<<" hit = "<<hit<<" ray.mint = "<<
+			//	ray.mint<<" ray.maxt = "<<ray.maxt<<" maxt = "<<tmax;
 		    //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
-			// Check for intersections inside leaf node
-			u_int nPrimitives = node->nPrimitives();
-			if (nPrimitives == 1) {
-				MailboxPrim *mp = node->onePrimitive;
-				// Check one primitive inside leaf node
-				// Dade - to fix
-				//if (mp->lastMailboxId != rayId) {
-					mp->lastMailboxId = rayId;
-					if (mp->primitive->Intersect(ray, isect))
+		    if (nPrimitives == 1) {
+				Primitive *pp = node->onePrimitive;
+
+				// Dade - check with the mailboxes if we need to do
+				// the intersection test
+				if (mailboxes.alreadyChecked(pp)) {
+					// Dade - debugging code
+					//mailboxesHit++;
+				} else {
+					// Dade - debugging code
+					//mailboxesMiss++;
+	
+					if (pp->Intersect(ray, isect))
 						hit = true;
-				//}
+	
+					mailboxes.addChecked(pp);
+				}
 			}
 			else {
-				MailboxPrim **prims = node->primitives;
+				Primitive **prims = node->primitives;
 				for (u_int i = 0; i < nPrimitives; ++i) {
-					MailboxPrim *mp = prims[i];
-					// Check one primitive inside leaf node
-					// Dade - to fix
-					//if (mp->lastMailboxId != rayId) {
-						mp->lastMailboxId = rayId;
-						if (mp->primitive->Intersect(ray, isect))
-							hit = true;
-					//}
+					Primitive *pp = prims[i];
+
+					// Dade - check with the mailboxes if we need to do
+					// the intersection test
+					if (mailboxes.alreadyChecked(pp)) {
+						// Dade - debugging code
+						//mailboxesHit++;
+						continue;
+					}
+					// Dade - debugging code
+					//mailboxesMiss++;
+
+					if (pp->Intersect(ray, isect))
+						hit = true;
+
+					mailboxes.addChecked(pp);
 				}
 			}
 			// Grab next node to process from todo list
@@ -312,11 +322,13 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 				break;
 		}
 	}
-	
-	// Dade - restore the original ray mint and maxt
-	ray.mint = originalRayMint;
-	if(!hit)
-		ray.maxt = originalRayMaxt;
+
+	// Dade - debugging code
+	//std::stringstream ss;
+	//ss<<"\n-----------------------------------------------------\n"<<
+	//	"mailboxesHit = "<<mailboxesHit<<" mailboxesMiss = "<<mailboxesMiss<<
+	//	" ( "<<100.0f*mailboxesHit/(float)(mailboxesHit+mailboxesMiss)<<"%)";
+    //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
 	return hit;
 }
@@ -325,13 +337,18 @@ bool SafeKdTreeAccel::IntersectP(const Ray &ray) const {
 	float tmin, tmax;
 	if (!bounds.IntersectP(ray, &tmin, &tmax))
 		return false;
+
+	// Dade - Prepare the local Mailboxes. I'm going to use an inverse mailbox
+	// in order to be thread-safe
+	Mailbox mailboxes;
+
 	// Prepare to traverse kd-tree for ray
-	int rayId = curMailboxId++;
 	Vector invDir(1.f/ray.d.x, 1.f/ray.d.y, 1.f/ray.d.z);
 	#define MAX_TODO 64
-	KdToDo todo[MAX_TODO];
+	SafeKdToDo todo[MAX_TODO];
 	int todoPos = 0;
-	const KdAccelNode *node = &nodes[0];
+	const SafeKdAccelNode *node = &nodes[0];
+
 	while (node != NULL) {
 		// Update kd-tree shadow ray traversal statistics
 		// radiance - disabled for threading // static StatsCounter nodesTraversed("Kd-Tree Accelerator",
@@ -341,24 +358,30 @@ bool SafeKdTreeAccel::IntersectP(const Ray &ray) const {
 			// Check for shadow ray intersections inside leaf node
 			u_int nPrimitives = node->nPrimitives();
 			if (nPrimitives == 1) {
-				MailboxPrim *mp = node->onePrimitive;
-				// Dade - to fix
-				//if (mp->lastMailboxId != rayId) {
-					mp->lastMailboxId = rayId;
-					if (mp->primitive->IntersectP(ray))
+				Primitive *pp = node->onePrimitive;
+
+				// Dade - check with the mailboxes if we need to do
+				// the intersection test
+				if (!mailboxes.alreadyChecked(pp)) {
+					if (pp->IntersectP(ray))
 						return true;
-				//}
+
+					mailboxes.addChecked(pp);
+				}
 			}
 			else {
-				MailboxPrim **prims = node->primitives;
+				Primitive **prims = node->primitives;
 				for (u_int i = 0; i < nPrimitives; ++i) {
-					MailboxPrim *mp = prims[i];
-					// Dade - to fix
-					//if (mp->lastMailboxId != rayId) {
-						mp->lastMailboxId = rayId;
-						if (mp->primitive->IntersectP(ray))
+					Primitive *pp = prims[i];
+
+					// Dade - check with the mailboxes if we need to do
+					// the intersection test
+					if (!mailboxes.alreadyChecked(pp)) {
+						if (pp->IntersectP(ray))
 							return true;
-					//}
+
+						mailboxes.addChecked(pp);
+					}
 				}
 			}
 			// Grab next node to process from todo list
@@ -378,7 +401,7 @@ bool SafeKdTreeAccel::IntersectP(const Ray &ray) const {
 			float tplane = (node->SplitPos() - ray.o[axis]) *
 				invDir[axis];
 			// Get node children pointers for ray
-			const KdAccelNode *firstChild, *secondChild;
+			const SafeKdAccelNode *firstChild, *secondChild;
 			// NOTE - ratow - added direction test for when ray origin is in split plane (fixes bands/artifacts)
 			int belowFirst = (ray.o[axis] < node->SplitPos()) ||
 				(ray.o[axis] == node->SplitPos() && ray.d[axis] < 0);
@@ -415,7 +438,7 @@ Primitive* SafeKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
 	int isectCost = ps.FindOneInt("intersectcost", 80);
 	int travCost = ps.FindOneInt("traversalcost", 1);
 	float emptyBonus = ps.FindOneFloat("emptybonus", 0.5f);
-	int maxPrims = ps.FindOneInt("maxprims", 1);
+	int maxPrims = ps.FindOneInt("maxprims", 4);
 	int maxDepth = ps.FindOneInt("maxdepth", -1);
 	return new SafeKdTreeAccel(prims, isectCost, travCost,
 		emptyBonus, maxPrims, maxDepth);
