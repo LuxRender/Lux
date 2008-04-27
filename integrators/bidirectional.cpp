@@ -57,9 +57,8 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	SWCSpectrum L(0.f);
 	*alpha = 1.f;
 	// Generate eye and light sub-paths
-	BidirVertex eyePath[maxEyeDepth], lightPath[maxLightDepth];
-	int nEye = generatePath(scene, ray, sample, sampleEyeOffset, eyePath,
-		maxEyeDepth);
+	vector<BidirVertex> eyePath(maxEyeDepth), lightPath(maxLightDepth);
+	int nEye = generatePath(scene, ray, sample, sampleEyeOffset, eyePath);
 	if (nEye == 0) {
 		L = eyePath[0].Le;
 		XYZColor color(L.ToXYZ());
@@ -94,14 +93,15 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	} else {
 		Le *= lightWeight / lightPdf;
 		nLight = generatePath(scene, lightRay, sample,
-			sampleLightOffset, lightPath, maxLightDepth);
+			sampleLightOffset, lightPath);
 	}
 	// Connect bidirectional path prefixes and evaluate throughput
 	SWCSpectrum directWt(1.f);
-	bool specular = true;
 	int consecDiffuse = 0;
 	for (int i = 0; i < nEye; ++i) {
 		// Handle direct lighting for bidirectional integrator
+		if (consecDiffuse < 2)
+			L += directWt * eyePath[i].Le;
 		if ((eyePath[i].flags & BSDF_SPECULAR) == 0)
 			++consecDiffuse;
 		else if (consecDiffuse < 2)
@@ -112,10 +112,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 				UniformSampleOneLight(scene, eyePath[i].p,
 					eyePath[i].ns, eyePath[i].wi, eyePath[i].bsdf,
 					sample, data, data + 2, data + 3, data + 5);
-			if (specular)
-				L += directWt * eyePath[i].Le;
 		}
-		specular = (eyePath[i].flags & BSDF_SPECULAR) != 0;
 		directWt *= eyePath[i].f *
 			(AbsDot(eyePath[i].wo, eyePath[i].ns) /
 			(eyePath[i].bsdfWeight * eyePath[i].rrWeight));
@@ -131,32 +128,35 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 }
 int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 	const Sample *sample, const int sampleOffset,
-	BidirVertex *vertices, int maxVerts) const
+	vector<BidirVertex> &vertices) const
 {
-	int nVerts = 0;
 	RayDifferential ray(r.o, r.d);
-	while (nVerts < maxVerts) {
+	bool specularBounce = true;
+	int nVerts = 0;
+	while (nVerts < (int)(vertices.size())) {
 		// Find next vertex in path and initialize _vertices_
+		BidirVertex &v = vertices[nVerts];
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
-			SWCSpectrum Le(0.f);
-			for (u_int i = 0; i < scene->lights.size(); ++i)
-				Le += scene->lights[i]->Le(ray);
-			if (nVerts > 0 && !Le.Black())
-				Le *= vertices[nVerts - 1].f *
-					(AbsDot(vertices[nVerts - 1].wo, vertices[nVerts - 1].ns) /
-					(vertices[nVerts - 1].bsdfWeight * vertices[nVerts - 1].rrWeight));
-			vertices[max(0, nVerts - 1)].Le += Le;
+			if (specularBounce) {
+				SWCSpectrum Le(0.f);
+				for (u_int i = 0; i < scene->lights.size(); ++i)
+					Le += scene->lights[i]->Le(ray);
+				if (nVerts > 0 && !Le.Black())
+					Le *= vertices[nVerts - 1].f *
+						(AbsDot(vertices[nVerts - 1].wo, vertices[nVerts - 1].ns) /
+						vertices[nVerts - 1].bsdfWeight * vertices[nVerts - 1].rrWeight);
+				vertices[max(0, nVerts - 1)].Le += Le;
+			}
 			break;
 		}
-		BidirVertex &v = vertices[nVerts];
-		MemoryArena arena;	// DUMMY ARENA TODO FIX THESE
+		v.wi = -ray.d;
+		if (specularBounce)
+			v.Le += isect.Le(v.wi);
 		v.bsdf = isect.GetBSDF(ray); // do before Ns is set!
 		v.p = isect.dg.p;
 		v.ng = isect.dg.nn;
 		v.ns = v.bsdf->dgShading.nn;
-		v.wi = -ray.d;
-		v.Le = isect.Le(v.wi);
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
 		++nVerts;
 		// Possibly terminate bidirectional path sampling
@@ -164,38 +164,39 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 			 &v.bsdfWeight, BSDF_ALL, &v.flags);
 		if (v.bsdfWeight == 0.f || v.f.Black())
 			break;
-		if (nVerts > 2) {
+		if (nVerts > 3) {
 			const float q = min(1.,
 				v.f.y() * (AbsDot(v.wo, v.ns) / v.bsdfWeight));
-			if (data[0] > q)
+			if (q < data[0])
 				break;
-			v.rrWeight = 1.f / q;
+			v.rrWeight = q;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
+		specularBounce = (v.flags & BSDF_SPECULAR) != 0;
 	}
 	// Initialize additional values in _vertices_
 	for (int i = 0; i < nVerts - 1; ++i)
 		vertices[i].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
-			AbsDot(-vertices[i].wo, vertices[i + 1].ng) /
+			AbsDot(-vertices[i].wo, vertices[i + 1].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 	return nVerts;
 }
 
-float BidirIntegrator::weightPath(BidirVertex *eye, int nEye,
-	BidirVertex *light, int nLight) const
+float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
+	vector<BidirVertex> &light, int nLight) const
 {
 	float weight = 1.f, p = 1.f;
-	if (nEye > 1 && nLight > 0) {
+	if (nEye > 1 && nLight > 0 && nLight < maxLightDepth) {
 		Vector w = light[nLight - 1].p - eye[nEye - 1].p;
 		float squaredDistance = Dot(w, w);
 		w /= sqrtf(squaredDistance);
 		float pdf = light[nLight - 1].bsdf->Pdf(light[nLight - 1].wi, -w);
 		p *= pdf * AbsDot(eye[nEye - 1].ns, w) / squaredDistance;
-		if (nLight > 3) {
+		if (nLight > 4) {
 			float f = light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w).y();
-			if (f > 0.f)
-				p *= max(1.f, pdf / (f * AbsDot(light[nLight - 1].ns, -w)));
+			if (pdf > 0.f)
+				p *= min(1.f, f * AbsDot(light[nLight - 1].ns, -w) / pdf);
 			else
 				p = 0.f;
 		}
@@ -203,23 +204,23 @@ float BidirIntegrator::weightPath(BidirVertex *eye, int nEye,
 		if ((eye[nEye - 2].flags & BSDF_SPECULAR) == 0)
 			weight += p;
 	}
-	for (int i = nEye - 2; i > 0; --i) {
+	for (int i = nEye - 2; i > max(0, nEye + nLight - maxLightDepth - 1); --i) {
 		p *= eye[i].dAWeight / eye[i - 1].dAWeight;
 		if ((eye[i].flags & BSDF_SPECULAR) == 0 &&
 			(eye[i - 1].flags & BSDF_SPECULAR) == 0)
 			weight += p;
 	}
 	p = 1.f;
-	if (nEye > 0 && nLight > 1) {
+	if (nEye > 0 && nLight > 1 && nEye < maxEyeDepth) {
 		Vector w = eye[nEye - 1].p - light[nLight - 1].p;
 		float squaredDistance = Dot(w, w);
 		w /= sqrtf(squaredDistance);
 		float pdf = eye[nEye - 1].bsdf->Pdf(eye[nEye - 1].wi, -w);
 		p *= pdf * AbsDot(light[nLight - 1].ns, w) / squaredDistance;
-		if (nEye > 3) {
+		if (nEye > 4) {
 			float f = eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, -w).y();
 			if (f > 0.f)
-				p *= max(1.f, pdf / (f * AbsDot(eye[nEye - 1].ns, -w)));
+				p *= min(1.f, f * AbsDot(eye[nEye - 1].ns, -w) / pdf);
 			else
 				p = 0.f;
 		}
@@ -227,7 +228,7 @@ float BidirIntegrator::weightPath(BidirVertex *eye, int nEye,
 		if ((light[nLight - 2].flags & BSDF_SPECULAR) == 0)
 			weight += p;
 	}
-	for (int i = nLight - 2; i > 0; --i) {
+	for (int i = nLight - 2; i > max(0, nLight + nEye - maxEyeDepth - 1); --i) {
 		p *= light[i].dAWeight / light[i - 1].dAWeight;
 		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
 			(light[i - 1].flags & BSDF_SPECULAR) == 0)
@@ -235,23 +236,22 @@ float BidirIntegrator::weightPath(BidirVertex *eye, int nEye,
 	}
 	return weight;
 }
-SWCSpectrum BidirIntegrator::evalPath(const Scene *scene, BidirVertex *eye,
-	int nEye, BidirVertex *light, int nLight) const
+SWCSpectrum BidirIntegrator::evalPath(const Scene *scene, vector<BidirVertex> &eye,
+	int nEye, vector<BidirVertex> &light, int nLight) const
 {
 	SWCSpectrum L(1.f);
 	for (int i = 0; i < nEye - 1; ++i)
 		L *= eye[i].f * AbsDot(eye[i].wo, eye[i].ns) /
 			(eye[i].bsdfWeight * eye[i].rrWeight);
-	Vector w = light[nLight - 1].p - eye[nEye - 1].p;
+	Vector w = Normalize(light[nLight - 1].p - eye[nEye - 1].p);
 	L *= eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, w) *
 		G(eye[nEye - 1], light[nLight - 1]) *
-		light[nLight - 1].bsdf->f(-w, light[nLight - 1].wi) /
-		(eye[nEye - 1].rrWeight * light[nLight - 1].rrWeight);
+		light[nLight - 1].bsdf->f(-w, light[nLight - 1].wi);
 	for (int i = nLight - 2; i >= 0; --i)
 		L *= light[i].f * AbsDot(light[i].wo, light[i].ns) /
 			(light[i].bsdfWeight * light[i].rrWeight);
 	if (L.Black())
-		return L;
+		return 0.;
 	if (!visible(scene, eye[nEye - 1].p, light[nLight - 1].p))
 		return 0.;
 	return L;
@@ -259,7 +259,7 @@ SWCSpectrum BidirIntegrator::evalPath(const Scene *scene, BidirVertex *eye,
 float BidirIntegrator::G(const BidirVertex &v0, const BidirVertex &v1)
 {
 	Vector w = Normalize(v1.p - v0.p);
-	return AbsDot(v0.ng, w) * AbsDot(v1.ng, -w) /
+	return AbsDot(v0.ns, w) * AbsDot(v1.ns, -w) /
 		DistanceSquared(v0.p, v1.p);
 }
 bool BidirIntegrator::visible(const Scene *scene, const Point &P0,

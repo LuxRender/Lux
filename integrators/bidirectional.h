@@ -43,10 +43,10 @@ private:
 	// BidirIntegrator Private Methods
 	int generatePath(const Scene *scene, const Ray &r, const Sample *sample,
 		int sampleOffset,
-		BidirVertex *vertices, int maxVerts) const;
-	float weightPath(BidirVertex *eye, int nEye, BidirVertex *light, int nLight) const;
-	SWCSpectrum evalPath(const Scene *scene, BidirVertex *eye, int nEye,
-	BidirVertex *light, int nLight) const;
+		vector<BidirVertex> &vertices) const;
+	float weightPath(vector<BidirVertex> &eye, int nEye, vector<BidirVertex> &light, int nLight) const;
+	SWCSpectrum evalPath(const Scene *scene, vector<BidirVertex> &eye, int nEye,
+	vector<BidirVertex> &light, int nLight) const;
 	static float G(const BidirVertex &v0, const BidirVertex &v1);
 	static bool visible(const Scene *scene, const Point &P0, const Point &P1);
 	// BidirIntegrator Data
