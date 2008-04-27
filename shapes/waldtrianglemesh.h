@@ -65,7 +65,23 @@ public:
 	bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &ray) const;
-	void GetUVs(float uv[3][2]) const;
+	void GetUVs(float uv[3][2]) const {
+		if (mesh->uvs) {
+			uv[0][0] = mesh->uvs[2*v[0]];
+			uv[0][1] = mesh->uvs[2*v[0]+1];
+			uv[1][0] = mesh->uvs[2*v[1]];
+			uv[1][1] = mesh->uvs[2*v[1]+1];
+			uv[2][0] = mesh->uvs[2*v[2]];
+			uv[2][1] = mesh->uvs[2*v[2]+1];
+		} else {
+			uv[0][0] = mesh->p[v[0]].x;
+			uv[0][1] = mesh->p[v[0]].y;
+			uv[1][0] = mesh->p[v[1]].x;
+			uv[1][1] = mesh->p[v[1]].y;
+			uv[2][0] = mesh->p[v[2]].x;
+			uv[2][1] = mesh->p[v[2]].y;
+		}
+	}
 	float Area() const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg,
@@ -136,11 +152,7 @@ private:
 	WaldTriangleMesh* mesh;
 	int *v;
 
-	// Dade - wasting memory space to save edge computation is a bit questionable
-	Vector e1, e2;
-
-    // Wald's precomputed values
-
+    // Dade - Wald's precomputed values
 	enum IntersectionType {
 		DOMINANT_X,
 		DOMINANT_Y,
@@ -156,6 +168,10 @@ private:
     float nu, nv, nd;
     float bnu, bnv, bnd;
     float cnu, cnv, cnd;
+
+	// Dade - procomputed values for filling the DifferentialGeometry
+	Vector dpdu, dpdv;
+	Normal normalizedNormal;
 };
 
 }//namespace lux

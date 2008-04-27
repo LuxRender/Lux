@@ -40,6 +40,11 @@ class  DifferentialGeometry {
 			const Vector &DPDV, const Vector &DNDU,
 			const Vector &DNDV, float uu, float vv,
 			const Shape *sh);
+	DifferentialGeometry(const Point &P, const Normal &NN,
+			const Vector &DPDU,	const Vector &DPDV, 
+			const Vector &DNDU, const Vector &DNDV, 
+			float uu, float vv,
+			const Shape *sh);
 	void ComputeDifferentials(const RayDifferential &r) const;
 	// DifferentialGeometry Public Data
 	Point p;

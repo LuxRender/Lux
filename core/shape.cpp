@@ -116,6 +116,20 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	if (shape->reverseOrientation ^ shape->transformSwapsHandedness)
 		nn *= -1.f;
 }
+// Dade - added this costructor as a little optimization if the
+// normalized normal is already available
+DifferentialGeometry::DifferentialGeometry(const Point &P,
+		const Normal &NN,
+		const Vector &DPDU, const Vector &DPDV,
+		const Vector &DNDU, const Vector &DNDV,
+		float uu, float vv, const Shape *sh)
+	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu((Normal)DNDU), dndv((Normal)DNDV) {
+	// Initialize _DifferentialGeometry_ from parameters
+	u = uu;
+	v = vv;
+	shape = sh;
+	dudx = dvdx = dudy = dvdy = 0;
+}
 void DifferentialGeometry::ComputeDifferentials(
 		const RayDifferential &ray) const {
 	if (ray.hasDifferentials) {

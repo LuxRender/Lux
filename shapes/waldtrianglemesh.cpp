@@ -104,8 +104,8 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     const Point &v0 = mesh->p[v[0]];
 	const Point &v1 = mesh->p[v[1]];
 	const Point &v2 = mesh->p[v[2]];
-    e1 = v1 - v0;
-	e2 = v2 - v0;
+    Vector e1 = v1 - v0;
+	Vector e2 = v2 - v0;
 	Vector normal = Normalize(Cross(e1, e2));
 
 	// Define the type of intersection to use according the normal
@@ -216,6 +216,46 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     cnu = cy * invDet;
     cnv = -cx * invDet;
     cnd = (cx * ay - cy * ax) * invDet;
+
+    // Dade - doing some precomputation for filling the _DifferentialGeometry_
+    // in the intersection method
+
+	// Compute triangle partial derivatives
+	float uvs[3][2];
+	GetUVs(uvs);
+	// Compute deltas for triangle partial derivatives
+	const float du1 = uvs[0][0] - uvs[2][0];
+	const float du2 = uvs[1][0] - uvs[2][0];
+	const float dv1 = uvs[0][1] - uvs[2][1];
+	const float dv2 = uvs[1][1] - uvs[2][1];
+	const Vector dp1 = v0 - v2, dp2 = v1 - v2;
+	const float determinant = du1 * dv2 - dv1 * du2;
+	if (determinant == 0.f) {
+		// Handle zero determinant for triangle partial derivative matrix
+		CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
+	} else {
+		const float invdet = 1.f / determinant;
+		dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
+		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
+	}
+
+	// NOTE - ratow - Invert generated normal in case it falls on the wrong side.
+	// Dade - this computation can be done at scene creation time too
+
+	normalizedNormal = Normal(Normalize(Cross(dpdu, dpdv)));
+	// Adjust normal based on orientation and handedness
+	if (this->reverseOrientation ^ this->transformSwapsHandedness)
+		normalizedNormal *= -1.f;
+
+	if(!mesh->uvs) {
+		if(mesh->n) {
+			if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), normalizedNormal) < 0)
+				normalizedNormal *= -1;
+		} else {
+			if(Dot(Cross(e1, e2), normalizedNormal) < 0)
+				normalizedNormal *= -1;
+		}
+	}
 }
 BBox WaldTriangle::ObjectBound() const {
 	// Get triangle vertices in _p1_, _p2_, and _p3_
@@ -413,51 +453,18 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
     	return false;
     }
 
-    const Point &p1 = mesh->p[v[0]];
-	const Point &p2 = mesh->p[v[1]];
-	const Point &p3 = mesh->p[v[2]];
-
 	// radiance - disabled for threading // triangleHits.Add(1, 0); //NOBOOK
-	// Fill in _DifferentialGeometry_ from triangle hit
-	// Compute triangle partial derivatives
-	Vector dpdu, dpdv;
-	float uvs[3][2];
-	GetUVs(uvs);
-	// Compute deltas for triangle partial derivatives
-	const float du1 = uvs[0][0] - uvs[2][0];
-	const float du2 = uvs[1][0] - uvs[2][0];
-	const float dv1 = uvs[0][1] - uvs[2][1];
-	const float dv2 = uvs[1][1] - uvs[2][1];
-	const Vector dp1 = p1 - p3, dp2 = p2 - p3;
-	const float determinant = du1 * dv2 - dv1 * du2;
-	if (determinant == 0.f) {
-		// Handle zero determinant for triangle partial derivative matrix
-		CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
-	}
-	else {
-		const float invdet = 1.f / determinant;
-		dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
-		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
-	}
-
+    float uvs[3][2];
+    GetUVs(uvs);
 	// Interpolate $(u,v)$ triangle parametric coordinates
 	const float b0 = 1.0f - uu - vv;
 	const float tu = b0*uvs[0][0] + uu*uvs[1][0] + vv*uvs[2][0];
 	const float tv = b0*uvs[0][1] + uu*uvs[1][1] + vv*uvs[2][1];
-	*dg = DifferentialGeometry(ray(t), dpdu, dpdv,
-	                           Vector(0,0,0), Vector(0,0,0),
-							   tu, tv, this);
-
-	// NOTE - ratow - Invert generated normal in case it falls on the wrong side.
-	if(!mesh->uvs) {
-		if(mesh->n) {
-			if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), dg->nn) < 0)
-				dg->nn *= -1;
-		} else {
-			if(Dot(Cross(e1, e2), dg->nn) < 0)
-				dg->nn *= -1;
-		}
-	} 
+	*dg = DifferentialGeometry(ray(t),
+			normalizedNormal,
+			dpdu, dpdv,
+			Vector(0,0,0), Vector(0,0,0),
+			tu, tv, this);
 
 	*tHit = t;
 	return true;
@@ -633,23 +640,6 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
     }
 
 	return true;
-}
-void WaldTriangle::GetUVs(float uv[3][2]) const {
-	if (mesh->uvs) {
-		uv[0][0] = mesh->uvs[2*v[0]];
-		uv[0][1] = mesh->uvs[2*v[0]+1];
-		uv[1][0] = mesh->uvs[2*v[1]];
-		uv[1][1] = mesh->uvs[2*v[1]+1];
-		uv[2][0] = mesh->uvs[2*v[2]];
-		uv[2][1] = mesh->uvs[2*v[2]+1];
-	} else {
-		uv[0][0] = mesh->p[v[0]].x;
-		uv[0][1] = mesh->p[v[0]].y;
-		uv[1][0] = mesh->p[v[1]].x;
-		uv[1][1] = mesh->p[v[1]].y;
-		uv[2][0] = mesh->p[v[2]].x;
-		uv[2][1] = mesh->p[v[2]].y;
-	}
 }
 float WaldTriangle::Area() const {
 	// Get triangle vertices in _p1_, _p2_, and _p3_
