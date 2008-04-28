@@ -41,13 +41,17 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+  // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum kd(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
+  // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum ks(Ks->Evaluate(dgs).Clamp(0.f, 1.f));
+	// Note - Ratow - limit maximum output
+	float SumY = (kd+ks).y();
+	kd *= kd.y()/SumY;
+	ks *= ks.y()/SumY;
 	BxDF *diff = BSDF_ALLOC( Lambertian)(kd);
 	Fresnel *fresnel =
 		BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
-    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum ks(Ks->Evaluate(dgs).Clamp(0.f, 1.f));
 	float rough = roughness->Evaluate(dgs);
 	BxDF *spec = BSDF_ALLOC( Microfacet)(ks, fresnel,
 		BSDF_ALLOC( Blinn)(1.f / rough));
