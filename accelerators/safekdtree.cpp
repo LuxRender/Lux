@@ -203,9 +203,9 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 	if (!bounds.IntersectP(ray, &tmin, &tmax))
 		return false;
 
-	// Dade - Prepare the local Mailboxes. I'm going to use an inverse mailbox
+	// Dade - Prepare the local Mailboxes. I'm going to use an inverse mailboxes
 	// in order to be thread-safe
-	Mailbox mailboxes;
+	InverseMailboxes mailboxes;
 	// Dade - debugging code
 	//int mailboxesHit = 0;
 	//int mailboxesMiss = 0;
@@ -251,15 +251,15 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 				node = firstChild;
 			else if (tplane < tmin)
 				node = secondChild;
-			else {
-				// Enqueue _secondChild_ in todo list
-				todo[todoPos].node = secondChild;
-				todo[todoPos].tmin = tplane;
-				todo[todoPos].tmax = tmax;
-				++todoPos;
-				node = firstChild;
-				tmax = tplane;
-			}
+            else  {
+                // Enqueue _secondChild_ in todo list
+                todo[todoPos].node = secondChild;
+                todo[todoPos].tmin = tplane;
+                todo[todoPos].tmax = tmax;
+                ++todoPos;
+                node = firstChild;
+                tmax = tplane;
+            }
 		}
 		else {
 			// Check for intersections inside leaf node
@@ -268,8 +268,9 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 			// Dade - debugging code
 			//std::stringstream ss;
 			//ss<<"\n-----------------------------------------------------\n"<<
-			//	"nPrims = "<<nPrimitives<<" hit = "<<hit<<" ray.mint = "<<
-			//	ray.mint<<" ray.maxt = "<<ray.maxt<<" maxt = "<<tmax;
+			//	"nPrims = "<<nPrimitives<<" hit = "<<hit<<
+            //   //" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt<<
+            //    " tmin = "<<tmin<<" tmax = "<<tmax;
 		    //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
 		    if (nPrimitives == 1) {
@@ -311,6 +312,7 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 					mailboxes.addChecked(pp);
 				}
 			}
+
 			// Grab next node to process from todo list
 			if (todoPos > 0) {
 				--todoPos;
@@ -338,9 +340,9 @@ bool SafeKdTreeAccel::IntersectP(const Ray &ray) const {
 	if (!bounds.IntersectP(ray, &tmin, &tmax))
 		return false;
 
-	// Dade - Prepare the local Mailboxes. I'm going to use an inverse mailbox
+	// Dade - Prepare the local Mailboxes. I'm going to use an inverse mailboxes
 	// in order to be thread-safe
-	Mailbox mailboxes;
+	InverseMailboxes mailboxes;
 
 	// Prepare to traverse kd-tree for ray
 	Vector invDir(1.f/ray.d.x, 1.f/ray.d.y, 1.f/ray.d.z);
@@ -438,7 +440,7 @@ Primitive* SafeKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
 	int isectCost = ps.FindOneInt("intersectcost", 80);
 	int travCost = ps.FindOneInt("traversalcost", 1);
 	float emptyBonus = ps.FindOneFloat("emptybonus", 0.5f);
-	int maxPrims = ps.FindOneInt("maxprims", 4);
+	int maxPrims = ps.FindOneInt("maxprims", 1);
 	int maxDepth = ps.FindOneInt("maxdepth", -1);
 	return new SafeKdTreeAccel(prims, isectCost, travCost,
 		emptyBonus, maxPrims, maxDepth);

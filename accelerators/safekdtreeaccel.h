@@ -73,9 +73,15 @@ struct SafeKdAccelNode {
 
 	// NOTE - radiance - applied bugfix for light leaks on planes (found by ratow)
 	// moved flags outside of union
-	u_int flags;   // Both
+	//u_int flags;   // Both
+    // Dade - placing flags inside the union was intended by PBRT authors. It is
+    // used at the same time of split or nPrims in order to set the lower 2 bits
+    // of the long word. Read the PBRT book (kdtree chapter, about at pag. 200)
+    // for more details. If there is a light leak in some case, another kind
+    // of fix must be find.
+
 	union {
-		//u_int flags;   // Both
+		u_int flags;   // Both
 		float split;   // Interior
 		u_int nPrims;  // Leaf
 	};
@@ -87,15 +93,15 @@ struct SafeKdAccelNode {
 };
 
 // Dade - inverse mailbox support. I use a ring buffer in order to
-// store already intersected primitives.
-// This implementation could be improved by using only MAILBOX_SIZE
-// power of 2 (in that case X  & MAILBOX_SIZE_MASK = X % MAILBOX_SIZE)
-#define MAILBOX_SIZE 8
-struct Mailbox {
+// store a list of already intersected primitives.
+
+// Dade - simple size generic implementation
+/*#define MAILBOX_SIZE 8
+struct InverseMailboxes {
 	int indexFirstUsed, indexFirstFree;
 	Primitive *mailboxes[MAILBOX_SIZE];
 
-	Mailbox() {
+	InverseMailboxes() {
 		indexFirstUsed = -1;
 		indexFirstFree = -1;
 	}
@@ -150,6 +156,82 @@ struct Mailbox {
 
 		return false;
 	}
+};*/
+// Dade - size generic implementation
+/*#define MAILBOX_BITS_SIZE 3
+#define MAILBOX_SIZE (1<<MAILBOX_BITS_SIZE)
+#define MAILBOX_SIZE_MASK (MAILBOX_SIZE - 1)
+struct InverseMailboxes {
+    int indexFirstFree;
+    Primitive *mailboxes[MAILBOX_SIZE];
+
+    InverseMailboxes() {
+        indexFirstFree = 0;
+        memset(mailboxes, 0, sizeof (Primitive *[MAILBOX_SIZE]));
+    }
+
+    void addChecked(Primitive *p) {
+        mailboxes[indexFirstFree] = p;
+        indexFirstFree++;
+        indexFirstFree &= MAILBOX_SIZE_MASK;
+    }
+
+    bool alreadyChecked(const Primitive *p) const {
+        for (int i = 0; i < MAILBOX_SIZE; i++)
+            if (mailboxes[i] == p)
+                return true;
+
+        return false;
+    }
+};*/
+// Dade - implementation with hardcoded size
+struct InverseMailboxes {
+    int indexFirstFree;
+    Primitive *mailboxes[8];
+
+    InverseMailboxes() {
+        indexFirstFree = 0;
+
+        //memset(mailboxes, 0, sizeof (Primitive *[8]));
+        Primitive** mb = mailboxes;
+        *mb++ = NULL; // mailboxes[0]
+        *mb++ = NULL; // mailboxes[1]
+        *mb++ = NULL; // mailboxes[2]
+        *mb++ = NULL; // mailboxes[3]
+        *mb++ = NULL; // mailboxes[4]
+        *mb++ = NULL; // mailboxes[5]
+        *mb++ = NULL; // mailboxes[6]
+        *mb++ = NULL; // mailboxes[7]
+    }
+
+    void addChecked(Primitive *p) {
+        mailboxes[indexFirstFree] = p;
+        indexFirstFree++;
+        indexFirstFree &= 0x7;
+    }
+
+    bool alreadyChecked(const Primitive *p) const {
+        Primitive* const* mb = mailboxes;
+
+        if (*mb++ == p) // mailboxes[0]
+            return true;
+        if (*mb++ == p) // mailboxes[1]
+            return true;
+        if (*mb++ == p) // mailboxes[2]
+            return true;
+        if (*mb++ == p) // mailboxes[3]
+            return true;
+        if (*mb++ == p) // mailboxes[4]
+            return true;
+        if (*mb++ == p) // mailboxes[5]
+            return true;
+        if (*mb++ == p) // mailboxes[6]
+            return true;
+        if (*mb++ == p) // mailboxes[7]
+            return true;
+
+        return false;
+    }
 };
 
 // SafeKdTreeAccel Declarations
