@@ -303,7 +303,10 @@ void MultiImageFilm::WriteImage(ImageType type) {
 		  &toneParams,gamma,dither,255);
 		WriteTGAImage(rgb, alpha, ldrFilename);
 	}
-	if (type & IMAGE_FRAMEBUFFER)
+    // Dade - I added the check for framebuffer != null because the scene class
+    // ask for WriteImage(IMAGE_FRAMEBUFFER) even i there is no frambuffer
+    // Fix for bug #125
+	if ((type & IMAGE_FRAMEBUFFER) && framebuffer)
 	{
 		// Update gui film display
 		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,

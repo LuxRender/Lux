@@ -567,6 +567,12 @@ int main(int ac, char *av[]) {
 
 				//wait for threads to finish
 				t.join();
+
+                // Dade - print the total rendering time
+                boost::posix_time::time_duration td(0, 0,
+                        (int)luxStatistics("secElapsed"), 0);
+                std::cout<<'\n' << " 100% rendering done [" << threads <<
+                        " threads] " << td << '\n' << std::flush;
 			}
 
 		}

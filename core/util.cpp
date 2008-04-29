@@ -170,8 +170,10 @@ StatsPercentage::StatsPercentage(const string &category, const string &name) {
 namespace lux {
 
 void StatsPrint(FILE *dest) {
-	fprintf(dest, "Statistics:\n");
 	TrackerMap::iterator iter = trackers.begin();
+    if(iter != trackers.end())
+        fprintf(dest, "Statistics:\n");
+
 	string lastCategory;
 	while (iter != trackers.end()) {
 		// Print statistic

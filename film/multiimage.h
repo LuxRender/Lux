@@ -53,7 +53,9 @@ class MultiImageFilm : public Film {
 	friend class boost::serialization::access;
 public:
 	// MultiImageFilm Public Methods
-	MultiImageFilm(int xres, int yres) : Film(xres,yres) { pixels=NULL; filter=NULL; filterTable=NULL; }; 
+	MultiImageFilm(int xres, int yres) : Film(xres,yres) {
+        pixels = NULL; filter = NULL; filterTable = NULL; framebuffer = NULL;
+    }; 
 	//Copy constructor
 	MultiImageFilm(const MultiImageFilm &m) : Film(m.xResolution,m.yResolution)
 	{
@@ -61,6 +63,7 @@ public:
 		pixels=new BlockedArray<Pixel>(*(m.pixels));
 		filter=NULL;
 		filterTable=NULL;
+        framebuffer = NULL;
 	}
 	MultiImageFilm(int xres, int yres,
 	                     Filter *filt, const float crop[4], bool hdr_out, bool igi_out, bool ldr_out, 
