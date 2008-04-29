@@ -32,7 +32,8 @@ SafeKdTreeAccel::
 		int icost, int tcost,
 		float ebonus, int maxp, int maxDepth)
 	: isectCost(icost), traversalCost(tcost),
-	maxPrims(maxp), emptyBonus(ebonus) {
+	maxPrims(maxp), emptyBonus(ebonus),
+    arena(min((u_int)32768, p.size() * sizeof(Primitive **))) {
 	vector<Primitive* > vPrims;
 	for (u_int i = 0; i < p.size(); ++i)
 		p[i]->FullyRefine(vPrims);
@@ -301,15 +302,15 @@ bool SafeKdTreeAccel::Intersect(const Ray &ray,
 					if (mailboxes.alreadyChecked(pp)) {
 						// Dade - debugging code
 						//mailboxesHit++;
-						continue;
-					}
-					// Dade - debugging code
-					//mailboxesMiss++;
+                    } else {
+                        // Dade - debugging code
+                        //mailboxesMiss++;
 
-					if (pp->Intersect(ray, isect))
-						hit = true;
+                        if (pp->Intersect(ray, isect))
+                            hit = true;
 
-					mailboxes.addChecked(pp);
+                        mailboxes.addChecked(pp);
+                    }
 				}
 			}
 

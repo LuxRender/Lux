@@ -86,7 +86,7 @@ struct SafeKdAccelNode {
 		u_int nPrims;  // Leaf
 	};
 	union {
-		u_int aboveChild;           // Interior
+		u_int aboveChild;         // Interior
 		Primitive *onePrimitive;  // Leaf
 		Primitive **primitives;   // Leaf
 	};
@@ -192,7 +192,6 @@ struct InverseMailboxes {
     InverseMailboxes() {
         indexFirstFree = 0;
 
-        //memset(mailboxes, 0, sizeof (Primitive *[8]));
         Primitive** mb = mailboxes;
         *mb++ = NULL; // mailboxes[0]
         *mb++ = NULL; // mailboxes[1]
@@ -227,7 +226,7 @@ struct InverseMailboxes {
             return true;
         if (*mb++ == p) // mailboxes[6]
             return true;
-        if (*mb++ == p) // mailboxes[7]
+        if (*mb == p)   // mailboxes[7]
             return true;
 
         return false;
