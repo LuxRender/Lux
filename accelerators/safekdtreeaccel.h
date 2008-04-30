@@ -200,7 +200,7 @@ struct InverseMailboxes {
         *mb++ = NULL; // mailboxes[4]
         *mb++ = NULL; // mailboxes[5]
         *mb++ = NULL; // mailboxes[6]
-        *mb++ = NULL; // mailboxes[7]
+        *mb = NULL; // mailboxes[7]
     }
 
     void addChecked(Primitive *p) {

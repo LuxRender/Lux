@@ -92,6 +92,57 @@ struct TaBRecKdAccelNode {
 	};
 };
 
+// Dade - inverse mailbox support. I use a ring buffer in order to
+// store a list of already intersected primitives.
+
+// Dade - implementation with hardcoded size
+struct TaBRecInverseMailboxes {
+    int indexFirstFree;
+    Primitive *mailboxes[8];
+
+    TaBRecInverseMailboxes() {
+        indexFirstFree = 0;
+
+        Primitive** mb = mailboxes;
+        *mb++ = NULL; // mailboxes[0]
+        *mb++ = NULL; // mailboxes[1]
+        *mb++ = NULL; // mailboxes[2]
+        *mb++ = NULL; // mailboxes[3]
+        *mb++ = NULL; // mailboxes[4]
+        *mb++ = NULL; // mailboxes[5]
+        *mb++ = NULL; // mailboxes[6]
+        *mb = NULL; // mailboxes[7]
+    }
+
+    void addChecked(Primitive *p) {
+        mailboxes[indexFirstFree++] = p;
+        indexFirstFree &= 0x7;
+    }
+
+    bool alreadyChecked(const Primitive *p) const {
+        Primitive* const* mb = mailboxes;
+
+        if (*mb++ == p) // mailboxes[0]
+            return true;
+        if (*mb++ == p) // mailboxes[1]
+            return true;
+        if (*mb++ == p) // mailboxes[2]
+            return true;
+        if (*mb++ == p) // mailboxes[3]
+            return true;
+        if (*mb++ == p) // mailboxes[4]
+            return true;
+        if (*mb++ == p) // mailboxes[5]
+            return true;
+        if (*mb++ == p) // mailboxes[6]
+            return true;
+        if (*mb == p)   // mailboxes[7]
+            return true;
+
+        return false;
+    }
+};
+
 // TaBRecKdTreeAccel Declarations
 class  TaBRecKdTreeAccel : public Aggregate {
 public:

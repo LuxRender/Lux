@@ -22,7 +22,6 @@
 
 // tabreckdtree.cpp*
 #include "tabreckdtreeaccel.h"
-#include "safekdtreeaccel.h"
 #include "paramset.h"
 
 using namespace lux;
@@ -134,7 +133,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
 		    BoundEdge(bbox.pMin[axis] - RAY_EPSILON, pn, true);
 		edges[axis][2*i+1] =
 			BoundEdge(bbox.pMax[axis] + RAY_EPSILON, pn, false);
-	}
+    }
 	sort(&edges[axis][0], &edges[axis][2*nPrims]);
 	// Compute cost of all splits for _axis_ to find best
 	int nBelow = 0, nAbove = nPrims;
@@ -203,8 +202,9 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
 }
 
 // Dade - this code is based on Appendix C of Ph.D. Thesis by Vlastimil Havran
-// "Heuristic Ray Shooting Algorithms" available at
-// http://www.cgg.cvut.cz/members/havran/phdthesis.html
+// "Heuristic Ray Shooting Algorithms" available at http://www.cgg.cvut.cz/members/havran/phdthesis.html
+// TaBRecKdTreeAccel::Intersect uses limts in mint/maxt while TaBRecKdTreeAccel::IntersectP
+// uses inverse mailboxes, it looks like the fastest combo.
 bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
 		Intersection *isect) const {
 	// Compute initial parametric range of ray inside kd-tree extent
@@ -300,6 +300,8 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
             }
         }
 
+        // Dade - it looks like using mint/maxt here is faster than use the
+        // inverse mailboxes
         ray.mint = max(stack[enPt].t, originalMint);
         ray.maxt = min(stack[exPt].t, originalMaxt);
 
@@ -354,8 +356,9 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
 	if (!bounds.IntersectP(ray, &tmin, &tmax))
 		return false;
 
-    const float originalMint = ray.mint;
-    const float originalMaxt = ray.maxt;
+    // Dade - Prepare the local Mailboxes. I'm going to use an inverse mailboxes
+	// in order to be thread-safe
+	TaBRecInverseMailboxes mailboxes;
 
 	// Prepare to traverse kd-tree for ray
 	Vector invDir(1.f/ray.d.x, 1.f/ray.d.y, 1.f/ray.d.z);
@@ -455,15 +458,27 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
         if (nPrimitives == 1) {
             Primitive *pp = currNode->onePrimitive;
 
-            if (pp->IntersectP(ray))
-                return true;
+            // Dade - check with the mailboxes if we need to do
+            // the intersection test
+            if (!mailboxes.alreadyChecked(pp)) {
+                if (pp->IntersectP(ray))
+                    return true;
+
+                mailboxes.addChecked(pp);
+            }
         } else {
             Primitive **prims = currNode->primitives;
             for (u_int i = 0; i < nPrimitives; ++i) {
                 Primitive *pp = prims[i];
 
-                if (pp->IntersectP(ray))
-                    return true;
+                // Dade - check with the mailboxes if we need to do
+				// the intersection test
+				if (!mailboxes.alreadyChecked(pp)) {
+					if (pp->IntersectP(ray))
+						return true;
+
+					mailboxes.addChecked(pp);
+				}
             }
         }
 
@@ -474,9 +489,6 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
         currNode = stack[exPt].node;
         exPt = stack[enPt].prev;
 	}
-
-    ray.mint = originalMint;
-    ray.maxt = originalMaxt;
 
 	return false;
 }
