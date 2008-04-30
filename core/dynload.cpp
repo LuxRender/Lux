@@ -131,6 +131,7 @@
 #include "grid.h"
 #include "kdtreeaccel.h"
 #include "safekdtreeaccel.h"
+#include "tabreckdtreeaccel.h"
 #include "bruteforce.h"
 
 //
@@ -750,6 +751,12 @@ static string SearchPath(const string &searchpath,
     if(name=="safekdtree")
     {
         Primitive* ret=SafeKdTreeAccel::CreateAccelerator(prims, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="tabreckdtree")
+    {
+        Primitive* ret=TaBRecKdTreeAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }

@@ -256,10 +256,11 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
+
 ADD_DEFINITIONS( -O2 -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 #ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 #ADD_DEFINITIONS(-O3 -Wall -msse -msse2 -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-g -Wall -msse -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ICC definitions
 #ADD_DEFINITIONS(-O3 -ipo -no-prec-div -static -fp-model fast=2 -rcd)
 
@@ -353,7 +354,7 @@ SET(lux_lib_src
         shapes/plymesh/rply.c shapes/lenscomponent.cpp
         samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
         samplers/random.cpp samplers/halton.cpp
-        accelerators/grid.cpp accelerators/kdtree.cpp accelerators/safekdtree.cpp accelerators/bruteforce.cpp
+        accelerators/grid.cpp accelerators/kdtree.cpp accelerators/safekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp
         film/multiimage.cpp film/fleximage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
