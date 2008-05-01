@@ -97,10 +97,12 @@ TaBRecKdTreeAccel(const vector<Primitive* > &p,
     delete[] prims0;
     delete[] prims1;
 }
+
 TaBRecKdTreeAccel::~TaBRecKdTreeAccel() {
     FreeAligned(prims);
     FreeAligned(nodes);
 }
+
 void TaBRecKdTreeAccel::buildTree(int nodeNum,
         const BBox &nodeBounds,
         const vector<BBox> &allPrimBounds, int *primNums,
@@ -144,17 +146,10 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
         for (int i = 0; i < nPrims; ++i) {
             int pn = primNums[i];
             const BBox &bbox = allPrimBounds[pn];
-            
-            // Dade - I need to enlarge the object bounding box by a EPSILON
-            // in order to avoid numerical problems
             edges[axis][2*i] =
                     BoundEdge(bbox.pMin[axis], pn, true);
             edges[axis][2*i+1] =
                     BoundEdge(bbox.pMax[axis], pn, false);
-            /*edges[axis][2*i] =
-                    BoundEdge(bbox.pMin[axis] - RAY_EPSILON, pn, true);
-            edges[axis][2*i+1] =
-                    BoundEdge(bbox.pMax[axis] + RAY_EPSILON, pn, false);*/
         }
     sort(&edges[axis][0], &edges[axis][2*nPrims]);
     // Compute cost of all splits for _axis_ to find best
@@ -276,7 +271,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
                 }
                 
                 // Case N4
-
+                
                 farChild = &nodes[currNode->aboveChild];
                 currNode = currNode + 1;
             } else {
@@ -372,6 +367,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
     
     return false;
 }
+
 bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float t, tmin, tmax;
@@ -514,6 +510,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
     
     return false;
 }
+
 Primitive* TaBRecKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
         const ParamSet &ps) {
     int isectCost = ps.FindOneInt("intersectcost", 80);
