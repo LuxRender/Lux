@@ -32,8 +32,7 @@ TaBRecKdTreeAccel(const vector<Primitive* > &p,
         int icost, int tcost,
         float ebonus, int maxp, int maxDepth)
 : isectCost(icost), traversalCost(tcost),
-        maxPrims(maxp), emptyBonus(ebonus),
-        arena(min((u_int)32768, p.size() * sizeof(Primitive **))) {
+        maxPrims(maxp), emptyBonus(ebonus) {
     vector<Primitive* > vPrims;
     for (u_int i = 0; i < p.size(); ++i)
         p[i]->FullyRefine(vPrims);
