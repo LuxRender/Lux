@@ -28,177 +28,199 @@ using namespace lux;
 
 // TaBRecKdTreeAccel Method Definitions
 TaBRecKdTreeAccel::
-    TaBRecKdTreeAccel(const vector<Primitive* > &p,
-		int icost, int tcost,
-		float ebonus, int maxp, int maxDepth)
-	: isectCost(icost), traversalCost(tcost),
-	maxPrims(maxp), emptyBonus(ebonus),
-    arena(min((u_int)32768, p.size() * sizeof(Primitive **))) {
-	vector<Primitive* > vPrims;
-	for (u_int i = 0; i < p.size(); ++i)
-		p[i]->FullyRefine(vPrims);
+TaBRecKdTreeAccel(const vector<Primitive* > &p,
+        int icost, int tcost,
+        float ebonus, int maxp, int maxDepth)
+: isectCost(icost), traversalCost(tcost),
+        maxPrims(maxp), emptyBonus(ebonus),
+        arena(min((u_int)32768, p.size() * sizeof(Primitive **))) {
+    vector<Primitive* > vPrims;
+    for (u_int i = 0; i < p.size(); ++i)
+        p[i]->FullyRefine(vPrims);
+    
+    // Initialize primitives for _TaBRecKdTreeAccel_
+    nPrims = vPrims.size();
+    prims = (Primitive **)AllocAligned(nPrims *
+            sizeof(Primitive **));
+    for (u_int i = 0; i < nPrims; ++i)
+        prims[i] = vPrims[i];
+    
+    // Build kd-tree for accelerator
+    nextFreeNode = nAllocedNodes = 0;
+    if (maxDepth <= 0)
+        maxDepth =
+                Round2Int(8 + 1.3f * Log2Int(float(vPrims.size())));
 
-	// Initialize primitives for _TaBRecKdTreeAccel_
-	nPrims = vPrims.size();
-	prims = (Primitive **)AllocAligned(nPrims *
-		sizeof(Primitive **));
-	for (u_int i = 0; i < nPrims; ++i)
-		prims[i] = vPrims[i];
+    // Compute bounds for kd-tree construction
+    vector<BBox> primBounds;
+    primBounds.reserve(vPrims.size());
+    for (u_int i = 0; i < vPrims.size(); ++i) {
+        BBox b = prims[i]->WorldBound();
 
-	// Build kd-tree for accelerator
-	nextFreeNode = nAllocedNodes = 0;
-	if (maxDepth <= 0)
-		maxDepth =
-		    Round2Int(8 + 1.3f * Log2Int(float(vPrims.size())));
-	// Compute bounds for kd-tree construction
-	vector<BBox> primBounds;
-	primBounds.reserve(vPrims.size());
-	for (u_int i = 0; i < vPrims.size(); ++i) {
-		BBox b = prims[i]->WorldBound();
-		bounds = Union(bounds, b);
-		primBounds.push_back(b);
-	}
-	// Allocate working memory for kd-tree construction
-	BoundEdge *edges[3];
-	for (int i = 0; i < 3; ++i)
-		edges[i] = new BoundEdge[2*vPrims.size()];
-	int *prims0 = new int[vPrims.size()];
-	int *prims1 = new int[(maxDepth+1) * vPrims.size()];
-	// Initialize _primNums_ for kd-tree construction
-	int *primNums = new int[vPrims.size()];
-	for (u_int i = 0; i < vPrims.size(); ++i)
-		primNums[i] = i;
-	// Start recursive construction of kd-tree
-	buildTree(0, bounds, primBounds, primNums,
-			vPrims.size(), maxDepth, edges,
-			  prims0, prims1);
-	// Free working memory for kd-tree construction
-	delete[] primNums;
-	for (int i = 0; i < 3; ++i)
-		delete[] edges[i];
-	delete[] prims0;
-	delete[] prims1;
+        // Dade - expand the bbox by EPSILON in order to avoid numerical problems
+        Vector bbEdge = b.pMax - b.pMin;
+        if (bbEdge.x < 2.0f * RAY_EPSILON) {
+            b.pMin.x -= RAY_EPSILON;
+            b.pMax.x += RAY_EPSILON;
+        }
+        if (bbEdge.y < 2.0f * RAY_EPSILON) {
+            b.pMin.y -= RAY_EPSILON;
+            b.pMax.y += RAY_EPSILON;
+        }
+        if (bbEdge.z < 2.0f * RAY_EPSILON) {
+            b.pMin.z -= RAY_EPSILON;
+            b.pMax.z += RAY_EPSILON;
+        }
+
+        bounds = Union(bounds, b);
+        primBounds.push_back(b);
+    }
+
+    // Allocate working memory for kd-tree construction
+    BoundEdge *edges[3];
+    for (int i = 0; i < 3; ++i)
+        edges[i] = new BoundEdge[2*vPrims.size()];
+    int *prims0 = new int[vPrims.size()];
+    int *prims1 = new int[(maxDepth+1) * vPrims.size()];
+    // Initialize _primNums_ for kd-tree construction
+    int *primNums = new int[vPrims.size()];
+    for (u_int i = 0; i < vPrims.size(); ++i)
+        primNums[i] = i;
+    // Start recursive construction of kd-tree
+    buildTree(0, bounds, primBounds, primNums,
+            vPrims.size(), maxDepth, edges,
+            prims0, prims1);
+    // Free working memory for kd-tree construction
+    delete[] primNums;
+    for (int i = 0; i < 3; ++i)
+        delete[] edges[i];
+    delete[] prims0;
+    delete[] prims1;
 }
 TaBRecKdTreeAccel::~TaBRecKdTreeAccel() {
-	FreeAligned(prims);
-	FreeAligned(nodes);
+    FreeAligned(prims);
+    FreeAligned(nodes);
 }
 void TaBRecKdTreeAccel::buildTree(int nodeNum,
         const BBox &nodeBounds,
-		const vector<BBox> &allPrimBounds, int *primNums,
-		int nPrims, int depth, BoundEdge *edges[3],
-		int *prims0, int *prims1, int badRefines) {
-	BOOST_ASSERT(nodeNum == nextFreeNode); // NOBOOK
-	// Get next free node from _nodes_ array
-	if (nextFreeNode == nAllocedNodes) {
-		int nAlloc = max(2 * nAllocedNodes, 512);
-		TaBRecKdAccelNode *n = (TaBRecKdAccelNode *)AllocAligned(nAlloc *
-			sizeof(TaBRecKdAccelNode));
-		if (nAllocedNodes > 0) {
-			memcpy(n, nodes,
-			       nAllocedNodes * sizeof(TaBRecKdAccelNode));
-			FreeAligned(nodes);
-		}
-		nodes = n;
-		nAllocedNodes = nAlloc;
-	}
-	++nextFreeNode;
-	// Initialize leaf node if termination criteria met
-	if (nPrims <= maxPrims || depth == 0) {
-		nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
-		return;
-	}
-	// Initialize interior node and continue recursion
-	// Choose split axis position for interior node
-	int bestAxis = -1, bestOffset = -1;
-	float bestCost = INFINITY;
-	float oldCost = isectCost * float(nPrims);
-	Vector d = nodeBounds.pMax - nodeBounds.pMin;
-	float totalSA = (2.f * (d.x*d.y + d.x*d.z + d.y*d.z));
-	float invTotalSA = 1.f / totalSA;
-	// Choose which axis to split along
-	int axis;
-	if (d.x > d.y && d.x > d.z) axis = 0;
-	else axis = (d.y > d.z) ? 1 : 2;
-	int retries = 0;
-	retrySplit:
-	// Initialize edges for _axis_
-	for (int i = 0; i < nPrims; ++i) {
-		int pn = primNums[i];
-		const BBox &bbox = allPrimBounds[pn];
-
-        // Dade - I need to enlarge the object bounding box by a EPSILON
-        // in order to avoid numerical problems
-        edges[axis][2*i] =
-		    BoundEdge(bbox.pMin[axis] - RAY_EPSILON, pn, true);
-		edges[axis][2*i+1] =
-			BoundEdge(bbox.pMax[axis] + RAY_EPSILON, pn, false);
+        const vector<BBox> &allPrimBounds, int *primNums,
+        int nPrims, int depth, BoundEdge *edges[3],
+        int *prims0, int *prims1, int badRefines) {
+    BOOST_ASSERT(nodeNum == nextFreeNode); // NOBOOK
+    // Get next free node from _nodes_ array
+    if (nextFreeNode == nAllocedNodes) {
+        int nAlloc = max(2 * nAllocedNodes, 512);
+        TaBRecKdAccelNode *n = (TaBRecKdAccelNode *)AllocAligned(nAlloc *
+                sizeof(TaBRecKdAccelNode));
+        if (nAllocedNodes > 0) {
+            memcpy(n, nodes,
+                    nAllocedNodes * sizeof(TaBRecKdAccelNode));
+            FreeAligned(nodes);
+        }
+        nodes = n;
+        nAllocedNodes = nAlloc;
     }
-	sort(&edges[axis][0], &edges[axis][2*nPrims]);
-	// Compute cost of all splits for _axis_ to find best
-	int nBelow = 0, nAbove = nPrims;
-	for (int i = 0; i < 2*nPrims; ++i) {
-		if (edges[axis][i].type == BoundEdge::END) --nAbove;
-		float edget = edges[axis][i].t;
-		if (edget > nodeBounds.pMin[axis] &&
-			edget < nodeBounds.pMax[axis]) {
-			// Compute cost for split at _i_th edge
-			int otherAxis[3][2] = { {1,2}, {0,2}, {0,1} };
-			int otherAxis0 = otherAxis[axis][0];
-			int otherAxis1 = otherAxis[axis][1];
-			float belowSA = 2 * (d[otherAxis0] * d[otherAxis1] +
-			             		(edget - nodeBounds.pMin[axis]) *
-				                (d[otherAxis0] + d[otherAxis1]));
-			float aboveSA = 2 * (d[otherAxis0] * d[otherAxis1] +
-								(nodeBounds.pMax[axis] - edget) *
-								(d[otherAxis0] + d[otherAxis1]));
-			float pBelow = belowSA * invTotalSA;
-			float pAbove = aboveSA * invTotalSA;
-			float eb = (nAbove == 0 || nBelow == 0) ? emptyBonus : 0.f;
-			float cost = traversalCost + isectCost * (1.f - eb) *
-				(pBelow * nBelow + pAbove * nAbove);
-			// Update best split if this is lowest cost so far
-			if (cost < bestCost)  {
-				bestCost = cost;
-				bestAxis = axis;
-				bestOffset = i;
-			}
-		}
-		if (edges[axis][i].type == BoundEdge::START) ++nBelow;
-	}
-	BOOST_ASSERT(nBelow == nPrims && nAbove == 0); // NOBOOK
-	// Create leaf if no good splits were found
-	if (bestAxis == -1 && retries < 2) {
-		++retries;
-		axis = (axis+1) % 3;
-		goto retrySplit;
-	}
-	if (bestCost > oldCost) ++badRefines;
-	if ((bestCost > 4.f * oldCost && nPrims < 16) ||
-		bestAxis == -1 || badRefines == 3) {
-		nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
-		return;
-	}
-	// Classify primitives with respect to split
-	int n0 = 0, n1 = 0;
-	for (int i = 0; i < bestOffset; ++i)
-		if (edges[bestAxis][i].type == BoundEdge::START)
-			prims0[n0++] = edges[bestAxis][i].primNum;
-	for (int i = bestOffset+1; i < 2*nPrims; ++i)
-		if (edges[bestAxis][i].type == BoundEdge::END)
-			prims1[n1++] = edges[bestAxis][i].primNum;
-	// Recursively initialize children nodes
-	float tsplit = edges[bestAxis][bestOffset].t;
-	nodes[nodeNum].initInterior(bestAxis, tsplit);
-	BBox bounds0 = nodeBounds, bounds1 = nodeBounds;
-	bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tsplit;
-	buildTree(nodeNum+1, bounds0,
-		allPrimBounds, prims0, n0, depth-1, edges,
-		prims0, prims1 + nPrims, badRefines);
-	nodes[nodeNum].aboveChild = nextFreeNode;
-	buildTree(nodes[nodeNum].aboveChild, bounds1, allPrimBounds,
-		prims1, n1, depth-1, edges,
-		prims0, prims1 + nPrims, badRefines);
+    ++nextFreeNode;
+    // Initialize leaf node if termination criteria met
+    if (nPrims <= maxPrims || depth == 0) {
+        nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
+        return;
+    }
+    // Initialize interior node and continue recursion
+    // Choose split axis position for interior node
+    int bestAxis = -1, bestOffset = -1;
+    float bestCost = INFINITY;
+    float oldCost = isectCost * float(nPrims);
+    Vector d = nodeBounds.pMax - nodeBounds.pMin;
+    float totalSA = (2.f * (d.x*d.y + d.x*d.z + d.y*d.z));
+    float invTotalSA = 1.f / totalSA;
+    // Choose which axis to split along
+    int axis;
+    if (d.x > d.y && d.x > d.z) axis = 0;
+    else axis = (d.y > d.z) ? 1 : 2;
+    int retries = 0;
+    retrySplit:
+        // Initialize edges for _axis_
+        for (int i = 0; i < nPrims; ++i) {
+            int pn = primNums[i];
+            const BBox &bbox = allPrimBounds[pn];
+            
+            // Dade - I need to enlarge the object bounding box by a EPSILON
+            // in order to avoid numerical problems
+            edges[axis][2*i] =
+                    BoundEdge(bbox.pMin[axis], pn, true);
+            edges[axis][2*i+1] =
+                    BoundEdge(bbox.pMax[axis], pn, false);
+            /*edges[axis][2*i] =
+                    BoundEdge(bbox.pMin[axis] - RAY_EPSILON, pn, true);
+            edges[axis][2*i+1] =
+                    BoundEdge(bbox.pMax[axis] + RAY_EPSILON, pn, false);*/
+        }
+    sort(&edges[axis][0], &edges[axis][2*nPrims]);
+    // Compute cost of all splits for _axis_ to find best
+    int nBelow = 0, nAbove = nPrims;
+    for (int i = 0; i < 2*nPrims; ++i) {
+        if (edges[axis][i].type == BoundEdge::END) --nAbove;
+        float edget = edges[axis][i].t;
+        if (edget > nodeBounds.pMin[axis] &&
+        edget < nodeBounds.pMax[axis]) {
+            // Compute cost for split at _i_th edge
+            int otherAxis[3][2] = { {1, 2}, {0, 2}, {0, 1} };
+            int otherAxis0 = otherAxis[axis][0];
+            int otherAxis1 = otherAxis[axis][1];
+            float belowSA = 2 * (d[otherAxis0] * d[otherAxis1] +
+            (edget - nodeBounds.pMin[axis]) *
+            (d[otherAxis0] + d[otherAxis1]));
+            float aboveSA = 2 * (d[otherAxis0] * d[otherAxis1] +
+            (nodeBounds.pMax[axis] - edget) *
+            (d[otherAxis0] + d[otherAxis1]));
+            float pBelow = belowSA * invTotalSA;
+            float pAbove = aboveSA * invTotalSA;
+            float eb = (nAbove == 0 || nBelow == 0) ? emptyBonus : 0.f;
+            float cost = traversalCost + isectCost * (1.f - eb) *
+            (pBelow * nBelow + pAbove * nAbove);
+            // Update best split if this is lowest cost so far
+            if (cost < bestCost)  {
+                bestCost = cost;
+                bestAxis = axis;
+                bestOffset = i;
+            }
+        }
+        if (edges[axis][i].type == BoundEdge::START) ++nBelow;
+    }
+    BOOST_ASSERT(nBelow == nPrims && nAbove == 0); // NOBOOK
+    // Create leaf if no good splits were found
+    if (bestAxis == -1 && retries < 2) {
+        ++retries;
+        axis = (axis+1) % 3;
+        goto retrySplit;
+    }
+    if (bestCost > oldCost) ++badRefines;
+    if ((bestCost > 4.f * oldCost && nPrims < 16) ||
+            bestAxis == -1 || badRefines == 3) {
+        nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
+        return;
+    }
+    // Classify primitives with respect to split
+    int n0 = 0, n1 = 0;
+    for (int i = 0; i < bestOffset; ++i)
+        if (edges[bestAxis][i].type == BoundEdge::START)
+            prims0[n0++] = edges[bestAxis][i].primNum;
+    for (int i = bestOffset+1; i < 2*nPrims; ++i)
+        if (edges[bestAxis][i].type == BoundEdge::END)
+            prims1[n1++] = edges[bestAxis][i].primNum;
+    // Recursively initialize children nodes
+    float tsplit = edges[bestAxis][bestOffset].t;
+    nodes[nodeNum].initInterior(bestAxis, tsplit);
+    BBox bounds0 = nodeBounds, bounds1 = nodeBounds;
+    bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tsplit;
+    buildTree(nodeNum+1, bounds0,
+            allPrimBounds, prims0, n0, depth-1, edges,
+            prims0, prims1 + nPrims, badRefines);
+    nodes[nodeNum].aboveChild = nextFreeNode;
+    buildTree(nodes[nodeNum].aboveChild, bounds1, allPrimBounds,
+            prims1, n1, depth-1, edges,
+            prims0, prims1 + nPrims, badRefines);
 }
 
 // Dade - this code is based on Appendix C of Ph.D. Thesis by Vlastimil Havran
@@ -254,7 +276,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
                 }
                 
                 // Case N4
-                
+
                 farChild = &nodes[currNode->aboveChild];
                 currNode = currNode + 1;
             } else {
@@ -302,8 +324,8 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
         
         // Dade - it looks like using mint/maxt here is faster than use the
         // inverse mailboxes
-        ray.mint = max(stack[enPt].t - RAY_EPSILON, originalMint);
-        ray.maxt = min(stack[exPt].t + RAY_EPSILON, originalMaxt);
+        ray.mint = max(stack[enPt].t, originalMint);
+        ray.maxt = min(stack[exPt].t, originalMaxt);
         
         // Check for intersections inside leaf node
         u_int nPrimitives = currNode->nPrimitives();
@@ -493,12 +515,12 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 Primitive* TaBRecKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
-		const ParamSet &ps) {
-	int isectCost = ps.FindOneInt("intersectcost", 80);
-	int travCost = ps.FindOneInt("traversalcost", 1);
-	float emptyBonus = ps.FindOneFloat("emptybonus", 0.5f);
-	int maxPrims = ps.FindOneInt("maxprims", 1);
-	int maxDepth = ps.FindOneInt("maxdepth", -1);
-	return new TaBRecKdTreeAccel(prims, isectCost, travCost,
-		emptyBonus, maxPrims, maxDepth);
+        const ParamSet &ps) {
+    int isectCost = ps.FindOneInt("intersectcost", 80);
+    int travCost = ps.FindOneInt("traversalcost", 1);
+    float emptyBonus = ps.FindOneFloat("emptybonus", 0.5f);
+    int maxPrims = ps.FindOneInt("maxprims", 1);
+    int maxDepth = ps.FindOneInt("maxdepth", -1);
+    return new TaBRecKdTreeAccel(prims, isectCost, travCost,
+            emptyBonus, maxPrims, maxDepth);
 }
