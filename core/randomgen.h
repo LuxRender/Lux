@@ -80,6 +80,8 @@ public:
 		bufid = RAN_BUFFER_AMOUNT;
 	}
 
+	~RandomGenerator() { delete[] buf; }
+
 	void taus113_set(unsigned long int s) {
 	  if (!s) s = 1UL; // default seed is 1
 
