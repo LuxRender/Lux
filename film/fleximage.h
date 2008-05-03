@@ -195,7 +195,8 @@ public:
 		const string &filename1, bool premult, int wI, int dI,
 		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 		bool w_untonemapped_IGI, bool w_tonemapped_TGA,
-		float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g);
+		float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g,
+		int reject_warmup, bool debugmode);
 	~FlexImageFilm() {
 		delete[] framebuffer;
 		delete[] factor;
@@ -246,12 +247,12 @@ private:
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
 	ParamSet toneParams;
 	float gamma;
-
+	float reject_warmup_samples;
 	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga;
 
 	unsigned char *framebuffer;
 	boost::timer timer;
-	bool imageLock;
+	bool imageLock, debug_mode;
 	float *factor;
 
 	std::vector<BufferConfig> bufferConfigs;

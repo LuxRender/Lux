@@ -39,12 +39,12 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 	bool w_untonemapped_IGI, bool w_tonemapped_TGA,
-	float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g) :
+	float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g, int reject_warmup, bool debugmode ) :
 	Film(xres, yres), filter(filt), writeInterval(wI), displayInterval(dI), filename(filename1),
 	premultiplyAlpha(premult), buffersInited(false),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA),
-    gamma(g), framebuffer(NULL), imageLock(false), factor(NULL)
+    gamma(g), framebuffer(NULL), imageLock(false), factor(NULL), debug_mode(debugmode)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -60,6 +60,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 
 	// init timer
 	timer.restart();
+
+	// calculate reject warmup samples
+	reject_warmup_samples = (float) (xResolution * yResolution * reject_warmup);
 
 	// Precompute filter weight table
 	#define FILTER_TABLE_SIZE 16
@@ -162,10 +165,12 @@ void FlexImageFilm::MergeSampleArray() {
 
 		// Issue warning if unexpected radiance value returned
 		if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
-	//		std::stringstream ss;
-	//		ss << "Out of bound intensity in FlexImageFilm::AddSample: "
-	//		   << xyz.y() << ", sample discarded";
-	//		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+			if(debug_mode) {
+				std::stringstream ss;
+				ss << "Out of bound intensity in FlexImageFilm::AddSample: "
+				   << xyz.y() << ", sample discarded";
+				luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+			}
 			continue;
 		}
 
@@ -174,7 +179,7 @@ void FlexImageFilm::MergeSampleArray() {
 			if(xyz.y() > maxY)
 				continue;
 		} else {
-			if(warmupSamples < 1048576) {
+			if(warmupSamples < reject_warmup_samples) {
 				if(xyz.y() > maxY)
 					maxY = xyz.y();
 				warmupSamples++;
@@ -482,6 +487,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[3] = Clamp(max(cr[2], cr[3]), 0.f, 1.f);
 	}
 
+	// output fileformats
 	bool w_tonemapped_EXR = params.FindOneBool("write_tonemapped_exr", true);
 	bool w_untonemapped_EXR = params.FindOneBool("write_untonemapped_exr", false);
 	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
@@ -502,10 +508,16 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	// Gamma correction
 	float gamma = params.FindOneFloat("gamma", 2.2f);
 
+	// Rejection mechanism
+	int reject_warmup = params.FindOneInt("reject_warmup", 3); // minimum samples/px before rejecting
+
+	// Debugging mode (display erratic sample values and disable rejection mechanism)
+	bool debug_mode = params.FindOneBool("debug", false);
+
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
 		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA,
-		reinhard_prescale, reinhard_postscale, reinhard_burn, gamma);
+		reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
 }
 
 
