@@ -257,14 +257,34 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 
-ADD_DEFINITIONS( -O2 -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+# Dade - GCC Profiling (remember to uncomment the line at the end of file too)
+#ADD_DEFINITIONS(-pg -g -O2 -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+
+# Dade - GCC 2 pass optimization (remember to uncomment the line at the end of file too)
+#ADD_DEFINITIONS(-O3 --coverage -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -fbranch-probabilities -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+
+# Dade - default compiler options
+ADD_DEFINITIONS(-O2 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+
+# Dade - my settings
+#ADD_DEFINITIONS(-O3 -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+
+# Dade - Intel CC settings (remember to uncomment the line at the end of file too)
+#  rm -rf CMakeCache.txt CMakeFiles
+#  CC=/opt/intel/cc/10.1.015/bin/icc CXX=/opt/intel/cc/10.1.015/bin/icpc cmake lux
+# Pass 1
+#ADD_DEFINITIONS(-prof-gen -prof-dir /tmp  -O3 -ipo -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
+# Pass 2
+#ADD_DEFINITIONS(-prof-use -prof-dir /tmp  -O3 -ipo -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
+
+
+#ADD_DEFINITIONS(-O3 -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 #ADD_DEFINITIONS(-O3 -Wall -msse -msse2 -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ICC definitions
 #ADD_DEFINITIONS(-O3 -ipo -no-prec-div -static -fp-model fast=2 -rcd)
-
-
 
 #############################################################################
 #############################################################################
@@ -406,8 +426,8 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} $
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 
-#Needed for ICC
-#REMOVE_DEFINITIONS(-ipo)
+# Needed for ICC
+REMOVE_DEFINITIONS(-ipo)
 
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
@@ -484,3 +504,12 @@ ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
 	DEPENDS ${lux_lib_src}
 	COMMENT Building source package
 )
+
+# Dade - GCC Profiling (remember to uncomment the line in the middle of file too)
+#SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "-pg")
+
+# Dade - GCC 2 pass optimization (remember to uncomment the line in the middle of file too)
+#SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "--coverage")
+
+# Dade - Intel Compiler optimization
+#REMOVE_DEFINITIONS(-ipo)
