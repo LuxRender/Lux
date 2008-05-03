@@ -35,10 +35,14 @@
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
+#include "lux.h"
+
 #include <boost/thread/tss.hpp>
 
 #define LCG(n) ((69069UL * n) & 0xffffffffUL)
 #define MASK 0xffffffffUL
+
+#define RAN_BUFFER_AMOUNT 2048
 
 namespace lux
 {
@@ -70,7 +74,11 @@ static float seeds[64] = {
 class RandomGenerator
 {
 public:
-	RandomGenerator() {}
+	RandomGenerator() {
+		buf = (unsigned long int *)memalign(64,
+			RAN_BUFFER_AMOUNT * sizeof(unsigned long int));
+		bufid = RAN_BUFFER_AMOUNT;
+	}
 
 	void taus113_set(unsigned long int s) {
 	  if (!s) s = 1UL; // default seed is 1
@@ -81,37 +89,48 @@ public:
 	  z4 = LCG (z3); if (z4 < 128UL) z4 += 128UL;
 
 	  // Calling RNG ten times to satify recurrence condition
-	  for(int i=0; i<10; i++) generateUInt();
+	  for(int i=0; i<10; i++) nobuf_generateUInt();
 	}
 
-	inline unsigned long generateUInt() {
-	  unsigned long b1, b2, b3, b4;
-
-	  b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
+	inline unsigned long nobuf_generateUInt() {
+	  const unsigned long b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
 	  z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
 
-	  b2 = ((((z2 << 2UL) & MASK) ^ z2) >> 27UL);
+	  const unsigned long b2 = ((((z2 << 2UL) & MASK) ^ z2) >> 27UL);
 	  z2 = ((((z2 & 4294967288UL) << 2UL) & MASK) ^ b2);
 
-	  b3 = ((((z3 << 13UL) & MASK) ^ z3) >> 21UL);
+	  const unsigned long b3 = ((((z3 << 13UL) & MASK) ^ z3) >> 21UL);
 	  z3 = ((((z3 & 4294967280UL) << 7UL) & MASK) ^ b3);
 
-	  b4 = ((((z4 << 3UL) & MASK) ^ z4) >> 12UL);
+	  const unsigned long b4 = ((((z4 << 3UL) & MASK) ^ z4) >> 12UL);
 	  z4 = ((((z4 & 4294967168UL) << 13UL) & MASK) ^ b4);
 
 	  return (z1 ^ z2 ^ z3 ^ z4);
 	}
 
-	inline float generateFloat() {
-		return generateUInt() *((float)1.0/(float)4294967296.0);
+	inline unsigned long generateUInt() {
+	  // Repopulate buffer if necessary
+	  if(bufid == RAN_BUFFER_AMOUNT) {
+		  for(int i=0; i<RAN_BUFFER_AMOUNT; i++)
+			  buf[i] = nobuf_generateUInt();
+		  bufid = 0;
+	  }
+
+	  unsigned long int ii = buf[bufid];
+	  bufid++;
+	  return ii; 
 	}
 	
 private:
 	unsigned long int z1, z2, z3, z4;
+	unsigned long int *buf;
+	int bufid;
 };
 
 // thread local pointer to boost random generator
 extern boost::thread_specific_ptr<RandomGenerator> myGen;
+
+static const float invUI = ((float)1.0/(float)4294967296.0);
 
 inline void init(int tn) {
 	if(!myGen.get())
@@ -126,7 +145,7 @@ inline void init(int tn) {
 
 // request RN's during render threads (uses per thread rangen/seed)
 inline float floatValue() { 
-	return myGen->generateFloat();
+	return myGen->generateUInt() * invUI;
 }
 inline unsigned long uintValue() { 
 	return myGen->generateUInt();
@@ -139,14 +158,14 @@ inline float floatValueP() {
 		PGen = new RandomGenerator();
 		PGen->taus113_set(1);
 	}
-	return PGen->generateFloat();
+	return PGen->nobuf_generateUInt() * invUI;
 }
 inline unsigned long uintValueP() { 
 	if(!PGen) {
 		PGen = new RandomGenerator();
 		PGen->taus113_set(1);
 	}
-	return PGen->generateUInt();
+	return PGen->nobuf_generateUInt();
 }
 
 } // random
