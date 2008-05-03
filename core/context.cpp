@@ -668,8 +668,8 @@ void Context::getFilm(std::basic_ostream<char> &stream) {
 	boost::archive::text_oarchive oa(s);
 
 	//jromang TODO : fix this hack !
-	//ob<<(*const_cast<const MultiImageFilm *>((MultiImageFilm *)(luxCurrentScene->camera->film)));
-	const MultiImageFilm m(*((MultiImageFilm *)(luxCurrentScene->camera->film)));
+	//ob<<(*const_cast<const FlexImageFilm *>((FlexImageFilm *)(luxCurrentScene->camera->film)));
+	const FlexImageFilm m(*((FlexImageFilm *)(luxCurrentScene->camera->film)));
 	luxCurrentScene->camera->film->clean();
 	oa<<m;
 	
@@ -680,7 +680,7 @@ void Context::getFilm(std::basic_ostream<char> &stream) {
 }
 
 void Context::updateFilmFromNetwork() {
-	renderFarm.updateFilm((MultiImageFilm *)(luxCurrentScene->camera->film));
+	renderFarm.updateFilm((FlexImageFilm *)(luxCurrentScene->camera->film));
 	/*
 	for (vector<string>::iterator server = luxServerList.begin(); server
 			!= luxServerList.end(); ++server) {
@@ -691,10 +691,10 @@ void Context::updateFilmFromNetwork() {
 			std::cout << "connected"<<std::endl;
 			stream<<"luxGetFilm"<<std::endl;
 			boost::archive::text_iarchive ia(stream);
-			MultiImageFilm m(320,200);
+			FlexImageFilm m(320,200);
 			ia>>m;
 			std::cout<<"ok, i got the film! merging...";
-			((MultiImageFilm *)(luxCurrentScene->camera->film))->merge(m);
+			((FlexImageFilm *)(luxCurrentScene->camera->film))->merge(m);
 			std::cout<<"merged!"<<std::endl;
 		}
 		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}

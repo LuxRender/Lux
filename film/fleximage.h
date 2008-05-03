@@ -184,6 +184,7 @@ public:
 
 // FlexImageFilm Declarations
 class FlexImageFilm : public Film {
+	// TODO add serialization
 public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
@@ -191,21 +192,19 @@ public:
 		framebuffer(NULL), factor(NULL) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
-		bool outhdr, bool outldr,
-		const string &filename1, bool premult, int wI,
-		const string &tm, float c_dY, float n_MY,
-		float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
-		float bw, float br, float g, float d);
+		const string &filename1, bool premult, int wI, int dI,
+		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
+		bool w_untonemapped_IGI, bool w_tonemapped_TGA,
+		float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g);
 	~FlexImageFilm() {
 		delete[] framebuffer;
 		delete[] factor;
-		//while(buffers.size()>0)
-		//{
-		//	delete buffers.end();
-		//	buffers.pop_back();
-		//}
 	}
-
+	//Copy constructor
+	FlexImageFilm(const FlexImageFilm &m) : Film(m.xResolution,m.yResolution)
+	{
+		// TODO write copy constructor for network rendering
+	}
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
 
@@ -215,11 +214,13 @@ public:
 		if (!bufferGroups.empty())
 			bufferGroups[bufferGroup].numberOfSamples += count;
 	}
+	void MergeSampleArray();
 
 	void WriteImage(ImageType type);
 	void WriteImage2(ImageType type, float* rgb, float* alpha, string postfix);
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
+	void WriteIGIImage(float *rgb, float *alpha, const string &filename);
 	void ScaleOutput(float *rgb, float *alpha, float *scale);
 
 	// GUI display methods
@@ -229,7 +230,7 @@ public:
 	void merge(FlexImageFilm &f);
 	void createFrameBuffer();
 	float getldrDisplayInterval() {
-		return writeInterval;
+		return displayInterval;
 	}
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
@@ -238,14 +239,15 @@ private:
 	// FlexImageFilm Private Data
 	Filter *filter;
 	int writeInterval;
+	int displayInterval;
 	string filename;
-	ImageType outputType;
 	bool premultiplyAlpha, buffersInited;
 	float cropWindow[4], *filterTable;
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
-	const string toneMapper;
 	ParamSet toneParams;
-	float bloomWidth, bloomRadius, gamma, dither;
+	float gamma;
+
+	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga;
 
 	unsigned char *framebuffer;
 	boost::timer timer;
@@ -256,6 +258,13 @@ private:
 	std::vector<BufferGroup> bufferGroups;
 
 	mutable boost::mutex addSampleMutex;
+
+	float maxY;
+	u_int warmupSamples;
+	bool warmupComplete;
+	ArrSample *SampleArrptr;
+	ArrSample *SampleArr2ptr;
+	int curSampleArrId, maxSampleArrId;
 };
 
 }//namespace lux

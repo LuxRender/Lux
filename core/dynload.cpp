@@ -66,7 +66,6 @@
 #include "perspective.h"
 #include "realistic.h"
 
-#include "multiimage.h"
 #include "fleximage.h"
 
 #include "box.h"
@@ -192,7 +191,7 @@ namespace lux
     if(name=="sphere")
         return boost::shared_ptr<Shape>(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="trianglemesh")
-        return boost::shared_ptr<Shape>(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
+        return boost::shared_ptr<Shape>(WaldTriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="waldtrianglemesh")
         return boost::shared_ptr<Shape>(WaldTriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="plymesh")
@@ -999,9 +998,10 @@ static string SearchPath(const string &searchpath,
         return ret;
     }*/
     
+	// note - radiance - MultiImageFilm is removed, leaving this for backward scenefile compatibility
     if(name=="multiimage")
     {
-		Film *ret=MultiImageFilm::CreateFilm(paramSet, filter);
+		Film *ret=FlexImageFilm::CreateFilm(paramSet, filter);
         paramSet.ReportUnused();
         return ret;
     }

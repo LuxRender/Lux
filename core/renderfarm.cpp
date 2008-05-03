@@ -56,7 +56,7 @@ void RenderFarm::flush() {
 	}
 }
 
-void RenderFarm::updateFilm(MultiImageFilm *film) {
+void RenderFarm::updateFilm(FlexImageFilm *film) {
 	for (vector<string>::iterator server = serverList.begin(); server
 			!= serverList.end(); ++server) {
 		try
@@ -82,7 +82,7 @@ void RenderFarm::updateFilm(MultiImageFilm *film) {
 			//std::cout<<"in"<<std::endl;
 			
 			boost::archive::text_iarchive ia(in);
-			MultiImageFilm m(320,200);
+			FlexImageFilm m(320,200);
 			
 			//std::cout<<"before ia>>m"<<std::endl;
 			ia>>m;

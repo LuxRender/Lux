@@ -26,7 +26,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "../film/multiimage.h"
+#include "../film/fleximage.h"
 
 namespace lux
 {
@@ -47,7 +47,7 @@ public:
 	void send(const std::string &command, const string &name, const string &type, const string &texname, const ParamSet &params);
 	
 	void flush(); //!< Sends immediately all commands in the buffer to the servers
-	void updateFilm(MultiImageFilm *film); //!<Gets the films from the network, and merge them to the film given in parameter
+	void updateFilm(FlexImageFilm *film); //!<Gets the films from the network, and merge them to the film given in parameter
 
 private:
 	std::vector<std::string> serverList;

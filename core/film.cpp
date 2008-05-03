@@ -115,7 +115,7 @@ void ApplyImagingPipeline(float *rgb, int xResolution,
 				yWeight[1] * rgb[3*i+1] + yWeight[2] * rgb[3*i+2]);
 		toneMap->Map(lum, xResolution, yResolution,
 			maxDisplayY, scale);
-		// Apple scale to pixels for tone mapping and map to $[0,1]$
+		// Apply scale to pixels for tone mapping and map to $[0,1]$
 		float displayTo01 = 683.f / maxDisplayY;
 		for (int i = 0; i < xResolution * yResolution; ++i) {
 			rgb[3*i  ] *= scale[i] * displayTo01;

@@ -24,6 +24,7 @@
 #define LUX_FILM_H
 // film.h*
 #include "lux.h"
+#include "color.h"
 #include "error.h"
 
 #include <boost/serialization/split_member.hpp>
@@ -32,13 +33,10 @@ namespace lux
 {
 
 enum ImageType {
-	IMAGE_NONE        = 0,
-	IMAGE_HDR         = 1<<0,
-	IMAGE_LDR         = 1<<1,
-	IMAGE_FRAMEBUFFER = 1<<2,
-	IMAGE_IGI         = 1<<3,
-	IMAGE_FILEOUTPUT  = IMAGE_HDR | IMAGE_IGI | IMAGE_LDR,
-	IMAGE_ALL         = IMAGE_HDR | IMAGE_IGI | IMAGE_LDR | IMAGE_FRAMEBUFFER
+	IMAGE_NONE				= 0,
+	IMAGE_FILEOUTPUT	    = 1<<1,
+	IMAGE_FRAMEBUFFER		= 1<<2,
+	IMAGE_ALL				= IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
 };
 
 // Buffer types
@@ -55,7 +53,18 @@ enum BufferOutputConfig {
 	BUF_RAWDATA       = 1<<2
 };
 
-class MultiImageFilm;
+class FlexImageFilm;
+
+	class ArrSample {
+	public:
+		void Sample() { sX = 0; sY = 0; xyz = XYZColor(0.); alpha = 0; buf_id = 0; bufferGroup = 0; }
+		float sX;
+		float sY;
+		XYZColor xyz;
+		float alpha;
+		int buf_id;
+		int bufferGroup;
+	};
 
 // Film Declarations
 class Film {
@@ -77,7 +86,7 @@ public:
 	virtual void updateFrameBuffer() = 0;
 	virtual float getldrDisplayInterval() = 0;
 
-	virtual void merge(MultiImageFilm &f) {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::merge()");}
+	virtual void merge(FlexImageFilm &f) {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::merge()");}
 	virtual void clean() {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::clean()");}
 	void SetScene(Scene *scene1) {
 		scene = scene1;

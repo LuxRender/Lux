@@ -168,6 +168,9 @@ void Scene::SignalThreads(int signal)
 // thread specific wavelengths
 extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
+		static RGBColor sumRGB = 0.f;
+		static int tot = 0;
+
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread)
 {
@@ -246,6 +249,60 @@ void RenderThread::render(RenderThread *myThread)
 				sampPos = 0;
 			*useSampPos = sampPos;
 		}
+
+
+		// Temporary colour scaling code by radiance - SHOULD NOT BE IN CVS !
+
+	/*	// RGB -> XYZ -> RGB
+		printf("\n\n\nRGB -> XYZ -> RGB --------------\n");
+		Spectrum RGB = 1.f;
+		printf("RGB: %f %f %f\n\n", RGB.c[0], RGB.c[1], RGB.c[2]);
+
+		XYZColor XYZ = RGB.ToXYZ();
+		printf("XYZ: %f %f %f\n", XYZ.c[0], XYZ.c[1], XYZ.c[2]);
+		printf("XYZ.y(): %f\n\n", XYZ.y());
+
+		RGBColor oRGB = XYZ.ToRGB();
+		printf("out RGB: %f %f %f\n", oRGB.c[0], oRGB.c[1], oRGB.c[2]);
+		printf("--------------------------------\n");
+
+		// RGB -> SWCSpectrum -> XYZ -> RGB
+		printf("\n\n\nRGB -> SWCSpect -> XYZ -> RGB --\n");
+		printf("RGB: %f %f %f\n\n", RGB.c[0], RGB.c[1], RGB.c[2]);
+
+		SWCSpectrum spect = SWCSpectrum(RGB);
+		printf("SWCSpect.y(): %f\n\n", spect.y());
+
+		XYZ = spect.ToXYZ();
+		printf("XYZ: %f %f %f\n", XYZ.c[0], XYZ.c[1], XYZ.c[2]);
+		printf("XYZ.y(): %f\n\n", XYZ.y());
+
+		oRGB = XYZ.ToRGB();
+		printf("out RGB: %f %f %f\n", oRGB.c[0], oRGB.c[1], oRGB.c[2]);
+
+		sumRGB += oRGB;
+		tot++;
+		printf("avg RGB: %f %f %f\n", sumRGB.c[0] / tot, sumRGB.c[1] / tot, sumRGB.c[2] / tot);
+
+			for(int i=0; i<8; i++)
+				printf("wl: %f, dat: %f\n", thread_wavelengths->w[i], spect.c[i] * 8);
+
+			printf("\n\n");
+
+
+		printf("--------------------------------\n"); */
+
+
+
+
+
+
+		// sleep 1 sec
+	//		boost::xtime xt;
+	//		boost::xtime_get(&xt, boost::TIME_UTC);
+	//		xt.sec += 1;
+			//boost::thread::sleep(xt);
+
 	}
 
 	delete useSampPos;
@@ -297,7 +354,7 @@ void Scene::Render() {
 	}
 
 	// Store final image
-	camera->film->WriteImage((ImageType)(IMAGE_HDR|IMAGE_FRAMEBUFFER));
+	camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 }
 Scene::~Scene() {
 	delete camera;

@@ -73,8 +73,6 @@ using std::swap;
 using std::sort;
 #include <assert.h>
 
-#include "randomgen.h"
-
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define memalign(a,b) _aligned_malloc(b, a)
@@ -106,6 +104,8 @@ extern "C" {
 #elif defined(sgi)
 #  define for if (0) ; else for
 #endif
+
+#include "randomgen.h"
 
 // Global Type Declarations
 typedef double StatsCounterType;

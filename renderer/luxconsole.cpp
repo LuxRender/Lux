@@ -61,7 +61,7 @@
 #define chdir _chdir
 #endif
 
-#include "multiimage.h"
+#include "fleximage.h"
 #include "context.h"
 
 using namespace boost::iostreams;

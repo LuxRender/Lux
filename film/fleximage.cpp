@@ -36,15 +36,15 @@ using namespace lux;
 
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
-	bool outhdr, bool outldr,
-	const string &filename1, bool premult, int wI,
-	const string &tm, float c_dY, float n_MY,
-	float reinhard_prescale, float reinhard_postscale, float reinhard_burn,
-	float bw, float br, float g, float d) :
-	Film(xres, yres), filter(filt), writeInterval(wI), filename(filename1),
-	outputType(IMAGE_NONE), premultiplyAlpha(premult), buffersInited(false),
-	toneMapper(tm), bloomWidth(bw), bloomRadius(br), gamma(g), dither(d),
-	framebuffer(NULL), imageLock(false), factor(NULL)
+	const string &filename1, bool premult, int wI, int dI,
+	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
+	bool w_untonemapped_IGI, bool w_tonemapped_TGA,
+	float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g) :
+	Film(xres, yres), filter(filt), writeInterval(wI), displayInterval(dI), filename(filename1),
+	premultiplyAlpha(premult), buffersInited(false),
+	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
+	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA),
+    gamma(g), framebuffer(NULL), imageLock(false), factor(NULL)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -53,21 +53,10 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
 	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
 
-	if (outhdr)
-		outputType = (ImageType)(outputType | IMAGE_HDR);
-	if (outldr)
-		outputType = (ImageType)(outputType | IMAGE_LDR);
-
 	// Set tonemapper params
-	if (toneMapper == "contrast") {
-		toneParams.AddFloat("displayadaptationY", &c_dY, 1);
-	} else if (toneMapper == "nonlinear") {
-		toneParams.AddFloat("maxY", &n_MY, 1);
-	} else if (toneMapper == "reinhard") {
-		toneParams.AddFloat("prescale", &reinhard_prescale, 1);
-		toneParams.AddFloat("postscale", &reinhard_postscale, 1);
-		toneParams.AddFloat("burn", &reinhard_burn, 1);
-	}
+	toneParams.AddFloat("prescale", &reinhard_prescale, 1);
+	toneParams.AddFloat("postscale", &reinhard_postscale, 1);
+	toneParams.AddFloat("burn", &reinhard_burn, 1);
 
 	// init timer
 	timer.restart();
@@ -83,6 +72,18 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 			*ftp++ = filter->Evaluate(fx, fy);
 		}
 	}
+
+	// array allocation
+	int arrsize = 2048;
+	SampleArrptr = new ArrSample[arrsize];
+	SampleArr2ptr = new ArrSample[arrsize];
+
+	curSampleArrId = 0;
+	maxSampleArrId = arrsize-1;
+
+	maxY = 0.f;
+	warmupSamples = 0;
+	warmupComplete = false;
 }
 
 void FlexImageFilm::GetSampleExtent(int *xstart, int *xend,
@@ -109,55 +110,110 @@ void FlexImageFilm::CreateBuffers()
 }
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
-	// Issue warning if unexpected radiance value returned
-//	assert(!xyz.IsNaN() && xyz.y() >= -1e-5f && !isinf(xyz.y()));
-	if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
-		std::stringstream ss;
-		ss << "Out of bound intensity in FlexImageFilm::AddSample: "
-		   << xyz.y() << ", sample discarded";
-		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
-		return;
-	}
-
-	// TODO: Find a group
-	if (bufferGroups.empty())
-	{
-		RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
-		CreateBuffers();
-	}
-
-	BufferGroup &currentGroup = bufferGroups[bufferGroup];
-	Buffer *buffer = currentGroup.getBuffer(buf_id);
-
-	// Compute sample's raster extent
-	float dImageX = sX - 0.5f;
-	float dImageY = sY - 0.5f;
-	int x0 = Ceil2Int (dImageX - filter->xWidth);
-	int x1 = Floor2Int(dImageX + filter->xWidth);
-	int y0 = Ceil2Int (dImageY - filter->yWidth);
-	int y1 = Floor2Int(dImageY + filter->yWidth);
-	x0 = max(x0, xPixelStart);
-	x1 = min(x1, xPixelStart + xPixelCount - 1);
-	y0 = max(y0, yPixelStart);
-	y1 = min(y1, yPixelStart + yPixelCount - 1);
-	if (x1 < x0 || y1 < y0) return;
-	// Loop over filter support and add sample to pixel arrays
-	// Precompute $x$ and $y$ filter table offsets
-	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-	for (int x = x0; x <= x1; ++x) {
-		float fx = fabsf((x - dImageX) *
-			filter->invXWidth * FILTER_TABLE_SIZE);
-		ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
-	}
-	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-	for (int y = y0; y <= y1; ++y) {
-		float fy = fabsf((y - dImageY) *
-			filter->invYWidth * FILTER_TABLE_SIZE);
-		ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
-	}
-
+	bool SampleArrmerge = false;
+	int arr_id;
+	// retrieve array position and increment for next AddSample()
 	{
 		boost::mutex::scoped_lock lock(addSampleMutex);
+
+		// fetch arr_id and increment
+		arr_id = curSampleArrId;
+		curSampleArrId++;
+
+		// check for end
+		if(curSampleArrId == maxSampleArrId) {
+			// swap SampleArrptrs
+			ArrSample *tmpptr = SampleArrptr; 
+			SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+			// enable merge and reset counter
+			SampleArrmerge = true;
+			curSampleArrId = 0;
+		}
+	}
+
+	// Copy to array location
+	SampleArrptr[arr_id].sX = sX;
+	SampleArrptr[arr_id].sY = sY;
+	SampleArrptr[arr_id].xyz = xyz;
+	SampleArrptr[arr_id].alpha = alpha;
+	SampleArrptr[arr_id].buf_id = buf_id;
+	SampleArrptr[arr_id].bufferGroup = bufferGroup;
+
+	if(SampleArrmerge)
+		MergeSampleArray();
+}
+
+void FlexImageFilm::MergeSampleArray() {
+
+			// TODO: Find a group
+		if (bufferGroups.empty())
+		{
+			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+			CreateBuffers();
+		}
+
+	for(int sArrId = 0; sArrId < maxSampleArrId-1; sArrId++) {
+		float sX = SampleArr2ptr[sArrId].sX;
+		float sY = SampleArr2ptr[sArrId].sY;
+		XYZColor xyz = SampleArr2ptr[sArrId].xyz;
+		float alpha = SampleArr2ptr[sArrId].alpha;
+		int buf_id = SampleArr2ptr[sArrId].buf_id;
+		int bufferGroup = SampleArr2ptr[sArrId].bufferGroup;
+
+		// Issue warning if unexpected radiance value returned
+		if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
+	//		std::stringstream ss;
+	//		ss << "Out of bound intensity in FlexImageFilm::AddSample: "
+	//		   << xyz.y() << ", sample discarded";
+	//		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+			continue;
+		}
+
+		// Reject samples higher than max y() after warmup period
+		if(warmupComplete) {
+			if(xyz.y() > maxY)
+				continue;
+		} else {
+			if(warmupSamples < 1048576) {
+				if(xyz.y() > maxY)
+					maxY = xyz.y();
+				warmupSamples++;
+			} else
+				warmupComplete = true;
+		}
+
+		BufferGroup &currentGroup = bufferGroups[bufferGroup];
+		Buffer *buffer = currentGroup.getBuffer(buf_id);
+
+		// Compute sample's raster extent
+		float dImageX = sX - 0.5f;
+		float dImageY = sY - 0.5f;
+		int x0 = Ceil2Int (dImageX - filter->xWidth);
+		int x1 = Floor2Int(dImageX + filter->xWidth);
+		int y0 = Ceil2Int (dImageY - filter->yWidth);
+		int y1 = Floor2Int(dImageY + filter->yWidth);
+		x0 = max(x0, xPixelStart);
+		x1 = min(x1, xPixelStart + xPixelCount - 1);
+		y0 = max(y0, yPixelStart);
+		y1 = min(y1, yPixelStart + yPixelCount - 1);
+		if (x1 < x0 || y1 < y0) continue;
+		// Loop over filter support and add sample to pixel arrays
+		// Precompute $x$ and $y$ filter table offsets
+	//	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
+		int ifx[32];
+		for (int x = x0; x <= x1; ++x) {
+			float fx = fabsf((x - dImageX) *
+				filter->invXWidth * FILTER_TABLE_SIZE);
+			ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
+		}
+	//	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
+		int ify[32];
+		for (int y = y0; y <= y1; ++y) {
+			float fy = fabsf((y - dImageY) *
+				filter->invYWidth * FILTER_TABLE_SIZE);
+			ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
+		}
+
 		for (int y = y0; y <= y1; ++y) {
 			for (int x = x0; x <= x1; ++x) {
 				// Evaluate filter value at $(x,y)$ pixel
@@ -168,15 +224,14 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 					xyz, alpha, filterWt);
 			}
 		}
+
 	}
+
 	// Possibly write out in-progress image
-	// File output
-	// TODO: Use only a output timer.
-	// TODO: use a real lock
-	if( outputType && !imageLock && Floor2Int(timer.elapsed()) > writeInterval)
+	if( !imageLock && Floor2Int(timer.elapsed()) > writeInterval)
 	{
 		imageLock = true;
-		WriteImage(outputType);
+		WriteImage((ImageType)(IMAGE_FILEOUTPUT));
 		timer.restart();
 		imageLock = false;
 	}
@@ -184,23 +239,54 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 
 void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string postfix)
 {
-	if (type & IMAGE_HDR)
-		WriteEXRImage(rgb, alpha, filename+postfix+".exr");
-	if ((type & IMAGE_LDR) || (type & IMAGE_FRAMEBUFFER && framebuffer))
-	{
+	if (type & IMAGE_FRAMEBUFFER && framebuffer) {
+		// Apply the imagine/tonemapping pipeline
 		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-			bloomRadius,bloomWidth,toneMapper.c_str(),
-			&toneParams,gamma,dither,255);
-		// Write tonemapped ldr TGA file
-		if (type & IMAGE_LDR)
-			WriteTGAImage(rgb, alpha, filename+postfix+".tga");
-		// Update gui film display
-		if (type & IMAGE_FRAMEBUFFER && framebuffer)
-		{
-			// Copy to framebuffer pixels
+			0.,0.,"reinhard",
+			&toneParams,gamma,0.,255);
+
+		// Copy to framebuffer pixels
 			u_int nPix = xPixelCount * yPixelCount;
 			for (u_int i=0;  i < nPix*3 ; i++)
 				framebuffer[i] = (unsigned char) rgb[i];
+
+	} else if(type & IMAGE_FILEOUTPUT) {
+		// write out untonemapped EXR
+		if(writeUtmExr)
+			WriteEXRImage(rgb, alpha, filename+postfix+"_untonemapped.exr");
+		// write out untonemapped IGI
+		if(writeUtmIgi)
+			WriteIGIImage(rgb, alpha, filename+postfix+"_untonemapped.igi"); // TODO add samples
+
+		if(writeTmExr || writeTmIgi || writeTmTga) {
+			// Apply the imagine/tonemapping pipeline
+			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
+				0.,0.,"reinhard",
+				&toneParams,gamma,0.,255);
+
+			// write out tonemapped TGA
+			if(writeTmTga)
+				WriteTGAImage(rgb, alpha, filename+postfix+".tga");
+
+			if(writeTmExr || writeTmIgi) {
+				// Map display range 0.-255. back to float range 0.-1.
+				// and reverse the gamma correction
+				// necessary for EXR/IGI formats
+				int nPix = xResolution * yResolution ;
+				for (int i = 0; i < 3*nPix; ++i) {
+					rgb[i] /= 255;
+					if (gamma != 1.f)
+						rgb[i] = powf(rgb[i], gamma);
+				}
+
+				// write out tonemapped EXR
+				if(writeTmExr)
+					WriteEXRImage(rgb, alpha, filename+postfix+".exr");
+
+				// write out tonemapped IGI
+				if(writeTmIgi)
+					WriteIGIImage(rgb, alpha, filename+postfix+".igi"); // TODO add samples
+			}
 		}
 	}
 }
@@ -222,8 +308,6 @@ void FlexImageFilm::ScaleOutput(float *rgb, float *alpha, float *scale)
 }
 void FlexImageFilm::WriteImage(ImageType type)
 {
-	boost::mutex::scoped_lock lock(addSampleMutex);
-
 	int x,y,offset;
 	int nPix = xPixelCount * yPixelCount;
 	float *rgb0 = new float[3*nPix], *alpha0 = new float[nPix];
@@ -361,16 +445,25 @@ void FlexImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filena
 		xPixelStart, yPixelStart);
 }
 
-void FlexImageFilm::clean() {
+void FlexImageFilm::WriteIGIImage(float *rgb, float *alpha, const string &filename)
+{
+	// Write IGI image
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing IGI image to file ")+filename).c_str());
+	WriteIgiImage(filename, rgb, alpha,
+		xPixelCount, yPixelCount,
+		xResolution, yResolution,
+		xPixelStart, yPixelStart);
+}
 
+void FlexImageFilm::clean() {
+	// TODO implement
 }
 
 void FlexImageFilm::merge(FlexImageFilm &f) {
-
+	// TODO implement
 }
 
 // params / creation
-
 Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 {
 	// General
@@ -389,33 +482,30 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[3] = Clamp(max(cr[2], cr[3]), 0.f, 1.f);
 	}
 
-	bool outhdr = params.FindOneBool("outhdr", true);
-	bool outldr = params.FindOneBool("outldr", false);
+	bool w_tonemapped_EXR = params.FindOneBool("write_tonemapped_exr", true);
+	bool w_untonemapped_EXR = params.FindOneBool("write_untonemapped_exr", false);
+	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
+	bool w_untonemapped_IGI = params.FindOneBool("write_untonemapped_igi", false);
+	bool w_tonemapped_TGA = params.FindOneBool("write_tonemapped_tga", false);
+
 	// output filenames
-	string filename = params.FindOneString("filename", "-");
+	string filename = params.FindOneString("filename", "luxout");
 
 	// intervals
-	int writeInterval = params.FindOneInt("writeinterval", 30);
+	int writeInterval = params.FindOneInt("writeinterval", 60);
+	int displayInterval = params.FindOneInt("displayinterval", 12);
 
-	// tonemapper
-	string toneMapper = params.FindOneString("tonemapper", "reinhard");
-	float contrast_displayAdaptationY = params.FindOneFloat("contrast_displayadaptationY", 50.0f);
-	float nonlinear_MaxY = params.FindOneFloat("nonlinear_maxY", 0.0f);
+	// Default tonemapping options (reinhard)
 	float reinhard_prescale = params.FindOneFloat("reinhard_prescale", 1.0f);
 	float reinhard_postscale = params.FindOneFloat("reinhard_postscale", 1.0f);
 	float reinhard_burn = params.FindOneFloat("reinhard_burn", 6.0f);
-
-	// Pipeline correction
-	float bloomWidth = params.FindOneFloat("bloomwidth", 0.0f);
-	float bloomRadius = params.FindOneFloat("bloomradius", 0.0f);
+	// Gamma correction
 	float gamma = params.FindOneFloat("gamma", 2.2f);
-	float dither = params.FindOneFloat("dither", 0.0f);
 
-	return new FlexImageFilm(xres, yres, filter, crop, outhdr, outldr,
-		filename, premultiplyAlpha, writeInterval, 
-		toneMapper, contrast_displayAdaptationY, nonlinear_MaxY,
-		reinhard_prescale, reinhard_postscale, reinhard_burn,
-		bloomWidth, bloomRadius, gamma, dither);
+	return new FlexImageFilm(xres, yres, filter, crop,
+		filename, premultiplyAlpha, writeInterval, displayInterval,
+		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA,
+		reinhard_prescale, reinhard_postscale, reinhard_burn, gamma);
 }
 
 
