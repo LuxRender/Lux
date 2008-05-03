@@ -191,7 +191,7 @@ namespace lux
     if(name=="sphere")
         return boost::shared_ptr<Shape>(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="trianglemesh")
-        return boost::shared_ptr<Shape>(WaldTriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
+        return boost::shared_ptr<Shape>(TriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="waldtrianglemesh")
         return boost::shared_ptr<Shape>(WaldTriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="plymesh")
