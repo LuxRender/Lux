@@ -179,7 +179,11 @@ void FlexImageFilm::MergeSampleArray() {
 			if(xyz.y() > maxY)
 				continue;
 		} else {
-			if(warmupSamples < reject_warmup_samples) {
+			if(debug_mode) {
+				maxY = INFINITY;
+				warmupComplete = true;
+			}
+			 else if(warmupSamples < reject_warmup_samples) {
 				if(xyz.y() > maxY)
 					maxY = xyz.y();
 				warmupSamples++;
