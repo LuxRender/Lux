@@ -23,7 +23,7 @@
 #include "plymesh.h"
 #include "paramset.h"
 
-#include "trianglemesh.h"
+#include "waldtrianglemesh.h"
 #include "./plymesh/rply.h"
 
 namespace lux
@@ -203,9 +203,9 @@ void
 PlyMesh::Refine(vector<boost::shared_ptr<Shape> > &refined)
 const {
 	for (int i = 0; i < ntris; ++i) {
-		boost::shared_ptr<Shape> o (new Triangle(ObjectToWorld,
+		boost::shared_ptr<Shape> o (new WaldTriangle(ObjectToWorld,
 		                               reverseOrientation,
-                                       (TriangleMesh *)this,
+                                       (WaldTriangleMesh *)this,
 									   i));
 		refined.push_back(o);
 	}

@@ -76,9 +76,9 @@ TaBRecKdTreeAccel(const vector<Primitive* > &p,
     }
 
     // Allocate working memory for kd-tree construction
-    BoundEdge *edges[3];
+    TaBRecBoundEdge *edges[3];
     for (int i = 0; i < 3; ++i)
-        edges[i] = new BoundEdge[2*vPrims.size()];
+        edges[i] = new TaBRecBoundEdge[2*vPrims.size()];
     int *prims0 = new int[vPrims.size()];
     int *prims1 = new int[(maxDepth+1) * vPrims.size()];
     // Initialize _primNums_ for kd-tree construction
@@ -105,7 +105,7 @@ TaBRecKdTreeAccel::~TaBRecKdTreeAccel() {
 void TaBRecKdTreeAccel::buildTree(int nodeNum,
         const BBox &nodeBounds,
         const vector<BBox> &allPrimBounds, int *primNums,
-        int nPrims, int depth, BoundEdge *edges[3],
+        int nPrims, int depth, TaBRecBoundEdge *edges[3],
         int *prims0, int *prims1, int badRefines) {
     BOOST_ASSERT(nodeNum == nextFreeNode); // NOBOOK
     // Get next free node from _nodes_ array
@@ -146,15 +146,15 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
             int pn = primNums[i];
             const BBox &bbox = allPrimBounds[pn];
             edges[axis][2*i] =
-                    BoundEdge(bbox.pMin[axis], pn, true);
+                    TaBRecBoundEdge(bbox.pMin[axis], pn, true);
             edges[axis][2*i+1] =
-                    BoundEdge(bbox.pMax[axis], pn, false);
+                    TaBRecBoundEdge(bbox.pMax[axis], pn, false);
         }
     sort(&edges[axis][0], &edges[axis][2*nPrims]);
     // Compute cost of all splits for _axis_ to find best
     int nBelow = 0, nAbove = nPrims;
     for (int i = 0; i < 2*nPrims; ++i) {
-        if (edges[axis][i].type == BoundEdge::END) --nAbove;
+        if (edges[axis][i].type == TaBRecBoundEdge::END) --nAbove;
         float edget = edges[axis][i].t;
         if (edget > nodeBounds.pMin[axis] &&
         edget < nodeBounds.pMax[axis]) {
@@ -180,7 +180,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
                 bestOffset = i;
             }
         }
-        if (edges[axis][i].type == BoundEdge::START) ++nBelow;
+        if (edges[axis][i].type == TaBRecBoundEdge::START) ++nBelow;
     }
     BOOST_ASSERT(nBelow == nPrims && nAbove == 0); // NOBOOK
     // Create leaf if no good splits were found
@@ -198,10 +198,10 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     // Classify primitives with respect to split
     int n0 = 0, n1 = 0;
     for (int i = 0; i < bestOffset; ++i)
-        if (edges[bestAxis][i].type == BoundEdge::START)
+        if (edges[bestAxis][i].type == TaBRecBoundEdge::START)
             prims0[n0++] = edges[bestAxis][i].primNum;
     for (int i = bestOffset+1; i < 2*nPrims; ++i)
-        if (edges[bestAxis][i].type == BoundEdge::END)
+        if (edges[bestAxis][i].type == TaBRecBoundEdge::END)
             prims1[n1++] = edges[bestAxis][i].primNum;
     // Recursively initialize children nodes
     float tsplit = edges[bestAxis][bestOffset].t;
