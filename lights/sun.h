@@ -49,6 +49,8 @@ public:
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
+	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
+	float Pdf(const Scene *scene, const Point &p) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

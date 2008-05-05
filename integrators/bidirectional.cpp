@@ -50,6 +50,53 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(1); //bsdf component for light path
 	sampleLightOffset = sample->AddxD(structure, maxLightDepth);
 }
+static int generateLightPath(const Scene *scene, BSDF *bsdf,
+	const Sample *sample, const int sampleOffset,
+	vector<BidirVertex> &vertices)
+{
+	RayDifferential ray;
+	Intersection isect;
+	int nVerts = 0;
+	while (nVerts < (int)(vertices.size())) {
+		BidirVertex &v = vertices[nVerts];
+		if (nVerts == 0) {
+			v.wi = Vector(bsdf->dgShading.nn);
+			v.bsdf = bsdf;
+			v.p = bsdf->dgShading.p;
+			v.ng = bsdf->dgShading.nn;
+		} else {
+			v.wi = -ray.d;
+			v.bsdf = isect.GetBSDF(ray);
+			v.p = isect.dg.p;
+			v.ng = isect.dg.nn;
+		}
+		v.ns = bsdf->dgShading.nn;
+		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
+		// Possibly terminate bidirectional path sampling
+		v.f = v.bsdf->Sample_f(v.wi, &v.wo, data[1], data[2], data[3],
+			 &v.bsdfWeight, BSDF_ALL, &v.flags);
+		++nVerts;
+		if (v.bsdfWeight == 0.f || v.f.Black())
+			break;
+		if (nVerts > 3) {
+			const float q = min(1.,
+				v.f.y() * (AbsDot(v.wo, v.ns) / v.bsdfWeight));
+			if (q < data[0])
+				break;
+			v.rrWeight = q;
+		}
+		// Initialize _ray_ for next segment of path
+		ray = RayDifferential(v.p, v.wo);
+		if (!scene->Intersect(ray, &isect))
+			break;
+	}
+	// Initialize additional values in _vertices_
+	for (int i = 0; i < nVerts - 1; ++i)
+		vertices[i].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
+			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
+			DistanceSquared(vertices[i].p, vertices[i + 1].p);
+	return nVerts;
+}
 SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	const Sample *sample, float *alpha) const
 {
@@ -84,15 +131,17 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	u[1] = sample->twoD[lightPosOffset][1];
 	u[2] = sample->twoD[lightDirOffset][0];
 	u[3] = sample->twoD[lightDirOffset][1];
-	SWCSpectrum Le = light->Sample_L(scene, u[0], u[1], u[2], u[3],
-		&lightRay, &lightPdf);
+/*	SWCSpectrum Le = light->Sample_L(scene, u[0], u[1], u[2], u[3],
+		&lightRay, &lightPdf);*/
+	BSDF *lightBsdf;
+	SWCSpectrum Le = light->Sample_L(scene, u[0], u[1], &lightBsdf, &lightPdf);
 	int nLight;
 	if (lightPdf == 0.f) {
 		Le = 0.f;
 		nLight = 0;
 	} else {
 		Le *= lightWeight / lightPdf;
-		nLight = generatePath(scene, lightRay, sample,
+		nLight = generateLightPath(scene, lightBsdf, sample,
 			sampleLightOffset, lightPath);
 	}
 	// Connect bidirectional path prefixes and evaluate throughput
@@ -100,13 +149,13 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	int consecDiffuse = 0;
 	for (int i = 0; i < nEye; ++i) {
 		// Handle direct lighting for bidirectional integrator
-		if (consecDiffuse < 2)
+/*		if (consecDiffuse < 0)
 			L += directWt * eyePath[i].Le;
 		if ((eyePath[i].flags & BSDF_SPECULAR) == 0)
 			++consecDiffuse;
-		else if (consecDiffuse < 2)
+		else if (consecDiffuse < 1)
 			consecDiffuse = 0;
-		if (consecDiffuse < 2) {
+		if (consecDiffuse < 0) {
 			float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
 			L += directWt *
 				UniformSampleOneLight(scene, eyePath[i].p,
@@ -115,7 +164,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		}
 		directWt *= eyePath[i].f *
 			(AbsDot(eyePath[i].wo, eyePath[i].ns) /
-			(eyePath[i].bsdfWeight * eyePath[i].rrWeight));
+			(eyePath[i].bsdfWeight * eyePath[i].rrWeight));*/
 		for (int j = 1; j <= nLight; ++j)
 			L += Le * evalPath(scene, eyePath, i + 1, lightPath, j) /
 				weightPath(eyePath, i + 1, lightPath, j);
@@ -246,7 +295,7 @@ SWCSpectrum BidirIntegrator::evalPath(const Scene *scene, vector<BidirVertex> &e
 	Vector w = Normalize(light[nLight - 1].p - eye[nEye - 1].p);
 	L *= eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, w) *
 		G(eye[nEye - 1], light[nLight - 1]) *
-		light[nLight - 1].bsdf->f(-w, light[nLight - 1].wi);
+		light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w);
 	for (int i = nLight - 2; i >= 0; --i)
 		L *= light[i].f * AbsDot(light[i].wo, light[i].ns) /
 			(light[i].bsdfWeight * light[i].rrWeight);

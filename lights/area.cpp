@@ -27,6 +27,8 @@
 #include "paramset.h"
 #include "rgbillum.h"
 #include "blackbody.h"
+#include "reflection/bxdf.h"
+#include "reflection/bxdf/lambertian.h"
 
 using namespace lux;
 
@@ -110,6 +112,22 @@ SWCSpectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 	float pdf = shape->Pdf(P, *wo);
 	if (pdf == 0.f) return SWCSpectrum(0.f);
 	return L(P, Ns, -*wo) /	pdf;
+}
+SWCSpectrum AreaLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+{
+	Normal ns;
+	Point p = shape->Sample(u1, u2, &ns);
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
+	*pdf = shape->Pdf(p);
+	return L(p, ns, Vector(ns)) * M_PI;
+}
+float AreaLight::Pdf(const Scene *scene, const Point &p) const
+{
+	return shape->Pdf(p);
 }
 
 void AreaLight::SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const

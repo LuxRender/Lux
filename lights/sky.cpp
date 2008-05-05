@@ -25,10 +25,29 @@
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
+#include "reflection/bxdf.h"
 
 #include "data/skychroma_spect.h"
 
 using namespace lux;
+
+class SkyBxDF : public BxDF
+{
+public:
+	SkyBxDF(const SkyLight &sky, const Transform &WL) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL) {}
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const
+	{
+		Vector wh = Normalize(WorldToLight(wi));
+		const float phi = SphericalPhi(wh);
+		const float theta = SphericalTheta(wh);
+		SWCSpectrum L;
+		skyLight.GetSkySpectralRadiance(theta, phi, &L);
+		return L;
+	}
+private:
+	const SkyLight &skyLight;
+	const Transform &WorldToLight;
+};
 
 // SkyLight Method Definitions
 SkyLight::~SkyLight() {
@@ -205,6 +224,30 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 		lux::random::floatValue(), wi, &pdf, visibility);
 	if (pdf == 0.f) return Spectrum(0.f);
 	return L / pdf;
+}
+SWCSpectrum SkyLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+{
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	worldRadius *= 1.01f;
+	Point p = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
+	Normal ns = Normal(Normalize(Point(0, 0, 0) - p));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight));
+	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	return SWCSpectrum(skyScale);
+}
+float SkyLight::Pdf(const Scene *scene, const Point &p) const
+{
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	worldRadius *= 1.01f;
+	return 1.f / (4.f * M_PI * worldRadius * worldRadius);
 }
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {

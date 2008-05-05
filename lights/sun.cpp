@@ -27,10 +27,33 @@
 #include "irregular.h"
 #include "mc.h"
 #include "paramset.h"
+#include "reflection/bxdf.h"
 
 #include "data/sun_spect.h"
 
 using namespace lux;
+
+class SunBxDF : public BxDF
+{
+public:
+	SunBxDF(float cosMax, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosThetaMax(cosMax), worldRadius(radius) {}
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return wi.z < cosThetaMax ? 0.f : 1.f;}
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const
+	{
+		*wi = UniformSampleCone(u1, u2, cosThetaMax, Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1));
+		*pdf = UniformConePdf(cosThetaMax);
+		return 1.f;
+	}
+	float Pdf(const Vector &wi, const Vector &wo) const
+	{
+		if (wo.z < cosThetaMax)
+			return 0.;
+		else
+			return UniformConePdf(cosThetaMax);//1.f / (M_PI * worldRadius * worldRadius * (1.f - cosThetaMax * cosThetaMax));
+	}
+private:
+	float cosThetaMax, worldRadius;
+};
 
 // SunLight Method Definitions
 SunLight::SunLight(const Transform &light2world,
@@ -165,6 +188,28 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene,											// TODO - radiance 
 	ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
 	*pdf = UniformConePdf(cosThetaMax) / (M_PI * worldRadius * worldRadius);
 	return LSPD;
+}
+SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+{
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	float d1, d2;
+	ConcentricSampleDisk(u1, u2, &d1, &d2);
+	Point p = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
+	Normal ns(-sundir);
+	DifferentialGeometry dg(p, ns, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
+	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	return LSPD;
+}
+float SunLight::Pdf(const Scene *scene, const Point &p) const
+{
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	return 1.f / (M_PI * worldRadius * worldRadius);
 }
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
