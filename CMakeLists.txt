@@ -269,6 +269,7 @@ ADD_DEFINITIONS(-O2 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - my settings
 #ADD_DEFINITIONS(-O3 -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 
 # Dade - Intel CC settings (remember to uncomment the line at the end of file too)
 #  rm -rf CMakeCache.txt CMakeFiles
@@ -370,11 +371,11 @@ SET(lux_lib_src
 				core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
-        shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/trianglemesh.cpp shapes/waldtrianglemesh.cpp
+        shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/barytrianglemesh.cpp shapes/waldtrianglemesh.cpp
         shapes/plymesh/rply.c shapes/lenscomponent.cpp
         samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
         samplers/random.cpp samplers/halton.cpp
-        accelerators/grid.cpp accelerators/kdtree.cpp accelerators/safekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
+        accelerators/grid.cpp accelerators/unsafekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp
         film/fleximage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
