@@ -93,6 +93,8 @@ double Scene::Statistics(const string &statName) {
 		return s_Timer.Time();
 	else if(statName=="samplesSec")
 		return Statistics_SamplesPSec(); 
+    else if(statName=="samplesTotSec")
+		return Statistics_SamplesPTotSec(); 
 	else if(statName=="samplesPx")
 		return Statistics_SamplesPPx(); 
 	else if(statName=="efficiency")
@@ -144,6 +146,15 @@ double Scene::Statistics_SamplesPSec()
 
 	// return current samples / sec total
 	return dif_samples / elapsed;
+}
+
+double Scene::Statistics_SamplesPTotSec()
+{
+	double samples = GetNumberOfSamples();
+	double time = s_Timer.Time();
+
+	// return current samples / total elapsed secs
+	return samples / time;
 }
 
 double Scene::Statistics_Efficiency()

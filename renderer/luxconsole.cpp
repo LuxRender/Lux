@@ -95,6 +95,7 @@ void infoThread() {
         std::stringstream ss;
         ss << '[' << threads << " threads] " << td << " "
                 << (int) luxStatistics("samplesSec") << " samples/sec " << " "
+                << (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
                 << (float) luxStatistics("samplesPx") << " samples/pix";
         luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
     }
@@ -367,7 +368,8 @@ void startServer(int listenPort = 18018) {
                         boost::thread j(&infoThread);
 
                         //add rendering threads
-                        for(int i = 1; i < threads; i++)
+                        int threadsToAdd = threads;
+                        while (--threadsToAdd)
                             Context::luxAddThread();
                     }
                         break;
@@ -533,8 +535,9 @@ int main(int ac, char *av[]) {
                 }
 
                 //add rendering threads
-                for(int i = 1; i < threads; i++)
-                    luxAddThread();
+                int threadsToAdd = threads;
+                while (--threadsToAdd)
+                    Context::luxAddThread();
 
                 //launch info printing thread
                 boost::thread j(&infoThread);

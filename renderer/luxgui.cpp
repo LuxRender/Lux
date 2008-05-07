@@ -57,6 +57,7 @@
 using namespace lux;
 namespace po = boost::program_options;
 static int threads;
+static int serverInterval;
 bool parseError;
 void AddThread();
 
@@ -77,6 +78,20 @@ Fl_Menu_Item menu_threads[] = {
 	{ "- Remove Thread", 0, (Fl_Callback *) removethread_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 },
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
+
+void networkFilmUpdateThread() {
+    boost::xtime xt;
+    boost::xtime_get(&xt, boost::TIME_UTC);
+    xt.sec += serverInterval;
+
+    while (true) {
+        boost::thread::sleep(xt);
+        boost::xtime_get(&xt, boost::TIME_UTC);
+        xt.sec += serverInterval;
+
+        luxUpdateFilmFromNetwork();
+    }
+}
 
 void exit_cb(Fl_Widget *, void *) {
 	if (fb_update_thread)
@@ -692,6 +707,7 @@ void bindFrameBuffer() {
 
 void update_Statistics(void *) {
 	int samplessec = Floor2Int(luxStatistics("samplesSec"));
+    int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
 	int secelapsed = Floor2Int(luxStatistics("secElapsed"));
 	double samplespx = luxStatistics("samplesPx");
 	int efficiency = Floor2Int(luxStatistics("efficiency"));
@@ -706,7 +722,8 @@ void update_Statistics(void *) {
 	t[0] = ((mins / 10) % 10) + '0';
 
 	static char istxt[256];
-	sprintf(istxt, "%i:%s - %i S/s - %.2f S/px - %i%% eff", hours, t, samplessec,
+	sprintf(istxt, "%i:%s - %i S/s - %i TotS/s - %.2f S/px - %i%% eff", hours, t, 
+            samplessec, samplesTotSec,
 			samplespx, efficiency);
 	static const char * txts = istxt;
 	info_statistics->label(txts);
@@ -764,6 +781,7 @@ void message_window(const char *label, const char *msg){
 
 // main program
 int main(int ac, char *av[]) {
+    bool useServer = false;
 	GuiSceneReady = false;
 	framebufferUpdate = 10.0f;
 	strcpy(gui_current_scenefile, "");
@@ -789,8 +807,10 @@ int main(int ac, char *av[]) {
 		// config file
 		po::options_description config ("Configuration");
 		config.add_options ()
-			("threads,t", po::value < int >(),
-				"Specify the number of threads that Lux will run in parallel.");
+			("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
+            ("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
+            ("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
+            ;
 
 		// Hidden options, will be allowed both on command line and
 		// in config file, but will not be shown to the user.
@@ -850,6 +870,32 @@ int main(int ac, char *av[]) {
 		{
 			threads = 1;;
 		}
+
+        if (vm.count("useserver")) {
+            std::stringstream ss;
+
+            std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
+
+            for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++) {
+                ss.str("");
+                ss << "Connecting to server '" << (*i) << "'";
+                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+                //TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull		
+                luxAddServer((*i).c_str());
+            }
+
+            useServer = true;
+            
+            ss.str("");
+            ss << "Server requests interval:  " << serverInterval << " secs";
+            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        }
+
+        if (vm.count("serverinterval"))
+            serverInterval = vm["serverinterval"].as<int>();
+        else
+            serverInterval = 3*60;
 
 		if (vm.count ("noopengl"))
 		{
@@ -920,14 +966,16 @@ int main(int ac, char *av[]) {
 			XSetWMHints(fl_display, fl_xid(window), hints);
 			XFree(hints);
 		#endif
-
-		
 		
 		if(gui_current_scenefile[0]!=0) //if we have a scene file
 			RenderScenefile();
 
 		// set timeouts
 		Fl::add_timeout(0.25, check_SceneReady);
+
+        // Dade - start the thread used to collect network rendering results 
+        if (useServer)
+            boost::thread networkRenderingThread(&networkFilmUpdateThread);
 
 		// run gui
 		Fl::run ();

@@ -94,6 +94,7 @@ public:
 	void RemoveThread();
 	double GetNumberOfSamples();
 	double Statistics_SamplesPSec();
+    double Statistics_SamplesPTotSec();
 	double Statistics_Efficiency();
 	double Statistics_SamplesPPx();
 	//framebuffer access
