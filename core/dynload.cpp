@@ -992,16 +992,10 @@ static string SearchPath(const string &searchpath,
     }*/
     
 	// note - radiance - MultiImageFilm is removed, leaving this for backward scenefile compatibility
-    if(name=="multiimage")
-    {
-		Film *ret=FlexImageFilm::CreateFilm(paramSet, filter);
-        paramSet.ReportUnused();
-        return ret;
-    }
 
-    if(name=="fleximage")
+    if((name == "fleximage") || (name == "multiimage"))
     {
-		Film *ret=FlexImageFilm::CreateFilm(paramSet, filter);
+		Film *ret = FlexImageFilm::CreateFilm(paramSet, filter);
         paramSet.ReportUnused();
         return ret;
     }

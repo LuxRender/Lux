@@ -188,9 +188,7 @@ public:
 				*a++ = (*this)(u, v);
 		}
 	}
-	
-	
-	
+
 private:
 	// BlockedArray Private Data
 	T *data;

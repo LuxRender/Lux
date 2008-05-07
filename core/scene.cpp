@@ -119,13 +119,17 @@ double Scene::GetNumberOfSamples()
 	double samples = 0.;
 	for(unsigned int i=0;i<renderThreads.size();i++)
 		samples +=renderThreads[i]->stat_Samples;
+    
+    // Dade - add the samples received from network
+    samples += numberOfSamplesFromNetwork;
+
 	return samples;
 }
 double Scene::Statistics_SamplesPPx()
 {
 	// divide by total pixels
-	int xstart,xend,ystart,yend;
-	camera->film->GetSampleExtent(&xstart,&xend,&ystart,&yend);
+	int xstart, xend, ystart, yend;
+	camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	return GetNumberOfSamples() / (double) ((xend-xstart)*(yend-ystart));
 }
 
@@ -344,6 +348,8 @@ void Scene::Render() {
 	// initial thread signal is paused
 	CurThreadSignal = RenderThread::SIG_RUN;
 	
+    // Dade - this code needs a fix, it must be removed in order to not create
+    // 1 more thread than required
 	//add a thread
 	CreateRenderThread();
 	

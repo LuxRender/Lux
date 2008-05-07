@@ -32,6 +32,23 @@
 #include "transport.h"	// for SurfaceIntegrator::IsFluxBased()
 #include "filter.h"
 
+#include <fstream>
+#include <boost/thread/xtime.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
+using namespace boost::iostreams;
 using namespace lux;
 
 // FlexImageFilm Method Definitions
@@ -41,10 +58,10 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	bool w_untonemapped_IGI, bool w_tonemapped_TGA,
 	float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g, int reject_warmup, bool debugmode ) :
 	Film(xres, yres), filter(filt), writeInterval(wI), displayInterval(dI), filename(filename1),
-	premultiplyAlpha(premult), buffersInited(false),
+	premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA),
-    gamma(g), framebuffer(NULL), imageLock(false), factor(NULL), debug_mode(debugmode)
+    framebuffer(NULL), imageLock(false), debug_mode(debugmode), factor(NULL)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -111,6 +128,7 @@ void FlexImageFilm::CreateBuffers()
 	bufferGroups.push_back(BufferGroup());
 	bufferGroups.back().CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
 }
+
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
 	bool SampleArrmerge = false;
@@ -148,12 +166,12 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 
 void FlexImageFilm::MergeSampleArray() {
 
-			// TODO: Find a group
-		if (bufferGroups.empty())
-		{
-			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
-			CreateBuffers();
-		}
+    // TODO: Find a group
+    if (bufferGroups.empty())
+    {
+        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+        CreateBuffers();
+    }
 
 	for(int sArrId = 0; sArrId < maxSampleArrId-1; sArrId++) {
 		float sX = SampleArr2ptr[sArrId].sX;
@@ -464,12 +482,120 @@ void FlexImageFilm::WriteIGIImage(float *rgb, float *alpha, const string &filena
 		xPixelStart, yPixelStart);
 }
 
-void FlexImageFilm::clean() {
-	// TODO implement
+void FlexImageFilm::TransmitSampleBuffer(std::basic_ostream<char> &stream,
+        int buf_id, int bufferGroup) {
+    BlockedArray<Pixel> *pixelBuf;
+    float numberOfSamples;
+    {
+        // Dade - collect data to transmit
+        boost::mutex::scoped_lock lock(addSampleMutex);
+
+        BufferGroup &currentGroup = bufferGroups[buf_id];
+		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
+
+        pixelBuf = new BlockedArray<Pixel>(*buffer->pixels);
+        numberOfSamples = currentGroup.numberOfSamples;
+
+        // Dede - reset the rendering buffer
+        buffer->Clear();
+        currentGroup.numberOfSamples = 0;
+    }
+
+    std::stringstream ss;
+    ss << "Transfering " << (pixelBuf->uSize() * pixelBuf->uSize()) << 
+            " pixels (" <<numberOfSamples << " samples)";
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+    // Dade - TODO: check stream i/o for errors and support for little/big endian
+    
+    std::stringstream os;
+    os.write((char *)&numberOfSamples, sizeof(float));
+
+    for (int y = 0; y < pixelBuf->vSize(); ++y) {
+        for (int x = 0; x < pixelBuf->uSize(); ++x) {
+            Pixel &pixel = (*pixelBuf)(x, y);
+            os.write((char *)&pixel.L.c[0], sizeof(float));
+            os.write((char *)&pixel.L.c[1], sizeof(float));
+            os.write((char *)&pixel.L.c[2], sizeof(float));
+            os.write((char *)&pixel.alpha, sizeof(float));
+            os.write((char *)&pixel.weightSum, sizeof(float));
+        }
+    }
+
+    filtering_streambuf<input> in;
+    in.push(gzip_compressor(9));
+    in.push(os);
+    std::streamsize size = boost::iostreams::copy(in, stream);
+
+    ss.str("");
+    ss << "Pixels transmition done (" << (size / 1024.0f) << " Kbytes sent)";
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+    delete pixelBuf;
 }
 
-void FlexImageFilm::merge(FlexImageFilm &f) {
-	// TODO implement
+void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
+        int buf_id, int bufferGroup) {
+    BlockedArray<Pixel> *pixelBuf;
+    {
+        // Dade - prepare buffer to receive data
+        boost::mutex::scoped_lock lock(addSampleMutex);
+
+        BufferGroup &currentGroup = bufferGroups[buf_id];
+		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
+
+        pixelBuf = new BlockedArray<Pixel>(buffer->xPixelCount, buffer->yPixelCount);
+    }
+
+    filtering_stream<input> in;
+    in.push(gzip_decompressor());
+    in.push(stream);
+
+    // Dade - TODO: check stream i/o for errors and support for little/big endian
+
+    float numberOfSamples;
+    in.read((char *)&numberOfSamples, sizeof(float));
+
+    std::stringstream ss;
+    ss << "Receiving " <<  numberOfSamples << " samples";
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+    for (int y = 0; y < pixelBuf->vSize(); ++y) {
+        for (int x = 0; x < pixelBuf->uSize(); ++x) {
+            Pixel &pixel = (*pixelBuf)(x, y);
+            in.read((char *)&pixel.L.c[0], sizeof(float));
+            in.read((char *)&pixel.L.c[1], sizeof(float));
+            in.read((char *)&pixel.L.c[2], sizeof(float));
+            in.read((char *)&pixel.alpha, sizeof(float));
+            in.read((char *)&pixel.weightSum, sizeof(float));
+        }
+    }
+
+    {
+        // Dade - add all received pixels
+        boost::mutex::scoped_lock lock(addSampleMutex);
+
+        BufferGroup &currentGroup = bufferGroups[buf_id];
+		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
+
+        for (int y = 0; y < buffer->yPixelCount; ++y) {
+            for (int x = 0; x < buffer->xPixelCount; ++x) {
+                Pixel &pixel = (*pixelBuf)(x, y);
+                Pixel &pixelResult = (*buffer->pixels)(x, y);
+
+                pixelResult.L.c[0] += pixel.L.c[0];
+                pixelResult.L.c[1] += pixel.L.c[1];
+                pixelResult.L.c[2] += pixel.L.c[2];
+                pixelResult.alpha += pixel.alpha;
+                pixelResult.weightSum += pixel.weightSum;
+            }
+        }
+
+        currentGroup.numberOfSamples += numberOfSamples;
+    }   
+    
+    scene->numberOfSamplesFromNetwork += numberOfSamples;
+    delete pixelBuf;
 }
 
 // params / creation
@@ -523,6 +649,3 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA,
 		reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
 }
-
-
-

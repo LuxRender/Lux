@@ -30,14 +30,6 @@
 namespace lux
 {
 
-/*
-template<class Archive>
-void Film::serialize(Archive & ar, const unsigned int version)
-{
-		ar & xResolution;
-		ar & yResolution;
-}*/
-
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(float *rgb, int xResolution,
 		int yResolution, float *yWeight,

@@ -110,8 +110,7 @@ public:
 	void SignalThreads(int signal);
 	int CreateRenderThread();
 	void RemoveRenderThread();
-	
-	
+
 	// Scene Data
 	Primitive *aggregate;
 	vector<Light *> lights;
@@ -122,6 +121,9 @@ public:
 	Sampler *sampler;
 	BBox bound;
 	
+    // Dade - number of samples received from network
+    double numberOfSamplesFromNetwork;
+
 	private:
 		std::vector<RenderThread*> renderThreads;
 		//boost::thread_group threadGroup;

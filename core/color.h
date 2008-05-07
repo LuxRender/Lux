@@ -31,7 +31,9 @@ namespace lux
 
 // Color Declarations
 class  Color {
+    // Dade - serialization here is required by network rendering
 	friend class boost::serialization::access;
+
 public:
 	// Color Public Methods
 	Color() {};
@@ -217,6 +219,9 @@ public:
 
 // XYZColor Declarations
 class  XYZColor : public Color {
+    // Dade - serialization here is required by network rendering
+    friend class boost::serialization::access;
+
 public:
 	// XYZColor Public Methods
 	XYZColor(float v = 0.f) {

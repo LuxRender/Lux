@@ -45,9 +45,11 @@ public:
 	void send(const std::string &command, float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz);
 	void send(const std::string &command, float tr[16]);
 	void send(const std::string &command, const string &name, const string &type, const string &texname, const ParamSet &params);
-	
-	void flush(); //!< Sends immediately all commands in the buffer to the servers
-	void updateFilm(FlexImageFilm *film); //!<Gets the films from the network, and merge them to the film given in parameter
+
+    //!< Sends immediately all commands in the buffer to the servers
+	void flush();
+    //!<Gets the films from the network, and merge them to the film given in parameter
+	void updateFilm(Scene *scene, FlexImageFilm *film); 
 
 private:
 	std::vector<std::string> serverList;

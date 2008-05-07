@@ -610,8 +610,6 @@ Scene *Context::RenderOptions::MakeScene() const {
 	return ret;
 }
 
-
-
 //user interactive thread functions
 void Context::start() {
 	luxCurrentScene->Start();
@@ -643,20 +641,6 @@ unsigned char* Context::framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
 }
 
-/*
-int Context::displayInterval() {
-	return luxCurrentScene->DisplayInterval();
-}
-
-
-int Context::filmXres() {
-	return luxCurrentScene->FilmXres();
-}
-
-int Context::filmYres() {
-	return luxCurrentScene->FilmYres();
-}*/
-
 double Context::statistics(const string &statName) {
 	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL);
 	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);
@@ -664,41 +648,12 @@ double Context::statistics(const string &statName) {
 }
 
 void Context::getFilm(std::basic_ostream<char> &stream) {
-	std::stringstream s;
-	boost::archive::text_oarchive oa(s);
-
 	//jromang TODO : fix this hack !
-	//ob<<(*const_cast<const FlexImageFilm *>((FlexImageFilm *)(luxCurrentScene->camera->film)));
-	const FlexImageFilm m(*((FlexImageFilm *)(luxCurrentScene->camera->film)));
-	luxCurrentScene->camera->film->clean();
-	oa<<m;
-	
-	filtering_streambuf<input> in;
-	in.push(basic_zlib_compressor<>(9));
-	in.push(s);
-	boost::iostreams::copy(in, stream);
+	FlexImageFilm *fif = (FlexImageFilm *)luxCurrentScene->camera->film;
+
+    fif->TransmitSampleBuffer(stream);
 }
 
 void Context::updateFilmFromNetwork() {
-	renderFarm.updateFilm((FlexImageFilm *)(luxCurrentScene->camera->film));
-	/*
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			std::cout << "getting film from "<<*server<<std::endl;
-			tcp::iostream stream((*server).c_str(), "18018");
-			std::cout << "connected"<<std::endl;
-			stream<<"luxGetFilm"<<std::endl;
-			boost::archive::text_iarchive ia(stream);
-			FlexImageFilm m(320,200);
-			ia>>m;
-			std::cout<<"ok, i got the film! merging...";
-			((FlexImageFilm *)(luxCurrentScene->camera->film))->merge(m);
-			std::cout<<"merged!"<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}*/
+	renderFarm.updateFilm(luxCurrentScene, (FlexImageFilm *)(luxCurrentScene->camera->film));
 }
-
-

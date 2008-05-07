@@ -31,7 +31,6 @@
 #include "sampling.h"
 #include <boost/timer.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/serialization/base_object.hpp>
 
 namespace lux {
 
@@ -43,11 +42,22 @@ public:
 	BufferOutputConfig output;
 	string postfix;
 };
+
 struct Pixel {
+    // Dade - serialization here is required by network rendering
+	friend class boost::serialization::access;
+
+    template<class Archive> void serialize(Archive & ar, const unsigned int version) {
+        ar & L;
+        ar & alpha;
+        ar & weightSum;
+    }
+
 	Pixel(): L(0.f), alpha(0.f), weightSum(0.f) { }
 	XYZColor L;
 	float alpha, weightSum;
 };
+
 class Buffer {
 public:
 	Buffer(int x, int y) {
@@ -55,16 +65,31 @@ public:
 		yPixelCount = y;
 		pixels = new BlockedArray<Pixel>(x, y);
 	}
-	virtual ~Buffer() {
+
+    virtual ~Buffer() {
 		delete pixels; 
 	}
+
 	void Add(int x, int y, XYZColor L, float alpha, float wt) {
 		Pixel &pixel = (*pixels)(x, y);
 		pixel.L.AddWeighted(wt, L);
 		pixel.alpha += alpha * wt;
 		pixel.weightSum += wt;
 	}
-	void Clean() { }
+
+    void Clear() {
+        for (int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+				Pixel &pixel = (*pixels)(x, y);
+				pixel.L.c[0] = 0.0f;
+                pixel.L.c[1] = 0.0f;
+                pixel.L.c[2] = 0.0f;
+				pixel.alpha = 0.0f;
+                pixel.weightSum = 0.0f;
+			}
+		}
+    }
+
 	virtual void GetData(float *rgb, float *alpha) = 0;
 	bool isFramebuffer;
 	int xPixelCount, yPixelCount;
@@ -184,7 +209,6 @@ public:
 
 // FlexImageFilm Declarations
 class FlexImageFilm : public Film {
-	// TODO add serialization
 public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
@@ -201,12 +225,8 @@ public:
 		delete[] framebuffer;
 		delete[] factor;
 	}
-	//Copy constructor
-	FlexImageFilm(const FlexImageFilm &m) : Film(m.xResolution,m.yResolution)
-	{
-		// TODO write copy constructor for network rendering
-	}
-	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
+
+    int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
@@ -227,12 +247,16 @@ public:
 	// GUI display methods
 	void updateFrameBuffer();
 	unsigned char* getFrameBuffer();
-	void clean();
-	void merge(FlexImageFilm &f);
 	void createFrameBuffer();
 	float getldrDisplayInterval() {
 		return displayInterval;
 	}
+
+    // Dade - method useful for transmitting the samples to a client
+    void TransmitSampleBuffer(std::basic_ostream<char> &stream,
+            int buf_id = 0, int bufferGroup = 0);
+    void UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
+            int buf_id = 0, int bufferGroup = 0);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 

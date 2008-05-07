@@ -29,106 +29,112 @@
 
 #include <boost/serialization/split_member.hpp>
 
-namespace lux
-{
+namespace lux {
 
 enum ImageType {
-	IMAGE_NONE				= 0,
-	IMAGE_FILEOUTPUT	    = 1<<1,
-	IMAGE_FRAMEBUFFER		= 1<<2,
-	IMAGE_ALL				= IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
+    IMAGE_NONE = 0,
+    IMAGE_FILEOUTPUT = 1 << 1,
+    IMAGE_FRAMEBUFFER = 1 << 2,
+    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
 };
 
 // Buffer types
-enum BufferType{
-	BUF_TYPE_PER_PIXEL = 0,	// Per pixel normalized
-	BUF_TYPE_PER_SCREEN,	// Per screen normalized
-	BUF_TYPE_RAW,		// 
-	NUM_OF_BUFFER_TYPES
+
+enum BufferType {
+    BUF_TYPE_PER_PIXEL = 0, // Per pixel normalized
+    BUF_TYPE_PER_SCREEN, // Per screen normalized
+    BUF_TYPE_RAW, // 
+    NUM_OF_BUFFER_TYPES
 };
 
 enum BufferOutputConfig {
-	BUF_FRAMEBUFFER   = 1<<0,
-	BUF_STANDALONE    = 1<<1,
-	BUF_RAWDATA       = 1<<2
+    BUF_FRAMEBUFFER = 1 << 0,
+    BUF_STANDALONE = 1 << 1,
+    BUF_RAWDATA = 1 << 2
 };
 
 class FlexImageFilm;
 
-	class ArrSample {
-	public:
-		void Sample() { sX = 0; sY = 0; xyz = XYZColor(0.); alpha = 0; buf_id = 0; bufferGroup = 0; }
-		float sX;
-		float sY;
-		XYZColor xyz;
-		float alpha;
-		int buf_id;
-		int bufferGroup;
-	};
+class ArrSample {
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        ar & sX;
+        ar & sY;
+        ar & xyz;
+        ar & alpha;
+
+        // Dade - I avoid to transmit this information in order to save bandwidth
+        //ar & buf_id;
+        //ar & bufferGroup;
+    }
+
+public:
+    void Sample() {
+        sX = 0;
+        sY = 0;
+        xyz = XYZColor(0.);
+        alpha = 0;
+        buf_id = 0;
+        bufferGroup = 0;
+    }
+
+    float sX;
+    float sY;
+    XYZColor xyz;
+    float alpha;
+    int buf_id;
+    int bufferGroup;
+};
 
 // Film Declarations
-class Film {
-	friend class boost::serialization::access;
-public:
-	// Film Interface
-	Film(int xres, int yres) :
-		xResolution(xres), yResolution(yres) { }
-	virtual ~Film() { }
-	virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buffer = 0, int bufferGroup = 0) = 0;
-	virtual void AddSampleCount(float count, int bufferGroup = 0) { }
-	virtual void WriteImage(ImageType type) = 0;
-	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
-	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) {
-		return 0;
-	}
-	virtual void CreateBuffers() { }
-	virtual unsigned char* getFrameBuffer() = 0;
-	virtual void updateFrameBuffer() = 0;
-	virtual float getldrDisplayInterval() = 0;
 
-	virtual void merge(FlexImageFilm &f) {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::merge()");}
-	virtual void clean() {luxError(LUX_BUG,LUX_ERROR,"Invalid call to Film::clean()");}
-	void SetScene(Scene *scene1) {
-		scene = scene1;
-	}
-	// Film Public Data
-	int xResolution, yResolution;
-	float* flux2radiance;
+class Film {
+public:
+    // Film Interface
+
+    Film(int xres, int yres) :
+    xResolution(xres), yResolution(yres) {
+    }
+
+    virtual ~Film() {
+    }
+    virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buffer = 0, int bufferGroup = 0) = 0;
+
+    virtual void AddSampleCount(float count, int bufferGroup = 0) {
+    }
+    virtual void WriteImage(ImageType type) = 0;
+    virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
+
+    virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) {
+        return 0;
+    }
+
+    virtual void CreateBuffers() {
+    }
+    virtual unsigned char* getFrameBuffer() = 0;
+    virtual void updateFrameBuffer() = 0;
+    virtual float getldrDisplayInterval() = 0;
+
+    void SetScene(Scene *scene1) {
+        scene = scene1;
+    }
+
+    // Film Public Data
+    int xResolution, yResolution;
+    float* flux2radiance;
 
 protected:
-	Scene *scene;
-private:
-
-	//template<class Archive>
-	//void serialize(Archive & ar, const unsigned int version)
-	/*void serialize(std::string & ar, const unsigned int version)
-	 {
-	 //ar & xResolution;
-	 //ar & yResolution;
-	 }*/
-
-	virtual void save(boost::archive::text_oarchive & ar, const unsigned int version) const {
-		ar & xResolution;
-		ar & yResolution;
-	}
-
-	virtual void load(boost::archive::text_iarchive & ar, const unsigned int version)
-	{
-		ar & xResolution;
-		ar & yResolution;
-	}
-	BOOST_SERIALIZATION_SPLIT_MEMBER()
-	
-	//template<class Archive>
-	//	virtual void serialize(Archive & ar, const unsigned int version)=0;
-
+    Scene *scene;
 };
+
 // Image Pipeline Declarations
 extern void ApplyImagingPipeline(float *rgb, int xResolution, int yResolution,
-		float *yWeight = NULL, float bloomRadius = .2f,
-		float bloomWeight = 0.f, const char *tonemap = NULL,
-		const ParamSet *toneMapParams = NULL, float gamma = 2.2,
-		float dither = 0.5f, int maxDisplayValue = 255);
+        float *yWeight = NULL, float bloomRadius = .2f,
+        float bloomWeight = 0.f, const char *tonemap = NULL,
+        const ParamSet *toneMapParams = NULL, float gamma = 2.2,
+        float dither = 0.5f, int maxDisplayValue = 255);
 
 }//namespace lux;
 

@@ -381,8 +381,7 @@ SET(lux_lib_src
         samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
         samplers/random.cpp samplers/halton.cpp
         accelerators/grid.cpp accelerators/unsafekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
-        cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp
-        film/fleximage.cpp
+        cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp film/fleximage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/directlighting.cpp integrators/emission.cpp
         integrators/path.cpp integrators/path2.cpp integrators/single.cpp
