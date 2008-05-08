@@ -295,8 +295,9 @@ void Context::material(const string &name, const ParamSet &params) {
 }
 
 void Context::makenamedmaterial(const string &name, const ParamSet &params) {
-	VERIFY_WORLD("MakeNamedMaterial")
+	VERIFY_WORLD("luxMakeNamedMaterial")
 	;
+    renderFarm.send("luxMakeNamedMaterial", name, params);
 	NamedMaterial nm;
 	nm.material = name;
 	nm.materialParams = params;
@@ -304,8 +305,9 @@ void Context::makenamedmaterial(const string &name, const ParamSet &params) {
 }
 
 void Context::namedmaterial(const string &name, const ParamSet &params) {
-	VERIFY_WORLD("NamedMaterial")
+	VERIFY_WORLD("luxNamedMaterial")
 	;
+    renderFarm.send("luxNamedMaterial", name, params);
 	bool found = false;
 	for(unsigned int i=0; i<namedmaterials.size(); i++)
 		if(namedmaterials[i].material == name) {
