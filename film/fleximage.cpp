@@ -482,6 +482,54 @@ void FlexImageFilm::WriteIGIImage(float *rgb, float *alpha, const string &filena
 		xPixelStart, yPixelStart);
 }
 
+// Dade - used to check and swap bytes in the network rendering code
+
+bool IsLittleEndian() {
+    union ShortBytes {
+        short shortValue;
+        unsigned char bytes[2];
+    };
+
+    ShortBytes shortTest;
+    shortTest.shortValue = 1;
+
+    return (shortTest.bytes[0] == 1);
+}
+
+void writeLittleEndianFloat(bool isLittleEndian, std::stringstream &os, float value) {
+    if(isLittleEndian)
+        os.write((char *)&value, sizeof(float));
+    else {
+        union FloatBytes {
+            float floatValue;
+            unsigned char bytes[4];
+        };
+
+        FloatBytes f;
+        f.floatValue = value;
+
+        for(unsigned int i = 0; i < sizeof(float); i++)
+            os.write((char *)&f.bytes[sizeof(float) - i -1], 1);
+    }
+}
+
+void readLittleEndianFloat(bool isLittleEndian, filtering_stream<input> &in, float *value) {
+    if(isLittleEndian)
+        in.read((char *)value, sizeof(float));
+    else {
+        union FloatBytes {
+            float floatValue;
+            unsigned char bytes[4];
+        };
+
+        FloatBytes f;
+        
+        for(unsigned int i = 0; i < sizeof(float); i++)
+            in.read((char *)&f.bytes[sizeof(float) - i -1], 1);
+
+        (*value) = f.floatValue;
+    }
+}
 void FlexImageFilm::TransmitSampleBuffer(std::basic_ostream<char> &stream,
         int buf_id, int bufferGroup) {
     BlockedArray<Pixel> *pixelBuf;
@@ -501,24 +549,27 @@ void FlexImageFilm::TransmitSampleBuffer(std::basic_ostream<char> &stream,
         currentGroup.numberOfSamples = 0;
     }
 
+    bool isLittleEndian = IsLittleEndian();
+
     std::stringstream ss;
     ss << "Transfering " << (pixelBuf->uSize() * pixelBuf->uSize()) << 
-            " pixels (" <<numberOfSamples << " samples)";
+            " pixels (" <<numberOfSamples << " samples, little endian " <<
+            (isLittleEndian ? "true" : "false") << ")";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-    // Dade - TODO: check stream i/o for errors and support for little/big endian
-    
+    // Dade - TODO: check stream i/o for errors
+
     std::stringstream os;
-    os.write((char *)&numberOfSamples, sizeof(float));
+    writeLittleEndianFloat(isLittleEndian, os, numberOfSamples);
 
     for (int y = 0; y < pixelBuf->vSize(); ++y) {
         for (int x = 0; x < pixelBuf->uSize(); ++x) {
             Pixel &pixel = (*pixelBuf)(x, y);
-            os.write((char *)&pixel.L.c[0], sizeof(float));
-            os.write((char *)&pixel.L.c[1], sizeof(float));
-            os.write((char *)&pixel.L.c[2], sizeof(float));
-            os.write((char *)&pixel.alpha, sizeof(float));
-            os.write((char *)&pixel.weightSum, sizeof(float));
+            writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
+            writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
+            writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
+            writeLittleEndianFloat(isLittleEndian, os, pixel.alpha);
+            writeLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
         }
     }
 
@@ -551,23 +602,26 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
     in.push(gzip_decompressor());
     in.push(stream);
 
-    // Dade - TODO: check stream i/o for errors and support for little/big endian
+    // Dade - TODO: check stream i/o for errors
+
+    bool isLittleEndian = IsLittleEndian();
 
     float numberOfSamples;
-    in.read((char *)&numberOfSamples, sizeof(float));
+    readLittleEndianFloat(isLittleEndian, in, &numberOfSamples);
 
     std::stringstream ss;
-    ss << "Receiving " <<  numberOfSamples << " samples";
+    ss << "Receiving " <<  numberOfSamples << " samples (little endian " <<
+            (isLittleEndian ? "true" : "false") << ")";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
     for (int y = 0; y < pixelBuf->vSize(); ++y) {
         for (int x = 0; x < pixelBuf->uSize(); ++x) {
             Pixel &pixel = (*pixelBuf)(x, y);
-            in.read((char *)&pixel.L.c[0], sizeof(float));
-            in.read((char *)&pixel.L.c[1], sizeof(float));
-            in.read((char *)&pixel.L.c[2], sizeof(float));
-            in.read((char *)&pixel.alpha, sizeof(float));
-            in.read((char *)&pixel.weightSum, sizeof(float));
+            readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[0]);
+            readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[1]);
+            readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[2]);
+            readLittleEndianFloat(isLittleEndian, in, &pixel.alpha);
+            readLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
         }
     }
 
