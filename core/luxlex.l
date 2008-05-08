@@ -132,6 +132,8 @@ Identity		{ return IDENTITY;		}
 LightSource 		{ return LIGHTSOURCE;		}
 LookAt			{ return LOOKAT;		}
 Material		{ return MATERIAL;		}
+MakeNamedMaterial	{ return MAKENAMEDMATERIAL;	}
+NamedMaterial		{ return NAMEDMATERIAL;		}
 ObjectBegin 		{ return OBJECTBEGIN;		}
 ObjectEnd 		{ return OBJECTEND;		}
 ObjectInstance 		{ return OBJECTINSTANCE;	}

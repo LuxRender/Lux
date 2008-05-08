@@ -25,6 +25,7 @@
 #include "bxdf.h"
 #include "fresnelconductor.h"
 #include "blinn.h"
+#include "anisotropic.h"
 #include "microfacet.h"
 #include "specularreflection.h"
 #include "paramset.h"
@@ -41,10 +42,17 @@ BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 	SWCSpectrum spec(Ks->Evaluate(dgs).Clamp());
-	float rough = roughness->Evaluate(dgs);
 	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
 
-	MicrofacetDistribution *md = BSDF_ALLOC( Blinn)(1.f / rough);
+	float u = nu->Evaluate(dgs);
+	float v = nv->Evaluate(dgs);
+
+	MicrofacetDistribution *md;
+	if(u == v)
+		md = BSDF_ALLOC( Blinn)(1.f / u);
+	else
+		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
+
 	SWCSpectrum k = 0.;
 	Fresnel *frMf = BSDF_ALLOC( FresnelConductor)(FresnelApproxEta(spec), k);
 	Fresnel *frSr = BSDF_ALLOC( FresnelConductor)(FresnelApproxEta(R), k);
@@ -56,7 +64,8 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	boost::shared_ptr<Texture<Spectrum> > Kr = mp.GetSpectrumTexture("Kr", Spectrum(1.f));
 	boost::shared_ptr<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
-	boost::shared_ptr<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
+	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
+	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new ShinyMetal(Ks, roughness, Kr, bumpMap);
+	return new ShinyMetal(Ks, uroughness, vroughness, Kr, bumpMap);
 }

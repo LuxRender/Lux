@@ -285,6 +285,28 @@ extern "C" void luxMaterialV(const char *name, int n, LuxToken tokens[], LuxPoin
 {
 	Context::luxMaterial(name,ParamSet(n,name,tokens,params));
 }
+
+extern "C" void luxMakeNamedMaterial(const char *name, ...)
+{
+	EXTRACT_PARAMETERS( name )
+	luxMakeNamedMaterialV( name, PASS_PARAMETERS );
+}
+
+extern "C" void luxMakeNamedMaterialV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+{
+	Context::luxMakeNamedMaterial(name,ParamSet(n,name,tokens,params));
+}
+
+extern "C" void luxNamedMaterial(const char *name, ...)
+{
+	EXTRACT_PARAMETERS( name )
+	luxNamedMaterialV( name, PASS_PARAMETERS );
+}
+
+extern "C" void luxNamedMaterialV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+{
+	Context::luxNamedMaterial(name,ParamSet(n,name,tokens,params));
+}
 /*
 void luxLightSource(const char *name, const ParamSet &params)
 {

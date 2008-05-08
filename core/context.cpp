@@ -293,6 +293,36 @@ void Context::material(const string &name, const ParamSet &params) {
 	graphicsState.material = name;
 	graphicsState.materialParams = params;
 }
+
+void Context::makenamedmaterial(const string &name, const ParamSet &params) {
+	VERIFY_WORLD("MakeNamedMaterial")
+	;
+	NamedMaterial nm;
+	nm.material = name;
+	nm.materialParams = params;
+	namedmaterials.push_back(nm);
+}
+
+void Context::namedmaterial(const string &name, const ParamSet &params) {
+	VERIFY_WORLD("NamedMaterial")
+	;
+	bool found = false;
+	for(unsigned int i=0; i<namedmaterials.size(); i++)
+		if(namedmaterials[i].material == name) {
+			string type = namedmaterials[i].materialParams.FindOneString("type", "matte");
+			ParamSet nparams = namedmaterials[i].materialParams;
+			nparams.EraseString("type");
+			material(type, nparams);
+			found = true;
+		}
+
+	if(!found) {
+		std::stringstream ss;
+		ss<<"NamedMaterial named '"<<name<<"' unknown";
+		luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+	}
+}
+
 void Context::lightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("LightSource")
 	;
@@ -301,42 +331,6 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
 		Light *lt_sun = MakeLight("sun", curTransform, params);
-		if (lt_sun == NULL)
-			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
-		else {
-			renderOptions->lights.push_back(lt_sun);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt_sun;
-		}
-		Light *lt_sky = MakeLight("sky", curTransform, params);
-		if (lt_sky == NULL)
-			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
-		else {
-			renderOptions->lights.push_back(lt_sky);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt_sky;
-		}
-	} else if (name == "sunsky_exp") {
-		//SunSky light - create both sun & sky lightsources
-		Light *lt_sun = MakeLight("sun2", curTransform, params);
-		if (lt_sun == NULL)
-			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
-		else {
-			renderOptions->lights.push_back(lt_sun);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt_sun;
-		}
-		Light *lt_sky = MakeLight("sky", curTransform, params);
-		if (lt_sky == NULL)
-			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
-		else {
-			renderOptions->lights.push_back(lt_sky);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt_sky;
-		}
-	} else if (name == "sunsky_exp2") {
-		//SunSky light - create both sun & sky lightsources
-		Light *lt_sun = MakeLight("sun3", curTransform, params);
 		if (lt_sun == NULL)
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
 		else {

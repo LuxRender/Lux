@@ -81,6 +81,8 @@ public:
 	static void luxTransformEnd() { activeContext->transformEnd(); }
 	static void luxTexture(const string &name, const string &type, const string &texname, const ParamSet &params) { activeContext->texture(name, type, texname, params); }
 	static void luxMaterial(const string &name, const ParamSet &params) { activeContext->material(name, params); }
+	static void luxMakeNamedMaterial(const string &name, const ParamSet &params) { activeContext->makenamedmaterial(name, params); }
+	static void luxNamedMaterial(const string &name, const ParamSet &params) { activeContext->namedmaterial(name, params); }
 	static void luxLightSource(const string &name, const ParamSet &params) { activeContext->lightSource(name, params); }
 	static void luxAreaLightSource(const string &name, const ParamSet &params) { activeContext->areaLightSource(name, params); }
 	static void luxPortalShape(const string &name, const ParamSet &params) { activeContext->portalShape(name, params); }
@@ -155,6 +157,8 @@ private:
 	void texture(const string &name, const string &type, const string &texname,
 			const ParamSet &params);
 	void material(const string &name, const ParamSet &params);
+	void makenamedmaterial(const string &name, const ParamSet &params);
+	void namedmaterial(const string &name, const ParamSet &params);
 	void lightSource(const string &name, const ParamSet &params);
 	void areaLightSource(const string &name, const ParamSet &params);
 	void portalShape(const string &name, const ParamSet &params);
@@ -231,6 +235,13 @@ private:
 		vector<Primitive* > *currentInstance;
 	};
 
+	struct NamedMaterial {
+		NamedMaterial() {};
+
+		ParamSet materialParams;
+		string material;
+	};
+
 	struct GraphicsState {
 		// Graphics State Methods
 		GraphicsState() {
@@ -255,6 +266,7 @@ private:
 	map<string, Transform> namedCoordinateSystems;
 	RenderOptions *renderOptions;
 	GraphicsState graphicsState;
+	vector<NamedMaterial> namedmaterials;
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<Transform> pushedTransforms;
 	RenderFarm renderFarm;

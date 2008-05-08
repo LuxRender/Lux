@@ -46,7 +46,6 @@ BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialG
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
 
-	// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 	if(u == v)
 		bsdf->Add(BSDF_ALLOC( FresnelBlend)(d, s, BSDF_ALLOC( Blinn)(1.f/u)));
 	else
