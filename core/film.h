@@ -64,10 +64,8 @@ class ArrSample {
         ar & sY;
         ar & xyz;
         ar & alpha;
-
-        // Dade - I avoid to transmit this information in order to save bandwidth
-        //ar & buf_id;
-        //ar & bufferGroup;
+        ar & buf_id;
+        ar & bufferGroup;
     }
 
 public:

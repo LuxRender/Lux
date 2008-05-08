@@ -94,7 +94,11 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	}
 
 	// array allocation
-	int arrsize = 2048;
+        // Dade - 2048 was a too small value for QuadCores, there was a memory fault
+        // because the second buffer was filled while we were still merging the first
+        // one. Bug #140.
+
+	int arrsize = 128*1024;
 	SampleArrptr = new ArrSample[arrsize];
 	SampleArr2ptr = new ArrSample[arrsize];
 
