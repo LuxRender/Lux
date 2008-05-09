@@ -1,5 +1,8 @@
 PROJECT(lux)
 
+# Dade - uncomment to obtain verbose building output
+#SET(CMAKE_VERBOSE_MAKEFILE true)
+
 IF(APPLE)
 SET(APPLE_64 0)
 ENDIF(APPLE)
@@ -269,7 +272,7 @@ ADD_DEFINITIONS(-O2 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - my settings
 #ADD_DEFINITIONS(-O3 -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 
 # Dade - Intel CC settings (double pass, 32bit, remember to uncomment the line at the end of file too)
 #  rm -rf CMakeCache.txt CMakeFiles
@@ -397,7 +400,7 @@ SET(lux_lib_src
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
-        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
+        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/gridpx.cpp
 	spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
 	core/spectrumwavelengths.cpp core/spd.cpp
 	)

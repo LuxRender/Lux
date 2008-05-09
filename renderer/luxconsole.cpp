@@ -120,7 +120,7 @@ void processCommandFilm(void (&f)(const string &, const ParamSet &), std::basic_
     ParamSet params;
     stream >> type;
 
-    if(type != "fleximage") {
+    if((type != "fleximage") && (type != "multiimage")) {
         std::stringstream ss;
         ss << "Unsupported film type for server rendering: " << type;
         luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
@@ -315,7 +315,7 @@ void startServer(int listenPort = 18018) {
                             //std::cout<<"receiving file..."<<file<<std::endl;
                             {
                                 std::stringstream ss;
-                                ss << "Receiving file : '" << file << "'";
+                                ss << "Receiving file: '" << file << "'";
                                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
                             }
 
