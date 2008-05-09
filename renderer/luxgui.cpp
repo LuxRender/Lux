@@ -871,6 +871,11 @@ int main(int ac, char *av[]) {
 			threads = 1;;
 		}
 
+        if (vm.count("serverinterval"))
+            serverInterval = vm["serverinterval"].as<int>();
+        else
+            serverInterval = 3*60;
+
         if (vm.count("useserver")) {
             std::stringstream ss;
 
@@ -891,11 +896,6 @@ int main(int ac, char *av[]) {
             ss << "Server requests interval:  " << serverInterval << " secs";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
         }
-
-        if (vm.count("serverinterval"))
-            serverInterval = vm["serverinterval"].as<int>();
-        else
-            serverInterval = 3*60;
 
 		if (vm.count ("noopengl"))
 		{

@@ -500,7 +500,7 @@ int main(int ac, char *av[]) {
             useServer = true;
             
             ss.str("");
-            ss << "Server requests interval:  " << serverInterval << " secs";
+            ss << "Server requests interval: " << serverInterval << " secs";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
         }
 
