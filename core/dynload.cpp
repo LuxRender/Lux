@@ -30,14 +30,14 @@
 #include "material.h"
 #include "texture.h"
 /*
-#ifndef WIN32
-#ifndef __APPLE__
-#include <dlfcn.h>
-#else
-#include <mach-o/dyld.h>
-#endif
-#endif
-#include <map>*/
+ * #ifndef WIN32
+ * #ifndef __APPLE__
+ * #include <dlfcn.h>
+ * #else
+ * #include <mach-o/dyld.h>
+ * #endif
+ * #endif
+ * #include <map>*/
 
 
 
@@ -79,6 +79,7 @@
 #include "path2.h"
 #include "particletracing.h"
 #include "bidirectional.h"
+#include "photonmap.h"
 
 #include "emission.h"
 #include "single.h"
@@ -134,42 +135,40 @@
 
 //
 // Radiance - The following plugins are currently retired to /PBRT_Attic
-// 
+//
 /*
-#include "debug.h"
-#include "exphotonmap.h"
-#include "igi.h"
-#include "irradiancecache.h"
-#include "photonmap.h"
-#include "whitted.h"
-#include "bidirectional.h"
-
-#include "image.h"
-
-#include "stratified.h"
-#include "bestcandidate.h"
-*/
+ * #include "debug.h"
+ * #include "exphotonmap.h"
+ * #include "igi.h"
+ * #include "irradiancecache.h"
+ * #include "photonmap.h"
+ * #include "whitted.h"
+ * #include "bidirectional.h"
+ *
+ * #include "image.h"
+ *
+ * #include "stratified.h"
+ * #include "bestcandidate.h"
+ */
 
 using std::map;
 
-namespace lux
-{
-
-
- boost::shared_ptr<Shape> MakeShape(const string &name,
-                                   const Transform &object2world,
-                                   bool reverseOrientation,
-                                   const ParamSet &paramSet)
-{
+namespace lux {
+    
+    
+boost::shared_ptr<Shape> MakeShape(const string &name,
+        const Transform &object2world,
+        bool reverseOrientation,
+        const ParamSet &paramSet) {
     /*
-    ShapePlugin *plugin =
-    GetPlugin<ShapePlugin>(name,
-    				   shapePlugins,
-    				   PluginSearchPath);
-    if (plugin)
-    return plugin->CreateShape(object2world,
-                             reverseOrientation,
-    					  paramSet);*/
+ShapePlugin *plugin =
+GetPlugin<ShapePlugin>(name,
+                               shapePlugins,
+                               PluginSearchPath);
+if (plugin)
+return plugin->CreateShape(object2world,
+                         reverseOrientation,
+                                      paramSet);*/
 
     if(name=="cone")
         return boost::shared_ptr<Shape>(Cone::CreateShape(object2world, reverseOrientation, paramSet));
@@ -198,612 +197,561 @@ namespace lux
     if(name=="lenscomponent")
         return boost::shared_ptr<Shape>(LensComponent::CreateShape(object2world, reverseOrientation, paramSet));
     //Error("Static loading of shape '%s' failed.",name.c_str());
-	std::stringstream ss;
-	ss<<"Static loading of shape '"<<name<<"' failed.";
-	luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    std::stringstream ss;
+    ss<<"Static loading of shape '"<<name<<"' failed.";
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     boost::shared_ptr<Shape> o;
-	return o;
+    return o;
 }
+
 /*
 static string SearchPath(const string &searchpath,
-                         const string &filename)
+                     const string &filename)
 {
-    const char *start = searchpath.c_str();
-    const char *end = start;
-    while (*start)
-    {
-        while (*end && *end != LUX_PATH_SEP[0])
-            ++end;
-        string component(start, end);
+const char *start = searchpath.c_str();
+const char *end = start;
+while (*start)
+{
+    while (*end && *end != LUX_PATH_SEP[0])
+        ++end;
+    string component(start, end);
 
-        string fn = component + "/" + filename;
-        FILE *f = fopen(fn.c_str(), "r");
-        if (f)
-        {
-            fclose(f);
-            return fn;
-        }
-        if (*end == LUX_PATH_SEP[0])
-            ++end;
-        start = end;
+    string fn = component + "/" + filename;
+    FILE *f = fopen(fn.c_str(), "r");
+    if (f)
+    {
+        fclose(f);
+        return fn;
     }
-    return "";
+    if (*end == LUX_PATH_SEP[0])
+        ++end;
+    start = end;
+}
+return "";
 }*/
- boost::shared_ptr<Material> MakeMaterial(const string &name,
+
+boost::shared_ptr<Material> MakeMaterial(const string &name,
         const Transform &mtl2world,
-        const TextureParams &mp)
-{
+        const TextureParams &mp) {
     /*MaterialPlugin *plugin = GetPlugin<MaterialPlugin>(name, materialPlugins,
-                             PluginSearchPath);
-    if (plugin)
-    {
-        boost::shared_ptr<Material> ret =
-            plugin->CreateMaterial(mtl2world, mp);
-        mp.ReportUnused();
-        return ret;
-    }*/
-    if(name=="glass")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Glass::CreateMaterial(mtl2world, mp));
-        mp.ReportUnused();
-        return ret;
-    }
-    if(name=="roughglass")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(RoughGlass::CreateMaterial(mtl2world, mp));
+                         PluginSearchPath);
+if (plugin)
+{
+    boost::shared_ptr<Material> ret =
+        plugin->CreateMaterial(mtl2world, mp);
+    mp.ReportUnused();
+    return ret;
+}*/
+    if(name=="glass") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Glass::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="matte")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Matte::CreateMaterial(mtl2world, mp));
+    if(name=="roughglass") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(RoughGlass::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="mattetranslucent")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(MatteTranslucent::CreateMaterial(mtl2world, mp));
+    if(name=="matte") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Matte::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="mirror")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Mirror::CreateMaterial(mtl2world, mp));
+    if(name=="mattetranslucent") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(MatteTranslucent::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="plastic")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Plastic::CreateMaterial(mtl2world, mp));
+    if(name=="mirror") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Mirror::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="shinymetal")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(ShinyMetal::CreateMaterial(mtl2world, mp));
+    if(name=="plastic") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Plastic::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="substrate")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Substrate::CreateMaterial(mtl2world, mp));
+    if(name=="shinymetal") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(ShinyMetal::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="carpaint")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(CarPaint::CreateMaterial(mtl2world, mp));
+    if(name=="substrate") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Substrate::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    if(name=="metal")
-    {
-    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Metal::CreateMaterial(mtl2world, mp));
+    if(name=="carpaint") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(CarPaint::CreateMaterial(mtl2world, mp));
         mp.ReportUnused();
         return ret;
     }
-    
-    
+    if(name=="metal") {
+        boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Metal::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }
+
+
     //Error("Static loading of material '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of material '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
-	boost::shared_ptr<Material> o;
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+    boost::shared_ptr<Material> o;
     return o;
 }
- boost::shared_ptr< Texture<float> > MakeFloatTexture(const string &name,
-        const Transform &tex2world, const TextureParams &tp)
-{
+
+boost::shared_ptr< Texture<float> > MakeFloatTexture(const string &name,
+        const Transform &tex2world, const TextureParams &tp) {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
-                            PluginSearchPath);
-    if (plugin)
-    {
-        boost::shared_ptr<Texture<float> > ret =
-            plugin->CreateFloatTex(tex2world, tp);
-        tp.ReportUnused();
-        return ret;
-    }*/
-    if(name=="bilerp")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BilerpTexture<float>::CreateFloatTexture(tex2world, tp));
-        tp.ReportUnused();
-        return ret;
-    }
-    if(name=="checkerboard")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(Checkerboard::CreateFloatTexture(tex2world, tp));
+                        PluginSearchPath);
+if (plugin)
+{
+    boost::shared_ptr<Texture<float> > ret =
+        plugin->CreateFloatTex(tex2world, tp);
+    tp.ReportUnused();
+    return ret;
+}*/
+    if(name=="bilerp") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BilerpTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="constant")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(Constant::CreateFloatTexture(tex2world, tp));
+    if(name=="checkerboard") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(Checkerboard::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="dots")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(DotsTexture<float>::CreateFloatTexture(tex2world, tp));
+    if(name=="constant") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(Constant::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="fbm")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(FBmTexture<float>::CreateFloatTexture(tex2world, tp));
+    if(name=="dots") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(DotsTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="imagemap")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(ImageTexture<float>::CreateFloatTexture(tex2world, tp));
+    if(name=="fbm") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(FBmTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="marble")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(MarbleTexture::CreateFloatTexture(tex2world, tp));
+    if(name=="imagemap") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(ImageTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="mix")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(MixTexture<float>::CreateFloatTexture(tex2world, tp));
+    if(name=="marble") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(MarbleTexture::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="scale")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(ScaleTexture<float,float>::CreateFloatTexture(tex2world, tp));
-        tp.ReportUnused();
-        return ret;
-    } 
-    if(name=="uv")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(UVTexture::CreateFloatTexture(tex2world, tp));
+    if(name=="mix") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(MixTexture<float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="windy")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(WindyTexture<float>::CreateFloatTexture(tex2world, tp));
+    if(name=="scale") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(ScaleTexture<float, float>::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="wrinkled")
-    {
-    	boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(WrinkledTexture<float>::CreateFloatTexture(tex2world, tp));
+    if(name=="uv") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(UVTexture::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    
+    if(name=="windy") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(WindyTexture<float>::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="wrinkled") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(WrinkledTexture<float>::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+
     //Error("Static loading of float texture '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of texture '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
-	boost::shared_ptr<Texture<float> > o;
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+    boost::shared_ptr<Texture<float> > o;
     return o;
 }
- boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
-        const Transform &tex2world, const TextureParams &tp)
-{
+
+boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+        const Transform &tex2world, const TextureParams &tp) {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
-                            PluginSearchPath);
-    if (plugin)
-    {
-        boost::shared_ptr<Texture<Spectrum> > ret =
-            plugin->CreateSpectrumTex(tex2world, tp);
-        tp.ReportUnused();
-        return ret;
-    }*/
-    if(name=="bilerp")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
-        tp.ReportUnused();
-        return ret;
-    }
-    if(name=="checkerboard")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Checkerboard::CreateSpectrumTexture(tex2world, tp));
+                        PluginSearchPath);
+if (plugin)
+{
+    boost::shared_ptr<Texture<Spectrum> > ret =
+        plugin->CreateSpectrumTex(tex2world, tp);
+    tp.ReportUnused();
+    return ret;
+}*/
+    if(name=="bilerp") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="constant")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Constant::CreateSpectrumTexture(tex2world, tp));
+    if(name=="checkerboard") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Checkerboard::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="dots")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    if(name=="constant") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Constant::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="fbm")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    if(name=="dots") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="imagemap")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    if(name=="fbm") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="marble")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MarbleTexture::CreateSpectrumTexture(tex2world, tp));
+    if(name=="imagemap") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="mix")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    if(name=="marble") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MarbleTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="scale")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ScaleTexture<Spectrum,Spectrum>::CreateSpectrumTexture(tex2world, tp));
-        tp.ReportUnused();
-        return ret;
-    } 
-    if(name=="uv")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(UVTexture::CreateSpectrumTexture(tex2world, tp));
+    if(name=="mix") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="windy")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    if(name=="scale") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ScaleTexture<Spectrum, Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    if(name=="wrinkled")
-    {
-    	boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+    if(name=="uv") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(UVTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    
+    if(name=="windy") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="wrinkled") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+
     //Error("Static loading of spectrum texture '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of specturm texture '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
-	boost::shared_ptr<Texture<Spectrum> > o;
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+    boost::shared_ptr<Texture<Spectrum> > o;
     return o;
 }
- Light *MakeLight(const string &name,
-                         const Transform &light2world, const ParamSet &paramSet)
-{
+
+Light *MakeLight(const string &name,
+        const Transform &light2world, const ParamSet &paramSet) {
     /*LightPlugin *plugin = GetPlugin<LightPlugin>(name, lightPlugins, PluginSearchPath);
-    if (plugin)
-    {
-        Light *ret = plugin->CreateLight(light2world, paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    if(name=="distant")
-    {
-    	Light *ret = DistantLight::CreateLight(light2world, paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="goniometric")
-    {
-    	Light *ret = GonioPhotometricLight::CreateLight(light2world, paramSet);
+if (plugin)
+{
+    Light *ret = plugin->CreateLight(light2world, paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+    if(name=="distant") {
+        Light *ret = DistantLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="infinitesample")
-    {
-    	Light *ret = InfiniteAreaLightIS::CreateLight(light2world, paramSet);
+    if(name=="goniometric") {
+        Light *ret = GonioPhotometricLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="infinite")
-    {
-    	Light *ret = InfiniteAreaLight::CreateLight(light2world, paramSet);
+    if(name=="infinitesample") {
+        Light *ret = InfiniteAreaLightIS::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="point")
-    {
-    	Light *ret = PointLight::CreateLight(light2world, paramSet);
+    if(name=="infinite") {
+        Light *ret = InfiniteAreaLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="projection")
-    {
-    	Light *ret = ProjectionLight::CreateLight(light2world, paramSet);
+    if(name=="point") {
+        Light *ret = PointLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="spot")
-    {
-    	Light *ret = SpotLight::CreateLight(light2world, paramSet);
+    if(name=="projection") {
+        Light *ret = ProjectionLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="sun")
-    {
-    	Light *ret = SunLight::CreateLight(light2world, paramSet);
+    if(name=="spot") {
+        Light *ret = SpotLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="sky")
-    {
-    	Light *ret = SkyLight::CreateLight(light2world, paramSet);
+    if(name=="sun") {
+        Light *ret = SunLight::CreateLight(light2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="sky") {
+        Light *ret = SkyLight::CreateLight(light2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
     //Error("Static loading of light '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of light '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- AreaLight *MakeAreaLight(const string &name,
-                                 const Transform &light2world, const ParamSet &paramSet,
-                                 const boost::shared_ptr<Shape> &shape)
-{
+
+AreaLight *MakeAreaLight(const string &name,
+        const Transform &light2world, const ParamSet &paramSet,
+        const boost::shared_ptr<Shape> &shape) {
     /*AreaLightPlugin *plugin = GetPlugin<AreaLightPlugin>(name, arealightPlugins,
-                              PluginSearchPath);
-    if (plugin)
-    {
-        AreaLight *ret = plugin->CreateAreaLight(light2world, paramSet, shape);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    
-    if(name=="area")
-    {
-    	AreaLight *ret = AreaLight::CreateAreaLight(light2world, paramSet, shape);
+                          PluginSearchPath);
+if (plugin)
+{
+    AreaLight *ret = plugin->CreateAreaLight(light2world, paramSet, shape);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+
+    if(name=="area") {
+        AreaLight *ret = AreaLight::CreateAreaLight(light2world, paramSet, shape);
         paramSet.ReportUnused();
         return ret;
     }
-    
+
     //Error("Static loading of area light '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of area light '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- VolumeRegion *MakeVolumeRegion(const string &name,
-                                       const Transform &volume2world, const ParamSet &paramSet)
-{
+
+VolumeRegion *MakeVolumeRegion(const string &name,
+        const Transform &volume2world, const ParamSet &paramSet) {
     /*VolumeRegionPlugin *plugin = GetPlugin<VolumeRegionPlugin>(name, volumePlugins,
-                                 PluginSearchPath);
-    if (plugin)
-    {
-        VolumeRegion *ret = plugin->CreateVolumeRegion(volume2world, paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    
-    if(name=="exponential")
-    {
-    	VolumeRegion *ret = ExponentialDensity::CreateVolumeRegion(volume2world, paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="homogeneous")
-    {
-    	VolumeRegion *ret = HomogeneousVolume::CreateVolumeRegion(volume2world, paramSet);
+                             PluginSearchPath);
+if (plugin)
+{
+    VolumeRegion *ret = plugin->CreateVolumeRegion(volume2world, paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+
+    if(name=="exponential") {
+        VolumeRegion *ret = ExponentialDensity::CreateVolumeRegion(volume2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="volumegrid")
-    {
-    	VolumeRegion *ret = VolumeGrid::CreateVolumeRegion(volume2world, paramSet);
+    if(name=="homogeneous") {
+        VolumeRegion *ret = HomogeneousVolume::CreateVolumeRegion(volume2world, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
+    if(name=="volumegrid") {
+        VolumeRegion *ret = VolumeGrid::CreateVolumeRegion(volume2world, paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+
     //Error("Static loading of volume region '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of volume region '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
-        const ParamSet &paramSet)
-{
+
+SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
+        const ParamSet &paramSet) {
     /*SurfaceIntegratorPlugin *plugin = GetPlugin<SurfaceIntegratorPlugin>(name,
-                                      surf_integratorPlugins, PluginSearchPath);
-    if (plugin)
-    {
-        SurfaceIntegrator *ret = plugin->CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    
-    if(name=="directlighting")
-    {
+                                  surf_integratorPlugins, PluginSearchPath);
+if (plugin)
+{
+    SurfaceIntegrator *ret = plugin->CreateSurfaceIntegrator(paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+
+    if(name=="directlighting") {
         SurfaceIntegrator *ret=DirectLighting::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-	if(name=="path")
-	{
-		SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	if(name=="path2")
-	{
-		SurfaceIntegrator *ret=Path2Integrator::CreateSurfaceIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	if(name=="particletracing")
-	{
-		SurfaceIntegrator *ret=ParticleTracingIntegrator::CreateSurfaceIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
-	if(name=="bidirectional")
-	{
-		SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
-		paramSet.ReportUnused();
-		return ret;
-	}
+    if(name=="path") {
+        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="path2") {
+        SurfaceIntegrator *ret=Path2Integrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="particletracing") {
+        SurfaceIntegrator *ret=ParticleTracingIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="bidirectional") {
+        SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="bidirectional") {
+        SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="photonmap") {
+        SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
 
     //
-    // Radiance - Volume integrators currently disabled 
+    // Radiance - Volume integrators currently disabled
     // due to multithreading implementation which is in progress.
-    // 
+    //
     /*if(name=="single")
-    {
-        SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
+{
+    SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
     /*if(name=="emission")
-    {
-        SurfaceIntegrator *ret=EmissionIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
+{
+    SurfaceIntegrator *ret=EmissionIntegrator::CreateSurfaceIntegrator(paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
 
     //Error("Static loading of surface integrator '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of surface integrator '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- VolumeIntegrator *MakeVolumeIntegrator(const string &name,
-        const ParamSet &paramSet)
-{
+
+VolumeIntegrator *MakeVolumeIntegrator(const string &name,
+        const ParamSet &paramSet) {
     /*
-    VolumeIntegratorPlugin *plugin = GetPlugin<VolumeIntegratorPlugin>(name, vol_integratorPlugins,
-                                     PluginSearchPath);
-    if (plugin)
-    {
-        VolumeIntegrator *ret = plugin->CreateVolumeIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    
-    if(name=="single")
-    {
+VolumeIntegratorPlugin *plugin = GetPlugin<VolumeIntegratorPlugin>(name, vol_integratorPlugins,
+                                 PluginSearchPath);
+if (plugin)
+{
+    VolumeIntegrator *ret = plugin->CreateVolumeIntegrator(paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+
+    if(name=="single") {
         VolumeIntegrator *ret=SingleScattering::CreateVolumeIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
-    if(name=="emission")
-    {
+
+    if(name=="emission") {
         VolumeIntegrator *ret=EmissionIntegrator::CreateVolumeIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
+
     //Error("Static loading of volume integrator '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of volume integrator '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims, const ParamSet &paramSet)
-{
+
+Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims, const ParamSet &paramSet) {
     /*
-       AcceleratorPlugin *plugin = GetPlugin<AcceleratorPlugin>(name, acceleratorPlugins,
-                                   PluginSearchPath);
-       if (plugin)
-       {
-           Primitive *ret = plugin->CreateAccelerator(prims, paramSet);
-           paramSet.ReportUnused();
-           return ret;
-       }*/
+   AcceleratorPlugin *plugin = GetPlugin<AcceleratorPlugin>(name, acceleratorPlugins,
+                               PluginSearchPath);
+   if (plugin)
+   {
+       Primitive *ret = plugin->CreateAccelerator(prims, paramSet);
+       paramSet.ReportUnused();
+       return ret;
+   }*/
     //Primitive* ret;
 
-    if(name=="unsafekdtree")
-    {
+    if(name=="unsafekdtree") {
         Primitive* ret=UnsafeKdTreeAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if((name=="tabreckdtree") || (name=="kdtree"))
-    {
+    if((name=="tabreckdtree") || (name=="kdtree")) {
         Primitive* ret=TaBRecKdTreeAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="grid")
-    {
+    if(name=="grid") {
         Primitive* ret=GridAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-		// NOTE - ratow - Added a brute force (de)accelerator for debugging purposes.
-    if(name=="none")
-		{
+    // NOTE - ratow - Added a brute force (de)accelerator for debugging purposes.
+    if(name=="none") {
         Primitive* ret=BruteForceAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
         return ret;
-		}
+    }
 
     //Error("Static loading of accelerator '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of accelerator '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- Camera *MakeCamera(const string &name,
-                           const ParamSet &paramSet,
-                           const Transform &world2cam, Film *film)
-{
+
+Camera *MakeCamera(const string &name,
+        const ParamSet &paramSet,
+        const Transform &world2cam, Film *film) {
     /*
-    CameraPlugin *plugin = GetPlugin<CameraPlugin>(name, cameraPlugins, PluginSearchPath);
-    if (plugin)
-    {
-        Camera *ret = plugin->CreateCamera(paramSet, world2cam, film);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    if(name=="environment")
-    {
+CameraPlugin *plugin = GetPlugin<CameraPlugin>(name, cameraPlugins, PluginSearchPath);
+if (plugin)
+{
+    Camera *ret = plugin->CreateCamera(paramSet, world2cam, film);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+    if(name=="environment") {
         Camera *ret=EnvironmentCamera::CreateCamera(paramSet, world2cam, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="orthographic")
-    {
+    if(name=="orthographic") {
         Camera *ret=OrthoCamera::CreateCamera(paramSet, world2cam, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="perspective")
-    {
+    if(name=="perspective") {
         Camera *ret=PerspectiveCamera::CreateCamera(paramSet, world2cam, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="realistic")
-    {
+    if(name=="realistic") {
         Camera *ret=RealisticCamera::CreateCamera(paramSet, world2cam, film);
         paramSet.ReportUnused();
         return ret;
@@ -812,47 +760,42 @@ static string SearchPath(const string &searchpath,
     //Error("Static loading of camera '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of camera '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- Sampler *MakeSampler(const string &name,
-                             const ParamSet &paramSet, const Film *film)
-{
+
+Sampler *MakeSampler(const string &name,
+        const ParamSet &paramSet, const Film *film) {
     /*
-    SamplerPlugin *plugin = GetPlugin<SamplerPlugin>(name, samplerPlugins, PluginSearchPath);
-    if (plugin) {
-    Sampler *ret = plugin->CreateSampler(paramSet, film);
-    paramSet.ReportUnused();
-    return ret;
+SamplerPlugin *plugin = GetPlugin<SamplerPlugin>(name, samplerPlugins, PluginSearchPath);
+if (plugin) {
+Sampler *ret = plugin->CreateSampler(paramSet, film);
+paramSet.ReportUnused();
+return ret;
 }*/
     //Sampler *ret;
 
-    if(name=="lowdiscrepancy")
-    {
+    if(name=="lowdiscrepancy") {
         Sampler *ret=LDSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="random")
-    {
+    if(name=="random") {
         Sampler *ret=RandomSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="halton")
-    {
+    if(name=="halton") {
         Sampler *ret=HaltonSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="metropolis")
-    {
+    if(name=="metropolis") {
         Sampler *ret=MetropolisSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="erpt")
-    {
+    if(name=="erpt") {
         Sampler *ret=ERPTSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
         return ret;
@@ -862,113 +805,103 @@ static string SearchPath(const string &searchpath,
     // Radiance - The following samplers are currently retired to /PBRT_Attic
     //
     /*
-    if(name=="bestcandidate")
-    {
-        Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
-        paramSet.ReportUnused();
-        return ret;
-    } 
-    if(name=="stratified")
-    {
-        Sampler *ret=StratifiedSampler::CreateSampler(paramSet, film);
-        paramSet.ReportUnused();
-        return ret;
-    } */
+if(name=="bestcandidate")
+{
+    Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
+    paramSet.ReportUnused();
+    return ret;
+}
+if(name=="stratified")
+{
+    Sampler *ret=StratifiedSampler::CreateSampler(paramSet, film);
+    paramSet.ReportUnused();
+    return ret;
+} */
 
     //Error("Static loading of sampler '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of sampler '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- Filter *MakeFilter(const string &name,
-                           const ParamSet &paramSet)
-{
+
+Filter *MakeFilter(const string &name,
+        const ParamSet &paramSet) {
     /*FilterPlugin *plugin = GetPlugin<FilterPlugin>(name, filterPlugins, PluginSearchPath);
-    if (plugin)
-    {
-        Filter *ret = plugin->CreateFilter(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    
-    if(name=="box")
-    {
+if (plugin)
+{
+    Filter *ret = plugin->CreateFilter(paramSet);
+    paramSet.ReportUnused();
+    return ret;
+}*/
+
+    if(name=="box") {
         Filter *ret=BoxFilter::CreateFilter(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
-    if(name=="gaussian")
-    {
+
+    if(name=="gaussian") {
         Filter *ret=GaussianFilter::CreateFilter(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
-    if(name=="mitchell")
-    {
+
+    if(name=="mitchell") {
         Filter *ret=MitchellFilter::CreateFilter(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
-    if(name=="sinc")
-    {
+
+    if(name=="sinc") {
         Filter *ret=LanczosSincFilter::CreateFilter(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
-    if(name=="triangle")
-    {
+
+    if(name=="triangle") {
         Filter *ret=TriangleFilter::CreateFilter(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    
+
     //Error("Static loading of filter '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of fiter '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- ToneMap *MakeToneMap(const string &name,
-                             const ParamSet &paramSet)
-{
+
+ToneMap *MakeToneMap(const string &name,
+        const ParamSet &paramSet) {
     /*ToneMapPlugin *plugin = GetPlugin<ToneMapPlugin>(name, tonemapPlugins, PluginSearchPath);
-    if (plugin)
-    {
-        ToneMap *ret = plugin->CreateToneMap(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    if(name=="contrast")
-    {
+if (plugin)
+{
+    ToneMap *ret = plugin->CreateToneMap(paramSet);
+     * paramSet.ReportUnused();
+     * return ret;
+     * }*/
+    if(name=="contrast") {
         ToneMap *ret=ContrastOp::CreateToneMap(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="highcontrast")
-    {
+    if(name=="highcontrast") {
         ToneMap *ret=HighContrastOp::CreateToneMap(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="maxwhite")
-    {
+    if(name=="maxwhite") {
         ToneMap *ret=MaxWhiteOp::CreateToneMap(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="nonlinear")
-    {
+    if(name=="nonlinear") {
         ToneMap *ret=NonLinearOp::CreateToneMap(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="reinhard")
-    {
+    if(name=="reinhard") {
         ToneMap *ret=ReinhardOp::CreateToneMap(paramSet);
         paramSet.ReportUnused();
         return ret;
@@ -977,25 +910,24 @@ static string SearchPath(const string &searchpath,
     //Error("Static loading of tonemap '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of tonemap '"<<name<<"' failed.";
-    luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
- Film *MakeFilm(const string &name,
-                       const ParamSet &paramSet, Filter *filter)
-{
-    /*FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);
-    if (plugin)
-    {
-        Film *ret = plugin->CreateFilm(paramSet, filter);
-        paramSet.ReportUnused();
-        return ret;
-    }*/
-    
-	// note - radiance - MultiImageFilm is removed, leaving this for backward scenefile compatibility
 
-    if((name == "fleximage") || (name == "multiimage"))
-    {
-		Film *ret = FlexImageFilm::CreateFilm(paramSet, filter);
+Film *MakeFilm(const string &name,
+        const ParamSet &paramSet, Filter *filter) {
+    /*FilmPlugin *plugin = GetPlugin<FilmPlugin>(name, filmPlugins, PluginSearchPath);
+     * if (plugin)
+     * {
+     * Film *ret = plugin->CreateFilm(paramSet, filter);
+     * paramSet.ReportUnused();
+     * return ret;
+     * }*/
+
+    // note - radiance - MultiImageFilm is removed, leaving this for backward scenefile compatibility
+
+    if((name == "fleximage") || (name == "multiimage")) {
+        Film *ret = FlexImageFilm::CreateFilm(paramSet, filter);
         paramSet.ReportUnused();
         return ret;
     }
@@ -1004,19 +936,19 @@ static string SearchPath(const string &searchpath,
     // Radiance - The following films are currently retired to /PBRT_Attic
     //
     /*
-    if(name=="image")
-    {
-        Film *ret=ImageFilm::CreateFilm(paramSet, filter);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    */    
+     * if(name=="image")
+     * {
+     * Film *ret=ImageFilm::CreateFilm(paramSet, filter);
+     * paramSet.ReportUnused();
+     * return ret;
+     * }
+     */
     //Error("Static loading of film '%s' failed.",name.c_str());
-	std::stringstream ss;
-	ss<<"Static loading of film '"<<name<<"' failed.";
-	luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
+    std::stringstream ss;
+    ss<<"Static loading of film '"<<name<<"' failed.";
+    luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     return NULL;
 }
+    
+}//namespace lux
 
- }//namespace lux
- 

@@ -145,4 +145,3 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
                              ystart, yend,
                              xsamp, ysamp, pixelsampler);
 }
-

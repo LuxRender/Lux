@@ -162,7 +162,3 @@ SWCSpectrum::SWCSpectrum(Spectrum s) {
 		}
 	}
 }
-
-
-
-

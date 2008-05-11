@@ -108,6 +108,7 @@ public:
 	const float eta;
 	
 	friend class RenderThread;
+        friend class Scene;
 	
 private:
 	// BSDF Private Methods
