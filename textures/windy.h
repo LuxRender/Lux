@@ -60,6 +60,9 @@ template <class T> inline Texture<float> * WindyTexture<T>::CreateFloatTexture(c
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
 	return new WindyTexture<float>(map);
 }
 
@@ -67,6 +70,9 @@ template <class T> inline Texture<Spectrum> * WindyTexture<T>::CreateSpectrumTex
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
 	return new WindyTexture<Spectrum>(map);
 }
 

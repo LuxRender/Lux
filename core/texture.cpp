@@ -22,6 +22,7 @@
 
 // texture.cpp*
 #include "texture.h"
+#include "paramset.h"
 #include "shape.h"
 
 namespace lux
@@ -155,6 +156,19 @@ Point IdentityMapping3D::Map(const DifferentialGeometry &dg,
 	*dpdx = WorldToTexture(dg.dpdx);
 	*dpdy = WorldToTexture(dg.dpdy);
 	return WorldToTexture(dg.p);
+}
+void IdentityMapping3D::Apply3DTextureMappingOptions(const TextureParams &tp) {
+	// Apply inverted scale
+	Vector scalev = tp.FindVector("scale", Vector(1., 1., 1.));
+	WorldToTexture = WorldToTexture * Scale(1.f/scalev.x, 1.f/scalev.y, 1.f/scalev.z);
+	// Apply rotations on X Y and Z axii
+	Vector rotatev = tp.FindVector("rotate", Vector(0., 0., 0.));
+	WorldToTexture = WorldToTexture * RotateX(rotatev.x);
+	WorldToTexture = WorldToTexture * RotateY(rotatev.y);
+	WorldToTexture = WorldToTexture * RotateZ(rotatev.z);
+	// Apply negated Translation
+	Vector translatev = tp.FindVector("translate", Vector(0., 0., 0.));
+	WorldToTexture = WorldToTexture * Translate(-translatev);
 }
  float Noise(float x, float y, float z) {
 	// Compute noise cell coordinates and offsets

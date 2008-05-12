@@ -35,6 +35,9 @@ Texture<Spectrum> * MarbleTexture::CreateSpectrumTexture(const Transform &tex2wo
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
 	return new MarbleTexture(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f),
 		tp.FindFloat("scale", 1.f),

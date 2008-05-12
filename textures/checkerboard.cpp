@@ -75,6 +75,9 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 	else {
 		// Initialize 3D texture mapping _map_ from _tp_
 		TextureMapping3D *map = new IdentityMapping3D(tex2world);
+		// Apply texture specified transformation option for 3D mapping
+		IdentityMapping3D *imap = (IdentityMapping3D*) map;
+		imap->Apply3DTextureMappingOptions(tp);
 		return new Checkerboard3D<float>(map, tex1, tex2);
 	}
 }
@@ -122,6 +125,9 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 	else {
 		// Initialize 3D texture mapping _map_ from _tp_
 		TextureMapping3D *map = new IdentityMapping3D(tex2world);
+		// Apply texture specified transformation option for 3D mapping
+		IdentityMapping3D *imap = (IdentityMapping3D*) map;
+		imap->Apply3DTextureMappingOptions(tp);
 		return new Checkerboard3D<Spectrum>(map, tex1, tex2);
 	}
 }

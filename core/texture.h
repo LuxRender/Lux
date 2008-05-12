@@ -101,7 +101,8 @@ public:
 		: WorldToTexture(x) { }
 	Point Map(const DifferentialGeometry &dg, Vector *dpdx,
 		Vector *dpdy) const;
-private:
+		void Apply3DTextureMappingOptions(const TextureParams &tp);
+//private:
 	Transform WorldToTexture;
 };
 template <class T> class Texture {

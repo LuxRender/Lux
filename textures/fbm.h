@@ -61,6 +61,10 @@ template <class T> Texture<float> * FBmTexture<T>::CreateFloatTexture(const Tran
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
+
 	return new FBmTexture<float>(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f), map);
 }
@@ -69,6 +73,10 @@ template <class T> Texture<Spectrum> * FBmTexture<T>::CreateSpectrumTexture(cons
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
+
 	return new FBmTexture<Spectrum>(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f), map);
 }
