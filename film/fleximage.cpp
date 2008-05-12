@@ -32,7 +32,9 @@
 #include "transport.h"	// for SurfaceIntegrator::IsFluxBased()
 #include "filter.h"
 
+#include <iostream>
 #include <fstream>
+
 #include <boost/thread/xtime.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -55,12 +57,12 @@ using namespace lux;
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-	bool w_untonemapped_IGI, bool w_tonemapped_TGA,
+	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM,
 	float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g, int reject_warmup, bool debugmode ) :
 	Film(xres, yres), filter(filt), writeInterval(wI), displayInterval(dI), filename(filename1),
 	premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
-	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA),
+	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM),
     framebuffer(NULL), imageLock(false), debug_mode(debugmode), factor(NULL)
 {
 	// Compute film image extent
@@ -94,9 +96,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	}
 
 	// array allocation
-        // Dade - 2048 was a too small value for QuadCores, there was a memory fault
-        // because the second buffer was filled while we were still merging the first
-        // one. Bug #140.
+    // Dade - 2048 was a too small value for QuadCores, there was a memory fault
+    // because the second buffer was filled while we were still merging the first
+    // one. Bug #140.
 
 	int arrsize = 128*1024;
 	SampleArrptr = new ArrSample[arrsize];
@@ -131,6 +133,24 @@ void FlexImageFilm::CreateBuffers()
 	// TODO: more groups for multilight
 	bufferGroups.push_back(BufferGroup());
 	bufferGroups.back().CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
+
+    // Dade - check if we have to resume a rendering and restore the buffers
+    if(writeResumeFlm) {
+        // Dade - check if the film file exists
+
+        string fname = filename+".flm";
+        std::ifstream ifs(fname.c_str());
+
+        if(ifs.good()) {
+            // Dade - read the data
+
+            luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
+            
+            UpdateFilm(NULL, ifs, 0, 0);
+        }
+
+        ifs.close();
+    }
 }
 
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
@@ -289,6 +309,10 @@ void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string
 		if(writeUtmIgi)
 			WriteIGIImage(rgb, alpha, filename+postfix+"_untonemapped.igi"); // TODO add samples
 
+        // Dade - save the current status of the film if required
+        if(writeResumeFlm)
+            WriteResumeFilm(filename + ".flm");
+
 		if(writeTmExr || writeTmIgi || writeTmTga) {
 			// Apply the imagine/tonemapping pipeline
 			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
@@ -418,6 +442,19 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 	return framebuffer;
 }
 
+void FlexImageFilm::WriteResumeFilm(const string &filename)
+{
+	// Dade - save the status of the film to the file
+
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing film status to file ")+filename).c_str());
+
+    std::ofstream filestr(filename.c_str());
+
+    TransmitFilm(filestr,0,0,false);
+
+    filestr.close();
+}
+
 void FlexImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filename)
 {
 	//printf("\nWriting Tonemapped TGA image to file \"%s\"...\n", filename.c_str());
@@ -534,8 +571,11 @@ void readLittleEndianFloat(bool isLittleEndian, filtering_stream<input> &in, flo
         (*value) = f.floatValue;
     }
 }
-void FlexImageFilm::TransmitSampleBuffer(std::basic_ostream<char> &stream,
-        int buf_id, int bufferGroup) {
+
+void FlexImageFilm::TransmitFilm(
+        std::basic_ostream<char> &stream,
+        int buf_id, int bufferGroup,
+        bool clearGroup) {
     BlockedArray<Pixel> *pixelBuf;
     float numberOfSamples;
     {
@@ -548,9 +588,11 @@ void FlexImageFilm::TransmitSampleBuffer(std::basic_ostream<char> &stream,
         pixelBuf = new BlockedArray<Pixel>(*buffer->pixels);
         numberOfSamples = currentGroup.numberOfSamples;
 
-        // Dede - reset the rendering buffer
-        buffer->Clear();
-        currentGroup.numberOfSamples = 0;
+        if(clearGroup) {
+            // Dede - reset the rendering buffer
+            buffer->Clear();
+            currentGroup.numberOfSamples = 0;
+        }
     }
 
     bool isLittleEndian = IsLittleEndian();
@@ -651,8 +693,10 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
 
         currentGroup.numberOfSamples += numberOfSamples;
     }   
-    
-    scene->numberOfSamplesFromNetwork += numberOfSamples;
+
+    if(scene != NULL)
+        scene->numberOfSamplesFromNetwork += numberOfSamples;
+
     delete pixelBuf;
 }
 
@@ -681,6 +725,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
 	bool w_untonemapped_IGI = params.FindOneBool("write_untonemapped_igi", false);
 	bool w_tonemapped_TGA = params.FindOneBool("write_tonemapped_tga", false);
+    bool w_resume_FLM = params.FindOneBool("write_resume_flm", false);
 
 	// output filenames
 	string filename = params.FindOneString("filename", "luxout");
@@ -704,6 +749,6 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
-		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA,
+		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM,
 		reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
 }

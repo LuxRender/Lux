@@ -218,7 +218,7 @@ public:
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
 		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-		bool w_untonemapped_IGI, bool w_tonemapped_TGA,
+		bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM,
 		float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g,
 		int reject_warmup, bool debugmode);
 	~FlexImageFilm() {
@@ -242,6 +242,7 @@ public:
 	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
 	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
 	void WriteIGIImage(float *rgb, float *alpha, const string &filename);
+    void WriteResumeFilm(const string &filename);
 	void ScaleOutput(float *rgb, float *alpha, float *scale);
 
 	// GUI display methods
@@ -253,8 +254,8 @@ public:
 	}
 
     // Dade - method useful for transmitting the samples to a client
-    void TransmitSampleBuffer(std::basic_ostream<char> &stream,
-            int buf_id = 0, int bufferGroup = 0);
+    void TransmitFilm(std::basic_ostream<char> &stream,
+            int buf_id = 0, int bufferGroup = 0, bool clearBuffer = true);
     void UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
             int buf_id = 0, int bufferGroup = 0);
 
@@ -272,7 +273,7 @@ private:
 	ParamSet toneParams;
 	float gamma;
 	float reject_warmup_samples;
-	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga;
+	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga, writeResumeFlm;
 
 	unsigned char *framebuffer;
 	boost::timer timer;
