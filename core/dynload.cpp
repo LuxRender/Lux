@@ -117,6 +117,8 @@
 #include "uv.h"
 #include "windy.h"
 #include "wrinkled.h"
+#include "blender_musgrave.h"
+#include "blender_marble.h"
 
 #include "contrast.h"
 #include "highcontrast.h"
@@ -373,6 +375,16 @@ if (plugin)
         tp.ReportUnused();
         return ret;
     }
+    if(name=="blender_musgrave") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderMusgraveTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_marble") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderMarbleTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
 
     //Error("Static loading of float texture '%s' failed.",name.c_str());
     std::stringstream ss;
@@ -456,7 +468,7 @@ if (plugin)
 
     //Error("Static loading of spectrum texture '%s' failed.",name.c_str());
     std::stringstream ss;
-    ss<<"Static loading of specturm texture '"<<name<<"' failed.";
+    ss<<"Static loading of spectrum texture '"<<name<<"' failed.";
     luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     boost::shared_ptr<Texture<Spectrum> > o;
     return o;
