@@ -22,7 +22,6 @@ ENDIF(APPLE)
 #OPTION(WITH_SSE "Enable SSE optimisations" ON)
 SET(VERSION 0.1)
 
-
 #############################################################################
 #############################################################################
 ###########################      Find BISON       ###########################
@@ -43,6 +42,17 @@ FIND_PROGRAM(FLEX_EXECUTABLE flex)
 IF (NOT FLEX_EXECUTABLE)
 MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
+
+
+#############################################################################
+#############################################################################
+###########################      Find OpenGL       ##########################
+#############################################################################
+#############################################################################
+SET(OPENGL_LIBRARY ${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
+
+MESSAGE(STATUS "OpenGL include directory:" ${OPENGL_INCLUDE_DIR})
 
 
 #############################################################################
@@ -72,6 +82,7 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 IF( FLTK_INCLUDE_DIR )
+    MESSAGE(STATUS "FLTK include directory:" ${FLTK_INCLUDE_DIR})
 	SET(FLTK_LIBRARIES fltk fltk_gl)
 ELSE( FLTK_INCLUDE_DIR )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
@@ -85,7 +96,6 @@ ENDIF( FLTK_INCLUDE_DIR )
 #ELSE( FLTK_FOUND )
 #        MESSAGE(FATAL_ERROR "Could not find FLTK")
 #ENDIF( FLTK_FOUND )
-
 
 
 #############################################################################
@@ -104,8 +114,8 @@ IF(APPLE)
 ELSE(APPLE)
 	FIND_PACKAGE(Boost REQUIRED)
 	IF(Boost_FOUND)
-		MESSAGE(STATUS ${Boost_LIBRARY_DIRS})
-		MESSAGE(STATUS ${Boost_INCLUDE_DIRS})
+		MESSAGE(STATUS "Boost library directory:" ${Boost_LIBRARY_DIRS})
+		MESSAGE(STATUS "Boost include directory:" ${Boost_INCLUDE_DIRS})
 		IF(CYGWIN)
 			SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
 		ELSE(CYGWIN)
@@ -227,7 +237,7 @@ ELSE(APPLE)
 	INCLUDE(FindJPEG)
 	#FIND_PACKAGE(JPEG REQUIRED)
 	IF(JPEG_FOUND)
-		MESSAGE( STATUS ${JPEG_INCLUDE_DIR} )
+		MESSAGE( STATUS "JPEG include directory:" ${JPEG_INCLUDE_DIR} )
 	ELSE(JPEG_FOUND)
 		MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
 	ENDIF(JPEG_FOUND)
@@ -407,7 +417,8 @@ SET(lux_lib_src
 	core/spectrumwavelengths.cpp core/spd.cpp
 	)
 
-INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR}
+INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
+                    ${JPEG_INCLUDE_DIR}
 					${TIFF_INCLUDE_DIR}
 					${PNG_INCLUDE_DIR}
 					${OPENEXR_INCLUDE_DIRS}
@@ -464,7 +475,7 @@ ENDIF(APPLE)
 
 #Here we build the GUI executable
 ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/luxgui.cpp renderer/renderwindow.cpp)
-INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include)
+INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include /usr/include)
 
 IF(APPLE)
 INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
@@ -483,7 +494,7 @@ MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+TARGET_LINK_LIBRARIES(luxrender lux ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 #IF(APPLE AND !APPLE_64)
