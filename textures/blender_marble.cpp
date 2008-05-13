@@ -33,6 +33,10 @@ Texture<float> *BlenderMarbleTexture3D::CreateFloatTexture(
         const TextureParams &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
     TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
+
     return new BlenderMarbleTexture3D(
             tp.FindFloat("noisesize", 0.250f),
             (short)tp.FindInt("noisetype", TEX_NOISESOFT),

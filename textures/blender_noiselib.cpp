@@ -1080,7 +1080,7 @@ static float dist_Minkovsky4(float x, float y, float z, float e)
 /* Minkovsky, general case, slow, maybe too slow to be useful */
 static float dist_Minkovsky(float x, float y, float z, float e)
 {
- return pow(pow(fabs(x), e) + pow(fabs(y), e) + pow(fabs(z), e), 1.0/e);
+ return powf(powf(fabs(x), e) + powf(fabs(y), e) + powf(fabs(z), e), 1.0/e);
 }
 
 
