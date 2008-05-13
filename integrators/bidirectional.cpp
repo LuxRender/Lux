@@ -92,7 +92,7 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 	}
 	// Initialize additional values in _vertices_
 	for (int i = 0; i < nVerts - 1; ++i)
-		vertices[i].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
+		vertices[i + 1].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
 			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 	return nVerts;
@@ -117,6 +117,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 				color, alpha ? *alpha : 1.f);
 		return L;
 	}
+	eyePath[0].dAWeight = 0.f; //FIXME
 	// Choose light for bidirectional path
 	int lightNum = Floor2Int(sample->oneD[lightNumOffset][0] *
 		scene->lights.size());
@@ -144,6 +145,10 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		nLight = generateLightPath(scene, lightBsdf, sample,
 			sampleLightOffset, lightPath);
 	}
+	if (nLight > 0 && !light->IsDeltaLight())
+		lightPath[0].dAWeight = lightPdf / lightWeight;
+	else
+		lightPath[0].dAWeight = 0.f;
 	// Connect bidirectional path prefixes and evaluate throughput
 	SWCSpectrum directWt(1.f);
 	int consecDiffuse = 0;
@@ -226,8 +231,8 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 	}
 	// Initialize additional values in _vertices_
 	for (int i = 0; i < nVerts - 1; ++i)
-		vertices[i].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
-			AbsDot(-vertices[i].wo, vertices[i + 1].ns) /
+		vertices[i + 1].dAWeight = vertices[i].bsdfWeight * vertices[i].rrWeight *
+			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 	return nVerts;
 }
@@ -249,15 +254,19 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 			else
 				p = 0.f;
 		}
-		p /= eye[nEye - 2].dAWeight;
+		p /= eye[nEye - 1].dAWeight;
 		if ((eye[nEye - 2].flags & BSDF_SPECULAR) == 0)
 			weight += p;
 	}
 	for (int i = nEye - 2; i > max(0, nEye + nLight - maxLightDepth - 1); --i) {
-		p *= eye[i].dAWeight / eye[i - 1].dAWeight;
+		p *= eye[i + 1].dAWeight / eye[i].dAWeight;
 		if ((eye[i].flags & BSDF_SPECULAR) == 0 &&
 			(eye[i - 1].flags & BSDF_SPECULAR) == 0)
 			weight += p;
+	}
+	if (nEye > 0 && eye[0].dAWeight > 0.f) {
+		p *= eye[1].dAWeight / eye[0].dAWeight;
+		weight += p;
 	}
 	p = 1.f;
 	if (nEye > 0 && nLight > 1 && nEye < maxEyeDepth) {
@@ -273,15 +282,19 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 			else
 				p = 0.f;
 		}
-		p /= light[nLight - 2].dAWeight;
+		p /= light[nLight - 1].dAWeight;
 		if ((light[nLight - 2].flags & BSDF_SPECULAR) == 0)
 			weight += p;
 	}
 	for (int i = nLight - 2; i > max(0, nLight + nEye - maxEyeDepth - 1); --i) {
-		p *= light[i].dAWeight / light[i - 1].dAWeight;
+		p *= light[i + 1].dAWeight / light[i].dAWeight;
 		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
 			(light[i - 1].flags & BSDF_SPECULAR) == 0)
 			weight += p;
+	}
+	if (nLight > 0 && light[0].dAWeight > 0.f) {
+		p *= light[1].dAWeight / light[0].dAWeight;
+		weight += p;
 	}
 	return weight;
 }

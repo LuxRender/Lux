@@ -125,6 +125,22 @@ SWCSpectrum AreaLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **b
 	*pdf = shape->Pdf(p);
 	return L(p, ns, Vector(ns)) * M_PI;
 }
+SWCSpectrum AreaLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	VisibilityTester *visibility) const
+{
+	Normal ns;
+	Point ps = shape->Sample(p, u1, u2, &ns);
+	Vector wo(Normalize(ps - p));
+	*pdf = shape->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
+	visibility->SetSegment(p, ps);
+	return L(ps, ns, -wo);
+}
 float AreaLight::Pdf(const Scene *scene, const Point &p) const
 {
 	return shape->Pdf(p);

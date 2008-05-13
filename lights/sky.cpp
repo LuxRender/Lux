@@ -232,13 +232,73 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	worldRadius *= 1.01f;
 	Point p = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
-	Normal ns = Normal(Normalize(Point(0, 0, 0) - p));
+	Normal ns = Normal(Normalize(worldCenter - p));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	return SWCSpectrum(skyScale);
+}
+SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	VisibilityTester *visibility) const
+{
+	Vector wi;
+	if(!havePortalShape) {
+		// Sample cosine-weighted direction on unit sphere
+		float x, y, z;
+		ConcentricSampleDisk(u1, u2, &x, &y);
+		z = sqrtf(max(0.f, 1.f - x*x - y*y));
+		if (u3 < .5)
+			z *= -1;
+		wi = Vector(x, y, z);
+		// Compute _pdf_ for cosine-weighted infinite light direction
+		*pdf = fabsf(wi.z) * INV_TWOPI;
+		// Transform direction to world space
+		Vector v1, v2;
+		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
+		wi = Vector(v1.x * wi.x + v2.x * wi.y + n.x * wi.z,
+			 v1.y * wi.x + v2.y * wi.y + n.y * wi.z,
+			 v1.z * wi.x + v2.z * wi.y + n.z * wi.z);
+	} else {
+		// Sample a random Portal
+		int shapeidx = 0;
+		if(nrPortalShapes > 1)
+			shapeidx = Floor2Int(u3 * nrPortalShapes);
+		Normal ns;
+		Point ps;
+		bool exit = false;
+		for (int i = 0; i < nrPortalShapes && !exit; ++i) {
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			wi = Normalize(ps - p);
+			exit = (Dot(wi, ns) < 0.f);
+		}
+		if (exit)
+			*pdf = PortalShapes[shapeidx]->Pdf(p, wi);
+		else {
+			*pdf = 0.f;
+			return 0.f;
+		}
+	}
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	worldRadius *= 1.01f;
+	Vector toCenter(worldCenter - p);
+	float centerDistance = Dot(toCenter, toCenter);
+	float approach = Dot(toCenter, wi);
+	float distance = approach + sqrtf(worldRadius * worldRadius - centerDistance + approach * approach);
+	Point ps(p + distance * wi);
+	Normal ns(Normalize(worldCenter - ps));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight));
+	*pdf *= AbsDot(wi, ns) / DistanceSquared(worldCenter, ps);
+	visibility->SetSegment(p, ps);
 	return SWCSpectrum(skyScale);
 }
 float SkyLight::Pdf(const Scene *scene, const Point &p) const
