@@ -56,7 +56,7 @@ Texture<float> *BlenderMarbleTexture3D::CreateFloatTexture(
     }
 
     // Dade - decode the noise type
-    short ntype = TEX_NOISESOFT;
+    short ntype = TEX_NOISEPERL;
     string noiseType = tp.FindString("noisetype");
     if ((noiseType == "soft_noise") || (noiseType == ""))
         ntype = TEX_NOISESOFT;
