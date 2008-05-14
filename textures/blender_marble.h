@@ -67,7 +67,13 @@ public:
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
         blender::TexResult texres;
-        multitex(&tex, &P.x, &texres);
+        int resultType = multitex(&tex, &P.x, &texres);
+
+        if(resultType & TEX_RGB)
+            texres.tin = (0.35 * texres.tr + 0.45 * texres.tg
+                    + 0.2 * texres.tb);
+        else
+            texres.tr = texres.tg = texres.tb = texres.tin;
 
         return texres.tin;
     }

@@ -29,7 +29,6 @@
 namespace lux {
 
 // Dade - BlenderMusgraveTexture3D Declarations
-
 class BlenderMusgraveTexture3D : public Texture<float> {
 public:
     // BlenderMusgraveTexture3D Public Methods
@@ -42,6 +41,8 @@ public:
             float mg_H,
             float mg_lacunarity,
             float mg_octaves,
+            float mg_gain,
+            float mg_offset,
             float noiseSize,
             float ns_outscale,
             short sType,
@@ -54,6 +55,8 @@ public:
         tex.mg_H = mg_H;
         tex.mg_lacunarity = mg_lacunarity;
         tex.mg_octaves = mg_octaves;
+        tex.mg_gain = mg_gain;
+        tex.mg_offset = mg_offset;
 
         tex.noisesize = noiseSize;
         tex.ns_outscale = ns_outscale;
@@ -69,12 +72,19 @@ public:
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
         blender::TexResult texres;
-        multitex(&tex, &P.x, &texres);
+        int resultType = multitex(&tex, &P.x, &texres);
+
+        if(resultType & TEX_RGB)
+            texres.tin = (0.35 * texres.tr + 0.45 * texres.tg
+                    + 0.2 * texres.tb);
+        else
+            texres.tr = texres.tg = texres.tb = texres.tin;
 
         return texres.tin;
     }
 
     static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+    
 private:
     // BlenderMusgraveTexture3D Private Data
 

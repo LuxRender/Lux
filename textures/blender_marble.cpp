@@ -22,6 +22,9 @@
 
 // blender_marble.cpp*
 #include "blender_marble.h"
+#include "error.h"
+
+#include <sstream>
 
 using namespace lux;
 using namespace blender;
@@ -37,14 +40,86 @@ Texture<float> *BlenderMarbleTexture3D::CreateFloatTexture(
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
+    // Dade - decode the noise type
+    short type = TEX_SOFT;
+    string stype = tp.FindString("type");
+    if ((stype == "soft") || (stype == ""))
+        type = TEX_SOFT;
+    else if (stype == "sharp")
+        type = TEX_SHARP;
+    else if (stype == "sharper")
+        type = TEX_SHARPER;
+    else {
+        std::stringstream ss;
+        ss << "Unknown noise type '" << stype << "'";
+        luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+    }
+
+    // Dade - decode the noise type
+    short ntype = TEX_NOISESOFT;
+    string noiseType = tp.FindString("noisetype");
+    if ((noiseType == "soft_noise") || (noiseType == ""))
+        ntype = TEX_NOISESOFT;
+    else if (noiseType == "hard_noise")
+        ntype = TEX_NOISEPERL;
+    else {
+        std::stringstream ss;
+        ss << "Unknown noise type '" << noiseType << "'";
+        luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+    }
+
+    // Dade - decode the noise basis
+    short basis = TEX_BLENDER;
+    string noiseBasis = tp.FindString("noisebasis");
+    if ((noiseBasis == "blender_original") || (noiseBasis == ""))
+        basis = TEX_BLENDER;
+    else if (noiseBasis == "original_perlin")
+        basis = TEX_STDPERLIN;
+    else if (noiseBasis == "improved_perlin")
+        basis = TEX_NEWPERLIN;
+    else if (noiseBasis == "voronoi_f1")
+        basis = TEX_VORONOI_F1;
+    else if (noiseBasis == "voronoi_f2")
+        basis = TEX_VORONOI_F2;
+    else if (noiseBasis == "voronoi_f3")
+        basis = TEX_VORONOI_F3;
+    else if (noiseBasis == "voronoi_f4")
+        basis = TEX_VORONOI_F4;
+    else if (noiseBasis == "voronoi_f2f1")
+        basis = TEX_VORONOI_F2F1;
+    else if (noiseBasis == "voronoi_crackle")
+        basis = TEX_VORONOI_CRACKLE;
+    else if (noiseBasis == "cell_noise")
+        basis = TEX_CELLNOISE;
+    else {
+        std::stringstream ss;
+        ss << "Unknown noise basis '" << noiseBasis << "'";
+        luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+    }
+
+    // Dade - decode the noise basis
+    short basis2 = TEX_SIN;
+    string noiseBasis2 = tp.FindString("noisebasis2");
+    if ((noiseBasis2 == "sin") || (noiseBasis2 == ""))
+        basis2 = TEX_SIN;
+    else if (noiseBasis2 == "saw")
+        basis2 = TEX_SAW;
+    else if (noiseBasis2 == "tri")
+        basis2 = TEX_TRI;
+    else {
+        std::stringstream ss;
+        ss << "Unknown noise basis2 '" << noiseBasis << "'";
+        luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+    }
+
     return new BlenderMarbleTexture3D(
             tp.FindFloat("noisesize", 0.250f),
-            (short)tp.FindInt("noisetype", TEX_NOISESOFT),
+            ntype,
             (short)tp.FindInt("noisedepth", 2),
-            tp.FindFloat("turbul", 5.0f),
-            (short)tp.FindInt("type", TEX_SOFT),
-            (short)tp.FindInt("noisebasis2", TEX_SIN),
-            (short)tp.FindInt("noisebasis", 0),
+            tp.FindFloat("turbulance", 5.0f),
+            type,
+            basis2,
+            basis,
             tp.FindFloat("bright", 1.0f),
             tp.FindFloat("contrast", 1.0f),
             map);
