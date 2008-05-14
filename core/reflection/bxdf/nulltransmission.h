@@ -20,34 +20,33 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_MATERIAL_H
-#define LUX_MATERIAL_H
-// material.h*
+#ifndef LUX_NULLTRANSMISSION_H
+#define LUX_NULLTRANSMISSION_H
+// nulltransmission.h*
 #include "lux.h"
+#include "bxdf.h"
+#include "spectrum.h"
 
 namespace lux
 {
 
-// Material Class Declarations
-class  Material  {
+class  NullTransmission : public BxDF {
 public:
-	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const = 0;
-	virtual ~Material();
-	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
-	void SetChild1(boost::shared_ptr<Material> x) {
-		child1 = x;
+	// NullTransmission Public Methods
+	NullTransmission()
+		: BxDF(BxDFType(BSDF_NULL)) {}
+	SWCSpectrum f(const Vector &, const Vector &) const {
+		return SWCSpectrum(0.);
 	}
-	void SetChild2(boost::shared_ptr<Material> x) {
-		child2 = x;
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
+	float Pdf(const Vector &wo, const Vector &wi) const {
+		return 0.;
 	}
-
-	boost::shared_ptr<Material> child1;
-	boost::shared_ptr<Material> child2;
+private:
+	// NullTransmission Private Data
 };
 
 }//namespace lux
 
-#endif // LUX_MATERIAL_H
+#endif // LUX_NULLTRANSMISSION_H
+

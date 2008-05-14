@@ -20,34 +20,28 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_MATERIAL_H
-#define LUX_MATERIAL_H
-// material.h*
-#include "lux.h"
+// mixmaterial.cpp*
+#include "mixmaterial.h"
+#include "bxdf.h"
+#include "nulltransmission.h"
+#include "paramset.h"
 
-namespace lux
-{
+using namespace lux;
 
-// Material Class Declarations
-class  Material  {
-public:
-	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const = 0;
-	virtual ~Material();
-	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
-	void SetChild1(boost::shared_ptr<Material> x) {
-		child1 = x;
-	}
-	void SetChild2(boost::shared_ptr<Material> x) {
-		child2 = x;
-	}
-
-	boost::shared_ptr<Material> child1;
-	boost::shared_ptr<Material> child2;
-};
-
-}//namespace lux
-
-#endif // LUX_MATERIAL_H
+// MixMaterial Method Definitions
+BSDF *MixMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+	DifferentialGeometry dgs;
+	dgs = dgShading;
+	float amt = amount->Evaluate(dgs);
+	if(lux::random::floatValue() < amt) // TODO - radiance - include in samplevector for mutation
+		return child1->GetBSDF(dgGeom, dgShading);
+	else
+		return child2->GetBSDF(dgGeom, dgShading);
+}
+Material* MixMaterial::CreateMaterial(const Transform &xform,
+		const TextureParams &mp) {
+	string namedmaterial1 = mp.FindString("namedmaterial1"); // discarded as these are passed trough Context::Shape()
+    string namedmaterial2 = mp.FindString("namedmaterial2"); // discarded as these are passed trough Context::Shape()
+	boost::shared_ptr<Texture<float> > amount = mp.GetFloatTexture("amount", 0.5f);
+	return new MixMaterial(amount);
+}

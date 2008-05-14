@@ -20,34 +20,27 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_MATERIAL_H
-#define LUX_MATERIAL_H
-// material.h*
+// mixmaterial.cpp*
 #include "lux.h"
+#include "material.h"
 
 namespace lux
 {
 
-// Material Class Declarations
-class  Material  {
+// MixMaterial Class Declarations
+class MixMaterial : public Material {
 public:
-	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const = 0;
-	virtual ~Material();
-	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
-	void SetChild1(boost::shared_ptr<Material> x) {
-		child1 = x;
+	// MixMaterial Public Methods
+	MixMaterial(boost::shared_ptr<Texture<float> > a) {
+		amount = a;
 	}
-	void SetChild2(boost::shared_ptr<Material> x) {
-		child2 = x;
-	}
-
-	boost::shared_ptr<Material> child1;
-	boost::shared_ptr<Material> child2;
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	
+	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+private:
+	// MixMaterial Private Data
+	boost::shared_ptr<Texture<float> > amount;
 };
 
 }//namespace lux
 
-#endif // LUX_MATERIAL_H

@@ -20,34 +20,23 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_MATERIAL_H
-#define LUX_MATERIAL_H
-// material.h*
-#include "lux.h"
+// null.cpp*
+#include "null.h"
+#include "bxdf.h"
+#include "nulltransmission.h"
+#include "paramset.h"
 
-namespace lux
-{
+using namespace lux;
 
-// Material Class Declarations
-class  Material  {
-public:
-	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const = 0;
-	virtual ~Material();
-	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
-	void SetChild1(boost::shared_ptr<Material> x) {
-		child1 = x;
-	}
-	void SetChild2(boost::shared_ptr<Material> x) {
-		child2 = x;
-	}
-
-	boost::shared_ptr<Material> child1;
-	boost::shared_ptr<Material> child2;
-};
-
-}//namespace lux
-
-#endif // LUX_MATERIAL_H
+// Glass Method Definitions
+BSDF *Null::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
+	DifferentialGeometry dgs = dgShading;
+	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, 1.);
+	bsdf->Add(BSDF_ALLOC( NullTransmission)());
+	return bsdf;
+}
+Material* Null::CreateMaterial(const Transform &xform,
+		const TextureParams &mp) {
+	return new Null();
+}

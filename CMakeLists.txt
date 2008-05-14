@@ -383,7 +383,7 @@ SET(lux_lib_src
 				core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
 				core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
 				core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
-				core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp
+				core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp core/reflection/bxdf/nulltransmission.cpp
 				core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
 				core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp
 				core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
@@ -406,6 +406,7 @@ SET(lux_lib_src
         materials/glass.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp materials/plastic.cpp
         materials/shinymetal.cpp materials/substrate.cpp
         materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
+	materials/mix.cpp materials/null.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp

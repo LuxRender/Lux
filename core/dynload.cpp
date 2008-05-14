@@ -104,6 +104,8 @@
 #include "substrate.h"
 #include "carpaint.h"
 #include "metal.h"
+#include "null.h"
+#include "mixmaterial.h"
 
 #include "bilerp.h"
 #include "checkerboard.h"
@@ -294,6 +296,18 @@ if (plugin)
         mp.ReportUnused();
         return ret;
     }
+    if(name=="null")
+    {
+    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(Null::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }    
+    if(name=="mix")
+    {
+    	boost::shared_ptr<Material> ret = boost::shared_ptr<Material>(MixMaterial::CreateMaterial(mtl2world, mp));
+        mp.ReportUnused();
+        return ret;
+    }    
 
 
     //Error("Static loading of material '%s' failed.",name.c_str());

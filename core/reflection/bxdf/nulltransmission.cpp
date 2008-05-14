@@ -20,34 +20,22 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_MATERIAL_H
-#define LUX_MATERIAL_H
-// material.h*
-#include "lux.h"
+// nulltransmission.cpp*
+#include "nulltransmission.h"
+#include "color.h"
+#include "spectrum.h"
+#include <stdarg.h>
 
-namespace lux
-{
+#include <boost/thread/tss.hpp>
 
-// Material Class Declarations
-class  Material  {
-public:
-	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const = 0;
-	virtual ~Material();
-	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
-	void SetChild1(boost::shared_ptr<Material> x) {
-		child1 = x;
-	}
-	void SetChild2(boost::shared_ptr<Material> x) {
-		child2 = x;
-	}
+using namespace lux;
 
-	boost::shared_ptr<Material> child1;
-	boost::shared_ptr<Material> child2;
-};
+SWCSpectrum NullTransmission::Sample_f(const Vector &wo,
+		Vector *wi, float u1, float u2, float *pdf) const {
+	*wi = Vector(-wo.x,
+	             -wo.y,
+				 -wo.z);
+	*pdf = 1.f;
+	return 1.f;
+}
 
-}//namespace lux
-
-#endif // LUX_MATERIAL_H
