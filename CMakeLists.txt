@@ -406,7 +406,7 @@ SET(lux_lib_src
         materials/glass.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp materials/plastic.cpp
         materials/shinymetal.cpp materials/substrate.cpp
         materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
-	materials/mix.cpp materials/null.cpp
+        materials/mixmaterial.cpp materials/null.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
