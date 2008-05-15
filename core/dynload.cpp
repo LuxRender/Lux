@@ -121,6 +121,7 @@
 #include "wrinkled.h"
 #include "blender_musgrave.h"
 #include "blender_marble.h"
+#include "blender_wood.h"
 
 #include "contrast.h"
 #include "highcontrast.h"
@@ -396,6 +397,11 @@ if (plugin)
     }
     if(name=="blender_marble") {
         boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderMarbleTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_wood") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderWoodTexture3D::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }

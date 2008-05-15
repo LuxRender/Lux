@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// blender_marble.cpp*
-#include "blender_marble.h"
+// blender_wood.cpp*
+#include "blender_wood.h"
 #include "error.h"
 
 #include <sstream>
@@ -29,9 +29,9 @@
 using namespace lux;
 using namespace blender;
 
-// Dade - BlenderMarbleTexture3D Method Definitions
+// Dade - BlenderWoodTexture3D Method Definitions
 
-Texture<float> *BlenderMarbleTexture3D::CreateFloatTexture(
+Texture<float> *BlenderWoodTexture3D::CreateFloatTexture(
         const Transform &tex2world,
         const TextureParams &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
@@ -41,14 +41,16 @@ Texture<float> *BlenderMarbleTexture3D::CreateFloatTexture(
 	imap->Apply3DTextureMappingOptions(tp);
 
     // Dade - decode the noise type
-    short type = TEX_SOFT;
+    short type = TEX_BAND;
     string stype = tp.FindString("type");
-    if ((stype == "soft") || (stype == ""))
-        type = TEX_SOFT;
-    else if (stype == "sharp")
-        type = TEX_SHARP;
-    else if (stype == "sharper")
-        type = TEX_SHARPER;
+    if ((stype == "bands") || (stype == ""))
+        type = TEX_BAND;
+    else if (stype == "rings")
+        type = TEX_RING;
+    else if (stype == "bandnoise")
+        type = TEX_BANDNOISE;
+    else if (stype == "ringnoise")
+        type = TEX_RINGNOISE;
     else {
         std::stringstream ss;
         ss << "Unknown noise type '" << stype << "'";
@@ -112,10 +114,9 @@ Texture<float> *BlenderMarbleTexture3D::CreateFloatTexture(
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
-    return new BlenderMarbleTexture3D(
+    return new BlenderWoodTexture3D(
             tp.FindFloat("noisesize", 0.250f),
             ntype,
-            (short)tp.FindInt("noisedepth", 2),
             tp.FindFloat("turbulance", 5.0f),
             type,
             basis2,
