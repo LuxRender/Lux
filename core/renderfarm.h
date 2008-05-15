@@ -26,15 +26,48 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "../film/fleximage.h"
+
+#include <boost/thread.hpp>
+#include <boost/thread/xtime.hpp>
+
+#include "fleximage.h"
 
 namespace lux
 {
 
+class RenderFarm;
+
+class FilmUpdaterThread : public boost::noncopyable {
+public:
+    FilmUpdaterThread(RenderFarm *renderFarm, Scene *scene) :
+        renderFarm(renderFarm), scene(scene), thread(NULL), signal(SIG_NONE) { }
+
+    ~FilmUpdaterThread() {
+        delete thread;
+    }
+
+    void interrupt() {
+        signal = SIG_EXIT;
+        thread->join();
+    }
+    
+    friend class RenderFarm;
+private:
+    static void updateFilm(FilmUpdaterThread *filmUpdaterThread);
+
+    RenderFarm *renderFarm;
+    Scene *scene;
+    boost::thread *thread; // keep pointer to delete the thread object
+    
+    // Dade - used 
+    int signal;
+    static const int SIG_NONE = 0;
+    static const int SIG_EXIT = 1;
+};
+
 class RenderFarm {
 public:
-	RenderFarm()
-	{}
+	RenderFarm() : serverUpdateInterval(3*60), filmUpdateThread(NULL) {}
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	
 	void send(const std::string &command);
@@ -48,12 +81,25 @@ public:
 
     //!< Sends immediately all commands in the buffer to the servers
 	void flush();
+
+    int getServerCount() { return serverList.size(); }
+
+    // Dade - used to periodically update the film
+    void startFilmUpdater(Scene *scene);
+    void stopFilmUpdater();
     //!<Gets the films from the network, and merge them to the film given in parameter
-	void updateFilm(Scene *scene, FlexImageFilm *film); 
+	void updateFilm(Scene *scene); 
+
+public:
+    // Dade - film update infromation
+    int serverUpdateInterval;
 
 private:
 	std::vector<std::string> serverList;
 	std::stringstream netBuffer;
+
+    // Dade - film update infromation
+    FilmUpdaterThread *filmUpdateThread;
 };
 
 }//namespace lux

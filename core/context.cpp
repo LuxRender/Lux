@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include "renderfarm.h"
+
+
 #include "lux.h"
 #include "context.h"
 #include "dynload.h"
@@ -596,8 +599,18 @@ void Context::worldEnd() {
 	}
 	// Create scene and render
 	luxCurrentScene = renderOptions->MakeScene();
-	if (luxCurrentScene)
+    if (luxCurrentScene) {
+        // Dade - check if we have to start the network rendering updater thread
+
+        if (renderFarm.getServerCount() > 0)
+            renderFarm.startFilmUpdater(luxCurrentScene);
+
 		luxCurrentScene->Render();
+        
+        if (renderFarm.getServerCount() > 0)
+            renderFarm.stopFilmUpdater();
+    }
+
 	//delete scene;
 	// Clean up after rendering
 	currentApiState = STATE_OPTIONS_BLOCK;
@@ -696,5 +709,5 @@ void Context::getFilm(std::basic_ostream<char> &stream) {
 }
 
 void Context::updateFilmFromNetwork() {
-	renderFarm.updateFilm(luxCurrentScene, (FlexImageFilm *)(luxCurrentScene->camera->film));
+	renderFarm.updateFilm(luxCurrentScene);
 }

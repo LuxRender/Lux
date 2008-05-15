@@ -57,7 +57,6 @@
 using namespace lux;
 namespace po = boost::program_options;
 static int threads;
-static int serverInterval;
 bool parseError;
 void AddThread();
 
@@ -78,20 +77,6 @@ Fl_Menu_Item menu_threads[] = {
 	{ "- Remove Thread", 0, (Fl_Callback *) removethread_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0 },
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
-
-void networkFilmUpdateThread() {
-    boost::xtime xt;
-    boost::xtime_get(&xt, boost::TIME_UTC);
-    xt.sec += serverInterval;
-
-    while (true) {
-        boost::thread::sleep(xt);
-        boost::xtime_get(&xt, boost::TIME_UTC);
-        xt.sec += serverInterval;
-
-        luxUpdateFilmFromNetwork();
-    }
-}
 
 void exit_cb(Fl_Widget *, void *) {
 	if (fb_update_thread)
@@ -871,10 +856,12 @@ int main(int ac, char *av[]) {
 			threads = 1;;
 		}
 
-        if (vm.count("serverinterval"))
+        int serverInterval;
+        if (vm.count("serverinterval")) {
             serverInterval = vm["serverinterval"].as<int>();
-        else
-            serverInterval = 3*60;
+            luxSetNetworkServerUpdateInterval(serverInterval);
+        } else
+            serverInterval = luxGetNetworkServerUpdateInterval();
 
         if (vm.count("useserver")) {
             std::stringstream ss;
@@ -972,10 +959,6 @@ int main(int ac, char *av[]) {
 
 		// set timeouts
 		Fl::add_timeout(0.25, check_SceneReady);
-
-        // Dade - start the thread used to collect network rendering results 
-        if (useServer)
-            boost::thread networkRenderingThread(&networkFilmUpdateThread);
 
 		// run gui
 		Fl::run ();

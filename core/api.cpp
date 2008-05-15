@@ -500,15 +500,20 @@ extern "C" double luxStatistics(const char *statName) {
 		}
 }
 
-
 extern "C" void luxUpdateFilmFromNetwork() {
 	
 	Context::luxUpdateFilmFromNetwork();
 }
 
+extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval) {
+	
+	Context::luxSetNetworkServerUpdateInterval(updateInterval);
+}
 
-
-
+extern "C" int luxGetNetworkServerUpdateInterval() {
+	
+	return Context::luxGetNetworkServerUpdateInterval();
+}
 
 //error handling
 LuxErrorHandler luxError=luxErrorPrint;

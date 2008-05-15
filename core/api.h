@@ -100,6 +100,8 @@ unsigned char* luxFramebuffer();
 /* Networking */
 void luxAddServer(const char * name);
 void luxUpdateFilmFromNetwork();
+void luxSetNetworkServerUpdateInterval(int updateInterval);
+int luxGetNetworkServerUpdateInterval();
 
 /* Informations and statistics */
 double luxStatistics(const char *statName);

@@ -71,7 +71,6 @@ namespace po = boost::program_options;
 
 std::string sceneFileName;
 int threads;
-int serverInterval;
 bool parseError;
 
 void engineThread() {
@@ -98,20 +97,6 @@ void infoThread() {
                 << (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
                 << (float) luxStatistics("samplesPx") << " samples/pix";
         luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-    }
-}
-
-void networkFilmUpdateThread() {
-    boost::xtime xt;
-    boost::xtime_get(&xt, boost::TIME_UTC);
-    xt.sec += serverInterval;
-
-    while (true) {
-        boost::thread::sleep(xt);
-        boost::xtime_get(&xt, boost::TIME_UTC);
-        xt.sec += serverInterval;
-
-        luxUpdateFilmFromNetwork();
     }
 }
 
@@ -476,10 +461,12 @@ int main(int ac, char *av[]) {
         else
             threads = 1;
 
-        if (vm.count("serverinterval"))
+        int serverInterval;
+        if (vm.count("serverinterval")) {
             serverInterval = vm["serverinterval"].as<int>();
-        else
-            serverInterval = 3*60;
+            luxSetNetworkServerUpdateInterval(serverInterval);
+        } else
+            serverInterval = luxGetNetworkServerUpdateInterval();
 
         ss.str("");
         ss << "Threads: " << threads;
@@ -546,7 +533,6 @@ int main(int ac, char *av[]) {
 
                 //launch info printing thread
                 boost::thread j(&infoThread);
-                if (useServer) boost::thread k(&networkFilmUpdateThread);
 
                 //wait for threads to finish
                 t.join();

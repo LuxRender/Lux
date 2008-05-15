@@ -25,17 +25,66 @@
 #include "error.h"
 #include "paramset.h"
 #include "renderfarm.h"
+#include "scene.h"
+#include "camera.h"
 
 #include "../renderer/include/asio.hpp"
 
 #include <fstream>
 #include <boost/iostreams/filtering_stream.hpp>
-//#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/bind.hpp>
 
 using namespace boost::iostreams;
 using namespace lux;
 using asio::ip::tcp;
+
+void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
+    // Dade - thread to update the film with data from servers
+
+    boost::xtime xt, reft;
+    boost::xtime_get(&xt, boost::TIME_UTC);
+    xt.sec += 2;
+    boost::xtime_get(&reft, boost::TIME_UTC);
+
+    while (filmUpdaterThread->signal == SIG_NONE) {
+        // Dade - check signal every 2 seconds
+
+        for(;;) {
+            boost::thread::sleep(xt);
+            if (filmUpdaterThread->signal == SIG_EXIT)
+                break;
+
+            boost::xtime_get(&xt, boost::TIME_UTC);
+            
+            if (xt.sec - reft.sec > filmUpdaterThread->renderFarm->serverUpdateInterval) {
+                reft = xt;
+                break;
+            }
+            
+            xt.sec += 2;
+        }
+
+        if (filmUpdaterThread->signal == SIG_EXIT)
+            break;
+
+        filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
+    }
+}
+
+// Dade - used to periodically update the film
+void RenderFarm::startFilmUpdater(Scene *scene) {
+    filmUpdateThread = new FilmUpdaterThread(this, scene);
+    filmUpdateThread->thread = new boost::thread(boost::bind(
+            FilmUpdaterThread::updateFilm, filmUpdateThread));    
+}
+
+void RenderFarm::stopFilmUpdater() {
+    if (filmUpdateThread != NULL) {
+        filmUpdateThread->interrupt();
+        delete filmUpdateThread;
+        filmUpdateThread = NULL;
+    }
+}
 
 bool RenderFarm::connect(const string &serverName) {
     serverList.push_back(std::string(serverName));
@@ -64,7 +113,6 @@ void RenderFarm::flush() {
     }
 
     // Dade - write info only if there was the communication with some server
-
     if (serverList.size() > 0) {
         ss.str("");
         ss << "All servers are aligned";
@@ -72,7 +120,10 @@ void RenderFarm::flush() {
     }
 }
 
-void RenderFarm::updateFilm(Scene *scene, FlexImageFilm *film) {
+void RenderFarm::updateFilm(Scene *scene) {
+    // Dade - network rendering supports only FlexImageFilm
+    FlexImageFilm *film = (FlexImageFilm *)(scene->camera->film);
+
     std::stringstream ss;
     for (vector<string>::iterator server = serverList.begin(); server
             != serverList.end(); ++server) {
@@ -87,7 +138,7 @@ void RenderFarm::updateFilm(Scene *scene, FlexImageFilm *film) {
             film->UpdateFilm(scene, stream);
 
             ss.str("");
-            ss << "Samples recieved from '" << (*server) << "'";
+            ss << "Samples received from '" << (*server) << "'";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
         } catch (std::exception& e) {
             luxError(LUX_SYSTEM, LUX_ERROR, e.what());

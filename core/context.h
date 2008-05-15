@@ -36,8 +36,7 @@ namespace lux {
 class Context {
 public:
 
-	Context(std::string n="Lux default context") :
-		name(n) {
+	Context(std::string n="Lux default context") : name(n) {
 		currentApiState = STATE_OPTIONS_BLOCK;
 		renderOptions = new RenderOptions;
 		graphicsState = GraphicsState();
@@ -115,13 +114,13 @@ public:
 	//static int luxFilmYres() { return activeContext->filmYres(); }
 
 	//film access (networking)
-	//static void getFilm(std::basic_ostream<char> &stream);
-	static void luxUpdateFilmFromNetwork() { activeContext->updateFilmFromNetwork() ; }
+	static void luxUpdateFilmFromNetwork() { activeContext->updateFilmFromNetwork(); }
+	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->renderFarm.serverUpdateInterval = updateInterval; }
+	static int luxGetNetworkServerUpdateInterval() { return activeContext->renderFarm.serverUpdateInterval; }
+    static void luxAddServer(const string &name) { activeContext->addServer(name); }
 
 	//statistics
 	static double luxStatistics(const string &statName) { return activeContext->statistics(statName); }
-	static void luxAddServer(const string &name) { activeContext->addServer(name); }
-	
 	
 	//film access (networking)
 	void getFilm(std::basic_ostream<char> &stream);
@@ -191,7 +190,7 @@ private:
 	int filmXres();
 	int filmYres();*/
 
-	
+	// Dade - network rendering
 	void updateFilmFromNetwork();
 
 	//statistics
@@ -270,7 +269,6 @@ private:
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<Transform> pushedTransforms;
 	RenderFarm renderFarm;
-
 };
 
 }
