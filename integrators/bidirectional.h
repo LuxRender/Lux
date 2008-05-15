@@ -44,7 +44,7 @@ private:
 	int generatePath(const Scene *scene, const Ray &r, const Sample *sample,
 		int sampleOffset,
 		vector<BidirVertex> &vertices) const;
-	float weightPath(vector<BidirVertex> &eye, int nEye, vector<BidirVertex> &light, int nLight) const;
+	float weightPath(vector<BidirVertex> &eye, int nEye, vector<BidirVertex> &light, int nLight, float pdfLight, bool directLight) const;
 	SWCSpectrum evalPath(const Scene *scene, vector<BidirVertex> &eye, int nEye,
 	vector<BidirVertex> &light, int nLight) const;
 	static float G(const BidirVertex &v0, const BidirVertex &v1);
@@ -61,7 +61,7 @@ struct BidirVertex {
 	Point p;
 	Normal ng, ns;
 	Vector wi, wo;
-	float bsdfWeight, dAWeight, rrWeight;
+	float bsdfWeight, dAWeight, rrWeight, dARWeight;
 	BxDFType flags;
 	SWCSpectrum f, Le;
 };
