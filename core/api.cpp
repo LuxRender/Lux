@@ -500,6 +500,10 @@ extern "C" double luxStatistics(const char *statName) {
 		}
 }
 
+extern "C" void luxEnableDebugMode() {	
+	Context::luxEnableDebugMode();
+}
+
 extern "C" void luxUpdateFilmFromNetwork() {
 	
 	Context::luxUpdateFilmFromNetwork();

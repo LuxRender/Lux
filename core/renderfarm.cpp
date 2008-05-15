@@ -41,27 +41,26 @@ using asio::ip::tcp;
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
     // Dade - thread to update the film with data from servers
 
-    boost::xtime xt, reft;
-    boost::xtime_get(&xt, boost::TIME_UTC);
-    xt.sec += 2;
+    boost::xtime reft;
     boost::xtime_get(&reft, boost::TIME_UTC);
 
     while (filmUpdaterThread->signal == SIG_NONE) {
-        // Dade - check signal every 2 seconds
+        // Dade - check signal every 1 sec
 
         for(;;) {
+            // Dade - sleep for 1 sec
+            boost::xtime xt;
+            boost::xtime_get(&xt, boost::TIME_UTC);
+            xt.sec += 1;
             boost::thread::sleep(xt);
+
             if (filmUpdaterThread->signal == SIG_EXIT)
                 break;
-
-            boost::xtime_get(&xt, boost::TIME_UTC);
-            
+           
             if (xt.sec - reft.sec > filmUpdaterThread->renderFarm->serverUpdateInterval) {
                 reft = xt;
                 break;
             }
-            
-            xt.sec += 2;
         }
 
         if (filmUpdaterThread->signal == SIG_EXIT)

@@ -151,6 +151,12 @@ void Context::coordSysTransform(const string &name) {
 	if (namedCoordinateSystems.find(name) != namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[name];
 }
+void Context::enableDebugMode() {
+    VERIFY_OPTIONS("EnableDebugMode")
+	;
+    // Dade - I avoid to transmit the EnableDebugMode option to the renderFarm
+    renderOptions->debugMode = true;
+}
 void Context::pixelFilter(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("PixelFilter")
 	;
@@ -299,7 +305,7 @@ void Context::material(const string &name, const ParamSet &params) {
 }
 
 void Context::makenamedmaterial(const string &name, const ParamSet &params) {
-	VERIFY_WORLD("luxMakeNamedMaterial")
+	VERIFY_WORLD("MakeNamedMaterial")
 	;
     renderFarm.send("luxMakeNamedMaterial", name, params);
 	NamedMaterial nm;
@@ -309,7 +315,7 @@ void Context::makenamedmaterial(const string &name, const ParamSet &params) {
 }
 
 void Context::namedmaterial(const string &name, const ParamSet &params) {
-	VERIFY_WORLD("luxNamedMaterial")
+	VERIFY_WORLD("NamedMaterial")
 	;
     renderFarm.send("luxNamedMaterial", name, params);
 	bool found = false;
@@ -601,12 +607,12 @@ void Context::worldEnd() {
 	luxCurrentScene = renderOptions->MakeScene();
     if (luxCurrentScene) {
         // Dade - check if we have to start the network rendering updater thread
-
         if (renderFarm.getServerCount() > 0)
             renderFarm.startFilmUpdater(luxCurrentScene);
 
 		luxCurrentScene->Render();
         
+        // Dade - check if we have to stop the network rendering updater thread
         if (renderFarm.getServerCount() > 0)
             renderFarm.stopFilmUpdater();
     }
@@ -661,6 +667,13 @@ Scene *Context::RenderOptions::MakeScene() const {
 	primitives.erase(primitives.begin(), primitives.end());
 	lights.erase(lights.begin(), lights.end());
 	volumeRegions.erase(volumeRegions.begin(), volumeRegions.end());
+
+    // Dade - enable debug mode
+    if (debugMode) {
+        // Dade -  set the scene seed to zero
+        ret->seedBase = 0;
+    }
+
 	return ret;
 }
 
@@ -701,7 +714,7 @@ double Context::statistics(const string &statName) {
 	else return 0;
 }
 
-void Context::getFilm(std::basic_ostream<char> &stream) {
+void Context::transmitFilm(std::basic_ostream<char> &stream) {
 	//jromang TODO : fix this hack !
 	FlexImageFilm *fif = (FlexImageFilm *)luxCurrentScene->camera->film;
 

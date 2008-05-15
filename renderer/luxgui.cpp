@@ -784,8 +784,10 @@ int main(int ac, char *av[]) {
 		// allowed only on command line
 		po::options_description generic ("Generic options");
 		generic.add_options ()
-			("version,v", "print version string")
-			("help", "produce help message");
+			("version,v", "Print version string")
+			("help", "Produce help message")
+            ("debug,d", "Enable debug mode")
+            ;
 
 		// Declare a group of options that will be
 		// allowed both on command line and in
@@ -855,6 +857,11 @@ int main(int ac, char *av[]) {
 		{
 			threads = 1;;
 		}
+
+        if (vm.count("debug")) {
+            luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+            luxEnableDebugMode();
+        }
 
         int serverInterval;
         if (vm.count("serverinterval")) {

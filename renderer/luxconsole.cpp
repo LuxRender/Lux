@@ -367,7 +367,7 @@ void startServer(int listenPort = 18018) {
                     {
                         luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
 
-                        Context::getActive()->getFilm(stream);
+                        Context::luxTransmitFilm(stream);
                         stream.close();
 
                         luxError(LUX_NOERROR, LUX_INFO, "Finished film samples transmission");
@@ -401,8 +401,9 @@ int main(int ac, char *av[]) {
         // allowed only on command line
         po::options_description generic("Generic options");
         generic.add_options()
-                ("version,v", "print version string") ("help", "produce help message")
+                ("version,v", "Print version string") ("help", "Produce help message")
                 ("server,s", "Launch in server mode")
+                ("debug,d", "Enable debug mode")
                 ;
 
         // Declare a group of options that will be
@@ -419,7 +420,9 @@ int main(int ac, char *av[]) {
         // in config file, but will not be shown to the user.
         po::options_description hidden("Hidden options");
         hidden.add_options()
-                ("input-file", po::value< vector<string> >(), "input file") ("test", "debug test mode");
+                ("input-file", po::value< vector<string> >(), "input file")
+                ("test", "debug test mode")
+                ;
 
         po::options_description cmdline_options;
         cmdline_options.add(generic).add(config).add(hidden);
@@ -460,6 +463,11 @@ int main(int ac, char *av[]) {
             threads = vm["threads"].as<int>();
         else
             threads = 1;
+
+        if (vm.count("debug")) {
+            luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+            luxEnableDebugMode();
+        }
 
         int serverInterval;
         if (vm.count("serverinterval")) {

@@ -36,8 +36,10 @@ namespace lux {
 
 class RenderThread : public boost::noncopyable {
 public:
-    RenderThread( int _n, int _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam, Scene* _Scn)
-    : n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi), sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn), thread(NULL) {
+    RenderThread( int _n, int _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi,
+            Sampler* _Splr, Camera* _Cam, Scene* _Scn)
+    : n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi),
+            sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn), thread(NULL) {
         stat_Samples=0;
         stat_blackSamples=0;
         sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
@@ -120,6 +122,7 @@ public:
     VolumeIntegrator *volumeIntegrator;
     Sampler *sampler;
     BBox bound;
+    int seedBase;
 
     // Dade - number of samples received from network
     double numberOfSamplesFromNetwork;

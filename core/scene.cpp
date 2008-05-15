@@ -22,6 +22,7 @@
 
 // scene.cpp*
 #include <sstream>
+#include <stdlib.h>
 
 #include "scene.h"
 #include "camera.h"
@@ -193,8 +194,12 @@ void RenderThread::render(RenderThread *myThread) {
     myThread->stat_Samples = 0.;
     
     // initialize the thread's rangen
-    lux::random::init(myThread->n);
-    
+    int seed = myThread->scene->seedBase + myThread->n;
+    std::stringstream ss;
+    ss << "Thread " << myThread->n << " uses seed: " << seed;
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    lux::random::init(seed);
+
     // initialize the thread's spectral wavelengths
     thread_wavelengths.reset(new SpectrumWavelengths());
     SpectrumWavelengths *thr_wl = thread_wavelengths.get();
@@ -346,9 +351,13 @@ void Scene::Render() {
 
     // initialize the thread's arena
     BSDF::arena.reset(new MemoryArena());
-    
+
     // initialize the thread's rangen
-    lux::random::init(-1);
+    int seed = seedBase - 1;
+    std::stringstream ss;
+    ss << "Preprocess thread uses seed: " << seed;
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    lux::random::init(seed);
 
     // initialize the thread's spectral wavelengths
     thread_wavelengths.reset(new SpectrumWavelengths());
@@ -412,6 +421,14 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
     // Scene Constructor Implementation
     bound = aggregate->WorldBound();
     if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
+
+    // Dade - Initialize the base seed with the time of day
+    /*boost::xtime t;
+    boost::xtime_get(&t, boost::TIME_UTC);
+    seedBase = (int)t.sec;*/
+
+    // Dade - Otherwise I can use standard C lib random number generator
+    seedBase = rand();
 }
 
 const BBox &Scene::WorldBound() const {

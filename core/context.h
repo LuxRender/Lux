@@ -123,7 +123,10 @@ public:
 	static double luxStatistics(const string &statName) { return activeContext->statistics(statName); }
 	
 	//film access (networking)
-	void getFilm(std::basic_ostream<char> &stream);
+    static void luxTransmitFilm(std::basic_ostream<char> &stream) { activeContext->transmitFilm(stream); }
+
+    // dade enable debug mode
+    static void luxEnableDebugMode() { activeContext->enableDebugMode(); }
 
 private:
 	static Context *activeContext;
@@ -192,10 +195,13 @@ private:
 
 	// Dade - network rendering
 	void updateFilmFromNetwork();
+    void transmitFilm(std::basic_ostream<char> &stream);
 
 	//statistics
 	double statistics(const string &statName);
 	void addServer(const string &name);
+
+    void enableDebugMode();
 
 	// API Local Classes
 	struct RenderOptions {
@@ -210,7 +216,9 @@ private:
 			VolIntegratorName = "emission";
 			CameraName = "perspective";
 			currentInstance = NULL;
+            debugMode = false;
 		}
+
 		Scene *MakeScene() const;
 		// RenderOptions Public Data
 		string FilterName;
@@ -232,6 +240,7 @@ private:
 		mutable vector<VolumeRegion *> volumeRegions;
 		map<string, vector<Primitive* > > instances;
 		vector<Primitive* > *currentInstance;
+        bool debugMode;
 	};
 
 	struct NamedMaterial {

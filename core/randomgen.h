@@ -50,7 +50,8 @@ namespace lux
 namespace random
 {
 
-#define MAX_SEEDS 64
+// Dade - old code: it is not thread safe
+/*#define MAX_SEEDS 64
 static int newseed = 0;
 static float seeds[64] = { 
 0.8147236705f, 0.1354770064f, 0.0000925521f, 0.4019474089f,
@@ -69,7 +70,7 @@ static float seeds[64] = {
 0.9411987066f, 0.5897576213f, 0.0033880144f, 0.8060938716f,
 0.5399997830f, 0.9201279879f, 0.0034516300f, 0.7110665441f,
 0.7044532299f, 0.3615645170f, 0.0038146735f, 0.3312333524f
-};
+};*/
 
 class RandomGenerator
 {
@@ -134,7 +135,8 @@ extern boost::thread_specific_ptr<RandomGenerator> myGen;
 
 static const float invUI = ((float)1.0/(float)4294967296.0);
 
-inline void init(int tn) {
+// Dade - old code: it is not thread safe
+/*inline void init(int tn) {
 	if(!myGen.get())
 		myGen.reset(new RandomGenerator);
 
@@ -143,6 +145,13 @@ inline void init(int tn) {
 	newseed++;
 
 	myGen->taus113_set(seed);
+}*/
+
+inline void init(int tn) {
+	if(!myGen.get())
+		myGen.reset(new RandomGenerator);
+
+	myGen->taus113_set(tn);
 }
 
 // request RN's during render threads (uses per thread rangen/seed)

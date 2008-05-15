@@ -106,6 +106,9 @@ int luxGetNetworkServerUpdateInterval();
 /* Informations and statistics */
 double luxStatistics(const char *statName);
 
+// Dade - enable debug mode
+void luxEnableDebugMode();
+
 /* Error Handlers */
 extern int luxLastError; /*  Keeps track of the last error code */
 typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
