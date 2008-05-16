@@ -278,7 +278,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #ADD_DEFINITIONS(-O3 -fbranch-probabilities -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - default compiler options
-ADD_DEFINITIONS(-O2 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - my settings
 #ADD_DEFINITIONS(-g -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
@@ -380,14 +380,14 @@ SET(lux_lib_src
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp
         core/transport.cpp core/util.cpp core/volume.cpp core/imagereader.cpp
         core/geometry/transform.cpp core/geometry/matrix4x4.cpp
-				core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
-				core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
-				core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
-				core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp core/reflection/bxdf/nulltransmission.cpp
-				core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
-				core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp
-				core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
-				core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
+        core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
+        core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
+        core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
+        core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp core/reflection/bxdf/nulltransmission.cpp
+        core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
+        core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp
+        core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
+        core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
         shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/barytrianglemesh.cpp shapes/waldtrianglemesh.cpp
@@ -414,8 +414,9 @@ SET(lux_lib_src
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/gridpx.cpp
-	spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
-	core/spectrumwavelengths.cpp core/spd.cpp
+        spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
+        core/spectrumwavelengths.cpp core/spd.cpp
+        renderer/renderserver.cpp
 	)
 
 INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}

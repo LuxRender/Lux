@@ -59,7 +59,7 @@ private:
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
     
-    // Dade - used 
+    // Dade - used to send signals to the thread
     int signal;
     static const int SIG_NONE = 0;
     static const int SIG_EXIT = 1;
