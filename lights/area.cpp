@@ -145,6 +145,14 @@ float AreaLight::Pdf(const Scene *scene, const Point &p) const
 {
 	return shape->Pdf(p);
 }
+SWCSpectrum AreaLight::L(const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	*bsdf = BSDF_ALLOC(BSDF)(dg, dg.nn);
+	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
+	*pdf = shape->Pdf(dg.p);
+	*pdfDirect = shape->Pdf(ray.o, ray.d) * AbsDot(ray.d, n) / DistanceSquared(dg.p, ray.o);
+	return L(dg.p, dg.nn, -ray.d);
+}
 
 void AreaLight::SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const
 {

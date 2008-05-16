@@ -57,11 +57,11 @@ private:
 struct BidirVertex {
 	BidirVertex() : bsdf(NULL), bsdfWeight(0.f), dAWeight(0.f),
 		rrWeight(1.f), flags(BxDFType(0)), f(0.f), Le(0.f) {}
-	BSDF *bsdf;
+	BSDF *bsdf, *eBsdf;
 	Point p;
 	Normal ng, ns;
 	Vector wi, wo;
-	float bsdfWeight, dAWeight, rrWeight, dARWeight;
+	float bsdfWeight, dAWeight, rrWeight, dARWeight, ePdf, ePdfDirect;
 	BxDFType flags;
 	SWCSpectrum f, Le;
 };

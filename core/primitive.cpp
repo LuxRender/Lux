@@ -173,3 +173,12 @@ SWCSpectrum Intersection::Le(const Vector &w) const {
 	const AreaLight *area = primitive->GetAreaLight();
 	return area ? area->L(dg.p, dg.nn, w) : SWCSpectrum(0.);
 }
+SWCSpectrum Intersection::Le(const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	const AreaLight *area = primitive->GetAreaLight();
+	if (area)
+		return area->L(ray, dg, n, bsdf, pdf, pdfDirect);
+	*pdf = *pdfDirect = 0.f;
+	*bsdf = NULL;
+	return 0.f;
+}

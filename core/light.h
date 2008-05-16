@@ -129,6 +129,7 @@ public:
 			const Vector &w) const {
 		return Dot(n, w) > 0 ? SWCSpectrum(LSPD) : 0.;
 	}
+	virtual SWCSpectrum L(const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	SWCSpectrum Power(const Scene *) const {
 		return SWCSpectrum(LSPD) * area * M_PI;
 	}

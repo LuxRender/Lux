@@ -54,7 +54,7 @@ class  Intersection {
 	Intersection() { primitive = NULL; }
 	BSDF *GetBSDF(const RayDifferential &ray) const;
 	SWCSpectrum Le(const Vector &wo) const;
-
+	SWCSpectrum Le(const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 
 	
 	DifferentialGeometry dg;
