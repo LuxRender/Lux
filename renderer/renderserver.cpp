@@ -20,19 +20,19 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include "renderserver.h"
+#include "api.h"
+#include "context.h"
+#include "paramset.h"
+#include "error.h"
+#include "include/asio.hpp"
+
 #include <fstream>
 #include <boost/thread/xtime.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
-#include "include/asio.hpp"
-#include "renderserver.h"
-#include "api.h"
-#include "context.h"
-#include "paramset.h"
-#include "error.h"
 
 using namespace lux;
 using namespace boost::iostreams;

@@ -23,10 +23,10 @@
 #ifndef RENDER_SERVER_H
 #define RENDER_SERVER_H
 
+#include "lux.h"
+
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-
-#include "lux.h"
 
 namespace lux
 {
