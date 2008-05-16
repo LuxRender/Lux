@@ -48,7 +48,6 @@ BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
 	else
 		bsdf->Add(BSDF_ALLOC(OrenNayar)(r, sig));
 	return bsdf;
-	return bsdf;
 }
 Material* Matte::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
