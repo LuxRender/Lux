@@ -63,6 +63,7 @@ void Scene::Pause() {
 
 void Scene::Exit() {
     SignalThreads(RenderThread::SIG_EXIT);
+    JoinThreads();
 }
 
 // Engine Thread Control (adding/removing)
@@ -179,6 +180,11 @@ void Scene::SignalThreads(int signal) {
         renderThreads[i]->signal=signal;
     }
     CurThreadSignal = signal;
+}
+
+void Scene::JoinThreads() {
+    for(unsigned int i=0;i<renderThreads.size();i++)
+        renderThreads[i]->thread->join();
 }
 
 // thread specific wavelengths

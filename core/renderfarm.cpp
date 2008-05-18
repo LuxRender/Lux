@@ -91,6 +91,23 @@ bool RenderFarm::connect(const string &serverName) {
     return true;
 }
 
+void RenderFarm::disconnectAll() {
+    std::stringstream ss;
+    for (vector<string>::iterator server = serverList.begin(); server
+            != serverList.end(); ++server) {
+        try {
+            ss.str("");
+            ss << "Disconnect from server: " << (*server);
+            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+            tcp::iostream stream((*server).c_str(), "18018");
+            stream << "luxExit" << std::endl;
+        } catch (std::exception& e) {
+            luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+        }
+    }
+}
+
 void RenderFarm::flush() {
     std::stringstream ss;
     // Dade - the buffers with all commands

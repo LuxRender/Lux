@@ -68,7 +68,14 @@ private:
 class RenderFarm {
 public:
 	RenderFarm() : serverUpdateInterval(3*60), filmUpdateThread(NULL) {}
+        ~RenderFarm() {
+            if (filmUpdateThread)
+                delete filmUpdateThread;
+        }
+
 	bool connect(const string &serverName); //!< Connects to a new rendering server
+        // Dade - Disconnect from all servers
+        void disconnectAll();
 	
 	void send(const std::string &command);
 	void send(const std::string &command, const std::string &name, const ParamSet &params);

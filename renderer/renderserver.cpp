@@ -109,10 +109,14 @@ static void printInfoThread() {
         boost::posix_time::time_duration td(0, 0,
                 (int) luxStatistics("secElapsed"), 0);
 
-        std::stringstream ss;
-        ss << td << "  " << (int) luxStatistics("samplesSec") << " samples/sec " << " "
-            << (float) luxStatistics("samplesPx") << " samples/pix";
-        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        int sampleSec = (int)luxStatistics("samplesSec");
+        // Dade - print only if we are rendering something
+        if (sampleSec > 0) {
+            std::stringstream ss;
+            ss << td << "  " << sampleSec << " samples/sec " << " "
+                << (float) luxStatistics("samplesPx") << " samples/pix";
+            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        }
     }
 }
 
@@ -192,6 +196,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
             CMD_LUXAREALIGHTSOURCE = 515057184U, CMD_LUXPORTALSHAPE = 3416559329U, CMD_LUXSHAPE = 1943702863U,
             CMD_LUXREVERSEORIENTATION = 2027239206U, CMD_LUXVOLUME = 4138761078U, CMD_LUXOBJECTBEGIN = 1097337658U,
             CMD_LUXOBJECTEND = 229760620U, CMD_LUXOBJECTINSTANCE = 4125664042U, CMD_LUXWORLDEND = 1582674973U, CMD_LUXGETFILM = 859419430U,
+            CMD_LUXEXIT = 2531274616U,
             CMD_VOID = 5381U, CMD_SPACE = 177605U;
 
     int listenPort = serverThread->renderServer->tcpPort;
@@ -227,6 +232,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                 switch (hash) {
                     case CMD_VOID:
                     case CMD_SPACE:
+                        break;
+                    case CMD_LUXEXIT:
+                        // Dade - stop the rendering and cleanup
+                        luxExit();
+                        luxWait();
+                        luxCleanup();
                         break;
                     case CMD_LUXINIT:
                         luxError(LUX_BUG, LUX_SEVERE, "Server already initialized");

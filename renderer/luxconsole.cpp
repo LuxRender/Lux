@@ -54,7 +54,6 @@ int threads;
 bool parseError;
 
 void engineThread() {
-    //luxInit();
     ParseFile(sceneFileName.c_str());
     if (luxStatistics("sceneIsReady") == false)
         parseError = true;
@@ -71,12 +70,16 @@ void infoThread() {
         boost::posix_time::time_duration td(0, 0,
                 (int) luxStatistics("secElapsed"), 0);
 
-        std::stringstream ss;
-        ss << '[' << threads << " threads] " << td << " "
-                << (int) luxStatistics("samplesSec") << " samples/sec " << " "
-                << (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
-                << (float) luxStatistics("samplesPx") << " samples/pix";
-        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        int sampleSec = (int)luxStatistics("samplesSec");
+        // Dade - print only if we are rendering something
+        if (sampleSec > 0) {
+            std::stringstream ss;
+            ss << '[' << threads << " threads] " << td << " "
+                    << sampleSec << " samples/sec " << " "
+                    << (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
+                    << (float) luxStatistics("samplesPx") << " samples/pix";
+            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        }
     }
 }
 
@@ -259,8 +262,8 @@ int main(int ac, char *av[]) {
                     }
                 }
 
-                //wait for threads to finish
-                engine.join();
+                // Dade - wait for the end of the rendering
+                luxWait();
 
                 // Dade - print the total rendering time
                 boost::posix_time::time_duration td(0, 0,

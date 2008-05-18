@@ -109,9 +109,10 @@ public:
     //statistics
     double Statistics(const string &statName);
 
-    void SignalThreads(int signal);
     int CreateRenderThread();
     void RemoveRenderThread();
+    void SignalThreads(int signal);
+    void JoinThreads();
 
     // Scene Data
     Primitive *aggregate;

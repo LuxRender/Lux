@@ -71,7 +71,7 @@ int buildParameterList( va_list pArgs, std::vector<LuxToken>& aTokens, std::vect
 
 }
 
-static bool initialized=false;
+static bool initialized = false;
 
 
 // API Function Definitions
@@ -436,17 +436,18 @@ extern "C" void luxInit() {
 //user interactive thread functions
 extern "C" void luxStart() {
 	Context::luxStart();
-	//luxCurrentScene->Start();
 }
 
 extern "C" void luxPause() {
 	Context::luxPause();
-	//luxCurrentScene->Pause();
 }
 
 extern "C" void luxExit() {
 	Context::luxExit();
-	//luxCurrentScene->Exit();
+}
+
+extern "C" void luxWait() {
+	Context::luxWait();
 }
 
 //controlling number of threads

@@ -23,6 +23,8 @@
 #ifndef LUX_CONTEXT_H
 #define LUX_CONTEXT_H
 
+#include <boost/thread/mutex.hpp>
+
 #include "lux.h"
 #include "renderfarm.h"
 
@@ -37,11 +39,12 @@ class Context {
 public:
 
 	Context(std::string n="Lux default context") : name(n) {
-		currentApiState = STATE_OPTIONS_BLOCK;
-		renderOptions = new RenderOptions;
-		graphicsState = GraphicsState();
-		luxCurrentScene=NULL;
+            init();
 	}
+        
+        ~Context() {
+            free();
+        }
 
 	//static bool checkMode(unsigned char modeMask, std::string callerName, int errorCode); //!< Check the graphics state mode in the active context
 
@@ -93,7 +96,6 @@ public:
 	static void luxObjectInstance(const string &name) { activeContext->objectInstance(name); }
 	static void luxWorldEnd() { activeContext->worldEnd(); }
 
-	//TODO - jromang replace by a destructor or remove
 	static void luxCleanup() { activeContext->cleanup(); }
 
 	//CORE engine control
@@ -101,6 +103,8 @@ public:
 	static void luxStart() { activeContext->start(); }
 	static void luxPause() { activeContext->pause(); }
 	static void luxExit() { activeContext->exit(); }
+        // Dade - wait for the end of the rendering
+        static void luxWait() { activeContext->wait(); }
 
 	//controlling number of threads
 	static int luxAddThread() { return activeContext->addThread(); }
@@ -115,8 +119,8 @@ public:
 
 	//film access (networking)
 	static void luxUpdateFilmFromNetwork() { activeContext->updateFilmFromNetwork(); }
-	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->renderFarm.serverUpdateInterval = updateInterval; }
-	static int luxGetNetworkServerUpdateInterval() { return activeContext->renderFarm.serverUpdateInterval; }
+	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->renderFarm->serverUpdateInterval = updateInterval; }
+	static int luxGetNetworkServerUpdateInterval() { return activeContext->renderFarm->serverUpdateInterval; }
     static void luxAddServer(const string &name) { activeContext->addServer(name); }
 
 	//statistics
@@ -132,6 +136,9 @@ private:
 	static Context *activeContext;
 	string name;
 	Scene *luxCurrentScene;
+
+        void init();
+        void free();
 
 	// API Function Declarations
 	void identity();
@@ -180,6 +187,7 @@ private:
 	void start();
 	void pause();
 	void exit();
+        void wait();
 
 	//controlling number of threads
 	int addThread();
@@ -240,7 +248,7 @@ private:
 		mutable vector<VolumeRegion *> volumeRegions;
 		map<string, vector<Primitive* > > instances;
 		vector<Primitive* > *currentInstance;
-        bool debugMode;
+                bool debugMode;
 	};
 
 	struct NamedMaterial {
@@ -273,11 +281,14 @@ private:
 	Transform curTransform;
 	map<string, Transform> namedCoordinateSystems;
 	RenderOptions *renderOptions;
-	GraphicsState graphicsState;
+	GraphicsState *graphicsState;
 	vector<NamedMaterial> namedmaterials;
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<Transform> pushedTransforms;
-	RenderFarm renderFarm;
+	RenderFarm *renderFarm;
+
+        // Dade - mutex used to wait the end of the rendering
+        mutable boost::mutex renderingMutex;
 };
 
 }

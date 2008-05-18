@@ -88,6 +88,7 @@ void luxWorldEnd();
 void luxStart();
 void luxPause();
 void luxExit();
+void luxWait();
 
 /* Controlling number of threads */
 int luxAddThread();

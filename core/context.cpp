@@ -70,15 +70,53 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 	return; \
 } else /* swallow trailing semicolon */
 
+
+void Context::init() {
+    // Dade - reinitialize
+    currentApiState = STATE_OPTIONS_BLOCK;
+    luxCurrentScene = NULL;
+    curTransform = Transform();
+    namedCoordinateSystems.clear();
+    renderOptions = new RenderOptions;
+    graphicsState = new GraphicsState;
+    namedmaterials.clear();
+    pushedGraphicsStates.clear();
+    pushedTransforms.clear();
+    renderFarm = new RenderFarm();
+}
+
+void Context::free() {
+    // Dade - free memory
+    if (luxCurrentScene) {
+        delete luxCurrentScene;
+        luxCurrentScene = NULL;
+    }
+
+    if (renderOptions) {
+        delete renderOptions;
+        renderOptions = NULL;
+    }
+
+    if (graphicsState) {
+        delete graphicsState;
+        graphicsState = NULL;
+    }
+
+    if (renderFarm) {
+        delete renderFarm;
+        renderFarm = NULL;
+    }
+}
+
 // API Function Definitions
 
 void Context::addServer(const string &name) {
 	//luxServerList.push_back(std::string(name));
-	renderFarm.connect(name);
+	renderFarm->connect(name);
 }
 
 void Context::cleanup() {
-	renderFarm.send("luxCleanup");
+	renderFarm->send("luxCleanup");
 
 	StatsCleanup();
 	// API Cleanup
@@ -86,26 +124,29 @@ void Context::cleanup() {
 		luxError(LUX_NOTSTARTED,LUX_ERROR,"luxCleanup() called without luxInit().");
 	else if (currentApiState == STATE_WORLD_BLOCK)
 		luxError(LUX_ILLSTATE,LUX_ERROR,"luxCleanup() called while inside world block.");
-	currentApiState = STATE_UNINITIALIZED;
-	delete renderOptions;
-	renderOptions = NULL;
+
+        // Dade - free memory
+        free();
+
+        // Dade - reinitialize
+        init();
 }
 
 void Context::identity() {
 	VERIFY_INITIALIZED("Identity");
-	renderFarm.send("luxIdentity");
+	renderFarm->send("luxIdentity");
 	curTransform = Transform();
 }
 
 void Context::translate(float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Translate");
-	renderFarm.send("luxTranslate", dx, dy, dz);
+	renderFarm->send("luxTranslate", dx, dy, dz);
 	curTransform = curTransform * Translate(Vector(dx, dy, dz));
 }
 
 void Context::transform(float tr[16]) {
 	VERIFY_INITIALIZED("Transform");
-	renderFarm.send("luxTransform", tr);
+	renderFarm->send("luxTransform", tr);
 	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(
 			tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
@@ -115,7 +156,7 @@ void Context::transform(float tr[16]) {
 }
 void Context::concatTransform(float tr[16]) {
 	VERIFY_INITIALIZED("ConcatTransform");
-	renderFarm.send("luxConcatTransform", tr);
+	renderFarm->send("luxConcatTransform", tr);
 	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
@@ -124,30 +165,30 @@ void Context::concatTransform(float tr[16]) {
 }
 void Context::rotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED("Rotate");
-	renderFarm.send("luxRotate", angle, dx, dy, dz);
+	renderFarm->send("luxRotate", angle, dx, dy, dz);
 	curTransform = curTransform * Rotate(angle, Vector(dx, dy, dz));
 }
 void Context::scale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED("Scale");
-	renderFarm.send("luxScale", sx, sy, sz);
+	renderFarm->send("luxScale", sx, sy, sz);
 	curTransform = curTransform * Scale(sx, sy, sz);
 }
 void Context::lookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 		float ux, float uy, float uz) {
 	VERIFY_INITIALIZED("LookAt");
-	renderFarm.send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
+	renderFarm->send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
 
 	curTransform = curTransform * LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
 			Vector(ux, uy, uz));
 }
 void Context::coordinateSystem(const string &name) {
 	VERIFY_INITIALIZED("CoordinateSystem");
-	renderFarm.send("luxCoordinateSystem", name);
+	renderFarm->send("luxCoordinateSystem", name);
 	namedCoordinateSystems[name] = curTransform;
 }
 void Context::coordSysTransform(const string &name) {
 	VERIFY_INITIALIZED("CoordSysTransform");
-	renderFarm.send("luxCoordSysTransform", name);
+	renderFarm->send("luxCoordSysTransform", name);
 	if (namedCoordinateSystems.find(name) != namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[name];
 }
@@ -160,49 +201,49 @@ void Context::enableDebugMode() {
 void Context::pixelFilter(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("PixelFilter")
 	;
-	renderFarm.send("luxPixelFilter", name, params);
+	renderFarm->send("luxPixelFilter", name, params);
 	renderOptions->FilterName = name;
 	renderOptions->FilterParams = params;
 }
 void Context::film(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film")
 	;
-	renderFarm.send("luxFilm", type, params);
+	renderFarm->send("luxFilm", type, params);
 	renderOptions->FilmParams = params;
 	renderOptions->FilmName = type;
 }
 void Context::sampler(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Sampler")
 	;
-	renderFarm.send("luxSampler", name, params);
+	renderFarm->send("luxSampler", name, params);
 	renderOptions->SamplerName = name;
 	renderOptions->SamplerParams = params;
 }
 void Context::accelerator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Accelerator")
 	;
-	renderFarm.send("luxAccelerator", name, params);
+	renderFarm->send("luxAccelerator", name, params);
 	renderOptions->AcceleratorName = name;
 	renderOptions->AcceleratorParams = params;
 }
 void Context::surfaceIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("SurfaceIntegrator")
 	;
-	renderFarm.send("luxSurfaceIntegrator", name, params);
+	renderFarm->send("luxSurfaceIntegrator", name, params);
 	renderOptions->SurfIntegratorName = name;
 	renderOptions->SurfIntegratorParams = params;
 }
 void Context::volumeIntegrator(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("VolumeIntegrator")
 	;
-	renderFarm.send("luxVolumeIntegrator", name, params);
+	renderFarm->send("luxVolumeIntegrator", name, params);
 	renderOptions->VolIntegratorName = name;
 	renderOptions->VolIntegratorParams = params;
 }
 void Context::camera(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Camera")
 	;
-	renderFarm.send("luxCamera", name, params);
+	renderFarm->send("luxCamera", name, params);
 
 	renderOptions->CameraName = name;
 	renderOptions->CameraParams = params;
@@ -212,7 +253,7 @@ void Context::camera(const string &name, const ParamSet &params) {
 void Context::worldBegin() {
 	VERIFY_OPTIONS("WorldBegin")
 	;
-	renderFarm.send("luxWorldBegin");
+	renderFarm->send("luxWorldBegin");
 	currentApiState = STATE_WORLD_BLOCK;
 	curTransform = Transform();
 	namedCoordinateSystems["world"] = curTransform;
@@ -220,19 +261,19 @@ void Context::worldBegin() {
 void Context::attributeBegin() {
 	VERIFY_WORLD("AttributeBegin")
 	;
-	renderFarm.send("luxAttributeBegin");
-	pushedGraphicsStates.push_back(graphicsState);
+	renderFarm->send("luxAttributeBegin");
+	pushedGraphicsStates.push_back(*graphicsState);
 	pushedTransforms.push_back(curTransform);
 }
 void Context::attributeEnd() {
 	VERIFY_WORLD("AttributeEnd")
 	;
-	renderFarm.send("luxAttributeEnd");
+	renderFarm->send("luxAttributeEnd");
 	if (!pushedGraphicsStates.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxAttributeEnd() encountered. Ignoring it.");
 		return;
 	}
-	graphicsState = pushedGraphicsStates.back();
+	*graphicsState = pushedGraphicsStates.back();
 	curTransform = pushedTransforms.back();
 	pushedGraphicsStates.pop_back();
 	pushedTransforms.pop_back();
@@ -240,13 +281,13 @@ void Context::attributeEnd() {
 void Context::transformBegin() {
 	VERIFY_WORLD("TransformBegin")
 	;
-	renderFarm.send("luxTransformBegin");
+	renderFarm->send("luxTransformBegin");
 	pushedTransforms.push_back(curTransform);
 }
 void Context::transformEnd() {
 	VERIFY_WORLD("TransformEnd")
 	;
-	renderFarm.send("luxTransformEnd");
+	renderFarm->send("luxTransformEnd");
 	if (!pushedTransforms.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxTransformEnd() encountered. Ignoring it.");
 		return;
@@ -258,14 +299,14 @@ void Context::texture(const string &name, const string &type, const string &texn
 		const ParamSet &params) {
 	VERIFY_WORLD("Texture")
 	;
-	renderFarm.send("luxTexture", name, type, texname, params);
+	renderFarm->send("luxTexture", name, type, texname, params);
 
-	TextureParams tp(params, params, graphicsState.floatTextures,
-			graphicsState.spectrumTextures);
+	TextureParams tp(params, params, graphicsState->floatTextures,
+			graphicsState->spectrumTextures);
 	if (type == "float") {
 		// Create _float_ texture and store in _floatTextures_
-		if (graphicsState.floatTextures.find(name)
-				!= graphicsState.floatTextures.end()) {
+		if (graphicsState->floatTextures.find(name)
+				!= graphicsState->floatTextures.end()) {
 			//Warning("Texture \"%s\" being redefined", name.c_str());
 			std::stringstream ss;
 			ss<<"Texture '"<<name<<"' being redefined.";
@@ -274,11 +315,11 @@ void Context::texture(const string &name, const string &type, const string &texn
 		boost::shared_ptr<Texture<float> > ft = MakeFloatTexture(texname,
 				curTransform, tp);
 		if (ft)
-			graphicsState.floatTextures[name] = ft;
+			graphicsState->floatTextures[name] = ft;
 	} else if (type == "color") {
 		// Create _color_ texture and store in _spectrumTextures_
-		if (graphicsState.spectrumTextures.find(name)
-				!= graphicsState.spectrumTextures.end()) {
+		if (graphicsState->spectrumTextures.find(name)
+				!= graphicsState->spectrumTextures.end()) {
 			//Warning("Texture \"%s\" being redefined", name.c_str());
 			std::stringstream ss;
 			ss<<"Texture '"<<name<<"' being redefined.";
@@ -287,7 +328,7 @@ void Context::texture(const string &name, const string &type, const string &texn
 		boost::shared_ptr<Texture<Spectrum> > st = MakeSpectrumTexture(texname,
 				curTransform, tp);
 		if (st)
-			graphicsState.spectrumTextures[name] = st;
+			graphicsState->spectrumTextures[name] = st;
 	} else {
 		//Error("Texture type \"%s\" unknown.", type.c_str());
 		std::stringstream ss;
@@ -299,15 +340,15 @@ void Context::texture(const string &name, const string &type, const string &texn
 void Context::material(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Material")
 	;
-	renderFarm.send("luxMaterial", name, params);
-	graphicsState.material = name;
-	graphicsState.materialParams = params;
+	renderFarm->send("luxMaterial", name, params);
+	graphicsState->material = name;
+	graphicsState->materialParams = params;
 }
 
 void Context::makenamedmaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("MakeNamedMaterial")
 	;
-    renderFarm.send("luxMakeNamedMaterial", name, params);
+    renderFarm->send("luxMakeNamedMaterial", name, params);
 	NamedMaterial nm;
 	nm.material = name;
 	nm.materialParams = params;
@@ -317,7 +358,7 @@ void Context::makenamedmaterial(const string &name, const ParamSet &params) {
 void Context::namedmaterial(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("NamedMaterial")
 	;
-    renderFarm.send("luxNamedMaterial", name, params);
+    renderFarm->send("luxNamedMaterial", name, params);
 	bool found = false;
 	for(unsigned int i=0; i<namedmaterials.size(); i++)
 		if(namedmaterials[i].material == name) {
@@ -338,7 +379,7 @@ void Context::namedmaterial(const string &name, const ParamSet &params) {
 void Context::lightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("LightSource")
 	;
-	renderFarm.send("luxLightSource", name, params);
+	renderFarm->send("luxLightSource", name, params);
 
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
@@ -347,16 +388,16 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sun);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt_sun;
+			graphicsState->currentLight = name;
+			graphicsState->currentLightPtr = lt_sun;
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL)
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
 		else {
 			renderOptions->lights.push_back(lt_sky);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt_sky;
+			graphicsState->currentLight = name;
+			graphicsState->currentLightPtr = lt_sky;
 		}
 	} else {
 		// other lightsource type
@@ -369,8 +410,8 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 			luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
 		} else {
 			renderOptions->lights.push_back(lt);
-			graphicsState.currentLight = name;
-			graphicsState.currentLightPtr = lt;
+			graphicsState->currentLight = name;
+			graphicsState->currentLightPtr = lt;
 		}
 	}
 }
@@ -378,36 +419,36 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 void Context::areaLightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("AreaLightSource")
 	;
-	renderFarm.send("luxAreaLightSource", name, params);
+	renderFarm->send("luxAreaLightSource", name, params);
 
-	graphicsState.areaLight = name;
-	graphicsState.areaLightParams = params;
+	graphicsState->areaLight = name;
+	graphicsState->areaLightParams = params;
 }
 
 void Context::portalShape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("PortalShape")
 	;
-	renderFarm.send("luxPortalShape", name, params);
+	renderFarm->send("luxPortalShape", name, params);
 
 	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
-			graphicsState.reverseOrientation, params);
+			graphicsState->reverseOrientation, params);
 	if (!shape)
 		return;
 	params.ReportUnused();
 	// Initialize area light for shape									// TODO - radiance - add portalshape to area light & cleanup
 	AreaLight *area= NULL;
-	//if (graphicsState.areaLight != "")
-	//	area = MakeAreaLight(graphicsState.areaLight,
-	//	curTransform, graphicsState.areaLightParams, shape);
+	//if (graphicsState->areaLight != "")
+	//	area = MakeAreaLight(graphicsState->areaLight,
+	//	curTransform, graphicsState->areaLightParams, shape);
 
-	if (graphicsState.currentLight != "") {
-		if (graphicsState.currentLight == "sunsky"
-				|| graphicsState.currentLight == "infinite")
-			graphicsState.currentLightPtr->AddPortalShape(shape);
+	if (graphicsState->currentLight != "") {
+		if (graphicsState->currentLight == "sunsky"
+				|| graphicsState->currentLight == "infinite")
+			graphicsState->currentLightPtr->AddPortalShape(shape);
 		else {
-			//Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState.currentLight.c_str());
+			//Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState->currentLight.c_str());
 			std::stringstream ss;
-			ss<<"LightType '"<<graphicsState.currentLight
+			ss<<"LightType '"<<graphicsState->currentLight
 					<<" does not support PortalShape(s).";
 			luxError(LUX_UNIMPLEMENT,LUX_WARNING,ss.str().c_str());
 			return;
@@ -415,8 +456,8 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	}
 
 	// Initialize material for shape (dummy)
-	TextureParams mp(params, graphicsState.materialParams,
-			graphicsState.floatTextures, graphicsState.spectrumTextures);
+	TextureParams mp(params, graphicsState->materialParams,
+			graphicsState->floatTextures, graphicsState->spectrumTextures);
 	boost::shared_ptr<Texture<float> > bump;
 	boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
 
@@ -427,32 +468,32 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 void Context::shape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Shape")
 	;
-	renderFarm.send("luxShape", name, params);
+	renderFarm->send("luxShape", name, params);
 
 	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
-			graphicsState.reverseOrientation, params);
+			graphicsState->reverseOrientation, params);
 	if (!shape)
 		return;
 	params.ReportUnused();
 	// Initialize area light for shape
 	AreaLight *area= NULL;
-	if (graphicsState.areaLight != "")
-		area = MakeAreaLight(graphicsState.areaLight, curTransform,
-				graphicsState.areaLightParams, shape);
+	if (graphicsState->areaLight != "")
+		area = MakeAreaLight(graphicsState->areaLight, curTransform,
+				graphicsState->areaLightParams, shape);
 	// Initialize material for shape
-	TextureParams mp(params, graphicsState.materialParams,
-			graphicsState.floatTextures, graphicsState.spectrumTextures);
+	TextureParams mp(params, graphicsState->materialParams,
+			graphicsState->floatTextures, graphicsState->spectrumTextures);
 	boost::shared_ptr<Texture<float> > bump;
-	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState.material, curTransform, mp);
+	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
 	if (!mtl)
 		mtl = MakeMaterial("matte", curTransform, mp);
 	if (!mtl)
 		luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
 
 	// Set child materials if mix material
-	if(graphicsState.material == "mix") {
+	if(graphicsState->material == "mix") {
 		// create 1st material
-		string namedmaterial1 = graphicsState.materialParams.FindOneString("namedmaterial1", "-");
+		string namedmaterial1 = graphicsState->materialParams.FindOneString("namedmaterial1", "-");
 		bool found = false;
 		for(unsigned int i=0; i<namedmaterials.size(); i++)
 			if(namedmaterials[i].material == namedmaterial1) {
@@ -460,7 +501,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 				ParamSet nparams = namedmaterials[i].materialParams;
 				nparams.EraseString("type");
 				TextureParams mp1(params, nparams,
-				graphicsState.floatTextures, graphicsState.spectrumTextures);
+				graphicsState->floatTextures, graphicsState->spectrumTextures);
 				boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
 				mtl->SetChild1(mtl1);
 				found = true;
@@ -472,7 +513,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 		}
 
 		// create 2nd material
-		string namedmaterial2 = graphicsState.materialParams.FindOneString("namedmaterial2", "-");
+		string namedmaterial2 = graphicsState->materialParams.FindOneString("namedmaterial2", "-");
 		found = false;
 		for(unsigned int i=0; i<namedmaterials.size(); i++)
 			if(namedmaterials[i].material == namedmaterial2) {
@@ -480,7 +521,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 				ParamSet nparams = namedmaterials[i].materialParams;
 				nparams.EraseString("type");
 				TextureParams mp1(params, nparams,
-				graphicsState.floatTextures, graphicsState.spectrumTextures);
+				graphicsState->floatTextures, graphicsState->spectrumTextures);
 				boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
 				mtl->SetChild2(mtl2);
 				found = true;
@@ -509,13 +550,13 @@ void Context::shape(const string &name, const ParamSet &params) {
 void Context::reverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation")
 	;
-	renderFarm.send("luxReverseOrientation");
-	graphicsState.reverseOrientation = !graphicsState.reverseOrientation;
+	renderFarm->send("luxReverseOrientation");
+	graphicsState->reverseOrientation = !graphicsState->reverseOrientation;
 }
 void Context::volume(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Volume")
 	;
-	renderFarm.send("luxVolume", name, params);
+	renderFarm->send("luxVolume", name, params);
 	VolumeRegion *vr = MakeVolumeRegion(name, curTransform, params);
 	if (vr)
 		renderOptions->volumeRegions.push_back(vr);
@@ -523,7 +564,7 @@ void Context::volume(const string &name, const ParamSet &params) {
 void Context::objectBegin(const string &name) {
 	VERIFY_WORLD("ObjectBegin")
 	;
-	renderFarm.send("luxObjectBegin", name);
+	renderFarm->send("luxObjectBegin", name);
 	luxAttributeBegin();
 	if (renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectBegin called inside of instance definition");
@@ -533,7 +574,7 @@ void Context::objectBegin(const string &name) {
 void Context::objectEnd() {
 	VERIFY_WORLD("ObjectEnd")
 	;
-	renderFarm.send("luxObjectEnd");
+	renderFarm->send("luxObjectEnd");
 	if (!renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectEnd called outside of instance definition");
 	renderOptions->currentInstance = NULL;
@@ -542,7 +583,7 @@ void Context::objectEnd() {
 void Context::objectInstance(const string &name) {
 	VERIFY_WORLD("ObjectInstance")
 	;
-	renderFarm.send("luxObjectInstance", name);
+	renderFarm->send("luxObjectInstance", name);
 	// Object instance error checking
 	if (renderOptions->currentInstance) {
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectInstance can't be called inside instance definition");
@@ -573,57 +614,51 @@ void Context::objectInstance(const string &name) {
 	Primitive* prim = o;
 	renderOptions->primitives.push_back(prim);
 }
-void Context::worldEnd() {
-	VERIFY_WORLD("WorldEnd")
-	;
-	renderFarm.send("luxWorldEnd");
-	renderFarm.flush();
-	/*
-	//flush network buffer
-	for (vector<string>::iterator server = luxServerList.begin(); server
-			!= luxServerList.end(); ++server) {
-		try
-		{
-			tcp::iostream stream((*server).c_str(), "18018");
-			stream<<netBuffer.str()<<std::endl;
-		}
-		catch (std::exception& e) {luxError(LUX_SYSTEM,LUX_ERROR,e.what());}
-	}*/
 
-	// Ensure the search path was set
-	/*if (!renderOptions->gotSearchPath)
-	 Severe("LUX_SEARCHPATH environment variable "
-	 "wasn't set and a plug-in\n"
-	 "search path wasn't given in the "
-	 "input (with the SearchPath "
-	 "directive).\n");*/
-	// Ensure there are no pushed graphics states
-	while (pushedGraphicsStates.size()) {
-		luxError(LUX_NESTING,LUX_WARNING,"Missing end to luxAttributeBegin()");
-		pushedGraphicsStates.pop_back();
-		pushedTransforms.pop_back();
-	}
-	// Create scene and render
-	luxCurrentScene = renderOptions->MakeScene();
+void Context::worldEnd() {
+    VERIFY_WORLD("WorldEnd")
+            ;
+    renderFarm->send("luxWorldEnd");
+    renderFarm->flush();
+
+    // Dade - get the lock, other thread can use this lock to wait the end of
+    // the rendering
+    boost::mutex::scoped_lock lock(renderingMutex);
+
+    // Ensure the search path was set
+    /*if (!renderOptions->gotSearchPath)
+     Severe("LUX_SEARCHPATH environment variable "
+     "wasn't set and a plug-in\n"
+     "search path wasn't given in the "
+     "input (with the SearchPath "
+     "directive).\n");*/
+    // Ensure there are no pushed graphics states
+    while (pushedGraphicsStates.size()) {
+        luxError(LUX_NESTING, LUX_WARNING, "Missing end to luxAttributeBegin()");
+        pushedGraphicsStates.pop_back();
+        pushedTransforms.pop_back();
+    }
+    // Create scene and render
+    luxCurrentScene = renderOptions->MakeScene();
     if (luxCurrentScene) {
         // Dade - check if we have to start the network rendering updater thread
-        if (renderFarm.getServerCount() > 0)
-            renderFarm.startFilmUpdater(luxCurrentScene);
+        if (renderFarm->getServerCount() > 0)
+            renderFarm->startFilmUpdater(luxCurrentScene);
 
-		luxCurrentScene->Render();
-        
+        luxCurrentScene->Render();
+
         // Dade - check if we have to stop the network rendering updater thread
-        if (renderFarm.getServerCount() > 0)
-            renderFarm.stopFilmUpdater();
+        if (renderFarm->getServerCount() > 0)
+            renderFarm->stopFilmUpdater();
     }
 
-	//delete scene;
-	// Clean up after rendering
-	currentApiState = STATE_OPTIONS_BLOCK;
-	StatsPrint(stdout);
-	curTransform = Transform();
-	namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
-			namedCoordinateSystems.end());
+    //delete scene;
+    // Clean up after rendering
+    currentApiState = STATE_OPTIONS_BLOCK;
+    StatsPrint(stdout);
+    curTransform = Transform();
+    namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
+            namedCoordinateSystems.end());
 }
 
 Scene *Context::RenderOptions::MakeScene() const {
@@ -686,8 +721,19 @@ void Context::pause() {
 	luxCurrentScene->Pause();
 }
 
+void Context::wait() {
+    boost::mutex::scoped_lock lock(renderingMutex);
+}
+
 void Context::exit() {
-	luxCurrentScene->Exit();
+    // Dade - stop the render farm too
+    activeContext->renderFarm->stopFilmUpdater();
+    // Dade - update the film for the last time
+    activeContext->renderFarm->updateFilm(luxCurrentScene);
+    // Dade - disconnect from all servers
+    activeContext->renderFarm->disconnectAll();
+
+    luxCurrentScene->Exit();
 }
 
 //controlling number of threads
@@ -722,5 +768,5 @@ void Context::transmitFilm(std::basic_ostream<char> &stream) {
 }
 
 void Context::updateFilmFromNetwork() {
-	renderFarm.updateFilm(luxCurrentScene);
+	renderFarm->updateFilm(luxCurrentScene);
 }
