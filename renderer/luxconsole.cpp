@@ -185,14 +185,8 @@ int main(int ac, char *av[]) {
         if (vm.count("useserver")) {
             std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
 
-            for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++) {
-                ss.str("");
-                ss << "Connecting to server '" << (*i) << "'";
-                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-                //TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull		
+            for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
                 luxAddServer((*i).c_str());
-            }
 
             useServer = true;
             

@@ -86,8 +86,50 @@ void RenderFarm::stopFilmUpdater() {
 }
 
 bool RenderFarm::connect(const string &serverName) {
-    serverList.push_back(std::string(serverName));
+    // Dade - connect to the rendering server
 
+    std::stringstream ss;
+    try {
+        ss.str("");
+        ss << "Connecting server: " << serverName;
+        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+        tcp::iostream stream(serverName, "18018");
+        stream << "ServerConnect" << std::endl;
+
+        // Dede - check if the server accepted the connection
+
+        string result;
+        if(!getline(stream, result)) {
+            ss.str("");
+            ss << "Unable to connect server: " << serverName;
+            luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+            return false;
+        }
+
+        ss.str("");
+        ss << "Server connect result: " << result;
+        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+        if ("OK" != result) {
+            ss.str("");
+            ss << "Unable to connect server: " << serverName;
+            luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+            return false;
+        }
+    } catch (std::exception& e) {
+        ss.str("");
+        ss << "Unable to connect server: " << serverName;
+        luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+        luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+        return false;
+    }
+
+    serverList.push_back(std::string(serverName));
+    
     return true;
 }
 
@@ -101,7 +143,7 @@ void RenderFarm::disconnectAll() {
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
             tcp::iostream stream((*server).c_str(), "18018");
-            stream << "luxExit" << std::endl;
+            stream << "ServerDisconnect" << std::endl;
         } catch (std::exception& e) {
             luxError(LUX_SYSTEM, LUX_ERROR, e.what());
         }

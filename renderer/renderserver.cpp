@@ -36,6 +36,7 @@
 
 using namespace lux;
 using namespace boost::iostreams;
+using namespace std;
 using asio::ip::tcp;
 
 //------------------------------------------------------------------------------
@@ -53,7 +54,7 @@ RenderServer::~RenderServer() {
 
 void RenderServer::start() {
     if (state != UNSTARTED) {
-        std::stringstream ss;
+        stringstream ss;
         ss << "Can not start a rendering server in state: " << state;
         luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
@@ -70,7 +71,7 @@ void RenderServer::start() {
 
 void RenderServer::join() {
     if ((state != READY) && (state != BUSY)) {
-        std::stringstream ss;
+        stringstream ss;
         ss << "Can not join a rendering server in state: " << state;
         luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
@@ -82,7 +83,7 @@ void RenderServer::join() {
 
 void RenderServer::stop() {
     if ((state != READY) && (state != BUSY)) {
-        std::stringstream ss;
+        stringstream ss;
         ss << "Can not stop a rendering server in state: " << state;
         luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
@@ -112,7 +113,7 @@ static void printInfoThread() {
         int sampleSec = (int)luxStatistics("samplesSec");
         // Dade - print only if we are rendering something
         if (sampleSec > 0) {
-            std::stringstream ss;
+            stringstream ss;
             ss << td << "  " << sampleSec << " samples/sec " << " "
                 << (float) luxStatistics("samplesPx") << " samples/pix";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -120,13 +121,13 @@ static void printInfoThread() {
     }
 }
 
-static void processCommandFilm(void (&f)(const string &, const ParamSet &), std::basic_istream<char> &stream) {
-    std::string type;
+static void processCommandFilm(void (&f)(const string &, const ParamSet &), basic_istream<char> &stream) {
+    string type;
     ParamSet params;
     stream >> type;
 
     if((type != "fleximage") && (type != "multiimage")) {
-        std::stringstream ss;
+        stringstream ss;
         ss << "Unsupported film type for server rendering: " << type;
         luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
@@ -151,8 +152,8 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), std:
     f(type.c_str(), params);
 }
 
-static void processCommand(void (&f)(const string &, const ParamSet &), std::basic_istream<char> &stream) {
-    std::string type;
+static void processCommand(void (&f)(const string &, const ParamSet &), basic_istream<char> &stream) {
+    string type;
     ParamSet params;
     stream >> type;
     boost::archive::text_iarchive ia(stream);
@@ -160,13 +161,13 @@ static void processCommand(void (&f)(const string &, const ParamSet &), std::bas
     f(type.c_str(), params);
 }
 
-static void processCommand(void (&f)(const string &), std::basic_istream<char> &stream) {
-    std::string type;
+static void processCommand(void (&f)(const string &), basic_istream<char> &stream) {
+    string type;
     stream >> type;
     f(type.c_str());
 }
 
-static void processCommand(void (&f)(float, float, float), std::basic_istream<char> &stream) {
+static void processCommand(void (&f)(float, float, float), basic_istream<char> &stream) {
     float ax, ay, az;
     stream >> ax;
     stream >> ay;
@@ -174,7 +175,7 @@ static void processCommand(void (&f)(float, float, float), std::basic_istream<ch
     f(ax, ay, az);
 }
 
-static void processCommand(void (&f)(float[16]), std::basic_istream<char> &stream) {
+static void processCommand(void (&f)(float[16]), basic_istream<char> &stream) {
     float t[16];
     for (int i = 0; i < 16; i++)
         stream >> t[i];
@@ -196,11 +197,11 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
             CMD_LUXAREALIGHTSOURCE = 515057184U, CMD_LUXPORTALSHAPE = 3416559329U, CMD_LUXSHAPE = 1943702863U,
             CMD_LUXREVERSEORIENTATION = 2027239206U, CMD_LUXVOLUME = 4138761078U, CMD_LUXOBJECTBEGIN = 1097337658U,
             CMD_LUXOBJECTEND = 229760620U, CMD_LUXOBJECTINSTANCE = 4125664042U, CMD_LUXWORLDEND = 1582674973U, CMD_LUXGETFILM = 859419430U,
-            CMD_LUXEXIT = 2531274616U,
+            CMD_SERVER_DISCONNECT = 2500584742U, CMD_SERVER_CONNECT = 332355398U,
             CMD_VOID = 5381U, CMD_SPACE = 177605U;
 
     int listenPort = serverThread->renderServer->tcpPort;
-    std::stringstream ss;
+    stringstream ss;
     ss << "Launching server [" << serverThread->renderServer->threadCount <<
             " threads] mode on port '" << listenPort << "'.";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -213,12 +214,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
         for (;;) {
             tcp::iostream stream;
             acceptor.accept(*stream.rdbuf());
-            stream.setf(std::ios::scientific, std::ios::floatfield);
+            stream.setf(ios::scientific, ios::floatfield);
             stream.precision(16);
 
             //reading the command
-            std::string command;
-            while (std::getline(stream, command)) {
+            string command;
+            while (getline(stream, command)) {
                 unsigned int hash = DJBHash(command);
 
                 if ((command != "") && (command != " ")) {
@@ -233,11 +234,19 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                     case CMD_VOID:
                     case CMD_SPACE:
                         break;
-                    case CMD_LUXEXIT:
+                    case CMD_SERVER_DISCONNECT:
                         // Dade - stop the rendering and cleanup
                         luxExit();
                         luxWait();
                         luxCleanup();
+                        serverThread->renderServer->state = RenderServer::READY;
+                        break;
+                    case CMD_SERVER_CONNECT:
+                        if (serverThread->renderServer->state == RenderServer::READY) {
+                            serverThread->renderServer->state = RenderServer::BUSY;
+                            stream << "OK" <<endl;
+                        } else
+                            stream << "BUSY" <<endl;
                         break;
                     case CMD_LUXINIT:
                         luxError(LUX_BUG, LUX_SEVERE, "Server already initialized");
@@ -251,7 +260,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         stream >> ax;
                         stream >> ay;
                         stream >> az;
-                        //std::cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<std::endl;
+                        //cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<endl;
                         luxRotate(angle, ax, ay, az);
                     }
                         break;
@@ -269,7 +278,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         stream >> ux;
                         stream >> uy;
                         stream >> uz;
-                        //std::cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<std::endl;
+                        //cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<endl;
                         luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
                     }
                         break;
@@ -315,28 +324,28 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         break;
                     case CMD_LUXTEXTURE:
                     {
-                        std::string name, type, texname;
+                        string name, type, texname;
                         ParamSet params;
                         stream >> name;
                         stream >> type;
                         stream >> texname;
                         boost::archive::text_iarchive ia(stream);
                         ia >> params;
-                        //std::cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<std::endl;
+                        //cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<endl;
 
-                        std::string file = "";
-                        file = params.FindOneString(std::string("filename"), file);
+                        string file = "";
+                        file = params.FindOneString(string("filename"), file);
                         if (file.size()) {
-                            //std::cout<<"receiving file..."<<file<<std::endl;
+                            //cout<<"receiving file..."<<file<<endl;
                             {
-                                std::stringstream ss;
+                                stringstream ss;
                                 ss << "Receiving file: '" << file << "'";
                                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
                             }
 
                             bool first = true;
-                            std::string s;
-                            std::ofstream out(file.c_str(), std::ios::out | std::ios::binary);
+                            string s;
+                            ofstream out(file.c_str(), ios::out | ios::binary);
                             while (getline(stream, s) && s != "LUX_END_FILE") {
                                 if (!first)out << "\n";
                                 first = false;
@@ -412,7 +421,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                 //END OF COMMAND PROCESSING
             }
         }
-    } catch (std::exception& e) {
+    } catch (exception& e) {
         luxError(LUX_BUG, LUX_ERROR, e.what());
     }
 }
