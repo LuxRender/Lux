@@ -104,6 +104,7 @@ int main(int ac, char *av[]) {
                 ("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
                 ("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
                 ("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
+                ("samplepix,p", po::value < int >(), "Specify to stop after the number of samples per pixel has been reached.")
                 ;
 
         // Hidden options, will be allowed both on command line and
@@ -153,6 +154,9 @@ int main(int ac, char *av[]) {
             threads = vm["threads"].as<int>();
         else
             threads = 1;
+        ss.str("");
+        ss << "Threads: " << threads;
+        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
         if (vm.count("debug")) {
             luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
@@ -166,9 +170,14 @@ int main(int ac, char *av[]) {
         } else
             serverInterval = luxGetNetworkServerUpdateInterval();
 
-        ss.str("");
-        ss << "Threads: " << threads;
-        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        int maxSamplePerPixel;
+        if (vm.count("samplepix")) {
+            maxSamplePerPixel = vm["samplepix"].as<int>();
+            ss.str("");
+            ss << "Maximum number of samples per pixel: " << maxSamplePerPixel;
+            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        } else
+            maxSamplePerPixel = -1;
 
         if (vm.count("useserver")) {
             std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
@@ -207,7 +216,7 @@ int main(int ac, char *av[]) {
                 chdir(fullPath.branch_path().string().c_str());
 
                 parseError = false;
-                boost::thread t(&engineThread);
+                boost::thread engine(&engineThread);
 
                 //wait the scene parsing to finish
                 while (!luxStatistics("sceneIsReady") && !parseError) {
@@ -230,10 +239,28 @@ int main(int ac, char *av[]) {
                     Context::luxAddThread();
 
                 //launch info printing thread
-                boost::thread j(&infoThread);
+                boost::thread info(&infoThread);
+
+                if (maxSamplePerPixel > 0) {
+                    // Dade - check if we have reached the requested amount of
+                    // samples per pixel
+
+                    for(;;) {
+                        boost::xtime xt;
+                        boost::xtime_get(&xt, boost::TIME_UTC);
+                        xt.sec += 1;
+                        boost::thread::sleep(xt);
+
+                        if(luxStatistics("samplesPx") >= maxSamplePerPixel) {
+                            // Dade stop the rendering
+                            luxExit();
+                            break;
+                        }
+                    }
+                }
 
                 //wait for threads to finish
-                t.join();
+                engine.join();
 
                 // Dade - print the total rendering time
                 boost::posix_time::time_duration td(0, 0,
