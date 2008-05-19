@@ -37,7 +37,7 @@ class NetworkRenderServerThread : public boost::noncopyable {
 public:
     NetworkRenderServerThread(RenderServer *renderServer) :
         renderServer(renderServer), serverThread(NULL), engineThread(NULL),
-        signal(SIG_NONE) { }
+        infoThread(NULL), signal(SIG_NONE) { }
 
     ~NetworkRenderServerThread() {
         if (engineThread)

@@ -393,7 +393,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                             boost::thread::sleep(xt);
                         }
 
-                        serverThread->infoThread = new boost::thread(&printInfoThread);
+                        // Dade - start the info thread only if it is not already running
+                        if(!serverThread->infoThread)
+                            serverThread->infoThread = new boost::thread(&printInfoThread);
 
                         // Add rendering threads
                         int threadsToAdd = serverThread->renderServer->threadCount;
