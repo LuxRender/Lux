@@ -468,6 +468,7 @@ SWCSpectrum PhotonIntegrator::SceneLi(
         const RayDifferential &ray,
         const Sample *sample,
         float *alpha) const {
+    // Dade - TODO: this one needs to be thread safe, the problem in the use of sample.
     SWCSpectrum Lo = scene->surfaceIntegrator->Li(scene, ray, sample, alpha);
     SWCSpectrum T = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
     SWCSpectrum Lv = scene->volumeIntegrator->Li(scene, ray, sample, alpha);

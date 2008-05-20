@@ -128,6 +128,9 @@ public:
     // Dade - number of samples received from network
     double numberOfSamplesFromNetwork;
 
+    // Dade - used to suspend render threads until the preprocessing phase is done
+    bool preprocessDone;
+
 private:
     std::vector<RenderThread*> renderThreads;
     //boost::thread_group threadGroup;

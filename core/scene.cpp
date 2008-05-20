@@ -195,6 +195,15 @@ static int tot = 0;
 
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread) {
+    // Dade - wait the end of the preprocessing phase
+
+    while(!myThread->scene->preprocessDone) {
+        boost::xtime xt;
+        boost::xtime_get(&xt, boost::TIME_UTC);
+        xt.sec += 1;
+        boost::thread::sleep(xt);
+    }
+
     // initialize the thread's arena
     BSDF::arena.reset(new MemoryArena());
     myThread->stat_Samples = 0.;
@@ -378,6 +387,9 @@ void Scene::Render() {
     
     //start the timer
     s_Timer.Start();
+
+    // Dade - preprocessing done
+    preprocessDone = true;
     
     // initial thread signal is paused
     CurThreadSignal = RenderThread::SIG_RUN;
@@ -430,6 +442,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 
     // Dade - Initialize the base seed with the standard C lib random number generator
     seedBase = rand();
+    
+    preprocessDone = false;
 }
 
 const BBox &Scene::WorldBound() const {
