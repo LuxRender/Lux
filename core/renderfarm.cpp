@@ -187,17 +187,23 @@ void RenderFarm::updateFilm(Scene *scene) {
             != serverList.end(); ++server) {
         try {
             ss.str("");
-            ss << "Getting samples from '" << (*server) << "'";
+            ss << "Getting samples from: " << (*server);
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
             tcp::iostream stream((*server).c_str(), "18018");
             stream << "luxGetFilm" << std::endl;
 
-            film->UpdateFilm(scene, stream);
+            if (stream.good()) {
+                film->UpdateFilm(scene, stream);
 
-            ss.str("");
-            ss << "Samples received from '" << (*server) << "'";
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+                ss.str("");
+                ss << "Samples received from '" << (*server) << "'";
+                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+            } else {
+                ss.str("");
+                ss << "Error while contacting server: " << (*server);
+                luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+            }
         } catch (std::exception& e) {
             luxError(LUX_SYSTEM, LUX_ERROR, e.what());
         }

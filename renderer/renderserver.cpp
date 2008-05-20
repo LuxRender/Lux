@@ -405,12 +405,19 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         break;
                     case CMD_LUXGETFILM:
                     {
-                        luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
+                        // Dade - check if we are rendering something
 
-                        Context::luxTransmitFilm(stream);
-                        stream.close();
+                        if (serverThread->renderServer->state == RenderServer::BUSY) {
+                            luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
 
-                        luxError(LUX_NOERROR, LUX_INFO, "Finished film samples transmission");
+                            Context::luxTransmitFilm(stream);
+                            stream.close();
+
+                            luxError(LUX_NOERROR, LUX_INFO, "Finished film samples transmission");
+                        } else {
+                            luxError(LUX_SYSTEM, LUX_ERROR, "Received a GetFilm command after a ServerDisconnect");
+                            stream.close();
+                        }
                     }
                         break;
                     default:

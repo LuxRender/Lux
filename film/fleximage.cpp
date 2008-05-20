@@ -414,7 +414,6 @@ void FlexImageFilm::WriteImage(ImageType type)
 	delete[] alpha0;
 }
 
-
 // GUI display methods
 void FlexImageFilm::createFrameBuffer()
 {
@@ -618,6 +617,7 @@ void FlexImageFilm::TransmitFilm(
             writeLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
         }
     }
+    
 
     filtering_streambuf<input> in;
     in.push(gzip_compressor(9));
@@ -648,54 +648,58 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
     in.push(gzip_decompressor());
     in.push(stream);
 
-    // Dade - TODO: check stream i/o for errors
-
     bool isLittleEndian = IsLittleEndian();
 
     float numberOfSamples;
     readLittleEndianFloat(isLittleEndian, in, &numberOfSamples);
+    if (in.good()) {
+        std::stringstream ss;
+        ss << "Receiving " <<  numberOfSamples << " samples (little endian " <<
+                (isLittleEndian ? "true" : "false") << ")";
+        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-    std::stringstream ss;
-    ss << "Receiving " <<  numberOfSamples << " samples (little endian " <<
-            (isLittleEndian ? "true" : "false") << ")";
-    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-    for (int y = 0; y < pixelBuf->vSize(); ++y) {
-        for (int x = 0; x < pixelBuf->uSize(); ++x) {
-            Pixel &pixel = (*pixelBuf)(x, y);
-            readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[0]);
-            readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[1]);
-            readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[2]);
-            readLittleEndianFloat(isLittleEndian, in, &pixel.alpha);
-            readLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
-        }
-    }
-
-    {
-        // Dade - add all received pixels
-        boost::mutex::scoped_lock lock(addSampleMutex);
-
-        BufferGroup &currentGroup = bufferGroups[buf_id];
-		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
-
-        for (int y = 0; y < buffer->yPixelCount; ++y) {
-            for (int x = 0; x < buffer->xPixelCount; ++x) {
+        for (int y = 0; y < pixelBuf->vSize(); ++y) {
+            for (int x = 0; x < pixelBuf->uSize(); ++x) {
                 Pixel &pixel = (*pixelBuf)(x, y);
-                Pixel &pixelResult = (*buffer->pixels)(x, y);
-
-                pixelResult.L.c[0] += pixel.L.c[0];
-                pixelResult.L.c[1] += pixel.L.c[1];
-                pixelResult.L.c[2] += pixel.L.c[2];
-                pixelResult.alpha += pixel.alpha;
-                pixelResult.weightSum += pixel.weightSum;
+                readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[0]);
+                readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[1]);
+                readLittleEndianFloat(isLittleEndian, in, &pixel.L.c[2]);
+                readLittleEndianFloat(isLittleEndian, in, &pixel.alpha);
+                readLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
             }
         }
 
-        currentGroup.numberOfSamples += numberOfSamples;
-    }   
+        // Dade - check stream i/o for errors
+        if (in.good()) {
+            // Dade - add all received pixels
+            boost::mutex::scoped_lock lock(addSampleMutex);
 
-    if(scene != NULL)
-        scene->numberOfSamplesFromNetwork += numberOfSamples;
+            BufferGroup &currentGroup = bufferGroups[buf_id];
+            Buffer *buffer = currentGroup.getBuffer(bufferGroup);
+
+            for (int y = 0; y < buffer->yPixelCount; ++y) {
+                for (int x = 0; x < buffer->xPixelCount; ++x) {
+                    Pixel &pixel = (*pixelBuf)(x, y);
+                    Pixel &pixelResult = (*buffer->pixels)(x, y);
+
+                    pixelResult.L.c[0] += pixel.L.c[0];
+                    pixelResult.L.c[1] += pixel.L.c[1];
+                    pixelResult.L.c[2] += pixel.L.c[2];
+                    pixelResult.alpha += pixel.alpha;
+                    pixelResult.weightSum += pixel.weightSum;
+                }
+            }
+
+            currentGroup.numberOfSamples += numberOfSamples;
+
+            if(scene != NULL)
+                scene->numberOfSamplesFromNetwork += numberOfSamples;
+        } else {
+            luxError(LUX_SYSTEM, LUX_ERROR, "Error while reading samples");
+        }
+    } else {
+        luxError(LUX_SYSTEM, LUX_ERROR, "Error while reading samples");
+    }
 
     delete pixelBuf;
 }

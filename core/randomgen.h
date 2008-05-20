@@ -50,28 +50,6 @@ namespace lux
 namespace random
 {
 
-// Dade - old code: it is not thread safe
-/*#define MAX_SEEDS 64
-static int newseed = 0;
-static float seeds[64] = { 
-0.8147236705f, 0.1354770064f, 0.0000925521f, 0.4019474089f,
-0.9057919383f, 0.8350085616f, 0.0003553750f, 0.0861424059f,
-0.5407393575f, 0.2690643370f, 0.0006090801f, 0.6007867455f,
-0.2601301968f, 0.6379706860f, 0.0009086037f, 0.7664164901f,
-0.3190678060f, 0.9074092507f, 0.0011911630f, 0.9212453961f,
-0.7451665998f, 0.5743905902f, 0.0013162681f, 0.9683164358f,
-0.4001524150f, 0.5284244418f, 0.0016778698f, 0.6921809912f,
-0.1100450456f, 0.1057574451f, 0.0018501711f, 0.0146250632f,
-0.8948429227f, 0.2533296347f, 0.0020738356f, 0.4565072358f,
-0.2674683630f, 0.5533290505f, 0.0023895311f, 0.1681169569f,
-0.3942572773f, 0.2532950938f, 0.0026231781f, 0.2203403264f,
-0.4852786958f, 0.3545391560f, 0.0028830934f, 0.3188484907f,
-0.6586979032f, 0.8418058157f, 0.0030069787f, 0.7844486237f,
-0.9411987066f, 0.5897576213f, 0.0033880144f, 0.8060938716f,
-0.5399997830f, 0.9201279879f, 0.0034516300f, 0.7110665441f,
-0.7044532299f, 0.3615645170f, 0.0038146735f, 0.3312333524f
-};*/
-
 class RandomGenerator
 {
 public:
@@ -134,18 +112,6 @@ private:
 extern boost::thread_specific_ptr<RandomGenerator> myGen;
 
 static const float invUI = ((float)1.0/(float)4294967296.0);
-
-// Dade - old code: it is not thread safe
-/*inline void init(int tn) {
-	if(!myGen.get())
-		myGen.reset(new RandomGenerator);
-
-	if(newseed >= MAX_SEEDS) newseed = 1; // 0 always used by 1st thr
-	unsigned long seed = (unsigned long) (seeds[newseed] * 4294967296.0);
-	newseed++;
-
-	myGen->taus113_set(seed);
-}*/
 
 inline void init(int tn) {
 	if(!myGen.get())

@@ -428,12 +428,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
     bound = aggregate->WorldBound();
     if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
 
-    // Dade - Initialize the base seed with the time of day
-    /*boost::xtime t;
-    boost::xtime_get(&t, boost::TIME_UTC);
-    seedBase = (int)t.sec;*/
-
-    // Dade - Otherwise I can use standard C lib random number generator
+    // Dade - Initialize the base seed with the standard C lib random number generator
     seedBase = rand();
 }
 
