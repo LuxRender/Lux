@@ -20,7 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/
 
-// photonmap.cpp*
+//#include <iostream>
+//using namespace std;
+
 #include "photonmap.h"
 #include "bxdf.h"
 #include "light.h"
@@ -386,10 +388,12 @@ SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
         if (alpha && !L.Black()) *alpha = 1.;
     }
 
+    //cout << "=" << sample->imageX << "=" << sample->imageY << "=" << L.ToXYZ() << endl;
+
     XYZColor color(L.ToXYZ());
     if (color.y() > 0.f)
         sample->AddContribution(sample->imageX, sample->imageY,
-                color, alpha ? *alpha : 1.0f, 1.0f);
+                color, alpha ? *alpha : 1.0f);
 
     return L;
 }
