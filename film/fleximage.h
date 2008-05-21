@@ -235,15 +235,10 @@ public:
 		if (!bufferGroups.empty())
 			bufferGroups[bufferGroup].numberOfSamples += count;
 	}
-	void MergeSampleArray();
+
+    void FlushSampleArray();
 
 	void WriteImage(ImageType type);
-	void WriteImage2(ImageType type, float* rgb, float* alpha, string postfix);
-	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
-	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
-	void WriteIGIImage(float *rgb, float *alpha, const string &filename);
-    void WriteResumeFilm(const string &filename);
-	void ScaleOutput(float *rgb, float *alpha, float *scale);
 
 	// GUI display methods
 	void updateFrameBuffer();
@@ -262,6 +257,16 @@ public:
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 
 private:
+    // Dade - using this method requires to lock arrSampleMutex
+    void MergeSampleArray();
+
+    void WriteImage2(ImageType type, float* rgb, float* alpha, string postfix);
+	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
+	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
+	void WriteIGIImage(float *rgb, float *alpha, const string &filename);
+    void WriteResumeFilm(const string &filename);
+	void ScaleOutput(float *rgb, float *alpha, float *scale);
+
 	// FlexImageFilm Private Data
 	Filter *filter;
 	int writeInterval;
@@ -290,6 +295,10 @@ private:
 	bool warmupComplete;
 	ArrSample *SampleArrptr;
 	ArrSample *SampleArr2ptr;
+    // Dade - this mutex is used to lock SampleArrptr/SampleArr2ptr pointers.
+    // Beaware of potential dealock with addSampleMutex mutex. Always lock 
+    // addSampleMutex first and then arrSampleMutex.
+    mutable boost::mutex arrSampleMutex;
 	int curSampleArrId, maxSampleArrId;
 };
 

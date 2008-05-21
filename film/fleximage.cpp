@@ -99,8 +99,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
     // Dade - 2048 was a too small value for QuadCores, there was a memory fault
     // because the second buffer was filled while we were still merging the first
     // one. Bug #140.
+    // Dade - this problem is now solved with a dedicated mutex. Bug #147
 
-	int arrsize = 128*1024;
+	int arrsize = 8 * 1024;
 	SampleArrptr = new ArrSample[arrsize];
 	SampleArr2ptr = new ArrSample[arrsize];
 
@@ -155,40 +156,63 @@ void FlexImageFilm::CreateBuffers()
 
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
-	bool SampleArrmerge = false;
-	int arr_id;
-	// retrieve array position and increment for next AddSample()
-	{
-		boost::mutex::scoped_lock lock(addSampleMutex);
+    boost::mutex::scoped_lock lockSample(addSampleMutex);
 
-		// fetch arr_id and increment
-		arr_id = curSampleArrId;
-		curSampleArrId++;
+    // retrieve array position and increment for next AddSample()
 
-		// check for end
-		if(curSampleArrId == maxSampleArrId) {
-			// swap SampleArrptrs
-			ArrSample *tmpptr = SampleArrptr; 
-			SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
-			// enable merge and reset counter
-			SampleArrmerge = true;
-			curSampleArrId = 0;
-		}
-	}
+    // fetch arr_id and increment
+    int arr_id = curSampleArrId;
+    curSampleArrId++;
 
-	// Copy to array location
-	SampleArrptr[arr_id].sX = sX;
-	SampleArrptr[arr_id].sY = sY;
-	SampleArrptr[arr_id].xyz = xyz;
-	SampleArrptr[arr_id].alpha = alpha;
-	SampleArrptr[arr_id].buf_id = buf_id;
-	SampleArrptr[arr_id].bufferGroup = bufferGroup;
+    // check for end
+    if(curSampleArrId == maxSampleArrId) {
+        // Dade - lock the pointer mutex
+        boost::mutex::scoped_lock lockArray(arrSampleMutex);
 
-	if(SampleArrmerge)
-		MergeSampleArray();
+        // swap SampleArrptrs
+        ArrSample *tmpptr = SampleArrptr; 
+        SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+        // enable merge and reset counter
+        curSampleArrId = 0;
+
+        // Dade - unlock the sample lock 
+        lockSample.unlock();
+
+        // Dade - merge buffers
+        MergeSampleArray();
+    } else
+        lockSample.unlock();
+
+    // Copy to array location
+    SampleArrptr[arr_id].sX = sX;
+    SampleArrptr[arr_id].sY = sY;
+    SampleArrptr[arr_id].xyz = xyz;
+    SampleArrptr[arr_id].alpha = alpha;
+    SampleArrptr[arr_id].buf_id = buf_id;
+    SampleArrptr[arr_id].bufferGroup = bufferGroup;
+}
+
+void FlexImageFilm::FlushSampleArray() {
+    boost::mutex::scoped_lock lockSample(addSampleMutex);
+
+    // Dade - lock the pointer mutex
+    boost::mutex::scoped_lock lockArray(arrSampleMutex);
+
+    // swap SampleArrptrs
+    ArrSample *tmpptr = SampleArrptr; 
+    SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+    // enable merge and reset counter
+    curSampleArrId = 0;
+
+    // Dade - unlock the sample lock 
+    lockSample.unlock();
+
+    // Dade - merge buffers
+    MergeSampleArray();
 }
 
 void FlexImageFilm::MergeSampleArray() {
+    // Dade - ATTENTION: you have to lock arrSampleMutex outside this method
 
     // TODO: Find a group
     if (bufferGroups.empty())
