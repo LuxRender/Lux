@@ -50,45 +50,81 @@ PhotonIntegrator::PhotonIntegrator(int ncaus, int ndir, int nind,
     maxDistSquared = mdist * mdist;
     maxSpecularDepth = mdepth;
     causticMap = directMap = indirectMap = NULL;
-    specularDepth = 0;
     finalGather = fg;
     gatherSamples = gs;
     directWithPhotons = dp;
+    
+    lightSampleOffset = NULL;
+    bsdfSampleOffset = NULL;
+    bsdfComponentOffset = NULL;
+    gatherSampleOffset = NULL;
+    gatherComponentOffset = NULL;
 }
 
 PhotonIntegrator::~PhotonIntegrator() {
     delete causticMap;
     delete directMap;
     delete indirectMap;
+
+    if (lightSampleOffset)
+        delete lightSampleOffset;
+    if (bsdfSampleOffset)
+        delete bsdfSampleOffset;
+    if (bsdfComponentOffset)
+        delete bsdfComponentOffset;
+    if (gatherSampleOffset)
+        delete gatherSampleOffset;
+    if (gatherComponentOffset)
+        delete gatherComponentOffset;
 }
 
 void PhotonIntegrator::RequestSamples(Sample *sample,
         const Scene *scene) {
-    // Allocate and request samples for sampling all lights
+    // Dade - request samples for sampling all lights
     u_int nLights = scene->lights.size();
-    lightSampleOffset = new int[nLights];
-    bsdfSampleOffset = new int[nLights];
-    bsdfComponentOffset = new int[nLights];
-    for (u_int i = 0; i < nLights; ++i) {
-        const Light *light = scene->lights[i];
-        int lightSamples =
-        scene->sampler->RoundSize(light->nSamples);
-        lightSampleOffset[i] = sample->Add2D(lightSamples);
-        bsdfSampleOffset[i] = sample->Add2D(lightSamples);
-        bsdfComponentOffset[i] = sample->Add1D(lightSamples);
-    }
-    lightNumOffset = -1;
-    if (finalGather) {
-        gatherSamples = scene->sampler->RoundSize(gatherSamples);
-        gatherSampleOffset = sample->Add2D(gatherSamples);
-        gatherComponentOffset = sample->Add1D(gatherSamples);
+
+    for (int j = 0; j < maxSpecularDepth; ++j) {
+        for (u_int i = 0; i < nLights; ++i) {
+            const Light *light = scene->lights[i];
+            int lightSamples = scene->sampler->RoundSize(light->nSamples);
+
+            lightSampleOffset[i + j * nLights] = sample->Add2D(lightSamples);
+            bsdfSampleOffset[i + j * nLights] = sample->Add2D(lightSamples);
+            bsdfComponentOffset[i + j * nLights] = sample->Add1D(lightSamples);
+        }
+
+        if (finalGather) {
+            gatherSampleOffset[j] = sample->Add2D(gatherSamples);
+            gatherComponentOffset[j] = sample->Add1D(gatherSamples);
+        }
     }
 }
 
 void PhotonIntegrator::Preprocess(const Scene *scene) {
     if (scene->lights.size() == 0) return;
-    
+
+    // Dade - allocate samples for sampling all lights
+    u_int sampleCount = scene->lights.size() * maxSpecularDepth;
+    lightSampleOffset = new int[sampleCount];
+    bsdfSampleOffset = new int[sampleCount];
+    bsdfComponentOffset = new int[sampleCount];
+
     std::stringstream ss;
+    ss << "Number of samples requested for lights: " << sampleCount;
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+    if (finalGather) {
+        gatherSamples = scene->sampler->RoundSize(gatherSamples);
+        gatherSampleOffset = new int[maxSpecularDepth];
+        gatherComponentOffset = new int[maxSpecularDepth];
+
+        ss.str("");
+        ss << "Number of samples requested for final gather: " << maxSpecularDepth;
+        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    }
+
+    // Dade - shoot photons
+    ss.str("");
     ss << "Shooting photons: " << (nCausticPhotons + nDirectPhotons + nIndirectPhotons);
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
@@ -255,15 +291,33 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
     luxError(LUX_NOERROR, LUX_INFO, "Photon shooting done");
 }
 
+
 SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
         const RayDifferential &ray, const Sample *sample,
         float *alpha) const {
     SampleGuard guard(sample->sampler, sample);
 
+    SWCSpectrum L = SceneLi(0, scene, ray, sample, alpha);
+
+    XYZColor color(L.ToXYZ());
+    if (color.y() > 0.f)
+        sample->AddContribution(sample->imageX, sample->imageY,
+                color, alpha ? *alpha : 1.0f);
+
+    return L;
+}
+
+SWCSpectrum PhotonIntegrator::IntegratorLi(
+        const int specularDepth,
+        const Scene *scene,
+        const RayDifferential &ray, const Sample *sample,
+        float *alpha) const {
     // Compute reflected radiance with photon map
     SWCSpectrum L(0.);
     Intersection isect;
     if (scene->Intersect(ray, &isect)) {
+        int sampleOffset = specularDepth * scene->lights.size();
+
         if (alpha) *alpha = 1.;
         Vector wo = -ray.d;
         // Compute emitted light if ray hit an area light source
@@ -279,21 +333,23 @@ SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
         else
             L += UniformSampleAllLights(scene, p, n,
                     wo, bsdf, sample,
-                    lightSampleOffset, bsdfSampleOffset,
-                    bsdfComponentOffset);
+                    &lightSampleOffset[sampleOffset],
+                    &bsdfSampleOffset[sampleOffset],
+                    &bsdfComponentOffset[sampleOffset]);
         
         // Compute indirect lighting for photon map integrator
         L += LPhoton(causticMap, nCausticPaths, nLookup, bsdf,
                 isect, wo, maxDistSquared);
         if (finalGather) {
+            int finalGatherSampleOffset = specularDepth;
             // Do one-bounce final gather for photon map
             SWCSpectrum Li(0.);
             for (int i = 0; i < gatherSamples; ++i) {
                 // Sample random direction for final gather ray
                 Vector wi;
-                float u1 = sample->twoD[gatherSampleOffset][2*i];
-                float u2 = sample->twoD[gatherSampleOffset][2*i+1];
-                float u3 = sample->oneD[gatherComponentOffset][i];
+                float u1 = sample->twoD[gatherSampleOffset[finalGatherSampleOffset]][2*i];
+                float u2 = sample->twoD[gatherSampleOffset[finalGatherSampleOffset]][2*i+1];
+                float u3 = sample->oneD[gatherComponentOffset[finalGatherSampleOffset]][i];
                 float pdf;
                 SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
                         &pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
@@ -322,7 +378,7 @@ SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
         else
             L += LPhoton(indirectMap, nIndirectPaths, nLookup,
                     bsdf, isect, wo, maxDistSquared);
-        if (specularDepth++ < maxSpecularDepth) {
+        if (specularDepth < maxSpecularDepth - 1) {
             Vector wi;
             // Trace rays for specular reflection and refraction
             SWCSpectrum f = bsdf->Sample_f(wo, &wi,
@@ -347,7 +403,7 @@ SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
                 rd.ry.d = wi -
                         dwody + 2 * Vector(Dot(wo, n) * dndy +
                         dDNdy * n);
-                L += SceneLi(scene, rd, sample) * f * AbsDot(wi, n);
+                L += SceneLi(specularDepth + 1, scene, rd, sample) * f * AbsDot(wi, n);
             }
             f = bsdf->Sample_f(wo, &wi,
                     BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
@@ -375,10 +431,9 @@ SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
                 
                 rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
                 rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
-                L += SceneLi(scene, rd, sample) * f * AbsDot(wi, n);
+                L += SceneLi(specularDepth + 1, scene, rd, sample) * f * AbsDot(wi, n);
             }
         }
-        --specularDepth;
     }
     else {
         // Handle ray with no intersection
@@ -388,18 +443,24 @@ SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
         if (alpha && !L.Black()) *alpha = 1.;
     }
 
-    //cout << "=" << sample->imageX << "=" << sample->imageY << "=" << L.ToXYZ() << endl;
-
-    XYZColor color(L.ToXYZ());
-    if (color.y() > 0.f)
-        sample->AddContribution(sample->imageX, sample->imageY,
-                color, alpha ? *alpha : 1.0f);
-
     return L;
 }
 
+SWCSpectrum PhotonIntegrator::SceneLi(
+        const int specularDepth,
+        const Scene *scene,
+        const RayDifferential &ray,
+        const Sample *sample,
+        float *alpha) const {
+    SWCSpectrum Lo = IntegratorLi(specularDepth, scene, ray, sample, alpha);
+    SWCSpectrum T = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+    SWCSpectrum Lv = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+
+    return T * Lo + Lv;
+}
+
 SWCSpectrum PhotonIntegrator::LPhoton(
-KdTree<Photon, PhotonProcess> *map,
+        KdTree<Photon, PhotonProcess> *map,
         int nPaths, int nLookup, BSDF *bsdf,
         const Intersection &isect, const Vector &wo,
         float maxDistSquared) {
@@ -461,19 +522,6 @@ KdTree<Photon, PhotonProcess> *map,
                 Lt * bsdf->rho(wo, BSDF_ALL_TRANSMISSION));
     }
     return L;
-}
-
-SWCSpectrum PhotonIntegrator::SceneLi(
-        const Scene *scene,
-        const RayDifferential &ray,
-        const Sample *sample,
-        float *alpha) const {
-    // Dade - TODO: this one needs to be thread safe, the problem in the use of sample.
-    SWCSpectrum Lo = scene->surfaceIntegrator->Li(scene, ray, sample, alpha);
-    SWCSpectrum T = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
-    SWCSpectrum Lv = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
-
-    return T * Lo + Lv;
 }
 
 PhotonProcess::PhotonProcess(u_int mp, const Point &P)

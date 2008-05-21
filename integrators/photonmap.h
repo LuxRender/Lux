@@ -57,8 +57,12 @@ public:
 
     static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
-    SWCSpectrum SceneLi(const Scene *scene, const RayDifferential &ray,
-        const Sample *sample, float *alpha = NULL) const;
+    SWCSpectrum IntegratorLi(const int specularDepth, const Scene *scene,
+            const RayDifferential &ray, const Sample *sample,
+            float *alpha) const;
+    SWCSpectrum SceneLi(const int specularDepth, const Scene *scene,
+            const RayDifferential &ray, const Sample *sample,
+            float *alpha = NULL) const;
 
     // PhotonIntegrator Private Methods
     static inline bool unsuccessful(int needed, int found, int shot) {
@@ -71,15 +75,16 @@ private:
     // PhotonIntegrator Private Data
     u_int nCausticPhotons, nIndirectPhotons, nDirectPhotons;
     u_int nLookup;
-    mutable int specularDepth;
     int maxSpecularDepth;
     float maxDistSquared;
     bool directWithPhotons, finalGather;
     int gatherSamples;
+
     // Declare sample parameters for light source sampling
-    int *lightSampleOffset, lightNumOffset;
+    int *lightSampleOffset;
     int *bsdfSampleOffset, *bsdfComponentOffset;
-    int gatherSampleOffset, gatherComponentOffset;
+    int *gatherSampleOffset, *gatherComponentOffset;
+    
     int nCausticPaths, nDirectPaths, nIndirectPaths;
     mutable KdTree<Photon, PhotonProcess> *causticMap;
     mutable KdTree<Photon, PhotonProcess> *directMap;
