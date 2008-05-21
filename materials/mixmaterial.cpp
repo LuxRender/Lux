@@ -23,7 +23,6 @@
 // mixmaterial.cpp*
 #include "mixmaterial.h"
 #include "bxdf.h"
-#include "nulltransmission.h"
 #include "paramset.h"
 
 using namespace lux;
