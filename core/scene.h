@@ -112,7 +112,6 @@ public:
     int CreateRenderThread();
     void RemoveRenderThread();
     void SignalThreads(int signal);
-    void JoinThreads();
 
     // Scene Data
     Primitive *aggregate;
