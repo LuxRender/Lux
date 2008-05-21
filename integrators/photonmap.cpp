@@ -214,6 +214,14 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
                         // Process direct lighting photon intersection
                         if (!directDone) {
                             directPhotons.push_back(photon);
+
+                            // Dade - print some progress info
+                            if ((directPhotons.size() & 0x8fff) == 0) {
+                                ss.str("");
+                                ss << "Direct photonmap size: " << directPhotons.size();
+                                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+                            }
+
                             if (directPhotons.size() == nDirectPhotons) {
                                 directDone = true;
                                 nDirectPaths = nshot;
@@ -227,6 +235,14 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
                         // Process caustic photon intersection
                         if (!causticDone) {
                             causticPhotons.push_back(photon);
+                            
+                            // Dade - print some progress info
+                            if ((causticPhotons.size() & 0x4ff) == 0) {
+                                ss.str("");
+                                ss << "Caustic photonmap size: " << causticPhotons.size();
+                                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+                            }
+
                             if (causticPhotons.size() == nCausticPhotons) {
                                 causticDone = true;
                                 nCausticPaths = nshot;
@@ -240,6 +256,14 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
                         // Process indirect lighting photon intersection
                         if (!indirectDone) {
                             indirectPhotons.push_back(photon);
+                            
+                            // Dade - print some progress info
+                            if ((indirectPhotons.size() & 0x8fff) == 0) {
+                                ss.str("");
+                                ss << "Indirect photonmap size: " << indirectPhotons.size();
+                                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+                            }
+
                             if (indirectPhotons.size() == nIndirectPhotons) {
                                 indirectDone = true;
                                 nIndirectPaths = nshot;
@@ -554,8 +578,8 @@ void PhotonProcess::operator()(const Photon &photon,
 }
 
 SurfaceIntegrator* PhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
-    int nCaustic = params.FindOneInt("causticphotons", 20000);
-    int nDirect = params.FindOneInt("directphotons", 100000);
+    int nCaustic = params.FindOneInt("causticphotons", 10000);
+    int nDirect = params.FindOneInt("directphotons", 0);
     int nIndirect = params.FindOneInt("indirectphotons", 100000);
     int nUsed = params.FindOneInt("nused", 50);
     int maxDepth = params.FindOneInt("maxdepth", 5);
