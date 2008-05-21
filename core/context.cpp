@@ -465,6 +465,56 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	Primitive* prim(new GeometricPrimitive(shape, mtl, area));
 }
 
+void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materialparams, boost::shared_ptr<Material> mtl) {
+	// create 1st material
+	string namedmaterial1 = materialparams.FindOneString("namedmaterial1", "-");
+	bool found = false;
+	for(unsigned int i=0; i<namedmaterials.size(); i++)
+		if(namedmaterials[i].material == namedmaterial1) {
+			string type = namedmaterials[i].materialParams.FindOneString("type", "matte");
+			ParamSet nparams = namedmaterials[i].materialParams;
+			nparams.EraseString("type");
+			TextureParams mp1(shapeparams, nparams,
+			graphicsState->floatTextures, graphicsState->spectrumTextures);
+			boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
+
+			if(type == "mix")
+				makemixmaterial(shapeparams, nparams, mtl1);
+
+			mtl->SetChild1(mtl1);
+			found = true;
+		}
+	if(!found) {
+		std::stringstream ss;
+		ss<<"MixMaterial: NamedMaterial1 named '"<<namedmaterial1<<"' unknown";
+		luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+	}
+
+	// create 2nd material
+	string namedmaterial2 = materialparams.FindOneString("namedmaterial2", "-");
+	found = false;
+	for(unsigned int i=0; i<namedmaterials.size(); i++)
+		if(namedmaterials[i].material == namedmaterial2) {
+			string type = namedmaterials[i].materialParams.FindOneString("type", "matte");
+			ParamSet nparams = namedmaterials[i].materialParams;
+			nparams.EraseString("type");
+			TextureParams mp1(shapeparams, nparams,
+			graphicsState->floatTextures, graphicsState->spectrumTextures);
+			boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
+
+			if(type == "mix")
+				makemixmaterial(shapeparams, nparams, mtl2);
+
+			mtl->SetChild2(mtl2);
+			found = true;
+		}
+	if(!found) {
+		std::stringstream ss;
+		ss<<"MixMaterial: NamedMaterial2 named '"<<namedmaterial1<<"' unknown";
+		luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+	}
+}
+
 void Context::shape(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("Shape")
 	;
@@ -491,46 +541,9 @@ void Context::shape(const string &name, const ParamSet &params) {
 		luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
 
 	// Set child materials if mix material
-	if(graphicsState->material == "mix") {
-		// create 1st material
-		string namedmaterial1 = graphicsState->materialParams.FindOneString("namedmaterial1", "-");
-		bool found = false;
-		for(unsigned int i=0; i<namedmaterials.size(); i++)
-			if(namedmaterials[i].material == namedmaterial1) {
-				string type = namedmaterials[i].materialParams.FindOneString("type", "matte");
-				ParamSet nparams = namedmaterials[i].materialParams;
-				nparams.EraseString("type");
-				TextureParams mp1(params, nparams,
-				graphicsState->floatTextures, graphicsState->spectrumTextures);
-				boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
-				mtl->SetChild1(mtl1);
-				found = true;
-			}
-		if(!found) {
-			std::stringstream ss;
-			ss<<"MixMaterial: NamedMaterial1 named '"<<namedmaterial1<<"' unknown";
-			luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
-		}
 
-		// create 2nd material
-		string namedmaterial2 = graphicsState->materialParams.FindOneString("namedmaterial2", "-");
-		found = false;
-		for(unsigned int i=0; i<namedmaterials.size(); i++)
-			if(namedmaterials[i].material == namedmaterial2) {
-				string type = namedmaterials[i].materialParams.FindOneString("type", "matte");
-				ParamSet nparams = namedmaterials[i].materialParams;
-				nparams.EraseString("type");
-				TextureParams mp1(params, nparams,
-				graphicsState->floatTextures, graphicsState->spectrumTextures);
-				boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
-				mtl->SetChild2(mtl2);
-				found = true;
-			}
-		if(!found) {
-			std::stringstream ss;
-			ss<<"MixMaterial: NamedMaterial1 named '"<<namedmaterial1<<"' unknown";
-			luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
-		}
+	if(graphicsState->material == "mix") {
+		makemixmaterial(params, graphicsState->materialParams, mtl);
 	}
 
 	// Create primitive and add to scene or current instance

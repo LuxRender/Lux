@@ -96,6 +96,10 @@ public:
 	static void luxObjectInstance(const string &name) { activeContext->objectInstance(name); }
 	static void luxWorldEnd() { activeContext->worldEnd(); }
 
+
+	void makemixmaterial(const ParamSet shapeparams, const ParamSet materialparams, boost::shared_ptr<Material> mtl);
+
+	//TODO - jromang replace by a destructor or remove
 	static void luxCleanup() { activeContext->cleanup(); }
 
 	//CORE engine control

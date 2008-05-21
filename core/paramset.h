@@ -317,7 +317,7 @@ public:
 	       return geomParams.FindOneSpectrum(n, materialParams.FindOneSpectrum(n, d));
 	}
 	void ReportUnused() const {
-		geomParams.ReportUnused();
+		//geomParams.ReportUnused(); // note - radiance - incompatible with mix material. (must recursiveley pass)
 		materialParams.ReportUnused();
 	}
 	const ParamSet &GetGeomParams() const { return geomParams; }
