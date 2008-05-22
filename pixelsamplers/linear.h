@@ -34,8 +34,6 @@ public:
 	// LinearPixelSampler Public Methods
 	LinearPixelSampler(int xstart, int xend,
 	          int ystart, int yend);
-	~LinearPixelSampler() {
-	}
 
 	u_int GetTotalPixels();
 	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
@@ -43,6 +41,9 @@ public:
 private:
 	// LinearPixelSampler Private Data
 	u_int TotalPx;
+    // Dade - number of pixel ralready returned by GetNextPixel()
+    u_int pixelCounter;
+
 	vector<PxLoc> Pxa; // pixel coordinate cache
 };
 

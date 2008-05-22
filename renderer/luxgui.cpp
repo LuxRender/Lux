@@ -84,6 +84,8 @@ void exit_cb(Fl_Widget *, void *) {
 	if (engine_thread) {
 		luxExit();
 		engine_thread->join();
+
+        luxCleanup();
 	}
 	exit(0);
 }
@@ -509,7 +511,10 @@ void Engine_Thread() {
 	ParseFile(gui_current_scenefile);
 	if (luxStatistics("sceneIsReady") == false)
 		parseError = true;
-	luxCleanup();
+    
+    // Dade - avoid to call luxCleanup() in order to free resources used
+    // merge_FrameBuffer_Thread
+
 	/*
 	 #ifdef WIN32
 	 _endthread();

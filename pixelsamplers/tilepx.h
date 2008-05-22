@@ -20,7 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
  
-// gridpx.cpp*
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
@@ -28,27 +27,25 @@
 namespace lux
 {
 
-// Dade - GridPixelSampler Declarations
-class GridPixelSampler : public PixelSampler {
-    #define GRIDPX_SIZE 32
+// Dade - TilePixelSampler Declarations
+class TilePixelSampler : public PixelSampler {
+    #define TILEPX_SIZE 32
 
 public:
-	// GridPixelSampler Public Methods
-	GridPixelSampler(
-            int log2SampleCount,
+	// TilePixelSampler Public Methods
+	TilePixelSampler(
             int xStart, int xEnd,
             int yStart, int yEnd);
-	~GridPixelSampler() {
-	}
 
 	u_int GetTotalPixels();
 	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
 
 private:
-	// GridPixelSampler Private Data
-    int l2SampleCount;
-
+	// TilePixelSampler Private Data
 	u_int TotalPx;
+    // Dade - number of pixel ralready returned by GetNextPixel()
+    u_int pixelCounter;
+
 	vector<PxLoc> Pxa; // pixel coordinate cache
 };
 

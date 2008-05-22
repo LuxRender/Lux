@@ -48,6 +48,8 @@ LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 				break;
 		}
 	}
+
+    pixelCounter = 0;
 }
 
 u_int LinearPixelSampler::GetTotalPixels() {
@@ -55,11 +57,12 @@ u_int LinearPixelSampler::GetTotalPixels() {
 }
 
 bool LinearPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	static u_int counter = 0;
-	if(counter == TotalPx)
+	if(pixelCounter == TotalPx)
 		return false;
-	counter++;
+
+	pixelCounter++;
 	xPos = Pxa[*use_pos].x;
 	yPos = Pxa[*use_pos].y;
+
 	return true;
 }

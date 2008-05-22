@@ -27,7 +27,7 @@
 #include "randompx.h"
 #include "lowdiscrepancypx.h"
 #include "linear.h"
-#include "gridpx.h"
+#include "tilepx.h"
 
 using namespace lux;
 
@@ -50,14 +50,8 @@ HaltonSampler::HaltonSampler(int xstart, int xend,
 		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "random")
 		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
-    else if((pixelsampler == "grid") || (pixelsampler == "grid1"))
-		pixelSampler = new GridPixelSampler(0, xstart, xend, ystart, yend);
-    else if(pixelsampler == "grid2")
-		pixelSampler = new GridPixelSampler(1, xstart, xend, ystart, yend);
-    else if(pixelsampler == "grid4")
-		pixelSampler = new GridPixelSampler(2, xstart, xend, ystart, yend);
-    else if(pixelsampler == "grid8")
-		pixelSampler = new GridPixelSampler(3, xstart, xend, ystart, yend);
+    else if((pixelsampler == "tile") || (pixelsampler == "grid"))
+		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
 	else
 		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 

@@ -413,7 +413,7 @@ SET(lux_lib_src
         textures/blender_wood.cpp textures/blender_musgrave.cpp textures/blender_marble.cpp textures/blender_noiselib.cpp textures/blender_texlib.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
-        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/gridpx.cpp
+        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/tilepx.cpp
         spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
         core/spectrumwavelengths.cpp core/spd.cpp
         renderer/renderserver.cpp

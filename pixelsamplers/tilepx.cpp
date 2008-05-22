@@ -20,48 +20,42 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
  
-// gridpx.cpp*
-#include "gridpx.h"
+#include "tilepx.h"
 #include "error.h"
 
 using namespace lux;
 
-// GridPixelSampler Method Definitions
-GridPixelSampler::GridPixelSampler(
-        int log2SampleCount,
+// TilePixelSampler Method Definitions
+TilePixelSampler::TilePixelSampler(
         int xStart, int xEnd,
         int yStart, int yEnd) {
-
     // Dade - debugging code
     //std::stringstream ss;
     //ss << "xstart: " << xstart << " xend: " << xend <<
     //        " ystart: " << ystart << " yend: " << yend;
     //luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-    l2SampleCount = log2SampleCount;
-    int sampleCount = 1 << log2SampleCount;
-
     int xSize = xEnd - xStart;
     int ySize = yEnd - yStart;
 
-    int gridXSize = xSize / GRIDPX_SIZE + ((xSize % GRIDPX_SIZE == 0) ? 0 : 1);
-    int gridYSize = ySize / GRIDPX_SIZE + ((ySize % GRIDPX_SIZE == 0) ? 0 : 1);
+    int tileXSize = xSize / TILEPX_SIZE + ((xSize % TILEPX_SIZE == 0) ? 0 : 1);
+    int tileYSize = ySize / TILEPX_SIZE + ((ySize % TILEPX_SIZE == 0) ? 0 : 1);
     
     // Dade - debugging code
     //ss.str("");
-    //ss << "gridXSize: " << gridXSize << " gridYSize: " << gridYSize;
+    //ss << "tileXSize: " << tileXSize << " tileYSize: " << tileYSize;
     //luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
     TotalPx = 0;
-    for(int yg = 0; yg < gridYSize; yg++) {
-        for(int xg = 0; xg < gridXSize; xg++) {
-            for(int y = yStart +  yg * GRIDPX_SIZE; y < yStart + (yg + 1) * GRIDPX_SIZE; y++) {
-                for(int x = xStart + xg * GRIDPX_SIZE; x < xStart + (xg + 1) * GRIDPX_SIZE; x++) {
+    for(int yg = 0; yg < tileYSize; yg++) {
+        for(int xg = 0; xg < tileXSize; xg++) {
+            for(int y = yStart +  yg * TILEPX_SIZE; y < yStart + (yg + 1) * TILEPX_SIZE; y++) {
+                for(int x = xStart + xg * TILEPX_SIZE; x < xStart + (xg + 1) * TILEPX_SIZE; x++) {
                     if((x <= xEnd) && (y <= yEnd)) {
                         PxLoc px;
                         px.x = x; px.y = y;
                         Pxa.push_back(px);
-                        TotalPx += sampleCount;
+                        TotalPx++;
                     }
                 }
             }
@@ -69,12 +63,17 @@ GridPixelSampler::GridPixelSampler(
     }
 }
 
-u_int GridPixelSampler::GetTotalPixels() {
+u_int TilePixelSampler::GetTotalPixels() {
 	return TotalPx;
 }
 
-bool GridPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-    u_int pos = (*use_pos) >> l2SampleCount;
+bool TilePixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
+    if(pixelCounter == TotalPx)
+		return false;
+
+	pixelCounter++;
+
+    u_int pos = (*use_pos);
 	xPos = Pxa[pos].x;
 	yPos = Pxa[pos].y;
 
