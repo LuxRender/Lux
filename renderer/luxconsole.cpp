@@ -57,7 +57,6 @@ void engineThread() {
     ParseFile(sceneFileName.c_str());
     if (luxStatistics("sceneIsReady") == false)
         parseError = true;
-    luxCleanup();
 }
 
 void infoThread() {
@@ -258,6 +257,7 @@ int main(int ac, char *av[]) {
 
                 // Dade - wait for the end of the rendering
                 luxWait();
+                luxExit();
 
                 // Dade - print the total rendering time
                 boost::posix_time::time_duration td(0, 0,
@@ -266,6 +266,8 @@ int main(int ac, char *av[]) {
                 ss.str("");
                 ss << "100% rendering done [" << threads << " threads] " << td;
                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+                luxCleanup();
             }
         } else if (vm.count("server")) {
             RenderServer *renderServer = new RenderServer(threads);

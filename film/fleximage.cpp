@@ -63,7 +63,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM),
-    framebuffer(NULL), imageLock(false), debug_mode(debugmode), factor(NULL)
+    framebuffer(NULL), debug_mode(debugmode), factor(NULL)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -106,6 +106,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	SampleArr2ptr = new ArrSample[arrsize];
 
 	curSampleArrId = 0;
+    curSampleArr2Id = 0;
 	maxSampleArrId = arrsize-1;
 
 	maxY = 0.f;
@@ -172,6 +173,9 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
         // swap SampleArrptrs
         ArrSample *tmpptr = SampleArrptr; 
         SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+
+        // Dade - save the amount of samples in the second buffer
+        curSampleArr2Id = curSampleArrId;
         // enable merge and reset counter
         curSampleArrId = 0;
 
@@ -180,6 +184,15 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 
         // Dade - merge buffers
         MergeSampleArray();
+
+        // Dade - unlock the array lock 
+        lockArray.unlock();
+
+        // Possibly write out in-progress image
+        if(Floor2Int(timer.elapsed()) > writeInterval) {
+            timer.restart();
+            WriteImage((ImageType)(IMAGE_FILEOUTPUT));
+        }
     } else
         lockSample.unlock();
 
@@ -201,6 +214,9 @@ void FlexImageFilm::FlushSampleArray() {
     // swap SampleArrptrs
     ArrSample *tmpptr = SampleArrptr; 
     SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+
+    // Dade - save the amount of samples in the second buffer
+    curSampleArr2Id = curSampleArrId;
     // enable merge and reset counter
     curSampleArrId = 0;
 
@@ -215,13 +231,17 @@ void FlexImageFilm::MergeSampleArray() {
     // Dade - ATTENTION: you have to lock arrSampleMutex outside this method
 
     // TODO: Find a group
-    if (bufferGroups.empty())
-    {
+    if (bufferGroups.empty()) {
         RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
         CreateBuffers();
     }
 
-	for(int sArrId = 0; sArrId < maxSampleArrId-1; sArrId++) {
+    if (curSampleArr2Id == 0) {
+        // Dade - nothing to do
+        return;
+    }
+        
+	for(int sArrId = 0; sArrId < curSampleArr2Id - 1; sArrId++) {
 		float sX = SampleArr2ptr[sArrId].sX;
 		float sY = SampleArr2ptr[sArrId].sY;
 		XYZColor xyz = SampleArr2ptr[sArrId].xyz;
@@ -301,73 +321,64 @@ void FlexImageFilm::MergeSampleArray() {
 		}
 
 	}
-
-	// Possibly write out in-progress image
-	if( !imageLock && Floor2Int(timer.elapsed()) > writeInterval)
-	{
-		imageLock = true;
-		WriteImage((ImageType)(IMAGE_FILEOUTPUT));
-		timer.restart();
-		imageLock = false;
-	}
 }
 
-void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string postfix)
-{
-	if (type & IMAGE_FRAMEBUFFER && framebuffer) {
-		// Apply the imagine/tonemapping pipeline
-		ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-			0.,0.,"reinhard",
-			&toneParams,gamma,0.,255);
+void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string postfix) {
 
-		// Copy to framebuffer pixels
-			u_int nPix = xPixelCount * yPixelCount;
-			for (u_int i=0;  i < nPix*3 ; i++)
-				framebuffer[i] = (unsigned char) rgb[i];
-
-	} else if(type & IMAGE_FILEOUTPUT) {
-		// write out untonemapped EXR
-		if(writeUtmExr)
-			WriteEXRImage(rgb, alpha, filename+postfix+"_untonemapped.exr");
-		// write out untonemapped IGI
-		if(writeUtmIgi)
-			WriteIGIImage(rgb, alpha, filename+postfix+"_untonemapped.igi"); // TODO add samples
+    if (type & IMAGE_FILEOUTPUT) {
+        // write out untonemapped EXR
+        if (writeUtmExr)
+            WriteEXRImage(rgb, alpha, filename + postfix + "_untonemapped.exr");
+        // write out untonemapped IGI
+        if (writeUtmIgi)
+            WriteIGIImage(rgb, alpha, filename + postfix + "_untonemapped.igi"); // TODO add samples
 
         // Dade - save the current status of the film if required
-        if(writeResumeFlm)
+        if (writeResumeFlm)
             WriteResumeFilm(filename + ".flm");
+    }
 
-		if(writeTmExr || writeTmIgi || writeTmTga) {
-			// Apply the imagine/tonemapping pipeline
-			ApplyImagingPipeline(rgb,xPixelCount,yPixelCount,NULL,
-				0.,0.,"reinhard",
-				&toneParams,gamma,0.,255);
+    // Dade - check if I have to run ApplyImagingPipeline
+    if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
+        ((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
+        // Apply the imagine/tonemapping pipeline
+        ApplyImagingPipeline(rgb, xPixelCount, yPixelCount, NULL,
+                0., 0., "reinhard",
+                &toneParams, gamma, 0., 255);
 
-			// write out tonemapped TGA
-			if(writeTmTga)
-				WriteTGAImage(rgb, alpha, filename+postfix+".tga");
+        if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
+            // Copy to framebuffer pixels
+            u_int nPix = xPixelCount * yPixelCount;
+            for (u_int i = 0; i < nPix * 3; i++)
+                framebuffer[i] = (unsigned char) rgb[i];
+        }
 
-			if(writeTmExr || writeTmIgi) {
-				// Map display range 0.-255. back to float range 0.-1.
-				// and reverse the gamma correction
-				// necessary for EXR/IGI formats
-				int nPix = xResolution * yResolution ;
-				for (int i = 0; i < 3*nPix; ++i) {
-					rgb[i] /= 255;
-					if (gamma != 1.f)
-						rgb[i] = powf(rgb[i], gamma);
-				}
+        if ((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga)) {
+            // write out tonemapped TGA
+            if (writeTmTga)
+                WriteTGAImage(rgb, alpha, filename + postfix + ".tga");
 
-				// write out tonemapped EXR
-				if(writeTmExr)
-					WriteEXRImage(rgb, alpha, filename+postfix+".exr");
+            if (writeTmExr || writeTmIgi) {
+                // Map display range 0.-255. back to float range 0.-1.
+                // and reverse the gamma correction
+                // necessary for EXR/IGI formats
+                int nPix = xResolution * yResolution;
+                for (int i = 0; i < 3 * nPix; ++i) {
+                    rgb[i] /= 255;
+                    if (gamma != 1.f)
+                        rgb[i] = powf(rgb[i], gamma);
+                }
 
-				// write out tonemapped IGI
-				if(writeTmIgi)
-					WriteIGIImage(rgb, alpha, filename+postfix+".igi"); // TODO add samples
-			}
-		}
-	}
+                // write out tonemapped EXR
+                if (writeTmExr)
+                    WriteEXRImage(rgb, alpha, filename + postfix + ".exr");
+
+                // write out tonemapped IGI
+                if (writeTmIgi)
+                    WriteIGIImage(rgb, alpha, filename + postfix + ".igi"); // TODO add samples
+            }
+        }
+    }
 }
 
 void FlexImageFilm::ScaleOutput(float *rgb, float *alpha, float *scale)
@@ -387,11 +398,16 @@ void FlexImageFilm::ScaleOutput(float *rgb, float *alpha, float *scale)
 }
 void FlexImageFilm::WriteImage(ImageType type)
 {
+    boost::mutex::scoped_lock lock(imageMutex);
+
+    // Dade - flush the sample buffer before to save the image.
+    FlushSampleArray();
+
 	int x,y,offset;
 	int nPix = xPixelCount * yPixelCount;
 	float *rgb0 = new float[3*nPix], *alpha0 = new float[nPix];
 	float *rgb = new float[3*nPix], *alpha = new float[nPix];
-	if (factor==NULL)
+    if (factor==NULL)
 	{
 		factor = new float[nPix];
 		scene->camera->GetFlux2RadianceFactors(this,factor,xPixelCount,yPixelCount);

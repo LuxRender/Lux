@@ -236,8 +236,6 @@ public:
 			bufferGroups[bufferGroup].numberOfSamples += count;
 	}
 
-    void FlushSampleArray();
-
 	void WriteImage(ImageType type);
 
 	// GUI display methods
@@ -257,6 +255,7 @@ public:
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 
 private:
+    void FlushSampleArray();
     // Dade - using this method requires to lock arrSampleMutex
     void MergeSampleArray();
 
@@ -282,7 +281,7 @@ private:
 
 	unsigned char *framebuffer;
 	boost::timer timer;
-	bool imageLock, debug_mode;
+	bool debug_mode;
 	float *factor;
 
 	std::vector<BufferConfig> bufferConfigs;
@@ -299,7 +298,10 @@ private:
     // Beaware of potential dealock with addSampleMutex mutex. Always lock 
     // addSampleMutex first and then arrSampleMutex.
     mutable boost::mutex arrSampleMutex;
-	int curSampleArrId, maxSampleArrId;
+	int curSampleArrId, curSampleArr2Id, maxSampleArrId;
+
+    // Dade - used by the WriteImage method
+    mutable boost::mutex imageMutex;
 };
 
 }//namespace lux

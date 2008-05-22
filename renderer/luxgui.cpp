@@ -58,6 +58,7 @@ using namespace lux;
 namespace po = boost::program_options;
 static int threads;
 bool parseError;
+bool renderingDone;
 void AddThread();
 
 // menu items
@@ -81,13 +82,16 @@ Fl_Menu_Item menu_threads[] = {
 void exit_cb(Fl_Widget *, void *) {
 	if (fb_update_thread)
 		fb_update_thread->join();
-	if (engine_thread) {
-		luxExit();
+
+    luxExit();
+
+	if (engine_thread)
 		engine_thread->join();
 
-        luxCleanup();
-	}
-	exit(0);
+    luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
+    luxCleanup();
+
+    exit(0);
 }
 
 // main window
@@ -512,6 +516,12 @@ void Engine_Thread() {
 	if (luxStatistics("sceneIsReady") == false)
 		parseError = true;
     
+    // Dade - wait for the end of the rendering
+    
+    luxWait();
+    renderingDone = true;
+    luxError(LUX_NOERROR, LUX_INFO, "Rendering done.");
+
     // Dade - avoid to call luxCleanup() in order to free resources used
     // merge_FrameBuffer_Thread
 
@@ -531,7 +541,8 @@ void merge_FrameBuffer_Thread(bool *threadDone){
 
 // GUI functions
 void merge_FrameBuffer(void *) {
-	if(fb_update_thread) return; //update already in progress
+	if (fb_update_thread)
+        return; // update already in progress or rendering done
 
 	static char ittxt[256];
 	sprintf(ittxt, "(1) Tonemapping...");
@@ -553,7 +564,11 @@ void merge_FrameBuffer(void *) {
 	sprintf(ittxt, "(1) Idle.");
 	info_tonemap->label(txttp);
 	Fl::redraw();
-	Fl::repeat_timeout(framebufferUpdate, merge_FrameBuffer);
+
+    // Dade - continue to update the framebuffer only if the rendering is still
+    // in progress
+    if (!renderingDone)
+        Fl::repeat_timeout(framebufferUpdate, merge_FrameBuffer);
 }
 
 int RenderScenefile() {
@@ -570,6 +585,7 @@ int RenderScenefile() {
 
 	fflush(stdout);
 	parseError = false;
+    renderingDone = false;
 	//create parsing thread
 	engine_thread = new boost::thread (&Engine_Thread);
 
