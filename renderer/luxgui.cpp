@@ -83,13 +83,16 @@ void exit_cb(Fl_Widget *, void *) {
 	if (fb_update_thread)
 		fb_update_thread->join();
 
-    luxExit();
+    //if we have a scene file
+    if(gui_current_scenefile[0]!=0) {
+        luxExit();
 
-	if (engine_thread)
-		engine_thread->join();
+        if (engine_thread)
+            engine_thread->join();
 
-    luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
-    luxCleanup();
+        luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
+        luxCleanup();
+    }
 
     exit(0);
 }
