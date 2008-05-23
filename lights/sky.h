@@ -47,6 +47,8 @@ public:
 	}
 	bool IsDeltaLight() const { return false; }
 	SWCSpectrum Le(const RayDifferential &r) const;
+	SWCSpectrum Le(const Scene *scene, const Ray &r,
+		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	SWCSpectrum Sample_L(const Point &p, const Normal &n,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;

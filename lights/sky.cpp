@@ -117,6 +117,34 @@ SWCSpectrum SkyLight::Le(const RayDifferential &r) const {
 
 	return L;
 }
+SWCSpectrum SkyLight::Le(const Scene *scene, const Ray &r,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	worldRadius *= 1.01f;
+	Vector toCenter(worldCenter - r.o);
+	float centerDistance = Dot(toCenter, toCenter);
+	float approach = Dot(toCenter, r.d);
+	float distance = approach + sqrtf(worldRadius * worldRadius - centerDistance + approach * approach);
+	Point ps(r.o + distance * r.d);
+	Normal ns(Normalize(worldCenter - ps));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
+	Vector wh = Normalize(WorldToLight(r.d));
+	const float phi = SphericalPhi(wh);
+	const float theta = SphericalTheta(wh);
+	SWCSpectrum L;
+	GetSkySpectralRadiance(theta, phi, &L);
+	L *= skyScale;
+	return L;
+}
 
 SWCSpectrum SkyLight::Sample_L(const Point &p,
 		const Normal &n, float u1, float u2, float u3,

@@ -51,6 +51,8 @@ public:
 	virtual SWCSpectrum Power(const Scene *) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual SWCSpectrum Le(const RayDifferential &r) const;
+	virtual SWCSpectrum Le(const Scene *scene, const Ray &r,
+		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	virtual SWCSpectrum Sample_L(const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *vis) const = 0;

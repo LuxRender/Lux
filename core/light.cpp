@@ -42,6 +42,11 @@ SWCSpectrum VisibilityTester::
 SWCSpectrum Light::Le(const RayDifferential &) const {
 	return SWCSpectrum(0.);
 }
+SWCSpectrum Light::Le(const Scene *scene, const Ray &r,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	return SWCSpectrum(0.f);
+}
 
 void Light::AddPortalShape(boost::shared_ptr<Shape> s) {
 	boost::shared_ptr<Shape> PortalShape;

@@ -159,7 +159,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	float lightDirectPdf;
 	if (nLight > 1)
 		lightDirectPdf = light->Pdf(lightPath[1].p, lightPath[1].ns,
-			lightPath[1].wi) *
+			lightPath[1].wi) / lightWeight *
 			DistanceSquared(lightPath[1].p, lightPath[0].p) /
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
 	else
@@ -176,10 +176,12 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			directPath[0].p = eyePath[i].p;
 			directPath[0].ng = eyePath[i].ng;
 			directPath[0].ns = eyePath[i].ns;
-			directPath[0].dAWeight = eyePath[i].ePdf;
+			directPath[0].dAWeight = eyePath[i].ePdf / lightWeight;
 			L += eyePath[i].Le * evalPath(scene, eyePath, i + 1, directPath, 0) /
-				weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect, false);
+				weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect / lightWeight, false);
 		}
+		if (eyePath[i].bsdf == NULL)
+			break;
 		// Do direct lighting
 		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
 		// Randomly choose a single light to sample
@@ -238,18 +240,39 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		BidirVertex &v = vertices[nVerts];
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
 		Intersection isect;
-		if (!scene->Intersect(ray, &isect))
-			break; //FIXME Get point on infinite light
+		++nVerts;
 		v.wi = -ray.d;
+		if (!scene->Intersect(ray, &isect)) {
+			// Randomly choose a single light to sample
+			int numberOfLights = scene->lights.size();
+			int lightNumber = min(Floor2Int(data[3] * numberOfLights),
+				numberOfLights - 1);
+			Light *light = scene->lights[lightNumber];
+			if (nVerts == 1)
+				v.Le = light->Le(ray);
+			else {
+				v.Le = light->Le(scene, ray, vertices[nVerts - 2].ns, &v.eBsdf, &v.ePdf, &v.ePdfDirect);
+				if (v.eBsdf && v.ePdf > 0.f) {
+					v.p = v.eBsdf->dgShading.p;
+					v.ng = v.eBsdf->dgShading.nn;
+					v.ns = v.ng;
+				}
+				v.rrWeight = 1.f;
+				v.rrRWeight = 1.f;
+				v.bsdf = NULL;
+				v.f = 1.f;
+			}
+			v.Le *= numberOfLights;
+			break;
+		}
 		v.bsdf = isect.GetBSDF(ray); // do before Ns is set!
-		if (nVerts == 0)
+		if (nVerts == 1)
 			v.Le = isect.Le(v.wi);
 		else
-			v.Le = isect.Le(ray, vertices[nVerts - 1].ns, &v.eBsdf, &v.ePdf, &v.ePdfDirect);
+			v.Le = isect.Le(ray, vertices[nVerts - 2].ns, &v.eBsdf, &v.ePdf, &v.ePdfDirect);
 		v.p = isect.dg.p;
 		v.ng = isect.dg.nn;
 		v.ns = v.bsdf->dgShading.nn;
-		++nVerts;
 		// Possibly terminate bidirectional path sampling
 		v.f = v.bsdf->Sample_f(v.wi, &v.wo, data[1], data[2], data[3],
 			 &v.bsdfWeight, BSDF_ALL, &v.flags, &v.bsdfRWeight);
@@ -269,6 +292,8 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		vertices[i + 1].dAWeight = vertices[i].bsdfWeight *
 			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
+		if (vertices[i + 1].bsdf == NULL)
+			break;
 		vertices[i].dARWeight = vertices[i + 1].bsdfRWeight *
 			AbsDot(vertices[i].wo, vertices[i].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);

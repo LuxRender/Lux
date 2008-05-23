@@ -140,6 +140,30 @@ SWCSpectrum SunLight::Le(const RayDifferential &r) const {
 	else
 		return 0.;
 }
+SWCSpectrum SunLight::Le(const Scene *scene, const Ray &r,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	if (cosThetaMax == 1.f || Dot(r.d, sundir) < cosThetaMax) {
+		*bsdf = NULL;
+		*pdf = 0.f;
+		*pdfDirect = 0.f;
+		return 0.f;
+	}
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	Vector toCenter(worldCenter - r.o);
+	float approach = Dot(toCenter, sundir);
+	float distance = approach + worldRadius;
+	Point ps(r.o + distance * r.d);
+	Normal ns(-sundir);
+	DifferentialGeometry dg(r.o, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
+	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	*pdfDirect = UniformConePdf(cosThetaMax) * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
+	return LSPD;
+}
 
 SWCSpectrum SunLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
