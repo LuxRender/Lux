@@ -36,7 +36,7 @@ using namespace lux;
 extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
-		Vector *wi, float u1, float u2, float *pdf) const {
+	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	bool entering = CosTheta(wo) > 0.;
 	float ei = etai, et = etat;
@@ -54,7 +54,12 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 	float eta = ei / et;
 	float sint2 = eta * eta * sini2;
 	// Handle total internal reflection for transmission
-	if (sint2 > 1.) return 0.;
+	if (sint2 > 1.) {
+		*pdf = 0.f;
+		if (pdfBack)
+			*pdfBack = 0.f;
+		return 0.;
+	}
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering) cost = -cost;
 	float sintOverSini = eta;
@@ -62,6 +67,8 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 	             sintOverSini * -wo.y,
 				 cost);
 	*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
 	return (et*et)/(ei*ei) * (SWCSpectrum(1.)-F) * T /
 		fabsf(CosTheta(*wi));

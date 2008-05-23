@@ -67,7 +67,7 @@ float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) cons
   return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));
 }
 
-SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
+SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const {
   // Pick a random component
   u_int comp = lux::random::uintValue() % (nLobes+1);
 
@@ -81,11 +81,15 @@ SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float
     // Sample lobe number _comp_ for Cook-Torrance BRDF
    distribution[comp]->Sample_f(wo, wi, u1, u2, pdf);
   }
-  // If outgoing and incoming is in different hemispheres, return None
-  if (!SameHemisphere(wo, *wi))
-    return SWCSpectrum(0.f);
-
   *pdf = Pdf(wo, *wi);
+  if (*pdf == 0.f) {
+	  if (pdfBack)
+		  *pdfBack = 0.f;
+	  return SWCSpectrum(0.f);
+  }
+  if (pdfBack)
+	  *pdfBack = Pdf(*wi, wo);
+
   return f(wo, *wi);
 }
 

@@ -37,19 +37,21 @@ class SunBxDF : public BxDF
 {
 public:
 	SunBxDF(float cosMax, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosThetaMax(cosMax), worldRadius(radius) {}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return wi.z < cosThetaMax ? 0.f : 1.f;}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return min(wo.z, wi.z) < cosThetaMax ? 0.f : 1.f;}
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const
 	{
-		*wi = UniformSampleCone(u1, u2, cosThetaMax, Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1));
+		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = UniformConePdf(cosThetaMax);
+		if (pdfBack)
+			*pdfBack = Pdf(*wi, wo);
 		return 1.f;
 	}
 	float Pdf(const Vector &wi, const Vector &wo) const
 	{
-		if (wo.z < cosThetaMax)
+		if (min(wi.z, wo.z) < cosThetaMax)
 			return 0.;
 		else
-			return UniformConePdf(cosThetaMax);//1.f / (M_PI * worldRadius * worldRadius * (1.f - cosThetaMax * cosThetaMax));
+			return UniformConePdf(cosThetaMax);
 	}
 private:
 	float cosThetaMax, worldRadius;
@@ -196,42 +198,39 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	float d1, d2;
 	ConcentricSampleDisk(u1, u2, &d1, &d2);
-	Point p = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
+	Point ps = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
 	Normal ns(-sundir);
-	DifferentialGeometry dg(p, ns, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	return LSPD;
 }
 SWCSpectrum SunLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility) const
 {
 	Vector wi;
 	if(cosThetaMax == 1) {
 		wi = sundir;
-		*pdf = 1.f;
+		*pdfDirect = 1.f;
 	} else {
 		wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
-		*pdf = UniformConePdf(cosThetaMax);
+		*pdfDirect = UniformConePdf(cosThetaMax);
 	}
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	worldRadius *= 1.01f;
 	Vector toCenter(worldCenter - p);
-	float centerDistance = Dot(toCenter, toCenter);
-	float approach = Dot(toCenter, wi);
-	float distance = approach + sqrtf(worldRadius * worldRadius - centerDistance + approach * approach);
+	float approach = Dot(toCenter, sundir);
+	float distance = approach + worldRadius;
 	Point ps(p + distance * wi);
-	Normal ns(Normalize(worldCenter - ps));
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	Normal ns(-sundir);
+	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
-	*pdf *= AbsDot(wi, ns) / DistanceSquared(worldCenter, ps);
+	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
 	return LSPD;
 }

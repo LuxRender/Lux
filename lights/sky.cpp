@@ -34,12 +34,13 @@ using namespace lux;
 class SkyBxDF : public BxDF
 {
 public:
-	SkyBxDF(const SkyLight &sky, const Transform &WL) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL) {}
+	SkyBxDF(const SkyLight &sky, const Transform &WL, const Vector &x, const Vector &y, const Vector &z) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL), X(x), Y(y), Z(z) {}
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const
 	{
-		Vector wh = Normalize(WorldToLight(wi));
-		const float phi = SphericalPhi(wh);
-		const float theta = SphericalTheta(wh);
+		Vector w(wi.x * X.x + wi.y * Y.x + wi.z * Z.x, wi.x * X.y + wi.y * Y.y + wi.z * Z.y, wi.x * X.z + wi.y * Y.z + wi.z * Z.z);
+		w = -Normalize(WorldToLight(w));
+		const float phi = SphericalPhi(w);
+		const float theta = SphericalTheta(w);
 		SWCSpectrum L;
 		skyLight.GetSkySpectralRadiance(theta, phi, &L);
 		return L;
@@ -47,6 +48,7 @@ public:
 private:
 	const SkyLight &skyLight;
 	const Transform &WorldToLight;
+	Vector X, Y, Z;
 };
 
 // SkyLight Method Definitions
@@ -231,18 +233,18 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	worldRadius *= 1.01f;
-	Point p = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
-	Normal ns = Normal(Normalize(worldCenter - p));
+	Point ps = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
+	Normal ns = Normal(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight));
+	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	return SWCSpectrum(skyScale);
 }
 SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility) const
 {
 	Vector wi;
@@ -255,7 +257,7 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 			z *= -1;
 		wi = Vector(x, y, z);
 		// Compute _pdf_ for cosine-weighted infinite light direction
-		*pdf = fabsf(wi.z) * INV_TWOPI;
+		*pdfDirect = fabsf(wi.z) * INV_TWOPI;
 		// Transform direction to world space
 		Vector v1, v2;
 		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
@@ -264,21 +266,27 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 			 v1.z * wi.x + v2.z * wi.y + n.z * wi.z);
 	} else {
 		// Sample a random Portal
-		int shapeidx = 0;
+		int shapeIndex = 0;
 		if(nrPortalShapes > 1)
-			shapeidx = Floor2Int(u3 * nrPortalShapes);
+			shapeIndex = Floor2Int(u3 * nrPortalShapes);
 		Normal ns;
 		Point ps;
-		bool exit = false;
-		for (int i = 0; i < nrPortalShapes && !exit; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+		bool found = false;
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, &ns);
 			wi = Normalize(ps - p);
-			exit = (Dot(wi, ns) < 0.f);
+			if (Dot(wi, ns) < 0.f) {
+				found = true;
+				break;
+			}
+			if (++shapeIndex >= nrPortalShapes)
+				shapeIndex = 0;
 		}
-		if (exit)
-			*pdf = PortalShapes[shapeidx]->Pdf(p, wi);
+		if (found)
+			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi);
 		else {
 			*pdf = 0.f;
+			*pdfDirect = 0.f;
 			return 0.f;
 		}
 	}
@@ -294,10 +302,11 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 	Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight));
-	*pdf *= AbsDot(wi, ns) / DistanceSquared(worldCenter, ps);
+	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
 	return SWCSpectrum(skyScale);
 }

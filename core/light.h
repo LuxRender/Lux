@@ -69,7 +69,7 @@ public:
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
 	virtual SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return 0.f;}
-	virtual SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return 0.f;}
+	virtual SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return 0.f;}
 	virtual float Pdf(const Scene *scene, const Point &p) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Pdf"); return 0.f;}
 
 	void AddPortalShape(boost::shared_ptr<Shape> shape);
@@ -145,7 +145,7 @@ public:
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	virtual SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
-	virtual SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, VisibilityTester *visibility) const;
+	virtual SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
 	virtual float Pdf(const Scene *scene, const Point &p) const;
 	void SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const;
 	void SampleDirection(float u1, float u2,const Normal &nn, Vector *wo, float *pdf) const;

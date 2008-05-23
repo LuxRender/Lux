@@ -32,10 +32,12 @@
 using namespace lux;
 
 SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
-		Vector *wi, float u1, float u2, float *pdf) const {
+	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const {
 	// Compute perfect specular reflection direction
 	*wi = Vector(-wo.x, -wo.y, wo.z);
 	*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	return fresnel->Evaluate(CosTheta(wo)) * R /
 		fabsf(CosTheta(*wi));
 }

@@ -51,8 +51,10 @@ SWCSpectrum Microfacet::f(const Vector &wo,
 }
 
 SWCSpectrum Microfacet::Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf) const {
+		float u1, float u2, float *pdf, float *pdfBack) const {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
+	if (pdfBack)
+		*pdfBack = Pdf(*wi, wo);
 	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
 	return f(wo, *wi);
 }

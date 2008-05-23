@@ -74,7 +74,7 @@ public:
 	// BSDF Public Methods
 	SWCSpectrum Sample_f(const Vector &o, Vector *wi, float u1, float u2,
 		float u3, float *pdf, BxDFType flags = BSDF_ALL,
-		BxDFType *sampledType = NULL) const;
+		BxDFType *sampledType = NULL, float *pdfBack = NULL) const;
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 		BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL) const;
@@ -138,7 +138,7 @@ public:
 	virtual SWCSpectrum f(const Vector &wo,
 	                   const Vector &wi) const = 0;
 	virtual SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf) const;
+		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 	virtual SWCSpectrum rho(const Vector &wo,
 	                     int nSamples = 16,
 		                 float *samples = NULL) const;
@@ -168,7 +168,7 @@ public:
 	}
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf) const;
+		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 	float Pdf(const Vector &wo, const Vector &wi) const;
 private:
 	BxDF *brdf;

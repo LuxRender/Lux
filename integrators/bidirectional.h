@@ -61,7 +61,7 @@ struct BidirVertex {
 	Point p;
 	Normal ng, ns;
 	Vector wi, wo;
-	float bsdfWeight, dAWeight, rrWeight, dARWeight, rrRWeight, ePdf, ePdfDirect;
+	float bsdfWeight, dAWeight, rrWeight, bsdfRWeight, dARWeight, rrRWeight, ePdf, ePdfDirect;
 	BxDFType flags;
 	SWCSpectrum f, Le;
 };

@@ -53,19 +53,26 @@ SWCSpectrum FresnelBlend::f(const Vector &wo,
 }
 
 SWCSpectrum FresnelBlend::Sample_f(const Vector &wo,
-		Vector *wi, float u1, float u2, float *pdf) const {
-	if (u1 < .5) {
-		u1 = 2.f * u1;
+	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const
+{
+	u1 *= 2.f;
+	if (u1 < 1.f) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		*wi = CosineSampleHemisphere(u1, u2);
 		if (wo.z < 0.) wi->z *= -1.f;
 	}
 	else {
-		u1 = 2.f * (u1 - .5f);
+		u1 -= 1.f;
 		distribution->Sample_f(wo, wi, u1, u2, pdf);
-		if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
 	}
 	*pdf = Pdf(wo, *wi);
+	if (*pdf == 0.f) {
+		if (pdfBack)
+			*pdfBack = 0.f;
+		return SWCSpectrum(0.f);
+	}
+	if (pdfBack)
+		*pdfBack = Pdf(*wi, wo);
 	return f(wo, *wi);
 }
 float FresnelBlend::Pdf(const Vector &wo,

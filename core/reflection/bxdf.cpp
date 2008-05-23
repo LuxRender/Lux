@@ -36,18 +36,20 @@ SWCSpectrum BRDFToBTDF::f(const Vector &wo,
 	return brdf->f(wo, otherHemisphere(wi));
 }
 SWCSpectrum BRDFToBTDF::Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf) const {
-	SWCSpectrum f = brdf->Sample_f(wo, wi, u1, u2, pdf);
+		float u1, float u2, float *pdf, float *pdfBack) const {
+	SWCSpectrum f = brdf->Sample_f(wo, wi, u1, u2, pdf, pdfBack);
 	*wi = otherHemisphere(*wi);
 	return f;
 }
 
 SWCSpectrum BxDF::Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf) const {
+		float u1, float u2, float *pdf, float *pdfBack) const {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
 	if (wo.z < 0.) wi->z *= -1.f;
 	*pdf = Pdf(wo, *wi);
+	if (pdfBack)
+		*pdfBack = Pdf(*wi, wo);
 	return f(wo, *wi);
 }
 float BxDF::Pdf(const Vector &wo, const Vector &wi) const {
@@ -108,11 +110,13 @@ SWCSpectrum BSDF::Sample_f(const Vector &wo, Vector *wi, BxDFType flags,
 }
 SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 		float u1, float u2, float u3, float *pdf,
-		BxDFType flags, BxDFType *sampledType) const {
+		BxDFType flags, BxDFType *sampledType, float *pdfBack) const {
 	// Choose which _BxDF_ to sample
 	int matchingComps = NumComponents(flags);
 	if (matchingComps == 0) {
 		*pdf = 0.f;
+		if (pdfBack)
+			*pdfBack = 0.f;
 		return SWCSpectrum(0.f);
 	}
 	int which = min(Floor2Int(u3 * matchingComps),
@@ -130,7 +134,9 @@ SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 	Vector wi;
 	Vector wo = WorldToLocal(woW);
 	*pdf = 0.f;
-	SWCSpectrum f = bxdf->Sample_f(wo, &wi, u1, u2, pdf);
+	if (pdfBack)
+		*pdfBack = 0.f;
+	SWCSpectrum f = bxdf->Sample_f(wo, &wi, u1, u2, pdf, pdfBack);
 	if (*pdf == 0.f) return 0.f;
 	if (sampledType) *sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
@@ -138,11 +144,18 @@ SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
 		for (int i = 0; i < nBxDFs; ++i) {
 			if (bxdfs[i] != bxdf &&
-			    bxdfs[i]->MatchesFlags(flags))
+			    bxdfs[i]->MatchesFlags(flags)) {
 				*pdf += bxdfs[i]->Pdf(wo, wi);
+				if (pdfBack)
+					*pdfBack += bxdfs[i]->Pdf(wi, wo);
+			}
 		}
 	}
-	if (matchingComps > 1) *pdf /= matchingComps;
+	if (matchingComps > 1) {
+		*pdf /= matchingComps;
+		if (pdfBack)
+			*pdfBack /= matchingComps;
+	}
 	// Compute value of BSDF for sampled direction
 	if (!(bxdf->type & BSDF_SPECULAR)) {
 		f = 0.;

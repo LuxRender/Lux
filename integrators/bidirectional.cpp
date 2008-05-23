@@ -74,14 +74,14 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
 		// Possibly terminate bidirectional path sampling
 		v.f = v.bsdf->Sample_f(v.wi, &v.wo, data[1], data[2], data[3],
-			 &v.bsdfWeight, BSDF_ALL, &v.flags);
+			 &v.bsdfWeight, BSDF_ALL, &v.flags, &v.bsdfRWeight);
 		++nVerts;
 		if (v.bsdfWeight == 0.f || v.f.Black())
 			break;
 		v.rrWeight = min<float>(1.f,
 			v.f.y() * AbsDot(v.wo, v.ns) / v.bsdfWeight);
 		v.rrRWeight = min<float>(1.f,
-			v.f.y() * AbsDot(v.wi, v.ns) / v.bsdf->Pdf(v.wo, v.wi));
+			v.f.y() * AbsDot(v.wi, v.ns) / v.bsdfRWeight);
 		if (nVerts > 3 && v.rrWeight < data[0])
 			break;
 		// Initialize _ray_ for next segment of path
@@ -94,7 +94,7 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 		vertices[i + 1].dAWeight = vertices[i].bsdfWeight *
 			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
-		vertices[i].dARWeight = ((vertices[i + 1].flags & BSDF_SPECULAR) == 0 ? vertices[i + 1].bsdf->Pdf(vertices[i + 1].wo, vertices[i + 1].wi, vertices[i + 1].flags) : vertices[i + 1].bsdfWeight) *
+		vertices[i].dARWeight = vertices[i + 1].bsdfRWeight *
 			AbsDot(vertices[i].wo, vertices[i].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 	}
@@ -165,7 +165,6 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	else
 		lightDirectPdf = 0.f;
 	// Connect bidirectional path prefixes and evaluate throughput
-	SWCSpectrum directWt(1.f);
 	for (int i = 0; i < nEye; ++i) {
 		// Check light intersection
 		if (i == 0)
@@ -194,7 +193,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		VisibilityTester visibility;
 		// Sample the chosen light
 		SWCSpectrum Ld = lightDirect->Sample_L(scene, eyePath[i].p, eyePath[i].ns,
-			data[0], data[1], portal, &bsdfDirect, &pdfDirect,
+			data[0], data[1], portal, &bsdfDirect, &(directPath[0].dAWeight), &pdfDirect,
 			&visibility);
 		// Test the visibility of the light
 		if (pdfDirect > 0.f && !Ld.Black() && visibility.Unoccluded(scene)) {
@@ -204,19 +203,23 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			directPath[0].p = bsdfDirect->dgShading.p;
 			directPath[0].ng = bsdfDirect->dgShading.nn;
 			directPath[0].ns = directPath[0].ng;
-			directPath[0].dAWeight = lightDirect->Pdf(scene, directPath[0].p);
 			// Add direct lighting contribution
-			L += Ld * evalPath(scene, eyePath, i + 1, directPath, 1) /
-				weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true);
+			Ld *= evalPath(scene, eyePath, i + 1, directPath, 1);
+			Ld *= lightWeight / (pdfDirect *
+				weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true));
+			L += Ld;
 		}
 		// Compute direct lighting pdf
 		float directPdf = light->Pdf(eyePath[i].p, eyePath[i].ns,
 			eyePath[i].wi) *
 			DistanceSquared(eyePath[i].p, lightPath[0].p) /
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
-		for (int j = 1; j <= nLight; ++j)
-			L += Le * evalPath(scene, eyePath, i + 1, lightPath, j) /
-				weightPath(eyePath, i + 1, lightPath, j, j == 1 ? directPdf : lightDirectPdf, false);
+		for (int j = 1; j <= nLight; ++j) {
+			SWCSpectrum Ll(Le);
+			Ll *= evalPath(scene, eyePath, i + 1, lightPath, j);
+			Ll /= weightPath(eyePath, i + 1, lightPath, j, j == 1 ? directPdf : lightDirectPdf, false);
+			L += Ll;
+		}
 	}
 	XYZColor color(L.ToXYZ());
 	if (color.y() > 0.f)
@@ -249,13 +252,13 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		++nVerts;
 		// Possibly terminate bidirectional path sampling
 		v.f = v.bsdf->Sample_f(v.wi, &v.wo, data[1], data[2], data[3],
-			 &v.bsdfWeight, BSDF_ALL, &v.flags);
+			 &v.bsdfWeight, BSDF_ALL, &v.flags, &v.bsdfRWeight);
 		if (v.bsdfWeight == 0.f || v.f.Black())
 			break;
 		v.rrWeight = min<float>(1.f,
 			v.f.y() * AbsDot(v.wo, v.ns) / v.bsdfWeight);
 		v.rrRWeight = min<float>(1.f,
-			v.f.y() * AbsDot(v.wi, v.ns) / v.bsdf->Pdf(v.wo, v.wi));
+			v.f.y() * AbsDot(v.wi, v.ns) / v.bsdfRWeight);
 		if (nVerts > 3 && v.rrWeight < data[0])
 			break;
 		// Initialize _ray_ for next segment of path
@@ -266,7 +269,7 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		vertices[i + 1].dAWeight = vertices[i].bsdfWeight *
 			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
-		vertices[i].dARWeight = ((vertices[i + 1].flags & BSDF_SPECULAR) == 0 ? vertices[i + 1].bsdf->Pdf(vertices[i + 1].wo, vertices[i + 1].wi, vertices[i + 1].flags) : vertices[i + 1].bsdfWeight) *
+		vertices[i].dARWeight = vertices[i + 1].bsdfRWeight *
 			AbsDot(vertices[i].wo, vertices[i].ns) /
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 	}

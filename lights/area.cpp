@@ -116,30 +116,31 @@ SWCSpectrum AreaLight::Sample_L(const Point &P, Vector *wo,
 SWCSpectrum AreaLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
 {
 	Normal ns;
-	Point p = shape->Sample(u1, u2, &ns);
+	Point ps = shape->Sample(u1, u2, &ns);
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(p, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
-	*pdf = shape->Pdf(p);
-	return L(p, ns, Vector(ns)) * M_PI;
+	*pdf = shape->Pdf(ps);
+	return L(ps, ns, Vector(ns)) * M_PI;
 }
 SWCSpectrum AreaLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility) const
 {
 	Normal ns;
 	Point ps = shape->Sample(p, u1, u2, &ns);
 	Vector wo(Normalize(ps - p));
-	*pdf = shape->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
+	*pdf = shape->Pdf(ps);
+	*pdfDirect = shape->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
 	visibility->SetSegment(p, ps);
-	return L(ps, ns, -wo);
+	return L(ps, ns, -wo) * M_PI;
 }
 float AreaLight::Pdf(const Scene *scene, const Point &p) const
 {
@@ -151,7 +152,7 @@ SWCSpectrum AreaLight::L(const Ray &ray, const DifferentialGeometry &dg, const N
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
 	*pdf = shape->Pdf(dg.p);
 	*pdfDirect = shape->Pdf(ray.o, ray.d) * AbsDot(ray.d, n) / DistanceSquared(dg.p, ray.o);
-	return L(dg.p, dg.nn, -ray.d);
+	return L(dg.p, dg.nn, -ray.d) * M_PI;
 }
 
 void AreaLight::SamplePosition(float u1, float u2, Point *p, Normal *n, float *pdf) const

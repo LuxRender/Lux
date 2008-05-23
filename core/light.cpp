@@ -46,9 +46,9 @@ SWCSpectrum Light::Le(const RayDifferential &) const {
 void Light::AddPortalShape(boost::shared_ptr<Shape> s) {
 	boost::shared_ptr<Shape> PortalShape;
 
-	if (s->CanIntersect())
+/*	if (s->CanIntersect())
 		PortalShape = s;
-	else {
+	else {*/
 		// Create _ShapeSet_ for _Shape_
 		boost::shared_ptr<Shape> shapeSet = s;
 		vector<boost::shared_ptr<Shape> > todo, done;
@@ -61,15 +61,15 @@ void Light::AddPortalShape(boost::shared_ptr<Shape> s) {
 			else
 				sh->Refine(todo);
 		}
-		if (done.size() == 1) PortalShape = done[0];
-		else {
+/*		if (done.size() == 1) PortalShape = done[0];
+		else {*/
 			boost::shared_ptr<Shape> o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
 			PortalShape = o;
 			havePortalShape = true; 
 			// store
 			PortalArea += PortalShape->Area();
 			PortalShapes.push_back(PortalShape);
-		}
-	}
+/*		}
+	}*/
 
 }
