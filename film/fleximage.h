@@ -30,7 +30,7 @@
 #include "tonemap.h"
 #include "sampling.h"
 #include <boost/timer.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace lux {
 
@@ -287,7 +287,7 @@ private:
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
-	mutable boost::mutex addSampleMutex;
+	mutable boost::recursive_mutex addSampleMutex;
 
 	float maxY;
 	u_int warmupSamples;
@@ -297,11 +297,11 @@ private:
     // Dade - this mutex is used to lock SampleArrptr/SampleArr2ptr pointers.
     // Beaware of potential dealock with addSampleMutex mutex. Always lock 
     // addSampleMutex first and then arrSampleMutex.
-    mutable boost::mutex arrSampleMutex;
+    mutable boost::recursive_mutex arrSampleMutex;
 	int curSampleArrId, curSampleArr2Id, maxSampleArrId;
 
     // Dade - used by the WriteImage method
-    mutable boost::mutex imageMutex;
+    mutable boost::recursive_mutex imageMutex;
 };
 
 }//namespace lux

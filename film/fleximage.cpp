@@ -157,7 +157,13 @@ void FlexImageFilm::CreateBuffers()
 
 void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
 {
-    boost::mutex::scoped_lock lockSample(addSampleMutex);
+    boost::recursive_mutex::scoped_lock lockSample(addSampleMutex);
+
+    // TODO: Find a group
+    if (bufferGroups.empty()) {
+        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+        CreateBuffers();
+    }
 
     // retrieve array position and increment for next AddSample()
 
@@ -168,7 +174,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
     // check for end
     if(curSampleArrId == maxSampleArrId) {
         // Dade - lock the pointer mutex
-        boost::mutex::scoped_lock lockArray(arrSampleMutex);
+        boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
 
         // swap SampleArrptrs
         ArrSample *tmpptr = SampleArrptr; 
@@ -206,10 +212,16 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 }
 
 void FlexImageFilm::FlushSampleArray() {
-    boost::mutex::scoped_lock lockSample(addSampleMutex);
+    boost::recursive_mutex::scoped_lock lockSample(addSampleMutex);
+    
+    // TODO: Find a group
+    if (bufferGroups.empty()) {
+        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+        CreateBuffers();
+    }
 
     // Dade - lock the pointer mutex
-    boost::mutex::scoped_lock lockArray(arrSampleMutex);
+    boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
 
     // swap SampleArrptrs
     ArrSample *tmpptr = SampleArrptr; 
@@ -229,12 +241,6 @@ void FlexImageFilm::FlushSampleArray() {
 
 void FlexImageFilm::MergeSampleArray() {
     // Dade - ATTENTION: you have to lock arrSampleMutex outside this method
-
-    // TODO: Find a group
-    if (bufferGroups.empty()) {
-        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
-        CreateBuffers();
-    }
 
     if (curSampleArr2Id == 0) {
         // Dade - nothing to do
@@ -398,7 +404,7 @@ void FlexImageFilm::ScaleOutput(float *rgb, float *alpha, float *scale)
 }
 void FlexImageFilm::WriteImage(ImageType type)
 {
-    boost::mutex::scoped_lock lock(imageMutex);
+    boost::recursive_mutex::scoped_lock lock(imageMutex);
 
     // Dade - flush the sample buffer before to save the image.
     FlushSampleArray();
@@ -619,7 +625,7 @@ void FlexImageFilm::TransmitFilm(
     float numberOfSamples;
     {
         // Dade - collect data to transmit
-        boost::mutex::scoped_lock lock(addSampleMutex);
+        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
         BufferGroup &currentGroup = bufferGroups[buf_id];
 		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
@@ -676,10 +682,10 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
     BlockedArray<Pixel> *pixelBuf;
     {
         // Dade - prepare buffer to receive data
-        boost::mutex::scoped_lock lock(addSampleMutex);
+        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
         BufferGroup &currentGroup = bufferGroups[buf_id];
-		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
+        Buffer *buffer = currentGroup.getBuffer(bufferGroup);
 
         pixelBuf = new BlockedArray<Pixel>(buffer->xPixelCount, buffer->yPixelCount);
     }
@@ -712,7 +718,7 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
         // Dade - check stream i/o for errors
         if (in.good()) {
             // Dade - add all received pixels
-            boost::mutex::scoped_lock lock(addSampleMutex);
+            boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
             BufferGroup &currentGroup = bufferGroups[buf_id];
             Buffer *buffer = currentGroup.getBuffer(bufferGroup);
