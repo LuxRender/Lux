@@ -123,6 +123,8 @@ double Scene::Statistics(const string &statName) {
 
 // Control Implementations in Scene:
 double Scene::GetNumberOfSamples() {
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+			
     // collect samples from all threads
     double samples = 0.;
     for(unsigned int i=0;i<renderThreads.size();i++)
@@ -162,6 +164,8 @@ double Scene::Statistics_SamplesPTotSec() {
 }
 
 double Scene::Statistics_Efficiency() {
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+
     // collect samples from all threads
     double samples = 0.;
     double drops = 0.;
@@ -175,6 +179,8 @@ double Scene::Statistics_Efficiency() {
 }
 
 void Scene::SignalThreads(int signal) {
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+
     for(unsigned int i=0;i<renderThreads.size();i++) {
         renderThreads[i]->signal=signal;
     }
@@ -337,6 +343,8 @@ void RenderThread::render(RenderThread *myThread) {
 }
 
 int Scene::CreateRenderThread() {
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+
     // Dade - this code is not thread safe
     RenderThread *rt = new  RenderThread(renderThreads.size(),
             CurThreadSignal,
@@ -351,6 +359,8 @@ int Scene::CreateRenderThread() {
 }
 
 void Scene::RemoveRenderThread() {
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+
     renderThreads.back()->signal = RenderThread::SIG_EXIT;
     renderThreads.pop_back();
 }
@@ -393,7 +403,8 @@ void Scene::Render() {
     // 1 more thread than required
     //add a thread
     CreateRenderThread();
-    
+
+	// Dade - this code fragment is not thread safe
     //wait all threads to finish their job
     for(unsigned int i = 0; i < renderThreads.size(); i++)
         renderThreads[i]->thread->join();

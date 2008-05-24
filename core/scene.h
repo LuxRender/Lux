@@ -131,6 +131,9 @@ public:
     bool preprocessDone;
 
 private:
+
+	// Dade - mutex used for adding/removing threads
+	boost::mutex renderThreadsMutex;
     std::vector<RenderThread*> renderThreads;
     //boost::thread_group threadGroup;
     int CurThreadSignal;
