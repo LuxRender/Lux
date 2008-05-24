@@ -111,14 +111,22 @@ private:
 	//equivalent of user specializations of template type
 	inline float clamp(float v) { return max(v, 0.f); }
 	inline Spectrum clamp(const Spectrum &v) { return v.Clamp(0.f, INFINITY); }
+	inline TextureColor<unsigned char, 1> clamp(const TextureColor<unsigned char, 1> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned char, 3> clamp(const TextureColor<unsigned char, 3> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned char, 4> clamp(const TextureColor<unsigned char, 4> &v) { return v.Clamp(0.f, INFINITY); }
+	inline TextureColor<unsigned short, 1> clamp(const TextureColor<unsigned short, 1> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned short, 3> clamp(const TextureColor<unsigned short, 3> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned short, 4> clamp(const TextureColor<unsigned short, 4> &v) { return v.Clamp(0.f, INFINITY); }
+	inline TextureColor<float, 1> clamp(const TextureColor<float, 1> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<float, 3> clamp(const TextureColor<float, 3> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<float, 4> clamp(const TextureColor<float, 4> &v) { return v.Clamp(0.f, INFINITY); }
 
 	//template user specializations are not supported in vc++, so this hack
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
+	{
+		float c = static_cast<float>(internalValue.c[0]) / (std::numeric_limits<unsigned char>::max() - 1);
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
 	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
 	{
 		float c[3];
@@ -133,6 +141,11 @@ private:
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) / (std::numeric_limits<unsigned char>::max() - 1);
 		}
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
+	{
+		float c = static_cast<float>(internalValue.c[0]) / (std::numeric_limits<unsigned short>::max() - 1);
 		outputValue = (Spectrum(c) * gain).Pow(gamma);
 	}
 	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
@@ -150,6 +163,10 @@ private:
 			c[i] = static_cast<float>(internalValue.c[i]) / (std::numeric_limits<unsigned short>::max() - 1);
 		}
 		outputValue= (Spectrum(c) * gain).Pow(gamma);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<float, 1> &internalValue) const
+	{
+		outputValue = (Spectrum(internalValue.c[0]) * gain).Pow(gamma);
 	}
 	inline void convert(Spectrum& outputValue, const TextureColor<float, 3> &internalValue) const
 	{

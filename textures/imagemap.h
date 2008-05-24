@@ -63,7 +63,6 @@ private:
 	TextureMapping2D *mapping;
 };
 
-
 template <class T> inline Texture<float> * ImageTexture<T>::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
@@ -150,9 +149,11 @@ ImageTexture<T>::ImageTexture(TextureMapping2D *m,
 	mipmap = GetTexture(filename, doTrilinear,
 		maxAniso, wrapMode);
 }
+
 template <class T> inline ImageTexture<T>::~ImageTexture() {
 	delete mapping;
 }
+
 struct TexInfo {
 	TexInfo(const string &f, bool dt, float ma, ImageWrap wm)
 		: filename(f), doTrilinear(dt), maxAniso(ma), wrapMode(wm) { }
@@ -167,6 +168,7 @@ struct TexInfo {
 		return wrapMode < t2.wrapMode;
 	}
 };
+
 template <class T> inline MIPMap<T> *ImageTexture<T>::
 	GetTexture( const string &filename,
 	           bool doTrilinear,
@@ -182,7 +184,7 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	int width, height;
 	auto_ptr<ImageData> imgdata(ReadImage(filename));
 	MIPMap<T> *ret = NULL;
-	if (imgdata.get()!=NULL) {
+	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
 		ret = imgdata->createMIPMap<T>(doTrilinear,maxAniso, wrap);
@@ -195,8 +197,10 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 		delete[] oneVal;
 	}
 	textures[texInfo] = ret;
+	
 	return ret;
 }
+
 template <class T> inline 
 T ImageTexture<T>::Evaluate(
 		const DifferentialGeometry &dg) const {

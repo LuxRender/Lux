@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "texturecolor.h"
 #include "mipmap.h"
+#include "error.h"
 using namespace std;
 
 namespace lux
@@ -38,7 +39,7 @@ namespace lux
 			  FLOAT_TYPE
 		   };
 
-		ImageData(int width,int height,PixelDataType type,int noChannels,TextureColorBase* data)
+		ImageData(int width, int height, PixelDataType type, int noChannels, TextureColorBase* data)
 		{
 			width_=width;
 			height_=height;
@@ -67,45 +68,75 @@ namespace lux
 			float maxAniso = 8.f, ImageWrap wrapMode = TEXTURE_REPEAT)
 		{
 			MIPMap<T> *mipmap=NULL;
-			if(noChannels_==3)
-			{
+			
+			// Dade - added support for 1 channel maps
+			if(noChannels_ == 1) {
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned char,3> >(width_, height_,(TextureColor<unsigned char,3>*)data_,
-						doTri,maxAniso,wrapMode);
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 1> >(
+							width_, height_,(TextureColor<unsigned char, 1>*)data_,
+							doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<float,3> >(width_, height_,(TextureColor<float,3>*)data_,
-						doTri,maxAniso,wrapMode);
+					mipmap = new MIPMapImpl<T, TextureColor<float, 1> >(
+							width_, height_,(TextureColor<float,1>*)data_,
+							doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned short,3> >(width_, height_,( TextureColor<unsigned short,3>*)data_,
-						doTri,maxAniso,wrapMode);
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 1> >(
+							width_, height_,( TextureColor<unsigned short, 1>*)data_,
+							doTri,maxAniso,wrapMode);
 				}
-			}
+			} else if(noChannels_ == 3) {
+				if(pixel_type_==UNSIGNED_CHAR_TYPE)
+				{
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 3> >(
+							width_, height_,(TextureColor<unsigned char,3>*)data_,
+							doTri,maxAniso,wrapMode);
+				}
 
-			if(noChannels_==4)
-			{
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<float,4> >(width_, height_,( TextureColor<float,4>*)data_,
-						doTri,maxAniso,wrapMode);
+					mipmap = new MIPMapImpl<T, TextureColor<float, 3> >(
+							width_, height_,(TextureColor<float,3>*)data_,
+							doTri,maxAniso,wrapMode);
+				}
+
+				if(pixel_type_==UNSIGNED_SHORT_TYPE)
+				{
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 3> >(
+							width_, height_,( TextureColor<unsigned short,3>*)data_,
+							doTri,maxAniso,wrapMode);
+				}
+			} else if(noChannels_ == 4) {
+				if(pixel_type_==FLOAT_TYPE)
+				{
+					mipmap = new MIPMapImpl<T, TextureColor<float,4> >(
+							width_, height_,( TextureColor<float,4>*)data_,
+							doTri,maxAniso,wrapMode);
 				}
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned char,4> >(width_, height_,static_cast< TextureColor<unsigned char,4>* >(data_),
-						doTri,maxAniso,wrapMode);
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned char,4> >(
+							width_, height_,static_cast< TextureColor<unsigned char,4>* >(data_),
+							doTri,maxAniso,wrapMode);
 				}
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned short,4> >(width_, height_,static_cast< TextureColor<unsigned short,4>* >(data_),
-						doTri,maxAniso,wrapMode);
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned short,4> >(
+							width_, height_,static_cast< TextureColor<unsigned short,4>* >(data_),
+							doTri,maxAniso,wrapMode);
 				}
+			} else {
+				luxError(LUX_SYSTEM, LUX_ERROR, "Unsupported channel count in ImageData::createMIPMap()");
+
+				return NULL;
 			}
+
 			return mipmap;
 		}
 	private:
