@@ -55,8 +55,10 @@ private:
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
 };
 struct BidirVertex {
-	BidirVertex() : bsdf(NULL), bsdfWeight(0.f), dAWeight(0.f),
-		rrWeight(1.f), flags(BxDFType(0)), f(0.f), Le(0.f) {}
+	BidirVertex() : bsdf(NULL), eBsdf(NULL), bsdfWeight(0.f), dAWeight(0.f),
+		rrWeight(1.f), bsdfRWeight(0.f), dARWeight(0.f), rrRWeight(0.f),
+		ePdf(0.f), ePdfDirect(0.f), flags(BxDFType(0)),
+		f(0.f), Le(0.f) {}
 	BSDF *bsdf, *eBsdf;
 	Point p;
 	Normal ng, ns;
