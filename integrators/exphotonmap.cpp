@@ -301,7 +301,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
         u[2] = RadicalInverse((int) nshot + 1, 5);
         u[3] = RadicalInverse((int) nshot + 1, 7);
 
-        // Dade - ser SpectrumWavelengths
+        // Dade - for SpectrumWavelengths
         thr_wl->Sample((float)RadicalInverse(nshot + 1, 23),
                 (float)RadicalInverse(nshot + 1, 29));
 
@@ -614,8 +614,8 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
                 for (int i = 0; i < gatherSamples; ++i) {
                     // Sample random direction using photons for final gather ray
                     float u1 = sample->oneD[gatherComponentOffset2[finalGatherSampleOffset]][i];
-                    float u2 = sample->twoD[gatherComponentOffset2[finalGatherSampleOffset]][2 * i];
-                    float u3 = sample->twoD[gatherComponentOffset2[finalGatherSampleOffset]][2 * i + 1];
+                    float u2 = sample->twoD[gatherSampleOffset2[finalGatherSampleOffset]][2 * i];
+                    float u3 = sample->twoD[gatherSampleOffset2[finalGatherSampleOffset]][2 * i + 1];
                     int photonNum = min((int) nIndirSamplePhotons - 1,
                             Floor2Int(u1 * nIndirSamplePhotons));
                     // Sample gather ray direction from _photonNum_

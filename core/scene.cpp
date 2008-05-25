@@ -345,7 +345,6 @@ void RenderThread::render(RenderThread *myThread) {
 int Scene::CreateRenderThread() {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 
-    // Dade - this code is not thread safe
     RenderThread *rt = new  RenderThread(renderThreads.size(),
             CurThreadSignal,
             surfaceIntegrator,

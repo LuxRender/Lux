@@ -163,7 +163,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
         u[2] = (float)RadicalInverse(nshot + 1, 5);
         u[3] = (float)RadicalInverse(nshot + 1, 7);
 
-        // Dade - ser SpectrumWavelengths
+        // Dade - for SpectrumWavelengths
         thr_wl->Sample((float)RadicalInverse(nshot + 1, 23),
                 (float)RadicalInverse(nshot + 1, 29));
 
