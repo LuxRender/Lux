@@ -80,6 +80,7 @@
 #include "particletracing.h"
 #include "bidirectional.h"
 #include "photonmap.h"
+#include "exphotonmap.h"
 
 #include "emission.h"
 #include "single.h"
@@ -657,6 +658,11 @@ if (plugin)
     }
     if(name=="photonmap") {
         SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
+    if(name=="exphotonmap") {
+        SurfaceIntegrator *ret=ExPhotonIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }

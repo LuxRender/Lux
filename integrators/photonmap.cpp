@@ -139,7 +139,6 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
     SpectrumWavelengths *thr_wl = thread_wavelengths.get();
 
     // Initialize photon shooting statistics
-
     bool causticDone = (nCausticPhotons == 0);
     bool directDone = (nDirectPhotons == 0);
     bool indirectDone = (nIndirectPhotons == 0);
@@ -149,15 +148,9 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 
         // Give up if we're not storing enough photons
         if (nshot > 500000 &&
-                (unsuccessful(nCausticPhotons,
-                causticPhotons.size(),
-                nshot) ||
-                unsuccessful(nDirectPhotons,
-                directPhotons.size(),
-                nshot) ||
-                unsuccessful(nIndirectPhotons,
-                indirectPhotons.size(),
-                nshot))) {
+                (unsuccessful(nCausticPhotons, causticPhotons.size(), nshot) ||
+                unsuccessful(nDirectPhotons, directPhotons.size(), nshot) ||
+                unsuccessful(nIndirectPhotons, indirectPhotons.size(), nshot))) {
             luxError(LUX_CONSISTENCY, LUX_ERROR, "Unable to store enough photons.  Giving up.");
             return;
         }
@@ -171,8 +164,8 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
         u[3] = (float)RadicalInverse(nshot + 1, 7);
 
         // Dade - ser SpectrumWavelengths
-        thr_wl->Sample((float)RadicalInverse(nshot+1, 23),
-                (float)RadicalInverse(nshot+1, 29));
+        thr_wl->Sample((float)RadicalInverse(nshot + 1, 23),
+                (float)RadicalInverse(nshot + 1, 29));
 
         // Choose light to shoot photon from
         int nLights = int(scene->lights.size());
@@ -216,7 +209,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
                             directPhotons.push_back(photon);
 
                             // Dade - print some progress info
-                            if ((directPhotons.size() & 0x8fff) == 0) {
+                            if ((directPhotons.size() & 0xafff) == 0) {
                                 ss.str("");
                                 ss << "Direct photonmap size: " << directPhotons.size();
                                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -258,7 +251,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
                             indirectPhotons.push_back(photon);
                             
                             // Dade - print some progress info
-                            if ((indirectPhotons.size() & 0x8fff) == 0) {
+                            if ((indirectPhotons.size() & 0xafff) == 0) {
                                 ss.str("");
                                 ss << "Indirect photonmap size: " << indirectPhotons.size();
                                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -314,7 +307,6 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 
     luxError(LUX_NOERROR, LUX_INFO, "Photon shooting done");
 }
-
 
 SWCSpectrum PhotonIntegrator::Li(const Scene *scene,
         const RayDifferential &ray, const Sample *sample,
