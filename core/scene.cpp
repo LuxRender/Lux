@@ -97,12 +97,16 @@ int Scene::FilmYres() {
 
 // Statistics Access
 double Scene::Statistics(const string &statName) {
-    if(statName=="secElapsed")
-        return s_Timer.Time();
-    else if(statName=="samplesSec")
-        return Statistics_SamplesPSec();
+	if(statName=="secElapsed") {
+		// Dade - s_Timer is inizialized only after the preprocess phase
+		if (preprocessDone)
+			return s_Timer.Time();
+		else
+			return 0.0;
+	} else if(statName=="samplesSec")
+		return Statistics_SamplesPSec();
     else if(statName=="samplesTotSec")
-        return Statistics_SamplesPTotSec();
+		return Statistics_SamplesPTotSec();
     else if(statName=="samplesPx")
         return Statistics_SamplesPPx();
     else if(statName=="efficiency")
@@ -144,6 +148,10 @@ double Scene::Statistics_SamplesPPx() {
 }
 
 double Scene::Statistics_SamplesPSec() {
+	// Dade - s_Timer is inizialized only after the preprocess phase
+	if (!preprocessDone)
+		return 0.0;
+
     double samples = GetNumberOfSamples();
     double time = s_Timer.Time();
     double dif_samples = samples - lastSamples;
@@ -156,6 +164,10 @@ double Scene::Statistics_SamplesPSec() {
 }
 
 double Scene::Statistics_SamplesPTotSec() {
+	// Dade - s_Timer is inizialized only after the preprocess phase
+	if (!preprocessDone)
+		return 0.0;
+
     double samples = GetNumberOfSamples();
     double time = s_Timer.Time();
     
@@ -165,6 +177,9 @@ double Scene::Statistics_SamplesPTotSec() {
 
 double Scene::Statistics_Efficiency() {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
+
+	if(renderThreads.size() == 0)
+		return 0.0;
 
     // collect samples from all threads
     double samples = 0.;
