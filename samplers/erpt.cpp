@@ -63,9 +63,10 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 }
 
 // Metropolis method definitions
-ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng, int sw) :
- Sampler(xStart, xEnd, yStart, yEnd, 0), LY(0.), gain(0.f),
- totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
+ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int pixelSamples,
+		int totMutations, float rng, int sw) :
+ Sampler(xStart, xEnd, yStart, yEnd, pixelSamples), LY(0.), gain(0.f),
+ sampleCount(0), totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
  numChains(0), mutation(0), consecRejects(0), stamp(0),
  range(rng), weight(0.), alpha(0.), baseImage(NULL), sampleImage(NULL),
  timeImage(NULL), strataWidth(sw)
@@ -80,6 +81,7 @@ ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMuta
 ERPTSampler* ERPTSampler::clone() const
 {
 	ERPTSampler *newSampler = new ERPTSampler(*this);
+	newSampler->sampleCount = 0;
 	newSampler->totalSamples = 0;
 	newSampler->sampleImage = NULL;
 	return newSampler;
@@ -113,8 +115,14 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	if (sampleImage == NULL) {
 		initERPT(this, sample);
 	}
+
 	if ((chain == 0 && mutation == 0) || initCount < initSamples) {
 		if(currentStrata == strataSqr) {
+			// Dade - check if it is time to stop
+			if ((samplesPerPixel > 0) &&
+					(samplesPerPixel <= sampleCount / (float)((xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart))))
+				return false;
+
 			// Generate shuffled stratified image samples
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
 			Shuffle(strataSamples, strataSqr, 2);
@@ -137,6 +145,11 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->stamp = 0;
 	} else {
 		if (mutation == 0) {
+			// Dade - check if it is time to stop
+			if ((samplesPerPixel > 0) &&
+					(samplesPerPixel <= sampleCount / (float)((xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart))))
+				return false;
+
 			// *** new chain ***
 			sample->imageX = baseImage[0];
 			sample->imageY = baseImage[1];
@@ -166,6 +179,8 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i]);
 		++(sample->stamp);
 	}
+
+	sampleCount++;
 
     return true;
 }
@@ -309,7 +324,9 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	int totMutations = params.FindOneInt("chainlength", 2000);	// number of mutations from a given seed
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 50.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
-	return new ERPTSampler(xStart, xEnd, yStart, yEnd, totMutations, range, stratawidth);
+	int nsamp = params.FindOneInt("pixelsamples", 0);
+
+	return new ERPTSampler(xStart, xEnd, yStart, yEnd, nsamp, totMutations, range, stratawidth);
 }
 
 int ERPTSampler::initCount, ERPTSampler::initSamples;

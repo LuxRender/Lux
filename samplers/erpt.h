@@ -34,7 +34,10 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
-	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int totMutations, float rng, int sw);
+	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int pixelSamples,
+			int totMutations, float rng, int sw);
+	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
+
 	virtual ERPTSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }
 	int RoundSize(int size) const { return size; }
@@ -42,9 +45,11 @@ public:
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	void AddSample(const Sample &sample);
-	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+
 	float LY, gain;
+	// Dade - used to stop after a fixed amount of samples per pixel
+	u_int sampleCount;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
 	float range, weight, alpha;
 	float *baseImage, *sampleImage;
