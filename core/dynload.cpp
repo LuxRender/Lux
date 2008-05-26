@@ -123,6 +123,7 @@
 #include "blender_musgrave.h"
 #include "blender_marble.h"
 #include "blender_wood.h"
+#include "blender_clouds.h"
 
 #include "contrast.h"
 #include "highcontrast.h"
@@ -406,7 +407,11 @@ if (plugin)
         tp.ReportUnused();
         return ret;
     }
-
+    if(name=="blender_clouds") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderCloudsTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
     //Error("Static loading of float texture '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of texture '"<<name<<"' failed.";
