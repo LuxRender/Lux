@@ -56,6 +56,8 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 		short int temp = Pxa[i].x; Pxa[i].x = Pxa[r].x; Pxa[r].x = temp;
 		temp = Pxa[i].y; Pxa[i].y = Pxa[r].y; Pxa[r].y = temp;
     } 
+
+	pixelCounter = 0;
 }
 
 u_int VegasPixelSampler::GetTotalPixels() {
@@ -63,6 +65,11 @@ u_int VegasPixelSampler::GetTotalPixels() {
 }
 
 bool VegasPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
+	if(pixelCounter == TotalPx)
+		return false;
+
+	pixelCounter++;
+
 	xPos = Pxa[*use_pos].x;
 	yPos = Pxa[*use_pos].y;
 	return true;

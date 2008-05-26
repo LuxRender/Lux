@@ -61,6 +61,8 @@ TilePixelSampler::TilePixelSampler(
             }
         }
     }
+
+	pixelCounter = 0;
 }
 
 u_int TilePixelSampler::GetTotalPixels() {

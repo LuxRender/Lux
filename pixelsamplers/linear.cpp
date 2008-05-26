@@ -49,7 +49,7 @@ LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 		}
 	}
 
-    pixelCounter = 0;
+	pixelCounter = 0;
 }
 
 u_int LinearPixelSampler::GetTotalPixels() {
