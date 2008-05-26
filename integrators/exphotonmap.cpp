@@ -270,14 +270,8 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	bool causticDone = (nCausticPhotons == 0);
     bool indirectDone = (nIndirectPhotons == 0);
 
-    // Compute light power CDF for photon shooting
-    int nLights = int(scene->lights.size());
-    float *lightPower = (float *) alloca(nLights * sizeof (float));
-    float *lightCDF = (float *) alloca((nLights + 1) * sizeof (float));
-    for (int i = 0; i < nLights; ++i)
-        lightPower[i] = scene->lights[i]->Power(scene).y();
-    float totalPower;
-    ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
+	int nLights = int(scene->lights.size());
+
     // Declare radiance photon reflectance arrays
     vector<SWCSpectrum> rpReflectances, rpTransmittances;
 
@@ -306,12 +300,12 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                 (float)RadicalInverse(nshot + 1, 29));
 
         // Choose light to shoot photon from
-        float lightPdf;
-        float uln = RadicalInverse((int) nshot + 1, 11);
-        int lightNum = Floor2Int(SampleStep1d(lightPower, lightCDF,
-                totalPower, nLights, uln, &lightPdf) * nLights);
-        lightNum = min(lightNum, nLights - 1);
+        int lightNum = min(
+            Floor2Int(nLights * (float)RadicalInverse(nshot + 1, 11)),
+			nLights-1);
         const Light *light = scene->lights[lightNum];
+        float lightPdf = 1.f / nLights;
+
         // Generate _photonRay_ from light source and initialize _alpha_
         RayDifferential photonRay;
         float pdf;
@@ -330,7 +324,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                 // Handle photon/surface intersection
                 alpha *= scene->Transmittance(photonRay);
                 Vector wo = -photonRay.d;
-                MemoryArena arena; // DUMMY ARENA TODO FIX THESE
+
                 BSDF *photonBSDF = photonIsect.GetBSDF(photonRay);
                 BxDFType specularType = BxDFType(BSDF_REFLECTION |
                         BSDF_TRANSMISSION | BSDF_SPECULAR);

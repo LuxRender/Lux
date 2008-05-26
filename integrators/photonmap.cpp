@@ -169,9 +169,9 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
 
         // Choose light to shoot photon from
         int nLights = int(scene->lights.size());
-        int lightNum =
-        min(Floor2Int(nLights * (float)RadicalInverse(nshot+1, 11)),
-                nLights-1);
+        int lightNum = min(
+            Floor2Int(nLights * (float)RadicalInverse(nshot+1, 11)),
+			nLights-1);
         Light *light = scene->lights[lightNum];
         float lightPdf = 1.f / nLights;
 
