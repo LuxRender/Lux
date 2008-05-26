@@ -177,8 +177,11 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			directPath[0].ng = eyePath[i].ng;
 			directPath[0].ns = eyePath[i].ns;
 			directPath[0].dAWeight = eyePath[i].ePdf / lightWeight;
-			L += eyePath[i].Le * evalPath(scene, eyePath, i + 1, directPath, 0) /
-				weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect / lightWeight, false);
+			eyePath[i].Le *= evalPath(scene, eyePath, i + 1, directPath, 0);
+			if (!eyePath[i].Le.Black()) {
+				eyePath[i].Le /= weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect / lightWeight, false);
+				L += eyePath[i].Le;
+			}
 		}
 		if (eyePath[i].bsdf == NULL)
 			break;
@@ -207,9 +210,11 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			directPath[0].ns = directPath[0].ng;
 			// Add direct lighting contribution
 			Ld *= evalPath(scene, eyePath, i + 1, directPath, 1);
-			Ld *= lightWeight / (pdfDirect *
-				weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true));
-			L += Ld;
+			if (!Ld.Black()) {
+				Ld *= lightWeight / (pdfDirect *
+					weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true));
+				L += Ld;
+			}
 		}
 		// Compute direct lighting pdf
 		float directPdf = light->Pdf(eyePath[i].p, eyePath[i].ns,
@@ -219,8 +224,10 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		for (int j = 1; j <= nLight; ++j) {
 			SWCSpectrum Ll(Le);
 			Ll *= evalPath(scene, eyePath, i + 1, lightPath, j);
-			Ll /= weightPath(eyePath, i + 1, lightPath, j, j == 1 ? directPdf : lightDirectPdf, false);
-			L += Ll;
+			if (!Ll.Black()) {
+				Ll /= weightPath(eyePath, i + 1, lightPath, j, j == 1 ? directPdf : lightDirectPdf, false);
+				L += Ll;
+			}
 		}
 	}
 	XYZColor color(L.ToXYZ());
@@ -310,7 +317,8 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	// Weight alternate paths obtained by extending the light path toward
 	// the eye path. If there is no light path vertex (eye path hit a light)
 	// there is a special case for the first alternate path
-	if (nLight == 0 && nEye > 1) {
+	if (nLight == 0) {
+		// Here nEye must be at least 2, otherwise there is no path
 		p *= light[0].dAWeight / eye[nEye - 1].dAWeight;
 		// The path can only be obtained if the last eye bounce isn't
 		// specular, the last eye point cannot be specular otherwise
@@ -323,19 +331,26 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 		eyePos = nEye - 1;
 		lightPos = nLight - 1;
 	}
-	// In the case of a light path with at most one vertex,
-	// the path can be obtained with direct lighting so compute the
-	// direct lighting probability and add it to the weight
-	if (nLight <= 1 && pdfLight > 0.f && light[0].dAWeight > 0.f && (nLight == 1 || nEye <= 1 || (eye[nEye - 2].flags & BSDF_SPECULAR) == 0)) {
-		pdfDirect = p * pdfLight / light[0].dAWeight;
-		weight += pdfDirect;
+	// If there is only 1 light vertex remaining, the path can be obtained
+	// with direct lighting so compute the corresponding pdf and add it
+	// to the weight
+	if (lightPos == 0) {
+		// If light source is not delta, compute relative weight
+		if (light[0].dAWeight > 0.f)
+			pdfDirect = p * pdfLight / light[0].dAWeight;
+		else
+			pdfDirect = p;
+		// The path can only be obtained if the last eye bounce is not
+		// specular
+		if (pdfDirect > 0.f && (nEye <= 1 || (eye[nEye - 2].flags & BSDF_SPECULAR) == 0))
+			weight += pdfDirect;
 	}
 	// The next alternate path is obtained by connecting the last vertex of
 	// the light path (or the light point) to the last vertex of the eye
 	// path (or the one before it hit the light)
 	// If nLight is already maxLightDepth, alternate paths cannot be
 	// obtained this way
-	if (eyePos > 0 && nLight < maxLightDepth) {
+	if (eyePos >= 0 && nLight + nEye - eyePos - 1 < maxLightDepth) {
 		Vector w = light[lightPos].p - eye[eyePos].p;
 		float squaredDistance = Dot(w, w);
 		w /= sqrtf(squaredDistance);
@@ -344,8 +359,7 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 		// Compute RR probability if needed
 		if (nLight > 3) {
 			if (pdf > 0.f)
-				pdf = min<float>(1.f, light[lightPos].bsdf->f(light[lightPos].wi, -w).y() *
-					AbsDot(light[lightPos].ns, -w));
+				pdf *= light[lightPos].rrWeight;
 			else
 				pdf = 0.f;
 		}
@@ -361,9 +375,9 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	for (int i = eyePos - 1; i > max(0, nEye + nLight - maxLightDepth - 1); --i) {
 		p *= eye[i].dARWeight / eye[i].dAWeight;
 		if (nLight + nEye - i > 3)
-			p /= eye[i].rrRWeight;
+			p *= eye[i + 1].rrRWeight;
 		if (i > 3)
-			p *= eye[i].rrWeight;
+			p /= eye[i - 1].rrWeight;
 		// If neither bounce is specular, this path can be found so
 		// add its probability to the weight
 		if ((eye[i].flags & BSDF_SPECULAR) == 0 &&
@@ -374,8 +388,12 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	// probability to the weight
 	if (nEye > 0 && nEye + nLight - maxLightDepth - 1 <= 0 && eye[0].dAWeight > 0.f) {
 		p *= eye[0].dARWeight / eye[0].dAWeight;
-		if (nLight + nEye > 3)
-			p /= eye[0].rrRWeight;
+		if (nLight + nEye > 3) {
+			if (nEye > 1)
+				p *= eye[1].rrRWeight;
+			else
+				p *= light[nLight - 1].rrWeight;
+		}
 		weight += p;
 	}
 	// Now we look for alternate paths in the other direction
@@ -386,7 +404,9 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	// there is a special case for the first alternate path
 	if (nEye == 0) {
 		p *= eye[0].dAWeight / light[nLight - 1].dAWeight;
-		lightPos = nLight - 2;
+                if ((light[nLight - 2].flags & BSDF_SPECULAR) == 0)
+                        weight += p;
+ 		lightPos = nLight - 2;
 		eyePos = 0;
 	} else {
 		lightPos = nLight - 1;
@@ -397,7 +417,7 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	// path (or the one before it hit the light)
 	// If nLight is already maxLightDepth, alternate paths cannot be
 	// obtained this way
-	if (lightPos > 0 && nEye < maxEyeDepth) {
+	if (lightPos >= 0 && nEye +nLight - lightPos - 1 < maxEyeDepth) {
 		Vector w = eye[eyePos].p - light[lightPos].p;
 		float squaredDistance = Dot(w, w);
 		w /= sqrtf(squaredDistance);
@@ -406,8 +426,7 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 		// Compute RR probability if needed
 		if (nEye > 3) {
 			if (pdf > 0.f)
-				pdf = min<float>(1.f, eye[eyePos].bsdf->f(eye[eyePos].wi, -w).y() *
-					AbsDot(eye[eyePos].ns, -w));
+				pdf *= eye[eyePos].rrWeight;
 			else
 				pdf = 0.f;
 		}
@@ -423,9 +442,9 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	for (int i = lightPos - 1; i > max(0, nLight + nEye - maxEyeDepth - 1); --i) {
 		p *= light[i].dARWeight / light[i].dAWeight;
 		if (nEye + nLight - i > 3)
-			p /= light[i].rrRWeight;
+			p *= light[i + 1].rrRWeight;
 		if (i > 3)
-			p *= light[i].rrWeight;
+			p /= light[i - 1].rrWeight;
 		// If neither bounce is specular, this path can be found so
 		// add its probability to the weight
 		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
@@ -436,16 +455,23 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 	// alternative can be obtained through direct lighting too
 	// so compute the probability and add it to the weight
 	if (nLight > 1 && nLight + nEye - maxEyeDepth - 1 <= 0 && pdfLight > 0. && light[0].dAWeight > 0.f) {
-
-		pdfDirect = p * pdfLight / light[0].dAWeight;
-		weight += pdfDirect;
+		if (light[0].dAWeight > 0.f)
+			pdfDirect = p * pdfLight / light[0].dAWeight;
+		else
+			pdfDirect = p;
+		if (pdfDirect > 0.f && (light[1].flags & BSDF_SPECULAR) == 0)
+			weight += pdfDirect;
 	}
 	// If the eye path can land on the light, add the corresponding
 	// probability to the weight
 	if (nLight > 0 && nLight + nEye - maxEyeDepth - 1 <= 0 && light[0].dAWeight > 0.f) {
 		p *= light[0].dARWeight / light[0].dAWeight;
-		if (nEye + nLight > 3)
-			p /= light[0].rrRWeight;
+		if (nEye + nLight > 3) {
+			if (nLight > 1)
+				p *= light[1].rrRWeight;
+			else
+				p *= light[nEye - 1].rrWeight;
+		}
 		weight += p;
 	}
 	// The weight has been computed as if it was a normal path, however it
@@ -466,6 +492,22 @@ SWCSpectrum BidirIntegrator::evalPath(const Scene *scene, vector<BidirVertex> &e
 		L *= eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, w) *
 			G(eye[nEye - 1], light[nLight - 1]) *
 			light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w);
+		eye[nEye - 1].rrWeight = min<float>(1.f,
+			eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, w).y() *
+				AbsDot(eye[nEye - 1].ns, w) /
+				eye[nEye - 1].bsdf->Pdf(eye[nEye - 1].wi, w));
+		eye[nEye - 1].rrRWeight = min<float>(1.f,
+			eye[nEye - 1].bsdf->f(w, eye[nEye - 1].wi).y() *
+				AbsDot(eye[nEye - 1].wi, eye[nEye - 1].ns) /
+				eye[nEye - 1].bsdf->Pdf(w, eye[nEye - 1].wi));
+		light[nLight - 1].rrWeight = min<float>(1.f,
+			light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w).y() *
+				AbsDot(light[nLight - 1].ns, -w) /
+				light[nLight - 1].bsdf->Pdf(light[nLight - 1].wi, -w));
+		light[nLight - 1].rrRWeight = min<float>(1.f,
+			light[nLight - 1].bsdf->f(-w, light[nLight - 1].wi).y() *
+				AbsDot(light[nLight - 1].wi, light[nLight - 1].ns) /
+				light[nLight - 1].bsdf->Pdf(-w, light[nLight - 1].wi));
 	}
 	for (int i = nLight - 2; i >= 0; --i)
 		L *= light[i].f * AbsDot(light[i].wo, light[i].ns) /
