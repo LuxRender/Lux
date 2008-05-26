@@ -34,8 +34,10 @@ namespace lux
 
 class MetropolisSampler : public Sampler {
 public:
-	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw, bool useV);
+	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int pixelSamples,
+			int maxRej, float largeProb, float rng, int sw, bool useV);
 	~MetropolisSampler() { delete[] sampleImage; delete[] strataSamples; }
+
 	virtual MetropolisSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }
 	int RoundSize(int size) const { return size; }
@@ -44,12 +46,12 @@ public:
 	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	void GetBufferType(BufferType *t)
-	{
-		*t = BUF_TYPE_PER_SCREEN;
-	}
+	void GetBufferType(BufferType *t) { *t = BUF_TYPE_PER_SCREEN; }
+
 	bool large;
 	float LY, V;
+	// Dade - used to stop after a fixed amount of samples per pixel
+	u_int sampleCount;
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;

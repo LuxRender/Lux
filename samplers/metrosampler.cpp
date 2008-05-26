@@ -64,9 +64,10 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 }
 
 // Metropolis method definitions
-MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int maxRej, float largeProb, float rng, int sw, bool useV) :
- Sampler(xStart, xEnd, yStart, yEnd, 0), large(true), LY(0.), V(0.),
- totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
+MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
+		int pixelSamples, int maxRej, float largeProb, float rng, int sw, bool useV) :
+ Sampler(xStart, xEnd, yStart, yEnd, pixelSamples), large(true), LY(0.), V(0.),
+ sampleCount(0), totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
  timeImage(NULL), strataWidth(sw), useVariance(useV)
 {
@@ -80,8 +81,10 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 MetropolisSampler* MetropolisSampler::clone() const
 {
 	MetropolisSampler *newSampler = new MetropolisSampler(*this);
+	newSampler->sampleCount = 0;
 	newSampler->totalSamples = 0;
 	newSampler->sampleImage = NULL;
+
 	return newSampler;
 }
 
@@ -114,8 +117,14 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		initMetropolis(this, sample);
 		large = true;
 	}
+
 	if (large) {
 		if(currentStrata == strataSqr) {
+			// Dade - check if it is time to stop
+			if ((samplesPerPixel > 0) &&
+					(samplesPerPixel <= sampleCount / (float)((xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart))))
+				return false;
+
 			// Generate shuffled stratified image samples
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
 			Shuffle(strataSamples, strataSqr, 2);
@@ -151,6 +160,8 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i]);
 		++(sample->stamp);
 	}
+
+	sampleCount++;
 
     return true;
 }
@@ -281,9 +292,11 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
 	bool useVariance = params.FindOneBool("usevariance", false);
-	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects, largeMutationProb, range, stratawidth, useVariance);
+	int nsamp = params.FindOneInt("pixelsamples", 0);
+
+	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, nsamp,
+			maxConsecRejects, largeMutationProb, range, stratawidth, useVariance);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;
 float MetropolisSampler::meanIntensity;
-
