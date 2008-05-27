@@ -36,11 +36,14 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/split_member.hpp>
 
-#if !defined(__APPLE__) && !defined(__OpenBSD__)
+#if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__)
 #  include <malloc.h> // for _alloca, memalign
 #  if !defined(WIN32) || defined(__CYGWIN__)
 #    include <alloca.h>
 #  endif
+#endif
+#if defined(__FreeBSD__)
+#  define memalign(A,B)  malloc(B)
 #endif
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
