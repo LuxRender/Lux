@@ -152,14 +152,14 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	// Give the light point probability for the weighting if the light
 	// is not delta
 	if (nLight > 0 && !light->IsDeltaLight())
-		lightPath[0].dAWeight = lightPdf / lightWeight;
+		lightPath[0].dAWeight = lightPdf;
 	else
 		lightPath[0].dAWeight = 0.f;
 	// Get the pdf of the point in case of direct lighting
 	float lightDirectPdf;
 	if (nLight > 1)
 		lightDirectPdf = light->Pdf(lightPath[1].p, lightPath[1].ns,
-			lightPath[1].wi) / lightWeight *
+			lightPath[1].wi) *
 			DistanceSquared(lightPath[1].p, lightPath[0].p) /
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
 	else
@@ -176,12 +176,12 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			directPath[0].p = eyePath[i].p;
 			directPath[0].ng = eyePath[i].ng;
 			directPath[0].ns = eyePath[i].ns;
-			directPath[0].dAWeight = eyePath[i].ePdf / lightWeight;
+			directPath[0].dAWeight = eyePath[i].ePdf;
 			float err = eyePath[i].rrWeight;
 			float errR = eyePath[i].rrRWeight;
 			eyePath[i].Le *= evalPath(scene, eyePath, i + 1, directPath, 0);
 			if (!eyePath[i].Le.Black()) {
-				eyePath[i].Le /= weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect / lightWeight, false);
+				eyePath[i].Le /= weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect, false);
 				L += eyePath[i].Le;
 			}
 			eyePath[i].rrWeight = err;
@@ -205,7 +205,6 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			data[0], data[1], portal, &bsdfDirect, &(directPath[0].dAWeight), &pdfDirect,
 			&visibility);
 		// Test the visibility of the light
-		pdfDirect /= lightWeight;
 		if (pdfDirect > 0.f && !Ld.Black() && visibility.Unoccluded(scene)) {
 			// Prepare the light vertex
 			directPath[0].wi = Vector(bsdfDirect->dgShading.nn);
@@ -218,8 +217,8 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			float errR = eyePath[i].rrRWeight;
 			Ld *= evalPath(scene, eyePath, i + 1, directPath, 1);
 			if (!Ld.Black()) {
-				Ld /= pdfDirect *
-					weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true);
+				Ld *= lightWeight / (pdfDirect *
+					weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true));
 				L += Ld;
 			}
 			eyePath[i].rrWeight = err;
@@ -227,7 +226,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		}
 		// Compute direct lighting pdf
 		float directPdf = light->Pdf(eyePath[i].p, eyePath[i].ns,
-			eyePath[i].wi) / lightWeight *
+			eyePath[i].wi) *
 			DistanceSquared(eyePath[i].p, lightPath[0].p) /
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
 		for (int j = 1; j <= nLight; ++j) {
