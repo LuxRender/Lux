@@ -184,6 +184,10 @@ public:
   void dispatch_descriptors(const Descriptor_Set& descriptors,
       const asio::error_code& result)
   {
+#if defined(__FreeBSD__)
+    // NOTE - radiance - temporary fix for getting compiled on FreeBSD
+    printf("boost asio detail dispatch_descriptors called - not implemented on FreeBSD\n");
+#else
     typename operation_map::iterator i = operations_.begin();
     while (i != operations_.end())
     {
@@ -210,6 +214,7 @@ public:
         }
       }
     }
+#endif
   }
 
   // Dispatch any pending cancels for operations.
