@@ -33,6 +33,9 @@ RandomPixelSampler::RandomPixelSampler(int xstart, int xend,
 	yPixelStart = ystart;
 	xPixelEnd = xend;
 	yPixelEnd = yend;
+
+	TotalPx = (xend - xstart) * (yend - ystart);
+	pixelCounter = 0;
 }
 
 u_int RandomPixelSampler::GetTotalPixels() {
@@ -40,7 +43,16 @@ u_int RandomPixelSampler::GetTotalPixels() {
 }
 
 bool RandomPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
+	bool hasMorePixel = true;
+	if(pixelCounter == TotalPx) {
+		pixelCounter = 0;
+		hasMorePixel = false;
+	}
+
+	pixelCounter++;
+
 	xPos = xPixelStart + Floor2Int( lux::random::floatValue() * (xPixelEnd - xPixelStart) );
-	yPos = yPixelStart + Floor2Int( lux::random::floatValue() * (yPixelEnd - yPixelStart) ); 
-	return true;
+	yPos = yPixelStart + Floor2Int( lux::random::floatValue() * (yPixelEnd - yPixelStart) );
+
+	return hasMorePixel;
 }

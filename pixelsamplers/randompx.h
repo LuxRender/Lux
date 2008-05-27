@@ -41,6 +41,11 @@ public:
 	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
 
 private:
+	// TilePixelSampler Private Data
+	u_int TotalPx;
+    // Dade - number of pixel ralready returned by GetNextPixel()
+    u_int pixelCounter;
+
 	// RandomPixelSampler Private Data
 	int xPixelStart, yPixelStart, xPixelEnd, yPixelEnd;
 };

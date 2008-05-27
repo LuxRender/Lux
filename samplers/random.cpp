@@ -78,12 +78,17 @@ u_int RandomSampler::GetTotalSamplePos()
 bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
+
 	// Compute new set of samples if needed for next pixel
-	if (samplePos == xPixelSamples * yPixelSamples)
-	{
+	bool haveMoreSample = true;
+	if (samplePos == xPixelSamples * yPixelSamples) {
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
-			return false;
+		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
+			// Dade - we are at a valid checkpoint where we can stop the
+			// rendering. Check if we have enough samples per pixel in the film.
+			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+				haveMoreSample = false;
+		}
 
 		for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
 			imageSamples[i] = lux::random::floatValue();
@@ -116,8 +121,10 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
 			sample->twoD[i][j] = lux::random::floatValue();
 	}
+
 	++samplePos;
-	return true;
+
+	return haveMoreSample;
 }
 
 float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)

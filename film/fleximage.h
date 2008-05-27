@@ -212,15 +212,15 @@ class FlexImageFilm : public Film {
 public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
-		Film(xres, yres), filter(NULL), filterTable(NULL),
+		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
 		framebuffer(NULL), factor(NULL) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
 		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 		bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM,
-		float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g,
-		int reject_warmup, bool debugmode);
+		int haltspp, float reinhard_prescale, float reinhard_postscale,
+		float reinhard_burn, float g, int reject_warmup, bool debugmode);
 	~FlexImageFilm() {
 		delete[] framebuffer;
 		delete[] factor;
@@ -232,8 +232,15 @@ public:
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 	void AddSampleCount(float count, int bufferGroup = 0) {
-		if (!bufferGroups.empty())
+		if (!bufferGroups.empty()) {
 			bufferGroups[bufferGroup].numberOfSamples += count;
+
+			// Dade - check if we have enough samples per pixel
+			if ((haltSamplePerPixel > 0) &&
+					(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
+						haltSamplePerPixel))
+				enoughSamplePerPixel = true;
+		}
 	}
 
 	void WriteImage(ImageType type);

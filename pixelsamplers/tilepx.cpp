@@ -70,8 +70,11 @@ u_int TilePixelSampler::GetTotalPixels() {
 }
 
 bool TilePixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-    if(pixelCounter == TotalPx)
-		return false;
+	bool hasMorePixel = true;
+	if(pixelCounter == TotalPx) {
+		pixelCounter = 0;
+		hasMorePixel = false;
+	}
 
 	pixelCounter++;
 
@@ -79,5 +82,5 @@ bool TilePixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
 	xPos = Pxa[pos].x;
 	yPos = Pxa[pos].y;
 
-    return true;
+    return hasMorePixel;
 }

@@ -34,7 +34,7 @@ namespace lux
 
 class MetropolisSampler : public Sampler {
 public:
-	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd, int pixelSamples,
+	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 			int maxRej, float largeProb, float rng, int sw, bool useV);
 	~MetropolisSampler() { delete[] sampleImage; delete[] strataSamples; }
 
@@ -50,8 +50,6 @@ public:
 
 	bool large;
 	float LY, V;
-	// Dade - used to stop after a fixed amount of samples per pixel
-	u_int sampleCount;
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp;
 	float pLarge, range, weight, alpha;
 	float *sampleImage;

@@ -65,9 +65,9 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		int pixelSamples, int maxRej, float largeProb, float rng, int sw, bool useV) :
- Sampler(xStart, xEnd, yStart, yEnd, pixelSamples), large(true), LY(0.), V(0.),
- sampleCount(0), totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
+		int maxRej, float largeProb, float rng, int sw, bool useV) :
+ Sampler(xStart, xEnd, yStart, yEnd, 1), large(true), LY(0.), V(0.),
+ totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
  timeImage(NULL), strataWidth(sw), useVariance(useV)
 {
@@ -81,7 +81,6 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 MetropolisSampler* MetropolisSampler::clone() const
 {
 	MetropolisSampler *newSampler = new MetropolisSampler(*this);
-	newSampler->sampleCount = 0;
 	newSampler->totalSamples = 0;
 	newSampler->sampleImage = NULL;
 
@@ -118,12 +117,13 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		large = true;
 	}
 
+	bool haveMoreSample = true;
 	if (large) {
 		if(currentStrata == strataSqr) {
-			// Dade - check if it is time to stop
-			if ((samplesPerPixel > 0) &&
-					(samplesPerPixel <= sampleCount / (float)((xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart))))
-				return false;
+			// Dade - we are at a valid checkpoint where we can stop the
+			// rendering. Check if we have enough samples per pixel in the film.
+			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+				haveMoreSample = false;
 
 			// Generate shuffled stratified image samples
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
@@ -161,9 +161,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		++(sample->stamp);
 	}
 
-	sampleCount++;
-
-    return true;
+    return haveMoreSample;
 }
 
 float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
@@ -292,10 +290,9 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
 	bool useVariance = params.FindOneBool("usevariance", false);
-	int nsamp = params.FindOneInt("pixelsamples", 0);
 
-	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, nsamp,
-			maxConsecRejects, largeMutationProb, range, stratawidth, useVariance);
+	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects,
+			largeMutationProb, range, stratawidth, useVariance);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;

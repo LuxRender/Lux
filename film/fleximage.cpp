@@ -58,12 +58,13 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM,
-	float reinhard_prescale, float reinhard_postscale, float reinhard_burn, float g, int reject_warmup, bool debugmode ) :
-	Film(xres, yres), filter(filt), writeInterval(wI), displayInterval(dI), filename(filename1),
-	premultiplyAlpha(premult), buffersInited(false), gamma(g),
+	int haltspp, float reinhard_prescale, float reinhard_postscale,
+	float reinhard_burn, float g, int reject_warmup, bool debugmode) :
+	Film(xres, yres, haltspp), filter(filt), writeInterval(wI), displayInterval(dI),
+	filename(filename1), premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM),
-    framebuffer(NULL), debug_mode(debugmode), factor(NULL)
+	framebuffer(NULL), debug_mode(debugmode), factor(NULL)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -171,6 +172,14 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
     int arr_id = curSampleArrId;
     curSampleArrId++;
 
+    // Copy to array location
+    SampleArrptr[arr_id].sX = sX;
+    SampleArrptr[arr_id].sY = sY;
+    SampleArrptr[arr_id].xyz = xyz;
+    SampleArrptr[arr_id].alpha = alpha;
+    SampleArrptr[arr_id].buf_id = buf_id;
+    SampleArrptr[arr_id].bufferGroup = bufferGroup;
+
     // check for end
     if(curSampleArrId == maxSampleArrId) {
         // Dade - lock the pointer mutex
@@ -199,16 +208,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
             timer.restart();
             WriteImage((ImageType)(IMAGE_FILEOUTPUT));
         }
-    } else
-        lockSample.unlock();
-
-    // Copy to array location
-    SampleArrptr[arr_id].sX = sX;
-    SampleArrptr[arr_id].sY = sY;
-    SampleArrptr[arr_id].xyz = xyz;
-    SampleArrptr[arr_id].alpha = alpha;
-    SampleArrptr[arr_id].buf_id = buf_id;
-    SampleArrptr[arr_id].bufferGroup = bufferGroup;
+    }
 }
 
 void FlexImageFilm::FlushSampleArray() {
@@ -797,8 +797,10 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	// Debugging mode (display erratic sample values and disable rejection mechanism)
 	bool debug_mode = params.FindOneBool("debug", false);
 
+	int haltspp = params.FindOneInt("haltspp", -1);
+
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
 		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM,
-		reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
+		haltspp, reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
 }

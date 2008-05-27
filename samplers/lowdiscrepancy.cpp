@@ -36,6 +36,7 @@ LDSampler* LDSampler::clone() const
  {
    return new LDSampler(*this);
  }
+
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
 		int ystart, int yend, int ps, string pixelsampler)
@@ -99,10 +100,16 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			xDSamples[i] = new float[sample->dxD[i] * sample->nxD[i] *
 		                               pixelSamples];
 	}
+
+	bool haveMoreSample = true;
 	if (samplePos == pixelSamples) {
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
-			return false;
+		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
+			// Dade - we are at a valid checkpoint where we can stop the
+			// rendering. Check if we have enough samples per pixel in the film.
+			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+				haveMoreSample = false;
+		}
 
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
@@ -139,6 +146,7 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			}
 		}
 	}
+
 	// reset so scene knows to increment
 	if (samplePos >= pixelSamples-1)
 		*use_pos = -1;
@@ -161,8 +169,10 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			sample->twoD[i][j] = twoDSamples[i][startSamp+j];
 	}
 	++samplePos;
-	return true;
+
+	return haveMoreSample;
 }
+
 float *LDSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	float *data = sample->xD[num] + pos * sample->dxD[num];
@@ -180,6 +190,7 @@ float *LDSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	}
 	return data;
 }
+
 Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;

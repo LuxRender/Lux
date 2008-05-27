@@ -92,16 +92,16 @@ class Film {
 public:
     // Film Interface
 
-    Film(int xres, int yres) :
-    xResolution(xres), yResolution(yres) {
-    }
+    Film(int xres, int yres, int haltspp) :
+		xResolution(xres), yResolution(yres), haltSamplePerPixel(haltspp),
+		enoughSamplePerPixel(false) {
+		invSamplePerPass =  1.0 / (xResolution * yResolution);
+	}
+    virtual ~Film() { }
 
-    virtual ~Film() {
-    }
     virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buffer = 0, int bufferGroup = 0) = 0;
 
-    virtual void AddSampleCount(float count, int bufferGroup = 0) {
-    }
+    virtual void AddSampleCount(float count, int bufferGroup = 0) { }
     virtual void WriteImage(ImageType type) = 0;
     virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
 
@@ -123,8 +123,16 @@ public:
     int xResolution, yResolution;
     float* flux2radiance;
 
+	// Dade - Samplers will check this flag to know if we have enough samples per
+	// pixel and it is time to stop
+	int haltSamplePerPixel;
+	bool enoughSamplePerPixel;
+
 protected:
     Scene *scene;
+
+	// Dade - 1.0 / (xResolution * yResolution)
+	float invSamplePerPass;
 };
 
 // Image Pipeline Declarations

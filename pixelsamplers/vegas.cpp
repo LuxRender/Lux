@@ -65,12 +65,16 @@ u_int VegasPixelSampler::GetTotalPixels() {
 }
 
 bool VegasPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	if(pixelCounter == TotalPx)
-		return false;
+	bool hasMorePixel = true;
+	if(pixelCounter == TotalPx) {
+		pixelCounter = 0;
+		hasMorePixel = false;
+	}
 
 	pixelCounter++;
 
 	xPos = Pxa[*use_pos].x;
 	yPos = Pxa[*use_pos].y;
-	return true;
+
+	return hasMorePixel;
 }

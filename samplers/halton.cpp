@@ -99,10 +99,16 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			xDSamples[i] = new float[sample->dxD[i] * sample->nxD[i] *
 						pixelSamples];
 	}
+
+	bool haveMoreSample = true;
 	if (samplePos == pixelSamples) {
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos))
-			return false;
+		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
+			// Dade - we are at a valid checkpoint where we can stop the
+			// rendering. Check if we have enough samples per pixel in the film.
+			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+				haveMoreSample = false;
+		}
 
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
@@ -160,7 +166,7 @@ bool HaltonSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			sample->twoD[i][j] = twoDSamples[i][startSamp+j];
 	}
 	++samplePos;
-	return true;
+	return haveMoreSample;
 }
 float *HaltonSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {

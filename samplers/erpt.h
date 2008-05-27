@@ -34,7 +34,7 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
-	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd, int pixelSamples,
+	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd,
 			int totMutations, float rng, int sw);
 	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
 
@@ -48,8 +48,6 @@ public:
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
 	float LY, gain;
-	// Dade - used to stop after a fixed amount of samples per pixel
-	u_int sampleCount;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
 	float range, weight, alpha;
 	float *baseImage, *sampleImage;
