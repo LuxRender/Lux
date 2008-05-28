@@ -451,6 +451,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
     volumeRegion = vr;
     s_Timer.Reset();
     lastSamples = 0.;
+	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
     lastTime = 0.;
     if (lts.size() == 0) {
         luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render. Exitting...");
