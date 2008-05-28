@@ -188,7 +188,10 @@ double Scene::Statistics_Efficiency() {
         samples +=renderThreads[i]->stat_Samples;
         drops +=renderThreads[i]->stat_blackSamples;
     }
-    
+
+	if (samples == 0.0)
+		return 0.0;
+
     // return efficiency percentage
     return 100. - (drops * (100/samples));
 }

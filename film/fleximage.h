@@ -29,7 +29,7 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
-#include <boost/timer.hpp>
+#include <boost/thread/xtime.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 
 namespace lux {
@@ -287,7 +287,10 @@ private:
 	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga, writeResumeFlm;
 
 	unsigned char *framebuffer;
-	boost::timer timer;
+	// Dade - timer is broken under Linux when using multiple threads, using
+	// instead
+	boost::xtime lastWriteImageTime;
+
 	bool debug_mode;
 	float *factor;
 

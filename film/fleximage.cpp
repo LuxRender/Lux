@@ -79,7 +79,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	toneParams.AddFloat("burn", &reinhard_burn, 1);
 
 	// init timer
-	timer.restart();
+	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 
 	// calculate reject warmup samples
 	reject_warmup_samples = (float) (xResolution * yResolution * reject_warmup);
@@ -194,6 +194,13 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
         // enable merge and reset counter
         curSampleArrId = 0;
 
+		// Dade - check time interval under mutex
+		boost::xtime currentTime;
+		boost::xtime_get(&currentTime, boost::TIME_UTC);
+		bool timeToWriteImage = (currentTime.sec - lastWriteImageTime.sec > writeInterval);
+		if (timeToWriteImage)
+			boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
+
         // Dade - unlock the sample lock 
         lockSample.unlock();
 
@@ -204,10 +211,8 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
         lockArray.unlock();
 
         // Possibly write out in-progress image
-        if(Floor2Int(timer.elapsed()) > writeInterval) {
-            timer.restart();
+        if (timeToWriteImage)
             WriteImage((ImageType)(IMAGE_FILEOUTPUT));
-        }
     }
 }
 
