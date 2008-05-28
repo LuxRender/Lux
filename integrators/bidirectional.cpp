@@ -487,8 +487,7 @@ float BidirIntegrator::weightPath(vector<BidirVertex> &eye, int nEye,
 			if (nLight > 1)
 				p *= light[1].rrRWeight;
 			else
-				if(nLight >= (nEye - 1)) // NOTE - radiance - added check (crash on win32) - jeanphi, please validate.
-					p *= light[nEye - 1].rrWeight;
+				p *= eye[nEye - 1].rrWeight;
 		}
 		if (p > 0.f)
 			weight += p;
