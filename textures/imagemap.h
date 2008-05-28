@@ -137,7 +137,6 @@ template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTex
 		trilerp, maxAniso, wrapMode);
 }
 
-
 // ImageMapTexture Method Definitions
 template <class T> inline 
 ImageTexture<T>::ImageTexture(TextureMapping2D *m,
@@ -193,7 +192,9 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 		// Create one-valued _MIPMap_
 		T *oneVal = new T[1];
 		oneVal[0] = 1.;
-		ret = new MIPMapImpl<T,T>(1, 1, oneVal);
+
+		ret = new MIPMapFastImpl<T,T>(1, 1, oneVal);
+
 		delete[] oneVal;
 	}
 	textures[texInfo] = ret;

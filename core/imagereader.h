@@ -73,61 +73,61 @@ namespace lux
 			if(noChannels_ == 1) {
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 1> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 1> >(
 							width_, height_,(TextureColor<unsigned char, 1>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<float, 1> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<float, 1> >(
 							width_, height_,(TextureColor<float,1>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 1> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 1> >(
 							width_, height_,( TextureColor<unsigned short, 1>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 			} else if(noChannels_ == 3) {
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 3> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 3> >(
 							width_, height_,(TextureColor<unsigned char,3>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<float, 3> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<float, 3> >(
 							width_, height_,(TextureColor<float,3>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 3> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 3> >(
 							width_, height_,( TextureColor<unsigned short,3>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 			} else if(noChannels_ == 4) {
 				if(pixel_type_==FLOAT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<float,4> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<float,4> >(
 							width_, height_,( TextureColor<float,4>*)data_,
 							doTri,maxAniso,wrapMode);
 				}
 				if(pixel_type_==UNSIGNED_CHAR_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned char,4> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char,4> >(
 							width_, height_,static_cast< TextureColor<unsigned char,4>* >(data_),
 							doTri,maxAniso,wrapMode);
 				}
 				if(pixel_type_==UNSIGNED_SHORT_TYPE)
 				{
-					mipmap = new MIPMapImpl<T, TextureColor<unsigned short,4> >(
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short,4> >(
 							width_, height_,static_cast< TextureColor<unsigned short,4>* >(data_),
 							doTri,maxAniso,wrapMode);
 				}

@@ -47,6 +47,7 @@ public:
 	virtual T Lookup(float s, float t, float ds0, float dt0,
 		float ds1, float dt1) const = 0;
 };
+
 template <class T, class U> class MIPMapImpl : public MIPMap<T> {
 public:
 	// MIPMapImpl Public Methods
@@ -57,6 +58,95 @@ public:
 	T Lookup(float s, float t, float ds0, float dt0,
 		float ds1, float dt1) const;
 	~MIPMapImpl();
+
+protected:
+	const U& texelInternal(int level, int s, int t) const;
+	const T texel(int level, int s, int t) const {
+		T texelValue;
+		convert(texelValue, texelInternal(level, s, t));
+		return texelValue;
+	}
+
+	//template user specializations are not supported in vc++, so this hack
+	//----------------------------- Unsigned Chars -----------------------------
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
+	{
+		float c = static_cast<float>(internalValue.c[0]) * invMaxUnsignedChar;
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedChar;
+		}
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedChar;
+		}
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
+
+	//---------------------------- Unsigned Shorts -----------------------------
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
+	{
+		float c = static_cast<float>(internalValue.c[0]) * invMaxUnsignedShort;
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedShort;
+		}
+		outputValue = (Spectrum(c) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedShort;
+		}
+		outputValue= (Spectrum(c) * gain).Pow(gamma);
+	}
+
+	//--------------------------------- Floats ---------------------------------
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<float, 1> &internalValue) const
+	{
+		outputValue = (Spectrum(internalValue.c[0]) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<float, 3> &internalValue) const
+	{
+		outputValue = (Spectrum(internalValue.c) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const TextureColor<float, 4> &internalValue) const
+	{
+		outputValue = (Spectrum(internalValue.c) * gain).Pow(gamma);
+	}
+	inline virtual void convert(Spectrum& outputValue, const Spectrum &internalValue) const
+	{
+		outputValue = (internalValue * gain).Pow(gamma);
+	}
+
+	template<class V, int n>
+	inline void convert(float& outputValue, const TextureColor<V, n> &internalValue) const
+	{
+		Spectrum specValue;
+		convert(specValue, internalValue);
+		outputValue = specValue.y();
+	}
+	inline virtual void convert(float& outputValue, const float internalValue) const
+	{
+		outputValue = powf(internalValue * gain, gamma);
+	}
+
+	// Dade - initialized by the class costructor
+	static float invMaxUnsignedChar;
+	static float invMaxUnsignedShort;
 
 private:
 	// MIPMAPImpl Provate data types
@@ -88,12 +178,7 @@ private:
 
 	inline int uSize(int level) const { return pyramid[level]->uSize(); }
 	inline int vSize(int level) const { return pyramid[level]->vSize(); }
-	const U& texelInternal(int level, int s, int t) const;
-	const T texel(int level, int s, int t) const {
-		T texelValue;
-		convert(texelValue, texelInternal(level, s, t));
-		return texelValue;
-	}
+
 	T triangle(int level, float s, float t) const;
 	T EWA(float s, float t, float ds0, float dt0, float ds1, float dt1, int level) const;
 
@@ -105,6 +190,7 @@ private:
 	ImageWrap wrapMode;
 	int nLevels;
 	BlockedArray<U> **pyramid;
+
 	#define WEIGHT_LUT_SIZE 128
 	static float *weightLut;
 
@@ -120,78 +206,11 @@ private:
 	inline TextureColor<float, 1> clamp(const TextureColor<float, 1> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<float, 3> clamp(const TextureColor<float, 3> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<float, 4> clamp(const TextureColor<float, 4> &v) { return v.Clamp(0.f, INFINITY); }
-
-	//template user specializations are not supported in vc++, so this hack
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
-	{
-		float c = static_cast<float>(internalValue.c[0]) / (std::numeric_limits<unsigned char>::max() - 1);
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
-	{
-		float c[3];
-		for (int i = 0; i < 3; ++i) {
-			c[i] = static_cast<float>(internalValue.c[i]) / (std::numeric_limits<unsigned char>::max() - 1);
-		}
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
-	{
-		float c[3];
-		for (int i = 0; i < 3; ++i) {
-			c[i] = static_cast<float>(internalValue.c[i]) / (std::numeric_limits<unsigned char>::max() - 1);
-		}
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
-	{
-		float c = static_cast<float>(internalValue.c[0]) / (std::numeric_limits<unsigned short>::max() - 1);
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
-	{
-		float c[3];
-		for (int i = 0; i < 3; ++i) {
-			c[i] = static_cast<float>(internalValue.c[i]) / (std::numeric_limits<unsigned short>::max() - 1);
-		}
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
-	{
-		float c[3];
-		for (int i = 0; i < 3; ++i) {
-			c[i] = static_cast<float>(internalValue.c[i]) / (std::numeric_limits<unsigned short>::max() - 1);
-		}
-		outputValue= (Spectrum(c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<float, 1> &internalValue) const
-	{
-		outputValue = (Spectrum(internalValue.c[0]) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<float, 3> &internalValue) const
-	{
-		outputValue = (Spectrum(internalValue.c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const TextureColor<float, 4> &internalValue) const
-	{
-		outputValue = (Spectrum(internalValue.c) * gain).Pow(gamma);
-	}
-	inline void convert(Spectrum& outputValue, const Spectrum &internalValue) const
-	{
-		outputValue = (internalValue * gain).Pow(gamma);
-	}
-	template<class V,int n>
-	inline void convert(float& outputValue, const TextureColor<V, n> &internalValue) const
-	{
-		Spectrum specValue;
-		convert(specValue, internalValue);
-		outputValue = specValue.y();
-	}
-	inline void convert(float& outputValue, const float internalValue) const
-	{
-		outputValue = powf(internalValue * gain, gamma);
-	}
 };
+
+template <class T, class U> float *MIPMapImpl<T, U>::weightLut = NULL;
+template <class T, class U> float MIPMapImpl<T, U>::invMaxUnsignedChar = 1.0f / (std::numeric_limits<unsigned char>::max() - 1);
+template <class T, class U> float MIPMapImpl<T, U>::invMaxUnsignedShort;
 
 // MIPMapImpl Method Definitions
 
@@ -236,6 +255,7 @@ T MIPMapImpl<T, U>::Lookup(float s, float t, float ds0, float dt0,
 	if (doTrilinear)
 		return Lookup(s, t, 2.f * max(max(fabsf(ds0), fabsf(dt0)),
 			max(fabsf(ds1), fabsf(dt1))));
+
 	// Compute ellipse minor and major axes
 	if (ds0 * ds0 + dt0 * dt0 < ds1 * ds1 + dt1 * dt1) {
 		swap(ds0, ds1);
@@ -243,6 +263,7 @@ T MIPMapImpl<T, U>::Lookup(float s, float t, float ds0, float dt0,
 	}
 	float majorLength = sqrtf(ds0 * ds0 + dt0 * dt0);
 	float minorLength = sqrtf(ds1 * ds1 + dt1 * dt1);
+
 	// Clamp ellipse eccentricity if too large
 	if (minorLength * maxAnisotropy < majorLength) {
 		float scale = majorLength / (minorLength * maxAnisotropy);
@@ -250,6 +271,7 @@ T MIPMapImpl<T, U>::Lookup(float s, float t, float ds0, float dt0,
 		dt1 *= scale;
 		minorLength *= scale;
 	}
+
 	// Choose level of detail for EWA lookup and perform EWA filtering
 	float lod = max(0.f, nLevels - 1 + Log2(minorLength));
 	int ilod = Floor2Int(lod);
@@ -281,14 +303,16 @@ T MIPMapImpl<T, U>::EWA(float s, float t, float ds0, float dt0,
 	int s1 = Floor2Int(s + du);
 	int t0 = Ceil2Int(t - dv);
 	int t1 = Floor2Int(t + dv);
-	A /= F;
-	B /= F;
-	C /= F;
+
+	float invF = 1.0f / F;
+	A *= invF;
+	B *= invF;
+	C *= invF;
 	// radiance - disabled for threading // static StatsRatio ewaTexels("Texture", "Texels per EWA lookup"); // NOBOOK
 	// radiance - disabled for threading // ewaTexels.Add((1+s1-s0) * (1+t1-t0), 1); // NOBOOK
 	// Scan over ellipse bound and compute quadratic equation
-	T num(0.);
-	float den = 0;
+	T num(0.f);
+	float den = 0.f;
 	for (int it = t0; it <= t1; ++it) {
 		float tt = it - t;
 		for (int is = s0; is <= s1; ++is) {
@@ -304,10 +328,9 @@ T MIPMapImpl<T, U>::EWA(float s, float t, float ds0, float dt0,
 			}
 		}
 	}
+
 	return num / den;
 }
-
-template <class T, class U> float *MIPMapImpl<T, U>::weightLut = NULL;
 
 template <class T,class U>
 MIPMapImpl<T,U>::~MIPMapImpl() {
@@ -316,11 +339,15 @@ MIPMapImpl<T,U>::~MIPMapImpl() {
 		delete[] pyramid;
 }
 
-
 template <class T,class U>
 MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 	float maxAniso, ImageWrap wm, float gn,float gma)
 {
+	// Dade - initialized all the times. Not very clean but far more portable than 
+	// using static costructors
+	invMaxUnsignedChar = 1.0f / (std::numeric_limits<unsigned char>::max() - 1);
+	invMaxUnsignedShort = 1.0f / (std::numeric_limits<unsigned short>::max() - 1);
+
 	doTrilinear = doTri;
 	maxAnisotropy = maxAniso;
 	wrapMode = wm;
@@ -331,9 +358,11 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 	if (!IsPowerOf2(sres) || !IsPowerOf2(tres)) {
 		// Resample image to power-of-two resolution
 		int sPow2 = RoundUpPow2(sres), tPow2 = RoundUpPow2(tres);
+
 		// Resample image in $s$ direction
 		struct ResampleWeight *sWeights = resampleWeights(sres, sPow2);
 		resampledImage = new U[sPow2 * tPow2];
+
 		// Apply _sWeights_ to zoom in $s$ direction
 		for (int t = 0; t < tres; ++t) {
 			for (int s = 0; s < sPow2; ++s) {
@@ -357,6 +386,7 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 			}
 		}
 		delete[] sWeights;
+
 		// Resample image in $t$ direction
 		struct ResampleWeight *tWeights = resampleWeights(tres, tPow2);
 		U *workData = new U[tPow2];
@@ -389,6 +419,7 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 		sres = sPow2;
 		tres = tPow2;
 	}
+
 	// Initialize levels of MIPMap from image
 	nLevels = 1 + Log2Int(max(sres, tres));
 	pyramid = new BlockedArray<U> *[this->nLevels];
@@ -446,6 +477,86 @@ const U& MIPMapImpl<T, U>::texelInternal(int level, int s, int t) const
 	}
 	return l(s, t);
 }
+
+// Dade - optimized path for gain = 1.0 and gamma = 1.0
+template <class T, class U> class MIPMapFastImpl : public MIPMapImpl<T, U> {
+public:
+	// MIPMapFastImpl Public Methods
+	MIPMapFastImpl(int xres, int yres, const U *data, bool doTri = false,
+			float maxAniso = 8.f, ImageWrap wrapMode = TEXTURE_REPEAT) :
+	MIPMapImpl<T, U>(xres, yres, data, doTri, maxAniso, wrapMode, 1.0f, 1.0f) { };
+
+private:
+	//template user specializations are not supported in vc++, so this hack
+	//----------------------------- Unsigned Chars -----------------------------
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
+	{
+		float c = static_cast<float>(internalValue.c[0]) * MIPMapImpl<T, U>::invMaxUnsignedChar;
+		outputValue = Spectrum(c);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedChar;
+		}
+		outputValue = Spectrum(c);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedChar;
+		}
+		outputValue = Spectrum(c);
+	}
+
+	//---------------------------- Unsigned Shorts -----------------------------
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
+	{
+		float c = static_cast<float>(internalValue.c[0]) * MIPMapImpl<T, U>::invMaxUnsignedShort;
+		outputValue = Spectrum(c);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedShort;
+		}
+		outputValue = Spectrum(c);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
+	{
+		float c[3];
+		for (int i = 0; i < 3; ++i) {
+			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedShort;
+		}
+		outputValue = Spectrum(c);
+	}
+
+	//--------------------------------- Floats ---------------------------------
+	inline void convert(Spectrum& outputValue, const TextureColor<float, 1> &internalValue) const
+	{
+		outputValue = Spectrum(internalValue.c[0]);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<float, 3> &internalValue) const
+	{
+		outputValue = Spectrum(internalValue.c);
+	}
+	inline void convert(Spectrum& outputValue, const TextureColor<float, 4> &internalValue) const
+	{
+		outputValue = Spectrum(internalValue.c);
+	}
+	inline void convert(Spectrum& outputValue, const Spectrum &internalValue) const
+	{
+		outputValue = Spectrum(internalValue.c);
+	}
+
+	inline void convert(float& outputValue, const float internalValue) const
+	{
+		outputValue = internalValue;
+	}
+};
 
 }//namespace lux
 

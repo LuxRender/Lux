@@ -167,7 +167,7 @@ namespace lux {
             int pixels = width * height;
 
 			ss.str("");
-			ss << width << "x" << height << " (" << noChannels << " channel)";
+			ss << width << "x" << height << " (" << noChannels << " channels)";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 			
             TextureColorBase* ret;
@@ -194,9 +194,9 @@ namespace lux {
             for (int i = 0; i < width; ++i)
                 for (int j = 0; j < height; ++j) {
                     for (int k = 0; k < noChannels; ++k) {
-                        //assuming that cimg depth is 1, single image layer
+                        // assuming that cimg depth is 1, single image layer
                         unsigned long off = i + (j * width) + (k * pixels);
-                        //c[k]= image[off];
+
 						if (noChannels == 1)
 							((TextureColor<T, 1> *)ret)[i + (j * width)].c[k] = image[off];
 						else if (noChannels == 3)
@@ -204,15 +204,6 @@ namespace lux {
                         else
                             ((TextureColor<T, 4> *)ret)[i + (j * width)].c[k] = image[off];
                     }
-                    /*
-                    if(noChannels==3)
-                        ret[i+(j*width)] = TextureColor<T,3>(c);
-                    else {
-                        ret[i+(j*width)] = TextureColor<T,4>(c);
-                        std::cout <<  TextureColor<T,4>(c).c[3] << std::endl;
-                        std::cout << ((TextureColor<T,4>*)ret)[i+(j*width)].c[3] << std::endl;
-                    }
-                     */
                 }
             delete [] c;
 
