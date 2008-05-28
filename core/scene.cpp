@@ -373,7 +373,7 @@ int Scene::CreateRenderThread() {
 }
 
 void Scene::RemoveRenderThread() {
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
+	// boost::mutex::scoped_lock lock(renderThreadsMutex); - NOTE - radiance - FIX - cannot lock threads while asking one to exit - crash on win32
 
     renderThreads.back()->signal = RenderThread::SIG_EXIT;
     renderThreads.pop_back();
