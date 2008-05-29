@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 2.4)
+IF(COMMAND cmake_policy)
+	cmake_policy(SET CMP0003 NEW)
+ENDIF(COMMAND cmake_policy)
 PROJECT(lux)
 
 # Dade - uncomment to obtain verbose building output
@@ -283,7 +287,7 @@ ADD_DEFINITIONS(-O3 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 # Dade - my settings
 #ADD_DEFINITIONS(-g -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 
 # Dade - Intel CC settings (double pass, 32bit, remember to uncomment the line at the end of file too)
 #  rm -rf CMakeCache.txt CMakeFiles
