@@ -338,14 +338,7 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 	visibility->SetSegment(p, ps);
 	return SWCSpectrum(skyScale);
 }
-float SkyLight::Pdf(const Scene *scene, const Point &p) const
-{
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	worldRadius *= 1.01f;
-	return 1.f / (4.f * M_PI * worldRadius * worldRadius);
-}
+
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	float scale = paramSet.FindOneFloat("gain", 1.f);				// gain (aka scale) factor to apply to sun/skylight (0.005)

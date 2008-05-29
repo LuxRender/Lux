@@ -258,13 +258,7 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 	visibility->SetSegment(p, ps);
 	return LSPD;
 }
-float SunLight::Pdf(const Scene *scene, const Point &p) const
-{
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	return 1.f / (M_PI * worldRadius * worldRadius);
-}
+
 Light* SunLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	//NOTE - Ratow - Added relsize param and reactivated nsamples

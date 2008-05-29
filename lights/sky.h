@@ -61,7 +61,6 @@ public:
 	SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
 	SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
-	float Pdf(const Scene *scene, const Point &p) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
