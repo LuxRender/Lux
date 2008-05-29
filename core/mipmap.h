@@ -22,12 +22,13 @@
 
 #ifndef LUX_MIPMAP_H
 #define LUX_MIPMAP_H
-// mipmap.h*
+
 #include "lux.h"
 #include "spectrum.h"
 #include "texture.h"
 #include "texturecolor.h"
 #include "memory.h"
+#include "error.h"
 
 namespace lux
 {
@@ -358,6 +359,10 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 	if (!IsPowerOf2(sres) || !IsPowerOf2(tres)) {
 		// Resample image to power-of-two resolution
 		int sPow2 = RoundUpPow2(sres), tPow2 = RoundUpPow2(tres);
+		std::stringstream ss;
+		ss << "Resampling image from " << sres << "x" << tres <<
+				" to " << sPow2 << "x" << tPow2;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		// Resample image in $s$ direction
 		struct ResampleWeight *sWeights = resampleWeights(sres, sPow2);
@@ -371,11 +376,13 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 				// NOTE - Ratow - Offsetting weights to minimize possible over/underflows
 				for (int jo = 2; jo < 6; ++jo) {
 					int j = jo % 4;
+
 					int origS = sWeights[s].firstTexel + j;
 					if (wrapMode == TEXTURE_REPEAT)
 						origS = Mod(origS, sres);
 					else if (wrapMode == TEXTURE_CLAMP)
 						origS = Clamp(origS, 0, sres - 1);
+
 					if (origS >= 0 && origS < sres) {
 						if(sWeights[s].weight[j] > 0.)
 							resampledImage[t * sPow2 + s] += sWeights[s].weight[j] * img[t * sres + origS];
@@ -396,11 +403,13 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 				// NOTE - Ratow - Offsetting weights to minimize possible over/underflows
 				for (int jo = 2; jo < 6; ++jo) {
 					int j = jo % 4;
+
 					int offset = tWeights[t].firstTexel + j;
 					if (wrapMode == TEXTURE_REPEAT)
 						offset = Mod(offset, tres);
 					else if (wrapMode == TEXTURE_CLAMP)
 						offset = Clamp(offset, 0, tres - 1);
+
 					if (offset >= 0 && offset < tres) {
 						if(tWeights[t].weight[j] > 0.)
 							workData[t] += tWeights[t].weight[j] * resampledImage[offset * sPow2 + s];
@@ -422,6 +431,11 @@ MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 
 	// Initialize levels of MIPMap from image
 	nLevels = 1 + Log2Int(max(sres, tres));
+
+	std::stringstream ss;
+	ss << "Generating " << nLevels << " mipmap levels";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
 	pyramid = new BlockedArray<U> *[this->nLevels];
 	// Initialize most detailed level of MIPMap
 	pyramid[0] = new BlockedArray<U>(sres, tres, img);
