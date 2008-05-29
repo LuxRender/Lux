@@ -115,8 +115,11 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		initERPT(this, sample);
 	}
 
-	bool haveMoreSample = true;
 	if ((chain == 0 && mutation == 0) || initCount < initSamples) {
+		// Dade - we are at a valid checkpoint where we can stop the
+		// rendering. Check if we have enough samples per pixel in the film.
+		if (film->enoughSamplePerPixel)
+			return false;
 		if(currentStrata == strataSqr) {
 			// Generate shuffled stratified image samples
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
@@ -140,10 +143,6 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->stamp = 0;
 	} else {
 		if (mutation == 0) {
-			// Dade - we are at a valid checkpoint where we can stop the
-			// rendering. Check if we have enough samples per pixel in the film.
-			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
-				haveMoreSample = false;
 
 			// *** new chain ***
 			sample->imageX = baseImage[0];
@@ -175,7 +174,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		++(sample->stamp);
 	}
 
-    return haveMoreSample;
+    return true;
 }
 
 float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
