@@ -26,6 +26,8 @@
 #include "mc.h"
 #include "scene.h" // for Intersection
 #include "film.h" // for Film
+#include "reflection/bxdf.h"
+#include "light.h"
 #include "paramset.h"
 #include "disk.h"
 
@@ -113,6 +115,44 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
+SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+{
+	Point ps(0.f);
+	ConcentricSampleDisk(u1, u2, &ps.x, &ps.y);
+	ps.x *= LensRadius;
+	ps.y *= LensRadius;
+	CameraToWorld(ps, &ps);
+	Normal ns(CameraToWorld(Normal(0, 0, 1)));
+	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+//	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)());
+	*pdf = posPdf;
+	return SWCSpectrum(1.f);
+}
+SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const
+{
+	Point ps(0.f);
+	ConcentricSampleDisk(u1, u2, &ps.x, &ps.y);
+	ps.x *= LensRadius;
+	ps.y *= LensRadius;
+	CameraToWorld(ps, &ps);
+	Normal ns(CameraToWorld(Normal(0, 0, 1)));
+	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
+//	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)());
+	*pdf = posPdf;
+	*pdfDirect = posPdf;
+	visibility->SetSegment(p, ps);
+	return SWCSpectrum(1.f);
+}
+float PerspectiveCamera::Pdf(const Point &p, const Normal &n, const Vector &wi) const
+{
+	return posPdf;
+}
+void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+{
+}
+
 bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
 {
 	//TODO: check whether IsVisibleFromEyes() can always return correct answer.

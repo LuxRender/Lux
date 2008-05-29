@@ -39,6 +39,10 @@ public:
 		float lensr, float focald, float fov,
 		Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
+	SWCSpectrum Sample_W(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
+	SWCSpectrum Sample_W(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
+	float Pdf(const Point &p, const Normal &n, const Vector &wi) const;
+	void GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const;
 	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
 	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
 	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
