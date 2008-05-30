@@ -142,12 +142,14 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), basi
     params.EraseBool("write_tonemapped_exr");
     params.EraseBool("write_untonemapped_exr");
     params.EraseBool("write_untonemapped_igi");
+	params.EraseBool("write_tonemapped_igi");
     params.EraseBool("write_tonemapped_tga");
     params.EraseBool("write_resume_flm");
 
     params.AddBool("write_tonemapped_exr", new bool(false));
     params.AddBool("write_untonemapped_exr", new bool(false));
     params.AddBool("write_untonemapped_igi", new bool(false));
+	params.AddBool("write_tonemapped_igi", new bool(false));
     params.AddBool("write_tonemapped_tga", new bool(false));
     params.AddBool("write_resume_flm", new bool(false));
 
