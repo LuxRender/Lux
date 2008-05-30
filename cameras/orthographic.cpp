@@ -34,13 +34,61 @@ using namespace lux;
 OrthoCamera::OrthoCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, float lensr,
-		float focald, Film *f)
+		float focald, bool autofocus, Film *f)
 	: ProjectiveCamera(world2cam, Orthographic(hither, yon),
 		 Screen, hither, yon, sopen, sclose,
-		 lensr, focald, f) {
+		 lensr, focald, f), autoFocus(autofocus) {
 	 screenDx = Screen[1] - Screen[0];
 	 screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
 }
+
+void OrthoCamera::AutoFocus(Scene* scene)
+{
+	if (autoFocus) {
+		std::stringstream ss;
+
+		// Dade - trace a ray in the middle of the screen
+		
+		int xstart, xend, ystart, yend;
+		film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+		Point Pras((xend - xstart) / 2, (yend - ystart) / 2, 0);
+
+		// Dade - debug code
+		//ss.str("");
+		//ss << "Raster point: " << Pras;
+		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		
+		Point Pcamera;
+		RasterToCamera(Pras, &Pcamera);
+		Ray ray;
+		ray.o = Pcamera;
+		ray.d = Vector(Pcamera.x, Pcamera.y, Pcamera.z);
+		ray.d = Normalize(ray.d);
+
+		// Dade - I wonder what time I could use here
+		ray.time = 0.0f;
+		
+		ray.mint = 0.f;
+		ray.maxt = (ClipYon - ClipHither) / ray.d.z;
+		CameraToWorld(ray, &ray);
+
+		// Dade - debug code
+		//ss.str("");
+		//ss << "Ray.o: " << ray.o << " Ray.d: " << ray.d;
+		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+		Intersection isect;
+		if (scene->Intersect(ray, &isect))
+			FocalDistance = ray.maxt;
+		else
+			luxError(LUX_NOERROR, LUX_WARNING, "Unable to define the Autofocus focal distance");
+
+		ss.str("");
+		ss << "Autofocus focal distance: " << FocalDistance;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	}
+}
+
 float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 {
 	// Generate raster and camera samples
@@ -78,6 +126,7 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
+
 bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
 {
 	bool isVisible = false;
@@ -92,10 +141,12 @@ bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const
 	}
 	return isVisible;
 }
+
 float OrthoCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
 {
 	return AbsDot(wo, n);
 }
+
 void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
 {
 	float Apixel = (screenDx*screenDy/(film->xResolution*film->yResolution));
@@ -107,11 +158,13 @@ void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixel
 		}
 	}
 }
+
 void OrthoCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
 {
 	// orthographic camera is composed of many parallel pinhole cameras with little fov.
 	*pdf = 1.0f;
 }
+
 float OrthoCamera::EvalPositionPdf() const
 {
 	return 1.0f/(screenDx*screenDy);
@@ -126,6 +179,7 @@ Camera* OrthoCamera::CreateCamera(const ParamSet &params,
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
 	float lensradius = params.FindOneFloat("lensradius", 0.f);
 	float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
+	bool autofocus = params.FindOneBool("autofocus", false);
 	float frame = params.FindOneFloat("frameaspectratio",
 		float(film->xResolution)/float(film->yResolution));
 	float screen[4];
@@ -146,6 +200,6 @@ Camera* OrthoCamera::CreateCamera(const ParamSet &params,
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
 	return new OrthoCamera(world2cam, screen, hither, yon,
-		shutteropen, shutterclose, lensradius, focaldistance,
+		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
 		film);
 }

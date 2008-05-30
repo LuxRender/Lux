@@ -343,11 +343,6 @@ void RenderThread::render(RenderThread *myThread) {
          *
          * printf("--------------------------------\n"); */
         
-        
-        
-        
-        
-        
         // sleep 1 sec
         //		boost::xtime xt;
         //		boost::xtime_get(&xt, boost::TIME_UTC);
@@ -404,6 +399,9 @@ void Scene::Render() {
     sampler->SetFilm(camera->film);
     surfaceIntegrator->Preprocess(this);
     volumeIntegrator->Preprocess(this);
+
+	// Dade - to support autofocus for some camera model
+	camera->AutoFocus(this);
     
     sampPos = 0;
     

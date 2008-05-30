@@ -30,6 +30,7 @@
 #include "light.h"
 #include "paramset.h"
 #include "disk.h"
+#include "error.h"
 
 using namespace lux;
 
@@ -38,12 +39,12 @@ PerspectiveCamera::
     PerspectiveCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose,
-		float lensr, float focald,
+		float lensr, float focald, bool autofocus,
 		float fov1, Film *f)
 	: ProjectiveCamera(world2cam,
 	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose,
-		lensr, focald, f) {
+		lensr, focald, f), autoFocus(autofocus) {
 	pos = CameraToWorld(Point(0,0,0));
 	normal = CameraToWorld(Normal(0,0,1));
 	fov = Radians(fov1);
@@ -81,6 +82,54 @@ PerspectiveCamera::
 	Apixel = xPixelWidth * yPixelHeight;
 
 }
+
+void PerspectiveCamera::AutoFocus(Scene* scene)
+{
+	if (autoFocus) {
+		std::stringstream ss;
+
+		// Dade - trace a ray in the middle of the screen
+		
+		int xstart, xend, ystart, yend;
+		film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+		Point Pras((xend - xstart) / 2, (yend - ystart) / 2, 0);
+
+		// Dade - debug code
+		//ss.str("");
+		//ss << "Raster point: " << Pras;
+		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		
+		Point Pcamera;
+		RasterToCamera(Pras, &Pcamera);
+		Ray ray;
+		ray.o = Pcamera;
+		ray.d = Vector(Pcamera.x, Pcamera.y, Pcamera.z);
+		ray.d = Normalize(ray.d);
+
+		// Dade - I wonder what time I could use here
+		ray.time = 0.0f;
+		
+		ray.mint = 0.f;
+		ray.maxt = (ClipYon - ClipHither) / ray.d.z;
+		CameraToWorld(ray, &ray);
+
+		// Dade - debug code
+		//ss.str("");
+		//ss << "Ray.o: " << ray.o << " Ray.d: " << ray.d;
+		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+		Intersection isect;
+		if (scene->Intersect(ray, &isect))
+			FocalDistance = ray.maxt;
+		else
+			luxError(LUX_NOERROR, LUX_WARNING, "Unable to define the Autofocus focal distance");
+
+		ss.str("");
+		ss << "Autofocus focal distance: " << FocalDistance;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	}
+}
+
 float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 {
 	// Generate raster and camera samples
@@ -101,6 +150,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 		Point lenPCamera(WorldToCamera(lenP));
 		float lensU = lenPCamera.x;
 		float lensV = lenPCamera.y;;
+
 		// Compute point on plane of focus
 		float ft = (FocalDistance - ClipHither) / ray->d.z;
 		Point Pfocus = (*ray)(ft);
@@ -115,6 +165,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	CameraToWorld(*ray, ray);
 	return 1.f;
 }
+
 SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
 {
 	Point ps(0.f);
@@ -153,8 +204,8 @@ void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, floa
 {
 }
 
-bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
-{
+bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP,
+		const Point &worldP, Sample* sample_gen, Ray *ray_gen) const {
 	//TODO: check whether IsVisibleFromEyes() can always return correct answer.
 	bool isVisible;
 	Point point;
@@ -193,10 +244,12 @@ bool PerspectiveCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP,
 		isVisible = false;
 	return isVisible;
 }
+
 float PerspectiveCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
 {
 	return AbsDot(wo, normal)*AbsDot(wo, n)/DistanceSquared(lenP, worldP);
 }
+
 void PerspectiveCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
 {
 	float d2,cos2,cos4,detaX,detaY;
@@ -217,6 +270,7 @@ void PerspectiveCamera::GetFlux2RadianceFactors(Film *film, float *factors, int 
 		}
 	}
 }
+
 void PerspectiveCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
 {
 	if (LensRadius==0.0f)
@@ -231,10 +285,12 @@ void PerspectiveCamera::SamplePosition(float u1, float u2, Point *p, float *pdf)
 	*p = CameraToWorld(*p);
 	*pdf = posPdf;
 }
+
 float  PerspectiveCamera::EvalPositionPdf() const
 {
 	return LensRadius==0.0f ? 0 : posPdf;
 }
+
 bool PerspectiveCamera::Intersect(const Ray &ray, Intersection *isect) const
 {
 	// Backface culling
@@ -250,6 +306,7 @@ bool PerspectiveCamera::Intersect(const Ray &ray, Intersection *isect) const
 	ray.maxt = thit;
 	return true;
 }
+
 Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 		const Transform &world2cam, Film *film) {
 	// Extract common camera parameters from _ParamSet_
@@ -259,6 +316,7 @@ Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
 	float lensradius = params.FindOneFloat("lensradius", 0.f);
 	float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
+	bool autofocus = params.FindOneBool("autofocus", false);
 	float frame = params.FindOneFloat("frameaspectratio",
 		float(film->xResolution)/float(film->yResolution));
 	float screen[4];
@@ -280,6 +338,6 @@ Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 		memcpy(screen, sw, 4*sizeof(float));
 	float fov = params.FindOneFloat("fov", 90.);
 	return new PerspectiveCamera(world2cam, screen, hither, yon,
-		shutteropen, shutterclose, lensradius, focaldistance,
+		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
 		fov, film);
 }

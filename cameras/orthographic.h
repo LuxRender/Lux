@@ -34,7 +34,7 @@ public:
 	            const float Screen[4],
 		        float hither, float yon,
 				float sopen, float sclose,
-				float lensr, float focald, Film *film);
+				float lensr, float focald, bool autofocus, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
 	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
 	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
@@ -45,6 +45,8 @@ public:
 	}
 	void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
 	float EvalPositionPdf() const;
+	void AutoFocus(Scene* scene);
+
 	//float SampleDirection(const Sample &sample, Ray *ray)
 	//{
 	//	Point Pras(sample.imageX, sample.imageY, 0);
@@ -63,8 +65,13 @@ public:
 	//{
 	//	return SWCSpectrum(1.0f);
 	//}
+
 	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
-private:
+
+private:	
+	// Dade - field used for autofocus feature
+	bool autoFocus;
+
 	float screenDx,screenDy;
 };
 

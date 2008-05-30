@@ -49,6 +49,8 @@ public:
 	virtual void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
 	virtual float EvalPositionPdf() const;
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual void AutoFocus(Scene* scene) { }
+
 	// Camera Public Data
 	Film *film;
 protected:

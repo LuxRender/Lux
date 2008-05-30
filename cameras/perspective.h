@@ -36,7 +36,7 @@ public:
 	PerspectiveCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose,
-		float lensr, float focald, float fov,
+		float lensr, float focald, bool autofocus, float fov,
 		Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
 	SWCSpectrum Sample_W(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
@@ -53,6 +53,8 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect) const;
 	void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
 	float EvalPositionPdf() const;
+	void AutoFocus(Scene* scene);
+
 	//float SampleDirection(const Sample &sample, Ray *ray)
 	//{
 	//	GenerateRay(sample,ray);
@@ -83,7 +85,9 @@ public:
 	//{
 	//	return SWCSpectrum(1.0f);
 	//}
+
 	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
+
 private:
 	Point pos;
 	Normal normal;
@@ -91,6 +95,10 @@ private:
 	float posPdf;
 	float screen[4];
 	float R,xWidth,yHeight,xPixelWidth,yPixelHeight,Apixel;
+
+	// Dade - field used for autofocus feature
+	bool autoFocus;
+
 	boost::shared_ptr<Shape> lens;
 };
 
