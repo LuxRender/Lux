@@ -36,9 +36,14 @@
 #define LUX_RANDOM_H
 
 #include "lux.h"
-#include "memory.h"
 
 #include <boost/thread/tss.hpp>
+
+namespace lux
+{
+  void *AllocAligned(size_t size);
+  void FreeAligned(void *);
+}
 
 #define LCG(n) ((69069UL * n) & 0xffffffffUL)
 #define MASK 0xffffffffUL
