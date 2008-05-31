@@ -214,7 +214,6 @@ static int tot = 0;
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread) {
     // Dade - wait the end of the preprocessing phase
-
     while(!myThread->scene->preprocessDone) {
         boost::xtime xt;
         boost::xtime_get(&xt, boost::TIME_UTC);
@@ -246,7 +245,7 @@ void RenderThread::render(RenderThread *myThread) {
     while (true) {
         if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
             break;
-        
+
         // Sample new SWC thread wavelengths
         thr_wl->Sample(myThread->sample->wavelengths,
                 myThread->sample->singleWavelength);
@@ -259,10 +258,11 @@ void RenderThread::render(RenderThread *myThread) {
         }
         if(myThread->signal== RenderThread::SIG_EXIT)
             break;
-        
-        // Find camera ray for _sample_
+
+		// Find camera ray for _sample_
         RayDifferential ray;
         float rayWeight = myThread->camera->GenerateRay(*(myThread->sample), &ray);
+
         if (rayWeight > 0.f) {
             // Generate ray differentials for camera ray
             ++(myThread->sample->imageX);
@@ -272,24 +272,24 @@ void RenderThread::render(RenderThread *myThread) {
             float wt2 = myThread->camera->GenerateRay(*(myThread->sample), &ray.ry);
             ray.hasDifferentials = wt1 > 0.f && wt2 > 0.f;
             --(myThread->sample->imageY);
-            
+
             // Evaluate radiance along camera ray
             float alpha;
             SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
             /*			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
                         SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
                         SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );*/
-            
+
             if (Lo.Black())
                 myThread->stat_blackSamples++;
-            
+
             // TODO: what about rayWeight?
             myThread->sampler->AddSample(*(myThread->sample));
-            
+
             // Free BSDF memory from computing image sample value
             BSDF::FreeAll();
         }
-        
+
         // update samples statistics
         myThread->stat_Samples++;
         // increment (locked) global sample pos if necessary (eg maxSampPos != 0)
@@ -300,8 +300,7 @@ void RenderThread::render(RenderThread *myThread) {
                 sampPos = 0;
             *useSampPos = sampPos;
         }
-        
-        
+
         // Temporary colour scaling code by radiance - SHOULD NOT BE IN CVS !
         
         /*	// RGB -> XYZ -> RGB

@@ -120,8 +120,7 @@ class ExPhotonIntegrator : public SurfaceIntegrator {
 public:
 	// ExPhotonIntegrator Public Methods
 	ExPhotonIntegrator(int ncaus, int nindir, int nLookup, int mdepth,
-			float maxdist, bool finalGather, int gatherSamples,
-			float rrt, float ga);
+			float maxdist, bool finalGather, int gatherSamples, float ga);
 	~ExPhotonIntegrator();
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray,
 			const Sample *sample, float *alpha) const;
@@ -156,7 +155,7 @@ private:
 	u_int nCausticPhotons, nIndirectPhotons;
 	u_int nLookup;
 	int maxSpecularDepth;
-	float maxDistSquared, rrTreshold;
+	float maxDistSquared;
 	bool finalGather;
 	float cosGatherAngle;
 	int gatherSamples;
@@ -166,6 +165,8 @@ private:
     int *bsdfSampleOffset, *bsdfComponentOffset;
     int *gatherSampleOffset1, *gatherComponentOffset1;
     int *gatherSampleOffset2, *gatherComponentOffset2;
+	int *reflectionSampleOffset, *reflectionComponentOffset;
+	int *transmissionSampleOffset, *transmissionComponentOffset;
 
 	int nCausticPaths, nIndirectPaths;
 	mutable KdTree<EPhoton, EPhotonProcess> *causticMap;
