@@ -99,6 +99,19 @@ double SWCSpectrum::y() const {
 
 	return y;
 }
+double SWCSpectrum::filter() const
+{
+	SpectrumWavelengths *sw = thread_wavelengths.get();
+	double result = 0.f;
+	if (sw->single) {
+		result = c[sw->single_w];
+	} else {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			result += c[i];
+		result *= inv_WAVELENGTH_SAMPLES;
+	}
+	return result;
+}
 
 SWCSpectrum::SWCSpectrum(const SPD *s) {
 	SpectrumWavelengths *sw = thread_wavelengths.get();

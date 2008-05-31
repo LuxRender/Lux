@@ -71,7 +71,7 @@ SWCSpectrum EmissionIntegrator::Li(const Scene *scene,
 			.5f * stepSize, lux::random::floatValue());
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.y() < 1e-3) {
+		if (Tr.filter() < 1e-3) {
 			const float continueProb = .5f;
 			if (lux::random::floatValue() > continueProb) break;
 			Tr /= continueProb;

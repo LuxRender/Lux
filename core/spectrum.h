@@ -562,6 +562,7 @@ public:
 	}
 	XYZColor ToXYZ() const;
 	double y() const;
+	double filter() const;
 
 	bool operator<(const SWCSpectrum &s2) const {
 		return y() < s2.y();

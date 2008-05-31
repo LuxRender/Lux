@@ -79,9 +79,9 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 		if (v.bsdfWeight == 0.f || v.f.Black())
 			break;
 		v.rrWeight = min<float>(1.f,
-			v.f.y() * AbsDot(v.wo, v.ns) / v.bsdfWeight);
+			v.f.filter() * AbsDot(v.wo, v.ns) / v.bsdfWeight);
 		v.rrRWeight = min<float>(1.f,
-			v.f.y() * AbsDot(v.wi, v.ns) / v.bsdfRWeight);
+			v.f.filter() * AbsDot(v.wi, v.ns) / v.bsdfRWeight);
 		if (nVerts > 3 && v.rrWeight < data[0])
 			break;
 		// Initialize _ray_ for next segment of path
@@ -302,9 +302,9 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		if (v.bsdfWeight == 0.f || v.f.Black())
 			break;
 		v.rrWeight = min<float>(1.f,
-			v.f.y() * AbsDot(v.wo, v.ns) / v.bsdfWeight);
+			v.f.filter() * AbsDot(v.wo, v.ns) / v.bsdfWeight);
 		v.rrRWeight = min<float>(1.f,
-			v.f.y() * AbsDot(v.wi, v.ns) / v.bsdfRWeight);
+			v.f.filter() * AbsDot(v.wi, v.ns) / v.bsdfRWeight);
 		if (nVerts > 3 && v.rrWeight < data[0])
 			break;
 		// Initialize _ray_ for next segment of path
@@ -511,19 +511,19 @@ SWCSpectrum BidirIntegrator::evalPath(const Scene *scene, vector<BidirVertex> &e
 			G(eye[nEye - 1], light[nLight - 1]) *
 			light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w);
 		eye[nEye - 1].rrWeight = min<float>(1.f,
-			eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, w).y() *
+			eye[nEye - 1].bsdf->f(eye[nEye - 1].wi, w).filter() *
 				AbsDot(eye[nEye - 1].ns, w) /
 				eye[nEye - 1].bsdf->Pdf(eye[nEye - 1].wi, w));
 		eye[nEye - 1].rrRWeight = min<float>(1.f,
-			eye[nEye - 1].bsdf->f(w, eye[nEye - 1].wi).y() *
+			eye[nEye - 1].bsdf->f(w, eye[nEye - 1].wi).filter() *
 				AbsDot(eye[nEye - 1].wi, eye[nEye - 1].ns) /
 				eye[nEye - 1].bsdf->Pdf(w, eye[nEye - 1].wi));
 		light[nLight - 1].rrWeight = min<float>(1.f,
-			light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w).y() *
+			light[nLight - 1].bsdf->f(light[nLight - 1].wi, -w).filter() *
 				AbsDot(light[nLight - 1].ns, -w) /
 				light[nLight - 1].bsdf->Pdf(light[nLight - 1].wi, -w));
 		light[nLight - 1].rrRWeight = min<float>(1.f,
-			light[nLight - 1].bsdf->f(-w, light[nLight - 1].wi).y() *
+			light[nLight - 1].bsdf->f(-w, light[nLight - 1].wi).filter() *
 				AbsDot(light[nLight - 1].wi, light[nLight - 1].ns) /
 				light[nLight - 1].bsdf->Pdf(-w, light[nLight - 1].wi));
 	}

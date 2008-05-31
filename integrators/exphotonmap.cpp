@@ -419,7 +419,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                     break;
                 SWCSpectrum anew = alpha * fr *
                         AbsDot(wi, photonBSDF->dgShading.nn) / pdf;
-                float continueProb = min(1.0, anew.y() / alpha.y());
+                float continueProb = min(1.0, anew.filter() / alpha.filter());
                 if (lux::random::floatValue() > continueProb || nIntersections > 10)
                     break;
                 alpha = anew / continueProb;
