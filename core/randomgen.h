@@ -55,12 +55,12 @@ class RandomGenerator
 {
 public:
 	RandomGenerator() {
-		buf = (unsigned long int *)AllocAligned(
+		buf = (unsigned long int *)lux::AllocAligned(
 			RAN_BUFFER_AMOUNT * sizeof(unsigned long int));
 		bufid = RAN_BUFFER_AMOUNT;
 	}
 
-	~RandomGenerator() { FreeAligned(buf); }
+	~RandomGenerator() { lux::FreeAligned(buf); }
 
 	void taus113_set(unsigned long int s) {
 	  if (!s) s = 1UL; // default seed is 1
