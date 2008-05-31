@@ -35,18 +35,8 @@ public:
 	LDSampler(int xstart, int xend,
 	          int ystart, int yend,
 			  int nsamp, string pixelsampler);
-	~LDSampler() {
-		delete[] imageSamples;
-		for (int i = 0; i < n1D; ++i)
-			delete[] oneDSamples[i];
-		for (int i = 0; i < n2D; ++i)
-			delete[] twoDSamples[i];
-		for (int i = 0; i < nxD; ++i)
-			delete[] xDSamples[i];
-		delete[] oneDSamples;
-		delete[] twoDSamples;
-		delete[] xDSamples;
-	}
+	~LDSampler();
+
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
 	}

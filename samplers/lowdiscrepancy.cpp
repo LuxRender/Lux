@@ -67,12 +67,26 @@ LDSampler::LDSampler(int xstart, int xend,
 		pixelSamples = ps;
 	samplePos = pixelSamples;
 	oneDSamples = twoDSamples = xDSamples = NULL;
+	// Dade - should use AllocAligned()
 	imageSamples = new float[7*pixelSamples];
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
 	wavelengthsSamples = imageSamples + 5*pixelSamples;
 	singleWavelengthSamples = imageSamples + 6*pixelSamples;
 	n1D = n2D = nxD = 0;
+}
+
+LDSampler::~LDSampler() {
+	delete[] imageSamples;
+	for (int i = 0; i < n1D; ++i)
+		delete[] oneDSamples[i];
+	for (int i = 0; i < n2D; ++i)
+		delete[] twoDSamples[i];
+	for (int i = 0; i < nxD; ++i)
+		delete[] xDSamples[i];
+	delete[] oneDSamples;
+	delete[] twoDSamples;
+	delete[] xDSamples;
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions

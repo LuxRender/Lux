@@ -36,7 +36,7 @@ class ERPTSampler : public Sampler {
 public:
 	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd,
 			int totMutations, float rng, int sw);
-	~ERPTSampler() { delete[] sampleImage; delete[] baseImage; delete[] timeImage; }
+	~ERPTSampler();
 
 	virtual ERPTSampler* clone() const;
 	u_int GetTotalSamplePos() { return 0; }

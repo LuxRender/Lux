@@ -77,6 +77,12 @@ ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd,
 	currentStrata = strataSqr;
 }
 
+ERPTSampler::~ERPTSampler() {
+	FreeAligned(sampleImage);
+	FreeAligned(baseImage);
+	FreeAligned(timeImage);
+}
+
 // Copy
 ERPTSampler* ERPTSampler::clone() const
 {

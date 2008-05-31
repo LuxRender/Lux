@@ -35,6 +35,7 @@ RandomSampler* RandomSampler::clone() const
  {
    return new RandomSampler(*this);
  }
+
 RandomSampler::RandomSampler(int xstart, int xend,
                              int ystart, int yend, int xs, int ys, string pixelsampler)
         : Sampler(xstart, xend, ystart, yend, xs * ys)
@@ -67,6 +68,11 @@ RandomSampler::RandomSampler(int xstart, int xend,
 	singleWavelengthSamples = wavelengthsSamples + xPixelSamples * yPixelSamples;
 
 	samplePos = xPixelSamples * yPixelSamples;
+}
+
+RandomSampler::~RandomSampler()
+{
+	FreeAligned(imageSamples);
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions

@@ -33,10 +33,8 @@ class RandomSampler : public Sampler
 public:
 	RandomSampler(int xstart, int xend, int ystart, int yend,
 		int xs, int ys, string pixelsampler);
-	~RandomSampler()
-	{
-		FreeAligned(imageSamples);
-	}
+	~RandomSampler();
+
 	u_int GetTotalSamplePos();
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);

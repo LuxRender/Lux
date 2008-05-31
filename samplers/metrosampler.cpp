@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include "memory.h"
+
+
 // initial metropolis light transport sample integrator
 // by radiance
 
@@ -75,6 +78,11 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	strataSamples = (float *)AllocAligned(2 * sw * sw * sizeof(float));
 	strataSqr = sw*sw;
 	currentStrata = strataSqr;
+}
+
+MetropolisSampler::~MetropolisSampler() {
+	FreeAligned(sampleImage);
+	FreeAligned(strataSamples);
 }
 
 // Copy
