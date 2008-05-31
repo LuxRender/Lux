@@ -36,6 +36,7 @@
 #define LUX_RANDOM_H
 
 #include "lux.h"
+#include "memory.h"
 
 #include <boost/thread/tss.hpp>
 
@@ -54,12 +55,12 @@ class RandomGenerator
 {
 public:
 	RandomGenerator() {
-		buf = (unsigned long int *)memalign(64,
+		buf = (unsigned long int *)AllocAligned(
 			RAN_BUFFER_AMOUNT * sizeof(unsigned long int));
 		bufid = RAN_BUFFER_AMOUNT;
 	}
 
-	~RandomGenerator() { delete[] buf; }
+	~RandomGenerator() { FreeAligned(buf); }
 
 	void taus113_set(unsigned long int s) {
 	  if (!s) s = 1UL; // default seed is 1
