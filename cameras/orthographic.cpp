@@ -57,19 +57,18 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		//ss.str("");
 		//ss << "Raster point: " << Pras;
 		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-		
+
 		Point Pcamera;
 		RasterToCamera(Pras, &Pcamera);
 		Ray ray;
 		ray.o = Pcamera;
-		ray.d = Vector(Pcamera.x, Pcamera.y, Pcamera.z);
-		ray.d = Normalize(ray.d);
+		ray.d = Vector(0,0,1);
 
 		// Dade - I wonder what time I could use here
 		ray.time = 0.0f;
 		
 		ray.mint = 0.f;
-		ray.maxt = (ClipYon - ClipHither) / ray.d.z;
+		ray.maxt = ClipYon - ClipHither;
 		CameraToWorld(ray, &ray);
 
 		// Dade - debug code
@@ -100,9 +99,6 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	// Set ray time value
 	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
 
-	/*
-	// TODO: Why orthographic camera have DOF?
-
 	// Modify ray for depth of field
 	if (LensRadius > 0.) {
 		// Sample point on lens
@@ -119,7 +115,7 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 		ray->o.y += lensV;
 		ray->d = Pfocus - ray->o;
 	}
-	*/
+
 	ray->mint = 0.;
 	ray->maxt = ClipYon - ClipHither;
 	ray->d = Normalize(ray->d);
