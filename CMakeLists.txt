@@ -249,6 +249,25 @@ ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
+######################### wxWidgets LIBRARIES SETUP #########################
+#############################################################################
+#############################################################################
+
+# Here you can define what libraries of wxWidgets you need for your
+# application. You can figure out what libraries you need here;
+# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
+SET(wxWidgets_USE_LIBS base core gl aui)
+FIND_PACKAGE(wxWidgets)
+IF(wxWidgets_FOUND)
+    # Include wxWidgets macros
+    INCLUDE(${wxWidgets_USE_FILE})
+		MESSAGE( STATUS "wxWidgets include directory:" ${wxWidgets_INCLUDE_DIRS} )
+ELSE(wxWidgets_FOUND)
+		MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
+ENDIF(wxWidgets_FOUND)
+
+#############################################################################
+#############################################################################
 ###########################   SYSTEM LIBRARIES    ###########################
 #############################################################################
 #############################################################################
@@ -452,7 +471,7 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} $
 					
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} )
 
 # Needed for ICC
 REMOVE_DEFINITIONS(-ipo)
@@ -507,6 +526,32 @@ ENDIF(APPLE)
 #IF(APPLE AND !APPLE_64)
 #SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "-mmacosx-version-min=10.4")
 #ENDIF(APPLE AND !APPLE_64)
+
+#Here we build the new GUI executable
+IF(wxWidgets_FOUND)
+	ADD_EXECUTABLE(wxluxgui ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp)
+	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
+
+	IF(APPLE)
+	INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
+	FIND_LIBRARY(CARBON_LIBRARY Carbon)
+	FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
+	FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
+	FIND_LIBRARY(AGL_LIBRARY AGL )
+	FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
+
+	MESSAGE(STATUS ${CARBON_LIBRARY})
+	MARK_AS_ADVANCED (CARBON_LIBRARY)
+	MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
+	MARK_AS_ADVANCED (OPENGL_LIBRARY)
+	MARK_AS_ADVANCED (AGL_LIBRARY)
+	MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
+	SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+	TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	ELSE(APPLE)
+	TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	ENDIF(APPLE)
+ENDIF(wxWidgets_FOUND)
 
 #Install target
 INSTALL(TARGETS luxrender luxconsole
