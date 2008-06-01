@@ -57,13 +57,13 @@ using namespace lux;
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM,
+	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM,
 	int haltspp, float reinhard_prescale, float reinhard_postscale,
 	float reinhard_burn, float g, int reject_warmup, bool debugmode) :
 	Film(xres, yres, haltspp), filter(filt), writeInterval(wI), displayInterval(dI),
 	filename(filename1), premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
-	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM),
+	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
 	framebuffer(NULL), debug_mode(debugmode), factor(NULL)
 {
 	// Compute film image extent
@@ -138,7 +138,7 @@ void FlexImageFilm::CreateBuffers()
 	bufferGroups.back().CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
 
     // Dade - check if we have to resume a rendering and restore the buffers
-    if(writeResumeFlm) {
+    if(writeResumeFlm && !restartResumeFlm) {
         // Dade - check if the film file exists
 
         string fname = filename+".flm";
@@ -780,7 +780,9 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
 	bool w_untonemapped_IGI = params.FindOneBool("write_untonemapped_igi", false);
 	bool w_tonemapped_TGA = params.FindOneBool("write_tonemapped_tga", false);
+
     bool w_resume_FLM = params.FindOneBool("write_resume_flm", false);
+	bool restart_resume_FLM = params.FindOneBool("restart_resume_flm", false);
 
 	// output filenames
 	string filename = params.FindOneString("filename", "luxout");
@@ -806,6 +808,6 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
-		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM,
+		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM, restart_resume_FLM,
 		haltspp, reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
 }
