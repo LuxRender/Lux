@@ -124,6 +124,11 @@
 #include "blender_marble.h"
 #include "blender_wood.h"
 #include "blender_clouds.h"
+#include "blender_blend.h"
+#include "blender_distortednoise.h"
+#include "blender_noise.h"
+#include "blender_magic.h"
+#include "blender_stucci.h"
 
 #include "contrast.h"
 #include "highcontrast.h"
@@ -409,6 +414,31 @@ if (plugin)
     }
     if(name=="blender_clouds") {
         boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderCloudsTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_blend") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderBlendTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_distortednoise") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderDistortedNoiseTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_stucci") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderStucciTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_noise") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderNoiseTexture3D::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_magic") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderMagicTexture3D::CreateFloatTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
