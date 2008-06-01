@@ -202,16 +202,21 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 	    // Sample a random Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1)
-			shapeidx = Floor2Int(lux::random::floatValue() * nrPortalShapes);
+			shapeidx = Floor2Int(u3 * nrPortalShapes);
 		Normal ns;
 		Point ps;
-		bool exit = false;
-		for (int i = 0; i < nrPortalShapes && !exit; ++i) {
+		bool found = false;
+		for (int i = 0; i < nrPortalShapes; ++i) {
 			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
 			*wi = Normalize(ps - p);
-			exit = (Dot(*wi, ns) < 0.f);
+			if (Dot(*wi, ns) < 0.f) {
+				found = true;
+				break;
+			}
+			if (++shapeidx >= nrPortalShapes)
+				shapeidx = 0;
 		}
-		if (exit)
+		if (found)
 			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
 		else {
 			*pdf = 0.f;
