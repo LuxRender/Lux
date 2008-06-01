@@ -187,8 +187,34 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			eyePath[i].rrWeight = err;
 			eyePath[i].rrRWeight = errR;
 		}
-		if (eyePath[i].bsdf == NULL)
+		if (eyePath[i].bsdf == NULL) {
+			for (unsigned int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
+				Light *light = scene->lights[lightNumber];
+				if (i == 0)
+					L += light->Le(RayDifferential(eyePath[i].p, -eyePath[i].wi));
+				else {
+					eyePath[i].Le = light->Le(scene, RayDifferential(eyePath[i].p, -eyePath[i].wi), eyePath[i - 1].ns, &(directPath[0].bsdf), &(directPath[0].dAWeight), &(eyePath[i].ePdfDirect));
+					if (directPath[0].bsdf && directPath[0].dAWeight > 0.f && !eyePath[i].Le.Black()) {
+						eyePath[i].p = directPath[0].bsdf->dgShading.p;
+						directPath[0].p = eyePath[i].p;
+						eyePath[i].ng = directPath[0].bsdf->dgShading.nn;
+						directPath[0].ng = eyePath[i].ng;
+						directPath[0].wi = Vector(directPath[0].ng);
+						eyePath[i].ns = eyePath[i].ng;
+						directPath[0].ns = directPath[0].ng;
+						eyePath[i].rrWeight = 1.f;
+						eyePath[i].rrRWeight = 1.f;
+						eyePath[i].f = 1.f;
+						eyePath[i].Le *= evalPath(scene, eyePath, i + 1, directPath, 0);
+						if (!eyePath[i].Le.Black()) {
+							eyePath[i].Le /= weightPath(eyePath, i + 1, directPath, 0, eyePath[i].ePdfDirect, false);
+							L += eyePath[i].Le;
+						}
+					}
+				}
+			}
 			break;
+		}
 		// Do direct lighting
 		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
 		// Randomly choose a single light to sample
@@ -266,26 +292,8 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 		++nVerts;
 		v.wi = -ray.d;
 		if (!scene->Intersect(ray, &isect)) {
-			// Randomly choose a single light to sample
-			int numberOfLights = scene->lights.size();
-			int lightNumber = min(Floor2Int(data[3] * numberOfLights),
-				numberOfLights - 1);
-			Light *light = scene->lights[lightNumber];
-			if (nVerts == 1)
-				v.Le = light->Le(ray);
-			else {
-				v.Le = light->Le(scene, ray, vertices[nVerts - 2].ns, &v.eBsdf, &v.ePdf, &v.ePdfDirect);
-				if (v.eBsdf && v.ePdf > 0.f) {
-					v.p = v.eBsdf->dgShading.p;
-					v.ng = v.eBsdf->dgShading.nn;
-					v.ns = v.ng;
-				}
-				v.rrWeight = 1.f;
-				v.rrRWeight = 1.f;
-				v.bsdf = NULL;
-				v.f = 1.f;
-			}
-			v.Le *= numberOfLights;
+			v.p = ray.o;
+			v.bsdf = NULL;
 			break;
 		}
 		v.bsdf = isect.GetBSDF(ray); // do before Ns is set!
