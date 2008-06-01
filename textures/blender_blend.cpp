@@ -59,20 +59,11 @@ Texture<float> *BlenderBlendTexture3D::CreateFloatTexture(
         ss << "Unknown noise type '" << type << "'";
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
-	
-	//SMISRA - flag parameter
+
 	short flag = !TEX_FLIPBLEND;
-	string sflag = tp.FindString("flag");
-//	if(sflag == "")
-//		;//No action needed so empty
-	if (sflag == "flip xy")
-        flag = TEX_FLIPBLEND;
-	else
-	{ 
-		std::stringstream ss;
-        ss << "Unknown flag type '" << flag << "'";
-        luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
-    }
+	bool sflag = tp.FindBool("flipxy", false);
+	if(sflag == true)
+		flag = TEX_FLIPBLEND;
 
     return new BlenderBlendTexture3D(
             type,
