@@ -20,11 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-
 #include "blender_magic.h"
-#include "error.h"
-
-#include <sstream>
 
 using namespace lux;
 using namespace blender;

@@ -20,11 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// blender_clouds.cpp*
 #include "blender_clouds.h"
-#include "error.h"
-
-#include <sstream>
 
 using namespace lux;
 using namespace blender;

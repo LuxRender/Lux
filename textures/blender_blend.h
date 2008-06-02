@@ -23,6 +23,7 @@
 #include "lux.h"
 #include "texture.h"
 #include "paramset.h"
+#include "error.h"
 #include "blender_texlib.h"
 
 namespace lux {

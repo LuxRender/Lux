@@ -20,11 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// blender_distortednoise.cpp*
 #include "blender_distortednoise.h"
-#include "error.h"
-
-#include <sstream>
 
 using namespace lux;
 using namespace blender;

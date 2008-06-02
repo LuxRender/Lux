@@ -21,9 +21,6 @@
  ***************************************************************************/
 
 #include "blender_blend.h"
-#include "error.h"
-
-#include <sstream>
 
 using namespace lux;
 using namespace blender;

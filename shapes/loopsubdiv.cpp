@@ -102,6 +102,7 @@ LoopSubdiv::~LoopSubdiv() {
 }
 
 BBox LoopSubdiv::ObjectBound() const {
+	// Dade - todo: the bbox returned doesn't include the effect of displacement map
 	BBox b;
 	for (u_int i = 0; i < vertices.size(); i++)
 		b = Union(b, vertices[i]->P);
@@ -109,6 +110,7 @@ BBox LoopSubdiv::ObjectBound() const {
 }
 
 BBox LoopSubdiv::WorldBound() const {
+	// Dade - todo: the bbox returned doesn't include the effect of displacement map
 	BBox b;
 	for (u_int i = 0; i < vertices.size(); i++)
 		b = Union(b, ObjectToWorld(vertices[i]->P));
@@ -340,14 +342,16 @@ void LoopSubdiv::ApplyDisplacementMap(
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	for (int i = 0; i < totVerts; i++) {
+		Point pp = ObjectToWorld(verts[i]);
 		Normal nn = Normalize(norms[i]);		
 
 		DifferentialGeometry dg = DifferentialGeometry(
-				verts[i],
+				pp,
 				nn,
+				// Dade - I should use better dpdu, dpdv
 				Vector(0, 0, 0), Vector(0, 0, 0),
 				Vector(0, 0, 0), Vector(0, 0, 0),
-				verts[i].x, verts[i].y, this);
+				pp.x, pp.y, this);
 
 		Vector displacement(nn);
 		displacement *= displacementMap.get()->Evaluate(dg) * displacementMapScale;

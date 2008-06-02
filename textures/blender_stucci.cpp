@@ -20,11 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// blender_stucci.cpp*
 #include "blender_stucci.h"
-#include "error.h"
-
-#include <sstream>
 
 using namespace lux;
 using namespace blender;
