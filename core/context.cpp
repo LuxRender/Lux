@@ -431,7 +431,7 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	renderFarm->send("luxPortalShape", name, params);
 
 	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
-			graphicsState->reverseOrientation, params);
+			graphicsState->reverseOrientation, params, &graphicsState->floatTextures);
 	if (!shape)
 		return;
 	params.ReportUnused();
@@ -520,8 +520,12 @@ void Context::shape(const string &name, const ParamSet &params) {
 	;
 	renderFarm->send("luxShape", name, params);
 
-	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
-			graphicsState->reverseOrientation, params);
+	boost::shared_ptr<Shape> shape = MakeShape(
+			name,
+			curTransform,
+			graphicsState->reverseOrientation,
+			params,
+			&graphicsState->floatTextures);
 	if (!shape)
 		return;
 	params.ReportUnused();

@@ -31,8 +31,10 @@ using namespace lux;
 LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
         int nfaces, int nvertices,
 		const int *vertexIndices,
-		const Point *P, int nl)
-	: Shape(o2w, ro) {
+		const Point *P, int nl,
+		const boost::shared_ptr<Texture<float> > dismap,
+		float dmscale)
+	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale) {
 	nLevels = nl;
 	// Allocate _LoopSubdiv_ vertices and faces
 	int i;
@@ -98,21 +100,25 @@ LoopSubdiv::~LoopSubdiv() {
 	delete[] vertices[0];
 	delete[] faces[0];
 }
+
 BBox LoopSubdiv::ObjectBound() const {
 	BBox b;
 	for (u_int i = 0; i < vertices.size(); i++)
 		b = Union(b, vertices[i]->P);
 	return b;
 }
+
 BBox LoopSubdiv::WorldBound() const {
 	BBox b;
 	for (u_int i = 0; i < vertices.size(); i++)
 		b = Union(b, ObjectToWorld(vertices[i]->P));
 	return b;
 }
+
 bool LoopSubdiv::CanIntersect() const {
 	return false;
 }
+
 void
 LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined)
 const {
@@ -124,6 +130,7 @@ const {
 		// Update _f_ and _v_ for next level of subdivision
 		vector<SDFace *> newFaces;
 		vector<SDVertex *> newVertices;
+
 		// Allocate next level of children in mesh tree
 		for (u_int j = 0; j < v.size(); ++j) {
 			v[j]->child = vertexArena.malloc();//new (vertexArena) SDVertex;
@@ -136,6 +143,7 @@ const {
 				f[j]->children[k] = faceArena.malloc();//new (faceArena) SDFace;
 				newFaces.push_back(f[j]->children[k]);
 			}
+
 		// Update vertex positions and create new edge vertices
 		// Update vertex positions for even vertices
 		for (u_int j = 0; j < v.size(); ++j) {
@@ -152,6 +160,7 @@ const {
 				v[j]->child->P = weightBoundary(v[j], 1.f/8.f);
 			}
 		}
+
 		// Compute new odd edge vertices
 		map<SDEdge, SDVertex *> edgeVerts;
 		for (u_int j = 0; j < f.size(); ++j) {
@@ -184,6 +193,7 @@ const {
 				}
 			}
 		}
+
 		// Update new mesh topology
 		// Update even vertex face pointers
 		for (u_int j = 0; j < v.size(); ++j) {
@@ -192,6 +202,7 @@ const {
 			vert->child->startFace =
 			    vert->startFace->children[vertNum];
 		}
+
 		// Update face neighbor pointers
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
@@ -208,6 +219,7 @@ const {
 					f2 ? f2->children[f2->vnum(face->v[k])] : NULL;
 			}
 		}
+
 		// Update face vertex pointers
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
@@ -222,10 +234,12 @@ const {
 				face->children[3]->v[k] = vert;
 			}
 		}
+
 		// Prepare for next level of subdivision
 		f = newFaces;
 		v = newVertices;
 	}
+
 	// Push vertices to limit surface
 	Point *Plimit = new Point[v.size()];
 	for (u_int i = 0; i < v.size(); ++i) {
@@ -238,6 +252,7 @@ const {
 	}
 	for (u_int i = 0; i < v.size(); ++i)
 		v[i]->P = Plimit[i];
+
 	// Compute vertex tangents on limit surface
 	vector<Normal> Ns;
 	Ns.reserve(v.size());
@@ -283,6 +298,7 @@ const {
 		}
 		Ns.push_back(Normal(Cross(S, T)));
 	}
+
 	// Create _TriangleMesh_ from subdivision mesh
 	u_int ntris = u_int(f.size());
 	int *verts = new int[3*ntris];
@@ -297,6 +313,13 @@ const {
 			++vp;
 		}
 	}
+
+	if (displacementMap.get() != NULL) {
+		// Dade - apply the displacement map
+
+		ApplyDisplacementMap(totVerts, Plimit, &Ns[0]);
+	}
+
 	ParamSet paramSet;
 	paramSet.AddInt("indices", verts, 3*ntris);
 	paramSet.AddPoint("P", Plimit, totVerts);
@@ -306,6 +329,33 @@ const {
 	delete[] verts;
 	delete[] Plimit;
 }
+
+void LoopSubdiv::ApplyDisplacementMap(
+		int totVerts, Point *verts,
+		const Normal *norms) const {
+	// Dade - apply the displacement map
+
+	std::stringstream ss;
+	ss << "Applying displacement map to " << totVerts << " vertices";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+	for (int i = 0; i < totVerts; i++) {
+		Normal nn = Normalize(norms[i]);		
+
+		DifferentialGeometry dg = DifferentialGeometry(
+				verts[i],
+				nn,
+				Vector(0, 0, 0), Vector(0, 0, 0),
+				Vector(0, 0, 0), Vector(0, 0, 0),
+				verts[i].x, verts[i].y, this);
+
+		Vector displacement(nn);
+		displacement *= displacementMap.get()->Evaluate(dg) * displacementMapScale;
+
+		verts[i] += displacement;
+	}
+}
+
 Point LoopSubdiv::weightOneRing(SDVertex *vert, float beta) {
 	// Put _vert_ one-ring in _Pring_
 	int valence = vert->valence();
@@ -316,6 +366,7 @@ Point LoopSubdiv::weightOneRing(SDVertex *vert, float beta) {
 		P += beta * Pring[i];
 	return P;
 }
+
 void SDVertex::oneRing(Point *P) {
 	if (!boundary) {
 		// Get one ring vertices for interior vertex
@@ -337,6 +388,7 @@ void SDVertex::oneRing(Point *P) {
 		} while (face != NULL);
 	}
 }
+
 Point LoopSubdiv::weightBoundary(SDVertex *vert,
                                  float beta) {
 	// Put _vert_ one-ring in _Pring_
@@ -348,17 +400,36 @@ Point LoopSubdiv::weightBoundary(SDVertex *vert,
 	P += beta * Pring[valence-1];
 	return P;
 }
-Shape* LoopSubdiv::CreateShape(const Transform &o2w,
-		bool reverseOrientation, const ParamSet &params) {
+
+Shape *LoopSubdiv::CreateShape(
+		const Transform &o2w,
+		bool reverseOrientation,
+		const ParamSet &params,
+		map<string, boost::shared_ptr<Texture<float> > > *floatTextures) {
 	int nlevels = params.FindOneInt("nlevels", 3);
 	int nps, nIndices;
 	const int *vi = params.FindInt("indices", &nIndices);
 	const Point *P = params.FindPoint("P", &nps);
 	if (!vi || !P) return NULL;
 
+	// Dade - the optional displacement map
+	string displacementMapName = params.FindOneString("displacementmap", "");
+	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
+
+	boost::shared_ptr<Texture<float> > displacementMap;
+	if (displacementMapName != "") {
+		displacementMap = (*floatTextures)[displacementMapName];
+
+		if (displacementMap.get() == NULL) {
+            std::stringstream ss;
+            ss << "Unknow float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
+            luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+		}
+	}
+
 	// don't actually use this for now...
 	string scheme = params.FindOneString("scheme", "loop");
 
 	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
-		vi, P, nlevels);
+		vi, P, nlevels, displacementMap, displacementMapScale);
 }

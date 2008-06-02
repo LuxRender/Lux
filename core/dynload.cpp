@@ -171,7 +171,8 @@ namespace lux {
 boost::shared_ptr<Shape> MakeShape(const string &name,
         const Transform &object2world,
         bool reverseOrientation,
-        const ParamSet &paramSet) {
+        const ParamSet &paramSet,
+		map<string, boost::shared_ptr<Texture<float> > > *floatTextures) {
     /*
 ShapePlugin *plugin =
 GetPlugin<ShapePlugin>(name,
@@ -193,7 +194,7 @@ return plugin->CreateShape(object2world,
     if(name=="hyperboloid")
         return boost::shared_ptr<Shape>(Hyperboloid::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="loopsubdiv")
-        return boost::shared_ptr<Shape>(LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet));
+        return boost::shared_ptr<Shape>(LoopSubdiv::CreateShape(object2world, reverseOrientation, paramSet, floatTextures));
     if(name=="nurbs")
         return boost::shared_ptr<Shape>(NURBS::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="paraboloid")

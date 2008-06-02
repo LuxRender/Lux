@@ -209,7 +209,6 @@ void Scene::SignalThreads(int signal) {
 extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 static RGBColor sumRGB = 0.f;
-static int tot = 0;
 
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread) {

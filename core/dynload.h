@@ -22,7 +22,9 @@
 
 #ifndef LUX_DYNLOAD_H
 #define LUX_DYNLOAD_H
-// dynload.h*
+
+#include <map>
+
 #include "lux.h"
 
 namespace lux
@@ -31,7 +33,8 @@ namespace lux
 // Runtime Loading Declarations
  void UpdatePluginPath(const string &newpath);
  boost::shared_ptr<Shape> MakeShape(const string &name,
-	const Transform &object2world, bool reverseOrientation, const ParamSet &paramSet);
+	const Transform &object2world, bool reverseOrientation, const ParamSet &paramSet,
+	std::map<string, boost::shared_ptr<Texture<float> > > *floatTextures = NULL);
  boost::shared_ptr<Material> MakeMaterial(const string &name,
 	const Transform &mtl2world, const TextureParams &mp);
  boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,

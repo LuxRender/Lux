@@ -55,9 +55,8 @@ class  DifferentialGeometry {
 	float u, v;
 	const Shape *shape;
 	mutable float dudx, dvdx, dudy, dvdy;
-
-
 };
+
 // Shape Declarations
 class  Shape {
 public:

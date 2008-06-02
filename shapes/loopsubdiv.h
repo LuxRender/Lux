@@ -54,6 +54,7 @@ struct SDVertex {
 	SDVertex *child;
 	bool regular, boundary;
 };
+
 struct SDFace {
 	// SDFace Constructor
 	SDFace() {
@@ -95,6 +96,7 @@ struct SDFace {
 	SDFace *f[3];
 	SDFace *children[4];
 };
+
 struct SDEdge {
 	// SDEdge Constructor
 	SDEdge(SDVertex *v0 = NULL, SDVertex *v1 = NULL) {
@@ -112,20 +114,26 @@ struct SDEdge {
 	SDFace *f[2];
 	int f0edgeNum;
 };
+
 // LoopSubdiv Declarations
 class LoopSubdiv : public Shape {
 public:
 	// LoopSubdiv Public Methods
 	LoopSubdiv(const Transform &o2w, bool ro,
-	           int nt, int nv, const int *vi,
-	           const Point *P, int nlevels);
+			int nt, int nv, const int *vi,
+			const Point *P, int nlevels,
+			const boost::shared_ptr<Texture<float> > dismap,
+			float dmscale);
 	~LoopSubdiv();
 	bool CanIntersect() const;
 	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
-	
-	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+
+	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
+			const ParamSet &params, map<string,
+			boost::shared_ptr<Texture<float> > > *floatTextures);
+
 private:
 	// LoopSubdiv Private Methods
 	static float beta(int valence) {
@@ -137,11 +145,19 @@ private:
 	static float gamma(int valence) {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
+
+	void ApplyDisplacementMap(int totVerts, Point *verts, const Normal *norms) const;
+
 	// LoopSubdiv Private Data
 	int nLevels;
 	vector<SDVertex *> vertices;
 	vector<SDFace *> faces;
+
+	// Dade - optional displacement map
+	boost::shared_ptr<Texture<float> > displacementMap;
+	float displacementMapScale;
 };
+
 // LoopSubdiv Inline Functions
 inline int SDVertex::valence() {
 	SDFace *f = startFace;
