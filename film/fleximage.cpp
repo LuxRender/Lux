@@ -495,10 +495,17 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 void FlexImageFilm::WriteResumeFilm(const string &filename)
 {
 	// Dade - save the status of the film to the file
-
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing film status to file ")+filename).c_str());
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing film status to file ") +
+			filename).c_str());
 
     std::ofstream filestr(filename.c_str());
+	if(!filestr) {
+		std::stringstream ss;
+	 	ss << "Cannot open file '" << filename << "' for writing resume film";
+		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+
+		return;
+	}
 
     TransmitFilm(filestr,0,0,false);
 
@@ -639,7 +646,7 @@ void FlexImageFilm::TransmitFilm(
         numberOfSamples = currentGroup.numberOfSamples;
 
         if(clearGroup) {
-            // Dede - reset the rendering buffer
+            // Dade - reset the rendering buffer
             buffer->Clear();
             currentGroup.numberOfSamples = 0;
         }
@@ -652,8 +659,6 @@ void FlexImageFilm::TransmitFilm(
             " pixels (" <<numberOfSamples << " samples, little endian " <<
             (isLittleEndian ? "true" : "false") << ")";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-    // Dade - TODO: check stream i/o for errors
 
     std::stringstream os;
     writeLittleEndianFloat(isLittleEndian, os, numberOfSamples);
@@ -668,12 +673,21 @@ void FlexImageFilm::TransmitFilm(
             writeLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
         }
     }
-    
+	if(!os.good()) {
+		luxError(LUX_SYSTEM, LUX_SEVERE, "Error preparing data for film resume file");
+		delete pixelBuf;
+		return;
+	}
 
     filtering_streambuf<input> in;
     in.push(gzip_compressor(9));
     in.push(os);
     std::streamsize size = boost::iostreams::copy(in, stream);
+	if(!stream.good()) {
+		luxError(LUX_SYSTEM, LUX_SEVERE, "Error writing film resume file");
+		delete pixelBuf;
+		return;
+	}
 
     ss.str("");
     ss << "Pixels transmition done (" << (size / 1024.0f) << " Kbytes sent)";
