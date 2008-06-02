@@ -26,8 +26,8 @@
 #include "blender_texlib.h"
 
 namespace lux {
-
-class BlenderNoiseTexture3D : public Texture<float> {
+template <class T>
+class BlenderNoiseTexture3D : public Texture<T> {
 public:
     // BlenderMagicTexture3D Public Methods
 
@@ -36,6 +36,8 @@ public:
     }
 
     BlenderNoiseTexture3D(
+	        boost::shared_ptr<Texture<T> > c1,
+			boost::shared_ptr<Texture<T> > c2,
             short noiseDepth,
             float bright,
             float contrast,
@@ -45,9 +47,11 @@ public:
 		tex.noisedepth = noiseDepth;
         tex.bright = bright;
         tex.contrast = contrast;
+		tex1 = c1;
+		tex2 = c2;
     }
 
-    float Evaluate(const DifferentialGeometry &dg) const {
+    T Evaluate(const DifferentialGeometry &dg) const {
         Vector dpdx, dpdy;
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
@@ -60,16 +64,60 @@ public:
         else
             texres.tr = texres.tg = texres.tb = texres.tin;
 
-        return texres.tin;
+		T t1 = tex1->Evaluate(dg), t2 = tex2->Evaluate(dg);
+		return (1.f - texres.tin) * t1 + texres.tin * t2;
     }
 
     static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<Spectrum> *CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
     // BlenderNoiseTexture3D Private Data
 
     TextureMapping3D *mapping;
-
+	boost::shared_ptr<Texture<T> > tex1, tex2;
     blender::Tex tex;
 };
+
+template <class T> Texture<float> *BlenderNoiseTexture3D<T>::CreateFloatTexture(
+        const Transform &tex2world,
+        const TextureParams &tp) {
+    // Initialize 3D texture mapping _map_ from _tp_
+    TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
+
+	boost::shared_ptr<Texture<float> > tex1 = tp.GetFloatTexture("tex1", 1.f);
+	boost::shared_ptr<Texture<float> > tex2 = tp.GetFloatTexture("tex2", 0.f);
+
+    return new BlenderNoiseTexture3D<float>(
+			tex1,
+			tex2,
+            (short)tp.FindInt("noisedepth", 2),
+            tp.FindFloat("bright", 1.0f),
+            tp.FindFloat("contrast", 1.0f),
+            map);
+}
+
+template <class T> Texture<Spectrum> *BlenderNoiseTexture3D<T>::CreateSpectrumTexture(
+        const Transform &tex2world,
+        const TextureParams &tp) {
+    // Initialize 3D texture mapping _map_ from _tp_
+    TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	imap->Apply3DTextureMappingOptions(tp);
+
+	boost::shared_ptr<Texture<Spectrum> > tex1 = tp.GetSpectrumTexture("tex1", 1.f);
+	boost::shared_ptr<Texture<Spectrum> > tex2 = tp.GetSpectrumTexture("tex2", 0.f);
+
+    return new BlenderNoiseTexture3D<Spectrum>(
+			tex1,
+			tex2,
+            (short)tp.FindInt("noisedepth", 2),
+            tp.FindFloat("bright", 1.0f),
+            tp.FindFloat("contrast", 1.0f),
+            map);
+}
 
 } // namespace lux

@@ -28,47 +28,6 @@
 using namespace lux;
 using namespace blender;
 
-Texture<float> *BlenderBlendTexture3D::CreateFloatTexture(
-        const Transform &tex2world,
-        const TextureParams &tp) {
-    // Initialize 3D texture mapping _map_ from _tp_
-    TextureMapping3D *map = new IdentityMapping3D(tex2world);
-	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = (IdentityMapping3D*) map;
-	imap->Apply3DTextureMappingOptions(tp);
 
-    // Decode the noise type
-	short type = TEX_LIN;
-    string stype = tp.FindString("type");
-    if ((stype == "lin") || (stype == ""))
-        type = TEX_LIN;
-    else if (stype == "quad")
-        type = TEX_QUAD;
-    else if (stype == "ease")
-        type = TEX_EASE;
-    else if (stype == "diag")
-        type = TEX_DIAG;
-	else if (stype == "sphere")
-        type = TEX_SPHERE;
-	else if (stype == "halo")
-        type = TEX_HALO;
-	else if (stype == "radial")
-        type = TEX_RAD;
-    else {
-        std::stringstream ss;
-        ss << "Unknown noise type '" << type << "'";
-        luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
-    }
 
-	short flag = !TEX_FLIPBLEND;
-	bool sflag = tp.FindBool("flipxy", false);
-	if(sflag == true)
-		flag = TEX_FLIPBLEND;
 
-    return new BlenderBlendTexture3D(
-            type,
-            flag,
-            tp.FindFloat("bright", 1.0f),
-            tp.FindFloat("contrast", 1.0f),
-            map);
-}
