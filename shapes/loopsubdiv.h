@@ -42,17 +42,21 @@ struct SDFace;
 struct SDFace;
 struct SDVertex {
 	// SDVertex Constructor
-	SDVertex(Point pt = Point(0,0,0))
-		: P(pt), startFace(NULL), child(NULL),
+	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f)
+		: P(pt), u(uu), v(vv), startFace(NULL), child(NULL),
 		regular(false), boundary(false) {
 	}
+
 	// SDVertex Methods
 	int valence();
 	void oneRing(Point *P);
+	void oneRing(SDVertex **V);
+
 	Point P;
+	float u, v;
 	SDFace *startFace;
 	SDVertex *child;
-	bool regular, boundary;
+	bool regular, boundary, hasUV;
 };
 
 struct SDFace {
@@ -121,7 +125,7 @@ public:
 	// LoopSubdiv Public Methods
 	LoopSubdiv(const Transform &o2w, bool ro,
 			int nt, int nv, const int *vi,
-			const Point *P, int nlevels,
+			const Point *P, const float *uv, int nlevels,
 			const boost::shared_ptr<Texture<float> > dismap,
 			float dmscale);
 	~LoopSubdiv();
@@ -140,13 +144,14 @@ private:
 		if (valence == 3) return 3.f/16.f;
 		else return 3.f / (8.f * valence);
 	}
-	static Point weightOneRing(SDVertex *vert, float beta);
-	static Point weightBoundary(SDVertex *vert, float beta);
+	static void weightOneRing(SDVertex *destVert, SDVertex *vert, float beta);
+	static void weightBoundary(SDVertex *destVert, SDVertex *vert, float beta);
 	static float gamma(int valence) {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
 
-	void ApplyDisplacementMap(int totVerts, Point *verts, const Normal *norms) const;
+	void ApplyDisplacementMap(int totVerts, Point *verts, const Normal *norms,
+			const float *uvs) const;
 
 	// LoopSubdiv Private Data
 	int nLevels;
@@ -156,6 +161,8 @@ private:
 	// Dade - optional displacement map
 	boost::shared_ptr<Texture<float> > displacementMap;
 	float displacementMapScale;
+
+	bool hasUV;
 };
 
 // LoopSubdiv Inline Functions
