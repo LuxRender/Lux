@@ -343,18 +343,19 @@ void LoopSubdiv::ApplyDisplacementMap(
 
 	for (int i = 0; i < totVerts; i++) {
 		Point pp = ObjectToWorld(verts[i]);
-		Normal nn = Normalize(norms[i]);		
+		Normal nn = Normalize(norms[i]);	
+		Vector dpdu, dpdv;
+		CoordinateSystem(Vector(nn), &dpdu, &dpdv);
 
 		DifferentialGeometry dg = DifferentialGeometry(
 				pp,
 				nn,
-				// Dade - I should use better dpdu, dpdv
-				Vector(0, 0, 0), Vector(0, 0, 0),
+				dpdu, dpdv,
 				Vector(0, 0, 0), Vector(0, 0, 0),
 				pp.x, pp.y, this);
 
 		Vector displacement(nn);
-		displacement *= displacementMap.get()->Evaluate(dg) * displacementMapScale;
+		displacement *= -displacementMap.get()->Evaluate(dg) * displacementMapScale;
 
 		verts[i] += displacement;
 	}
