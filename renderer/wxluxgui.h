@@ -24,6 +24,7 @@
 #define LUX_WXLUXGUI_H
 
 #include <boost/shared_ptr.hpp>
+#include <string>
 
 #include "wxluxframe.h"
 
