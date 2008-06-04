@@ -35,8 +35,9 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		const float *uv,
 		int nl,
 		const boost::shared_ptr<Texture<float> > dismap,
-		float dmscale)
-	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale) {
+		float dmscale, float dmoffset)
+	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale),
+	displacementMapOffset(dmoffset) {
 	nLevels = nl;
 	hasUV = (uv != NULL);
 
@@ -407,7 +408,9 @@ void LoopSubdiv::ApplyDisplacementMap(
 				u, v, this);
 
 		Vector displacement(nn);
-		displacement *= -displacementMap.get()->Evaluate(dg) * displacementMapScale;
+		displacement *=	- (
+				displacementMap.get()->Evaluate(dg) * displacementMapScale +
+				displacementMapOffset);
 
 		verts[i] += displacement;
 	}
@@ -518,6 +521,7 @@ Shape *LoopSubdiv::CreateShape(
 	// Dade - the optional displacement map
 	string displacementMapName = params.FindOneString("displacementmap", "");
 	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
+	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
@@ -534,5 +538,6 @@ Shape *LoopSubdiv::CreateShape(
 	string scheme = params.FindOneString("scheme", "loop");
 
 	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
-		vi, P, uvs, nlevels, displacementMap, displacementMapScale);
+		vi, P, uvs, nlevels, displacementMap,
+		displacementMapScale, displacementMapOffset);
 }

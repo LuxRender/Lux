@@ -127,7 +127,7 @@ public:
 			int nt, int nv, const int *vi,
 			const Point *P, const float *uv, int nlevels,
 			const boost::shared_ptr<Texture<float> > dismap,
-			float dmscale);
+			float dmscale, float dmoffset);
 	~LoopSubdiv();
 	bool CanIntersect() const;
 	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
@@ -161,6 +161,7 @@ private:
 	// Dade - optional displacement map
 	boost::shared_ptr<Texture<float> > displacementMap;
 	float displacementMapScale;
+	float displacementMapOffset;
 
 	bool hasUV;
 };
