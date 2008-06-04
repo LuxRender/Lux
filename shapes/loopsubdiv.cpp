@@ -35,9 +35,9 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		const float *uv,
 		int nl,
 		const boost::shared_ptr<Texture<float> > dismap,
-		float dmscale, float dmoffset)
+		float dmscale, float dmoffset, bool dmnormalsmooth)
 	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale),
-	displacementMapOffset(dmoffset) {
+	displacementMapOffset(dmoffset), displacementMapNormalSmooth(dmnormalsmooth) {
 	nLevels = nl;
 	hasUV = (uv != NULL);
 
@@ -274,16 +274,77 @@ const {
 		else
 			weightOneRing(&Vlimit[i], v[i], gamma(v[i]->valence()));
 	}
-	Point *Plimit = new Point[v.size()];
 	for (u_int i = 0; i < v.size(); ++i) {
-		v[i]->P = Plimit[i] = Vlimit[i].P;
+		v[i]->P = Vlimit[i].P;
 		v[i]->u = Vlimit[i].u;
 		v[i]->v = Vlimit[i].v;
 	}
 	delete[] Vlimit;
 
-	// Compute vertex tangents on limit surface
+	// Dade - calculate normals
 	vector<Normal> Ns;
+	GenerateNormals(v, Ns);
+
+	// Create _TriangleMesh_ from subdivision mesh
+	u_int ntris = u_int(f.size());
+	int *verts = new int[3*ntris];
+	int *vp = verts;
+	u_int totVerts = u_int(v.size());
+	map<SDVertex *, int> usedVerts;
+	for (u_int i = 0; i < totVerts; ++i)
+		usedVerts[v[i]] = i;
+	for (u_int i = 0; i < ntris; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			*vp = usedVerts[f[i]->v[j]];
+			++vp;
+		}
+	}
+
+	// Dade - create vertex UVs if required
+	float *UVlimit = NULL;
+	if (hasUV) {
+		UVlimit = new float[2 * v.size()];
+		for (u_int i = 0; i < v.size(); ++i) {
+			UVlimit[2 * i] = v[i]->u;
+			UVlimit[2 * i + 1] = v[i]->v;
+		}
+	}
+
+	if (displacementMap.get() != NULL) {
+		// Dade - apply the displacement map
+
+		ApplyDisplacementMap(v, &Ns[0], UVlimit);
+
+		if (displacementMapNormalSmooth) {
+			// Dade - recalculate normals after the displacement
+			GenerateNormals(v, Ns);
+		}
+	}
+
+	// Dade - create trianglemesh vertices
+	Point *Plimit = new Point[v.size()];
+	for (u_int i = 0; i < v.size(); ++i)
+		Plimit[i] = v[i]->P;
+
+	ParamSet paramSet;
+	paramSet.AddInt("indices", verts, 3*ntris);
+	paramSet.AddPoint("P", Plimit, totVerts);
+	paramSet.AddNormal("N", &Ns[0], int(Ns.size()));
+	if (hasUV)
+		paramSet.AddFloat("uv", UVlimit, 2 * v.size());
+	
+	refined.push_back(MakeShape("trianglemesh", ObjectToWorld,
+			reverseOrientation, paramSet));
+
+	delete[] verts;
+	delete[] Plimit;
+	if (UVlimit)
+		delete UVlimit;
+}
+
+void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, vector<Normal> &Ns) {
+	// Compute vertex tangents on limit surface
+	Ns.clear();
 	Ns.reserve(v.size());
 	int ringSize = 16;
 	Point *Pring = new Point[ringSize];
@@ -326,67 +387,20 @@ const {
 		}
 		Ns.push_back(Normal(Cross(S, T)));
 	}
-
-	// Create _TriangleMesh_ from subdivision mesh
-	u_int ntris = u_int(f.size());
-	int *verts = new int[3*ntris];
-	int *vp = verts;
-	u_int totVerts = u_int(v.size());
-	map<SDVertex *, int> usedVerts;
-	for (u_int i = 0; i < totVerts; ++i)
-		usedVerts[v[i]] = i;
-	for (u_int i = 0; i < ntris; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			*vp = usedVerts[f[i]->v[j]];
-			++vp;
-		}
-	}
-
-	// Dade - create vertex UVs if required
-	float *UVlimit = NULL;
-	if (hasUV) {
-		UVlimit = new float[2 * v.size()];
-		for (u_int i = 0; i < v.size(); ++i) {
-			UVlimit[2 * i] = v[i]->u;
-			UVlimit[2 * i + 1] = v[i]->v;
-		}
-	}
-
-	if (displacementMap.get() != NULL) {
-		// Dade - apply the displacement map
-
-		ApplyDisplacementMap(totVerts, Plimit, &Ns[0], UVlimit);
-	}
-
-	ParamSet paramSet;
-	paramSet.AddInt("indices", verts, 3*ntris);
-	paramSet.AddPoint("P", Plimit, totVerts);
-	paramSet.AddNormal("N", &Ns[0], int(Ns.size()));
-	if (hasUV)
-		paramSet.AddFloat("uv", UVlimit, 2 * v.size());
-	
-	refined.push_back(MakeShape("trianglemesh", ObjectToWorld,
-			reverseOrientation, paramSet));
-
-	delete[] verts;
-	delete[] Plimit;
-	if (UVlimit)
-		delete UVlimit;
 }
 
 void LoopSubdiv::ApplyDisplacementMap(
-		int totVerts,
-		Point *verts,
+		const vector<SDVertex *> verts,
 		const Normal *norms,
 		const float *uvs) const {
 	// Dade - apply the displacement map
 
 	std::stringstream ss;
-	ss << "Applying displacement map to " << totVerts << " vertices";
+	ss << "Applying displacement map to " << verts.size() << " vertices";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	for (int i = 0; i < totVerts; i++) {
-		Point pp = ObjectToWorld(verts[i]);
+	for (u_int i = 0; i < verts.size(); i++) {
+		Point pp = ObjectToWorld(verts[i]->P);
 		Normal nn = Normalize(norms[i]);	
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(nn), &dpdu, &dpdv);
@@ -412,7 +426,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 				displacementMap.get()->Evaluate(dg) * displacementMapScale +
 				displacementMapOffset);
 
-		verts[i] += displacement;
+		verts[i]->P += displacement;
 	}
 }
 
@@ -522,6 +536,7 @@ Shape *LoopSubdiv::CreateShape(
 	string displacementMapName = params.FindOneString("displacementmap", "");
 	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
+	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
@@ -539,5 +554,6 @@ Shape *LoopSubdiv::CreateShape(
 
 	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
 		vi, P, uvs, nlevels, displacementMap,
-		displacementMapScale, displacementMapOffset);
+		displacementMapScale, displacementMapOffset,
+		displacementMapNormalSmooth);
 }

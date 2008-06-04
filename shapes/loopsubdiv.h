@@ -127,7 +127,7 @@ public:
 			int nt, int nv, const int *vi,
 			const Point *P, const float *uv, int nlevels,
 			const boost::shared_ptr<Texture<float> > dismap,
-			float dmscale, float dmoffset);
+			float dmscale, float dmoffset, bool dmnormalsmooth);
 	~LoopSubdiv();
 	bool CanIntersect() const;
 	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
@@ -149,8 +149,11 @@ private:
 	static float gamma(int valence) {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
+	static void GenerateNormals(const vector<SDVertex *> verts, vector<Normal> &Ns);
 
-	void ApplyDisplacementMap(int totVerts, Point *verts, const Normal *norms,
+	void ApplyDisplacementMap(
+			const vector<SDVertex *> verts,
+			const Normal *norms,
 			const float *uvs) const;
 
 	// LoopSubdiv Private Data
@@ -163,7 +166,7 @@ private:
 	float displacementMapScale;
 	float displacementMapOffset;
 
-	bool hasUV;
+	bool hasUV, displacementMapNormalSmooth;
 };
 
 // LoopSubdiv Inline Functions
