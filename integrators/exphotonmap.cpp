@@ -191,27 +191,27 @@ ExPhotonIntegrator::~ExPhotonIntegrator() {
     delete radianceMap;
 
     if (lightSampleOffset)
-        delete lightSampleOffset;
+        delete[] lightSampleOffset;
     if (bsdfSampleOffset)
-        delete bsdfSampleOffset;
+        delete[] bsdfSampleOffset;
     if (bsdfComponentOffset)
-        delete bsdfComponentOffset;
+        delete[] bsdfComponentOffset;
     if (gatherSampleOffset1)
-        delete gatherSampleOffset1;
+        delete[] gatherSampleOffset1;
     if (gatherSampleOffset2)
-        delete gatherSampleOffset2;
+        delete[] gatherSampleOffset2;
     if (gatherComponentOffset1)
-        delete gatherComponentOffset1;
+        delete[] gatherComponentOffset1;
     if (gatherComponentOffset2)
-        delete gatherComponentOffset2;
+        delete[] gatherComponentOffset2;
     if (reflectionSampleOffset)
-        delete reflectionSampleOffset;
+        delete[] reflectionSampleOffset;
     if (reflectionComponentOffset)
-        delete reflectionComponentOffset;
+        delete[] reflectionComponentOffset;
     if (transmissionSampleOffset)
-        delete transmissionSampleOffset;
+        delete[] transmissionSampleOffset;
     if (transmissionComponentOffset)
-        delete transmissionComponentOffset;
+        delete[] transmissionComponentOffset;
 }
 
 void ExPhotonIntegrator::RequestSamples(Sample *sample,
@@ -534,6 +534,10 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
         float *alpha) const {
     // Compute reflected radiance with photon map
     SWCSpectrum L(0.);
+
+	if (!indirectMap)
+		return L;
+
     Intersection isect;
     if (scene->Intersect(ray, &isect)) {
 		int sampleOffset = specularDepth * scene->lights.size();
