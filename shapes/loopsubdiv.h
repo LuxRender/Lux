@@ -127,7 +127,8 @@ public:
 			int nt, int nv, const int *vi,
 			const Point *P, const float *uv, int nlevels,
 			const boost::shared_ptr<Texture<float> > dismap,
-			float dmscale, float dmoffset, bool dmnormalsmooth);
+			float dmscale, float dmoffset,
+			bool dmnormalsmooth, bool dmsharpboundary);
 	~LoopSubdiv();
 	bool CanIntersect() const;
 	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
@@ -140,13 +141,13 @@ public:
 
 private:
 	// LoopSubdiv Private Methods
-	static float beta(int valence) {
+	float beta(int valence) const {
 		if (valence == 3) return 3.f/16.f;
 		else return 3.f / (8.f * valence);
 	}
-	static void weightOneRing(SDVertex *destVert, SDVertex *vert, float beta);
-	static void weightBoundary(SDVertex *destVert, SDVertex *vert, float beta);
-	static float gamma(int valence) {
+	void weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) const ;
+	void weightBoundary(SDVertex *destVert, SDVertex *vert, float beta) const;
+	float gamma(int valence) const {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
 	static void GenerateNormals(const vector<SDVertex *> verts, vector<Normal> &Ns);
@@ -166,7 +167,7 @@ private:
 	float displacementMapScale;
 	float displacementMapOffset;
 
-	bool hasUV, displacementMapNormalSmooth;
+	bool hasUV, displacementMapNormalSmooth, displacementMapSharpBoundary;
 };
 
 // LoopSubdiv Inline Functions

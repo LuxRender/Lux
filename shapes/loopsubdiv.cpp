@@ -35,9 +35,11 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		const float *uv,
 		int nl,
 		const boost::shared_ptr<Texture<float> > dismap,
-		float dmscale, float dmoffset, bool dmnormalsmooth)
+		float dmscale, float dmoffset,
+		bool dmnormalsmooth, bool dmsharpboundary)
 	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale),
-	displacementMapOffset(dmoffset), displacementMapNormalSmooth(dmnormalsmooth) {
+	displacementMapOffset(dmoffset), displacementMapNormalSmooth(dmnormalsmooth),
+	displacementMapSharpBoundary(dmsharpboundary) {
 	nLevels = nl;
 	hasUV = (uv != NULL);
 
@@ -430,7 +432,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 	}
 }
 
-void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) {
+void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) const {
 	// Put _vert_ one-ring in _Pring_
 	int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
@@ -497,24 +499,27 @@ void SDVertex::oneRing(Point *P) {
 }
 
 void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
-                                 float beta) {
+                                 float beta) const {
 	// Put _vert_ one-ring in _Pring_
 	int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
 	vert->oneRing(Vring);
 
-	Point P = (1 - 2 * beta) * vert->P;
-	P += beta * Vring[0]->P;
-	P += beta * Vring[valence-1]->P;
+	if(displacementMapSharpBoundary) {
+		Point P = (1 - 2 * beta) * vert->P;
+		P += beta * Vring[0]->P;
+		P += beta * Vring[valence - 1]->P;
+		destVert->P = P;
+	} else
+		destVert->P = vert->P;
 
 	float u = (1 - 2 * beta) * vert->u;
 	float v = (1 - 2 * beta) * vert->v;
 	u += beta * Vring[0]->u;
 	v += beta * Vring[0]->v;
-	u += beta * Vring[valence-1]->u;
-	v += beta * Vring[valence-1]->v;
+	u += beta * Vring[valence - 1]->u;
+	v += beta * Vring[valence - 1]->v;
 
-	destVert->P = P;
 	destVert->u = u;
 	destVert->v = v;
 }
@@ -537,6 +542,7 @@ Shape *LoopSubdiv::CreateShape(
 	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
+	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
@@ -555,5 +561,5 @@ Shape *LoopSubdiv::CreateShape(
 	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
 		vi, P, uvs, nlevels, displacementMap,
 		displacementMapScale, displacementMapOffset,
-		displacementMapNormalSmooth);
+		displacementMapNormalSmooth, displacementMapSharpBoundary);
 }
