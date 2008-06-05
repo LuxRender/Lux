@@ -17,6 +17,7 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
+#include <wx/spinctrl.h>
 #include <wx/toolbar.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
@@ -50,12 +51,12 @@ namespace lux
 			wxAuiNotebook* m_auinotebook;
 			wxPanel* m_renderPage;
 			wxToolBar* m_renderToolBar;
+			wxSpinCtrl* m_threadSpinCtrl;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
 			wxPanel* m_outputPage;
 			wxStaticText* m_staticText;
 			wxStatusBar* m_statusBar;
-			wxToolBar* m_toolBar2;
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }

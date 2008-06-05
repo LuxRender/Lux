@@ -23,6 +23,8 @@
 #ifndef LUX_WXLUXAPP_H
 #define LUX_WXLUXAPP_H
 
+#include "wxluxgui.h"
+
 namespace lux
 {
 
@@ -30,6 +32,11 @@ namespace lux
 class LuxGuiApp : public wxApp {
 public:
 	virtual bool OnInit();
+
+protected:
+	bool ProcessCommandLine();
+
+	LuxGui *m_guiFrame;
 };
 
 DECLARE_APP(LuxGuiApp)

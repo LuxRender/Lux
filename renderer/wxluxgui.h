@@ -31,7 +31,8 @@
 namespace lux
 {
 
-#define ID_TIMERUPDATE	2000
+#define ID_RENDERUPDATE	2000
+#define ID_STATSUPDATE	2001
 
 /*** LuxError and wxLuxErrorEvent ***/
 
@@ -79,6 +80,9 @@ public:
 	/** Constructor */
 	LuxGui(wxWindow* parent);
 
+	void RenderScenefile(wxString filename);
+	void SetRenderThreads(int num);
+
 protected:
 	DECLARE_EVENT_TABLE()
 	// Handlers for LuxMainFrame events.
@@ -87,14 +91,17 @@ protected:
 	void OnExit(wxCommandEvent &event);
 	void OnError(wxLuxErrorEvent &event);
 	void OnTimer(wxTimerEvent& event);
-
-	void RenderScenefile(wxString filename);
+	void OnSpin(wxSpinEvent& event);
 
 	// Parsing and rendering threads
 	void EngineThread(wxString filename);
+	int m_numThreads;
+
+	void UpdateStatistics();
 
 	wxWindow* m_renderOutput;
 	wxTimer* m_renderTimer;
+	wxTimer* m_statsTimer;
 };
 
 

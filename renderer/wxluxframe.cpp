@@ -56,9 +56,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bRenderSizer;
 	bRenderSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_renderToolBar = new wxToolBar( m_renderPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxTB_TEXT ); 
+	m_renderToolBar = new wxToolBar( m_renderPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
 	m_renderToolBar->AddTool( ID_RESUMETOOL, wxT("Resume"), wxNullBitmap, wxNullBitmap, wxITEM_NORMAL, wxT("Resume rendering"), wxT("Resume (CTRL-S)") );
 	m_renderToolBar->AddTool( ID_STOPTOOL, wxT("Stop"), wxNullBitmap, wxNullBitmap, wxITEM_NORMAL, wxT("Stop (CTRL-T)"), wxT("Stop current rendering") );
+	m_renderToolBar->AddSeparator();
+	m_threadSpinCtrl = new wxSpinCtrl( m_renderToolBar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), wxSP_ARROW_KEYS, 1, 16, 1 );
+	m_renderToolBar->AddControl( m_threadSpinCtrl );
 	m_renderToolBar->Realize();
 	
 	bRenderSizer->Add( m_renderToolBar, 0, wxEXPAND, 5 );
@@ -95,11 +98,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	this->SetSizer( bSizer );
 	this->Layout();
-	m_statusBar = this->CreateStatusBar( 1, wxST_SIZEGRIP, wxID_ANY );
-	m_toolBar2 = this->CreateToolBar( wxTB_HORIZONTAL|wxTB_TEXT, wxID_ANY ); 
-	m_toolBar2->AddTool( wxID_ANY, wxT("tool"), wxNullBitmap, wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString );
-	m_toolBar2->Realize();
-	
+	m_statusBar = this->CreateStatusBar( 2, wxST_SIZEGRIP, wxID_ANY );
 	
 	// Connect Events
 	this->Connect( m_open->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnOpen ) );
