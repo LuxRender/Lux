@@ -120,6 +120,7 @@
 #include "uv.h"
 #include "windy.h"
 #include "wrinkled.h"
+#include "harlequin.h"
 #include "blender_musgrave.h"
 #include "blender_marble.h"
 #include "blender_wood.h"
@@ -519,6 +520,11 @@ if (plugin)
     }
     if(name=="wrinkled") {
         boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="harlequin") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(HarlequinTexture::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }

@@ -444,7 +444,8 @@ SET(lux_lib_src
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
         textures/blender_wood.cpp textures/blender_musgrave.cpp textures/blender_marble.cpp textures/blender_noiselib.cpp textures/blender_texlib.cpp
-		textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp textures/blender_stucci.cpp
+		textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp
+		textures/blender_stucci.cpp textures/harlequin.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/tilepx.cpp
