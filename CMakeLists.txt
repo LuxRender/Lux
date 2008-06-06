@@ -122,7 +122,9 @@ ELSE(APPLE)
 		MESSAGE(STATUS "Boost include directory:" ${Boost_INCLUDE_DIRS})
 		IF(CYGWIN)
 			SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
-		ELSE(CYGWIN)
+		ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+			SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem boost_serialization boost_iostreams boost_regex)
+		ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 			SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
 		ENDIF(CYGWIN)
 	ELSE(Boost_FOUND)
@@ -268,6 +270,14 @@ ENDIF(wxWidgets_FOUND)
 
 #############################################################################
 #############################################################################
+############################ THREADING LIBRARIES ############################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE(Threads REQUIRED)
+
+#############################################################################
+#############################################################################
 ###########################   SYSTEM LIBRARIES    ###########################
 #############################################################################
 #############################################################################
@@ -304,9 +314,9 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 ADD_DEFINITIONS(-O3 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - my settings
-#ADD_DEFINITIONS(-g -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-g -O0 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 
 # Dade - Intel CC settings (double pass, 32bit, remember to uncomment the line at the end of file too)
 #  rm -rf CMakeCache.txt CMakeFiles
@@ -323,7 +333,7 @@ ADD_DEFINITIONS(-O3 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -ip -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"' -DBOOST_NO_INTRINSIC_INT64_T "-D'__builtin_vsnprintf(__out, __size, __fmt, __args)'='__builtin_vsnprintf(__out, __size, __fmt, (char *) __args)'") 
 
 #ADD_DEFINITIONS(-O3 -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS( -O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 #ADD_DEFINITIONS(-O3 -Wall -msse -msse2 -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-g -Wall -msse -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ICC definitions
@@ -434,7 +444,7 @@ SET(lux_lib_src
         textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
         textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp
         textures/blender_wood.cpp textures/blender_musgrave.cpp textures/blender_marble.cpp textures/blender_noiselib.cpp textures/blender_texlib.cpp
-	textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp textures/blender_stucci.cpp
+		textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp textures/blender_stucci.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/tilepx.cpp
@@ -479,9 +489,9 @@ REMOVE_DEFINITIONS(-ipo)
 #Here we build the console executable
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole lux ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxconsole lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole lux ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -518,9 +528,9 @@ MARK_AS_ADVANCED (OPENGL_LIBRARY)
 MARK_AS_ADVANCED (AGL_LIBRARY)
 MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-TARGET_LINK_LIBRARIES(luxrender lux ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-TARGET_LINK_LIBRARIES(luxrender lux ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 #IF(APPLE AND !APPLE_64)
