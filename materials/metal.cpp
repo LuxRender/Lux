@@ -26,6 +26,7 @@
 #include "fresnelconductor.h"
 #include "microfacet.h"
 #include "blinn.h"
+#include "anisotropic.h"
 #include "paramset.h"
 
 #include "irregular.h"
@@ -36,10 +37,13 @@
 
 using namespace lux;
 
-Metal::Metal(boost::shared_ptr<Texture<SPD*> > n, boost::shared_ptr<Texture<SPD*> > k, boost::shared_ptr<Texture<float> > rough, boost::shared_ptr<Texture<float> > bump) {
+Metal::Metal(boost::shared_ptr<Texture<SPD*> > n, boost::shared_ptr<Texture<SPD*> > k, 
+			 boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
+			 boost::shared_ptr<Texture<float> > bump) {
   N = n;
   K = k;
-  roughness = rough;
+		nu = u;
+		nv = v;
   bumpMap = bump;
 }
 
@@ -54,9 +58,15 @@ BSDF *Metal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
   BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
   SWCSpectrum n(N->Evaluate(dgs));
   SWCSpectrum k(K->Evaluate(dgs));
-  float rough = roughness->Evaluate(dgs);
 
-  MicrofacetDistribution *md = BSDF_ALLOC( Blinn)(1.f / rough);
+    float u = nu->Evaluate(dgs);
+	float v = nv->Evaluate(dgs);
+
+	MicrofacetDistribution *md;
+	if(u == v)
+		md = BSDF_ALLOC( Blinn)(1.f / u);
+	else
+		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
 
   Fresnel *fresnel = BSDF_ALLOC( FresnelConductor)(n, k);
   bsdf->Add(BSDF_ALLOC( Microfacet)(1., fresnel, md));
@@ -396,8 +406,9 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
   boost::shared_ptr<Texture<SPD*> > n (new ConstantTexture<SPD*>(s_n));
   boost::shared_ptr<Texture<SPD*> > k (new ConstantTexture<SPD*>(s_k));
 
-  boost::shared_ptr<Texture<float> > roughness = tp.GetFloatTexture("roughness", .1f);
+	boost::shared_ptr<Texture<float> > uroughness = tp.GetFloatTexture("uroughness", .1f);
+	boost::shared_ptr<Texture<float> > vroughness = tp.GetFloatTexture("vroughness", .1f);
   boost::shared_ptr<Texture<float> > bumpMap = tp.GetFloatTexture("bumpmap", 0.f);
 
-  return new Metal(n, k, roughness, bumpMap);
+  return new Metal(n, k, uroughness, vroughness, bumpMap);
 }

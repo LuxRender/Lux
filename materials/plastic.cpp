@@ -27,6 +27,7 @@
 #include "fresneldielectric.h"
 #include "microfacet.h"
 #include "blinn.h"
+#include "anisotropic.h"
 #include "paramset.h"
 
 using namespace lux;
@@ -52,9 +53,17 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 	BxDF *diff = BSDF_ALLOC( Lambertian)(kd);
 	Fresnel *fresnel =
 		BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
-	float rough = roughness->Evaluate(dgs);
-	BxDF *spec = BSDF_ALLOC( Microfacet)(ks, fresnel,
-		BSDF_ALLOC( Blinn)(1.f / rough));
+
+	float u = nu->Evaluate(dgs);
+	float v = nv->Evaluate(dgs);
+
+	MicrofacetDistribution *md;
+	if(u == v)
+		md = BSDF_ALLOC( Blinn)(1.f / u);
+	else
+		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
+
+	BxDF *spec = BSDF_ALLOC( Microfacet)(ks, fresnel, md);
 	bsdf->Add(diff);
 	bsdf->Add(spec);
 	return bsdf;
@@ -64,7 +73,8 @@ Material* Plastic::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	boost::shared_ptr<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
 	boost::shared_ptr<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
-	boost::shared_ptr<Texture<float> > roughness = mp.GetFloatTexture("roughness", .1f);
+	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
+	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Plastic(Kd, Ks, roughness, bumpMap);
+	return new Plastic(Kd, Ks, uroughness, vroughness, bumpMap);
 }

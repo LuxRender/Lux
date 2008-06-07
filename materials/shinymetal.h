@@ -46,7 +46,7 @@ public:
 private:
 	// ShinyMetal Private Data
 	boost::shared_ptr<Texture<Spectrum> > Ks, Kr;
-		boost::shared_ptr<Texture<float> > nu, nv;
+	boost::shared_ptr<Texture<float> > nu, nv;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
 

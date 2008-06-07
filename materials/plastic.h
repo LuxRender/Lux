@@ -33,11 +33,12 @@ public:
 	// Plastic Public Methods
 	Plastic(boost::shared_ptr<Texture<Spectrum> > kd,
 			boost::shared_ptr<Texture<Spectrum> > ks,
-			boost::shared_ptr<Texture<float> > rough,
+			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
 			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
-		roughness = rough;
+		nu = u;
+		nv = v;
 		bumpMap = bump;
 	}
 	BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
@@ -47,7 +48,7 @@ public:
 private:
 	// Plastic Private Data
 	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
-	boost::shared_ptr<Texture<float> > roughness, bumpMap;
+	boost::shared_ptr<Texture<float> > nu, nv, bumpMap;
 };
 
 }//namespace lux
