@@ -94,7 +94,8 @@ using std::sort;
 #  define atan2f atan2
 #  define logf log
 #  define log10f log10
-#  define expf exp
+// Dade - commented out because of Jim's suggestion in bug #177
+//#  define expf exp
 #  define sqrtf sqrt
 #  if (__GNUC__ == 3) || (__GNUC__ == 4)
 extern "C" {
