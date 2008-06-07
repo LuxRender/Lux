@@ -25,7 +25,6 @@
 #include "bxdf.h"
 #include "nulltransmission.h"
 #include "paramset.h"
-
 using namespace lux;
 
 // Glass Method Definitions

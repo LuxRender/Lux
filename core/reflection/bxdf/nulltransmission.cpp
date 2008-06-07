@@ -36,6 +36,6 @@ SWCSpectrum NullTransmission::Sample_f(const Vector &wo,
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	return 1.f;
+	return 1.f / fabsf(CosTheta(*wi));
 }
 

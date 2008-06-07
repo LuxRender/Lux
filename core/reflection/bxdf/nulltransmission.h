@@ -34,7 +34,7 @@ class  NullTransmission : public BxDF {
 public:
 	// NullTransmission Public Methods
 	NullTransmission()
-		: BxDF(BxDFType(BSDF_NULL)) {}
+		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
 	SWCSpectrum f(const Vector &, const Vector &) const {
 		return SWCSpectrum(0.);
 	}
