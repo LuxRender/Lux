@@ -794,9 +794,9 @@ int main(int ac, char *av[]) {
 	// Dade - reported by jim (bug #176), in order to avoid an Apple system
 	// specific argument
 
-	for(int i=0;i<ac;i++)
-		if(av[i][0] == '-' && av[i][1] == 'p' && av[i][2] == 's' && av[i][3] == 'n' && av[i][4] == '_')
-		  av[i][0]=0;
+	for(int i = 0; i < ac; ++i)
+		if (std::string(av[i]).compare(0, 5, "-psn_") == 0)
+			av[i][0] = '\0';
 #endif
 
     bool useServer = false;
