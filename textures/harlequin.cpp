@@ -20,6 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "harlequin.h"
+//#include "harlequin.h"
 
-using namespace lux;
+//using namespace lux;
