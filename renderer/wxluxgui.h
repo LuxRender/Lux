@@ -26,6 +26,8 @@
 #include <boost/shared_ptr.hpp>
 #include <string>
 
+#include <wx/scrolwin.h>
+
 #include "wxluxframe.h"
 
 namespace lux
@@ -73,6 +75,18 @@ typedef void (wxEvtHandler::*wxLuxErrorEventFunction)(wxLuxErrorEvent&);
     wxStaticCastEvent( wxLuxErrorEventFunction, & fn ), (wxObject *) NULL ),
 
 
+/*** LuxOutputWin ***/
+
+class LuxOutputWin : public wxScrolledWindow {
+public:
+	LuxOutputWin(wxWindow *parent);
+
+protected:
+	DECLARE_EVENT_TABLE()
+	void OnDraw(wxDC &dc);
+};
+
+
 /*** LuxGui ***/
 
 class LuxGui : public LuxMainFrame {
@@ -93,27 +107,19 @@ protected:
 	void OnTimer(wxTimerEvent& event);
 	void OnSpin(wxSpinEvent& event);
 
+	void LoadImages();
+
 	// Parsing and rendering threads
 	void EngineThread(wxString filename);
 	int m_numThreads;
 
 	void UpdateStatistics();
 
-	wxWindow* m_renderOutput;
+	LuxOutputWin* m_renderOutput;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;
-};
 
-
-/*** LuxOutputWin ***/
-
-class LuxOutputWin : public wxWindow {
-public:
-	LuxOutputWin(wxWindow *parent);
-
-protected:
-	DECLARE_EVENT_TABLE()
-	void OnPaint(wxPaintEvent &event);
+	wxBitmap m_splashbmp;
 };
 
 

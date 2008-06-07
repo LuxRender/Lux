@@ -35,8 +35,10 @@
 #include "wx/filedlg.h"
 #include "wx/filename.h"
 #include "wx/dcbuffer.h"
+#include "wx/splash.h"
 
 #include "wxluxgui.h"
+#include "wximages.h"
 
 using namespace lux;
 
@@ -51,6 +53,9 @@ BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 END_EVENT_TABLE()
 
 LuxGui::LuxGui(wxWindow* parent):LuxMainFrame(parent) {
+	// Load images and icons from header.
+	LoadImages();
+
 	// Add custom output viewer window
 	m_renderOutput = new LuxOutputWin(m_renderPage);
 	m_renderPage->GetSizer()->Add(m_renderOutput, 1, wxALL | wxEXPAND, 5);
@@ -64,9 +69,40 @@ LuxGui::LuxGui(wxWindow* parent):LuxMainFrame(parent) {
 	luxErrorHandler(&LuxGuiErrorHandler);
 }
 
+void LuxGui::LoadImages() {
+	wxImage::AddHandler(new wxPNGHandler());
+
+	// App icon
+	wxIcon appIcon;
+	appIcon.CopyFromBitmap(wxMEMORY_BITMAP(luxicon_png));
+	SetIcon(appIcon);
+
+	// Resume toolbar tool
+	m_renderToolBar->SetToolNormalBitmap(ID_RESUMETOOL, wxMEMORY_BITMAP(resume_png));
+	// Stop toolbar tool
+	m_renderToolBar->SetToolNormalBitmap(ID_STOPTOOL, wxMEMORY_BITMAP(stop_png));
+
+	// wxGTK has problems changing an existing menu item's icon, so we remove and add then again...
+	// Resume menu item
+	wxMenuItem *renderitem = m_render->Remove(ID_RESUMEITEM);
+	renderitem->SetBitmap(wxMEMORY_BITMAP(resume_png));
+	m_render->Insert(0,renderitem);
+	// Stop menu item
+	wxMenuItem *stopitem = m_render->Remove(ID_STOPITEM);
+	stopitem->SetBitmap(wxMEMORY_BITMAP(stop_png));
+	m_render->Insert(1,stopitem);
+
+	m_auinotebook->SetPageBitmap(0, wxMEMORY_BITMAP(render_png));
+	m_auinotebook->SetPageBitmap(1, wxMEMORY_BITMAP(info_png));
+	m_auinotebook->SetPageBitmap(2, wxMEMORY_BITMAP(output_png));
+
+	m_splashbmp = wxMEMORY_BITMAP(splash_png);
+}
+
 void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
 		case ID_RESUMEITEM:
+		case ID_RESUMETOOL:
 			// Start display update timer
 			if(luxStatistics("sceneIsReady")) {
 				m_renderOutput->Refresh();
@@ -75,9 +111,14 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			}
 			break;
 		case ID_STOPITEM:
+		case ID_STOPTOOL:
 			// Stop display update timer
 			m_renderTimer->Stop();
 			m_statsTimer->Stop();
+			break;
+		case wxID_ABOUT:
+			new wxSplashScreen(m_splashbmp, wxSPLASH_CENTRE_ON_PARENT, 0, this, -1);
+			break;
 		default:
 			break;
 	}
@@ -150,6 +191,8 @@ void LuxGui::RenderScenefile(wxString filename) {
 		wxSleep(1);
 
 	// Start updating the display by faking a resume menu item click.
+	m_renderOutput->SetVirtualSize(luxStatistics("filmXres"), luxStatistics("filmYres"));
+	m_renderOutput->SetScrollRate(1,1);
 	wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
 	GetEventHandler()->AddPendingEvent(startEvent);
 }
@@ -198,12 +241,11 @@ BEGIN_EVENT_TABLE(LuxOutputWin, wxWindow)
 END_EVENT_TABLE()
 
 LuxOutputWin::LuxOutputWin(wxWindow *parent)
-      : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(-1, -1), wxHSCROLL | wxVSCROLL) {
+      : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(-1, -1)) {
 }
 
-void LuxOutputWin::OnPaint(wxPaintEvent& event) {
+void LuxOutputWin::OnDraw(wxDC &dc) {
 	if (luxStatistics("sceneIsReady")) {
-		wxPaintDC dc(this);
 		unsigned char* fb = luxFramebuffer();
 		dc.DrawBitmap(wxBitmap(wxImage(luxStatistics("filmXres"), luxStatistics("filmYres"), fb, true)), 0, 0, false);
 	}

@@ -172,7 +172,7 @@
                         <event name="OnUpdateUI"></event>
                     </object>
                     <object class="wxMenuItem" expanded="1">
-                        <property name="bitmap"></property>
+                        <property name="bitmap">; Load From File</property>
                         <property name="checked">0</property>
                         <property name="enabled">1</property>
                         <property name="help">Stop current rendering</property>
@@ -271,7 +271,7 @@
                         <event name="OnSize"></event>
                         <event name="OnUpdateUI"></event>
                         <object class="auinotebookpage" expanded="1">
-                            <property name="bitmap"></property>
+                            <property name="bitmap">; Load From File</property>
                             <property name="label">Render</property>
                             <property name="select">1</property>
                             <object class="wxPanel" expanded="1">
@@ -327,7 +327,7 @@
                                         <property name="proportion">0</property>
                                         <object class="wxToolBar" expanded="1">
                                             <property name="bg"></property>
-                                            <property name="bitmapsize"></property>
+                                            <property name="bitmapsize">-1,-1</property>
                                             <property name="context_help"></property>
                                             <property name="enabled">1</property>
                                             <property name="fg"></property>
@@ -373,7 +373,7 @@
                                             <event name="OnSize"></event>
                                             <event name="OnUpdateUI"></event>
                                             <object class="tool" expanded="1">
-                                                <property name="bitmap">; Load From File</property>
+                                                <property name="bitmap">blank.xpm; Load From File</property>
                                                 <property name="id">ID_RESUMETOOL</property>
                                                 <property name="kind">wxITEM_NORMAL</property>
                                                 <property name="label">Resume</property>
@@ -381,13 +381,13 @@
                                                 <property name="statusbar">Resume (CTRL-S)</property>
                                                 <property name="tooltip">Resume rendering</property>
                                                 <event name="OnMenuSelection"></event>
-                                                <event name="OnToolClicked"></event>
+                                                <event name="OnToolClicked">OnMenu</event>
                                                 <event name="OnToolEnter"></event>
                                                 <event name="OnToolRClicked"></event>
                                                 <event name="OnUpdateUI"></event>
                                             </object>
                                             <object class="tool" expanded="1">
-                                                <property name="bitmap">; Load From File</property>
+                                                <property name="bitmap">blank.xpm; Load From File</property>
                                                 <property name="id">ID_STOPTOOL</property>
                                                 <property name="kind">wxITEM_NORMAL</property>
                                                 <property name="label">Stop</property>
@@ -395,7 +395,7 @@
                                                 <property name="statusbar">Stop current rendering</property>
                                                 <property name="tooltip">Stop (CTRL-T)</property>
                                                 <event name="OnMenuSelection"></event>
-                                                <event name="OnToolClicked"></event>
+                                                <event name="OnToolClicked">OnMenu</event>
                                                 <event name="OnToolEnter"></event>
                                                 <event name="OnToolRClicked"></event>
                                                 <event name="OnUpdateUI"></event>
@@ -457,10 +457,10 @@
                             </object>
                         </object>
                         <object class="auinotebookpage" expanded="1">
-                            <property name="bitmap"></property>
+                            <property name="bitmap">; Load From File</property>
                             <property name="label">Log</property>
                             <property name="select">0</property>
-                            <object class="wxPanel" expanded="1">
+                            <object class="wxPanel" expanded="0">
                                 <property name="bg"></property>
                                 <property name="context_help"></property>
                                 <property name="enabled">1</property>
@@ -566,10 +566,10 @@
                             </object>
                         </object>
                         <object class="auinotebookpage" expanded="1">
-                            <property name="bitmap"></property>
+                            <property name="bitmap">; Load From File</property>
                             <property name="label">Output</property>
                             <property name="select">0</property>
-                            <object class="wxPanel" expanded="1">
+                            <object class="wxPanel" expanded="0">
                                 <property name="bg"></property>
                                 <property name="context_help"></property>
                                 <property name="enabled">1</property>
