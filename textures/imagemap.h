@@ -48,8 +48,21 @@ public:
 	T Evaluate(const DifferentialGeometry &) const;
 	~ImageTexture();
 	
+	u_int getMemoryUsed() const {
+		if (mipmap)
+			return mipmap->getMemoryUsed();
+		else
+			return 0;
+	}
+
+	void discardMipmaps(int n) {
+		if (mipmap)
+			mipmap->discardMipmaps(n);
+	}
+	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+
 private:
 	// ImageTexture Private Methods
 	static MIPMap<T> *GetTexture(const string &filename,
@@ -60,12 +73,13 @@ private:
 	static void convert(const Spectrum &from, float *to) {
 		*to = from.y();
 	}
+
 	// ImageTexture Private Data
 	MIPMap<T> *mipmap;
 	TextureMapping2D *mapping;
 };
 
-template <class T> inline Texture<float> * ImageTexture<T>::CreateFloatTexture(const Transform &tex2world,
+template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
@@ -103,11 +117,30 @@ template <class T> inline Texture<float> * ImageTexture<T>::CreateFloatTexture(c
 	float gain = tp.FindFloat("gain", 1.0f);
 	float gamma = tp.FindFloat("gamma", 1.0f);
 
-	return new ImageTexture<float>(map, tp.FindString("filename"),
+	string filename = tp.FindString("filename");
+
+	int discardmm = tp.FindInt("discardmipmaps", 0);
+
+	ImageTexture<float> *tex = new ImageTexture<float>(map, filename,
 		trilerp, maxAniso, wrapMode, gain, gamma);
+
+	if (discardmm > 0) {
+		tex->discardMipmaps(discardmm);
+
+		std::stringstream ss;
+		ss<<"Discarded " << discardmm << " mipmap levels";
+		luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+	}
+
+	std::stringstream ss;
+	ss<<"Memory used for imagemap '" << filename << "': " <<
+		(tex->getMemoryUsed() / 1024) << "KBytes";
+	luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+
+	return tex;
 }
 
-template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T> inline Texture<Spectrum> *ImageTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
@@ -145,8 +178,27 @@ template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTex
 	float gain = tp.FindFloat("gain", 1.0f);
 	float gamma = tp.FindFloat("gamma", 1.0f);
 
-	return new ImageTexture<Spectrum>(map, tp.FindString("filename"),
+	string filename = tp.FindString("filename");
+
+	int discardmm = tp.FindInt("discardmipmaps", 0);
+
+	ImageTexture<Spectrum> *tex = new ImageTexture<Spectrum>(map, filename,
 		trilerp, maxAniso, wrapMode, gain, gamma);
+
+	if (discardmm > 0) {
+		tex->discardMipmaps(discardmm);
+
+		std::stringstream ss;
+		ss<<"Discarded " << discardmm << " mipmap levels";
+		luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+	}
+
+	std::stringstream ss;
+	ss<<"Memory used for imagemap '" << filename << "': " <<
+		(tex->getMemoryUsed() / 1024) << "KBytes";
+	luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
+
+	return tex;
 }
 
 // ImageMapTexture Method Definitions
@@ -202,7 +254,7 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap<T>(doTrilinear,maxAniso, wrap, gain, gamma);
+		ret = imgdata->createMIPMap<T>(doTrilinear, maxAniso, wrap, gain, gamma);
 	} else {
 		// Create one-valued _MIPMap_
 		T *oneVal = new T[1];

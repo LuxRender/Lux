@@ -47,6 +47,9 @@ public:
 	virtual T Lookup(float s, float t, float width = 0.f) const = 0;
 	virtual T Lookup(float s, float t, float ds0, float dt0,
 		float ds1, float dt1) const = 0;
+
+	virtual u_int getMemoryUsed() const = 0;
+	virtual void discardMipmaps(int n) = 0;
 };
 
 template <class T, class U> class MIPMapImpl : public MIPMap<T> {
@@ -55,16 +58,44 @@ public:
 	MIPMapImpl(int xres, int yres, const U *data, bool doTri = false,
 		float maxAniso = 8.f, ImageWrap wrapMode = TEXTURE_REPEAT,
 		float gain = 1.f, float gamma = 1.0f);
+	~MIPMapImpl();
+
 	T Lookup(float s, float t, float width = 0.f) const;
 	T Lookup(float s, float t, float ds0, float dt0,
 		float ds1, float dt1) const;
-	~MIPMapImpl();
+
+	u_int getMemoryUsed() const {
+		u_int size = 0;
+
+		for (int i = 0; i < nLevels; i++)
+			size += pyramid[i]->uSize() * pyramid[i]->vSize() * sizeof(U);
+
+		return size;
+	}
+
+	void discardMipmaps(int n) {
+		for (int i = 0; i < n; i++) {
+			if (nLevels <= 1)
+				return;
+
+			delete pyramid[0];
+
+			nLevels--;
+			BlockedArray<U> **newPyramid = new BlockedArray<U> *[nLevels];
+			for (int j = 0; j < nLevels; j++)
+				newPyramid[j] = pyramid[j + 1];
+
+			delete[] pyramid;
+			pyramid = newPyramid;
+		}
+	}
 
 protected:
 	const U& texelInternal(int level, int s, int t) const;
 	const T texel(int level, int s, int t) const {
 		T texelValue;
 		convert(texelValue, texelInternal(level, s, t));
+
 		return texelValue;
 	}
 
@@ -211,7 +242,7 @@ private:
 
 template <class T, class U> float *MIPMapImpl<T, U>::weightLut = NULL;
 template <class T, class U> float MIPMapImpl<T, U>::invMaxUnsignedChar = 1.0f / (std::numeric_limits<unsigned char>::max() - 1);
-template <class T, class U> float MIPMapImpl<T, U>::invMaxUnsignedShort;
+template <class T, class U> float MIPMapImpl<T, U>::invMaxUnsignedShort = 1.0f / (std::numeric_limits<unsigned short>::max() - 1);
 
 // MIPMapImpl Method Definitions
 
@@ -233,6 +264,7 @@ T MIPMapImpl<T, U>::Lookup(float s, float t, float width) const
 		return Lerp<T>(delta, triangle(iLevel, s, t), triangle(iLevel + 1, s, t));
 	}
 }
+
 template <class T, class U>
 T MIPMapImpl<T, U>::triangle(int level, float s, float t) const
 {
@@ -344,11 +376,6 @@ template <class T,class U>
 MIPMapImpl<T,U>::MIPMapImpl(int sres, int tres, const U *img, bool doTri,
 	float maxAniso, ImageWrap wm, float gn,float gma)
 {
-	// Dade - initialized all the times. Not very clean but far more portable than 
-	// using static costructors
-	invMaxUnsignedChar = 1.0f / (std::numeric_limits<unsigned char>::max() - 1);
-	invMaxUnsignedShort = 1.0f / (std::numeric_limits<unsigned short>::max() - 1);
-
 	doTrilinear = doTri;
 	maxAnisotropy = maxAniso;
 	wrapMode = wm;
