@@ -52,7 +52,7 @@ public:
 
 	Spectrum Evaluate(const DifferentialGeometry &dg) const {
 		// Dade - I assume object are 8 bytes aligned
-		u_int lookupIndex = (((u_int)dg.shape) &
+		u_long lookupIndex = (((u_long)dg.shape) &
 				((HARLEQUIN_TEXTURE_PALETTE_SIZE-1) << 3)) >> 3;
 
 		return ColorLookupTable[lookupIndex];
