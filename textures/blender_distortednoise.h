@@ -52,7 +52,7 @@ public:
         tex.type = TEX_DISTNOISE;
 
         tex.noisesize = noiseSize;
-        tex.stype = sType;
+        tex.noisebasis2 = sType;
 		tex.dist_amount = distAmount;
 		tex.nabla = nabla;
         tex.noisebasis = noiseBasis;
