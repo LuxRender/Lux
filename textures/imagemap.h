@@ -39,10 +39,12 @@ class ImageTexture : public Texture<T> {
 public:
 	// ImageTexture Public Methods
 	ImageTexture(TextureMapping2D *m,
-	             const string &filename,
-				 bool doTri,
-				 float maxAniso,
-				 ImageWrap wm);
+			const string &filename,
+			bool doTri,
+			float maxAniso,
+			ImageWrap wm,
+			float gain,
+			float gamma);
 	T Evaluate(const DifferentialGeometry &) const;
 	~ImageTexture();
 	
@@ -51,7 +53,7 @@ public:
 private:
 	// ImageTexture Private Methods
 	static MIPMap<T> *GetTexture(const string &filename,
-	    bool doTrilinear, float maxAniso, ImageWrap wm);
+	    bool doTrilinear, float maxAniso, ImageWrap wm, float gain, float gamma);
 	static void convert(const Spectrum &from, Spectrum *to) {
 		*to = from;
 	}
@@ -88,6 +90,7 @@ template <class T> inline Texture<float> * ImageTexture<T>::CreateFloatTexture(c
 		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
+
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
 	bool trilerp = tp.FindBool("trilinear", false);
@@ -96,8 +99,12 @@ template <class T> inline Texture<float> * ImageTexture<T>::CreateFloatTexture(c
 	if (wrap == "" || wrap == "repeat") wrapMode = TEXTURE_REPEAT;
 	else if (wrap == "black") wrapMode = TEXTURE_BLACK;
 	else if (wrap == "clamp") wrapMode = TEXTURE_CLAMP;
+
+	float gain = tp.FindFloat("gain", 1.0f);
+	float gamma = tp.FindFloat("gamma", 1.0f);
+
 	return new ImageTexture<float>(map, tp.FindString("filename"),
-		trilerp, maxAniso, wrapMode);
+		trilerp, maxAniso, wrapMode, gain, gamma);
 }
 
 template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
@@ -125,6 +132,7 @@ template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTex
 		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
+
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
 	bool trilerp = tp.FindBool("trilinear", false);
@@ -133,8 +141,12 @@ template <class T> inline Texture<Spectrum> * ImageTexture<T>::CreateSpectrumTex
 	if (wrap == "" || wrap == "repeat") wrapMode = TEXTURE_REPEAT;
 	else if (wrap == "black") wrapMode = TEXTURE_BLACK;
 	else if (wrap == "clamp") wrapMode = TEXTURE_CLAMP;
+
+	float gain = tp.FindFloat("gain", 1.0f);
+	float gamma = tp.FindFloat("gamma", 1.0f);
+
 	return new ImageTexture<Spectrum>(map, tp.FindString("filename"),
-		trilerp, maxAniso, wrapMode);
+		trilerp, maxAniso, wrapMode, gain, gamma);
 }
 
 // ImageMapTexture Method Definitions
@@ -143,10 +155,12 @@ ImageTexture<T>::ImageTexture(TextureMapping2D *m,
 		const string &filename,
 		bool doTrilinear,
 		float maxAniso,
-		ImageWrap wrapMode) {
+		ImageWrap wrapMode,
+		float gain,
+		float gamma) {
 	mapping = m;
 	mipmap = GetTexture(filename, doTrilinear,
-		maxAniso, wrapMode);
+		maxAniso, wrapMode, gain, gamma);
 }
 
 template <class T> inline ImageTexture<T>::~ImageTexture() {
@@ -169,10 +183,12 @@ struct TexInfo {
 };
 
 template <class T> inline MIPMap<T> *ImageTexture<T>::
-	GetTexture( const string &filename,
-	           bool doTrilinear,
-			   float maxAniso,
-			   ImageWrap wrap) {
+	GetTexture(const string &filename,
+		bool doTrilinear,
+		float maxAniso,
+		ImageWrap wrap,
+		float gain,
+		float gamma) {
 	// Look for texture in texture cache
 	static map<TexInfo, MIPMap<T> *> textures;
 	TexInfo texInfo(filename, doTrilinear, maxAniso, wrap);
@@ -186,9 +202,8 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap<T>(doTrilinear,maxAniso, wrap);
-	}
-	else {
+		ret = imgdata->createMIPMap<T>(doTrilinear,maxAniso, wrap, gain, gamma);
+	} else {
 		// Create one-valued _MIPMap_
 		T *oneVal = new T[1];
 		oneVal[0] = 1.;

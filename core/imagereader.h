@@ -31,135 +31,188 @@ using namespace std;
 
 namespace lux
 {
-	class  ImageData {
-	public:
-		enum PixelDataType {
-			  UNSIGNED_CHAR_TYPE,
-			  UNSIGNED_SHORT_TYPE,
-			  FLOAT_TYPE
-		   };
 
-		ImageData(int width, int height, PixelDataType type, int noChannels, TextureColorBase* data)
-		{
-			width_=width;
-			height_=height;
-			pixel_type_=type;
-			noChannels_=noChannels;
-			// NOTE - Ratow - Not using auto_ptr here because of undefined behavior when deleting array data
-			data_=data;
-			isExrImage_=false;
+class ImageData {
+public:
+	enum PixelDataType {
+		UNSIGNED_CHAR_TYPE,
+		UNSIGNED_SHORT_TYPE,
+		FLOAT_TYPE
+	};
 
-		}
-		~ImageData()
-		{
-			delete[] data_;
-		}
+	ImageData(int width, int height, PixelDataType type, int noChannels, TextureColorBase* data) {
+		width_ = width;
+		height_ = height;
+		pixel_type_ = type;
+		noChannels_ = noChannels;
+		// NOTE - Ratow - Not using auto_ptr here because of undefined behavior when deleting array data
+		data_ = data;
+		isExrImage_ = false;
 
-		int getWidth()		{	return width_; }
-		int getHeight()		{	return height_; }
-		int getChannels()	{	return noChannels_; }
-		PixelDataType  getPixelDataType() { return pixel_type_;}
-		TextureColorBase * getData()	{	return data_; }
-		bool isExrImage() { return isExrImage_;}
-		void setIsExrImage(bool isExrImage) {isExrImage_= isExrImage;}
+	}
 
-    template <class T>
-		MIPMap<T> * createMIPMap(bool doTri = false,
-			float maxAniso = 8.f, ImageWrap wrapMode = TEXTURE_REPEAT)
-		{
-			MIPMap<T> *mipmap=NULL;
-			
-			// Dade - added support for 1 channel maps
-			if(noChannels_ == 1) {
-				if(pixel_type_==UNSIGNED_CHAR_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 1> >(
-							width_, height_,(TextureColor<unsigned char, 1>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
+	~ImageData() {
+		delete[] data_;
+	}
 
-				if(pixel_type_==FLOAT_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<float, 1> >(
-							width_, height_,(TextureColor<float,1>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
+	int getWidth() {
+		return width_;
+	}
 
-				if(pixel_type_==UNSIGNED_SHORT_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 1> >(
-							width_, height_,( TextureColor<unsigned short, 1>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
-			} else if(noChannels_ == 3) {
-				if(pixel_type_==UNSIGNED_CHAR_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 3> >(
-							width_, height_,(TextureColor<unsigned char,3>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
+	int getHeight() {
+		return height_;
+	}
 
-				if(pixel_type_==FLOAT_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<float, 3> >(
-							width_, height_,(TextureColor<float,3>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
+	int getChannels() {
+		return noChannels_;
+	}
 
-				if(pixel_type_==UNSIGNED_SHORT_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 3> >(
-							width_, height_,( TextureColor<unsigned short,3>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
-			} else if(noChannels_ == 4) {
-				if(pixel_type_==FLOAT_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<float,4> >(
-							width_, height_,( TextureColor<float,4>*)data_,
-							doTri,maxAniso,wrapMode);
-				}
-				if(pixel_type_==UNSIGNED_CHAR_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char,4> >(
-							width_, height_,static_cast< TextureColor<unsigned char,4>* >(data_),
-							doTri,maxAniso,wrapMode);
-				}
-				if(pixel_type_==UNSIGNED_SHORT_TYPE)
-				{
-					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short,4> >(
-							width_, height_,static_cast< TextureColor<unsigned short,4>* >(data_),
-							doTri,maxAniso,wrapMode);
-				}
-			} else {
-				luxError(LUX_SYSTEM, LUX_ERROR, "Unsupported channel count in ImageData::createMIPMap()");
+	PixelDataType getPixelDataType() {
+		return pixel_type_;
+	}
 
-				return NULL;
+	TextureColorBase * getData() {
+		return data_;
+	}
+
+	bool isExrImage() {
+		return isExrImage_;
+	}
+
+	void setIsExrImage(bool isExrImage) {
+		isExrImage_ = isExrImage;
+	}
+
+	template <class T>
+	MIPMap<T> * createMIPMap(bool doTri = false,
+	float maxAniso = 8.f, ImageWrap wrapMode = TEXTURE_REPEAT,
+	float gain = 1.0f, float gamma = 1.0f) {
+		MIPMap<T> *mipmap = NULL;
+
+		// Dade - added support for 1 channel maps
+		if (noChannels_ == 1) {
+			if (pixel_type_ == UNSIGNED_CHAR_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 1 > >(
+						width_, height_, (TextureColor<unsigned char, 1 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 1 > >(
+						width_, height_, (TextureColor<unsigned char, 1 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			} else if (pixel_type_ == FLOAT_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<float, 1 > >(
+						width_, height_, (TextureColor<float, 1 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<float, 1 > >(
+						width_, height_, (TextureColor<float, 1 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			} else if (pixel_type_ == UNSIGNED_SHORT_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 1 > >(
+						width_, height_, (TextureColor<unsigned short, 1 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 1 > >(
+						width_, height_, (TextureColor<unsigned short, 1 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
 			}
+		} else if (noChannels_ == 3) {
+			if (pixel_type_ == UNSIGNED_CHAR_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 3 > >(
+						width_, height_, (TextureColor<unsigned char, 3 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 3 > >(
+						width_, height_, (TextureColor<unsigned char, 3 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			} else if (pixel_type_ == FLOAT_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<float, 3 > >(
+						width_, height_, (TextureColor<float, 3 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<float, 3 > >(
+						width_, height_, (TextureColor<float, 3 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			} else if (pixel_type_ == UNSIGNED_SHORT_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 3 > >(
+						width_, height_, (TextureColor<unsigned short, 3 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 3 > >(
+						width_, height_, (TextureColor<unsigned short, 3 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			}
+		} else if (noChannels_ == 4) {
+			if (pixel_type_ == UNSIGNED_CHAR_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned char, 4 > >(
+						width_, height_, (TextureColor<unsigned char, 4 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned char, 4 > >(
+						width_, height_, (TextureColor<unsigned char, 4 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			} else if (pixel_type_ == FLOAT_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<float, 4 > >(
+						width_, height_, (TextureColor<float, 4 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<float, 4 > >(
+						width_, height_, (TextureColor<float, 4 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			} else if (pixel_type_ == UNSIGNED_SHORT_TYPE) {
+				if ((gain == 1.0f) && (gamma == 1.0f))
+					mipmap = new MIPMapFastImpl<T, TextureColor<unsigned short, 4 > >(
+						width_, height_, (TextureColor<unsigned short, 4 > *)data_,
+						doTri, maxAniso, wrapMode);
+				else
+					mipmap = new MIPMapImpl<T, TextureColor<unsigned short, 4 > >(
+						width_, height_, (TextureColor<unsigned short, 4 > *)data_,
+						doTri, maxAniso, wrapMode, gain, gamma);
+			}
+		} else {
+			luxError(LUX_SYSTEM, LUX_ERROR, "Unsupported channel count in ImageData::createMIPMap()");
 
-			return mipmap;
+			return NULL;
 		}
-	private:
+
+		return mipmap;
+	}
+
+private:
 	int width_;
 	int height_;
 	int noChannels_;
 	TextureColorBase *data_;
 	PixelDataType pixel_type_;
 	bool isExrImage_;
-	};
+};
 
-	class  ImageReader {
-	public:
-		virtual ~ImageReader() {}
-		virtual ImageData* read(const string &name) =0;
-	};
+class ImageReader {
+public:
 
-	class ExrImageReader : public ImageReader {
-	public:
-		virtual ~ExrImageReader() {}
-		ExrImageReader(){};
-		ImageData* read(const string &name);
+	virtual ~ImageReader() {
+	}
+	virtual ImageData* read(const string &name) = 0;
+};
+
+class ExrImageReader : public ImageReader {
+public:
+
+	virtual ~ExrImageReader() {
+	}
+
+	ExrImageReader() {
 	};
+	ImageData* read(const string &name);
+};
 
 }
 #endif // LUX_IMAGEREADER_H
