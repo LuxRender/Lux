@@ -258,7 +258,7 @@ ENDIF(APPLE)
 # Here you can define what libraries of wxWidgets you need for your
 # application. You can figure out what libraries you need here;
 # http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-SET(wxWidgets_USE_LIBS base core gl aui)
+SET(wxWidgets_USE_LIBS base core gl aui adv)
 FIND_PACKAGE(wxWidgets)
 IF(wxWidgets_FOUND)
     # Include wxWidgets macros

@@ -111,8 +111,13 @@ bool LuxGuiApp::ProcessCommandLine() {
 	p.add("input-file", -1);
 
 	po::variables_map vm;
+#if wxUSE_UNICODE == 1
 	store(po::wcommand_line_parser(wxApp::argc, wxApp::argv).
 	  options(cmdline_options).positional(p).run(), vm);
+#else // ANSI
+	store(po::command_line_parser(wxApp::argc, wxApp::argv).
+	  options(cmdline_options).positional(p).run(), vm);
+#endif // Unicode/ANSI
 
 	std::ifstream ifs("luxrender.cfg");
 	store(parse_config_file(ifs, config_file_options), vm);
