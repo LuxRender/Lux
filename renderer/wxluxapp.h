@@ -37,6 +37,11 @@ protected:
 	bool ProcessCommandLine();
 
 	LuxGui *m_guiFrame;
+
+	// Command line options
+	int m_threads;
+  bool m_useServer, m_openglEnabled;
+	wxString m_inputFile;
 };
 
 DECLARE_APP(LuxGuiApp)

@@ -51,17 +51,20 @@ bool LuxGuiApp::OnInit() {
 
 	luxInit();
 
-	m_guiFrame = new LuxGui((wxFrame*)NULL);
-	m_guiFrame->Show(true);
-	SetTopWindow(m_guiFrame);
-
-	return ProcessCommandLine();
+	if(ProcessCommandLine()) {
+		m_guiFrame = new LuxGui((wxFrame*)NULL, m_openglEnabled);
+		m_guiFrame->Show(true);
+		SetTopWindow(m_guiFrame);
+		m_guiFrame->SetRenderThreads(m_threads);
+		if(!m_inputFile.IsEmpty())
+			m_guiFrame->RenderScenefile(m_inputFile);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 bool LuxGuiApp::ProcessCommandLine() {
-	int threads;
-	bool useServer, openglEnabled;
-
 	// allowed only on command line
 	po::options_description generic("Generic options");
 	generic.add_options()
@@ -135,10 +138,10 @@ bool LuxGuiApp::ProcessCommandLine() {
 	}
 
 	if(vm.count("threads")) {
-		threads = vm["threads"].as < int >();
+		m_threads = vm["threads"].as < int >();
 	}
 	else {
-		threads = 1;;
+		m_threads = 1;;
 	}
 
 	if(vm.count("debug")) {
@@ -168,20 +171,27 @@ bool LuxGuiApp::ProcessCommandLine() {
 			luxAddServer((*i).c_str());
 		}
 
-		useServer = true;
+		m_useServer = true;
 
 		ss.str("");
 		ss << "Server requests interval:  " << serverInterval << " secs";
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	} else {
+		m_useServer = false;
 	}
 
 	if(vm.count("noopengl")) {
-		openglEnabled = false;
+		m_openglEnabled = false;
 	} else {
 		#ifdef LUX_USE_OPENGL
-			openglEnabled = true;
+			#if wxUSE_GLCANVAS == 1
+				m_openglEnabled = true;
+			#else
+				m_openglEnabled = false;
+				luxError(LUX_NOERROR, LUX_INFO, "GUI: wxWidgets without suppport for OpenGL canvas - will not be used.");
+			#endif // wxUSE_GLCANVAS
 		#else
-			openglEnabled = false;
+			m_openglEnabled = false;
 			luxError(LUX_NOERROR, LUX_INFO, "GUI: OpenGL support was not compiled in - will not be used.");
 		#endif // LUX_USE_OPENGL
 	}
@@ -192,8 +202,9 @@ bool LuxGuiApp::ProcessCommandLine() {
 			luxError(LUX_SYSTEM, LUX_SEVERE, "More than one file passed on command line : rendering the first one.");
 		}
 
-		m_guiFrame->RenderScenefile(wxString(v[0].c_str(), wxConvUTF8));
-		m_guiFrame->SetRenderThreads(threads);
+		m_inputFile = wxString(v[0].c_str(), wxConvUTF8);
+	} else {
+		m_inputFile.Clear();
 	}
 
 	return true;

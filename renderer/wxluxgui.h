@@ -92,7 +92,7 @@ protected:
 class LuxGui : public LuxMainFrame {
 public:
 	/** Constructor */
-	LuxGui(wxWindow* parent);
+	LuxGui(wxWindow* parent, bool opengl);
 
 	void RenderScenefile(wxString filename);
 	void SetRenderThreads(int num);
@@ -115,7 +115,9 @@ protected:
 
 	void UpdateStatistics();
 
-	LuxOutputWin* m_renderOutput;
+	bool m_opengl;
+
+	wxWindow* m_renderOutput;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;
 

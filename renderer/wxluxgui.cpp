@@ -23,6 +23,7 @@
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
+#include <boost/cast.hpp>
 
 #include <sstream>
 #include <clocale>
@@ -38,6 +39,7 @@
 #include "wx/splash.h"
 
 #include "wxluxgui.h"
+#include "wxglviewer.h"
 #include "wximages.h"
 
 using namespace lux;
@@ -52,12 +54,15 @@ BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 		EVT_SPINCTRL	(wxID_ANY, LuxGui::OnSpin)
 END_EVENT_TABLE()
 
-LuxGui::LuxGui(wxWindow* parent):LuxMainFrame(parent) {
+LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(opengl) {
 	// Load images and icons from header.
 	LoadImages();
 
 	// Add custom output viewer window
-	m_renderOutput = new LuxOutputWin(m_renderPage);
+	if(m_opengl)
+		m_renderOutput = new LuxGLViewer(m_renderPage);
+	else
+		m_renderOutput = new LuxOutputWin(m_renderPage);
 	m_renderPage->GetSizer()->Add(m_renderOutput, 1, wxALL | wxEXPAND, 5);
 
 	// Create render output update timer
@@ -178,21 +183,25 @@ void LuxGui::OnSpin(wxSpinEvent& event) {
 }
 
 void LuxGui::RenderScenefile(wxString filename) {
-	boost::thread engine(boost::bind(&LuxGui::EngineThread, this, filename));
-	m_numThreads = 1;
-	m_threadSpinCtrl->SetValue(m_numThreads);
-
 	wxFileName fn(filename);
 	SetTitle(wxT("LuxRender - ")+fn.GetName());
+
+	// Start main render thread
+	boost::thread engine(boost::bind(&LuxGui::EngineThread, this, filename));
 
 	//TODO: Show "loading" dialog
 
 	while(!luxStatistics("sceneIsReady"))
 		wxSleep(1);
 
+	// Add other render threads if necessary
+	int curThreads = 1;
+	while(curThreads < m_numThreads) {
+		luxAddThread();
+		curThreads++;
+	}
+
 	// Start updating the display by faking a resume menu item click.
-	m_renderOutput->SetVirtualSize(luxStatistics("filmXres"), luxStatistics("filmYres"));
-	m_renderOutput->SetScrollRate(1,1);
 	wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
 	GetEventHandler()->AddPendingEvent(startEvent);
 }
@@ -207,12 +216,16 @@ void LuxGui::EngineThread(wxString filename) {
 }
 
 void LuxGui::SetRenderThreads(int num) {
-	if(num > m_numThreads) {
-		for(; num > m_numThreads; m_numThreads++)
-			luxAddThread();
+	if(luxStatistics("sceneIsReady")) {
+		if(num > m_numThreads) {
+			for(; num > m_numThreads; m_numThreads++)
+				luxAddThread();
+		} else {
+			for(; num < m_numThreads; m_numThreads--)
+				luxRemoveThread();
+		}
 	} else {
-		for(; num < m_numThreads; m_numThreads--)
-			luxRemoveThread();
+		m_numThreads = num;
 	}
 	m_threadSpinCtrl->SetValue(m_numThreads);
 }
@@ -246,8 +259,11 @@ LuxOutputWin::LuxOutputWin(wxWindow *parent)
 
 void LuxOutputWin::OnDraw(wxDC &dc) {
 	if (luxStatistics("sceneIsReady")) {
+		int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
+		SetVirtualSize(w, h);
+		SetScrollRate(1,1);
 		unsigned char* fb = luxFramebuffer();
-		dc.DrawBitmap(wxBitmap(wxImage(luxStatistics("filmXres"), luxStatistics("filmYres"), fb, true)), 0, 0, false);
+		dc.DrawBitmap(wxBitmap(wxImage(w, h, fb, true)), 0, 0, false);
 	}
 }
 
