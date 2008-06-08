@@ -38,11 +38,12 @@ template <class T>
 class ImageTexture : public Texture<T> {
 public:
 	// ImageTexture Public Methods
-	ImageTexture(TextureMapping2D *m,
+	ImageTexture(
+			TextureMapping2D *m,
+			ImageTextureFilterType type,
 			const string &filename,
-			bool doTri,
 			float maxAniso,
-			ImageWrap wm,
+			ImageWrap wrapMode,
 			float gain,
 			float gamma);
 	T Evaluate(const DifferentialGeometry &) const;
@@ -65,16 +66,23 @@ public:
 
 private:
 	// ImageTexture Private Methods
-	static MIPMap<T> *GetTexture(const string &filename,
-	    bool doTrilinear, float maxAniso, ImageWrap wm, float gain, float gamma);
+	static MIPMap<T> *GetTexture(
+		ImageTextureFilterType filterType,
+		const string &filename,
+		float maxAniso,
+		ImageWrap wrap,
+		float gain,
+		float gamma);
 	static void convert(const Spectrum &from, Spectrum *to) {
 		*to = from;
 	}
 	static void convert(const Spectrum &from, float *to) {
 		*to = from.y();
 	}
-
+		
 	// ImageTexture Private Data
+
+	ImageTextureFilterType filterType;
 	MIPMap<T> *mipmap;
 	TextureMapping2D *mapping;
 };
@@ -83,6 +91,19 @@ template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(co
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
+	
+	string sFilterType = tp.FindString("filtertype");
+	ImageTextureFilterType filterType = MIPMAP_EWA;
+	if ((sFilterType == "") || (sFilterType == "mipmap_ewa")) {
+		filterType = MIPMAP_EWA;
+	} else if (sFilterType == "mipmap_trilinear") {
+		filterType = MIPMAP_TRILINEAR;
+	} else if (sFilterType == "bilinear") {
+		filterType = BILINEAR;
+	} else if (sFilterType == "nearest") {
+		filterType = NEAREST;
+	}
+
 	string type = tp.FindString("mapping");
 	if (type == "" || type == "uv") {
 		float su = tp.FindFloat("uscale", 1.);
@@ -107,7 +128,6 @@ template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(co
 
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
-	bool trilerp = tp.FindBool("trilinear", false);
 	string wrap = tp.FindString("wrap");
 	ImageWrap wrapMode = TEXTURE_REPEAT;
 	if (wrap == "" || wrap == "repeat") wrapMode = TEXTURE_REPEAT;
@@ -118,13 +138,13 @@ template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(co
 	float gamma = tp.FindFloat("gamma", 1.0f);
 
 	string filename = tp.FindString("filename");
-
 	int discardmm = tp.FindInt("discardmipmaps", 0);
 
-	ImageTexture<float> *tex = new ImageTexture<float>(map, filename,
-		trilerp, maxAniso, wrapMode, gain, gamma);
+	ImageTexture<float> *tex = new ImageTexture<float>(map, filterType,
+			filename, maxAniso, wrapMode, gain, gamma);
 
-	if (discardmm > 0) {
+	if ((discardmm > 0) &&
+			((filterType == MIPMAP_TRILINEAR) || (filterType == MIPMAP_EWA))) {
 		tex->discardMipmaps(discardmm);
 
 		std::stringstream ss;
@@ -144,6 +164,19 @@ template <class T> inline Texture<Spectrum> *ImageTexture<T>::CreateSpectrumText
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
+	
+	string sFilterType = tp.FindString("filtertype");
+	ImageTextureFilterType filterType = MIPMAP_EWA;;
+	if ((sFilterType == "") || (sFilterType == "mipmap_ewa")) {
+		filterType = MIPMAP_EWA;
+	} else if (sFilterType == "mipmap_trilinear") {
+		filterType = MIPMAP_TRILINEAR;
+	} else if (sFilterType == "bilinear") {
+		filterType = BILINEAR;
+	} else if (sFilterType == "nearest") {
+		filterType = NEAREST;
+	}
+
 	string type = tp.FindString("mapping");
 	if (type == "" || type == "uv") {
 		float su = tp.FindFloat("uscale", 1.);
@@ -168,7 +201,6 @@ template <class T> inline Texture<Spectrum> *ImageTexture<T>::CreateSpectrumText
 
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
-	bool trilerp = tp.FindBool("trilinear", false);
 	string wrap = tp.FindString("wrap");
 	ImageWrap wrapMode = TEXTURE_REPEAT;
 	if (wrap == "" || wrap == "repeat") wrapMode = TEXTURE_REPEAT;
@@ -179,13 +211,13 @@ template <class T> inline Texture<Spectrum> *ImageTexture<T>::CreateSpectrumText
 	float gamma = tp.FindFloat("gamma", 1.0f);
 
 	string filename = tp.FindString("filename");
-
 	int discardmm = tp.FindInt("discardmipmaps", 0);
 
-	ImageTexture<Spectrum> *tex = new ImageTexture<Spectrum>(map, filename,
-		trilerp, maxAniso, wrapMode, gain, gamma);
+	ImageTexture<Spectrum> *tex = new ImageTexture<Spectrum>(map, filterType,
+			filename, maxAniso, wrapMode, gain, gamma);
 
-	if (discardmm > 0) {
+	if ((discardmm > 0) &&
+			((filterType == MIPMAP_TRILINEAR) || (filterType == MIPMAP_EWA))) {
 		tex->discardMipmaps(discardmm);
 
 		std::stringstream ss;
@@ -203,16 +235,17 @@ template <class T> inline Texture<Spectrum> *ImageTexture<T>::CreateSpectrumText
 
 // ImageMapTexture Method Definitions
 template <class T> inline 
-ImageTexture<T>::ImageTexture(TextureMapping2D *m,
+ImageTexture<T>::ImageTexture(
+		TextureMapping2D *m,
+		ImageTextureFilterType type,
 		const string &filename,
-		bool doTrilinear,
 		float maxAniso,
 		ImageWrap wrapMode,
 		float gain,
 		float gamma) {
+	filterType = type;
 	mapping = m;
-	mipmap = GetTexture(filename, doTrilinear,
-		maxAniso, wrapMode, gain, gamma);
+	mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
 }
 
 template <class T> inline ImageTexture<T>::~ImageTexture() {
@@ -220,32 +253,43 @@ template <class T> inline ImageTexture<T>::~ImageTexture() {
 }
 
 struct TexInfo {
-	TexInfo(const string &f, bool dt, float ma, ImageWrap wm)
-		: filename(f), doTrilinear(dt), maxAniso(ma), wrapMode(wm) { }
+	TexInfo(ImageTextureFilterType type, const string &f, float ma,
+			ImageWrap wm, float ga, float gam)
+		: filterType(type), filename(f), maxAniso(ma),
+			wrapMode(wm), gain(ga), gamma(gam) { }
+
+	ImageTextureFilterType filterType;
 	string filename;
-	bool doTrilinear;
 	float maxAniso;
 	ImageWrap wrapMode;
+	float gain;
+	float gamma;
+
 	bool operator<(const TexInfo &t2) const {
+		if (filterType != t2.filterType) return filterType < t2.filterType;
 		if (filename != t2.filename) return filename < t2.filename;
-		if (doTrilinear != t2.doTrilinear) return doTrilinear < t2.doTrilinear;
 		if (maxAniso != t2.maxAniso) return maxAniso < t2.maxAniso;
-		return wrapMode < t2.wrapMode;
+		if (wrapMode != t2.wrapMode) return wrapMode < t2.wrapMode;
+		if (gain != t2.gain) return gain < t2.gain;
+
+		return gamma < t2.gamma;
 	}
 };
 
 template <class T> inline MIPMap<T> *ImageTexture<T>::
-	GetTexture(const string &filename,
-		bool doTrilinear,
+	GetTexture(
+		ImageTextureFilterType filterType,
+		const string &filename,
 		float maxAniso,
 		ImageWrap wrap,
 		float gain,
 		float gamma) {
 	// Look for texture in texture cache
 	static map<TexInfo, MIPMap<T> *> textures;
-	TexInfo texInfo(filename, doTrilinear, maxAniso, wrap);
+	TexInfo texInfo(filterType, filename, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end())
 		return textures[texInfo];
+
 	// radiance - disabled for threading // static StatsCounter texLoaded("Texture", "Number of image maps loaded"); // NOBOOK
 	// radiance - disabled for threading // ++texLoaded; // NOBOOK
 	int width, height;
@@ -254,13 +298,13 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap<T>(doTrilinear, maxAniso, wrap, gain, gamma);
+		ret = imgdata->createMIPMap<T>(filterType, maxAniso, wrap, gain, gamma);
 	} else {
 		// Create one-valued _MIPMap_
 		T *oneVal = new T[1];
 		oneVal[0] = 1.;
 
-		ret = new MIPMapFastImpl<T,T>(1, 1, oneVal);
+		ret = new MIPMapFastImpl<T,T>(filterType, 1, 1, oneVal);
 
 		delete[] oneVal;
 	}

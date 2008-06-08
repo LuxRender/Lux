@@ -37,9 +37,8 @@ void HighContrastOp::Map(const float *y, int xRes, int yRes,
 	}
 	float CYmin = C(minY), CYmax = C(maxY);
 	// Build luminance image pyramid
-	MIPMapImpl<float,float> pyramid(xRes, yRes,
-	                      y, false,
-						  4.f, TEXTURE_CLAMP);
+	MIPMapImpl<float,float> pyramid(MIPMAP_EWA, xRes, yRes,
+	                      y, 4.f, TEXTURE_CLAMP);
 	// Apply high contrast tone mapping operator
 	ProgressReporter progress(xRes*yRes, "Tone Mapping"); // NOBOOK
 	for (int y = 0; y < yRes; ++y) {
