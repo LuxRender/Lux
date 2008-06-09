@@ -59,6 +59,7 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 	int nVerts = 0;
 	while (nVerts < (int)(vertices.size())) {
 		BidirVertex &v = vertices[nVerts];
+		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
 		if (nVerts == 0) {
 			v.wi = Vector(bsdf->dgShading.nn);
 			v.bsdf = bsdf;
@@ -66,12 +67,11 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 			v.ng = bsdf->dgShading.nn;
 		} else {
 			v.wi = -ray.d;
-			v.bsdf = isect.GetBSDF(ray);
+			v.bsdf = isect.GetBSDF(ray, fabsf(2.f * data[3] - 1.f));
 			v.p = isect.dg.p;
 			v.ng = isect.dg.nn;
 		}
 		v.ns = bsdf->dgShading.nn;
-		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
 		// Possibly terminate bidirectional path sampling
 		v.f = v.bsdf->Sample_f(v.wi, &v.wo, data[1], data[2], data[3],
 			 &v.bsdfWeight, BSDF_ALL, &v.flags, &v.bsdfRWeight);
@@ -296,7 +296,7 @@ int BidirIntegrator::generatePath(const Scene *scene, const Ray &r,
 			v.bsdf = NULL;
 			break;
 		}
-		v.bsdf = isect.GetBSDF(ray); // do before Ns is set!
+		v.bsdf = isect.GetBSDF(ray, fabsf(2.f * data[3] - 1.f)); // do before Ns is set!
 		if (nVerts == 1)
 			v.Le = isect.Le(v.wi);
 		else
