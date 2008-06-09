@@ -25,6 +25,7 @@
 #include "imagereader.h"
 #include "mc.h"
 #include "paramset.h"
+#include "blackbody.h"
 using namespace lux;
 
 // InfiniteAreaLight Method Definitions
@@ -32,34 +33,38 @@ InfiniteAreaLight::~InfiniteAreaLight() {
 	delete radianceMap;
 }
 InfiniteAreaLight
-	::InfiniteAreaLight(const Transform &light2world,
-		                const Spectrum &L, int ns,
-						const string &texmap)
+	::InfiniteAreaLight(const Transform &light2world, int ns, const string &texmap, float gain, float gamma)
 	: Light(light2world, ns) {
 	radianceMap = NULL;
 	if (texmap != "") {
 		auto_ptr<ImageData> imgdata(ReadImage(texmap));
 		if(imgdata.get()!=NULL)
 		{
-			radianceMap = imgdata->createMIPMap<Spectrum>();
+			radianceMap = imgdata->createMIPMap<Spectrum>(BILINEAR, 8.f, 
+				TEXTURE_REPEAT, gain, gamma);
 		}
 		else
 			radianceMap=NULL;
 	}
-	Lbase = L;
+
+	// Base illuminant SPD
+	SPDbase = new BlackbodySPD();
 }
+
 SWCSpectrum
 	InfiniteAreaLight::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
-	Spectrum L = Lbase;
+	
+	Spectrum L = 1.f;
 	if (radianceMap != NULL) {
 		Vector wh = Normalize(WorldToLight(w));
 		float s = SphericalPhi(wh) * INV_TWOPI;
 		float t = SphericalTheta(wh) * INV_PI;
 		L *= radianceMap->Lookup(s, t);
 	}
-	return L;
+
+	return SWCSpectrum(SPDbase) * SWCSpectrum(L);
 }
 SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		const Normal &n, float u1, float u2, float u3,
@@ -177,8 +182,13 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 }
 Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	//Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new InfiniteAreaLight(light2world, L, nSamples, texmap);
+
+	// Initialize _ImageTexture_ parameters
+	float gain = paramSet.FindOneFloat("gain", 1.0f);
+	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
+
+	return new InfiniteAreaLight(light2world, nSamples, texmap, gain, gamma);
 }
