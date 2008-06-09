@@ -378,7 +378,7 @@ inline int Round2Int(double val) {
 	return int (val+_doublemagicroundeps);
 #endif
 }
-inline int Float2Int(double val) {
+template<class T> inline int Float2Int(T val) {
 #ifdef FAST_INT
 	return (val<0) ?  Round2Int(val+_doublemagicroundeps) :
 		   Round2Int(val-_doublemagicroundeps);
@@ -386,14 +386,14 @@ inline int Float2Int(double val) {
 	return (int)val;
 #endif
 }
-inline int Floor2Int(double val) {
+template<class T> inline int Floor2Int(T val) {
 #ifdef FAST_INT
 	return Round2Int(val - _doublemagicroundeps);
 #else
 	return (int)floor(val);
 #endif
 }
-inline int Ceil2Int(double val) {
+template<class T> inline int Ceil2Int(T val) {
 #ifdef FAST_INT
 	return Round2Int(val + _doublemagicroundeps);
 #else

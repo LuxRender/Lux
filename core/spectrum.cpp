@@ -65,7 +65,7 @@ XYZColor SWCSpectrum::ToXYZ() const {
 	float xyz[3];
 	xyz[0] = xyz[1] = xyz[2] = 0.;
 	if (sw->single) {
-		int j = sw->single_w;
+		const int j = sw->single_w;
 		xyz[0] = sw->cie_X[j] * c[j];
 		xyz[1] = sw->cie_Y[j] * c[j];
 		xyz[2] = sw->cie_Z[j] * c[j];
@@ -83,12 +83,12 @@ XYZColor SWCSpectrum::ToXYZ() const {
 	return XYZColor(xyz);
 }
 
-double SWCSpectrum::y() const {
+Scalar SWCSpectrum::y() const {
 	SpectrumWavelengths *sw = thread_wavelengths.get();
-	double y = 0.;
+	Scalar y = 0.f;
 
 	if (sw->single) {
-		int j = sw->single_w;
+		const int j = sw->single_w;
 		y = sw->cie_Y[j] * c[j];
 	} else {
 		for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
@@ -99,10 +99,10 @@ double SWCSpectrum::y() const {
 
 	return y;
 }
-double SWCSpectrum::filter() const
+Scalar SWCSpectrum::filter() const
 {
 	SpectrumWavelengths *sw = thread_wavelengths.get();
-	double result = 0.f;
+	Scalar result = 0.f;
 	if (sw->single) {
 		result = c[sw->single_w];
 	} else {
@@ -116,7 +116,7 @@ double SWCSpectrum::filter() const
 SWCSpectrum::SWCSpectrum(const SPD *s) {
 	SpectrumWavelengths *sw = thread_wavelengths.get();
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-		c[j] = (double) s->sample(sw->w[j]);
+		c[j] = s->sample(sw->w[j]);
 	}
 }
 

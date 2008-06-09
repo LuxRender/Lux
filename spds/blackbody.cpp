@@ -38,10 +38,10 @@ void BlackbodySPD::init(float t) {
 
 	// Fill samples with BB curve
 	for(int i=0; i<BB_CACHE_SAMPLES; i++) {
-		double w = 1e-9 * (BB_CACHE_START + (delta*i));
+		float w = 1e-9f * (BB_CACHE_START + (delta*i));
 		// Compute blackbody power for wavelength w and temperature temp
-		samples[i] = float(0.4e-9 * (3.74183e-16 * pow(w,-5.0))
-				/ (exp(1.4388e-2 / (w * temp)) - 1.0));
+		samples[i] = 0.4e-9f * (3.74183e-16f * powf(w, -5.f))
+				/ (expf(1.4388e-2f / (w * temp)) - 1.f);
 	}
 
 	Normalize();

@@ -427,12 +427,13 @@ protected:
 
 Spectrum FromXYZ(float x, float y, float z);
 
+#define Scalar double
 
-class  SWCSpectrum {
+class SWCSpectrum {
 	friend class boost::serialization::access;
 public:
 	// Spectrum Public Methods
-	SWCSpectrum(double v = 0.f) {
+	SWCSpectrum(Scalar v = 0.f) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = v;
 	}
@@ -440,7 +441,7 @@ public:
 
 	SWCSpectrum(const SPD *s);
 
-	SWCSpectrum(double cs[WAVELENGTH_SAMPLES]) {
+	SWCSpectrum(float cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = cs[i];
 	}
@@ -479,31 +480,31 @@ public:
 			c[i] *= sp.c[i];
 		return *this;
 	}
-	SWCSpectrum operator*(double a) const {
+	SWCSpectrum operator*(Scalar a) const {
 		SWCSpectrum ret = *this;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			ret.c[i] *= a;
 		return ret;
 	}
-	SWCSpectrum &operator*=(double a) {
+	SWCSpectrum &operator*=(Scalar a) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] *= a;
 		return *this;
 	}
 	friend inline
-	SWCSpectrum operator*(double a, const SWCSpectrum &s) {
+	SWCSpectrum operator*(Scalar a, const SWCSpectrum &s) {
 		return s * a;
 	}
-	SWCSpectrum operator/(double a) const {
+	SWCSpectrum operator/(Scalar a) const {
 		return *this * (1.f / a);
 	}
-	SWCSpectrum &operator/=(double a) {
-		double inv = 1.f / a;
+	SWCSpectrum &operator/=(Scalar a) {
+		Scalar inv = 1.f / a;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] *= inv;
 		return *this;
 	}
-	void AddWeighted(double w, const SWCSpectrum &s) {
+	void AddWeighted(Scalar w, const SWCSpectrum &s) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] += w * s.c[i];
 	}
@@ -517,7 +518,7 @@ public:
 	}
 	bool Black() const {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			if (c[i] != 0.) return false;
+			if (c[i] != 0.f) return false;
 		return true;
 	}
 	SWCSpectrum Sqrt() const {
@@ -544,8 +545,8 @@ public:
 			ret.c[i] = expf(s.c[i]);
 		return ret;
 	}
-	SWCSpectrum Clamp(double low = 0.f,
-	               double high = INFINITY) const {
+	SWCSpectrum Clamp(Scalar low = 0.f,
+	               Scalar high = INFINITY) const {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			ret.c[i] = ::Clamp(c[i], low, high);
@@ -561,8 +562,8 @@ public:
 			fprintf(f, "%f ", c[i]);
 	}
 	XYZColor ToXYZ() const;
-	double y() const;
-	double filter() const;
+	Scalar y() const;
+	Scalar filter() const;
 
 	bool operator<(const SWCSpectrum &s2) const {
 		return y() < s2.y();
@@ -570,7 +571,7 @@ public:
 	friend class lux::ParamSet;
 	
 	// SWCSpectrum Public Data
-	double c[WAVELENGTH_SAMPLES];
+	Scalar c[WAVELENGTH_SAMPLES];
 	
 private:
 	template<class Archive>

@@ -128,7 +128,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 
 		// Possibly terminate the path - note - radiance - added effiency optimized RR
 		if (pathLength > 3) {
-			float q = min(1., f.filter() * dp);
+			float q = min<float>(1.f, f.filter() * dp);
 			if (q < data[6])
 				break;
 			pathThroughput /= q;

@@ -46,29 +46,23 @@ public:
 		const float offset = float(WAVELENGTH_END - WAVELENGTH_START) * inv_WAVELENGTH_SAMPLES;
 		float waveln = WAVELENGTH_START + u1 * offset;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
+			// Interpolate RGB Conversion SPDs
+			spect_w.c[i] = spd_w->sample(waveln);
+			spect_c.c[i] = spd_c->sample(waveln);
+			spect_m.c[i] = spd_m->sample(waveln);
+			spect_y.c[i] = spd_y->sample(waveln);
+			spect_r.c[i] = spd_r->sample(waveln);
+			spect_g.c[i] = spd_g->sample(waveln);
+			spect_b.c[i] = spd_b->sample(waveln);
+			// Interpolate XYZ Conversion weights
+			const float w0 = waveln - CIEstart;
+			int i0 = Floor2Int(w0);
+			const float b0 = w0 - i0;
+			cie_X[i] = Lerp(b0, CIE_X[i0], CIE_X[i0 + 1]);
+			cie_Y[i] = Lerp(b0, CIE_Y[i0], CIE_Y[i0 + 1]);
+			cie_Z[i] = Lerp(b0, CIE_Z[i0], CIE_Z[i0 + 1]);
 			w[i] = waveln;
 			waveln += offset;
-		}			
-		
-		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-			// Interpolate RGB Conversion SPDs
-			spect_w.c[i] = (double) spd_w->sample(w[i]);
-			spect_c.c[i] = (double) spd_c->sample(w[i]);
-			spect_m.c[i] = (double) spd_m->sample(w[i]);
-			spect_y.c[i] = (double) spd_y->sample(w[i]);
-			spect_r.c[i] = (double) spd_r->sample(w[i]);
-			spect_g.c[i] = (double) spd_g->sample(w[i]);
-			spect_b.c[i] = (double) spd_b->sample(w[i]);
-		}
-
-		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-			// Interpolate XYZ Conversion weights
-			const float w0 = w[i] - CIEstart;
-			int i0 = Floor2Int(w0);
-			const float b0 = w0 - float(i0), a0 = 1.0f - b0;
-			cie_X[i] = (CIE_X[i0] * a0 + CIE_X[i0+1] * b0);
-			cie_Y[i] = (CIE_Y[i0] * a0 + CIE_Y[i0+1] * b0);
-			cie_Z[i] = (CIE_Z[i0] * a0 + CIE_Z[i0+1] * b0);
 		}
 	}
 
