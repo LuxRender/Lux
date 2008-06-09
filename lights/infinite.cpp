@@ -31,6 +31,7 @@ using namespace lux;
 // InfiniteAreaLight Method Definitions
 InfiniteAreaLight::~InfiniteAreaLight() {
 	delete radianceMap;
+	delete SPDbase;
 }
 InfiniteAreaLight
 	::InfiniteAreaLight(const Transform &light2world, int ns, const string &texmap, float gain, float gamma)

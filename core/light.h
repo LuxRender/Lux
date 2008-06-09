@@ -127,6 +127,7 @@ public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
 		const Spectrum &power, float g, int ns, const boost::shared_ptr<Shape> &shape);
+	~AreaLight() { delete LSPD; }
 	virtual SWCSpectrum L(const Point &p, const Normal &n,
 			const Vector &w) const {
 		return Dot(n, w) > 0 ? SWCSpectrum(LSPD) : 0.;

@@ -37,7 +37,7 @@ public:
 	// InfiniteAreaLight Public Methods
 	InfiniteAreaLight(const Transform &light2world,	int ns, const string &texmap,
 		float gain, float gamma);
-	~InfiniteAreaLight() { delete SPDbase; };
+	~InfiniteAreaLight();
 	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
