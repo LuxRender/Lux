@@ -29,16 +29,18 @@ using namespace lux;
 
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
-		const Spectrum &radiance, const Vector &dir)
+		const Spectrum &radiance, float gain, const Vector &dir)
 	: Light(light2world) {
 	lightDir = Normalize(LightToWorld(dir));
-	L = radiance;
+	// Create SPD
+	LSPD = new RGBIllumSPD(radiance);
+	LSPD->Scale(gain);
 }
 SWCSpectrum DistantLight::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	*wi = lightDir;
 	visibility->SetRay(p, *wi);
-	return L;
+	return SWCSpectrum(LSPD);
 }
 SWCSpectrum DistantLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
@@ -66,13 +68,14 @@ SWCSpectrum DistantLight::Sample_L(const Scene *scene,
 	ray->o = Pdisk + worldRadius * lightDir;
 	ray->d = -lightDir;
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
-	return L;
+	return SWCSpectrum(LSPD);
 }
 Light* DistantLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	float g = paramSet.FindOneFloat("gain", 1.f);
 	Point from = paramSet.FindOnePoint("from", Point(0,0,0));
 	Point to = paramSet.FindOnePoint("to", Point(0,0,1));
 	Vector dir = from-to;
-	return new DistantLight(light2world, L, dir);
+	return new DistantLight(light2world, L, g, dir);
 }
