@@ -36,23 +36,27 @@ WaldTriangleMesh::WaldTriangleMesh(const Transform &o2w, bool ro,
     nverts = nv;
     vertexIndex = new int[3 * ntris];
     memcpy(vertexIndex, vi, 3 * ntris * sizeof(int));
-    // Copy _uv_, _N_, and _S_ vertex data, if present
+
+	// Copy _uv_, _N_, and _S_ vertex data, if present
     if (uv) {
         uvs = new float[2*nverts];
         memcpy(uvs, uv, 2*nverts*sizeof(float));
-    }
-    else uvs = NULL;
+    } else
+		uvs = NULL;
+
     p = new Point[nverts];
     if (N) {
         n = new Normal[nverts];
         memcpy(n, N, nverts*sizeof(Normal));
-    }
-    else n = NULL;
+    } else
+		n = NULL;
+
     if (S) {
         s = new Vector[nverts];
         memcpy(s, S, nverts*sizeof(Vector));
-    }
-    else s = NULL;
+    } else
+		s = NULL;
+
     // Transform mesh vertices to world space
     for (int i  = 0; i < nverts; ++i)
         p[i] = ObjectToWorld(P[i]);
@@ -247,16 +251,16 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     // Adjust normal based on orientation and handedness
     if (this->reverseOrientation ^ this->transformSwapsHandedness)
         normalizedNormal *= -1.f;
-    
+
     if(!mesh->uvs) {
-        if(mesh->n) {
-            if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), normalizedNormal) < 0)
-                normalizedNormal *= -1;
-        } else {
-            if(Dot(Cross(e1, e2), normalizedNormal) < 0)
-                normalizedNormal *= -1;
-        }
-    }
+		if(mesh->n) {
+			if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), normalizedNormal) < 0)
+				normalizedNormal *= -1;
+		} else {
+			if(Dot(Cross(e1, e2), normalizedNormal) < 0)
+				normalizedNormal *= -1;
+		}
+	}
 }
 
 BBox WaldTriangle::ObjectBound() const {
@@ -463,7 +467,7 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
             dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
             tu, tv, this);
-    
+
     *tHit = t;
     return true;
 }
@@ -664,19 +668,22 @@ Shape* WaldTriangleMesh::CreateShape(const Transform &o2w,
     const int *vi = params.FindInt("indices", &nvi);
     const Point *P = params.FindPoint("P", &npi);
     const float *uvs = params.FindFloat("uv", &nuvi);
-    if (!uvs) uvs = params.FindFloat("st", &nuvi);
+
+	if (!uvs) uvs = params.FindFloat("st", &nuvi);
     // NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
     if (uvs && nuvi != npi * 2) {
         luxError(LUX_CONSISTENCY, LUX_ERROR, "Number of \"uv\"s for triangle mesh must match \"P\"s");
         uvs = NULL;
     }
     if (!vi || !P) return NULL;
-    const Vector *S = params.FindVector("S", &nsi);
+
+	const Vector *S = params.FindVector("S", &nsi);
     if (S && nsi != npi) {
         luxError(LUX_CONSISTENCY, LUX_ERROR, "Number of \"S\"s for triangle mesh must match \"P\"s");
         S = NULL;
     }
-    const Normal *N = params.FindNormal("N", &nni);
+
+	const Normal *N = params.FindNormal("N", &nni);
     if (N && nni != npi) {
         luxError(LUX_CONSISTENCY, LUX_ERROR, "Number of \"N\"s for triangle mesh must match \"P\"s");
         N = NULL;
@@ -712,6 +719,7 @@ Shape* WaldTriangleMesh::CreateShape(const Transform &o2w,
             luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
             return NULL;
         }
+
     return new WaldTriangleMesh(o2w, reverseOrientation, nvi/3, npi, vi, P,
             N, S, uvs);
 }

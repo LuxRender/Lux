@@ -31,12 +31,26 @@ using namespace lux;
 // Material Method Definitions
 Material::~Material() {
 }
+
 void Material::Bump(boost::shared_ptr<Texture<float> > d,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgs,
 		DifferentialGeometry *dgBump) {
 	// Compute offset positions and evaluate displacement texture
 	DifferentialGeometry dgEval = dgs;
+
+	// Dade - in order to fix bug #180
+	Normal dnndu;
+	if((dgs.dndu.x == 0.0f) && (dgs.dndu.y == 0.0f) && (dgs.dndu.z == 0.0f))
+		dnndu = 0.0f;
+	else
+		dnndu = Normalize(dgs.dndu);
+	Normal dnndv;
+	if((dgs.dndv.x == 0.0f) && (dgs.dndv.y == 0.0f) && (dgs.dndv.z == 0.0f))
+		dnndv = 0.0f;
+	else
+		dnndv = Normalize(dgs.dndv);
+
 	// Shift _dgEval_ _du_ in the $u$ direction
 	float du = .5f * (fabsf(dgs.dudx) + fabsf(dgs.dudy));
 	if (du == 0.f) du = .01f;
@@ -44,8 +58,9 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	dgEval.u = dgs.u + du;
 	dgEval.nn =
 		Normalize((Normal)Cross(dgs.dpdu, dgs.dpdv) +
-		                 du * dgs.dndu);
+		                 du * dnndu);
 	float uDisplace = d->Evaluate(dgEval);
+
 	// Shift _dgEval_ _dv_ in the $v$ direction
 	float dv = .5f * (fabsf(dgs.dvdx) + fabsf(dgs.dvdy));
 	if (dv == 0.f) dv = .01f;
@@ -54,22 +69,25 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	dgEval.v = dgs.v + dv;
 	dgEval.nn =
 		Normalize((Normal)Cross(dgs.dpdu, dgs.dpdv) +
-		                 dv * dgs.dndv);
+		                 dv * dnndv);
 	float vDisplace = d->Evaluate(dgEval);
 	float displace = d->Evaluate(dgs);
+
 	// Compute bump-mapped differential geometry
 	*dgBump = dgs;
 	dgBump->dpdu = dgs.dpdu +
 		(uDisplace - displace) / du * Vector(dgs.nn) +
-		displace * Vector(dgs.dndu);
+		displace * Vector(dnndu);
 	dgBump->dpdv = dgs.dpdv +
 		(vDisplace - displace) / dv * Vector(dgs.nn) +
-		displace * Vector(dgs.dndv);
+		displace * Vector(dnndv);
+
 	dgBump->nn =
 		Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
 	if (dgs.shape->reverseOrientation ^
 		dgs.shape->transformSwapsHandedness)
 		dgBump->nn *= -1.f;
+
 	// Orient shading normal to match geometric normal
 	if (Dot(dgGeom.nn, dgBump->nn) < 0.f)
 		dgBump->nn *= -1.f;
