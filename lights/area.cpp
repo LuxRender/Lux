@@ -39,7 +39,6 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 	: Light(light2world, ns) {
 	// Create SPD
 	LSPD = new RGBIllumSPD(le);
-	// Set gain (scale)
 	LSPD->Scale(g);
 
 	if (s->CanIntersect())

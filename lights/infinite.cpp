@@ -41,14 +41,15 @@ InfiniteAreaLight
 		if(imgdata.get()!=NULL)
 		{
 			radianceMap = imgdata->createMIPMap<Spectrum>(BILINEAR, 8.f, 
-				TEXTURE_REPEAT, gain, gamma);
+				TEXTURE_REPEAT, 1.f, gamma);
 		}
 		else
 			radianceMap=NULL;
 	}
 
 	// Base illuminant SPD
-	SPDbase = new BlackbodySPD();
+	SPDbase = new BlackbodySPD(); // TODO normalize vs other lightsources
+	SPDbase->Scale(gain);
 }
 
 SWCSpectrum
@@ -86,7 +87,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 					 v1.y * wi->x + v2.y * wi->y + n.y * wi->z,
 					 v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
 	} else {
-	    // Sample a random Portal
+	    // Sample Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = Floor2Int(u3 * nrPortalShapes);

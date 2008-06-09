@@ -31,14 +31,13 @@
 namespace lux
 {
 
-
 // InfiniteAreaLight Declarations
 class InfiniteAreaLight : public Light {
 public:
 	// InfiniteAreaLight Public Methods
 	InfiniteAreaLight(const Transform &light2world,	int ns, const string &texmap,
 		float gain, float gamma);
-	~InfiniteAreaLight();
+	~InfiniteAreaLight() { delete SPDbase; };
 	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
