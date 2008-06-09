@@ -49,8 +49,8 @@ namespace lux
 					c[i] = v;
 			}
 			TextureColor(T cs[colorSamples]) {
-			for (int i = 0; i < colorSamples; ++i)
-				c[i] = cs[i];
+				for (int i = 0; i < colorSamples; ++i)
+					c[i] = cs[i];
 			}
 
 			TextureColor<T,colorSamples> &operator+=(const TextureColor<T,colorSamples> &s2) {

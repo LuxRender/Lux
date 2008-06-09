@@ -84,7 +84,7 @@ public:
 	}
 
 	template <class T> MIPMap<T> *createMIPMap(
-			ImageTextureFilterType filterType = MIPMAP_EWA,
+			ImageTextureFilterType filterType = BILINEAR,
 			float maxAniso = 8.f, ImageWrap wrapMode = TEXTURE_REPEAT,
 			float gain = 1.0f, float gamma = 1.0f) {
 		MIPMap<T> *mipmap = NULL;

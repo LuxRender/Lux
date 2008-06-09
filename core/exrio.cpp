@@ -94,7 +94,7 @@ namespace lux {
 
     // EXR Function Definitions
 
-    ImageData* ExrImageReader::read(const string &name) {
+    ImageData *ExrImageReader::read(const string &name) {
         try {
 			stringstream ss;
 			ss << "Loading OpenEXR Texture: '" << name << "'...";
@@ -106,6 +106,10 @@ namespace lux {
             int height = dw.max.y - dw.min.y + 1;
             //todo: verify if this is always correct
             int noChannels = 3;
+
+			ss.str("");
+			ss << width << "x" << height << " (" << noChannels << " channels)";
+            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
             half *rgb = new half[noChannels * width * height];
 
@@ -119,26 +123,23 @@ namespace lux {
 
             file.setFrameBuffer(frameBuffer);
             file.readPixels(dw.min.y, dw.max.y);
-            TextureColorBase*ret = new TextureColor<float, 3 > [width * height];
+            TextureColor<float, 3 > *ret = new TextureColor<float, 3 > [width * height];
             ImageData* data = new ImageData(width, height, ImageData::FLOAT_TYPE, noChannels, ret);
 
             // XXX should do real RGB -> Spectrum conversion here
             for (int i = 0; i < width * height; ++i) {
-                //if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
-                float c[3] = {rgb[(3 * i)], rgb[(3 * i) + 1], rgb[(3 * i) + 2]
-                };
+                float c[3] = { rgb[(3 * i)], rgb[(3 * i) + 1], rgb[(3 * i) + 2] };
                 ret[i] = TextureColor<float, 3 > (c);
+
+				//if(i<10) std::cout<<i<<":"<<c[0]<<','<<c[1]<<','<<c[2]<<std::endl;
             }
 
-
-            delete[] rgb;
-
-            luxError(LUX_NOERROR, LUX_INFO, "Done.");
+			delete[] rgb;
 
             return data;
         } catch (const std::exception &e) {
             std::stringstream ss;
-            ss << "Unable to read EXR image file '" << name << "' : " << e.what();
+            ss << "Unable to read EXR image file '" << name << "': " << e.what();
             luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
             return NULL;
         }
@@ -207,12 +208,10 @@ namespace lux {
                 }
             delete [] c;
 
-            luxError(LUX_NOERROR, LUX_INFO, "Done.");
-
             return data;
         } catch (CImgIOException &e) {
             std::stringstream ss;
-            ss << "Unable to read Cimg image file '" << name << "' : " << e.message;
+            ss << "Unable to read Cimg image file '" << name << "': " << e.message;
             luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
             return NULL;
         }
@@ -240,7 +239,8 @@ namespace lux {
             ExrImageReader exrReader;
             ImageData* data = exrReader.read(name);
             data->setIsExrImage(true);
-            return data;
+
+			return data;
         }
         /*
         The CImg Library can NATIVELY handle the following file formats :
@@ -332,7 +332,7 @@ namespace lux {
             //Error("Unable to write image file \"%s\": %s", name.c_str(),
             //	e.what());
             std::stringstream ss;
-            ss << "Unable to write image file '" << name << "' : " << e.what();
+            ss << "Unable to write image file '" << name << "': " << e.what();
             luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
         }
 
@@ -379,7 +379,7 @@ namespace lux {
             //Error("Unable to write image file \"%s\": %s", name.c_str(),
             //	e.what());
             std::stringstream ss;
-            ss << "Unable to write image file '" << name << "' : " << e.what();
+            ss << "Unable to write image file '" << name << "': " << e.what();
             luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
         }
 
