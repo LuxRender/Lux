@@ -195,7 +195,7 @@ void PhotonIntegrator::Preprocess(const Scene *scene) {
                 alpha *= scene->Transmittance(photonRay);
                 Vector wo = -photonRay.d;
 
-                BSDF *photonBSDF = photonIsect.GetBSDF(photonRay);
+                BSDF *photonBSDF = photonIsect.GetBSDF(photonRay, lux::random::floatValue());
                 BxDFType specularType = BxDFType(BSDF_REFLECTION |
                         BSDF_TRANSMISSION | BSDF_SPECULAR);
                 bool hasNonSpecular = (photonBSDF->NumComponents() >
@@ -339,7 +339,7 @@ SWCSpectrum PhotonIntegrator::IntegratorLi(
         // Compute emitted light if ray hit an area light source
         L += isect.Le(wo);
         // Evaluate BSDF at hit point
-        BSDF *bsdf = isect.GetBSDF(ray);
+        BSDF *bsdf = isect.GetBSDF(ray, lux::random::floatValue());
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
         // Compute direct lighting for photon map integrator
@@ -376,7 +376,7 @@ SWCSpectrum PhotonIntegrator::IntegratorLi(
                 Intersection gatherIsect;
                 if (scene->Intersect(bounceRay, &gatherIsect)) {
                     // Compute exitant radiance at final gather intersection
-                    BSDF *gatherBSDF = gatherIsect.GetBSDF( bounceRay);
+                    BSDF *gatherBSDF = gatherIsect.GetBSDF(bounceRay, fabsf(2.f * u3 - 1.f));
                     Vector bounceWo = -bounceRay.d;
                     SWCSpectrum Lindir =
                             LPhoton(directMap, nDirectPaths, nLookup,

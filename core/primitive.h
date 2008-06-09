@@ -46,13 +46,13 @@ public:
 	const;
 	virtual const AreaLight *GetAreaLight() const = 0;
 	virtual BSDF *GetBSDF(const DifferentialGeometry &dg,
-		const Transform &WorldToObject) const = 0;
+		const Transform &WorldToObject, float u) const = 0;
 };
 class  Intersection {
 	public:
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
-	BSDF *GetBSDF(const RayDifferential &ray) const;
+	BSDF *GetBSDF(const RayDifferential &ray, float u) const;
 	SWCSpectrum Le(const Vector &wo) const;
 	SWCSpectrum Le(const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 
@@ -76,7 +76,7 @@ public:
 	                   AreaLight *a);
 	const AreaLight *GetAreaLight() const;
 	BSDF *GetBSDF(const DifferentialGeometry &dg,
-	              const Transform &WorldToObject) const;
+	              const Transform &WorldToObject, float u) const;
 private:
 	// GeometricPrimitive Private Data
 	boost::shared_ptr<Shape> shape;
@@ -96,7 +96,7 @@ public:
 	bool IntersectP(const Ray &r) const;
 	const AreaLight *GetAreaLight() const { return NULL; }
 	BSDF *GetBSDF(const DifferentialGeometry &dg,
-	              const Transform &WorldToObject) const {
+	              const Transform &WorldToObject, float u) const {
 		return NULL;
 	}
 	BBox WorldBound() const {
@@ -112,7 +112,7 @@ public:
 	// Aggregate Public Methods
 	const AreaLight *GetAreaLight() const;
 	BSDF *GetBSDF(const DifferentialGeometry &dg,
-	              const Transform &) const;
+	              const Transform &, float u) const;
 };
 
 }//namespace lux

@@ -53,7 +53,7 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<Spectrum> > kd,
 }
 
 // CarPaint Method Definitions
-BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 
   // Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
   DifferentialGeometry dgs;

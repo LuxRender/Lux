@@ -183,7 +183,7 @@ SWCSpectrum ParticleTracingIntegrator::Li(const Scene *scene,
 //		pathThroughput *= scene->Transmittance(ray);
 
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * data[7] - 1.f));
 		// Sample illumination from lights to find path contribution
 		p = bsdf->dgShading.p;
 		n = bsdf->dgShading.nn;

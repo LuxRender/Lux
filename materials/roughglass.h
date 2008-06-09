@@ -42,7 +42,7 @@ public:
 		cauchyb = cbf;
 		bumpMap = bump;
 	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

@@ -47,7 +47,7 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 	if (alpha) *alpha = 1.;
 	if (scene->Intersect(ray, &isect)) {
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * sample->oneD[bsdfComponentOffset[0]][0] - 1.f));
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

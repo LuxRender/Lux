@@ -32,7 +32,7 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)

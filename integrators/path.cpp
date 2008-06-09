@@ -100,11 +100,11 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * data[5] - 1.f));
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 		SWCSpectrum Ll(UniformSampleOneLight(scene, p, n,
 			wo, bsdf, sample,
 			data, data + 2, data + 3, data + 5));

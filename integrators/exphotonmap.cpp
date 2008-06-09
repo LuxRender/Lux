@@ -346,7 +346,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                 alpha *= scene->Transmittance(photonRay);
                 Vector wo = -photonRay.d;
 
-                BSDF *photonBSDF = photonIsect.GetBSDF(photonRay);
+                BSDF *photonBSDF = photonIsect.GetBSDF(photonRay, lux::random::floatValue());
                 BxDFType specularType = BxDFType(BSDF_REFLECTION |
                         BSDF_TRANSMISSION | BSDF_SPECULAR);
                 bool hasNonSpecular = (photonBSDF->NumComponents() >
@@ -549,7 +549,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
         L += isect.Le(wo);
 
         // Evaluate BSDF at hit point
-        BSDF *bsdf = isect.GetBSDF(ray);
+        BSDF *bsdf = isect.GetBSDF(ray, lux::random::floatValue());
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
 

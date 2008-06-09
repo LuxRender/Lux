@@ -34,7 +34,7 @@ using namespace lux;
 
 // Plastic Method Definitions
 BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const {
+		const DifferentialGeometry &dgShading, float) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)

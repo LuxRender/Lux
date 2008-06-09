@@ -28,14 +28,12 @@
 using namespace lux;
 
 // MixMaterial Method Definitions
-BSDF *MixMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	DifferentialGeometry dgs;
-	dgs = dgShading;
-	float amt = amount->Evaluate(dgs);
-	if(lux::random::floatValue() < amt) // TODO - radiance - include in samplevector for mutation
-		return child1->GetBSDF(dgGeom, dgShading);
+BSDF *MixMaterial::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+	float amt = amount->Evaluate(dgShading);
+	if(u < amt)
+		return child1->GetBSDF(dgGeom, dgShading, u / amt);
 	else
-		return child2->GetBSDF(dgGeom, dgShading);
+		return child2->GetBSDF(dgGeom, dgShading, (u - amt) / (1.f - amt));
 }
 Material* MixMaterial::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {

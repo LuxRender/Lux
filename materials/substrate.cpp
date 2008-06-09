@@ -31,7 +31,7 @@
 using namespace lux;
 
 // Substrate Method Definitions
-BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)

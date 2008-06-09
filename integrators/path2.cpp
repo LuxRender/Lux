@@ -102,11 +102,11 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray);
+		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * data[5] - 1.f));
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 		SWCSpectrum Ll = UniformSampleOneLight(scene, p, n,
 			wo, bsdf, sample,
 			data, data + 2, data + 3, data + 5);
@@ -151,7 +151,7 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 		if (pathLength > 0) {
 			if (scene->camera->IsVisibleFromEyes(scene, lenP, p, &sample_gen, &ray_gen)) {
 				wo = -ray_gen.d;
-				bsdf = isect.GetBSDF(ray_gen);
+				bsdf = isect.GetBSDF(ray_gen, fabsf(2.f * data[5] - 1.f));
 				weight[pathLength] = scene->camera->GetConnectingFactor(lenP, bsdf->dgShading.p, wo, bsdf->dgShading.nn);
 				pathThroughput[pathLength] = scene->Transmittance(ray_gen) * (weight[pathLength] / weight[0]);
 				imageX[pathLength] = sample_gen.imageX;

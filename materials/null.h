@@ -33,7 +33,7 @@ public:
 	// Null Public Methods
 	Null() {
 	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

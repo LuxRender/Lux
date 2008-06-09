@@ -31,7 +31,7 @@ using namespace lux;
 
 // Matte Method Definitions
 BSDF *MatteTranslucent::GetBSDF(const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const {
+		const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
