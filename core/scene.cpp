@@ -299,6 +299,10 @@ void RenderThread::render(RenderThread *myThread) {
                 sampPos = 0;
             *useSampPos = sampPos;
         }
+#ifdef WIN32
+	//Work around Windows bad scheduling -- Jeanphi
+	myThread->thread->yield();
+#endif
 
         // Temporary colour scaling code by radiance - SHOULD NOT BE IN CVS !
         
