@@ -93,13 +93,13 @@ template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(co
 	TextureMapping2D *map = NULL;
 	
 	string sFilterType = tp.FindString("filtertype");
-	ImageTextureFilterType filterType = MIPMAP_EWA;
-	if ((sFilterType == "") || (sFilterType == "mipmap_ewa")) {
-		filterType = MIPMAP_EWA;
+	ImageTextureFilterType filterType = BILINEAR;
+	if ((sFilterType == "") || (sFilterType == "bilinear")) {
+		filterType = BILINEAR;
 	} else if (sFilterType == "mipmap_trilinear") {
 		filterType = MIPMAP_TRILINEAR;
-	} else if (sFilterType == "bilinear") {
-		filterType = BILINEAR;
+	} else if (sFilterType == "mipmap_ewa") {
+		filterType = MIPMAP_EWA;
 	} else if (sFilterType == "nearest") {
 		filterType = NEAREST;
 	}
