@@ -32,10 +32,11 @@ namespace lux
 class PointLight : public Light {
 public:
 	// PointLight Public Methods
-	PointLight(const Transform &light2world, const Spectrum &intensity);
+	PointLight(const Transform &light2world, const Spectrum &le, float gain);
+	~PointLight() { delete LSPD; }
 	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
 	SWCSpectrum Power(const Scene *) const {
-		return Intensity * 4.f * M_PI;
+		return SWCSpectrum(LSPD) * 4.f * M_PI;
 	}
 	bool IsDeltaLight() const { return true; }
 	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
@@ -49,7 +50,7 @@ public:
 private:
 	// PointLight Private Data
 	Point lightPos;
-	Spectrum Intensity;
+	SPD *LSPD;
 };
 
 }//namespace lux

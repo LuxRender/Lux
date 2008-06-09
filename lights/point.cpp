@@ -29,16 +29,18 @@ using namespace lux;
 
 // PointLight Method Definitions
 PointLight::PointLight(const Transform &light2world,
-		const Spectrum &intensity)
+		const Spectrum &intensity, float gain)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
-	Intensity = intensity;
+	// Create SPD
+	LSPD = new RGBIllumSPD(intensity);
+	LSPD->Scale(gain);
 }
 SWCSpectrum PointLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	visibility->SetSegment(p, lightPos);
-	return Intensity / DistanceSquared(lightPos, p);
+	return SWCSpectrum(LSPD) / DistanceSquared(lightPos, p);
 }
 SWCSpectrum PointLight::Sample_L(const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,
@@ -55,12 +57,13 @@ SWCSpectrum PointLight::Sample_L(const Scene *scene, float u1,
 	ray->o = lightPos;
 	ray->d = UniformSampleSphere(u1, u2);
 	*pdf = UniformSpherePdf();
-	return Intensity;
+	return SWCSpectrum(LSPD);
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	Spectrum intensity = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	float g = paramSet.FindOneFloat("gain", 1.f);
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
-	return new PointLight(l2w, I);
+	return new PointLight(l2w, intensity, g);
 }

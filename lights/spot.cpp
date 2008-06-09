@@ -29,10 +29,14 @@ using namespace lux;
 
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &light2world,
-		const Spectrum &intensity, float width, float fall)
+		const Spectrum &intensity, float gain, float width, float fall)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
-	Intensity = intensity;
+
+	// Create SPD
+	LSPD = new RGBIllumSPD(intensity);
+	LSPD->Scale(gain);
+
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
 }
@@ -40,7 +44,7 @@ SWCSpectrum SpotLight::Sample_L(const Point &p, Vector *wi,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	visibility->SetSegment(p, lightPos);
-	return Intensity * Falloff(-*wi) /
+	return SWCSpectrum(LSPD) * Falloff(-*wi) /
 		DistanceSquared(lightPos, p);
 }
 float SpotLight::Falloff(const Vector &w) const {
@@ -70,10 +74,11 @@ SWCSpectrum SpotLight::Sample_L(const Scene *scene, float u1,
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
-	return Intensity * Falloff(ray->d);
+	return SWCSpectrum(LSPD) * Falloff(ray->d);
 }
 Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	float g = paramSet.FindOneFloat("gain", 1.f);
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);
 	// Compute spotlight world to light transformation
@@ -91,6 +96,6 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	l2w *
 	Translate(Vector(from.x, from.y, from.z)) *
 	dirToZ.GetInverse();
-	return new SpotLight(light2world, I, coneangle,
+	return new SpotLight(light2world, I, g, coneangle,
 		coneangle-conedelta);
 }
