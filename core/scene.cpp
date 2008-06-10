@@ -160,7 +160,10 @@ double Scene::Statistics_SamplesPSec() {
     lastTime = time;
     
     // return current samples / sec total
-    return dif_samples / elapsed;
+	if (elapsed == 0.0)
+		return 0.0;
+	else
+		return dif_samples / elapsed;
 }
 
 double Scene::Statistics_SamplesPTotSec() {
