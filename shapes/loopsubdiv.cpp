@@ -136,9 +136,11 @@ bool LoopSubdiv::CanIntersect() const {
 	return false;
 }
 
-void
-LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined)
-const {
+void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
+	std::stringstream ss;
+	ss << "Refining LoopSubdiv shape, cage mesh size: " << faces.size();
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;
 	boost::object_pool<SDVertex> vertexArena;
@@ -312,6 +314,10 @@ const {
 		}
 	}
 
+	ss.str("");
+	ss << "LoopSubdiv shape refined, triangles: " << f.size();
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
 	if (displacementMap.get() != NULL) {
 		// Dade - apply the displacement map
 
@@ -396,7 +402,6 @@ void LoopSubdiv::ApplyDisplacementMap(
 		const Normal *norms,
 		const float *uvs) const {
 	// Dade - apply the displacement map
-
 	std::stringstream ss;
 	ss << "Applying displacement map to " << verts.size() << " vertices";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());

@@ -85,6 +85,10 @@ TaBRecKdTreeAccel(const vector<Primitive* > &p,
     int *primNums = new int[vPrims.size()];
     for (u_int i = 0; i < vPrims.size(); ++i)
         primNums[i] = i;
+
+	std::stringstream ss;
+	ss << "Building KDTree, primitives: " << nPrims;
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
     // Start recursive construction of kd-tree
     buildTree(0, bounds, primBounds, primNums,
             vPrims.size(), maxDepth, edges,
