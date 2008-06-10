@@ -23,11 +23,15 @@
 #ifndef LUX_WXGLVIEWER_H
 #define LUX_WXGLVIEWER_H
 
+#ifdef LUX_USE_OPENGL
 #include "wx/wx.h"
 #include "wx/glcanvas.h"
+#endif // LUX_USE_OPENGL
 
 namespace lux
 {
+
+#ifdef LUX_USE_OPENGL
 
 class LuxGLViewer : public wxGLCanvas {
 public:
@@ -54,6 +58,16 @@ protected:
 	int m_lastW, m_lastH;
 
 };
+
+#else // LUX_USE_OPENGL
+
+//dummy class
+class LuxGLViewer : public wxWindow {
+public:
+	LuxGLViewer(wxWindow *parent, int textureW = 256, int textureH = 256) {}
+};
+
+#endif // LUX_USE_OPENGL
 
 }//namespace lux
 

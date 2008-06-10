@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#ifdef LUX_USE_OPENGL
+
 #include "wxglviewer.h"
 
 // include OpenGL
@@ -245,3 +247,5 @@ void LuxGLViewer::Refresh(bool eraseBackground, const wxRect* rect) {
 	m_imageChanged=true;
 	wxGLCanvas::Refresh(eraseBackground, rect);
 }
+
+#endif // LUX_USE_OPENGL
