@@ -248,19 +248,17 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     // Dade - this computation can be done at scene creation time too
     
     normalizedNormal = Normal(Normalize(Cross(dpdu, dpdv)));
+	if(mesh->n) {
+		if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), normalizedNormal) < 0)
+			normalizedNormal *= -1;
+	} else {
+		if(Dot(Cross(e1, e2), normalizedNormal) < 0)
+			normalizedNormal *= -1;
+	}
+
     // Adjust normal based on orientation and handedness
     if (this->reverseOrientation ^ this->transformSwapsHandedness)
         normalizedNormal *= -1.f;
-
-    if(!mesh->uvs) {
-		if(mesh->n) {
-			if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), normalizedNormal) < 0)
-				normalizedNormal *= -1;
-		} else {
-			if(Dot(Cross(e1, e2), normalizedNormal) < 0)
-				normalizedNormal *= -1;
-		}
-	}
 }
 
 BBox WaldTriangle::ObjectBound() const {

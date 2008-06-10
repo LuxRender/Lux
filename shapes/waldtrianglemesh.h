@@ -120,7 +120,7 @@ public:
 			ns = Normalize(obj2world(b[0] * mesh->n[v[0]] +
 				b[1] * mesh->n[v[1]] + b[2] * mesh->n[v[2]]));
 		else 
-			ns = dg.nn;
+			ns = dg.nn;		
 		if (mesh->s)
 			ss = Normalize(obj2world(b[0] * mesh->s[v[0]] +
 				b[1] * mesh->s[v[1]] + b[2] * mesh->s[v[2]]));

@@ -40,16 +40,16 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	DifferentialGeometry dgEval = dgs;
 
 	// Dade - in order to fix bug #180
-	Normal dnndu;
+	Normal ndndu;
 	if((dgs.dndu.x == 0.0f) && (dgs.dndu.y == 0.0f) && (dgs.dndu.z == 0.0f))
-		dnndu = 0.0f;
+		ndndu = 0.0f;
 	else
-		dnndu = Normalize(dgs.dndu);
-	Normal dnndv;
+		ndndu = Normalize(dgs.dndu);
+	Normal ndndv;
 	if((dgs.dndv.x == 0.0f) && (dgs.dndv.y == 0.0f) && (dgs.dndv.z == 0.0f))
-		dnndv = 0.0f;
+		ndndv = 0.0f;
 	else
-		dnndv = Normalize(dgs.dndv);
+		ndndv = Normalize(dgs.dndv);
 
 	// Shift _dgEval_ _du_ in the $u$ direction
 	float du = .5f * (fabsf(dgs.dudx) + fabsf(dgs.dudy));
@@ -58,7 +58,7 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	dgEval.u = dgs.u + du;
 	dgEval.nn =
 		Normalize((Normal)Cross(dgs.dpdu, dgs.dpdv) +
-		                 du * dnndu);
+		                 du * ndndu);
 	float uDisplace = d->Evaluate(dgEval);
 
 	// Shift _dgEval_ _dv_ in the $v$ direction
@@ -69,7 +69,7 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	dgEval.v = dgs.v + dv;
 	dgEval.nn =
 		Normalize((Normal)Cross(dgs.dpdu, dgs.dpdv) +
-		                 dv * dnndv);
+		                 dv * ndndv);
 	float vDisplace = d->Evaluate(dgEval);
 	float displace = d->Evaluate(dgs);
 
@@ -77,10 +77,10 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	*dgBump = dgs;
 	dgBump->dpdu = dgs.dpdu +
 		(uDisplace - displace) / du * Vector(dgs.nn) +
-		displace * Vector(dnndu);
+		displace * Vector(ndndu);
 	dgBump->dpdv = dgs.dpdv +
 		(vDisplace - displace) / dv * Vector(dgs.nn) +
-		displace * Vector(dnndv);
+		displace * Vector(ndndv);
 
 	dgBump->nn =
 		Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
