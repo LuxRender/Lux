@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
  
+// TODO - Port SPD interfaces
+
 // infinitesample.cpp*
 #include "infinitesample.h"
 #include "imagereader.h"

@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+// TODO - Port SPD interfaces
+
 // goniometric.cpp*
 #include "goniometric.h"
 #include "imagereader.h"

@@ -49,7 +49,7 @@ InfiniteAreaLight
 	}
 
 	// Base illuminant SPD
-	SPDbase = new BlackbodySPD(); // TODO normalize vs other lightsources
+	SPDbase = new BlackbodySPD();
 	SPDbase->Normalize();
 	SPDbase->Scale(gain);
 }
