@@ -36,6 +36,11 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/split_member.hpp>
 
+#if defined (__INTEL_COMPILER)
+// Dade - to fix a problem with expf undefined with Intel CC
+inline float expf(float a) { return exp(a); }
+#endif
+
 #if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__)
 #  include <malloc.h> // for _alloca, memalign
 #  if !defined(WIN32) || defined(__CYGWIN__)
