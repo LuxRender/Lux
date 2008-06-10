@@ -427,7 +427,7 @@ protected:
 
 Spectrum FromXYZ(float x, float y, float z);
 
-#define Scalar double
+#define Scalar float
 
 class SWCSpectrum {
 	friend class boost::serialization::access;
