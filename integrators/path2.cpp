@@ -140,7 +140,7 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 			case P2SAMPLE_ONE_UNIFORM:
 				Ll = UniformSampleOneLight(scene, p, n,
 					wo, bsdf, sample,
-					data, data + 2, data + 3, data + 5);\
+					data, data + 2, data + 3, data + 5);
 				break;
 		}
 
