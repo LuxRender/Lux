@@ -119,6 +119,7 @@ struct  VisibilityTester {
 		r = Ray(p, w, RAY_EPSILON);
 	}
 	bool Unoccluded(const Scene *scene) const;
+	bool TestOcclusion(const Scene *scene, SWCSpectrum *f) const;
 	SWCSpectrum Transmittance(const Scene *scene) const;
 	Ray r;
 };

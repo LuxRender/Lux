@@ -35,8 +35,8 @@ public:
 	// NullTransmission Public Methods
 	NullTransmission()
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
-	SWCSpectrum f(const Vector &, const Vector &) const {
-		return SWCSpectrum(0.);
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const {
+		return wo == -wi ? SWCSpectrum(1.f / fabsf(CosTheta(wi))) : SWCSpectrum(0.);
 	}
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {

@@ -245,9 +245,11 @@ static SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 		ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 	if (lightPdf > 0. && !Li.Black()) {
 		SWCSpectrum f = bsdf->f(wo, wi);
-		if (!f.Black() && visibility.Unoccluded(scene)) {
+		SWCSpectrum fO;
+		if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
 			// Add light's contribution to reflected radiance
 			Li *= visibility.Transmittance(scene);
+			Li *= fO;
 			if (light->IsDeltaLight())
 				Ld += f * Li * AbsDot(wi, n) / lightPdf;
 			else {

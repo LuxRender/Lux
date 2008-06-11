@@ -23,6 +23,7 @@
 // light.cpp*
 #include "light.h"
 #include "scene.h"
+#include "reflection/bxdf.h"
 
 using namespace lux;
 
@@ -34,6 +35,20 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	// radiance - disabled for threading // static StatsCounter nShadowRays("Lights","Number of shadow rays traced");
 	// radiance - disabled for threading // ++nShadowRays;
 	return !scene->IntersectP(r);
+}
+bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const
+{
+	*f = 1.f;
+	Intersection isect;
+	while (true) {
+		if (!scene->Intersect(r, &isect))
+			return true;
+		BSDF *bsdf = isect.GetBSDF(RayDifferential(r),
+			lux::random::floatValue());
+		*f *= bsdf->f(-r.d, r.d) * AbsDot(bsdf->dgShading.nn, r.d);
+		if (f->Black())
+			return false;
+	}
 }
 SWCSpectrum VisibilityTester::
 	Transmittance(const Scene *scene) const {
