@@ -130,6 +130,7 @@
 #include "blender_noise.h"
 #include "blender_magic.h"
 #include "blender_stucci.h"
+#include "blender_voronoi.h"
 
 #include "contrast.h"
 #include "highcontrast.h"
@@ -444,6 +445,11 @@ if (plugin)
         tp.ReportUnused();
         return ret;
     }
+    if(name=="blender_voronoi") {
+        boost::shared_ptr<Texture<float> >  ret = boost::shared_ptr<Texture<float> >(BlenderVoronoiTexture3D<float>::CreateFloatTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
     //Error("Static loading of float texture '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of texture '"<<name<<"' failed.";
@@ -570,6 +576,11 @@ if (plugin)
     }
     if(name=="blender_magic") {
         boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderMagicTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        tp.ReportUnused();
+        return ret;
+    }
+    if(name=="blender_voronoi") {
+        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderVoronoiTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
