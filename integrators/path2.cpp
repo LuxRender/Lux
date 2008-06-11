@@ -32,6 +32,13 @@ using namespace lux;
 // Path2Integrator Method Definitions
 void Path2Integrator::RequestSamples(Sample *sample, const Scene *scene)
 {
+	if (strategy == P2SAMPLE_AUTOMATIC) {
+		if (scene->lights.size() > 5)
+			strategy = P2SAMPLE_ONE_UNIFORM;
+		else
+			strategy = P2SAMPLE_ALL_UNIFORM;
+	}
+
 	vector<u_int> structure;
 	structure.push_back(2);
 	structure.push_back(1);
@@ -41,6 +48,23 @@ void Path2Integrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(2);
 	structure.push_back(1);
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+
+	if (strategy == P2SAMPLE_ALL_UNIFORM) {
+		// Allocate and request samples for sampling all lights
+		u_int nLights = scene->lights.size();
+		lightSampleOffset = new int[nLights];
+		bsdfSampleOffset = new int[nLights];
+		bsdfComponentOffset = new int[nLights];
+		for (u_int i = 0; i < nLights; ++i) {
+			const Light *light = scene->lights[i];
+			int lightSamples =
+				scene->sampler->RoundSize(light->nSamples);
+			lightSampleOffset[i] = sample->Add2D(lightSamples);
+			bsdfSampleOffset[i] = sample->Add2D(lightSamples);
+			bsdfComponentOffset[i] = sample->Add1D(lightSamples);
+		}
+		lightNumOffset = -1;
+	}
 }
 
 SWCSpectrum Path2Integrator::Li(const Scene *scene,
@@ -52,7 +76,6 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 	RayDifferential ray(r);
 	Point lenP;
 	float lenPdf;
-//	SWCSpectrum pathThroughput = 1., L = 0.;
 	vector<SWCSpectrum> pathThroughput(maxDepth + 1), L(maxDepth + 1);
 	vector<float> imageX(maxDepth + 1), imageY(maxDepth  + 1);
 	vector<float> weight(maxDepth + 1);
@@ -89,7 +112,6 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 		if (pathLength == 0) {
 			r.maxt = ray.maxt;
 		} else {
-//			pathThroughput *= scene->Transmittance(ray);
 			SWCSpectrum T(scene->Transmittance(ray));
 			for (int i = 0; i < pathLength; ++i) {
 				pathThroughput[i] *= T;
@@ -107,22 +129,25 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		SWCSpectrum Ll = UniformSampleOneLight(scene, p, n,
-			wo, bsdf, sample,
-			data, data + 2, data + 3, data + 5);
+
+		SWCSpectrum Ll;
+		switch (strategy) {
+			case P2SAMPLE_ALL_UNIFORM:
+				Ll = UniformSampleAllLights(scene, p, n,
+					wo, bsdf, sample,
+					lightSampleOffset, bsdfSampleOffset, bsdfComponentOffset);
+				break;
+			case P2SAMPLE_ONE_UNIFORM:
+				Ll = UniformSampleOneLight(scene, p, n,
+					wo, bsdf, sample,
+					data, data + 2, data + 3, data + 5);\
+				break;
+		}
+
 		L[0] += pathThroughput[0] * Ll;
 		for (int i = 1; i < pathLength; ++i)
 			L[i] += pathThroughput[i] * Ll;
 
-		// Possibly terminate the path
-		if (pathLength > 3) {
-			if (data[6] > continueProbability)
-				break;
-
-			// increase path contribution
-			for (int i = 0; i < pathLength; ++i)
-				pathThroughput[i] /= continueProbability;
-		}
 		// Sample BSDF to get new path direction
 		Vector wi;
 		float pdf;
@@ -134,6 +159,25 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
 		float cos = AbsDot(wi, n);
 		float factor = cos / pdf;
+
+		// Possibly terminate the path
+		if (pathLength > 3) {
+			if( rrstrategy == P2RR_EFFICIENT ) { // use efficiency optimized RR
+				const float q = min<float>(1.f, f.filter() * factor);
+				if (q < data[6])
+					break;
+				// increase path contribution
+				for (int i = 0; i < pathLength; ++i)
+					pathThroughput[i] /= q;
+			} else if ( rrstrategy == P2RR_PROBABILITY ) { // use normal/probability RR
+				if (data[6] > continueProbability)
+					break;
+				// increase path contribution
+				for (int i = 0; i < pathLength; ++i)
+					pathThroughput[i] /= continueProbability;
+			}
+		}
+
 		pathThroughput[0] *= f;
 		pathThroughput[0] *= factor;
 		for (int i = 1; i < pathLength; ++i) {
@@ -157,10 +201,22 @@ SWCSpectrum Path2Integrator::Li(const Scene *scene,
 				imageX[pathLength] = sample_gen.imageX;
 				imageY[pathLength] = sample_gen.imageY;
 //				L[pathLength] = pathThroughput[pathLength] * isect.Le(wo);
-				L[pathLength] += pathThroughput[pathLength] *
-					UniformSampleOneLight(scene, bsdf->dgShading.p, bsdf->dgShading.nn,
-						wo, bsdf, sample,
-						data, data + 2, data + 3, data + 5);
+
+				SWCSpectrum Lx;
+				switch (strategy) {
+					case P2SAMPLE_ALL_UNIFORM:
+						Lx = UniformSampleAllLights(scene, p, n,
+							wo, bsdf, sample,
+							lightSampleOffset, bsdfSampleOffset, bsdfComponentOffset);
+						break;
+					case P2SAMPLE_ONE_UNIFORM:
+						Lx = UniformSampleOneLight(scene, bsdf->dgShading.p, bsdf->dgShading.nn,
+							wo, bsdf, sample,
+							data, data + 2, data + 3, data + 5);
+						break;
+				}
+				L[pathLength] += pathThroughput[pathLength] * Lx;
+
 				pdf = bsdf->Pdf(wo, wi);
 				if (pdf > 0.f) {
 					f = bsdf->f(wo, wi);
@@ -200,9 +256,31 @@ SurfaceIntegrator* Path2Integrator::CreateSurfaceIntegrator(const ParamSet &para
 {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
-	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for RR (0.0-1.0)
+	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for plain RR (0.0-1.0)
+	P2LightStrategy estrategy;
+	string st = params.FindOneString("strategy", "auto");
+	if (st == "one") estrategy = P2SAMPLE_ONE_UNIFORM;
+	else if (st == "all") estrategy = P2SAMPLE_ALL_UNIFORM;
+	else if (st == "auto") estrategy = P2SAMPLE_AUTOMATIC;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"all\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		estrategy = P2SAMPLE_AUTOMATIC;
+	}
+	P2RRStrategy rstrategy;
+	string rst = params.FindOneString("rrstrategy", "efficient");
+	if (rst == "efficient") rstrategy = P2RR_EFFICIENT;
+	else if (rst == "probability") rstrategy = P2RR_PROBABILITY;
+	else if (rst == "none") rstrategy = P2RR_NONE;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficient\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		rstrategy = P2RR_EFFICIENT;
+	}
 
-	return new Path2Integrator(maxDepth, RRcontinueProb);
+	return new Path2Integrator(estrategy, rstrategy, maxDepth, RRcontinueProb);
 
 }
 
