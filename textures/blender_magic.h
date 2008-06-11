@@ -49,6 +49,10 @@ public:
         tex.turbul = turbul;
         tex.bright = bright;
         tex.contrast = contrast;
+		tex.rfac = 1.0f;
+		tex.gfac = 1.0f;
+		tex.bfac = 1.0f;
+
 		tex1 = c1;
 		tex2 = c2;
     }
@@ -58,13 +62,7 @@ public:
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
         blender::TexResult texres;
-        int resultType = multitex(&tex, &P.x, &texres);
-
-        if(resultType & TEX_RGB)
-            texres.tin = (0.35 * texres.tr + 0.45 * texres.tg
-                    + 0.2 * texres.tb);
-        else
-            texres.tr = texres.tg = texres.tb = texres.tin;
+        multitex(&tex, &P.x, &texres);
 
 		T t1 = tex1->Evaluate(dg), t2 = tex2->Evaluate(dg);
 		return (1.f - texres.tin) * t1 + texres.tin * t2;

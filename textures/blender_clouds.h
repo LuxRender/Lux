@@ -59,6 +59,10 @@ public:
         tex.noisebasis = noiseBasis;
         tex.bright = bright;
         tex.contrast = contrast;
+		tex.rfac = 1.0f;
+		tex.gfac = 1.0f;
+		tex.bfac = 1.0f;
+
 		tex1 = c1;
 		tex2 = c2;
     }
