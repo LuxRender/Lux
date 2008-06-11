@@ -229,7 +229,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			if (lightStrategy == SAMPLE_ONE_UNIFORM) {
 				// Randomly choose a single light to sample
 				portal *= numberOfLights;
-				int lightDirectNumber = min(Floor2Int(portal),
+				lightDirectNumber = min(Floor2Int(portal),
 					numberOfLights - 1);
 				portal -= lightDirectNumber;
 			}
