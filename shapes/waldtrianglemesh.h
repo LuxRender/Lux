@@ -180,9 +180,8 @@ private:
 		DOMINANT_Z,
 		ORTHOGONAL_X,
 		ORTHOGONAL_Y,
-		ORTHOGONAL_Z
-		// Dade - could be useful to check for degenerate triangles too
-		//DEGENERATE
+		ORTHOGONAL_Z,
+		DEGENERATE
 	};
 
 	IntersectionType intersectionType;

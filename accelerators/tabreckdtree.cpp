@@ -231,8 +231,8 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
     float t, tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
         return false;
-    
-    const float originalMint = ray.mint;
+
+	const float originalMint = ray.mint;
     const float originalMaxt = ray.maxt;
     
     // Prepare to traverse kd-tree for ray
@@ -294,7 +294,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
             
             // Signed distance to the splitting plane
             t = (splitVal - ray.o[axis]) * invDir[axis];
-            
+
             // Setup the new exit point
             
             int tmp = exPt++;
@@ -353,7 +353,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
         }
         
         if (hit) {
-            ray.mint = originalMint;
+			ray.mint = originalMint;
             return true;
         }
         

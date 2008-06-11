@@ -114,9 +114,15 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     const Point &v2 = mesh->p[v[2]];
     Vector e1 = v1 - v0;
     Vector e2 = v2 - v0;
+
     Vector normal = Normalize(Cross(e1, e2));
-    
-    // Define the type of intersection to use according the normal
+	// Dade - check for degenerate triangle
+	if (isnan(normal.x) || isnan(normal.y) || isnan(normal.z)) {
+		intersectionType = DEGENERATE;
+		return;
+	}
+
+	// Define the type of intersection to use according the normal
     // of the triangle
     
     if ((normal.y == 0.0f) && (normal.z == 0.0f))
@@ -430,7 +436,7 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
             
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.x + t * ray.d.x;
             const float hv = ray.o.y + t * ray.d.y;
             
@@ -447,6 +453,8 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
                 return false;
             break;
         }
+		case DEGENERATE:
+			return false;
         default:
             BOOST_ASSERT(false);
             // Dade - how can I report internal errors ?
@@ -628,6 +636,8 @@ bool WaldTriangle::IntersectP(const Ray &ray) const {
                 return false;
             break;
         }
+		case DEGENERATE:
+			return false;
         default:
             BOOST_ASSERT(false);
             // Dade - how can I report internal errors ?
