@@ -58,10 +58,15 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bRenderSizer;
 	bRenderSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_renderToolBar = new wxToolBar( m_renderPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
-	m_renderToolBar->AddTool( ID_RESUMETOOL, wxT("Resume"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Resume rendering"), wxT("Resume (CTRL-S)") );
-	m_renderToolBar->AddTool( ID_STOPTOOL, wxT("Stop"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Stop (CTRL-T)"), wxT("Stop current rendering") );
+	m_renderToolBar = new wxToolBar( m_renderPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL );
+	m_renderToolBar->SetToolBitmapSize( wxSize( 16,16 ) );
+	m_renderToolBar->AddTool( ID_RESUMETOOL, wxT("Resume"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Resume rendering"), wxT("Resume rendering") );
+	m_renderToolBar->AddTool( ID_STOPTOOL, wxT("Stop"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Stop current rendering"), wxT("Stop current rendering") );
 	m_renderToolBar->AddSeparator();
+	wxStaticText* m_staticText;
+	m_staticText = new wxStaticText( m_renderToolBar, wxID_ANY, wxT("Threads: "), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText->Wrap( -1 );
+	m_renderToolBar->AddControl( m_staticText );
 	m_threadSpinCtrl = new wxSpinCtrl( m_renderToolBar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), wxSP_ARROW_KEYS, 1, 16, 1 );
 	m_renderToolBar->AddControl( m_threadSpinCtrl );
 	m_renderToolBar->Realize();
@@ -76,25 +81,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bLogSizer;
 	bLogSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_logTextCtrl = new wxTextCtrl( m_logPage, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH|wxTE_WORDWRAP );
+	m_logTextCtrl = new wxTextCtrl( m_logPage, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_DONTWRAP|wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH|wxTE_WORDWRAP );
 	bLogSizer->Add( m_logTextCtrl, 1, wxALL|wxEXPAND, 5 );
 	
 	m_logPage->SetSizer( bLogSizer );
 	m_logPage->Layout();
 	bLogSizer->Fit( m_logPage );
 	m_auinotebook->AddPage( m_logPage, wxT("Log"), false, wxNullBitmap );
-	m_outputPage = new wxPanel( m_auinotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxBoxSizer* bOutputSizer;
-	bOutputSizer = new wxBoxSizer( wxVERTICAL );
-	
-	m_staticText = new wxStaticText( m_outputPage, wxID_ANY, wxT("Output tab not implemented yet."), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText->Wrap( -1 );
-	bOutputSizer->Add( m_staticText, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
-	
-	m_outputPage->SetSizer( bOutputSizer );
-	m_outputPage->Layout();
-	bOutputSizer->Fit( m_outputPage );
-	m_auinotebook->AddPage( m_outputPage, wxT("Output"), false, wxNullBitmap );
 	
 	bSizer->Add( m_auinotebook, 1, wxEXPAND | wxALL, 5 );
 	

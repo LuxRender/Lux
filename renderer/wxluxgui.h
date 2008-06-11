@@ -89,6 +89,8 @@ protected:
 
 /*** LuxGui ***/
 
+typedef enum { WAITING, RENDERING, IDLE } LuxGuiState;
+
 class LuxGui : public LuxMainFrame {
 public:
 	/** Constructor */
@@ -107,6 +109,7 @@ protected:
 	void OnTimer(wxTimerEvent& event);
 	void OnSpin(wxSpinEvent& event);
 
+	void ChangeState(LuxGuiState state);
 	void LoadImages();
 
 	// Parsing and rendering threads
@@ -116,6 +119,7 @@ protected:
 	void UpdateStatistics();
 
 	bool m_opengl;
+	LuxGuiState m_guiState;
 
 	wxWindow* m_renderOutput;
 	wxTimer* m_renderTimer;

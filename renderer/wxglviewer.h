@@ -41,6 +41,7 @@ protected:
 	DECLARE_EVENT_TABLE()
 	virtual void Refresh(bool eraseBackground = true, const wxRect* rect = NULL);
 	void OnPaint(wxPaintEvent &event);
+	void OnEraseBackground(wxEraseEvent &event);
 	void OnSize(wxSizeEvent &event);
 	void OnMouse(wxMouseEvent &event);
 

@@ -41,9 +41,10 @@
 using namespace lux;
 
 BEGIN_EVENT_TABLE(LuxGLViewer, wxWindow)
-    EVT_PAINT        (LuxGLViewer::OnPaint)
-		EVT_SIZE         (LuxGLViewer::OnSize)
-		EVT_MOUSE_EVENTS (LuxGLViewer::OnMouse)
+    EVT_PAINT            (LuxGLViewer::OnPaint)
+		EVT_SIZE             (LuxGLViewer::OnSize)
+		EVT_MOUSE_EVENTS     (LuxGLViewer::OnMouse)
+		EVT_ERASE_BACKGROUND (LuxGLViewer::OnEraseBackground)
 END_EVENT_TABLE()
 
 int glAttribList[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0};
@@ -139,11 +140,20 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 	m_imageChanged=false;
 }
 
+void LuxGLViewer::OnEraseBackground(wxEraseEvent &event) {
+	// Method overridden for less flicker:
+	// http://wiki.wxwidgets.org/WxGLCanvas#Animation_flicker:_wxGLCanvas-as-member_vs_subclass-as-member
+	return;
+}
+
 void LuxGLViewer::OnSize(wxSizeEvent &event) {
 	wxGLCanvas::OnSize(event);
 
-	int W = event.GetSize().x;
-	int H = event.GetSize().y;
+	int W, H;
+	//W = event.GetSize().x;
+	//H = event.GetSize().y;
+	// NOTE - Ratow - trying to get same thing from other place (bug in wxMSW)
+	GetClientSize(&W, &H);
 
 	if(!m_firstDraw) {
 		//calculate new offset
@@ -217,8 +227,8 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 			wxGLCanvas::Refresh();
 		}
 	} else if(event.GetEventType() == wxEVT_MOUSEWHEEL) {
-		if((event.GetWheelRotation() < 0 && m_scale < 4) || //zoom in up to 4x
-			  (event.GetWheelRotation() > 0 && (m_scale > 1 || m_scale*m_imageW > W*0.5f || m_scale*m_imageH > H*0.5f))) { //zoom out up to 50% of window size
+		if((event.GetWheelRotation() > 0 && m_scale < 4) || //zoom in up to 4x
+			  (event.GetWheelRotation() < 0 && (m_scale > 1 || m_scale*m_imageW > W*0.5f || m_scale*m_imageH > H*0.5f))) { //zoom out up to 50% of window size
 			//calculate the scaling point in image space
 			m_scaleXo = (int)(     event.GetX() /m_scale-m_scaleXo2/m_scale-m_offsetX/m_scale+m_scaleXo);
 			m_scaleYo = (int)((H-1-event.GetY())/m_scale-m_scaleYo2/m_scale-m_offsetY/m_scale+m_scaleYo);
@@ -228,7 +238,7 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 			if(m_scaleYo < 0) m_scaleYo = 0;
 			if(m_scaleYo > m_imageH-1) m_scaleYo = m_imageH-1;
 			//calculate new scale
-			m_scaleExp += -(event.GetWheelRotation()>0?1:-1)*0.5f;
+			m_scaleExp += (event.GetWheelRotation()>0?1:-1)*0.5f;
 			m_scale = pow(2.0f, m_scaleExp);
 			//get the scaling point in window space
 			m_scaleXo2 = event.GetX();

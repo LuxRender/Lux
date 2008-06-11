@@ -17,12 +17,12 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
+#include <wx/stattext.h>
 #include <wx/spinctrl.h>
 #include <wx/toolbar.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/textctrl.h>
-#include <wx/stattext.h>
 #include <wx/aui/auibook.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
@@ -54,8 +54,6 @@ namespace lux
 			wxSpinCtrl* m_threadSpinCtrl;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
-			wxPanel* m_outputPage;
-			wxStaticText* m_staticText;
 			wxStatusBar* m_statusBar;
 			
 			// Virtual event handlers, overide them in your derived class
