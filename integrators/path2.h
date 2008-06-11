@@ -28,22 +28,20 @@
 namespace lux
 {
 
-// PathIntegrator Declarations
-enum P2LightStrategy { P2SAMPLE_ALL_UNIFORM, P2SAMPLE_ONE_UNIFORM,
-	P2SAMPLE_AUTOMATIC
-};
-enum P2RRStrategy { P2RR_EFFICIENT, P2RR_PROBABILITY,
-	P2RR_NONE 
-};
-
 class Path2Integrator : public SurfaceIntegrator {
 public:
+	// PathIntegrator types
+	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
+		SAMPLE_AUTOMATIC
+	};
+	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
+
 	// PathIntegrator Public Methods
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	Path2Integrator(P2LightStrategy st, P2RRStrategy rst, int md, float cp) { 
-		strategy = st;
-		rrstrategy = rst;
+	Path2Integrator(LightStrategy st, RRStrategy rst, int md, float cp) {
+		lightStrategy = st;
+		rrStrategy = rst;
 		maxDepth = md;
 		continueProbability = cp; 
 	}
@@ -51,13 +49,12 @@ public:
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// PathIntegrator Private Data
-	P2LightStrategy strategy;
-	P2RRStrategy rrstrategy;
-	int maxDepth, sampleOffset;
-	// Declare sample parameters for light source sampling
-	int *lightSampleOffset, lightNumOffset;
-	int *bsdfSampleOffset, *bsdfComponentOffset;
+	LightStrategy lightStrategy;
+	RRStrategy rrStrategy;
+	int maxDepth;
 	float continueProbability;
+	// Declare sample parameters for light source sampling
+	int sampleOffset;
 };
 
 }//namespace lux

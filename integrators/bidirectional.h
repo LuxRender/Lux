@@ -34,7 +34,13 @@ namespace lux
 struct BidirVertex;
 class BidirIntegrator : public SurfaceIntegrator {
 public:
-	BidirIntegrator(int ed, int ld) : maxEyeDepth(ed), maxLightDepth(ld) {}
+	// PathIntegrator types
+	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
+		SAMPLE_AUTOMATIC
+	};
+//	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
+
+	BidirIntegrator(int ed, int ld, LightStrategy ls) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld) {}
 	// BidirIntegrator Public Methods
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
@@ -50,6 +56,7 @@ private:
 	static float G(const BidirVertex &v0, const BidirVertex &v1);
 	static bool visible(const Scene *scene, const Point &P0, const Point &P1);
 	// BidirIntegrator Data
+	LightStrategy lightStrategy;
 	int maxEyeDepth, maxLightDepth;
 	int lightNumOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;

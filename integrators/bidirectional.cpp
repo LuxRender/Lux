@@ -30,6 +30,13 @@ using namespace lux;
 // Bidirectional Method Definitions
 void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
+	if (lightStrategy == SAMPLE_AUTOMATIC) {
+		if (scene->lights.size() > 5)
+			lightStrategy = SAMPLE_ONE_UNIFORM;
+		else
+			lightStrategy = SAMPLE_ALL_UNIFORM;
+	}
+
 	lightNumOffset = sample->Add1D(1);
 	lightPosOffset = sample->Add2D(1);
 	lightDirOffset = sample->Add2D(1);
@@ -217,38 +224,47 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		}
 		// Do direct lighting
 		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
-		// Randomly choose a single light to sample
-		float portal = data[2] * numberOfLights;
-		int lightDirectNumber = min(Floor2Int(portal),
-			numberOfLights - 1);
-		portal -= lightDirectNumber;
-		Light *lightDirect = scene->lights[lightDirectNumber];
-		float pdfDirect;
-		BSDF *bsdfDirect;
-		VisibilityTester visibility;
-		// Sample the chosen light
-		SWCSpectrum Ld = lightDirect->Sample_L(scene, eyePath[i].p, eyePath[i].ns,
-			data[0], data[1], portal, &bsdfDirect, &(directPath[0].dAWeight), &pdfDirect,
-			&visibility);
-		// Test the visibility of the light
-		if (pdfDirect > 0.f && !Ld.Black() && visibility.Unoccluded(scene)) {
-			// Prepare the light vertex
-			directPath[0].wi = Vector(bsdfDirect->dgShading.nn);
-			directPath[0].bsdf = bsdfDirect;
-			directPath[0].p = bsdfDirect->dgShading.p;
-			directPath[0].ng = bsdfDirect->dgShading.nn;
-			directPath[0].ns = directPath[0].ng;
-			// Add direct lighting contribution
-			float err = eyePath[i].rrWeight;
-			float errR = eyePath[i].rrRWeight;
-			Ld *= evalPath(scene, eyePath, i + 1, directPath, 1);
-			if (!Ld.Black()) {
-				Ld *= lightWeight / (pdfDirect *
-					weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true));
-				L += Ld;
+		for (int lightDirectNumber = 0; lightDirectNumber < numberOfLights; ++lightDirectNumber) {
+			float portal = data[2];
+			if (lightStrategy == SAMPLE_ONE_UNIFORM) {
+				// Randomly choose a single light to sample
+				portal *= numberOfLights;
+				int lightDirectNumber = min(Floor2Int(portal),
+					numberOfLights - 1);
+				portal -= lightDirectNumber;
 			}
-			eyePath[i].rrWeight = err;
-			eyePath[i].rrRWeight = errR;
+			Light *lightDirect = scene->lights[lightDirectNumber];
+			float pdfDirect;
+			BSDF *bsdfDirect;
+			VisibilityTester visibility;
+			// Sample the chosen light
+			SWCSpectrum Ld = lightDirect->Sample_L(scene, eyePath[i].p, eyePath[i].ns,
+				data[0], data[1], portal, &bsdfDirect, &(directPath[0].dAWeight), &pdfDirect,
+				&visibility);
+			// Test the visibility of the light
+			if (pdfDirect > 0.f && !Ld.Black() && visibility.Unoccluded(scene)) {
+				// Prepare the light vertex
+				directPath[0].wi = Vector(bsdfDirect->dgShading.nn);
+				directPath[0].bsdf = bsdfDirect;
+				directPath[0].p = bsdfDirect->dgShading.p;
+				directPath[0].ng = bsdfDirect->dgShading.nn;
+				directPath[0].ns = directPath[0].ng;
+				// Add direct lighting contribution
+				float err = eyePath[i].rrWeight;
+				float errR = eyePath[i].rrRWeight;
+				Ld *= evalPath(scene, eyePath, i + 1, directPath, 1);
+				if (!Ld.Black()) {
+					if (lightStrategy == SAMPLE_ONE_UNIFORM)
+						pdfDirect /= lightWeight;
+					Ld /= pdfDirect *
+						weightPath(eyePath, i + 1, directPath, 1, pdfDirect, true);
+					L += Ld;
+				}
+				eyePath[i].rrWeight = err;
+				eyePath[i].rrRWeight = errR;
+			}
+			if (lightStrategy == SAMPLE_ONE_UNIFORM)
+				break;
 		}
 		// Compute direct lighting pdf
 		float directPdf = light->Pdf(eyePath[i].p, eyePath[i].ns,
@@ -560,5 +576,16 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 {
 	int eyeDepth = params.FindOneInt("eyedepth", 8);
 	int lightDepth = params.FindOneInt("lightdepth", 8);
-	return new BidirIntegrator(eyeDepth, lightDepth);
+	LightStrategy estrategy;
+	string st = params.FindOneString("strategy", "auto");
+	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
+	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
+	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		estrategy = SAMPLE_AUTOMATIC;
+	}
+	return new BidirIntegrator(eyeDepth, lightDepth, estrategy);
 }

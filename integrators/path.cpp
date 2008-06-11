@@ -31,14 +31,22 @@ using namespace lux;
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
+	if (lightStrategy == SAMPLE_AUTOMATIC) {
+		if (scene->lights.size() > 5)
+			lightStrategy = SAMPLE_ONE_UNIFORM;
+		else
+			lightStrategy = SAMPLE_ALL_UNIFORM;
+	}
+
 	vector<u_int> structure;
-	structure.push_back(2);	//light position
-	structure.push_back(1);	//light number
-	structure.push_back(2);	//bsdf sampling for light
-	structure.push_back(1);	//bsdf component for light
-	structure.push_back(1);	//continue
-	structure.push_back(2);	//bsdf sampling for path
-	structure.push_back(1);	//bsdf component for path
+	structure.push_back(2);	// light position sample
+	structure.push_back(1);	// light number sample
+	structure.push_back(2);	// bsdf direction sample for light
+	structure.push_back(1);	// bsdf component sample for light
+	structure.push_back(2);	// bsdf direction sample for path
+	structure.push_back(1);	// bsdf component sample for path
+	if (rrStrategy != RR_NONE)
+		structure.push_back(1);	// continue sample
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
 
@@ -105,9 +113,22 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		SWCSpectrum Ll(UniformSampleOneLight(scene, p, n,
-			wo, bsdf, sample,
-			data, data + 2, data + 3, data + 5));
+
+		SWCSpectrum Ll;
+		switch (lightStrategy) {
+			case SAMPLE_ALL_UNIFORM:
+				Ll = UniformSampleAllLights(scene, p, n,
+					wo, bsdf, sample,
+					data, data + 2, data + 3, data + 5);
+				break;
+			case SAMPLE_ONE_UNIFORM:
+				Ll = UniformSampleOneLight(scene, p, n,
+					wo, bsdf, sample,
+					data, data + 2, data + 3, data + 5);
+				break;
+			default:
+				Ll = 0.f;
+		}
 		Ll *= pathThroughput;
 		L += Ll;
 		color = Ll.ToXYZ();
@@ -119,19 +140,27 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[7], data[8], data[9],
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[6], data[7], data[8],
 			&pdf, BSDF_ALL, &flags);
 		if (pdf == .0f || f.Black())
 			break;
 
 		const float dp = AbsDot(wi, n) / pdf;
 
-		// Possibly terminate the path - note - radiance - added effiency optimized RR
+		// Possibly terminate the path
 		if (pathLength > 3) {
-			float q = min<float>(1.f, f.filter() * dp);
-			if (q < data[6])
-				break;
-			pathThroughput /= q;
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float q = min<float>(1.f, f.filter() * dp);
+				if (q < data[9])
+					break;
+				// increase path contribution
+				pathThroughput /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (continueProbability < data[9])
+					break;
+				// increase path contribution
+				pathThroughput /= continueProbability;
+			}
 		}
 
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
@@ -149,6 +178,30 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
-	return new PathIntegrator(maxDepth);
+	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for plain RR (0.0-1.0)
+	LightStrategy estrategy;
+	string st = params.FindOneString("strategy", "auto");
+	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
+	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
+	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		estrategy = SAMPLE_AUTOMATIC;
+	}
+	RRStrategy rstrategy;
+	string rst = params.FindOneString("rrstrategy", "efficiency");
+	if (rst == "efficiency") rstrategy = RR_EFFICIENCY;
+	else if (rst == "probability") rstrategy = RR_PROBABILITY;
+	else if (rst == "none") rstrategy = RR_NONE;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficiency\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		rstrategy = RR_EFFICIENCY;
+	}
+
+	return new PathIntegrator(estrategy, rstrategy, maxDepth, RRcontinueProb);
 }
 

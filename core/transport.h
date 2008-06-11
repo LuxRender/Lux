@@ -63,6 +63,11 @@ public:
 		const Ray &ray, const Sample *sample,
 		float *alpha) const = 0;
 };
+ SWCSpectrum UniformSampleAllLights(const Scene *scene, const Point &p,
+	const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, float *lightSample = NULL,
+	float *lightNum = NULL, float *bsdfSample = NULL,
+	float *bsdfComponent = NULL);
  SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo,
 	BSDF *bsdf, const Sample *sample,

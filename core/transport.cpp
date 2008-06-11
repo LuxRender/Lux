@@ -78,6 +78,42 @@ SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	}
 	return L;
 }
+SWCSpectrum UniformSampleAllLights(const Scene *scene,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample,
+	float *lightSample, float *lightNum,
+	float *bsdfSample, float *bsdfComponent)
+{
+	float ls1, ls2, ls3, bs1, bs2, bcs;
+	if (lightNum)
+		ls3 = *lightNum;
+	else
+		ls3 = lux::random::floatValue();
+	if (lightSample) {
+		ls1 = lightSample[0];
+		ls2 = lightSample[1];
+	} else {
+		ls1 = lux::random::floatValue();
+		ls2 = lux::random::floatValue();
+	}
+	if (bsdfSample) {
+		bs1 = bsdfSample[0];
+		bs2 = bsdfSample[1];
+	} else {
+		bs1 = lux::random::floatValue();
+		bs2 = lux::random::floatValue();
+	}
+	if (bsdfComponent)
+		bcs = *bsdfComponent;
+	else
+		bcs = lux::random::floatValue();
+	SWCSpectrum L(0.f);
+	for (u_int i = 0; i < scene->lights.size(); ++i) {
+		L += EstimateDirect(scene, scene->lights[i], p, n, wo, bsdf,
+			ls1, ls2, ls3, bs1, bs2, bcs);
+	}
+	return L;
+}
 SWCSpectrum UniformSampleOneLight(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
