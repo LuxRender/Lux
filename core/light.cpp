@@ -39,15 +39,17 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const
 {
 	*f = 1.f;
+	RayDifferential ray(r);
 	Intersection isect;
 	while (true) {
-		if (!scene->Intersect(r, &isect))
+		if (!scene->Intersect(ray, &isect))
 			return true;
-		BSDF *bsdf = isect.GetBSDF(RayDifferential(r),
-			lux::random::floatValue());
-		*f *= bsdf->f(-r.d, r.d) * AbsDot(bsdf->dgShading.nn, r.d);
+		BSDF *bsdf = isect.GetBSDF(ray, lux::random::floatValue());
+		*f *= bsdf->f(-ray.d, ray.d) * AbsDot(bsdf->dgShading.nn, ray.d);
 		if (f->Black())
 			return false;
+		ray.maxt -= Distance(ray.o, bsdf->dgShading.p);
+		ray.o = bsdf->dgShading.p;
 	}
 }
 SWCSpectrum VisibilityTester::
