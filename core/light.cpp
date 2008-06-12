@@ -45,11 +45,11 @@ bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const
 		if (!scene->Intersect(ray, &isect))
 			return true;
 		BSDF *bsdf = isect.GetBSDF(ray, lux::random::floatValue());
-		*f *= bsdf->f(-ray.d, ray.d) * AbsDot(bsdf->dgShading.nn, ray.d);
+		*f *= bsdf->f(-ray.d, ray.d) * AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d));
 		if (f->Black())
 			return false;
-		ray.maxt -= Distance(ray.o, bsdf->dgShading.p);
-		ray.o = bsdf->dgShading.p;
+		ray.mint = ray.maxt + RAY_EPSILON;
+		ray.maxt = r.maxt;
 	}
 }
 SWCSpectrum VisibilityTester::
