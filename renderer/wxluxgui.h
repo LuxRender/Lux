@@ -24,9 +24,11 @@
 #define LUX_WXLUXGUI_H
 
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 #include <string>
 
 #include <wx/scrolwin.h>
+#include <wx/progdlg.h>
 
 #include "wxluxframe.h"
 
@@ -35,6 +37,7 @@ namespace lux
 
 #define ID_RENDERUPDATE	2000
 #define ID_STATSUPDATE	2001
+#define ID_LOADUPDATE		2002
 
 /*** LuxError and wxLuxErrorEvent ***/
 
@@ -66,6 +69,7 @@ protected:
 };
 
 DECLARE_EVENT_TYPE(wxEVT_LUX_ERROR, -1)
+DECLARE_EVENT_TYPE(wxEVT_LUX_TONEMAPPED, -1)
 
 typedef void (wxEvtHandler::*wxLuxErrorEventFunction)(wxLuxErrorEvent&);
 
@@ -73,7 +77,6 @@ typedef void (wxEvtHandler::*wxLuxErrorEventFunction)(wxLuxErrorEvent&);
     DECLARE_EVENT_TABLE_ENTRY( wxEVT_LUX_ERROR, id, -1, \
     (wxObjectEventFunction) (wxEventFunction) (wxCommandEventFunction) (wxNotifyEventFunction) \
     wxStaticCastEvent( wxLuxErrorEventFunction, & fn ), (wxObject *) NULL ),
-
 
 /*** LuxOutputWin ***/
 
@@ -104,24 +107,29 @@ protected:
 	// Handlers for LuxMainFrame events.
 	void OnMenu(wxCommandEvent &event);
 	void OnOpen(wxCommandEvent &event);
-	void OnExit(wxCommandEvent &event);
+	void OnExit(wxCloseEvent &event);
 	void OnError(wxLuxErrorEvent &event);
 	void OnTimer(wxTimerEvent& event);
 	void OnSpin(wxSpinEvent& event);
+	void OnTonemap(wxCommandEvent &event);
 
 	void ChangeState(LuxGuiState state);
 	void LoadImages();
 
 	// Parsing and rendering threads
 	void EngineThread(wxString filename);
+	void UpdateThread();
 	int m_numThreads;
 
 	void UpdateStatistics();
 
+	boost::thread *m_engineThread, *m_updateThread;
 	bool m_opengl;
 	LuxGuiState m_guiState;
 
+	wxProgressDialog* m_progDialog;
 	wxWindow* m_renderOutput;
+	wxTimer* m_loadTimer;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;
 

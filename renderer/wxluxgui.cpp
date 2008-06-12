@@ -47,11 +47,13 @@ using namespace lux;
 /*** LuxGui ***/
 
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_ERROR)
+DEFINE_EVENT_TYPE(lux::wxEVT_LUX_TONEMAPPED)
 
 BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 		EVT_LUX_ERROR (wxID_ANY, LuxGui::OnError)
     EVT_TIMER			(wxID_ANY, LuxGui::OnTimer)
 		EVT_SPINCTRL	(wxID_ANY, LuxGui::OnSpin)
+	  EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnTonemap)
 END_EVENT_TABLE()
 
 LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(opengl) {
@@ -63,14 +65,21 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(ope
 		m_renderOutput = new LuxGLViewer(m_renderPage);
 	else
 		m_renderOutput = new LuxOutputWin(m_renderPage);
-	m_renderOutput->Show();
 	m_renderPage->GetSizer()->Add(m_renderOutput, 1, wxALL | wxEXPAND, 5);
+	m_renderPage->Layout();
+
+	// Trick to generate resize event and show output window
+	// http://lists.wxwidgets.org/pipermail/wx-users/2007-February/097829.html
+	SetSize(GetSize());
 
 	// Create render output update timer
 	m_renderTimer = new wxTimer(this, ID_RENDERUPDATE);
 	m_statsTimer = new wxTimer(this, ID_STATSUPDATE);
+	m_loadTimer = new wxTimer(this, ID_LOADUPDATE);
 
 	m_numThreads = 0;
+	m_engineThread = NULL;
+	m_updateThread = NULL;
 
 	luxErrorHandler(&LuxGuiErrorHandler);
 
@@ -120,13 +129,13 @@ void LuxGui::LoadImages() {
 
 	// wxMac has problems changing an existing tool's icon, so we remove and add then again...
 	// Resume toolbar tool
-	m_renderToolBar->SetToolNormalBitmap(ID_RESUMETOOL, wxMEMORY_BITMAP(resume_png));
-	wxToolBarToolBase *rendertool = m_renderToolBar->RemoveTool(0);
+	wxToolBarToolBase *rendertool = m_renderToolBar->RemoveTool(ID_RESUMETOOL);
+	rendertool->SetNormalBitmap(wxMEMORY_BITMAP(resume_png));
 	m_renderToolBar->InsertTool(0, rendertool);
 
 	// Stop toolbar tool
-	m_renderToolBar->SetToolNormalBitmap(ID_STOPTOOL, wxMEMORY_BITMAP(stop_png));
-	wxToolBarToolBase *stoptool = m_renderToolBar->RemoveTool(1);
+	wxToolBarToolBase *stoptool = m_renderToolBar->RemoveTool(ID_STOPTOOL);
+	stoptool->SetNormalBitmap(wxMEMORY_BITMAP(stop_png));
 	m_renderToolBar->InsertTool(1, stoptool);
 	m_renderToolBar->Realize();
 
@@ -151,24 +160,32 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
 		case ID_RESUMEITEM:
 		case ID_RESUMETOOL:
-			// Start display update timer
-			m_renderOutput->Refresh();
-			m_renderOutput->Update();
-			m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
-			m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
-			luxStart();
-			ChangeState(RENDERING);
+			if(m_guiState != RENDERING) {
+				// Start display update timer
+				m_renderOutput->Refresh();
+				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
+				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
+				if(m_guiState == IDLE) // Only re-start if we were previously stopped
+					luxStart();
+				ChangeState(RENDERING);
+			}
 			break;
 		case ID_STOPITEM:
 		case ID_STOPTOOL:
-			// Stop display update timer
-			m_renderTimer->Stop();
-			m_statsTimer->Stop();
-			luxPause();
-			ChangeState(IDLE);
+			if(m_guiState != IDLE) {
+				// Stop display update timer
+				m_renderTimer->Stop();
+				m_statsTimer->Stop();
+				if(m_guiState == RENDERING)
+					luxPause();
+				ChangeState(IDLE);
+			}
 			break;
 		case wxID_ABOUT:
 			new wxSplashScreen(m_splashbmp, wxSPLASH_CENTRE_ON_PARENT, 0, this, -1);
+			break;
+		case wxID_EXIT:
+			Close(false);
 			break;
 		default:
 			break;
@@ -187,8 +204,22 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 		RenderScenefile(filedlg.GetPath());
 }
 
-void LuxGui::OnExit(wxCommandEvent& event) {
-	Close(false);
+void LuxGui::OnExit(wxCloseEvent& event) {
+	//if we have a scene file
+  if(m_guiState != WAITING) {
+		if(m_updateThread)
+			m_updateThread->join();
+
+		luxExit();
+
+		if(m_engineThread)
+			m_engineThread->join();
+
+		luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
+		luxCleanup();
+	}
+
+	Destroy();
 }
 
 void LuxGui::OnError(wxLuxErrorEvent &event) {
@@ -211,15 +242,34 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
-			if (luxStatistics("sceneIsReady")) {
+			if(luxStatistics("sceneIsReady")) {
 				LuxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
-				luxUpdateFramebuffer();
-				m_renderOutput->Refresh();
+				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
+				m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
 			}
 			break;
 		case ID_STATSUPDATE:
-			if (luxStatistics("sceneIsReady"))
+			if(luxStatistics("sceneIsReady"))
 				UpdateStatistics();
+			break;
+		case ID_LOADUPDATE:
+			m_progDialog->Pulse();
+			if(luxStatistics("sceneIsReady")) {
+				// Scene file loaded
+				m_progDialog->Destroy();
+				m_loadTimer->Stop();
+
+				// Add other render threads if necessary
+				int curThreads = 1;
+				while(curThreads < m_numThreads) {
+					luxAddThread();
+					curThreads++;
+				}
+
+				// Start updating the display by faking a resume menu item click.
+				wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
+				GetEventHandler()->AddPendingEvent(startEvent);
+			}
 			break;
 	}
 }
@@ -228,30 +278,22 @@ void LuxGui::OnSpin(wxSpinEvent& event) {
 	SetRenderThreads(event.GetPosition());
 }
 
+void LuxGui::OnTonemap(wxCommandEvent &event) {
+	m_statusBar->SetStatusText(wxT(""), 0);
+	m_renderOutput->Refresh();
+}
+
+
 void LuxGui::RenderScenefile(wxString filename) {
 	wxFileName fn(filename);
 	SetTitle(wxT("LuxRender - ")+fn.GetName());
 
 	// Start main render thread
-	boost::thread engine(boost::bind(&LuxGui::EngineThread, this, filename));
+	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
 
-	//TODO: Show "loading" dialog
-
-	while(!luxStatistics("sceneIsReady"))
-		wxSleep(1);
-
-	ChangeState(RENDERING);
-
-	// Add other render threads if necessary
-	int curThreads = 1;
-	while(curThreads < m_numThreads) {
-		luxAddThread();
-		curThreads++;
-	}
-
-	// Start updating the display by faking a resume menu item click.
-	wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
-	GetEventHandler()->AddPendingEvent(startEvent);
+	m_progDialog = new wxProgressDialog(wxT("Loading..."), wxT(""), 100, this);
+	m_progDialog->Pulse();
+	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 }
 
 void LuxGui::EngineThread(wxString filename) {
@@ -261,6 +303,12 @@ void LuxGui::EngineThread(wxString filename) {
 	chdir(fullPath.branch_path().string().c_str());
 
 	ParseFile(fullPath.leaf().c_str());
+}
+
+void LuxGui::UpdateThread() {
+	luxUpdateFramebuffer();
+	wxCommandEvent endEvent(wxEVT_LUX_TONEMAPPED, GetId());
+	GetEventHandler()->AddPendingEvent(endEvent);
 }
 
 void LuxGui::SetRenderThreads(int num) {

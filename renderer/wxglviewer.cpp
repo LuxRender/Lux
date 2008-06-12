@@ -150,10 +150,8 @@ void LuxGLViewer::OnSize(wxSizeEvent &event) {
 	wxGLCanvas::OnSize(event);
 
 	int W, H;
-	//W = event.GetSize().x;
-	//H = event.GetSize().y;
-	// NOTE - Ratow - trying to get same thing from other place (bug in wxMSW)
-	GetClientSize(&W, &H);
+	W = event.GetSize().x;
+	H = event.GetSize().y;
 
 	if(!m_firstDraw) {
 		//calculate new offset

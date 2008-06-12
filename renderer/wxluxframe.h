@@ -57,8 +57,8 @@ namespace lux
 			wxStatusBar* m_statusBar;
 			
 			// Virtual event handlers, overide them in your derived class
+			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnExit( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
 			
 		
