@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.4)
 IF(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 ENDIF(COMMAND cmake_policy)
+
 PROJECT(lux)
+SET(VERSION 0.5)
 
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
@@ -13,18 +15,15 @@ ENDIF(APPLE)
 
 #Setting Universal Binary Properties, only for Mac OS X
 IF(APPLE)
-IF(APPLE_64)
-	SET(CMAKE_OSX_ARCHITECTURES ppc64;x86_64)
-	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
-ELSE(APPLE_64)
-	SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
-	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
-ENDIF(APPLE_64)
+	IF(APPLE_64)
+		SET(CMAKE_OSX_ARCHITECTURES ppc64;x86_64)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
+	ELSE(APPLE_64)
+		SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
+	ENDIF(APPLE_64)
 ENDIF(APPLE)
 
-#OPTION(WITH_GUI "Enable the GUI." OFF)
-#OPTION(WITH_SSE "Enable SSE optimisations" ON)
-SET(VERSION 0.1)
 
 #############################################################################
 #############################################################################
@@ -33,7 +32,7 @@ SET(VERSION 0.1)
 #############################################################################
 FIND_PROGRAM(BISON_EXECUTABLE bison)
 IF (NOT BISON_EXECUTABLE)
-MESSAGE(FATAL_ERROR "bison not found - aborting")
+	MESSAGE(FATAL_ERROR "bison not found - aborting")
 ENDIF (NOT BISON_EXECUTABLE)
 
 
@@ -44,7 +43,7 @@ ENDIF (NOT BISON_EXECUTABLE)
 #############################################################################
 FIND_PROGRAM(FLEX_EXECUTABLE flex)
 IF (NOT FLEX_EXECUTABLE)
-MESSAGE(FATAL_ERROR "flex not found - aborting")
+	MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
 
 
@@ -56,7 +55,7 @@ ENDIF (NOT FLEX_EXECUTABLE)
 SET(OPENGL_LIBRARY ${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
 
-MESSAGE(STATUS "OpenGL include directory:" ${OPENGL_INCLUDE_DIR})
+MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 
 
 #############################################################################
@@ -86,7 +85,7 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 IF( FLTK_INCLUDE_DIR )
-    MESSAGE(STATUS "FLTK include directory:" ${FLTK_INCLUDE_DIR})
+    MESSAGE(STATUS "FLTK include directory: " ${FLTK_INCLUDE_DIR})
 	SET(FLTK_LIBRARIES fltk fltk_gl)
 ELSE( FLTK_INCLUDE_DIR )
         MESSAGE(FATAL_ERROR "Could not find FLTK")
@@ -118,8 +117,8 @@ IF(APPLE)
 ELSE(APPLE)
 	FIND_PACKAGE(Boost REQUIRED)
 	IF(Boost_FOUND)
-		MESSAGE(STATUS "Boost library directory:" ${Boost_LIBRARY_DIRS})
-		MESSAGE(STATUS "Boost include directory:" ${Boost_INCLUDE_DIRS})
+		MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
+		MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
 		IF(CYGWIN)
 			SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
 		ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -160,13 +159,12 @@ ELSE(APPLE)
 	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
 ENDIF(APPLE)
 
+
 #############################################################################
 #############################################################################
 ########################### PNG   LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-
-
 # - Find the native PNG includes and library
 #
 # This module defines
@@ -197,7 +195,6 @@ ENDIF(APPLE)
 ########################### TIFF  LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-
 # - Find TIFF library
 # Find the native TIFF includes and library
 # This module defines
@@ -214,7 +211,7 @@ ELSE(APPLE)
 	INCLUDE(FindTIFF)
 	#FIND_PACKAGE(TIFF REQUIRED)
 	IF(TIFF_FOUND)
-		MESSAGE( STATUS "Found TIFF" )
+		MESSAGE( STATUS "Found TIFF: " ${TIFF_LIBRARIES} )
 	ELSE(TIFF_FOUND)
 		MESSAGE( STATUS "Warning : could not find TIFF - building without tiff support")
 	ENDIF(TIFF_FOUND)
@@ -226,7 +223,6 @@ ENDIF(APPLE)
 ########################### JPEG  LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-
 # - Find JPEG
 # Find the native JPEG includes and library
 # This module defines
@@ -243,18 +239,18 @@ ELSE(APPLE)
 	INCLUDE(FindJPEG)
 	#FIND_PACKAGE(JPEG REQUIRED)
 	IF(JPEG_FOUND)
-		MESSAGE( STATUS "JPEG include directory:" ${JPEG_INCLUDE_DIR} )
+		MESSAGE( STATUS "JPEG include directory: " ${JPEG_INCLUDE_DIR} )
 	ELSE(JPEG_FOUND)
 		MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
 	ENDIF(JPEG_FOUND)
 ENDIF(APPLE)
+
 
 #############################################################################
 #############################################################################
 ######################### wxWidgets LIBRARIES SETUP #########################
 #############################################################################
 #############################################################################
-
 # Here you can define what libraries of wxWidgets you need for your
 # application. You can figure out what libraries you need here;
 # http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
@@ -263,10 +259,11 @@ FIND_PACKAGE(wxWidgets)
 IF(wxWidgets_FOUND)
     # Include wxWidgets macros
     INCLUDE(${wxWidgets_USE_FILE})
-		MESSAGE( STATUS "wxWidgets include directory:" ${wxWidgets_INCLUDE_DIRS} )
+		MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
 ELSE(wxWidgets_FOUND)
 		MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
 ENDIF(wxWidgets_FOUND)
+
 
 #############################################################################
 #############################################################################
@@ -276,12 +273,12 @@ ENDIF(wxWidgets_FOUND)
 
 FIND_PACKAGE(Threads REQUIRED)
 
+
 #############################################################################
 #############################################################################
 ###########################   SYSTEM LIBRARIES    ###########################
 #############################################################################
 #############################################################################
-
 IF(APPLE)
 	SET(SYS_LIBRARIES z)
 ENDIF(APPLE)
@@ -291,7 +288,9 @@ IF(CYGWIN)
 ENDIF(CYGWIN)
 
 
+#############################################################################
 #All dependencies OK !
+#############################################################################
 
 #Generate the config.h file
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
@@ -302,21 +301,25 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
+# Dade - default compiler options
+ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+
+
+#############################################################################
+# Compiler flags for specific setup
+#############################################################################
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
-#ADD_DEFINITIONS(-pg -g -O2 -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-pg -g -O2 -march=-msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - GCC 2 pass optimization (remember to uncomment the line at the end of file too)
 #ADD_DEFINITIONS(-O3 --coverage -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -fbranch-probabilities -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
-# Dade - default compiler options
-ADD_DEFINITIONS(-O3 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-
 # Dade - my settings
 #ADD_DEFINITIONS(-g -O0 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -march=prescott -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -march=athlon-xp -m3dnow -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 
 # Dade - Intel CC settings (double pass, 32bit, remember to uncomment the line at the end of file too)
 #  rm -rf CMakeCache.txt CMakeFiles
@@ -354,7 +357,6 @@ TARGET LuxLexer
 #DEPENDS ${CMAKE_BINARY_DIR}/core/pbrtparse.cpp ${lux_BINARY_DIR}/core/pbrtparse.h
 OUTPUTS ${CMAKE_BINARY_DIR}/luxlex.cpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
-
 
 # Create custom command for bison/yacc (note the DEPENDS)
 IF(APPLE AND !APPLE_64)
@@ -484,10 +486,10 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} $
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} )
 
-# Needed for ICC
-REMOVE_DEFINITIONS(-ipo)
 
+#############################################################################
 #Here we build the console executable
+#############################################################################
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole lux ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
@@ -510,40 +512,14 @@ IF(APPLE)
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
 
+
+#############################################################################
 #Here we build the GUI executable
+#############################################################################
 ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/luxgui.cpp renderer/renderwindow.cpp)
 INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include /usr/include)
 
 IF(APPLE)
-INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
-FIND_LIBRARY(CARBON_LIBRARY Carbon)
-FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
-FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
-FIND_LIBRARY(AGL_LIBRARY AGL )
-FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
-
-MESSAGE(STATUS ${CARBON_LIBRARY})
-MARK_AS_ADVANCED (CARBON_LIBRARY)
-MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
-MARK_AS_ADVANCED (OPENGL_LIBRARY)
-MARK_AS_ADVANCED (AGL_LIBRARY)
-MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-	TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
-ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
-ENDIF(APPLE)
-
-#IF(APPLE AND !APPLE_64)
-#SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "-mmacosx-version-min=10.4")
-#ENDIF(APPLE AND !APPLE_64)
-
-#Here we build the new GUI executable
-IF(wxWidgets_FOUND)
-	ADD_EXECUTABLE(wxluxgui ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp)
-	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
-
-	IF(APPLE)
 	INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
 	FIND_LIBRARY(CARBON_LIBRARY Carbon)
 	FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
@@ -558,11 +534,46 @@ IF(wxWidgets_FOUND)
 	MARK_AS_ADVANCED (AGL_LIBRARY)
 	MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 	SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-	TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+ENDIF(APPLE)
+
+#IF(APPLE AND !APPLE_64)
+#SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "-mmacosx-version-min=10.4")
+#ENDIF(APPLE AND !APPLE_64)
+
+
+#############################################################################
+#Here we build the new GUI executable
+#############################################################################
+IF(wxWidgets_FOUND)
+	ADD_EXECUTABLE(wxluxgui ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp)
+	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
+
+	IF(APPLE)
+		INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
+		FIND_LIBRARY(CARBON_LIBRARY Carbon)
+		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
+		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
+		FIND_LIBRARY(AGL_LIBRARY AGL )
+		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
+
+		MESSAGE(STATUS ${CARBON_LIBRARY})
+		MARK_AS_ADVANCED (CARBON_LIBRARY)
+		MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
+		MARK_AS_ADVANCED (OPENGL_LIBRARY)
+		MARK_AS_ADVANCED (AGL_LIBRARY)
+		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
+		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+		TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	ELSE(APPLE)
+		TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ENDIF(wxWidgets_FOUND)
+
+
+#############################################################################
 
 #Install target
 INSTALL(TARGETS luxrender luxconsole
