@@ -215,8 +215,8 @@ namespace lux
 #  define INFINITY HUGE_VAL
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
-#define LUX_VERSION 0.1
-#define LUX_VERSION_STRING "0.1 RC4 (CVS)"
+#define LUX_VERSION 0.5
+#define LUX_VERSION_STRING "0.5 (CVS)"
 #define RAY_EPSILON 1e-3f
 #define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
