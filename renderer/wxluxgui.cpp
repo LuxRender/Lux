@@ -25,6 +25,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/thread.hpp>
 #include <boost/cast.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <sstream>
 #include <clocale>
@@ -225,6 +226,7 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 
 void LuxGui::OnError(wxLuxErrorEvent &event) {
 	std::stringstream ss("");
+	ss << boost::posix_time::second_clock::local_time() << ' ';
 	switch(event.GetError()->GetSeverity()) {
 		case LUX_INFO:
 			ss << "Info: ";	break;
@@ -238,13 +240,14 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 	ss << "(" << event.GetError()->GetCode() << ") ";
 	ss << event.GetError()->GetMessage() << std::endl;
 	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
+	m_logTextCtrl->ShowPosition(m_logTextCtrl->GetLastPosition());
 }
 
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
 			if(luxStatistics("sceneIsReady")) {
-				LuxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
+				luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
 				m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
 			}
@@ -292,7 +295,7 @@ void LuxGui::RenderScenefile(wxString filename) {
 	// Start main render thread
 	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
 
-	m_progDialog = new wxProgressDialog(wxT("Loading..."), wxT(""), 100, this);
+	m_progDialog = new wxProgressDialog(wxT("Loading..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 	m_progDialog->Pulse();
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 }
