@@ -25,7 +25,6 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/thread.hpp>
 #include <boost/cast.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <sstream>
 #include <clocale>
@@ -39,6 +38,7 @@
 #include "wx/filename.h"
 #include "wx/dcbuffer.h"
 #include "wx/splash.h"
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "wxluxgui.h"
 #include "wxglviewer.h"
