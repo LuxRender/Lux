@@ -38,21 +38,22 @@ extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const {
 	// Figure out which $\eta$ is incident and which is transmitted
-	bool entering = CosTheta(wo) > 0.;
+	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
 
-	if(cb != 0.) {
+	if(cb != 0.f) {
 		// Handle dispersion using cauchy formula
-		float w = thread_wavelengths->SampleSingle();
-		et = etat + (cb * 1000000) / (w*w);
+		const float w = thread_wavelengths->SampleSingle();
+		et += (cb * 1000000.f) / (w * w);
 	}
 
-	if (!entering)
+	if (!entering && !architectural)
 		swap(ei, et);
 	// Compute transmitted ray direction
-	float sini2 = SinTheta2(wo);
-	float eta = ei / et;
-	float sint2 = eta * eta * sini2;
+	const float sini2 = SinTheta2(wo);
+	const float eta = ei / et;
+	const float eta2 = eta * eta;
+	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
 	if (sint2 > 1.) {
 		*pdf = 0.f;
@@ -62,15 +63,49 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 	}
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering) cost = -cost;
-	float sintOverSini = eta;
-	*wi = Vector(sintOverSini * -wo.x,
-	             sintOverSini * -wo.y,
-				 cost);
+	if (architectural)
+		*wi = -wo;
+	else
+		*wi = Vector(-eta * wo.x, -eta * wo.y, cost);
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
-	return (et*et)/(ei*ei) * (SWCSpectrum(1.)-F) * T /
-		fabsf(CosTheta(*wi));
+	if (!architectural) {
+		SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
+		return (SWCSpectrum(1.f) - F) * T / (fabsf(cost) * eta2);
+	} else {
+		SWCSpectrum F = fresnel.Evaluate(-cost);
+		if (entering)
+			return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
+		else
+			return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
+	}
 }
+SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const
+{
+	if (!(architectural && wi == -wo))
+		return 0.f;
+	// Figure out which $\eta$ is incident and which is transmitted
+	const bool entering = CosTheta(wo) > 0.f;
+	float ei = etai, et = etat;
 
+	if(cb != 0.f) {
+		// Handle dispersion using cauchy formula
+		const float w = thread_wavelengths->SampleSingle();
+		et += (cb * 1000000.f) / (w * w);
+	}
+
+	if (!entering)
+		swap(ei, et);
+	// Compute transmitted ray direction
+	const float sini2 = SinTheta2(wo);
+	const float eta = ei / et;
+	const float eta2 = eta * eta;
+	const float sint2 = eta2 * sini2;
+	// Handle total internal reflection for transmission
+	if (sint2 > 1.) {
+		return 0.;
+	}
+	SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
+	return (SWCSpectrum(1.f) - F) * T / (fabsf(CosTheta(wi)) * eta2);
+}

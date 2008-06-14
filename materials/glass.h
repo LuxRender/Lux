@@ -32,12 +32,13 @@ class Glass : public Material {
 public:
 	// Glass Public Methods
 	Glass(boost::shared_ptr<Texture<Spectrum> > r, boost::shared_ptr<Texture<Spectrum> > t,
-			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, boost::shared_ptr<Texture<float> > bump) {
+			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, bool archi, boost::shared_ptr<Texture<float> > bump) {
 		Kr = r;
 		Kt = t;
 		index = i;
-		bumpMap = bump;
 		cauchyb = cbf;
+		architectural = archi;
+		bumpMap = bump;
 	}
 	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	
@@ -48,6 +49,7 @@ private:
 	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > cauchyb;
 	boost::shared_ptr<Texture<float> > bumpMap;
+	bool architectural;
 };
 
 }//namespace lux

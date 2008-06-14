@@ -34,25 +34,23 @@ namespace lux
 class  SpecularTransmission : public BxDF {
 public:
 	// SpecularTransmission Public Methods
-	SpecularTransmission(const SWCSpectrum &t, float ei, float et, float cbf)
+	SpecularTransmission(const SWCSpectrum &t, float ei, float et, float cbf, bool archi = false)
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
-		  fresnel(ei, et) {
-		T = t;
-		etai = ei;
-		etat = et;
-		cb = cbf;
-	}
-	SWCSpectrum f(const Vector &, const Vector &) const {
+		  T(t), etai(ei), etat(et), cb(cbf), architectural(archi),
+		  fresnel(ei, et) {}
+	SWCSpectrum f(const Vector &, const Vector &) const;/* {
 		return SWCSpectrum(0.);
-	}
+	}*/
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {
-		return 0.;
+		if (architectural && wi == -wo) return 1.f;
+		else return 0.f;
 	}
 private:
 	// SpecularTransmission Private Data
 	SWCSpectrum T;
 	float etai, etat, cb;
+	bool architectural;
 	FresnelDielectric fresnel;
 };
 

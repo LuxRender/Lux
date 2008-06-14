@@ -49,7 +49,7 @@ BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
 		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
 			BSDF_ALLOC( FresnelDielectric)(1., ior)));
 	if (!T.Black())
-		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior, cb));
+		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior, cb, architectural));
 	return bsdf;
 }
 Material* Glass::CreateMaterial(const Transform &xform,
@@ -58,6 +58,7 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<Spectrum> > Kt = mp.GetSpectrumTexture("Kt", Spectrum(1.f));
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.f);				// Cauchy B coefficient
+	bool archi = mp.FindBool("architectural", false);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Glass(Kr, Kt, index, cbf, bumpMap);
+	return new Glass(Kr, Kt, index, cbf, archi, bumpMap);
 }
