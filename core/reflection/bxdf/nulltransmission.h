@@ -40,7 +40,7 @@ public:
 	}
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {
-		return 0.;
+		return wo == -wi ? 1.f : 0.f;
 	}
 private:
 	// NullTransmission Private Data
