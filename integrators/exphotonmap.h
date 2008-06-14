@@ -119,9 +119,13 @@ struct EClosePhoton {
 class ExPhotonIntegrator : public SurfaceIntegrator {
 public:
 	// ExPhotonIntegrator Public Methods
-	ExPhotonIntegrator(int ncaus, int nindir, int nLookup, int mdepth,
-			float maxdist, bool finalGather, int gatherSamples, float ga);
+	ExPhotonIntegrator(int ncaus, int nindir,  int maxDirPhotons,
+		int nLookup, int mdepth,
+		float maxdist, bool finalGather, int gatherSamples, float ga,
+		bool dbgEnableDirect, bool dbgEnableCaustic,
+		bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
+
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray,
 			const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
@@ -152,7 +156,7 @@ private:
             float *alpha) const;
 
 	// ExPhotonIntegrator Private Data
-	u_int nCausticPhotons, nIndirectPhotons;
+	u_int nCausticPhotons, nIndirectPhotons, maxDirectPhotons;
 	u_int nLookup;
 	int maxSpecularDepth;
 	float maxDistSquared;
@@ -160,8 +164,13 @@ private:
 	float cosGatherAngle;
 	int gatherSamples;
 
+	// Dade - debug flags
+	bool debugEnableDirect, debugEnableCaustic,
+			debugEnableIndirect, debugEnableSpecular;
+	
 	// Declare sample parameters for light source sampling
     int *lightSampleOffset;
+	int *bsdfRayOffset;
     int *bsdfSampleOffset, *bsdfComponentOffset;
     int *gatherSampleOffset1, *gatherComponentOffset1;
     int *gatherSampleOffset2, *gatherComponentOffset2;

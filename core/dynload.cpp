@@ -748,11 +748,6 @@ if (plugin)
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="bidirectional") {
-        SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
     if(name=="photonmap") {
         SurfaceIntegrator *ret=PhotonIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
