@@ -45,9 +45,13 @@ bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const
 		if (!scene->Intersect(ray, &isect))
 			return true;
 		BSDF *bsdf = isect.GetBSDF(ray, lux::random::floatValue());
-		*f *= bsdf->f(-ray.d, ray.d) * AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d));
+		*f *= bsdf->f(-ray.d, ray.d);// * AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d));
 		if (f->Black())
 			return false;
+		float pdf = bsdf->Pdf(-ray.d, ray.d);
+		if (!(pdf > 0.f))
+			return false;
+		*f *= AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d)) / pdf;
 		ray.mint = ray.maxt + RAY_EPSILON;
 		ray.maxt = r.maxt;
 	}
