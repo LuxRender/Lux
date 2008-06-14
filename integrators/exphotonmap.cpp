@@ -764,7 +764,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 			float pdf;
             // Trace rays for specular reflection and refraction
             SWCSpectrum f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-                    &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
+                    &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY | BSDF_SPECULAR));
             if ((!f.Black()) || (pdf > 0.0f)) {
                 // Compute ray differential _rd_ for specular reflection
                 RayDifferential rd(p, wi);
