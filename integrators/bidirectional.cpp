@@ -268,7 +268,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		}
 		// Compute direct lighting pdf
 		float directPdf = light->Pdf(eyePath[i].p, eyePath[i].ns,
-			eyePath[i].wi) *
+			Normalize(lightPath[0].p - eyePath[i].p)) *
 			DistanceSquared(eyePath[i].p, lightPath[0].p) /
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
 		for (int j = 1; j <= nLight; ++j) {
