@@ -578,8 +578,8 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
         L += isect.Le(wo);
 
         // Evaluate BSDF at hit point
-        BSDF *bsdf = isect.GetBSDF(ray,
-				sample->oneD[bsdfRayOffset[specularDepth]][0]);
+        BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f *
+				sample->oneD[bsdfRayOffset[specularDepth]][0]) - 1.0f);
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
 

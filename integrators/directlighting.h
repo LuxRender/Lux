@@ -33,55 +33,28 @@ namespace lux
 enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 	SAMPLE_ONE_WEIGHTED  // NOBOOK
 };
+
 class DirectLighting : public SurfaceIntegrator {
 public:
 	// DirectLighting Public Methods
 	DirectLighting(LightStrategy ls, int md);
-	~DirectLighting();
+	~DirectLighting() { }
+
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		float *alpha) const;
-	void RequestSamples(Sample *sample, const Scene *scene) {
-		if (strategy == SAMPLE_ALL_UNIFORM) {
-			// Allocate and request samples for sampling all lights
-			u_int nLights = scene->lights.size();
-			lightSampleOffset = new int[nLights];
-			bsdfSampleOffset = new int[nLights];
-			bsdfComponentOffset = new int[nLights];
-			for (u_int i = 0; i < nLights; ++i) {
-				const Light *light = scene->lights[i];
-				int lightSamples =
-					scene->sampler->RoundSize(light->nSamples);
-				lightSampleOffset[i] = sample->Add2D(lightSamples);
-				bsdfSampleOffset[i] = sample->Add2D(lightSamples);
-				bsdfComponentOffset[i] = sample->Add1D(lightSamples);
-			}
-			lightNumOffset = -1;
-		}
-		else {
-			// Allocate and request samples for sampling one light
-			lightSampleOffset = new int[1];
-			lightSampleOffset[0] = sample->Add2D(1);
-			lightNumOffset = sample->Add1D(1);
-			bsdfSampleOffset = new int[1];
-			bsdfSampleOffset[0] = sample->Add2D(1);
-			bsdfComponentOffset = new int[1];
-			bsdfComponentOffset[0] = sample->Add1D(1);
-		}
-	}
+	void RequestSamples(Sample *sample, const Scene *scene);
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+
 private:
 	SWCSpectrum LiInternal(const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, float *alpha, int rayDepth) const;
+
 	// DirectLighting Private Data
 	LightStrategy strategy;
 	int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
-	int *lightSampleOffset, lightNumOffset;
-	int *bsdfSampleOffset, *bsdfComponentOffset;
-	// Those are shared amongst all threads and updated concurrently
-	// without locking.
-	mutable float *avgY, *avgYsample, *cdf;
-	mutable float overallAvgY;
+	int sampleOffset;
 };
 
 }//namespace lux

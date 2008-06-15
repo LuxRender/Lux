@@ -28,53 +28,78 @@
 using namespace lux;
 
 // DirectLighting Method Definitions
-DirectLighting::~DirectLighting() {
-	delete[] avgY;
-	delete[] avgYsample;
-	delete[] cdf;
-}
 DirectLighting::DirectLighting(LightStrategy st, int md) {
 	maxDepth = md;
 	strategy = st;
-	avgY = avgYsample = cdf = NULL;
-	overallAvgY = 0.;
 }
+
+void DirectLighting::RequestSamples(Sample *sample, const Scene *scene) {
+	vector<u_int> structure;
+	if (strategy == SAMPLE_ALL_UNIFORM) {
+		// Dade - allocate and request samples for sampling all lights
+		structure.push_back(2);	// light position sample
+		structure.push_back(2);	// bsdf direction sample for light
+		structure.push_back(1);	// bsdf component sample for light
+	} else {
+		// Dade - allocate and request samples for sampling one light
+		structure.push_back(2);	// light position sample
+		structure.push_back(1);	// light number sample
+		structure.push_back(2);	// bsdf direction sample for light
+		structure.push_back(1);	// bsdf component sample for light
+	}
+
+	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+}
+
 SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha, int rayDepth) const {
 	Intersection isect;
 	SWCSpectrum L(0.);
 	if (alpha) *alpha = 1.;
+
 	if (scene->Intersect(ray, &isect)) {
+		// Dade - collect samples
+		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
+		float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
+		if (strategy == SAMPLE_ALL_UNIFORM) {
+			lightSample = &data[0];
+			lightNum = NULL;
+			bsdfSample = &data[2];
+			bsdfComponent = &data[4];
+		} else {
+			lightSample = &data[0];
+			lightNum = &data[2];
+			bsdfSample = &data[3];
+			bsdfComponent = &data[5];
+		}
+
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * sample->oneD[bsdfComponentOffset[0]][0] - 1.f));
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * bsdfComponent[0] - 1.f));
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
+
 		// Compute emitted light if ray hit an area light source
 		L += isect.Le(wo);
+
 		// Compute direct lighting for _DirectLighting_ integrator
 		if (scene->lights.size() > 0) {
 			// Apply direct lighting strategy
 			switch (strategy) {
 				case SAMPLE_ALL_UNIFORM:
-					L += UniformSampleAllLights(scene, p, n, wo, bsdf,
-						sample, lightSampleOffset, bsdfSampleOffset,
-						bsdfComponentOffset);
+					L += UniformSampleAllLights(scene, p, n,
+							wo, bsdf, sample,
+							lightSample, bsdfSample, bsdfComponent);
 					break;
 				case SAMPLE_ONE_UNIFORM:
-					L += UniformSampleOneLight(scene, p, n, wo, bsdf,
-						sample, sample->twoD[lightSampleOffset[0]], sample->oneD[lightNumOffset],
-						sample->twoD[bsdfSampleOffset[0]], sample->oneD[bsdfComponentOffset[0]]);
-					break;
-				case SAMPLE_ONE_WEIGHTED:
-					L += WeightedSampleOneLight(scene, p, n, wo, bsdf,
-						sample, lightSampleOffset[0], lightNumOffset,
-						bsdfSampleOffset[0], bsdfComponentOffset[0], avgY,
-						avgYsample, cdf, overallAvgY);
+					L += UniformSampleOneLight(scene, p, n,
+							wo, bsdf, sample,
+							lightSample, lightNum, bsdfSample, bsdfComponent);
 					break;
 			}
 		}
+
 		if (rayDepth < maxDepth) {
 			Vector wi;
 			// Trace rays for specular reflection and refraction
@@ -103,6 +128,7 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
 				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
 			}
+
 			f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
 			if (!f.Black()) {
@@ -133,31 +159,35 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
 			}
 		}
-	}
-	else {
+	} else {
 		// Handle ray with no intersection
 		for (u_int i = 0; i < scene->lights.size(); ++i)
 			L += scene->lights[i]->Le(ray);
 		if (alpha && L.Black()) *alpha = 0.;
 	}
+
 	return L * scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha) + scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 }
+
 SWCSpectrum DirectLighting::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	SampleGuard guard(sample->sampler, sample);
+
 	sample->AddContribution(sample->imageX, sample->imageY,
 		LiInternal(scene, ray, sample, alpha, 0).ToXYZ(),
 		alpha ? *alpha : 1.f);
+
 	return SWCSpectrum(-1.f);
 }
+
 SurfaceIntegrator* DirectLighting::CreateSurfaceIntegrator(const ParamSet &params) {
 	int maxDepth = params.FindOneInt("maxdepth", 5);
+
 	LightStrategy strategy;
 	string st = params.FindOneString("strategy", "all");
 	if (st == "one") strategy = SAMPLE_ONE_UNIFORM;
 	else if (st == "all") strategy = SAMPLE_ALL_UNIFORM;
-	else if (st == "weighted") strategy = SAMPLE_ONE_WEIGHTED;
 	else {
 		//Warning("Strategy \"%s\" for direct lighting unknown. Using \"all\".", st.c_str());
 		std::stringstream ss;
@@ -165,5 +195,6 @@ SurfaceIntegrator* DirectLighting::CreateSurfaceIntegrator(const ParamSet &param
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		strategy = SAMPLE_ALL_UNIFORM;
 	}
+
 	return new DirectLighting(strategy, maxDepth);
 }
