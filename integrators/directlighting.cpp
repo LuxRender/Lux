@@ -60,18 +60,18 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 
 	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
-		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
+		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
 		float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
 		if (strategy == SAMPLE_ALL_UNIFORM) {
-			lightSample = &data[0];
+			lightSample = &sampleData[0];
 			lightNum = NULL;
-			bsdfSample = &data[2];
-			bsdfComponent = &data[4];
+			bsdfSample = &sampleData[2];
+			bsdfComponent = &sampleData[4];
 		} else {
-			lightSample = &data[0];
-			lightNum = &data[2];
-			bsdfSample = &data[3];
-			bsdfComponent = &data[5];
+			lightSample = &sampleData[0];
+			lightNum = &sampleData[2];
+			bsdfSample = &sampleData[3];
+			bsdfComponent = &sampleData[5];
 		}
 
 		// Evaluate BSDF at hit point
@@ -96,6 +96,8 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 					L += UniformSampleOneLight(scene, p, n,
 							wo, bsdf, sample,
 							lightSample, lightNum, bsdfSample, bsdfComponent);
+					break;
+				default:
 					break;
 			}
 		}

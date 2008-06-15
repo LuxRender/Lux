@@ -181,105 +181,43 @@ ExPhotonIntegrator::ExPhotonIntegrator(int ncaus, int nind, int maxDirPhotons,
 	debugEnableCaustic = dbgEnableCaustic;
 	debugEnableIndirect = dbgEnableIndirect;
 	debugEnableSpecular = dbgEnableSpecular;
-		
-    lightSampleOffset = NULL;
-	bsdfRayOffset = NULL;
-    bsdfSampleOffset = NULL;
-    bsdfComponentOffset = NULL;
-    gatherSampleOffset1 = NULL;
-    gatherSampleOffset2 = NULL;
-    gatherComponentOffset1 = NULL;
-    gatherComponentOffset2 = NULL;
-	reflectionSampleOffset = NULL;
-	reflectionComponentOffset = NULL;
-	transmissionSampleOffset = NULL;
-	transmissionComponentOffset = NULL;
 }
 
 ExPhotonIntegrator::~ExPhotonIntegrator() {
     delete causticMap;
     delete indirectMap;
     delete radianceMap;
-
-	delete[] lightSampleOffset;
-	delete[] bsdfRayOffset;
-	delete[] bsdfSampleOffset;
-	delete[] bsdfComponentOffset;
-	delete[] gatherSampleOffset1;
-	delete[] gatherSampleOffset2;
-	delete[] gatherComponentOffset1;
-	delete[] gatherComponentOffset2;
-	delete[] reflectionSampleOffset;
-	delete[] reflectionComponentOffset;
-	delete[] transmissionSampleOffset;
-	delete[] transmissionComponentOffset;
 }
 
 void ExPhotonIntegrator::RequestSamples(Sample *sample,
         const Scene *scene) {
-    // Dade - request samples for sampling all lights
-    u_int nLights = scene->lights.size();
+	// Dade - allocate and request samples
+ 	vector<u_int> structure;
 
-    for (int j = 0; j < maxSpecularDepth; ++j) {
-        for (u_int i = 0; i < nLights; ++i) {
-            const Light *light = scene->lights[i];
-            int lightSamples = scene->sampler->RoundSize(light->nSamples);
+	structure.push_back(2);	// light position sample
+	structure.push_back(2);	// bsdf direction sample for light
+	structure.push_back(1);	// bsdf component sample for light
 
-            lightSampleOffset[i + j * nLights] = sample->Add2D(lightSamples);
-            bsdfSampleOffset[i + j * nLights] = sample->Add2D(lightSamples);
-            bsdfComponentOffset[i + j * nLights] = sample->Add1D(lightSamples);
-        }
+	structure.push_back(2);	// reflection bsdf direction sample
+	structure.push_back(1);	// reflection bsdf component sample
+	structure.push_back(2);	// transmission bsdf direction sample
+	structure.push_back(1);	// transmission bsdf component sample
 
-		bsdfRayOffset[j] = sample->Add1D(1);
+	if (finalGather) {
+		structure.push_back(2);	// gather bsdf direction sample 1
+		structure.push_back(2);	// gather bsdf direction sample 2
+		structure.push_back(1);	// gather bsdf component sample 1
+		structure.push_back(1);	// gather bsdf component sample 2
+	}
 
-        if (finalGather) {
-            gatherSampleOffset1[j] = sample->Add2D(gatherSamples);
-			gatherSampleOffset2[j] = sample->Add2D(gatherSamples);
-            gatherComponentOffset1[j] = sample->Add1D(gatherSamples);
-			gatherComponentOffset2[j] = sample->Add1D(gatherSamples);
-        }
-
-		reflectionSampleOffset[j] = sample->Add2D(1);
-		reflectionComponentOffset[j] = sample->Add1D(1);
-		transmissionSampleOffset[j] = sample->Add2D(1);
-		transmissionComponentOffset[j] = sample->Add1D(1);
-    }
+	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 }
 
 void ExPhotonIntegrator::Preprocess(const Scene *scene) {
     if (scene->lights.size() == 0) return;
 
-    // Dade - allocate samples for sampling all lights
-    u_int sampleCount = scene->lights.size() * maxSpecularDepth;
-    lightSampleOffset = new int[sampleCount];
-    bsdfSampleOffset = new int[sampleCount];
-    bsdfComponentOffset = new int[sampleCount];
-
-    std::stringstream ss;
-    ss << "Number of samples requested for lights: " << sampleCount;
-    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-	bsdfRayOffset = new int[maxSpecularDepth];
-
-    if (finalGather) {
-        gatherSamples = scene->sampler->RoundSize(gatherSamples);
-        gatherSampleOffset1 = new int[maxSpecularDepth];
-        gatherSampleOffset2 = new int[maxSpecularDepth];
-        gatherComponentOffset1 = new int[maxSpecularDepth];
-        gatherComponentOffset2 = new int[maxSpecularDepth];
-
-        ss.str("");
-        ss << "Number of samples requested for final gather: " << maxSpecularDepth;
-        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-    }
-
-	reflectionSampleOffset = new int[maxSpecularDepth];
-	reflectionComponentOffset = new int[maxSpecularDepth];
-	transmissionSampleOffset = new int[maxSpecularDepth];
-	transmissionComponentOffset = new int[maxSpecularDepth];
-
     // Dade - shoot photons
-    ss.str("");
+    std::stringstream ss;
     ss << "Shooting photons: " << (nCausticPhotons + nIndirectPhotons);
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
@@ -547,11 +485,8 @@ SWCSpectrum ExPhotonIntegrator::Li(const Scene *scene,
     SampleGuard guard(sample->sampler, sample);
 
     SWCSpectrum L = SceneLi(0, scene, ray, sample, alpha);
-
-	XYZColor color(L.ToXYZ());
-    if (color.y() > 0.f)
-        sample->AddContribution(sample->imageX, sample->imageY,
-                color, alpha ? *alpha : 1.0f);
+	sample->AddContribution(sample->imageX, sample->imageY,
+			L.ToXYZ(), alpha ? *alpha : 1.0f);
 
     return L;
 }
@@ -569,7 +504,27 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 
     Intersection isect;
     if (scene->Intersect(ray, &isect)) {
-		int sampleOffset = specularDepth * scene->lights.size();
+		// Dade - collect samples
+		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, specularDepth);
+		float *lightSample = &sampleData[0];
+		float *bsdfSample = &sampleData[2];
+		float *bsdfComponent = &sampleData[4];
+
+		float *reflectionSample = &sampleData[5];
+		float *reflectionComponent = &sampleData[7];
+		float *transmissionSample = &sampleData[8];
+		float *transmissionComponent = &sampleData[10];
+
+		float *gatherSample1, *gatherComponent1;
+		float *gatherSample2, *gatherComponent2;
+		if (finalGather) {
+			gatherSample1 = &sampleData[11];
+			gatherSample2 = &sampleData[13];
+			gatherComponent1 = &sampleData[15];
+			gatherComponent2 = &sampleData[16];
+		} else
+			gatherSample1 = gatherComponent1 =
+					gatherSample2 = gatherComponent2 = NULL;
 
         if (alpha) *alpha = 1.;
         Vector wo = -ray.d;
@@ -579,7 +534,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 
         // Evaluate BSDF at hit point
         BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f *
-				sample->oneD[bsdfRayOffset[specularDepth]][0]) - 1.0f);
+				bsdfComponent[0]) - 1.0f);
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
 
@@ -595,9 +550,9 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 		if (debugEnableDirect) {
 			L += UniformSampleAllLights(scene, p, n,
 					wo, bsdf, sample,
-					&lightSampleOffset[sampleOffset],
-					&bsdfSampleOffset[sampleOffset],
-					&bsdfComponentOffset[sampleOffset]);
+					lightSample,
+					bsdfSample,
+					bsdfComponent);
 		}
 
 		if (debugEnableCaustic) {
@@ -608,8 +563,6 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 
 		if (debugEnableIndirect) {
 			if (finalGather) {
-				int finalGatherSampleOffset = specularDepth;
-
 				// Do one-bounce final gather for photon map
 				BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
 						BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
@@ -652,9 +605,9 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 						for (int i = 0; i < gatherSamples; ++i) {
 							// Sample random direction from BSDF for final gather ray
 							Vector wi;
-							float u1 = sample->twoD[gatherSampleOffset1[finalGatherSampleOffset]][2 * i];
-							float u2 = sample->twoD[gatherSampleOffset1[finalGatherSampleOffset]][2 * i + 1];
-							float u3 = sample->oneD[gatherComponentOffset1[finalGatherSampleOffset]][i];
+							float u1 = gatherSample1[0];
+							float u2 = gatherSample1[1];
+							float u3 = gatherComponent1[0];
 							float pdf;
 							SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
 									&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
@@ -698,9 +651,9 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 						Li = 0.;
 						for (int i = 0; i < gatherSamples; ++i) {
 							// Sample random direction using photons for final gather ray
-							float u1 = sample->oneD[gatherComponentOffset2[finalGatherSampleOffset]][i];
-							float u2 = sample->twoD[gatherSampleOffset2[finalGatherSampleOffset]][2 * i];
-							float u3 = sample->twoD[gatherSampleOffset2[finalGatherSampleOffset]][2 * i + 1];
+							float u1 = gatherComponent2[0];
+							float u2 = gatherSample2[0];
+							float u3 = gatherSample2[1];
 							int photonNum = min((int) nIndirSamplePhotons - 1,
 									Floor2Int(u1 * nIndirSamplePhotons));
 							// Sample gather ray direction from _photonNum_
@@ -754,17 +707,15 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 		}
 
         if (debugEnableSpecular && (specularDepth < maxSpecularDepth - 1)) {
-			int specularSampleOffset = specularDepth;
-
-			float u1 = sample->twoD[reflectionSampleOffset[specularSampleOffset]][0];
-			float u2 = sample->twoD[reflectionSampleOffset[specularSampleOffset]][1];
-			float u3 = sample->oneD[reflectionComponentOffset[specularSampleOffset]][0];
+			float u1 = reflectionSample[0];
+			float u2 = reflectionSample[1];
+			float u3 = reflectionComponent[0];
 			
             Vector wi;
 			float pdf;
             // Trace rays for specular reflection and refraction
             SWCSpectrum f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-                    &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY | BSDF_SPECULAR));
+                    &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
             if ((!f.Black()) || (pdf > 0.0f)) {
                 // Compute ray differential _rd_ for specular reflection
                 RayDifferential rd(p, wi);
@@ -789,9 +740,9 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 					(f * (1.0f / pdf)) * AbsDot(wi, n);
             }
 
-			u1 = sample->twoD[transmissionSampleOffset[specularSampleOffset]][0];
-			u2 = sample->twoD[transmissionSampleOffset[specularSampleOffset]][1];
-			u3 = sample->oneD[transmissionComponentOffset[specularSampleOffset]][0];
+			u1 = transmissionSample[0];
+			u2 = transmissionSample[1];
+			u3 = transmissionComponent[0];
 
             f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
                     &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));

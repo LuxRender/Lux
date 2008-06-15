@@ -169,13 +169,14 @@ private:
 			debugEnableIndirect, debugEnableSpecular;
 	
 	// Declare sample parameters for light source sampling
-    int *lightSampleOffset;
+	int sampleOffset;
+    /*int *lightSampleOffset;
 	int *bsdfRayOffset;
     int *bsdfSampleOffset, *bsdfComponentOffset;
     int *gatherSampleOffset1, *gatherComponentOffset1;
     int *gatherSampleOffset2, *gatherComponentOffset2;
 	int *reflectionSampleOffset, *reflectionComponentOffset;
-	int *transmissionSampleOffset, *transmissionComponentOffset;
+	int *transmissionSampleOffset, *transmissionComponentOffset;*/
 
 	int nCausticPaths, nIndirectPaths;
 	mutable KdTree<EPhoton, EPhotonProcess> *causticMap;
