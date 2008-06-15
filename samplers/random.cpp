@@ -92,9 +92,13 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
-			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel) {
+				// Dade - pixelSampler->renderingDone is shared among all rendering threads
+				pixelSampler->renderingDone = true;
 				haveMoreSample = false;
-		}
+			}
+		} else
+			haveMoreSample = (!pixelSampler->renderingDone);
 
 		for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
 			imageSamples[i] = lux::random::floatValue();

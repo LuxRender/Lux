@@ -41,11 +41,11 @@ public:
 	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
 
 private:
+	// LowdiscrepancyPixelSampler Private Data
 	u_int TotalPx;
-    // Dade - number of pixel ralready returned by GetNextPixel()
+    // Dade - number of pixel already returned by GetNextPixel()
     u_int pixelCounter;
 
-	// LowdiscrepancyPixelSampler Private Data
 	int xPixelStart, yPixelStart, xPixelEnd, yPixelEnd;
 	u_int xSeed, ySeed;
 };

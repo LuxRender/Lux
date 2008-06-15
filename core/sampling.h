@@ -174,10 +174,15 @@ struct PxLoc {
 };
 class PixelSampler {
 public:
-	PixelSampler() {}
+	PixelSampler() : renderingDone(false) {}
 	virtual ~PixelSampler() {}
+
 	virtual u_int GetTotalPixels() = 0;
 	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos) = 0;
+
+	// Dade - used by sampler to store the renderingDone condition. Placed here
+	// because PixelSampler is shared among threads
+	bool renderingDone;
 };
 
 void StratifiedSample1D(float *samples, int nsamples, bool jitter = true);

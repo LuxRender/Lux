@@ -61,8 +61,6 @@ TilePixelSampler::TilePixelSampler(
             }
         }
     }
-
-	pixelCounter = 0;
 }
 
 u_int TilePixelSampler::GetTotalPixels() {
@@ -70,15 +68,11 @@ u_int TilePixelSampler::GetTotalPixels() {
 }
 
 bool TilePixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
+	u_int pos = (*use_pos);
 	bool hasMorePixel = true;
-	if(pixelCounter == TotalPx) {
-		pixelCounter = 0;
+	if(pos == TotalPx - 1)
 		hasMorePixel = false;
-	}
 
-	pixelCounter++;
-
-    u_int pos = (*use_pos);
 	xPos = Pxa[pos].x;
 	yPos = Pxa[pos].y;
 

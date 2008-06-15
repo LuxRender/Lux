@@ -41,8 +41,6 @@ public:
 private:
 	// LinearPixelSampler Private Data
 	u_int TotalPx;
-    // Dade - number of pixel ralready returned by GetNextPixel()
-    u_int pixelCounter;
 
 	vector<PxLoc> Pxa; // pixel coordinate cache
 };

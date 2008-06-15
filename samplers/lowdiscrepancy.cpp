@@ -121,9 +121,13 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
-			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+			if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel) {
+				// Dade - pixelSampler->renderingDone is shared among all rendering threads
+				pixelSampler->renderingDone = true;
 				haveMoreSample = false;
-		}
+			}
+		} else
+			haveMoreSample = (!pixelSampler->renderingDone);
 
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
@@ -162,7 +166,7 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	}
 
 	// reset so scene knows to increment
-	if (samplePos >= pixelSamples-1)
+	if (samplePos >= pixelSamples - 1)
 		*use_pos = -1;
 	// Copy low-discrepancy samples from tables
 	sample->imageX = xPos + imageSamples[2*samplePos];

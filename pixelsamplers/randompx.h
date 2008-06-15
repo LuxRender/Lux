@@ -43,7 +43,7 @@ public:
 private:
 	// TilePixelSampler Private Data
 	u_int TotalPx;
-    // Dade - number of pixel ralready returned by GetNextPixel()
+    // Dade - number of pixel already returned by GetNextPixel()
     u_int pixelCounter;
 
 	// RandomPixelSampler Private Data
