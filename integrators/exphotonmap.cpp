@@ -249,7 +249,26 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
     bool indirectDone = (nIndirectPhotons == 0);
 	bool directDone = false;
 
+	// Compute light power CDF for photon shooting
 	int nLights = int(scene->lights.size());
+	float *lightPower = (float *)alloca(nLights * sizeof(float));
+	float *lightCDF = (float *)alloca((nLights+1) * sizeof(float));
+
+	// Dade - avarge the light power
+	for (int i = 0; i < nLights; ++i)
+		lightPower[i] +=0.0f;
+	for (int j = 0; j < 128; j++) {
+		thr_wl->Sample((float)RadicalInverse(j, 2),
+			(float)RadicalInverse(j, 3));
+
+		for (int i = 0; i < nLights; ++i)
+			lightPower[i] += scene->lights[i]->Power(scene).y();
+	}
+	for (int i = 0; i < nLights; ++i)
+		lightPower[i] *= 1.0f / 128.0f;
+
+	float totalPower;
+	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 
     // Declare radiance photon reflectance arrays
     vector<SWCSpectrum> rpReflectances, rpTransmittances;
@@ -290,11 +309,12 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                 (float)RadicalInverse(nshot + 1, 29));
 
         // Choose light to shoot photon from
-        int lightNum = min(
-            Floor2Int(nLights * (float)RadicalInverse(nshot + 1, 11)),
-			nLights-1);
-        const Light *light = scene->lights[lightNum];
-        float lightPdf = 1.f / nLights;
+		float lightPdf;
+		float uln = RadicalInverse((int)nshot+1, 11);
+		int lightNum = Floor2Int(SampleStep1d(lightPower, lightCDF,
+				totalPower, nLights, uln, &lightPdf) * nLights);
+		lightNum = min(lightNum, nLights-1);
+		const Light *light = scene->lights[lightNum];
 
         // Generate _photonRay_ from light source and initialize _alpha_
         RayDifferential photonRay;
