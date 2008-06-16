@@ -118,12 +118,19 @@ struct EClosePhoton {
 
 class ExPhotonIntegrator : public SurfaceIntegrator {
 public:
+	// ExPhotonIntegrator types
+	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
+		SAMPLE_AUTOMATIC
+	};
+
 	// ExPhotonIntegrator Public Methods
-	ExPhotonIntegrator(int ncaus, int nindir,  int maxDirPhotons,
-		int nLookup, int mdepth,
-		float maxdist, bool finalGather, int gatherSamples, float ga,
-		bool dbgEnableDirect, bool dbgEnableCaustic,
-		bool dbgEnableIndirect, bool dbgEnableSpecular);
+	ExPhotonIntegrator(
+			LightStrategy st,
+			int ncaus, int nindir,  int maxDirPhotons,
+			int nLookup, int mdepth,
+			float maxdist, bool finalGather, int gatherSamples, float ga,
+			bool dbgEnableDirect, bool dbgEnableCaustic,
+			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
 
 	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray,
@@ -135,7 +142,9 @@ public:
 	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) {
 		return NULL;
 	}; // Not implemented
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+
 private:
 
 	static inline bool unsuccessful(int needed, int found, int shot) {
@@ -156,6 +165,7 @@ private:
             float *alpha) const;
 
 	// ExPhotonIntegrator Private Data
+	LightStrategy lightStrategy;
 	u_int nCausticPhotons, nIndirectPhotons, maxDirectPhotons;
 	u_int nLookup;
 	int maxSpecularDepth;
@@ -170,13 +180,6 @@ private:
 	
 	// Declare sample parameters for light source sampling
 	int sampleOffset;
-    /*int *lightSampleOffset;
-	int *bsdfRayOffset;
-    int *bsdfSampleOffset, *bsdfComponentOffset;
-    int *gatherSampleOffset1, *gatherComponentOffset1;
-    int *gatherSampleOffset2, *gatherComponentOffset2;
-	int *reflectionSampleOffset, *reflectionComponentOffset;
-	int *transmissionSampleOffset, *transmissionComponentOffset;*/
 
 	int nCausticPaths, nIndirectPaths;
 	mutable KdTree<EPhoton, EPhotonProcess> *causticMap;

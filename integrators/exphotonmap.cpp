@@ -159,11 +159,15 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
     return L;
 }
 
-ExPhotonIntegrator::ExPhotonIntegrator(int ncaus, int nind, int maxDirPhotons,
+ExPhotonIntegrator::ExPhotonIntegrator(
+		LightStrategy st,
+		int ncaus, int nind, int maxDirPhotons,
         int nl, int mdepth, float mdist, bool fg,
         int gs, float ga,
 		bool dbgEnableDirect, bool dbgEnableCaustic,
 		bool dbgEnableIndirect, bool dbgEnableSpecular) {
+	lightStrategy = st;
+
     nCausticPhotons = ncaus;
     nIndirectPhotons = nind;
 	maxDirectPhotons = maxDirPhotons;
@@ -191,6 +195,13 @@ ExPhotonIntegrator::~ExPhotonIntegrator() {
 
 void ExPhotonIntegrator::RequestSamples(Sample *sample,
         const Scene *scene) {
+	if (lightStrategy == SAMPLE_AUTOMATIC) {
+		if (scene->lights.size() > 5)
+			lightStrategy = SAMPLE_ONE_UNIFORM;
+		else
+			lightStrategy = SAMPLE_ALL_UNIFORM;
+	}
+
 	// Dade - allocate and request samples
  	vector<u_int> structure;
 
@@ -202,6 +213,9 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 	structure.push_back(1);	// reflection bsdf component sample
 	structure.push_back(2);	// transmission bsdf direction sample
 	structure.push_back(1);	// transmission bsdf component sample
+
+	if (lightStrategy == SAMPLE_ONE_UNIFORM)
+		structure.push_back(1);	// light number sample
 
 	if (finalGather) {
 		structure.push_back(2);	// gather bsdf direction sample 1
@@ -515,13 +529,21 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 		float *transmissionSample = &sampleData[8];
 		float *transmissionComponent = &sampleData[10];
 
+		float *lightNum;
+		if (lightStrategy == SAMPLE_ONE_UNIFORM)
+			lightNum = &sampleData[11];
+		else
+			lightNum = NULL;
+				
 		float *gatherSample1, *gatherComponent1;
 		float *gatherSample2, *gatherComponent2;
 		if (finalGather) {
-			gatherSample1 = &sampleData[11];
-			gatherSample2 = &sampleData[13];
-			gatherComponent1 = &sampleData[15];
-			gatherComponent2 = &sampleData[16];
+			const int offset = (lightStrategy == SAMPLE_ONE_UNIFORM) ? 12 : 11;
+
+			gatherSample1 = &sampleData[offset];
+			gatherSample2 = &sampleData[offset + 2];
+			gatherComponent1 = &sampleData[offset + 4];
+			gatherComponent2 = &sampleData[offset + 5];
 		} else
 			gatherSample1 = gatherComponent1 =
 					gatherSample2 = gatherComponent2 = NULL;
@@ -548,11 +570,21 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 		}*/
 
 		if (debugEnableDirect) {
-			L += UniformSampleAllLights(scene, p, n,
-					wo, bsdf, sample,
-					lightSample,
-					bsdfSample,
-					bsdfComponent);
+			// Apply direct lighting strategy
+			switch (lightStrategy) {
+				case SAMPLE_ALL_UNIFORM:
+					L += UniformSampleAllLights(scene, p, n,
+							wo, bsdf, sample,
+							lightSample, bsdfSample, bsdfComponent);
+					break;
+				case SAMPLE_ONE_UNIFORM:
+					L += UniformSampleOneLight(scene, p, n,
+							wo, bsdf, sample,
+							lightSample, lightNum, bsdfSample, bsdfComponent);
+					break;
+				default:
+					break;
+			}
 		}
 
 		if (debugEnableCaustic) {
@@ -745,7 +777,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 			u3 = transmissionComponent[0];
 
             f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-                    &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
+                    &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY));
             if ((!f.Black()) || (pdf > 0.0f)) {
                 // Compute ray differential _rd_ for specular transmission
                 RayDifferential rd(p, wi);
@@ -786,6 +818,18 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 }
 
 SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
+	LightStrategy estrategy;
+	string st = params.FindOneString("strategy", "auto");
+	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
+	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
+	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		estrategy = SAMPLE_AUTOMATIC;
+	}
+
     int nCaustic = params.FindOneInt("causticphotons", 20000);
     int nIndirect = params.FindOneInt("indirectphotons", 200000);
 	int maxDirect = params.FindOneInt("maxdirectphotons", 1000000);
@@ -804,7 +848,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
 	bool debugEnableSpecular = params.FindOneBool("dbg_enablespecular", true);
 
-    return new ExPhotonIntegrator(nCaustic, nIndirect, maxDirect,
+    return new ExPhotonIntegrator(estrategy, nCaustic, nIndirect, maxDirect,
             nUsed, maxDepth, maxDist, finalGather, gatherSamples, gatherAngle,
 			debugEnableDirect, debugEnableCaustic, debugEnableIndirect, debugEnableSpecular);
 }
