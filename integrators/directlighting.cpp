@@ -30,12 +30,19 @@ using namespace lux;
 // DirectLighting Method Definitions
 DirectLighting::DirectLighting(LightStrategy st, int md) {
 	maxDepth = md;
-	strategy = st;
+	lightStrategy = st;
 }
 
 void DirectLighting::RequestSamples(Sample *sample, const Scene *scene) {
+	if (lightStrategy == SAMPLE_AUTOMATIC) {
+		if (scene->lights.size() > 5)
+			lightStrategy = SAMPLE_ONE_UNIFORM;
+		else
+			lightStrategy = SAMPLE_ALL_UNIFORM;
+	}
+
 	vector<u_int> structure;
-	if (strategy == SAMPLE_ALL_UNIFORM) {
+	if (lightStrategy == SAMPLE_ALL_UNIFORM) {
 		// Dade - allocate and request samples for sampling all lights
 		structure.push_back(2);	// light position sample
 		structure.push_back(2);	// bsdf direction sample for light
@@ -62,7 +69,7 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
 		float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
-		if (strategy == SAMPLE_ALL_UNIFORM) {
+		if (lightStrategy == SAMPLE_ALL_UNIFORM) {
 			lightSample = &sampleData[0];
 			lightNum = NULL;
 			bsdfSample = &sampleData[2];
@@ -86,7 +93,7 @@ SWCSpectrum DirectLighting::LiInternal(const Scene *scene,
 		// Compute direct lighting for _DirectLighting_ integrator
 		if (scene->lights.size() > 0) {
 			// Apply direct lighting strategy
-			switch (strategy) {
+			switch (lightStrategy) {
 				case SAMPLE_ALL_UNIFORM:
 					L += UniformSampleAllLights(scene, p, n,
 							wo, bsdf, sample,
@@ -186,17 +193,17 @@ SWCSpectrum DirectLighting::Li(const Scene *scene,
 SurfaceIntegrator* DirectLighting::CreateSurfaceIntegrator(const ParamSet &params) {
 	int maxDepth = params.FindOneInt("maxdepth", 5);
 
-	LightStrategy strategy;
-	string st = params.FindOneString("strategy", "all");
-	if (st == "one") strategy = SAMPLE_ONE_UNIFORM;
-	else if (st == "all") strategy = SAMPLE_ALL_UNIFORM;
+	LightStrategy estrategy;
+	string st = params.FindOneString("strategy", "auto");
+	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
+	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
+	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
 	else {
-		//Warning("Strategy \"%s\" for direct lighting unknown. Using \"all\".", st.c_str());
 		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"all\".";
+		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		strategy = SAMPLE_ALL_UNIFORM;
+		estrategy = SAMPLE_AUTOMATIC;
 	}
 
-	return new DirectLighting(strategy, maxDepth);
+	return new DirectLighting(estrategy, maxDepth);
 }

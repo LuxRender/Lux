@@ -30,12 +30,14 @@ namespace lux
 {
 
 // DirectLighting Declarations
-enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
-	SAMPLE_ONE_WEIGHTED  // NOBOOK
-};
 
 class DirectLighting : public SurfaceIntegrator {
 public:
+	// DirectLighting types
+	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
+		SAMPLE_AUTOMATIC
+	};
+
 	// DirectLighting Public Methods
 	DirectLighting(LightStrategy ls, int md);
 	~DirectLighting() { }
@@ -51,7 +53,8 @@ private:
 		const Sample *sample, float *alpha, int rayDepth) const;
 
 	// DirectLighting Private Data
-	LightStrategy strategy;
+	LightStrategy lightStrategy;
+
 	int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
 	int sampleOffset;
