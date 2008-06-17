@@ -219,17 +219,20 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 	if (lightStrategy == SAMPLE_ONE_UNIFORM)
 		structure.push_back(1);	// light number sample
 
+	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
+
 	if (finalGather) {
 		// Dade - request n samples for the final gather step
-		for (int i = 0; i < gatherSamples; ++i) {
-			structure.push_back(2);	// gather bsdf direction sample 1
-			structure.push_back(2);	// gather bsdf direction sample 2
-			structure.push_back(1);	// gather bsdf component sample 1
-			structure.push_back(1);	// gather bsdf component sample 2
-		}
-	}
+		structure.clear();
+		structure.push_back(2);	// gather bsdf direction sample 1
+		structure.push_back(1);	// gather bsdf component sample 1
+		sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
 
-	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
+		structure.clear();
+		structure.push_back(2);	// gather bsdf direction sample 1
+		structure.push_back(1);	// gather bsdf component sample 1
+		sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
+	}
 }
 
 void ExPhotonIntegrator::Preprocess(const Scene *scene) {
@@ -260,9 +263,10 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	float *lightCDF = (float *)alloca((nLights+1) * sizeof(float));
 
 	// Dade - avarge the light power
+	const int spectrumSamples = 64;
 	for (int i = 0; i < nLights; ++i)
 		lightPower[i] +=0.0f;
-	for (int j = 0; j < 128; j++) {
+	for (int j = 0; j < spectrumSamples; j++) {
 		thr_wl->Sample((float)RadicalInverse(j, 2),
 			(float)RadicalInverse(j, 3));
 
@@ -270,7 +274,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 			lightPower[i] += scene->lights[i]->Power(scene).y();
 	}
 	for (int i = 0; i < nLights; ++i)
-		lightPower[i] *= 1.0f / 128.0f;
+		lightPower[i] *= 1.0f / spectrumSamples;
 
 	float totalPower;
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
@@ -322,21 +326,21 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
         // Trace a photon path and store contribution
         // Choose 4D sample values for photon
         float u[4];
-        u[0] = RadicalInverse((int) nshot + 1, 2);
-        u[1] = RadicalInverse((int) nshot + 1, 3);
-        u[2] = RadicalInverse((int) nshot + 1, 5);
-        u[3] = RadicalInverse((int) nshot + 1, 7);
+        u[0] = RadicalInverse(nshot, 2);
+        u[1] = RadicalInverse(nshot, 3);
+        u[2] = RadicalInverse(nshot, 5);
+        u[3] = RadicalInverse(nshot, 7);
 
         // Dade - for SpectrumWavelengths
-        thr_wl->Sample((float)RadicalInverse(nshot + 1, 23),
-                (float)RadicalInverse(nshot + 1, 29));
+        thr_wl->Sample(RadicalInverse(nshot, 23),
+				RadicalInverse(nshot, 29));
 
         // Choose light to shoot photon from
 		float lightPdf;
-		float uln = RadicalInverse((int)nshot+1, 11);
+		float uln = RadicalInverse(nshot, 11);
 		int lightNum = Floor2Int(SampleStep1d(lightPower, lightCDF,
 				totalPower, nLights, uln, &lightPdf) * nLights);
-		lightNum = min(lightNum, nLights-1);
+		lightNum = min(lightNum, nLights - 1);
 		const Light *light = scene->lights[lightNum];
 
         // Generate _photonRay_ from light source and initialize _alpha_
@@ -354,6 +358,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
             int nIntersections = 0;
             while (scene->Intersect(photonRay, &photonIsect)) {
                 ++nIntersections;
+
                 // Handle photon/surface intersection
                 alpha *= scene->Transmittance(photonRay);
                 Vector wo = -photonRay.d;
@@ -367,12 +372,11 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                     // Deposit photon at surface
                     EPhoton photon(photonIsect.dg.p, alpha, wo);
                     if (nIntersections == 1) {
-						// Dade - check if we have enough direct photons
-
-						if (!directDone) {
+						if (finalGather && (!directDone)) {
 							// Deposit direct photon
 							directPhotons.push_back(photon);
 
+							// Dade - check if we have enough direct photons
 							if (directPhotons.size() == maxDirectPhotons) {
 								directDone = true;
 								nDirectPaths = nshot;
@@ -418,6 +422,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                         rpTransmittances.push_back(rho_t);
                     }
                 }
+
                 // Sample new photon ray direction
                 Vector wi;
                 float pdf;
@@ -425,9 +430,9 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                 // Get random numbers for sampling outgoing photon direction
                 float u1, u2, u3;
                 if (nIntersections == 1) {
-                    u1 = RadicalInverse((int) nshot + 1, 13);
-                    u2 = RadicalInverse((int) nshot + 1, 17);
-                    u3 = RadicalInverse((int) nshot + 1, 19);
+                    u1 = RadicalInverse(nshot, 13);
+                    u2 = RadicalInverse(nshot, 17);
+                    u3 = RadicalInverse(nshot, 19);
                 } else {
                     u1 = lux::random::floatValue();
                     u2 = lux::random::floatValue();
@@ -441,10 +446,10 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                     break;
                 SWCSpectrum anew = alpha * fr *
                         AbsDot(wi, photonBSDF->dgShading.nn) / pdf;
-                float continueProb = min<float>(1.f, anew.filter() / alpha.filter());
+                float continueProb = min<float>(1.0f, anew.filter() / alpha.filter());
                 if (lux::random::floatValue() > continueProb || nIntersections > 10)
                     break;
-                alpha = anew / continueProb;
+				alpha = anew / continueProb;
                 specularPath = (nIntersections == 1 || specularPath) &&
                         ((flags & BSDF_SPECULAR) != 0);
                 photonRay = RayDifferential(photonIsect.dg.p, wi);
@@ -454,17 +459,16 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
         BSDF::FreeAll();
     }
 
-	luxError(LUX_NOERROR, LUX_INFO, "Precompute radiance");
-
-    // Precompute radiance at a subset of the photons
-    KdTree<EPhoton, EPhotonProcess> directMap(directPhotons);
-	if (!directDone)
-		nDirectPaths = nshot;
-
     if (finalGather) {
+		luxError(LUX_NOERROR, LUX_INFO, "Precompute radiance");
+
+		// Precompute radiance at a subset of the photons
+		KdTree<EPhoton, EPhotonProcess> directMap(directPhotons);
+		if (!directDone)
+			nDirectPaths = nshot;
+
         for (u_int i = 0; i < radiancePhotons.size(); ++i) {
 			// Dade - print some progress info
-					// Dade - print some progress information
 			boost::xtime currentTime;
 			boost::xtime_get(&currentTime, boost::TIME_UTC);
 			if (currentTime.sec - lastUpdateTime.sec > 5) {
@@ -505,38 +509,25 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	luxError(LUX_NOERROR, LUX_INFO, "Photon shooting done");
 }
 
-SWCSpectrum ExPhotonIntegrator::SceneLi(
-        const int specularDepth,
-        const Scene *scene,
-        const RayDifferential &ray,
-        const Sample *sample,
-        float *alpha) const {
-    SWCSpectrum Lo = IntegratorLi(specularDepth, scene, ray, sample, alpha);
-    SWCSpectrum T = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
-    SWCSpectrum Lv = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
-
-    return T * Lo + Lv;
-}
-
 SWCSpectrum ExPhotonIntegrator::Li(const Scene *scene,
         const RayDifferential &ray, const Sample *sample,
         float *alpha) const {
     SampleGuard guard(sample->sampler, sample);
 
-    SWCSpectrum L = SceneLi(0, scene, ray, sample, alpha);
+    SWCSpectrum L = LiInternal(0, scene, ray, sample, alpha);
 	sample->AddContribution(sample->imageX, sample->imageY,
 			L.ToXYZ(), alpha ? *alpha : 1.0f);
 
-    return L;
+    return SWCSpectrum(-1.f);
 }
 
-SWCSpectrum ExPhotonIntegrator::IntegratorLi(
+SWCSpectrum ExPhotonIntegrator::LiInternal(
         const int specularDepth,
         const Scene *scene,
         const RayDifferential &ray, const Sample *sample,
         float *alpha) const {
     // Compute reflected radiance with photon map
-    SWCSpectrum L(0.);
+    SWCSpectrum L(0.0f);
 
 	if (!indirectMap)
 		return L;
@@ -560,7 +551,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 		else
 			lightNum = NULL;
 
-        if (alpha) *alpha = 1.;
+        if (alpha) *alpha = 1.0f;
         Vector wo = -ray.d;
 
         // Compute emitted light if ray hit an area light source
@@ -571,15 +562,6 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 				bsdfComponent[0]) - 1.0f);
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
-
-		/*// Dade - a sanity check
-		if (isnan(p.x) || isnan(p.y) || isnan(p.z)) {
-			// Dade - something wrong here
-			std::stringstream ss;
-			ss << "Internal error in photonmap, received a NaN point in differential shading geometry: point = (" << p << ")";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-			return L;
-		}*/
 
 		if (debugEnableDirect) {
 			// Apply direct lighting strategy
@@ -607,12 +589,6 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 
 		if (debugEnableIndirect) {
 			if (finalGather) {
-				const int offset = (lightStrategy == SAMPLE_ONE_UNIFORM) ? 12 : 11;
-				float *gatherSample1 = &sampleData[offset];
-				float *gatherSample2 = &sampleData[offset + 2];
-				float *gatherComponent1 = &sampleData[offset + 4];
-				float *gatherComponent2 = &sampleData[offset + 5];
-
 				// Do one-bounce final gather for photon map
 				BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
 						BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
@@ -624,96 +600,57 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 							sizeof (EClosePhoton));
 					float searchDist2 = maxDistSquared;
 
-					//int sanityCheckIndex = 0;
 					while (proc.foundPhotons < nIndirSamplePhotons) {
 						float md2 = searchDist2;
 						proc.foundPhotons = 0;
 						indirectMap->Lookup(p, proc, md2);
 
 						searchDist2 *= 2.f;
-
-						/*if(sanityCheckIndex++ > 32) {
-							// Dade - something wrong here
-							std::stringstream ss;
-							ss << "Internal error in photonmap: point = (" <<
-									p << ") searchDist2 = " << searchDist2;
-							luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-							break;
-						}*/
 					}
 
-					if (proc.foundPhotons > 0) {
-						// Copy photon directions to local array
-						Vector *photonDirs = (Vector *) alloca(nIndirSamplePhotons *
-								sizeof (Vector));
-						for (u_int i = 0; i < nIndirSamplePhotons; ++i)
-							photonDirs[i] = proc.photons[i].photon->wi;
+					// Copy photon directions to local array
+					Vector *photonDirs = (Vector *) alloca(nIndirSamplePhotons *
+							sizeof (Vector));
+					for (u_int i = 0; i < nIndirSamplePhotons; ++i)
+						photonDirs[i] = proc.photons[i].photon->wi;
 
-						// Use BSDF to do final gathering
-						SWCSpectrum Li = 0.;
-						// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", "Final gather rays traced"); // NOBOOK
-						for (int i = 0; i < gatherSamples; ++i) {
-							// Sample random direction from BSDF for final gather ray
-							Vector wi;
-							float u1 = gatherSample1[2 * i];
-							float u2 = gatherSample1[2 * i + 1];
-							float u3 = gatherComponent1[i];
-							float pdf;
-							SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-									&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
-							if (fr.Black() || pdf == 0.f) continue;
-							// Trace BSDF final gather ray and accumulate radiance
-							RayDifferential bounceRay(p, wi);
-							// radiance - disabled for threading // ++gatherRays; // NOBOOK
-							Intersection gatherIsect;
-							if (scene->Intersect(bounceRay, &gatherIsect)) {
-								// Compute exitant radiance using precomputed irradiance
-								SWCSpectrum Lindir = 0.f;
-								Normal nGather = gatherIsect.dg.nn;
-								if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
-								ERadiancePhotonProcess proc(gatherIsect.dg.p, nGather);
-								float md2 = INFINITY;
+					// Use BSDF to do final gathering
+					SWCSpectrum Li = 0.;
+					// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", "Final gather rays traced"); // NOBOOK
+					for (int i = 0; i < gatherSamples; ++i) {
+						float *sampleFGData = sample->sampler->GetLazyValues(
+							const_cast<Sample *>(sample), sampleFinalGather1Offset, i);
 
-								radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
-								if (proc.photon) {
-									Lindir = FromXYZ(proc.photon->Lo.c[0],
-											proc.photon->Lo.c[1],
-											proc.photon->Lo.c[2]);
-								}
+						// Sample random direction from BSDF for final gather ray
+						Vector wi;
+						float u1 = sampleFGData[0];
+						float u2 = sampleFGData[1];
+						float u3 = sampleFGData[2];
+						float pdf;
+						SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+								&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
+						if (fr.Black() || pdf == 0.f) continue;
+						// Trace BSDF final gather ray and accumulate radiance
+						RayDifferential bounceRay(p, wi);
+						// radiance - disabled for threading // ++gatherRays; // NOBOOK
+						Intersection gatherIsect;
+						if (scene->Intersect(bounceRay, &gatherIsect)) {
+							// Compute exitant radiance using precomputed irradiance
+							SWCSpectrum Lindir = 0.f;
+							Normal nGather = gatherIsect.dg.nn;
+							if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
+							ERadiancePhotonProcess proc(gatherIsect.dg.p, nGather);
+							float md2 = INFINITY;
 
-								Lindir *= scene->Transmittance(bounceRay);
-								// Compute MIS weight for BSDF-sampled gather ray
-								// Compute PDF for photon-sampling of direction _wi_
-								float photonPdf = 0.f;
-								float conePdf = UniformConePdf(cosGatherAngle);
-								for (u_int j = 0; j < nIndirSamplePhotons; ++j)
-									if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
-										photonPdf += conePdf;
-								photonPdf /= nIndirSamplePhotons;
-								float wt = PowerHeuristic(gatherSamples, pdf,
-										gatherSamples, photonPdf);
-								Li += fr * Lindir * AbsDot(wi, n) * wt / pdf;
+							radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+							if (proc.photon) {
+								Lindir = FromXYZ(proc.photon->Lo.c[0],
+										proc.photon->Lo.c[1],
+										proc.photon->Lo.c[2]);
 							}
-						}
-						L += Li / gatherSamples;
 
-						// Use nearby photons to do final gathering
-						Li = 0.;
-						for (int i = 0; i < gatherSamples; ++i) {
-							// Sample random direction using photons for final gather ray
-							float u1 = gatherComponent2[i];
-							float u2 = gatherSample2[2 * i];
-							float u3 = gatherSample2[2 * i + 1];
-							int photonNum = min((int) nIndirSamplePhotons - 1,
-									Floor2Int(u1 * nIndirSamplePhotons));
-							// Sample gather ray direction from _photonNum_
-							Vector vx, vy;
-							CoordinateSystem(photonDirs[photonNum], &vx, &vy);
-							Vector wi = UniformSampleCone(u2, u3, cosGatherAngle, vx, vy,
-									photonDirs[photonNum]);
-							// Trace photon-sampled final gather ray and accumulate radiance
-							SWCSpectrum fr = bsdf->f(wo, wi);
-							if (fr.Black()) continue;
+							Lindir *= scene->Transmittance(bounceRay);
+							// Compute MIS weight for BSDF-sampled gather ray
 							// Compute PDF for photon-sampling of direction _wi_
 							float photonPdf = 0.f;
 							float conePdf = UniformConePdf(cosGatherAngle);
@@ -721,34 +658,67 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 								if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
 									photonPdf += conePdf;
 							photonPdf /= nIndirSamplePhotons;
-							RayDifferential bounceRay(p, wi);
-							// radiance - disabled for threading // ++gatherRays; // NOBOOK
-							Intersection gatherIsect;
-							if (scene->Intersect(bounceRay, &gatherIsect)) {
-								// Compute exitant radiance using precomputed irradiance
-								SWCSpectrum Lindir = 0.f;
-								Normal nGather = gatherIsect.dg.nn;
-								if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
-								ERadiancePhotonProcess proc(gatherIsect.dg.p, nGather);
-								float md2 = INFINITY;
-
-								radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
-								if (proc.photon) {
-									Lindir = FromXYZ(proc.photon->Lo.c[0],
-											proc.photon->Lo.c[1],
-											proc.photon->Lo.c[2]);
-								}
-
-								Lindir *= scene->Transmittance(bounceRay);
-								// Compute MIS weight for photon-sampled gather ray
-								float bsdfPdf = bsdf->Pdf(wo, wi);
-								float wt = PowerHeuristic(gatherSamples, photonPdf,
-										gatherSamples, bsdfPdf);
-								Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
-							}
+							float wt = PowerHeuristic(gatherSamples, pdf,
+									gatherSamples, photonPdf);
+							Li += fr * Lindir * AbsDot(wi, n) * wt / pdf;
 						}
-						L += Li / gatherSamples;
 					}
+					L += Li / gatherSamples;
+
+					// Use nearby photons to do final gathering
+					Li = 0.;
+					for (int i = 0; i < gatherSamples; ++i) {
+						float *sampleFGData = sample->sampler->GetLazyValues(
+							const_cast<Sample *>(sample), sampleFinalGather2Offset, i);
+
+						// Sample random direction using photons for final gather ray
+						float u1 = sampleFGData[2];
+						float u2 = sampleFGData[0];
+						float u3 = sampleFGData[1];
+						int photonNum = min((int) nIndirSamplePhotons - 1,
+								Floor2Int(u1 * nIndirSamplePhotons));
+						// Sample gather ray direction from _photonNum_
+						Vector vx, vy;
+						CoordinateSystem(photonDirs[photonNum], &vx, &vy);
+						Vector wi = UniformSampleCone(u2, u3, cosGatherAngle, vx, vy,
+								photonDirs[photonNum]);
+						// Trace photon-sampled final gather ray and accumulate radiance
+						SWCSpectrum fr = bsdf->f(wo, wi);
+						if (fr.Black()) continue;
+						// Compute PDF for photon-sampling of direction _wi_
+						float photonPdf = 0.f;
+						float conePdf = UniformConePdf(cosGatherAngle);
+						for (u_int j = 0; j < nIndirSamplePhotons; ++j)
+							if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
+								photonPdf += conePdf;
+						photonPdf /= nIndirSamplePhotons;
+						RayDifferential bounceRay(p, wi);
+						// radiance - disabled for threading // ++gatherRays; // NOBOOK
+						Intersection gatherIsect;
+						if (scene->Intersect(bounceRay, &gatherIsect)) {
+							// Compute exitant radiance using precomputed irradiance
+							SWCSpectrum Lindir = 0.f;
+							Normal nGather = gatherIsect.dg.nn;
+							if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
+							ERadiancePhotonProcess proc(gatherIsect.dg.p, nGather);
+							float md2 = INFINITY;
+
+							radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+							if (proc.photon) {
+								Lindir = FromXYZ(proc.photon->Lo.c[0],
+										proc.photon->Lo.c[1],
+										proc.photon->Lo.c[2]);
+							}
+
+							Lindir *= scene->Transmittance(bounceRay);
+							// Compute MIS weight for photon-sampled gather ray
+							float bsdfPdf = bsdf->Pdf(wo, wi);
+							float wt = PowerHeuristic(gatherSamples, photonPdf,
+									gatherSamples, bsdfPdf);
+							Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
+						}
+					}
+					L += Li / gatherSamples;
 				}
 			} else {
 				L += LPhoton(indirectMap, nIndirectPaths, nLookup,
@@ -756,7 +726,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 			}
 		}
 
-        if (debugEnableSpecular && (specularDepth < maxSpecularDepth - 1)) {
+        if (debugEnableSpecular && (specularDepth < maxSpecularDepth)) {
 			float u1 = reflectionSample[0];
 			float u2 = reflectionSample[1];
 			float u3 = reflectionComponent[0];
@@ -786,7 +756,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
                 rd.ry.d = wi -
                         dwody + 2 * Vector(Dot(wo, n) * dndy +
                         dDNdy * n);
-                L += SceneLi(specularDepth + 1, scene, rd, sample) *
+                L += LiInternal(specularDepth + 1, scene, rd, sample, alpha) *
 					(f * (1.0f / pdf)) * AbsDot(wi, n);
             }
 
@@ -820,19 +790,20 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 
                 rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
                 rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
-                L += SceneLi(specularDepth + 1, scene, rd, sample) *
+                L += LiInternal(specularDepth + 1, scene, rd, sample, alpha) *
 					(f * (1.0f / pdf)) * AbsDot(wi, n);
             }
         }
     } else {
         // Handle ray with no intersection
-        if (alpha) *alpha = 0.;
+        if (alpha) *alpha = 0.0f;
         for (u_int i = 0; i < scene->lights.size(); ++i)
             L += scene->lights[i]->Le(ray);
-        if (alpha && !L.Black()) *alpha = 1.;
+        if (alpha && !L.Black()) *alpha = 1.0f;
     }
 
-    return L;
+    return L * scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha) +
+			scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 }
 
 SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {

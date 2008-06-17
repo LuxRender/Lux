@@ -157,10 +157,7 @@ private:
 
 	SWCSpectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
 			const Point &p, const Normal &n) const;
-    SWCSpectrum SceneLi(const int specularDepth, const Scene *scene,
-            const RayDifferential &ray, const Sample *sample,
-            float *alpha = NULL) const;
-    SWCSpectrum IntegratorLi(const int specularDepth, const Scene *scene,
+    SWCSpectrum LiInternal(const int specularDepth, const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
 
@@ -180,6 +177,8 @@ private:
 	
 	// Declare sample parameters for light source sampling
 	int sampleOffset;
+	int sampleFinalGather1Offset;
+	int sampleFinalGather2Offset;
 
 	int nCausticPaths, nIndirectPaths;
 	mutable KdTree<EPhoton, EPhotonProcess> *causticMap;
