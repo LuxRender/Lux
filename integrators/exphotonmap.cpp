@@ -221,7 +221,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 
 	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 
-	/*if (finalGather) {
+	if (finalGather) {
 		// Dade - request n samples for the final gather step
 		structure.clear();
 		structure.push_back(2);	// gather bsdf direction sample 1
@@ -232,7 +232,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		structure.push_back(2);	// gather bsdf direction sample 2
 		structure.push_back(1);	// gather bsdf component sample 2
 		sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
-	}*/
+	}
 }
 
 void ExPhotonIntegrator::Preprocess(const Scene *scene) {
