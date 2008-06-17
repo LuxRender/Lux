@@ -65,147 +65,152 @@ bool LuxGuiApp::OnInit() {
 }
 
 bool LuxGuiApp::ProcessCommandLine() {
-	// allowed only on command line
-	po::options_description generic("Generic options");
-	generic.add_options()
-	  ("version,v", "Print version string")
-	  ("help", "Produce help message")
-	  ("debug,d", "Enable debug mode")
-	;
-
-	// Declare a group of options that will be
-	// allowed both on command line and in
-	// config file
-	po::options_description config("Configuration");
-	config.add_options()
-	  ("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
-	  ("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
-	  ("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
-	;
-
-	// Hidden options, will be allowed both on command line and
-	// in config file, but will not be shown to the user.
-	po::options_description hidden("Hidden options");
-	hidden.add_options()
-	  ("input-file", po::value < vector < string > >(), "input file")
-	;
-
-	#ifdef LUX_USE_OPENGL
+	try {
+		// allowed only on command line
+		po::options_description generic("Generic options");
 		generic.add_options()
-		  ("noopengl", "Disable OpenGL to display the image")
+			("version,v", "Print version string")
+			("help", "Produce help message")
+			("debug,d", "Enable debug mode")
 		;
-	#else
+
+		// Declare a group of options that will be
+		// allowed both on command line and in
+		// config file
+		po::options_description config("Configuration");
+		config.add_options()
+			("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
+			("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
+			("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
+		;
+
+		// Hidden options, will be allowed both on command line and
+		// in config file, but will not be shown to the user.
+		po::options_description hidden("Hidden options");
 		hidden.add_options()
-		  ("noopengl", "Disable OpenGL to display the image")
+			("input-file", po::value < vector < string > >(), "input file")
 		;
-	#endif // LUX_USE_OPENGL
 
-	po::options_description cmdline_options;
-	cmdline_options.add(generic).add(config).add(hidden);
+		#ifdef LUX_USE_OPENGL
+			generic.add_options()
+				("noopengl", "Disable OpenGL to display the image")
+			;
+		#else
+			hidden.add_options()
+				("noopengl", "Disable OpenGL to display the image")
+			;
+		#endif // LUX_USE_OPENGL
 
-	po::options_description config_file_options;
-	config_file_options.add(config).add(hidden);
+		po::options_description cmdline_options;
+		cmdline_options.add(generic).add(config).add(hidden);
 
-	po::options_description visible("Allowed options");
-	visible.add(generic).add(config);
+		po::options_description config_file_options;
+		config_file_options.add(config).add(hidden);
 
-	po::positional_options_description p;
+		po::options_description visible("Allowed options");
+		visible.add(generic).add(config);
 
-	p.add("input-file", -1);
+		po::positional_options_description p;
 
-	po::variables_map vm;
-#if wxUSE_UNICODE == 1
-	store(po::wcommand_line_parser(wxApp::argc, wxApp::argv).
-	  options(cmdline_options).positional(p).run(), vm);
-#else // ANSI
-	store(po::command_line_parser(wxApp::argc, wxApp::argv).
-	  options(cmdline_options).positional(p).run(), vm);
-#endif // Unicode/ANSI
+		p.add("input-file", -1);
 
-	std::ifstream ifs("luxrender.cfg");
-	store(parse_config_file(ifs, config_file_options), vm);
-	notify(vm);
+		po::variables_map vm;
+	#if wxUSE_UNICODE == 1
+		store(po::wcommand_line_parser(wxApp::argc, wxApp::argv).
+			options(cmdline_options).positional(p).run(), vm);
+	#else // ANSI
+		store(po::command_line_parser(wxApp::argc, wxApp::argv).
+			options(cmdline_options).positional(p).run(), vm);
+	#endif // Unicode/ANSI
 
-	if(vm.count("help")) {
-		std::cout << "Usage: luxrender [options] file..." << std::endl;
-		std::cout << visible << std::endl;
-		return false;
-	}
+		std::ifstream ifs("luxrender.cfg");
+		store(parse_config_file(ifs, config_file_options), vm);
+		notify(vm);
 
-	if(vm.count("version")) {
-		std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
-		return false;
-	}
-
-	if(vm.count("threads")) {
-		m_threads = vm["threads"].as < int >();
-	}
-	else {
-		m_threads = 1;;
-	}
-
-	if(vm.count("debug")) {
-		luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
-		luxEnableDebugMode();
-	}
-
-	int serverInterval;
-	if(vm.count("serverinterval")) {
-		serverInterval = vm["serverinterval"].as<int>();
-		luxSetNetworkServerUpdateInterval(serverInterval);
-	} else {
-		serverInterval = luxGetNetworkServerUpdateInterval();
-	}
-
-	if(vm.count("useserver")) {
-		std::stringstream ss;
-
-		std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
-
-		for(std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++) {
-			ss.str("");
-			ss << "Connecting to server '" <<(*i) << "'";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-			//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
-			luxAddServer((*i).c_str());
+		if(vm.count("help")) {
+			std::cout << "Usage: luxrender [options] file..." << std::endl;
+			std::cout << visible << std::endl;
+			return false;
 		}
 
-		m_useServer = true;
+		if(vm.count("version")) {
+			std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
+			return false;
+		}
 
-		ss.str("");
-		ss << "Server requests interval:  " << serverInterval << " secs";
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	} else {
-		m_useServer = false;
-	}
+		if(vm.count("threads")) {
+			m_threads = vm["threads"].as < int >();
+		}
+		else {
+			m_threads = 1;;
+		}
 
-	if(vm.count("noopengl")) {
-		m_openglEnabled = false;
-	} else {
-		#ifdef LUX_USE_OPENGL
-			#if wxUSE_GLCANVAS == 1
-				m_openglEnabled = true;
+		if(vm.count("debug")) {
+			luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+			luxEnableDebugMode();
+		}
+
+		int serverInterval;
+		if(vm.count("serverinterval")) {
+			serverInterval = vm["serverinterval"].as<int>();
+			luxSetNetworkServerUpdateInterval(serverInterval);
+		} else {
+			serverInterval = luxGetNetworkServerUpdateInterval();
+		}
+
+		if(vm.count("useserver")) {
+			std::stringstream ss;
+
+			std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
+
+			for(std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++) {
+				ss.str("");
+				ss << "Connecting to server '" <<(*i) << "'";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
+				luxAddServer((*i).c_str());
+			}
+
+			m_useServer = true;
+
+			ss.str("");
+			ss << "Server requests interval:  " << serverInterval << " secs";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		} else {
+			m_useServer = false;
+		}
+
+		if(vm.count("noopengl")) {
+			m_openglEnabled = false;
+		} else {
+			#ifdef LUX_USE_OPENGL
+				#if wxUSE_GLCANVAS == 1
+					m_openglEnabled = true;
+				#else
+					m_openglEnabled = false;
+					luxError(LUX_NOERROR, LUX_INFO, "GUI: wxWidgets without suppport for OpenGL canvas - will not be used.");
+				#endif // wxUSE_GLCANVAS
 			#else
 				m_openglEnabled = false;
-				luxError(LUX_NOERROR, LUX_INFO, "GUI: wxWidgets without suppport for OpenGL canvas - will not be used.");
-			#endif // wxUSE_GLCANVAS
-		#else
-			m_openglEnabled = false;
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: OpenGL support was not compiled in - will not be used.");
-		#endif // LUX_USE_OPENGL
-	}
-
-	if(vm.count("input-file")) {
-		const std::vector < std::string > &v = vm["input-file"].as < vector < string > >();
-		if(v.size() > 1) {
-			luxError(LUX_SYSTEM, LUX_SEVERE, "More than one file passed on command line : rendering the first one.");
+				luxError(LUX_NOERROR, LUX_INFO, "GUI: OpenGL support was not compiled in - will not be used.");
+			#endif // LUX_USE_OPENGL
 		}
 
-		m_inputFile = wxString(v[0].c_str(), wxConvUTF8);
-	} else {
-		m_inputFile.Clear();
-	}
+		if(vm.count("input-file")) {
+			const std::vector < std::string > &v = vm["input-file"].as < vector < string > >();
+			if(v.size() > 1) {
+				luxError(LUX_SYSTEM, LUX_SEVERE, "More than one file passed on command line : rendering the first one.");
+			}
 
-	return true;
+			m_inputFile = wxString(v[0].c_str(), wxConvUTF8);
+		} else {
+			m_inputFile.Clear();
+		}
+
+		return true;
+	} catch(std::exception &e) {
+		std::cout << e.what() << std::endl;
+		return false;
+	}
 }
