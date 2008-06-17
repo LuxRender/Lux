@@ -221,7 +221,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 
 	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 
-	if (finalGather) {
+	/*if (finalGather) {
 		// Dade - request n samples for the final gather step
 		structure.clear();
 		structure.push_back(2);	// gather bsdf direction sample 1
@@ -229,10 +229,10 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
 
 		structure.clear();
-		structure.push_back(2);	// gather bsdf direction sample 1
-		structure.push_back(1);	// gather bsdf component sample 1
+		structure.push_back(2);	// gather bsdf direction sample 2
+		structure.push_back(1);	// gather bsdf component sample 2
 		sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
-	}
+	}*/
 }
 
 void ExPhotonIntegrator::Preprocess(const Scene *scene) {
@@ -263,7 +263,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	float *lightCDF = (float *)alloca((nLights+1) * sizeof(float));
 
 	// Dade - avarge the light power
-	const int spectrumSamples = 64;
+	const int spectrumSamples = 128;
 	for (int i = 0; i < nLights; ++i)
 		lightPower[i] +=0.0f;
 	for (int j = 0; j < spectrumSamples; j++) {
@@ -292,12 +292,21 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 		boost::xtime_get(&currentTime, boost::TIME_UTC);
 		if (currentTime.sec - lastUpdateTime.sec > 5) {
 			ss.str("");
-			ss << "Direct photon count: " << directPhotons.size() <<
-					" (" << (100 * directPhotons.size() / maxDirectPhotons) << "% limit)";
-			ss << " Caustic photonmap size: " << causticPhotons.size() << 
+			ss << "Direct photon count: " << directPhotons.size();
+			if (maxDirectPhotons > 0)
+				ss << " (" << (100 * directPhotons.size() / maxDirectPhotons) << "% limit)";
+			else
+				ss << " (100% limit)";
+			ss << " Caustic photonmap size: " << causticPhotons.size();
+			if (nCausticPhotons > 0)
 				" (" << (100 * causticPhotons.size() / nCausticPhotons) << "%)";
-			ss << " Indirect photonmap size: " << indirectPhotons.size() <<
-				" (" << (100 * indirectPhotons.size() / nIndirectPhotons) << "%)";
+			else
+				ss << " (100%)";
+			ss << " Indirect photonmap size: " << indirectPhotons.size();
+			if (nIndirectPhotons > 0)
+				ss << " (" << (100 * indirectPhotons.size() / nIndirectPhotons) << "%)";
+			else
+				ss << " (100%)";
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 			lastUpdateTime = currentTime;
