@@ -92,7 +92,17 @@ protected:
 
 /*** LuxGui ***/
 
-typedef enum { WAITING, RENDERING, IDLE } LuxGuiState;
+enum LuxGuiRenderState
+{
+	WAITING,
+	RENDERING,
+	IDLE
+};
+enum LuxGuiWindowState
+{
+	SHOWN,
+	HIDDEN
+};
 
 class LuxGui : public LuxMainFrame {
 public:
@@ -112,8 +122,9 @@ protected:
 	void OnTimer(wxTimerEvent& event);
 	void OnSpin(wxSpinEvent& event);
 	void OnTonemap(wxCommandEvent &event);
+	void OnIconize(wxIconizeEvent& event);
 
-	void ChangeState(LuxGuiState state);
+	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
 
 	// Parsing and rendering threads
@@ -125,7 +136,8 @@ protected:
 
 	boost::thread *m_engineThread, *m_updateThread;
 	bool m_opengl;
-	LuxGuiState m_guiState;
+	LuxGuiRenderState m_guiRenderState;
+	LuxGuiWindowState m_guiWindowState;
 
 	wxProgressDialog* m_progDialog;
 	wxWindow* m_renderOutput;

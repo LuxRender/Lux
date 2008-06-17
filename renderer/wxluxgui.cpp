@@ -52,10 +52,11 @@ DEFINE_EVENT_TYPE(lux::wxEVT_LUX_ERROR)
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_TONEMAPPED)
 
 BEGIN_EVENT_TABLE(LuxGui, wxFrame)
-		EVT_LUX_ERROR (wxID_ANY, LuxGui::OnError)
-    EVT_TIMER			(wxID_ANY, LuxGui::OnTimer)
-		EVT_SPINCTRL	(wxID_ANY, LuxGui::OnSpin)
-	  EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnTonemap)
+	EVT_LUX_ERROR (wxID_ANY, LuxGui::OnError)
+	EVT_TIMER     (wxID_ANY, LuxGui::OnTimer)
+	EVT_SPINCTRL  (wxID_ANY, LuxGui::OnSpin)
+	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnTonemap)
+	EVT_ICONIZE   (LuxGui::OnIconize)
 END_EVENT_TABLE()
 
 LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(opengl) {
@@ -73,6 +74,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(ope
 	// Trick to generate resize event and show output window
 	// http://lists.wxwidgets.org/pipermail/wx-users/2007-February/097829.html
 	SetSize(GetSize());
+	m_renderOutput->Update();
 
 	// Create render output update timer
 	m_renderTimer = new wxTimer(this, ID_RENDERUPDATE);
@@ -85,10 +87,10 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(ope
 
 	luxErrorHandler(&LuxGuiErrorHandler);
 
-	ChangeState(WAITING);
+	ChangeRenderState(WAITING);
 }
 
-void LuxGui::ChangeState(LuxGuiState state) {
+void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 	switch(state) {
 		case WAITING:
 			// Waiting for input file. Most controls disabled.
@@ -118,7 +120,7 @@ void LuxGui::ChangeState(LuxGuiState state) {
 			m_threadSpinCtrl->Enable();
 			break;
 	}
-	m_guiState = state;
+	m_guiRenderState = state;
 }
 
 void LuxGui::LoadImages() {
@@ -162,25 +164,25 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
 		case ID_RESUMEITEM:
 		case ID_RESUMETOOL:
-			if(m_guiState != RENDERING) {
+			if(m_guiRenderState != RENDERING) {
 				// Start display update timer
 				m_renderOutput->Refresh();
 				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
-				if(m_guiState == IDLE) // Only re-start if we were previously stopped
+				if(m_guiRenderState == IDLE) // Only re-start if we were previously stopped
 					luxStart();
-				ChangeState(RENDERING);
+				ChangeRenderState(RENDERING);
 			}
 			break;
 		case ID_STOPITEM:
 		case ID_STOPTOOL:
-			if(m_guiState != IDLE) {
+			if(m_guiRenderState != IDLE) {
 				// Stop display update timer
 				m_renderTimer->Stop();
 				m_statsTimer->Stop();
-				if(m_guiState == RENDERING)
+				if(m_guiRenderState == RENDERING)
 					luxPause();
-				ChangeState(IDLE);
+				ChangeRenderState(IDLE);
 			}
 			break;
 		case wxID_ABOUT:
@@ -208,7 +210,7 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 
 void LuxGui::OnExit(wxCloseEvent& event) {
 	//if we have a scene file
-  if(m_guiState != WAITING) {
+  if(m_guiRenderState != WAITING) {
 		if(m_updateThread)
 			m_updateThread->join();
 
@@ -246,7 +248,7 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
-			if(luxStatistics("sceneIsReady")) {
+			if(m_guiWindowState == SHOWN && luxStatistics("sceneIsReady")) {
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
 				m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
@@ -287,6 +289,13 @@ void LuxGui::OnTonemap(wxCommandEvent &event) {
 	m_renderOutput->Refresh();
 }
 
+void lux::LuxGui::OnIconize( wxIconizeEvent& event )
+{
+	if(!event.Iconized())
+		m_guiWindowState = SHOWN;
+	else
+		m_guiWindowState = HIDDEN;
+}
 
 void LuxGui::RenderScenefile(wxString filename) {
 	wxFileName fn(filename);
@@ -374,3 +383,4 @@ void lux::LuxGuiErrorHandler(int code, int severity, const char *msg) {
 	wxLuxErrorEvent errorEvent(error, wxEVT_LUX_ERROR);
 	wxTheApp->GetTopWindow()->GetEventHandler()->AddPendingEvent(errorEvent);
 }
+
