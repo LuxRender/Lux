@@ -27,6 +27,8 @@
 #include "paramset.h"
 #include "spectrumwavelengths.h"
 
+#include <boost/thread/xtime.hpp>
+
 using namespace lux;
 
 // thread specific wavelengths
@@ -218,10 +220,13 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		structure.push_back(1);	// light number sample
 
 	if (finalGather) {
-		structure.push_back(2);	// gather bsdf direction sample 1
-		structure.push_back(2);	// gather bsdf direction sample 2
-		structure.push_back(1);	// gather bsdf component sample 1
-		structure.push_back(1);	// gather bsdf component sample 2
+		// Dade - request n samples for the final gather step
+		for (int i = 0; i < gatherSamples; ++i) {
+			structure.push_back(2);	// gather bsdf direction sample 1
+			structure.push_back(2);	// gather bsdf direction sample 2
+			structure.push_back(1);	// gather bsdf component sample 1
+			structure.push_back(1);	// gather bsdf component sample 2
+		}
 	}
 
 	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
@@ -273,9 +278,27 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
     // Declare radiance photon reflectance arrays
     vector<SWCSpectrum> rpReflectances, rpTransmittances;
 
+	boost::xtime lastUpdateTime;
+	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
 	int nDirectPaths = 0;
 	int nshot = 0;
     while (!causticDone || !indirectDone) {
+		// Dade - print some progress information
+		boost::xtime currentTime;
+		boost::xtime_get(&currentTime, boost::TIME_UTC);
+		if (currentTime.sec - lastUpdateTime.sec > 5) {
+			ss.str("");
+			ss << "Direct photon count: " << directPhotons.size() <<
+					" (" << (100 * directPhotons.size() / maxDirectPhotons) << "% limit)";
+			ss << " Caustic photonmap size: " << causticPhotons.size() << 
+				" (" << (100 * causticPhotons.size() / nCausticPhotons) << "%)";
+			ss << " Indirect photonmap size: " << indirectPhotons.size() <<
+				" (" << (100 * indirectPhotons.size() / nIndirectPhotons) << "%)";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			lastUpdateTime = currentTime;
+		}
+		
 		++nshot;
 
         // Give up if we're not storing enough photons
@@ -350,13 +373,6 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 							// Deposit direct photon
 							directPhotons.push_back(photon);
 
-							// Dade - print some progress info
-							if ((directPhotons.size() & 0xffff) == 0) {
-								ss.str("");
-								ss << "Direct photon count: " << directPhotons.size();
-								luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-							}
-
 							if (directPhotons.size() == maxDirectPhotons) {
 								directDone = true;
 								nDirectPaths = nshot;
@@ -369,14 +385,6 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                             if (!causticDone) {
                                 causticPhotons.push_back(photon);
 
-								// Dade - print some progress info
-								if ((causticPhotons.size() & 0x4ff) == 0) {
-									ss.str("");
-									ss << "Caustic photonmap size: " << causticPhotons.size() << 
-										" (" << (100 * causticPhotons.size() / nCausticPhotons) << "%)";
-									luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-								}
-
                                 if (causticPhotons.size() == nCausticPhotons) {
                                     causticDone = true;
                                     nCausticPaths = nshot;
@@ -387,14 +395,6 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                             // Process indirect lighting photon intersection
                             if (!indirectDone) {
                                 indirectPhotons.push_back(photon);
-
-								// Dade - print some progress info
-								if ((indirectPhotons.size() & 0xafff) == 0) {
-									ss.str("");
-									ss << "Indirect photonmap size: " << indirectPhotons.size() <<
-											" (" << (100 * indirectPhotons.size() / nIndirectPhotons) << "%)";
-									luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-								}
 
                                 if (indirectPhotons.size() == nIndirectPhotons) {
                                     indirectDone = true;
@@ -464,10 +464,15 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
     if (finalGather) {
         for (u_int i = 0; i < radiancePhotons.size(); ++i) {
 			// Dade - print some progress info
-			if ((i & 0xafff) == 0) {
+					// Dade - print some progress information
+			boost::xtime currentTime;
+			boost::xtime_get(&currentTime, boost::TIME_UTC);
+			if (currentTime.sec - lastUpdateTime.sec > 5) {
 				ss.str("");
 				ss << "Photon: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)" ;
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				lastUpdateTime = currentTime;
 			}
 
             // Compute radiance for radiance photon _i_
@@ -554,19 +559,6 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 			lightNum = &sampleData[11];
 		else
 			lightNum = NULL;
-				
-		float *gatherSample1, *gatherComponent1;
-		float *gatherSample2, *gatherComponent2;
-		if (finalGather) {
-			const int offset = (lightStrategy == SAMPLE_ONE_UNIFORM) ? 12 : 11;
-
-			gatherSample1 = &sampleData[offset];
-			gatherSample2 = &sampleData[offset + 2];
-			gatherComponent1 = &sampleData[offset + 4];
-			gatherComponent2 = &sampleData[offset + 5];
-		} else
-			gatherSample1 = gatherComponent1 =
-					gatherSample2 = gatherComponent2 = NULL;
 
         if (alpha) *alpha = 1.;
         Vector wo = -ray.d;
@@ -615,6 +607,12 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 
 		if (debugEnableIndirect) {
 			if (finalGather) {
+				const int offset = (lightStrategy == SAMPLE_ONE_UNIFORM) ? 12 : 11;
+				float *gatherSample1 = &sampleData[offset];
+				float *gatherSample2 = &sampleData[offset + 2];
+				float *gatherComponent1 = &sampleData[offset + 4];
+				float *gatherComponent2 = &sampleData[offset + 5];
+
 				// Do one-bounce final gather for photon map
 				BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
 						BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
@@ -657,9 +655,9 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 						for (int i = 0; i < gatherSamples; ++i) {
 							// Sample random direction from BSDF for final gather ray
 							Vector wi;
-							float u1 = gatherSample1[0];
-							float u2 = gatherSample1[1];
-							float u3 = gatherComponent1[0];
+							float u1 = gatherSample1[2 * i];
+							float u2 = gatherSample1[2 * i + 1];
+							float u3 = gatherComponent1[i];
 							float pdf;
 							SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
 									&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
@@ -703,9 +701,9 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 						Li = 0.;
 						for (int i = 0; i < gatherSamples; ++i) {
 							// Sample random direction using photons for final gather ray
-							float u1 = gatherComponent2[0];
-							float u2 = gatherSample2[0];
-							float u3 = gatherSample2[1];
+							float u1 = gatherComponent2[i];
+							float u2 = gatherSample2[2 * i];
+							float u3 = gatherSample2[2 * i + 1];
 							int photonNum = min((int) nIndirSamplePhotons - 1,
 									Floor2Int(u1 * nIndirSamplePhotons));
 							// Sample gather ray direction from _photonNum_
@@ -797,7 +795,7 @@ SWCSpectrum ExPhotonIntegrator::IntegratorLi(
 			u3 = transmissionComponent[0];
 
             f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-                    &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY));
+                    &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
             if ((!f.Black()) || (pdf > 0.0f)) {
                 // Compute ray differential _rd_ for specular transmission
                 RayDifferential rd(p, wi);
@@ -861,7 +859,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     int gatherSamples = params.FindOneInt("finalgathersamples", 8);
 
 	float maxDist = params.FindOneFloat("maxdist", 0.5f);
-    float gatherAngle = params.FindOneFloat("gatherangle", 20.0f);
+    float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
 	bool debugEnableDirect = params.FindOneBool("dbg_enabledirect", true);
 	bool debugEnableCaustic = params.FindOneBool("dbg_enablecaustic", true);
