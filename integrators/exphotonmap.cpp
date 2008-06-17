@@ -299,7 +299,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 				ss << " (100% limit)";
 			ss << " Caustic photonmap size: " << causticPhotons.size();
 			if (nCausticPhotons > 0)
-				" (" << (100 * causticPhotons.size() / nCausticPhotons) << "%)";
+				ss << " (" << (100 * causticPhotons.size() / nCausticPhotons) << "%)";
 			else
 				ss << " (100%)";
 			ss << " Indirect photonmap size: " << indirectPhotons.size();
