@@ -49,13 +49,17 @@ using namespace lux;
 /*** LuxGui ***/
 
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_ERROR)
+DEFINE_EVENT_TYPE(lux::wxEVT_LUX_PARSEERROR)
+DEFINE_EVENT_TYPE(lux::wxEVT_LUX_FINISHED)
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_TONEMAPPED)
 
 BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 	EVT_LUX_ERROR (wxID_ANY, LuxGui::OnError)
 	EVT_TIMER     (wxID_ANY, LuxGui::OnTimer)
 	EVT_SPINCTRL  (wxID_ANY, LuxGui::OnSpin)
-	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnTonemap)
+	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_PARSEERROR, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_FINISHED, LuxGui::OnCommand)
 	EVT_ICONIZE   (LuxGui::OnIconize)
 END_EVENT_TABLE()
 
@@ -118,6 +122,15 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Enable();
+			break;
+		case FINISHED:
+			// Rendering is finished.
+			m_file->Enable(wxID_OPEN, false);
+			m_render->Enable(ID_RESUMEITEM, false);
+			m_render->Enable(ID_STOPITEM, false);
+			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
+			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_threadSpinCtrl->Disable();
 			break;
 	}
 	m_guiRenderState = state;
@@ -260,21 +273,23 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			break;
 		case ID_LOADUPDATE:
 			m_progDialog->Pulse();
-			if(luxStatistics("sceneIsReady")) {
-				// Scene file loaded
+			if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
 				m_progDialog->Destroy();
 				m_loadTimer->Stop();
 
-				// Add other render threads if necessary
-				int curThreads = 1;
-				while(curThreads < m_numThreads) {
-					luxAddThread();
-					curThreads++;
-				}
+				if(luxStatistics("sceneIsReady")) {
+					// Scene file loaded
+					// Add other render threads if necessary
+					int curThreads = 1;
+					while(curThreads < m_numThreads) {
+						luxAddThread();
+						curThreads++;
+					}
 
-				// Start updating the display by faking a resume menu item click.
-				wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
-				GetEventHandler()->AddPendingEvent(startEvent);
+					// Start updating the display by faking a resume menu item click.
+					wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
+					GetEventHandler()->AddPendingEvent(startEvent);
+				}
 			}
 			break;
 	}
@@ -284,9 +299,17 @@ void LuxGui::OnSpin(wxSpinEvent& event) {
 	SetRenderThreads(event.GetPosition());
 }
 
-void LuxGui::OnTonemap(wxCommandEvent &event) {
-	m_statusBar->SetStatusText(wxT(""), 0);
-	m_renderOutput->Refresh();
+void LuxGui::OnCommand(wxCommandEvent &event) {
+	if(event.GetEventType() == wxEVT_LUX_TONEMAPPED) {
+		m_statusBar->SetStatusText(wxT(""), 0);
+		m_renderOutput->Refresh();
+	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
+		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
+		ChangeRenderState(FINISHED);
+	} else if(event.GetEventType() == wxEVT_LUX_FINISHED) {
+		//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
+		ChangeRenderState(FINISHED);
+	}
 }
 
 void lux::LuxGui::OnIconize( wxIconizeEvent& event )
@@ -316,6 +339,19 @@ void LuxGui::EngineThread(wxString filename) {
 	chdir(fullPath.branch_path().string().c_str());
 
 	ParseFile(fullPath.leaf().c_str());
+
+	if(luxStatistics("sceneIsReady") == false) {
+		wxCommandEvent errorEvent(wxEVT_LUX_PARSEERROR, GetId());
+		GetEventHandler()->AddPendingEvent(errorEvent);
+
+		luxWait();
+	} else {
+		luxWait();
+
+	  luxError(LUX_NOERROR, LUX_INFO, "Rendering done.");
+		wxCommandEvent endEvent(wxEVT_LUX_FINISHED, GetId());
+		GetEventHandler()->AddPendingEvent(endEvent);
+	}
 }
 
 void LuxGui::UpdateThread() {

@@ -69,6 +69,8 @@ protected:
 };
 
 DECLARE_EVENT_TYPE(wxEVT_LUX_ERROR, -1)
+DECLARE_EVENT_TYPE(wxEVT_LUX_PARSEERROR, -1)
+DECLARE_EVENT_TYPE(wxEVT_LUX_FINISHED, -1)
 DECLARE_EVENT_TYPE(wxEVT_LUX_TONEMAPPED, -1)
 
 typedef void (wxEvtHandler::*wxLuxErrorEventFunction)(wxLuxErrorEvent&);
@@ -96,7 +98,8 @@ enum LuxGuiRenderState
 {
 	WAITING,
 	RENDERING,
-	IDLE
+	IDLE,
+	FINISHED
 };
 enum LuxGuiWindowState
 {
@@ -121,7 +124,7 @@ protected:
 	void OnError(wxLuxErrorEvent &event);
 	void OnTimer(wxTimerEvent& event);
 	void OnSpin(wxSpinEvent& event);
-	void OnTonemap(wxCommandEvent &event);
+	void OnCommand(wxCommandEvent &event);
 	void OnIconize(wxIconizeEvent& event);
 
 	void ChangeRenderState(LuxGuiRenderState state);
