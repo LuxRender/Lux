@@ -131,7 +131,7 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
             BxDFType flag = Dot(Nf, p->wi) > 0.f ?
                     BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION;
             float k = Ekernel(p, isect.dg.p, maxDistSquared);
-			
+
 			SWCSpectrum alpha = FromXYZ(p->alpha.c[0], p->alpha.c[1], p->alpha.c[2]);
             L += (k / nPaths) * bsdf->f(wo, p->wi, flag) * alpha;
         }
@@ -158,6 +158,7 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
         L += Lr * bsdf->rho(wo, BSDF_ALL_REFLECTION) * INV_PI +
                 Lt * bsdf->rho(wo, BSDF_ALL_TRANSMISSION) * INV_PI;
     }
+
     return L;
 }
 
@@ -222,6 +223,10 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 
 	if (finalGather) {
+		// Dade - use half samples for sampling along the BSDF and the other
+		// half to sample along photon incoming direction
+		gatherSamples = gatherSamples / 2;
+
 		// Dade - request n samples for the final gather step
 		structure.clear();
 		structure.push_back(2);	// gather bsdf direction sample 1
@@ -731,7 +736,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 				}
 			} else {
 				L += LPhoton(indirectMap, nIndirectPaths, nLookup,
-						bsdf, isect, wo, maxDistSquared);
+					bsdf, isect, wo, maxDistSquared);
 			}
 		}
 
@@ -739,7 +744,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 			float u1 = reflectionSample[0];
 			float u2 = reflectionSample[1];
 			float u3 = reflectionComponent[0];
-			
+
             Vector wi;
 			float pdf;
             // Trace rays for specular reflection and refraction
@@ -836,7 +841,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     int maxDepth = params.FindOneInt("maxdepth", 4);
 
 	bool finalGather = params.FindOneBool("finalgather", true);
-    int gatherSamples = params.FindOneInt("finalgathersamples", 8);
+    int gatherSamples = params.FindOneInt("finalgathersamples", 32);
 
 	float maxDist = params.FindOneFloat("maxdist", 0.5f);
     float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
