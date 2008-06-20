@@ -167,6 +167,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 		int ncaus, int nind, int maxDirPhotons,
         int nl, int mdepth, float mdist, bool fg,
         int gs, float ga,
+		RRStrategy grrStrategy, float grrContinueProbability,
 		bool dbgEnableDirect, bool dbgEnableCaustic,
 		bool dbgEnableIndirect, bool dbgEnableSpecular) {
 	lightStrategy = st;
@@ -183,6 +184,9 @@ ExPhotonIntegrator::ExPhotonIntegrator(
     finalGather = fg;
     gatherSamples = gs;
     cosGatherAngle = cos(Radians(ga));
+
+	gatherRRStrategy = grrStrategy;
+	gatherRRContinueProbability = grrContinueProbability;
 
 	debugEnableDirect = dbgEnableDirect;
 	debugEnableCaustic = dbgEnableCaustic;
@@ -231,11 +235,15 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		structure.clear();
 		structure.push_back(2);	// gather bsdf direction sample 1
 		structure.push_back(1);	// gather bsdf component sample 1
+		if (gatherRRStrategy != RR_NONE)
+			structure.push_back(1); // RR
 		sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
 
 		structure.clear();
 		structure.push_back(2);	// gather bsdf direction sample 2
 		structure.push_back(1);	// gather bsdf component sample 2
+		if (gatherRRStrategy != RR_NONE)
+			structure.push_back(1); // RR
 		sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
 	}
 }
@@ -644,6 +652,23 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 						SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
 								&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
 						if (fr.Black() || pdf == 0.f) continue;
+
+						// Dade - russian roulette
+						if (gatherRRStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+							const float dp = AbsDot(wi, n) / pdf;
+							const float q = min<float>(1.0f, fr.filter() * dp);
+							if (q < sampleFGData[3])
+								continue;
+
+							// increase contribution
+							fr /= q;
+						} else if (gatherRRStrategy == RR_PROBABILITY) { // use normal/probability RR
+							if (gatherRRContinueProbability < sampleFGData[3])
+								continue;
+
+							// increase path contribution
+							fr /= gatherRRContinueProbability;
+						}
 						// Trace BSDF final gather ray and accumulate radiance
 						RayDifferential bounceRay(p, wi);
 						// radiance - disabled for threading // ++gatherRays; // NOBOOK
@@ -699,6 +724,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 						// Trace photon-sampled final gather ray and accumulate radiance
 						SWCSpectrum fr = bsdf->f(wo, wi);
 						if (fr.Black()) continue;
+
 						// Compute PDF for photon-sampling of direction _wi_
 						float photonPdf = 0.f;
 						float conePdf = UniformConePdf(cosGatherAngle);
@@ -706,6 +732,24 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 							if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
 								photonPdf += conePdf;
 						photonPdf /= nIndirSamplePhotons;
+						
+						// Dade - russian roulette
+						if (gatherRRStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+							const float dp = 1.0f / photonPdf;
+							const float q = min<float>(1.0f, fr.filter() * dp);
+							if (q < sampleFGData[3])
+								continue;
+
+							// increase contribution
+							fr /= q;
+						} else if (gatherRRStrategy == RR_PROBABILITY) { // use normal/probability RR
+							if (gatherRRContinueProbability < sampleFGData[3])
+								continue;
+
+							// increase path contribution
+							fr /= gatherRRContinueProbability;
+						}
+
 						RayDifferential bounceRay(p, wi);
 						// radiance - disabled for threading // ++gatherRays; // NOBOOK
 						Intersection gatherIsect;
@@ -732,6 +776,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 							Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
 						}
 					}
+
 					L += Li / gatherSamples;
 				}
 			} else {
@@ -846,6 +891,20 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	float maxDist = params.FindOneFloat("maxdist", 0.5f);
     float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
+	RRStrategy rstrategy;
+	string rst = params.FindOneString("gatherrrstrategy", "efficiency");
+	if (rst == "efficiency") rstrategy = RR_EFFICIENCY;
+	else if (rst == "probability") rstrategy = RR_PROBABILITY;
+	else if (rst == "none") rstrategy = RR_NONE;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficiency\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		rstrategy = RR_EFFICIENCY;
+	}
+	// continueprobability for plain RR (0.0-1.0)
+	float rrcontinueProb = params.FindOneFloat("gatherrrcontinueprob", 0.65f);
+
 	bool debugEnableDirect = params.FindOneBool("dbg_enabledirect", true);
 	bool debugEnableCaustic = params.FindOneBool("dbg_enablecaustic", true);
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
@@ -853,5 +912,6 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 
     return new ExPhotonIntegrator(estrategy, nCaustic, nIndirect, maxDirect,
             nUsed, maxDepth, maxDist, finalGather, gatherSamples, gatherAngle,
+			rstrategy, rrcontinueProb,
 			debugEnableDirect, debugEnableCaustic, debugEnableIndirect, debugEnableSpecular);
 }

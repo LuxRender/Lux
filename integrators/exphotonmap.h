@@ -119,9 +119,11 @@ struct EClosePhoton {
 class ExPhotonIntegrator : public SurfaceIntegrator {
 public:
 	// ExPhotonIntegrator types
-	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
+	enum LightStrategy {
+		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC
 	};
+	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// ExPhotonIntegrator Public Methods
 	ExPhotonIntegrator(
@@ -129,6 +131,7 @@ public:
 			int ncaus, int nindir,  int maxDirPhotons,
 			int nLookup, int mdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
+			RRStrategy grrStrategy, float grrContinueProbability,
 			bool dbgEnableDirect, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
@@ -167,9 +170,14 @@ private:
 	u_int nLookup;
 	int maxSpecularDepth;
 	float maxDistSquared;
+	int maxDepth;
+
 	bool finalGather;
 	float cosGatherAngle;
 	int gatherSamples;
+	RRStrategy gatherRRStrategy;
+	float gatherRRContinueProbability;
+
 
 	// Dade - debug flags
 	bool debugEnableDirect, debugEnableCaustic,
