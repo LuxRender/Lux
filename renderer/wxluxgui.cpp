@@ -261,7 +261,8 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
-			if(m_guiWindowState == SHOWN && luxStatistics("sceneIsReady")) {
+			//if(m_guiWindowState == SHOWN && luxStatistics("sceneIsReady")) {
+			if(luxStatistics("sceneIsReady")) { // Radiance - note - temporary fix to prevent gui from not updating at all on win32
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
 				m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
