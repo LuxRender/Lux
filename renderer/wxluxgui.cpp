@@ -92,6 +92,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(ope
 	luxErrorHandler(&LuxGuiErrorHandler);
 
 	ChangeRenderState(WAITING);
+	m_guiWindowState = SHOWN;
 }
 
 void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
@@ -139,10 +140,12 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 void LuxGui::LoadImages() {
 	wxImage::AddHandler(new wxPNGHandler());
 
-	// App icon
+	// App icon - only set on non-windows platforms
+#ifndef __WXMSW__
 	wxIcon appIcon;
 	appIcon.CopyFromBitmap(wxMEMORY_BITMAP(luxicon_png));
 	SetIcon(appIcon);
+#endif
 
 	// wxMac has problems changing an existing tool's icon, so we remove and add then again...
 	// Resume toolbar tool
@@ -156,6 +159,8 @@ void LuxGui::LoadImages() {
 	m_renderToolBar->InsertTool(1, stoptool);
 	m_renderToolBar->Realize();
 
+	// NOTE - Ratow - Temporarily disabling icons on menu items on the Windows platform.
+#ifndef __WXMSW__
 	// wxGTK has problems changing an existing menu item's icon, so we remove and add then again...
 	// Resume menu item
 	wxMenuItem *renderitem = m_render->Remove(ID_RESUMEITEM);
@@ -165,6 +170,7 @@ void LuxGui::LoadImages() {
 	wxMenuItem *stopitem = m_render->Remove(ID_STOPITEM);
 	stopitem->SetBitmap(wxMEMORY_BITMAP(stop_png));
 	m_render->Insert(1,stopitem);
+#endif
 
 	m_auinotebook->SetPageBitmap(0, wxMEMORY_BITMAP(render_png));
 	m_auinotebook->SetPageBitmap(1, wxMEMORY_BITMAP(info_png));
@@ -261,8 +267,7 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
-			//if(m_guiWindowState == SHOWN && luxStatistics("sceneIsReady")) {
-			if(luxStatistics("sceneIsReady")) { // Radiance - note - temporary fix to prevent gui from not updating at all on win32
+			if((m_guiWindowState == SHOWN || m_guiRenderState == FINISHED) && luxStatistics("sceneIsReady")) {
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
 				m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
@@ -310,6 +315,13 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 	} else if(event.GetEventType() == wxEVT_LUX_FINISHED) {
 		//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
 		ChangeRenderState(FINISHED);
+		// Stop timers and update output one last time.
+		m_renderTimer->Stop();
+		wxTimerEvent rendUpdEvent(ID_RENDERUPDATE, GetId());
+		GetEventHandler()->AddPendingEvent(rendUpdEvent);
+		m_statsTimer->Stop();
+		wxTimerEvent statUpdEvent(ID_STATSUPDATE, GetId());
+		GetEventHandler()->AddPendingEvent(statUpdEvent);
 	}
 }
 
@@ -341,7 +353,7 @@ void LuxGui::EngineThread(wxString filename) {
 
 	ParseFile(fullPath.leaf().c_str());
 
-	if(luxStatistics("sceneIsReady") == false) {
+	if(!luxStatistics("sceneIsReady")) {
 		wxCommandEvent errorEvent(wxEVT_LUX_PARSEERROR, GetId());
 		GetEventHandler()->AddPendingEvent(errorEvent);
 
