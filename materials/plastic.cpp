@@ -49,9 +49,10 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 	// Note - Ratow - limit maximum output
 	// Jeanphi - disable for now as it produces mitigated result,
 	// it should at least not divide if the sum is less than 1
-/*	float SumY = (kd+ks).y();
+	// Radiance - reenabled limit as this is not expected to be useable by users
+	float SumY = (kd+ks).y();
 	kd *= kd.y()/SumY;
-	ks *= ks.y()/SumY;*/
+	ks *= ks.y()/SumY;
 	BxDF *diff = BSDF_ALLOC( Lambertian)(kd);
 	Fresnel *fresnel =
 		BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
