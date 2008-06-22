@@ -585,6 +585,15 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
 
+		// Dade - a sanity check
+		if (isnan(p.x) || isnan(p.y) || isnan(p.z)) {
+			// Dade - something wrong here
+			std::stringstream ss;
+			ss << "Internal error in photonmap, received a NaN point in differential shading geometry: point = (" << p << ")";
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			return L;
+		}
+
 		if (debugEnableDirect) {
 			// Apply direct lighting strategy
 			switch (lightStrategy) {
@@ -622,12 +631,22 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 							sizeof (EClosePhoton));
 					float searchDist2 = maxDistSquared;
 
+					int sanityCheckIndex = 0;
 					while (proc.foundPhotons < nIndirSamplePhotons) {
 						float md2 = searchDist2;
 						proc.foundPhotons = 0;
 						indirectMap->Lookup(p, proc, md2);
 
 						searchDist2 *= 2.f;
+
+						if(sanityCheckIndex++ > 32) {
+							// Dade - something wrong here
+							std::stringstream ss;
+							ss << "Internal error in photonmap: point = (" <<
+									p << ") searchDist2 = " << searchDist2;
+							luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+							break;
+						}
 					}
 
 					// Copy photon directions to local array
