@@ -161,27 +161,43 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 float InfiniteAreaLight::Pdf(const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const Scene *scene,			// TODO - radiance - add portal implementation
+SWCSpectrum InfiniteAreaLight::Sample_L(const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
-	// Choose two points _p1_ and _p2_ on scene bounding sphere
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter,
-	                                    &worldRadius);
-	worldRadius *= 1.01f;
-	Point p1 = worldCenter + worldRadius *
-		UniformSampleSphere(u1, u2);
-	Point p2 = worldCenter + worldRadius *
-		UniformSampleSphere(u3, u4);
-	// Construct ray between _p1_ and _p2_
-	ray->o = p1;
-	ray->d = Normalize(p2-p1);
-	// Compute _InfiniteAreaLight_ ray weight
-	Vector to_center = Normalize(worldCenter - p1);
-	float costheta = AbsDot(to_center,ray->d);
-	*pdf =
-		costheta / ((4.f * M_PI * worldRadius * worldRadius));
+	if(!havePortalShape) {
+		// Choose two points _p1_ and _p2_ on scene bounding sphere
+		Point worldCenter;
+		float worldRadius;
+		scene->WorldBound().BoundingSphere(&worldCenter,
+											&worldRadius);
+		worldRadius *= 1.01f;
+		Point p1 = worldCenter + worldRadius *
+			UniformSampleSphere(u1, u2);
+		Point p2 = worldCenter + worldRadius *
+			UniformSampleSphere(u3, u4);
+		// Construct ray between _p1_ and _p2_
+		ray->o = p1;
+		ray->d = Normalize(p2-p1);
+		// Compute _InfiniteAreaLight_ ray weight
+		Vector to_center = Normalize(worldCenter - p1);
+		float costheta = AbsDot(to_center,ray->d);
+		*pdf =
+			costheta / ((4.f * M_PI * worldRadius * worldRadius));		
+	} else {
+		// Dade - choose a random portal. This strategy is quite bad if there
+		// is more than one portal.
+		int shapeidx = 0;
+		if(nrPortalShapes > 1) 
+			shapeidx = Floor2Int(lux::random::floatValue() * nrPortalShapes);
+
+		Normal ns;
+		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, &ns);
+		ray->d = UniformSampleSphere(u3, u4);
+		if (Dot(ray->d, ns) < 0.) ray->d *= -1;
+
+		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
+	}
+
 	return Le(RayDifferential(ray->o, -ray->d));
 }
 SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
