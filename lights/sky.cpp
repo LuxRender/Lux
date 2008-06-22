@@ -169,7 +169,7 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 		// Sample a random Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1)
-			shapeidx = max<float>(nrPortalShapes - 1,
+			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(u3 * nrPortalShapes));
 		Normal ns;
 		Point ps;
@@ -210,7 +210,7 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 	    // Sample a random Portal
 		int shapeidx = 0;
 		if(nrPortalShapes > 1)
-			shapeidx = max<float>(nrPortalShapes - 1,
+			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(u3 * nrPortalShapes));
 		Normal ns;
 		Point ps;
@@ -266,7 +266,7 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene,
 		// is more than one portal.
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = max<float>(nrPortalShapes - 1,
+			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(lux::random::floatValue() * nrPortalShapes));
 
 		Normal ns;
