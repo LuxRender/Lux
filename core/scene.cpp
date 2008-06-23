@@ -211,8 +211,6 @@ void Scene::SignalThreads(int signal) {
 // thread specific wavelengths
 extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
-static RGBColor sumRGB = 0.f;
-
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread) {
     // Dade - wait the end of the preprocessing phase
@@ -306,54 +304,7 @@ void RenderThread::render(RenderThread *myThread) {
 	//Work around Windows bad scheduling -- Jeanphi
 	myThread->thread->yield();
 #endif
-
-        // Temporary colour scaling code by radiance - SHOULD NOT BE IN CVS !
-        
-        /*	// RGB -> XYZ -> RGB
-         * printf("\n\n\nRGB -> XYZ -> RGB --------------\n");
-         * Spectrum RGB = 1.f;
-         * printf("RGB: %f %f %f\n\n", RGB.c[0], RGB.c[1], RGB.c[2]);
-         *
-         * XYZColor XYZ = RGB.ToXYZ();
-         * printf("XYZ: %f %f %f\n", XYZ.c[0], XYZ.c[1], XYZ.c[2]);
-         * printf("XYZ.y(): %f\n\n", XYZ.y());
-         *
-         * RGBColor oRGB = XYZ.ToRGB();
-         * printf("out RGB: %f %f %f\n", oRGB.c[0], oRGB.c[1], oRGB.c[2]);
-         * printf("--------------------------------\n");
-         *
-         * // RGB -> SWCSpectrum -> XYZ -> RGB
-         * printf("\n\n\nRGB -> SWCSpect -> XYZ -> RGB --\n");
-         * printf("RGB: %f %f %f\n\n", RGB.c[0], RGB.c[1], RGB.c[2]);
-         *
-         * SWCSpectrum spect = SWCSpectrum(RGB);
-         * printf("SWCSpect.y(): %f\n\n", spect.y());
-         *
-         * XYZ = spect.ToXYZ();
-         * printf("XYZ: %f %f %f\n", XYZ.c[0], XYZ.c[1], XYZ.c[2]);
-         * printf("XYZ.y(): %f\n\n", XYZ.y());
-         *
-         * oRGB = XYZ.ToRGB();
-         * printf("out RGB: %f %f %f\n", oRGB.c[0], oRGB.c[1], oRGB.c[2]);
-         *
-         * sumRGB += oRGB;
-         * tot++;
-         * printf("avg RGB: %f %f %f\n", sumRGB.c[0] / tot, sumRGB.c[1] / tot, sumRGB.c[2] / tot);
-         *
-         * for(int i=0; i<8; i++)
-         * printf("wl: %f, dat: %f\n", thread_wavelengths->w[i], spect.c[i] * 8);
-         *
-         * printf("\n\n");
-         *
-         *
-         * printf("--------------------------------\n"); */
-        
-        // sleep 1 sec
-        //		boost::xtime xt;
-        //		boost::xtime_get(&xt, boost::TIME_UTC);
-        //		xt.sec += 1;
-        //boost::thread::sleep(xt);
-        
+  
     }
     
     delete useSampPos;
@@ -361,7 +312,9 @@ void RenderThread::render(RenderThread *myThread) {
 }
 
 int Scene::CreateRenderThread() {
+#if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
+#endif
 
     RenderThread *rt = new  RenderThread(renderThreads.size(),
             CurThreadSignal,
@@ -376,7 +329,9 @@ int Scene::CreateRenderThread() {
 }
 
 void Scene::RemoveRenderThread() {
-	// boost::mutex::scoped_lock lock(renderThreadsMutex); - NOTE - radiance - FIX - cannot lock threads while asking one to exit - crash on win32
+#if !defined(WIN32)
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+#endif
 
     renderThreads.back()->signal = RenderThread::SIG_EXIT;
     renderThreads.pop_back();
