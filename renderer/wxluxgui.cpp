@@ -267,7 +267,8 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
-			if((m_guiWindowState == SHOWN || m_guiRenderState == FINISHED) && luxStatistics("sceneIsReady")) {
+			if(m_updateThread == NULL && luxStatistics("sceneIsReady") &&
+			    (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
 				m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
@@ -307,8 +308,13 @@ void LuxGui::OnSpin(wxSpinEvent& event) {
 
 void LuxGui::OnCommand(wxCommandEvent &event) {
 	if(event.GetEventType() == wxEVT_LUX_TONEMAPPED) {
+		// Make sure the update thread has ended so we can start another one later.
+		m_updateThread->join();
+		delete m_updateThread;
+		m_updateThread = NULL;
 		m_statusBar->SetStatusText(wxT(""), 0);
 		m_renderOutput->Refresh();
+
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		ChangeRenderState(FINISHED);
