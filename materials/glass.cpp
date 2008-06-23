@@ -45,9 +45,14 @@ BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	SWCSpectrum T(Kt->Evaluate(dgs).Clamp(0.f, 1.f));
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
-			BSDF_ALLOC( FresnelDielectric)(1., ior)));
+	if (!R.Black()) {
+		if (architectural)
+			bsdf->Add(BSDF_ALLOC( ArchitecturalReflection)(R,
+				BSDF_ALLOC( FresnelDielectric)(1., ior)));
+		else
+			bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
+				BSDF_ALLOC( FresnelDielectric)(1., ior)));
+	}
 	if (!T.Black())
 		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior, cb, architectural));
 	return bsdf;

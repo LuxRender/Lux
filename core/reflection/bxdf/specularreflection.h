@@ -40,8 +40,8 @@ public:
 	SWCSpectrum f(const Vector &, const Vector &) const {
 		return SWCSpectrum(0.);
 	}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-                  float u1, float u2, float *pdf, float *pdfBack = NULL) const;
+	virtual SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {
 		return 0.;
 	}
@@ -49,6 +49,14 @@ private:
 	// SpecularReflection Private Data
 	SWCSpectrum R;
 	Fresnel *fresnel;
+};
+
+class ArchitecturalReflection : public SpecularReflection {
+public:
+	ArchitecturalReflection(const SWCSpectrum &r, Fresnel *f)
+		: SpecularReflection(r, f) {}
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
 };
 
 }//namespace lux

@@ -42,3 +42,14 @@ SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
 		fabsf(CosTheta(*wi));
 }
 
+SWCSpectrum ArchitecturalReflection::Sample_f(const Vector &wo,
+	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const
+{
+	if (wo.z <= 0.f) {
+		*pdf = 0.f;
+		if (pdfBack)
+			*pdfBack = 0.f;
+		return 0.f;
+	}
+	return SpecularReflection::Sample_f(wo, wi, u1, u2, pdf, pdfBack);
+}

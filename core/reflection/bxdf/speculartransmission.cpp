@@ -95,8 +95,6 @@ SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const
 		et += (cb * 1000000.f) / (w * w);
 	}
 
-	if (!entering)
-		swap(ei, et);
 	// Compute transmitted ray direction
 	const float sini2 = SinTheta2(wo);
 	const float eta = ei / et;
@@ -106,6 +104,11 @@ SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const
 	if (sint2 > 1.) {
 		return 0.;
 	}
-	SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
-	return (SWCSpectrum(1.f) - F) * T / (fabsf(CosTheta(wi)) * eta2);
+	float cost = sqrtf(max(0.f, 1.f - sint2));
+	if (entering) cost = -cost;
+	SWCSpectrum F = fresnel.Evaluate(-cost);
+	if (entering)
+		return (SWCSpectrum(1.f) - F) * T / (fabsf(wi.z) * eta2);
+	else
+		return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi.z));
 }
