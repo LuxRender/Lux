@@ -44,7 +44,9 @@ namespace lux
 		init(t);
     }
 
-    ~BlackbodySPD() {}
+    ~BlackbodySPD() {
+		FreeSamples();
+	}
 
 	void init(float t);
 

@@ -31,6 +31,7 @@
 #include "kdtree.h"
 #include "mc.h"
 #include "sampling.h"
+#include "blackbody.h"
 
 namespace lux
 {
@@ -40,14 +41,14 @@ struct EClosePhoton;
 // Local Declarations
 
 struct EPhoton {
-	EPhoton(const Point &pp, const SWCSpectrum &wt, const Vector & w)
-			: p(pp), alpha(wt.ToXYZ()), wi(w) {
+	EPhoton(const Point &pp, const Spectrum &wt, const Vector & w)
+			: p(pp), alpha(wt), wi(w) {
 	}
 
 	EPhoton() {
 	} // NOBOOK
 	Point p;
-	XYZColor alpha;
+	Spectrum alpha;
 	Vector wi;
 };
 
@@ -60,7 +61,7 @@ struct ERadiancePhoton {
 	} // NOBOOK
 	Point p;
 	Normal n;
-	XYZColor Lo;
+	Spectrum Lo;
 };
 
 struct ERadiancePhotonProcess {
@@ -154,10 +155,10 @@ private:
 		return (found < needed &&
 				(found == 0 || found < shot / 1024));
 	}
-	static SWCSpectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
-			int nPaths, int nLookup, BSDF *bsdf, const Intersection &isect,
-			const Vector &w, float maxDistSquared);
 
+	SWCSpectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
+			int nPaths, int nLookup, BSDF *bsdf, const Intersection &isect,
+			const Vector &w, float maxDistSquared) const;
 	SWCSpectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
 			const Point &p, const Normal &n) const;
     SWCSpectrum LiInternal(const int specularDepth, const Scene *scene,
@@ -178,11 +179,13 @@ private:
 	RRStrategy gatherRRStrategy;
 	float gatherRRContinueProbability;
 
-
 	// Dade - debug flags
 	bool debugEnableDirect, debugEnableCaustic,
 			debugEnableIndirect, debugEnableSpecular;
-	
+
+	// Dade - used to translate Spectrum in SWCSpectrum
+	BlackbodySPD blackBodySPD;
+
 	// Declare sample parameters for light source sampling
 	int sampleOffset;
 	int sampleFinalGather1Offset;

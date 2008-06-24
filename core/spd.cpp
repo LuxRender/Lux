@@ -32,6 +32,11 @@ void SPD::AllocateSamples(int n) {
 		AllocAligned(n * sizeof(float));
 }
 
+void SPD::FreeSamples() {
+	 // Free Allocate memory for samples
+	FreeAligned(samples);
+}
+
 void SPD::Normalize() {
 	float max = 0.f;
 

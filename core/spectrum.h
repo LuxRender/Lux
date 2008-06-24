@@ -425,7 +425,17 @@ protected:
 
 #endif
 
-Spectrum FromXYZ(float x, float y, float z);
+inline Spectrum FromXYZ(float x, float y, float z) {
+	float c[3];
+	c[0] =  3.240479f * x + -1.537150f * y + -0.498535f * z;
+	c[1] = -0.969256f * x +  1.875991f * y +  0.041556f * z;
+	c[2] =  0.055648f * x + -0.204043f * y +  1.057311f * z;
+	return Spectrum(c);
+}
+
+inline Spectrum FromXYZ(XYZColor c) {
+	return FromXYZ(c.c[0], c.c[1], c.c[2]);
+}
 
 #define Scalar float
 

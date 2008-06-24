@@ -34,6 +34,7 @@ public:
 	SPD() { 
 		nSamples = 0; 
 		lambdaMin = lambdaMax = delta = invDelta = 0.;
+		samples = NULL;
 	}
     ~SPD() {}
 
@@ -65,6 +66,7 @@ public:
     }
 
 	void AllocateSamples(int n);
+	void FreeSamples();
 	void Normalize();
 	void Clamp();
 	void Scale(float s);

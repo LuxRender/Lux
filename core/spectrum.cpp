@@ -49,14 +49,6 @@ float Spectrum::ZWeight[COLOR_SAMPLES] = {
 	0.019334f, 0.119193f, 0.950227f
 };
 
-Spectrum lux::FromXYZ(float x, float y, float z) {
-	float c[3];
-	c[0] =  3.240479f * x + -1.537150f * y + -0.498535f * z;
-	c[1] = -0.969256f * x +  1.875991f * y +  0.041556f * z;
-	c[2] =  0.055648f * x + -0.204043f * y +  1.057311f * z;
-	return Spectrum(c);
-}
-
 // thread specific wavelengths
 boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
