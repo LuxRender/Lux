@@ -36,7 +36,7 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/split_member.hpp>
 
-#if defined (__INTEL_COMPILER)
+#if defined (__INTEL_COMPILER) && !defined(WIN32)
 // Dade - to fix a problem with expf undefined with Intel CC
 inline float expf(float a) { return exp(a); }
 #endif
