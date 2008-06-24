@@ -34,7 +34,7 @@ InfiniteAreaLight::~InfiniteAreaLight() {
 	delete SPDbase;
 }
 InfiniteAreaLight
-	::InfiniteAreaLight(const Transform &light2world, int ns, const string &texmap, float gain, float gamma)
+	::InfiniteAreaLight(const Transform &light2world, const Spectrum &l, int ns, const string &texmap, float gain, float gamma)
 	: Light(light2world, ns) {
 	radianceMap = NULL;
 	if (texmap != "") {
@@ -52,6 +52,9 @@ InfiniteAreaLight
 	SPDbase = new BlackbodySPD();
 	SPDbase->Normalize();
 	SPDbase->Scale(gain);
+
+	// Base RGB spectrum
+	Lbase = l;
 }
 
 SWCSpectrum
@@ -59,7 +62,7 @@ SWCSpectrum
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
 	
-	Spectrum L = 1.f;
+	Spectrum L = Lbase;
 	if (radianceMap != NULL) {
 		Vector wh = Normalize(WorldToLight(w));
 		float s = SphericalPhi(wh) * INV_TWOPI;
@@ -213,7 +216,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 }
 Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	//Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 
@@ -221,5 +224,5 @@ Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	return new InfiniteAreaLight(light2world, nSamples, texmap, gain, gamma);
+	return new InfiniteAreaLight(light2world, L, nSamples, texmap, gain, gamma);
 }
