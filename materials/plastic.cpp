@@ -56,8 +56,9 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 		ks /= sumMax;
 	}
 	BxDF *diff = BSDF_ALLOC( Lambertian)(SWCSpectrum(kd));
+	float ior = index->Evaluate(dgs);
 	Fresnel *fresnel =
-		BSDF_ALLOC( FresnelDielectric)(1.5f, 1.f);
+		BSDF_ALLOC( FresnelDielectric)(1.f, ior);
 
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
@@ -78,8 +79,9 @@ Material* Plastic::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	boost::shared_ptr<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
 	boost::shared_ptr<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
+	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
-	return new Plastic(Kd, Ks, uroughness, vroughness, bumpMap);
+	return new Plastic(Kd, Ks, index, uroughness, vroughness, bumpMap);
 }
