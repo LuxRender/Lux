@@ -86,14 +86,18 @@ SWCSpectrum SingleScattering::Li(const Scene *scene,
 				min(Floor2Int(samp[sampOffset] * nLights),
 				    nLights-1);
 			Light *light = scene->lights[lightNum];
+
 			// Add contribution of _light_ due to scattering at _p_
 			float pdf;
 			VisibilityTester vis;
 			Vector wo;
 			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2], u3 = samp[sampOffset+3];
 			SWCSpectrum L = light->Sample_L(p, u1, u2, u3, &wo, &pdf, &vis);
-			if (!L.Black() && pdf > 0.f && vis.Unoccluded(scene)) {
-				SWCSpectrum Ld = L * vis.Transmittance(scene);
+
+			// Dade - use the new TestOcclusion() method
+			SWCSpectrum occlusion;
+			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(scene, &occlusion)) {	
+				SWCSpectrum Ld = L * occlusion * vis.Transmittance(scene);
 				Lv += Tr * ss * vr->p(p, w, -wo) *
 				      Ld * float(nLights) / pdf;
 			}
