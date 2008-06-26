@@ -36,6 +36,8 @@ VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2wor
 	Spectrum Le = params.FindOneSpectrum("Le", 0.);
 	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
 	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
+	bool hasOutscattering = params.FindOneBool("outscatering", true);
+
 	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world);
+		volume2world, hasOutscattering);
 }

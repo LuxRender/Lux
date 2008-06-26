@@ -32,7 +32,7 @@ public:
 	// HomogeneousVolume Public Methods
 	HomogeneousVolume(const Spectrum &sa, const Spectrum &ss, float gg,
 		 	const Spectrum &emit, const BBox &e,
-			const Transform &v2w) {
+			const Transform &v2w, float tauScat) : hasOutscattering(tauScat) {
 		WorldToVolume = v2w.GetInverse();
 		sig_a = sa;
 		sig_s = ss;
@@ -54,7 +54,10 @@ public:
 		return extent.Inside(WorldToVolume(p)) ? sig_s : 0.;
 	}
 	Spectrum sigma_t(const Point &p, const Vector &) const {
-		return extent.Inside(WorldToVolume(p)) ? (sig_a + sig_s) : 0.;
+		if (hasOutscattering)
+			return extent.Inside(WorldToVolume(p)) ? (sig_a + sig_s) : 0.;
+		else
+			return extent.Inside(WorldToVolume(p)) ? (sig_a) : 0.;
 	}
 	Spectrum Lve(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? le : 0.;
@@ -66,7 +69,13 @@ public:
 	Spectrum Tau(const Ray &ray, float, float) const {
 		float t0, t1;
 		if (!IntersectP(ray, &t0, &t1)) return 0.;
-		return Distance(ray(t0), ray(t1)) * (sig_a + sig_s);
+
+		if (hasOutscattering)
+			return Distance(ray(t0), ray(t1)) * (sig_a + sig_s);
+		else {
+			// Dade - this is not phisically correct but it is so much easier to use
+			return Distance(ray(t0), ray(t1)) * (sig_a);
+		}
 	}
 	
 	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
@@ -76,6 +85,7 @@ private:
 	float g;
 	BBox extent;
 	Transform WorldToVolume;
+	bool hasOutscattering;
 };
 
 }//namespace lux

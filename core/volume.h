@@ -32,15 +32,15 @@ namespace lux
 {
 
 // Volume Scattering Declarations
- float PhaseIsotropic(const Vector &w, const Vector &wp);
+float PhaseIsotropic(const Vector &w, const Vector &wp);
 
 float PhaseRayleigh(const Vector &w, const Vector &wp);
 
 float PhaseMieHazy(const Vector &w, const Vector &wp);
 
 float PhaseMieMurky(const Vector &w, const Vector &wp);
- float PhaseHG(const Vector &w, const Vector &wp, float g);
- float PhaseSchlick(const Vector &w, const Vector &wp, float g);
+float PhaseHG(const Vector &w, const Vector &wp, float g);
+float PhaseSchlick(const Vector &w, const Vector &wp, float g);
 class  VolumeRegion {
 public:
 	// VolumeRegion Interface
@@ -60,6 +60,7 @@ public:
 	virtual Spectrum Tau(const Ray &ray,
 		float step = 1.f, float offset = 0.5) const = 0;
 };
+
 class  DensityRegion : public VolumeRegion {
 public:
 	// DensityRegion Public Methods
@@ -89,6 +90,7 @@ protected:
 	Spectrum sig_a, sig_s, le;
 	float g;
 };
+
 class  AggregateVolume : public VolumeRegion {
 public:
 	// AggregateVolume Public Methods
