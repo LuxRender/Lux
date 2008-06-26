@@ -33,6 +33,7 @@ void SingleScattering::RequestSamples(Sample *sample,
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
+
 SWCSpectrum SingleScattering::Transmittance(const Scene *scene,
 		const Ray &ray, const Sample *sample, float *alpha) const {
 	if (!scene->volumeRegion) return SWCSpectrum(1.f);
@@ -42,6 +43,7 @@ SWCSpectrum SingleScattering::Transmittance(const Scene *scene,
 	SWCSpectrum tau = scene->volumeRegion->Tau(ray, step, offset);
 	return Exp(-tau);
 }
+
 SWCSpectrum SingleScattering::Li(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
@@ -68,45 +70,58 @@ SWCSpectrum SingleScattering::Li(const Scene *scene,
 		// Advance to sample at _t0_ and update _T_
 		pPrev = p;
 		p = ray(t0);
-		SWCSpectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
-			.5f * stepSize, lux::random::floatValue());
-		Tr *= Exp(-stepTau);
-		// Possibly terminate raymarching if transmittance is small
-		if (Tr.filter() < 1e-3) {
-			const float continueProb = .5f;
-			if (lux::random::floatValue() > continueProb) break;
-			Tr /= continueProb;
-		}
-		// Compute single-scattering source term at _p_
-		Lv += Tr * vr->Lve(p, w);
-		SWCSpectrum ss = vr->sigma_s(p, w);
-		if (!ss.Black() && scene->lights.size() > 0) {
-			int nLights = scene->lights.size();
-			int lightNum =
-				min(Floor2Int(samp[sampOffset] * nLights),
-				    nLights-1);
-			Light *light = scene->lights[lightNum];
 
-			// Add contribution of _light_ due to scattering at _p_
-			float pdf;
-			VisibilityTester vis;
-			Vector wo;
-			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2], u3 = samp[sampOffset+3];
-			SWCSpectrum L = light->Sample_L(p, u1, u2, u3, &wo, &pdf, &vis);
-
-			// Dade - use the new TestOcclusion() method
-			SWCSpectrum occlusion;
-			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(scene, &occlusion)) {	
-				SWCSpectrum Ld = L * occlusion * vis.Transmittance(scene);
-				Lv += Tr * ss * vr->p(p, w, -wo) *
-				      Ld * float(nLights) / pdf;
+		if (enableAbsorption) {
+			SWCSpectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
+				.5f * stepSize, lux::random::floatValue());
+			Tr *= Exp(-stepTau);
+			// Possibly terminate raymarching if transmittance is small
+			if (Tr.filter() < 1e-3) {
+				const float continueProb = .5f;
+				if (lux::random::floatValue() > continueProb) break;
+				Tr /= continueProb;
 			}
 		}
+
+		
+		// Compute single-scattering source term at _p_
+		Lv += Tr * vr->Lve(p, w);
+
+		if (enableScattering) {
+			SWCSpectrum ss = vr->sigma_s(p, w);
+			if (!ss.Black() && scene->lights.size() > 0) {
+				int nLights = scene->lights.size();
+				int lightNum =
+					min(Floor2Int(samp[sampOffset] * nLights),
+						nLights-1);
+				Light *light = scene->lights[lightNum];
+
+				// Add contribution of _light_ due to scattering at _p_
+				float pdf;
+				VisibilityTester vis;
+				Vector wo;
+				float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2], u3 = samp[sampOffset+3];
+				SWCSpectrum L = light->Sample_L(p, u1, u2, u3, &wo, &pdf, &vis);
+
+				// Dade - use the new TestOcclusion() method
+				SWCSpectrum occlusion;
+				if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(scene, &occlusion)) {	
+					SWCSpectrum Ld = L * occlusion * vis.Transmittance(scene);
+					Lv += Tr * ss * vr->p(p, w, -wo) *
+						  Ld * float(nLights) / pdf;
+				}
+			}
+		}
+
 		sampOffset += 3;
 	}
 	return Lv * step;
 }
+
 VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
-	return new SingleScattering(stepSize);
+	bool enableAbsorption = params.FindOneBool("absorption", true);
+	bool enableScattering = params.FindOneBool("scattering", true);
+
+	return new SingleScattering(stepSize, enableAbsorption, enableScattering);
 }

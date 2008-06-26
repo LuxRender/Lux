@@ -32,17 +32,22 @@ namespace lux
 class SingleScattering : public VolumeIntegrator {
 public:
 	// SingleScattering Public Methods
-	SingleScattering(float ss) { stepSize = ss; }
+	SingleScattering(float ss, bool absorp, bool scat) : stepSize(ss),
+			enableAbsorption(absorp), enableScattering(scat) { }
+
 	SWCSpectrum Transmittance(const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	SWCSpectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
+
 private:
 	// SingleScattering Private Data
 	float stepSize;
+	bool enableAbsorption, enableScattering;
+
 	int tauSampleOffset, scatterSampleOffset;
 };
 
 }//namespace lux
-
