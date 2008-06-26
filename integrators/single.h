@@ -32,7 +32,7 @@ namespace lux
 class SingleScattering : public VolumeIntegrator {
 public:
 	// SingleScattering Public Methods
-	SingleScattering(float ss, bool absorp, bool scat) : stepSize(ss) { }
+	SingleScattering(float ss) : stepSize(ss) { }
 
 	SWCSpectrum Transmittance(const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha) const;
