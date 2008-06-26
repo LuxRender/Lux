@@ -57,8 +57,8 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 	SampleGuard guard(sample->sampler, sample);
 	// Declare common path integration variables
 	RayDifferential ray(r);
-	SWCSpectrum pathThroughput(scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha));
-	SWCSpectrum L(scene->volumeIntegrator->Li(scene, ray, sample, alpha));
+	SWCSpectrum pathThroughput(1.0f);
+	SWCSpectrum L(0.0f);
 	float V = .1f;
 	bool specularBounce = true, specular = true;
 	if (alpha) *alpha = 1.;
@@ -70,6 +70,17 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		// Find next vertex of path
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
+			if (pathLength == 0) {
+				// Dade - now I know ray.maxt and I can call volumeIntegrator
+				pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+				L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+
+				color = L.ToXYZ();
+				if (color.y() > 0.f)
+					sample->AddContribution(sample->imageX, sample->imageY,
+						color, alpha ? *alpha : 1.f, V);
+			}
+
 			// Stop path sampling since no intersection was found
 			// Possibly add emitted light
 			// NOTE - Added by radiance - adds horizon in render & reflections
@@ -89,11 +100,20 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 					color, alpha ? *alpha : 1.f, V);
 			break;
 		}
+
 		if (pathLength == 0) {
 			r.maxt = ray.maxt;
-		}
-		else
+			// Dade - now I know ray.maxt and I can call volumeIntegrator
+			pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+			L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+
+			color = L.ToXYZ();
+			if (color.y() > 0.f)
+				sample->AddContribution(sample->imageX, sample->imageY,
+					color, alpha ? *alpha : 1.f, V);
+		} else
 			pathThroughput *= scene->Transmittance(ray);
+
 		// Possibly add emitted light at path vertex
 		Vector wo = -ray.d;
 		if (specularBounce) {
@@ -172,6 +192,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 
 		ray = RayDifferential(p, wi);
 	}
+
 	return L;
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
