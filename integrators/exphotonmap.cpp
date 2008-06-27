@@ -104,7 +104,7 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
 	if ((nPaths <= 0) || (!map)) return L;
 
     BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
-            BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
+            BSDF_TRANSMISSION | BSDF_DIFFUSE);
     if (bsdf->NumComponents(nonSpecular) == 0)
         return L;
     // radiance - disabled for threading // static StatsCounter lookups("Photon Map", "Total lookups"); // NOBOOK
@@ -126,7 +126,7 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
 
 	SWCSpectrum D65(&blackBodySPD);
     if (bsdf->NumComponents(BxDFType(BSDF_REFLECTION |
-            BSDF_TRANSMISSION | BSDF_GLOSSY)) > 0) {
+            BSDF_TRANSMISSION)) > 0) {
         // Compute exitant radiance from photons for glossy surface
         for (int i = 0; i < nFound; ++i) {
             const EPhoton *p = photons[i].photon;
@@ -625,7 +625,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 			if (finalGather) {
 				// Do one-bounce final gather for photon map
 				BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
-						BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
+						BSDF_TRANSMISSION | BSDF_DIFFUSE);
 				if (bsdf->NumComponents(nonSpecular) > 0) {
 					// Find indirect photons around point for importance sampling
 					u_int nIndirSamplePhotons = 50;
@@ -817,7 +817,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 			float pdf;
             // Trace rays for specular reflection and refraction
             SWCSpectrum f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-                    &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
+                    &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR | BSDF_GLOSSY));
             if ((!f.Black()) || (pdf > 0.0f)) {
                 // Compute ray differential _rd_ for specular reflection
                 RayDifferential rd(p, wi);
@@ -847,7 +847,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 			u3 = transmissionComponent[0];
 
             f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-                    &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
+                    &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY));
             if ((!f.Black()) || (pdf > 0.0f)) {
                 // Compute ray differential _rd_ for specular transmission
                 RayDifferential rd(p, wi);
