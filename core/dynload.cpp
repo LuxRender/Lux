@@ -80,6 +80,7 @@
 #include "particletracing.h"
 #include "bidirectional.h"
 #include "exphotonmap.h"
+#include "importancepath.h"
 #include "distributedpath.h"
 
 #include "emission.h"
@@ -753,12 +754,18 @@ if (plugin)
         paramSet.ReportUnused();
         return ret;
     }
+    if(name=="importancepath") {
+        SurfaceIntegrator *ret=ImportancePathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
     if(name=="distributedpath") {
         SurfaceIntegrator *ret=DistributedPath::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-    //
+
+	//
     // Radiance - Volume integrators currently disabled
     // due to multithreading implementation which is in progress.
     //
