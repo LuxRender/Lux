@@ -383,8 +383,12 @@ SWCSpectrum ImportancePathIntegrator::LiInternal(
 						importanceTable[i] = 0.0f;
 
 					// Dade - build the reference coordinate system around the normal
-					Vector vx, vy;
-					const Vector vz = Vector(n);
+					Vector vx, vy, vz;
+					// Dade - revert normal if required
+					if (Dot(n, ray.d) > 0.0f)
+						vz = -Vector(n);
+					else
+						vz = Vector(n);
 					CoordinateSystem(vz, &vx, &vy);
 
 					for (u_int i = 0; i < nImportSamplePhotons; ++i) {
@@ -392,8 +396,9 @@ SWCSpectrum ImportancePathIntegrator::LiInternal(
 
 						// Dade - compute the importance of the photon
 						SWCSpectrum fr = bsdf->f(wo, pwi);
-						SWCSpectrum importanceSpectrum = fr * proc.photons[i].photon->alpha;
-						float importance = importanceSpectrum.y();
+						SWCSpectrum importanceSpectrum = fr * proc.photons[i].photon->alpha *
+								AbsDot(pwi, n);
+						float importance = importanceSpectrum.filter();
 
 						// Dade - tansform the photon incoming direction to the
 						// reference coordinate system
@@ -458,9 +463,9 @@ SWCSpectrum ImportancePathIntegrator::LiInternal(
 							totalPower, impTableSize, importanceSample[0], &importancePdf) * impTableSize);
 
 					// TODO: use a lookup table
-					float samplePhi = (cellNum % impTableWidth + lux::random::floatValue()) /
+					float samplePhi = ((cellNum % impTableWidth) + lux::random::floatValue()) /
 						float(impTableWidth) * (2.0f * M_PI) - M_PI;
-					float sampleTheta = (cellNum / impTableWidth + lux::random::floatValue()) /
+					float sampleTheta = ((cellNum / impTableWidth) + lux::random::floatValue()) /
 						float(impTableHeight) * (M_PI / 2.0f) ;
 					Vector sampleWi = SphericalDirection(sinf(sampleTheta),
 							cosf(sampleTheta), samplePhi,
@@ -472,7 +477,7 @@ SWCSpectrum ImportancePathIntegrator::LiInternal(
 						RayDifferential bounceRay = RayDifferential(p, sampleWi);
 						L += bsdfValue *
 								LiInternal(rayDepth + 1, scene, bounceRay, sample, alpha) *
-								AbsDot(sampleWi, n) / importancePdf;
+								(AbsDot(sampleWi, n) / importancePdf);
 					}
 					
 					usedImportanceMap = true;
@@ -518,7 +523,7 @@ SWCSpectrum ImportancePathIntegrator::LiInternal(
 						RayDifferential bounceRay = RayDifferential(p, wi);
 						L += bsdfBSDF *
 								LiInternal(rayDepth + 1, scene, bounceRay, sample, alpha) *
-								AbsDot(wi, n) / pdf;
+								(AbsDot(wi, n) / pdf);
 					}
 				}
 			}
