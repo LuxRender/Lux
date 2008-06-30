@@ -59,26 +59,22 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
 	SWCSpectrum L(0.0f);
+	XYZColor color;
 	float V = .1f;
 	bool specularBounce = true, specular = true;
 	if (alpha) *alpha = 1.;
-	XYZColor color(L.ToXYZ());
-	if (color.y() > 0.f)
-		sample->AddContribution(sample->imageX, sample->imageY,
-			color, alpha ? *alpha : 1.f, V);
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
-				pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
 				L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
-
 				color = L.ToXYZ();
 				if (color.y() > 0.f)
 					sample->AddContribution(sample->imageX, sample->imageY,
 						color, alpha ? *alpha : 1.f, V);
+				pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
 			}
 
 			// Stop path sampling since no intersection was found
@@ -93,29 +89,26 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 				color = Le.ToXYZ();
 			}
 			// Set alpha channel
-			if (pathLength == 0 && alpha && L.Black())
+			if (pathLength == 0 && alpha && !(color.y() > 0.f))
 				*alpha = 0.;
 			if (color.y() > 0.f)
 				sample->AddContribution(sample->imageX, sample->imageY,
 					color, alpha ? *alpha : 1.f, V);
 			break;
 		}
-
-		if (pathLength == 0) {
+		if (pathLength == 0)
 			r.maxt = ray.maxt;
-			// Dade - now I know ray.maxt and I can call volumeIntegrator
-			pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
-			L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 
-			color = L.ToXYZ();
-			if (color.y() > 0.f)
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
-		} else
-			pathThroughput *= scene->Transmittance(ray);
+		SWCSpectrum Lv(scene->volumeIntegrator->Li(scene, ray, sample, alpha));
+		Lv *= pathThroughput;
+		color = Lv.ToXYZ();
+		if (color.y() > 0.f)
+			sample->AddContribution(sample->imageX, sample->imageY,
+				color, alpha ? *alpha : 1.f, V);
+		pathThroughput *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
 
 		// Possibly add emitted light at path vertex
-		Vector wo = -ray.d;
+		Vector wo(-ray.d);
 		if (specularBounce) {
 			SWCSpectrum Le(isect.Le(wo));
 			Le *= pathThroughput;
