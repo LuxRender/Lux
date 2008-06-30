@@ -31,7 +31,6 @@ namespace lux
 {
 
 // Bidirectional Local Declarations
-struct BidirVertex;
 class BidirIntegrator : public SurfaceIntegrator {
 public:
 	// PathIntegrator types
@@ -46,33 +45,11 @@ public:
 	void RequestSamples(Sample *sample, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
-	// BidirIntegrator Private Methods
-	int generatePath(const Scene *scene, const Ray &r, const Sample *sample,
-		int sampleOffset,
-		vector<BidirVertex> &vertices) const;
-	float weightPath(vector<BidirVertex> &eye, int nEye, vector<BidirVertex> &light, int nLight, float pdfLight, bool directLight) const;
-	SWCSpectrum evalPath(const Scene *scene, vector<BidirVertex> &eye, int nEye,
-	vector<BidirVertex> &light, int nLight) const;
-	static float G(const BidirVertex &v0, const BidirVertex &v1);
-	static bool visible(const Scene *scene, const Point &P0, const Point &P1);
 	// BidirIntegrator Data
 	LightStrategy lightStrategy;
 	int maxEyeDepth, maxLightDepth;
 	int lightNumOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
-};
-struct BidirVertex {
-	BidirVertex() : bsdf(NULL), eBsdf(NULL), bsdfWeight(0.f), dAWeight(0.f),
-		rrWeight(1.f), bsdfRWeight(0.f), dARWeight(0.f), rrRWeight(0.f),
-		ePdf(0.f), ePdfDirect(0.f), flags(BxDFType(0)),
-		f(0.f), Le(0.f) {}
-	BSDF *bsdf, *eBsdf;
-	Point p;
-	Normal ng, ns;
-	Vector wi, wo;
-	float bsdfWeight, dAWeight, rrWeight, bsdfRWeight, dARWeight, rrRWeight, ePdf, ePdfDirect;
-	BxDFType flags;
-	SWCSpectrum f, Le;
 };
 
 }//namespace lux
