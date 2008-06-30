@@ -124,9 +124,8 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	if ((chain == 0 && mutation == 0) || initCount < initSamples) {
 		// Dade - we are at a valid checkpoint where we can stop the
 		// rendering. Check if we have enough samples per pixel in the film.
-		if ((film->haltSamplePerPixel > 0)  && film->enoughSamplePerPixel)
+		if (film->enoughSamplePerPixel)
 			return false;
-
 		if(currentStrata == strataSqr) {
 			// Generate shuffled stratified image samples
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
