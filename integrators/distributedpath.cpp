@@ -54,18 +54,11 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 	structure.push_back(2); // glossy transmission direction sample for bsdf
 	structure.push_back(1); // glossy transmission component sample for bsdf
 
-	if (lightStrategy == SAMPLE_ALL_UNIFORM) {
-		// Dade - allocate and request samples for sampling all lights
-		structure.push_back(2);	// light position sample
-		structure.push_back(2);	// bsdf direction sample for light
-		structure.push_back(1);	// bsdf component sample for light
-	} else {
-		// Dade - allocate and request samples for sampling one light
-		structure.push_back(2);	// light position sample
-		structure.push_back(1);	// light number sample
-		structure.push_back(2);	// bsdf direction sample for light
-		structure.push_back(1);	// bsdf component sample for light
-	}
+	// Dade - allocate and request samples for sampling one light
+	structure.push_back(2);	// light position sample
+	structure.push_back(1);	// light number/portal sample
+	structure.push_back(2);	// bsdf direction sample for light
+	structure.push_back(1);	// bsdf component sample for light
 
 	int maxDepth = diffuseDepth;
 	if(glossyDepth > diffuseDepth) maxDepth = glossyDepth;
@@ -84,17 +77,10 @@ SWCSpectrum DistributedPath::LiInternal(const Scene *scene,
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
 		float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
-		if (lightStrategy == SAMPLE_ALL_UNIFORM) {
-			lightSample = &sampleData[12];
-			lightNum = NULL;
-			bsdfSample = &sampleData[14];
-			bsdfComponent = &sampleData[16];
-		} else {
-			lightSample = &sampleData[12];
-			lightNum = &sampleData[14];
-			bsdfSample = &sampleData[15];
-			bsdfComponent = &sampleData[17];
-		}
+		lightSample = &sampleData[12];
+		lightNum = &sampleData[14];
+		bsdfSample = &sampleData[15];
+		bsdfComponent = &sampleData[17];
 
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * bsdfComponent[0] - 1.f));
@@ -113,7 +99,7 @@ SWCSpectrum DistributedPath::LiInternal(const Scene *scene,
 				case SAMPLE_ALL_UNIFORM:
 					L += UniformSampleAllLights(scene, p, n,
 							wo, bsdf, sample,
-							lightSample, bsdfSample, bsdfComponent);
+							lightSample, lightNum, bsdfSample, bsdfComponent);
 					break;
 				case SAMPLE_ONE_UNIFORM:
 					L += UniformSampleOneLight(scene, p, n,
