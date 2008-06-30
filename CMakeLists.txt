@@ -302,7 +302,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 # Dade - default compiler options
-#ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 
 #############################################################################
@@ -317,7 +317,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #ADD_DEFINITIONS(-O3 -fbranch-probabilities -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - my settings
-ADD_DEFINITIONS(-g -O0 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-g -O0 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -march=prescott -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 #ADD_DEFINITIONS(-O3 -march=athlon-xp -m3dnow -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 
@@ -451,7 +451,8 @@ SET(lux_lib_src
 		textures/blender_stucci.cpp textures/harlequin.cpp textures/blender_voronoi.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
-        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp pixelsamplers/tilepx.cpp
+        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
+		pixelsamplers/tilepx.cpp pixelsamplers/hilbertpx.cpp
         spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
         core/spectrumwavelengths.cpp core/spd.cpp
         renderer/renderserver.cpp

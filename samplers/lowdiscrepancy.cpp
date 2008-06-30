@@ -28,6 +28,7 @@
 #include "lowdiscrepancypx.h"
 #include "tilepx.h"
 #include "linear.h"
+#include "hilbertpx.h"
 
 using namespace lux;
 
@@ -53,6 +54,8 @@ LDSampler::LDSampler(int xstart, int xend,
 		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
     else if((pixelsampler == "tile") || (pixelsampler == "grid"))
 		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
+	else if(pixelsampler == "hilbert")
+		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
 	else
 		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 
