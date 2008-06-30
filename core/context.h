@@ -107,8 +107,9 @@ public:
 	static void luxStart() { activeContext->start(); }
 	static void luxPause() { activeContext->pause(); }
 	static void luxExit() { activeContext->exit(); }
-        // Dade - wait for the end of the rendering
-        static void luxWait() { activeContext->wait(); }
+	// Dade - wait for the end of the rendering
+	static void luxWait() { activeContext->wait(); }
+	static void luxHaveEnoughSamplePerPixel() { activeContext->haveEnoughSamplePerPixel(); }
 
 	//controlling number of threads
 	static int luxAddThread() { return activeContext->addThread(); }
@@ -191,7 +192,9 @@ private:
 	void start();
 	void pause();
 	void exit();
-        void wait();
+	void wait();
+
+	void haveEnoughSamplePerPixel();
 
 	//controlling number of threads
 	int addThread();

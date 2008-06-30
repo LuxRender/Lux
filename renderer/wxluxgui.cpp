@@ -102,6 +102,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_file->Enable(wxID_OPEN, true);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
+			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Disable();
@@ -111,6 +112,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_file->Enable(wxID_OPEN, false);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, true);
+			m_render->Enable(ID_ENOUGHSAMPLEITEM, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
 			m_threadSpinCtrl->Enable();
@@ -120,6 +122,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_file->Enable(wxID_OPEN, false);
 			m_render->Enable(ID_RESUMEITEM, true);
 			m_render->Enable(ID_STOPITEM, false);
+			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Enable();
@@ -129,6 +132,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_file->Enable(wxID_OPEN, false);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
+			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Disable();
@@ -202,6 +206,12 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if(m_guiRenderState == RENDERING)
 					luxPause();
 				ChangeRenderState(IDLE);
+			}
+			break;
+		case ID_ENOUGHSAMPLEITEM:
+			if ((m_guiRenderState == RENDERING) || (m_guiRenderState == IDLE)) {
+				// Dade - we can set the enough sample per pixel condition
+				luxHaveEnoughSamplePerPixel();
 			}
 			break;
 		case wxID_ABOUT:

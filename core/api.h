@@ -90,6 +90,8 @@ void luxPause();
 void luxExit();
 void luxWait();
 
+void luxHaveEnoughSamplePerPixel();
+		
 /* Controlling number of threads */
 int luxAddThread();
 void luxRemoveThread();

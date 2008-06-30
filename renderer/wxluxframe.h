@@ -33,8 +33,9 @@ namespace lux
 {
 	#define ID_RESUMEITEM 1000
 	#define ID_STOPITEM 1001
-	#define ID_RESUMETOOL 1002
-	#define ID_STOPTOOL 1003
+	#define ID_ENOUGHSAMPLEITEM 1002
+	#define ID_RESUMETOOL 1003
+	#define ID_STOPTOOL 1004
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame

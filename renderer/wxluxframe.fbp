@@ -186,6 +186,21 @@
                         <event name="OnMenuSelection">OnMenu</event>
                         <event name="OnUpdateUI"></event>
                     </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap">; Load From File</property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Stop the rendering at the next valid point</property>
+                        <property name="id">ID_ENOUGHSAMPLEITEM</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Set enough sample &amp;condition</property>
+                        <property name="name">m_enoughsamples</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">CTRL+C</property>
+                        <property name="unchecked_bitmap"></property>
+                        <event name="OnMenuSelection">OnMenu</event>
+                        <event name="OnUpdateUI"></event>
+                    </object>
                 </object>
                 <object class="wxMenu" expanded="1">
                     <property name="label">Help</property>

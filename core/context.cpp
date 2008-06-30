@@ -738,6 +738,12 @@ void Context::pause() {
 	luxCurrentScene->Pause();
 }
 
+void Context::haveEnoughSamplePerPixel() {
+	FlexImageFilm *fif = (FlexImageFilm *)luxCurrentScene->camera->film;
+	fif->haltSamplePerPixel = 1;
+	fif->enoughSamplePerPixel = true;
+}
+
 void Context::wait() {
     boost::mutex::scoped_lock lock(renderingMutex);
 }
