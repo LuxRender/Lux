@@ -53,7 +53,7 @@
 
 #else //LUX_USE_CONFIG_H
 #define cimg_use_png 1
-//#define cimg_use_tiff 1
+#define cimg_use_tiff 1
 #define cimg_use_jpeg 1
 #endif //LUX_USE_CONFIG_H
 
