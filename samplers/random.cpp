@@ -27,6 +27,7 @@
 #include "lowdiscrepancypx.h"
 #include "linear.h"
 #include "tilepx.h"
+#include "hilbertpx.h"
 
 using namespace lux;
 
