@@ -51,12 +51,15 @@ SWCSpectrum Microfacet::f(const Vector &wo,
 }
 
 SWCSpectrum Microfacet::Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack) const {
+		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
 	if (pdfBack)
 		*pdfBack = Pdf(*wi, wo);
 	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
-	return f(wo, *wi);
+	if (reverse)
+		return f(*wi, wo) * (wo.z / wi->z);
+	else
+		return f(wo, *wi);
 }
 float Microfacet::Pdf(const Vector &wo,
 		const Vector &wi) const {

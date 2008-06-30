@@ -38,7 +38,7 @@ class SunBxDF : public BxDF
 public:
 	SunBxDF(float cosMax, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosThetaMax(cosMax), worldRadius(radius) {}
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return min(wo.z, wi.z) < cosThetaMax ? 0.f : 1.f;}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = UniformConePdf(cosThetaMax);

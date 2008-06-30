@@ -67,7 +67,7 @@ float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) cons
   return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));
 }
 
-SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const {
+SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
   // Pick a random component
   u_int comp = lux::random::uintValue() % (nLobes+1);
 
@@ -90,7 +90,10 @@ SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float
   if (pdfBack)
 	  *pdfBack = Pdf(*wi, wo);
 
-  return f(wo, *wi);
+  if (reverse)
+	  return f(*wi, wo) * (wo.z / wi->z);
+  else
+	  return f(wo, *wi);
 }
 
 float CookTorrance::Pdf(const Vector &wo, const Vector &wi) const {

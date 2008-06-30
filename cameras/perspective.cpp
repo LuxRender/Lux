@@ -39,7 +39,7 @@ class PerspectiveBxDF : public BxDF
 public:
 	PerspectiveBxDF(bool lens, float FD, float f, const Point &pL, const Transform &R2C, float xW, float yH) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens), FocalDistance(FD), fov(f), xWidth(xW), yHeight(yH), p(pL), RasterToCamera(R2C) {}
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return fabsf(wi.x / wi.z) > 1.f || fabsf(wi.y / wi.z) > 1.f ? 0.f : 1.f;}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		Point pS(RasterToCamera(Point(u1 * xWidth, u2 * yHeight, 0.f)));
 		*wi = Vector(pS.x, pS.y, pS.z);

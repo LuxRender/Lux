@@ -46,7 +46,7 @@ public:
 		                (2.f * NdotWh * NdotWi / WOdotWh)));
 	}
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
+		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Pdf(const Vector &wo, const Vector &wi) const;
 private:
 	// Microfacet Private Data

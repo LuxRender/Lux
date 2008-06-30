@@ -38,7 +38,7 @@ public:
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const {
 		return wo == -wi ? SWCSpectrum(1.f / fabsf(CosTheta(wi))) : SWCSpectrum(0.);
 	}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL) const;
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Pdf(const Vector &wo, const Vector &wi) const {
 		return wo == -wi ? 1.f : 0.f;
 	}

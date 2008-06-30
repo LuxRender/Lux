@@ -72,7 +72,8 @@ public:
 	// BSDF Public Methods
 	SWCSpectrum Sample_f(const Vector &o, Vector *wi, float u1, float u2,
 		float u3, float *pdf, BxDFType flags = BSDF_ALL,
-		BxDFType *sampledType = NULL, float *pdfBack = NULL) const;
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const;
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
 		BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL) const;
@@ -106,7 +107,7 @@ public:
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
-	
+
 	friend class RenderThread;
         friend class Scene;
 	
@@ -136,7 +137,8 @@ public:
 	virtual SWCSpectrum f(const Vector &wo,
 	                   const Vector &wi) const = 0;
 	virtual SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
+		float u1, float u2, float *pdf, float *pdfBack = NULL,
+		bool reverse = false) const;
 	virtual SWCSpectrum rho(const Vector &wo,
 	                     int nSamples = 16,
 		                 float *samples = NULL) const;
@@ -166,7 +168,8 @@ public:
 	}
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
+		float u1, float u2, float *pdf, float *pdfBack = NULL,
+		bool reverse = false) const;
 	float Pdf(const Vector &wo, const Vector &wi) const;
 private:
 	BxDF *brdf;

@@ -38,7 +38,7 @@ public:
 			  const SWCSpectrum *e, BxDFType t);
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
 	SWCSpectrum Sample_f(const Vector &wi, Vector *sampled_f,
-		float u1, float u2, float *pdf, float *pdfBack = NULL) const;
+		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Pdf(const Vector &wi, const Vector &wo) const;
 private:
 	// Lafortune Private Data

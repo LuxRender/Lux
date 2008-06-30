@@ -55,7 +55,7 @@ SWCSpectrum Lafortune::f(const Vector &wo,
 }
 
 SWCSpectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack) const {
+		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	u_int comp = lux::random::uintValue() % (nLobes+1);
 	if (comp == nLobes) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
@@ -80,7 +80,10 @@ SWCSpectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
 	if (pdfBack)
 		*pdfBack = Pdf(*wi, wo);
 	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
-	return f(wo, *wi);
+	if (reverse)
+		return f(*wi, wo) * (wo.z / wi->z);
+	else
+		return f(wo, *wi);
 }
 float Lafortune::Pdf(const Vector &wo, const Vector &wi) const {
 	if (!SameHemisphere(wo, wi)) return 0.f;

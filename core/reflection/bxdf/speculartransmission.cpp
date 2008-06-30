@@ -36,7 +36,7 @@ using namespace lux;
 extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
-	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const {
+	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
@@ -71,14 +71,27 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 	if (pdfBack)
 		*pdfBack = 1.f;
 	if (!architectural) {
-		SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
-		return (SWCSpectrum(1.f) - F) * T / (fabsf(cost) * eta2);
+		if (reverse) {
+			SWCSpectrum F = fresnel.Evaluate(cost);
+			return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
+		} else {
+			SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
+			return (SWCSpectrum(1.f) - F) * T / (fabsf(cost) * eta2);
+		}
 	} else {
-		SWCSpectrum F = fresnel.Evaluate(-cost);
-		if (entering)
-			return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
-		else
-			return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
+		if (reverse) {
+			SWCSpectrum F = fresnel.Evaluate(-CosTheta(wo));
+			if (entering)
+				return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
+			else
+				return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
+		} else {
+			SWCSpectrum F = fresnel.Evaluate(-cost);
+			if (entering)
+				return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
+			else
+				return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
+		}
 	}
 }
 SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const

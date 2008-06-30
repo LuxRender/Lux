@@ -53,7 +53,7 @@ SWCSpectrum FresnelBlend::f(const Vector &wo,
 }
 
 SWCSpectrum FresnelBlend::Sample_f(const Vector &wo,
-	Vector *wi, float u1, float u2, float *pdf, float *pdfBack) const
+	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const
 {
 	u1 *= 2.f;
 	if (u1 < 1.f) {
@@ -73,7 +73,10 @@ SWCSpectrum FresnelBlend::Sample_f(const Vector &wo,
 	}
 	if (pdfBack)
 		*pdfBack = Pdf(*wi, wo);
-	return f(wo, *wi);
+	if (reverse)
+		return f(*wi, wo) * (wo.z / wi->z);
+	else
+		return f(wo, *wi);
 }
 float FresnelBlend::Pdf(const Vector &wo,
 		const Vector &wi) const {
