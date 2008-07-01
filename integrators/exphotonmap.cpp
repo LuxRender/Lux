@@ -222,6 +222,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		vector<u_int> structure;
 
 		structure.push_back(2);	// light position sample
+		structure.push_back(1);	// light number/portal sample
 		structure.push_back(2);	// bsdf direction sample for light
 		structure.push_back(1);	// bsdf component sample for light
 
@@ -229,9 +230,6 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		structure.push_back(1);	// reflection bsdf component sample
 		structure.push_back(2);	// transmission bsdf direction sample
 		structure.push_back(1);	// transmission bsdf component sample
-
-		if (lightStrategy == SAMPLE_ONE_UNIFORM)
-			structure.push_back(1);	// light number sample
 
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
@@ -258,6 +256,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 	} else if (renderingMode == RM_PATH) {
 		vector<u_int> structure;
 		structure.push_back(2);	// light position sample
+		structure.push_back(1);	// light number/portal sample
 		structure.push_back(2);	// bsdf direction sample for light
 		structure.push_back(1);	// bsdf component sample for light
 		structure.push_back(2);	// bsdf direction sample for path
@@ -265,8 +264,6 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		structure.push_back(2);	// bsdf direction sample for indirect light
 		structure.push_back(1);	// bsdf component sample for indirect light
 
-		if (lightStrategy == SAMPLE_ONE_UNIFORM)
-			structure.push_back(1);	// light number sample
 		if (rrStrategy != RR_NONE)
 			structure.push_back(1);	// continue sample
 		
@@ -596,17 +593,17 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, specularDepth);
 		float *lightSample = &sampleData[0];
-		float *bsdfSample = &sampleData[2];
-		float *bsdfComponent = &sampleData[4];
+		float *bsdfSample = &sampleData[3];
+		float *bsdfComponent = &sampleData[5];
 
-		float *reflectionSample = &sampleData[5];
-		float *reflectionComponent = &sampleData[7];
-		float *transmissionSample = &sampleData[8];
-		float *transmissionComponent = &sampleData[10];
+		float *reflectionSample = &sampleData[6];
+		float *reflectionComponent = &sampleData[8];
+		float *transmissionSample = &sampleData[9];
+		float *transmissionComponent = &sampleData[11];
 
 		float *lightNum;
 		if (lightStrategy == SAMPLE_ONE_UNIFORM)
-			lightNum = &sampleData[11];
+			lightNum = &sampleData[2];
 		else
 			lightNum = NULL;
 
@@ -996,29 +993,24 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 		float *lightSample = &sampleData[0];
-		float *bsdfSample = &sampleData[2];
-		float *bsdfComponent = &sampleData[4];
-		float *pathSample = &sampleData[5];
-		float *pathComponent = &sampleData[7];
-		float *indirectSample = &sampleData[8];
-		float *indirectComponent = &sampleData[10];
+		float *bsdfSample = &sampleData[3];
+		float *bsdfComponent = &sampleData[5];
+		float *pathSample = &sampleData[6];
+		float *pathComponent = &sampleData[8];
+		float *indirectSample = &sampleData[9];
+		float *indirectComponent = &sampleData[11];
 
-		float *lightNum, *rrSample;
+		float *lightNum;
 		if (lightStrategy == SAMPLE_ONE_UNIFORM) {
-			lightNum = &sampleData[11];
-			
-			if (rrStrategy != RR_NONE)
-				rrSample = &sampleData[12];
-			else
-				rrSample = NULL;
-		} else {
+			lightNum = &sampleData[2];
+		} else
 			lightNum = NULL;
 
-			if (rrStrategy != RR_NONE)
-				rrSample = &sampleData[11];
-			else
-				rrSample = NULL;
-		}
+		float *rrSample;
+		if (rrStrategy != RR_NONE)
+			rrSample = &sampleData[12];
+		else
+			rrSample = NULL;
 		
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * bsdfComponent[0] - 1.f));
