@@ -103,9 +103,9 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
     SWCSpectrum L(0.);
 	if ((nPaths <= 0) || (!map)) return L;
 
-    BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
+    BxDFType diffuse = BxDFType(BSDF_REFLECTION |
             BSDF_TRANSMISSION | BSDF_DIFFUSE);
-    if (bsdf->NumComponents(nonSpecular) == 0)
+    if (bsdf->NumComponents(diffuse) == 0)
         return L;
     // radiance - disabled for threading // static StatsCounter lookups("Photon Map", "Total lookups"); // NOBOOK
     // Initialize _PhotonProcess_ object, _proc_, for photon map lookups
@@ -125,7 +125,9 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
             bsdf->dgShading.nn;
 
 	SWCSpectrum D65(&blackBodySPD);
-    if (bsdf->NumComponents(BxDFType(BSDF_REFLECTION |
+	// Dade - Glossy reflection/transmition is not done anymore with
+	// photonmap
+    /*if (bsdf->NumComponents(BxDFType(BSDF_REFLECTION |
             BSDF_TRANSMISSION)) > 0) {
         // Compute exitant radiance from photons for glossy surface
         for (int i = 0; i < nFound; ++i) {
@@ -139,11 +141,11 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
 
             L += (k / nPaths) * bsdf->f(wo, p->wi, flag) * alpha;
         }
-    } else {
+    } else */{
         // Compute exitant radiance from photons for diffuse surface
         SWCSpectrum Lr(0.), Lt(0.);
 
-        for (int i = 0; i < nFound; ++i) {
+        for (int i = 0; i < nFound; ++i) {			
 			SWCSpectrum alpha = photons[i].photon->alpha;
 			alpha *= D65;
 
