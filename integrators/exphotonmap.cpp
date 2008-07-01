@@ -166,13 +166,15 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
 }
 
 ExPhotonIntegrator::ExPhotonIntegrator(
+		RenderingMode rm,
 		LightStrategy st,
 		int ncaus, int nind, int maxDirPhotons,
         int nl, int mdepth, float mdist, bool fg,
         int gs, float ga,
-		RRStrategy grrStrategy, float grrContinueProbability,
+		RRStrategy rrstrategy, float rrcontprob,
 		bool dbgEnableDirect, bool dbgEnableCaustic,
 		bool dbgEnableIndirect, bool dbgEnableSpecular) : blackBodySPD(6503.6f) {
+	renderingMode = rm;
 	lightStrategy = st;
 
     nCausticPhotons = ncaus;
@@ -181,15 +183,15 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 
     nLookup = nl;
     maxDistSquared = mdist * mdist;
-    maxSpecularDepth = mdepth;
+    maxDepth = mdepth;
     causticMap = indirectMap = NULL;
     radianceMap = NULL;
     finalGather = fg;
     gatherSamples = gs;
     cosGatherAngle = cos(Radians(ga));
 
-	gatherRRStrategy = grrStrategy;
-	gatherRRContinueProbability = grrContinueProbability;
+	rrStrategy = rrstrategy;
+	rrContinueProbability = rrcontprob;
 
 	debugEnableDirect = dbgEnableDirect;
 	debugEnableCaustic = dbgEnableCaustic;
@@ -213,42 +215,62 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 	}
 
 	// Dade - allocate and request samples
- 	vector<u_int> structure;
 
-	structure.push_back(2);	// light position sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
+	if (renderingMode == RM_DIRECTLIGHTING) {
+		vector<u_int> structure;
 
-	structure.push_back(2);	// reflection bsdf direction sample
-	structure.push_back(1);	// reflection bsdf component sample
-	structure.push_back(2);	// transmission bsdf direction sample
-	structure.push_back(1);	// transmission bsdf component sample
+		structure.push_back(2);	// light position sample
+		structure.push_back(2);	// bsdf direction sample for light
+		structure.push_back(1);	// bsdf component sample for light
 
-	if (lightStrategy == SAMPLE_ONE_UNIFORM)
-		structure.push_back(1);	// light number sample
+		structure.push_back(2);	// reflection bsdf direction sample
+		structure.push_back(1);	// reflection bsdf component sample
+		structure.push_back(2);	// transmission bsdf direction sample
+		structure.push_back(1);	// transmission bsdf component sample
 
-	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
+		if (lightStrategy == SAMPLE_ONE_UNIFORM)
+			structure.push_back(1);	// light number sample
 
-	if (finalGather) {
-		// Dade - use half samples for sampling along the BSDF and the other
-		// half to sample along photon incoming direction
-		gatherSamples = gatherSamples / 2;
+		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
-		// Dade - request n samples for the final gather step
-		structure.clear();
-		structure.push_back(2);	// gather bsdf direction sample 1
-		structure.push_back(1);	// gather bsdf component sample 1
-		if (gatherRRStrategy != RR_NONE)
-			structure.push_back(1); // RR
-		sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
+		if (finalGather) {
+			// Dade - use half samples for sampling along the BSDF and the other
+			// half to sample along photon incoming direction
+			gatherSamples = gatherSamples / 2;
 
-		structure.clear();
-		structure.push_back(2);	// gather bsdf direction sample 2
-		structure.push_back(1);	// gather bsdf component sample 2
-		if (gatherRRStrategy != RR_NONE)
-			structure.push_back(1); // RR
-		sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
-	}
+			// Dade - request n samples for the final gather step
+			structure.clear();
+			structure.push_back(2);	// gather bsdf direction sample 1
+			structure.push_back(1);	// gather bsdf component sample 1
+			if (rrStrategy != RR_NONE)
+				structure.push_back(1); // RR
+			sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
+
+			structure.clear();
+			structure.push_back(2);	// gather bsdf direction sample 2
+			structure.push_back(1);	// gather bsdf component sample 2
+			if (rrStrategy != RR_NONE)
+				structure.push_back(1); // RR
+			sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
+		}
+	} else if (renderingMode == RM_PATH) {
+		vector<u_int> structure;
+		structure.push_back(2);	// light position sample
+		structure.push_back(2);	// bsdf direction sample for light
+		structure.push_back(1);	// bsdf component sample for light
+		structure.push_back(2);	// bsdf direction sample for path
+		structure.push_back(1);	// bsdf component sample for path
+		structure.push_back(2);	// bsdf direction sample for indirect light
+		structure.push_back(1);	// bsdf component sample for indirect light
+
+		if (lightStrategy == SAMPLE_ONE_UNIFORM)
+			structure.push_back(1);	// light number sample
+		if (rrStrategy != RR_NONE)
+			structure.push_back(1);	// continue sample
+		
+		sampleOffset = sample->AddxD(structure, maxDepth + 1);
+	} else
+		BOOST_ASSERT(false);
 }
 
 void ExPhotonIntegrator::Preprocess(const Scene *scene) {
@@ -390,10 +412,10 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 
                 BSDF *photonBSDF = photonIsect.GetBSDF(photonRay, lux::random::floatValue());
                 BxDFType specularType = BxDFType(BSDF_REFLECTION |
-                        BSDF_TRANSMISSION | BSDF_SPECULAR);
-                bool hasNonSpecular = (photonBSDF->NumComponents() >
+                        BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY);
+                bool hasNonSpecularGlossy = (photonBSDF->NumComponents() >
                         photonBSDF->NumComponents(specularType));
-                if (hasNonSpecular) {
+                if (hasNonSpecularGlossy) {
                     // Deposit photon at surface
                     EPhoton photon(photonIsect.dg.p, FromXYZ(alpha.ToXYZ()), wo);
                     if (nIntersections == 1) {
@@ -539,14 +561,24 @@ SWCSpectrum ExPhotonIntegrator::Li(const Scene *scene,
         float *alpha) const {
     SampleGuard guard(sample->sampler, sample);
 
-    SWCSpectrum L = LiInternal(0, scene, ray, sample, alpha);
-	sample->AddContribution(sample->imageX, sample->imageY,
-			L.ToXYZ(), alpha ? *alpha : 1.0f);
+	switch(renderingMode) {
+		case RM_DIRECTLIGHTING: {
+			SWCSpectrum L = LiDirectLigthtingMode(0, scene, ray, sample, alpha);
+			sample->AddContribution(sample->imageX, sample->imageY,
+					L.ToXYZ(), alpha ? *alpha : 1.0f);
+		}
+			break;
+		case RM_PATH:
+			LiPathMode(scene, ray, sample, alpha);
+			break;
+		default:
+			BOOST_ASSERT(false);
+	}
 
     return SWCSpectrum(-1.f);
 }
 
-SWCSpectrum ExPhotonIntegrator::LiInternal(
+SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
         const int specularDepth,
         const Scene *scene,
         const RayDifferential &ray, const Sample *sample,
@@ -678,7 +710,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 						if (fr.Black() || pdf == 0.f) continue;
 
 						// Dade - russian roulette
-						if (gatherRRStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+						if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 							const float dp = AbsDot(wi, n) / pdf;
 							const float q = min<float>(1.0f, fr.filter() * dp);
 							if (q < sampleFGData[3])
@@ -686,12 +718,12 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 
 							// increase contribution
 							fr /= q;
-						} else if (gatherRRStrategy == RR_PROBABILITY) { // use normal/probability RR
-							if (gatherRRContinueProbability < sampleFGData[3])
+						} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+							if (rrContinueProbability < sampleFGData[3])
 								continue;
 
 							// increase path contribution
-							fr /= gatherRRContinueProbability;
+							fr /= rrContinueProbability;
 						}
 
 						// Trace BSDF final gather ray and accumulate radiance
@@ -758,7 +790,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 						photonPdf /= nIndirSamplePhotons;
 						
 						// Dade - russian roulette
-						if (gatherRRStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+						if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 							const float dp = 1.0f / photonPdf;
 							const float q = min<float>(1.0f, fr.filter() * dp);
 							if (q < sampleFGData[3])
@@ -766,12 +798,12 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 
 							// increase contribution
 							fr /= q;
-						} else if (gatherRRStrategy == RR_PROBABILITY) { // use normal/probability RR
-							if (gatherRRContinueProbability < sampleFGData[3])
+						} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+							if (rrContinueProbability < sampleFGData[3])
 								continue;
 
 							// increase path contribution
-							fr /= gatherRRContinueProbability;
+							fr /= rrContinueProbability;
 						}
 
 						RayDifferential bounceRay(p, wi);
@@ -808,7 +840,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 			}
 		}
 
-        if (debugEnableSpecular && (specularDepth < maxSpecularDepth)) {
+        if (debugEnableSpecular && (specularDepth < maxDepth)) {
 			float u1 = reflectionSample[0];
 			float u2 = reflectionSample[1];
 			float u3 = reflectionComponent[0];
@@ -838,7 +870,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
                 rd.ry.d = wi -
                         dwody + 2 * Vector(Dot(wo, n) * dndy +
                         dDNdy * n);
-                L += LiInternal(specularDepth + 1, scene, rd, sample, alpha) *
+                L += LiDirectLigthtingMode(specularDepth + 1, scene, rd, sample, alpha) *
 					(f * (1.0f / pdf)) * AbsDot(wi, n);
             }
 
@@ -872,7 +904,7 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 
                 rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
                 rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
-                L += LiInternal(specularDepth + 1, scene, rd, sample, alpha) *
+                L += LiDirectLigthtingMode(specularDepth + 1, scene, rd, sample, alpha) *
 					(f * (1.0f / pdf)) * AbsDot(wi, n);
             }
         }
@@ -886,6 +918,239 @@ SWCSpectrum ExPhotonIntegrator::LiInternal(
 
     return L * scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha) +
 			scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+}
+
+SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
+		const RayDifferential &r, const Sample *sample,
+		float *alpha) const
+{
+	SampleGuard guard(sample->sampler, sample);
+	// Declare common path integration variables
+	RayDifferential ray(r);
+	SWCSpectrum pathThroughput(1.0f);
+	SWCSpectrum L(0.0f);
+	XYZColor color;
+	float V = .1f;
+	bool specularBounce = true, specular = true;
+	if (alpha) *alpha = 1.;
+	for (int pathLength = 0; ; ++pathLength) {
+		// Find next vertex of path
+		Intersection isect;
+		if (!scene->Intersect(ray, &isect)) {
+			if (pathLength == 0) {
+				// Dade - now I know ray.maxt and I can call volumeIntegrator
+				L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+				color = L.ToXYZ();
+				if (color.y() > 0.f)
+					sample->AddContribution(sample->imageX, sample->imageY,
+						color, alpha ? *alpha : 1.f, V);
+				pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+			}
+
+			// Stop path sampling since no intersection was found
+			// Possibly add emitted light
+			// NOTE - Added by radiance - adds horizon in render & reflections
+			if (specularBounce) {
+				SWCSpectrum Le(0.f);
+				for (u_int i = 0; i < scene->lights.size(); ++i)
+					Le += scene->lights[i]->Le(ray);
+				Le *= pathThroughput;
+				L += Le;
+				color = Le.ToXYZ();
+			}
+			// Set alpha channel
+			if (pathLength == 0 && alpha && !(color.y() > 0.f))
+				*alpha = 0.;
+			if (color.y() > 0.f)
+				sample->AddContribution(sample->imageX, sample->imageY,
+					color, alpha ? *alpha : 1.f, V);
+			break;
+		}
+		if (pathLength == 0)
+			r.maxt = ray.maxt;
+
+		SWCSpectrum Lv(scene->volumeIntegrator->Li(scene, ray, sample, alpha));
+		Lv *= pathThroughput;
+		color = Lv.ToXYZ();
+		if (color.y() > 0.f)
+			sample->AddContribution(sample->imageX, sample->imageY,
+				color, alpha ? *alpha : 1.f, V);
+		pathThroughput *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+
+		// Possibly add emitted light at path vertex
+		Vector wo(-ray.d);
+		if (specularBounce) {
+			SWCSpectrum Le(isect.Le(wo));
+			Le *= pathThroughput;
+			L += Le;
+			color = Le.ToXYZ();
+			if (color.y() > 0.f)
+				sample->AddContribution(sample->imageX, sample->imageY,
+					color, alpha ? *alpha : 1.f, V);
+		}
+		if (pathLength == maxDepth)
+			break;
+
+		// Dade - collect samples
+		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		float *lightSample = &sampleData[0];
+		float *bsdfSample = &sampleData[2];
+		float *bsdfComponent = &sampleData[4];
+		float *pathSample = &sampleData[5];
+		float *pathComponent = &sampleData[7];
+		float *indirectSample = &sampleData[8];
+		float *indirectComponent = &sampleData[10];
+
+		float *lightNum, *rrSample;
+		if (lightStrategy == SAMPLE_ONE_UNIFORM) {
+			lightNum = &sampleData[11];
+			
+			if (rrStrategy != RR_NONE)
+				rrSample = &sampleData[12];
+			else
+				rrSample = NULL;
+		} else {
+			lightNum = NULL;
+
+			if (rrStrategy != RR_NONE)
+				rrSample = &sampleData[11];
+			else
+				rrSample = NULL;
+		}
+		
+		// Evaluate BSDF at hit point
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * bsdfComponent[0] - 1.f));
+		// Sample illumination from lights to find path contribution
+		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
+
+		// Dade - direct lighting
+		if (debugEnableDirect) {
+			SWCSpectrum Ll;
+			switch (lightStrategy) {
+				case SAMPLE_ALL_UNIFORM:
+					Ll = UniformSampleAllLights(scene, p, n,
+						wo, bsdf, sample,
+						lightSample, bsdfSample, bsdfComponent);
+					break;
+				case SAMPLE_ONE_UNIFORM:
+					Ll = UniformSampleOneLight(scene, p, n,
+						wo, bsdf, sample,
+						lightSample, lightNum, bsdfSample, bsdfComponent);
+					break;
+				default:
+					Ll = 0.f;
+			}
+			Ll *= pathThroughput;
+			L += Ll;
+			color = Ll.ToXYZ();
+			if (color.y() > 0.f)
+				sample->AddContribution(sample->imageX, sample->imageY,
+					color, alpha ? *alpha : 1.f, V);
+		}
+
+		// Dade - add caustic		
+		if (debugEnableCaustic) {
+			// Compute indirect lighting for photon map integrator
+			SWCSpectrum Lc = LPhoton(causticMap, nCausticPaths, nLookup, bsdf,
+					isect, wo, maxDistSquared);
+			Lc *= pathThroughput;
+			L += Lc;
+			color = Lc.ToXYZ();
+			if (color.y() > 0.f)
+				sample->AddContribution(sample->imageX, sample->imageY,
+					color, alpha ? *alpha : 1.f, V);
+		}
+
+		// Dade - add indirect lighting
+		if (debugEnableIndirect) {
+			BxDFType nonSpecularGlossy = BxDFType(BSDF_REFLECTION |
+					BSDF_TRANSMISSION | BSDF_DIFFUSE);
+			if (bsdf->NumComponents(nonSpecularGlossy) > 0) {
+
+				Vector wi;
+				float u1 = indirectSample[0];
+				float u2 = indirectSample[1];
+				float u3 = indirectComponent[0];
+				float pdf;
+				SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+						&pdf, nonSpecularGlossy);
+				if (!fr.Black() && (pdf != 0.f)) {
+					RayDifferential bounceRay(p, wi);
+
+					Intersection gatherIsect;
+					if (scene->Intersect(bounceRay, &gatherIsect)) {
+						// Compute exitant radiance using precomputed irradiance
+						SWCSpectrum Lindir = 0.f;
+						Normal nGather = gatherIsect.dg.nn;
+						if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
+						ERadiancePhotonProcess proc(gatherIsect.dg.p, nGather);
+						float md2 = INFINITY;
+
+						radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+						if (proc.photon) {
+							SWCSpectrum D65(&blackBodySPD);
+
+							Lindir = proc.photon->Lo;
+							Lindir *= D65;
+						}
+
+						Lindir *= scene->Transmittance(bounceRay);
+						SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
+
+						Li *= pathThroughput;
+						L += Li;
+						color = Li.ToXYZ();
+						if (color.y() > 0.f)
+							sample->AddContribution(sample->imageX, sample->imageY,
+								color, alpha ? *alpha : 1.f, V);
+					}
+				}
+			}
+		}
+
+		BxDFType specularGlossy = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
+		if (bsdf->NumComponents(specularGlossy) <= 0)
+			break;
+
+		// Sample BSDF to get new path direction
+		Vector wi;
+		float pdf;
+		BxDFType flags;
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi, pathSample[0], pathSample[1], pathComponent[0],
+			&pdf, specularGlossy, &flags);
+		if (pdf == .0f || f.Black())
+			break;
+
+		const float dp = AbsDot(wi, n) / pdf;
+
+		// Possibly terminate the path
+		if (pathLength > 3) {
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float q = min<float>(1.f, f.filter() * dp);
+				if (q < rrSample[0])
+					break;
+				// increase path contribution
+				pathThroughput /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (rrContinueProbability < rrSample[0])
+					break;
+				// increase path contribution
+				pathThroughput /= rrContinueProbability;
+			}
+		}
+
+		specularBounce = (flags & BSDF_SPECULAR) != 0;
+		specular = specular && specularBounce;
+		pathThroughput *= f;
+		pathThroughput *= dp;
+		if (!specular)
+			V += dp;
+
+		ray = RayDifferential(p, wi);
+	}
+
+	return L;
 }
 
 SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
@@ -906,10 +1171,23 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	int maxDirect = params.FindOneInt("maxdirectphotons", 1000000);
 
 	int nUsed = params.FindOneInt("nused", 50);
-    int maxDepth = params.FindOneInt("maxdepth", 4);
+    int maxDepth = params.FindOneInt("maxdepth", 6);
 
 	bool finalGather = params.FindOneBool("finalgather", true);
     int gatherSamples = params.FindOneInt("finalgathersamples", 32);
+	string smode =  params.FindOneString("renderingmode", "directlighting");
+
+	RenderingMode renderingMode;
+	if (smode == "directlighting") renderingMode = RM_DIRECTLIGHTING;
+	else if (smode == "path") {
+		renderingMode = RM_PATH;
+		finalGather = true;
+	} else {
+		std::stringstream ss;
+		ss<<"Strategy  '" << smode << "' for rendering mode unknown. Using \"directlighting\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		renderingMode = RM_DIRECTLIGHTING;
+	}
 
 	float maxDist = params.FindOneFloat("maxdist", 0.5f);
     float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
@@ -933,7 +1211,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
 	bool debugEnableSpecular = params.FindOneBool("dbg_enablespecular", true);
 
-    return new ExPhotonIntegrator(estrategy, nCaustic, nIndirect, maxDirect,
+    return new ExPhotonIntegrator(renderingMode, estrategy, nCaustic, nIndirect, maxDirect,
             nUsed, maxDepth, maxDist, finalGather, gatherSamples, gatherAngle,
 			rstrategy, rrcontinueProb,
 			debugEnableDirect, debugEnableCaustic, debugEnableIndirect, debugEnableSpecular);

@@ -46,7 +46,8 @@ struct EPhoton {
 	}
 
 	EPhoton() {
-	} // NOBOOK
+	}
+
 	Point p;
 	Spectrum alpha;
 	Vector wi;
@@ -58,7 +59,8 @@ struct ERadiancePhoton {
 	}
 
 	ERadiancePhoton() {
-	} // NOBOOK
+	}
+
 	Point p;
 	Normal n;
 	Spectrum Lo;
@@ -86,8 +88,8 @@ struct ERadiancePhotonProcess {
 
 inline float Ekernel(const EPhoton *photon, const Point &p,
 		float md2) {
-	//	return 1.f / (md2 * M_PI); // NOBOOK
 	float s = (1.f - DistanceSquared(photon->p, p) / md2);
+
 	return 3.f / (md2 * M_PI) * s * s;
 }
 
@@ -120,6 +122,7 @@ struct EClosePhoton {
 class ExPhotonIntegrator : public SurfaceIntegrator {
 public:
 	// ExPhotonIntegrator types
+	enum RenderingMode { RM_DIRECTLIGHTING, RM_PATH };
 	enum LightStrategy {
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC
@@ -128,11 +131,12 @@ public:
 
 	// ExPhotonIntegrator Public Methods
 	ExPhotonIntegrator(
+			RenderingMode rm,
 			LightStrategy st,
 			int ncaus, int nindir,  int maxDirPhotons,
 			int nLookup, int mdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
-			RRStrategy grrStrategy, float grrContinueProbability,
+			RRStrategy rrstrategy, float rrcontprob,
 			bool dbgEnableDirect, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
@@ -161,23 +165,26 @@ private:
 			const Vector &w, float maxDistSquared) const;
 	SWCSpectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
 			const Point &p, const Normal &n) const;
-    SWCSpectrum LiInternal(const int specularDepth, const Scene *scene,
+    SWCSpectrum LiDirectLigthtingMode(const int specularDepth, const Scene *scene,
+            const RayDifferential &ray, const Sample *sample,
+            float *alpha) const;
+    SWCSpectrum LiPathMode(const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
 
 	// ExPhotonIntegrator Private Data
+	RenderingMode renderingMode;
 	LightStrategy lightStrategy;
 	u_int nCausticPhotons, nIndirectPhotons, maxDirectPhotons;
 	u_int nLookup;
-	int maxSpecularDepth;
-	float maxDistSquared;
 	int maxDepth;
+	float maxDistSquared;
 
 	bool finalGather;
 	float cosGatherAngle;
 	int gatherSamples;
-	RRStrategy gatherRRStrategy;
-	float gatherRRContinueProbability;
+	RRStrategy rrStrategy;
+	float rrContinueProbability;
 
 	// Dade - debug flags
 	bool debugEnableDirect, debugEnableCaustic,
