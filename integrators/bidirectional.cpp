@@ -154,7 +154,7 @@ static int generateLightPath(const Scene *scene, BSDF *bsdf,
 			v.p = isect.dg.p;
 			v.ng = isect.dg.nn;
 		}
-		v.ns = bsdf->dgShading.nn;
+		v.ns = v.bsdf->dgShading.nn;
 		++nVerts;
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == static_cast<int>(vertices.size()))
