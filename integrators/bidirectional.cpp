@@ -598,9 +598,9 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 				break;
 		}
 		// Compute direct lighting pdf for first light vertex link
-		float directPdf = light->Pdf(eyePath[i].p, eyePath[i].ns,
-			Normalize(lightPath[0].p - eyePath[i].p)) / //FIXME
-			DistanceSquared(eyePath[i].p, lightPath[0].p) *
+		float directPdf = light->Pdf(eyePath[i - 1].p, eyePath[i - 1].ns,
+			Normalize(lightPath[0].p - eyePath[i - 1].p)) / //FIXME
+			DistanceSquared(eyePath[i - 1].p, lightPath[0].p) *
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
 		// Connect to light subpath
 		for (int j = 1; j <= nLight; ++j) {
