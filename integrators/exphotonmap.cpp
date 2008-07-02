@@ -47,7 +47,7 @@ EPhotonProcess::EPhotonProcess(u_int mp, const Point &P)
     foundPhotons = 0;
 }
 
-SWCSpectrum ExPhotonIntegrator::estimateE(
+Spectrum ExPhotonIntegrator::estimateE(
         KdTree<EPhoton, EPhotonProcess> *map, int count,
         const Point &p, const Normal &n) const {
     if (!map) return 0.f;
@@ -60,14 +60,10 @@ SWCSpectrum ExPhotonIntegrator::estimateE(
 
     // Accumulate irradiance value from nearby photons
     EClosePhoton *photons = proc.photons;
-    SWCSpectrum E(0.);
-	SWCSpectrum D65(&blackBodySPD);
+    Spectrum E(0.);
 	for (u_int i = 0; i < proc.foundPhotons; ++i) {
-		if (Dot(n, photons[i].photon->wi) > 0.) {
-			SWCSpectrum alpha = photons[i].photon->alpha;
-			alpha *= D65;
-            E += alpha;
-		}
+		if (Dot(n, photons[i].photon->wi) > 0.)
+            E += photons[i].photon->alpha;
 	}
 
     return E / (float(count) * md2 * M_PI);
@@ -95,12 +91,12 @@ void EPhotonProcess::operator()(const EPhoton &photon,
     }
 }
 
-SWCSpectrum ExPhotonIntegrator::LPhoton(
+Spectrum ExPhotonIntegrator::LPhoton(
         KdTree<EPhoton, EPhotonProcess> *map,
         int nPaths, int nLookup, BSDF *bsdf,
         const Intersection &isect, const Vector &wo,
         float maxDistSquared) const {
-    SWCSpectrum L(0.);
+    Spectrum L(0.);
 	if ((nPaths <= 0) || (!map)) return L;
 
     BxDFType diffuse = BxDFType(BSDF_REFLECTION |
@@ -124,7 +120,6 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
     Normal Nf = Dot(wo, bsdf->dgShading.nn) < 0 ? -bsdf->dgShading.nn :
             bsdf->dgShading.nn;
 
-	SWCSpectrum D65(&blackBodySPD);
 	// Dade - Glossy reflection/transmition is not done anymore with
 	// photonmap
     /*if (bsdf->NumComponents(BxDFType(BSDF_REFLECTION |
@@ -136,18 +131,16 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
                     BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION;
             float k = Ekernel(p, isect.dg.p, maxDistSquared);
 
-			SWCSpectrum alpha = p->alpha;
-			alpha *= D65;
+			Spectrum alpha = p->alpha;
 
             L += (k / nPaths) * bsdf->f(wo, p->wi, flag) * alpha;
         }
     } else */{
         // Compute exitant radiance from photons for diffuse surface
-        SWCSpectrum Lr(0.), Lt(0.);
+        Spectrum Lr(0.), Lt(0.);
 
         for (int i = 0; i < nFound; ++i) {			
-			SWCSpectrum alpha = photons[i].photon->alpha;
-			alpha *= D65;
+			Spectrum alpha = photons[i].photon->alpha;
 
             if (Dot(Nf, photons[i].photon->wi) > 0.f) {
                 float k = Ekernel(photons[i].photon, isect.dg.p,
@@ -160,8 +153,8 @@ SWCSpectrum ExPhotonIntegrator::LPhoton(
             }
         }
 
-        L += Lr * bsdf->rho(wo, BSDF_ALL_REFLECTION) * INV_PI +
-                Lt * bsdf->rho(wo, BSDF_ALL_TRANSMISSION) * INV_PI;
+        L += Lr * FromXYZ(bsdf->rho(wo, BSDF_ALL_REFLECTION).ToXYZ()) * INV_PI +
+                Lt * FromXYZ(bsdf->rho(wo, BSDF_ALL_TRANSMISSION).ToXYZ()) * INV_PI;
     }
 
     return L;
@@ -175,7 +168,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
         int gs, float ga,
 		RRStrategy rrstrategy, float rrcontprob,
 		bool dbgEnableDirect, bool dbgEnableCaustic,
-		bool dbgEnableIndirect, bool dbgEnableSpecular) : blackBodySPD(6503.6f) {
+		bool dbgEnableIndirect, bool dbgEnableSpecular) {
 	renderingMode = rm;
 	lightStrategy = st;
 
@@ -317,7 +310,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 
     // Declare radiance photon reflectance arrays
-    vector<SWCSpectrum> rpReflectances, rpTransmittances;
+    vector<Spectrum> rpReflectances, rpTransmittances;
 
 	boost::xtime lastUpdateTime;
 	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
@@ -416,7 +409,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                         photonBSDF->NumComponents(specularType));
                 if (hasNonSpecularGlossy) {
                     // Deposit photon at surface
-                    EPhoton photon(photonIsect.dg.p, FromXYZ(alpha.ToXYZ()), wo);
+                    EPhoton photon(photonIsect.dg.p, alpha, wo);
                     if (nIntersections == 1) {
 						if (finalGather && (!directDone)) {
 							// Deposit direct photon
@@ -462,9 +455,9 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                         Normal n = photonIsect.dg.nn;
                         if (Dot(n, photonRay.d) > 0.f) n = -n;
                         radiancePhotons.push_back(ERadiancePhoton(photonIsect.dg.p, n));
-                        SWCSpectrum rho_r = photonBSDF->rho(BSDF_ALL_REFLECTION);
+                        Spectrum rho_r = FromXYZ(photonBSDF->rho(BSDF_ALL_REFLECTION).ToXYZ());
                         rpReflectances.push_back(rho_r);
-                        SWCSpectrum rho_t = photonBSDF->rho(BSDF_ALL_TRANSMISSION);
+                        Spectrum rho_t = FromXYZ(photonBSDF->rho(BSDF_ALL_TRANSMISSION).ToXYZ());
                         rpTransmittances.push_back(rho_t);
                     }
                 }
@@ -527,24 +520,26 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 
             // Compute radiance for radiance photon _i_
             ERadiancePhoton &rp = radiancePhotons[i];
-            const SWCSpectrum &rho_r = rpReflectances[i];
-            const SWCSpectrum &rho_t = rpTransmittances[i];
-            SWCSpectrum E;
+            const Spectrum &rho_r = rpReflectances[i];
+            const Spectrum &rho_t = rpTransmittances[i];
+            Spectrum E;
             Point p = rp.p;
             Normal n = rp.n;
 
             if (!rho_r.Black()) {
-                E = estimateE(&directMap, nDirectPaths, p, n) +
-                        estimateE(indirectMap, nIndirectPaths, p, n) +
-                        estimateE(causticMap, nCausticPaths, p, n);
-                rp.Lo += FromXYZ((E * INV_PI * rho_r).ToXYZ());
+                E = estimateE(&directMap, nDirectPaths, p, n);
+				E += estimateE(indirectMap, nIndirectPaths, p, n);
+				E += estimateE(causticMap, nCausticPaths, p, n);
+
+                rp.Lo += E * INV_PI * rho_r;
             }
 
             if (!rho_t.Black()) {
-                E = estimateE(&directMap, nDirectPaths, p, -n) +
-                        estimateE(indirectMap, nIndirectPaths, p, -n) +
-                        estimateE(causticMap, nCausticPaths, p, -n);
-                rp.Lo += FromXYZ((E * INV_PI * rho_t).ToXYZ());
+                E = estimateE(&directMap, nDirectPaths, p, -n);
+				E += estimateE(indirectMap, nIndirectPaths, p, -n);
+				E += estimateE(causticMap, nCausticPaths, p, -n);
+
+                rp.Lo += E * INV_PI * rho_t;
             }
         }
 
@@ -689,8 +684,6 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 					for (u_int i = 0; i < nIndirSamplePhotons; ++i)
 						photonDirs[i] = proc.photons[i].photon->wi;
 
-					SWCSpectrum D65(&blackBodySPD);
-
 					// Use BSDF to do final gathering
 					SWCSpectrum Li = 0.;
 					// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", "Final gather rays traced"); // NOBOOK
@@ -740,21 +733,20 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 							radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
 							if (proc.photon) {
 								Lindir = proc.photon->Lo;
-								Lindir *= D65;
-							}
 
-							Lindir *= scene->Transmittance(bounceRay);
-							// Compute MIS weight for BSDF-sampled gather ray
-							// Compute PDF for photon-sampling of direction _wi_
-							float photonPdf = 0.f;
-							float conePdf = UniformConePdf(cosGatherAngle);
-							for (u_int j = 0; j < nIndirSamplePhotons; ++j)
-								if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
-									photonPdf += conePdf;
-							photonPdf /= nIndirSamplePhotons;
-							float wt = PowerHeuristic(gatherSamples, pdf,
-									gatherSamples, photonPdf);
-							Li += fr * Lindir * AbsDot(wi, n) * wt / pdf;
+								Lindir *= scene->Transmittance(bounceRay);
+								// Compute MIS weight for BSDF-sampled gather ray
+								// Compute PDF for photon-sampling of direction _wi_
+								float photonPdf = 0.f;
+								float conePdf = UniformConePdf(cosGatherAngle);
+								for (u_int j = 0; j < nIndirSamplePhotons; ++j)
+									if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
+										photonPdf += conePdf;
+								photonPdf /= nIndirSamplePhotons;
+								float wt = PowerHeuristic(gatherSamples, pdf,
+										gatherSamples, photonPdf);
+								Li += fr * Lindir * AbsDot(wi, n) * wt / pdf;
+							}
 						}
 					}
 					L += Li / gatherSamples;
@@ -819,15 +811,14 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 							radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
 							if (proc.photon) {
 								Lindir = proc.photon->Lo;
-								Lindir *= D65;
-							}
 
-							Lindir *= scene->Transmittance(bounceRay);
-							// Compute MIS weight for photon-sampled gather ray
-							float bsdfPdf = bsdf->Pdf(wo, wi);
-							float wt = PowerHeuristic(gatherSamples, photonPdf,
-									gatherSamples, bsdfPdf);
-							Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
+								Lindir *= scene->Transmittance(bounceRay);
+								// Compute MIS weight for photon-sampled gather ray
+								float bsdfPdf = bsdf->Pdf(wo, wi);
+								float wt = PowerHeuristic(gatherSamples, photonPdf,
+										gatherSamples, bsdfPdf);
+								Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
+							}
 						}
 					}
 
@@ -919,7 +910,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 			scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 }
 
-SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
+void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
@@ -927,7 +918,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 	// Declare common path integration variables
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
-	SWCSpectrum L(0.0f);
 	XYZColor color;
 	float V = .1f;
 	bool specularBounce = true, specular = true;
@@ -938,7 +928,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		if (!scene->Intersect(ray, &isect)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
-				L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
+				SWCSpectrum L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 				color = L.ToXYZ();
 				if (color.y() > 0.f)
 					sample->AddContribution(sample->imageX, sample->imageY,
@@ -954,7 +944,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					Le += scene->lights[i]->Le(ray);
 				Le *= pathThroughput;
-				L += Le;
 				color = Le.ToXYZ();
 			}
 			// Set alpha channel
@@ -981,7 +970,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		if (specularBounce) {
 			SWCSpectrum Le(isect.Le(wo));
 			Le *= pathThroughput;
-			L += Le;
 			color = Le.ToXYZ();
 			if (color.y() > 0.f)
 				sample->AddContribution(sample->imageX, sample->imageY,
@@ -1036,7 +1024,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 					Ll = 0.f;
 			}
 			Ll *= pathThroughput;
-			L += Ll;
 			color = Ll.ToXYZ();
 			if (color.y() > 0.f)
 				sample->AddContribution(sample->imageX, sample->imageY,
@@ -1049,7 +1036,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 			SWCSpectrum Lc = LPhoton(causticMap, nCausticPaths, nLookup, bsdf,
 					isect, wo, maxDistSquared);
 			Lc *= pathThroughput;
-			L += Lc;
 			color = Lc.ToXYZ();
 			if (color.y() > 0.f)
 				sample->AddContribution(sample->imageX, sample->imageY,
@@ -1083,21 +1069,17 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 
 						radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
 						if (proc.photon) {
-							SWCSpectrum D65(&blackBodySPD);
-
 							Lindir = proc.photon->Lo;
-							Lindir *= D65;
+
+							Lindir *= scene->Transmittance(bounceRay);
+							SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
+
+							Li *= pathThroughput;
+							color = Li.ToXYZ();
+							if (color.y() > 0.f)
+								sample->AddContribution(sample->imageX, sample->imageY,
+									color, alpha ? *alpha : 1.f, V);
 						}
-
-						Lindir *= scene->Transmittance(bounceRay);
-						SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
-
-						Li *= pathThroughput;
-						L += Li;
-						color = Li.ToXYZ();
-						if (color.y() > 0.f)
-							sample->AddContribution(sample->imageX, sample->imageY,
-								color, alpha ? *alpha : 1.f, V);
 					}
 				}
 			}
@@ -1143,8 +1125,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 
 		ray = RayDifferential(p, wi);
 	}
-
-	return L;
 }
 
 SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {

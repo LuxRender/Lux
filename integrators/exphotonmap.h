@@ -41,8 +41,12 @@ struct EClosePhoton;
 // Local Declarations
 
 struct EPhoton {
-	EPhoton(const Point &pp, const Spectrum &wt, const Vector & w)
-			: p(pp), alpha(wt), wi(w) {
+	EPhoton(const Point &pp, const SWCSpectrum &wt, const Vector & w)
+			: p(pp), wi(w) {
+		Spectrum c1 = FromXYZ(wt.ToXYZ());
+		Spectrum c2 = FromXYZ(SWCSpectrum(c1).ToXYZ());
+		float k = c1.y() / c2.y();
+		alpha = k * c1;
 	}
 
 	EPhoton() {
@@ -160,15 +164,15 @@ private:
 				(found == 0 || found < shot / 1024));
 	}
 
-	SWCSpectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
+	Spectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
 			int nPaths, int nLookup, BSDF *bsdf, const Intersection &isect,
 			const Vector &w, float maxDistSquared) const;
-	SWCSpectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
+	Spectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
 			const Point &p, const Normal &n) const;
     SWCSpectrum LiDirectLigthtingMode(const int specularDepth, const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
-    SWCSpectrum LiPathMode(const Scene *scene,
+    void LiPathMode(const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
 
@@ -189,9 +193,6 @@ private:
 	// Dade - debug flags
 	bool debugEnableDirect, debugEnableCaustic,
 			debugEnableIndirect, debugEnableSpecular;
-
-	// Dade - used to translate Spectrum in SWCSpectrum
-	BlackbodySPD blackBodySPD;
 
 	// Declare sample parameters for light source sampling
 	int sampleOffset;
