@@ -28,62 +28,106 @@
 using namespace lux;
 
 // DistributedPath Method Definitions
-DistributedPath::DistributedPath(LightStrategy st, int dd, int gd, int sd) {
-	diffuseDepth = dd;
-	glossyDepth = gd;
-	specularDepth = sd;
+DistributedPath::DistributedPath(LightStrategy st, bool da, int ds, bool dd, bool dg, bool ida, int ids, bool idd, bool idg,
+								 int drd, int drs, int dtd, int dts, int grd, int grs, int gtd, int gts, int srd, int std) {
 	lightStrategy = st;
+
+	directAll = da;
+	directSamples = ds;
+	directDiffuse = dd;
+	directGlossy = dg;
+	indirectAll = ida;
+	indirectSamples = ids;
+	indirectDiffuse = idd;
+	indirectGlossy = idg;
+	diffusereflectDepth = drd;
+	diffusereflectSamples = drs;
+	diffuserefractDepth = dtd;
+	diffuserefractSamples = dts;
+	glossyreflectDepth = grd;
+	glossyreflectSamples = grs;
+	glossyrefractDepth = gtd;
+	glossyrefractSamples = gts;
+	specularreflectDepth = srd;
+	specularrefractDepth = std;
 }
 
 void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene->lights.size() > 7)
+		if (scene->lights.size() > 16)
 			lightStrategy = SAMPLE_ONE_UNIFORM;
 		else
 			lightStrategy = SAMPLE_ALL_UNIFORM;
 	}
 
-	vector<u_int> structure;
+	// determine maximum depth for samples
+	maxDepth = diffusereflectDepth;
+	if(diffuserefractDepth > maxDepth) maxDepth = diffuserefractDepth;
+	if(glossyreflectDepth > maxDepth) maxDepth = glossyreflectDepth;
+	if(glossyrefractDepth > maxDepth) maxDepth = glossyrefractDepth;
+	if(specularreflectDepth > maxDepth) maxDepth = specularreflectDepth;
+	if(specularrefractDepth > maxDepth) maxDepth = specularrefractDepth;
 
-	structure.push_back(2); // diffuse reflection direction sample for bsdf
-	structure.push_back(1); // diffuse reflection component sample for bsdf
-	structure.push_back(2); // diffuse transmission direction sample for bsdf
-	structure.push_back(1); // diffuse transmission component sample for bsdf
-	structure.push_back(2); // glossy reflection direction sample for bsdf
-	structure.push_back(1); // glossy reflection component sample for bsdf
-	structure.push_back(2); // glossy transmission direction sample for bsdf
-	structure.push_back(1); // glossy transmission component sample for bsdf
+	// Direct lighting
+	// eye vertex
+	lightSampleOffset = sample->Add2D(directSamples);
+	lightNumOffset = sample->Add1D(directSamples);
+	bsdfSampleOffset = sample->Add2D(directSamples);
+	bsdfComponentOffset = sample->Add1D(directSamples);
+	// remaining vertices
+	indirectlightSampleOffset = sample->Add2D(indirectSamples * maxDepth);
+	indirectlightNumOffset = sample->Add1D(indirectSamples * maxDepth);
+	indirectbsdfSampleOffset = sample->Add2D(indirectSamples * maxDepth);
+	indirectbsdfComponentOffset = sample->Add1D(indirectSamples * maxDepth);
 
-	// Dade - allocate and request samples for sampling one light
-	structure.push_back(2);	// light position sample
-	structure.push_back(1);	// light number/portal sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
+	// Diffuse reflection
+	// eye vertex
+	diffuse_reflectSampleOffset = sample->Add2D(diffusereflectSamples);
+	diffuse_reflectComponentOffset = sample->Add1D(diffusereflectSamples);
+	// remaining vertices
+	indirectdiffuse_reflectSampleOffset = sample->Add2D(diffusereflectDepth);
+	indirectdiffuse_reflectComponentOffset = sample->Add1D(diffusereflectDepth);
 
-	int maxDepth = diffuseDepth;
-	if(glossyDepth > diffuseDepth) maxDepth = glossyDepth;
-	if(specularDepth > glossyDepth) maxDepth = specularDepth;
-	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+	// Diffuse refraction
+	// eye vertex
+	diffuse_refractSampleOffset = sample->Add2D(diffuserefractSamples);
+	diffuse_refractComponentOffset = sample->Add1D(diffuserefractSamples);
+	// remaining vertices
+	indirectdiffuse_refractSampleOffset = sample->Add2D(diffuserefractDepth);
+	indirectdiffuse_refractComponentOffset = sample->Add1D(diffuserefractDepth);
+
+	// Glossy reflection
+	// eye vertex
+	glossy_reflectSampleOffset = sample->Add2D(glossyreflectSamples);
+	glossy_reflectComponentOffset = sample->Add1D(glossyreflectSamples);
+	// remaining vertices
+	indirectglossy_reflectSampleOffset = sample->Add2D(glossyreflectDepth);
+	indirectglossy_reflectComponentOffset = sample->Add1D(glossyreflectDepth);
+
+	// Glossy refraction
+	// eye vertex
+	glossy_refractSampleOffset = sample->Add2D(glossyrefractSamples);
+	glossy_refractComponentOffset = sample->Add1D(glossyrefractSamples);
+	// remaining vertices
+	indirectglossy_refractSampleOffset = sample->Add2D(glossyrefractDepth);
+	indirectglossy_refractComponentOffset = sample->Add1D(glossyrefractDepth);
+
 }
 
 SWCSpectrum DistributedPath::LiInternal(const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha, int rayDepth, bool includeEmit, bool caustic) const {
+		float *alpha, int rayDepth, bool includeEmit) const {
 	Intersection isect;
 	SWCSpectrum L(0.);
 	if (alpha) *alpha = 1.;
 
 	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
-		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
-		float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
-		lightSample = &sampleData[12];
-		lightNum = &sampleData[14];
-		bsdfSample = &sampleData[15];
-		bsdfComponent = &sampleData[17];
-
+	//	float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
+		
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * bsdfComponent[0] - 1.f));
+//		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * bsdfComponent[0] - 1.f));
+		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * lux::random::floatValue() - 1.f)); // TODO FIX
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -94,20 +138,45 @@ SWCSpectrum DistributedPath::LiInternal(const Scene *scene,
 
 		// Compute direct lighting for _DistributedPath_ integrator
 		if (scene->lights.size() > 0) {
-			// Apply direct lighting strategy
-			switch (lightStrategy) {
-				case SAMPLE_ALL_UNIFORM:
-					L += UniformSampleAllLights(scene, p, n,
-							wo, bsdf, sample,
-							lightSample, lightNum, bsdfSample, bsdfComponent);
-					break;
-				case SAMPLE_ONE_UNIFORM:
-					L += UniformSampleOneLight(scene, p, n,
-							wo, bsdf, sample,
-							lightSample, lightNum, bsdfSample, bsdfComponent);
-					break;
-				default:
-					break;
+			int samples = directSamples;
+			if(rayDepth > 0) {
+				samples = indirectSamples;
+			}
+			float invsamples = 1.f/samples;
+			float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
+			for(int i=0; i<samples; i++) {
+				// get samples
+				if(rayDepth > 0) {
+					lightSample = &sample->twoD[indirectlightSampleOffset][2*i * rayDepth];
+					lightNum = &sample->oneD[indirectlightNumOffset][i * rayDepth];
+					bsdfSample = &sample->twoD[indirectbsdfSampleOffset][2*i * rayDepth]; 
+					bsdfComponent = &sample->oneD[indirectbsdfComponentOffset][i * rayDepth]; 
+				} else {
+					lightSample = &sample->twoD[lightSampleOffset][2*i];
+					lightNum = &sample->oneD[lightNumOffset][i];
+					bsdfSample = &sample->twoD[bsdfSampleOffset][2*i]; 
+					bsdfComponent = &sample->oneD[bsdfComponentOffset][i]; 
+				}
+
+				BxDFType directflags = BxDFType(BSDF_ALL);
+
+				// Apply direct lighting strategy
+				switch (lightStrategy) {
+					case SAMPLE_ALL_UNIFORM:
+						for (u_int i = 0; i < scene->lights.size(); ++i) {
+							L += invsamples * EstimateDirect(scene, scene->lights[i], p, n, wo, bsdf,
+								lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent );
+							// TODO add bsdf selection flags
+						}
+						break;
+					case SAMPLE_ONE_UNIFORM:
+						L += invsamples * UniformSampleOneLight(scene, p, n,
+								wo, bsdf, sample,
+								lightSample, lightNum, bsdfSample, bsdfComponent);
+						break;
+					default:
+						break;
+				}
 			}
 		}
 
@@ -115,56 +184,132 @@ SWCSpectrum DistributedPath::LiInternal(const Scene *scene,
 		float pdf;
 		Vector wi;
 		SWCSpectrum f;
+		int samples;
+		float invsamples;
 
 		// trace Diffuse reflection & transmission rays
-		if (rayDepth < diffuseDepth) {
-			f = bsdf->Sample_f(wo, &wi,
-				sampleData[0], sampleData[1], sampleData[2],
-				&pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags);
-			if (pdf != .0f && !f.Black()) {
-				RayDifferential rd(p, wi);
-				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, false, false) * f * AbsDot(wi, n) / pdf;
+		if (rayDepth < diffusereflectDepth) {
+			if(rayDepth > 0) samples = 1;
+			else samples = diffusereflectSamples;
+			invsamples = 1.f/samples;
+
+			for(int i=0; i<samples; i++) {
+				float u1, u2, u3;
+				if(rayDepth > 0) {
+					u1 = sample->twoD[indirectdiffuse_reflectSampleOffset][2*i * rayDepth];
+					u2 = sample->twoD[indirectdiffuse_reflectSampleOffset][(2*i * rayDepth)+1];
+					u3 = sample->oneD[indirectdiffuse_reflectComponentOffset][i * rayDepth];
+				} else {
+					u1 = sample->twoD[diffuse_reflectSampleOffset][2*i];
+					u2 = sample->twoD[diffuse_reflectSampleOffset][2*i+1];
+					u3 = sample->oneD[diffuse_reflectComponentOffset][i];
+				} 
+
+				f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+					&pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags);
+				if (pdf != .0f && !f.Black()) {
+					RayDifferential rd(p, wi);
+					L += invsamples * LiInternal(scene, rd, sample, alpha, rayDepth + 1, false)
+						* f * AbsDot(wi, n) / pdf;
+				}
 			}
-			f = bsdf->Sample_f(wo, &wi,
-				sampleData[3], sampleData[4], sampleData[5],
-				&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags);
-			if (pdf != .0f && !f.Black()) {
-				RayDifferential rd(p, wi);
-				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, false, false) * f * AbsDot(wi, n) / pdf;
+		}
+		if (rayDepth < diffuserefractDepth) {
+			if(rayDepth > 0) samples = 1;
+			else samples = diffuserefractSamples;
+			invsamples = 1.f/samples;
+
+			for(int i=0; i<samples; i++) {
+				float u1, u2, u3;
+				if(rayDepth > 0) {
+					u1 = sample->twoD[indirectdiffuse_refractSampleOffset][2*i * rayDepth];
+					u2 = sample->twoD[indirectdiffuse_refractSampleOffset][(2*i * rayDepth)+1];
+					u3 = sample->oneD[indirectdiffuse_refractComponentOffset][i * rayDepth];
+				} else {
+					u1 = sample->twoD[diffuse_refractSampleOffset][2*i];
+					u2 = sample->twoD[diffuse_refractSampleOffset][2*i+1];
+					u3 = sample->oneD[diffuse_refractComponentOffset][i];
+				} 
+
+				f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags);
+				if (pdf != .0f && !f.Black()) {
+					RayDifferential rd(p, wi);
+					L += invsamples * LiInternal(scene, rd, sample, alpha, rayDepth + 1, false)
+						* f * AbsDot(wi, n) / pdf;
+				}
 			}
 		}
 
 		// trace Glossy reflection & transmission rays
-		if (rayDepth < glossyDepth) {
-			f = bsdf->Sample_f(wo, &wi,
-				sampleData[6], sampleData[7], sampleData[8],
-				&pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags);
-			if (pdf != .0f && !f.Black()) {
-				RayDifferential rd(p, wi);
-				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, false, true) * f * AbsDot(wi, n) / pdf;
+		if (rayDepth < glossyreflectDepth) {
+			if(rayDepth > 0) samples = 1;
+			else samples = glossyreflectSamples;
+			invsamples = 1.f/samples;
+
+			for(int i=0; i<samples; i++) {
+				float u1, u2, u3;
+				if(rayDepth > 0) {
+					u1 = sample->twoD[indirectglossy_reflectSampleOffset][2*i * rayDepth];
+					u2 = sample->twoD[indirectglossy_reflectSampleOffset][(2*i * rayDepth)+1];
+					u3 = sample->oneD[indirectglossy_reflectComponentOffset][i * rayDepth];
+				} else {
+					u1 = sample->twoD[glossy_reflectSampleOffset][2*i];
+					u2 = sample->twoD[glossy_reflectSampleOffset][2*i+1];
+					u3 = sample->oneD[glossy_reflectComponentOffset][i];
+				} 
+
+				f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+					&pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags);
+				if (pdf != .0f && !f.Black()) {
+					RayDifferential rd(p, wi);
+					L += invsamples * LiInternal(scene, rd, sample, alpha, rayDepth + 1, false)
+						* f * AbsDot(wi, n) / pdf;
+				}
 			}
-			f = bsdf->Sample_f(wo, &wi,
-				sampleData[9], sampleData[10], sampleData[11],
-				&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags);
-			if (pdf != .0f && !f.Black()) {
-				RayDifferential rd(p, wi);
-				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, false, true) * f * AbsDot(wi, n) / pdf;
+		}
+		if (rayDepth < glossyrefractDepth) {
+			if(rayDepth > 0) samples = 1;
+			else samples = glossyrefractSamples;
+			invsamples = 1.f/samples;
+
+			for(int i=0; i<samples; i++) {
+				float u1, u2, u3;
+				if(rayDepth > 0) {
+					u1 = sample->twoD[indirectglossy_refractSampleOffset][2*i * rayDepth];
+					u2 = sample->twoD[indirectglossy_refractSampleOffset][(2*i * rayDepth)+1];
+					u3 = sample->oneD[indirectglossy_refractComponentOffset][i * rayDepth];
+				} else {
+					u1 = sample->twoD[glossy_refractSampleOffset][2*i];
+					u2 = sample->twoD[glossy_refractSampleOffset][2*i+1];
+					u3 = sample->oneD[glossy_refractComponentOffset][i];
+				} 
+
+				f = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags);
+				if (pdf != .0f && !f.Black()) {
+					RayDifferential rd(p, wi);
+					L += invsamples * LiInternal(scene, rd, sample, alpha, rayDepth + 1, false)
+						* f * AbsDot(wi, n) / pdf;
+				}
 			}
 		} 
 		
 		// trace specular reflection & transmission rays
-		if (rayDepth < specularDepth) {
+		if (rayDepth < specularreflectDepth) {
 			f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
 			if (!f.Black()) {
 				RayDifferential rd(p, wi);
-				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, true, true) * f * AbsDot(wi, n);
+				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, true) * f * AbsDot(wi, n);
 			}
+		}
+		if (rayDepth < specularrefractDepth) {
 			f = bsdf->Sample_f(wo, &wi,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
 			if (!f.Black()) {
 				RayDifferential rd(p, wi);
-				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, true, true) * f * AbsDot(wi, n);
+				L += LiInternal(scene, rd, sample, alpha, rayDepth + 1, true) * f * AbsDot(wi, n);
 			}
 		} 
 
@@ -184,16 +329,37 @@ SWCSpectrum DistributedPath::Li(const Scene *scene,
 	SampleGuard guard(sample->sampler, sample);
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		LiInternal(scene, ray, sample, alpha, 0, true, true).ToXYZ(),
+		LiInternal(scene, ray, sample, alpha, 0, true).ToXYZ(),
 		alpha ? *alpha : 1.f);
 
 	return SWCSpectrum(-1.f);
 }
 
 SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &params) {
-	int diffusedepth = params.FindOneInt("diffusedepth", 3);
-	int glossydepth = params.FindOneInt("glossydepth", 2);
-	int speculardepth = params.FindOneInt("speculardepth", 5);
+	// DirectLight Sampling
+	bool directall = params.FindOneBool("directsampleall", true);
+	int directsamples = params.FindOneInt("directsamples", 1);
+	bool directdiffuse = params.FindOneBool("directdiffuse", true);
+	bool directglossy = params.FindOneBool("directglossy", true);
+	// Indirect DirectLight Sampling
+	bool indirectall = params.FindOneBool("indirectsampleall", false);
+	int indirectsamples = params.FindOneInt("indirectsamples", 1);
+	bool indirectdiffuse = params.FindOneBool("indirectdiffuse", true);
+	bool indirectglossy = params.FindOneBool("indirectglossy", true);
+
+	// Diffuse
+	int diffusereflectdepth = params.FindOneInt("diffusereflectdepth", 3);
+	int diffusereflectsamples = params.FindOneInt("diffusereflectsamples", 1);
+	int diffuserefractdepth = params.FindOneInt("diffuserefractdepth", 5);
+	int diffuserefractsamples = params.FindOneInt("diffuserefractsamples", 1);
+	// Glossy
+	int glossyreflectdepth = params.FindOneInt("glossyreflectdepth", 2);
+	int glossyreflectsamples = params.FindOneInt("glossyreflectsamples", 1);
+	int glossyrefractdepth = params.FindOneInt("glossyrefractdepth", 5);
+	int glossyrefractsamples = params.FindOneInt("glossyrefractsamples", 1);
+	// Specular
+	int specularreflectdepth = params.FindOneInt("specularreflectdepth", 2);
+	int specularrefractdepth = params.FindOneInt("specularrefractdepth", 5);
 
 	LightStrategy estrategy;
 	string st = params.FindOneString("strategy", "auto");
@@ -207,5 +373,8 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 		estrategy = SAMPLE_AUTOMATIC;
 	}
 
-	return new DistributedPath(estrategy, diffusedepth, glossydepth, speculardepth);
+	return new DistributedPath(estrategy, directall, directsamples,
+		directdiffuse, directglossy, indirectall, indirectsamples, indirectdiffuse, indirectglossy,
+		diffusereflectdepth, diffusereflectsamples, diffuserefractdepth, diffuserefractsamples, glossyreflectdepth, glossyreflectsamples, 
+		glossyrefractdepth, glossyrefractsamples, specularreflectdepth, specularrefractdepth);
 }

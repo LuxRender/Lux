@@ -34,9 +34,9 @@ namespace lux
 Integrator::~Integrator() {
 }
 // Integrator Utility Functions
-static SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs);
+//static SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
+//	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+//	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs);
 
 SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
@@ -232,7 +232,7 @@ SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 	}
 	return L;
 }
-static SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
+SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
 {
@@ -287,6 +287,65 @@ static SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 		}
 	}
 	
+	return Ld;
+}
+
+SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs, BxDFType flags)
+{
+	SWCSpectrum Ld(0.);
+	// Sample light source with multiple importance sampling
+	Vector wi;
+	float lightPdf, bsdfPdf;
+	VisibilityTester visibility;
+	SWCSpectrum Li = light->Sample_L(p, n,
+		ls1, ls2, ls3, &wi, &lightPdf, &visibility);
+	if (lightPdf > 0. && !Li.Black()) {
+		SWCSpectrum f = bsdf->f(wo, wi, flags);
+		//SWCSpectrum f = bsdf->f(wo, wi);
+		SWCSpectrum fO;
+		if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
+			// Add light's contribution to reflected radiance
+			Li *= visibility.Transmittance(scene);
+			Li *= fO;
+			if (light->IsDeltaLight())
+				Ld += f * Li * AbsDot(wi, n) / lightPdf;
+			else {
+				bsdfPdf = bsdf->Pdf(wo, wi, flags);
+				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
+				Ld += f * Li * AbsDot(wi, n) * weight / lightPdf;
+			}
+		}
+	}
+
+	// Sample BSDF with multiple importance sampling
+	if (!light->IsDeltaLight()) {
+		BxDFType bflags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
+		SWCSpectrum f = bsdf->Sample_f(wo, &wi,
+			bs1, bs2, bcs, &bsdfPdf, bflags);
+		if (!f.Black() && bsdfPdf > 0.) {
+			lightPdf = light->Pdf(p, n, wi);
+			if (lightPdf > 0.) {
+				// Add light contribution from BSDF sampling
+				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+				Intersection lightIsect;
+				SWCSpectrum Li(0.f);
+				RayDifferential ray(p, wi);
+				if (scene->Intersect(ray, &lightIsect)) {
+					if (lightIsect.primitive->GetAreaLight() == light)
+						Li = lightIsect.Le(-wi);
+				}
+				else
+					Li = light->Le(ray);
+				if (!Li.Black()) {
+					Li *= scene->Transmittance(ray);
+					Ld += f * Li * AbsDot(wi, n) * weight / bsdfPdf;
+				}
+			}
+		}
+	}
+
 	return Ld;
 }
 

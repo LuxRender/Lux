@@ -25,6 +25,7 @@
 // transport.h*
 #include "lux.h"
 #include "spectrum.h"
+#include "bxdf.h"
 
 namespace lux
 {
@@ -63,6 +64,13 @@ public:
 		const Ray &ray, const Sample *sample,
 		float *alpha) const = 0;
 };
+
+ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs);
+ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs, BxDFType flags);
  SWCSpectrum UniformSampleAllLights(const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, float *lightSample = NULL,
