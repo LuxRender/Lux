@@ -37,43 +37,70 @@ using namespace lux;
 class PerspectiveBxDF : public BxDF
 {
 public:
-	PerspectiveBxDF(bool lens, float FD, float f, const Point &pL, const Transform &R2C, float xW, float yH) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens), FocalDistance(FD), fov(f), xWidth(xW), yHeight(yH), p(pL), RasterToCamera(R2C) {}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return fabsf(wi.x / wi.z) > 1.f || fabsf(wi.y / wi.z) > 1.f ? 0.f : 1.f;}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	PerspectiveBxDF(bool lens, float FD, float f, float A, const Point &pL,
+		const Transform &R2C, float xW, float yH) :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens),
+		FocalDistance(FD), fov(f), xWidth(xW), yHeight(yH), Area(A),
+		p(pL), RasterToCamera(R2C) {}
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const
+	{
+		Vector wi0(wi);
+		wi0.y = -wi0.y;//FIXME
+		if (hasLens) {
+			Point pF(p + wi * (FocalDistance / wi.z));
+			wi0 *= FocalDistance / wi.z;
+			wi0 += Vector(p.x, p.y, p.z);
+		}
+		wi0 *= RasterToCamera(Point(0, 0, 0)).z / wi0.z;
+		Point p0(RasterToCamera.GetInverse()(Point(wi0.x, wi0.y, wi0.z)));
+		if (p0.x < 0.f || p0.x > xWidth || p0.y < 0.f || p0.y > yHeight)
+			return SWCSpectrum(0.f);
+		else {
+			const float cos = Normalize(wi0).z;
+			const float cos2 = cos * cos;
+			return SWCSpectrum(xWidth * yHeight / (Area * cos2 * cos2));
+		}
+	}
+	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		Point pS(RasterToCamera(Point(u1 * xWidth, u2 * yHeight, 0.f)));
 		*wi = Vector(pS.x, pS.y, pS.z);
+		const float cos = Normalize(*wi).z;
+		const float cos2 = cos * cos;
 		if (hasLens) {
 			Point pF(Point(0, 0, 0) + *wi * (FocalDistance / wi->z));
 			*wi = pF - p;
 		}
 		*wi = Normalize(*wi);
 		wi->y = -wi->y;//FIXME
-		*pdf = UniformConePdf(fov * 0.5f);//FIXME
+		*pdf = Area * cos2 * cos;
 		if (pdfBack)
 			*pdfBack = *pdf;//FIXME
-		return 1.f;
+		return SWCSpectrum(xWidth * yHeight / (Area * cos2 * cos2));
 	}
 	float Pdf(const Vector &wi, const Vector &wo) const
 	{
+		Vector wi0(wi);
+		wi0.y = -wi0.y;//FIXME
 		if (hasLens) {
-			Vector woL(wo);
-			woL.y = -woL.y;
-			Point pFC(p + woL * (FocalDistance / woL.z));
-			if (fabsf(pFC.x / pFC.z) > 1.f || fabsf(pFC.y / pFC.z) > 1.f)
-				return 0.f;
-			else
-				return UniformConePdf(fov * 0.5f);//FIXME
-		} else {
-			if (fabsf(wo.x / wo.z) > 1.f || fabsf(wo.y / wo.z) > 1.f)
-				return 0.f;
-			else
-				return UniformConePdf(fov * 0.5f);//FIXME
+			Point pF(p + wi * (FocalDistance / wi.z));
+			wi0 *= FocalDistance / wi.z;
+			wi0 += Vector(p.x, p.y, p.z);
+		}
+		wi0 *= RasterToCamera(Point(0, 0, 0)).z / wi0.z;
+		Point p0(RasterToCamera.GetInverse()(Point(wi0.x, wi0.y, wi0.z)));
+		if (p0.x < 0.f || p0.x > xWidth || p0.y < 0.f || p0.y > yHeight)
+			return 0.f;
+		else {
+			const float cos = Normalize(wi0).z;
+			const float cos2 = cos * cos;
+			return Area * cos2 * cos;
 		}
 	}
 private:
 	bool hasLens;
-	float FocalDistance, fov, xWidth, yHeight;
+	float FocalDistance, fov, xWidth, yHeight, Area;
 	Point p;
 	const Transform &RasterToCamera;
 };
@@ -220,9 +247,11 @@ SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, float u1, float u2, 
 	Normal ns(CameraToWorld(Normal(0, 0, 1)));
 	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)(LensRadius > 0.f, FocalDistance, fov, psC, RasterToCamera, xPixelWidth, yPixelHeight));
+	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+		xWidth * yHeight / (R * R), fov, psC, RasterToCamera,
+		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
-	return SWCSpectrum(1.f);
+	return SWCSpectrum(1.f / posPdf);
 }
 SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const
 {
@@ -234,11 +263,13 @@ SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, const Point &p, cons
 	Normal ns(CameraToWorld(Normal(0, 0, 1)));
 	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)(LensRadius > 0.f, FocalDistance, fov, psC, RasterToCamera, xPixelWidth, yPixelHeight));
+	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+		xWidth * yHeight / (R * R), fov, psC, RasterToCamera,
+		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
 	visibility->SetSegment(p, ps);
-	return SWCSpectrum(1.f);
+	return SWCSpectrum(1.f / posPdf);
 }
 float PerspectiveCamera::Pdf(const Point &p, const Normal &n, const Vector &wi) const
 {
