@@ -51,6 +51,7 @@ public:
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
+
 	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
 	SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
 
@@ -58,6 +59,8 @@ public:
 		const ParamSet &paramSet);
 
 private:
+	bool checkPortals(Ray portalRay) const;
+
 	// SunLight Private Data
 	Vector sundir;
 	// XY Vectors for cone sampling

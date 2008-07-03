@@ -133,6 +133,7 @@ SunLight::SunLight(const Transform &light2world,
     delete k_waCurve;
     delete solCurve;
 }
+
 SWCSpectrum SunLight::Le(const RayDifferential &r) const {
 	Vector w = r.d;
 	if(cosThetaMax < 1.0f && Dot(w,sundir) > cosThetaMax)
@@ -140,6 +141,7 @@ SWCSpectrum SunLight::Le(const RayDifferential &r) const {
 	else
 		return 0.;
 }
+
 SWCSpectrum SunLight::Le(const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
@@ -165,6 +167,28 @@ SWCSpectrum SunLight::Le(const Scene *scene, const Ray &r,
 	return LSPD;
 }
 
+bool SunLight::checkPortals(Ray portalRay) const {
+	if (!havePortalShape)
+		return true;
+
+	float tHit;
+	DifferentialGeometry portalDGeom;
+	bool found = false;
+	for (int i = 0; i < nrPortalShapes; ++i) {
+		// Dade - I need to use Intersect instead of IntersectP
+		// because of the normal
+		if (PortalShapes[i]->Intersect(portalRay, &tHit, &portalDGeom)) {
+			// Dade - found a valid portal, check the orientation
+			if (Dot(portalRay.d, portalDGeom.nn) < 0.f) {
+				found = true;
+				break;
+			}
+		}
+	}
+
+	return found;
+}
+
 SWCSpectrum SunLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	if(cosThetaMax == 1) {
@@ -174,47 +198,85 @@ SWCSpectrum SunLight::Sample_L(const Point &p, float u1, float u2, float u3,
 		*wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
 		*pdf = UniformConePdf(cosThetaMax);
 		visibility->SetRay(p, *wi);
+
+		// Dade - check if the portals are excluding this ray
+		if (!checkPortals(Ray(p, *wi)))
+			return SWCSpectrum(0.f);
+
 		return LSPD;
 	}
 }
+
 SWCSpectrum SunLight::Sample_L(const Point &p,
 		Vector *wi, VisibilityTester *visibility) const {
 	if(cosThetaMax == 1) {
 		*wi = sundir;
 		visibility->SetRay(p, *wi);
+
+		// Dade - check if the portals are excluding this ray
+		if (!checkPortals(Ray(p, *wi)))
+			return SWCSpectrum(0.f);
+
 		return LSPD;
 	} else {
 		float pdf;
 		SWCSpectrum Le = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
 			lux::random::floatValue(), wi, &pdf, visibility);
-		if (pdf == 0.f) return Spectrum(0.f);
+		if ((pdf == 0.f) || Le.Black()) return SWCSpectrum(0.f);
+
 		return Le / pdf;
 	}
 }
+
 float SunLight::Pdf(const Point &, const Vector &) const {
-	if(cosThetaMax == 1) {
+	if(cosThetaMax == 1)
 		return 0.;
-	} else {
+	else
 		return UniformConePdf(cosThetaMax);
-	}
 }
-SWCSpectrum SunLight::Sample_L(const Scene *scene,											// TODO - radiance - add portal implementation?
+
+SWCSpectrum SunLight::Sample_L(const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
-	// Choose point on disk oriented toward infinite light direction
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	float d1, d2;
-	ConcentricSampleDisk(u1, u2, &d1, &d2);
-	Point Pdisk =
-		worldCenter + worldRadius * (d1 * x + d2 * y);
-	// Set ray origin and direction for infinite light ray
-	ray->o = Pdisk + worldRadius * sundir;
-	ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
-	*pdf = UniformConePdf(cosThetaMax) / (M_PI * worldRadius * worldRadius);
-	return LSPD;
+	if (!havePortalShape) {
+		// Choose point on disk oriented toward infinite light direction
+		Point worldCenter;
+		float worldRadius;
+		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+		float d1, d2;
+		ConcentricSampleDisk(u1, u2, &d1, &d2);
+		Point Pdisk =
+			worldCenter + worldRadius * (d1 * x + d2 * y);
+		// Set ray origin and direction for infinite light ray
+		ray->o = Pdisk + worldRadius * sundir;
+		ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
+		*pdf = UniformConePdf(cosThetaMax) / (M_PI * worldRadius * worldRadius);
+
+		return LSPD;
+	} else {
+		// Dade - choose a random portal. This strategy is quite bad if there
+		// is more than one portal.
+		int shapeidx = 0;
+		if(nrPortalShapes > 1) 
+			shapeidx = min<float>(nrPortalShapes - 1,
+					Floor2Int(lux::random::floatValue() * nrPortalShapes));
+
+		Normal ns;
+		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, &ns);
+		ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
+
+		float pdfSun = UniformConePdf(cosThetaMax);
+		float pdfPortal = PortalShapes[shapeidx]->Pdf(ray->o) / nrPortalShapes;
+		
+		*pdf = pdfSun * pdfPortal;
+
+		if (Dot(ray->d, ns) < 0.)
+			return SWCSpectrum(0.0f);
+		else
+			return LSPD;
+	}
 }
+
 SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
 {
 	Point worldCenter;
@@ -228,8 +290,10 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+
 	return LSPD;
 }
+
 SWCSpectrum SunLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility) const
@@ -256,6 +320,7 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
+
 	return LSPD;
 }
 

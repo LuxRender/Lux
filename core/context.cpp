@@ -384,20 +384,22 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
 		Light *lt_sun = MakeLight("sun", curTransform, params);
-		if (lt_sun == NULL)
+		if (lt_sun == NULL) {
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
-		else {
+			graphicsState->currentLightPtr0 = NULL;
+		} else {
 			renderOptions->lights.push_back(lt_sun);
 			graphicsState->currentLight = name;
-			graphicsState->currentLightPtr = lt_sun;
+			graphicsState->currentLightPtr0 = lt_sun;
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
-		if (lt_sky == NULL)
+		if (lt_sky == NULL) {
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
-		else {
+			graphicsState->currentLightPtr1 = NULL;
+		} else {
 			renderOptions->lights.push_back(lt_sky);
 			graphicsState->currentLight = name;
-			graphicsState->currentLightPtr = lt_sky;
+			graphicsState->currentLightPtr1 = lt_sky;
 		}
 	} else {
 		// other lightsource type
@@ -411,7 +413,8 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 		} else {
 			renderOptions->lights.push_back(lt);
 			graphicsState->currentLight = name;
-			graphicsState->currentLightPtr = lt;
+			graphicsState->currentLightPtr0 = lt;
+			graphicsState->currentLightPtr1 = NULL;
 		}
 	}
 }
@@ -443,9 +446,13 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 
 	if (graphicsState->currentLight != "") {
 		if (graphicsState->currentLight == "sunsky"
-				|| graphicsState->currentLight == "infinite")
-			graphicsState->currentLightPtr->AddPortalShape(shape);
-		else {
+				|| graphicsState->currentLight == "infinite") {
+			if (graphicsState->currentLightPtr0)
+				graphicsState->currentLightPtr0->AddPortalShape(shape);
+
+			if (graphicsState->currentLightPtr1)
+				graphicsState->currentLightPtr1->AddPortalShape(shape);
+		} else {
 			//Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState->currentLight.c_str());
 			std::stringstream ss;
 			ss<<"LightType '"<<graphicsState->currentLight

@@ -255,7 +255,7 @@ private:
 		mutable vector<VolumeRegion *> volumeRegions;
 		map<string, vector<Primitive* > > instances;
 		vector<Primitive* > *currentInstance;
-                bool debugMode;
+        bool debugMode;
 	};
 
 	struct NamedMaterial {
@@ -280,7 +280,11 @@ private:
 		ParamSet areaLightParams;
 		string areaLight;
 		string currentLight;
-		Light* currentLightPtr;
+		// Dade - some light source like skysun is composed by 2 lights. So
+		// we can have 2 current light sources (i.e. Portal have to be applied
+		// to both sources, see bug #297)
+ 		Light* currentLightPtr0;
+ 		Light* currentLightPtr1;
 		bool reverseOrientation;
 	};
 
