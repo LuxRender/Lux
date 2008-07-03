@@ -142,7 +142,7 @@ void FlexImageFilm::CreateBuffers()
         // Dade - check if the film file exists
 
         string fname = filename+".flm";
-        std::ifstream ifs(fname.c_str());
+		std::ifstream ifs(fname.c_str(), std::ios_base::in | std::ios_base::binary);
 
         if(ifs.good()) {
             // Dade - read the data
@@ -498,7 +498,7 @@ void FlexImageFilm::WriteResumeFilm(const string &filename)
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing film status to file ") +
 			filename).c_str());
 
-    std::ofstream filestr(filename.c_str());
+    std::ofstream filestr(filename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
 		std::stringstream ss;
 	 	ss << "Cannot open file '" << filename << "' for writing resume film";
