@@ -211,7 +211,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_ENOUGHSAMPLEITEM:
 			if ((m_guiRenderState == RENDERING) || (m_guiRenderState == IDLE)) {
 				// Dade - we can set the enough sample per pixel condition
-				luxHaveEnoughSamplePerPixel();
+				luxSetHaltSamplePerPixel(1, true, false);
 			}
 			break;
 		case wxID_ABOUT:

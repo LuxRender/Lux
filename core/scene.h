@@ -130,6 +130,9 @@ public:
     // Dade - used to suspend render threads until the preprocessing phase is done
     bool preprocessDone;
 
+	// Dade - tell rendering threads what to do when they have done
+	bool suspendThreadsWhenDone;
+
 private:
 
 	// Dade - mutex used for adding/removing threads

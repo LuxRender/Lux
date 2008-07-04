@@ -745,10 +745,12 @@ void Context::pause() {
 	luxCurrentScene->Pause();
 }
 
-void Context::haveEnoughSamplePerPixel() {
+void Context::setHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
+		bool suspendThreadsWhenDone) {
 	FlexImageFilm *fif = (FlexImageFilm *)luxCurrentScene->camera->film;
-	fif->haltSamplePerPixel = 1;
-	fif->enoughSamplePerPixel = true;
+	fif->haltSamplePerPixel = haltspp;
+	fif->enoughSamplePerPixel = haveEnoughSamplePerPixel;
+	luxCurrentScene->suspendThreadsWhenDone = suspendThreadsWhenDone;
 }
 
 void Context::wait() {

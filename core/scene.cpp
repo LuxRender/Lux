@@ -240,11 +240,29 @@ void RenderThread::render(RenderThread *myThread) {
     u_int *useSampPos = new u_int();
     *useSampPos = 0;
     u_int maxSampPos = myThread->sampler->GetTotalSamplePos();
-    
+
     // Trace rays: The main loop
     while (true) {
-        if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos))
-            break;
+		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
+			// Dade - we have done, check what we have to do now
+			if (myThread->scene->suspendThreadsWhenDone) {
+				myThread->signal = RenderThread::SIG_PAUSE;
+
+				// Dade - wait for a resume rendering or exit				
+				while(myThread->signal == RenderThread::SIG_PAUSE) {
+					boost::xtime xt;
+					boost::xtime_get(&xt, boost::TIME_UTC);
+					xt.sec += 1;
+					boost::thread::sleep(xt);
+				}
+
+				if(myThread->signal == RenderThread::SIG_EXIT)
+					break;
+				else
+					continue;
+			} else
+				break;
+		}
 
         // Sample new SWC thread wavelengths
         thr_wl->Sample(myThread->sample->wavelengths,
@@ -300,11 +318,11 @@ void RenderThread::render(RenderThread *myThread) {
                 sampPos = 0;
             *useSampPos = sampPos;
         }
+
 #ifdef WIN32
-	//Work around Windows bad scheduling -- Jeanphi
-	myThread->thread->yield();
+		//Work around Windows bad scheduling -- Jeanphi
+		myThread->thread->yield();
 #endif
-  
     }
     
     delete useSampPos;
@@ -424,8 +442,9 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 
     // Dade - Initialize the base seed with the standard C lib random number generator
     seedBase = rand();
-    
+
     preprocessDone = false;
+	suspendThreadsWhenDone = false;
 }
 
 const BBox &Scene::WorldBound() const {

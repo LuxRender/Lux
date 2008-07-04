@@ -450,8 +450,9 @@ extern "C" void luxWait() {
 	Context::luxWait();
 }
 
-extern "C" void luxHaveEnoughSamplePerPixel() {
-	Context::luxHaveEnoughSamplePerPixel();
+extern "C" void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
+		bool suspendThreadsWhenDone) {
+	Context::luxSetHaltSamplePerPixel(haltspp, haveEnoughSamplePerPixel, suspendThreadsWhenDone);
 }
 //controlling number of threads
 extern "C" int luxAddThread() {
