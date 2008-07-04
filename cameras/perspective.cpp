@@ -44,19 +44,19 @@ public:
 		p(pL), RasterToCamera(R2C) {}
 	SWCSpectrum f(const Vector &wo, const Vector &wi) const
 	{
-		Vector wi0(wi);
-		wi0.y = -wi0.y;//FIXME
+		Vector wo0(wo);
+		wo0.y = -wo0.y;//FIXME
 		if (hasLens) {
-			Point pF(p + wi * (FocalDistance / wi.z));
-			wi0 *= FocalDistance / wi.z;
-			wi0 += Vector(p.x, p.y, p.z);
+			Point pF(p + wo * (FocalDistance / wo.z));
+			wo0 *= FocalDistance / wo.z;
+			wo0 += Vector(p.x, p.y, p.z);
 		}
-		wi0 *= RasterToCamera(Point(0, 0, 0)).z / wi0.z;
-		Point p0(RasterToCamera.GetInverse()(Point(wi0.x, wi0.y, wi0.z)));
+		wo0 *= RasterToCamera(Point(0, 0, 0)).z / wo0.z;
+		Point p0(RasterToCamera.GetInverse()(Point(wo0.x, wo0.y, wo0.z)));
 		if (p0.x < 0.f || p0.x > xWidth || p0.y < 0.f || p0.y > yHeight)
 			return SWCSpectrum(0.f);
 		else {
-			const float cos = Normalize(wi0).z;
+			const float cos = Normalize(wo0).z;
 			const float cos2 = cos * cos;
 			return SWCSpectrum(xWidth * yHeight / (Area * cos2 * cos2));
 		}
