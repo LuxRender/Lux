@@ -123,8 +123,7 @@ static void printInfoThread() {
 
 static void processCommandFilm(void (&f)(const string &, const ParamSet &), basic_istream<char> &stream) {
     string type;
-    ParamSet params;
-    stream >> type;
+	getline(stream, type);
 
     if((type != "fleximage") && (type != "multiimage")) {
         stringstream ss;
@@ -134,7 +133,8 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), basi
         return;
     }
 
-    boost::archive::text_iarchive ia(stream);
+	boost::archive::text_iarchive ia(stream);
+	ParamSet params;
     ia >> params;
 
     // Dade - overwrite some option for the servers
@@ -158,17 +158,20 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), basi
 
 static void processCommand(void (&f)(const string &, const ParamSet &), basic_istream<char> &stream) {
     string type;
-    ParamSet params;
-    stream >> type;
+	getline(stream, type);
+	
+	ParamSet params;
     boost::archive::text_iarchive ia(stream);
     ia >> params;
+
     f(type.c_str(), params);
 }
 
 static void processCommand(void (&f)(const string &), basic_istream<char> &stream) {
     string type;
-    stream >> type;
-    f(type.c_str());
+	getline(stream, type);
+
+	f(type.c_str());
 }
 
 static void processCommand(void (&f)(float, float, float), basic_istream<char> &stream) {
@@ -435,6 +438,8 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
             }
         }
     } catch (exception& e) {
-        luxError(LUX_BUG, LUX_ERROR, e.what());
+		ss.str("");
+		ss << "Internal error: " << e.what();
+        luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
     }
 }

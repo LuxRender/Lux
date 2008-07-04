@@ -235,7 +235,8 @@ void RenderFarm::send(const std::string &command, const std::string &name,
     //		!= serverList.end(); ++server) {
     try {
         //tcp::iostream stream((*server).c_str(), "18018");
-        netBuffer << command << std::endl << name << ' ';
+        //netBuffer << command << std::endl << name << ' ';
+		netBuffer << command << std::endl << name << std::endl;
         boost::archive::text_oarchive oa(netBuffer);
         oa << params;
     } catch (std::exception& e) {
@@ -321,7 +322,7 @@ void RenderFarm::send(const std::string &command, const string &name,
     //		!= serverList.end(); ++server) {
     try {
         //tcp::iostream stream((*server).c_str(), "18018");
-        netBuffer << command << std::endl << name << ' ' << type << ' ' << texname << ' ';
+        netBuffer << command << std::endl << name << std::endl << type << std::endl << texname << std::endl;
         boost::archive::text_oarchive oa(netBuffer);
         oa << params;
 
