@@ -23,6 +23,7 @@
 // bidirectional.cpp*
 #include "bidirectional.h"
 #include "light.h"
+#include "camera.h"
 #include "paramset.h"
 
 using namespace lux;
@@ -242,6 +243,14 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		if (!(eye[i].dAWeight > 0.f))
 			break;
 		p *= eye[i].dAWeight / eye[i].dARWeight;
+		if (i > 3)
+			p /= eye[i - 1].rrR;
+		if (nLight + nEye - i > 3) {
+			if (i < nEye - 1)
+				p *= eye[i + 1].rr;
+			else if (nLight > 0)
+				p *= light[nLight - 1].rr;
+		}
 		// The path can only be obtained if none of the vertices
 		// is specular
 		if ((eye[i].flags & BSDF_SPECULAR) == 0 &&
@@ -269,6 +278,14 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		if (!(light[i].dAWeight > 0.f))
 			break;
 		p *= light[i].dARWeight / light[i].dAWeight;
+		if (i > 3)
+			p /= light[i - 1].rr;
+		if (nEye + nLight - i > 3) {
+			if (i < nLight - 1)
+				p *= light[i + 1].rrR;
+			else if (nEye > 0)
+				p *= eye[nEye - 1].rrR;
+		}
 		// The path can only be obtained if none of the vertices
 		// is specular
 		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
@@ -512,7 +529,6 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	SWCSpectrum L(0.f);
 	int numberOfLights = static_cast<int>(scene->lights.size());
 	// Trace eye path
-//	int nEye = generateEyePath();//FIXME
 	int nEye = generateEyePath(scene, ray, sample, sampleEyeOffset, eyePath);
 	// Light path cannot intersect camera (FIXME)
 	eyePath[0].dARWeight = 0.f;
