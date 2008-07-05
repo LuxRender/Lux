@@ -158,7 +158,8 @@ SWCSpectrum DistributedPath::LiInternal(const Scene *scene,
 					bsdfComponent = &sample->oneD[bsdfComponentOffset][i]; 
 				}
 
-				BxDFType directflags = BxDFType(BSDF_ALL);
+				// Dade - unused variable
+				//BxDFType directflags = BxDFType(BSDF_ALL);
 
 				// Apply direct lighting strategy
 				switch (lightStrategy) {
