@@ -42,24 +42,20 @@ struct EClosePhoton;
 
 struct EPhoton {
 	EPhoton(const Point &pp, const SWCSpectrum &wt, const Vector & w)
-			: p(pp), wi(w) {
-		Spectrum c1 = FromXYZ(wt.ToXYZ());
-		Spectrum c2 = FromXYZ(SWCSpectrum(c1).ToXYZ());
-		float k = c1.y() / c2.y();
-		alpha = k * c1;
+			: p(pp), alpha(wt), wi(w) {
 	}
 
 	EPhoton() {
 	}
 
 	Point p;
-	Spectrum alpha;
+	SWCSpectrum alpha;
 	Vector wi;
 };
 
 struct ERadiancePhoton {
 	ERadiancePhoton(const Point &pp, const Normal & nn)
-			: p(pp), n(nn), Lo(0.f) {
+			: p(pp), n(nn), Lo(0.0f) {
 	}
 
 	ERadiancePhoton() {
@@ -67,7 +63,7 @@ struct ERadiancePhoton {
 
 	Point p;
 	Normal n;
-	Spectrum Lo;
+	SWCSpectrum Lo;
 };
 
 struct ERadiancePhotonProcess {
@@ -151,6 +147,10 @@ public:
 	void Preprocess(const Scene *);
 	virtual ExPhotonIntegrator* clone() const; // Lux (copy) constructor for multithreading
 
+	virtual bool IsSWCSupported() {
+		return false;
+	}
+
 	IntegrationSampler* HasIntegrationSampler(IntegrationSampler *is) {
 		return NULL;
 	}; // Not implemented
@@ -164,10 +164,10 @@ private:
 				(found == 0 || found < shot / 1024));
 	}
 
-	Spectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
+	SWCSpectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
 			int nPaths, int nLookup, BSDF *bsdf, const Intersection &isect,
 			const Vector &w, float maxDistSquared) const;
-	Spectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
+	SWCSpectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
 			const Point &p, const Normal &n) const;
     SWCSpectrum LiDirectLigthtingMode(const int specularDepth, const Scene *scene,
             const RayDifferential &ray, const Sample *sample,

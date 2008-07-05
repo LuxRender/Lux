@@ -47,7 +47,7 @@ EPhotonProcess::EPhotonProcess(u_int mp, const Point &P)
     foundPhotons = 0;
 }
 
-Spectrum ExPhotonIntegrator::estimateE(
+SWCSpectrum ExPhotonIntegrator::estimateE(
         KdTree<EPhoton, EPhotonProcess> *map, int count,
         const Point &p, const Normal &n) const {
     if (!map) return 0.f;
@@ -60,7 +60,7 @@ Spectrum ExPhotonIntegrator::estimateE(
 
     // Accumulate irradiance value from nearby photons
     EClosePhoton *photons = proc.photons;
-    Spectrum E(0.);
+    SWCSpectrum E(0.);
 	for (u_int i = 0; i < proc.foundPhotons; ++i) {
 		if (Dot(n, photons[i].photon->wi) > 0.)
             E += photons[i].photon->alpha;
@@ -91,12 +91,12 @@ void EPhotonProcess::operator()(const EPhoton &photon,
     }
 }
 
-Spectrum ExPhotonIntegrator::LPhoton(
+SWCSpectrum ExPhotonIntegrator::LPhoton(
         KdTree<EPhoton, EPhotonProcess> *map,
         int nPaths, int nLookup, BSDF *bsdf,
         const Intersection &isect, const Vector &wo,
         float maxDistSquared) const {
-    Spectrum L(0.);
+    SWCSpectrum L(0.);
 	if ((nPaths <= 0) || (!map)) return L;
 
     BxDFType diffuse = BxDFType(BSDF_REFLECTION |
@@ -131,16 +131,16 @@ Spectrum ExPhotonIntegrator::LPhoton(
                     BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION;
             float k = Ekernel(p, isect.dg.p, maxDistSquared);
 
-			Spectrum alpha = p->alpha;
+			SWCSpectrum alpha = p->alpha;
 
             L += (k / nPaths) * bsdf->f(wo, p->wi, flag) * alpha;
         }
     } else */{
         // Compute exitant radiance from photons for diffuse surface
-        Spectrum Lr(0.), Lt(0.);
+        SWCSpectrum Lr(0.), Lt(0.);
 
         for (int i = 0; i < nFound; ++i) {			
-			Spectrum alpha = photons[i].photon->alpha;
+			SWCSpectrum alpha = photons[i].photon->alpha;
 
             if (Dot(Nf, photons[i].photon->wi) > 0.f) {
                 float k = Ekernel(photons[i].photon, isect.dg.p,
@@ -153,8 +153,8 @@ Spectrum ExPhotonIntegrator::LPhoton(
             }
         }
 
-        L += Lr * FromXYZ(bsdf->rho(wo, BSDF_ALL_REFLECTION).ToXYZ()) * INV_PI +
-                Lt * FromXYZ(bsdf->rho(wo, BSDF_ALL_TRANSMISSION).ToXYZ()) * INV_PI;
+        L += Lr * bsdf->rho(wo, BSDF_ALL_REFLECTION) * INV_PI +
+                Lt * bsdf->rho(wo, BSDF_ALL_TRANSMISSION) * INV_PI;
     }
 
     return L;
@@ -282,6 +282,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 
 	// Dade - initialize SpectrumWavelengths
     SpectrumWavelengths *thr_wl = thread_wavelengths.get();
+	thr_wl->Sample(0.5f, 0.5f);
 
 	bool causticDone = (nCausticPhotons == 0);
     bool indirectDone = (nIndirectPhotons == 0);
@@ -310,7 +311,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 
     // Declare radiance photon reflectance arrays
-    vector<Spectrum> rpReflectances, rpTransmittances;
+    vector<SWCSpectrum> rpReflectances, rpTransmittances;
 
 	boost::xtime lastUpdateTime;
 	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
@@ -369,10 +370,6 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
         u[1] = RadicalInverse(nshot, 3);
         u[2] = RadicalInverse(nshot, 5);
         u[3] = RadicalInverse(nshot, 7);
-
-        // Dade - for SpectrumWavelengths
-        thr_wl->Sample(RadicalInverse(nshot, 23),
-				RadicalInverse(nshot, 29));
 
         // Choose light to shoot photon from
 		float lightPdf;
@@ -455,9 +452,9 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
                         Normal n = photonIsect.dg.nn;
                         if (Dot(n, photonRay.d) > 0.f) n = -n;
                         radiancePhotons.push_back(ERadiancePhoton(photonIsect.dg.p, n));
-                        Spectrum rho_r = FromXYZ(photonBSDF->rho(BSDF_ALL_REFLECTION).ToXYZ());
+                        SWCSpectrum rho_r = photonBSDF->rho(BSDF_ALL_REFLECTION);
                         rpReflectances.push_back(rho_r);
-                        Spectrum rho_t = FromXYZ(photonBSDF->rho(BSDF_ALL_TRANSMISSION).ToXYZ());
+                        SWCSpectrum rho_t = photonBSDF->rho(BSDF_ALL_TRANSMISSION);
                         rpTransmittances.push_back(rho_t);
                     }
                 }
@@ -520,9 +517,9 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 
             // Compute radiance for radiance photon _i_
             ERadiancePhoton &rp = radiancePhotons[i];
-            const Spectrum &rho_r = rpReflectances[i];
-            const Spectrum &rho_t = rpTransmittances[i];
-            Spectrum E;
+            const SWCSpectrum &rho_r = rpReflectances[i];
+            const SWCSpectrum &rho_t = rpTransmittances[i];
+            SWCSpectrum E;
             Point p = rp.p;
             Normal n = rp.n;
 

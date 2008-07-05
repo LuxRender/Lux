@@ -264,9 +264,13 @@ void RenderThread::render(RenderThread *myThread) {
 				break;
 		}
 
-        // Sample new SWC thread wavelengths
-        thr_wl->Sample(myThread->sample->wavelengths,
-                myThread->sample->singleWavelength);
+		// Dade - check if the integrator support SWC
+		if (myThread->surfaceIntegrator->IsSWCSupported()) {
+			// Sample new SWC thread wavelengths
+			thr_wl->Sample(myThread->sample->wavelengths,
+					myThread->sample->singleWavelength);
+		} else
+			thr_wl->Sample(0.5f, 0.5f);
         
         while(myThread->signal == RenderThread::SIG_PAUSE) {
             boost::xtime xt;

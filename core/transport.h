@@ -45,11 +45,18 @@ public:
 	                            const Scene *scene) {
 	}
 };
+
 class SurfaceIntegrator : public Integrator {
 public:
 	virtual bool IsFluxBased() {
 		return false;
 	}
+
+	// Dade - Exphotonmap is the only integrator not supporting SWC at the moment
+	virtual bool IsSWCSupported() {
+		return true;
+	}
+
 /*	virtual bool NeedAddSampleInRender() {
 		return true;
 	}
@@ -58,6 +65,7 @@ public:
 	}
 	Sampler *sampler;*/
 };
+
 class VolumeIntegrator : public Integrator {
 public:
 	virtual SWCSpectrum Transmittance(const Scene *scene,
