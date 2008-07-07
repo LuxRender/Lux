@@ -294,7 +294,8 @@ int cubic(double A[4], double X[3])
 		phi = atan2f(phit.y, phit.x);
 		if (phi < 0.) phi += 2.f*M_PI;
 		
-		float costheta = phit.z / minorRadius;
+		// clamp in case of precision issues
+		float costheta = Clamp(phit.z / minorRadius, -1.f, 1.f);
 		theta = acosf(costheta);
 		// adjust theta if hit lies on the inner half of the torus
 		if (phit.x*phit.x + phit.y*phit.y < majorRadius*majorRadius)
@@ -363,13 +364,14 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 
 	float u = phi / phiMax;
 	float v = (theta - thetaMin) / (thetaMax - thetaMin);
+
 	// Compute torus \dpdu and \dpdv
 	float cosphi, sinphi, sintheta;
 	Vector dpdu, dpdv;
 
 	sintheta = sinf(theta);
 
-	float zradius = sqrtf(powf(phit.x, 2) + powf(phit.y, 2));
+	float zradius = sqrtf(phit.x*phit.x + phit.y*phit.y);
 	if (zradius == 0)
 	{
 		// Handle hit at degenerate parameterization point
@@ -414,10 +416,6 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 		(e*F - f*E) * invEGF2 * dpdv;
 	Vector dndv = (g*F - f*G) * invEGF2 * dpdu +
 		(f*F - g*E) * invEGF2 * dpdv;
-
-	dndu = Vector();
-	dndv = Vector();
-
 	// Initialize _DifferentialGeometry_ from parametric information
 	*dg = DifferentialGeometry(ObjectToWorld(phit),
 	                           ObjectToWorld(dpdu),
