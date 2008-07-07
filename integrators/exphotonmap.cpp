@@ -229,7 +229,6 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 		if (finalGather) {
 			// Dade - use half samples for sampling along the BSDF and the other
 			// half to sample along photon incoming direction
-			gatherSamples = gatherSamples / 2;
 
 			// Dade - request n samples for the final gather step
 			structure.clear();
@@ -684,7 +683,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 					// Use BSDF to do final gathering
 					SWCSpectrum Li = 0.;
 					// radiance - disabled for threading // static StatsCounter gatherRays("Photon Map", "Final gather rays traced"); // NOBOOK
-					for (int i = 0; i < gatherSamples; ++i) {
+					for (int i = 0; i < gatherSamples ; ++i) {
 						float *sampleFGData = sample->sampler->GetLazyValues(
 							const_cast<Sample *>(sample), sampleFinalGather1Offset, i);
 
@@ -1145,7 +1144,10 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     int maxDepth = params.FindOneInt("maxdepth", 6);
 
 	bool finalGather = params.FindOneBool("finalgather", true);
-    int gatherSamples = params.FindOneInt("finalgathersamples", 32);
+	// Dade - use half samples for sampling along the BSDF and the other
+	// half to sample along photon incoming direction, this why I'm dividing
+	// the toal by 2
+    int gatherSamples = params.FindOneInt("finalgathersamples", 32) / 2;
 	string smode =  params.FindOneString("renderingmode", "directlighting");
 
 	RenderingMode renderingMode;
