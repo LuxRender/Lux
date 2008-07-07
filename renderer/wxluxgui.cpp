@@ -129,7 +129,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			break;
 		case FINISHED:
 			// Rendering is finished.
-			m_file->Enable(wxID_OPEN, false);
+			m_file->Enable(wxID_OPEN, true);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
 			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
@@ -233,8 +233,18 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 											 _("LuxRender scene files (*.lxs)|*.lxs|All files (*.*)|*.*"),
 											 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
-	if (filedlg.ShowModal() == wxID_OK)
+	if(filedlg.ShowModal() == wxID_OK) {
+		// Clean up if this is not the first rendering
+		if(m_guiRenderState != IDLE) {
+			luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
+			luxCleanup();
+			ChangeRenderState(IDLE);
+			if(m_opengl) // Re-init textures
+				boost::polymorphic_downcast<LuxGLViewer*>(m_renderOutput)->Reset();
+		}
+
 		RenderScenefile(filedlg.GetPath());
+	}
 }
 
 void LuxGui::OnExit(wxCloseEvent& event) {
