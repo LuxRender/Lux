@@ -304,7 +304,7 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 
 	Point samplePoint;
 	Normal sampleNormal;
-	if (!havePortalShape) {
+	if (1 || !havePortalShape) {//FIXME portal code isn't working correctly
 		float d1, d2;
 		ConcentricSampleDisk(u1, u2, &d1, &d2);
 		samplePoint = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
