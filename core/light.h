@@ -110,19 +110,35 @@ protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;
 };
-struct  VisibilityTester {
+
+struct VisibilityTester {
 	// VisibilityTester Public Methods
-	void SetSegment(const Point &p1, const Point &p2) {
-		r = Ray(p1, p2-p1, RAY_EPSILON, 1.f - RAY_EPSILON);
+
+	void SetSegment(const Point &p1, const Point & p2) {
+		// Dade - need to scale the RAY_EPSILON value because the ray direction
+		// is not normalized (in order to avoid light leaks: bug #295)
+
+		Vector w = p2 - p1;
+		float epsilon = SHADOW_RAY_EPSILON / w.Length();
+
+		r = Ray(p1, w, epsilon, 1.f - epsilon);
 	}
-	void SetRay(const Point &p, const Vector &w) {
-		r = Ray(p, w, RAY_EPSILON);
+
+	void SetRay(const Point &p, const Vector & w) {
+		// Dade - need to scale the RAY_EPSILON value because the ray direction
+		// is not normalized (in order to avoid light leaks: bug #295)
+
+		float epsilon = SHADOW_RAY_EPSILON / w.Length();
+
+		r = Ray(p, w, epsilon);
 	}
-	bool Unoccluded(const Scene *scene) const;
-	bool TestOcclusion(const Scene *scene, SWCSpectrum *f) const;
-	SWCSpectrum Transmittance(const Scene *scene) const;
+
+	bool Unoccluded(const Scene * scene) const;
+	bool TestOcclusion(const Scene *scene, SWCSpectrum * f) const;
+	SWCSpectrum Transmittance(const Scene * scene) const;
 	Ray r;
 };
+
 class AreaLight : public Light {
 public:
 	// AreaLight Interface

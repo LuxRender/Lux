@@ -36,8 +36,8 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	// radiance - disabled for threading // ++nShadowRays;
 	return !scene->IntersectP(r);
 }
-bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const
-{
+
+bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const {
 	*f = 1.f;
 	RayDifferential ray(r);
 	Intersection isect;
@@ -48,14 +48,20 @@ bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const
 		const float pdf = bsdf->Pdf(-ray.d, ray.d, BSDF_ALL_TRANSMISSION);
 		if (!(pdf > 0.f))
 			return false;
-		*f *= AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d)) / pdf;
-		*f *= bsdf->f(-ray.d, ray.d);// * AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d));
+
+		*f *= AbsDot(bsdf->dgShading.nn, Normalize(ray.d)) / pdf;
+		*f *= bsdf->f(-ray.d, ray.d);
 		if (f->Black())
 			return false;
-		ray.mint = ray.maxt + RAY_EPSILON;
+
+		// Dade - need to scale the RAY_EPSILON value because the ray direction
+		// is not normalized (in order to avoid light leaks: bug #295)
+		float epsilon = SHADOW_RAY_EPSILON / ray.d.Length();
+		ray.mint = ray.maxt + epsilon;
 		ray.maxt = r.maxt;
 	}
 }
+
 SWCSpectrum VisibilityTester::
 	Transmittance(const Scene *scene) const {
 	return scene->Transmittance(r);
