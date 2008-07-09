@@ -218,7 +218,7 @@ namespace lux
 #define LUX_VERSION 0.5
 #define LUX_VERSION_STRING "0.5 (CVS)"
 #define RAY_EPSILON 1e-3f
-#define SHADOW_RAY_EPSILON 1e-6f
+#define SHADOW_RAY_EPSILON 1e-4f
 #define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
