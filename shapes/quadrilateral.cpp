@@ -169,8 +169,8 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 	}
 
 	// TODO - verify differentials
-	Vector dpdu = Vector((v - 1.f) * (p00 + p10) + v * (p11 + p01));
-	Vector dpdv = Vector((u - 1.f) * (p00 + p01) + u * (p10 + p11));
+	Vector dpdu = Vector((1.f - v) * (p00 + p10) + v * (p11 + p01));
+	Vector dpdv = Vector((1.f - u) * (p00 + p01) + u * (p10 + p11));
 
     *dg = DifferentialGeometry(ray(t), dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
