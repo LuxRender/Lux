@@ -50,10 +50,12 @@
 #include "nurbs.h"
 #include "paraboloid.h"
 #include "sphere.h"
+#include "torus.h"
 #include "barytrianglemesh.h"
 #include "waldtrianglemesh.h"
 #include "plymesh.h"
 #include "lenscomponent.h"
+#include "quad.h"
 
 #include "lowdiscrepancy.h"
 #include "halton.h"
@@ -204,6 +206,8 @@ return plugin->CreateShape(object2world,
         return boost::shared_ptr<Shape>(Paraboloid::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="sphere")
         return boost::shared_ptr<Shape>(Sphere::CreateShape(object2world, reverseOrientation, paramSet));
+    if(name=="torus")
+        return boost::shared_ptr<Shape>(Torus::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="barytrianglemesh")
         return boost::shared_ptr<Shape>(BaryTriangleMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if((name=="waldtrianglemesh") || (name=="trianglemesh"))
@@ -212,6 +216,8 @@ return plugin->CreateShape(object2world,
         return boost::shared_ptr<Shape>(PlyMesh::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="lenscomponent")
         return boost::shared_ptr<Shape>(LensComponent::CreateShape(object2world, reverseOrientation, paramSet));
+    if(name=="quad")
+        return boost::shared_ptr<Shape>(Quad::CreateShape(object2world, reverseOrientation, paramSet));
     //Error("Static loading of shape '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of shape '"<<name<<"' failed.";
