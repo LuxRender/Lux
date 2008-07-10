@@ -423,8 +423,8 @@ SET(lux_lib_src
         core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp
         core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
         core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
-        shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp
-        shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp
+        shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp shapes/torus.cpp 
+        shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp shapes/quad.cpp shapes/quadrilateral.cpp
         shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/barytrianglemesh.cpp shapes/waldtrianglemesh.cpp
         shapes/plymesh/rply.c shapes/lenscomponent.cpp
         samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
