@@ -47,7 +47,6 @@ public:
 		Vector wo0(wo);
 		wo0.y = -wo0.y;//FIXME
 		if (hasLens) {
-			Point pF(p + wo * (FocalDistance / wo.z));
 			wo0 *= FocalDistance / wo.z;
 			wo0 += Vector(p.x, p.y, p.z);
 		}
@@ -84,7 +83,6 @@ public:
 		Vector wo0(wo);
 		wo0.y = -wo0.y;//FIXME
 		if (hasLens) {
-			Point pF(p + wo * (FocalDistance / wo.z));
 			wo0 *= FocalDistance / wo.z;
 			wo0 += Vector(p.x, p.y, p.z);
 		}
