@@ -147,9 +147,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 		maxDirectPhotons = 0;
 
 	indirectMap = new LightPhotonMap(nLookup, maxDistSquared);
-
-	if (nCausticPhotons > 0)
-		causticMap = new LightPhotonMap(nLookup, maxDistSquared);
+	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
 
 	PhotonMapPreprocess(
 			scene,
