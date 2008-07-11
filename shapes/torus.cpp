@@ -91,10 +91,10 @@ int cubic(double A[4], double X[3])
 		if ( DIS < 0.0 ) {
 			//three real solutions!
 			//Confine the argument of ACOS to the interval [-1;1]!
-			PHI = acos(min(1.0,max(-1.0,Q/sqrt(P))));
+			PHI = acosf(min(1.0,max(-1.0,Q/sqrt(P))));
 			P = 2.0*sqrt(P1);
 			for (int i = 0; i < 3; i++)
-				X[i] = P*cos((PHI+2*((double)i)*PI)*THIRD)-W;
+				X[i] = P*cosf((PHI+2*((double)i)*PI)*THIRD)-W;
 			L = 3;
 		}
 		else {
