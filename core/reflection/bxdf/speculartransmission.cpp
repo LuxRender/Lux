@@ -80,17 +80,21 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 		}
 	} else {
 		if (reverse) {
-			SWCSpectrum F = fresnel.Evaluate(-CosTheta(wo));
-			if (entering)
+			if (entering) {
+				SWCSpectrum F = fresnel.Evaluate(-cost);
 				return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
-			else
+			} else {
+				SWCSpectrum F = fresnel.Evaluate(-CosTheta(wo));
 				return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
+			}
 		} else {
-			SWCSpectrum F = fresnel.Evaluate(-cost);
-			if (entering)
+			if (entering) {
+				SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
 				return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
-			else
+			} else {
+				SWCSpectrum F = fresnel.Evaluate(-cost);
 				return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
+			}
 		}
 	}
 }
