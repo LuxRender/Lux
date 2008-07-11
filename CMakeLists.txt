@@ -420,7 +420,7 @@ SET(lux_lib_src
         core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
         core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp core/reflection/bxdf/nulltransmission.cpp
         core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
-        core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp
+        core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp core/photonmap.cpp
         core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
         core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp shapes/torus.cpp 

@@ -31,93 +31,10 @@
 #include "kdtree.h"
 #include "mc.h"
 #include "sampling.h"
-#include "blackbody.h"
+#include "photonmap.h"
 
 namespace lux
 {
-
-struct EClosePhoton;
-
-// Local Declarations
-
-struct EPhoton {
-	EPhoton(const Point &pp, const SWCSpectrum &wt, const Vector & w)
-			: p(pp), alpha(wt), wi(w) {
-	}
-
-	EPhoton() {
-	}
-
-	Point p;
-	SWCSpectrum alpha;
-	Vector wi;
-};
-
-struct ERadiancePhoton {
-	ERadiancePhoton(const Point &pp, const Normal & nn)
-			: p(pp), n(nn), Lo(0.0f) {
-	}
-
-	ERadiancePhoton() {
-	}
-
-	Point p;
-	Normal n;
-	SWCSpectrum Lo;
-};
-
-struct ERadiancePhotonProcess {
-	// RadiancePhotonProcess Methods
-
-	ERadiancePhotonProcess(const Point &pp, const Normal & nn)
-			: p(pp), n(nn) {
-		photon = NULL;
-	}
-
-	void operator()(const ERadiancePhoton &rp,
-			float distSquared, float &maxDistSquared) const {
-		if (Dot(rp.n, n) > 0) {
-			photon = &rp;
-			maxDistSquared = distSquared;
-		}
-	}
-	const Point &p;
-	const Normal &n;
-	mutable const ERadiancePhoton *photon;
-};
-
-inline float Ekernel(const EPhoton *photon, const Point &p,
-		float md2) {
-	float s = (1.f - DistanceSquared(photon->p, p) / md2);
-
-	return 3.f / (md2 * M_PI) * s * s;
-}
-
-struct EPhotonProcess {
-	// PhotonProcess Public Methods
-	EPhotonProcess(u_int mp, const Point & p);
-	void operator()(const EPhoton &photon, float dist2, float &maxDistSquared) const;
-	const Point &p;
-	EClosePhoton *photons;
-	u_int nLookup;
-	mutable u_int foundPhotons;
-};
-
-struct EClosePhoton {
-
-	EClosePhoton(const EPhoton *p = NULL,
-			float md2 = INFINITY) {
-		photon = p;
-		distanceSquared = md2;
-	}
-
-	bool operator<(const EClosePhoton & p2) const {
-		return distanceSquared == p2.distanceSquared ? (photon < p2.photon) :
-				distanceSquared < p2.distanceSquared;
-	}
-	const EPhoton *photon;
-	float distanceSquared;
-};
 
 class ExPhotonIntegrator : public SurfaceIntegrator {
 public:
@@ -127,7 +44,6 @@ public:
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC
 	};
-	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// ExPhotonIntegrator Public Methods
 	ExPhotonIntegrator(
@@ -136,7 +52,7 @@ public:
 			int ncaus, int nindir,  int maxDirPhotons,
 			int nLookup, int mdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
-			RRStrategy rrstrategy, float rrcontprob,
+			PhotonMapRRStrategy rrstrategy, float rrcontprob,
 			bool dbgEnableDirect, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
@@ -159,16 +75,6 @@ public:
 
 private:
 
-	static inline bool unsuccessful(int needed, int found, int shot) {
-		return (found < needed &&
-				(found == 0 || found < shot / 1024));
-	}
-
-	SWCSpectrum LPhoton(KdTree<EPhoton, EPhotonProcess> *map,
-			int nPaths, int nLookup, BSDF *bsdf, const Intersection &isect,
-			const Vector &w, float maxDistSquared) const;
-	SWCSpectrum estimateE(KdTree<EPhoton, EPhotonProcess> *map, int count,
-			const Point &p, const Normal &n) const;
     SWCSpectrum LiDirectLigthtingMode(const int specularDepth, const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
@@ -187,7 +93,7 @@ private:
 	bool finalGather;
 	float cosGatherAngle;
 	int gatherSamples;
-	RRStrategy rrStrategy;
+	PhotonMapRRStrategy rrStrategy;
 	float rrContinueProbability;
 
 	// Dade - debug flags
@@ -199,10 +105,9 @@ private:
 	int sampleFinalGather1Offset;
 	int sampleFinalGather2Offset;
 
-	int nCausticPaths, nIndirectPaths;
-	mutable KdTree<EPhoton, EPhotonProcess> *causticMap;
-	mutable KdTree<EPhoton, EPhotonProcess> *indirectMap;
-	mutable KdTree<ERadiancePhoton, ERadiancePhotonProcess> *radianceMap;
+	mutable LightPhotonMap *causticMap;
+	mutable LightPhotonMap *indirectMap;
+	mutable RadiancePhotonMap *radianceMap;
 };
 
 }//namespace lux

@@ -142,8 +142,8 @@ KdTree<NodeData, LookupProc>::privateLookup(u_int nodeNum,
 	// Process kd-tree node's children
 	int axis = node->splitAxis;
 	if (axis != 3) {
-		float dist2 = (p[axis] - node->splitPos) *
-			(p[axis] - node->splitPos);
+		float dist = p[axis] - node->splitPos;
+		float dist2 = dist * dist;
 		if (p[axis] <= node->splitPos) {
 			if (node->hasLeftChild)
 				privateLookup(nodeNum+1, p,

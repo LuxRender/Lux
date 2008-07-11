@@ -350,4 +350,3 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 }
 
 }//namespace lux
-
