@@ -80,47 +80,6 @@ Quadrilateral::Quadrilateral(const lux::Transform &o2w, bool ro,
 
 	idx = indices;
 	mesh = m;
-
-	// pre-compute differentials
- //   const Point &p0 = mesh->p[idx[0]];
- //   const Point &p1 = mesh->p[idx[1]];
- //   const Point &p2 = mesh->p[idx[2]];
- //   const Point &p3 = mesh->p[idx[3]];
-
-	//float uv[4][2];
-	//float A[3][3], InvA[3][3];
-
-	//GetUVs(uv);
-
-	//A[0][0] = uv[1][0] - uv[0][0];
-	//A[0][1] = uv[1][1] - uv[0][1];
-	//A[0][2] = uv[1][0]*uv[1][1] - uv[0][0]*uv[0][1];
-	//A[1][0] = uv[2][0] - uv[0][0];
-	//A[1][1] = uv[2][1] - uv[0][1];
-	//A[1][2] = uv[2][0]*uv[2][1] - uv[0][0]*uv[0][1];
-	//A[2][0] = uv[3][0] - uv[0][0];
-	//A[2][1] = uv[3][1] - uv[0][1];
-	//A[2][2] = uv[3][0]*uv[3][1] - uv[0][0]*uv[0][1];
-
-	//Vector dp1 = p1 - p0;
-	//Vector dp2 = p2 - p0;
-	//Vector dp3 = p3 - p0;
-
-	//// invert matrix
-	//if (!Invert3x3(A, InvA)) {
- //       // Handle zero determinant for quadrilateral partial derivative matrix
-	//	Vector N = Cross(dp1, dp2);
- //       CoordinateSystem(Normalize(N), &dpdu, &dpdv);	
-	//} else {
-	//	dpdu = Vector(
-	//		InvA[0][0] * dp1.x + InvA[0][1] * dp2.x + InvA[0][2] * dp3.x,
-	//		InvA[0][0] * dp1.y + InvA[0][1] * dp2.y + InvA[0][2] * dp3.y,
-	//		InvA[0][0] * dp1.z + InvA[0][1] * dp2.z + InvA[0][2] * dp3.z);
-	//	dpdv = Vector(
-	//		InvA[1][0] * dp1.x + InvA[1][1] * dp2.x + InvA[1][2] * dp3.x,
-	//		InvA[1][0] * dp1.y + InvA[1][1] * dp2.y + InvA[1][2] * dp3.y,
-	//		InvA[1][0] * dp1.z + InvA[1][1] * dp2.z + InvA[1][2] * dp3.z);
-	//}
 }
 
 Quadrilateral::~Quadrilateral() {
@@ -258,6 +217,7 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 	}
 
 
+	// compute partial differentials
 	Vector dpdu, dpdv;
 	float uv[4][2];
 	float A[3][3], InvA[3][3];

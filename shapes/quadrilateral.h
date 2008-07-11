@@ -124,7 +124,6 @@ private:
 	// Quadrilateral Private Data
 	int *idx;
 	QuadMesh *mesh;
-	//Vector dpdu, dpdv;
 };
 
 }//namespace lux
