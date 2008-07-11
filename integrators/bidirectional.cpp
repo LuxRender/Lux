@@ -71,6 +71,9 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(2); //bsdf sampling for light path
 	structure.push_back(1); //bsdf component for light path
 	sampleLightOffset = sample->AddxD(structure, maxLightDepth);
+	// Prepare image buffers
+	eyeBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "eye");
+	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
 }
 
 static int generateEyePath(const Scene *scene, BSDF *bsdf,//const Ray &r,
@@ -594,7 +597,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 						if (color.y() > 0.f) {
 							float x, y;
 							scene->camera->GetSamplePosition(eyePath[0].p, w, &x, &y);
-							sample->AddContribution(x, y, color, alpha ? *alpha : 1.f);
+							sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, lightBufferId);
 						}
 					}
 				}
@@ -614,7 +617,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 							if (color.y() > 0.f) {
 								float x, y;
 								scene->camera->GetSamplePosition(eyePath[0].p, w, &x, &y);
-								sample->AddContribution(x, y, color, alpha ? *alpha : 1.f);
+								sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, lightBufferId);
 							}
 						}
 					}
@@ -641,7 +644,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 					if (color.y() > 0.f) {
 						float x, y;
 						scene->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[0].p), &x, &y);
-						sample->AddContribution(x, y, color, alpha ? *alpha : 1.f);
+						sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, lightBufferId);
 					}
 				}
 			}
@@ -655,7 +658,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 	if (color.y() > 0.f) {
 		float x, y;
 		scene->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
-		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f);
+		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, eyeBufferId);
 	}
 	return L;
 }

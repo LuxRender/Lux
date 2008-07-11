@@ -50,6 +50,7 @@ private:
 	int maxEyeDepth, maxLightDepth;
 	int lightNumOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
+	int eyeBufferId, lightBufferId;
 };
 
 }//namespace lux
