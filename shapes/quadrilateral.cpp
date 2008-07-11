@@ -26,6 +26,48 @@
 
 using namespace lux;
 
+float Det2x2(const float a00, const float a01, const float a10, const float a11) {
+	return a00*a11 - a01*a10;
+}
+
+float Det3x3(float A[3][3]) {
+	return 
+		A[0][0] * Det2x2(A[1][1], A[1][2], A[2][1], A[2][2]) -
+		A[0][1] * Det2x2(A[1][0], A[1][2], A[2][0], A[2][2]) +
+		A[0][2] * Det2x2(A[1][0], A[1][1], A[2][0], A[2][1]);
+}
+
+bool Invert3x3(float A[3][3], float InvA[3][3]) {
+
+	float determinant = Det3x3(A);
+	if (determinant == 0.f)
+		return false;
+
+	float invdet = 1.f / determinant;
+
+	InvA[0][0] = invdet * Det2x2(A[1][1], A[1][2], A[2][1], A[2][2]);
+	InvA[0][1] = invdet * Det2x2(A[0][2], A[0][1], A[2][2], A[2][1]);
+	InvA[0][2] = invdet * Det2x2(A[0][1], A[0][2], A[1][1], A[1][2]);
+	InvA[1][0] = invdet * Det2x2(A[1][2], A[1][0], A[2][2], A[2][0]);
+	InvA[1][1] = invdet * Det2x2(A[0][0], A[0][2], A[2][0], A[2][2]);
+	InvA[1][2] = invdet * Det2x2(A[0][2], A[0][0], A[1][2], A[1][0]);
+	InvA[2][0] = invdet * Det2x2(A[1][0], A[1][1], A[2][0], A[2][1]);
+	InvA[2][1] = invdet * Det2x2(A[0][1], A[0][0], A[2][1], A[2][0]);
+	InvA[2][2] = invdet * Det2x2(A[0][0], A[0][1], A[1][0], A[1][1]);
+
+	return true;
+}
+
+int MajorAxis(const Vector &v) {
+	float absVx = fabsf(v.x);
+	float absVy = fabsf(v.y);
+	float absVz = fabsf(v.z);
+	
+	if (absVx > absVy)
+		return (absVx > absVz) ? 0 : 2;
+	return (absVy > absVz) ? 1 : 2;
+}
+
 BBox QuadMesh::ObjectBound() const {
 	luxError(LUX_BUG,LUX_SEVERE, "Unimplemented QuadMesh::ObjectBound() method called");
 	return BBox();
@@ -38,6 +80,47 @@ Quadrilateral::Quadrilateral(const lux::Transform &o2w, bool ro,
 
 	idx = indices;
 	mesh = m;
+
+	// pre-compute differentials
+ //   const Point &p0 = mesh->p[idx[0]];
+ //   const Point &p1 = mesh->p[idx[1]];
+ //   const Point &p2 = mesh->p[idx[2]];
+ //   const Point &p3 = mesh->p[idx[3]];
+
+	//float uv[4][2];
+	//float A[3][3], InvA[3][3];
+
+	//GetUVs(uv);
+
+	//A[0][0] = uv[1][0] - uv[0][0];
+	//A[0][1] = uv[1][1] - uv[0][1];
+	//A[0][2] = uv[1][0]*uv[1][1] - uv[0][0]*uv[0][1];
+	//A[1][0] = uv[2][0] - uv[0][0];
+	//A[1][1] = uv[2][1] - uv[0][1];
+	//A[1][2] = uv[2][0]*uv[2][1] - uv[0][0]*uv[0][1];
+	//A[2][0] = uv[3][0] - uv[0][0];
+	//A[2][1] = uv[3][1] - uv[0][1];
+	//A[2][2] = uv[3][0]*uv[3][1] - uv[0][0]*uv[0][1];
+
+	//Vector dp1 = p1 - p0;
+	//Vector dp2 = p2 - p0;
+	//Vector dp3 = p3 - p0;
+
+	//// invert matrix
+	//if (!Invert3x3(A, InvA)) {
+ //       // Handle zero determinant for quadrilateral partial derivative matrix
+	//	Vector N = Cross(dp1, dp2);
+ //       CoordinateSystem(Normalize(N), &dpdu, &dpdv);	
+	//} else {
+	//	dpdu = Vector(
+	//		InvA[0][0] * dp1.x + InvA[0][1] * dp2.x + InvA[0][2] * dp3.x,
+	//		InvA[0][0] * dp1.y + InvA[0][1] * dp2.y + InvA[0][2] * dp3.y,
+	//		InvA[0][0] * dp1.z + InvA[0][1] * dp2.z + InvA[0][2] * dp3.z);
+	//	dpdv = Vector(
+	//		InvA[1][0] * dp1.x + InvA[1][1] * dp2.x + InvA[1][2] * dp3.x,
+	//		InvA[1][0] * dp1.y + InvA[1][1] * dp2.y + InvA[1][2] * dp3.y,
+	//		InvA[1][0] * dp1.z + InvA[1][1] * dp2.z + InvA[1][2] * dp3.z);
+	//}
 }
 
 Quadrilateral::~Quadrilateral() {
@@ -75,9 +158,6 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
     const Point &p11 = mesh->p[idx[2]];
     const Point &p01 = mesh->p[idx[3]];
 
-	// bilinear coordinates
-	float u, v;
-
 	// Reject rays using the barycentric coordinates of
 	// the intersection point with respect to T.
 	Vector e01 = p10 - p00;
@@ -86,18 +166,17 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 	float det = Dot(e01, P);
 	if (fabsf(det) < 1e-7) 
 		return false;
+	
+	float invdet = 1.f / det;
+
 	Vector T = ray.o - p00;
-	float alpha = Dot(T, P) / det;	
-	if (alpha < 0) 
-		return false;
-	if (alpha > 1) 
+	float alpha = Dot(T, P) * invdet;	
+	if (alpha < 0 || alpha > 1) 
 		return false;
 
 	Vector Q = Cross(T, e01);
-	float beta = Dot(ray.d, Q) / det;
-	if (beta < 0) 
-		return false;
-	if (beta > 1)
+	float beta = Dot(ray.d, Q) * invdet;
+	if (beta < 0 || beta > 1)
 		return false;
 
 	// Reject rays using the barycentric coordinates of
@@ -109,68 +188,107 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 		float det2 = Dot(e23, P2);
 		if (fabsf(det2) < 1e-7f) 
 			return false;
+		//float invdet2 = 1.f / det2;
+		// since we only reject if alpha or beta < 0
+		// we just need the sign info from det2
+		float invdet2 = (det2 < 0) ? -1 : 1;
 		Vector T2 = ray.o - p11;
-		float alpha2 = Dot(T2, P2) / det2;
+		float alpha2 = Dot(T2, P2) * invdet2;
 		if (alpha2 < 0) 
 			return false;
 		Vector Q2 = Cross(T2, e23);
-		float beta2 = Dot(ray.d, Q2) / det2;
+		float beta2 = Dot(ray.d, Q2) * invdet2;
 		if (beta2 < 0) 
 			return false;
 	}
 
 	// Compute the ray parameter of the intersection
 	// point.
-	float t = Dot(e03, Q) / det;
+	float t = Dot(e03, Q) * invdet;
 	if (t < ray.mint || t > ray.maxt) 
 		return false;
 
 	// Compute the barycentric coordinates of V11.
 	Vector e02 = p11 - p00;
-	Normal N = Normal(Cross(e01, e03));
+	Vector N = Cross(e01, e03);
 
 	float a11, b11;
-	float absNx = fabsf(N.x);
-	float absNy = fabsf(N.y);
-	float absNz = fabsf(N.z);
+	int Nma = MajorAxis(N);
 
-	if (absNx >= absNy && absNx >= absNz) {
-		float iNx = 1.f / N.x;
-		a11 = (e02.y * e03.z - e02.z * e03.y) * iNx;
-		b11 = (e01.y * e02.z - e01.z * e02.y) * iNx;
-	} else if (absNy >= absNx && absNy >= absNz) {
-		float iNy = 1.f / N.y;
-		a11 = (e02.z * e03.x - e02.x * e03.z) * iNy;
-		b11 = (e01.z * e02.x - e01.x * e02.z) * iNy;
-	} else {
-		float iNz = 1.f / N.z;
-		a11 = (e02.x * e03.y - e02.y * e03.x) * iNz;
-		b11 = (e01.x * e02.y - e01.y * e02.x) * iNz;
+	switch (Nma) {
+		case 0: {
+			float iNx = 1.f / N.x;
+			a11 = (e02.y * e03.z - e02.z * e03.y) * iNx - 1.f;
+			b11 = (e01.y * e02.z - e01.z * e02.y) * iNx - 1.f;
+			break;
+		}
+		case 1: {
+			float iNy = 1.f / N.y;
+			a11 = (e02.z * e03.x - e02.x * e03.z) * iNy - 1.f;
+			b11 = (e01.z * e02.x - e01.x * e02.z) * iNy - 1.f;
+			break;
+		}
+		case 2: {
+			float iNz = 1.f / N.z;
+			a11 = (e02.x * e03.y - e02.y * e03.x) * iNz - 1.f;
+			b11 = (e01.x * e02.y - e01.y * e02.x) * iNz - 1.f;
+			break;
+		}
 	}
 
 	// Compute the bilinear coordinates of the
 	// intersection point.
-	if (fabsf(a11 - 1.f) < 1e-7f) {
+	float u, v;
+	if (fabsf(a11) < 1e-7f) {
 		u = alpha;
-		v = fabsf(b11 - 1.f) < 1e-7f ? beta : beta / (u * (b11 - 1.f) + 1.f);
-	} else if (fabsf(b11 - 1.f) < 1e-7f) {
+		v = fabsf(b11) < 1e-7f ? beta : beta / (u * b11 + 1.f);
+	} else if (fabsf(b11) < 1e-7f) {
 		v = beta;
-		u = alpha / (v * (a11 - 1.f) + 1.f);
+		u = alpha / (v * a11 + 1.f);
 	} else {
-		float A = -(b11 - 1.f);
-		float B = alpha*(b11 - 1.f) - beta*(a11 - 1.f) - 1.f;
+		float A = -b11;
+		float B = alpha*b11 - beta*a11 - 1.f;
 		float C = alpha;
 
 		Quadratic(A, B, C, &u, &v);		
 		if ((u < 0) || (u > 1))
 			u = v;
 		
-		v = beta / (u * (b11 - 1.f) + 1.f);
+		v = beta / (u * b11 + 1.f);
 	}
 
-	// TODO - verify differentials
-	Vector dpdu = Vector((1.f - v) * (p00 + p10) + v * (p11 + p01));
-	Vector dpdv = Vector((1.f - u) * (p00 + p01) + u * (p10 + p11));
+
+	Vector dpdu, dpdv;
+	float uv[4][2];
+	float A[3][3], InvA[3][3];
+
+	GetUVs(uv);
+
+	A[0][0] = uv[1][0] - uv[0][0];
+	A[0][1] = uv[1][1] - uv[0][1];
+	A[0][2] = uv[1][0]*uv[1][1] - uv[0][0]*uv[0][1];
+	A[1][0] = uv[2][0] - uv[0][0];
+	A[1][1] = uv[2][1] - uv[0][1];
+	A[1][2] = uv[2][0]*uv[2][1] - uv[0][0]*uv[0][1];
+	A[2][0] = uv[3][0] - uv[0][0];
+	A[2][1] = uv[3][1] - uv[0][1];
+	A[2][2] = uv[3][0]*uv[3][1] - uv[0][0]*uv[0][1];
+
+	// invert matrix
+	if (!Invert3x3(A, InvA)) {
+        // Handle zero determinant for quadrilateral partial derivative matrix
+		Vector N = Cross(e01, e02);
+        CoordinateSystem(Normalize(N), &dpdu, &dpdv);	
+	} else {
+		dpdu = Vector(
+			InvA[0][0] * e01.x + InvA[0][1] * e02.x + InvA[0][2] * e03.x,
+			InvA[0][0] * e01.y + InvA[0][1] * e02.y + InvA[0][2] * e03.y,
+			InvA[0][0] * e01.z + InvA[0][1] * e02.z + InvA[0][2] * e03.z);
+		dpdv = Vector(
+			InvA[1][0] * e01.x + InvA[1][1] * e02.x + InvA[1][2] * e03.x,
+			InvA[1][0] * e01.y + InvA[1][1] * e02.y + InvA[1][2] * e03.y,
+			InvA[1][0] * e01.z + InvA[1][1] * e02.z + InvA[1][2] * e03.z);
+	}
 
     *dg = DifferentialGeometry(ray(t), dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
