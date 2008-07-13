@@ -60,49 +60,6 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 
 #############################################################################
 #############################################################################
-########################### FLTK  LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-#This FIND_PATH is a hack, FIND_PACKAGE doesn't find fltk otherwise
-IF(APPLE)
-	SET(FLTK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/../macos/fltk-1.1/include)
-	IF(APPLE_64)
-		SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/../macos/fltk-1.1/lib/64bit)
-	ELSE(APPLE_64)
-		SET(FLTK_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/../macos/fltk-1.1/lib)
-	ENDIF(APPLE_64)
-ELSE(APPLE)
-	FIND_PATH(FLTK_INCLUDE_DIR
-		Fl/Fl.H
-		PATHS
-		/usr/local/include/
-		/usr/local/include/fltk-1.1
-		/usr/include/
-		/usr/include/fltk-1.1
-		/opt/local/include/
-		/opt/include/
-	)
-ENDIF(APPLE)
-
-IF( FLTK_INCLUDE_DIR )
-    MESSAGE(STATUS "FLTK include directory: " ${FLTK_INCLUDE_DIR})
-	SET(FLTK_LIBRARIES fltk fltk_gl)
-ELSE( FLTK_INCLUDE_DIR )
-        MESSAGE(FATAL_ERROR "Could not find FLTK")
-ENDIF( FLTK_INCLUDE_DIR )
-
-
-#INCLUDE(FindFLTK)
-#FIND_PACKAGE( FLTK REQUIRED )
-#IF( FLTK_FOUND )
-#        MESSAGE( STATUS "Found FLTK" )
-#ELSE( FLTK_FOUND )
-#        MESSAGE(FATAL_ERROR "Could not find FLTK")
-#ENDIF( FLTK_FOUND )
-
-
-#############################################################################
-#############################################################################
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
@@ -463,7 +420,7 @@ INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
 					${TIFF_INCLUDE_DIR}
 					${PNG_INCLUDE_DIR}
 					${OPENEXR_INCLUDE_DIRS}
-					${Boost_INCLUDE_DIRS} ${FLTK_INCLUDE_DIR}
+					${Boost_INCLUDE_DIRS}
 					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
 					${CMAKE_SOURCE_DIR}/core/reflection ${CMAKE_SOURCE_DIR}/core/reflection/bxdf ${CMAKE_SOURCE_DIR}/spds
 					${CMAKE_SOURCE_DIR}/core/reflection/fresnel ${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
@@ -482,8 +439,8 @@ INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
 #############################################################################
 #############################################################################
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${FLTK_LIBRARIES_DIR} /usr/lib/fltk-1.1 /usr/lib64/fltk-1.1 ${PNG_LIBRARY} ${TIFF_LIBRARY} ${JPEG_LIBRARY})
-					
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${JPEG_LIBRARY})
+
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} )
@@ -514,43 +471,11 @@ IF(APPLE)
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
 
-
 #############################################################################
-#Here we build the GUI executable
-#############################################################################
-ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/luxgui.cpp renderer/renderwindow.cpp)
-INCLUDE_DIRECTORIES(${FLTK_INCLUDE_DIR} /usr/local/include /usr/include)
-
-IF(APPLE)
-	INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
-	FIND_LIBRARY(CARBON_LIBRARY Carbon)
-	FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
-	FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
-	FIND_LIBRARY(AGL_LIBRARY AGL )
-	FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
-
-	MESSAGE(STATUS ${CARBON_LIBRARY})
-	MARK_AS_ADVANCED (CARBON_LIBRARY)
-	MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
-	MARK_AS_ADVANCED (OPENGL_LIBRARY)
-	MARK_AS_ADVANCED (AGL_LIBRARY)
-	MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-	SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
-	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrender lux ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${FLTK_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
-ENDIF(APPLE)
-
-#IF(APPLE AND !APPLE_64)
-#SET_TARGET_PROPERTIES(luxconsole luxrender PROPERTIES LINK_FLAGS "-mmacosx-version-min=10.4")
-#ENDIF(APPLE AND !APPLE_64)
-
-
-#############################################################################
-#Here we build the new GUI executable
+#Here we build the wxWidgets GUI executable
 #############################################################################
 IF(wxWidgets_FOUND)
-	ADD_EXECUTABLE(wxluxgui ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp)
+	ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp)
 	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
 
 	IF(APPLE)
@@ -568,9 +493,9 @@ IF(wxWidgets_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender lux ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(wxluxgui lux ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender lux ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ENDIF(wxWidgets_FOUND)
 
