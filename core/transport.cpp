@@ -78,6 +78,7 @@ SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	}
 	return L;
 }
+
 SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
@@ -114,6 +115,7 @@ SWCSpectrum UniformSampleAllLights(const Scene *scene,
 	}
 	return L;
 }
+
 SWCSpectrum UniformSampleOneLight(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
@@ -156,6 +158,7 @@ SWCSpectrum UniformSampleOneLight(const Scene *scene,
 		EstimateDirect(scene, light, p, n, wo, bsdf,
 			ls1, ls2, ls3, bs1, bs2, bcs);
 }
+
 SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
@@ -232,6 +235,7 @@ SWCSpectrum WeightedSampleOneLight(const Scene *scene,
 	}
 	return L;
 }
+
 SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
@@ -259,7 +263,7 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 			}
 		}
 	}
-	
+
 	// Sample BSDF with multiple importance sampling
 	if (!light->IsDeltaLight()) {
 		BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);

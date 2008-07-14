@@ -252,15 +252,8 @@ WaldTriangle::WaldTriangle(const Transform &o2w, bool ro,
     
     // NOTE - ratow - Invert generated normal in case it falls on the wrong side.
     // Dade - this computation can be done at scene creation time too
-    
-    normalizedNormal = Normal(Normalize(Cross(dpdu, dpdv)));
-	if(mesh->n) {
-		if(Dot(ObjectToWorld(mesh->n[v[0]]+mesh->n[v[1]]+mesh->n[v[2]]), normalizedNormal) < 0)
-			normalizedNormal *= -1;
-	} else {
-		if(Dot(Cross(e1, e2), normalizedNormal) < 0)
-			normalizedNormal *= -1;
-	}
+
+    normalizedNormal = Normal(Normalize(Cross(e1, e2)));
 
     // Adjust normal based on orientation and handedness
     if (this->reverseOrientation ^ this->transformSwapsHandedness)
@@ -466,13 +459,31 @@ bool WaldTriangle::Intersect(const Ray &ray, float *tHit,
     GetUVs(uvs);
     // Interpolate $(u,v)$ triangle parametric coordinates
     const float b0 = 1.0f - uu - vv;
-    const float tu = b0*uvs[0][0] + uu*uvs[1][0] + vv*uvs[2][0];
-    const float tv = b0*uvs[0][1] + uu*uvs[1][1] + vv*uvs[2][1];
+    const float tu = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
+    const float tv = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
+
+	// Dade - using the intepolated normal here in order to fix bug #340
+	Normal nn;
+	if (mesh->n)
+		nn = Normalize(ObjectToWorld(b0 * mesh->n[v[0]] +
+			uu * mesh->n[v[1]] + vv * mesh->n[v[2]]));
+	else
+		nn = normalizedNormal;
+
+	// Adjust normal based on orientation and handedness
+    if (this->reverseOrientation ^ this->transformSwapsHandedness)
+        nn *= -1.f;
+
     *dg = DifferentialGeometry(ray(t),
-            normalizedNormal,
+            nn,
             dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
             tu, tv, this);
+
+	// Dade - data used by GetShadingGeometry() method
+	dg->triangleBaryCoords[0] = b0;
+	dg->triangleBaryCoords[1] = uu;
+	dg->triangleBaryCoords[2] = vv;
 
     *tHit = t;
     return true;
@@ -652,7 +663,8 @@ float WaldTriangle::Area() const {
     const Point &p1 = mesh->p[v[0]];
     const Point &p2 = mesh->p[v[1]];
     const Point &p3 = mesh->p[v[2]];
-    return 0.5f * Cross(p2-p1, p3-p1).Length();
+
+    return 0.5f * Cross(p2 - p1, p3 - p1).Length();
 }
 
 Point WaldTriangle::Sample(float u1, float u2,
@@ -668,6 +680,72 @@ Point WaldTriangle::Sample(float u1, float u2,
     *Ns = normalizedNormal;
 
     return p;
+}
+
+void WaldTriangle::GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const {
+	if (!mesh->n && !mesh->s) {
+		*dgShading = dg;
+		return;
+	}
+
+	// Dade - recover barycentric coordinates
+	float b[3] = {
+		dg.triangleBaryCoords[0],
+		dg.triangleBaryCoords[1],
+		dg.triangleBaryCoords[2]
+	};
+
+	// Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and _ts_
+	Normal ns = dg.nn;
+	Vector ss, ts;
+	if (mesh->s)
+		ss = Normalize(obj2world(b[0] * mesh->s[v[0]] +
+			b[1] * mesh->s[v[1]] + b[2] * mesh->s[v[2]]));
+	else
+		ss = Normalize(dg.dpdu);
+
+	ts = Normalize(Cross(ss, ns));
+	ss = Cross(ts, ns);
+	Vector dndu, dndv;
+	if (mesh->n) {
+		// Compute \dndu and \dndv for triangle shading geometry
+		float uvs[3][2];
+		GetUVs(uvs);
+
+		// Compute deltas for triangle partial derivatives of normal
+		float du1 = uvs[0][0] - uvs[2][0];
+		float du2 = uvs[1][0] - uvs[2][0];
+		float dv1 = uvs[0][1] - uvs[2][1];
+		float dv2 = uvs[1][1] - uvs[2][1];
+		Vector dn1 = Vector(mesh->n[v[0]] - mesh->n[v[2]]);
+		Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
+		float determinant = du1 * dv2 - dv1 * du2;
+
+		if (determinant == 0)
+			dndu = dndv = Vector(0, 0, 0);
+		else {
+			float invdet = 1.f / determinant;
+			dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
+			dndv = (-du2 * dn1 + du1 * dn2) * invdet;
+
+			dndu = ObjectToWorld(dndu);
+			dndv = ObjectToWorld(dndu);
+		}
+	} else
+		dndu = dndv = Vector(0, 0, 0);
+
+	*dgShading = DifferentialGeometry(
+			dg.p,
+			ns,
+			ss, ts,
+			dndu, dndv,
+			dg.u, dg.v, dg.shape);
+
+	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx; // NOBOOK
+	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy; // NOBOOK
+	dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy; // NOBOOK
 }
 
 Shape* WaldTriangleMesh::CreateShape(const Transform &o2w,

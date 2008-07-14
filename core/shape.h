@@ -36,11 +36,14 @@ class  DifferentialGeometry {
 
 	DifferentialGeometry() { u = v = 0.; shape = NULL; }
 	// DifferentialGeometry Public Methods
-	DifferentialGeometry(const Point &P, const Vector &DPDU,
-			const Vector &DPDV, const Vector &DNDU,
-			const Vector &DNDV, float uu, float vv,
+	DifferentialGeometry(
+			const Point &P,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Vector &DNDU, const Vector &DNDV,
+			float uu, float vv,
 			const Shape *sh);
-	DifferentialGeometry(const Point &P, const Normal &NN,
+	DifferentialGeometry(
+			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV, 
 			const Vector &DNDU, const Vector &DNDV, 
 			float uu, float vv,
@@ -55,6 +58,12 @@ class  DifferentialGeometry {
 	float u, v;
 	const Shape *shape;
 	mutable float dudx, dvdx, dudy, dvdy;
+
+	// Dade - shape specific data, useful to "transport" informatin between
+	// shape intersection method and GetShadingGeometry()
+	union {
+		float triangleBaryCoords[3];
+	};
 };
 
 // Shape Declarations
@@ -118,6 +127,7 @@ public:
 	const Transform ObjectToWorld, WorldToObject;
 	const bool reverseOrientation, transformSwapsHandedness;
 };
+
 class ShapeSet : public Shape {
 public:
 	// ShapeSet Public Methods
