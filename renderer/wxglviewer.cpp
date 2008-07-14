@@ -71,7 +71,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	if(luxStatistics("sceneIsReady")) {
-		if(m_firstDraw) {
+		if(m_firstDraw || m_imageW != luxStatistics("filmXres") || m_imageH != luxStatistics("filmYres")) {
 			m_firstDraw = false;
 			m_imageW = luxStatistics("filmXres");
 			m_imageH = luxStatistics("filmYres");
@@ -93,6 +93,11 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 			}
 			m_imageChanged = true;
 			//move to center of window
+			m_offsetX = m_offsetY = 0;
+			m_scale = 1.0f;
+			m_scaleExp=0;
+			m_scaleXo = m_scaleYo = 0;
+			m_lastX = m_lastY = 0;
 			m_scaleXo2 = -m_imageW/2 + GetSize().x/2;
 			m_scaleYo2 = -m_imageH/2 + GetSize().y/2;
 		}

@@ -36,7 +36,6 @@ namespace lux
 class LuxGLViewer : public wxGLCanvas {
 public:
 	LuxGLViewer(wxWindow *parent, int textureW = 256, int textureH = 256);
-	void Reset(void) { m_firstDraw = true; }
 
 protected:
 	DECLARE_EVENT_TABLE()

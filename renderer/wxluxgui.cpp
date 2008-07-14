@@ -99,7 +99,6 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 	switch(state) {
 		case WAITING:
 			// Waiting for input file. Most controls disabled.
-			m_file->Enable(wxID_OPEN, true);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
 			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
@@ -109,7 +108,6 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			break;
 		case RENDERING:
 			// Rendering is in progress.
-			m_file->Enable(wxID_OPEN, false);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, true);
 			m_render->Enable(ID_ENOUGHSAMPLEITEM, true);
@@ -119,7 +117,6 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			break;
 		case IDLE:
 			// Rendering is paused.
-			m_file->Enable(wxID_OPEN, false);
 			m_render->Enable(ID_RESUMEITEM, true);
 			m_render->Enable(ID_STOPITEM, false);
 			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
@@ -129,7 +126,6 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			break;
 		case FINISHED:
 			// Rendering is finished.
-			m_file->Enable(wxID_OPEN, true);
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
 			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
@@ -226,6 +222,12 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 }
 
 void LuxGui::OnOpen(wxCommandEvent& event) {
+	if(m_guiRenderState == RENDERING) {
+		// Give warning that current rendering is not stoped
+		if(wxMessageBox(wxT("Current file is still rendering. Do you want to continue?"), wxT(""), wxYES_NO | wxICON_QUESTION, this) == wxNO)
+			return;
+	}
+
 	wxFileDialog filedlg(this,
 	                     _("Choose a file to open"),
 											 wxEmptyString,
@@ -235,12 +237,17 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 
 	if(filedlg.ShowModal() == wxID_OK) {
 		// Clean up if this is not the first rendering
-		if(m_guiRenderState != IDLE) {
+		if(m_guiRenderState != WAITING) {
+			if(m_guiRenderState == RENDERING) {
+				if(m_updateThread)
+					m_updateThread->join();
+				luxExit();
+				if(m_engineThread)
+					m_engineThread->join();
+			}
 			luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
 			luxCleanup();
-			ChangeRenderState(IDLE);
-			if(m_opengl) // Re-init textures
-				boost::polymorphic_downcast<LuxGLViewer*>(m_renderOutput)->Reset();
+			ChangeRenderState(WAITING);
 		}
 
 		RenderScenefile(filedlg.GetPath());
@@ -338,7 +345,8 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		ChangeRenderState(FINISHED);
-	} else if(event.GetEventType() == wxEVT_LUX_FINISHED) {
+	} else if(event.GetEventType() == wxEVT_LUX_FINISHED && m_guiRenderState == RENDERING) {
+		// Ignoring finished events if another file is being opened (state != RENDERING)
 		//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
 		ChangeRenderState(FINISHED);
 		// Stop timers and update output one last time.
