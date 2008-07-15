@@ -170,6 +170,79 @@ void IdentityMapping3D::Apply3DTextureMappingOptions(const TextureParams &tp) {
 	Vector translatev = tp.FindVector("translate", Vector(0., 0., 0.));
 	WorldToTexture = WorldToTexture * Translate(-translatev);
 }
+void LatLongMapping::Map(const Vector &wh, float *s, float *t) const {
+	*s = SphericalPhi(wh) * INV_TWOPI;
+	*t = SphericalTheta(wh) * INV_PI;
+}
+void AngularMapping::Map(const Vector &wh, float *s, float *t) const {
+	float r = sqrtf(wh.y*wh.y + wh.z*wh.z);
+	if (r > 1e-9)
+		r = INV_TWOPI * acosf(Clamp(-wh.x, -1.f, 1.f)) / r;
+	*s = 0.5f - wh.y * r;
+	*t = 0.5f - wh.z * r;
+}
+void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t) const {
+	int axis = 0;
+	float ma = fabsf(wh.x);
+	if (fabsf(wh.y) > ma) {
+		ma = fabsf(wh.y);
+		axis = 1;
+	}
+	if (fabsf(wh.z) > ma) {
+		ma = fabsf(wh.z);
+		axis = 2;
+	}
+	float ima = 1.f / ma;
+	float sc, tc;
+	float so, to;
+	// select cube face based on major axis
+	switch (axis) {
+		case 0:
+			if (wh.x > 0) {
+				sc = -wh.y;
+				tc = wh.z;
+				so = 1.f;
+				to = 3.f;
+			} else {
+				sc = -wh.y;
+				tc = -wh.z;
+				so = 1.f;
+				to = 1.f;
+			}
+			break;
+		case 1:
+			if (wh.y > 0) {
+				sc = -wh.x;
+				tc = -wh.z;
+				so = 0.f;
+				to = 1.f;
+			} else {
+				sc = wh.x;
+				tc = -wh.z;
+				so = 2.f;
+				to = 1.f;
+			}
+			break;
+		case 2:
+			if (wh.z > 0) {
+				sc = -wh.y;
+				tc = -wh.x;
+				so = 1.f;
+				to = 0.f;
+			} else {
+				sc = -wh.y;
+				tc = wh.x;
+				so = 1.f;
+				to = 2.f;
+			}
+			break;
+	}
+	*s = Clamp((sc * ima + 1.f) * 0.5f, 0.f, 1.f);
+	*t = Clamp((tc * ima + 1.f) * 0.5f, 0.f, 1.f);
+	// rescale and offset to correct cube face in cross
+	*s = (*s + so) * (1.f / 3.f);
+	*t = (*t + to) * (1.f / 4.f);
+}
  float Noise(float x, float y, float z) {
 	// Compute noise cell coordinates and offsets
 	int ix = Floor2Int(x);

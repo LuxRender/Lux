@@ -105,6 +105,30 @@ public:
 //private:
 	Transform WorldToTexture;
 };
+class  EnvironmentMapping {
+public:
+	// EnvironmentMapping Interface
+	virtual ~EnvironmentMapping() { }
+	virtual void Map(const Vector &wh, float *s, float *t) const = 0;
+};
+class  LatLongMapping : public EnvironmentMapping {
+public:
+	// LatLongMapping Public Methods
+	LatLongMapping() {}
+	virtual void Map(const Vector &wh, float *s, float *t) const;
+};
+class  AngularMapping : public EnvironmentMapping {
+public:
+	// AngularMapping Public Methods
+	AngularMapping() {}
+	virtual void Map(const Vector &wh, float *s, float *t) const;
+};
+class  VerticalCrossMapping : public EnvironmentMapping {
+public:
+	// VerticalCross Public Methods
+	VerticalCrossMapping() {}
+	virtual void Map(const Vector &wh, float *s, float *t) const;
+};
 template <class T> class Texture {
 public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
