@@ -36,7 +36,7 @@ class InfiniteAreaLight : public Light {
 public:
 	// InfiniteAreaLight Public Methods
 	InfiniteAreaLight(const Transform &light2world, const Spectrum &l, int ns, const string &texmap,
-		float gain, float gamma);
+		EnvironmentMapping *m, float gain, float gamma);
 	~InfiniteAreaLight();
 	SWCSpectrum Power(const Scene *scene) const {
 		Point worldCenter;
@@ -70,6 +70,7 @@ private:
 	SPD *SPDbase;
 	Spectrum Lbase;
 	MIPMap<Spectrum> *radianceMap;
+	EnvironmentMapping *mapping;
 };
 
 }//namespace lux

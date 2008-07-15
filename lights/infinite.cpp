@@ -32,9 +32,10 @@ using namespace lux;
 InfiniteAreaLight::~InfiniteAreaLight() {
 	delete radianceMap;
 	delete SPDbase;
+	delete mapping;
 }
 InfiniteAreaLight
-	::InfiniteAreaLight(const Transform &light2world, const Spectrum &l, int ns, const string &texmap, float gain, float gamma)
+	::InfiniteAreaLight(const Transform &light2world, const Spectrum &l, int ns, const string &texmap, EnvironmentMapping *m, float gain, float gamma)
 	: Light(light2world, ns) {
 	radianceMap = NULL;
 	if (texmap != "") {
@@ -47,6 +48,8 @@ InfiniteAreaLight
 		else
 			radianceMap=NULL;
 	}
+
+	mapping = m;
 
 	// Base illuminant SPD
 	SPDbase = new BlackbodySPD();
@@ -65,8 +68,11 @@ SWCSpectrum
 	Spectrum L = Lbase;
 	if (radianceMap != NULL) {
 		Vector wh = Normalize(WorldToLight(w));
-		float s = SphericalPhi(wh) * INV_TWOPI;
-		float t = SphericalTheta(wh) * INV_PI;
+
+		float s, t;
+
+		mapping->Map(wh, &s, &t);
+
 		L *= radianceMap->Lookup(s, t);
 	}
 
@@ -220,9 +226,17 @@ Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 
+	EnvironmentMapping *map = NULL;
+	string type = paramSet.FindOneString("mapping", "");
+	if (type == "" || type == "latlong") {
+		map = new LatLongMapping();
+	}
+	else if (type == "angular") map = new AngularMapping();
+	else if (type == "vcross") map = new VerticalCrossMapping();
+
 	// Initialize _ImageTexture_ parameters
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	return new InfiniteAreaLight(light2world, L, nSamples, texmap, gain, gamma);
+	return new InfiniteAreaLight(light2world, L, nSamples, texmap, map, gain, gamma);
 }
