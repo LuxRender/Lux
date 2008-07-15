@@ -241,56 +241,76 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
 {
 	SWCSpectrum Ld(0.);
-	// Sample light source with multiple importance sampling
-	Vector wi;
-	float lightPdf, bsdfPdf;
-	VisibilityTester visibility;
-	SWCSpectrum Li = light->Sample_L(p, n,
-		ls1, ls2, ls3, &wi, &lightPdf, &visibility);
-	if (lightPdf > 0. && !Li.Black()) {
-		SWCSpectrum f = bsdf->f(wo, wi);
-		SWCSpectrum fO;
-		if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
-			// Add light's contribution to reflected radiance
-			Li *= visibility.Transmittance(scene);
-			Li *= fO;
-			if (light->IsDeltaLight())
-				Ld += f * Li * AbsDot(wi, n) / lightPdf;
-			else {
+
+	// Dade - use MIS only if it is worth doing
+	BxDFType diffuse = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
+	if (light->IsDeltaLight() || (bsdf->NumComponents(diffuse) > 0)) {
+		// Dade - trace only a single shadow ray
+		
+		Vector wi;
+		float lightPdf;
+		VisibilityTester visibility;
+		SWCSpectrum Li = light->Sample_L(p, n,
+			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
+		if (lightPdf > 0. && !Li.Black()) {
+			SWCSpectrum f = bsdf->f(wo, wi);
+			SWCSpectrum fO;
+			if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
+				// Add light's contribution to reflected radiance
+				Li *= visibility.Transmittance(scene);
+				Li *= fO;
+
+				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
+			}
+		}
+	} else {
+		// Dade - trace 2 shadow rays and use MIS
+
+		// Sample light source with multiple importance sampling
+		Vector wi;
+		float lightPdf, bsdfPdf;
+		VisibilityTester visibility;
+		SWCSpectrum Li = light->Sample_L(p, n,
+			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
+		if (lightPdf > 0. && !Li.Black()) {
+			SWCSpectrum f = bsdf->f(wo, wi);
+			SWCSpectrum fO;
+			if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
+				// Add light's contribution to reflected radiance
+				Li *= visibility.Transmittance(scene);
+				Li *= fO;
+
 				bsdfPdf = bsdf->Pdf(wo, wi);
 				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
-				Ld += f * Li * AbsDot(wi, n) * weight / lightPdf;
+				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
+			}
+
+			// Sample BSDF with multiple importance sampling
+			BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
+			SWCSpectrum fBSDF = bsdf->Sample_f(wo, &wi,
+				bs1, bs2, bcs, &bsdfPdf, flags);
+			if (!fBSDF.Black() && bsdfPdf > 0.) {
+				lightPdf = light->Pdf(p, n, wi);
+				if (lightPdf > 0.) {
+					// Add light contribution from BSDF sampling
+					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+					Intersection lightIsect;
+					SWCSpectrum Li(0.f);
+					RayDifferential ray(p, wi);
+					if (scene->Intersect(ray, &lightIsect)) {
+						if (lightIsect.primitive->GetAreaLight() == light)
+							Li = lightIsect.Le(-wi);
+					} else
+						Li = light->Le(ray);
+					if (!Li.Black()) {
+						Li *= scene->Transmittance(ray);
+						Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
+					}
+				}
 			}
 		}
 	}
 
-	// Sample BSDF with multiple importance sampling
-	if (!light->IsDeltaLight()) {
-		BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi,
-			bs1, bs2, bcs, &bsdfPdf, flags);
-		if (!f.Black() && bsdfPdf > 0.) {
-			lightPdf = light->Pdf(p, n, wi);
-			if (lightPdf > 0.) {
-				// Add light contribution from BSDF sampling
-				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
-				Intersection lightIsect;
-				SWCSpectrum Li(0.f);
-				RayDifferential ray(p, wi);
-				if (scene->Intersect(ray, &lightIsect)) {
-					if (lightIsect.primitive->GetAreaLight() == light)
-						Li = lightIsect.Le(-wi);
-				}
-				else
-					Li = light->Le(ray);
-				if (!Li.Black()) {
-					Li *= scene->Transmittance(ray);
-					Ld += f * Li * AbsDot(wi, n) * weight / bsdfPdf;
-				}
-			}
-		}
-	}
-	
 	return Ld;
 }
 
@@ -299,36 +319,59 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs, BxDFType flags)
 {
 	SWCSpectrum Ld(0.);
-	// Sample light source with multiple importance sampling
-	Vector wi;
-	float lightPdf, bsdfPdf;
-	VisibilityTester visibility;
-	SWCSpectrum Li = light->Sample_L(p, n,
-		ls1, ls2, ls3, &wi, &lightPdf, &visibility);
-	if (lightPdf > 0. && !Li.Black()) {
-		SWCSpectrum f = bsdf->f(wo, wi, flags);
-		//SWCSpectrum f = bsdf->f(wo, wi);
-		SWCSpectrum fO;
-		if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
-			// Add light's contribution to reflected radiance
-			Li *= visibility.Transmittance(scene);
-			Li *= fO;
-			if (light->IsDeltaLight())
-				Ld += f * Li * AbsDot(wi, n) / lightPdf;
-			else {
-				bsdfPdf = bsdf->Pdf(wo, wi, flags);
-				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
-				Ld += f * Li * AbsDot(wi, n) * weight / lightPdf;
+
+	// Dade - use MIS only if it is worth doing
+	BxDFType diffuse = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
+	if (light->IsDeltaLight() ||
+			((bsdf->NumComponents(diffuse) > 0) && (flags & diffuse))) {
+		// Dade - trace only a single shadow ray
+		
+		Vector wi;
+		float lightPdf;
+		VisibilityTester visibility;
+		SWCSpectrum Li = light->Sample_L(p, n,
+			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
+		if (lightPdf > 0. && !Li.Black()) {
+			SWCSpectrum f = bsdf->f(wo, wi);
+			SWCSpectrum fO;
+			if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
+				// Add light's contribution to reflected radiance
+				Li *= visibility.Transmittance(scene);
+				Li *= fO;
+
+				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
 			}
 		}
-	}
+	} else {
+		// Dade - trace 2 shadow rays and use MIS
 
-	// Sample BSDF with multiple importance sampling
-	if (!light->IsDeltaLight()) {
+		// Sample light source with multiple importance sampling
+		Vector wi;
+		float lightPdf, bsdfPdf;
+		VisibilityTester visibility;
+		SWCSpectrum Li = light->Sample_L(p, n,
+			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
+		if (lightPdf > 0. && !Li.Black()) {
+			SWCSpectrum f = bsdf->f(wo, wi, flags);
+			//SWCSpectrum f = bsdf->f(wo, wi);
+			SWCSpectrum fO;
+			if (!f.Black() && visibility.TestOcclusion(scene, &fO)) {
+				// Add light's contribution to reflected radiance
+				Li *= visibility.Transmittance(scene);
+				Li *= fO;
+
+				bsdfPdf = bsdf->Pdf(wo, wi, flags);
+				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
+				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
+			}
+		}
+
+		// Sample BSDF with multiple importance sampling
+
 		BxDFType bflags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi,
+		SWCSpectrum fBSDF = bsdf->Sample_f(wo, &wi,
 			bs1, bs2, bcs, &bsdfPdf, bflags);
-		if (!f.Black() && bsdfPdf > 0.) {
+		if (!fBSDF.Black() && bsdfPdf > 0.) {
 			lightPdf = light->Pdf(p, n, wi);
 			if (lightPdf > 0.) {
 				// Add light contribution from BSDF sampling
@@ -344,7 +387,7 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 					Li = light->Le(ray);
 				if (!Li.Black()) {
 					Li *= scene->Transmittance(ray);
-					Ld += f * Li * AbsDot(wi, n) * weight / bsdfPdf;
+					Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
 				}
 			}
 		}
