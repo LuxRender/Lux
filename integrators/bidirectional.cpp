@@ -72,7 +72,9 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(1); //bsdf component for light path
 	sampleLightOffset = sample->AddxD(structure, maxLightDepth);
 	// Prepare image buffers
-	eyeBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "eye");
+	BufferType type = BUF_TYPE_PER_SCREEN;
+	scene->sampler->GetBufferType(&type);
+	eyeBufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
 }
 
@@ -86,7 +88,11 @@ static int generateEyePath(const Scene *scene, BSDF *bsdf,//const Ray &r,
 	while (nVerts < static_cast<int>(vertices.size())) {
 		// Find next vertex in path and initialize _vertices_
 		BidirVertex &v = vertices[nVerts];
-		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
+		const float *data;
+		if (nVerts > 0)
+			data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
+		else
+			data = NULL;
 		if (nVerts == 0) {
 			v.wo = Vector(bsdf->dgShading.nn);
 			v.bsdf = bsdf;
@@ -105,9 +111,13 @@ static int generateEyePath(const Scene *scene, BSDF *bsdf,//const Ray &r,
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == static_cast<int>(vertices.size()))
 			break;
-		v.f = v.bsdf->Sample_f(v.wo, &v.wi, data[1], data[2], data[3],
-			 &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
-		if (v.pdfR == 0.f || v.f.Black())
+		if (nVerts > 1)
+			v.f = v.bsdf->Sample_f(v.wo, &v.wi, data[1], data[2], data[3],
+				 &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
+		else
+			v.f = v.bsdf->Sample_f(v.wo, &v.wi, sample->imageX, sample->imageY, 0.5,
+				&v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
+		if (!(v.pdfR > 0.f) || v.f.Black())
 			break;
 		v.flux = v.f * (AbsDot(v.wi, v.ns) / v.pdfR);
 		v.rrR = min<float>(1.f, v.flux.filter());
