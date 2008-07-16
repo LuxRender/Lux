@@ -48,8 +48,8 @@ bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const {
 		const float pdf = bsdf->Pdf(-ray.d, ray.d, BSDF_ALL_TRANSMISSION);
 		if (!(pdf > 0.f))
 			return false;
+		*f *= AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d)) / pdf;
 
-		*f *= AbsDot(bsdf->dgShading.nn, Normalize(ray.d)) / pdf;
 		*f *= bsdf->f(-ray.d, ray.d);
 		if (f->Black())
 			return false;
