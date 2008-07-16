@@ -130,6 +130,7 @@ typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 class Timer;
 class MemoryArena;
 template<class T, int logBlockSize = 2> class BlockedArray;
+class ToneMap;
 class ProgressReporter;
 class StatsCounter;
 class StatsRatio;
@@ -168,7 +169,6 @@ namespace lux
   class Sample;
   class Filter;
   class Film;
-  class ToneMap;
   class BxDF;
   class BRDF;
   class BTDF;
@@ -238,6 +238,15 @@ namespace lux
   bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
 	ImageData *ReadImage(const string &name);
+  void WriteRGBAImage(const string &name,
+	float *pixels, float *alpha, int XRes, int YRes,
+	int totalXRes, int totalYRes, int xOffset, int yOffset);
+  void WriteRGBAImageFloat(const string &name,
+	  float *pixels, float *alpha, int XRes, int YRes,
+	  int totalXRes, int totalYRes, int xOffset, int yOffset);
+  void WriteIgiImage(const string &name,
+	float *pixels, float *alpha, int XRes, int YRes,
+	int totalXRes, int totalYRes, int xOffset, int yOffset);
 }
 
 // Global Classes

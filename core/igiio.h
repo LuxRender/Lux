@@ -24,9 +24,6 @@
 #define LUX_IGIIO_H
 // igiio.h*
 
-#include "lux.h"
-#include "color.h"
-
 namespace lux
 {
 
@@ -61,11 +58,7 @@ public:
 	//3 32 bit floats per pixel.
 };
 
-void WriteIgiImage(const string &name,
-	vector<Color> &pixels, vector<float> &alpha, int XRes, int YRes,
-	int totalXRes, int totalYRes, int xOffset, int yOffset);
-
 }
 
-#endif // LUX_IGIIO_H
+#endif // LUX_IGGIO_H
 

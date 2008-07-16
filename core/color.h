@@ -43,10 +43,6 @@ public:
 			c[0] += s2.c[0]; c[1] += s2.c[1]; c[2] += s2.c[2];
 		return *this;
 	}
-	Color &operator+=(float f) {
-			c[0] += f; c[1] += f; c[2] += f;
-		return *this;
-	}
 	Color operator+(const Color &s2) const {
 		Color ret = *this;
 			ret.c[0] += s2.c[0]; ret.c[1] += s2.c[1]; ret.c[2] += s2.c[2];
@@ -122,13 +118,6 @@ public:
 			ret.c[0] = c[0] > 0 ? powf(c[0], e.c[0]) : 0.f;
 			ret.c[1] = c[1] > 0 ? powf(c[1], e.c[1]) : 0.f;
 			ret.c[2] = c[2] > 0 ? powf(c[2], e.c[2]) : 0.f;
-		return ret;
-	}
-	Color Pow(float f) const {
-		Color ret;
-		ret.c[0] = c[0] > 0 ? powf(c[0], f) : 0.f;
-		ret.c[1] = c[1] > 0 ? powf(c[1], f) : 0.f;
-		ret.c[2] = c[2] > 0 ? powf(c[2], f) : 0.f;
 		return ret;
 	}
 	Color operator-() const {
@@ -295,18 +284,15 @@ public:
 //! the closest representation within the available gamut.
 //! \sa Constrain
 //!
-	RGBColor ToRGBConstrained(const XYZColor &color) const {
-		const float lum = color.y();
+	RGBColor Convert(XYZColor &color) const {
 		float c[3];
 		c[0] = conversion[0][0] * color.c[0] + conversion[0][1] * color.c[1] + conversion[0][2] * color.c[2];
 		c[1] = conversion[1][0] * color.c[0] + conversion[1][1] * color.c[1] + conversion[1][2] * color.c[2];
 		c[2] = conversion[2][0] * color.c[0] + conversion[2][1] * color.c[1] + conversion[2][2] * color.c[2];
-		RGBColor rgb(c);
-		Constrain(lum, rgb);
-		return rgb;
+		return RGBColor(c);
 	}
+	bool Constrain(const XYZColor &xyz, RGBColor &rgb) const;
 protected:
-	bool Constrain(float lum, RGBColor &rgb) const;
 	float xRed, yRed; //!<Red coordinates
 	float xGreen, yGreen; //!<Green coordinates
 	float xBlue, yBlue; //!<Blue coordinates

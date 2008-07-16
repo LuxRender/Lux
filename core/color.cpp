@@ -140,21 +140,9 @@ ColorSystem::ColorSystem(float xR, float yR, float xG, float yG, float xB, float
 //! the primaries of the current colour system. This amounts simply to
 //! testing whether all the primary weights are non-negative.
 //!
-static inline bool LowGamut(const RGBColor &color)
+static inline bool InsideGamut(const RGBColor &color)
 {
-    return color.c[0] < 0.f || color.c[1] < 0.f || color.c[2] < 0.f;
-}
-
-//!
-//! \param[in] color  A RGB color possibly unrepresentable
-//!
-//! Test whether a requested colour is within the gamut achievable with
-//! the primaries of the current colour system. This amounts simply to
-//! testing whether all the primary weights are at most 1.
-//!
-static inline bool HighGamut(const RGBColor &color)
-{
-    return color.c[0] > 1.f || color.c[1] > 1.f || color.c[2] > 1.f;
+    return color.c[0] >= 0.f && color.c[1] >= 0.f && color.c[2] >= 0.f;
 }
 
 //!
@@ -176,58 +164,29 @@ static inline bool HighGamut(const RGBColor &color)
 //! This function tries not to change the overall intensity, only the tint
 //! is shifted to be inside the representable gamut.
 //!
-bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
+bool ColorSystem::Constrain(const XYZColor &xyz, RGBColor &rgb) const
 {
-	bool constrain = false;
 	// Is the contribution of one of the primaries negative ?
-	if (LowGamut(rgb)) {
-		if (lum < 0.f) {
-			rgb = 0.f;
-			return true;
-		}
+	if (!InsideGamut(rgb)) {
+		float parameter;
+		float lum = xyz.c[1] / luminance;
 
-		// Find the primary with most negative weight and calculate the
+		// Find the primary with negative weight and calculate the
 		// parameter of the point on the vector from the white point
 		// to the original requested colour in RGB space.
-		float l = lum / luminance;
-		float parameter;
 		if (rgb.c[0] < rgb.c[1] && rgb.c[0] < rgb.c[2]) {
-			parameter = l / (l - rgb.c[0]);
+			parameter = lum / (lum - rgb.c[0]);
 		} else if (rgb.c[1] < rgb.c[2]) {
-			parameter = l / (l - rgb.c[1]);
+			parameter = lum / (lum - rgb.c[1]);
 		} else {
-			parameter = l / (l - rgb.c[2]);
+			parameter = lum / (lum - rgb.c[2]);
 		}
 
 		// Now finally compute the gamut-constrained RGB weights.
-		rgb = Lerp(parameter, RGBColor(l), rgb);
-		constrain = true;	// Colour modified to fit RGB gamut
+		rgb = Lerp(parameter, RGBColor(lum), rgb);
+		return true;	// Colour modified to fit RGB gamut
 	}
-	if (HighGamut(rgb)) {
-		if (lum > luminance) {
-			rgb = RGBColor(1.f);
-			return true;
-		}
-
-		// Find the primary with greater weight and calculate the
-		// parameter of the point on the vector from the white point
-		// to the original requested colour in RGB space.
-		float l = lum / luminance;
-		float parameter;
-		if (rgb.c[0] > rgb.c[1] && rgb.c[0] > rgb.c[2]) {
-			parameter = (1.f - l) / (rgb.c[0] - l);
-		} else if (rgb.c[1] > rgb.c[2]) {
-			parameter = (1.f - l) / (rgb.c[1] - l);
-		} else {
-			parameter = (1.f - l) / (rgb.c[2] - l);
-		}
-
-		// Now finally compute the gamut-constrained RGB weights.
-		rgb = Lerp(parameter, RGBColor(l), rgb);
-		constrain = true;	// Colour modified to fit RGB gamut
-	}
-
-	return constrain;
+	return false;		// Colour within RGB gamut
 }
 
 }

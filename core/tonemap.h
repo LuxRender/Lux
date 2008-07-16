@@ -23,20 +23,12 @@
 #ifndef LUX_TONEMAP_H
 #define LUX_TONEMAP_H
 // tonemap.h*
-
-#include "lux.h"
-#include "color.h"
-
-namespace lux {
-
 // ToneMap Declarations
 class ToneMap {
 public:
 	// ToneMap Interface
 	virtual ~ToneMap() { }
-	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const = 0;
+	virtual void Map(const float *y, int xRes, int yRes,
+		float maxDisplayY, float *scale) const = 0;
 };
-
-}
-
 #endif // LUX_TONEMAP_H

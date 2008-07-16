@@ -63,7 +63,7 @@ public:
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
-		Point pS(RasterToCamera(Point(u1, u2, 0.f)));
+		Point pS(RasterToCamera(Point(u1 * xWidth, u2 * yHeight, 0.f)));
 		*wi = Vector(pS.x, pS.y, pS.z);
 		const float cos = Normalize(*wi).z;
 		const float cos2 = cos * cos;
