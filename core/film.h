@@ -132,7 +132,7 @@ protected:
     Scene *scene;
 
 	// Dade - 1.0 / (xResolution * yResolution)
-	float invSamplePerPass;
+	double invSamplePerPass;
 };
 
 // Image Pipeline Declarations

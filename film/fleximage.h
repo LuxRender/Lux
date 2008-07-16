@@ -150,7 +150,7 @@ public:
 // Per screen normalized  buffer
 class PerScreenNormalizedBuffer : public Buffer {
 public:
-	PerScreenNormalizedBuffer(int x, int y, const float *samples) :
+	PerScreenNormalizedBuffer(int x, int y, const double *samples) :
 		Buffer(x, y), numberOfSamples_(samples) { }
 
 	~PerScreenNormalizedBuffer() { }
@@ -170,7 +170,7 @@ public:
 		}
 	}
 private:
-	const float *numberOfSamples_;
+	const double *numberOfSamples_;
 };
 
 
@@ -203,7 +203,8 @@ public:
 	Buffer *getBuffer(int index) {
 		return buffers[index];
 	}
-	float numberOfSamples;
+
+	double numberOfSamples;
 	vector<Buffer *> buffers;
 };
 
