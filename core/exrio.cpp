@@ -340,8 +340,8 @@ namespace lux {
         delete[] (ha + (xOffset + yOffset * xRes));
     }
 
-    void WriteRGBAImageFloat(const string &name, float *pixels,
-            float *alpha, int xRes, int yRes,
+    void WriteRGBAImageFloat(const string &name, vector<Color> &pixels,
+            vector<float> &alpha, int xRes, int yRes,
             int totalXRes, int totalYRes,
             int xOffset, int yOffset) {
         Header header(totalXRes, totalYRes);
@@ -352,11 +352,15 @@ namespace lux {
         header.channels().insert("B", Channel(Imf::FLOAT));
         header.channels().insert("A", Channel(Imf::FLOAT));
 
-        float *hrgb = new float[3 * xRes * yRes];
-        for (int i = 0; i < 3 * xRes * yRes; ++i)
-            hrgb[i] = pixels[i];
-        float *ha = new float[xRes * yRes];
-        for (int i = 0; i < xRes * yRes; ++i)
+	const int numPixels = xRes * yRes;
+        float *hrgb = new float[3 * numPixels];
+        for (int i = 0; i < numPixels; ++i) {
+            hrgb[3 * i] = pixels[i].c[0];
+            hrgb[3 * i + 1] = pixels[i].c[1];
+            hrgb[3 * i + 2] = pixels[i].c[2];
+	}
+        float *ha = new float[numPixels];
+        for (int i = 0; i < numPixels; ++i)
             ha[i] = alpha[i];
 
         hrgb -= 3 * (xOffset + yOffset * xRes);

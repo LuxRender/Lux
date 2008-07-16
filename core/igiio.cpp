@@ -43,21 +43,21 @@ namespace lux {
 		return NULL;
  }
 
- void WriteIgiImage(const string &name, float *pixels,
-		float *alpha, int xRes, int yRes,
+ void WriteIgiImage(const string &name, vector<Color> &pixels,
+		vector<float> &alpha, int xRes, int yRes,
 		int totalXRes, int totalYRes,
 		int xOffset, int yOffset) {
 
     IndigoImageHeader header;
 
 	// create XYZ float buffer
-    u_int xyzSize = xRes * yRes * 3;
-	float *xyz = new float[xyzSize];
-	for (u_int i = 0; i < xyzSize; i+=3) {
+    u_int xyzSize = xRes * yRes;
+	float *xyz = new float[3 * xyzSize];
+	for (u_int i = 0; i < xyzSize; ++i) {
 		// convert RGB values to XYZ colour space.
-		xyz[i] = 0.436052025f*pixels[i] + 0.385081593f*pixels[i+1] + 0.143087414f *pixels[i+2];
-		xyz[i+1] = 0.222491598f*pixels[i] + 0.71688606f *pixels[i+1] + 0.060621486f *pixels[i+2];
-		xyz[i+2] = 0.013929122f*pixels[i] + 0.097097002f*pixels[i+1] + 0.71418547f  *pixels[i+2];
+		xyz[3 * i] = 0.436052025f * pixels[i].c[0] + 0.385081593f * pixels[i].c[1] + 0.143087414f * pixels[i].c[2];
+		xyz[3 * i + 1] = 0.222491598f * pixels[i].c[0] + 0.71688606f * pixels[i].c[1] + 0.060621486f * pixels[i].c[2];
+		xyz[3 * i + 2] = 0.013929122f * pixels[i].c[0] + 0.097097002f * pixels[i].c[1] + 0.71418547f  * pixels[i].c[2];
     }
 
 	std::ofstream file(name.c_str(), std::ios::binary);

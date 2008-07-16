@@ -24,22 +24,74 @@
 #include "bxdf.h"
 #include "color.h"
 #include "spectrum.h"
+#include "spectrumwavelengths.h"
 #include "mc.h"
 #include "sampling.h"
 #include <stdarg.h>
+#include <boost/thread/tss.hpp>
 
 using namespace lux;
 
+extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
+
 // BxDF Method Definitions
-SWCSpectrum BRDFToBTDF::f(const Vector &wo,
-                       const Vector &wi) const {
-	return brdf->f(wo, otherHemisphere(wi));
+SWCSpectrum BRDFToBTDF::f(const Vector &wo, const Vector &wi) const
+{
+	// Figure out which $\eta$ is incident and which is transmitted
+	const bool entering = CosTheta(wo) > 0.f;
+	float ei = etai, et = etat;
+
+	if(cb != 0.f) {
+		// Handle dispersion using cauchy formula
+		const float w = thread_wavelengths->SampleSingle();
+		et += (cb * 1000000.f) / (w * w);
+	}
+
+	if (!entering)
+		swap(ei, et);
+	// Compute transmitted ray direction
+	const float eta = ei / et;
+	Vector H(eta * wo + wi);
+	Vector wiT(2.f * Dot(wo, H) * H - wo);
+	return brdf->f(wo, wiT) * fabsf(wi.z / wiT.z);
 }
 SWCSpectrum BRDFToBTDF::Sample_f(const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	SWCSpectrum f = brdf->Sample_f(wo, wi, u1, u2, pdf, pdfBack, reverse);
-	*wi = otherHemisphere(*wi);
-	return f;
+	Vector H(Normalize(wo + *wi));
+	if (H.z < 0.f)
+		H = -H;
+	const float cosi = Dot(wo, H);
+	// Figure out which $\eta$ is incident and which is transmitted
+	const bool entering = cosi > 0.f;
+	float ei = etai, et = etat;
+
+	if(cb != 0.f) {
+		// Handle dispersion using cauchy formula
+		const float w = thread_wavelengths->SampleSingle();
+		et += (cb * 1000000.f) / (w * w);
+	}
+
+	if (!entering)
+		swap(ei, et);
+	// Compute transmitted ray direction
+	const float sini2 = max(0.f, 1.f - cosi * cosi);
+	const float eta = ei / et;
+	const float eta2 = eta * eta;
+	const float sint2 = eta2 * sini2;
+	// Handle total internal reflection for transmission
+	if (sint2 > 1.) {
+		*pdf = 0.f;
+		if (pdfBack)
+			*pdfBack = 0.f;
+		return 0.;
+	}
+	float cost = sqrtf(max(0.f, 1.f - sint2));
+	if (entering)
+		cost = -cost;
+	const float cos = wi->z;
+	*wi = (cost - eta * cosi) * H - eta * wo;
+	return f * fabsf(cos / wi->z);
 }
 
 SWCSpectrum BxDF::Sample_f(const Vector &wo, Vector *wi,
@@ -59,9 +111,24 @@ float BxDF::Pdf(const Vector &wo, const Vector &wi) const {
 	return
 		SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f;
 }
-float BRDFToBTDF::Pdf(const Vector &wo,
-		const Vector &wi) const {
-	return brdf->Pdf(wo, otherHemisphere(wi));
+float BRDFToBTDF::Pdf(const Vector &wo, const Vector &wi) const
+{
+	// Figure out which $\eta$ is incident and which is transmitted
+	const bool entering = CosTheta(wo) > 0.f;
+	float ei = etai, et = etat;
+
+	if(cb != 0.f) {
+		// Handle dispersion using cauchy formula
+		const float w = thread_wavelengths->SampleSingle();
+		et += (cb * 1000000.f) / (w * w);
+	}
+
+	if (!entering)
+		swap(ei, et);
+	// Compute transmitted ray direction
+	const float eta = ei / et;
+	Vector H(eta * wo + wi);
+	return brdf->Pdf(wo, 2.f * Dot(wo, H) * H - wo);
 }
 
 SWCSpectrum BxDF::rho(const Vector &w, int nSamples,
