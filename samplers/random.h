@@ -42,6 +42,7 @@ public:
 	{
 		return sz;
 	}
+	void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

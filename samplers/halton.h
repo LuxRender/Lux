@@ -40,6 +40,7 @@ public:
 	int RoundSize(int size) const {
 		return RoundUpPow2(size);
 	}
+	void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	u_int GetTotalSamplePos();
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
