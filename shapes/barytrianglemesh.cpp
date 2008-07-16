@@ -180,7 +180,7 @@ bool BaryTriangle::Intersect(const Ray &ray, float *tHit,
 		nn = Normal(Normalize(Cross(e1, e2)));
 
 	// Adjust normal based on orientation and handedness
-    if (this->reverseOrientation ^ this->transformSwapsHandedness)
+    if (reverseOrientation ^ transformSwapsHandedness)
         nn *= -1.f;
 
     *dg = DifferentialGeometry(ray(t),
@@ -188,6 +188,9 @@ bool BaryTriangle::Intersect(const Ray &ray, float *tHit,
 			dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
             tu, tv, this);
+    dg->triangleBaryCoords[0] = b0;
+    dg->triangleBaryCoords[1] = b1;
+    dg->triangleBaryCoords[2] = b2;
 
     *tHit = t;
     return true;
