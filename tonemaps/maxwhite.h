@@ -31,15 +31,15 @@ namespace lux
 class MaxWhiteOp : public ToneMap {
 public:
 	// MaxWhiteOp Public Methods
-	void Map(const float *y, int xRes, int yRes,
-	         float maxDisplayY, float *scale) const {
+	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
+		const int numPixels = xRes * yRes;
 		// Compute maximum luminance of all pixels
-		float maxY = 0.;
-		for (int i = 0; i < xRes * yRes; ++i)
-			maxY = max(maxY, y[i]);
-		float s = maxDisplayY / maxY;
-		for (int i = 0; i < xRes * yRes; ++i)
-			scale[i] = s;
+		float maxY = 0.f;
+		for (int i = 0; i < numPixels; ++i)
+			maxY = max(maxY, xyz[i].c[1]);
+		float s = 1.f / maxY;
+		for (int i = 0; i < numPixels; ++i)
+			xyz[i] *= s;
 	}
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);

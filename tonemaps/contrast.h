@@ -31,12 +31,11 @@ namespace lux
 class ContrastOp : public ToneMap {
 public:
 	ContrastOp(float day) { displayAdaptationY = day; }
-	void Map(const float *y,
-	         int xRes, int yRes,
-			 float maxDisplayY, float *scale) const;
-	float displayAdaptationY;
-	
+	void Map(vector<Color> &xyz, int xRes, int yRes,
+		 float maxDisplayY) const;
 	static ToneMap *CreateToneMap(const ParamSet &ps);
+private:
+	float displayAdaptationY;
 };
 
 }//namespace lux

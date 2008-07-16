@@ -34,187 +34,13 @@
 
 namespace lux {
 
-class BufferConfig {
-public:
-	BufferConfig(BufferType t, BufferOutputConfig o, const string& s) :
-		type(t), output(o), postfix(s) { }
-	BufferType type;
-	BufferOutputConfig output;
-	string postfix;
-};
-
-struct Pixel {
-    // Dade - serialization here is required by network rendering
-	friend class boost::serialization::access;
-
-    template<class Archive> void serialize(Archive & ar, const unsigned int version) {
-        ar & L;
-        ar & alpha;
-        ar & weightSum;
-    }
-
-	Pixel(): L(0.f), alpha(0.f), weightSum(0.f) { }
-	XYZColor L;
-	float alpha, weightSum;
-};
-
-class Buffer {
-public:
-	Buffer(int x, int y) {
-		xPixelCount = x;
-		yPixelCount = y;
-		pixels = new BlockedArray<Pixel>(x, y);
-	}
-
-    virtual ~Buffer() {
-		delete pixels; 
-	}
-
-	void Add(int x, int y, XYZColor L, float alpha, float wt) {
-		Pixel &pixel = (*pixels)(x, y);
-		pixel.L.AddWeighted(wt, L);
-		pixel.alpha += alpha * wt;
-		pixel.weightSum += wt;
-	}
-
-    void Clear() {
-        for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
-				pixel.L.c[0] = 0.0f;
-                pixel.L.c[1] = 0.0f;
-                pixel.L.c[2] = 0.0f;
-				pixel.alpha = 0.0f;
-                pixel.weightSum = 0.0f;
-			}
-		}
-    }
-
-	virtual void GetData(float *rgb, float *alpha) = 0;
-	bool isFramebuffer;
-	int xPixelCount, yPixelCount;
-	float scaleFactor;
-	BlockedArray<Pixel> *pixels;
-};
-
-// Per pixel normalized buffer
-class RawBuffer : public Buffer {
-public:
-	RawBuffer(int x, int y) : Buffer(x, y) { }
-
-	~RawBuffer() { }
-
-	void GetData(float *rgb, float *alpha) {
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
-				rgb[3*offset  ] = pixel.L.c[0];
-				rgb[3*offset+1] = pixel.L.c[1];
-				rgb[3*offset+2] = pixel.L.c[2];
-				alpha[offset] = pixel.alpha;
-			}
-		}
-	}
-};
-
-// Per pixel normalized buffer
-class PerPixelNormalizedBuffer : public Buffer {
-public:
-	PerPixelNormalizedBuffer(int x, int y) : Buffer(x, y) { }
-
-	~PerPixelNormalizedBuffer() { }
-
-	void GetData(float *rgb, float *alpha) {
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
-				if (pixel.weightSum == 0.f) {
-					alpha[offset] = 0.f;
-					rgb[3*offset  ] = 0.f;
-					rgb[3*offset+1] = 0.f;
-					rgb[3*offset+2] = 0.f;
-				} else {
-					float inv = 1.f / pixel.weightSum;
-					// Convert pixel XYZ radiance to RGB
-					pixel.L.ToRGB(rgb + 3 * offset);
-					rgb[3*offset  ] *= inv;
-					rgb[3*offset+1] *= inv;
-					rgb[3*offset+2] *= inv;
-					alpha[offset] = pixel.alpha;
-				}
-			}
-		}
-	}
-};
-
-// Per screen normalized  buffer
-class PerScreenNormalizedBuffer : public Buffer {
-public:
-	PerScreenNormalizedBuffer(int x, int y, const double *samples) :
-		Buffer(x, y), numberOfSamples_(samples) { }
-
-	~PerScreenNormalizedBuffer() { }
-
-	void GetData(float *rgb, float *alpha) {
-		float inv = xPixelCount * yPixelCount / *numberOfSamples_;
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
-				// Convert pixel XYZ radiance to RGB
-				pixel.L.ToRGB(rgb + 3 * offset);
-				rgb[3*offset  ] *= inv;
-				rgb[3*offset+1] *= inv;
-				rgb[3*offset+2] *= inv;
-				alpha[offset] = pixel.alpha;
-			}
-		}
-	}
-private:
-	const double *numberOfSamples_;
-};
-
-
-class BufferGroup {
-public:
-	BufferGroup() : numberOfSamples(0.f) { }
-	~BufferGroup() {
-		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
-			delete *buffer;
-	}
-
-	void CreateBuffers(const vector<BufferConfig> &configs, int x, int y) {
-		for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
-			switch ((*config).type) {
-			case BUF_TYPE_PER_PIXEL:
-				buffers.push_back(new PerPixelNormalizedBuffer(x, y));
-				break;
-			case BUF_TYPE_PER_SCREEN:
-				buffers.push_back(new PerScreenNormalizedBuffer(x, y, &numberOfSamples));
-				break;
-			case BUF_TYPE_RAW:
-				buffers.push_back(new RawBuffer(x, y));
-				break;
-			default:
-				assert(0);
-			}
-		}
-	}
-
-	Buffer *getBuffer(int index) {
-		return buffers[index];
-	}
-
-	double numberOfSamples;
-	vector<Buffer *> buffers;
-};
-
 // FlexImageFilm Declarations
 class FlexImageFilm : public Film {
 public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
 		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
-		framebuffer(NULL), factor(NULL) { }
+		framebuffer(NULL), factor(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
@@ -227,7 +53,7 @@ public:
 		delete[] factor;
 	}
 
-    int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
+	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
@@ -254,25 +80,25 @@ public:
 		return displayInterval;
 	}
 
-    // Dade - method useful for transmitting the samples to a client
-    void TransmitFilm(std::basic_ostream<char> &stream,
-            int buf_id = 0, int bufferGroup = 0, bool clearBuffer = true);
-    void UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
-            int buf_id = 0, int bufferGroup = 0);
+	// Dade - method useful for transmitting the samples to a client
+	void TransmitFilm(std::basic_ostream<char> &stream,
+		int buf_id = 0, int bufferGroup = 0, bool clearBuffer = true);
+	void UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
+		int buf_id = 0, int bufferGroup = 0);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 
 private:
-    void FlushSampleArray();
-    // Dade - using this method requires to lock arrSampleMutex
-    void MergeSampleArray();
+	void FlushSampleArray();
+	// Dade - using this method requires to lock arrSampleMutex
+	void MergeSampleArray();
 
-    void WriteImage2(ImageType type, float* rgb, float* alpha, string postfix);
-	void WriteTGAImage(float *rgb, float *alpha, const string &filename);
-	void WriteEXRImage(float *rgb, float *alpha, const string &filename);
-	void WriteIGIImage(float *rgb, float *alpha, const string &filename);
-    void WriteResumeFilm(const string &filename);
-	void ScaleOutput(float *rgb, float *alpha, float *scale);
+	void WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix);
+	void WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
+	void WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
+	void WriteIGIImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
+	void WriteResumeFilm(const string &filename);
+	void ScaleOutput(vector<Color> &color, vector<float> &alpha, float *scale);
 
 	// FlexImageFilm Private Data
 	Filter *filter;
@@ -299,20 +125,20 @@ private:
 	std::vector<BufferGroup> bufferGroups;
 
 	mutable boost::recursive_mutex addSampleMutex;
+	// Dade - this mutex is used to lock SampleArrptr/SampleArr2ptr pointers.
+	// Be aware of potential dealock with addSampleMutex mutex. Always lock 
+	// addSampleMutex first and then arrSampleMutex.
+	mutable boost::recursive_mutex arrSampleMutex;
+	// Dade - used by the WriteImage method
+	mutable boost::recursive_mutex imageMutex;
 
 	float maxY;
 	u_int warmupSamples;
 	bool warmupComplete;
 	ArrSample *SampleArrptr;
 	ArrSample *SampleArr2ptr;
-    // Dade - this mutex is used to lock SampleArrptr/SampleArr2ptr pointers.
-    // Beaware of potential dealock with addSampleMutex mutex. Always lock 
-    // addSampleMutex first and then arrSampleMutex.
-    mutable boost::recursive_mutex arrSampleMutex;
 	int curSampleArrId, curSampleArr2Id, maxSampleArrId;
-
-    // Dade - used by the WriteImage method
-    mutable boost::recursive_mutex imageMutex;
+	ColorSystem colorSpace;
 };
 
 }//namespace lux

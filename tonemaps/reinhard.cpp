@@ -40,27 +40,26 @@ ReinhardOp::ReinhardOp(float prS, float poS, float b)
 	burn = b;
 }
 
-void ReinhardOp::Map(const float *y, int xRes, int yRes,
-		float maxDisplayY, float *scale) const
+void ReinhardOp::Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const
 {
 	const float alpha = .1f;
-    const float invA = 1.f / 683.f;
+	const int numPixels = xRes * yRes;
 
 	// Compute world adaptation luminance, _Ywa_
-	float Ywa = 0.;
-	for (int i = 0; i < xRes * yRes; ++i)
-		if (y[i] > 0) Ywa += y[i];
-	Ywa = Ywa / (xRes * yRes);
-	Ywa *= invA;
+	float Ywa = 0.f;
+	for (int i = 0; i < numPixels; ++i)
+		if (xyz[i].c[1] > 0.f) Ywa += xyz[i].c[1];
+	Ywa /= numPixels;
+	if (Ywa == 0.f)
+		Ywa = 1.f;
 
 	const float Yw = pre_scale * alpha * burn;
 	const float invY2 = 1.f / (Yw * Yw);
-	const float pScale = pre_scale * alpha / Ywa;
+	const float pScale = post_scale * pre_scale * alpha / Ywa;
 
-	for (int i = 0; i < xRes * yRes; ++i) {
-		float ys = y[i] * invA;
-		scale[i] = pScale * (maxDisplayY * invA *
-			post_scale * (1.f + ys * invY2) / (1.f + ys));
+	for (int i = 0; i < numPixels; ++i) {
+		float ys = xyz[i].c[1];
+		xyz[i] *= pScale * (1.f + ys * invY2) / (1.f + ys);
 	}
 }
 

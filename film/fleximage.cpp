@@ -31,6 +31,8 @@
 #include "camera.h"		// for Camera
 #include "transport.h"	// for SurfaceIntegrator::IsFluxBased()
 #include "filter.h"
+#include "exrio.h"
+#include "igiio.h"
 
 #include <iostream>
 #include <fstream>
@@ -64,7 +66,8 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	filename(filename1), premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	framebuffer(NULL), debug_mode(debugmode), factor(NULL)
+	framebuffer(NULL), debug_mode(debugmode), factor(NULL),
+	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -186,8 +189,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
         boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
 
         // swap SampleArrptrs
-        ArrSample *tmpptr = SampleArrptr; 
-        SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+	swap(SampleArrptr, SampleArr2ptr);
 
         // Dade - save the amount of samples in the second buffer
         curSampleArr2Id = curSampleArrId;
@@ -212,7 +214,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 
         // Possibly write out in-progress image
         if (timeToWriteImage)
-            WriteImage((ImageType)(IMAGE_FILEOUTPUT));
+            WriteImage(IMAGE_FILEOUTPUT);
     }
 }
 
@@ -228,9 +230,8 @@ void FlexImageFilm::FlushSampleArray() {
     // Dade - lock the pointer mutex
     boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
 
-    // swap SampleArrptrs
-    ArrSample *tmpptr = SampleArrptr; 
-    SampleArrptr = SampleArr2ptr; SampleArr2ptr = tmpptr;
+	// swap SampleArrptrs
+	swap(SampleArrptr, SampleArr2ptr);
 
     // Dade - save the amount of samples in the second buffer
     curSampleArr2Id = curSampleArrId;
@@ -253,12 +254,8 @@ void FlexImageFilm::MergeSampleArray() {
     }
         
 	for(int sArrId = 0; sArrId < curSampleArr2Id - 1; sArrId++) {
-		float sX = SampleArr2ptr[sArrId].sX;
-		float sY = SampleArr2ptr[sArrId].sY;
-		XYZColor xyz = SampleArr2ptr[sArrId].xyz;
-		float alpha = SampleArr2ptr[sArrId].alpha;
-		int buf_id = SampleArr2ptr[sArrId].buf_id;
-		int bufferGroup = SampleArr2ptr[sArrId].bufferGroup;
+		const XYZColor xyz = SampleArr2ptr[sArrId].xyz;
+		const float alpha = SampleArr2ptr[sArrId].alpha;
 
 		// Issue warning if unexpected radiance value returned
 		if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
@@ -272,28 +269,27 @@ void FlexImageFilm::MergeSampleArray() {
 		}
 
 		// Reject samples higher than max y() after warmup period
-		if(warmupComplete) {
-			if(xyz.y() > maxY)
+		if (warmupComplete) {
+			if (xyz.y() > maxY)
 				continue;
 		} else {
-			if(debug_mode) {
+			if (debug_mode) {
 				maxY = INFINITY;
 				warmupComplete = true;
+			} else {
+			 	maxY = max(maxY, xyz.y());
+				++warmupSamples;
+			 	if (warmupSamples >= reject_warmup_samples)
+					warmupComplete = true;
 			}
-			 else if(warmupSamples < reject_warmup_samples) {
-				if(xyz.y() > maxY)
-					maxY = xyz.y();
-				warmupSamples++;
-			} else
-				warmupComplete = true;
 		}
 
-		BufferGroup &currentGroup = bufferGroups[bufferGroup];
-		Buffer *buffer = currentGroup.getBuffer(buf_id);
+		BufferGroup &currentGroup = bufferGroups[SampleArr2ptr[sArrId].bufferGroup];
+		Buffer *buffer = currentGroup.getBuffer(SampleArr2ptr[sArrId].buf_id);
 
 		// Compute sample's raster extent
-		float dImageX = sX - 0.5f;
-		float dImageY = sY - 0.5f;
+		float dImageX = SampleArr2ptr[sArrId].sX - 0.5f;
+		float dImageY = SampleArr2ptr[sArrId].sY - 0.5f;
 		int x0 = Ceil2Int (dImageX - filter->xWidth);
 		int x1 = Floor2Int(dImageX + filter->xWidth);
 		int y0 = Ceil2Int (dImageY - filter->yWidth);
@@ -334,42 +330,44 @@ void FlexImageFilm::MergeSampleArray() {
 	}
 }
 
-void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string postfix) {
+void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix)
+{
+	if (type & IMAGE_FILEOUTPUT) {
+		// write out untonemapped EXR
+		if (writeUtmExr)
+			WriteEXRImage(color, alpha, filename + postfix + "_untonemapped.exr");
+		// write out untonemapped IGI
+		if (writeUtmIgi)
+			WriteIGIImage(color, alpha, filename + postfix + "_untonemapped.igi"); // TODO add samples
 
-    if (type & IMAGE_FILEOUTPUT) {
-        // write out untonemapped EXR
-        if (writeUtmExr)
-            WriteEXRImage(rgb, alpha, filename + postfix + "_untonemapped.exr");
-        // write out untonemapped IGI
-        if (writeUtmIgi)
-            WriteIGIImage(rgb, alpha, filename + postfix + "_untonemapped.igi"); // TODO add samples
+		// Dade - save the current status of the film if required
+		if (writeResumeFlm)
+			WriteResumeFilm(filename + ".flm");
+	}
 
-        // Dade - save the current status of the film if required
-        if (writeResumeFlm)
-            WriteResumeFilm(filename + ".flm");
-    }
+	// Dade - check if I have to run ApplyImagingPipeline
+	if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
+		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
+		// Apply the imaging/tonemapping pipeline
+		ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+			0., 0., "reinhard", &toneParams, gamma, 0.);
 
-    // Dade - check if I have to run ApplyImagingPipeline
-    if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
-        ((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
-        // Apply the imagine/tonemapping pipeline
-        ApplyImagingPipeline(rgb, xPixelCount, yPixelCount, NULL,
-                0., 0., "reinhard",
-                &toneParams, gamma, 0., 255);
+		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
+			// Copy to framebuffer pixels
+			const u_int nPix = xPixelCount * yPixelCount;
+			for (u_int i = 0; i < nPix; i++) {
+				framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * color[i].c[0], 0.f, 255.f));
+				framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * color[i].c[1], 0.f, 255.f));
+				framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * color[i].c[2], 0.f, 255.f));
+			}
+		}
 
-        if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
-            // Copy to framebuffer pixels
-            u_int nPix = xPixelCount * yPixelCount;
-            for (u_int i = 0; i < nPix * 3; i++)
-                framebuffer[i] = (unsigned char) rgb[i];
-        }
+		if (type & IMAGE_FILEOUTPUT) {
+			// write out tonemapped TGA
+			if (writeTmTga)
+				WriteTGAImage(color, alpha, filename + postfix + ".tga");
 
-        if ((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga)) {
-            // write out tonemapped TGA
-            if (writeTmTga)
-                WriteTGAImage(rgb, alpha, filename + postfix + ".tga");
-
-            if (writeTmExr || writeTmIgi) {
+/*            if (writeTmExr || writeTmIgi) {
                 // Map display range 0.-255. back to float range 0.-1.
                 // and reverse the gamma correction
                 // necessary for EXR/IGI formats
@@ -379,90 +377,67 @@ void FlexImageFilm::WriteImage2(ImageType type, float* rgb, float* alpha, string
                     if (gamma != 1.f)
                         rgb[i] = powf(rgb[i], gamma);
                 }
+*/
+			// write out tonemapped EXR
+			if (writeTmExr)
+				WriteEXRImage(color, alpha, filename + postfix + ".exr");
 
-                // write out tonemapped EXR
-                if (writeTmExr)
-                    WriteEXRImage(rgb, alpha, filename + postfix + ".exr");
-
-                // write out tonemapped IGI
-                if (writeTmIgi)
-                    WriteIGIImage(rgb, alpha, filename + postfix + ".igi"); // TODO add samples
-            }
-        }
-    }
+			// write out tonemapped IGI
+			if (writeTmIgi)
+				WriteIGIImage(color, alpha, filename + postfix + ".igi"); // TODO add samples
+//            }
+		}
+	}
 }
 
-void FlexImageFilm::ScaleOutput(float *rgb, float *alpha, float *scale)
+void FlexImageFilm::ScaleOutput(vector<Color> &pixel, vector<float> &alpha, float *scale)
 {
-	int x,y;
 	int offset = 0;
-	for (y = 0; y < yPixelCount; ++y)
-	{
-		for (x = 0; x < xPixelCount; ++x,++offset)
-		{
-			rgb[3*offset  ] *= scale[offset];
-			rgb[3*offset+1] *= scale[offset];
-			rgb[3*offset+2] *= scale[offset];
+	for (int y = 0; y < yPixelCount; ++y) {
+		for (int x = 0; x < xPixelCount; ++x,++offset) {
+			pixel[offset] *= scale[offset];
 			alpha[offset] *= scale[offset];
 		}
 	}
 }
 void FlexImageFilm::WriteImage(ImageType type)
 {
-    boost::recursive_mutex::scoped_lock lock(imageMutex);
+	boost::recursive_mutex::scoped_lock lock(imageMutex);
 
-    // Dade - flush the sample buffer before to save the image.
-    FlushSampleArray();
+	// Dade - flush the sample buffer before to save the image.
+	FlushSampleArray();
 
-	int x,y,offset;
-	int nPix = xPixelCount * yPixelCount;
-	float *rgb0 = new float[3*nPix], *alpha0 = new float[nPix];
-	float *rgb = new float[3*nPix], *alpha = new float[nPix];
-    if (factor==NULL)
-	{
+	const int nPix = xPixelCount * yPixelCount;
+	vector<Color> pixels(nPix), pixels0(nPix);
+	vector<float> alpha(nPix), alpha0(nPix);
+	if (factor == NULL) {
 		factor = new float[nPix];
-		scene->camera->GetFlux2RadianceFactors(this,factor,xPixelCount,yPixelCount);
+		scene->camera->GetFlux2RadianceFactors(this, factor, xPixelCount, yPixelCount);
 	}
-	memset(rgb0,0,nPix*3*sizeof(*rgb0));
-	memset(alpha0,0,nPix*sizeof(*alpha0));
 
-	for(u_int j=0;j<bufferGroups.size();++j)
-	{
-		for(u_int i=0;i<bufferConfigs.size();++i)
-		{
-			bufferGroups[j].buffers[i]->GetData(rgb, alpha);
-			if (bufferConfigs[i].output & BUF_FRAMEBUFFER)
-			{
-				for (offset = 0, y = 0; y < yPixelCount; ++y)
-				{
-					for (x = 0; x < xPixelCount; ++x,++offset)
-					{
-						rgb0[3*offset  ] += rgb[3*offset  ];
-						rgb0[3*offset+1] += rgb[3*offset+1];
-						rgb0[3*offset+2] += rgb[3*offset+2];
+	for(u_int j = 0; j < bufferGroups.size(); ++j) {
+		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
+			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
+			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
+				for (int x = 0; x < xPixelCount; ++x,++offset) {
+					buffer.GetData(x, y, &(pixels[offset]), &(alpha[offset]));
+					if (bufferConfigs[i].output & BUF_FRAMEBUFFER) {
+						pixels0[offset] += pixels[offset];
 						alpha0[offset] += alpha[offset];
 					}
 				}
 			}
-			if (bufferConfigs[i].output & BUF_STANDALONE)
-			{
+			if (bufferConfigs[i].output & BUF_STANDALONE) {
 				if (!(bufferConfigs[i].output & BUF_RAWDATA) && scene->surfaceIntegrator->IsFluxBased())
-					ScaleOutput(rgb,alpha,factor);
-				WriteImage2(type, rgb, alpha, bufferConfigs[i].postfix);
+					ScaleOutput(pixels, alpha, factor);
+				WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 			}
 		}
 
 		if (scene->surfaceIntegrator->IsFluxBased())
-		{
-			ScaleOutput(rgb0,alpha0,factor);
-		}
-		WriteImage2(type, rgb0, alpha0, "");
+			ScaleOutput(pixels0, alpha0, factor);
+		WriteImage2(type, pixels0, alpha0, "");
 	}
-
-	delete[] rgb;
-	delete[] alpha;
-	delete[] rgb0;
-	delete[] alpha0;
 }
 
 // GUI display methods
@@ -512,9 +487,8 @@ void FlexImageFilm::WriteResumeFilm(const string &filename)
     filestr.close();
 }
 
-void FlexImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filename)
+void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
 {
-	//printf("\nWriting Tonemapped TGA image to file \"%s\"...\n", filename.c_str());
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped TGA image to file ")+filename).c_str());
 
 	// Open file
@@ -529,38 +503,37 @@ void FlexImageFilm::WriteTGAImage(float *rgb, float *alpha, const string &filena
 	// write the header
 	// make sure its platform independent of little endian and big endian
 	char header[18];
-	memset(header, 0,sizeof(char)*18);
+	memset(header, 0, sizeof(char) * 18);
 
 	header[2] = 2;							// set the data type of the targa (2 = uncompressed)
 	short xResShort = xResolution;			// set the resolution and make sure the bytes are in the right order
 	header[13] = (char) (xResShort >> 8);
-	header[12] = xResShort;
+	header[12] = xResShort & 0xFF;
 	short yResShort = yResolution;
 	header[15] = (char) (yResShort >> 8);
-	header[14] = yResShort;
+	header[14] = yResShort & 0xFF;
 	header[16] = 32;						// set the bitdepth
 
 	// put the header data into the file
-	for (int i=0; i < 18; i++)
-		fputc(header[i],tgaFile);
+	for (int i = 0; i < 18; ++i)
+		fputc(header[i], tgaFile);
 
 	// write the bytes of data out
-	for (int i=yPixelCount-1;  i >= 0 ; i--) {
-		for (int j=0;  j < xPixelCount; j++) {
-			fputc((int) rgb[(i*xPixelCount+j)*3+2], tgaFile);
-			fputc((int) rgb[(i*xPixelCount+j)*3+1], tgaFile);
-			fputc((int) rgb[(i*xPixelCount+j)*3+0], tgaFile);
+	for (int i = yPixelCount - 1;  i >= 0 ; --i) {
+		for (int j = 0; j < xPixelCount; ++j) {
+			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[2], 0.f, 255.f)), tgaFile);
+			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[1], 0.f, 255.f)), tgaFile);
+			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[0], 0.f, 255.f)), tgaFile);
 			// NOTE - radiance - removed alpha output in TGA files due to errors
-			fputc((int) 255.0, tgaFile);
+			fputc(255, tgaFile);
 			//fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
 		}
 	}
 
 	fclose(tgaFile);
-	//printf("Done.\n");
 }
 
-void FlexImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filename)
+void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
 {
 	// Write OpenEXR RGBA image
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
@@ -570,7 +543,7 @@ void FlexImageFilm::WriteEXRImage(float *rgb, float *alpha, const string &filena
 		xPixelStart, yPixelStart);
 }
 
-void FlexImageFilm::WriteIGIImage(float *rgb, float *alpha, const string &filename)
+void FlexImageFilm::WriteIGIImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
 {
 	// Write IGI image
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing IGI image to file ")+filename).c_str());
