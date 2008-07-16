@@ -393,7 +393,7 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, vector<Normal> &Ns)
 				T = -T;
 			}
 		}
-		Ns.push_back(Normal(Cross(S, T)));
+		Ns.push_back(Normal(Cross(T, S)));
 	}
 }
 
