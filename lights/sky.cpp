@@ -425,6 +425,9 @@ inline float SkyLight::PerezFunction(const float *lam, float theta, float gamma,
 	return lvz* num/den;
 }
 
+// thread specific wavelengths
+extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
+
 // note - lyc - optimised return call to not create temporaries, passed in scale factor
 void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpectrum * const dst_spect) const
 {
@@ -438,11 +441,10 @@ void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpe
 	const float Y = PerezFunction(perez_Y, theta_fin, gamma, zenith_Y);
 
 	ChromaticityToSpectrum(x,y,dst_spect);
-	*dst_spect *= (Y / dst_spect->y() * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
+	// Change to full spectrum to have correct scale factor
+	*dst_spect *= (Y / 30.35/*dst_spect->y()*/ * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
+	// Jeanphi - hard value to avoid problems with degraded spectra
 }
-
-// thread specific wavelengths
-extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 
 // note - lyc - removed redundant computations and optimised
 void SkyLight::ChromaticityToSpectrum(const float x, const float y, SWCSpectrum * const dst_spect) const
