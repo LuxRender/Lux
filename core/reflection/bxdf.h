@@ -190,4 +190,3 @@ inline int BSDF::NumComponents(BxDFType flags) const {
 }//namespace lux
 
 #endif // LUX_BXDF_H
-
