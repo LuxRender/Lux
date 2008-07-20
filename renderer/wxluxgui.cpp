@@ -100,36 +100,60 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 		case WAITING:
 			// Waiting for input file. Most controls disabled.
 			m_render->Enable(ID_RESUMEITEM, false);
+			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Disable();
 			break;
 		case RENDERING:
 			// Rendering is in progress.
 			m_render->Enable(ID_RESUMEITEM, false);
+			m_render->Enable(ID_PAUSEITEM, true);
 			m_render->Enable(ID_STOPITEM, true);
-			m_render->Enable(ID_ENOUGHSAMPLEITEM, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, true);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
 			m_threadSpinCtrl->Enable();
 			break;
-		case IDLE:
+		case STOPPING:
+			// Rendering is being stopped.
+			m_render->Enable(ID_RESUMEITEM, false);
+			m_render->Enable(ID_PAUSEITEM, false);
+			m_render->Enable(ID_STOPITEM, false);
+			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
+			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_threadSpinCtrl->Enable();
+			break;
+		case STOPPED:
+			// Rendering is stopped.
+			m_render->Enable(ID_RESUMEITEM, true);
+			m_render->Enable(ID_PAUSEITEM, false);
+			m_render->Enable(ID_STOPITEM, false);
+			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
+			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_threadSpinCtrl->Disable();
+			break;
+		case PAUSED:
 			// Rendering is paused.
 			m_render->Enable(ID_RESUMEITEM, true);
-			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
+			m_render->Enable(ID_PAUSEITEM, false);
+			m_render->Enable(ID_STOPITEM, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
-			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
+			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
 			m_threadSpinCtrl->Enable();
 			break;
 		case FINISHED:
 			// Rendering is finished.
 			m_render->Enable(ID_RESUMEITEM, false);
+			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_ENOUGHSAMPLEITEM, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Disable();
 			break;
@@ -153,10 +177,16 @@ void LuxGui::LoadImages() {
 	rendertool->SetNormalBitmap(wxMEMORY_BITMAP(resume_png));
 	m_renderToolBar->InsertTool(0, rendertool);
 
+	// Pause toolbar tool
+	wxToolBarToolBase *pausetool = m_renderToolBar->RemoveTool(ID_PAUSETOOL);
+	pausetool->SetNormalBitmap(wxMEMORY_BITMAP(pause_png));
+	m_renderToolBar->InsertTool(1, pausetool);
+	m_renderToolBar->Realize();
+
 	// Stop toolbar tool
 	wxToolBarToolBase *stoptool = m_renderToolBar->RemoveTool(ID_STOPTOOL);
 	stoptool->SetNormalBitmap(wxMEMORY_BITMAP(stop_png));
-	m_renderToolBar->InsertTool(1, stoptool);
+	m_renderToolBar->InsertTool(2, stoptool);
 	m_renderToolBar->Realize();
 
 	// NOTE - Ratow - Temporarily disabling icons on menu items on the Windows platform.
@@ -166,10 +196,14 @@ void LuxGui::LoadImages() {
 	wxMenuItem *renderitem = m_render->Remove(ID_RESUMEITEM);
 	renderitem->SetBitmap(wxMEMORY_BITMAP(resume_png));
 	m_render->Insert(0,renderitem);
-	// Stop menu item
+	// Pause menu item
+	wxMenuItem *pauseitem = m_render->Remove(ID_PAUSEITEM);
+	pauseitem->SetBitmap(wxMEMORY_BITMAP(pause_png));
+	m_render->Insert(1,pauseitem);
+	// stop menu item
 	wxMenuItem *stopitem = m_render->Remove(ID_STOPITEM);
 	stopitem->SetBitmap(wxMEMORY_BITMAP(stop_png));
-	m_render->Insert(1,stopitem);
+	m_render->Insert(2,stopitem);
 #endif
 
 	m_auinotebook->SetPageBitmap(0, wxMEMORY_BITMAP(render_png));
@@ -188,26 +222,32 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_renderOutput->Refresh();
 				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
-				if(m_guiRenderState == IDLE) // Only re-start if we were previously stopped
+				if(m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 					luxStart();
+				luxSetHaltSamplePerPixel(-1, false, false);
 				ChangeRenderState(RENDERING);
 			}
 			break;
-		case ID_STOPITEM:
-		case ID_STOPTOOL:
-			if(m_guiRenderState != IDLE) {
+		case ID_PAUSEITEM:
+		case ID_PAUSETOOL:
+			if(m_guiRenderState != PAUSED) {
 				// Stop display update timer
 				m_renderTimer->Stop();
 				m_statsTimer->Stop();
 				if(m_guiRenderState == RENDERING)
 					luxPause();
-				ChangeRenderState(IDLE);
+				ChangeRenderState(PAUSED);
 			}
 			break;
-		case ID_ENOUGHSAMPLEITEM:
-			if ((m_guiRenderState == RENDERING) || (m_guiRenderState == IDLE)) {
+		case ID_STOPITEM:
+		case ID_STOPTOOL:
+			if ((m_guiRenderState == RENDERING) || (m_guiRenderState == PAUSED)) {
 				// Dade - we can set the enough sample per pixel condition
-				luxSetHaltSamplePerPixel(1, true, false);
+				m_renderTimer->Stop();
+				// Leave stats timer running so we know when threads stopped
+				luxSetHaltSamplePerPixel(1, true, true);
+				m_statusBar->SetStatusText(wxT("Waiting for render threads to stop."), 0);
+				ChangeRenderState(STOPPING);
 			}
 			break;
 		case wxID_ABOUT:
@@ -238,7 +278,7 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 	if(filedlg.ShowModal() == wxID_OK) {
 		// Clean up if this is not the first rendering
 		if(m_guiRenderState != WAITING) {
-			if(m_guiRenderState == RENDERING) {
+			if(m_guiRenderState == RENDERING || m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) {
 				if(m_updateThread)
 					m_updateThread->join();
 				luxExit();
@@ -302,8 +342,20 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			break;
 		case ID_STATSUPDATE:
-			if(luxStatistics("sceneIsReady"))
+			if(luxStatistics("sceneIsReady")) {
 				UpdateStatistics();
+
+				if(m_guiRenderState == STOPPING && m_samplesSec == 0.0) {
+					// Render threads stopped, do one last render update
+					luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
+					m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
+					m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
+					m_statsTimer->Stop();
+					luxPause();
+					luxError(LUX_NOERROR, LUX_INFO, "Rendering stopped by user.");
+					ChangeRenderState(STOPPED);
+				}
+			}
 			break;
 		case ID_LOADUPDATE:
 			m_progDialog->Pulse();
@@ -423,7 +475,8 @@ void LuxGui::SetRenderThreads(int num) {
 }
 
 void LuxGui::UpdateStatistics() {
-	int samplesSec = Floor2Int(luxStatistics("samplesSec"));
+	m_samplesSec = luxStatistics("samplesSec");
+	int samplesSec = Floor2Int(m_samplesSec);
 	int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
 	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
 	double samplesPx = luxStatistics("samplesPx");

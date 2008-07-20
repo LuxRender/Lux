@@ -98,7 +98,9 @@ enum LuxGuiRenderState
 {
 	WAITING,
 	RENDERING,
-	IDLE,
+	STOPPING,
+	STOPPED,
+	PAUSED,
 	FINISHED
 };
 enum LuxGuiWindowState
@@ -139,6 +141,7 @@ protected:
 
 	boost::thread *m_engineThread, *m_updateThread;
 	bool m_opengl;
+	double m_samplesSec;
 	LuxGuiRenderState m_guiRenderState;
 	LuxGuiWindowState m_guiWindowState;
 
