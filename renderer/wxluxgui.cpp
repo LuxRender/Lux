@@ -276,9 +276,10 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 											 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
 	if(filedlg.ShowModal() == wxID_OK) {
+		m_statusBar->SetStatusText(wxT(""), 0);
 		// Clean up if this is not the first rendering
 		if(m_guiRenderState != WAITING) {
-			if(m_guiRenderState == RENDERING || m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) {
+			if(m_guiRenderState != FINISHED) {
 				if(m_updateThread)
 					m_updateThread->join();
 				luxExit();
