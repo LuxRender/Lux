@@ -53,6 +53,7 @@
 #include "torus.h"
 #include "barytrianglemesh.h"
 #include "waldtrianglemesh.h"
+#include "mesh.h"
 #include "plymesh.h"
 #include "lenscomponent.h"
 #include "quad.h"
@@ -218,7 +219,10 @@ return plugin->CreateShape(object2world,
         return boost::shared_ptr<Shape>(LensComponent::CreateShape(object2world, reverseOrientation, paramSet));
     if(name=="quad")
         return boost::shared_ptr<Shape>(Quad::CreateShape(object2world, reverseOrientation, paramSet));
-    //Error("Static loading of shape '%s' failed.",name.c_str());
+    if(name=="mesh")
+        return boost::shared_ptr<Shape>(Mesh::CreateShape(object2world, reverseOrientation, paramSet));
+
+	//Error("Static loading of shape '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of shape '"<<name<<"' failed.";
     luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());

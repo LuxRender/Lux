@@ -383,8 +383,8 @@ SET(lux_lib_src
         shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp shapes/torus.cpp 
         shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp shapes/quad.cpp shapes/quadrilateral.cpp
         shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/barytrianglemesh.cpp shapes/waldtrianglemesh.cpp
-        shapes/plymesh/rply.c shapes/lenscomponent.cpp
-        samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
+        shapes/plymesh/rply.c shapes/lenscomponent.cpp shapes/mesh.cpp shapes/meshwaldtriangle.cpp shapes/meshbarytriangle.cpp
+        shapes/meshquadrilateral.cpp samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
         samplers/random.cpp samplers/halton.cpp
         accelerators/grid.cpp accelerators/unsafekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp film/fleximage.cpp
