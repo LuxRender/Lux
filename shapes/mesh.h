@@ -188,11 +188,7 @@ private:
 class MeshQuadrilateral : public Shape {
 public:
 	// Quadrilateral Public Methods
-	MeshQuadrilateral(const lux::Transform &o2w, bool ro, 
-		Mesh *m, int n) : Shape(o2w, ro) {
-		mesh = m;
-		idx = &mesh->quadVertexIndex[4 * n];;
-	}
+	MeshQuadrilateral(const lux::Transform &o2w, bool ro, Mesh *m, int n);
 
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
@@ -201,6 +197,10 @@ public:
 	bool IntersectP(const Ray &ray) const;
 
 	float Area() const;
+	virtual void GetShadingGeometry(const Transform &obj2world,
+            const DifferentialGeometry &dg,
+            DifferentialGeometry *dgShading) const;
+
 	Point Sample(float u1, float u2, Normal *Ns) const {
 		Point p;
 

@@ -68,6 +68,71 @@ int MeshQuadrilateral::MajorAxis(const Vector &v) {
 
 //------------------------------------------------------------------------------
 
+MeshQuadrilateral::MeshQuadrilateral(const lux::Transform &o2w, bool ro, 
+	Mesh *m, int n) : Shape(o2w, ro) {
+	mesh = m;
+	idx = &mesh->quadVertexIndex[4 * n];
+
+	// Dade - reorder the vertices if required
+	for(int i = 0; i < 4; i++) {
+		// Get quadrilateral vertices in _p00_, _p10_, _p11_, and _p01_
+		const Point &p00 = mesh->p[idx[0]];
+		const Point &p10 = mesh->p[idx[1]];
+		const Point &p11 = mesh->p[idx[2]];
+		const Point &p01 = mesh->p[idx[3]];
+
+		// Compute the barycentric coordinates of V11.
+		const Vector e01 = p10 - p00;
+		const Vector e03 = p01 - p00;
+		const Vector e02 = p11 - p00;
+		const Vector N = Cross(e01, e03);
+
+		float a11 = 0.0f;
+		float b11 = 0.0f;
+		int Nma = MajorAxis(N);
+
+		switch (Nma) {
+			case 0: {
+				float iNx = 1.f / N.x;
+				a11 = (e02.y * e03.z - e02.z * e03.y) * iNx;
+				b11 = (e01.y * e02.z - e01.z * e02.y) * iNx;
+				break;
+			}
+			case 1: {
+				float iNy = 1.f / N.y;
+				a11 = (e02.z * e03.x - e02.x * e03.z) * iNy;
+				b11 = (e01.z * e02.x - e01.x * e02.z) * iNy;
+				break;
+			}
+			case 2: {
+				float iNz = 1.f / N.z;
+				a11 = (e02.x * e03.y - e02.y * e03.x) * iNz;
+				b11 = (e01.x * e02.y - e01.y * e02.x) * iNz;
+				break;
+			}
+			default:
+				BOOST_ASSERT(false);
+				// Dade - how can I report internal errors ?
+				break;
+		}
+
+		if ((a11 > 1.0f) || (b11 > 1.0f)) {
+			// Dade - we need to reorder the vertices
+
+			// Dade - this code has as side effect to reorder the indices
+			// in mesh->quadVertexIndex. It is not a very clean behavior but
+			// it is simple and fast
+
+			const int tmp = idx[0];
+			idx[0] = idx[1];
+			idx[1] = idx[2];
+			idx[2] = idx[3];
+			idx[3] = tmp;
+		} else
+			break;
+	}
+}
+
 BBox MeshQuadrilateral::ObjectBound() const {
     // Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
     const Point &p0 = mesh->p[idx[0]];
@@ -94,6 +159,8 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 	// Compute intersection for quadrilateral
 	// based on "An Efficient Ray-Quadrilateral Intersection Test"
 	// by Ares Lagae and Philip Dutr�
+	// http://www.cs.kuleuven.be/~graphics/CGRG.PUBLICATIONS/LagaeDutre2005AnEfficientRayQuadrilateralIntersectionTest/
+	// http://jgt.akpeters.com/papers/LagaeDutre05/erqit.cpp.html
 
     // Get quadrilateral vertices in _p00_, _p10_, _p11_, and _p01_
     const Point &p00 = mesh->p[idx[0]];
@@ -103,43 +170,43 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 
 	// Reject rays using the barycentric coordinates of
 	// the intersection point with respect to T.
-	Vector e01 = p10 - p00;
-	Vector e03 = p01 - p00;
-	Vector P = Cross(ray.d, e03);
+	const Vector e01 = p10 - p00;
+	const Vector e03 = p01 - p00;
+	const Vector P = Cross(ray.d, e03);
 	float det = Dot(e01, P);
 	if (fabsf(det) < 1e-7) 
 		return false;
-	
+
 	float invdet = 1.f / det;
 
-	Vector T = ray.o - p00;
+	const Vector T = ray.o - p00;
 	float alpha = Dot(T, P) * invdet;	
-	if (alpha < 0 || alpha > 1) 
+	if (alpha < 0)// || alpha > 1) 
 		return false;
 
-	Vector Q = Cross(T, e01);
+	const Vector Q = Cross(T, e01);
 	float beta = Dot(ray.d, Q) * invdet;
-	if (beta < 0 || beta > 1)
+	if (beta < 0)// || beta > 1)
 		return false;
 
 	// Reject rays using the barycentric coordinates of
 	// the intersection point with respect to T'.
 	if ((alpha + beta) > 1.f) {
-		Vector e23 = p01 - p11;
-		Vector e21 = p10 - p11;
-		Vector P2 = Cross(ray.d, e21);
+		const Vector e23 = p01 - p11;
+		const Vector e21 = p10 - p11;
+		const Vector P2 = Cross(ray.d, e21);
 		float det2 = Dot(e23, P2);
-		if (fabsf(det2) < 1e-7f) 
+		if (fabsf(det2) < 1e-7f)
 			return false;
 		//float invdet2 = 1.f / det2;
 		// since we only reject if alpha or beta < 0
 		// we just need the sign info from det2
 		float invdet2 = (det2 < 0) ? -1 : 1;
-		Vector T2 = ray.o - p11;
+		const Vector T2 = ray.o - p11;
 		float alpha2 = Dot(T2, P2) * invdet2;
 		if (alpha2 < 0) 
 			return false;
-		Vector Q2 = Cross(T2, e23);
+		const Vector Q2 = Cross(T2, e23);
 		float beta2 = Dot(ray.d, Q2) * invdet2;
 		if (beta2 < 0) 
 			return false;
@@ -152,8 +219,8 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 		return false;
 
 	// Compute the barycentric coordinates of V11.
-	Vector e02 = p11 - p00;
-	Vector N = Cross(e01, e03);
+	const Vector e02 = p11 - p00;
+	const Vector N = Cross(e01, e03);
 
 	float a11, b11;
 	int Nma = MajorAxis(N);
@@ -204,7 +271,6 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 		v = beta / (u * b11 + 1.f);
 	}
 
-
 	// compute partial differentials
 	Vector dpdu, dpdv;
 	float uv[4][2];
@@ -238,7 +304,24 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 			InvA[1][0] * e01.z + InvA[1][1] * e02.z + InvA[1][2] * e03.z);
 	}
 
-    *dg = DifferentialGeometry(ray(t), dpdu, dpdv,
+	// Dade - using the intepolated normal here in order to fix bug #340
+	Normal nn;
+	if (mesh->n)
+		nn = Normalize(ObjectToWorld(
+				((1.0f - u) * (1.0f - v)) * mesh->n[idx[0]] +
+				(u * (1.0f - v)) * mesh->n[idx[1]] +
+				(u * v) * mesh->n[idx[2]] +
+				((1.0f - u) * v) * mesh->n[idx[3]]));
+	else
+		nn = Normal(Normalize(N));
+
+	// Adjust normal based on orientation and handedness
+    if (reverseOrientation ^ transformSwapsHandedness)
+        nn *= -1.f;
+
+    *dg = DifferentialGeometry(ray(t),
+			nn,
+			dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
             u, v, this);
 
@@ -268,4 +351,11 @@ float MeshQuadrilateral::Area() const {
 	Vector PxQ = Cross(P, Q);
 
 	return 0.5f * PxQ.Length();
+}
+
+void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const {
+	// TODO
+	*dgShading = dg;
 }
