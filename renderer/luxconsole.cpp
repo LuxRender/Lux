@@ -40,6 +40,7 @@
 #include "context.h"
 #include "error.h"
 #include "renderserver.h"
+#include "osfunc.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
@@ -154,8 +155,13 @@ int main(int ac, char *av[]) {
 
         if (vm.count("threads"))
             threads = vm["threads"].as<int>();
-        else
-            threads = 1;
+		else {
+			// Dade - check for the hardware concurrency available
+			threads = osHardwareConcurrency();
+			if (threads == 0)
+				threads = 1;
+		}
+
         ss.str("");
         ss << "Threads: " << threads;
         luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());

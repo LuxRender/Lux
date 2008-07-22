@@ -35,6 +35,7 @@
 #include "lux.h"
 #include "api.h"
 #include "error.h"
+#include "osfunc.h"
 
 #include "wxluxapp.h"
 #include "wxluxgui.h"
@@ -140,9 +141,11 @@ bool LuxGuiApp::ProcessCommandLine() {
 
 		if(vm.count("threads")) {
 			m_threads = vm["threads"].as < int >();
-		}
-		else {
-			m_threads = 1;;
+		} else {
+			// Dade - check for the hardware concurrency available
+			m_threads = osHardwareConcurrency();
+			if (m_threads == 0)
+				m_threads = 1;
 		}
 
 		if(vm.count("debug")) {
