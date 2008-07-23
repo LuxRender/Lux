@@ -27,13 +27,6 @@
 #include "error.h"
 #include "include/asio.hpp"
 
-#include <fstream>
-#include <boost/thread/xtime.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 using namespace lux;
 using namespace boost::iostreams;
 using namespace std;
@@ -189,6 +182,29 @@ static void processCommand(void (&f)(float[16]), basic_istream<char> &stream) {
     f(t);
 }
 
+string RenderServer::createNewSessionID() {
+	char buf[4 * 4 + 4];
+	sprintf(buf, "%04d_%04d_%04d_%04d", rand() % 9999, rand() % 9999,
+			rand() % 9999, rand() % 9999);
+
+	return string(buf);
+}
+
+bool RenderServer::validateAccess(basic_istream<char> &stream) const {
+	if (serverThread->renderServer->state != RenderServer::BUSY)
+		return false;
+
+	string sid;
+	if (!getline(stream, sid))
+		return false;
+
+	stringstream ss;
+    ss << "Validating SID: " << sid << " = " << currentSID;
+    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+	return (sid == currentSID);
+}
+
 // Dade - TODO: support signals
 void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
     //Command identifiers (hashed strings)
@@ -242,6 +258,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                     case CMD_SPACE:
                         break;
                     case CMD_SERVER_DISCONNECT:
+						if (!serverThread->renderServer->validateAccess(stream))
+							break;
+
                         // Dade - stop the rendering and cleanup
                         luxExit();
                         luxWait();
@@ -251,9 +270,17 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                     case CMD_SERVER_CONNECT:
                         if (serverThread->renderServer->state == RenderServer::READY) {
                             serverThread->renderServer->state = RenderServer::BUSY;
-                            stream << "OK" <<endl;
+                            stream << "OK" << endl;
+
+							// Dade - generate the session ID
+							serverThread->renderServer->currentSID =
+									RenderServer::createNewSessionID();
+							ss.str("");
+							ss << "New session ID: " << serverThread->renderServer->currentSID;
+							luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+							stream << serverThread->renderServer->currentSID << endl;
                         } else
-                            stream << "BUSY" <<endl;
+                            stream << "BUSY" << endl;
                         break;
                     case CMD_LUXINIT:
                         luxError(LUX_BUG, LUX_SEVERE, "Server already initialized");
@@ -267,7 +294,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         stream >> ax;
                         stream >> ay;
                         stream >> az;
-                        //cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<<endl;
+                        //cout<<"params :"<<angle<<", "<<ax<<", "<<ay<<", "<<az<< endl;
                         luxRotate(angle, ax, ay, az);
                     }
                         break;
@@ -285,7 +312,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         stream >> ux;
                         stream >> uy;
                         stream >> uz;
-                        //cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<<endl;
+                        //cout<<"params :"<<ex<<", "<<ey<<", "<<ez<<", "<<lx<<", "<<ly<<", "<<lz<<", "<<ux<<", "<<uy<<", "<<uz<< endl;
                         luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
                     }
                         break;
@@ -338,12 +365,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         stream >> texname;
                         boost::archive::text_iarchive ia(stream);
                         ia >> params;
-                        //cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<<endl;
+                        //cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<< endl;
 
                         string file = "";
                         file = params.FindOneString(string("filename"), file);
                         if (file.size()) {
-                            //cout<<"receiving file..."<<file<<endl;
+                            //cout<<"receiving file..."<<file<< endl;
                             {
                                 stringstream ss;
                                 ss << "Receiving file: '" << file << "'";
@@ -412,8 +439,10 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         break;
                     case CMD_LUXGETFILM:
                     {
-                        // Dade - check if we are rendering something
+						if (!serverThread->renderServer->validateAccess(stream))
+							break;
 
+                        // Dade - check if we are rendering something
                         if (serverThread->renderServer->state == RenderServer::BUSY) {
                             luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
 

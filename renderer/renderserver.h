@@ -25,8 +25,14 @@
 
 #include "lux.h"
 
+#include <fstream>
+#include <boost/thread/xtime.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 namespace lux
 {
@@ -90,10 +96,16 @@ public:
     ServerState getServerState() { return  state; }
 
     friend class NetworkRenderServerThread;
+
 private:
+	static string createNewSessionID();
+
+	bool validateAccess(std::basic_istream<char> &stream) const;
+
     int threadCount;
     int tcpPort;
     ServerState state;
+	string currentSID;
     NetworkRenderServerThread *serverThread;
 };
 

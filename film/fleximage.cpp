@@ -612,17 +612,23 @@ void FlexImageFilm::TransmitFilm(
         // Dade - collect data to transmit
         boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
-        BufferGroup &currentGroup = bufferGroups[buf_id];
+		// TODO: Find a group
+		if (bufferGroups.empty()) {
+			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+			CreateBuffers();
+		}
+
+		BufferGroup &currentGroup = bufferGroups[buf_id];
 		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
 
-        pixelBuf = new BlockedArray<Pixel>(*buffer->pixels);
-        numberOfSamples = currentGroup.numberOfSamples;
+		pixelBuf = new BlockedArray<Pixel>(*buffer->pixels);
+		numberOfSamples = currentGroup.numberOfSamples;
 
-        if(clearGroup) {
-            // Dade - reset the rendering buffer
-            buffer->Clear();
-            currentGroup.numberOfSamples = 0;
-        }
+		if(clearGroup) {
+			// Dade - reset the rendering buffer
+			buffer->Clear();
+			currentGroup.numberOfSamples = 0;
+		}
     }
 
     bool isLittleEndian = IsLittleEndian();
@@ -636,16 +642,17 @@ void FlexImageFilm::TransmitFilm(
     std::stringstream os;
     writeLittleEndianFloat(isLittleEndian, os, numberOfSamples);
 
-    for (int y = 0; y < pixelBuf->vSize(); ++y) {
-        for (int x = 0; x < pixelBuf->uSize(); ++x) {
-            Pixel &pixel = (*pixelBuf)(x, y);
-            writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
-            writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
-            writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
-            writeLittleEndianFloat(isLittleEndian, os, pixel.alpha);
-            writeLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
-        }
-    }
+	for (int y = 0; y < pixelBuf->vSize(); ++y) {
+		for (int x = 0; x < pixelBuf->uSize(); ++x) {
+			Pixel &pixel = (*pixelBuf)(x, y);
+			writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
+			writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
+			writeLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
+			writeLittleEndianFloat(isLittleEndian, os, pixel.alpha);
+			writeLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
+		}
+	}
+
 	if(!os.good()) {
 		luxError(LUX_SYSTEM, LUX_SEVERE, "Error preparing data for film resume file");
 		delete pixelBuf;
@@ -675,6 +682,12 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
     {
         // Dade - prepare buffer to receive data
         boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+
+		// TODO: Find a group
+		if (bufferGroups.empty()) {
+			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+			CreateBuffers();
+		}
 
         BufferGroup &currentGroup = bufferGroups[buf_id];
         Buffer *buffer = currentGroup.getBuffer(bufferGroup);

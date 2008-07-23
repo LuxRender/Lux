@@ -113,7 +113,7 @@ bool RenderFarm::connect(const string &serverName) {
         // Dede - check if the server accepted the connection
 
         string result;
-        if(!getline(stream, result)) {
+        if (!getline(stream, result)) {
             ss.str("");
             ss << "Unable to connect server: " << serverName;
             luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
@@ -125,16 +125,32 @@ bool RenderFarm::connect(const string &serverName) {
         ss << "Server connect result: " << result;
         luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
+		string sid;
         if ("OK" != result) {
             ss.str("");
             ss << "Unable to connect server: " << serverName;
             luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
             return false;
-        }
+		} else {
+			// Dade - read the session ID
+			if (!getline(stream, result)) {
+				ss.str("");
+				ss << "Unable read session ID from server: " << serverName;
+				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+				return false;
+			}
+
+			sid = result;
+			ss.str("");
+			ss << "Server session ID: " << sid;
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		}
 		
 		serverNameList.push_back(name);
 		serverPortList.push_back(port);
+		serverSIDList.push_back(sid);
     } catch (std::exception& e) {
         ss.str("");
         ss << "Unable to connect server: " << serverName;
@@ -158,6 +174,7 @@ void RenderFarm::disconnectAll() {
 
             tcp::iostream stream(serverNameList[i], serverPortList[i]);
             stream << "ServerDisconnect" << std::endl;
+			stream << serverSIDList[i] << std::endl;
         } catch (std::exception& e) {
             luxError(LUX_SYSTEM, LUX_ERROR, e.what());
         }
@@ -206,6 +223,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 
             tcp::iostream stream(serverNameList[i], serverPortList[i]);
             stream << "luxGetFilm" << std::endl;
+			stream << serverSIDList[i] << std::endl;
 
             if (stream.good()) {
                 film->UpdateFilm(scene, stream);

@@ -104,6 +104,7 @@ public:
 private:
 	std::vector<std::string> serverNameList;
 	std::vector<std::string> serverPortList;
+	std::vector<std::string> serverSIDList;
 	std::stringstream netBuffer;
 
     // Dade - film update infromation
