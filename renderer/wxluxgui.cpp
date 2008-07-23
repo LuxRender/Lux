@@ -224,7 +224,8 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
 				if(m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 					luxStart();
-				luxSetHaltSamplePerPixel(-1, false, false);
+				if(m_guiRenderState == STOPPED)
+					luxSetHaltSamplePerPixel(-1, false, false);
 				ChangeRenderState(RENDERING);
 			}
 			break;
