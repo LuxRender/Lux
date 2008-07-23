@@ -107,7 +107,7 @@ int main(int ac, char *av[]) {
                 ("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
                 ("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
                 ("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
-                ("samplepix,p", po::value < int >(), "Specify to stop after the number of samples per pixel has been reached.")
+				("serverport,p", po::value < int >(), "Specify the tcp port used in server mode.")
                 ;
 
         // Hidden options, will be allowed both on command line and
@@ -178,15 +178,6 @@ int main(int ac, char *av[]) {
         } else
             serverInterval = luxGetNetworkServerUpdateInterval();
 
-        int maxSamplePerPixel;
-        if (vm.count("samplepix")) {
-            maxSamplePerPixel = vm["samplepix"].as<int>();
-            ss.str("");
-            ss << "Maximum number of samples per pixel: " << maxSamplePerPixel;
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-        } else
-            maxSamplePerPixel = -1;
-
         if (vm.count("useserver")) {
             std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
 
@@ -200,6 +191,10 @@ int main(int ac, char *av[]) {
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
         }
 
+		int serverPort = RenderServer::DEFAULT_TCP_PORT;
+		if (vm.count("serverport"))
+            serverPort = vm["serverport"].as<int>();
+			
         if (vm.count("input-file")) {
             const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
             for (unsigned int i = 0; i < v.size(); i++) {
@@ -243,24 +238,6 @@ int main(int ac, char *av[]) {
                 //launch info printing thread
                 boost::thread info(&infoThread);
 
-                if (maxSamplePerPixel > 0) {
-                    // Dade - check if we have reached the requested amount of
-                    // samples per pixel
-
-                    for(;;) {
-                        boost::xtime xt;
-                        boost::xtime_get(&xt, boost::TIME_UTC);
-                        xt.sec += 1;
-                        boost::thread::sleep(xt);
-
-                        if(luxStatistics("samplesPx") >= maxSamplePerPixel) {
-                            // Dade stop the rendering
-                            luxExit();
-                            break;
-                        }
-                    }
-                }
-
                 // Dade - wait for the end of the rendering
                 luxWait();
                 luxExit();
@@ -276,7 +253,7 @@ int main(int ac, char *av[]) {
                 luxCleanup();
             }
         } else if (vm.count("server")) {
-            RenderServer *renderServer = new RenderServer(threads);
+            RenderServer *renderServer = new RenderServer(threads, serverPort);
             renderServer->start();
             renderServer->join();
             delete renderServer;

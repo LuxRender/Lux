@@ -89,7 +89,7 @@ public:
     //!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-    int getServerCount() { return serverList.size(); }
+    int getServerCount() { return serverNameList.size(); }
 
     // Dade - used to periodically update the film
     void startFilmUpdater(Scene *scene);
@@ -102,7 +102,8 @@ public:
     int serverUpdateInterval;
 
 private:
-	std::vector<std::string> serverList;
+	std::vector<std::string> serverNameList;
+	std::vector<std::string> serverPortList;
 	std::stringstream netBuffer;
 
     // Dade - film update infromation
