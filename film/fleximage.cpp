@@ -60,14 +60,15 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM,
-	int haltspp, float reinhard_prescale, float reinhard_postscale,
-	float reinhard_burn, float g, int reject_warmup, bool debugmode) :
+	int haltspp, float reinhard_prescale, float reinhard_postscale, float reinhard_burn, 
+	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
+	float g, int reject_warmup, bool debugmode) :
 	Film(xres, yres, haltspp), filter(filt), writeInterval(wI), displayInterval(dI),
 	filename(filename1), premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
 	framebuffer(NULL), debug_mode(debugmode), factor(NULL),
-	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f)
+	colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -755,6 +756,15 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
     delete pixelBuf;
 }
 
+void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name, float values[2]) {
+	int i;
+	const float *v = params.FindFloat(name, &i);
+	if (v && i == 2) {
+		values[0] = v[0];
+		values[1] = v[1];
+	}
+}
+
 // params / creation
 Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 {
@@ -806,8 +816,23 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	int haltspp = params.FindOneInt("haltspp", -1);
 
+	// Color space primaries and white point
+	// default is SMPTE
+	float red[2] = {0.63f, 0.34f};
+	GetColorspaceParam(params, "colorspace_red", red);
+
+	float green[2] = {0.31f, 0.595f};
+	GetColorspaceParam(params, "colorspace_green", green);
+
+	float blue[2] = {0.155f, 0.07f};
+	GetColorspaceParam(params, "colorspace_blue", blue);
+
+	float white[2] = {0.314275f, 0.329411f};
+	GetColorspaceParam(params, "colorspace_white", white);
+
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
 		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM, restart_resume_FLM,
-		haltspp, reinhard_prescale, reinhard_postscale, reinhard_burn, gamma, reject_warmup, debug_mode);
+		haltspp, reinhard_prescale, reinhard_postscale, reinhard_burn, red, green, blue, white,
+		gamma, reject_warmup, debug_mode);
 }
