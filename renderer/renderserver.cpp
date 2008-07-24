@@ -27,8 +27,11 @@
 #include "error.h"
 #include "include/asio.hpp"
 
+#include "boost/filesystem.hpp"
+
 using namespace lux;
 using namespace boost::iostreams;
+using namespace boost::filesystem;
 using namespace std;
 using asio::ip::tcp;
 
@@ -139,12 +142,13 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), basi
     params.EraseBool("write_tonemapped_tga");
     params.EraseBool("write_resume_flm");
 
-    params.AddBool("write_tonemapped_exr", new bool(false));
-    params.AddBool("write_untonemapped_exr", new bool(false));
-    params.AddBool("write_untonemapped_igi", new bool(false));
-	params.AddBool("write_tonemapped_igi", new bool(false));
-    params.AddBool("write_tonemapped_tga", new bool(false));
-    params.AddBool("write_resume_flm", new bool(false));
+	bool no = false;
+    params.AddBool("write_tonemapped_exr", &no);
+    params.AddBool("write_untonemapped_exr", &no);
+    params.AddBool("write_untonemapped_igi", &no);
+	params.AddBool("write_tonemapped_igi", &no);
+    params.AddBool("write_tonemapped_tga", &no);
+    params.AddBool("write_resume_flm", &no);
 
     f(type.c_str(), params);
 }
@@ -229,6 +233,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
             " threads] mode on port '" << listenPort << "'.";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
+	vector<string> tmpFileList;
     try {
         asio::io_service io_service;
         tcp::endpoint endpoint(tcp::v4(), listenPort);
@@ -265,6 +270,11 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         luxExit();
                         luxWait();
                         luxCleanup();
+
+						// Dade - remove all temporary files
+						for (size_t i = 0; i < tmpFileList.size(); i++)
+							remove(tmpFileList[i]);
+
                         serverThread->renderServer->state = RenderServer::READY;
                         break;
                     case CMD_SERVER_CONNECT:
@@ -279,6 +289,8 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
 							ss << "New session ID: " << serverThread->renderServer->currentSID;
 							luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 							stream << serverThread->renderServer->currentSID << endl;
+
+							tmpFileList.clear();
                         } else
                             stream << "BUSY" << endl;
                         break;
@@ -365,27 +377,41 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         stream >> texname;
                         boost::archive::text_iarchive ia(stream);
                         ia >> params;
-                        //cout<<"params :"<<name<<", "<<type<<", "<<texname<<", "<<params.ToString()<< endl;
 
-                        string file = "";
-                        file = params.FindOneString(string("filename"), file);
-                        if (file.size()) {
-                            //cout<<"receiving file..."<<file<< endl;
-                            {
-                                stringstream ss;
-                                ss << "Receiving file: '" << file << "'";
-                                luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-                            }
+                        string originalFile = params.FindOneString(string("filename"), "");
+                        if (originalFile.size()) {
+							// Dade - look for file extension
+							string fileExt = "";
+							size_t idx = originalFile.find_last_of('.');
+							if (idx != string::npos)
+								fileExt = originalFile.substr(idx);
+
+							// Dade - replace the file name with a temporary name
+							char buf[64];
+							sprintf(buf,"%05d_%08d%s", serverThread->renderServer->tcpPort,
+									tmpFileList.size(), fileExt.c_str());
+							string file = string(buf);
+
+							// Dade - replace the filename parameter
+							params.AddString("filename", &file);
+
+							ss.str("");
+							ss << "Receiving file: '" << originalFile << "' (in '" <<
+									file << "')";
+							luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
                             bool first = true;
                             string s;
                             ofstream out(file.c_str(), ios::out | ios::binary);
-                            while (getline(stream, s) && s != "LUX_END_FILE") {
-                                if (!first)out << "\n";
+                            while (getline(stream, s) && (s != "LUX_END_FILE")) {
+                                if (!first)
+									out << "\n";
                                 first = false;
                                 out << s;
                             }
                             out.flush();
+
+							tmpFileList.push_back(file);
                         }
 
                         Context::luxTexture(name.c_str(), type.c_str(), texname.c_str(), params);
