@@ -24,6 +24,114 @@
 
 using namespace lux;
 
+// checks if quad is degenerate or if any points coincide
+bool MeshQuadrilateral::IsDegenerate(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
+
+	Vector e0 = p1 - p0;
+	Vector e1 = p2 - p1;
+	Vector e2 = p3 - p2;
+	Vector e3 = p0 - p3;
+
+	float el0 = e0.Length();
+	float el1 = e1.Length();
+	float el2 = e2.Length();
+	float el3 = e3.Length();
+
+	return el0 < 1e-30 || el1 < 1e-30 || el2 < 1e-30 || el3 < 1e-30;		
+}
+
+// checks if a non-degenerate quad is planar
+// most likely susceptible to numerical issues for large quads
+bool MeshQuadrilateral::IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
+
+	// basis vectors for projection
+	Vector e0 = p1 - p0;
+	Vector e1 = p2 - p0;
+	
+	Point p = p3;
+
+	if (1.f - fabsf(Dot(e0, e1)) < 1e-6) {
+		// if collinear, use p3
+		e1 = p3 - p0;
+		p = p2;
+	}
+
+	Vector n = Cross(e1, e0);
+
+	Vector x = p - p0;
+
+	// find distance from point to plane defined by e0 and e1
+	float D = fabsf(Dot(x, n));
+
+	// if planar, the distance from point to plane should be zero
+	// |x.n|/|n| < eps ==> |x.n| < |n| * eps
+	return D < n.Length() * 1e-6f;
+}
+
+// checks if a non-degenerate, planar quad is strictly convex
+bool MeshQuadrilateral::IsConvex(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
+
+	// basis vectors for plane
+	Vector b0 = Normalize(p1 - p0);
+	Vector b1 = p3 - p0;
+	// orthogonalize using Gram-Schmitdt
+	b1 = Normalize(b1 - b0 * Dot(b1, b0));
+	
+	if (1.f - fabsf(Dot(b0, b1)) < 1e-6) {
+		// if collinear, use p2
+		b1 = p2 - p0;
+		// orthogonalize using Gram-Schmitdt
+		b1 = Normalize(b1 - b0 * Dot(b1, b0));
+	}
+
+	// compute polygon edges
+	Vector e[4];
+
+	e[0] = p1 - p0;
+	e[1] = p2 - p1;
+	e[2] = p3 - p2;
+	e[3] = p0 - p3;	
+
+	// project edges onto the plane
+	for (int i = 0; i < 4; i++)
+		e[i] = Vector(Dot(e[i], b0), Dot(e[i], b1), 0);
+
+	// in a convex polygon, the x values should alternate between 
+	// increasing and decreasing exactly twice
+	int altCount = 0;
+	int curd, prevd;
+
+	// since b0 is constructed from the same edge as e0
+	// it's x component will always be positive (|e0| is always > 0)
+	// this is just a boot-strap, hence i=1..4 below
+	curd = 1;
+	for (int i = 1; i <= 4; i++) {
+		prevd = curd;
+		// if x component of edge is zero, we simply ignore it by 
+		// using the previous direction
+		curd = (e[i & 3].x < 1e-6) ? (e[i & 3].x > -1e-6f ? prevd : -1) : 1;
+		altCount += prevd != curd ? 1 : 0;
+	}
+
+	if (altCount != 2)
+		return false;
+
+	// some concave polygons might pass
+	// the above test, verify that the turns
+	// all go in the same direction	
+	int curs, prevs;
+	altCount = 0;
+
+	curs = (Cross(e[1], e[0]).z < 0) ? -1 : 1;
+	for (int i = 1; i < 4; i++) {
+		prevs = curs;
+		curs = (Cross(e[(i + 1) & 3], e[i]).z < 0) ? -1 : 1;
+		altCount += prevs != curs ? 1 : 0;
+	}
+
+	return altCount == 0;
+}
+
 float MeshQuadrilateral::Det2x2(const float a00, const float a01, const float a10, const float a11) {
 	return a00*a11 - a01*a10;
 }
@@ -66,31 +174,70 @@ int MeshQuadrilateral::MajorAxis(const Vector &v) {
 	return (absVy > absVz) ? 1 : 2;
 }
 
-// checks if a non-degenerate quad is planar
-// most likely susceptible to numerical issues for large quads
-bool MeshQuadrilateral::IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
-	const Vector e0 = p1 - p0;
-	const Vector e1 = p3 - p0;
-	const Vector diagonal = p2 - p0;
+void MeshQuadrilateral::ComputeV11BarycentricCoords(const Vector &e01, 
+	const Vector &e02, const Vector &e03, float *a11, float *b11) {
+		const Vector N = Cross(e01, e03);
 
-	const Vector n = Normalize(Cross(e0, e1));
+	int Nma = MajorAxis(N);
 
-	float proj = fabsf(Dot(Vector(diagonal), n));
-
-	// if planar, the projection length should be zero
-	return proj < 1e-6f;
+	switch (Nma) {
+		case 0: {
+			float iNx = 1.f / N.x;
+			*a11 = (e02.y * e03.z - e02.z * e03.y) * iNx;
+			*b11 = (e01.y * e02.z - e01.z * e02.y) * iNx;
+			break;
+		}
+		case 1: {
+			float iNy = 1.f / N.y;
+			*a11 = (e02.z * e03.x - e02.x * e03.z) * iNy;
+			*b11 = (e01.z * e02.x - e01.x * e02.z) * iNy;
+			break;
+		}
+		case 2: {
+			float iNz = 1.f / N.z;
+			*a11 = (e02.x * e03.y - e02.y * e03.x) * iNz;
+			*b11 = (e01.x * e02.y - e01.y * e02.x) * iNz;
+			break;
+		}
+		default:
+			BOOST_ASSERT(false);
+			// since we don't allow for degenerate quads the normal 
+			// should always be well defined and we should never get here
+			break;
+	}
 }
 
 //------------------------------------------------------------------------------
-
 MeshQuadrilateral::MeshQuadrilateral(const lux::Transform &o2w, bool ro, 
 	Mesh *m, int n) : Shape(o2w, ro) {
 	mesh = m;
 	idx = &mesh->quadVertexIndex[4 * n];
 
+	// LordCrc - check for problematic quads
+	const Point &p0 = WorldToObject(mesh->p[idx[0]]);
+    const Point &p1 = WorldToObject(mesh->p[idx[1]]);
+    const Point &p2 = WorldToObject(mesh->p[idx[2]]);
+    const Point &p3 = WorldToObject(mesh->p[idx[3]]);
+
+	if (IsDegenerate(p0, p1, p2, p3)) {
+		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Degenerate quadrilateral detected").c_str());
+		idx = NULL;
+	}
+	else if (!IsPlanar(p0, p1, p2, p3)) {
+		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Non-planar quadrilateral detected").c_str());
+		idx = NULL;
+	}
+	else if (!IsConvex(p0, p1, p2, p3)) {
+		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Non-convex quadrilateral detected").c_str());
+		idx = NULL;
+	}
+
+	if (!idx)
+		return;
+
 	// Dade - reorder the vertices if required
 	for(int i = 0; i < 4; i++) {
-		// Get quadrilateral vertices in _p00_, _p10_, _p11_, and _p01_
+		// Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
 		const Point &p00 = mesh->p[idx[0]];
 		const Point &p10 = mesh->p[idx[1]];
 		const Point &p11 = mesh->p[idx[2]];
@@ -104,32 +251,8 @@ MeshQuadrilateral::MeshQuadrilateral(const lux::Transform &o2w, bool ro,
 
 		float a11 = 0.0f;
 		float b11 = 0.0f;
-		int Nma = MajorAxis(N);
 
-		switch (Nma) {
-			case 0: {
-				float iNx = 1.f / N.x;
-				a11 = (e02.y * e03.z - e02.z * e03.y) * iNx;
-				b11 = (e01.y * e02.z - e01.z * e02.y) * iNx;
-				break;
-			}
-			case 1: {
-				float iNy = 1.f / N.y;
-				a11 = (e02.z * e03.x - e02.x * e03.z) * iNy;
-				b11 = (e01.z * e02.x - e01.x * e02.z) * iNy;
-				break;
-			}
-			case 2: {
-				float iNz = 1.f / N.z;
-				a11 = (e02.x * e03.y - e02.y * e03.x) * iNz;
-				b11 = (e01.x * e02.y - e01.y * e02.x) * iNz;
-				break;
-			}
-			default:
-				BOOST_ASSERT(false);
-				// Dade - how can I report internal errors ?
-				break;
-		}
+		ComputeV11BarycentricCoords(e01, e02, e03, &a11, &b11);
 
 		if ((a11 > 1.0f) || (b11 > 1.0f)) {
 			// Dade - we need to reorder the vertices
@@ -149,7 +272,11 @@ MeshQuadrilateral::MeshQuadrilateral(const lux::Transform &o2w, bool ro,
 }
 
 BBox MeshQuadrilateral::ObjectBound() const {
-    // Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
+
+	if (!idx)
+		return BBox();
+
+	// Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
     const Point &p0 = mesh->p[idx[0]];
     const Point &p1 = mesh->p[idx[1]];
     const Point &p2 = mesh->p[idx[2]];
@@ -160,7 +287,11 @@ BBox MeshQuadrilateral::ObjectBound() const {
 }
 
 BBox MeshQuadrilateral::WorldBound() const {
-    // Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
+
+	if (!idx)
+		return BBox();
+	
+	// Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
     const Point &p0 = mesh->p[idx[0]];
     const Point &p1 = mesh->p[idx[1]];
     const Point &p2 = mesh->p[idx[2]];
@@ -173,11 +304,14 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 		DifferentialGeometry *dg) const {
 	// Compute intersection for quadrilateral
 	// based on "An Efficient Ray-Quadrilateral Intersection Test"
-	// by Ares Lagae and Philip Dutrï¿½
+	// by Ares Lagae and Philip Dutré
 	// http://www.cs.kuleuven.be/~graphics/CGRG.PUBLICATIONS/LagaeDutre2005AnEfficientRayQuadrilateralIntersectionTest/
 	// http://jgt.akpeters.com/papers/LagaeDutre05/erqit.cpp.html
 
-    // Get quadrilateral vertices in _p00_, _p10_, _p11_, and _p01_
+	if (!idx)
+		return false;
+
+    // Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
     const Point &p00 = mesh->p[idx[0]];
     const Point &p10 = mesh->p[idx[1]];
     const Point &p11 = mesh->p[idx[2]];
@@ -235,35 +369,15 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 
 	// Compute the barycentric coordinates of V11.
 	const Vector e02 = p11 - p00;
-	const Vector N = Cross(e01, e03);
 
-	float a11, b11;
-	int Nma = MajorAxis(N);
+	float a11 = 0.f;
+	float b11 = 0.f;
 
-	switch (Nma) {
-		case 0: {
-			float iNx = 1.f / N.x;
-			a11 = (e02.y * e03.z - e02.z * e03.y) * iNx - 1.f;
-			b11 = (e01.y * e02.z - e01.z * e02.y) * iNx - 1.f;
-			break;
-		}
-		case 1: {
-			float iNy = 1.f / N.y;
-			a11 = (e02.z * e03.x - e02.x * e03.z) * iNy - 1.f;
-			b11 = (e01.z * e02.x - e01.x * e02.z) * iNy - 1.f;
-			break;
-		}
-		case 2: {
-			float iNz = 1.f / N.z;
-			a11 = (e02.x * e03.y - e02.y * e03.x) * iNz - 1.f;
-			b11 = (e01.x * e02.y - e01.y * e02.x) * iNz - 1.f;
-			break;
-		}
-		default:
-            BOOST_ASSERT(false);
-            // Dade - how can I report internal errors ?
-            return false;
-	}
+	ComputeV11BarycentricCoords(e01, e02, e03, &a11, &b11);
+
+	// save a lot of redundant computations
+	a11 = a11 - 1;
+	b11 = b11 - 1;
 
 	// Compute the bilinear coordinates of the
 	// intersection point.
@@ -327,8 +441,10 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 				(u * (1.0f - v)) * mesh->n[idx[1]] +
 				(u * v) * mesh->n[idx[2]] +
 				((1.0f - u) * v) * mesh->n[idx[3]]));
-	else
+	else {
+		Vector N = Cross(e01, e02);
 		nn = Normal(Normalize(N));
+	}
 
 	// Adjust normal based on orientation and handedness
     if (reverseOrientation ^ transformSwapsHandedness)
@@ -354,6 +470,9 @@ bool MeshQuadrilateral::IntersectP(const Ray &ray) const {
 }
 
 float MeshQuadrilateral::Area() const {
+
+	if (!idx)
+		return 0.f;
 
 	// assumes convex quadrilateral
     const Point &p0 = mesh->p[idx[0]];
