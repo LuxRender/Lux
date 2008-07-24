@@ -36,11 +36,23 @@ using namespace lux;
 
 #define SAMPLE_FLOATS 7
 
+// quasi random number generator
+static float qrNumber(u_int generation, u_int scramble, u_int order)
+{
+	switch (order) {
+	case 0:
+		return VanDerCorput(generation, scramble);
+	case 1:
+		return Sobol2(generation, scramble);
+	default:
+		return lux::random::floatValue();
+	}
+}
+
 // mutate a value in the range [0-1]
-static float mutate(const float x)
+static float mutate(const float x, const float randomValue)
 {
 	static const float s1 = 1/1024., s2 = 1/16.;
-	float randomValue = lux::random::floatValue();
 	float dx = s2 * exp(-log(s2/s1) * fabsf(2.f * randomValue - 1.f));
 	if (randomValue < 0.5) {
 		float x1 = x + dx;
@@ -52,10 +64,9 @@ static float mutate(const float x)
 }
 
 // mutate a value in the range [min-max]
-static float mutateScaled(const float x, const float mini, const float maxi, const float range)
+static float mutateScaled(const float x, const float randomValue, const float mini, const float maxi, const float range)
 {
 	static const float s1 = 64.;
-	float randomValue = lux::random::floatValue();
 	float dx = range * exp(-log(s1) * fabsf(2.f * randomValue - 1.f));
 	if (randomValue < 0.5) {
 		float x1 = x + dx;
@@ -68,16 +79,22 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		int maxRej, float largeProb, float rng, int sw, bool useV) :
- Sampler(xStart, xEnd, yStart, yEnd, 1), large(true), LY(0.), V(0.),
+		int maxRej, float largeProb, float microProb, float rng, int sw,
+		bool useV, bool useQR) :
+ Sampler(xStart, xEnd, yStart, yEnd, 1), large(true), LY(0.f), V(0.f),
  totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
- pLarge(largeProb), range(rng), weight(0.), alpha(0.), sampleImage(NULL),
- timeImage(NULL), strataWidth(sw), useVariance(useV)
+ numMicro(-1), posMicro(-1), pLarge(largeProb), pMicro(microProb), range(rng),
+ weight(0.f), alpha(0.f), sampleImage(NULL), timeImage(NULL), strataWidth(sw),
+ useVariance(useV)
 {
 	// Allocate storage for image stratified samples
-	strataSamples = (float *)AllocAligned(2 * sw * sw * sizeof(float));
-	strataSqr = sw*sw;
+	strataSqr = sw * sw;
+	strataSamples = (float *)AllocAligned(2 * strataSqr * sizeof(float));
 	currentStrata = strataSqr;
+	if (useQR)
+		orderOffset = 0;
+	else
+		orderOffset = 10;
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -113,15 +130,21 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 	}
 	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
+	sampler->scramble = (u_int *)AllocAligned(sampler->totalSamples * sizeof(u_int));
+	for (u_int i = 0; i < sampler->totalSamples; ++i)
+		sampler->scramble[i] = lux::random::uintValue();
 }
 
 // interface for new ray/samples from scene
 bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
-	large = (lux::random::floatValue() < pLarge) || initCount < initSamples;
+	++generation;
+	const float mutationSelector = lux::random::floatValue();
+	large = (mutationSelector < pLarge) || initCount < initSamples;
 	if (sampleImage == NULL) {
 		initMetropolis(this, sample);
+		generation = 0;
 		large = true;
 	}
 
@@ -143,28 +166,41 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		currentStrata++;
 
-		sample->lensU = lux::random::floatValue();
-		sample->lensV = lux::random::floatValue();
-		sample->time = lux::random::floatValue();
-		sample->wavelengths = lux::random::floatValue();
-		sample->singleWavelength = lux::random::floatValue();
+		sample->lensU = qrNumber(generation, scramble[2], 0 + orderOffset);
+		sample->lensV = qrNumber(generation, scramble[3], 1 + orderOffset);
+		sample->time = qrNumber(generation, scramble[4], 0 + orderOffset);
+		sample->wavelengths = qrNumber(generation, scramble[5], 0 + orderOffset);
+		sample->singleWavelength = qrNumber(generation, scramble[6], 0 + orderOffset);
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = lux::random::floatValue();
+			sample->oneD[0][i - SAMPLE_FLOATS] = qrNumber(generation, scramble[i], (i & 1) + orderOffset);
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
 	} else {
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(sampleImage[0], xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(sampleImage[1], yPixelStart, yPixelEnd, range);
-		sample->lensU = mutate(sampleImage[2]);
-		sample->lensV = mutate(sampleImage[3]);
-		sample->time = mutate(sampleImage[4]);
-		sample->wavelengths = mutate(sampleImage[5]);
-		sample->singleWavelength = lux::random::floatValue();//mutate(sampleImage[6])
-		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i]);
+		if (1.f - mutationSelector < pMicro)
+			numMicro = min<int>(sample->nxD.size(), Float2Int(lux::random::floatValue() * (sample->nxD.size() + 1))) - 1;
+		else
+			numMicro = -1;
+		if (numMicro >= 0) {
+			int maxPos = 0;
+			for (; maxPos < sample->nxD[numMicro]; ++maxPos)
+				if (sample->timexD[numMicro][maxPos] < sample->stamp)
+					break;
+			posMicro = min<int>(sample->nxD[numMicro] - 1, Float2Int(lux::random::floatValue() * maxPos));
+		} else {
+			posMicro = -1;
+			sample->imageX = mutateScaled(sampleImage[0], qrNumber(generation, scramble[0], 0 + orderOffset), xPixelStart, xPixelEnd, range);
+			sample->imageY = mutateScaled(sampleImage[1], qrNumber(generation, scramble[1], 1 + orderOffset), yPixelStart, yPixelEnd, range);
+			sample->lensU = mutate(sampleImage[2], qrNumber(generation, scramble[2], 0 + orderOffset));
+			sample->lensV = mutate(sampleImage[3], qrNumber(generation, scramble[3], 1 + orderOffset));
+			sample->time = mutate(sampleImage[4], qrNumber(generation, scramble[4], 0 + orderOffset));
+			sample->wavelengths = mutate(sampleImage[5], qrNumber(generation, scramble[5], 0 + orderOffset));
+			sample->singleWavelength = qrNumber(generation, scramble[6], 0 + orderOffset);//mutate(sampleImage[6], qrNumber(generation, scramble[6], 0 + orderOffset))
+			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
+				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], qrNumber(generation, scramble[i], (i & 1) + orderOffset));
+		}
 		++(sample->stamp);
 	}
 
@@ -174,10 +210,13 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	float *data = sample->xD[num] + pos * sample->dxD[num];
+	if (numMicro >= 0 && num != numMicro && posMicro >= 0 && pos != posMicro)
+		return data;
+	int scrambleOffset = data - sample->oneD[0];
 	if (sample->timexD[num][pos] != sample->stamp) {
 		if (sample->timexD[num][pos] == -1) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
-				data[i] = lux::random::floatValue();
+				data[i] = qrNumber(generation - sample->stamp, scramble[scrambleOffset + i], (i & 1) + orderOffset);
 			sample->timexD[num][pos] = 0;
 		} else {
 			for (u_int i = 0; i < sample->dxD[num]; ++i){
@@ -187,7 +226,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 		}
 		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
-				data[i] = mutate(data[i]);
+				data[i] = mutate(data[i], qrNumber(generation - sample->stamp + sample->timexD[num][pos] + 1, scramble[scrambleOffset + i], (i & 1) + orderOffset));
 		}
 	}
 	return data;
@@ -228,7 +267,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	if (LY > 0.f) {
 		accProb = min(1.f, newLY / LY);
 		if (useVariance && V > 0.f && newV > 0.f && newLY > 0.f)
-			factor = newV / (V * accProb);
+			factor = newV / (/*newLY **/ V * accProb);
 		else
 			factor = 1.f;
 	} else {
@@ -294,12 +333,14 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	meanIntensity = 0.;
 	int maxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
+	float microMutationProb = params.FindOneFloat("micromutationprob", 0.f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
 	bool useVariance = params.FindOneBool("usevariance", false);
+	bool useQR = params.FindOneBool("useqr", false);	// use quasi random number sequences
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects,
-			largeMutationProb, range, stratawidth, useVariance);
+			largeMutationProb, microMutationProb, range, stratawidth, useVariance, useQR);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;
