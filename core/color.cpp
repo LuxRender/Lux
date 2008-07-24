@@ -203,7 +203,9 @@ bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
 		rgb = Lerp(parameter, RGBColor(l), rgb);
 		constrain = true;	// Colour modified to fit RGB gamut
 	}
-	if (HighGamut(rgb)) {
+	// The following is disabled to better preserve color instead of luminance
+	// The is most noticeable with HDR outputs that don't need this clipping at all
+/*	if (HighGamut(rgb)) {
 		if (lum > luminance) {
 			rgb = RGBColor(1.f);
 			return true;
@@ -225,7 +227,7 @@ bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
 		// Now finally compute the gamut-constrained RGB weights.
 		rgb = Lerp(parameter, RGBColor(l), rgb);
 		constrain = true;	// Colour modified to fit RGB gamut
-	}
+	}*/
 
 	return constrain;
 }
