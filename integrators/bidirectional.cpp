@@ -241,7 +241,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Unconditional add since the last eye vertex can't be specular
 		// otherwise the connectio wouldn't have been possible
 		// and weightPath wouldn't have been called
-		weight += pDirect;
+		weight += pDirect * pDirect;
 		// If the light is unidirectional the path can only be obtained
 		// by sampling the light directly
 		if (isLightDirect && (light[0].flags & BSDF_SPECULAR) != 0)
@@ -260,7 +260,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 			// The light vertex cannot be specular otherwise
 			// the eye path wouldn't have received any light
 			if (i > 0 && (eye[i - 1].flags & BSDF_SPECULAR) == 0)
-				weight += pDirect;
+				weight += pDirect * pDirect;
 		}
 		// Exit if the path is impossible
 		if (!(eye[i].dAWeight > 0.f))
@@ -278,7 +278,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// is specular
 		if ((eye[i].flags & BSDF_SPECULAR) == 0 &&
 			(i == 0 || (eye[i - 1].flags & BSDF_SPECULAR) == 0))
-			weight += p;
+			weight += p * p;
 	}
 	// Reinitialize p to search paths in the other direction
 	p = 1.f;
@@ -295,7 +295,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 			// is specular
 			if ((light[i].flags & BSDF_SPECULAR) == 0 &&
 				(light[i - 1].flags & BSDF_SPECULAR) == 0)
-				weight += pDirect;
+				weight += pDirect * pDirect;
 		}
 		// Exit if the path is impossible
 		if (!(light[i].dAWeight > 0.f))
@@ -313,19 +313,19 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// is specular
 		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
 			(i == 0 || (light[i - 1].flags & BSDF_SPECULAR) == 0))
-			weight += p;
+			weight += p * p;
 	}
 	// The weight is computed for normal lighting,
 	// if we have direct lighting, compensate for it
 	if (isLightDirect && pDirect > 0.f)
-		weight /= pDirect;
+		weight /= pDirect * pDirect;
 	return weight;
 }
 
 static SWCSpectrum evalPath(const Scene *scene,
 	vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	vector<BidirVertex> &light, int nLight, int lightDepth,
-	float pdfLightDirect, bool isLightDirect)
+	float pdfLightDirect, bool isLightDirect, float *weight)
 {
 	SWCSpectrum L;
 	float eWeight, lWeight;
@@ -427,8 +427,9 @@ static SWCSpectrum evalPath(const Scene *scene,
 	}
 	else
 		return 0.f;
-	L /= weightPath(eye, nEye, eyeDepth, light, nLight, lightDepth,
+	*weight = 1.f / weightPath(eye, nEye, eyeDepth, light, nLight, lightDepth,
 		pdfLightDirect, isLightDirect);
+	L *= *weight;
 	if (nEye > 1)
 		eye[nEye - 2].dAWeight = eWeight;
 	if (nLight > 1)
@@ -437,7 +438,7 @@ static SWCSpectrum evalPath(const Scene *scene,
 }
 
 static bool getLightHit(const Scene *scene, vector<BidirVertex> &eyePath,
-	int length, int eyeDepth, int lightDepth, SWCSpectrum *Le)
+	int length, int eyeDepth, int lightDepth, SWCSpectrum *Le, float *weight)
 {
 	BidirVertex &v(eyePath[length - 1]);
 	if (v.Le.Black())
@@ -448,14 +449,14 @@ static bool getLightHit(const Scene *scene, vector<BidirVertex> &eyePath,
 	vector<BidirVertex> path(0);
 	BidirVertex e(v);
 	*Le *= evalPath(scene, eyePath, length, eyeDepth, path, 0, lightDepth,
-		v.ePdfDirect, false);
+		v.ePdfDirect, false, weight);
 	v = e;
 	return !Le->Black();
 }
 
 static bool getEnvironmentLight(const Scene *scene,
 	vector<BidirVertex> &eyePath, int length, int eyeDepth, int lightDepth,
-	SWCSpectrum *Le)
+	SWCSpectrum *Le, float *weight)
 {
 	BidirVertex &v(eyePath[length - 1]);
 	if (v.bsdf)
@@ -472,7 +473,7 @@ static bool getEnvironmentLight(const Scene *scene,
 		v.p = v.eBsdf->dgShading.p;
 		v.ns = v.eBsdf->dgShading.nn;
 		v.Le *= evalPath(scene, eyePath, length, eyeDepth, path, 0,
-			lightDepth, v.ePdfDirect, false);
+			lightDepth, v.ePdfDirect, false, weight);
 		if (!v.Le.Black())
 			*Le += v.Le;
 	}
@@ -481,7 +482,8 @@ static bool getEnvironmentLight(const Scene *scene,
 
 static bool getDirectLight(const Scene *scene, vector<BidirVertex> &eyePath,
 	int length, int eyeDepth, int lightDepth, const Light *light,
-	float u0, float u1, float portal, SWCSpectrum *Ld, Vector *w)
+	float u0, float u1, float portal, SWCSpectrum *Ld, float *weight,
+	Vector *w)
 {
 	vector<BidirVertex> lightPath(1);
 	BidirVertex &vE(eyePath[length - 1]);
@@ -498,7 +500,7 @@ static bool getDirectLight(const Scene *scene, vector<BidirVertex> &eyePath,
 	vL.ns = vL.bsdf->dgShading.nn;
 	vL.wi = Vector(vL.ns);
 	*Ld *= evalPath(scene, eyePath, length, eyeDepth,
-		lightPath, 1, lightDepth, vL.ePdfDirect, true);
+		lightPath, 1, lightDepth, vL.ePdfDirect, true, weight);
 	*Ld /= vL.ePdfDirect;
 	vE = e;
 	if (length == 1)
@@ -509,13 +511,13 @@ static bool getDirectLight(const Scene *scene, vector<BidirVertex> &eyePath,
 static bool getLight(const Scene *scene,
 	vector<BidirVertex> &eyePath, int nEye, int eyeDepth,
 	vector<BidirVertex> &lightPath, int nLight, int lightDepth,
-	float lightDirectPdf, SWCSpectrum *Ll)
+	float lightDirectPdf, SWCSpectrum *Ll, float *weight)
 {
 	if (!visible(scene, eyePath[nEye - 1].p, lightPath[nLight - 1].p))
 		return false;
 	BidirVertex vE(eyePath[nEye - 1]), vL(lightPath[nLight - 1]);
 	*Ll *= evalPath(scene, eyePath, nEye, eyeDepth,
-		lightPath, nLight, lightDepth, lightDirectPdf, false);
+		lightPath, nLight, lightDepth, lightDirectPdf, false, weight);
 	eyePath[nEye - 1] = vE;
 	lightPath[nLight - 1] = vL;
 	return !Ll->Black();
@@ -572,18 +574,29 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 			lightPath[1].wi) / //FIXME
 			DistanceSquared(lightPath[1].p, lightPath[0].p) *
 			AbsDot(lightPath[0].ns, lightPath[0].wo);
+	// Gety back normal image position
+	float x, y;
+	scene->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
 	// Connect paths
 	for (int i = 1; i <= nEye; ++i) {
+		float weight;
 		// Check eye path light intersection
 		if (i > 1) {
 			SWCSpectrum Lh(0.f);
 			if (getEnvironmentLight(scene, eyePath, i, maxEyeDepth,
-				maxLightDepth, &Lh)) {
-				L += Lh;
+				maxLightDepth, &Lh, &weight)) {
+				Lh *= We;
+				XYZColor color(Lh.ToXYZ());
+				if (color.y() > 0.f)
+					sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
 				break; //from now on the eye path does not intersect anything
 			} else if (getLightHit(scene, eyePath, i, maxEyeDepth,
-				maxLightDepth, &Lh))
-				L += Lh;
+				maxLightDepth, &Lh, &weight)) {
+				Lh *= We;
+				XYZColor color(Lh.ToXYZ());
+				if (color.y() > 0.f)
+					sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
+			}
 		}
 		// Do direct lighting
 		SWCSpectrum Ld(0.f);
@@ -597,17 +610,18 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 				if (getDirectLight(scene, eyePath, i,
 					maxEyeDepth, maxLightDepth,
 					scene->lights[lightDirectNumber],
-					data[0], data[1], portal, &Ld, &w)) {
+					data[0], data[1], portal, &Ld, &weight,
+					&w)) {
+					Ld *= We;
 					Ld *= numberOfLights;
-					if (i > 1)
-						L += Ld;
-					else {
-						Ld *= We;
-						XYZColor color(Ld.ToXYZ());
-						if (color.y() > 0.f) {
-							float x, y;
-							scene->camera->GetSamplePosition(eyePath[0].p, w, &x, &y);
-							sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, lightBufferId);
+					XYZColor color(Ld.ToXYZ());
+					if (color.y() > 0.f) {
+						if (i > 1)
+							sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
+						else {
+							float xd, yd;
+							scene->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
+							sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 						}
 					}
 				}
@@ -618,16 +632,17 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 					if (getDirectLight(scene, eyePath, i,
 						maxEyeDepth, maxLightDepth,
 						scene->lights[l],
-						data[0], data[1], data[2], &Ld, &w)) {
-						if (i > 1)
-							L += Ld;
-						else {
-							Ld *= We;
-							XYZColor color(Ld.ToXYZ());
-							if (color.y() > 0.f) {
-								float x, y;
-								scene->camera->GetSamplePosition(eyePath[0].p, w, &x, &y);
-								sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, lightBufferId);
+						data[0], data[1], data[2], &Ld,
+						&weight, &w)) {
+						Ld *= We;
+						XYZColor color(Ld.ToXYZ());
+						if (color.y() > 0.f) {
+							if (i > 1)
+								sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
+							else {
+								float xd, yd;
+								scene->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
+								sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 							}
 						}
 					}
@@ -645,16 +660,17 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 		for (int j = 1; j <= nLight; ++j) {
 			SWCSpectrum Ll(Le);
 			if (getLight(scene, eyePath, i, maxEyeDepth,
-				lightPath, j, maxLightDepth, directPdf, &Ll)) {
-				if (i > 1)
-					L += Ll;
-				else {
-					Ll *= We;
-					XYZColor color(Ll.ToXYZ());
-					if (color.y() > 0.f) {
-						float x, y;
-						scene->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[0].p), &x, &y);
-						sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, lightBufferId);
+				lightPath, j, maxLightDepth, directPdf, &Ll,
+				&weight)) {
+				Ll *= We;
+				XYZColor color(Ll.ToXYZ());
+				if (color.y() > 0.f) {
+					if (i > 1)
+						sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
+					else {
+						float xl, yl;
+						scene->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
+						sample->AddContribution(xl, yl, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 					}
 				}
 			}
@@ -663,14 +679,7 @@ SWCSpectrum BidirIntegrator::Li(const Scene *scene, const RayDifferential &ray,
 				directPdf = lightDirectPdf;
 		}
 	}
-	L *= We;
-	XYZColor color(L.ToXYZ());
-	if (color.y() > 0.f) {
-		float x, y;
-		scene->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
-		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, eyeBufferId);
-	}
-	return L;
+	return SWCSpectrum(1.f);
 }
 
 SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
