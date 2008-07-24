@@ -159,6 +159,9 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
 			Shuffle(strataSamples, strataSqr, 2);
 			currentStrata = 0;
+			// Change randomization to avoid artefacts
+			for (u_int i = 0; i < totalSamples; ++i)
+				scramble[i] = lux::random::uintValue();
 		}
 
 		// *** large mutation ***
