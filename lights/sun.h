@@ -67,7 +67,7 @@ private:
 	Vector x, y;
 	float turbidity;
 	float thetaS, phiS, V;
-	float cosThetaMax;
+	float cosThetaMax, sin2ThetaMax;
 	SPD *LSPD;
 };
 

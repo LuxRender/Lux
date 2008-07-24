@@ -36,8 +36,8 @@ using namespace lux;
 class SunBxDF : public BxDF
 {
 public:
-	SunBxDF(float cosMax, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosThetaMax(cosMax), worldRadius(radius) {}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return min(wo.z, wi.z) < cosThetaMax ? 0.f : 1.f;}
+	SunBxDF(float sin2Max, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sin2ThetaMax(sin2Max), cosThetaMax(sqrtf(1.f - sin2Max)), worldRadius(radius) {}
+	SWCSpectrum f(const Vector &wo, const Vector &wi) const {return (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax) ? 0.f : 1.f;}
 	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
@@ -48,13 +48,13 @@ public:
 	}
 	float Pdf(const Vector &wi, const Vector &wo) const
 	{
-		if (min(wi.z, wo.z) < cosThetaMax)
+		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return 0.;
 		else
 			return UniformConePdf(cosThetaMax);
 	}
 private:
-	float cosThetaMax, worldRadius;
+	float sin2ThetaMax, cosThetaMax, worldRadius;
 };
 
 // SunLight Method Definitions
@@ -71,12 +71,15 @@ SunLight::SunLight(const Transform &light2world,
 	const float sunRadius = 695500;
 	const float sunMeanDistance = 149600000;
 	if(relSize*sunRadius <= sunMeanDistance) {
-		cosThetaMax = sqrt(1.0f - pow(relSize*sunRadius/sunMeanDistance, 2));
+		sin2ThetaMax = relSize * sunRadius / sunMeanDistance;
+		sin2ThetaMax *= sin2ThetaMax;
+		cosThetaMax = sqrtf(1.f - sin2ThetaMax);
 	} else {
 		std::stringstream ss;
 		ss <<"Reducing relative sun size to "<< sunMeanDistance/sunRadius;
 		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
-		cosThetaMax = 0.0f;
+		cosThetaMax = 0.f;
+		sin2ThetaMax = 1.f;
 	}
 
 	float solidAngle = 2*M_PI*(1-cosThetaMax);
@@ -145,7 +148,7 @@ SWCSpectrum SunLight::Le(const RayDifferential &r) const {
 SWCSpectrum SunLight::Le(const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
-	if (cosThetaMax == 1.f || Dot(r.d, sundir) < cosThetaMax) {
+	if (cosThetaMax == 1.f || Dot(r.d, sundir) < 0.f || (r.d - Dot(r.d, sundir) * sundir).LengthSquared() > sin2ThetaMax) {
 		*bsdf = NULL;
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
@@ -161,7 +164,7 @@ SWCSpectrum SunLight::Le(const Scene *scene, const Ray &r,
 	Normal ns(-sundir);
 	DifferentialGeometry dg(r.o, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
+	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(sin2ThetaMax, worldRadius));
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	*pdfDirect = UniformConePdf(cosThetaMax) * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
 	return LSPD;
@@ -304,11 +307,12 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 
 	Point samplePoint;
 	Normal sampleNormal;
-	if (1 || !havePortalShape) {//FIXME portal code isn't working correctly
+	if (!havePortalShape) {//FIXME portal code isn't working correctly
 		float d1, d2;
 		ConcentricSampleDisk(u1, u2, &d1, &d2);
 		samplePoint = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
 		sampleNormal = Normal(-sundir);
+		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	} else  {
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
@@ -351,8 +355,7 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 	
 	DifferentialGeometry dg(samplePoint, sampleNormal, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, sampleNormal);
-	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
-	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(sin2ThetaMax, worldRadius));
 
 	return LSPD;
 }
@@ -395,7 +398,7 @@ SWCSpectrum SunLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 
 	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(cosThetaMax, worldRadius));
+	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(sin2ThetaMax, worldRadius));
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
