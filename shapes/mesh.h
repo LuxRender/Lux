@@ -220,6 +220,8 @@ public:
 		return p;
 	}
 
+	static bool IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
+
 private:
 	static float Det2x2(const float a00, const float a01, const float a10, const float a11);
 	static float Det3x3(float A[3][3]);

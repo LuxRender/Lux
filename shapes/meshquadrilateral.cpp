@@ -66,6 +66,21 @@ int MeshQuadrilateral::MajorAxis(const Vector &v) {
 	return (absVy > absVz) ? 1 : 2;
 }
 
+// checks if a non-degenerate quad is planar
+// most likely susceptible to numerical issues for large quads
+bool MeshQuadrilateral::IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
+	const Vector e0 = p1 - p0;
+	const Vector e1 = p3 - p0;
+	const Vector diagonal = p2 - p0;
+
+	const Vector n = Normalize(Cross(e0, e1));
+
+	float proj = fabsf(Dot(Vector(diagonal), n));
+
+	// if planar, the projection length should be zero
+	return proj < 1e-6f;
+}
+
 //------------------------------------------------------------------------------
 
 MeshQuadrilateral::MeshQuadrilateral(const lux::Transform &o2w, bool ro, 

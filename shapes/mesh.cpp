@@ -50,24 +50,104 @@ Mesh::Mesh(const Transform &o2w, bool ro,
     } else
 		n = NULL;
 
-	// Dade - copy triangle data    
-	triType = tritype;
-	ntris = trisCount;
-	if (ntris == 0)
-		triVertexIndex = NULL;
-	else {
-		triVertexIndex = new int[3 * ntris];
-		memcpy(triVertexIndex, tris, 3 * ntris * sizeof(int));
-	}
-
 	// Dade - copy quad data
 	quadType = quadtype;
 	nquads = nquadsCount;
+	vector<int> quadsOk;
+	vector<int> quadsToSplit;
 	if (nquads == 0)
 		quadVertexIndex = NULL;
 	else {
-		quadVertexIndex = new int[4 * nquads];
-		memcpy(quadVertexIndex, quads, 4 * nquads * sizeof(int));
+		// Dade - check if quads are no planar and split them if required
+		for (int i = 0; i < nquads; i++) {
+			const int idx = 4 * i;
+			const Point &p0 = p[quads[idx]];
+			const Point &p1 = p[quads[idx + 1]];
+			const Point &p2 = p[quads[idx + 2]];
+			const Point &p3 = p[quads[idx + 3]];
+
+			if (MeshQuadrilateral::IsPlanar(p0, p1, p2, p3)) {
+				quadsOk.push_back(quads[idx]);
+				quadsOk.push_back(quads[idx + 1]);
+				quadsOk.push_back(quads[idx + 2]);
+				quadsOk.push_back(quads[idx + 3]);
+			} else {
+				// Dade - it is a no planar quad, I need to split in 2 x triangles
+				quadsToSplit.push_back(quads[idx]);
+				quadsToSplit.push_back(quads[idx + 1]);
+				quadsToSplit.push_back(quads[idx + 2]);
+				quadsToSplit.push_back(quads[idx + 3]);
+			}
+		}
+
+		nquads = quadsOk.size() / 4;
+		if (nquads == 0)
+			quadVertexIndex = NULL;
+		else {
+			quadVertexIndex = new int[4 * nquads];
+			for (int i = 0; i < nquads; i++) {
+				const int idx = 4 * i;
+				quadVertexIndex[idx] = quadsOk[idx];
+				quadVertexIndex[idx + 1] = quadsOk[idx + 1];
+				quadVertexIndex[idx + 2] = quadsOk[idx + 2];
+				quadVertexIndex[idx + 3] = quadsOk[idx + 3];
+			}
+		}
+	}
+
+	std::stringstream ss;
+	ss << "Mesh: " <<
+			trisCount << " triangles  " <<
+			(quadsOk.size() / 4) << " planar quads  " <<
+			(quadsToSplit.size() / 4) << " no-planar quads";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+	// Dade - copy triangle data    
+	triType = tritype;
+	ntris = trisCount;
+	if (ntris == 0) {
+		if (quadsToSplit.size() == 0)
+			triVertexIndex = NULL;
+		else {
+			// Dade - add quads to split
+			const size_t nquadsToSplit = quadsToSplit.size() / 4;
+			ntris = 2 * nquadsToSplit;
+			triVertexIndex = new int[3 * ntris];
+
+			for (size_t i = 0; i < nquadsToSplit; i++) {
+				const size_t qidx = 4 * i;
+				const size_t tidx = 2 * 3 * i;
+
+				// Dade - triangle A
+				triVertexIndex[tidx] = quadsToSplit[qidx];
+				triVertexIndex[tidx + 1] = quadsToSplit[qidx + 1];
+				triVertexIndex[tidx + 2] = quadsToSplit[qidx + 2];
+				// Dade - triangle B
+				triVertexIndex[tidx + 3] = quadsToSplit[qidx];
+				triVertexIndex[tidx + 4] = quadsToSplit[qidx + 2];
+				triVertexIndex[tidx + 5] = quadsToSplit[qidx + 3];
+			}
+		}
+	} else {
+		const size_t nquadsToSplit = quadsToSplit.size() / 4;
+		ntris += 2 * nquadsToSplit;
+		triVertexIndex = new int[3 * ntris];
+		memcpy(triVertexIndex, tris, 3 * trisCount * sizeof(int));
+
+		// Dade - add quads to split
+		for (size_t i = 0; i < nquadsToSplit; i++) {
+			const size_t qidx = 4 * i;
+			const size_t tidx = 3 * trisCount + 2 * 3 * i;
+
+			// Dade - triangle A
+			triVertexIndex[tidx] = quadsToSplit[qidx];
+			triVertexIndex[tidx + 1] = quadsToSplit[qidx + 1];
+			triVertexIndex[tidx + 2] = quadsToSplit[qidx + 2];
+			// Dade - triangle b
+			triVertexIndex[tidx + 3] = quadsToSplit[qidx];
+			triVertexIndex[tidx + 4] = quadsToSplit[qidx + 2];
+			triVertexIndex[tidx + 5] = quadsToSplit[qidx + 3];
+		}
 	}
 }
 
