@@ -401,6 +401,7 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, float *tHit,
 	}
 
 	// compute partial differentials
+	// see bugtracker ID 324 for derivation
 	Vector dpdu, dpdv;
 	float uv[4][2];
 	float A[3][3], InvA[3][3];
@@ -490,6 +491,68 @@ float MeshQuadrilateral::Area() const {
 void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const {
-	// TODO
-	*dgShading = dg;
+
+	if (!mesh->n) {
+		*dgShading = dg;
+		return;
+	}
+
+	// Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and _ts_
+	Normal ns = dg.nn;
+	Vector ss = Normalize(dg.dpdu);
+	Vector ts = Normalize(Cross(ss, ns));
+	ss = Cross(ts, ns);
+
+	// compute partial differentials
+	// see bugtracker ID 324 for derivation
+	Vector dndu, dndv;
+	float uv[4][2];
+	float A[3][3], InvA[3][3];
+
+	GetUVs(uv);
+
+	A[0][0] = uv[1][0] - uv[0][0];
+	A[0][1] = uv[1][1] - uv[0][1];
+	A[0][2] = uv[1][0]*uv[1][1] - uv[0][0]*uv[0][1];
+	A[1][0] = uv[2][0] - uv[0][0];
+	A[1][1] = uv[2][1] - uv[0][1];
+	A[1][2] = uv[2][0]*uv[2][1] - uv[0][0]*uv[0][1];
+	A[2][0] = uv[3][0] - uv[0][0];
+	A[2][1] = uv[3][1] - uv[0][1];
+	A[2][2] = uv[3][0]*uv[3][1] - uv[0][0]*uv[0][1];
+
+	// invert matrix
+	if (!Invert3x3(A, InvA)) {
+        // Handle zero determinant for quadrilateral partial derivative matrix
+		dndu = dndv = Vector(0, 0, 0);
+	} else {
+		const Normal &n00 = mesh->n[idx[0]];
+		const Normal &n10 = mesh->n[idx[1]];
+		const Normal &n11 = mesh->n[idx[2]];
+		const Normal &n01 = mesh->n[idx[3]];
+
+		const Vector dn01 = Vector(n10 - n00);
+		const Vector dn02 = Vector(n11 - n00);
+		const Vector dn03 = Vector(n01 - n00);
+
+		dndu = Vector(
+			InvA[0][0] * dn01.x + InvA[0][1] * dn02.x + InvA[0][2] * dn03.x,
+			InvA[0][0] * dn01.y + InvA[0][1] * dn02.y + InvA[0][2] * dn03.y,
+			InvA[0][0] * dn01.z + InvA[0][1] * dn02.z + InvA[0][2] * dn03.z);
+		dndv = Vector(
+			InvA[1][0] * dn01.x + InvA[1][1] * dn02.x + InvA[1][2] * dn03.x,
+			InvA[1][0] * dn01.y + InvA[1][1] * dn02.y + InvA[1][2] * dn03.y,
+			InvA[1][0] * dn01.z + InvA[1][1] * dn02.z + InvA[1][2] * dn03.z);
+	}
+
+	*dgShading = DifferentialGeometry(
+			dg.p,
+			ns,
+			ss, ts,
+			dndu, dndv,
+			dg.u, dg.v, dg.shape);
+
+	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
+	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
+	dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy;
 }
