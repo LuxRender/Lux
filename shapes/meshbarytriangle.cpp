@@ -191,32 +191,29 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	ss = Cross(ts, ns);
 
 	Vector dndu, dndv;
-	if (mesh->n) {
-		// Compute \dndu and \dndv for triangle shading geometry
-		float uvs[3][2];
-		GetUVs(uvs);
+	// Compute \dndu and \dndv for triangle shading geometry
+	float uvs[3][2];
+	GetUVs(uvs);
 
-		// Compute deltas for triangle partial derivatives of normal
-		float du1 = uvs[0][0] - uvs[2][0];
-		float du2 = uvs[1][0] - uvs[2][0];
-		float dv1 = uvs[0][1] - uvs[2][1];
-		float dv2 = uvs[1][1] - uvs[2][1];
-		Vector dn1 = Vector(mesh->n[v[0]] - mesh->n[v[2]]);
-		Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
-		float determinant = du1 * dv2 - dv1 * du2;
+	// Compute deltas for triangle partial derivatives of normal
+	float du1 = uvs[0][0] - uvs[2][0];
+	float du2 = uvs[1][0] - uvs[2][0];
+	float dv1 = uvs[0][1] - uvs[2][1];
+	float dv2 = uvs[1][1] - uvs[2][1];
+	Vector dn1 = Vector(mesh->n[v[0]] - mesh->n[v[2]]);
+	Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
+	float determinant = du1 * dv2 - dv1 * du2;
 
-		if (determinant == 0)
-			dndu = dndv = Vector(0, 0, 0);
-		else {
-			float invdet = 1.f / determinant;
-			dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
-			dndv = (-du2 * dn1 + du1 * dn2) * invdet;
-
-			dndu = ObjectToWorld(dndu);
-			dndv = ObjectToWorld(dndu);
-		}
-	} else
+	if (determinant == 0)
 		dndu = dndv = Vector(0, 0, 0);
+	else {
+		float invdet = 1.f / determinant;
+		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
+		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
+
+		dndu = ObjectToWorld(dndu);
+		dndv = ObjectToWorld(dndu);
+	}
 
 	*dgShading = DifferentialGeometry(
 			dg.p,
