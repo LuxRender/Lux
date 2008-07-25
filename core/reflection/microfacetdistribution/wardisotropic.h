@@ -37,7 +37,7 @@ public:
 
   WardIsotropic (float rms);
 
-  // Beckmann Public Methods
+  // WardIsotropic Public Methods
   float D (const Vector &wh) const;
   virtual void Sample_f (const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
   virtual float Pdf (const Vector &wi, const Vector &wo) const;
