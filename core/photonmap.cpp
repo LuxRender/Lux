@@ -174,8 +174,21 @@ void PhotonMapPreprocess(
 		for (int i = 0; i < nLights; ++i)
 			lightPower[i] += scene->lights[i]->Power(scene).y();
 	}
-	for (int i = 0; i < nLights; ++i)
+
+	// Dade - I'm setting a minimum value in order to not have numerical
+	// problems when lights have a huge power range (i.e. sun and sky)
+	float maxLightPower = 0.0;
+	for (int i = 0; i < nLights; ++i) {
 		lightPower[i] *= 1.0f / spectrumSamples;
+		if (lightPower[i] > maxLightPower)
+			maxLightPower = lightPower[i];
+	}
+	// Dade - the most powerful light can be only 10 times more "important" than
+	// other light sources
+	float lightPowerClipValue = maxLightPower * 0.1f;
+	for (int i = 0; i < nLights; ++i)
+		if (lightPower[i] < lightPowerClipValue)
+			lightPower[i] = lightPowerClipValue;
 
 	float totalPower;
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
