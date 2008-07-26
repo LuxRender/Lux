@@ -47,6 +47,9 @@ IMPLEMENT_APP(LuxGuiApp)
 
 // This is executed upon startup, like 'main()' in non-wxWidgets programs.
 bool LuxGuiApp::OnInit() {
+	// Dade - initialize rand() number generator
+	srand(time(NULL));
+
 	// Set numeric format to standard to avoid errors when parsing files
 	setlocale(LC_NUMERIC, "C");
 

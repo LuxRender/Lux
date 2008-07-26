@@ -84,6 +84,9 @@ void infoThread() {
 }
 
 int main(int ac, char *av[]) {
+	// Dade - initialize rand() number generator
+	srand(time(NULL));
+
     bool useServer = false;
     luxInit();
 
