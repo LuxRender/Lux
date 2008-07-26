@@ -166,7 +166,7 @@ void PhotonMapPreprocess(
 	// Dade - avarge the light power
 	const int spectrumSamples = 128;
 	for (int i = 0; i < nLights; ++i)
-		lightPower[i] +=0.0f;
+		lightPower[i] = 0.0f;
 	for (int j = 0; j < spectrumSamples; j++) {
 		thr_wl->Sample((float)RadicalInverse(j, 2),
 			(float)RadicalInverse(j, 3));
