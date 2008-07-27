@@ -27,7 +27,12 @@
 #include "error.h"
 #include "include/asio.hpp"
 
+#include "boost/version.hpp"
+#if (BOOST_VERSION < 103401)
+#include "boost/filesystem/operations.hpp"
+#else
 #include "boost/filesystem.hpp"
+#endif
 
 using namespace lux;
 using namespace boost::iostreams;
