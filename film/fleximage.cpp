@@ -416,6 +416,11 @@ void FlexImageFilm::WriteImage(ImageType type)
 		scene->camera->GetFlux2RadianceFactors(this, factor, xPixelCount, yPixelCount);
 	}
 
+	// Dade - in order to fix bug #360
+	for(int i=0;i<nPix;i++)
+		pixels[i].c[0] = pixels[i].c[1] = pixels[i].c[2] =
+				pixels0[i].c[0] = pixels0[i].c[1] = pixels0[i].c[2] = 0.0f;
+
 	for(u_int j = 0; j < bufferGroups.size(); ++j) {
 		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
 			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
