@@ -181,7 +181,7 @@ void PhotonMapPreprocess(
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 			// Dade - read the maps from the file
-			luxError(LUX_NOERROR, LUX_INFO, "Reading readiance photon map");
+			luxError(LUX_NOERROR, LUX_INFO, "Reading radiance photon map");
 			RadiancePhotonMap::load(ifs, radianceMap);
 			ss.str("");
 			ss << "Read " << radianceMap->getPhotonCount() << " radiance photon to file";
