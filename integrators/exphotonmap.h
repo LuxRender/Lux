@@ -53,6 +53,7 @@ public:
 			int nLookup, int mdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
 			PhotonMapRRStrategy rrstrategy, float rrcontprob,
+			string *mapsFileName,
 			bool dbgEnableDirect, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
@@ -95,6 +96,9 @@ private:
 	int gatherSamples;
 	PhotonMapRRStrategy rrStrategy;
 	float rrContinueProbability;
+
+	// Dade - != NULL if I have to read/write photon maps on file
+	string *mapsFileName;
 
 	// Dade - debug flags
 	bool debugEnableDirect, debugEnableCaustic,

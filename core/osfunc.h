@@ -23,12 +23,27 @@
 #ifndef LUX_OSFUNC_H
 #define LUX_OSFUNC_H
 
+#include <istream>
+#include <ostream>
+
 namespace lux
 {
 
 // Dade - return the number of concurrent threads the hardware can run or
 // 0 if the information is not avilable. The implementation come from Boost 1.35
 extern int osHardwareConcurrency();
+
+// Dade - used to check and swap bytes in the network rendering code and
+// other places
+extern bool osIsLittleEndian();
+extern void osWriteLittleEndianFloat(bool isLittleEndian,
+		std::basic_ostream<char> &os, float value);
+extern void osReadLittleEndianFloat(bool isLittleEndian,
+		std::basic_istream<char> &is, float *value);
+extern void osWriteLittleEndianInt(bool isLittleEndian,
+		std::basic_ostream<char> &os, int value);
+extern void osReadLittleEndianInt(bool isLittleEndian,
+		std::basic_istream<char> &is, int *value);
 
 }//namespace lux
 

@@ -43,6 +43,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
         int nl, int mdepth, float mdist, bool fg,
         int gs, float ga,
 		PhotonMapRRStrategy rrstrategy, float rrcontprob,
+		string *mapsfn,
 		bool dbgEnableDirect, bool dbgEnableCaustic,
 		bool dbgEnableIndirect, bool dbgEnableSpecular) {
 	renderingMode = rm;
@@ -64,6 +65,8 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 	rrStrategy = rrstrategy;
 	rrContinueProbability = rrcontprob;
 
+	mapsFileName = mapsfn;
+
 	debugEnableDirect = dbgEnableDirect;
 	debugEnableCaustic = dbgEnableCaustic;
 	debugEnableIndirect = dbgEnableIndirect;
@@ -71,6 +74,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 }
 
 ExPhotonIntegrator::~ExPhotonIntegrator() {
+	delete mapsFileName;
     delete causticMap;
     delete indirectMap;
     delete radianceMap;
@@ -150,7 +154,7 @@ void ExPhotonIntegrator::Preprocess(const Scene *scene) {
 	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
 
 	PhotonMapPreprocess(
-			scene,
+			scene, mapsFileName,
 			maxDirectPhotons, radianceMap,
 			nIndirectPhotons, indirectMap,
 			nCausticPhotons, causticMap);
@@ -507,7 +511,7 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 						NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
 						float md2 = INFINITY;
 
-						radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+						radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 						if (proc.photon) {
 							Lindir = proc.photon->alpha;
 
@@ -623,6 +627,11 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	// continueprobability for plain RR (0.0-1.0)
 	float rrcontinueProb = params.FindOneFloat("gatherrrcontinueprob", 0.65f);
 
+	string *mapsFileName = NULL;
+	string sfn = params.FindOneString("mapsfile", "");
+	if (sfn != "")
+		mapsFileName = new string(sfn);
+
 	bool debugEnableDirect = params.FindOneBool("dbg_enabledirect", true);
 	bool debugEnableCaustic = params.FindOneBool("dbg_enablecaustic", true);
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
@@ -631,5 +640,6 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     return new ExPhotonIntegrator(renderingMode, estrategy, nCaustic, nIndirect, maxDirect,
             nUsed, maxDepth, maxDist, finalGather, gatherSamples, gatherAngle,
 			rstrategy, rrcontinueProb,
+			mapsFileName,
 			debugEnableDirect, debugEnableCaustic, debugEnableIndirect, debugEnableSpecular);
 }

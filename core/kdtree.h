@@ -61,6 +61,8 @@ public:
 		vector<const NodeData *> &buildNodes);
 	void Lookup(const Point &p, const LookupProc &process,
 			float &maxDistSquared) const;
+	NodeData *getNodeData() { return nodeData; }
+
 private:
 	// KdTree Private Methods
 	void privateLookup(u_int nodeNum, const Point &p,

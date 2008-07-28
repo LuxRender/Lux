@@ -25,7 +25,9 @@
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "error.h"
+#include "osfunc.h"
 
+#include <fstream>
 #include <boost/thread/xtime.hpp>
 
 using namespace lux;
@@ -36,6 +38,34 @@ extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
 namespace lux
 {
 
+void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+	// Point p
+	for (int i = 0; i < 3; i++)
+		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
+
+	// SWCSpectrum alpha
+	for (int i = 0; i < WAVELENGTH_SAMPLES; i++)
+		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
+
+	// Vector wi
+	for (int i = 0; i < 3; i++)
+		osWriteLittleEndianFloat(isLittleEndian, stream, wi[i]);
+}
+
+void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+	// Point p
+	for (int i = 0; i < 3; i++)
+		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
+
+	// SWCSpectrum alpha
+	for (int i = 0; i < WAVELENGTH_SAMPLES; i++)
+		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
+
+	// Normal n
+	for (int i = 0; i < 3; i++)
+		osWriteLittleEndianFloat(isLittleEndian, stream, n[i]);
+}
+
 SWCSpectrum LightPhotonMap::estimateE(const Point &p, const Normal &n) const {
     if ((nPaths <= 0) || (!photonmap))
 		return 0.0f;
@@ -45,7 +75,7 @@ SWCSpectrum LightPhotonMap::estimateE(const Point &p, const Normal &n) const {
     proc.photons = (ClosePhoton<LightPhoton> *) alloca(nLookup *
             sizeof (ClosePhoton<LightPhoton>));
     float md2 = maxDistSquared;
-    Lookup(p, proc, md2);
+    lookup(p, proc, md2);
 
     // Accumulate irradiance value from nearby photons
     ClosePhoton<LightPhoton> *photons = proc.photons;
@@ -77,7 +107,7 @@ SWCSpectrum LightPhotonMap::LPhoton(
 			sizeof (ClosePhoton<LightPhoton>));
     // Do photon map lookup
 	float md2 = maxDistSquared;
-    Lookup(isect.dg.p, proc, md2);
+    lookup(isect.dg.p, proc, md2);
     // Accumulate light from nearby photons
     // Estimate reflected light from photons
     ClosePhoton<LightPhoton> *photons = proc.photons;
@@ -129,17 +159,59 @@ static bool unsuccessful(int needed, int found, int shot) {
 }
 
 void PhotonMapPreprocess(
-		const Scene *scene,
+		const Scene *scene, string *mapFileName,
 		u_int maxDirectPhotons, RadiancePhotonMap *radianceMap,
 		u_int nIndirectPhotons, LightPhotonMap *indirectMap,
 		u_int nCausticPhotons, LightPhotonMap *causticMap) {
-    if (scene->lights.size() == 0) return;
+	if (scene->lights.size() == 0) return;
+
+	std::stringstream ss;
+
+	// Dade - read the photon maps from file if required
+	bool mapsFileExist = false;
+	if (mapFileName) {
+		// Dade - check if the maps file exists
+		std::ifstream ifs(mapFileName->c_str(), std::ios_base::in | std::ios_base::binary);
+
+        if(ifs.good()) {
+			mapsFileExist = true;
+
+			ss.str("");
+			ss << "Reading photon maps file: " << (*mapFileName);
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			// Dade - read the maps from the file
+			luxError(LUX_NOERROR, LUX_INFO, "Reading readiance photon map");
+			RadiancePhotonMap::load(ifs, radianceMap);
+			ss.str("");
+			ss << "Read " << radianceMap->getPhotonCount() << " radiance photon to file";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			luxError(LUX_NOERROR, LUX_INFO, "Reading indirect photon map");
+			LightPhotonMap::load(ifs, indirectMap);
+			ss.str("");
+			ss << "Read " << indirectMap->getPhotonCount() << " light photon to file";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			luxError(LUX_NOERROR, LUX_INFO, "Reading caustic photon map");
+			LightPhotonMap::load(ifs, causticMap);
+			ss.str("");
+			ss << "Read " << causticMap->getPhotonCount() << " light photon to file";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			ifs.close();
+
+			return;
+		} else {
+			luxError(LUX_NOERROR, LUX_INFO, "Photon maps file doesn't exist");
+			ifs.close();
+		}
+	}
 
 	// Dade - check if have to build the radiancem map
 	bool finalGather = (maxDirectPhotons > 0);
 
     // Dade - shoot photons
-    std::stringstream ss;
     ss << "Shooting photons: " << (nCausticPhotons + nIndirectPhotons);
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
@@ -391,7 +463,7 @@ void PhotonMapPreprocess(
 			boost::xtime_get(&currentTime, boost::TIME_UTC);
 			if (currentTime.sec - lastUpdateTime.sec > 5) {
 				ss.str("");
-				ss << "Photon: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)" ;
+				ss << "Photon: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)";
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 				lastUpdateTime = currentTime;
@@ -426,6 +498,64 @@ void PhotonMapPreprocess(
     }
 
 	luxError(LUX_NOERROR, LUX_INFO, "Photon shooting done");
+
+	// Dade - check if we have to save maps to a file
+	if (mapFileName && !mapsFileExist) {
+		luxError(LUX_NOERROR, LUX_INFO, "Saving photon maps to file" );
+
+		std::ofstream ofs(mapFileName->c_str(), std::ios_base::out | std::ios_base::binary);
+        if(ofs.good()) {
+            // Dade - read the data
+
+			ss.str("");
+			ss << "Writting photon maps file: " << (*mapFileName);
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			bool isLittleEndian = osIsLittleEndian();
+
+			// Dade - save radiance photon map
+			if (radianceMap) {
+				radianceMap->save(ofs);
+
+				ss.str("");
+				ss << "Written " << radianceMap->getPhotonCount() << " radiance photon to file";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			} else
+				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
+
+			// Dade - save indirect photon map
+			if (indirectMap) {
+				indirectMap->save(ofs);
+
+				ss.str("");
+				ss << "Written " << indirectMap->getPhotonCount() << " light photon to file";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			} else
+				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
+
+			// Dade - save indirect photon map
+			if (causticMap) {
+				causticMap->save(ofs);
+
+				ss.str("");
+				ss << "Written " << causticMap->getPhotonCount() << " light photon to file";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			} else
+				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
+
+			if(!ofs.good()) {
+				std::stringstream ss;
+				ss << "Error while writting photon maps to file: " << (*mapFileName);
+				luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+			}
+
+			ofs.close();
+		} else {
+			std::stringstream ss;
+			ss << "Cannot open file '" << (*mapFileName) << "' for writing photon maps";
+			luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		}
+	}
 }
 
 SWCSpectrum PhotonMapFinalGather(
@@ -461,7 +591,7 @@ SWCSpectrum PhotonMapFinalGather(
 		while (proc.foundPhotons < nIndirSamplePhotons) {
 			float md2 = searchDist2;
 			proc.foundPhotons = 0;
-			indirectMap->Lookup(p, proc, md2);
+			indirectMap->lookup(p, proc, md2);
 
 			searchDist2 *= 2.0f;
 
@@ -526,7 +656,7 @@ SWCSpectrum PhotonMapFinalGather(
 				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
 				float md2 = radianceMap->maxDistSquared;
 
-				radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
 					Lindir = proc.photon->alpha;
 
@@ -603,7 +733,7 @@ SWCSpectrum PhotonMapFinalGather(
 				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
 				float md2 = radianceMap->maxDistSquared;
 
-				radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
 					Lindir = proc.photon->alpha;
 
@@ -621,6 +751,102 @@ SWCSpectrum PhotonMapFinalGather(
 	}
 
 	return L;
+}
+
+void LightPhotonMap::load(std::basic_istream<char> &stream, LightPhotonMap *map) {
+	bool isLittleEndian = osIsLittleEndian();
+
+	// Dade - read the size of the map
+	int count;
+	osReadLittleEndianInt(isLittleEndian, stream, &count);
+
+	int npaths;
+	osReadLittleEndianInt(isLittleEndian, stream, &npaths);
+
+	vector<LightPhoton> photons;
+	for (int i = 0; i < count; i++) {
+		Point p;
+		for (int j = 0; j < 3; j++)
+			osReadLittleEndianFloat(isLittleEndian, stream, &p[j]);
+
+		SWCSpectrum alpha;
+		for (int j = 0; j < WAVELENGTH_SAMPLES; j++)
+			osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[j]);
+
+		Vector wi;
+		for (int j = 0; j < 3; j++)
+			osReadLittleEndianFloat(isLittleEndian, stream, &wi[j]);
+
+		if (map) {
+			LightPhoton lp(p, alpha, wi);
+
+			photons.push_back(lp);
+		}
+	}
+
+	if (map && (count > 0))
+		map->init(npaths, photons);
+}
+
+void LightPhotonMap::save(
+	std::basic_ostream<char> &stream) const {
+	bool isLittleEndian = osIsLittleEndian();
+
+	// Dade - write the size of the map
+	osWriteLittleEndianInt(isLittleEndian, stream, photonCount);
+	osWriteLittleEndianInt(isLittleEndian, stream, nPaths);
+
+	if (photonmap != NULL) {
+		LightPhoton *photons = photonmap->getNodeData();
+		for (int i = 0; i < photonCount; i++)
+			photons[i].save(isLittleEndian, stream);
+	}
+}
+
+void RadiancePhotonMap::load(std::basic_istream<char> &stream, RadiancePhotonMap *map) {
+	bool isLittleEndian = osIsLittleEndian();
+
+	// Dade - read the size of the map
+	int count;
+	osReadLittleEndianInt(isLittleEndian, stream, &count);
+
+	vector<RadiancePhoton> photons;
+	for (int i = 0; i < count; i++) {
+		Point p;
+		for (int j = 0; j < 3; j++)
+			osReadLittleEndianFloat(isLittleEndian, stream, &p[j]);
+
+		SWCSpectrum alpha;
+		for (int j = 0; j < WAVELENGTH_SAMPLES; j++)
+			osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[j]);
+
+		Normal n;
+		for (int j = 0; j < 3; j++)
+			osReadLittleEndianFloat(isLittleEndian, stream, &n[j]);
+
+		if (map) {
+			RadiancePhoton lp(p, alpha, n);
+
+			photons.push_back(lp);
+		}
+	}
+
+	if (map && (count > 0))
+		map->init(photons);
+}
+
+void RadiancePhotonMap::save(
+	std::basic_ostream<char> &stream) const {
+	bool isLittleEndian = osIsLittleEndian();
+
+	// Dade - write the size of the map
+	osWriteLittleEndianInt(isLittleEndian, stream, photonCount);
+
+	if (photonmap != NULL) {
+		RadiancePhoton *photons = photonmap->getNodeData();
+		for (int i = 0; i < photonCount; i++)
+			photons[i].save(isLittleEndian, stream);
+	}
 }
 
 }//namespace lux

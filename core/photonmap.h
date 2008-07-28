@@ -48,6 +48,8 @@ public:
 	BasicPhoton() {
 	}
 
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) = 0;
+
 	Point p;
 	SWCSpectrum alpha;
 };
@@ -59,15 +61,21 @@ public:
 
 	LightPhoton() : BasicPhoton() { }
 
+	void save(bool isLittleEndian, std::basic_ostream<char> &stream);
+
 	Vector wi;
 };
 
 class RadiancePhoton : public BasicPhoton {
 public:
+	RadiancePhoton(const Point &pp, const SWCSpectrum &wt, const Normal & nn)
+			: BasicPhoton(pp, wt), n(nn) { }
 	RadiancePhoton(const Point &pp, const Normal & nn)
 			: BasicPhoton(pp, 0.0f), n(nn) { }
 
 	RadiancePhoton() : BasicPhoton() { }
+
+	void save(bool isLittleEndian, std::basic_ostream<char> &stream);
 
 	Normal n;
 };
@@ -167,20 +175,23 @@ public:
 
 template <class PhotonType, class PhotonProcess> class PhotonMap {
 public:
-	PhotonMap(): photonmap(NULL) { }
+	PhotonMap() : photonCount(0), photonmap(NULL) { }
 
 	~PhotonMap() {
 		if (photonmap)
 			delete photonmap;
 	}
 
-	void Lookup(const Point &p, const PhotonProcess &proc,
+	void lookup(const Point &p, const PhotonProcess &proc,
 			float &maxDistSquared) const {
 		if (photonmap)
 			photonmap->Lookup(p, proc, maxDistSquared);
 	}
 
+	int getPhotonCount() { return photonCount; }
+
 protected:
+	int photonCount;
 	KdTree<PhotonType, PhotonProcess> *photonmap;
 };
 
@@ -191,8 +202,13 @@ public:
 		nLookup(nl), maxDistSquared(md) { }
 
 	void init(const vector<RadiancePhoton> photons) {
+		photonCount = photons.size();
 		photonmap = new KdTree<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(photons);
 	}
+
+	void save(std::basic_ostream<char> &stream) const;
+
+	static void load(std::basic_istream<char> &stream, RadiancePhotonMap *map);
 
 	// Dade - used only to build the map but not for lookup
 	u_int nLookup;
@@ -206,6 +222,7 @@ public:
 		nLookup(nl), maxDistSquared(md), nPaths(0) { }
 
 	void init(int npaths, const vector<LightPhoton> photons) {
+		photonCount = photons.size();
 		nPaths = npaths;
 		photonmap = new KdTree<LightPhoton, NearSetPhotonProcess<LightPhoton> >(photons);
 	}
@@ -221,6 +238,10 @@ public:
 			const Intersection &isect,
 			const Vector &wo) const;
 
+	void save(std::basic_ostream<char> &stream) const;
+
+	static void load(std::basic_istream<char> &stream, LightPhotonMap *map);
+
 	u_int nLookup;
 	float maxDistSquared;
 
@@ -235,7 +256,7 @@ inline float Ekernel(const BasicPhoton *photon, const Point &p, float md2) {
 }
 
 void PhotonMapPreprocess(
-		const Scene *scene,
+		const Scene *scene, string *mapFileName,
 		u_int maxDirectPhotons, RadiancePhotonMap *radianceMap,
 		u_int nIndirectPhotons, LightPhotonMap *indirectMap,
 		u_int nCausticPhotons, LightPhotonMap *causticMap);

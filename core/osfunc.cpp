@@ -74,4 +74,92 @@ int osHardwareConcurrency() {
 #endif // WIN32
 }
 
+// Dade - used to check and swap bytes in the network rendering code and
+// other places
+bool osIsLittleEndian() {
+    union ShortBytes {
+        short shortValue;
+        unsigned char bytes[2];
+    };
+
+    ShortBytes shortTest;
+    shortTest.shortValue = 1;
+
+    return (shortTest.bytes[0] == 1);
+}
+
+void osWriteLittleEndianFloat(bool isLittleEndian,
+		std::basic_ostream<char> &os, float value) {
+    if(isLittleEndian)
+        os.write((char *)&value, sizeof(float));
+    else {
+        union FloatBytes {
+            float floatValue;
+            unsigned char bytes[4];
+        };
+
+        FloatBytes f;
+        f.floatValue = value;
+
+        for(unsigned int i = 0; i < sizeof(float); i++)
+            os.write((char *)&f.bytes[sizeof(float) - i - 1], 1);
+    }
+}
+
+void osReadLittleEndianFloat(bool isLittleEndian,
+		std::basic_istream<char> &is, float *value) {
+    if(isLittleEndian)
+        is.read((char *)value, sizeof(float));
+    else {
+        union FloatBytes {
+            float floatValue;
+            unsigned char bytes[4];
+        };
+
+        FloatBytes f;
+        
+        for(unsigned int i = 0; i < sizeof(float); i++)
+            is.read((char *)&f.bytes[sizeof(float) - i - 1], 1);
+
+        (*value) = f.floatValue;
+    }
+}
+
+void osWriteLittleEndianInt(bool isLittleEndian,
+		std::basic_ostream<char> &os, int value) {
+    if(isLittleEndian)
+        os.write((char *)&value, sizeof(int));
+    else {
+        union IntBytes {
+            int intValue;
+            unsigned char bytes[4];
+        };
+
+        IntBytes f;
+        f.intValue = value;
+
+        for(unsigned int i = 0; i < sizeof(int); i++)
+            os.write((char *)&f.bytes[sizeof(int) - i - 1], 1);
+    }
+}
+
+void osReadLittleEndianInt(bool isLittleEndian,
+		std::basic_istream<char> &is, int *value) {
+    if(isLittleEndian)
+        is.read((char *)value, sizeof(int));
+    else {
+        union IntBytes {
+            int intValue;
+            unsigned char bytes[4];
+        };
+
+        IntBytes f;
+        
+        for(unsigned int i = 0; i < sizeof(int); i++)
+            is.read((char *)&f.bytes[sizeof(int) - i - 1], 1);
+
+        (*value) = f.intValue;
+    }
+}
+
 }//namespace lux
