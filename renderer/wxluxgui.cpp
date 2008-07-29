@@ -63,7 +63,11 @@ BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 	EVT_ICONIZE   (LuxGui::OnIconize)
 END_EVENT_TABLE()
 
-LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(opengl) {
+// Dade - global variable used by LuxGuiErrorHandler()
+bool copyLog2Console = false;
+
+LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
+	LuxMainFrame(parent), m_opengl(opengl), m_copyLog2Console(copylog2console) {
 	// Load images and icons from header.
 	LoadImages();
 
@@ -89,6 +93,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl):LuxMainFrame(parent), m_opengl(ope
 	m_engineThread = NULL;
 	m_updateThread = NULL;
 
+	// Dade - I should use boost bind to avoid global variable
+	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
 
 	ChangeRenderState(WAITING);
@@ -517,8 +523,11 @@ void LuxOutputWin::OnDraw(wxDC &dc) {
 /*** LuxGuiErrorHandler wrapper ***/
 
 void lux::LuxGuiErrorHandler(int code, int severity, const char *msg) {
+	// Dade - console print enabled by command line option
+	if (copyLog2Console)
+		luxErrorPrint(code, severity, msg);
+
 	boost::shared_ptr<LuxError> error(new LuxError(code, severity, msg));
 	wxLuxErrorEvent errorEvent(error, wxEVT_LUX_ERROR);
 	wxTheApp->GetTopWindow()->GetEventHandler()->AddPendingEvent(errorEvent);
 }
-

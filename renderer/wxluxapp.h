@@ -40,7 +40,7 @@ protected:
 
 	// Command line options
 	int m_threads;
-  bool m_useServer, m_openglEnabled;
+	bool m_useServer, m_openglEnabled, m_copyLog2Console;
 	wxString m_inputFile;
 };
 

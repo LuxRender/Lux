@@ -56,7 +56,7 @@ bool LuxGuiApp::OnInit() {
 	luxInit();
 
 	if(ProcessCommandLine()) {
-		m_guiFrame = new LuxGui((wxFrame*)NULL, m_openglEnabled);
+		m_guiFrame = new LuxGui((wxFrame*)NULL, m_openglEnabled, m_copyLog2Console);
 		m_guiFrame->Show(true);
 		SetTopWindow(m_guiFrame);
 		m_guiFrame->SetRenderThreads(m_threads);
@@ -86,6 +86,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 			("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
 			("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
 			("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
+			("logconsole,l", "Copy the output of the log tab to the console.")
 		;
 
 		// Hidden options, will be allowed both on command line and
@@ -141,6 +142,11 @@ bool LuxGuiApp::ProcessCommandLine() {
 			std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
 			return false;
 		}
+
+		if(vm.count("logconsole"))
+			m_copyLog2Console = true;
+		else
+			m_copyLog2Console = false;
 
 		if(vm.count("threads")) {
 			m_threads = vm["threads"].as < int >();

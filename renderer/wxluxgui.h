@@ -112,7 +112,7 @@ enum LuxGuiWindowState
 class LuxGui : public LuxMainFrame {
 public:
 	/** Constructor */
-	LuxGui(wxWindow* parent, bool opengl);
+	LuxGui(wxWindow* parent, bool opengl, bool copylog2console);
 
 	void RenderScenefile(wxString filename);
 	void SetRenderThreads(int num);
@@ -141,6 +141,7 @@ protected:
 
 	boost::thread *m_engineThread, *m_updateThread;
 	bool m_opengl;
+	bool m_copyLog2Console;
 	double m_samplesSec;
 	LuxGuiRenderState m_guiRenderState;
 	LuxGuiWindowState m_guiWindowState;
