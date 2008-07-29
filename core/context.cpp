@@ -115,6 +115,13 @@ void Context::addServer(const string &name) {
 	renderFarm->connect(name);
 }
 
+int Context::getRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) {
+	if (!renderFarm)
+		return 0;
+
+	return renderFarm->getServersStatus(info, maxInfoCount);
+}
+
 void Context::cleanup() {
 	renderFarm->send("luxCleanup");
 

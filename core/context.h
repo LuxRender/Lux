@@ -131,6 +131,7 @@ public:
 	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->renderFarm->serverUpdateInterval = updateInterval; }
 	static int luxGetNetworkServerUpdateInterval() { return activeContext->renderFarm->serverUpdateInterval; }
     static void luxAddServer(const string &name) { activeContext->addServer(name); }
+	static int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) { return activeContext->getRenderingServersStatus(info, maxInfoCount); }
 
 	//statistics
 	static double luxStatistics(const string &statName) { return activeContext->statistics(statName); }
@@ -221,6 +222,7 @@ private:
 	//statistics
 	double statistics(const string &statName);
 	void addServer(const string &name);
+	int getRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount);
 
     void enableDebugMode();
 

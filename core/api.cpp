@@ -81,6 +81,10 @@ extern "C" void luxAddServer(const char * name)
 	Context::luxAddServer(std::string(name));
 }
 
+extern "C" int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) {
+	return Context::luxGetRenderingServersStatus(info, maxInfoCount);
+}
+
 extern "C" void luxCleanup()
 {
 	Context::luxCleanup();

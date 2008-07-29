@@ -115,6 +115,21 @@ void luxUpdateFilmFromNetwork();
 void luxSetNetworkServerUpdateInterval(int updateInterval);
 int luxGetNetworkServerUpdateInterval();
 
+struct RenderingServerInfo {
+	int serverIndex;
+
+	// Dade - connection information
+	const char *name; // Dade - name/ip address of the server
+	const char *port; // Dade - tcp port of the server
+	const char *sid; // Dade - session id for the server
+
+	unsigned int secsSinceLastContact;
+	double numberOfSamplesReceived;
+};
+// Dade - return the number of rendering servers and fill the info buffer with
+// information about the servers
+int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount);
+
 /* Informations and statistics */
 double luxStatistics(const char *statName);
 

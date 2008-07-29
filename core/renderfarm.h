@@ -29,6 +29,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/thread/xtime.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "fleximage.h"
 
@@ -89,7 +90,8 @@ public:
     //!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-    int getServerCount() { return serverNameList.size(); }
+    int getServerCount() { return serverInfoList.size(); }
+	int getServersStatus(RenderingServerInfo *info, int maxInfoCount);
 
     // Dade - used to periodically update the film
     void startFilmUpdater(Scene *scene);
@@ -102,12 +104,24 @@ public:
     int serverUpdateInterval;
 
 private:
-	std::vector<std::string> serverNameList;
-	std::vector<std::string> serverPortList;
-	std::vector<std::string> serverSIDList;
+	struct ExtRenderingServerInfo {
+		ExtRenderingServerInfo(string n, string p, string id) : name(n),
+				port(p), sid(id), timeLastContact(boost::posix_time::second_clock::local_time()),
+				numberOfSamplesReceived(0.0) { }
+
+		string name;
+		string port;
+		string sid;
+
+		boost::posix_time::ptime timeLastContact;
+		double numberOfSamplesReceived;
+	};
+
+	std::vector<ExtRenderingServerInfo> serverInfoList;
+
 	std::stringstream netBuffer;
 
-    // Dade - film update infromation
+    // Dade - film update information
     FilmUpdaterThread *filmUpdateThread;
 };
 

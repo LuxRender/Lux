@@ -35,6 +35,7 @@
 #include <boost/bind.hpp>
 
 using namespace boost::iostreams;
+using namespace boost::posix_time;
 using namespace lux;
 using asio::ip::tcp;
 
@@ -147,10 +148,8 @@ bool RenderFarm::connect(const string &serverName) {
 			ss << "Server session ID: " << sid;
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		}
-		
-		serverNameList.push_back(name);
-		serverPortList.push_back(port);
-		serverSIDList.push_back(sid);
+
+		serverInfoList.push_back(ExtRenderingServerInfo(name, port, sid));
     } catch (std::exception& e) {
         ss.str("");
         ss << "Unable to connect server: " << serverName;
@@ -165,16 +164,16 @@ bool RenderFarm::connect(const string &serverName) {
 
 void RenderFarm::disconnectAll() {
     std::stringstream ss;
-	for (size_t i = 0; i < serverNameList.size(); i++) {
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
         try {
             ss.str("");
             ss << "Disconnect from server: " <<
-					serverNameList[i] << ":" << serverPortList[i];
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-            tcp::iostream stream(serverNameList[i], serverPortList[i]);
+            tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
             stream << "ServerDisconnect" << std::endl;
-			stream << serverSIDList[i] << std::endl;
+			stream << serverInfoList[i].sid << std::endl;
         } catch (std::exception& e) {
             luxError(LUX_SYSTEM, LUX_ERROR, e.what());
         }
@@ -187,14 +186,14 @@ void RenderFarm::flush() {
     string commands = netBuffer.str();
 
     //flush network buffer
-	for (size_t i = 0; i < serverNameList.size(); i++) {
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
         try {
             ss.str("");
             ss << "Sending commands to server: " <<
-					serverNameList[i] << ":" << serverPortList[i];
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-            tcp::iostream stream(serverNameList[i], serverPortList[i]);
+            tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
             stream << commands << std::endl;
         } catch (std::exception& e) {
             luxError(LUX_SYSTEM, LUX_ERROR, e.what());
@@ -202,7 +201,7 @@ void RenderFarm::flush() {
     }
 
     // Dade - write info only if there was the communication with some server
-    if (serverNameList.size() > 0) {
+    if (serverInfoList.size() > 0) {
         ss.str("");
         ss << "All servers are aligned";
         luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -214,27 +213,30 @@ void RenderFarm::updateFilm(Scene *scene) {
     FlexImageFilm *film = (FlexImageFilm *)(scene->camera->film);
 
     std::stringstream ss;
-	for (size_t i = 0; i < serverNameList.size(); i++) {
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
         try {
             ss.str("");
             ss << "Getting samples from: " <<
-					serverNameList[i] << ":" << serverPortList[i];
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-            tcp::iostream stream(serverNameList[i], serverPortList[i]);
+            tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
             stream << "luxGetFilm" << std::endl;
-			stream << serverSIDList[i] << std::endl;
+			stream << serverInfoList[i].sid << std::endl;
 
             if (stream.good()) {
-                film->UpdateFilm(scene, stream);
+                serverInfoList[i].numberOfSamplesReceived += film->UpdateFilm(scene, stream);
 
                 ss.str("");
-                ss << "Samples received from '" << serverNameList[i] << ":" << serverPortList[i] << "'";
+                ss << "Samples received from '" <<
+						serverInfoList[i].name << ":" << serverInfoList[i].port << "'";
                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				serverInfoList[i].timeLastContact = second_clock::local_time();
             } else {
                 ss.str("");
                 ss << "Error while contacting server: " <<
-						serverNameList[i] << ":" << serverPortList[i];
+						serverInfoList[i].name << ":" << serverInfoList[i].port;
                 luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
             }
         } catch (std::exception& e) {
@@ -324,4 +326,20 @@ void RenderFarm::send(const std::string &command, const string &name,
     } catch (std::exception& e) {
         luxError(LUX_SYSTEM, LUX_ERROR, e.what());
     }
+}
+
+int RenderFarm::getServersStatus(RenderingServerInfo *info, int maxInfoCount) {
+	ptime now = second_clock::local_time();
+	for (size_t i = 0; i < min<int>(serverInfoList.size(), maxInfoCount); i++) {
+		info[i].serverIndex = i;
+		info[i].name = serverInfoList[i].name.c_str();
+		info[i].port = serverInfoList[i].port.c_str();
+		info[i].sid = serverInfoList[i].sid.c_str();
+
+		time_duration td = now - serverInfoList[i].timeLastContact;
+		info[i].secsSinceLastContact = td.seconds();
+		info[i].numberOfSamplesReceived = serverInfoList[i].numberOfSamplesReceived;
+	}
+
+	return serverInfoList.size();
 }

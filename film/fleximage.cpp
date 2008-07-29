@@ -634,7 +634,7 @@ void FlexImageFilm::TransmitFilm(
     delete pixelBuf;
 }
 
-void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
+float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
         int buf_id, int bufferGroup) {
     BlockedArray<Pixel> *pixelBuf;
     {
@@ -708,9 +708,12 @@ void  FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
         }
     } else {
         luxError(LUX_SYSTEM, LUX_ERROR, "Error while reading samples");
+		numberOfSamples = 0.0f;
     }
 
     delete pixelBuf;
+
+	return numberOfSamples;
 }
 
 void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name, float values[2]) {

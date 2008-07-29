@@ -84,7 +84,7 @@ public:
 	// Dade - method useful for transmitting the samples to a client
 	void TransmitFilm(std::basic_ostream<char> &stream,
 		int buf_id = 0, int bufferGroup = 0, bool clearBuffer = true);
-	void UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
+	float UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
 		int buf_id = 0, int bufferGroup = 0);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
