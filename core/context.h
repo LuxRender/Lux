@@ -117,6 +117,7 @@ public:
 	//controlling number of threads
 	static int luxAddThread() { return activeContext->addThread(); }
 	static void luxRemoveThread() { activeContext->removeThread(); }
+	static int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) { return activeContext->getRenderingThreadsStatus(info, maxInfoCount); }
 
 	//framebuffer access
 	static void luxUpdateFramebuffer() { activeContext->updateFramebuffer(); }
@@ -203,6 +204,7 @@ private:
 	//controlling number of threads
 	int addThread();
 	void removeThread();
+	int getRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
 
 	//framebuffer access
 	void updateFramebuffer();

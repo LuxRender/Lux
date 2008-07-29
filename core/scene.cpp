@@ -52,17 +52,17 @@ boost::mutex sampPosMutex;
 
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
-    SignalThreads(RenderThread::SIG_RUN);
+    SignalThreads(RUN);
     s_Timer.Start();
 }
 
 void Scene::Pause() {
-    SignalThreads(RenderThread::SIG_PAUSE);
+    SignalThreads(PAUSE);
     s_Timer.Stop();
 }
 
 void Scene::Exit() {
-    SignalThreads(RenderThread::SIG_EXIT);
+    SignalThreads(EXIT);
 }
 
 // Engine Thread Control (adding/removing)
@@ -72,6 +72,19 @@ int Scene::AddThread() {
 
 void Scene::RemoveThread() {
     RemoveRenderThread();
+}
+
+int Scene::getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
+#if !defined(WIN32)
+	boost::mutex::scoped_lock lock(renderThreadsMutex);
+#endif
+
+	for (int i = 0; i < min<int>(renderThreads.size(), maxInfoCount); i++) {
+		info[i].threadIndex = renderThreads[i]->n;
+		info[i].status = renderThreads[i]->signal;
+	}
+
+	return renderThreads.size();
 }
 
 // Framebuffer Access for GUI
@@ -199,7 +212,7 @@ double Scene::Statistics_Efficiency() {
     return 100. - (drops * (100/samples));
 }
 
-void Scene::SignalThreads(int signal) {
+void Scene::SignalThreads(ThreadSignals signal) {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 
     for(unsigned int i=0;i<renderThreads.size();i++) {
@@ -246,17 +259,17 @@ void RenderThread::render(RenderThread *myThread) {
 		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
 			// Dade - we have done, check what we have to do now
 			if (myThread->scene->suspendThreadsWhenDone) {
-				myThread->signal = RenderThread::SIG_PAUSE;
+				myThread->signal = PAUSE;
 
 				// Dade - wait for a resume rendering or exit				
-				while(myThread->signal == RenderThread::SIG_PAUSE) {
+				while(myThread->signal == PAUSE) {
 					boost::xtime xt;
 					boost::xtime_get(&xt, boost::TIME_UTC);
 					xt.sec += 1;
 					boost::thread::sleep(xt);
 				}
 
-				if(myThread->signal == RenderThread::SIG_EXIT)
+				if(myThread->signal == EXIT)
 					break;
 				else
 					continue;
@@ -272,13 +285,13 @@ void RenderThread::render(RenderThread *myThread) {
 		} else
 			thr_wl->Sample(0.5f, 0.5f);
         
-        while(myThread->signal == RenderThread::SIG_PAUSE) {
+        while(myThread->signal == PAUSE) {
             boost::xtime xt;
             boost::xtime_get(&xt, boost::TIME_UTC);
             xt.sec += 1;
             boost::thread::sleep(xt);
         }
-        if(myThread->signal== RenderThread::SIG_EXIT)
+        if(myThread->signal== EXIT)
             break;
 
 		// Find camera ray for _sample_
@@ -355,7 +368,7 @@ void Scene::RemoveRenderThread() {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
 
-    renderThreads.back()->signal = RenderThread::SIG_EXIT;
+    renderThreads.back()->signal = EXIT;
     renderThreads.pop_back();
 }
 
@@ -394,7 +407,7 @@ void Scene::Render() {
     preprocessDone = true;
     
     // initial thread signal is paused
-    CurThreadSignal = RenderThread::SIG_RUN;
+    CurThreadSignal = RUN;
     
     // Dade - this code needs a fix, it must be removed in order to not create
     // 1 more thread than required

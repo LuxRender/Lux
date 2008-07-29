@@ -109,7 +109,7 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 
 	// Compute intersection for quadrilateral
 	// based on "An Efficient Ray-Quadrilateral Intersection Test"
-	// by Ares Lagae and Philip Dutré
+	// by Ares Lagae and Philip Dutrï¿½
 
     // Get quadrilateral vertices in _p00_, _p10_, _p11_, and _p01_
     const Point &p00 = mesh->p[idx[0]];
@@ -171,7 +171,7 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 	Vector e02 = p11 - p00;
 	Vector N = Cross(e01, e03);
 
-	float a11, b11;
+	float a11 = 0.0f, b11 = 0.0f;
 	int Nma = MajorAxis(N);
 
 	switch (Nma) {
@@ -197,7 +197,7 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 
 	// Compute the bilinear coordinates of the
 	// intersection point.
-	float u, v;
+	float u = 0.0f, v = 0.0f;
 	if (fabsf(a11) < 1e-7f) {
 		u = alpha;
 		v = fabsf(b11) < 1e-7f ? beta : beta / (u * b11 + 1.f);
@@ -272,7 +272,6 @@ float Quadrilateral::Area() const {
 	// assumes convex quadrilateral
     const Point &p0 = mesh->p[idx[0]];
     const Point &p1 = mesh->p[idx[1]];
-    const Point &p2 = mesh->p[idx[2]];
     const Point &p3 = mesh->p[idx[3]];
 
 	Vector P = p1 - p0;

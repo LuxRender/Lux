@@ -328,7 +328,7 @@ static SWCSpectrum evalPath(const Scene *scene,
 	float pdfLightDirect, bool isLightDirect, float *weight)
 {
 	SWCSpectrum L;
-	float eWeight, lWeight;
+	float eWeight = 0.0f, lWeight = 0.0f;
 	// Be carefull, eye and light last vertex can be modified here
 	// If each path has at least 1 vertex, connect them
 	if (nLight > 0 && nEye > 0) {

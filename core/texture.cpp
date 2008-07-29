@@ -193,8 +193,8 @@ void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t) const {
 		axis = 2;
 	}
 	float ima = 1.f / ma;
-	float sc, tc;
-	float so, to;
+	float sc = 0.0f, tc = 0.0f;
+	float so = 0.0f, to = 0.0f;
 	// select cube face based on major axis
 	switch (axis) {
 		case 0:

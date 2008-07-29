@@ -96,6 +96,15 @@ void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool s
 int luxAddThread();
 void luxRemoveThread();
 
+enum ThreadSignals { RUN, PAUSE, EXIT};
+struct RenderingThreadInfo {
+	int threadIndex;
+	ThreadSignals status;
+};
+// Dade - return the number of rendering threads and fill the info buffer with
+// information about the threads
+int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
+
 /* Framebuffer access */
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();

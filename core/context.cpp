@@ -777,6 +777,13 @@ void Context::removeThread() {
 	luxCurrentScene->RemoveThread();
 }
 
+int Context::getRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
+	if (!luxCurrentScene)
+		return 0;
+
+	return luxCurrentScene->getThreadsStatus(info, maxInfoCount);
+}
+
 //framebuffer access
 void Context::updateFramebuffer() {
 	luxCurrentScene->UpdateFramebuffer();

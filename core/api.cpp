@@ -465,6 +465,10 @@ extern "C" void luxRemoveThread() {
 	//luxCurrentScene->RemoveThread();
 }
 
+extern "C" int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
+	return Context::luxGetRenderingThreadsStatus(info, maxInfoCount);
+}
+
 //framebuffer access
 extern "C" void luxUpdateFramebuffer() {
 	Context::luxUpdateFramebuffer();

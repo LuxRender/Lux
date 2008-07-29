@@ -36,7 +36,7 @@ namespace lux {
 
 class RenderThread : public boost::noncopyable {
 public:
-    RenderThread( int _n, int _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi,
+    RenderThread( int _n, ThreadSignals _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi,
             Sampler* _Splr, Camera* _Cam, Scene* _Scn)
     : n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi),
             sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn), thread(NULL) {
@@ -52,7 +52,8 @@ public:
 
     static void render(RenderThread *r);
 
-    int  n, signal;
+    int  n;
+	ThreadSignals signal;
     double stat_Samples, stat_blackSamples;
     SurfaceIntegrator *surfaceIntegrator;
     VolumeIntegrator *volumeIntegrator;
@@ -61,8 +62,6 @@ public:
     Camera *camera;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
-
-    static const int SIG_RUN=1, SIG_PAUSE=2, SIG_EXIT=3;
 };
 
 // Scene Declarations
@@ -93,6 +92,9 @@ public:
     //controlling number of threads
     int AddThread(); //returns the thread ID
     void RemoveThread();
+	int getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
+	
+
     double GetNumberOfSamples();
     double Statistics_SamplesPSec();
     double Statistics_SamplesPTotSec();
@@ -111,7 +113,7 @@ public:
 
     int CreateRenderThread();
     void RemoveRenderThread();
-    void SignalThreads(int signal);
+    void SignalThreads(ThreadSignals signal);
 
     // Scene Data
     Primitive *aggregate;
@@ -139,7 +141,7 @@ private:
 	boost::mutex renderThreadsMutex;
     std::vector<RenderThread*> renderThreads;
     //boost::thread_group threadGroup;
-    int CurThreadSignal;
+    ThreadSignals CurThreadSignal;
 };
 
 }//namespace lux
