@@ -60,15 +60,18 @@ public:
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 	void AddSampleCount(float count, int bufferGroup = 0) {
-		if (!bufferGroups.empty()) {
-			bufferGroups[bufferGroup].numberOfSamples += count;
-
-			// Dade - check if we have enough samples per pixel
-			if ((haltSamplePerPixel > 0) &&
-				(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
-						haltSamplePerPixel))
-				enoughSamplePerPixel = true;
+    		if (bufferGroups.empty()) {
+		        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+		        CreateBuffers();
 		}
+		bufferGroups[bufferGroup].numberOfSamples += count;
+
+		// Dade - check if we have enough samples per pixel
+		if ((haltSamplePerPixel > 0) &&
+			(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
+					haltSamplePerPixel))
+			enoughSamplePerPixel = true;
+
 	}
 
 	void WriteImage(ImageType type);
