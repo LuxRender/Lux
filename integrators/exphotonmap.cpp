@@ -43,6 +43,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
         int nl, int mdepth, float mdist, bool fg,
         int gs, float ga,
 		PhotonMapRRStrategy rrstrategy, float rrcontprob,
+		float distThreshold,
 		string *mapsfn,
 		bool dbgEnableDirect, bool dbgEnableCaustic,
 		bool dbgEnableIndirect, bool dbgEnableSpecular) {
@@ -64,6 +65,8 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 
 	rrStrategy = rrstrategy;
 	rrContinueProbability = rrcontprob;
+
+	distanceThreshold = distThreshold;
 
 	mapsFileName = mapsfn;
 
@@ -486,6 +489,8 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 					color, alpha ? *alpha : 1.f, V);
 		}
 
+		BxDFType componentsToSample =  BxDFType(BSDF_ALL);
+
 		// Dade - add indirect lighting
 		if (debugEnableIndirect) {
 			BxDFType nonSpecularGlossy = BxDFType(BSDF_REFLECTION |
@@ -504,33 +509,49 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 
 					Intersection gatherIsect;
 					if (scene->Intersect(bounceRay, &gatherIsect)) {
-						// Compute exitant radiance using precomputed irradiance
-						SWCSpectrum Lindir = 0.f;
-						Normal nGather = gatherIsect.dg.nn;
-						if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
-						NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
-						float md2 = INFINITY;
+						// Dade - check the distance threshold option, if the intersection
+						// distance is smaller than the threshold I revert to standard path
+						// tracing in order to avoid corner artifacts
 
-						radianceMap->lookup(gatherIsect.dg.p, proc, md2);
-						if (proc.photon) {
-							Lindir = proc.photon->alpha;
+						if (bounceRay.maxt > distanceThreshold) {
+							// Compute exitant radiance using precomputed irradiance
+							SWCSpectrum Lindir = 0.f;
+							Normal nGather = gatherIsect.dg.nn;
+							if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
+							NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
+							float md2 = INFINITY;
 
-							Lindir *= scene->Transmittance(bounceRay);
-							SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
+							radianceMap->lookup(gatherIsect.dg.p, proc, md2);
+							if (proc.photon) {
+								Lindir = proc.photon->alpha;
 
-							Li *= pathThroughput;
-							color = Li.ToXYZ();
-							if (color.y() > 0.f)
-								sample->AddContribution(sample->imageX, sample->imageY,
-									color, alpha ? *alpha : 1.f, V);
+								Lindir *= scene->Transmittance(bounceRay);
+								SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
+
+								Li *= pathThroughput;
+								color = Li.ToXYZ();
+								if (color.y() > 0.f)
+									sample->AddContribution(sample->imageX, sample->imageY,
+										color, alpha ? *alpha : 1.f, V);
+							}
+
+							componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
+						} else {
+							// Dade - the intersection is too near, fall back to
+							// standard path tracing
+
+							componentsToSample = BxDFType(BSDF_ALL);
 						}
-					}
-				}
-			}
-		}
+					} else
+						componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
+				} else
+					componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
+			} else
+				componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
+		} else
+			componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
 
-		BxDFType specularGlossy = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
-		if (bsdf->NumComponents(specularGlossy) <= 0)
+		if (bsdf->NumComponents(componentsToSample) <= 0)
 			break;
 
 		// Sample BSDF to get new path direction
@@ -538,7 +559,7 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f = bsdf->Sample_f(wo, &wi, pathSample[0], pathSample[1], pathComponent[0],
-			&pdf, specularGlossy, &flags);
+			&pdf, componentsToSample, &flags);
 		if (pdf == .0f || f.Black())
 			break;
 
@@ -610,7 +631,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		renderingMode = RM_DIRECTLIGHTING;
 	}
 
-	float maxDist = params.FindOneFloat("maxdist", 0.5f);
+	float maxDist = params.FindOneFloat("maxdist", 0.1f);
     float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
 	PhotonMapRRStrategy rstrategy;
@@ -632,6 +653,8 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	if (sfn != "")
 		mapsFileName = new string(sfn);
 
+	float distanceThreshold = params.FindOneFloat("distancethreshold", maxDist * 1.25f);
+
 	bool debugEnableDirect = params.FindOneBool("dbg_enabledirect", true);
 	bool debugEnableCaustic = params.FindOneBool("dbg_enablecaustic", true);
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
@@ -640,6 +663,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     return new ExPhotonIntegrator(renderingMode, estrategy, nCaustic, nIndirect, maxDirect,
             nUsed, maxDepth, maxDist, finalGather, gatherSamples, gatherAngle,
 			rstrategy, rrcontinueProb,
+			distanceThreshold,
 			mapsFileName,
 			debugEnableDirect, debugEnableCaustic, debugEnableIndirect, debugEnableSpecular);
 }

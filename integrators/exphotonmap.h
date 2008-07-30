@@ -53,6 +53,7 @@ public:
 			int nLookup, int mdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
 			PhotonMapRRStrategy rrstrategy, float rrcontprob,
+			float distThreshold,
 			string *mapsFileName,
 			bool dbgEnableDirect, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
@@ -96,6 +97,7 @@ private:
 	int gatherSamples;
 	PhotonMapRRStrategy rrStrategy;
 	float rrContinueProbability;
+	float distanceThreshold;
 
 	// Dade - != NULL if I have to read/write photon maps on file
 	string *mapsFileName;
