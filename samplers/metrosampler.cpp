@@ -131,7 +131,7 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
 	sampler->scramble = (u_int *)AllocAligned(sampler->totalSamples * sizeof(u_int));
-	for (u_int i = 0; i < sampler->totalSamples; ++i)
+	for (int i = 0; i < sampler->totalSamples; ++i)
 		sampler->scramble[i] = lux::random::uintValue();
 }
 
@@ -147,6 +147,12 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		generation = 0;
 		large = true;
 	}
+	if (generation >= 1024) {
+		// Change randomization to avoid artefacts
+		for (int i = 0; i < totalSamples; ++i)
+			scramble[i] = lux::random::uintValue();
+		generation = 0;
+	}
 
 	// Dade - we are at a valid checkpoint where we can stop the
 	// rendering. Check if we have enough samples per pixel in the film.
@@ -159,9 +165,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
 			Shuffle(strataSamples, strataSqr, 2);
 			currentStrata = 0;
-			// Change randomization to avoid artefacts
-			for (u_int i = 0; i < totalSamples; ++i)
-				scramble[i] = lux::random::uintValue();
 		}
 
 		// *** large mutation ***
@@ -187,7 +190,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		else
 			numMicro = -1;
 		if (numMicro >= 0) {
-			int maxPos = 0;
+			u_int maxPos = 0;
 			for (; maxPos < sample->nxD[numMicro]; ++maxPos)
 				if (sample->timexD[numMicro][maxPos] < sample->stamp)
 					break;
