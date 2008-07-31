@@ -70,6 +70,7 @@ public:
 	void Normalize();
 	void Clamp();
 	void Scale(float s);
+	void Whitepoint(float temp);
 
 protected:
 	int nSamples;

@@ -107,7 +107,7 @@ SunLight::SunLight(const Transform &light2world,
 	for(i = 0, lambda = 350; i < 91; i++, lambda+=5) {
 			// Rayleigh Scattering
 		tauR = exp( -m * 0.008735 * pow(lambda/1000, float(-4.08)));
-			// Aerosal (water + dust) attenuation
+			// Aerosol (water + dust) attenuation
 			// beta - amount of aerosols present
 			// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
 		const float alpha = 1.3;
@@ -130,6 +130,9 @@ SunLight::SunLight(const Transform &light2world,
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
 	LSPD->Scale(sunscale);
+
+	// Note - radiance - added D65 whitepoint for sun/sky
+	LSPD->Whitepoint(6500.f);
 
     delete k_oCurve;
     delete k_gCurve;

@@ -86,6 +86,7 @@ private:
 	float	thetaS, phiS;
 	float zenith_Y, zenith_x, zenith_y;
 	float perez_Y[6], perez_x[6], perez_y[6];
+	SPD *D65SPD;
 };
 
 }//namespace lux

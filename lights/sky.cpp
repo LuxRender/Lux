@@ -25,6 +25,7 @@
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
+#include "blackbody.h"
 #include "reflection/bxdf.h"
 
 #include "data/skychroma_spect.h"
@@ -101,6 +102,10 @@ SkyLight::SkyLight(const Transform &light2world,
 	perez_y[3] =  (-0.00792 *T  + 0.21023)*cconst;
 	perez_y[4] =  (-0.04405 *T  - 1.65369)*dconst;
 	perez_y[5] =  (-0.01092 *T  + 0.05291)*econst;
+
+	// Base illuminant SPD
+	D65SPD = new BlackbodySPD();
+	D65SPD->Normalize();
 }
 
 SWCSpectrum SkyLight::Le(const RayDifferential &r) const {
@@ -444,6 +449,9 @@ void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpe
 	// Change to full spectrum to have correct scale factor
 	*dst_spect *= (Y / 30.35/*dst_spect->y()*/ * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
 	// Jeanphi - hard value to avoid problems with degraded spectra
+
+	// Note - radiance - added D65 whitepoint multiplication. - TODO must be optimized! might go into ChromacityToSpectrum()
+	*dst_spect *= D65SPD;
 }
 
 // note - lyc - removed redundant computations and optimised

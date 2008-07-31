@@ -62,3 +62,29 @@ void SPD::Scale(float s) {
 		samples[i] *= s;
 }
 
+void SPD::Whitepoint(float temp) {
+	vector<float> bbvals;
+
+	// Fill bbvals with BB curve
+	for(int i=0; i<nSamples; i++) {
+		float w = 1e-9f * (lambdaMin + (delta*i));
+		// Compute blackbody power for wavelength w and temperature temp
+		bbvals.push_back(4e-9f * (3.74183e-16f * powf(w, -5.f))
+				/ (expf(1.4388e-2f / (w * temp)) - 1.f));
+	}
+
+	// Normalize
+	float max = 0.f;
+	for(int i=0; i<nSamples; i++)
+		if(bbvals[i] > max)
+			max = bbvals[i];
+	float scale = 1.f/max;
+	for(int i=0; i<nSamples; i++)
+		bbvals[i] *= scale;
+
+	// Multiply
+	for(int i=0; i<nSamples; i++)
+		samples[i] *= bbvals[i];
+
+	bbvals.clear();
+}
