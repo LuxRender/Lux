@@ -65,9 +65,9 @@ static float mutateScaled(const float x, const float mini, const float maxi, con
 // Metropolis method definitions
 ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd,
 		int totMutations, float rng, int sw) :
- Sampler(xStart, xEnd, yStart, yEnd, 1), LY(0.), gain(0.f),
+ Sampler(xStart, xEnd, yStart, yEnd, 1), LY(0.), baseLY(0.f), gain(0.f),
  totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
- numChains(0), mutation(0), consecRejects(0), stamp(0),
+ numChains(0), mutation(-1), consecRejects(0), stamp(0),
  range(rng), weight(0.), alpha(0.), baseImage(NULL), sampleImage(NULL),
  timeImage(NULL), strataWidth(sw)
 {
@@ -121,7 +121,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		initERPT(this, sample);
 	}
 
-	if ((chain == 0 && mutation == 0) || initCount < initSamples) {
+	if ((chain == 0 && mutation == -1) || initCount < initSamples) {
 		// Dade - we are at a valid checkpoint where we can stop the
 		// rendering. Check if we have enough samples per pixel in the film.
 		if (film->enoughSamplePerPixel)
@@ -234,27 +234,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 		if (meanIntensity == 0.) meanIntensity = 1.;
 		meanIntensity /= initSamples * totalMutations;
 	}
-	// calculate the number of chains on a new seed
-	if (chain == 0 && mutation == 0) {
-		gain = newLY / (meanIntensity * totalSamples);
-		if (gain < 1.f)
-			numChains = Floor2Int(lux::random::floatValue() + gain);
-		else
-			numChains = Floor2Int(gain);
-		if (numChains == 0)
-			return;
-		gain /= numChains;
-		film->AddSampleCount(1.f); // TODO: add to correct buffer groups
-	}
-	// calculate accept probability from old and new image sample
-	float accProb = min(1.0f, newLY / LY);
-	if (mutation == 0)
-		accProb = 1.f;
-	float newWeight = accProb;
-	weight += 1.f - accProb;
-
-	// try accepting of the new sample
-	if (accProb == 1.f || lux::random::floatValue() < accProb) {
+	if (mutation <= 0 && weight > 0.f) {
 		// Add accumulated contribution of previous reference sample
 		weight *= gain * meanIntensity / LY;
 		if (!isinf(weight) && LY > 0.f) {
@@ -266,10 +246,64 @@ void ERPTSampler::AddSample(const Sample &sample)
 					oldContributions[i].buffer, oldContributions[i].bufferGroup);
 			}
 		}
-		// Save new contributions for reference
+		weight = 0.f;
+		if (mutation == -1) {
+			// calculate the number of chains on a new seed
+			film->AddSampleCount(1.f); // TODO: add to correct buffer groups
+			gain = newLY / (meanIntensity * totalSamples);
+			if (gain < 1.f)
+				numChains = Floor2Int(lux::random::floatValue() + gain);
+			else
+				numChains = Floor2Int(gain);
+			if (numChains == 0)
+				return;
+			gain /= numChains;
+			baseLY = newLY;
+			baseContributions = newContributions;
+			sampleImage[0] = sample.imageX;
+			sampleImage[1] = sample.imageY;
+			sampleImage[2] = sample.lensU;
+			sampleImage[3] = sample.lensV;
+			sampleImage[4] = sample.time;
+			sampleImage[5] = sample.wavelengths;
+			sampleImage[6] = sample.singleWavelength;
+			for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
+				sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
+			for (int i = 0 ; i < totalTimes; ++i)
+				timeImage[i] = sample.timexD[0][i];
+			for (int i = 0; i < totalSamples; ++i)
+				baseImage[i] = sampleImage[i];
+			mutation = 0;
+			return;
+		}
+		LY = baseLY;
+		oldContributions = baseContributions;
+	}
+	// calculate accept probability from old and new image sample
+	float accProb = min(1.0f, newLY / LY);
+	float newWeight = accProb;
+	weight += 1.f - accProb;
+
+	const bool accept = accProb == 1.f || lux::random::floatValue() < accProb;
+
+	// try accepting of the new sample
+	if (accept) {
+		// Add accumulated contribution of previous reference sample
+		weight *= gain * meanIntensity / LY;
+		if (!isinf(weight) && LY > 0.f) {
+			for(u_int i = 0; i < oldContributions.size(); ++i) {
+				XYZColor color = oldContributions[i].color;
+				color *= weight;
+				film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
+					color, oldContributions[i].alpha,
+					oldContributions[i].buffer, oldContributions[i].bufferGroup);
+			}
+		}
 		weight = newWeight;
 		LY = newLY;
 		oldContributions = newContributions;
+
+		// Save new contributions for reference
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
 		sampleImage[2] = sample.lensU;
@@ -282,10 +316,6 @@ void ERPTSampler::AddSample(const Sample &sample)
 		for (int i = 0 ; i < totalTimes; ++i)
 			timeImage[i] = sample.timexD[0][i];
 		stamp = sample.stamp;
-		if (chain == 0 && mutation == 0) {
-			for (int i = 0; i < totalSamples; ++i)
-				baseImage[i] = sampleImage[i];
-		}
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
@@ -299,6 +329,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 					newContributions[i].buffer, newContributions[i].bufferGroup);
 			}
 		}
+
 		// Restart from previous reference
 		for (int i = 0; i < totalTimes; ++i)
 			sample.timexD[0][i] = timeImage[i];
@@ -307,8 +338,10 @@ void ERPTSampler::AddSample(const Sample &sample)
 	}
 	if (++mutation >= totalMutations) {
 		mutation = 0;
-		if (++chain >= numChains)
+		if (++chain >= numChains) {
 			chain = 0;
+			mutation = -1;
+		}
 	}
 }
 

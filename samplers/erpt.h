@@ -47,14 +47,14 @@ public:
 	void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	float LY, gain;
+	float LY, baseLY, gain;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
 	float range, weight, alpha;
 	float *baseImage, *sampleImage;
 	int *timeImage, *offset;
 	static int initCount, initSamples;
 	static float meanIntensity;
-	vector<Sample::Contribution> oldContributions;
+	vector<Sample::Contribution> oldContributions, baseContributions;
 	float *strataSamples;
 	int strataWidth, strataSqr, currentStrata;
 };
