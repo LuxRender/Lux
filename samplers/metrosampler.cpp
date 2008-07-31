@@ -41,9 +41,11 @@ static float qrNumber(u_int generation, u_int scramble, u_int order)
 {
 	switch (order) {
 	case 0:
-		return VanDerCorput(generation, scramble);
+//		return VanDerCorput(generation, scramble);
+		return Halton(generation, scramble);
 	case 1:
-		return Sobol2(generation, scramble);
+//		return Sobol2(generation, scramble);
+		return Halton2(generation, scramble);
 	default:
 		return lux::random::floatValue();
 	}
