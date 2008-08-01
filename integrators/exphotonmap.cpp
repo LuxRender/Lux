@@ -510,7 +510,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 								Normal nGather = gatherIsect.dg.nn;
 								if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
 								NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
-								float md2 = INFINITY;
+								float md2 = radianceMap->maxDistSquared;
 
 								radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 								if (proc.photon) {
@@ -530,8 +530,11 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 							}
 						}
 					}
-				} else
-					L += indirectMap->LPhoton(bsdf, isect, wo);
+				} else {
+					SWCSpectrum Li = indirectMap->LPhoton(bsdf, isect, wo);
+					Li *= pathThroughput;
+					L += Li;
+				}
 			}
 		}
 
