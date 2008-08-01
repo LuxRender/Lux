@@ -66,14 +66,16 @@ public:
 			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
 			CreateBuffers();
 		}*/
-		bufferGroups[bufferGroup].numberOfSamples += count;
 
-		// Dade - check if we have enough samples per pixel
-		if ((haltSamplePerPixel > 0) &&
-			(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
-					haltSamplePerPixel))
-			enoughSamplePerPixel = true;
+		if (!bufferGroups.empty()) {
+			bufferGroups[bufferGroup].numberOfSamples += count;
 
+			// Dade - check if we have enough samples per pixel
+			if ((haltSamplePerPixel > 0) &&
+				(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
+						haltSamplePerPixel))
+				enoughSamplePerPixel = true;
+		}
 	}
 
 	void WriteImage(ImageType type);
