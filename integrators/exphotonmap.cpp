@@ -483,49 +483,55 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 			BxDFType nonSpecularGlossy = BxDFType(BSDF_REFLECTION |
 					BSDF_TRANSMISSION | BSDF_DIFFUSE);
 			if (bsdf->NumComponents(nonSpecularGlossy) > 0) {
+				// Dade - use an additional ray for a finalgather-like step only
+				// if we are the first path vertex node or on a specular path.
+				// Otherwise use directly the photonmap
 
-				Vector wi;
-				float u1 = indirectSample[0];
-				float u2 = indirectSample[1];
-				float u3 = indirectComponent[0];
-				float pdf;
-				SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-						&pdf, nonSpecularGlossy);
-				if (!fr.Black() && (pdf != 0.f)) {
-					RayDifferential bounceRay(p, wi);
+				if ((pathLength == 0) || specular) {
+					Vector wi;
+					float u1 = indirectSample[0];
+					float u2 = indirectSample[1];
+					float u3 = indirectComponent[0];
+					float pdf;
+					SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
+							&pdf, nonSpecularGlossy);
+					if (!fr.Black() && (pdf != 0.f)) {
+						RayDifferential bounceRay(p, wi);
 
-					Intersection gatherIsect;
-					if (scene->Intersect(bounceRay, &gatherIsect)) {
-						// Dade - check the distance threshold option, if the intersection
-						// distance is smaller than the threshold I revert to standard path
-						// tracing in order to avoid corner artifacts
+						Intersection gatherIsect;
+						if (scene->Intersect(bounceRay, &gatherIsect)) {
+							// Dade - check the distance threshold option, if the intersection
+							// distance is smaller than the threshold I revert to standard path
+							// tracing in order to avoid corner artifacts
 
-						if (bounceRay.maxt > distanceThreshold) {
-							// Compute exitant radiance using precomputed irradiance
-							SWCSpectrum Lindir = 0.f;
-							Normal nGather = gatherIsect.dg.nn;
-							if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
-							NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
-							float md2 = INFINITY;
+							if (bounceRay.maxt > distanceThreshold) {
+								// Compute exitant radiance using precomputed irradiance
+								SWCSpectrum Lindir = 0.f;
+								Normal nGather = gatherIsect.dg.nn;
+								if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
+								NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
+								float md2 = INFINITY;
 
-							radianceMap->lookup(gatherIsect.dg.p, proc, md2);
-							if (proc.photon) {
-								Lindir = proc.photon->alpha;
+								radianceMap->lookup(gatherIsect.dg.p, proc, md2);
+								if (proc.photon) {
+									Lindir = proc.photon->alpha;
 
-								Lindir *= scene->Transmittance(bounceRay);
-								SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
+									Lindir *= scene->Transmittance(bounceRay);
+									SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
 
-								Li *= pathThroughput;
-								L += Li;
+									Li *= pathThroughput;
+									L += Li;
+								}
+							} else {
+								// Dade - the intersection is too near, fall back to
+								// standard path tracing
+
+								componentsToSample = BxDFType(BSDF_ALL);
 							}
-						} else {
-							// Dade - the intersection is too near, fall back to
-							// standard path tracing
-
-							componentsToSample = BxDFType(BSDF_ALL);
 						}
 					}
-				}
+				} else
+					L += indirectMap->LPhoton(bsdf, isect, wo);
 			}
 		}
 
