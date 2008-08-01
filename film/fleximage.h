@@ -60,9 +60,9 @@ public:
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 	void AddSampleCount(float count, int bufferGroup = 0) {
-    		if (bufferGroups.empty()) {
-		        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
-		        CreateBuffers();
+		if (bufferGroups.empty()) {
+			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+			CreateBuffers();
 		}
 		bufferGroups[bufferGroup].numberOfSamples += count;
 

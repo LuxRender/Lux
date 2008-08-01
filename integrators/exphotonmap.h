@@ -80,7 +80,7 @@ private:
     SWCSpectrum LiDirectLigthtingMode(const int specularDepth, const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
-    void LiPathMode(const Scene *scene,
+    SWCSpectrum LiPathMode(const Scene *scene,
             const RayDifferential &ray, const Sample *sample,
             float *alpha) const;
 

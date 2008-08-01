@@ -191,7 +191,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
         boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
 
         // swap SampleArrptrs
-	swap(SampleArrptr, SampleArr2ptr);
+		swap(SampleArrptr, SampleArr2ptr);
 
         // Dade - save the amount of samples in the second buffer
         curSampleArr2Id = curSampleArrId;

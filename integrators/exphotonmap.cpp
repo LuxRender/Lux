@@ -168,21 +168,22 @@ SWCSpectrum ExPhotonIntegrator::Li(const Scene *scene,
         float *alpha) const {
     SampleGuard guard(sample->sampler, sample);
 
+	SWCSpectrum L = 0.0f;
 	switch(renderingMode) {
-		case RM_DIRECTLIGHTING: {
-			SWCSpectrum L = LiDirectLigthtingMode(0, scene, ray, sample, alpha);
-			sample->AddContribution(sample->imageX, sample->imageY,
-					L.ToXYZ(), alpha ? *alpha : 1.0f);
-		}
+		case RM_DIRECTLIGHTING:
+			L = LiDirectLigthtingMode(0, scene, ray, sample, alpha);
 			break;
 		case RM_PATH:
-			LiPathMode(scene, ray, sample, alpha);
+			L = LiPathMode(scene, ray, sample, alpha);
 			break;
 		default:
 			BOOST_ASSERT(false);
 	}
 
-    return SWCSpectrum(-1.f);
+	sample->AddContribution(sample->imageX, sample->imageY,
+		L.ToXYZ(), alpha ? (*alpha) : 1.0f);
+
+    return L;
 }
 
 SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
@@ -358,29 +359,29 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 			scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 }
 
-void ExPhotonIntegrator::LiPathMode(const Scene *scene,
+SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
-	SampleGuard guard(sample->sampler, sample);
+	SWCSpectrum L(0.0f);
+
+	if (!indirectMap)
+		return L;
+
 	// Declare common path integration variables
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
 	XYZColor color;
-	float V = .1f;
 	bool specularBounce = true, specular = true;
 	if (alpha) *alpha = 1.;
+
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
-				SWCSpectrum L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
-				color = L.ToXYZ();
-				if (color.y() > 0.f)
-					sample->AddContribution(sample->imageX, sample->imageY,
-						color, alpha ? *alpha : 1.f, V);
+				L += scene->volumeIntegrator->Li(scene, ray, sample, alpha);
 				pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
 			}
 
@@ -392,14 +393,12 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					Le += scene->lights[i]->Le(ray);
 				Le *= pathThroughput;
-				color = Le.ToXYZ();
+				L += Le;
 			}
+
 			// Set alpha channel
 			if (pathLength == 0 && alpha && !(color.y() > 0.f))
-				*alpha = 0.;
-			if (color.y() > 0.f)
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
+				*alpha = 0.0f;
 			break;
 		}
 		if (pathLength == 0)
@@ -407,10 +406,7 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 
 		SWCSpectrum Lv(scene->volumeIntegrator->Li(scene, ray, sample, alpha));
 		Lv *= pathThroughput;
-		color = Lv.ToXYZ();
-		if (color.y() > 0.f)
-			sample->AddContribution(sample->imageX, sample->imageY,
-				color, alpha ? *alpha : 1.f, V);
+		L += Lv;
 		pathThroughput *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
 
 		// Possibly add emitted light at path vertex
@@ -418,10 +414,7 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		if (specularBounce) {
 			SWCSpectrum Le(isect.Le(wo));
 			Le *= pathThroughput;
-			color = Le.ToXYZ();
-			if (color.y() > 0.f)
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
+			L += Le;
 		}
 		if (pathLength == maxDepth)
 			break;
@@ -472,10 +465,7 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 					Ll = 0.f;
 			}
 			Ll *= pathThroughput;
-			color = Ll.ToXYZ();
-			if (color.y() > 0.f)
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
+			L += Ll;
 		}
 
 		// Dade - add caustic		
@@ -483,13 +473,10 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 			// Compute indirect lighting for photon map integrator
 			SWCSpectrum Lc = causticMap->LPhoton(bsdf, isect, wo);
 			Lc *= pathThroughput;
-			color = Lc.ToXYZ();
-			if (color.y() > 0.f)
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
+			L += Lc;
 		}
 
-		BxDFType componentsToSample =  BxDFType(BSDF_ALL);
+		BxDFType componentsToSample =  BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
 
 		// Dade - add indirect lighting
 		if (debugEnableIndirect) {
@@ -529,27 +516,18 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 								SWCSpectrum Li = fr * Lindir * (AbsDot(wi, n) / pdf);
 
 								Li *= pathThroughput;
-								color = Li.ToXYZ();
-								if (color.y() > 0.f)
-									sample->AddContribution(sample->imageX, sample->imageY,
-										color, alpha ? *alpha : 1.f, V);
+								L += Li;
 							}
-
-							componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
 						} else {
 							// Dade - the intersection is too near, fall back to
 							// standard path tracing
 
 							componentsToSample = BxDFType(BSDF_ALL);
 						}
-					} else
-						componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
-				} else
-					componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
-			} else
-				componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
-		} else
-			componentsToSample = BxDFType(BSDF_ALL & (~BSDF_DIFFUSE));
+					}
+				}
+			}
+		}
 
 		if (bsdf->NumComponents(componentsToSample) <= 0)
 			break;
@@ -585,11 +563,11 @@ void ExPhotonIntegrator::LiPathMode(const Scene *scene,
 		specular = specular && specularBounce;
 		pathThroughput *= f;
 		pathThroughput *= dp;
-		if (!specular)
-			V += dp;
 
 		ray = RayDifferential(p, wi);
 	}
+
+	return L;
 }
 
 SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
