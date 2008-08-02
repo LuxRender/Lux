@@ -282,8 +282,11 @@ void RenderThread::render(RenderThread *myThread) {
 			// Sample new SWC thread wavelengths
 			thr_wl->Sample(myThread->sample->wavelengths,
 					myThread->sample->singleWavelength);
-		} else
+		} else {
+			myThread->sample->wavelengths = 0.5f;
+			myThread->sample->singleWavelength = 0.5f;
 			thr_wl->Sample(0.5f, 0.5f);
+		}
         
         while(myThread->signal == PAUSE) {
             boost::xtime xt;

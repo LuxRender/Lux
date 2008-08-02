@@ -39,7 +39,7 @@ ExPhotonIntegrator* ExPhotonIntegrator::clone() const {
 ExPhotonIntegrator::ExPhotonIntegrator(
 		RenderingMode rm,
 		LightStrategy st,
-		int ncaus, int nind, int maxDirPhotons,
+		int ndir, int ncaus, int nindir, int nrad,
         int nl, int mdepth, float mdist, bool fg,
         int gs, float ga,
 		PhotonMapRRStrategy rrstrategy, float rrcontprob,
@@ -50,9 +50,10 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 	renderingMode = rm;
 	lightStrategy = st;
 
+	nDirectPhotons = ndir;
     nCausticPhotons = ncaus;
-    nIndirectPhotons = nind;
-	maxDirectPhotons = maxDirPhotons;
+    nIndirectPhotons = nindir;
+	nRadiancePhotons = nrad;
 
     nLookup = nl;
     maxDistSquared = mdist * mdist;
@@ -149,17 +150,20 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample,
 }
 
 void ExPhotonIntegrator::Preprocess(const Scene *scene) {
+	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
+	indirectMap = new LightPhotonMap(nLookup, maxDistSquared);
+
 	if (finalGather)
 		radianceMap = new RadiancePhotonMap(nLookup, maxDistSquared);
-	else
-		maxDirectPhotons = 0;
-
-	indirectMap = new LightPhotonMap(nLookup, maxDistSquared);
-	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
+	else {
+		nDirectPhotons = 0;
+		nRadiancePhotons = 0;
+	}
 
 	PhotonMapPreprocess(
 			scene, mapsFileName,
-			maxDirectPhotons, radianceMap,
+			nDirectPhotons,
+			nRadiancePhotons, radianceMap,
 			nIndirectPhotons, indirectMap,
 			nCausticPhotons, causticMap);
 }
@@ -198,7 +202,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 	if (!indirectMap)
 		return L;
 
-    Intersection isect;
+	Intersection isect;
     if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, specularDepth);
@@ -220,8 +224,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
         if (alpha) *alpha = 1.0f;
         Vector wo = -ray.d;
 
-        // Compute emitted light if ray hit an area light source
-        L += isect.Le(wo);
+		// Compute emitted light if ray hit an area light source
+		L += isect.Le(wo);
 
         // Evaluate BSDF at hit point
         BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f *
@@ -238,35 +242,35 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 			return L;
 		}
 
+		if (debugUseRadianceMap) {
+			// Dade - for debugging
+
+			Normal nGather = n;
+			if (Dot(nGather, ray.d) > 0) nGather = -nGather;
+
+			NearPhotonProcess<RadiancePhoton> proc(p, nGather);
+			float md2 = radianceMap->maxDistSquared;
+
+			radianceMap->lookup(p, proc, md2);
+			if (proc.photon)
+				L += proc.photon->alpha;
+		}
+
 		if (debugEnableDirect) {
-			if (debugUseRadianceMap) {
-				// Dade - for debugging
-
-				Normal nGather = n;
-				if (Dot(nGather, ray.d) > 0) nGather = -nGather;
-
-				NearPhotonProcess<RadiancePhoton> proc(p, nGather);
-				float md2 = radianceMap->maxDistSquared;
-
-				radianceMap->lookup(p, proc, md2);
-				if (proc.photon)
-					L += proc.photon->alpha;
-			} else {
-				// Apply direct lighting strategy
-				switch (lightStrategy) {
-					case SAMPLE_ALL_UNIFORM:
-						L += UniformSampleAllLights(scene, p, n,
-								wo, bsdf, sample,
-								lightSample, bsdfSample, bsdfComponent);
-						break;
-					case SAMPLE_ONE_UNIFORM:
-						L += UniformSampleOneLight(scene, p, n,
-								wo, bsdf, sample,
-								lightSample, lightNum, bsdfSample, bsdfComponent);
-						break;
-					default:
-						break;
-				}
+			// Apply direct lighting strategy
+			switch (lightStrategy) {
+				case SAMPLE_ALL_UNIFORM:
+					L += UniformSampleAllLights(scene, p, n,
+							wo, bsdf, sample,
+							lightSample, bsdfSample, bsdfComponent);
+					break;
+				case SAMPLE_ONE_UNIFORM:
+					L += UniformSampleOneLight(scene, p, n,
+							wo, bsdf, sample,
+							lightSample, lightNum, bsdfSample, bsdfComponent);
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -607,12 +611,13 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		estrategy = SAMPLE_AUTOMATIC;
 	}
 
+	int nDirect = params.FindOneInt("directphotons", 200000);
     int nCaustic = params.FindOneInt("causticphotons", 20000);
     int nIndirect = params.FindOneInt("indirectphotons", 200000);
-	int maxDirect = params.FindOneInt("maxdirectphotons", 1000000);
+	int nRadiance = params.FindOneInt("radiancephotons", 200000);
 
 	int nUsed = params.FindOneInt("nused", 50);
-    int maxDepth = params.FindOneInt("maxdepth", 6);
+    int maxDepth = params.FindOneInt("maxdepth", 5);
 
 	bool finalGather = params.FindOneBool("finalgather", true);
 	// Dade - use half samples for sampling along the BSDF and the other
@@ -663,7 +668,8 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
 	bool debugEnableSpecular = params.FindOneBool("dbg_enablespecular", true);
 
-    return new ExPhotonIntegrator(renderingMode, estrategy, nCaustic, nIndirect, maxDirect,
+    return new ExPhotonIntegrator(renderingMode, estrategy,
+			nDirect, nCaustic, nIndirect, nRadiance,
             nUsed, maxDepth, maxDist, finalGather, gatherSamples, gatherAngle,
 			rstrategy, rrcontinueProb,
 			distanceThreshold,

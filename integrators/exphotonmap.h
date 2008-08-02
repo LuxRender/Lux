@@ -49,7 +49,7 @@ public:
 	ExPhotonIntegrator(
 			RenderingMode rm,
 			LightStrategy st,
-			int ncaus, int nindir,  int maxDirPhotons,
+			int ndir, int ncaus, int nindir, int nrad,
 			int nLookup, int mdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
 			PhotonMapRRStrategy rrstrategy, float rrcontprob,
@@ -87,7 +87,7 @@ private:
 	// ExPhotonIntegrator Private Data
 	RenderingMode renderingMode;
 	LightStrategy lightStrategy;
-	u_int nCausticPhotons, nIndirectPhotons, maxDirectPhotons;
+	u_int nDirectPhotons, nCausticPhotons, nIndirectPhotons, nRadiancePhotons;
 	u_int nLookup;
 	int maxDepth;
 	float maxDistSquared;

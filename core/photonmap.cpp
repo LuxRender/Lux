@@ -160,7 +160,8 @@ static bool unsuccessful(int needed, int found, int shot) {
 
 void PhotonMapPreprocess(
 		const Scene *scene, string *mapFileName,
-		u_int maxDirectPhotons, RadiancePhotonMap *radianceMap,
+		u_int nDirectPhotons,
+		u_int nRadiancePhotons, RadiancePhotonMap *radianceMap,
 		u_int nIndirectPhotons, LightPhotonMap *indirectMap,
 		u_int nCausticPhotons, LightPhotonMap *causticMap) {
 	if (scene->lights.size() == 0) return;
@@ -209,26 +210,31 @@ void PhotonMapPreprocess(
 	}
 
 	// Dade - check if have to build the radiancem map
-	bool finalGather = (maxDirectPhotons > 0);
+	bool finalGather = (nRadiancePhotons > 0);
 
     // Dade - shoot photons
     ss << "Shooting photons: " << (nCausticPhotons + nIndirectPhotons);
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
+	vector<LightPhoton> directPhotons;
+	directPhotons.reserve(nDirectPhotons);
+	bool directDone = (nDirectPhotons == 0);
+
 	vector<LightPhoton> causticPhotons;
+	causticPhotons.reserve(nCausticPhotons);
+	bool causticDone = (nCausticPhotons == 0);
+
     vector<LightPhoton> indirectPhotons;
-    vector<LightPhoton> directPhotons;
-    vector<RadiancePhoton> radiancePhotons;
-    causticPhotons.reserve(nCausticPhotons); // NOBOOK
-    indirectPhotons.reserve(nIndirectPhotons); // NOBOOK
+	indirectPhotons.reserve(nIndirectPhotons);
+    bool indirectDone = (nIndirectPhotons == 0);
+
+	vector<RadiancePhoton> radiancePhotons;
+	radiancePhotons.reserve(nRadiancePhotons);
+	bool radianceDone = (nRadiancePhotons == 0);
 
 	// Dade - initialize SpectrumWavelengths
     SpectrumWavelengths *thr_wl = thread_wavelengths.get();
 	thr_wl->Sample(0.5f, 0.5f);
-
-	bool causticDone = (nCausticPhotons == 0);
-    bool indirectDone = (nIndirectPhotons == 0);
-	bool directDone = false;
 
 	// Compute light power CDF for photon shooting
 	int nLights = int(scene->lights.size());
@@ -266,33 +272,41 @@ void PhotonMapPreprocess(
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 
     // Declare radiance photon reflectance arrays
-    vector<SWCSpectrum> rpReflectances, rpTransmittances;
+    vector<SWCSpectrum> rpReflectances;
+	rpReflectances.reserve(nRadiancePhotons);
+	vector<SWCSpectrum> rpTransmittances;
+	rpTransmittances.reserve(nRadiancePhotons);
 
 	boost::xtime lastUpdateTime;
 	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
-	int nDirectPaths = 0;
 	int nshot = 0;
-    while (!causticDone || !indirectDone) {
+    while (!radianceDone || !directDone || !causticDone || !indirectDone) {
 		// Dade - print some progress information
 		boost::xtime currentTime;
 		boost::xtime_get(&currentTime, boost::TIME_UTC);
 		if (currentTime.sec - lastUpdateTime.sec > 5) {
 			ss.str("");
-			ss << "Direct photon count: " << directPhotons.size();
-			if (maxDirectPhotons > 0)
-				ss << " (" << (100 * directPhotons.size() / maxDirectPhotons) << "% limit)";
+			ss << "Photon maps: Direct[" << directPhotons.size();
+			if (nDirectPhotons > 0)
+				ss << " (" << (100 * directPhotons.size() / nDirectPhotons) << "% limit)";
 			else
 				ss << " (100% limit)";
-			ss << " Caustic photonmap size: " << causticPhotons.size();
+			ss << "] Caustic[" << causticPhotons.size();
 			if (nCausticPhotons > 0)
 				ss << " (" << (100 * causticPhotons.size() / nCausticPhotons) << "%)";
 			else
 				ss << " (100%)";
-			ss << " Indirect photonmap size: " << indirectPhotons.size();
+			ss << "] Indirect[" << indirectPhotons.size();
 			if (nIndirectPhotons > 0)
 				ss << " (" << (100 * indirectPhotons.size() / nIndirectPhotons) << "%)";
 			else
 				ss << " (100%)";
+			ss << "] Radiance[" << radiancePhotons.size();
+			if (nRadiancePhotons > 0)
+				ss << " (" << (100 * radiancePhotons.size() / nRadiancePhotons) << "% limit)";
+			else
+				ss << " (100% limit)";
+			ss << "]";
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 			lastUpdateTime = currentTime;
@@ -369,10 +383,8 @@ void PhotonMapPreprocess(
 							directPhotons.push_back(photon);
 
 							// Dade - check if we have enough direct photons
-							if (directPhotons.size() == maxDirectPhotons) {
+							if (directPhotons.size() == nDirectPhotons)
 								directDone = true;
-								nDirectPaths = nshot;
-							}
 						}
                     } else {
                         // Deposit either caustic or indirect photon
@@ -399,16 +411,20 @@ void PhotonMapPreprocess(
                         }
                     }
 
-                    if (finalGather && (!directDone) &&
-							(lux::random::floatValue() < .125f)) {
+                    if (finalGather && (!radianceDone) &&
+							(lux::random::floatValue() < 0.25f)) {
                         // Store data for radiance photon
                         Normal n = photonIsect.dg.nn;
                         if (Dot(n, photonRay.d) > 0.f) n = -n;
                         radiancePhotons.push_back(RadiancePhoton(photonIsect.dg.p, n));
+
                         SWCSpectrum rho_r = photonBSDF->rho(BSDF_ALL_REFLECTION);
                         rpReflectances.push_back(rho_r);
                         SWCSpectrum rho_t = photonBSDF->rho(BSDF_ALL_TRANSMISSION);
                         rpTransmittances.push_back(rho_t);
+						
+						if (radiancePhotons.size() == nRadiancePhotons)
+							radianceDone = true;
                     }
                 }
 
@@ -452,10 +468,8 @@ void PhotonMapPreprocess(
 		luxError(LUX_NOERROR, LUX_INFO, "Precompute radiance");
 
 		// Precompute radiance at a subset of the photons
-		if (!directDone)
-			nDirectPaths = nshot;
 		LightPhotonMap directMap(radianceMap->nLookup, radianceMap->maxDistSquared);
-		directMap.init(nDirectPaths, directPhotons);
+		directMap.init(nDirectPhotons, directPhotons);
 
         for (u_int i = 0; i < radiancePhotons.size(); ++i) {
 			// Dade - print some progress info

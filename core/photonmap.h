@@ -210,7 +210,7 @@ public:
 
 	static void load(std::basic_istream<char> &stream, RadiancePhotonMap *map);
 
-	// Dade - used only to build the map but not for lookup
+	// Dade - used only to build the map (lookup in the direct map) but not for lookup
 	u_int nLookup;
 	float maxDistSquared;
 };
@@ -255,13 +255,14 @@ inline float Ekernel(const BasicPhoton *photon, const Point &p, float md2) {
 	return 3.f / (md2 * M_PI) * s * s;
 }
 
-void PhotonMapPreprocess(
+enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
+
+extern void PhotonMapPreprocess(
 		const Scene *scene, string *mapFileName,
-		u_int maxDirectPhotons, RadiancePhotonMap *radianceMap,
+		u_int nDirectPhotons,
+		u_int nRadiancePhotons, RadiancePhotonMap *radianceMap,
 		u_int nIndirectPhotons, LightPhotonMap *indirectMap,
 		u_int nCausticPhotons, LightPhotonMap *causticMap);
-
-enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 		const Scene *scene,
