@@ -243,8 +243,10 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	SWCSpectrum Ld(0.);
 
 	// Dade - use MIS only if it is worth doing
-	BxDFType diffuse = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
-	if (light->IsDeltaLight() || (bsdf->NumComponents(diffuse) > 0)) {
+	BxDFType noDiffuse = BxDFType(BSDF_ALL &
+			~(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE));
+	if (light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0)) {
+
 		// Dade - trace only a single shadow ray
 		
 		Vector wi;
@@ -321,9 +323,9 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	SWCSpectrum Ld(0.);
 
 	// Dade - use MIS only if it is worth doing
-	BxDFType diffuse = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
-	if (light->IsDeltaLight() ||
-			((bsdf->NumComponents(diffuse) > 0) && (flags & diffuse))) {
+	BxDFType noDiffuse = BxDFType(BSDF_ALL &
+			~(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE));
+	if (light->IsDeltaLight() || ((bsdf->NumComponents(noDiffuse) == 0) && (flags & BSDF_DIFFUSE))) {
 		// Dade - trace only a single shadow ray
 		
 		Vector wi;
