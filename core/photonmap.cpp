@@ -558,7 +558,7 @@ void PhotonMapPreprocess(
 	}
 }
 
-SWCSpectrum PhotonMapFinalGather(
+SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 		const Scene *scene,
 		const Sample *sample,
 		int sampleFinalGather1Offset,
@@ -574,9 +574,9 @@ SWCSpectrum PhotonMapFinalGather(
 	SWCSpectrum L(0.0f);
 
 	// Do one-bounce final gather for photon map
-	BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
+	BxDFType nonSpecularGlossy = BxDFType(BSDF_REFLECTION |
 			BSDF_TRANSMISSION | BSDF_DIFFUSE);
-	if (bsdf->NumComponents(nonSpecular) > 0) {
+	if (bsdf->NumComponents(nonSpecularGlossy) > 0) {
 		const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
 
@@ -624,8 +624,7 @@ SWCSpectrum PhotonMapFinalGather(
 			float u2 = sampleFGData[1];
 			float u3 = sampleFGData[2];
 			float pdf;
-			SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3,
-					&pdf, BxDFType(BSDF_ALL & (~BSDF_SPECULAR)));
+			SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3, &pdf, nonSpecularGlossy);
 			if (fr.Black() || pdf == 0.f) continue;
 
 			// Dade - russian roulette
@@ -671,7 +670,7 @@ SWCSpectrum PhotonMapFinalGather(
 					photonPdf /= nIndirSamplePhotons;
 					float wt = PowerHeuristic(gatherSamples, pdf,
 							gatherSamples, photonPdf);
-					Li += fr * Lindir * AbsDot(wi, n) * wt / pdf;
+					Li += fr * Lindir * (AbsDot(wi, n) * wt / pdf);
 				}
 			}
 		}
@@ -742,11 +741,89 @@ SWCSpectrum PhotonMapFinalGather(
 					float bsdfPdf = bsdf->Pdf(wo, wi);
 					float wt = PowerHeuristic(gatherSamples, photonPdf,
 							gatherSamples, bsdfPdf);
-					Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
+					Li += fr * Lindir * (AbsDot(wi, n) * wt / photonPdf);
 				}
 			}
 		}
 
+		L += Li / gatherSamples;
+	}
+
+	return L;
+}
+
+SWCSpectrum PhotonMapFinalGather(
+		const Scene *scene,
+		const Sample *sample,
+		int sampleFinalGatherOffset,
+		int gatherSamples,
+		PhotonMapRRStrategy rrStrategy,
+		float rrContinueProbability,
+		const LightPhotonMap *indirectMap,
+		const RadiancePhotonMap *radianceMap,
+		const Vector &wo,
+		const BSDF *bsdf) {
+	SWCSpectrum L(0.0f);
+
+	// Do one-bounce final gather for photon map
+	BxDFType nonSpecularGlossy = BxDFType(BSDF_REFLECTION |
+			BSDF_TRANSMISSION | BSDF_DIFFUSE);
+	if (bsdf->NumComponents(nonSpecularGlossy) > 0) {
+		const Point &p = bsdf->dgShading.p;
+        const Normal &n = bsdf->dgShading.nn;
+
+		// Use BSDF to do final gathering
+		SWCSpectrum Li = 0.;
+		for (int i = 0; i < gatherSamples ; ++i) {
+			float *sampleFGData = sample->sampler->GetLazyValues(
+				const_cast<Sample *>(sample), sampleFinalGatherOffset, i);
+
+			// Sample random direction from BSDF for final gather ray
+			Vector wi;
+			float u1 = sampleFGData[0];
+			float u2 = sampleFGData[1];
+			float u3 = sampleFGData[2];
+			float pdf;
+			SWCSpectrum fr = bsdf->Sample_f(wo, &wi, u1, u2, u3, &pdf, nonSpecularGlossy);
+			if (fr.Black() || pdf == 0.f) continue;
+
+			// Dade - russian roulette
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float dp = AbsDot(wi, n) / pdf;
+				const float q = min<float>(1.0f, fr.filter() * dp);
+				if (q < sampleFGData[3])
+					continue;
+
+				// increase contribution
+				fr /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (rrContinueProbability < sampleFGData[3])
+					continue;
+
+				// increase path contribution
+				fr /= rrContinueProbability;
+			}
+
+			// Trace BSDF final gather ray and accumulate radiance
+			RayDifferential bounceRay(p, wi);
+			Intersection gatherIsect;
+			if (scene->Intersect(bounceRay, &gatherIsect)) {
+				// Compute exitant radiance using precomputed irradiance
+				SWCSpectrum Lindir = 0.f;
+				Normal nGather = gatherIsect.dg.nn;
+				if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
+				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
+				float md2 = radianceMap->maxDistSquared;
+
+				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
+				if (proc.photon) {
+					Lindir = proc.photon->alpha;
+					Lindir *= scene->Transmittance(bounceRay);
+
+					Li += fr * Lindir * (AbsDot(wi, n) / pdf);
+				}
+			}
+		}
 		L += Li / gatherSamples;
 	}
 

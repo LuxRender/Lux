@@ -263,13 +263,25 @@ void PhotonMapPreprocess(
 
 enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
-SWCSpectrum PhotonMapFinalGather(
+extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 		const Scene *scene,
 		const Sample *sample,
 		int sampleFinalGather1Offset,
 		int sampleFinalGather2Offset,
 		int gatherSamples,
 		float cosGatherAngle,
+		PhotonMapRRStrategy rrStrategy,
+		float rrContinueProbability,
+		const LightPhotonMap *indirectMap,
+		const RadiancePhotonMap *radianceMap,
+		const Vector &wo,
+		const BSDF *bsdf);
+
+extern SWCSpectrum PhotonMapFinalGather(
+		const Scene *scene,
+		const Sample *sample,
+		int sampleFinalGatherOffset,
+		int gatherSamples,
 		PhotonMapRRStrategy rrStrategy,
 		float rrContinueProbability,
 		const LightPhotonMap *indirectMap,

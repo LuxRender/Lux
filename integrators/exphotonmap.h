@@ -55,7 +55,7 @@ public:
 			PhotonMapRRStrategy rrstrategy, float rrcontprob,
 			float distThreshold,
 			string *mapsFileName,
-			bool dbgEnableDirect, bool dbgEnableCaustic,
+			bool dbgEnableDirect, bool dbgEnableDirectMap, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
 
@@ -103,7 +103,7 @@ private:
 	string *mapsFileName;
 
 	// Dade - debug flags
-	bool debugEnableDirect, debugEnableCaustic,
+	bool debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,
 			debugEnableIndirect, debugEnableSpecular;
 
 	// Declare sample parameters for light source sampling

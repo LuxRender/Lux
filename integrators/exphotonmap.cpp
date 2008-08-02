@@ -45,7 +45,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 		PhotonMapRRStrategy rrstrategy, float rrcontprob,
 		float distThreshold,
 		string *mapsfn,
-		bool dbgEnableDirect, bool dbgEnableCaustic,
+		bool dbgEnableDirect, bool dbgUseRadianceMap, bool dbgEnableCaustic,
 		bool dbgEnableIndirect, bool dbgEnableSpecular) {
 	renderingMode = rm;
 	lightStrategy = st;
@@ -71,6 +71,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(
 	mapsFileName = mapsfn;
 
 	debugEnableDirect = dbgEnableDirect;
+	debugUseRadianceMap = dbgUseRadianceMap;
 	debugEnableCaustic = dbgEnableCaustic;
 	debugEnableIndirect = dbgEnableIndirect;
 	debugEnableSpecular = dbgEnableSpecular;
@@ -238,20 +239,34 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 		}
 
 		if (debugEnableDirect) {
-			// Apply direct lighting strategy
-			switch (lightStrategy) {
-				case SAMPLE_ALL_UNIFORM:
-					L += UniformSampleAllLights(scene, p, n,
-							wo, bsdf, sample,
-							lightSample, bsdfSample, bsdfComponent);
-					break;
-				case SAMPLE_ONE_UNIFORM:
-					L += UniformSampleOneLight(scene, p, n,
-							wo, bsdf, sample,
-							lightSample, lightNum, bsdfSample, bsdfComponent);
-					break;
-				default:
-					break;
+			if (debugUseRadianceMap) {
+				// Dade - for debugging
+
+				Normal nGather = n;
+				if (Dot(nGather, ray.d) > 0) nGather = -nGather;
+
+				NearPhotonProcess<RadiancePhoton> proc(p, nGather);
+				float md2 = radianceMap->maxDistSquared;
+
+				radianceMap->lookup(p, proc, md2);
+				if (proc.photon)
+					L += proc.photon->alpha;
+			} else {
+				// Apply direct lighting strategy
+				switch (lightStrategy) {
+					case SAMPLE_ALL_UNIFORM:
+						L += UniformSampleAllLights(scene, p, n,
+								wo, bsdf, sample,
+								lightSample, bsdfSample, bsdfComponent);
+						break;
+					case SAMPLE_ONE_UNIFORM:
+						L += UniformSampleOneLight(scene, p, n,
+								wo, bsdf, sample,
+								lightSample, lightNum, bsdfSample, bsdfComponent);
+						break;
+					default:
+						break;
+				}
 			}
 		}
 
@@ -262,7 +277,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLigthtingMode(
 
 		if (debugEnableIndirect) {
 			if (finalGather)
-				L += PhotonMapFinalGather(
+				L += PhotonMapFinalGatherWithImportaceSampling(
 						scene,
 						sample,
 						sampleFinalGather1Offset,
@@ -618,7 +633,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		renderingMode = RM_DIRECTLIGHTING;
 	}
 
-	float maxDist = params.FindOneFloat("maxdist", 0.1f);
+	float maxDist = params.FindOneFloat("maxdist", 0.5f);
     float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
 	PhotonMapRRStrategy rstrategy;
@@ -643,6 +658,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	float distanceThreshold = params.FindOneFloat("distancethreshold", maxDist * 1.25f);
 
 	bool debugEnableDirect = params.FindOneBool("dbg_enabledirect", true);
+	bool debugUseRadianceMap = params.FindOneBool("dbg_useradiancemap", false);
 	bool debugEnableCaustic = params.FindOneBool("dbg_enablecaustic", true);
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
 	bool debugEnableSpecular = params.FindOneBool("dbg_enablespecular", true);
@@ -652,5 +668,6 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 			rstrategy, rrcontinueProb,
 			distanceThreshold,
 			mapsFileName,
-			debugEnableDirect, debugEnableCaustic, debugEnableIndirect, debugEnableSpecular);
+			debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,
+			debugEnableIndirect, debugEnableSpecular);
 }
