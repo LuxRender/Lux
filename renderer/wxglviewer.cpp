@@ -45,12 +45,13 @@ BEGIN_EVENT_TABLE(LuxGLViewer, wxWindow)
 		EVT_SIZE             (LuxGLViewer::OnSize)
 		EVT_MOUSE_EVENTS     (LuxGLViewer::OnMouse)
 		EVT_ERASE_BACKGROUND (LuxGLViewer::OnEraseBackground)
+		EVT_TIMER  					 (wxID_ANY, LuxGLViewer::OnTimer)
 END_EVENT_TABLE()
 
 int glAttribList[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0};
 
 LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
-      : wxGLCanvas(parent, wxID_ANY, glAttribList), m_glContext(this), m_textureW(textureW), m_textureH(textureH) {
+      : wxGLCanvas(parent, wxID_ANY, glAttribList), wxViewerBase(), m_glContext(this), m_textureW(textureW), m_textureH(textureH) {
 	m_firstDraw = true;
 	m_offsetX = m_offsetY = 0;
 	m_scale = 1.0f;
@@ -58,6 +59,19 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 	m_scaleXo = m_scaleYo = 0;
 	m_scaleXo2 = m_scaleYo2 = 0;
 	m_lastX = m_lastY = 0;
+
+	m_stipple = 0x00FF; // Stipple pattern - dashes
+	m_animTimer = new wxTimer(this, ID_ANIMATIONUPDATE);
+	m_animTimer->Start(100, wxTIMER_CONTINUOUS); // Animation at 10fps
+
+	m_selX1 = 0.0;
+	m_selX2 = 0.0;
+	m_selY1 = 0.0;
+	m_selY2 = 0.0;
+	m_highlightSel = NULL;
+
+	SetMode(PANZOOM);
+
 	SetCursor(wxCURSOR_CROSS);
 }
 
@@ -71,7 +85,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	if(luxStatistics("sceneIsReady")) {
-		if(m_firstDraw || m_imageW != luxStatistics("filmXres") || m_imageH != luxStatistics("filmYres")) {
+		if(m_firstDraw) {
 			m_firstDraw = false;
 			m_imageW = luxStatistics("filmXres");
 			m_imageH = luxStatistics("filmYres");
@@ -137,6 +151,15 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 			}
 		}
 		glDisable(GL_TEXTURE_2D);
+
+		if(m_viewerMode == SELECTION && m_selX1 != m_selX2 && m_selY1 != m_selY2)
+			DrawMarchingAnts(m_selX1, m_selX2, m_selY1, m_selY2, 1.0, 1.0, 1.0); // Draw current (white) selection area
+		if(m_highlightSel != NULL) {
+			int x1, x2, y1, y2;
+			m_highlightSel->GetBounds(x1,x2,y1,y2);
+			DrawMarchingAnts(x1, x2, y1, y2, 1.0, 0.0, 0.0); // Draw active (red) work area
+		}
+
 		glPopMatrix();
 	}
 
@@ -182,83 +205,201 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 	int W, H;
 	GetClientSize(&W, &H);
 
-	// Skip events if we have nothing to draw
-	if(m_firstDraw) {
-		event.Skip();
-	} else if(event.GetEventType() == wxEVT_LEFT_DOWN) {
-		SetCursor(wxCURSOR_HAND);
-		event.Skip();
-	} else if(event.GetEventType() == wxEVT_LEFT_UP) {
-		SetCursor(wxCURSOR_CROSS);
-	} else if(event.GetEventType() == wxEVT_MIDDLE_DOWN) {
-		m_scale = min(W/(float)m_imageW, H/(float)m_imageH);
-		m_scaleExp = floor(log((float)m_scale)/log(2.0f)*2+0.5f)/2;
-		m_scaleXo2 = W/2;
-		m_scaleYo2 = H/2;
-		m_scaleXo = m_imageW/2;
-		m_scaleYo = m_imageH/2;
-		m_offsetX = 0;
-		m_offsetY = 0;
-		wxGLCanvas::Refresh();
-	} else if(event.GetEventType() == wxEVT_RIGHT_DOWN) {
-		//calculate the scaling point in image space
-		m_scaleXo = (int)(     event.GetX() /m_scale-m_scaleXo2/m_scale-m_offsetX/m_scale+m_scaleXo);
-		m_scaleYo = (int)((H-1-event.GetY())/m_scale-m_scaleYo2/m_scale-m_offsetY/m_scale+m_scaleYo);
-		//make sure the scaling point is in bounds
-		if(m_scaleXo<0) m_scaleXo = 0;
-		if(m_scaleXo>m_imageW-1) m_scaleXo = m_imageW-1;
-		if(m_scaleYo<0) m_scaleYo = 0;
-		if(m_scaleYo>m_imageH-1) m_scaleYo = m_imageH-1;
-		//new scale
-		m_scaleExp = 0;
-		m_scale = 1.0f;
-		//get the scaling point in window space
-		m_scaleXo2 =     event.GetX();
-		m_scaleYo2 = H-1-event.GetY();
-		m_offsetX = m_offsetY = 0;
-		wxGLCanvas::Refresh();
-	} else if(event.GetEventType() == wxEVT_MOTION) {
-		if(event.Dragging() && event.m_leftDown) {
-			//calculate new offset
-			int offsetXNew = m_offsetX + (event.GetX()-m_lastX);
-			int offsetYNew = m_offsetY - (event.GetY()-m_lastY);
-			//check if new offset in bounds
-			if((m_imageW-m_scaleXo)*m_scale+m_scaleXo2+offsetXNew-10>=0 && (0-m_scaleXo)*m_scale+m_scaleXo2+offsetXNew+10<=W-1)
-				m_offsetX = offsetXNew;
-			if((m_imageH-m_scaleYo)*m_scale+m_scaleYo2+offsetYNew-10>=0 && (0-m_scaleYo)*m_scale+m_scaleYo2+offsetYNew+10<=H-1)
-				m_offsetY = offsetYNew;
-			wxGLCanvas::Refresh();
-		}
-	} else if(event.GetEventType() == wxEVT_MOUSEWHEEL) {
-		if((event.GetWheelRotation() > 0 && m_scale < 4) || //zoom in up to 4x
-			  (event.GetWheelRotation() < 0 && (m_scale > 1 || m_scale*m_imageW > W*0.5f || m_scale*m_imageH > H*0.5f))) { //zoom out up to 50% of window size
+	if(m_viewerMode == PANZOOM) {
+		// Skip events if we have nothing to draw
+		if(m_firstDraw) {
+			event.Skip();
+		} else if(event.GetEventType() == wxEVT_LEFT_DOWN) {
+			SetCursor(wxCURSOR_HAND);
+			event.Skip();
+		} else if(event.GetEventType() == wxEVT_LEFT_UP) {
+			SetCursor(wxCURSOR_CROSS);
+		} else if(event.GetEventType() == wxEVT_MIDDLE_DOWN) {
+			m_scale = min(W/(float)m_imageW, H/(float)m_imageH);
+			m_scaleExp = floor(log((float)m_scale)/log(2.0f)*2+0.5f)/2;
+			m_scaleXo2 = W/2;
+			m_scaleYo2 = H/2;
+			m_scaleXo = m_imageW/2;
+			m_scaleYo = m_imageH/2;
+			m_offsetX = 0;
+			m_offsetY = 0;
+			Refresh();
+		} else if(event.GetEventType() == wxEVT_RIGHT_DOWN) {
 			//calculate the scaling point in image space
 			m_scaleXo = (int)(     event.GetX() /m_scale-m_scaleXo2/m_scale-m_offsetX/m_scale+m_scaleXo);
 			m_scaleYo = (int)((H-1-event.GetY())/m_scale-m_scaleYo2/m_scale-m_offsetY/m_scale+m_scaleYo);
 			//make sure the scaling point is in bounds
-			if(m_scaleXo < 0) m_scaleXo = 0;
-			if(m_scaleXo > m_imageW-1) m_scaleXo = m_imageW-1;
-			if(m_scaleYo < 0) m_scaleYo = 0;
-			if(m_scaleYo > m_imageH-1) m_scaleYo = m_imageH-1;
-			//calculate new scale
-			m_scaleExp += (event.GetWheelRotation()>0?1:-1)*0.5f;
-			m_scale = pow(2.0f, m_scaleExp);
+			if(m_scaleXo<0) m_scaleXo = 0;
+			if(m_scaleXo>m_imageW-1) m_scaleXo = m_imageW-1;
+			if(m_scaleYo<0) m_scaleYo = 0;
+			if(m_scaleYo>m_imageH-1) m_scaleYo = m_imageH-1;
+			//new scale
+			m_scaleExp = 0;
+			m_scale = 1.0f;
 			//get the scaling point in window space
-			m_scaleXo2 = event.GetX();
+			m_scaleXo2 =     event.GetX();
 			m_scaleYo2 = H-1-event.GetY();
 			m_offsetX = m_offsetY = 0;
-			wxGLCanvas::Refresh();
+			Refresh();
+		} else if(event.GetEventType() == wxEVT_MOTION) {
+			if(event.Dragging() && event.m_leftDown) {
+				//calculate new offset
+				int offsetXNew = m_offsetX + (event.GetX()-m_lastX);
+				int offsetYNew = m_offsetY - (event.GetY()-m_lastY);
+				//check if new offset in bounds
+				if((m_imageW-m_scaleXo)*m_scale+m_scaleXo2+offsetXNew-10>=0 && (0-m_scaleXo)*m_scale+m_scaleXo2+offsetXNew+10<=W-1)
+					m_offsetX = offsetXNew;
+				if((m_imageH-m_scaleYo)*m_scale+m_scaleYo2+offsetYNew-10>=0 && (0-m_scaleYo)*m_scale+m_scaleYo2+offsetYNew+10<=H-1)
+					m_offsetY = offsetYNew;
+				Refresh();
+			}
+		} else if(event.GetEventType() == wxEVT_MOUSEWHEEL) {
+			if((event.GetWheelRotation() > 0 && m_scale < 4) || //zoom in up to 4x
+					(event.GetWheelRotation() < 0 && (m_scale > 1 || m_scale*m_imageW > W*0.5f || m_scale*m_imageH > H*0.5f))) { //zoom out up to 50% of window size
+				//calculate the scaling point in image space
+				m_scaleXo = (int)(     event.GetX() /m_scale-m_scaleXo2/m_scale-m_offsetX/m_scale+m_scaleXo);
+				m_scaleYo = (int)((H-1-event.GetY())/m_scale-m_scaleYo2/m_scale-m_offsetY/m_scale+m_scaleYo);
+				//make sure the scaling point is in bounds
+				if(m_scaleXo < 0) m_scaleXo = 0;
+				if(m_scaleXo > m_imageW-1) m_scaleXo = m_imageW-1;
+				if(m_scaleYo < 0) m_scaleYo = 0;
+				if(m_scaleYo > m_imageH-1) m_scaleYo = m_imageH-1;
+				//calculate new scale
+				m_scaleExp += (event.GetWheelRotation()>0?1:-1)*0.5f;
+				m_scale = pow(2.0f, m_scaleExp);
+				//get the scaling point in window space
+				m_scaleXo2 = event.GetX();
+				m_scaleYo2 = H-1-event.GetY();
+				m_offsetX = m_offsetY = 0;
+				Refresh();
+			}
+		} else {
+			event.Skip();
 		}
-	} else {
-		event.Skip();
+	} else if(m_viewerMode == SELECTION) {
+		if(event.GetEventType() == wxEVT_LEFT_DOWN) {
+			InverseTransformPoint(event.GetX(), event.GetY(), m_selX1, m_selY1);
+			m_selX2 = m_selX1;
+			m_selY2 = m_selY1;
+		} else if(event.GetEventType() == wxEVT_LEFT_UP) {
+			InverseTransformPoint(event.GetX(), event.GetY(), m_selX2, m_selY2);
+
+			boost::shared_ptr<wxViewerSelection> selection(new wxViewerSelection(m_selX1, m_selX2, m_selY1, m_selY2));
+			wxViewerEvent viewerEvent(selection, wxEVT_LUX_VIEWER_SELECTION);
+			GetEventHandler()->AddPendingEvent(viewerEvent);
+		} else if(event.GetEventType() == wxEVT_MOTION) {
+			if(event.Dragging() && event.m_leftDown)
+				InverseTransformPoint(event.GetX(), event.GetY(), m_selX2, m_selY2);
+		}
 	}
 	m_lastX = event.GetX();
 	m_lastY = event.GetY();
 }
 
-void LuxGLViewer::Refresh(bool eraseBackground, const wxRect* rect) {
-	m_imageChanged=true;
-	wxGLCanvas::Refresh(eraseBackground, rect);
+wxWindow* LuxGLViewer::GetWindow() {
+	return this;
+}
+
+wxViewerSelection LuxGLViewer::GetSelection() {
+	return wxViewerSelection(m_selX1, m_selX2, m_selY1, m_selY2);
+}
+
+void LuxGLViewer::SetMode(wxViewerMode mode) {
+	wxViewerBase::SetMode(mode);
+	Refresh();
+}
+
+void LuxGLViewer::SetZoom(wxViewerSelection *selection) {
+	int W, H;
+	GetClientSize(&W, &H);
+	int x1, x2, y1, y2;
+	selection->GetBounds(x1,x2,y1,y2);
+	int selMaxX = min(m_imageW, max(x1, x2));
+	int selMaxY = min(m_imageH, max(y1, y2));
+	int selMinX = max(0, min(x1, x2));
+	int selMinY = max(0, min(y1, y2));
+	float exactScale = min((float)W/(selMaxX-selMinX), (float)H/(selMaxY-selMinY));
+
+	if(isinf(exactScale)) // If selection is too small, increase it to 1 pixel
+		exactScale = min(W, H);
+
+	// Zoom in and center selection
+	m_scaleXo = (selMaxX + selMinX)/2.0;
+	m_scaleYo = (selMaxY + selMinY)/2.0;
+	m_scaleExp = log(exactScale)/log(2.0);
+	m_scale = exactScale;
+	m_scaleXo2 = W/2.0;
+	m_scaleYo2 = H/2.0-1;
+	m_offsetX = m_offsetY = 0;
+	Refresh();
+}
+
+void LuxGLViewer::SetSelection(wxViewerSelection *selection) {
+	if(selection == NULL) {
+		m_selX1 = 0.0;
+		m_selX2 = 0.0;
+		m_selY1 = 0.0;
+		m_selY2 = 0.0;
+	} else {
+		selection->GetBounds(m_selX1,m_selX2,m_selY1,m_selY2);
+	}
+	Refresh();
+}
+
+void LuxGLViewer::SetHighlight(wxViewerSelection *selection) {
+	if(m_highlightSel != NULL)
+		delete m_highlightSel;
+	if(selection == NULL) m_highlightSel = NULL;
+	else m_highlightSel = new wxViewerSelection(*selection);
+	Refresh();
+}
+
+void LuxGLViewer::Reload() {
+	m_imageChanged = true;
+	Refresh();
+}
+
+void LuxGLViewer::Reset() {
+	m_firstDraw = true;
+	Refresh();
+}
+
+void LuxGLViewer::OnTimer(wxTimerEvent &event) {
+	m_stipple = ((m_stipple >> 15) | (m_stipple << 1)) & 0xFFFF;
+	// TODO - Ratow - repaint the marching ants only
+	this->Refresh();
+}
+
+void LuxGLViewer::InverseTransformPoint(int x, int y, int &invX, int &invY) {
+	int width, height;
+	this->GetClientSize(&width, &height);
+
+	invX = (x - m_offsetX - m_scaleXo2)/m_scale + m_scaleXo;
+	invY = (height - y - m_offsetY - m_scaleYo2)/m_scale + m_scaleYo;
+}
+
+void LuxGLViewer::DrawMarchingAnts(int x1, int x2, int y1, int y2, float red, float green, float blue) {
+	glEnable(GL_LINE_STIPPLE);
+	glLineWidth(2.0); // Perhaps we should change width according to zoom
+	glLineStipple(1, m_stipple);
+	glBegin(GL_LINE_STRIP);
+	glColor3f(0.0, 0.0, 0.0);
+	glVertex3i(x1, y1, 0.0);
+	glVertex3i(x1, y2, 0.0);
+	glVertex3i(x2, y2, 0.0);
+	glVertex3i(x2, y1, 0.0);
+	glVertex3i(x1, y1, 0.0);
+	glEnd();
+	glLineStipple(1, ~m_stipple);
+	glBegin(GL_LINE_STRIP);
+	glColor3f(red, green, blue);
+	glVertex3i(x1, y1, 0.0);
+	glVertex3i(x1, y2, 0.0);
+	glVertex3i(x2, y2, 0.0);
+	glVertex3i(x2, y1, 0.0);
+	glVertex3i(x1, y1, 0.0);
+	glEnd();
+	glDisable(GL_LINE_STIPPLE);
 }
 
 #endif // LUX_USE_OPENGL

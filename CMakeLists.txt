@@ -476,7 +476,7 @@ ENDIF(APPLE)
 #Here we build the wxWidgets GUI executable
 #############################################################################
 IF(wxWidgets_FOUND)
-	ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp)
+	ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
 	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
 
 	IF(APPLE)

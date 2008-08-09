@@ -37,6 +37,9 @@ namespace lux
 	#define ID_RESUMETOOL 1003
 	#define ID_PAUSETOOL 1004
 	#define ID_STOPTOOL 1005
+	#define ID_PANTOOL 1006
+	#define ID_ZOOMTOOL 1007
+	#define ID_REFINETOOL 1008
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -54,6 +57,7 @@ namespace lux
 			wxPanel* m_renderPage;
 			wxToolBar* m_renderToolBar;
 			wxSpinCtrl* m_threadSpinCtrl;
+			wxToolBar* m_viewerToolBar;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
 			wxStatusBar* m_statusBar;

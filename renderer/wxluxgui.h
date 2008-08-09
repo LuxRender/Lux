@@ -31,6 +31,7 @@
 #include <wx/progdlg.h>
 
 #include "wxluxframe.h"
+#include "wxviewer.h"
 
 namespace lux
 {
@@ -82,9 +83,11 @@ typedef void (wxEvtHandler::*wxLuxErrorEventFunction)(wxLuxErrorEvent&);
 
 /*** LuxOutputWin ***/
 
-class LuxOutputWin : public wxScrolledWindow {
+class LuxOutputWin : public wxScrolledWindow, public wxViewerBase {
 public:
 	LuxOutputWin(wxWindow *parent);
+	virtual wxWindow* GetWindow();
+	virtual void Reload();
 
 protected:
 	DECLARE_EVENT_TABLE()
@@ -128,6 +131,7 @@ protected:
 	void OnSpin(wxSpinEvent& event);
 	void OnCommand(wxCommandEvent &event);
 	void OnIconize(wxIconizeEvent& event);
+	void OnSelection(wxViewerEvent& event);
 
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
@@ -147,7 +151,7 @@ protected:
 	LuxGuiWindowState m_guiWindowState;
 
 	wxProgressDialog* m_progDialog;
-	wxWindow* m_renderOutput;
+	wxViewerBase* m_renderOutput;
 	wxTimer* m_loadTimer;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;

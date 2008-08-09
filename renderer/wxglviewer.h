@@ -23,6 +23,8 @@
 #ifndef LUX_WXGLVIEWER_H
 #define LUX_WXGLVIEWER_H
 
+#include "wxviewer.h"
+
 #ifdef LUX_USE_OPENGL
 #include "wx/wx.h"
 #include "wx/glcanvas.h"
@@ -33,17 +35,32 @@ namespace lux
 
 #ifdef LUX_USE_OPENGL
 
-class LuxGLViewer : public wxGLCanvas {
+#define ID_ANIMATIONUPDATE	3000
+
+class LuxGLViewer : public wxGLCanvas, public wxViewerBase {
 public:
 	LuxGLViewer(wxWindow *parent, int textureW = 256, int textureH = 256);
 
 protected:
 	DECLARE_EVENT_TABLE()
-	virtual void Refresh(bool eraseBackground = true, const wxRect* rect = NULL);
 	void OnPaint(wxPaintEvent &event);
 	void OnEraseBackground(wxEraseEvent &event);
 	void OnSize(wxSizeEvent &event);
 	void OnMouse(wxMouseEvent &event);
+	void OnTimer(wxTimerEvent &event);
+
+	// wxViewerBase methods
+	virtual wxWindow* GetWindow();
+	virtual wxViewerSelection GetSelection();
+	virtual void SetMode(wxViewerMode mode);
+	virtual void SetZoom(wxViewerSelection *selection);
+	virtual void SetSelection(wxViewerSelection *selection);
+	virtual void SetHighlight(wxViewerSelection *selection);
+	virtual void Reload();
+	virtual void Reset();
+
+	void InverseTransformPoint(int x, int y, int &invX, int &invY);
+	void DrawMarchingAnts(int x1, int x2, int y1, int y2, float red, float green, float blue);
 
 	wxGLContext m_glContext;
 
@@ -58,12 +75,16 @@ protected:
 	float m_scaleExp;
 	int m_lastW, m_lastH;
 
+	wxTimer* m_animTimer;
+	int m_stipple;
+	int m_selX1, m_selX2, m_selY1, m_selY2;
+	wxViewerSelection* m_highlightSel;
 };
 
 #else // LUX_USE_OPENGL
 
 //dummy class
-class LuxGLViewer : public wxWindow {
+class LuxGLViewer : public wxWindow, wxViewerBase {
 public:
 	LuxGLViewer(wxWindow *parent, int textureW = 256, int textureH = 256) {}
 };

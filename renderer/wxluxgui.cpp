@@ -55,6 +55,7 @@ DEFINE_EVENT_TYPE(lux::wxEVT_LUX_TONEMAPPED)
 
 BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 	EVT_LUX_ERROR (wxID_ANY, LuxGui::OnError)
+	EVT_LUX_VIEWER_SELECTION (wxID_ANY, LuxGui::OnSelection)
 	EVT_TIMER     (wxID_ANY, LuxGui::OnTimer)
 	EVT_SPINCTRL  (wxID_ANY, LuxGui::OnSpin)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnCommand)
@@ -76,13 +77,13 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 		m_renderOutput = new LuxGLViewer(m_renderPage);
 	else
 		m_renderOutput = new LuxOutputWin(m_renderPage);
-	m_renderPage->GetSizer()->Add(m_renderOutput, 1, wxALL | wxEXPAND, 5);
+	m_renderPage->GetSizer()->Add(m_renderOutput->GetWindow(), 1, wxALL | wxEXPAND, 5);
 	m_renderPage->Layout();
 
 	// Trick to generate resize event and show output window
 	// http://lists.wxwidgets.org/pipermail/wx-users/2007-February/097829.html
 	SetSize(GetSize());
-	m_renderOutput->Update();
+	m_renderOutput->GetWindow()->Update();
 
 	// Create render output update timer
 	m_renderTimer = new wxTimer(this, ID_RENDERUPDATE);
@@ -112,6 +113,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_threadSpinCtrl->Disable();
+			m_viewerToolBar->Disable();
 			break;
 		case RENDERING:
 			// Rendering is in progress.
@@ -122,6 +124,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, true);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
 			m_threadSpinCtrl->Enable();
+			m_viewerToolBar->Enable();
 			break;
 		case STOPPING:
 			// Rendering is being stopped.
@@ -195,6 +198,24 @@ void LuxGui::LoadImages() {
 	m_renderToolBar->InsertTool(2, stoptool);
 	m_renderToolBar->Realize();
 
+	// Pan toolbar tool
+	wxToolBarToolBase *pantool = m_viewerToolBar->RemoveTool(ID_PANTOOL);
+	pantool->SetNormalBitmap(wxMEMORY_BITMAP(pan_png));
+	m_viewerToolBar->InsertTool(0, pantool);
+	m_viewerToolBar->Realize();
+
+	// Zoom toolbar tool
+	wxToolBarToolBase *zoomtool = m_viewerToolBar->RemoveTool(ID_ZOOMTOOL);
+	zoomtool->SetNormalBitmap(wxMEMORY_BITMAP(zoom_png));
+	m_viewerToolBar->InsertTool(1, zoomtool);
+	m_viewerToolBar->Realize();
+
+	// Refine toolbar tool
+	wxToolBarToolBase *refinetool = m_viewerToolBar->RemoveTool(ID_REFINETOOL);
+	refinetool->SetNormalBitmap(wxMEMORY_BITMAP(radiofocus_png));
+	m_viewerToolBar->InsertTool(2, refinetool);
+	m_viewerToolBar->Realize();
+
 	// NOTE - Ratow - Temporarily disabling icons on menu items on the Windows platform.
 #ifndef __WXMSW__
 	// wxGTK has problems changing an existing menu item's icon, so we remove and add then again...
@@ -225,7 +246,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_RESUMETOOL:
 			if(m_guiRenderState != RENDERING) {
 				// Start display update timer
-				m_renderOutput->Refresh();
+				m_renderOutput->Reload();
 				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
 				if(m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
@@ -263,6 +284,13 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case wxID_EXIT:
 			Close(false);
 			break;
+		case ID_PANTOOL:
+			m_renderOutput->SetMode(PANZOOM);
+			break;
+		case ID_ZOOMTOOL:
+		case ID_REFINETOOL:
+			m_renderOutput->SetMode(SELECTION);
+			break;
 		default:
 			break;
 	}
@@ -296,6 +324,7 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 			luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
 			luxCleanup();
 			ChangeRenderState(WAITING);
+			m_renderOutput->Reset();
 		}
 
 		RenderScenefile(filedlg.GetPath());
@@ -400,7 +429,7 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		delete m_updateThread;
 		m_updateThread = NULL;
 		m_statusBar->SetStatusText(wxT(""), 0);
-		m_renderOutput->Refresh();
+		m_renderOutput->Reload();
 
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
@@ -437,6 +466,19 @@ void LuxGui::RenderScenefile(wxString filename) {
 	m_progDialog = new wxProgressDialog(wxT("Loading..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 	m_progDialog->Pulse();
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
+}
+
+void LuxGui::OnSelection(wxViewerEvent& event) {
+	if(m_viewerToolBar->GetToolState(ID_ZOOMTOOL) == true) {
+		// Zoom in and de-select anything
+		m_renderOutput->SetZoom(event.GetSelection().get());
+		m_renderOutput->SetSelection(NULL);
+	} else if(m_viewerToolBar->GetToolState(ID_REFINETOOL) == true) {
+		// Highlight current selection
+		m_renderOutput->SetSelection(NULL);
+		m_renderOutput->SetHighlight(event.GetSelection().get());
+		// TODO: Pass selection to the core for actual refinement
+	}
 }
 
 void LuxGui::EngineThread(wxString filename) {
@@ -507,7 +549,15 @@ BEGIN_EVENT_TABLE(LuxOutputWin, wxWindow)
 END_EVENT_TABLE()
 
 LuxOutputWin::LuxOutputWin(wxWindow *parent)
-      : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(-1, -1)) {
+      : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(-1, -1)), wxViewerBase() {
+}
+
+wxWindow* LuxOutputWin::GetWindow() {
+	return this;
+}
+
+void LuxOutputWin::Reload() {
+	Refresh();
 }
 
 void LuxOutputWin::OnDraw(wxDC &dc) {
