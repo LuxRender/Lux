@@ -84,9 +84,10 @@ protected:
 #else // LUX_USE_OPENGL
 
 //dummy class
-class LuxGLViewer : public wxWindow, wxViewerBase {
+class LuxGLViewer : public wxWindow, public wxViewerBase {
 public:
 	LuxGLViewer(wxWindow *parent, int textureW = 256, int textureH = 256) {}
+	virtual wxWindow* GetWindow() { return this; }
 };
 
 #endif // LUX_USE_OPENGL
