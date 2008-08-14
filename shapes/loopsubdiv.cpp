@@ -137,6 +137,11 @@ bool LoopSubdiv::CanIntersect() const {
 }
 
 void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
+	if(refinedShape) {
+		refined.push_back(refinedShape);
+		return;
+	}
+
 	std::stringstream ss;
 	ss << "Refining LoopSubdiv shape, cage mesh size: " << faces.size();
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -341,8 +346,9 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	if (hasUV)
 		paramSet.AddFloat("uv", UVlimit, 2 * v.size());
 	
-	refined.push_back(MakeShape("trianglemesh", ObjectToWorld,
-			reverseOrientation, paramSet));
+	this->refinedShape = MakeShape("trianglemesh", ObjectToWorld,
+		reverseOrientation, paramSet);
+	refined.push_back(this->refinedShape);
 
 	delete[] verts;
 	delete[] Plimit;
