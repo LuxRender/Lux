@@ -243,8 +243,7 @@ SWCSpectrum EstimateDirect(const Scene *scene, const Light *light,
 	SWCSpectrum Ld(0.);
 
 	// Dade - use MIS only if it is worth doing
-	BxDFType noDiffuse = BxDFType(BSDF_ALL &
-			~(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE));
+	BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
 	if (light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0)) {
 
 		// Dade - trace only a single shadow ray
