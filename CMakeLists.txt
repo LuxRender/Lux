@@ -392,7 +392,7 @@ SET(lux_lib_src
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/emission.cpp
         integrators/path.cpp integrators/single.cpp
-		integrators/distributedpath.cpp integrators/particletracing.cpp
+		integrators/distributedpath.cpp 
 		integrators/bidirectional.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
