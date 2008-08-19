@@ -40,13 +40,6 @@ SpotLight::SpotLight(const Transform &light2world,
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
 }
-SWCSpectrum SpotLight::Sample_L(const Point &p, Vector *wi,
-		VisibilityTester *visibility) const {
-	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos);
-	return SWCSpectrum(LSPD) * Falloff(-*wi) /
-		DistanceSquared(lightPos, p);
-}
 float SpotLight::Falloff(const Vector &w) const {
 	Vector wl = Normalize(WorldToLight(w));
 	float costheta = wl.z;
@@ -59,22 +52,25 @@ float SpotLight::Falloff(const Vector &w) const {
 		(cosFalloffStart - cosTotalWidth);
 	return delta*delta*delta*delta;
 }
-SWCSpectrum SpotLight::Sample_L(const Point &p, float u1, float u2, float u3,
+SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
-	return Sample_L(p, wi, visibility);
+	*wi = Normalize(lightPos - p);
+	visibility->SetSegment(p, lightPos);
+	return SWCSpectrum(tspack, LSPD) * Falloff(-*wi) /
+		DistanceSquared(lightPos, p);
 }
 float SpotLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-SWCSpectrum SpotLight::Sample_L(const Scene *scene, float u1,
+SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	ray->o = lightPos;
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
-	return SWCSpectrum(LSPD) * Falloff(ray->d);
+	return SWCSpectrum(tspack, LSPD) * Falloff(ray->d);
 }
 Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));

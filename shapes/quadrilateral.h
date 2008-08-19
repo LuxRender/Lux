@@ -101,7 +101,7 @@ public:
 		}
 	}
 	float Area() const;
-	Point Sample(float u1, float u2, Normal *Ns) const {
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		Point p;
 
 		const Point &p0 = mesh->p[idx[0]];

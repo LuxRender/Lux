@@ -38,7 +38,7 @@ public:
            boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
            boost::shared_ptr<Texture<float> > bump);
 
-  BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
+  BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 
   static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

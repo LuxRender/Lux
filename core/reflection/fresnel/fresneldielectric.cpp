@@ -29,13 +29,9 @@
 #include "sampling.h"
 #include <stdarg.h>
 
-#include <boost/thread/tss.hpp>
-
 using namespace lux;
 
-extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
-
-SWCSpectrum FresnelDielectric::Evaluate(float cosi) const {
+SWCSpectrum FresnelDielectric::Evaluate(const TsPack *tspack, float cosi) const {
 	// Compute Fresnel reflectance for dielectric
 	cosi = Clamp(cosi, -1.f, 1.f);
 	// Compute indices of refraction for dielectric
@@ -44,7 +40,7 @@ SWCSpectrum FresnelDielectric::Evaluate(float cosi) const {
 
 	if(cb != 0.) {
 		// Handle dispersion using cauchy formula
-		float w = thread_wavelengths->SampleSingle();
+		float w = tspack->swl->SampleSingle();
 		et = eta_t + (cb * 1000000) / (w*w);
 	}
 

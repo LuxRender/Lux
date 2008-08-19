@@ -45,18 +45,17 @@ public:
 	void FullyRefine(vector<Primitive* > &refined)
 	const;
 	virtual const AreaLight *GetAreaLight() const = 0;
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dg,
+	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dg,
 		const Transform &WorldToObject, float u) const = 0;
 };
 class  Intersection {
 	public:
 	// Intersection Public Methods
 	Intersection() { primitive = NULL; }
-	BSDF *GetBSDF(const RayDifferential &ray, float u) const;
-	SWCSpectrum Le(const Vector &wo) const;
-	SWCSpectrum Le(const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
+	BSDF *GetBSDF(const TsPack *tspack, const RayDifferential &ray, float u) const;
+	SWCSpectrum Le(const TsPack *tspack, const Vector &wo) const;
+	SWCSpectrum Le(const TsPack *tspack, const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 
-	
 	DifferentialGeometry dg;
 	Transform WorldToObject;
 	const Primitive *primitive;
@@ -75,7 +74,7 @@ public:
 	                   const boost::shared_ptr<Material> &m,
 	                   AreaLight *a);
 	const AreaLight *GetAreaLight() const;
-	BSDF *GetBSDF(const DifferentialGeometry &dg,
+	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dg,
 	              const Transform &WorldToObject, float u) const;
 private:
 	// GeometricPrimitive Private Data
@@ -95,7 +94,7 @@ public:
 	bool Intersect(const Ray &r, Intersection *in) const;
 	bool IntersectP(const Ray &r) const;
 	const AreaLight *GetAreaLight() const { return NULL; }
-	BSDF *GetBSDF(const DifferentialGeometry &dg,
+	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dg,
 	              const Transform &WorldToObject, float u) const {
 		return NULL;
 	}
@@ -111,7 +110,7 @@ class  Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	const AreaLight *GetAreaLight() const;
-	BSDF *GetBSDF(const DifferentialGeometry &dg,
+	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dg,
 	              const Transform &, float u) const;
 };
 

@@ -43,14 +43,14 @@ public:
 								 int drd, int drs, int dtd, int dts, int grd, int grs, int gtd, int gts, int srd, int std);
 	~DistributedPath() { }
 
-	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
-	SWCSpectrum LiInternal(const Scene *scene, const RayDifferential &ray,
+	SWCSpectrum LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, float *alpha, int rayDepth, bool includeEmit) const;
 
 	// DistributedPath Private Data

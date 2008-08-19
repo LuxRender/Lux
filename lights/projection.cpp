@@ -68,13 +68,6 @@ ProjectionLight::
 	cosTotalWidth = cosf(atanf(tanDiag));
 }
 ProjectionLight::~ProjectionLight() { delete projectionMap; }
-SWCSpectrum ProjectionLight::Sample_L(const Point &p, Vector *wi,
-	 	VisibilityTester *visibility) const {
-	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos);
-	return Intensity * Projection(-*wi) /
-		DistanceSquared(lightPos, p);
-}
 Spectrum ProjectionLight::Projection(const Vector &w) const {
 	Vector wl = WorldToLight(w);
 	// Discard directions behind projection light
@@ -88,21 +81,21 @@ Spectrum ProjectionLight::Projection(const Vector &w) const {
 	float t = (Pl.y - screenY0) / (screenY1 - screenY0);
 	return projectionMap->Lookup(s, t);
 }
-SWCSpectrum ProjectionLight::Sample_L(const Point &p, float u1, float u2,
+SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2,
 		float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;
 	visibility->SetSegment(p, lightPos);
-	return Intensity * Projection(-*wi) / DistanceSquared(lightPos, p);
+	return SWCSpectrum(tspack, Intensity * Projection(-*wi) / DistanceSquared(lightPos, p));
 }
-SWCSpectrum ProjectionLight::Sample_L(const Scene *scene, float u1, float u2,
+SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
 	ray->o = lightPos;
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
-	return Intensity * Projection(ray->d);
+	return SWCSpectrum(tspack, Intensity * Projection(ray->d));
 }
 float ProjectionLight::Pdf(const Point &, const Vector &) const {
 	return 0.;

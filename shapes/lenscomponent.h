@@ -35,7 +35,7 @@ public:
         DifferentialGeometry *dg) const;
     bool IntersectP(const Ray &ray) const;
     float Area() const;
-    Point Sample(float u1, float u2, Normal *n) const;
+    Point Sample(float u1, float u2, float u3, Normal *n) const;
 
 	static Shape* CreateShape(const Transform &o2w,
                    bool reverseOrientation,

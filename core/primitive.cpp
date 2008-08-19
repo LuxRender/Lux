@@ -39,33 +39,7 @@ Primitive::Refine(vector<Primitive* > &refined)
 const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Refine method called!");
 }
-/*
-void Primitive::FullyRefine(
-		vector<Primitive* > &refined) const {
-	vector<Primitive* > todo;
-	//Primitive* op(new const_cast<Primitive *>(this));
-	//Primitive* op = const_cast<boost::shared_ptr<Primitive> > (shared_from_this()));
-	//Primitive* op(const_cast<boost::shared_ptr<const Primitive> >(shared_from_this()));
-	//Primitive* op(shared_from_this());
-	Primitive* o;
 
-	//Primitive* o = shared_from_this();
-
-	//Primitive* o;
-	//o.reset(const_cast<Primitive *>(this));
-	//todo.push_back(const_cast<Primitive *>(this));
-	todo.push_back(o);
-	while (todo.size()) {
-		// Refine last primitive in todo list
-		Primitive* prim = todo.back();
-		todo.pop_back();
-		if (prim->CanIntersect())
-			refined.push_back(prim);
-		else
-			prim->Refine(todo);
-	}
-}
-*/ // TODO CLEANUP
 void Primitive::FullyRefine(
 		vector<Primitive* > &refined) const {
 	vector<Primitive*> todo;
@@ -85,7 +59,7 @@ const AreaLight *Aggregate::GetAreaLight() const {
 	luxError(LUX_BUG,LUX_SEVERE,"Aggregate::GetAreaLight() method called; should have gone to GeometricPrimitive");
 	return NULL;
 }
-BSDF *Aggregate::GetBSDF(const DifferentialGeometry &,
+BSDF *Aggregate::GetBSDF(const TsPack *tspack, const DifferentialGeometry &,
 		const Transform &, float u) const {
 	luxError(LUX_BUG,LUX_SEVERE,"Aggregate::GetBSDF() method called; should have gone to GeometricPrimitive");
 	return NULL;
@@ -154,30 +128,30 @@ const AreaLight *GeometricPrimitive::GetAreaLight() const {
 	return areaLight;
 }
 BSDF *
-GeometricPrimitive::GetBSDF(const DifferentialGeometry &dg,
+GeometricPrimitive::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dg,
 		const Transform &WorldToObject, float u) const {
 	DifferentialGeometry dgs;
 	shape->GetShadingGeometry(WorldToObject.GetInverse(),
 		dg, &dgs);
-	return material->GetBSDF(dg, dgs, u);
+	return material->GetBSDF(tspack, dg, dgs, u);
 }
 // Intersection Method Definitions
-BSDF *Intersection::GetBSDF(const RayDifferential &ray, float u)
+BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray, float u)
 		const {
 	// radiance - disabled for threading // static StatsCounter pointsShaded("Shading", "Number of points shaded"); // NOBOOK
 	// radiance - disabled for threading // ++pointsShaded; // NOBOOK
 	dg.ComputeDifferentials(ray);
-	return primitive->GetBSDF(dg, WorldToObject, u);
+	return primitive->GetBSDF(tspack, dg, WorldToObject, u);
 }
-SWCSpectrum Intersection::Le(const Vector &w) const {
+SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const {
 	const AreaLight *area = primitive->GetAreaLight();
-	return area ? area->L(dg.p, dg.nn, w) : SWCSpectrum(0.);
+	return area ? area->L(tspack, dg.p, dg.nn, w) : SWCSpectrum(0.);
 }
-SWCSpectrum Intersection::Le(const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+SWCSpectrum Intersection::Le(const TsPack *tspack, const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	const AreaLight *area = primitive->GetAreaLight();
 	if (area)
-		return area->L(ray, dg, n, bsdf, pdf, pdfDirect);
+		return area->L(tspack, ray, dg, n, bsdf, pdf, pdfDirect);
 	*pdf = *pdfDirect = 0.f;
 	*bsdf = NULL;
 	return 0.f;

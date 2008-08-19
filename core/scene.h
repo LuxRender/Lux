@@ -61,6 +61,7 @@ public:
     Sampler *sampler;
     Camera *camera;
     Scene *scene;
+	TsPack *tspack;
     boost::thread *thread; // keep pointer to delete the thread object
 };
 
@@ -83,7 +84,7 @@ public:
     const BBox &WorldBound() const;
     SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
             float *alpha = NULL) const;
-    SWCSpectrum Transmittance(const Ray &ray) const;
+    SWCSpectrum Transmittance(const TsPack *tspack, const Ray &ray) const;
 
     //Control methods
     void Start();
@@ -142,6 +143,7 @@ private:
     std::vector<RenderThread*> renderThreads;
     //boost::thread_group threadGroup;
     ThreadSignals CurThreadSignal;
+	TsPack *tspack;
 };
 
 }//namespace lux

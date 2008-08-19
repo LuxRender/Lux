@@ -42,7 +42,7 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens),
 		FocalDistance(FD), fov(f), xWidth(xW), yHeight(yH), Area(A),
 		p(pL), RasterToCamera(R2C) {}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const
+	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const
 	{
 		Vector wo0(wo);
 		wo0.y = -wo0.y;//FIXME
@@ -60,7 +60,7 @@ public:
 			return SWCSpectrum(1.f / (Area * cos2 * cos2));
 		}
 	}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi, float u1, float u2,
+	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		Point pS(RasterToCamera(Point(u1, u2, 0.f)));
@@ -218,7 +218,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 		Point lenP;
 		float lenPdf;
 		// Sample point on lens
-		SamplePosition(sample.lensU, sample.lensV, &lenP, &lenPdf);
+		SamplePosition(sample.lensU, sample.lensV, 1.f, &lenP, &lenPdf); // TODO - REFACT - remove and add passed sample value
 		Point lenPCamera(WorldToCamera(lenP));
 		float lensU = lenPCamera.x;
 		float lensV = lenPCamera.y;;
@@ -363,7 +363,7 @@ void PerspectiveCamera::GetFlux2RadianceFactors(Film *film, float *factors, int 
 	}
 }
 
-void PerspectiveCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+void PerspectiveCamera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
 {
 	if (LensRadius==0.0f)
 	{

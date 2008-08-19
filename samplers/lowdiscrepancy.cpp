@@ -24,7 +24,7 @@
 #include "lowdiscrepancy.h"
 #include "error.h"
 #include "vegas.h"
-#include "randompx.h"
+//#include "randompx.h"
 #include "lowdiscrepancypx.h"
 #include "tilepx.h"
 #include "linear.h"
@@ -50,8 +50,8 @@ LDSampler::LDSampler(int xstart, int xend,
 		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "lowdiscrepancy")
 		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "random")
-		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
+//	else if(pixelsampler == "random")
+//		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
     else if((pixelsampler == "tile") || (pixelsampler == "grid"))
 		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "hilbert")
@@ -134,15 +134,15 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
-		LDShuffleScrambled2D(1, pixelSamples, imageSamples);
-		LDShuffleScrambled2D(1, pixelSamples, lensSamples);
-		LDShuffleScrambled1D(1, pixelSamples, timeSamples);
-		LDShuffleScrambled1D(1, pixelSamples, wavelengthsSamples);
+		LDShuffleScrambled2D(tspack, 1, pixelSamples, imageSamples);
+		LDShuffleScrambled2D(tspack, 1, pixelSamples, lensSamples);
+		LDShuffleScrambled1D(tspack, 1, pixelSamples, timeSamples);
+		LDShuffleScrambled1D(tspack, 1, pixelSamples, wavelengthsSamples);
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			LDShuffleScrambled1D(sample->n1D[i], pixelSamples,
+			LDShuffleScrambled1D(tspack, sample->n1D[i], pixelSamples,
 				oneDSamples[i]);
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			LDShuffleScrambled2D(sample->n2D[i], pixelSamples,
+			LDShuffleScrambled2D(tspack, sample->n2D[i], pixelSamples,
 				twoDSamples[i]);
 		float *xDSamp;
 		for (u_int i = 0; i < sample->nxD.size(); ++i) {
@@ -150,12 +150,12 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			for (u_int j = 0; j < sample->sxD[i].size(); ++j) {
 				switch (sample->sxD[i][j]) {
 				case 1: {
-					LDShuffleScrambled1D(sample->nxD[i],
+					LDShuffleScrambled1D(tspack, sample->nxD[i],
 						pixelSamples, xDSamp);
 					xDSamp += sample->nxD[i] * pixelSamples;
 					break; }
 				case 2: {
-					LDShuffleScrambled2D(sample->nxD[i],
+					LDShuffleScrambled2D(tspack, sample->nxD[i],
 						pixelSamples, xDSamp);
 					xDSamp += 2 * sample->nxD[i] * pixelSamples;
 					break; }
@@ -178,7 +178,7 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	sample->lensV = lensSamples[2*samplePos+1];
 	sample->time = timeSamples[samplePos];
 	sample->wavelengths = wavelengthsSamples[samplePos];
-	sample->singleWavelength = lux::random::floatValue();//singleWavelengthSamples[samplePos]
+	sample->singleWavelength = tspack->rng->floatValue();//singleWavelengthSamples[samplePos]
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		int startSamp = sample->n1D[i] * samplePos;
 		for (u_int j = 0; j < sample->n1D[i]; ++j)

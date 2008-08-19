@@ -221,9 +221,6 @@ void Scene::SignalThreads(ThreadSignals signal) {
     CurThreadSignal = signal;
 }
 
-// thread specific wavelengths
-extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
-
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread) {
     // Dade - wait the end of the preprocessing phase
@@ -243,12 +240,17 @@ void RenderThread::render(RenderThread *myThread) {
     std::stringstream ss;
     ss << "Thread " << myThread->n << " uses seed: " << seed;
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-    lux::random::init(seed);
 
-    // initialize the thread's spectral wavelengths
-    thread_wavelengths.reset(new SpectrumWavelengths());
-    SpectrumWavelengths *thr_wl = thread_wavelengths.get();
-    
+	// initialize the threads tspack
+	myThread->tspack = new TsPack();									// TODO - radiance - remove
+
+	myThread->tspack->swl = new SpectrumWavelengths();
+	myThread->tspack->rng = new RandomGenerator();
+	myThread->tspack->rng->init(seed);
+	// TODO add bsdf arena
+
+    myThread->sampler->SetTsPack(myThread->tspack);
+
     // allocate sample pos
     u_int *useSampPos = new u_int();
     *useSampPos = 0;
@@ -278,14 +280,14 @@ void RenderThread::render(RenderThread *myThread) {
 		}
 
 		// Dade - check if the integrator support SWC
-		if (myThread->surfaceIntegrator->IsSWCSupported()) {
+		if (myThread->surfaceIntegrator->IsSWCSupported()) {						// COCACOCA -> remove ?
 			// Sample new SWC thread wavelengths
-			thr_wl->Sample(myThread->sample->wavelengths,
+			myThread->tspack->swl->Sample(myThread->sample->wavelengths,
 					myThread->sample->singleWavelength);
 		} else {
 			myThread->sample->wavelengths = 0.5f;
 			myThread->sample->singleWavelength = 0.5f;
-			thr_wl->Sample(0.5f, 0.5f);
+			myThread->tspack->swl->Sample(0.5f, 0.5f);
 		}
         
         while(myThread->signal == PAUSE) {
@@ -313,9 +315,9 @@ void RenderThread::render(RenderThread *myThread) {
 
             // Evaluate radiance along camera ray
             float alpha;
-            SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
-            /*			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->scene, ray, myThread->sample, &alpha);
-                        SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->scene, ray, myThread->sample, &alpha);
+            SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
+            /*			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
+                        SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
                         SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );*/
 
             if (Lo.Black())
@@ -387,16 +389,21 @@ void Scene::Render() {
     std::stringstream ss;
     ss << "Preprocess thread uses seed: " << seed;
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-    lux::random::init(seed);
 
-    // initialize the thread's spectral wavelengths
-    thread_wavelengths.reset(new SpectrumWavelengths());
+	// initialize the preprocess thread's tspack
+	tspack = new TsPack();
+	tspack->swl = new SpectrumWavelengths();				// TODO - REFACT - check sample wavelengths
+	tspack->rng = new RandomGenerator();
+	tspack->rng->init(seed);
+	// TODO add bsdf arena
+
+    sampler->SetTsPack(tspack);
 
     // integrator preprocessing
     camera->film->SetScene(this);
     sampler->SetFilm(camera->film);
-    surfaceIntegrator->Preprocess(this);
-    volumeIntegrator->Preprocess(this);
+    surfaceIntegrator->Preprocess(tspack, this);
+    volumeIntegrator->Preprocess(tspack, this);
 
 	// Dade - to support autofocus for some camera model
 	camera->AutoFocus(this);
@@ -482,6 +489,6 @@ SWCSpectrum Scene::Li(const RayDifferential &ray,
 	return 0.;
 }
 
-SWCSpectrum Scene::Transmittance(const Ray &ray) const {
-    return volumeIntegrator->Transmittance(this, ray, NULL, NULL);
+SWCSpectrum Scene::Transmittance(const TsPack *tspack, const Ray &ray) const {
+    return volumeIntegrator->Transmittance(tspack, this, ray, NULL, NULL);
 }

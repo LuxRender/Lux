@@ -30,7 +30,7 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
+BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
@@ -41,7 +41,7 @@ BSDF *Matte::GetBSDF(const DifferentialGeometry &dgGeom,
 	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
 	// Evaluate textures for _Matte_ material and allocate BRDF
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum r(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum r(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
 	float sig = Clamp(sigma->Evaluate(dgs), 0.f, 90.f);
 	if (sig == 0.)
 		bsdf->Add(BSDF_ALLOC(Lambertian)(r));

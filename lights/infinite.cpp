@@ -61,7 +61,7 @@ InfiniteAreaLight
 }
 
 SWCSpectrum
-	InfiniteAreaLight::Le(const RayDifferential &r) const {
+	InfiniteAreaLight::Le(const TsPack *tspack, const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
 	
@@ -76,9 +76,9 @@ SWCSpectrum
 		L *= radianceMap->Lookup(s, t);
 	}
 
-	return SWCSpectrum(SPDbase) * SWCSpectrum(L);
+	return SWCSpectrum(tspack, SPDbase) * SWCSpectrum(tspack, L);
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
+SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
@@ -102,12 +102,12 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(u3 * nrPortalShapes));
+					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 		Normal ns;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 			*wi = Normalize(ps - p);
 			if (Dot(*wi, ns) < 0.f) {
 				found = true;
@@ -126,13 +126,13 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		}
 	}
 	visibility->SetRay(p, *wi);
-	return Le(RayDifferential(p, *wi));
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float InfiniteAreaLight::Pdf(const Point &, const Normal &n,
 		const Vector &wi) const {
 	return AbsDot(n, wi) * INV_TWOPI;
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
+SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	if(!havePortalShape) {
@@ -143,12 +143,12 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(lux::random::floatValue() * nrPortalShapes));
+					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 		Normal ns;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 			*wi = Normalize(ps - p);
 			if (Dot(*wi, ns) < 0.f) {
 				found = true;
@@ -167,12 +167,12 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
 		}
 	}
 	visibility->SetRay(p, *wi);
-	return Le(RayDifferential(p, *wi));
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float InfiniteAreaLight::Pdf(const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const Scene *scene,
+SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	if(!havePortalShape) {
@@ -200,25 +200,17 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const Scene *scene,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(lux::random::floatValue() * nrPortalShapes));
+					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		Normal ns;
-		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, &ns);
+		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 		ray->d = UniformSampleSphere(u3, u4);
 		if (Dot(ray->d, ns) < 0.) ray->d *= -1;
 
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
 	}
 
-	return Le(RayDifferential(ray->o, -ray->d));
-}
-SWCSpectrum InfiniteAreaLight::Sample_L(const Point &p,
-		Vector *wi, VisibilityTester *visibility) const {
-	float pdf;
-	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
-		lux::random::floatValue(), wi, &pdf, visibility);
-	if (pdf == 0.f) return SWCSpectrum(0.f);
-	return L / pdf;
+	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
 Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {

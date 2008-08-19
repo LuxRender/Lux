@@ -34,16 +34,15 @@ public:
 	// SpotLight Public Methods
 	SpotLight(const Transform &light2world, const Spectrum &, float gain, float width, float fall);
 	~SpotLight() { delete LSPD; }
-	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
 	bool IsDeltaLight() const { return true; }
 	float Falloff(const Vector &w) const;
-	SWCSpectrum Power(const Scene *) const {
-		return SWCSpectrum(LSPD) * 2.f * M_PI *
+	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
+		return SWCSpectrum(tspack, LSPD) * 2.f * M_PI *
 			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
 	}
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 			Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
 	

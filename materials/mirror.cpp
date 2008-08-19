@@ -30,7 +30,7 @@
 using namespace lux;
 
 // Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -39,7 +39,7 @@ BSDF *Mirror::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeom
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
 			BSDF_ALLOC( FresnelNoOp)()));

@@ -34,17 +34,16 @@ void SingleScattering::RequestSamples(Sample *sample,
 	scatterSampleOffset = sample->Add1D(1);
 }
 
-SWCSpectrum SingleScattering::Transmittance(const Scene *scene,
+SWCSpectrum SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
 		const Ray &ray, const Sample *sample, float *alpha) const {
 	if (!scene->volumeRegion) return SWCSpectrum(1.f);
 	float step = sample ? stepSize : 4.f * stepSize;
-	float offset = sample ? sample->oneD[tauSampleOffset][0] :
-		lux::random::floatValue();
-	SWCSpectrum tau = scene->volumeRegion->Tau(ray, step, offset);
+	float offset = sample->oneD[tauSampleOffset][0];
+	SWCSpectrum tau = SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
 	return Exp(-tau);
 }
 
-SWCSpectrum SingleScattering::Li(const Scene *scene,
+SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;
@@ -58,33 +57,30 @@ SWCSpectrum SingleScattering::Li(const Scene *scene,
 	SWCSpectrum Tr(1.f);
 	Point p = ray(t0), pPrev;
 	Vector w = -ray.d;
-	if (sample)
-		t0 += sample->oneD[scatterSampleOffset][0] * step;
-	else
-		t0 += lux::random::floatValue() * step;
+	t0 += sample->oneD[scatterSampleOffset][0] * step;
 	// Compute sample patterns for single scattering samples
 	float *samp = (float *)alloca(4 * N * sizeof(float));
-	LatinHypercube(samp, N, 4);
+	LatinHypercube(tspack, samp, N, 4);
 	int sampOffset = 0;
 	for (int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
 		pPrev = p;
 		p = ray(t0);
 
-		SWCSpectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
-			.5f * stepSize, lux::random::floatValue());
+		SWCSpectrum stepTau = SWCSpectrum(tspack, vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
+			.5f * stepSize, tspack->rng->floatValue())); // TODO - REFACT - remove and add random value from sample
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.filter() < 1e-3) {
+		if (Tr.filter(tspack) < 1e-3) {
 			const float continueProb = .5f;
-			if (lux::random::floatValue() > continueProb) break;
+			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 
 		// Compute single-scattering source term at _p_
-		Lv += Tr * vr->Lve(p, w);
+		Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
 
-		SWCSpectrum ss = vr->sigma_s(p, w);
+		SWCSpectrum ss = SWCSpectrum(tspack, vr->sigma_s(p, w));
 		if (!ss.Black() && scene->lights.size() > 0) {
 			int nLights = scene->lights.size();
 			int lightNum =
@@ -97,12 +93,12 @@ SWCSpectrum SingleScattering::Li(const Scene *scene,
 			VisibilityTester vis;
 			Vector wo;
 			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2], u3 = samp[sampOffset+3];
-			SWCSpectrum L = light->Sample_L(p, u1, u2, u3, &wo, &pdf, &vis);
+			SWCSpectrum L = light->Sample_L(tspack, p, u1, u2, u3, &wo, &pdf, &vis);
 
 			// Dade - use the new TestOcclusion() method
 			SWCSpectrum occlusion;
-			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(scene, &occlusion)) {	
-				SWCSpectrum Ld = L * occlusion * vis.Transmittance(scene);
+			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(tspack, scene, &occlusion)) {	
+				SWCSpectrum Ld = L * occlusion * vis.Transmittance(tspack, scene);
 				Lv += Tr * ss * vr->p(p, w, -wo) *
 					  Ld * float(nLights) / pdf;
 			}

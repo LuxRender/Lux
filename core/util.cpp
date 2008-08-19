@@ -302,18 +302,6 @@ void ProgressReporter::Done() const {
 	fflush(outFile);
 }
 
-// radiance - leave this here, it defines the main myGen thread local pointer
-#include "randomgen.h"
-namespace lux
-{
-namespace random
-{
-	// thread local pointer to boost random generator
-	boost::thread_specific_ptr<RandomGenerator> myGen;
-}
-}
-
-
 namespace lux
 {
 /* string hashing function

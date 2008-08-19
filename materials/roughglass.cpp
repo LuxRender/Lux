@@ -32,7 +32,7 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -44,8 +44,8 @@ BSDF *RoughGlass::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 	float cb = cauchyb->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
-	SWCSpectrum T(Kt->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	float urough = uroughness->Evaluate(dgs);
 	float vrough = vroughness->Evaluate(dgs);
 	if (!R.Black()) {

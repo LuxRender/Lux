@@ -50,10 +50,9 @@ namespace lux
 
 #define RAN_BUFFER_AMOUNT 2048
 
-namespace lux
-{
+static const float invUI = ((float)1.0/(float)4294967296.0);
 
-namespace random
+namespace lux
 {
 
 class RandomGenerator
@@ -79,6 +78,10 @@ public:
 	  for(int i=0; i<10; i++) nobuf_generateUInt();
 	}
 
+	inline void init(int tn) {
+		taus113_set(tn);
+	}
+
 	inline unsigned long nobuf_generateUInt() {
 	  const unsigned long b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
 	  z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
@@ -95,7 +98,7 @@ public:
 	  return (z1 ^ z2 ^ z3 ^ z4);
 	}
 
-	inline unsigned long generateUInt() {
+	inline unsigned long uintValue() {
 	  // Repopulate buffer if necessary
 	  if(bufid == RAN_BUFFER_AMOUNT) {
 		  for(int i=0; i<RAN_BUFFER_AMOUNT; i++)
@@ -107,32 +110,27 @@ public:
 	  bufid++;
 	  return ii; 
 	}
-	
+
+	inline float floatValue() {
+	  // Repopulate buffer if necessary
+	  if(bufid == RAN_BUFFER_AMOUNT) {
+		  for(int i=0; i<RAN_BUFFER_AMOUNT; i++)
+			  buf[i] = nobuf_generateUInt();
+		  bufid = 0;
+	  }
+
+	  unsigned long int ii = buf[bufid];
+	  bufid++;
+	  return ii * invUI; 
+	}
+
 private:
 	unsigned long int z1, z2, z3, z4;
 	unsigned long int *buf;
 	int bufid;
 };
 
-// thread local pointer to boost random generator
-extern boost::thread_specific_ptr<RandomGenerator> myGen;
-
-static const float invUI = ((float)1.0/(float)4294967296.0);
-
-inline void init(int tn) {
-	if(!myGen.get())
-		myGen.reset(new RandomGenerator);
-
-	myGen->taus113_set(tn);
-}
-
-// request RN's during render threads (uses per thread rangen/seed)
-inline float floatValue() { 
-	return myGen->generateUInt() * invUI;
-}
-inline unsigned long uintValue() { 
-	return myGen->generateUInt();
-}
+namespace random {
 
 static RandomGenerator* PGen;
 // request RN's during engine initialization (pre threads)
@@ -152,6 +150,7 @@ inline unsigned long uintValueP() {
 }
 
 } // random
+
 } // lux
 
 #endif //LUX_RANDOM_H

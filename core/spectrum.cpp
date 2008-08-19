@@ -26,8 +26,6 @@
 #include "regular.h"
 #include "memory.h"
 
-#include <boost/thread/tss.hpp>
-
 using namespace lux;
 
 // Spectrum Method Definitions
@@ -49,11 +47,8 @@ float Spectrum::ZWeight[COLOR_SAMPLES] = {
 	0.019334f, 0.119193f, 0.950227f
 };
 
-// thread specific wavelengths
-boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
-
-XYZColor SWCSpectrum::ToXYZ() const {
-	SpectrumWavelengths *sw = thread_wavelengths.get();
+XYZColor SWCSpectrum::ToXYZ(const TsPack *tspack) const {
+	SpectrumWavelengths *sw = tspack->swl;
 	float xyz[3];
 	xyz[0] = xyz[1] = xyz[2] = 0.;
 	if (sw->single) {
@@ -75,8 +70,8 @@ XYZColor SWCSpectrum::ToXYZ() const {
 	return XYZColor(xyz);
 }
 
-Scalar SWCSpectrum::y() const {
-	SpectrumWavelengths *sw = thread_wavelengths.get();
+Scalar SWCSpectrum::y(const TsPack *tspack) const {
+	SpectrumWavelengths *sw = tspack->swl;
 	Scalar y = 0.f;
 
 	if (sw->single) {
@@ -91,9 +86,9 @@ Scalar SWCSpectrum::y() const {
 
 	return y;
 }
-Scalar SWCSpectrum::filter() const
+Scalar SWCSpectrum::filter(const TsPack *tspack) const
 {
-	SpectrumWavelengths *sw = thread_wavelengths.get();
+	SpectrumWavelengths *sw = tspack->swl;
 	Scalar result = 0.f;
 	if (sw->single) {
 		result = c[sw->single_w];
@@ -105,15 +100,15 @@ Scalar SWCSpectrum::filter() const
 	return result;
 }
 
-SWCSpectrum::SWCSpectrum(const SPD *s) {
-	SpectrumWavelengths *sw = thread_wavelengths.get();
+SWCSpectrum::SWCSpectrum(const TsPack *tspack, const SPD *s) {
+	SpectrumWavelengths *sw = tspack->swl;
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
 		c[j] = s->sample(sw->w[j]);
 	}
 }
 
-SWCSpectrum::SWCSpectrum(Spectrum s) {
-	SpectrumWavelengths *sw = thread_wavelengths.get();
+SWCSpectrum::SWCSpectrum(const TsPack *tspack, Spectrum s) {
+	SpectrumWavelengths *sw = tspack->swl;
 	const float r = s.c[0];
 	const float g = s.c[1];
 	const float b = s.c[2];

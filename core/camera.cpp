@@ -65,7 +65,7 @@ bool Camera::IsDelta() const
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
 	return true;
 }
-void Camera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+void Camera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::SamplePosition() method called");
 }

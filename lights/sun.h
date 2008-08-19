@@ -35,25 +35,24 @@ public:
 	// SunLight Public Methods
 	SunLight(const Transform &light2world, const float sunscale, const Vector &dir, float turb, float relSize, int ns);
 	bool IsDeltaLight() const { return cosThetaMax == 1.0 ? true : false; }
-	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *) const;
-	SWCSpectrum Power(const Scene *scene) const {
+	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                   &worldRadius);
-		return SWCSpectrum(LSPD) * M_PI * worldRadius * worldRadius;
+		return SWCSpectrum(tspack, LSPD) * M_PI * worldRadius * worldRadius;
 	}
-	SWCSpectrum Le(const RayDifferential &r) const;
-	SWCSpectrum Le(const Scene *scene, const Ray &r,
+	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
 
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
-	SWCSpectrum Sample_L(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const;
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

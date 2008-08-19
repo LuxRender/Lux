@@ -31,7 +31,7 @@
 using namespace lux;
 
 // Substrate Method Definitions
-BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
+BSDF *Substrate::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -40,8 +40,8 @@ BSDF *Substrate::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialG
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum d(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
-	SWCSpectrum s(Ks->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum d(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum s(tspack, Ks->Evaluate(dgs).Clamp(0.f, 1.f));
 
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);

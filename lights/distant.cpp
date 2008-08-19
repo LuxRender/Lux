@@ -36,21 +36,17 @@ DistantLight::DistantLight(const Transform &light2world,
 	LSPD = new RGBIllumSPD(radiance);
 	LSPD->Scale(gain);
 }
-SWCSpectrum DistantLight::Sample_L(const Point &p,
-		Vector *wi, VisibilityTester *visibility) const {
-	*wi = lightDir;
-	visibility->SetRay(p, *wi);
-	return SWCSpectrum(LSPD);
-}
-SWCSpectrum DistantLight::Sample_L(const Point &p, float u1, float u2, float u3,
+SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
-	return Sample_L(p, wi, visibility);
+	*wi = lightDir;
+	visibility->SetRay(p, *wi);
+	return SWCSpectrum(tspack, LSPD);
 }
 float DistantLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-SWCSpectrum DistantLight::Sample_L(const Scene *scene,
+SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	// Choose point on disk oriented toward infinite light direction
@@ -68,7 +64,7 @@ SWCSpectrum DistantLight::Sample_L(const Scene *scene,
 	ray->o = Pdisk + worldRadius * lightDir;
 	ray->d = -lightDir;
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
-	return SWCSpectrum(LSPD);
+	return SWCSpectrum(tspack, LSPD);
 }
 Light* DistantLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {

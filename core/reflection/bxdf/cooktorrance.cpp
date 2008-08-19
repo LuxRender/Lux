@@ -42,7 +42,7 @@ CookTorrance::CookTorrance(const SWCSpectrum &kd, u_int nl,
   fresnel = fres;
 }
 
-SWCSpectrum CookTorrance::f(const Vector &wo, const Vector &wi) const {
+SWCSpectrum CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
   SWCSpectrum ret = KD * INV_PI;
 
   float cosThetaO = fabsf(CosTheta(wo));
@@ -53,8 +53,7 @@ SWCSpectrum CookTorrance::f(const Vector &wo, const Vector &wi) const {
 
   for (u_int i = 0; i < nLobes; i++) {
     // Add contribution for $i$th Cook-Torrance lobe
-
-    ret += KS[i] * distribution[i]->D(wh) * cG * fresnel[i]->Evaluate(cosThetaH) / (M_PI * cosThetaI * cosThetaO);
+    ret += KS[i] * distribution[i]->D(wh) * cG * fresnel[i]->Evaluate(tspack, cosThetaH) / (M_PI * cosThetaI * cosThetaO);
   }
   return ret;
 }
@@ -67,9 +66,9 @@ float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) cons
   return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));
 }
 
-SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
+SWCSpectrum CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
   // Pick a random component
-  u_int comp = lux::random::uintValue() % (nLobes+1);
+  u_int comp = tspack->rng->uintValue() % (nLobes+1);								// TODO - REFACT - remove and add random value from sample
 
   if (comp == nLobes) {
     // The diffuse term; cosine-sample the hemisphere, flipping the direction if necessary
@@ -81,22 +80,22 @@ SWCSpectrum CookTorrance::Sample_f(const Vector &wo, Vector *wi, float u1, float
     // Sample lobe number _comp_ for Cook-Torrance BRDF
    distribution[comp]->Sample_f(wo, wi, u1, u2, pdf);
   }
-  *pdf = Pdf(wo, *wi);
+  *pdf = Pdf(tspack, wo, *wi);
   if (*pdf == 0.f) {
 	  if (pdfBack)
 		  *pdfBack = 0.f;
 	  return SWCSpectrum(0.f);
   }
   if (pdfBack)
-	  *pdfBack = Pdf(*wi, wo);
+	  *pdfBack = Pdf(tspack, *wi, wo);
 
   if (reverse)
-	  return f(*wi, wo) * (wo.z / wi->z);
+	  return f(tspack, *wi, wo) * (wo.z / wi->z);
   else
-	  return f(wo, *wi);
+	  return f(tspack, wo, *wi);
 }
 
-float CookTorrance::Pdf(const Vector &wo, const Vector &wi) const {
+float CookTorrance::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
   if (!SameHemisphere(wo, wi))
     return 0.f;
 

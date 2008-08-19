@@ -31,7 +31,7 @@
 
 using namespace lux;
 
-SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
+SWCSpectrum SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	// Compute perfect specular reflection direction
 	*wi = Vector(-wo.x, -wo.y, wo.z);
@@ -39,14 +39,14 @@ SWCSpectrum SpecularReflection::Sample_f(const Vector &wo,
 	if (pdfBack)
 		*pdfBack = 1.f;
 	if (reverse)
-		return fresnel->Evaluate(CosTheta(*wi)) * R /
+		return fresnel->Evaluate(tspack, CosTheta(*wi)) * R /
 			fabsf(CosTheta(*wi));
 	else
-		return fresnel->Evaluate(CosTheta(wo)) * R /
+		return fresnel->Evaluate(tspack, CosTheta(wo)) * R /
 			fabsf(CosTheta(*wi));
 }
 
-SWCSpectrum ArchitecturalReflection::Sample_f(const Vector &wo,
+SWCSpectrum ArchitecturalReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const
 {
 	if (wo.z <= 0.f) {
@@ -55,5 +55,5 @@ SWCSpectrum ArchitecturalReflection::Sample_f(const Vector &wo,
 			*pdfBack = 0.f;
 		return 0.f;
 	}
-	return SpecularReflection::Sample_f(wo, wi, u1, u2, pdf, pdfBack, reverse);
+	return SpecularReflection::Sample_f(tspack, wo, wi, u1, u2, pdf, pdfBack, reverse);
 }

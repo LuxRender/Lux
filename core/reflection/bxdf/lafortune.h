@@ -36,10 +36,10 @@ public:
 	Lafortune(const SWCSpectrum &r, u_int nl,
 	          const SWCSpectrum *x, const SWCSpectrum *y, const SWCSpectrum *z,
 			  const SWCSpectrum *e, BxDFType t);
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
-	SWCSpectrum Sample_f(const Vector &wi, Vector *sampled_f,
+	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wi, Vector *sampled_f,
 		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	float Pdf(const Vector &wi, const Vector &wo) const;
+	float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 private:
 	// Lafortune Private Data
 	SWCSpectrum R;

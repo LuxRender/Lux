@@ -37,7 +37,7 @@ using namespace lux;
 #define SAMPLE_FLOATS 7
 
 // quasi random number generator
-static float qrNumber(u_int generation, u_int scramble, u_int order)
+static float qrNumber(const TsPack *tspack, u_int generation, u_int scramble, u_int order)
 {
 	switch (order) {
 	case 0:
@@ -47,7 +47,7 @@ static float qrNumber(u_int generation, u_int scramble, u_int order)
 //		return Sobol2(generation, scramble);
 		return Halton2(generation, scramble);
 	default:
-		return lux::random::floatValue();
+		return tspack->rng->floatValue();
 	}
 }
 
@@ -134,7 +134,7 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
 	sampler->scramble = (u_int *)AllocAligned(sampler->totalSamples * sizeof(u_int));
 	for (int i = 0; i < sampler->totalSamples; ++i)
-		sampler->scramble[i] = lux::random::uintValue();
+		sampler->scramble[i] = sampler->tspack->rng->uintValue();
 }
 
 // interface for new ray/samples from scene
@@ -142,7 +142,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
 	++generation;
-	const float mutationSelector = lux::random::floatValue();
+	const float mutationSelector = tspack->rng->floatValue();
 	large = (mutationSelector < pLarge) || initCount < initSamples;
 	if (sampleImage == NULL) {
 		initMetropolis(this, sample);
@@ -152,7 +152,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	if (generation >= 1024) {
 		// Change randomization to avoid artefacts
 		for (int i = 0; i < totalSamples; ++i)
-			scramble[i] = lux::random::uintValue();
+			scramble[i] = tspack->rng->uintValue();
 		generation = 0;
 	}
 
@@ -164,8 +164,8 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if(currentStrata == strataSqr) {
 
 			// Generate shuffled stratified image samples
-			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
-			Shuffle(strataSamples, strataSqr, 2);
+			StratifiedSample2D(tspack, strataSamples, strataWidth, strataWidth, true);
+			Shuffle(tspack, strataSamples, strataSqr, 2);
 			currentStrata = 0;
 		}
 
@@ -174,13 +174,13 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		currentStrata++;
 
-		sample->lensU = qrNumber(generation, scramble[2], 0 + orderOffset);
-		sample->lensV = qrNumber(generation, scramble[3], 1 + orderOffset);
-		sample->time = qrNumber(generation, scramble[4], 0 + orderOffset);
-		sample->wavelengths = qrNumber(generation, scramble[5], 0 + orderOffset);
-		sample->singleWavelength = qrNumber(generation, scramble[6], 0 + orderOffset);
+		sample->lensU = qrNumber(tspack, generation, scramble[2], 0 + orderOffset);
+		sample->lensV = qrNumber(tspack, generation, scramble[3], 1 + orderOffset);
+		sample->time = qrNumber(tspack, generation, scramble[4], 0 + orderOffset);
+		sample->wavelengths = qrNumber(tspack, generation, scramble[5], 0 + orderOffset);
+		sample->singleWavelength = qrNumber(tspack, generation, scramble[6], 0 + orderOffset);
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = qrNumber(generation, scramble[i], (i & 1) + orderOffset);
+			sample->oneD[0][i - SAMPLE_FLOATS] = qrNumber(tspack, generation, scramble[i], (i & 1) + orderOffset);
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -188,7 +188,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		// *** small mutation ***
 		// mutate current sample
 		if (1.f - mutationSelector < pMicro)
-			numMicro = min<int>(sample->nxD.size(), Float2Int(lux::random::floatValue() * (sample->nxD.size() + 1))) - 1;
+			numMicro = min<int>(sample->nxD.size(), Float2Int(tspack->rng->floatValue() * (sample->nxD.size() + 1))) - 1;
 		else
 			numMicro = -1;
 		if (numMicro >= 0) {
@@ -196,18 +196,18 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			for (; maxPos < sample->nxD[numMicro]; ++maxPos)
 				if (sample->timexD[numMicro][maxPos] < sample->stamp)
 					break;
-			posMicro = min<int>(sample->nxD[numMicro] - 1, Float2Int(lux::random::floatValue() * maxPos));
+			posMicro = min<int>(sample->nxD[numMicro] - 1, Float2Int(tspack->rng->floatValue() * maxPos));
 		} else {
 			posMicro = -1;
-			sample->imageX = mutateScaled(sampleImage[0], qrNumber(generation, scramble[0], 0 + orderOffset), xPixelStart, xPixelEnd, range);
-			sample->imageY = mutateScaled(sampleImage[1], qrNumber(generation, scramble[1], 1 + orderOffset), yPixelStart, yPixelEnd, range);
-			sample->lensU = mutate(sampleImage[2], qrNumber(generation, scramble[2], 0 + orderOffset));
-			sample->lensV = mutate(sampleImage[3], qrNumber(generation, scramble[3], 1 + orderOffset));
-			sample->time = mutate(sampleImage[4], qrNumber(generation, scramble[4], 0 + orderOffset));
-			sample->wavelengths = mutate(sampleImage[5], qrNumber(generation, scramble[5], 0 + orderOffset));
-			sample->singleWavelength = qrNumber(generation, scramble[6], 0 + orderOffset);//mutate(sampleImage[6], qrNumber(generation, scramble[6], 0 + orderOffset))
+			sample->imageX = mutateScaled(sampleImage[0], qrNumber(tspack, generation, scramble[0], 0 + orderOffset), xPixelStart, xPixelEnd, range);
+			sample->imageY = mutateScaled(sampleImage[1], qrNumber(tspack, generation, scramble[1], 1 + orderOffset), yPixelStart, yPixelEnd, range);
+			sample->lensU = mutate(sampleImage[2], qrNumber(tspack, generation, scramble[2], 0 + orderOffset));
+			sample->lensV = mutate(sampleImage[3], qrNumber(tspack, generation, scramble[3], 1 + orderOffset));
+			sample->time = mutate(sampleImage[4], qrNumber(tspack, generation, scramble[4], 0 + orderOffset));
+			sample->wavelengths = mutate(sampleImage[5], qrNumber(tspack, generation, scramble[5], 0 + orderOffset));
+			sample->singleWavelength = qrNumber(tspack, generation, scramble[6], 0 + orderOffset);//mutate(sampleImage[6], qrNumber(tspack, generation, scramble[6], 0 + orderOffset))
 			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], qrNumber(generation, scramble[i], (i & 1) + orderOffset));
+				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], qrNumber(tspack, generation, scramble[i], (i & 1) + orderOffset));
 		}
 		++(sample->stamp);
 	}
@@ -224,7 +224,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	if (sample->timexD[num][pos] != sample->stamp) {
 		if (sample->timexD[num][pos] == -1) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
-				data[i] = qrNumber(generation - sample->stamp, scramble[scrambleOffset + i], (i & 1) + orderOffset);
+				data[i] = qrNumber(tspack, generation - sample->stamp, scramble[scrambleOffset + i], (i & 1) + orderOffset);
 			sample->timexD[num][pos] = 0;
 		} else {
 			for (u_int i = 0; i < sample->dxD[num]; ++i){
@@ -234,7 +234,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 		}
 		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
-				data[i] = mutate(data[i], qrNumber(generation - sample->stamp + sample->timexD[num][pos] + 1, scramble[scrambleOffset + i], (i & 1) + orderOffset));
+				data[i] = mutate(data[i], qrNumber(tspack, generation - sample->stamp + sample->timexD[num][pos] + 1, scramble[scrambleOffset + i], (i & 1) + orderOffset));
 		}
 	}
 	return data;
@@ -286,7 +286,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	float newWeight = (accProb + (large ? 1.f : 0.f)) / (factor * newLY / meanIntensity + pLarge);
 	weight += (1.f - accProb) / (LY / (factor * meanIntensity) + pLarge);
 	// try or force accepting of the new sample
-	if (accProb2 == 1.f || consecRejects >= maxRejects || lux::random::floatValue() < accProb2) {
+	if (accProb2 == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb2) {
 		// Add accumulated contribution of previous reference sample
 		for(u_int i = 0; i < oldContributions.size(); ++i) {
 			XYZColor color = oldContributions[i].color;

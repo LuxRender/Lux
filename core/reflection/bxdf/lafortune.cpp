@@ -42,7 +42,7 @@ Lafortune::Lafortune(const SWCSpectrum &r, u_int nl,
 	z = zz;
 	exponent = e;
 }
-SWCSpectrum Lafortune::f(const Vector &wo,
+SWCSpectrum Lafortune::f(const TsPack *tspack, const Vector &wo,
                       const Vector &wi) const {
 	SWCSpectrum ret = R * INV_PI;
 	for (u_int i = 0; i < nLobes; ++i) {
@@ -54,9 +54,10 @@ SWCSpectrum Lafortune::f(const Vector &wo,
 	return ret;
 }
 
-SWCSpectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum Lafortune::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
-	u_int comp = lux::random::uintValue() % (nLobes+1);
+			*pdf = 0.f;
+	u_int comp = tspack->rng->uintValue() % (nLobes+1);										/// TODO - REFACT - remove and add random value from sample
 	if (comp == nLobes) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		*wi = CosineSampleHemisphere(u1, u2);
@@ -64,10 +65,10 @@ SWCSpectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
 	}
 	else {
 		// Sample lobe _comp_ for Lafortune BRDF
-		float xlum = x[comp].y();
-		float ylum = y[comp].y();
-		float zlum = z[comp].y();
-		float costheta = powf(u1, 1.f / (.8f * exponent[comp].y() + 1));
+		float xlum = x[comp].y(tspack);
+		float ylum = y[comp].y(tspack);
+		float zlum = z[comp].y(tspack);
+		float costheta = powf(u1, 1.f / (.8f * exponent[comp].y(tspack) + 1));
 		float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
 		float phi = u2 * 2.f * M_PI;
 		Vector lobeCenter = Normalize(Vector(xlum * wo.x, ylum * wo.y, zlum * wo.z));
@@ -76,25 +77,27 @@ SWCSpectrum Lafortune::Sample_f(const Vector &wo, Vector *wi,
 		*wi = SphericalDirection(sintheta, costheta, phi, lobeX, lobeY,
 			lobeCenter);
 	}
-	*pdf = Pdf(wo, *wi);
+	*pdf = Pdf(tspack, wo, *wi);
 	if (pdfBack)
-		*pdfBack = Pdf(*wi, wo);
+		*pdfBack = Pdf(tspack, *wi, wo);
 	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
 	if (reverse)
-		return f(*wi, wo) * (wo.z / wi->z);
+		return f(tspack, *wi, wo) * (wo.z / wi->z);
 	else
-		return f(wo, *wi);
+		return f(tspack, wo, *wi);
 }
-float Lafortune::Pdf(const Vector &wo, const Vector &wi) const {
+
+
+float Lafortune::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 	if (!SameHemisphere(wo, wi)) return 0.f;
 	float pdfSum = fabsf(wi.z) * INV_PI;
 	for (u_int i = 0; i < nLobes; ++i) {
-		float xlum = x[i].y();
-		float ylum = y[i].y();
-		float zlum = z[i].y();
+		float xlum = x[i].y(tspack);
+		float ylum = y[i].y(tspack);
+		float zlum = z[i].y(tspack);
 		Vector lobeCenter =
 			Normalize(Vector(wo.x * xlum, wo.y * ylum, wo.z * zlum));
-		float e = .8f * exponent[i].y();
+		float e = .8f * exponent[i].y(tspack);
 		pdfSum += (e + 1.f) * powf(max(0.f, Dot(wi, lobeCenter)), e);
 	}
 	return pdfSum / (1.f + nLobes);

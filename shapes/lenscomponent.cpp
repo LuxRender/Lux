@@ -44,7 +44,7 @@ LensComponent::LensComponent(const Transform &o2w, bool ro, float rad,
                    phiMax = Radians(Clamp(pm, 0.0f, 360.0f));
                    apRadius = ap / 2.0f;
 }
-Point LensComponent::Sample(float u1, float u2, Normal *n) const {
+Point LensComponent::Sample(float u1, float u2, float u3, Normal *n) const {
     float lensU, lensV;
     ConcentricSampleDisk(u1, u2, &lensU, &lensV);
     lensU *= radius;

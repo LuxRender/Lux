@@ -447,9 +447,9 @@ public:
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = v;
 	}
-	SWCSpectrum(Spectrum s);
+	SWCSpectrum(const TsPack *tspack, Spectrum s);							// Note -radiance- - REFACT - can inline now.
 
-	SWCSpectrum(const SPD *s);
+	SWCSpectrum(const TsPack *tspack, const SPD *s);
 
 	SWCSpectrum(float cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
@@ -571,13 +571,14 @@ public:
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			fprintf(f, "%f ", c[i]);
 	}
-	XYZColor ToXYZ() const;
-	Scalar y() const;
-	Scalar filter() const;
+	XYZColor ToXYZ(const TsPack *tspack) const;
+	Scalar y(const TsPack *tspack) const;
+	Scalar filter(const TsPack *tspack) const;
 
-	bool operator<(const SWCSpectrum &s2) const {
-		return y() < s2.y();
-	}
+//	bool operator<(const SWCSpectrum &s2) const {
+//		return y() < s2.y();												// Note - radiance - REFACT - need to rewrite without use of spectrumwavelengths
+//		return false;
+//	}
 	friend class lux::ParamSet;
 	
 	// SWCSpectrum Public Data

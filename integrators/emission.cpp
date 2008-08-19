@@ -33,19 +33,17 @@ void EmissionIntegrator::RequestSamples(Sample *sample,
 	scatterSampleOffset = sample->Add1D(1);
 }
 SWCSpectrum
-	EmissionIntegrator::Transmittance(const Scene *scene,
+	EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
 		const Ray &ray, const Sample *sample,
 		float *alpha) const {
 	if (!scene->volumeRegion) return SWCSpectrum(1.f);
 	float step = sample ? stepSize : 4.f * stepSize;
-	float offset =
-		sample ? sample->oneD[tauSampleOffset][0] :
-		lux::random::floatValue();
+	float offset = sample->oneD[tauSampleOffset][0];
 	SWCSpectrum tau =
-		scene->volumeRegion->Tau(ray, step, offset);
+		SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
 	return Exp(-tau);
 }
-SWCSpectrum EmissionIntegrator::Li(const Scene *scene,
+SWCSpectrum EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;
@@ -59,25 +57,22 @@ SWCSpectrum EmissionIntegrator::Li(const Scene *scene,
 	SWCSpectrum Tr(1.f);
 	Point p = ray(t0), pPrev;
 	Vector w = -ray.d;
-	if (sample)
-		t0 += sample->oneD[scatterSampleOffset][0] * step;
-	else
-		t0 += lux::random::floatValue() * step;
+	t0 += sample->oneD[scatterSampleOffset][0] * step;
 	for (int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
 		pPrev = p;
 		p = ray(t0);
-		SWCSpectrum stepTau = vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
-			.5f * stepSize, lux::random::floatValue());
+		SWCSpectrum stepTau = SWCSpectrum(tspack, vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
+			.5f * stepSize, tspack->rng->floatValue()));	// TODO - REFACT - remove and add random value from sample
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.filter() < 1e-3) {
+		if (Tr.filter(tspack) < 1e-3) {
 			const float continueProb = .5f;
-			if (lux::random::floatValue() > continueProb) break;
+			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		Lv += Tr * vr->Lve(p, w);
+		Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
 	}
 	return Lv * step;
 }

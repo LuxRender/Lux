@@ -82,7 +82,7 @@ InfiniteAreaLightIS
 	delete[] img;
 }
 SWCSpectrum
-	InfiniteAreaLightIS::Le(const RayDifferential &r) const {
+	InfiniteAreaLightIS::Le(const TsPack *tspack, const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
 	Spectrum L = Lbase;
@@ -92,9 +92,9 @@ SWCSpectrum
 		float t = SphericalTheta(wh) * INV_PI;
 		L *= radianceMap->Lookup(s, t);
 	}
-	return L;
+	return SWCSpectrum(tspack, L);
 }
-SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p, float u1,
+SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	// Find floating-point $(u,v)$ sample coordinates
@@ -113,8 +113,8 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p, float u1,
 	*pdf = (pdfs[0] * pdfs[1]) / (2. * M_PI * M_PI * sintheta);
 	// Return radiance value for direction
 	visibility->SetRay(p, *wi);
-	return Lbase * radianceMap->Lookup(fu * uDistrib->invCount,
-		fv * vDistribs[u]->invCount);
+	return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(fu * uDistrib->invCount,
+		fv * vDistribs[u]->invCount));
 }
 float InfiniteAreaLightIS::Pdf(const Point &,
 		const Vector &w) const {
@@ -128,7 +128,7 @@ float InfiniteAreaLightIS::Pdf(const Point &,
            (uDistrib->funcInt * vDistribs[u]->funcInt) *
            1.f / (2.f * M_PI * M_PI * sin(theta));
 }
-SWCSpectrum InfiniteAreaLightIS::Sample_L(const Scene *scene,
+SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	// Choose two points _p1_ and _p2_ on scene bounding sphere
@@ -149,17 +149,8 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const Scene *scene,
 	float costheta = AbsDot(to_center,ray->d);
 	*pdf =
 		costheta / ((4.f * M_PI * worldRadius * worldRadius));
-	return Le(RayDifferential(ray->o, -ray->d));
+	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
-SWCSpectrum InfiniteAreaLightIS::Sample_L(const Point &p,
-		Vector *wi, VisibilityTester *visibility) const {
-	float pdf;
-	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
-		lux::random::floatValue(), wi, &pdf, visibility);
-	if (pdf == 0.) return SWCSpectrum(0.);
-	return L / pdf;
-}
-
 Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));

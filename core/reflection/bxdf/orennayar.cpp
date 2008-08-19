@@ -30,7 +30,7 @@
 
 using namespace lux;
 
-SWCSpectrum OrenNayar::f(const Vector &wo,
+SWCSpectrum OrenNayar::f(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const {
 	float sinthetai = SinTheta(wi);
 	float sinthetao = SinTheta(wo);

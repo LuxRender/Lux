@@ -31,12 +31,6 @@
 using namespace lux;
 
 // GonioPhotometricLight Method Definitions
-SWCSpectrum GonioPhotometricLight::Sample_L(const Point &p, Vector *wi,
-		VisibilityTester *visibility) const {
-	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos);
-	return Intensity * Scale(-*wi) / DistanceSquared(lightPos, p);
-}
 GonioPhotometricLight::GonioPhotometricLight(
 		const Transform &light2world,
 		const Spectrum &intensity, const string &texname)
@@ -51,20 +45,20 @@ GonioPhotometricLight::GonioPhotometricLight(
 	else 
 		mipmap = NULL;
 }
-SWCSpectrum GonioPhotometricLight::Sample_L(const Point &P, float u1, float u2,
+SWCSpectrum GonioPhotometricLight::Sample_L(const TsPack *tspack, const Point &P, float u1, float u2,
 		float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	*wo = Normalize(lightPos - P);
 	*pdf = 1.f;
 	visibility->SetSegment(P, lightPos);
-	return Intensity * Scale(-*wo) / DistanceSquared(lightPos, P);
+	return SWCSpectrum(tspack, Intensity * Scale(-*wo) / DistanceSquared(lightPos, P));
 }
-SWCSpectrum GonioPhotometricLight::Sample_L(const Scene *scene, float u1, float u2,
+SWCSpectrum GonioPhotometricLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
 	ray->o = lightPos;
 	ray->d = UniformSampleSphere(u1, u2);
 	*pdf = UniformSpherePdf();
-	return Intensity * Scale(ray->d);
+	return SWCSpectrum(tspack, Intensity * Scale(ray->d));
 }
 float GonioPhotometricLight::Pdf(const Point &, const Vector &) const {
 	return 0.;

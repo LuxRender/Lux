@@ -37,20 +37,20 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	return !scene->IntersectP(r);
 }
 
-bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const {
+bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f) const {
 	*f = 1.f;
 	RayDifferential ray(r);
 	Intersection isect;
 	while (true) {
 		if (!scene->Intersect(ray, &isect))
 			return true;
-		BSDF *bsdf = isect.GetBSDF(ray, lux::random::floatValue());
-		const float pdf = bsdf->Pdf(-ray.d, ray.d, BSDF_ALL_TRANSMISSION);
+		BSDF *bsdf = isect.GetBSDF(tspack, ray, tspack->rng->floatValue());							// TODO - REFACT - remove and add random value from sample
+		const float pdf = bsdf->Pdf(tspack, -ray.d, ray.d, BSDF_ALL_TRANSMISSION);
 		if (!(pdf > 0.f))
 			return false;
 		*f *= AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d)) / pdf;
 
-		*f *= bsdf->f(-ray.d, ray.d);
+		*f *= bsdf->f(tspack, -ray.d, ray.d);
 		if (f->Black())
 			return false;
 
@@ -63,13 +63,13 @@ bool VisibilityTester::TestOcclusion(const Scene *scene, SWCSpectrum *f) const {
 }
 
 SWCSpectrum VisibilityTester::
-	Transmittance(const Scene *scene) const {
-	return scene->Transmittance(r);
+	Transmittance(const TsPack *tspack, const Scene *scene) const {
+	return scene->Transmittance(tspack, r);
 }
-SWCSpectrum Light::Le(const RayDifferential &) const {
+SWCSpectrum Light::Le(const TsPack *tspack, const RayDifferential &) const {
 	return SWCSpectrum(0.);
 }
-SWCSpectrum Light::Le(const Scene *scene, const Ray &r,
+SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	return SWCSpectrum(0.f);

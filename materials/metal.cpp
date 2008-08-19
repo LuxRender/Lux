@@ -47,7 +47,7 @@ Metal::Metal(boost::shared_ptr<Texture<SPD*> > n, boost::shared_ptr<Texture<SPD*
   bumpMap = bump;
 }
 
-BSDF *Metal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
+BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
   // Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
   DifferentialGeometry dgs;
   if (bumpMap)
@@ -56,8 +56,8 @@ BSDF *Metal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
     dgs = dgShading;
 
   BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-  SWCSpectrum n(N->Evaluate(dgs));
-  SWCSpectrum k(K->Evaluate(dgs));
+  SWCSpectrum n(tspack, N->Evaluate(dgs));
+  SWCSpectrum k(tspack, K->Evaluate(dgs));
 
     float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);

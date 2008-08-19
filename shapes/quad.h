@@ -40,8 +40,8 @@ public:
 	               DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &ray) const;
 	float Area() const;
-	Point Sample(float u1, float u2, Normal *Ns) const {
-		return quad->Sample(u1, u2, Ns);
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+		return quad->Sample(u1, u2, u3, Ns);
 	}
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);

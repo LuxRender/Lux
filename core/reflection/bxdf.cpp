@@ -31,45 +31,45 @@
 using namespace lux;
 
 // BxDF Method Definitions
-SWCSpectrum BRDFToBTDF::f(const Vector &wo,
+SWCSpectrum BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
                        const Vector &wi) const {
-	return brdf->f(wo, otherHemisphere(wi));
+	return brdf->f(tspack, wo, otherHemisphere(wi));
 }
-SWCSpectrum BRDFToBTDF::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
-	SWCSpectrum f = brdf->Sample_f(wo, wi, u1, u2, pdf, pdfBack, reverse);
+	SWCSpectrum f = brdf->Sample_f(tspack, wo, wi, u1, u2, pdf, pdfBack, reverse);
 	*wi = otherHemisphere(*wi);
 	return f;
 }
 
-SWCSpectrum BxDF::Sample_f(const Vector &wo, Vector *wi,
+SWCSpectrum BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
 	if (wo.z < 0.) wi->z *= -1.f;
-	*pdf = Pdf(wo, *wi);
+	*pdf = Pdf(tspack, wo, *wi);
 	if (pdfBack)
-		*pdfBack = Pdf(*wi, wo);
+		*pdfBack = Pdf(tspack, *wi, wo);
 	if (reverse)
-		return f(*wi, wo) * (wo.z / wi->z);
+		return f(tspack, *wi, wo) * (wo.z / wi->z);
 	else
-		return f(wo, *wi);
+		return f(tspack, wo, *wi);
 }
-float BxDF::Pdf(const Vector &wo, const Vector &wi) const {
+float BxDF::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 	return
 		SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f;
 }
-float BRDFToBTDF::Pdf(const Vector &wo,
+float BRDFToBTDF::Pdf(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const {
-	return brdf->Pdf(wo, otherHemisphere(wi));
+	return brdf->Pdf(tspack, wo, otherHemisphere(wi));
 }
 
-SWCSpectrum BxDF::rho(const Vector &w, int nSamples,
+SWCSpectrum BxDF::rho(const TsPack *tspack, const Vector &w, int nSamples,
 		float *samples) const {
 	if (!samples) {
 		samples =
 			(float *)alloca(2 * nSamples * sizeof(float));
-		LatinHypercube(samples, nSamples, 2);
+		LatinHypercube(tspack, samples, nSamples, 2);
 	}
 	SWCSpectrum r = 0.;
 	for (int i = 0; i < nSamples; ++i) {
@@ -77,16 +77,16 @@ SWCSpectrum BxDF::rho(const Vector &w, int nSamples,
 		Vector wi;
 		float pdf = 0.f;
 		SWCSpectrum f =
-			Sample_f(w, &wi, samples[2*i], samples[2*i+1], &pdf);
+			Sample_f(tspack, w, &wi, samples[2*i], samples[2*i+1], &pdf);
 		if (pdf > 0.) r += f * fabsf(wi.z) / pdf;
 	}
 	return r / nSamples;
 }
-SWCSpectrum BxDF::rho(int nSamples, float *samples) const {
+SWCSpectrum BxDF::rho(const TsPack *tspack, int nSamples, float *samples) const {
 	if (!samples) {
 		samples =
 			(float *)alloca(4 * nSamples * sizeof(float));
-		LatinHypercube(samples, nSamples, 4);
+		LatinHypercube(tspack, samples, nSamples, 4);
 	}
 	SWCSpectrum r = 0.;
 	for (int i = 0; i < nSamples; ++i) {
@@ -95,23 +95,14 @@ SWCSpectrum BxDF::rho(int nSamples, float *samples) const {
 		wo = UniformSampleHemisphere(samples[4*i], samples[4*i+1]);
 		float pdf_o = INV_TWOPI, pdf_i = 0.f;
 		SWCSpectrum f =
-			Sample_f(wo, &wi, samples[4*i+2], samples[4*i+3],
+			Sample_f(tspack, wo, &wi, samples[4*i+2], samples[4*i+3],
 				&pdf_i);
 		if (pdf_i > 0.)
 			r += f * fabsf(wi.z * wo.z) / (pdf_o * pdf_i);
 	}
 	return r / (M_PI*nSamples);
 }
-// BSDF Method Definitions
-SWCSpectrum BSDF::Sample_f(const Vector &wo, Vector *wi, BxDFType flags,
-	BxDFType *sampledType) const {
-	float pdf;
-	SWCSpectrum f = Sample_f(wo, wi, lux::random::floatValue(), lux::random::floatValue(),
-		lux::random::floatValue(), &pdf, flags, sampledType);
-	if (!f.Black() && pdf > 0.) f /= pdf;
-	return f;
-}
-SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
+SWCSpectrum BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 		float u1, float u2, float u3, float *pdf,
 		BxDFType flags, BxDFType *sampledType, float *pdfBack,
 		bool reverse) const {
@@ -140,7 +131,7 @@ SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 	*pdf = 0.f;
 	if (pdfBack)
 		*pdfBack = 0.f;
-	SWCSpectrum f = bxdf->Sample_f(wo, &wi, u1, u2, pdf, pdfBack, reverse);
+	SWCSpectrum f = bxdf->Sample_f(tspack, wo, &wi, u1, u2, pdf, pdfBack, reverse);
 	if (*pdf == 0.f) return 0.f;
 	if (sampledType) *sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
@@ -149,9 +140,9 @@ SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 		for (int i = 0; i < nBxDFs; ++i) {
 			if (bxdfs[i] != bxdf &&
 			    bxdfs[i]->MatchesFlags(flags)) {
-				*pdf += bxdfs[i]->Pdf(wo, wi);
+				*pdf += bxdfs[i]->Pdf(tspack, wo, wi);
 				if (pdfBack)
-					*pdfBack += bxdfs[i]->Pdf(wi, wo);
+					*pdfBack += bxdfs[i]->Pdf(tspack, wi, wo);
 			}
 		}
 	}
@@ -172,15 +163,15 @@ SWCSpectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
 		for (int i = 0; i < nBxDFs; ++i) {
 			if (bxdfs[i]->MatchesFlags(flags)) {
 				if (reverse)
-					f += bxdfs[i]->f(wi, wo);
+					f += bxdfs[i]->f(tspack, wi, wo);
 				else
-					f += bxdfs[i]->f(wo, wi);
+					f += bxdfs[i]->f(tspack, wo, wi);
 			}
 		}
 	}
 	return f;
 }
-float BSDF::Pdf(const Vector &woW, const Vector &wiW,
+float BSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 		BxDFType flags) const {
 	if (nBxDFs == 0.) return 0.;
 	Vector wo = WorldToLocal(woW), wi = WorldToLocal(wiW);
@@ -189,7 +180,7 @@ float BSDF::Pdf(const Vector &woW, const Vector &wiW,
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags)) {
 			++matchingComps;
-			pdf += bxdfs[i]->Pdf(wo, wi);
+			pdf += bxdfs[i]->Pdf(tspack, wo, wi);
 		}
 	return matchingComps > 0 ? pdf / matchingComps : 0.f;
 }
@@ -202,7 +193,7 @@ BSDF::BSDF(const DifferentialGeometry &dg,
 	tn = Cross(nn, sn);
 	nBxDFs = 0;
 }
-SWCSpectrum BSDF::f(const Vector &woW,
+SWCSpectrum BSDF::f(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags) const {
 	Vector wi = WorldToLocal(wiW), wo = WorldToLocal(woW);
 	if (Dot(wiW, ng) * Dot(woW, ng) > 0)
@@ -214,22 +205,22 @@ SWCSpectrum BSDF::f(const Vector &woW,
 	SWCSpectrum f = 0.;
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
-			f += bxdfs[i]->f(wo, wi);
+			f += bxdfs[i]->f(tspack, wo, wi);
 	return f;
 }
-SWCSpectrum BSDF::rho(BxDFType flags) const {
+SWCSpectrum BSDF::rho(const TsPack *tspack, BxDFType flags) const {
 	SWCSpectrum ret(0.);
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
-			ret += bxdfs[i]->rho();
+			ret += bxdfs[i]->rho(tspack);
 	return ret;
 }
-SWCSpectrum BSDF::rho(const Vector &wo, BxDFType flags) const {
+SWCSpectrum BSDF::rho(const TsPack *tspack, const Vector &wo, BxDFType flags) const {
 	SWCSpectrum ret(0.);
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
-			ret += bxdfs[i]->rho(wo);
+			ret += bxdfs[i]->rho(tspack, wo);
 	return ret;
 }
-//MemoryArena BSDF::arena;
+
 boost::thread_specific_ptr<MemoryArena> BSDF::arena;

@@ -37,11 +37,11 @@ public:
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance), RoverPI(reflectance * INV_PI) {
 	}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
-	SWCSpectrum rho(const Vector &, int, float *) const {
+	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	SWCSpectrum rho(const TsPack *tspack, const Vector &, int, float *) const {
 		return R;
 	}
-	SWCSpectrum rho(int, float *) const { return R; }
+	SWCSpectrum rho(const TsPack *tspack, int, float *) const { return R; }
 private:
 	// Lambertian Private Data
 	SWCSpectrum R, RoverPI;

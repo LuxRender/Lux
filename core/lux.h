@@ -157,6 +157,7 @@ namespace lux
   class Spectrum;
   class ImageData;
   class SWCSpectrum;
+  class SpectrumWavelengths;
   class Color;
   class RGBColor;
   class XYZColor;
@@ -202,6 +203,7 @@ namespace lux
   class Integrator;
   class SurfaceIntegrator;
   class VolumeIntegrator;
+  class RandomGenerator;
 }
 
 // Global Constants
@@ -240,80 +242,21 @@ namespace lux
 	ImageData *ReadImage(const string &name);
 }
 
-// Global Classes
-// Lux renderer boost::shared_ptr implementation - Radiance
-
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-//#define Reference boost::shared_ptr
-//#define ReferenceCounted boost::enable_shared_from_this
+// Radiance - Thread specific pack of pointers to eliminate use of boost tss smart pointers.
+// Initialized per thread in scene.cpp/RenderThread::RenderThread and passed where needed.
+namespace lux {
 
-//typedef boost::shared_ptr<Matrix4x4> Matrix4x4Ptr;
-//typedef boost::shared_ptr<Texture<float> > TexturePtr<float>;
+	struct TsPack {
+		SpectrumWavelengths *swl;
+		RandomGenerator *rng;
+	};
 
-//typedef boost::shared_ptr<Shape> ShapePtr;
-//typedef boost::shared_ptr<Primitive> PrimitivePtr;
-//typedef boost::shared_ptr<Material> MaterialPtr;
-//typedef boost::shared_ptr<TriangleMesh> TriangleMesh*;
-
-/* class  ReferenceCounted {
-public:
-	ReferenceCounted() { nReferences = 0; }
-	int nReferences;
-private:
-	ReferenceCounted(const ReferenceCounted &);
-	ReferenceCounted &operator=(const ReferenceCounted &);
-};
-
-template <class T> class Reference {
-public:
-	// Reference Public Methods
-	Reference(T *p = NULL) {
-		ptr = p;
-		if (ptr) ++ptr->nReferences;
-	}
-	Reference(const Reference<T> &r) {
-		ptr = r.ptr;
-		if (ptr) ++ptr->nReferences;
-	}
-	Reference &operator=(const Reference<T> &r) {
-		if (r.ptr) r.ptr->nReferences++;
-		if (ptr && --ptr->nReferences == 0) delete ptr;
-		ptr = r.ptr;
-		return *this;
-	}
-	Reference &operator=(T *p) {
-		if (p) p->nReferences++;
-		if (ptr && --ptr->nReferences == 0) delete ptr;
-		ptr = p;
-		return *this;
-	}
-	~Reference() {
-		if (ptr && --ptr->nReferences == 0)
-			delete ptr;
-	}
-	T *operator->() { return ptr; }
-	const T *operator->() const { return ptr; }
-	operator bool() const { return ptr != NULL; }
-	bool operator<(const Reference<T> &t2) const {
-		return ptr < t2.ptr;
-	}
-private:
-	T *ptr;
-};
-*/
+}
 
 // Global Inline Functions
-/*
-#ifdef NDEBUG
-#define Assert(expr) ((void)0)
-#else
-#define Assert(expr) \
-    ((expr) ? (void)0 : \
-		Severe("Assertion \"%s\" failed in %s, line %d", \
-               #expr, __FILE__, __LINE__))
-#endif // NDEBUG */
 template<class T> inline T Lerp(float t, T v1, T v2) {
 	return (1.f - t) * v1 + t * v2;
 }

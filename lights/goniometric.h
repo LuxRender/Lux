@@ -36,7 +36,6 @@ public:
 	// GonioPhotometricLight Public Methods
 	GonioPhotometricLight(const Transform &light2world, const Spectrum &, const
 	string &texname);
-	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
 	~GonioPhotometricLight() { delete mipmap; }
 	bool IsDeltaLight() const { return true; }
 	Spectrum Scale(const Vector &w) const {
@@ -47,13 +46,13 @@ public:
 		float s = phi * INV_TWOPI, t = theta * INV_PI;
 		return mipmap ? mipmap->Lookup(s, t) : 1.f;
 	}
-	SWCSpectrum Power(const Scene *) const {
-		return 4.f * M_PI * Intensity *
-			mipmap->Lookup(.5f, .5f, .5f);
+	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
+		return SWCSpectrum(tspack, 4.f * M_PI * Intensity *
+			mipmap->Lookup(.5f, .5f, .5f));
 	}
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
 	

@@ -38,7 +38,7 @@ public:
 	               DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &ray) const;
 	float Area() const;
-	Point Sample(float u1, float u2, Normal *ns) const {
+	Point Sample(float u1, float u2, float u3, Normal *ns) const {
 		Point p = Point(0,0,0) + radius *
 			UniformSampleSphere(u1, u2);
 		*ns = Normalize(ObjectToWorld(Normal(p.x, p.y, p.z)));
@@ -46,7 +46,7 @@ public:
 		return ObjectToWorld(p);
 	}
 	Point Sample(const Point &p,
-			float u1, float u2, Normal *ns) const {
+			float u1, float u2, float u3, Normal *ns) const {
 		// Compute coordinate system for sphere sampling
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		Vector wc = Normalize(Pcenter - p);
@@ -54,7 +54,7 @@ public:
 		CoordinateSystem(wc, &wcX, &wcY);
 		// Sample uniformly on sphere if \pt is inside it
 		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
-			return Sample(u1, u2, ns);
+			return Sample(u1, u2, u3, ns);
 		// Sample sphere uniformly inside subtended cone
 		float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
 			DistanceSquared(p, Pcenter)));

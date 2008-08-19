@@ -23,7 +23,7 @@
 // random.cpp*
 #include "random.h"
 #include "vegas.h"
-#include "randompx.h"
+//#include "randompx.h"
 #include "lowdiscrepancypx.h"
 #include "linear.h"
 #include "tilepx.h"
@@ -51,8 +51,8 @@ RandomSampler::RandomSampler(int xstart, int xend,
 		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "lowdiscrepancy")
 		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "random")
-		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
+//	else if(pixelsampler == "random")
+//		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
     else if((pixelsampler == "tile") || (pixelsampler == "grid"))
 		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
 	else if(pixelsampler == "hilbert")
@@ -104,7 +104,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			haveMoreSample = (!pixelSampler->renderingDone);
 
 		for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
-			imageSamples[i] = lux::random::floatValue();
+			imageSamples[i] = tspack->rng->floatValue();
 		}
 
 		// Shift image samples to pixel coordinates
@@ -128,11 +128,11 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	// Generate stratified samples for integrators
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		for (u_int j = 0; j < sample->n1D[i]; ++j)
-			sample->oneD[i][j] = lux::random::floatValue();
+			sample->oneD[i][j] = tspack->rng->floatValue();
 	}
 	for (u_int i = 0; i < sample->n2D.size(); ++i) {
 		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-			sample->twoD[i][j] = lux::random::floatValue();
+			sample->twoD[i][j] = tspack->rng->floatValue();
 	}
 
 	++samplePos;
@@ -144,7 +144,7 @@ float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	float *data = sample->xD[num] + pos * sample->dxD[num];
 	for (u_int i = 0; i < sample->dxD[num]; ++i)
-		data[i] = lux::random::floatValue();
+		data[i] = tspack->rng->floatValue();
 	return data;
 }
 

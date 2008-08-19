@@ -43,12 +43,6 @@ float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	return sample->xD[num] + pos * sample->dxD[num];
 }
-/*void Sampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id)
-{
-	if (!L.Black())
-		film->AddSample(imageX, imageY, L, alpha, id);
-	film->AddSampleCount(1.); // TODO: add to correct buffer group
-}*/
 void Sampler::AddSample(const Sample &sample)
 {
 	film->AddSampleCount(1.f); // TODO: add to correct buffer group
@@ -116,43 +110,43 @@ namespace lux
 {
 
 // Sampling Function Definitions
- void StratifiedSample1D(float *samp, int nSamples,
+ void StratifiedSample1D(const TsPack *tspack, float *samp, int nSamples,
 		bool jitter) {
 	float invTot = 1.f / nSamples;
 	for (int i = 0;  i < nSamples; ++i) {
-		float delta = jitter ? lux::random::floatValue() : 0.5f;
+		float delta = jitter ? tspack->rng->floatValue() : 0.5f;
 		*samp++ = (i + delta) * invTot;
 	}
 }
- void StratifiedSample2D(float *samp, int nx, int ny,
+ void StratifiedSample2D(const TsPack *tspack, float *samp, int nx, int ny,
 		bool jitter) {
 	float dx = 1.f / nx, dy = 1.f / ny;
 	for (int y = 0; y < ny; ++y)
 		for (int x = 0; x < nx; ++x) {
-			float jx = jitter ? lux::random::floatValue() : 0.5f;
-			float jy = jitter ? lux::random::floatValue() : 0.5f;
+			float jx = jitter ? tspack->rng->floatValue() : 0.5f;
+			float jy = jitter ? tspack->rng->floatValue() : 0.5f;
 			*samp++ = (x + jx) * dx;
 			*samp++ = (y + jy) * dy;
 		}
 }
- void Shuffle(float *samp, int count, int dims) {
+ void Shuffle(const TsPack *tspack, float *samp, int count, int dims) {
 	for (int i = 0; i < count; ++i) {
-		u_int other = lux::random::uintValue() % count;
+		u_int other = tspack->rng->uintValue() % count;
 		for (int j = 0; j < dims; ++j)
 			swap(samp[dims*i + j], samp[dims*other + j]);
 	}
 }
- void LatinHypercube(float *samples,
+ void LatinHypercube(const TsPack *tspack, float *samples,
                              int nSamples, int nDim) {
 	// Generate LHS samples along diagonal
 	float delta = 1.f / nSamples;
 	for (int i = 0; i < nSamples; ++i)
 		for (int j = 0; j < nDim; ++j)
-			samples[nDim * i + j] = (i + lux::random::floatValue()) * delta;
+			samples[nDim * i + j] = (i + tspack->rng->floatValue()) * delta;
 	// Permute LHS samples in each dimension
 	for (int i = 0; i < nDim; ++i) {
 		for (int j = 0; j < nSamples; ++j) {
-			u_int other = lux::random::uintValue() % nSamples;
+			u_int other = tspack->rng->uintValue() % nSamples;
 			swap(samples[nDim * j + i],
 			     samples[nDim * other + i]);
 		}

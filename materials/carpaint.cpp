@@ -53,7 +53,7 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<Spectrum> > kd,
 }
 
 // CarPaint Method Definitions
-BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 
   // Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
   DifferentialGeometry dgs;
@@ -66,10 +66,10 @@ BSDF *CarPaint::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGe
   BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
 
   // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-  SWCSpectrum kd(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
-  SWCSpectrum ks1(Ks1->Evaluate(dgs).Clamp(0.f, 1.f));
-  SWCSpectrum ks2(Ks2->Evaluate(dgs).Clamp(0.f, 1.f));
-  SWCSpectrum ks3(Ks3->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum kd(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum ks1(tspack, Ks1->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum ks2(tspack, Ks2->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum ks3(tspack, Ks3->Evaluate(dgs).Clamp(0.f, 1.f));
 
   // NOTE - lordcrc - added clamping to 0..1 to avoid >1 reflection
   float r1 = Clamp(R1->Evaluate(dgs), 0.f, 1.f);

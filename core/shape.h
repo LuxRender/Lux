@@ -100,7 +100,7 @@ public:
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Area() method called");
 		return 0.;
 	}
-	virtual Point Sample(float u1, float u2, Normal *Ns) const {
+	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Sample method called");
 		return Point();
 	}
@@ -108,8 +108,8 @@ public:
 		return 1.f / Area();
 	}
 	virtual Point Sample(const Point &P,
-			float u1, float u2, Normal *Ns) const {
-		return Sample(u1, u2, Ns);
+			float u1, float u2, float u3, Normal *Ns) const {
+		return Sample(u1, u2, u3, Ns);
 	}
 	virtual float Pdf(const Point &p, const Vector &wi) const {
 		// Intersect sample ray with area light geometry
@@ -131,12 +131,11 @@ public:
 class ShapeSet : public Shape {
 public:
 	// ShapeSet Public Methods
-	Point Sample(float u1, float u2, Normal *Ns) const {
-		float ls = lux::random::floatValue();
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		u_int sn;
 		for (sn = 0; sn < shapes.size()-1; ++sn)
-			if (ls < areaCDF[sn]) break;
-		return shapes[sn]->Sample(u1, u2, Ns);
+			if (u3 < areaCDF[sn]) break;
+		return shapes[sn]->Sample(u1, u2, u3, Ns);
 	}
 	ShapeSet(const vector<boost::shared_ptr<Shape> > &s,
 		const Transform &o2w, bool ro);

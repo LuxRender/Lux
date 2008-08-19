@@ -30,7 +30,7 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *MatteTranslucent::GetBSDF(const DifferentialGeometry &dgGeom,
+BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
@@ -41,8 +41,8 @@ BSDF *MatteTranslucent::GetBSDF(const DifferentialGeometry &dgGeom,
 
 	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
-	SWCSpectrum T(Kt->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	float sig = Clamp(sigma->Evaluate(dgs), 0.f, 90.f);
 
 	if (!R.Black()) {

@@ -38,30 +38,28 @@ public:
 	InfiniteAreaLight(const Transform &light2world, const Spectrum &l, int ns, const string &texmap,
 		EnvironmentMapping *m, float gain, float gamma);
 	~InfiniteAreaLight();
-	SWCSpectrum Power(const Scene *scene) const {
+	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                    &worldRadius);
-		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000081: crash in infinite light
 		Spectrum L = Lbase;
 		if (radianceMap != NULL)
 			L *= radianceMap->Lookup(.5f, .5f, .5f);
 
-		return SWCSpectrum(SPDbase) * SWCSpectrum(L) * (M_PI * worldRadius * worldRadius);
+		return SWCSpectrum(tspack, SPDbase) * SWCSpectrum(tspack, L) * (M_PI * worldRadius * worldRadius);
 	}
 	bool IsDeltaLight() const { return false; }
-	SWCSpectrum Le(const RayDifferential &r) const;
-	SWCSpectrum Sample_L(const Point &p, const Normal &n,
+	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Point &p, float u1, float u2, float u3,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Normal &, const Vector &) const;
 	float Pdf(const Point &, const Vector &) const;
-	SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

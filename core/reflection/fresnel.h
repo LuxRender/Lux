@@ -33,7 +33,7 @@ class  Fresnel {
 public:
 	// Fresnel Interface
 	virtual ~Fresnel();
-	virtual SWCSpectrum Evaluate(float cosi) const = 0;
+	virtual SWCSpectrum Evaluate(const TsPack *tspack, float cosi) const = 0;
 };
 
   SWCSpectrum FrDiel(float cosi, float cost,

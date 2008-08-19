@@ -34,10 +34,9 @@ using namespace lux;
 #define SAMPLE_FLOATS 7
 
 // mutate a value in the range [0-1]
-static float mutate(const float x)
+static float mutate(const float x, const float randomValue)
 {
 	static const float s1 = 1.f / 1024.f, s2 = 1.f / 16.f;
-	float randomValue = lux::random::floatValue();
 	float dx = s2 * powf(s1 / s2, fabsf(2.f * randomValue - 1.f));
 	if (randomValue < 0.5f) {
 		float x1 = x + dx;
@@ -49,9 +48,8 @@ static float mutate(const float x)
 }
 
 // mutate a value in the range [min-max]
-static float mutateScaled(const float x, const float mini, const float maxi, const float range)
+static float mutateScaled(const float x, const float randomValue, const float mini, const float maxi, const float range)
 {
-	float randomValue = lux::random::floatValue();
 	float dx = range * exp(-log(2.f * range) * fabsf(2.f * randomValue - 1.f));
 	if (randomValue < 0.5f) {
 		float x1 = x + dx;
@@ -128,8 +126,8 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			return false;
 		if(currentStrata == strataSqr) {
 			// Generate shuffled stratified image samples
-			StratifiedSample2D(strataSamples, strataWidth, strataWidth, true);
-			Shuffle(strataSamples, strataSqr, 2);
+			StratifiedSample2D(tspack, strataSamples, strataWidth, strataWidth, true);
+			Shuffle(tspack, strataSamples, strataSqr, 2);
 			currentStrata = 0;
 		}
 		// *** new seed ***
@@ -137,13 +135,13 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		currentStrata++;
 
-		sample->lensU = lux::random::floatValue();
-		sample->lensV = lux::random::floatValue();
-		sample->time = lux::random::floatValue();
-		sample->wavelengths = lux::random::floatValue();
-		sample->singleWavelength = lux::random::floatValue();
+		sample->lensU = tspack->rng->floatValue();
+		sample->lensV = tspack->rng->floatValue();
+		sample->time = tspack->rng->floatValue();
+		sample->wavelengths = tspack->rng->floatValue();
+		sample->singleWavelength = tspack->rng->floatValue();
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = lux::random::floatValue();
+			sample->oneD[0][i - SAMPLE_FLOATS] = tspack->rng->floatValue();
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -157,7 +155,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->lensV = baseImage[3];
 			sample->time = baseImage[4];
 			sample->wavelengths = baseImage[5];
-			sample->singleWavelength = lux::random::floatValue();//baseImage[6];
+			sample->singleWavelength = tspack->rng->floatValue();//baseImage[6];
 			for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
 				sample->oneD[0][i - SAMPLE_FLOATS] = baseImage[i];
 			for (int i = 0; i < totalTimes; ++i) {
@@ -168,15 +166,15 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		}
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(sampleImage[0], xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(sampleImage[1], yPixelStart, yPixelEnd, range);
-		sample->lensU = mutate(sampleImage[2]);
-		sample->lensV = mutate(sampleImage[3]);
-		sample->time = mutate(sampleImage[4]);
-		sample->wavelengths = mutate(sampleImage[5]);
-		sample->singleWavelength = lux::random::floatValue();//mutate(sampleImage[6]);
+		sample->imageX = mutateScaled(sampleImage[0], tspack->rng->floatValue(), xPixelStart, xPixelEnd, range);
+		sample->imageY = mutateScaled(sampleImage[1], tspack->rng->floatValue(), yPixelStart, yPixelEnd, range);
+		sample->lensU = mutate(sampleImage[2], tspack->rng->floatValue());
+		sample->lensV = mutate(sampleImage[3], tspack->rng->floatValue());
+		sample->time = mutate(sampleImage[4], tspack->rng->floatValue());
+		sample->wavelengths = mutate(sampleImage[5], tspack->rng->floatValue());
+		sample->singleWavelength = tspack->rng->floatValue();//mutate(sampleImage[6], tspack->rng->floatValue());
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i]);
+			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], tspack->rng->floatValue());
 		++(sample->stamp);
 	}
 
@@ -190,7 +188,7 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 		if (sample->timexD[num][pos] == -1) {
 			float *image = baseImage + offset[num] + pos * sample->dxD[num];
 			for (u_int i = 0; i < sample->dxD[num]; ++i) {
-				data[i] = lux::random::floatValue();
+				data[i] = tspack->rng->floatValue();
 				image[i] = data[i];
 			}
 			sample->timexD[num][pos] = 0;
@@ -202,7 +200,7 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 		}
 		for (int &time = sample->timexD[num][pos]; time < sample->stamp; ++time) {
 			for (u_int i = 0; i < sample->dxD[num]; ++i)
-				data[i] = mutate(data[i]);
+				data[i] = mutate(data[i], tspack->rng->floatValue());
 		}
 	}
 	return data;
@@ -252,7 +250,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 			film->AddSampleCount(1.f); // TODO: add to correct buffer groups
 			gain = newLY / (meanIntensity * totalSamples);
 			if (gain < 1.f)
-				numChains = Floor2Int(lux::random::floatValue() + gain);
+				numChains = Floor2Int(tspack->rng->floatValue() + gain);
 			else
 				numChains = Floor2Int(gain);
 			if (numChains == 0)
@@ -284,7 +282,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	float newWeight = accProb;
 	weight += 1.f - accProb;
 
-	const bool accept = accProb == 1.f || lux::random::floatValue() < accProb;
+	const bool accept = accProb == 1.f || tspack->rng->floatValue() < accProb;
 
 	// try accepting of the new sample
 	if (accept) {

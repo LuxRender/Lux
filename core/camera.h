@@ -46,7 +46,7 @@ public:
 	virtual float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
 	virtual void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
 	virtual bool IsDelta() const;
-	virtual void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
+	virtual void SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const;
 	virtual float EvalPositionPdf() const;
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	virtual void AutoFocus(Scene* scene) { }

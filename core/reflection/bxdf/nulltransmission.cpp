@@ -26,11 +26,9 @@
 #include "spectrum.h"
 #include <stdarg.h>
 
-#include <boost/thread/tss.hpp>
-
 using namespace lux;
 
-SWCSpectrum NullTransmission::Sample_f(const Vector &wo,
+SWCSpectrum NullTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	*wi = -wo;
 	*pdf = 1.f;

@@ -38,7 +38,7 @@ public:
 	               DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &ray) const;
 	float Area() const;
-	Point Sample(float u1, float u2, Normal *ns) const {
+	Point Sample(float u1, float u2, float u3, Normal *ns) const {
 
 		float phi = u1 * phiMax;
 		float theta;

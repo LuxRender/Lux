@@ -37,12 +37,12 @@ public:
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
 		  R(r), fresnel(f) {
 	}
-	SWCSpectrum f(const Vector &, const Vector &) const {
+	SWCSpectrum f(const TsPack *tspack, const Vector &, const Vector &) const {
 		return SWCSpectrum(0.);
 	}
-	virtual SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+	virtual SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	float Pdf(const Vector &wo, const Vector &wi) const {
+	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return 0.;
 	}
 private:
@@ -55,7 +55,7 @@ class ArchitecturalReflection : public SpecularReflection {
 public:
 	ArchitecturalReflection(const SWCSpectrum &r, Fresnel *f)
 		: SpecularReflection(r, f) {}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 };
 

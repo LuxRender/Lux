@@ -44,7 +44,7 @@ public:
 		nv = v;
 		bumpMap = bump;
 	}
-	BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
+	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	              const DifferentialGeometry &dgShading, float u) const;
 	              
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);	              

@@ -88,7 +88,7 @@ public:
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg,
 			DifferentialGeometry *dgShading) const;
-	Point Sample(float u1, float u2, Normal *Ns) const;
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const;
 
 private:	
 	void GetUVs(float uv[3][2]) const {

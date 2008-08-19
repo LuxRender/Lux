@@ -43,7 +43,7 @@ public:
 	{
 		return true;
 	}
-	void SamplePosition(float u1, float u2, Point *p, float *pdf) const;
+	void SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const;
 	float EvalPositionPdf() const;
 	void AutoFocus(Scene* scene);
 

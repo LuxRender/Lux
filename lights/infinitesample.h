@@ -65,22 +65,21 @@ public:
 	InfiniteAreaLightIS(const Transform &light2world,	const Spectrum &power, int ns,
 			  const string &texmap);
 	~InfiniteAreaLightIS();
-	SWCSpectrum Power(const Scene *scene) const {
+	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 			&worldRadius);
-		return Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius;
+		return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
+			M_PI * worldRadius * worldRadius);
 	}
 	bool IsDeltaLight() const { return false; }
-	SWCSpectrum Le(const RayDifferential &r) const;
-	SWCSpectrum Sample_L(const Point &p, float u1, float u2, float u3,
+	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
-	SWCSpectrum Sample_L(const Point &P, Vector *w, VisibilityTester *visibility) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

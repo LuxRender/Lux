@@ -36,10 +36,10 @@ public:
   // CookTorrance Public Methods
   CookTorrance(const SWCSpectrum &kd, u_int nl,
                const SWCSpectrum *ks, MicrofacetDistribution **dist, Fresnel **fres);
-  SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+  SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
   float G(const Vector &wo, const Vector &wi, const Vector &wh) const;
-  SWCSpectrum Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-  float Pdf(const Vector &wi, const Vector &wo) const;
+  SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+  float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 private:
   // Cook-Torrance Private Data
   SWCSpectrum KD;

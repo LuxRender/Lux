@@ -35,7 +35,7 @@ public:
 	// Microfacet Public Methods
 	Microfacet(const SWCSpectrum &reflectance, Fresnel *f,
 		MicrofacetDistribution *d);
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
+	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 	float G(const Vector &wo, const Vector &wi,
 			const Vector &wh) const {
 		float NdotWh = fabsf(CosTheta(wh));
@@ -45,9 +45,9 @@ public:
 		return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh),
 		                (2.f * NdotWh * NdotWi / WOdotWh)));
 	}
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	float Pdf(const Vector &wo, const Vector &wi) const;
+	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
 	// Microfacet Private Data
 	SWCSpectrum R;

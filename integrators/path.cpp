@@ -50,7 +50,7 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
 
-SWCSpectrum PathIntegrator::Li(const Scene *scene,
+SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
 		float *alpha) const
 {
@@ -69,12 +69,12 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		if (!scene->Intersect(ray, &isect)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
-				L = scene->volumeIntegrator->Li(scene, ray, sample, alpha);
-				color = L.ToXYZ();
-				if (color.y() > 0.f)
+				L = scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
+				color = L.ToXYZ(tspack);
+				if (!L.Black())
 					sample->AddContribution(sample->imageX, sample->imageY,
-						color, alpha ? *alpha : 1.f, V);
-				pathThroughput = scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+						L.ToXYZ(tspack), alpha ? *alpha : 1.f, V);
+				pathThroughput = scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha);
 			}
 
 			// Stop path sampling since no intersection was found
@@ -83,10 +83,10 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			if (specularBounce) {
 				SWCSpectrum Le(0.f);
 				for (u_int i = 0; i < scene->lights.size(); ++i)
-					Le += scene->lights[i]->Le(ray);
+					Le += scene->lights[i]->Le(tspack, ray);
 				Le *= pathThroughput;
 				L += Le;
-				color = Le.ToXYZ();
+				color = Le.ToXYZ(tspack);
 			}
 			// Set alpha channel
 			if (pathLength == 0 && alpha && !(color.y() > 0.f))
@@ -99,21 +99,21 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		if (pathLength == 0)
 			r.maxt = ray.maxt;
 
-		SWCSpectrum Lv(scene->volumeIntegrator->Li(scene, ray, sample, alpha));
+		SWCSpectrum Lv(scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha));
 		Lv *= pathThroughput;
-		color = Lv.ToXYZ();
+		color = Lv.ToXYZ(tspack);
 		if (color.y() > 0.f)
 			sample->AddContribution(sample->imageX, sample->imageY,
 				color, alpha ? *alpha : 1.f, V);
-		pathThroughput *= scene->volumeIntegrator->Transmittance(scene, ray, sample, alpha);
+		pathThroughput *= scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha);
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
 		if (specularBounce) {
-			SWCSpectrum Le(isect.Le(wo));
+			SWCSpectrum Le(isect.Le(tspack, wo));
 			Le *= pathThroughput;
 			L += Le;
-			color = Le.ToXYZ();
+			color = Le.ToXYZ(tspack);
 			if (color.y() > 0.f)
 				sample->AddContribution(sample->imageX, sample->imageY,
 					color, alpha ? *alpha : 1.f, V);
@@ -122,7 +122,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 			break;
 		// Evaluate BSDF at hit point
 		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
-		BSDF *bsdf = isect.GetBSDF(ray, fabsf(2.f * data[5] - 1.f));
+		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * data[5] - 1.f));
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -130,12 +130,12 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		SWCSpectrum Ll;
 		switch (lightStrategy) {
 			case SAMPLE_ALL_UNIFORM:
-				Ll = UniformSampleAllLights(scene, p, n,
+				Ll = UniformSampleAllLights(tspack, scene, p, n,
 					wo, bsdf, sample,
 					data, data + 2, data + 3, data + 5);
 				break;
 			case SAMPLE_ONE_UNIFORM:
-				Ll = UniformSampleOneLight(scene, p, n,
+				Ll = UniformSampleOneLight(tspack, scene, p, n,
 					wo, bsdf, sample,
 					data, data + 2, data + 3, data + 5);
 				break;
@@ -144,7 +144,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		}
 		Ll *= pathThroughput;
 		L += Ll;
-		color = Ll.ToXYZ();
+		color = Ll.ToXYZ(tspack);
 		if (color.y() > 0.f)
 			sample->AddContribution(sample->imageX, sample->imageY,
 				color, alpha ? *alpha : 1.f, V);
@@ -153,7 +153,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(wo, &wi, data[6], data[7], data[8],
+		SWCSpectrum f = bsdf->Sample_f(tspack, wo, &wi, data[6], data[7], data[8],
 			&pdf, BSDF_ALL, &flags);
 		if (pdf == .0f || f.Black())
 			break;
@@ -163,7 +163,7 @@ SWCSpectrum PathIntegrator::Li(const Scene *scene,
 		// Possibly terminate the path
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.filter() * dp);
+				const float q = min<float>(1.f, f.filter(tspack) * dp);
 				if (q < data[9])
 					break;
 				// increase path contribution

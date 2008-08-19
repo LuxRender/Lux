@@ -32,20 +32,15 @@ namespace lux
 class  Material  {
 public:
 	// Material Interface
-	virtual BSDF *GetBSDF(const DifferentialGeometry &dgGeom,
+	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, float u) const = 0;
 	virtual ~Material();
 	static void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump);
-	void SetChild1(boost::shared_ptr<Material> x) {
-		child1 = x;
-	}
-	void SetChild2(boost::shared_ptr<Material> x) {
-		child2 = x;
-	}
+	void SetChild1(boost::shared_ptr<Material> x) { child1 = x; }
+	void SetChild2(boost::shared_ptr<Material> x) { child2 = x; }
 
-	boost::shared_ptr<Material> child1;
-	boost::shared_ptr<Material> child2;
+	boost::shared_ptr<Material> child1, child2;
 };
 
 }//namespace lux

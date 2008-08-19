@@ -33,7 +33,7 @@
 using namespace lux;
 
 // Plastic Method Definitions
-BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
+BSDF *Plastic::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, float) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
@@ -55,7 +55,7 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 		kd /= sumMax;
 		ks /= sumMax;
 	}
-	BxDF *diff = BSDF_ALLOC( Lambertian)(SWCSpectrum(kd));
+	BxDF *diff = BSDF_ALLOC( Lambertian)(SWCSpectrum(tspack, kd));
 	float ior = index->Evaluate(dgs);
 	Fresnel *fresnel =
 		BSDF_ALLOC( FresnelDielectric)(1.f, ior);
@@ -69,7 +69,7 @@ BSDF *Plastic::GetBSDF(const DifferentialGeometry &dgGeom,
 	else
 		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
 
-	BxDF *spec = BSDF_ALLOC( Microfacet)(SWCSpectrum(ks), fresnel, md);
+	BxDF *spec = BSDF_ALLOC( Microfacet)(SWCSpectrum(tspack, ks), fresnel, md);
 	bsdf->Add(diff);
 	bsdf->Add(spec);
 	return bsdf;

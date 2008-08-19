@@ -34,10 +34,10 @@ public:
 	// SingleScattering Public Methods
 	SingleScattering(float ss) : stepSize(ss) { }
 
-	SWCSpectrum Transmittance(const Scene *, const Ray &ray,
+	SWCSpectrum Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	SWCSpectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	SWCSpectrum Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 

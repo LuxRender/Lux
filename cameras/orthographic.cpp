@@ -155,7 +155,7 @@ void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixel
 	}
 }
 
-void OrthoCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+void OrthoCamera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
 {
 	// orthographic camera is composed of many parallel pinhole cameras with little fov.
 	*pdf = 1.0f;

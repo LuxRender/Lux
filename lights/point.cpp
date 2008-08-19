@@ -36,28 +36,24 @@ PointLight::PointLight(const Transform &light2world,
 	LSPD = new RGBIllumSPD(intensity);
 	LSPD->Scale(gain);
 }
-SWCSpectrum PointLight::Sample_L(const Point &p, Vector *wi,
-		VisibilityTester *visibility) const {
-	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos);
-	return SWCSpectrum(LSPD) / DistanceSquared(lightPos, p);
-}
-SWCSpectrum PointLight::Sample_L(const Point &p, float u1,
+SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	*pdf = 1.f;
-	return Sample_L(p, wi, visibility);
+	*wi = Normalize(lightPos - p);
+	visibility->SetSegment(p, lightPos);
+	return SWCSpectrum(tspack, LSPD) / DistanceSquared(lightPos, p);
 }
 float PointLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
-SWCSpectrum PointLight::Sample_L(const Scene *scene, float u1,
+SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	ray->o = lightPos;
 	ray->d = UniformSampleSphere(u1, u2);
 	*pdf = UniformSpherePdf();
-	return SWCSpectrum(LSPD);
+	return SWCSpectrum(tspack, LSPD);
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {

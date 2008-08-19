@@ -29,13 +29,9 @@
 #include "sampling.h"
 #include <stdarg.h>
 
-#include <boost/thread/tss.hpp>
-
 using namespace lux;
 
-extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
-
-SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
+SWCSpectrum SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
@@ -43,7 +39,7 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 
 	if(cb != 0.f) {
 		// Handle dispersion using cauchy formula
-		const float w = thread_wavelengths->SampleSingle();
+		const float w = tspack->swl->SampleSingle();
 		et += (cb * 1000000.f) / (w * w);
 	}
 
@@ -72,33 +68,33 @@ SWCSpectrum SpecularTransmission::Sample_f(const Vector &wo,
 		*pdfBack = 1.f;
 	if (!architectural) {
 		if (reverse) {
-			SWCSpectrum F = fresnel.Evaluate(cost);
+			SWCSpectrum F = fresnel.Evaluate(tspack, cost);
 			return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
 		} else {
-			SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
+			SWCSpectrum F = fresnel.Evaluate(tspack, CosTheta(wo));
 			return (SWCSpectrum(1.f) - F) * T / (fabsf(cost) * eta2);
 		}
 	} else {
 		if (reverse) {
 			if (entering) {
-				SWCSpectrum F = fresnel.Evaluate(-cost);
+				SWCSpectrum F = fresnel.Evaluate(tspack, -cost);
 				return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
 			} else {
-				SWCSpectrum F = fresnel.Evaluate(-CosTheta(wo));
+				SWCSpectrum F = fresnel.Evaluate(tspack, -CosTheta(wo));
 				return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
 			}
 		} else {
 			if (entering) {
-				SWCSpectrum F = fresnel.Evaluate(CosTheta(wo));
+				SWCSpectrum F = fresnel.Evaluate(tspack, CosTheta(wo));
 				return (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
 			} else {
-				SWCSpectrum F = fresnel.Evaluate(-cost);
+				SWCSpectrum F = fresnel.Evaluate(tspack, -cost);
 				return (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
 			}
 		}
 	}
 }
-SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const
+SWCSpectrum SpecularTransmission::f(const TsPack *tspack, const Vector &wo, const Vector &wi) const
 {
 	if (!(architectural && wi == -wo))
 		return 0.f;
@@ -108,7 +104,7 @@ SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const
 
 	if(cb != 0.f) {
 		// Handle dispersion using cauchy formula
-		const float w = thread_wavelengths->SampleSingle();
+		const float w = tspack->swl->SampleSingle();
 		et += (cb * 1000000.f) / (w * w);
 	}
 
@@ -123,7 +119,7 @@ SWCSpectrum SpecularTransmission::f(const Vector &wo, const Vector &wi) const
 	}
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering) cost = -cost;
-	SWCSpectrum F = fresnel.Evaluate(-cost);
+	SWCSpectrum F = fresnel.Evaluate(tspack, -cost);
 	if (entering)
 		return (SWCSpectrum(1.f) - F) * T / (fabsf(wi.z) * eta2);
 	else

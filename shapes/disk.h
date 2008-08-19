@@ -37,7 +37,7 @@ public:
 	               DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &ray) const;
 	float Area() const;
-	Point Sample(float u1, float u2, Normal *Ns) const {
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		Point p;
 		ConcentricSampleDisk(u1, u2, &p.x, &p.y);
 		p.x *= radius;

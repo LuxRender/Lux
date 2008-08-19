@@ -59,7 +59,6 @@
 #include "quad.h"
 
 #include "lowdiscrepancy.h"
-#include "halton.h"
 #include "random.h"
 #include "metrosampler.h"
 #include "erpt.h"
@@ -77,13 +76,13 @@
 #include "sinc.h"
 #include "triangle.h"
 
-#include "directlighting.h"
+//#include "directlighting.h"
 #include "path.h"
-#include "path2.h"
-#include "particletracing.h"
+//#include "path2.h"
+//#include "particletracing.h"
 #include "bidirectional.h"
-#include "exphotonmap.h"
-#include "importancepath.h"
+//#include "exphotonmap.h"
+//#include "importancepath.h"
 #include "distributedpath.h"
 
 #include "emission.h"
@@ -150,24 +149,6 @@
 #include "unsafekdtreeaccel.h"
 #include "tabreckdtreeaccel.h"
 #include "bruteforce.h"
-
-//
-// Radiance - The following plugins are currently retired to /PBRT_Attic
-//
-/*
- * #include "debug.h"
- * #include "exphotonmap.h"
- * #include "igi.h"
- * #include "irradiancecache.h"
- * #include "photonmap.h"
- * #include "whitted.h"
- * #include "bidirectional.h"
- *
- * #include "image.h"
- *
- * #include "stratified.h"
- * #include "bestcandidate.h"
- */
 
 using std::map;
 
@@ -734,13 +715,8 @@ if (plugin)
     return ret;
 }*/
 
-    if(name=="directlighting") {
+ /*   if(name=="directlighting") {
         SurfaceIntegrator *ret=DirectLighting::CreateSurfaceIntegrator(paramSet);
-        paramSet.ReportUnused();
-        return ret;
-    }
-    if(name=="path") {
-        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
@@ -768,29 +744,22 @@ if (plugin)
         SurfaceIntegrator *ret=ImportancePathIntegrator::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
+    }*/
+    if(name=="path") {
+        SurfaceIntegrator *ret=PathIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
     }
     if(name=="distributedpath") {
         SurfaceIntegrator *ret=DistributedPath::CreateSurfaceIntegrator(paramSet);
         paramSet.ReportUnused();
         return ret;
     }
-
-	//
-    // Radiance - Volume integrators currently disabled
-    // due to multithreading implementation which is in progress.
-    //
-    /*if(name=="single")
-{
-    SurfaceIntegrator *ret=SingleScattering::CreateSurfaceIntegrator(paramSet);
-    paramSet.ReportUnused();
-    return ret;
-}*/
-    /*if(name=="emission")
-{
-    SurfaceIntegrator *ret=EmissionIntegrator::CreateSurfaceIntegrator(paramSet);
-    paramSet.ReportUnused();
-    return ret;
-}*/
+    if(name=="bidirectional") {
+        SurfaceIntegrator *ret=BidirIntegrator::CreateSurfaceIntegrator(paramSet);
+        paramSet.ReportUnused();
+        return ret;
+    }
 
     //Error("Static loading of surface integrator '%s' failed.",name.c_str());
     std::stringstream ss;
@@ -857,7 +826,6 @@ Primitive *MakeAccelerator(const string &name, const vector<Primitive* > &prims,
         paramSet.ReportUnused();
         return ret;
     }
-    // NOTE - ratow - Added a brute force (de)accelerator for debugging purposes.
     if(name=="none") {
         Primitive* ret=BruteForceAccel::CreateAccelerator(prims, paramSet);
         paramSet.ReportUnused();
@@ -931,11 +899,6 @@ return ret;
         paramSet.ReportUnused();
         return ret;
     }
-    if(name=="halton") {
-        Sampler *ret=HaltonSampler::CreateSampler(paramSet, film);
-        paramSet.ReportUnused();
-        return ret;
-    }
     if(name=="metropolis") {
         Sampler *ret=MetropolisSampler::CreateSampler(paramSet, film);
         paramSet.ReportUnused();
@@ -946,23 +909,6 @@ return ret;
         paramSet.ReportUnused();
         return ret;
     }
-
-    //
-    // Radiance - The following samplers are currently retired to /PBRT_Attic
-    //
-    /*
-if(name=="bestcandidate")
-{
-    Sampler *ret=BestCandidateSampler::CreateSampler(paramSet, film);
-    paramSet.ReportUnused();
-    return ret;
-}
-if(name=="stratified")
-{
-    Sampler *ret=StratifiedSampler::CreateSampler(paramSet, film);
-    paramSet.ReportUnused();
-    return ret;
-} */
 
     //Error("Static loading of sampler '%s' failed.",name.c_str());
     std::stringstream ss;
@@ -1078,17 +1024,6 @@ Film *MakeFilm(const string &name,
         return ret;
     }
 
-    //
-    // Radiance - The following films are currently retired to /PBRT_Attic
-    //
-    /*
-     * if(name=="image")
-     * {
-     * Film *ret=ImageFilm::CreateFilm(paramSet, filter);
-     * paramSet.ReportUnused();
-     * return ret;
-     * }
-     */
     //Error("Static loading of film '%s' failed.",name.c_str());
     std::stringstream ss;
     ss<<"Static loading of film '"<<name<<"' failed.";

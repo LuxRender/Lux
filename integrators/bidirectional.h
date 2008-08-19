@@ -41,7 +41,7 @@ public:
 
 	BidirIntegrator(int ed, int ld, LightStrategy ls) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld) {}
 	// BidirIntegrator Public Methods
-	SWCSpectrum Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	SWCSpectrum Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:

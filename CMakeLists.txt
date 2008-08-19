@@ -377,7 +377,7 @@ SET(lux_lib_src
         core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
         core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp core/reflection/bxdf/nulltransmission.cpp
         core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
-        core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp core/photonmap.cpp
+        core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp 
         core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
         core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
 		core/osfunc.cpp
@@ -386,14 +386,14 @@ SET(lux_lib_src
         shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp shapes/barytrianglemesh.cpp shapes/waldtrianglemesh.cpp
         shapes/plymesh/rply.c shapes/lenscomponent.cpp shapes/mesh.cpp shapes/meshwaldtriangle.cpp shapes/meshbarytriangle.cpp
         shapes/meshquadrilateral.cpp samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
-        samplers/random.cpp samplers/halton.cpp
+        samplers/random.cpp
         accelerators/grid.cpp accelerators/unsafekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp film/fleximage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
-        integrators/directlighting.cpp integrators/emission.cpp
-        integrators/path.cpp integrators/path2.cpp integrators/single.cpp integrators/importancepath.cpp
+        integrators/emission.cpp
+        integrators/path.cpp integrators/single.cpp
 		integrators/distributedpath.cpp integrators/particletracing.cpp
-		integrators/bidirectional.cpp integrators/exphotonmap.cpp
+		integrators/bidirectional.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp
@@ -409,7 +409,7 @@ SET(lux_lib_src
 		textures/blender_stucci.cpp textures/harlequin.cpp textures/blender_voronoi.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
-        pixelsamplers/linear.cpp pixelsamplers/randompx.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
+        pixelsamplers/linear.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
 		pixelsamplers/tilepx.cpp pixelsamplers/hilbertpx.cpp
         spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
         core/spectrumwavelengths.cpp core/spd.cpp

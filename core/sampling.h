@@ -145,6 +145,10 @@ public:
 		const Ray &ray, const XYZColor &L, float alpha, int id = 0);*/
 	virtual void AddSample(const Sample &sample);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
+
+	void SetTsPack(TsPack *t) { tspack = t; }
+	TsPack *tspack;
+
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	int samplesPerPixel;
@@ -185,10 +189,10 @@ public:
 	bool renderingDone;
 };
 
-void StratifiedSample1D(float *samples, int nsamples, bool jitter = true);
-void StratifiedSample2D(float *samples, int nx, int ny, bool jitter = true);
-void Shuffle(float *samp, int count, int dims);
-void LatinHypercube(float *samples, int nSamples, int nDim);
+void StratifiedSample1D(const TsPack *tspack, float *samples, int nsamples, bool jitter = true);
+void StratifiedSample2D(const TsPack *tspack, float *samples, int nx, int ny, bool jitter = true);
+void Shuffle(const TsPack *tspack, float *samp, int count, int dims);
+void LatinHypercube(const TsPack *tspack, float *samples, int nSamples, int nDim);
 
 // Sampling Inline Functions
 inline double RadicalInverse(int n, int base)
@@ -272,41 +276,41 @@ inline void Sample02(u_int n, u_int scramble[2], float sample[2])
 	sample[1] = Sobol2(n, scramble[1]);
 }
 
-inline void LDShuffleScrambled1D(int nSamples,
+inline void LDShuffleScrambled1D(const TsPack *tspack, int nSamples,
 		int nPixel, float *samples) {
-	u_int scramble = lux::random::uintValue();
+	u_int scramble = tspack->rng->uintValue();
 	for (int i = 0; i < nSamples * nPixel; ++i)
 		samples[i] = VanDerCorput(i, scramble);
 	for (int i = 0; i < nPixel; ++i)
-		Shuffle(samples + i * nSamples, nSamples, 1);
-	Shuffle(samples, nPixel, nSamples);
+		Shuffle(tspack, samples + i * nSamples, nSamples, 1);
+	Shuffle(tspack, samples, nPixel, nSamples);
 }
-inline void LDShuffleScrambled2D(int nSamples,
+inline void LDShuffleScrambled2D(const TsPack *tspack, int nSamples,
 		int nPixel, float *samples) {
-	u_int scramble[2] = { lux::random::uintValue(), lux::random::uintValue() };
+	u_int scramble[2] = { tspack->rng->uintValue(), tspack->rng->uintValue() };
 	for (int i = 0; i < nSamples * nPixel; ++i)
 		Sample02(i, scramble, &samples[2*i]);
 	for (int i = 0; i < nPixel; ++i)
-		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
-	Shuffle(samples, nPixel, 2 * nSamples);
+		Shuffle(tspack, samples + 2 * i * nSamples, nSamples, 2);
+	Shuffle(tspack, samples, nPixel, 2 * nSamples);
 }
-inline void HaltonShuffleScrambled1D(int nSamples,
+inline void HaltonShuffleScrambled1D(const TsPack *tspack, int nSamples,
 		int nPixel, float *samples) {
-	u_int scramble = lux::random::uintValue();
+	u_int scramble = tspack->rng->uintValue();
 	for (int i = 0; i < nSamples * nPixel; ++i)
 		samples[i] = Halton(i, scramble);
 	for (int i = 0; i < nPixel; ++i)
-		Shuffle(samples + i * nSamples, nSamples, 1);
-	Shuffle(samples, nPixel, nSamples);
+		Shuffle(tspack, samples + i * nSamples, nSamples, 1);
+	Shuffle(tspack, samples, nPixel, nSamples);
 }
-inline void HaltonShuffleScrambled2D(int nSamples,
+inline void HaltonShuffleScrambled2D(const TsPack *tspack, int nSamples,
 		int nPixel, float *samples) {
-	u_int scramble[2] = { lux::random::uintValue(), lux::random::uintValue() };
+	u_int scramble[2] = { tspack->rng->uintValue(), tspack->rng->uintValue() };
 	for (int i = 0; i < nSamples * nPixel; ++i)
 		SampleHalton(i, scramble, &samples[2*i]);
 	for (int i = 0; i < nPixel; ++i)
-		Shuffle(samples + 2 * i * nSamples, nSamples, 2);
-	Shuffle(samples, nPixel, 2 * nSamples);
+		Shuffle(tspack, samples + 2 * i * nSamples, nSamples, 2);
+	Shuffle(tspack, samples, nPixel, 2 * nSamples);
 }
 
 }//namespace lux

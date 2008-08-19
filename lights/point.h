@@ -34,14 +34,13 @@ public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, const Spectrum &le, float gain);
 	~PointLight() { delete LSPD; }
-	SWCSpectrum Sample_L(const Point &p, Vector *wi, VisibilityTester *vis) const;
-	SWCSpectrum Power(const Scene *) const {
-		return SWCSpectrum(LSPD) * 4.f * M_PI;
+	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
+		return SWCSpectrum(tspack, LSPD) * 4.f * M_PI;
 	}
 	bool IsDeltaLight() const { return true; }
-	SWCSpectrum Sample_L(const Point &P, float u1, float u2, float u3,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 			Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const Scene *scene, float u1, float u2,
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
 	

@@ -36,14 +36,14 @@ class SkyBxDF : public BxDF
 {
 public:
 	SkyBxDF(const SkyLight &sky, const Transform &WL, const Vector &x, const Vector &y, const Vector &z) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL), X(x), Y(y), Z(z) {}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const
+	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const
 	{
 		Vector w(wi.x * X.x + wi.y * Y.x + wi.z * Z.x, wi.x * X.y + wi.y * Y.y + wi.z * Z.y, wi.x * X.z + wi.y * Y.z + wi.z * Z.z);
 		w = -Normalize(WorldToLight(w));
 		const float phi = SphericalPhi(w);
 		const float theta = SphericalTheta(w);
 		SWCSpectrum L;
-		skyLight.GetSkySpectralRadiance(theta, phi, &L);
+		skyLight.GetSkySpectralRadiance(tspack, theta, phi, &L);
 		return L;
 	}
 private:
@@ -108,7 +108,7 @@ SkyLight::SkyLight(const Transform &light2world,
 	D65SPD->Normalize();
 }
 
-SWCSpectrum SkyLight::Le(const RayDifferential &r) const {
+SWCSpectrum SkyLight::Le(const TsPack *tspack, const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute sky light radiance for direction
 
@@ -117,12 +117,12 @@ SWCSpectrum SkyLight::Le(const RayDifferential &r) const {
 	const float theta = SphericalTheta(wh);
 
 	SWCSpectrum L;
-	GetSkySpectralRadiance(theta,phi,(SWCSpectrum * const)&L);
+	GetSkySpectralRadiance(tspack, theta,phi,(SWCSpectrum * const)&L);
 	L *= skyScale;
 
 	return L;
 }
-SWCSpectrum SkyLight::Le(const Scene *scene, const Ray &r,
+SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	Point worldCenter;
@@ -146,12 +146,12 @@ SWCSpectrum SkyLight::Le(const Scene *scene, const Ray &r,
 	const float phi = SphericalPhi(wh);
 	const float theta = SphericalTheta(wh);
 	SWCSpectrum L;
-	GetSkySpectralRadiance(theta, phi, &L);
+	GetSkySpectralRadiance(tspack, theta, phi, &L);
 	L *= skyScale;
 	return L;
 }
 
-SWCSpectrum SkyLight::Sample_L(const Point &p,
+SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
@@ -175,12 +175,12 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1)
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(u3 * nrPortalShapes));
+					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 		Normal ns;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns);		// TODO - REFACT - add passed value from sample
 			*wi = Normalize(ps - p);
 
 			if (Dot(*wi, ns) < 0.f) {
@@ -199,13 +199,13 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 		}
 	}
 	visibility->SetRay(p, *wi);
-	return Le(RayDifferential(p, *wi));
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float SkyLight::Pdf(const Point &, const Normal &n,
 		const Vector &wi) const {
 	return AbsDot(n, wi) * INV_TWOPI;
 }
-SWCSpectrum SkyLight::Sample_L(const Point &p,
+SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	if(!havePortalShape) {
@@ -216,12 +216,12 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1)
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(u3 * nrPortalShapes));
+					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 		Normal ns;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, &ns);
+			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns);	// TODO - REFACT - add passed value from sample
 			*wi = Normalize(ps - p);
 			if (Dot(*wi, ns) < 0.f) {
 				found = true;
@@ -239,12 +239,12 @@ SWCSpectrum SkyLight::Sample_L(const Point &p,
 		}
 	}
 	visibility->SetRay(p, *wi);
-	return Le(RayDifferential(p, *wi));
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float SkyLight::Pdf(const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
-SWCSpectrum SkyLight::Sample_L(const Scene *scene,
+SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	if(!havePortalShape) {
@@ -272,27 +272,19 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(lux::random::floatValue() * nrPortalShapes));
+					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		Normal ns;
-		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, &ns);
+		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 		ray->d = UniformSampleSphere(u3, u4);
 		if (Dot(ray->d, ns) < 0.) ray->d *= -1;
 
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
 	}
 
-	return Le(RayDifferential(ray->o, -ray->d));
+	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
-SWCSpectrum SkyLight::Sample_L(const Point &p,
-		Vector *wi, VisibilityTester *visibility) const {
-	float pdf;
-	SWCSpectrum L = Sample_L(p, lux::random::floatValue(), lux::random::floatValue(),
-		lux::random::floatValue(), wi, &pdf, visibility);
-	if (pdf == 0.f) return Spectrum(0.f);
-	return L / pdf;
-}
-SWCSpectrum SkyLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -308,7 +300,7 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, float u1, float u2, BSDF **bs
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	return SWCSpectrum(skyScale);
 }
-SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal &n,
+SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility) const
 {
@@ -333,12 +325,12 @@ SWCSpectrum SkyLight::Sample_L(const Scene *scene, const Point &p, const Normal 
 		// Sample a random Portal
 		int shapeIndex = 0;
 		if(nrPortalShapes > 1)
-			shapeIndex = Floor2Int(u3 * nrPortalShapes);
+			shapeIndex = Floor2Int(tspack->rng->floatValue() * nrPortalShapes);  // TODO - REFACT - add passed value from sample
 		Normal ns;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, &ns);
+			ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 			wi = Normalize(ps - p);
 			if (Dot(wi, ns) < 0.f) {
 				found = true;
@@ -430,11 +422,8 @@ inline float SkyLight::PerezFunction(const float *lam, float theta, float gamma,
 	return lvz* num/den;
 }
 
-// thread specific wavelengths
-extern boost::thread_specific_ptr<SpectrumWavelengths> thread_wavelengths;
-
 // note - lyc - optimised return call to not create temporaries, passed in scale factor
-void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpectrum * const dst_spect) const
+void SkyLight::GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const
 {
 	// add bottom half of hemisphere with horizon colour
 	const float theta_fin = min(theta,(M_PI * 0.5f) - 0.001f);
@@ -445,17 +434,17 @@ void SkyLight::GetSkySpectralRadiance(const float theta, const float phi, SWCSpe
 	const float y = PerezFunction(perez_y, theta_fin, gamma, zenith_y);
 	const float Y = PerezFunction(perez_Y, theta_fin, gamma, zenith_Y);
 
-	ChromaticityToSpectrum(x,y,dst_spect);
+	ChromaticityToSpectrum(tspack, x,y,dst_spect);
 	// Change to full spectrum to have correct scale factor
 	*dst_spect *= (Y / 30.35/*dst_spect->y()*/ * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
 	// Jeanphi - hard value to avoid problems with degraded spectra
 
 	// Note - radiance - added D65 whitepoint multiplication. - TODO must be optimized! might go into ChromacityToSpectrum()
-	*dst_spect *= D65SPD;
+	*dst_spect *= SWCSpectrum(tspack, D65SPD);
 }
 
 // note - lyc - removed redundant computations and optimised
-void SkyLight::ChromaticityToSpectrum(const float x, const float y, SWCSpectrum * const dst_spect) const
+void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const
 {
 	const float den = 1.0f / (0.0241f + 0.2562f * x - 0.7341f * y);
 	const float M1 = (-1.3515f -  1.7703f * x +  5.9114f * y) * den;
@@ -463,7 +452,7 @@ void SkyLight::ChromaticityToSpectrum(const float x, const float y, SWCSpectrum 
 
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
 	{
-		const float w = (thread_wavelengths->w[j] - 300.0f) * 0.1018867f;
+		const float w = (tspack->swl->w[j] - 300.0f) * 0.1018867f;
 		const int i  = Floor2Int(w);
 		const int i1 = i + 1;
 

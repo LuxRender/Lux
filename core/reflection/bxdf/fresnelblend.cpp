@@ -38,7 +38,7 @@ FresnelBlend::FresnelBlend(const SWCSpectrum &d,
 	  Rd(d), Rs(s) {
 	distribution = dist;
 }
-SWCSpectrum FresnelBlend::f(const Vector &wo,
+SWCSpectrum FresnelBlend::f(const TsPack *tspack, const Vector &wo,
                          const Vector &wi) const {
 	SWCSpectrum diffuse = (28.f/(23.f*M_PI)) * Rd *
 		(SWCSpectrum(1.) - Rs) *
@@ -52,7 +52,7 @@ SWCSpectrum FresnelBlend::f(const Vector &wo,
 	return diffuse + specular;
 }
 
-SWCSpectrum FresnelBlend::Sample_f(const Vector &wo,
+SWCSpectrum FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const
 {
 	u1 *= 2.f;
@@ -65,20 +65,20 @@ SWCSpectrum FresnelBlend::Sample_f(const Vector &wo,
 		u1 -= 1.f;
 		distribution->Sample_f(wo, wi, u1, u2, pdf);
 	}
-	*pdf = Pdf(wo, *wi);
+	*pdf = Pdf(tspack, wo, *wi);
 	if (*pdf == 0.f) {
 		if (pdfBack)
 			*pdfBack = 0.f;
 		return SWCSpectrum(0.f);
 	}
 	if (pdfBack)
-		*pdfBack = Pdf(*wi, wo);
+		*pdfBack = Pdf(tspack, *wi, wo);
 	if (reverse)
-		return f(*wi, wo) * (wo.z / wi->z);
+		return f(tspack, *wi, wo) * (wo.z / wi->z);
 	else
-		return f(wo, *wi);
+		return f(tspack, wo, *wi);
 }
-float FresnelBlend::Pdf(const Vector &wo,
+float FresnelBlend::Pdf(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const {
 	if (!SameHemisphere(wo, wi)) return 0.f;
 	return .5f * (fabsf(wi.z) * INV_PI +

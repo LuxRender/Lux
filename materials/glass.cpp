@@ -31,7 +31,7 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -43,8 +43,8 @@ BSDF *Glass::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeome
 	float cb = cauchyb->Evaluate(dgs);
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp(0.f, 1.f));
-	SWCSpectrum T(Kt->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!R.Black()) {
 		if (architectural)
 			bsdf->Add(BSDF_ALLOC( ArchitecturalReflection)(R,

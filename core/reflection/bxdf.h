@@ -70,14 +70,11 @@ enum BxDFType {
 class  BSDF {
 public:
 	// BSDF Public Methods
-	SWCSpectrum Sample_f(const Vector &o, Vector *wi, float u1, float u2,
+	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &o, Vector *wi, float u1, float u2,
 		float u3, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const;
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
-		BxDFType flags = BSDF_ALL,
-		BxDFType *sampledType = NULL) const;
-	float Pdf(const Vector &wo,
+	float Pdf(const TsPack *tspack, const Vector &wo,
 	          const Vector &wi,
 			  BxDFType flags = BSDF_ALL) const;
 	BSDF(const DifferentialGeometry &dgs,
@@ -97,10 +94,10 @@ public:
 		              sn.y * v.x + tn.y * v.y + nn.y * v.z,
 		              sn.z * v.x + tn.z * v.y + nn.z * v.z);
 	}
-	SWCSpectrum f(const Vector &woW, const Vector &wiW,
+	SWCSpectrum f(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 		BxDFType flags = BSDF_ALL) const;
-	SWCSpectrum rho(BxDFType flags = BSDF_ALL) const;
-	SWCSpectrum rho(const Vector &wo,
+	SWCSpectrum rho(const TsPack *tspack, BxDFType flags = BSDF_ALL) const;
+	SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
 	             BxDFType flags = BSDF_ALL) const;
 	static void *Alloc( u_int sz) { return arena->Alloc(sz); }		// TODO remove original memory arena
 	static void FreeAll() { arena->FreeAll(); }
@@ -134,17 +131,17 @@ public:
 	bool MatchesFlags(BxDFType flags) const {
 		return (type & flags) == type;
 	}
-	virtual SWCSpectrum f(const Vector &wo,
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &wo,
 	                   const Vector &wi) const = 0;
-	virtual SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+	virtual SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
-	virtual SWCSpectrum rho(const Vector &wo,
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
 	                     int nSamples = 16,
 		                 float *samples = NULL) const;
-	virtual SWCSpectrum rho(int nSamples = 16,
+	virtual SWCSpectrum rho(const TsPack *tspack, int nSamples = 16,
 	                     float *samples = NULL) const;
-	virtual float Pdf(const Vector &wi, const Vector &wo) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 	// BxDF Public Data
 	const BxDFType type;
 };
@@ -159,18 +156,18 @@ public:
 	static Vector otherHemisphere(const Vector &w) {
 		return Vector(w.x, w.y, -w.z);
 	}
-	SWCSpectrum rho(const Vector &w, int nSamples,
+	SWCSpectrum rho(const TsPack *tspack, const Vector &w, int nSamples,
 			float *samples) const {
-		return brdf->rho(otherHemisphere(w), nSamples, samples);
+		return brdf->rho(tspack, otherHemisphere(w), nSamples, samples);
 	}
-	SWCSpectrum rho(int nSamples, float *samples) const {
-		return brdf->rho(nSamples, samples);
+	SWCSpectrum rho(const TsPack *tspack, int nSamples, float *samples) const {
+		return brdf->rho(tspack, nSamples, samples);
 	}
-	SWCSpectrum f(const Vector &wo, const Vector &wi) const;
-	SWCSpectrum Sample_f(const Vector &wo, Vector *wi,
+	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
-	float Pdf(const Vector &wo, const Vector &wi) const;
+	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
 	BxDF *brdf;
 };

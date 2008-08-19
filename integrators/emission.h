@@ -34,8 +34,8 @@ public:
 	// EmissionIntegrator Public Methods
 	EmissionIntegrator(float ss) { stepSize = ss; }
 	void RequestSamples(Sample *sample, const Scene *scene);
-	SWCSpectrum Transmittance(const Scene *, const Ray &ray, const Sample *sample, float *alpha) const;
-	SWCSpectrum Li(const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	SWCSpectrum Transmittance(const TsPack *tspack, const Scene *, const Ray &ray, const Sample *sample, float *alpha) const;
+	SWCSpectrum Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// EmissionIntegrator Private Data

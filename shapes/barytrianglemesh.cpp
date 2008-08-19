@@ -239,7 +239,7 @@ float BaryTriangle::Area() const {
     return 0.5f * Cross(p2-p1, p3-p1).Length();
 }
 
-Point BaryTriangle::Sample(float u1, float u2,
+Point BaryTriangle::Sample(float u1, float u2, float u3, 
         Normal *Ns) const {
     float b1, b2;
     UniformSampleTriangle(u1, u2, &b1, &b2);

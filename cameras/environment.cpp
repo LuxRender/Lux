@@ -107,7 +107,7 @@ void EnvironmentCamera::GetFlux2RadianceFactors(Film *film, float *factors, int 
 		}
 	}
 }
-void EnvironmentCamera::SamplePosition(float u1, float u2, Point *p, float *pdf) const
+void EnvironmentCamera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
 {
 	*p = rayOrigin;
 	*pdf = 1.0f;

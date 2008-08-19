@@ -31,7 +31,7 @@ namespace lux
 
 class  FresnelSlick : public Fresnel {
 public:
-  SWCSpectrum Evaluate(float cosi) const;
+  SWCSpectrum Evaluate(const TsPack *tspack, float cosi) const;
   FresnelSlick (float r);
 private:
   float normal_incidence;

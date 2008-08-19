@@ -37,7 +37,7 @@ public:
 	               DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &ray) const;
 	float Area() const;
-	Point Sample(float u1, float u2,
+	Point Sample(float u1, float u2, float u3, 
 			Normal *Ns) const {
 		float z = Lerp(u1, zmin, zmax);
 		float t = u2 * phiMax;

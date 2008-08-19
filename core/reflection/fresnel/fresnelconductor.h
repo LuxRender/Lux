@@ -32,7 +32,7 @@ namespace lux
 class  FresnelConductor : public Fresnel {
 public:
 	// FresnelConductor Public Methods
-	SWCSpectrum Evaluate(float cosi) const;
+	SWCSpectrum Evaluate(const TsPack *tspack, float cosi) const;
 	FresnelConductor(const SWCSpectrum &e, const SWCSpectrum &kk)
 		: eta(e), k(kk) {
 	}

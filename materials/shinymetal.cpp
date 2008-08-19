@@ -33,7 +33,7 @@
 using namespace lux;
 
 // ShinyMetal Method Definitions
-BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
+BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -41,8 +41,8 @@ BSDF *ShinyMetal::GetBSDF(const DifferentialGeometry &dgGeom, const Differential
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
-	SWCSpectrum spec(Ks->Evaluate(dgs).Clamp());
-	SWCSpectrum R(Kr->Evaluate(dgs).Clamp());
+	SWCSpectrum spec(tspack, Ks->Evaluate(dgs).Clamp());
+	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp());
 
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
