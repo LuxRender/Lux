@@ -51,7 +51,11 @@ END_EVENT_TABLE()
 int glAttribList[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0};
 
 LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
+#ifdef __WXMAC__
+      : wxGLCanvas(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxGLCanvasName, glAttribList), wxViewerBase(), m_glContext(NULL,this,wxNullPalette,NULL), m_textureW(textureW), m_textureH(textureH){
+#else
       : wxGLCanvas(parent, wxID_ANY, glAttribList), wxViewerBase(), m_glContext(this), m_textureW(textureW), m_textureH(textureH) {
+#endif
 	m_firstDraw = true;
 	m_offsetX = m_offsetY = 0;
 	m_scale = 1.0f;
@@ -76,7 +80,11 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 }
 
 void LuxGLViewer::OnPaint(wxPaintEvent& event) {
+#ifdef __WXMAC__
+	SetCurrent();
+#else
 	SetCurrent(m_glContext);
+#endif
 	wxPaintDC(this);
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glViewport(0, 0, (GLint)GetSize().x, (GLint)GetSize().y);
