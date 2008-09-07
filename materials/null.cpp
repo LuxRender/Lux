@@ -25,6 +25,8 @@
 #include "bxdf.h"
 #include "nulltransmission.h"
 #include "paramset.h"
+#include "dynload.h"
+
 using namespace lux;
 
 // Glass Method Definitions
@@ -39,3 +41,5 @@ Material* Null::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	return new Null();
 }
+
+static DynamicLoader::RegisterMaterial<Null> r("null");

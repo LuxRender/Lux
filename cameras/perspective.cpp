@@ -29,6 +29,7 @@
 #include "reflection/bxdf.h"
 #include "light.h"
 #include "paramset.h"
+#include "dynload.h"
 #include "disk.h"
 #include "error.h"
 
@@ -399,8 +400,9 @@ bool PerspectiveCamera::Intersect(const Ray &ray, Intersection *isect) const
 	return true;
 }
 
-Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
-		const Transform &world2cam, Film *film) {
+Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
+	Film *film)
+{
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
 	float yon = min(params.FindOneFloat("yon", 1e30f), 1e30f);
@@ -433,3 +435,5 @@ Camera* PerspectiveCamera::CreateCamera(const ParamSet &params,
 		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
 		fov, film);
 }
+
+static DynamicLoader::RegisterCamera<PerspectiveCamera> r("perspective");

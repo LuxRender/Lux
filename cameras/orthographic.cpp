@@ -27,6 +27,7 @@
 #include "scene.h" // for struct Intersection
 #include "film.h" // for Film
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -166,8 +167,9 @@ float OrthoCamera::EvalPositionPdf() const
 	return 1.0f/(screenDx*screenDy);
 }
 
-Camera* OrthoCamera::CreateCamera(const ParamSet &params,
-		const Transform &world2cam, Film *film) {
+Camera* OrthoCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
+	Film *film)
+{
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
 	float yon = min(params.FindOneFloat("yon", 1e30f), 1e30f);
@@ -199,3 +201,5 @@ Camera* OrthoCamera::CreateCamera(const ParamSet &params,
 		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
 		film);
 }
+
+static DynamicLoader::RegisterCamera<OrthoCamera> r("orthographic");

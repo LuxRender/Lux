@@ -29,6 +29,7 @@
 #include "blackbody.h"
 #include "reflection/bxdf.h"
 #include "reflection/bxdf/lambertian.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -181,4 +182,5 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamS
 	return new AreaLight(light2world, L, g, nSamples, shape);
 }
 
+static DynamicLoader::RegisterAreaLight<AreaLight> r("area");
 

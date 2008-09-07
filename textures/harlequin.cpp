@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-//#include "harlequin.h"
+#include "harlequin.h"
+#include "dynload.h"
 
-//using namespace lux;
+using namespace lux;
+
+static DynamicLoader::RegisterRGBColorTexture<HarlequinTexture> r2("harlequin");

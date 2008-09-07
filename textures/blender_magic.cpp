@@ -21,10 +21,10 @@
  ***************************************************************************/
 
 #include "blender_magic.h"
+#include "dynload.h"
 
 using namespace lux;
 using namespace blender;
 
-
-
-
+static DynamicLoader::RegisterFloatTexture<BlenderMagicTexture3D<float> > r1("blender_magic");
+static DynamicLoader::RegisterRGBColorTexture<BlenderMagicTexture3D<RGBColor> > r2("blender_magic");

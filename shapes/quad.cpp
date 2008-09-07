@@ -23,6 +23,7 @@
 // quad.cpp*
 #include "quad.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -220,3 +221,5 @@ Shape* Quad::CreateShape(const Transform &o2w,
 
 	return new Quad(o2w, reverseOrientation, 1, 4, vi, P);
 }
+
+static DynamicLoader::RegisterShape<Quad> r("quad");

@@ -22,6 +22,7 @@
 
 // sinc.cpp*
 #include "sinc.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -44,3 +45,5 @@ Filter* LanczosSincFilter::CreateFilter(const ParamSet &ps) {
 	float tau = ps.FindOneFloat("tau", 3.f);
 	return new LanczosSincFilter(xw, yw, tau);
 }
+
+static DynamicLoader::RegisterFilter<LanczosSincFilter> r("sinc");

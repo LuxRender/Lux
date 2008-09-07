@@ -21,11 +21,11 @@
  ***************************************************************************/
 
 #include "lux.h"
+#include "scene.h"
 #include "api.h"
 #include "error.h"
 #include "paramset.h"
 #include "renderfarm.h"
-#include "scene.h"
 #include "camera.h"
 
 #include "../renderer/include/asio.hpp"
@@ -330,7 +330,7 @@ void RenderFarm::send(const std::string &command, const string &name,
 
 int RenderFarm::getServersStatus(RenderingServerInfo *info, int maxInfoCount) {
 	ptime now = second_clock::local_time();
-	for (size_t i = 0; i < min<int>(serverInfoList.size(), maxInfoCount); i++) {
+	for (size_t i = 0; i < min<size_t>(serverInfoList.size(), maxInfoCount); ++i) {
 		info[i].serverIndex = i;
 		info[i].name = serverInfoList[i].name.c_str();
 		info[i].port = serverInfoList[i].port.c_str();

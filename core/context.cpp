@@ -20,20 +20,20 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "renderfarm.h"
 
 
 #include "lux.h"
+#include "scene.h"
 #include "context.h"
 #include "dynload.h"
 #include "api.h"
 #include "camera.h"
 #include "light.h"
 #include "primitive.h"
-#include "scene.h"
 #include "volume.h"
 #include "material.h"
 #include "stats.h"
+#include "renderfarm.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -309,7 +309,7 @@ void Context::texture(const string &name, const string &type, const string &texn
 	renderFarm->send("luxTexture", name, type, texname, params);
 
 	TextureParams tp(params, params, graphicsState->floatTextures,
-			graphicsState->RGBColorTextures);
+			graphicsState->colorTextures);
 	if (type == "float") {
 		// Create _float_ texture and store in _floatTextures_
 		if (graphicsState->floatTextures.find(name)
@@ -324,9 +324,9 @@ void Context::texture(const string &name, const string &type, const string &texn
 		if (ft)
 			graphicsState->floatTextures[name] = ft;
 	} else if (type == "color") {
-		// Create _color_ texture and store in _RGBColorTextures_
-		if (graphicsState->RGBColorTextures.find(name)
-				!= graphicsState->RGBColorTextures.end()) {
+		// Create _color_ texture and store in _colorTextures_
+		if (graphicsState->colorTextures.find(name)
+				!= graphicsState->colorTextures.end()) {
 			//Warning("Texture \"%s\" being redefined", name.c_str());
 			std::stringstream ss;
 			ss<<"Texture '"<<name<<"' being redefined.";
@@ -335,7 +335,7 @@ void Context::texture(const string &name, const string &type, const string &texn
 		boost::shared_ptr<Texture<RGBColor> > st = MakeRGBColorTexture(texname,
 				curTransform, tp);
 		if (st)
-			graphicsState->RGBColorTextures[name] = st;
+			graphicsState->colorTextures[name] = st;
 	} else {
 		//Error("Texture type \"%s\" unknown.", type.c_str());
 		std::stringstream ss;
@@ -441,7 +441,7 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	renderFarm->send("luxPortalShape", name, params);
 
 	boost::shared_ptr<Shape> shape = MakeShape(name, curTransform,
-			graphicsState->reverseOrientation, params, &graphicsState->floatTextures);
+			graphicsState->reverseOrientation, params);
 	if (!shape)
 		return;
 	params.ReportUnused();
@@ -471,7 +471,7 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 
 	// Initialize material for shape (dummy)
 	TextureParams mp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->RGBColorTextures);
+			graphicsState->floatTextures, graphicsState->colorTextures);
 	boost::shared_ptr<Texture<float> > bump;
 	boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
 
@@ -489,7 +489,7 @@ void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materia
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-			graphicsState->floatTextures, graphicsState->RGBColorTextures);
+			graphicsState->floatTextures, graphicsState->colorTextures);
 			boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -513,7 +513,7 @@ void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materia
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-			graphicsState->floatTextures, graphicsState->RGBColorTextures);
+			graphicsState->floatTextures, graphicsState->colorTextures);
 			boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -538,8 +538,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 			name,
 			curTransform,
 			graphicsState->reverseOrientation,
-			params,
-			&graphicsState->floatTextures);
+			params);
 	if (!shape)
 		return;
 	params.ReportUnused();
@@ -550,7 +549,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 				graphicsState->areaLightParams, shape);
 	// Initialize material for shape
 	TextureParams mp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->RGBColorTextures);
+			graphicsState->floatTextures, graphicsState->colorTextures);
 	boost::shared_ptr<Texture<float> > bump;
 	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
 	if (!mtl)
@@ -698,7 +697,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 	Film *film = MakeFilm(FilmName, FilmParams, filter);
 	if (std::string(FilmName)=="film")
 		luxError(LUX_NOERROR,LUX_WARNING,"Warning: Legacy PBRT 'film' does not provide tonemapped output or GUI film display. Use 'multifilm' instead.");
-	Camera *camera = MakeCamera(CameraName, CameraParams, WorldToCamera, film);
+	Camera *camera = MakeCamera(CameraName, WorldToCamera, CameraParams, film);
 	Sampler *sampler = MakeSampler(SamplerName, SamplerParams, film);
 	SurfaceIntegrator *surfaceIntegrator = MakeSurfaceIntegrator(
 			SurfIntegratorName, SurfIntegratorParams);

@@ -22,6 +22,9 @@
 
 // wrinkled.cpp*
 #include "wrinkled.h"
+#include "dynload.h"
 
 using namespace lux;
 
+static DynamicLoader::RegisterFloatTexture<WrinkledTexture<float> > r1("wrinkled");
+static DynamicLoader::RegisterRGBColorTexture<WrinkledTexture<RGBColor> > r2("wrinkled");

@@ -23,6 +23,7 @@
 // volumegrid.cpp*
 #include "volumegrid.h"
 #include "paramset.h"
+#include "dynload.h"
 #include "error.h"
 
 using namespace lux;
@@ -89,3 +90,5 @@ VolumeRegion * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 	return new VolumeGrid(sigma_a, sigma_s, g, Le, BBox(p0, p1),
 		volume2world, nx, ny, nz, data);
 }
+
+static DynamicLoader::RegisterVolumeRegion<VolumeGrid> r("volumegrid");

@@ -165,6 +165,7 @@ namespace lux
   class Camera;
   class ProjectiveCamera;
   class Sampler;
+  class PixelSampler;
   class IntegrationSampler;
   class Sample;
   class Filter;

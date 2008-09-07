@@ -23,7 +23,7 @@
 // RGBColor.cpp*
 #include "color.h"
 #include "spectrum.h"
-#include "Spectrumwavelengths.h"
+#include "spectrumwavelengths.h"
 #include "regular.h"
 #include "memory.h"
 

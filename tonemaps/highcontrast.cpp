@@ -23,6 +23,7 @@
 // highcontrast.cpp*
 #include "highcontrast.h"
 #include "stats.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -92,3 +93,5 @@ void HighContrastOp::Map(vector<Color> &xyz, int xRes, int yRes,
 ToneMap * HighContrastOp::CreateToneMap(const ParamSet &ps) {
 	return new HighContrastOp;
 }
+
+static DynamicLoader::RegisterToneMap<HighContrastOp> r("highcontrast");

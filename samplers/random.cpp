@@ -28,6 +28,7 @@
 #include "linear.h"
 #include "tilepx.h"
 #include "hilbertpx.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -159,3 +160,5 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
                              ystart, yend,
                              xsamp, ysamp, pixelsampler);
 }
+
+static DynamicLoader::RegisterSampler<RandomSampler> r("random");

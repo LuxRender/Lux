@@ -22,7 +22,10 @@
 
 // loopsubdiv.cpp*
 #include "loopsubdiv.h"
+#include "context.h"
 #include "paramset.h"
+#include "dynload.h"
+
 #include <boost/pool/object_pool.hpp>
 
 using namespace lux;
@@ -538,8 +541,9 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 Shape *LoopSubdiv::CreateShape(
 		const Transform &o2w,
 		bool reverseOrientation,
-		const ParamSet &params,
-		map<string, boost::shared_ptr<Texture<float> > > *floatTextures) {
+		const ParamSet &params)
+{
+	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
 	int nlevels = params.FindOneInt("nlevels", 3);
 	int nps, nIndices, nuvi;
 	const int *vi = params.FindInt("indices", &nIndices);
@@ -574,3 +578,5 @@ Shape *LoopSubdiv::CreateShape(
 		displacementMapScale, displacementMapOffset,
 		displacementMapNormalSmooth, displacementMapSharpBoundary);
 }
+
+static DynamicLoader::RegisterShape<LoopSubdiv> r("loopsubdiv");

@@ -26,6 +26,7 @@
 #include "lambertian.h"
 #include "orennayar.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -56,3 +57,5 @@ Material* Matte::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Matte(Kd, sigma, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<Matte> r("matte");

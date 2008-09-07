@@ -25,6 +25,7 @@
 #include "light.h"
 #include "camera.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -699,3 +700,5 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	}
 	return new BidirIntegrator(eyeDepth, lightDepth, estrategy);
 }
+
+static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");

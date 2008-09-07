@@ -26,6 +26,7 @@
 #include "specularreflection.h"
 #include "fresnelnoop.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -51,3 +52,5 @@ Material* Mirror::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Mirror(Kr, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<Mirror> r("mirror");

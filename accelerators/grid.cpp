@@ -26,6 +26,7 @@
 #include "stats.h"
 #include "memory.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -346,3 +347,5 @@ Primitive* GridAccel::CreateAccelerator(const vector<Primitive* > &prims,
 	bool refineImmediately = ps.FindOneBool("refineimmediately", false);
 	return new GridAccel(prims, false, refineImmediately);
 }
+
+static DynamicLoader::RegisterAccelerator<GridAccel> r("grid");

@@ -22,6 +22,7 @@
 
 // marble.cpp*
 #include "marble.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -44,3 +45,6 @@ Texture<RGBColor> * MarbleTexture::CreateRGBColorTexture(const Transform &tex2wo
 		tp.FindFloat("variation", .2f),
 		map);
 }
+
+static DynamicLoader::RegisterFloatTexture<MarbleTexture> r1("marble");
+static DynamicLoader::RegisterRGBColorTexture<MarbleTexture> r2("marble");

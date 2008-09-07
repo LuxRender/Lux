@@ -23,6 +23,7 @@
 // paraboloid.cpp*
 #include "paraboloid.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -182,3 +183,5 @@ Shape* Paraboloid::CreateShape(const Transform &o2w,
 	float phimax = params.FindOneFloat( "phimax", 360 );
 	return new Paraboloid(o2w, reverseOrientation, radius, zmin, zmax, phimax);
 }
+
+static DynamicLoader::RegisterShape<Paraboloid> r("paraboloid");

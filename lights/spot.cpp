@@ -24,6 +24,7 @@
 #include "spot.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -95,3 +96,6 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
 	return new SpotLight(light2world, I, g, coneangle,
 		coneangle-conedelta);
 }
+
+static DynamicLoader::RegisterLight<SpotLight> r("spot");
+

@@ -23,6 +23,7 @@
 // unsafekdtree.cpp*
 #include "unsafekdtreeaccel.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -396,3 +397,5 @@ Primitive* UnsafeKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims
     return new UnsafeKdTreeAccel(prims, isectCost, travCost,
             emptyBonus, maxPrims, maxDepth);
 }
+
+static DynamicLoader::RegisterAccelerator<UnsafeKdTreeAccel> r("unsafekdtree");

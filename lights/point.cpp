@@ -24,6 +24,7 @@
 #include "point.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -63,3 +64,6 @@ Light* PointLight::CreateLight(const Transform &light2world,
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
 	return new PointLight(l2w, intensity, g);
 }
+
+static DynamicLoader::RegisterLight<PointLight> r("point");
+

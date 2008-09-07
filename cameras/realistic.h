@@ -22,6 +22,7 @@
 
 // realistic.cpp*
 #include "camera.h"
+#include "dynload.h"
 
 namespace lux
 {
@@ -45,7 +46,7 @@ public:
   ~RealisticCamera(void);
   float GenerateRay(const Sample &sample, Ray *) const;
 
-  static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
+  static Camera *CreateCamera(const Transform &world2cam, const ParamSet &params, Film *film);
   
 private:
     float ParseLensData(const string& specfile);

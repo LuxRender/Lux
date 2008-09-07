@@ -22,5 +22,9 @@
 
 // bilerp.cpp*
 #include "bilerp.h"
+#include "dynload.h"
 
 using namespace lux;
+
+static DynamicLoader::RegisterFloatTexture<BilerpTexture<float> > r1("bilerp");
+static DynamicLoader::RegisterRGBColorTexture<BilerpTexture<RGBColor> > r2("bilerp");

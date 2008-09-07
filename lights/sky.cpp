@@ -23,10 +23,11 @@
 // sky.cpp*
 #include "sky.h"
 #include "mc.h"
-#include "Spectrumwavelengths.h"
+#include "spectrumwavelengths.h"
 #include "paramset.h"
 #include "blackbody.h"
 #include "reflection/bxdf.h"
+#include "dynload.h"
 
 #include "data/skychroma_spect.h"
 
@@ -466,3 +467,6 @@ void SkyLight::ChromaticityToRGBColor(const TsPack *tspack, const float x, const
 		dst_spect->c[j] = t0 + M1 * t1 + M2 * t2;
 	}
 }
+
+static DynamicLoader::RegisterLight<SkyLight> r("sky");
+

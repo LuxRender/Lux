@@ -22,6 +22,7 @@
 
 // triangle.cpp*
 #include "triangle.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -36,3 +37,5 @@ Filter* TriangleFilter::CreateFilter(const ParamSet &ps) {
 	float yw = ps.FindOneFloat("ywidth", 2.);
 	return new TriangleFilter(xw, yw);
 }
+
+static DynamicLoader::RegisterFilter<TriangleFilter> r("triangle");

@@ -22,6 +22,7 @@
 
 // contrast.cpp*
 #include "contrast.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -43,3 +44,5 @@ ToneMap * ContrastOp::CreateToneMap(const ParamSet &ps) {
 	float day = ps.FindOneFloat("displayadaptationY", 50.f);
 	return new ContrastOp(day);
 }
+
+static DynamicLoader::RegisterToneMap<ContrastOp> r("contrast");

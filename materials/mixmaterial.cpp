@@ -24,6 +24,7 @@
 #include "mixmaterial.h"
 #include "bxdf.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -42,3 +43,5 @@ Material* MixMaterial::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > amount = mp.GetFloatTexture("amount", 0.5f);
 	return new MixMaterial(amount);
 }
+
+static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

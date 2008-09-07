@@ -28,6 +28,7 @@
 #include "mc.h"
 #include "paramset.h"
 #include "reflection/bxdf.h"
+#include "dynload.h"
 
 #include "data/sun_spect.h"
 
@@ -404,3 +405,6 @@ Light* SunLight::CreateLight(const Transform &light2world,
 	float relSize = paramSet.FindOneFloat("relsize", 1.0f);				// relative size to the sun. Set to 0 for old behavior.
 	return new SunLight(light2world, scale, sundir, turb, relSize, nSamples);
 }
+
+static DynamicLoader::RegisterLight<SunLight> r("sun");
+

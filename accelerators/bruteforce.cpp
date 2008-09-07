@@ -27,6 +27,7 @@
 // bruteforce.cpp*
 #include "bruteforce.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -76,3 +77,5 @@ Primitive* BruteForceAccel::CreateAccelerator(const vector<Primitive* > &prims,
 		const ParamSet &ps) {
 	return new BruteForceAccel(prims);
 }
+
+static DynamicLoader::RegisterAccelerator<BruteForceAccel> r("none");

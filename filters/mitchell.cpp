@@ -22,6 +22,7 @@
 
 // mitchell.cpp*
 #include "mitchell.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -39,3 +40,4 @@ Filter* MitchellFilter::CreateFilter(const ParamSet &ps) {
 	return new MitchellFilter(B, C, xw, yw);
 }
 
+static DynamicLoader::RegisterFilter<MitchellFilter> r("mitchell");

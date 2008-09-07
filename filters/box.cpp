@@ -22,6 +22,7 @@
 
 // box.cpp*
 #include "box.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -34,3 +35,5 @@ Filter* BoxFilter::CreateFilter(const ParamSet &ps) {
 	float yw = ps.FindOneFloat("ywidth", .5f);
 	return new BoxFilter(xw, yw);
 }
+
+static DynamicLoader::RegisterFilter<BoxFilter> r("box");

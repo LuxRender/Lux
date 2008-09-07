@@ -23,6 +23,7 @@
 // sphere.cpp*
 #include "sphere.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -201,3 +202,5 @@ Shape* Sphere::CreateShape(const Transform &o2w,
 	return new Sphere(o2w, reverseOrientation, radius,
 		zmin, zmax, phimax);
 }
+
+static DynamicLoader::RegisterShape<Sphere> r("sphere");

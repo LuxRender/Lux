@@ -25,7 +25,7 @@
 #include "color.h"
 #include "color.h"
 #include "spectrum.h"
-#include "Spectrumwavelengths.h"
+#include "spectrumwavelengths.h"
 #include "mc.h"
 #include "sampling.h"
 #include <stdarg.h>

@@ -22,7 +22,6 @@
 
 // quadrilateral.cpp*
 #include "quadrilateral.h"
-#include "paramset.h"
 
 using namespace lux;
 
@@ -109,7 +108,7 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 
 	// Compute intersection for quadrilateral
 	// based on "An Efficient Ray-Quadrilateral Intersection Test"
-	// by Ares Lagae and Philip Dutrï¿½
+	// by Ares Lagae and Philip Dutré
 
     // Get quadrilateral vertices in _p00_, _p10_, _p11_, and _p01_
     const Point &p00 = mesh->p[idx[0]];

@@ -29,6 +29,7 @@
 #include "microfacet.h"
 #include "specularreflection.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -69,3 +70,5 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new ShinyMetal(Ks, uroughness, vroughness, Kr, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<ShinyMetal> r("shinymetal");

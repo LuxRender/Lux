@@ -23,6 +23,7 @@
 // heightfield.cpp*
 #include "heightfield.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -102,3 +103,5 @@ Shape* Heightfield::CreateShape(const Transform &o2w,
 	BOOST_ASSERT(nu != -1 && nv != -1 && Pz != NULL);
 	return new Heightfield(o2w, reverseOrientation, nu, nv, Pz);
 }
+
+static DynamicLoader::RegisterShape<Heightfield> r("heightfield");

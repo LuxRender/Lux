@@ -27,6 +27,7 @@
 #include "blinn.h"
 #include "anisotropic.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -62,3 +63,5 @@ Material* Substrate::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Substrate(Kd, Ks, uroughness, vroughness, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<Substrate> r("substrate");

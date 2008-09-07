@@ -22,7 +22,7 @@
 
 // maxwhite.cpp*
 #include "maxwhite.h"
-#include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -30,3 +30,5 @@ using namespace lux;
 ToneMap * MaxWhiteOp::CreateToneMap(const ParamSet &ps) {
 	return new MaxWhiteOp;
 }
+
+static DynamicLoader::RegisterToneMap<MaxWhiteOp> r("maxwhite");

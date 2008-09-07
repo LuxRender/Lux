@@ -23,6 +23,7 @@
 // disk.cpp*
 #include "disk.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -114,3 +115,5 @@ Shape* Disk::CreateShape(const Transform &o2w,
 	float phimax = params.FindOneFloat( "phimax", 360 );
 	return new Disk(o2w, reverseOrientation, height, radius, inner_radius, phimax);
 }
+
+static DynamicLoader::RegisterShape<Disk> r("disk");

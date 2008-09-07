@@ -22,6 +22,7 @@
 
 // gaussian.cpp*
 #include "gaussian.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -37,3 +38,4 @@ Filter* GaussianFilter::CreateFilter(const ParamSet &ps) {
 	return new GaussianFilter(xw, yw, alpha);
 }
 
+static DynamicLoader::RegisterFilter<GaussianFilter> r("gaussian");

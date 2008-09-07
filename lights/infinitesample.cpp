@@ -26,6 +26,8 @@
 #include "infinitesample.h"
 #include "imagereader.h"
 #include "paramset.h"
+#include "dynload.h"
+
 using namespace lux;
 
 // InfiniteAreaLightIS Method Definitions
@@ -159,3 +161,6 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 
 	return new InfiniteAreaLightIS(light2world, L, nSamples, texmap);
 }
+
+static DynamicLoader::RegisterLight<InfiniteAreaLightIS> r("infinitesample");
+

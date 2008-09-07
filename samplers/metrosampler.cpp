@@ -20,7 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "memory.h"
 
 
 // initial metropolis light transport sample integrator
@@ -30,6 +29,7 @@
 
 // metrosampler.cpp*
 #include "metrosampler.h"
+#include "memory.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -353,3 +353,5 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;
 float MetropolisSampler::meanIntensity;
+
+static DynamicLoader::RegisterSampler<MetropolisSampler> r("metropolis");

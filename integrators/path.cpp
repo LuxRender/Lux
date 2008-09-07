@@ -25,6 +25,7 @@
 #include "bxdf.h"
 #include "light.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -219,3 +220,4 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	return new PathIntegrator(estrategy, rstrategy, maxDepth, RRcontinueProb);
 }
 
+static DynamicLoader::RegisterSurfaceIntegrator<PathIntegrator> r("path");

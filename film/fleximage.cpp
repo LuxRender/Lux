@@ -34,6 +34,7 @@
 #include "exrio.h"
 #include "igiio.h"
 #include "osfunc.h"
+#include "dynload.h"
 
 #include <iostream>
 #include <fstream>
@@ -796,3 +797,6 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		haltspp, reinhard_prescale, reinhard_postscale, reinhard_burn, red, green, blue, white,
 		gamma, reject_warmup, debug_mode);
 }
+
+static DynamicLoader::RegisterFilm<FlexImageFilm> r1("fleximage");
+static DynamicLoader::RegisterFilm<FlexImageFilm> r2("multiimage");

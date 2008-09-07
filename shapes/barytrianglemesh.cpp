@@ -24,6 +24,7 @@
 #include "barytrianglemesh.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -377,3 +378,5 @@ Shape* BaryTriangleMesh::CreateShape(const Transform &o2w,
     return new BaryTriangleMesh(o2w, reverseOrientation, nvi/3, npi, vi, P,
             N, S, uvs);
 }
+
+static DynamicLoader::RegisterShape<BaryTriangleMesh> r("barytrianglemesh");

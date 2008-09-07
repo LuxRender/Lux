@@ -23,6 +23,7 @@
 // torus.cpp*
 #include "torus.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -455,3 +456,5 @@ Shape* Torus::CreateShape(const Transform &o2w,
 	return new Torus(o2w, reverseOrientation, majorRadius, minorRadius,
 		thetamin, thetamax, phimax);
 }
+
+static DynamicLoader::RegisterShape<Torus> r("torus");

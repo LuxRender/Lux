@@ -21,10 +21,10 @@
  ***************************************************************************/
 
 #include "blender_blend.h"
+#include "dynload.h"
 
 using namespace lux;
 using namespace blender;
 
-
-
-
+static DynamicLoader::RegisterFloatTexture<BlenderBlendTexture3D<float> > r1("blender_blend");
+static DynamicLoader::RegisterRGBColorTexture<BlenderBlendTexture3D<RGBColor> > r2("blender_blend");

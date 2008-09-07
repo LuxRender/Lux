@@ -29,6 +29,7 @@
 #include "tilepx.h"
 #include "linear.h"
 #include "hilbertpx.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -221,3 +222,4 @@ Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	return new LDSampler(xstart, xend, ystart, yend, nsamp, pixelsampler);
 }
 
+static DynamicLoader::RegisterSampler<LDSampler> r("lowdiscrepancy");

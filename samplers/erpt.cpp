@@ -61,30 +61,33 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 }
 
 // Metropolis method definitions
-ERPTSampler::ERPTSampler(int xStart, int xEnd, int yStart, int yEnd,
-		int totMutations, float rng, int sw) :
- Sampler(xStart, xEnd, yStart, yEnd, 1), LY(0.), baseLY(0.f), gain(0.f),
+ERPTSampler::ERPTSampler(int totMutations, float microProb, float rng,
+	Sampler *sampler) :
+ Sampler(sampler->xPixelStart, sampler->xPixelEnd,
+	sampler->yPixelStart, sampler->yPixelEnd, sampler->samplesPerPixel),
+ LY(0.), baseLY(0.f), gain(0.f), quantum(0.f),
  totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
- numChains(0), mutation(-1), consecRejects(0), stamp(0),
- range(rng), weight(0.), alpha(0.), baseImage(NULL), sampleImage(NULL),
- timeImage(NULL), strataWidth(sw)
+ numChains(0), mutation(-1), stamp(0), numMicro(-1), posMicro(-1),
+ pMicro(microProb), range(rng), weight(0.), alpha(0.),
+ baseImage(NULL), sampleImage(NULL), currentImage(NULL),
+ timeImage(NULL), baseTimeImage(NULL), currentTimeImage(NULL),
+ baseSampler(sampler)
 {
-	// Allocate storage for image stratified samples
-	strataSamples = (float *)AllocAligned(2 * sw * sw * sizeof(float));
-	strataSqr = sw*sw;
-	currentStrata = strataSqr;
 }
 
 ERPTSampler::~ERPTSampler() {
 	FreeAligned(sampleImage);
 	FreeAligned(baseImage);
 	FreeAligned(timeImage);
+	FreeAligned(baseTimeImage);
+	delete baseSampler;
 }
 
 // Copy
 ERPTSampler* ERPTSampler::clone() const
 {
 	ERPTSampler *newSampler = new ERPTSampler(*this);
+	newSampler->baseSampler = baseSampler->clone();
 	newSampler->totalSamples = 0;
 	newSampler->sampleImage = NULL;
 	return newSampler;
@@ -109,6 +112,9 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
 	sampler->baseImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
+	sampler->baseTimeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
+	sampler->baseSampler->SetTsPack(sampler->tspack);
+	sampler->mutation = -1;
 }
 
 // interface for new ray/samples from scene
@@ -119,22 +125,9 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		initERPT(this, sample);
 	}
 
-	if ((chain == 0 && mutation == -1) || initCount < initSamples) {
-		// Dade - we are at a valid checkpoint where we can stop the
-		// rendering. Check if we have enough samples per pixel in the film.
-		if (film->enoughSamplePerPixel)
-			return false;
-		if(currentStrata == strataSqr) {
-			// Generate shuffled stratified image samples
-			StratifiedSample2D(tspack, strataSamples, strataWidth, strataWidth, true);
-			Shuffle(tspack, strataSamples, strataSqr, 2);
-			currentStrata = 0;
-		}
-		// *** new seed ***
-		sample->imageX = strataSamples[currentStrata*2] * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
-		currentStrata++;
-
+	if (initCount < initSamples) {
+		sample->imageX = tspack->rng->floatValue() * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = tspack->rng->floatValue() * (yPixelEnd - yPixelStart) + yPixelStart;
 		sample->lensU = tspack->rng->floatValue();
 		sample->lensV = tspack->rng->floatValue();
 		sample->time = tspack->rng->floatValue();
@@ -145,36 +138,58 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
+		numMicro = -1;
+	} else if (mutation == -1) {
+		// Dade - we are at a valid checkpoint where we can stop the
+		// rendering. Check if we have enough samples per pixel in the film.
+		if (film->enoughSamplePerPixel)
+			return false;
+
+		const bool ret = baseSampler->GetNextSample(sample, use_pos);
+		sample->sampler = this;
+		for (int i = 0; i < totalTimes; ++i)
+			sample->timexD[0][i] = -1;
+		sample->stamp = 0;
+		currentImage = baseImage;
+		currentTimeImage = baseTimeImage;
+		stamp = 0;
+		numMicro = -1;
+		return ret;
 	} else {
 		if (mutation == 0) {
-
 			// *** new chain ***
-			sample->imageX = baseImage[0];
-			sample->imageY = baseImage[1];
-			sample->lensU = baseImage[2];
-			sample->lensV = baseImage[3];
-			sample->time = baseImage[4];
-			sample->wavelengths = baseImage[5];
-			sample->singleWavelength = tspack->rng->floatValue();//baseImage[6];
-			for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = baseImage[i];
-			for (int i = 0; i < totalTimes; ++i) {
-				if (sample->timexD[0][i] != -1)
-					sample->timexD[0][i] = 0;
-			}
+			for (int i = 0; i < totalTimes; ++i)
+				sample->timexD[0][i] = baseTimeImage[i];
 			sample->stamp = 0;
+			currentImage = baseImage;
+			currentTimeImage = baseTimeImage;
+			stamp = 0;
 		}
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(sampleImage[0], tspack->rng->floatValue(), xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(sampleImage[1], tspack->rng->floatValue(), yPixelStart, yPixelEnd, range);
-		sample->lensU = mutate(sampleImage[2], tspack->rng->floatValue());
-		sample->lensV = mutate(sampleImage[3], tspack->rng->floatValue());
-		sample->time = mutate(sampleImage[4], tspack->rng->floatValue());
-		sample->wavelengths = mutate(sampleImage[5], tspack->rng->floatValue());
-		sample->singleWavelength = tspack->rng->floatValue();//mutate(sampleImage[6], tspack->rng->floatValue());
-		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], tspack->rng->floatValue());
+		float mutationSelector = tspack->rng->floatValue();
+		if (mutationSelector < pMicro)
+			numMicro = min<int>(sample->nxD.size(), Float2Int(mutationSelector / pMicro * (sample->nxD.size() + 1)));
+		else
+			numMicro = -1;
+		if (numMicro > 0) {
+			u_int maxPos = 0;
+			for(; maxPos < sample->nxD[numMicro - 1]; ++maxPos)
+				if (sample->timexD[numMicro - 1][maxPos] < sample->stamp)
+					break;
+			posMicro = min<int>(sample->nxD[numMicro - 1] - 1, Float2Int(tspack->rng->floatValue() * maxPos));
+		} else {
+			posMicro = -1;
+			sample->imageX = mutateScaled(currentImage[0], tspack->rng->floatValue(), xPixelStart, xPixelEnd, range);
+			sample->imageY = mutateScaled(currentImage[1], tspack->rng->floatValue(), yPixelStart, yPixelEnd, range);
+			sample->lensU = mutate(currentImage[2], tspack->rng->floatValue());
+			sample->lensV = mutate(currentImage[3], tspack->rng->floatValue());
+			sample->time = mutate(currentImage[4], tspack->rng->floatValue());
+			sample->wavelengths = mutate(currentImage[5], tspack->rng->floatValue());
+			sample->singleWavelength = /*tspack->rng->floatValue();*/mutateScaled(currentImage[6], tspack->rng->floatValue(), 0.f, 1.f, 1.f);
+			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
+				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(currentImage[i], tspack->rng->floatValue());
+		}
 		++(sample->stamp);
 	}
 
@@ -183,23 +198,29 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 
 float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
-	float *data = sample->xD[num] + pos * sample->dxD[num];
-	if (sample->timexD[num][pos] != sample->stamp) {
+	const u_int size = sample->dxD[num];
+	float *data = sample->xD[num] + pos * size;
+	int stampLimit = sample->stamp;
+	if (numMicro >= 0 && num != numMicro - 1 && pos != posMicro)
+		--stampLimit;
+	if (sample->timexD[num][pos] != stampLimit) {
 		if (sample->timexD[num][pos] == -1) {
-			float *image = baseImage + offset[num] + pos * sample->dxD[num];
-			for (u_int i = 0; i < sample->dxD[num]; ++i) {
-				data[i] = tspack->rng->floatValue();
-				image[i] = data[i];
+			if (initCount < initSamples) {
+				for (u_int i = 0; i < size; ++i)
+					data[i] = tspack->rng->floatValue();
+				return data;
+			} else {
+				baseSampler->GetLazyValues(sample, num, pos);
+				sample->timexD[num][pos] = 0;
 			}
-			sample->timexD[num][pos] = 0;
 		} else {
-			float *image = sampleImage + offset[num] + pos * sample->dxD[num];
-			for (u_int i = 0; i < sample->dxD[num]; ++i){
+			int start = offset[num] + pos * size;
+			float *image = currentImage + start;
+			for (u_int i = 0; i < size; ++i)
 				data[i] = image[i];
-			}
 		}
-		for (int &time = sample->timexD[num][pos]; time < sample->stamp; ++time) {
-			for (u_int i = 0; i < sample->dxD[num]; ++i)
+		for (int &time = sample->timexD[num][pos]; time < stampLimit; ++time) {
+			for (u_int i = 0; i < size; ++i)
 				data[i] = mutate(data[i], tspack->rng->floatValue());
 		}
 	}
@@ -230,47 +251,50 @@ void ERPTSampler::AddSample(const Sample &sample)
 		if (initCount < initSamples)
 			return;
 		if (meanIntensity == 0.) meanIntensity = 1.;
-		meanIntensity /= initSamples * totalMutations;
+		meanIntensity /= initSamples;
+		mutation = -1;
+		return;
 	}
-	if (mutation <= 0 && weight > 0.f) {
-		// Add accumulated contribution of previous reference sample
-		weight *= gain * meanIntensity / LY;
-		if (!isinf(weight) && LY > 0.f) {
-			for(u_int i = 0; i < oldContributions.size(); ++i) {
-				XYZColor color = oldContributions[i].color;
-				color *= weight;
-				film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
-					color, oldContributions[i].alpha,
-					oldContributions[i].buffer, oldContributions[i].bufferGroup);
+	if (mutation <= 0) {
+		if (weight > 0.f) {
+			// Add accumulated contribution of previous reference sample
+			weight *= gain * quantum / LY;
+			if (!isinf(weight) && LY > 0.f) {
+				for(u_int i = 0; i < oldContributions.size(); ++i) {
+					XYZColor color = oldContributions[i].color;
+					color *= weight;
+					film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
+						color, oldContributions[i].alpha,
+						oldContributions[i].buffer, oldContributions[i].bufferGroup);
+				}
 			}
+			weight = 0.f;
 		}
-		weight = 0.f;
 		if (mutation == -1) {
+			meanIntensity = Lerp(1.f / initSamples, meanIntensity, newLY);
 			// calculate the number of chains on a new seed
 			film->AddSampleCount(1.f); // TODO: add to correct buffer groups
-			gain = newLY / (meanIntensity * totalSamples);
-			if (gain < 1.f)
-				numChains = Floor2Int(tspack->rng->floatValue() + gain);
-			else
-				numChains = Floor2Int(gain);
-			if (numChains == 0)
+			if (!(newLY > 0.f))
 				return;
+			quantum = meanIntensity;
+			gain = newLY / quantum;
+			numChains = max(1, Floor2Int(gain + .5f));
+			if (numChains > 100) printf("%d chains\n", numChains);
 			gain /= numChains;
+			quantum /= totalSamples;
 			baseLY = newLY;
 			baseContributions = newContributions;
-			sampleImage[0] = sample.imageX;
-			sampleImage[1] = sample.imageY;
-			sampleImage[2] = sample.lensU;
-			sampleImage[3] = sample.lensV;
-			sampleImage[4] = sample.time;
-			sampleImage[5] = sample.wavelengths;
-			sampleImage[6] = sample.singleWavelength;
+			baseImage[0] = sample.imageX;
+			baseImage[1] = sample.imageY;
+			baseImage[2] = sample.lensU;
+			baseImage[3] = sample.lensV;
+			baseImage[4] = sample.time;
+			baseImage[5] = sample.wavelengths;
+			baseImage[6] = sample.singleWavelength;
 			for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
-				sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
+				baseImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
 			for (int i = 0 ; i < totalTimes; ++i)
-				timeImage[i] = sample.timexD[0][i];
-			for (int i = 0; i < totalSamples; ++i)
-				baseImage[i] = sampleImage[i];
+				baseTimeImage[i] = sample.timexD[0][i];
 			mutation = 0;
 			return;
 		}
@@ -287,7 +311,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	// try accepting of the new sample
 	if (accept) {
 		// Add accumulated contribution of previous reference sample
-		weight *= gain * meanIntensity / LY;
+		weight *= gain * quantum / LY;
 		if (!isinf(weight) && LY > 0.f) {
 			for(u_int i = 0; i < oldContributions.size(); ++i) {
 				XYZColor color = oldContributions[i].color;
@@ -314,10 +338,11 @@ void ERPTSampler::AddSample(const Sample &sample)
 		for (int i = 0 ; i < totalTimes; ++i)
 			timeImage[i] = sample.timexD[0][i];
 		stamp = sample.stamp;
-		consecRejects = 0;
+		currentImage = sampleImage;
+		currentTimeImage = timeImage;
 	} else {
 		// Add contribution of new sample before rejecting it
-		newWeight *= gain * meanIntensity / newLY;
+		newWeight *= gain * quantum / newLY;
 		if (!isinf(newWeight) && newLY > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				XYZColor color = newContributions[i].color;
@@ -330,9 +355,8 @@ void ERPTSampler::AddSample(const Sample &sample)
 
 		// Restart from previous reference
 		for (int i = 0; i < totalTimes; ++i)
-			sample.timexD[0][i] = timeImage[i];
+			sample.timexD[0][i] = currentTimeImage[i];
 		sample.stamp = stamp;
-		++consecRejects;
 	}
 	if (++mutation >= totalMutations) {
 		mutation = 0;
@@ -350,13 +374,19 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	initSamples = params.FindOneInt("initsamples", 100000);
 	initCount = 0;
 	meanIntensity = 0.;
-	int totMutations = params.FindOneInt("chainlength", 2000);	// number of mutations from a given seed
+	int totMutations = params.FindOneInt("chainlength", 100);	// number of mutations from a given seed
+	float microMutationProb = params.FindOneFloat("micromutationprob", .5f);	//probability of generating a micro sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 50.);	// maximum distance in pixel for a small mutation
-	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
-
-	return new ERPTSampler(xStart, xEnd, yStart, yEnd, totMutations, range, stratawidth);
+	string base = params.FindOneString("basesampler", "random");	// sampler for new chain seed
+	Sampler *sampler = MakeSampler(base, params, film);
+	if (sampler == NULL) {
+		luxError(LUX_SYSTEM, LUX_SEVERE, "Could not obtain a valid sampler");
+		return NULL;
+	}
+	return new ERPTSampler(totMutations, microMutationProb, range, sampler);
 }
 
 int ERPTSampler::initCount, ERPTSampler::initSamples;
 float ERPTSampler::meanIntensity = 0.f;
 
+static DynamicLoader::RegisterSampler<ERPTSampler> r("erpt");

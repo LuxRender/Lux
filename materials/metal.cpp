@@ -28,6 +28,7 @@
 #include "blinn.h"
 #include "anisotropic.h"
 #include "paramset.h"
+#include "dynload.h"
 
 #include "irregular.h"
 
@@ -412,3 +413,5 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
 
   return new Metal(n, k, uroughness, vroughness, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<Metal> r("metal");

@@ -23,6 +23,7 @@
 // uv.cpp*
 #include "uv.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -59,3 +60,6 @@ Texture<RGBColor> * UVTexture::CreateRGBColorTexture(const Transform &tex2world,
 	}
 	return new UVTexture(map);
 }
+
+static DynamicLoader::RegisterFloatTexture<UVTexture> r1("uv");
+static DynamicLoader::RegisterRGBColorTexture<UVTexture> r2("uv");

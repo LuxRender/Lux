@@ -29,6 +29,7 @@
 #include "blinn.h"
 #include "anisotropic.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -85,3 +86,5 @@ Material* Plastic::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Plastic(Kd, Ks, index, uroughness, vroughness, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<Plastic> r("plastic");

@@ -34,29 +34,28 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
-	ERPTSampler(int xStart, int xEnd, int yStart, int yEnd,
-			int totMutations, float rng, int sw);
+	ERPTSampler(int totMutations, float microProb, float rng,
+		Sampler *sampler);
 	~ERPTSampler();
 
 	virtual ERPTSampler* clone() const;
-	u_int GetTotalSamplePos() { return 0; }
-	int RoundSize(int size) const { return size; }
+	u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
+	int RoundSize(int size) const { return baseSampler->RoundSize(size); }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	float LY, baseLY, gain;
-	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp;
-	float range, weight, alpha;
-	float *baseImage, *sampleImage;
-	int *timeImage, *offset;
+	float LY, baseLY, gain, quantum;
+	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp, numMicro, posMicro;
+	float pMicro, range, weight, alpha;
+	float *baseImage, *sampleImage, *currentImage;
+	int *timeImage, *baseTimeImage, *currentTimeImage, *offset;
 	static int initCount, initSamples;
 	static float meanIntensity;
 	vector<Sample::Contribution> oldContributions, baseContributions;
-	float *strataSamples;
-	int strataWidth, strataSqr, currentStrata;
+	Sampler *baseSampler;
 };
 
 }//namespace lux

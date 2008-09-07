@@ -23,6 +23,7 @@
 // hyperboloid.cpp*
 #include "hyperboloid.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -227,3 +228,5 @@ Shape* Hyperboloid::CreateShape(const Transform &o2w,
 	float phimax = params.FindOneFloat( "phimax", 360 );
 	return new Hyperboloid(o2w, reverseOrientation, p1, p2, phimax);
 }
+
+static DynamicLoader::RegisterShape<Hyperboloid> r("hyperboloid");

@@ -29,6 +29,7 @@
 #include "lenscomponent.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -195,4 +196,6 @@ Shape* LensComponent::CreateShape(const Transform &o2w,
     return new LensComponent(o2w, reverseOrientation, radius,
         zmin, zmax, phimax, aperture);
 }
+
+static DynamicLoader::RegisterShape<LensComponent> r("lenscomponent");
 

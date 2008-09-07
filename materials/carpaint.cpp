@@ -31,6 +31,7 @@
 #include "microfacet.h"
 #include "fresnelblend.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -228,3 +229,5 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 
   return new CarPaint(Kd, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<CarPaint> r("carpaint");

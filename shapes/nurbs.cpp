@@ -23,6 +23,7 @@
 // nurbs.cpp*
 #include "nurbs.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -308,3 +309,5 @@ Shape* NURBS::CreateShape(const Transform &o2w,
                          nv, vorder, vknots, v0, v1, (float *)P,
                          isHomogeneous);
 }
+
+static DynamicLoader::RegisterShape<NURBS> r("nurbs");

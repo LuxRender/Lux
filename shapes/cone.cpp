@@ -23,6 +23,7 @@
 // cone.cpp*
 #include "cone.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -180,3 +181,5 @@ Shape* Cone::CreateShape(const Transform &o2w,
 	float phimax = params.FindOneFloat( "phimax", 360 );
 	return new Cone(o2w, reverseOrientation, height, radius, phimax);
 }
+
+static DynamicLoader::RegisterShape<Cone> r("cone");

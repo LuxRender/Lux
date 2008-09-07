@@ -24,6 +24,7 @@
 #include "waldtrianglemesh.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -809,3 +810,6 @@ Shape* WaldTriangleMesh::CreateShape(const Transform &o2w,
     return new WaldTriangleMesh(o2w, reverseOrientation, nvi/3, npi, vi, P,
             N, S, uvs);
 }
+
+static DynamicLoader::RegisterShape<WaldTriangleMesh> r1("waldtrianglemesh");
+static DynamicLoader::RegisterShape<WaldTriangleMesh> r2("trianglemesh");

@@ -23,6 +23,7 @@
 // cylinder.cpp*
 #include "cylinder.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -165,4 +166,6 @@ Shape* Cylinder::CreateShape(const Transform &o2w, bool reverseOrientation,
 	float phimax = params.FindOneFloat( "phimax", 360 );
 	return new Cylinder(o2w, reverseOrientation, radius, zmin, zmax, phimax);
 }
+
+static DynamicLoader::RegisterShape<Cylinder> r("cylinder");
 

@@ -22,6 +22,7 @@
 
 // checkerboard.cpp*
 #include "checkerboard.h"
+#include "dynload.h"
 
 
 namespace lux
@@ -131,3 +132,6 @@ Texture<RGBColor> * Checkerboard::CreateRGBColorTexture(const Transform &tex2wor
 		return new Checkerboard3D<RGBColor>(map, tex1, tex2);
 	}
 }
+
+static DynamicLoader::RegisterFloatTexture<Checkerboard> r1("checkerboard");
+static DynamicLoader::RegisterRGBColorTexture<Checkerboard> r2("checkerboard");

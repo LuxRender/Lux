@@ -23,6 +23,7 @@
 // emission.cpp*
 #include "emission.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -80,3 +81,5 @@ VolumeIntegrator* EmissionIntegrator::CreateVolumeIntegrator(const ParamSet &par
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new EmissionIntegrator(stepSize);
 }
+
+static DynamicLoader::RegisterVolumeIntegrator<EmissionIntegrator> r("emission");

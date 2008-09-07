@@ -27,6 +27,7 @@
 #include "imagereader.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -107,3 +108,6 @@ Light* ProjectionLight::CreateLight(const Transform &light2world,
 	string texname = paramSet.FindOneString("mapname", "");
 	return new ProjectionLight(light2world, I, texname, fov);
 }
+
+static DynamicLoader::RegisterLight<ProjectionLight> r("projection");
+

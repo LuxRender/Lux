@@ -24,6 +24,7 @@
 #include "distant.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -75,3 +76,6 @@ Light* DistantLight::CreateLight(const Transform &light2world,
 	Vector dir = from-to;
 	return new DistantLight(light2world, L, g, dir);
 }
+
+static DynamicLoader::RegisterLight<DistantLight> r("distant");
+

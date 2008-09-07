@@ -22,5 +22,9 @@
 
 // dots.cpp*
 #include "dots.h"
+#include "dynload.h"
 
 using namespace lux;
+
+static DynamicLoader::RegisterFloatTexture<DotsTexture<float> > r1("dots");
+static DynamicLoader::RegisterRGBColorTexture<DotsTexture<RGBColor> > r2("dots");

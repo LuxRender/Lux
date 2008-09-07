@@ -22,6 +22,9 @@
 
 // windy.cpp*
 #include "windy.h"
+#include "dynload.h"
 
 using namespace lux;
 
+static DynamicLoader::RegisterFloatTexture<WindyTexture<float> > r1("windy");
+static DynamicLoader::RegisterRGBColorTexture<WindyTexture<RGBColor> > r2("windy");

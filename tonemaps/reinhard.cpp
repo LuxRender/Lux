@@ -29,6 +29,7 @@
  */
 
 #include "reinhard.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -69,3 +70,5 @@ ToneMap * ReinhardOp::CreateToneMap(const ParamSet &ps) {
 	float burn = ps.FindOneFloat("burn", 7.f);
 	return new ReinhardOp(pre_scale, post_scale, burn);
 }
+
+static DynamicLoader::RegisterToneMap<ReinhardOp> r("reinhard");

@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "mesh.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -310,3 +311,5 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 			triType, triIndicesCount, triIndices,
 			quadType, quadIndicesCount, quadIndices);
 }
+
+static DynamicLoader::RegisterShape<Mesh> r("mesh");

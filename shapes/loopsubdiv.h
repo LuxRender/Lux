@@ -22,8 +22,6 @@
 
 // loopsubdiv.cpp*
 #include "shape.h"
-#include "paramset.h"
-#include "dynload.h"
 #include "texture.h"
 #include "error.h"
 #include <set>
@@ -136,8 +134,7 @@ public:
 	BBox WorldBound() const;
 
 	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
-			const ParamSet &params, map<string,
-			boost::shared_ptr<Texture<float> > > *floatTextures);
+			const ParamSet &params);
 
 private:
 	// LoopSubdiv Private Methods

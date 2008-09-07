@@ -27,6 +27,7 @@
 #include "imagereader.h"
 #include "mc.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -69,3 +70,6 @@ Light* GonioPhotometricLight::CreateLight(const Transform &light2world,
 	string texname = paramSet.FindOneString("mapname", "");
 	return new GonioPhotometricLight(light2world, I, texname);
 }
+
+static DynamicLoader::RegisterLight<GonioPhotometricLight> r("goniometric");
+

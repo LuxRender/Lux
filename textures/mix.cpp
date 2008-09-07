@@ -22,5 +22,9 @@
 
 // mix.cpp*
 #include "mix.h"
+#include "dynload.h"
 
 using namespace lux;
+
+static DynamicLoader::RegisterFloatTexture<MixTexture<float> > r1("mix");
+static DynamicLoader::RegisterRGBColorTexture<MixTexture<RGBColor> > r2("mix");

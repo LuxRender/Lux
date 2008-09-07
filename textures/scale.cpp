@@ -22,5 +22,9 @@
 
 // scale.cpp*
 #include "scale.h"
+#include "dynload.h"
 
 using namespace lux;
+
+static DynamicLoader::RegisterFloatTexture<ScaleTexture<float, float> > r1("scale");
+static DynamicLoader::RegisterRGBColorTexture<ScaleTexture<RGBColor, RGBColor> > r2("scale");

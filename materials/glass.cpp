@@ -27,6 +27,7 @@
 #include "speculartransmission.h"
 #include "fresneldielectric.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -67,3 +68,5 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Glass(Kr, Kt, index, cbf, archi, bumpMap);
 }
+
+static DynamicLoader::RegisterMaterial<Glass> r("glass");

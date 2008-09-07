@@ -33,6 +33,7 @@
 #include "film.h"
 #include "dynload.h"
 #include "paramset.h"
+#include "dynload.h"
 
 #include <fstream>
 using std::ifstream;
@@ -189,8 +190,9 @@ float RealisticCamera::ParseLensData(const string& specfile) {
     return accumdist;
 }
 
-Camera* RealisticCamera::CreateCamera(const ParamSet &params,
-		const Transform &world2cam, Film *film) {
+Camera* RealisticCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
+	Film *film)
+{
 	// Extract common camera parameters from \use{ParamSet}
 	float hither = params.FindOneFloat("hither", 1e-3f);
 	float yon = params.FindOneFloat("yon", 1e30f);
@@ -225,3 +227,5 @@ Camera* RealisticCamera::CreateCamera(const ParamSet &params,
 				   shutteropen, shutterclose, filmdistance, fstop, 
 				   specfile, filmdiag, film);
 }
+
+static DynamicLoader::RegisterCamera<RealisticCamera> r("realistic");

@@ -28,11 +28,12 @@
 namespace lux
 {
 
-namespace Constant
+class Constant
 {
-Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
-}
+public:
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+};
 
 }//namespace lux
 

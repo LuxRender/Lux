@@ -22,6 +22,7 @@
 
 #include "plymesh.h"
 #include "paramset.h"
+#include "dynload.h"
 
 #include "waldtrianglemesh.h"
 #include "./plymesh/rply.h"
@@ -217,6 +218,8 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	bool smooth = params.FindOneBool("smooth", false);
 	return new PlyMesh(o2w, reverseOrientation, filename, smooth);
 }
+
+static DynamicLoader::RegisterShape<PlyMesh> r("plymesh");
 
 }//namespace lux
 

@@ -28,13 +28,12 @@
 #include "camera.h"
 #include "film.h"
 #include "sampling.h"
-#include "dynload.h"
 #include "volume.h"
 #include "error.h"
 #include "context.h"
 #include "bxdf.h"
 #include "light.h"
-#include "Spectrumwavelengths.h"
+#include "spectrumwavelengths.h"
 
 #include "randomgen.h"
 

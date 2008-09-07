@@ -26,6 +26,8 @@
 #include "mc.h"
 #include "paramset.h"
 #include "blackbody.h"
+#include "dynload.h"
+
 using namespace lux;
 
 // InfiniteAreaLight Method Definitions
@@ -232,3 +234,6 @@ Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 
 	return new InfiniteAreaLight(light2world, L, nSamples, texmap, map, gain, gamma);
 }
+
+static DynamicLoader::RegisterLight<InfiniteAreaLight> r("infinite");
+

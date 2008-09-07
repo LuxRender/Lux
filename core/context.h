@@ -58,6 +58,13 @@ public:
 		activeContext=c;
 	}
 
+	static map<string, boost::shared_ptr<Texture<float> > > *getActiveFloatTextures() {
+		return &(activeContext->graphicsState->floatTextures);
+	}
+	static map<string, boost::shared_ptr<Texture<RGBColor> > > *getActiveRGBColorTextures() {
+		return &(activeContext->graphicsState->colorTextures);
+	}
+
 	//'static' API
 	//static void luxPixelFilter(const char *, const ParamSet &params) { activeContext->pixelFilter(std::string(name), params); }
 	static void luxIdentity() { activeContext->identity(); }
@@ -282,7 +289,7 @@ private:
 		}
 		// Graphics State
 		map<string, boost::shared_ptr<Texture<float> > > floatTextures;
-		map<string, boost::shared_ptr<Texture<RGBColor> > > RGBColorTextures;
+		map<string, boost::shared_ptr<Texture<RGBColor> > > colorTextures;
 		ParamSet materialParams;
 		string material;
 		ParamSet areaLightParams;

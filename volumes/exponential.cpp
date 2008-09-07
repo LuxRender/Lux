@@ -23,6 +23,7 @@
 // exponential.cpp*
 #include "exponential.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -42,3 +43,5 @@ VolumeRegion * ExponentialDensity::CreateVolumeRegion(const Transform &volume2wo
 	return new ExponentialDensity(sigma_a, sigma_s, g, Le, BBox(p0, p1),
 		volume2world, a, b, up);
 }
+
+static DynamicLoader::RegisterVolumeRegion<ExponentialDensity> r("exponential");

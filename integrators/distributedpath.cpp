@@ -24,6 +24,7 @@
 #include "distributedpath.h"
 #include "bxdf.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -376,3 +377,5 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 		diffusereflectdepth, diffusereflectsamples, diffuserefractdepth, diffuserefractsamples, glossyreflectdepth, glossyreflectsamples, 
 		glossyrefractdepth, glossyrefractsamples, specularreflectdepth, specularrefractdepth);
 }
+
+static DynamicLoader::RegisterSurfaceIntegrator<DistributedPath> r("distributedpath");

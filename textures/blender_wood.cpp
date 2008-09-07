@@ -21,11 +21,10 @@
  ***************************************************************************/
 
 #include "blender_wood.h"
+#include "dynload.h"
 
 using namespace lux;
 using namespace blender;
 
-
-
-
-
+static DynamicLoader::RegisterFloatTexture<BlenderWoodTexture3D<float> > r1("blender_wood");
+static DynamicLoader::RegisterRGBColorTexture<BlenderWoodTexture3D<RGBColor> > r2("blender_wood");

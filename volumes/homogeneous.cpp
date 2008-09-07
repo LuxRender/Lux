@@ -23,6 +23,7 @@
 // homogeneous.cpp*
 #include "homogeneous.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -40,3 +41,5 @@ VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2wor
 	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
 		volume2world);
 }
+
+static DynamicLoader::RegisterVolumeRegion<HomogeneousVolume> r("homogeneous");

@@ -23,6 +23,7 @@
 // tabreckdtree.cpp*
 #include "tabreckdtreeaccel.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -524,3 +525,6 @@ Primitive* TaBRecKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims
     return new TaBRecKdTreeAccel(prims, isectCost, travCost,
             emptyBonus, maxPrims, maxDepth);
 }
+
+static DynamicLoader::RegisterAccelerator<TaBRecKdTreeAccel> r1("tabreckdtree");
+static DynamicLoader::RegisterAccelerator<TaBRecKdTreeAccel> r2("kdtree");

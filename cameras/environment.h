@@ -70,7 +70,7 @@ public:
 	//{
 	//	return SWCSpectrum(1.0f);
 	//}
-	static Camera *CreateCamera(const ParamSet &params, const Transform &world2cam, Film *film);
+	static Camera *CreateCamera(const Transform &world2cam, const ParamSet &params, Film *film);
 private:
 	bool GenerateSample(const Point &p, Sample *sample) const;
 	// EnvironmentCamera Private Data

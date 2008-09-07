@@ -24,6 +24,7 @@
 #include "single.h"
 #include "light.h"
 #include "paramset.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -112,3 +113,5 @@ VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &param
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new SingleScattering(stepSize);
 }
+
+static DynamicLoader::RegisterVolumeIntegrator<SingleScattering> r("single");

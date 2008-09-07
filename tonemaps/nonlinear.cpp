@@ -22,6 +22,7 @@
 
 // nonlinear.cpp*
 #include "nonlinear.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -30,3 +31,5 @@ ToneMap* NonLinearOp::CreateToneMap(const ParamSet &ps) {
 	float maxy = ps.FindOneFloat("maxY", 0.f);
 	return new NonLinearOp(maxy);
 }
+
+static DynamicLoader::RegisterToneMap<NonLinearOp> r("nonlinear");

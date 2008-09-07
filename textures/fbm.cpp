@@ -22,6 +22,9 @@
 
 // fbm.cpp*
 #include "fbm.h"
+#include "dynload.h"
 
 using namespace lux;
 
+static DynamicLoader::RegisterFloatTexture<FBmTexture<float> > r1("fbm");
+static DynamicLoader::RegisterRGBColorTexture<FBmTexture<RGBColor> > r2("fbm");

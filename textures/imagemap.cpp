@@ -22,5 +22,9 @@
 
 // imagemap.cpp*
 #include "imagemap.h"
+#include "dynload.h"
 
 using namespace lux;
+
+static DynamicLoader::RegisterFloatTexture<ImageTexture<float> > r1("imagemap");
+static DynamicLoader::RegisterRGBColorTexture<ImageTexture<RGBColor> > r2("imagemap");
