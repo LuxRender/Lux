@@ -25,6 +25,7 @@
 // orennayar.h*
 #include "lux.h"
 #include "bxdf.h"
+#include "color.h"
 #include "spectrum.h"
 
 namespace lux

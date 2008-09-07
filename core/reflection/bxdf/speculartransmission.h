@@ -25,6 +25,7 @@
 // speculartransmission.h*
 #include "lux.h"
 #include "bxdf.h"
+#include "color.h"
 #include "spectrum.h"
 #include "fresneldielectric.h"
 

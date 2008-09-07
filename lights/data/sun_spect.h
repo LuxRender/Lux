@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/  
 
-// 32 bin RGB spectra for smits RGB->Spectrum conversion using D65 whitepoint (for illuminants)
+// 32 bin RGB spectra for smits RGB->RGBColor conversion using D65 whitepoint (for illuminants)
 // generated with matlab by karlvb - added by radiance
 
 #ifndef LUX_SUN_SPECT_H
@@ -34,7 +34,7 @@ namespace lux
 /* All data lifted from MI */
 /* Units are either [] or cm^-1. refer when in doubt MI */
 
-// k_o Spectrum table from pg 127, MI.
+// k_o RGBColor table from pg 127, MI.
 static float sun_k_oWavelengths[64] = {
 300, 305, 310, 315, 320,
 325, 330, 335, 340, 345,
@@ -128,7 +128,7 @@ static float sun_k_oAmplitudes[65] = {
   .0
 };
 
-// k_g Spectrum table from pg 130, MI.
+// k_g RGBColor table from pg 130, MI.
 static float sun_k_gWavelengths[2] = {
   760,
   770,
@@ -139,7 +139,7 @@ static float sun_k_gAmplitudes[2] = {
   0.210,
 };
 
-// k_wa Spectrum table from pg 130, MI.
+// k_wa RGBColor table from pg 130, MI.
 static float sun_k_waWavelengths[13] = {
   689,
   690,

@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry.h"
 #include "shape.h"
+#include "color.h"
 #include "spectrum.h"
 #include "memory.h"
 

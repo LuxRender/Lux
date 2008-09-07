@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/  
 
-// 32 bin RGB spectra for smits RGB->Spectrum conversion using D65 whitepoint (for illuminants)
+// 32 bin RGB spectra for smits RGB->RGBColor conversion using D65 whitepoint (for illuminants)
 // generated with matlab by karlvb - added by radiance
 
 #ifndef LUX_RGBD65_32_H

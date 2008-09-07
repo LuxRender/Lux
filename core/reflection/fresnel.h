@@ -24,6 +24,7 @@
 #define LUX_FRESNEL_H
 // fresnel.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 
 namespace lux

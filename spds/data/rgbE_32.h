@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.org                       *
  ***************************************************************************/  
 
-// 32 bin RGB spectra for smits RGB->Spectrum conversion using E whitepoint (for reflectances)
+// 32 bin RGB spectra for smits RGB->RGBColor conversion using E whitepoint (for reflectances)
 // generated with matlab by karlvb - added by radiance
 
 #ifndef LUX_RGBE_32_H

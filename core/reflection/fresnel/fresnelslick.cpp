@@ -23,6 +23,7 @@
 // fresnelslick.cpp*
 #include "fresnelslick.h"
 #include "color.h"
+#include "color.h"
 #include "spectrum.h"
 #include "mc.h"
 #include "sampling.h"

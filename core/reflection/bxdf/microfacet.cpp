@@ -23,6 +23,7 @@
 // microfacet.cpp*
 #include "microfacet.h"
 #include "color.h"
+#include "color.h"
 #include "spectrum.h"
 #include "mc.h"
 #include "sampling.h"

@@ -23,6 +23,7 @@
 // beckmann.cpp*
 #include "beckmann.h"
 #include "color.h"
+#include "color.h"
 #include "spectrum.h"
 #include "mc.h"
 #include "sampling.h"

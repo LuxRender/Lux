@@ -23,8 +23,9 @@
 // fresneldielectric.cpp*
 #include "fresneldielectric.h"
 #include "color.h"
+#include "color.h"
 #include "spectrum.h"
-#include "spectrumwavelengths.h"
+#include "Spectrumwavelengths.h"
 #include "mc.h"
 #include "sampling.h"
 #include <stdarg.h>

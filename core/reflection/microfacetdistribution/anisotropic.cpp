@@ -23,6 +23,7 @@
 // anisotropic.cpp*
 #include "anisotropic.h"
 #include "color.h"
+#include "color.h"
 #include "spectrum.h"
 #include "mc.h"
 #include "sampling.h"
