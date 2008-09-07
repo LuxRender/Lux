@@ -188,15 +188,15 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		// *** small mutation ***
 		// mutate current sample
 		if (1.f - mutationSelector < pMicro)
-			numMicro = min<int>(sample->nxD.size(), Float2Int(tspack->rng->floatValue() * (sample->nxD.size() + 1))) - 1;
+			numMicro = min<int>(sample->nxD.size(), Float2Int((1.f - mutationSelector) / pMicro * (sample->nxD.size() + 1)));
 		else
 			numMicro = -1;
-		if (numMicro >= 0) {
+		if (numMicro > 0) {
 			u_int maxPos = 0;
-			for (; maxPos < sample->nxD[numMicro]; ++maxPos)
-				if (sample->timexD[numMicro][maxPos] < sample->stamp)
+			for (; maxPos < sample->nxD[numMicro - 1]; ++maxPos)
+				if (sample->timexD[numMicro - 1][maxPos] < sample->stamp)
 					break;
-			posMicro = min<int>(sample->nxD[numMicro] - 1, Float2Int(tspack->rng->floatValue() * maxPos));
+			posMicro = min<int>(sample->nxD[numMicro - 1] - 1, Float2Int(tspack->rng->floatValue() * maxPos));
 		} else {
 			posMicro = -1;
 			sample->imageX = mutateScaled(sampleImage[0], qrNumber(tspack, generation, scramble[0], 0 + orderOffset), xPixelStart, xPixelEnd, range);
@@ -217,23 +217,24 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 
 float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
-	float *data = sample->xD[num] + pos * sample->dxD[num];
-	if (numMicro >= 0 && num != numMicro && posMicro >= 0 && pos != posMicro)
-		return data;
-	int scrambleOffset = data - sample->oneD[0];
-	if (sample->timexD[num][pos] != sample->stamp) {
+	const u_int size = sample->dxD[num];
+	float *data = sample->xD[num] + pos * size;
+	const int scrambleOffset = data - sample->oneD[0];
+	int stampLimit = sample->stamp;
+	if (numMicro >= 0 && num != numMicro - 1 && pos != posMicro)
+		--stampLimit;
+	if (sample->timexD[num][pos] != stampLimit) {
 		if (sample->timexD[num][pos] == -1) {
-			for (u_int i = 0; i < sample->dxD[num]; ++i)
+			for (u_int i = 0; i < size; ++i)
 				data[i] = qrNumber(tspack, generation - sample->stamp, scramble[scrambleOffset + i], (i & 1) + orderOffset);
 			sample->timexD[num][pos] = 0;
 		} else {
-			for (u_int i = 0; i < sample->dxD[num]; ++i){
-				data[i] = sampleImage[offset[num] +
-					pos * sample->dxD[num] + i];
-			}
+			float *image = sampleImage + offset[num] + pos * size;
+			for (u_int i = 0; i < size; ++i)
+				data[i] = image[i];
 		}
-		for (; sample->timexD[num][pos] < sample->stamp; ++(sample->timexD[num][pos])) {
-			for (u_int i = 0; i < sample->dxD[num]; ++i)
+		for (; sample->timexD[num][pos] < stampLimit; ++(sample->timexD[num][pos])) {
+			for (u_int i = 0; i < size; ++i)
 				data[i] = mutate(data[i], qrNumber(tspack, generation - sample->stamp + sample->timexD[num][pos] + 1, scramble[scrambleOffset + i], (i & 1) + orderOffset));
 		}
 	}
