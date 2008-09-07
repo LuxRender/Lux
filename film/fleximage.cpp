@@ -256,7 +256,7 @@ void FlexImageFilm::MergeSampleArray() {
         return;
     }
         
-	for(int sArrId = 0; sArrId < curSampleArr2Id - 1; sArrId++) {
+	for(int sArrId = 0; sArrId < curSampleArr2Id; ++sArrId) {
 		const XYZColor xyz = SampleArr2ptr[sArrId].xyz;
 		const float alpha = SampleArr2ptr[sArrId].alpha;
 
