@@ -29,7 +29,7 @@ using namespace lux;
 
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
-		const Spectrum &radiance, float gain, const Vector &dir)
+		const RGBColor &radiance, float gain, const Vector &dir)
 	: Light(light2world) {
 	lightDir = Normalize(LightToWorld(dir));
 	// Create SPD
@@ -68,7 +68,7 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 }
 Light* DistantLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	Point from = paramSet.FindOnePoint("from", Point(0,0,0));
 	Point to = paramSet.FindOnePoint("to", Point(0,0,1));

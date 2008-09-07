@@ -24,6 +24,7 @@
 #define LUX_RGBILLUMSPD_H
 // rgbillum.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "spd.h"
 
@@ -34,10 +35,10 @@ namespace lux
   class RGBIllumSPD : public SPD {
   public:
     RGBIllumSPD() : SPD() {
-	  init(Spectrum(1.f));
+	  init(RGBColor(1.f));
     }
 
-    RGBIllumSPD(Spectrum s) : SPD() {
+    RGBIllumSPD(RGBColor s) : SPD() {
       init(s);
     }
 
@@ -50,7 +51,7 @@ namespace lux
 		  }
 	  }
 
-	void init(Spectrum s);
+	void init(RGBColor s);
 
   private:   
   };

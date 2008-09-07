@@ -25,6 +25,7 @@
 // camera.h*
 #include "lux.h"
 #include "geometry/transform.h"
+#include "color.h"
 #include "spectrum.h"
 #include "error.h"
 

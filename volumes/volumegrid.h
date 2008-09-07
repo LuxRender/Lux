@@ -30,8 +30,8 @@ namespace lux
 class VolumeGrid : public DensityRegion {
 public:
 	// VolumeGrid Public Methods
-	VolumeGrid(const Spectrum &sa, const Spectrum &ss, float gg,
-	 		const Spectrum &emit, const BBox &e, const Transform &v2w,
+	VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
+	 		const RGBColor &emit, const BBox &e, const Transform &v2w,
 			int nx, int ny, int nz, const float *d);
 	~VolumeGrid() { delete[] density; }
 	BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }

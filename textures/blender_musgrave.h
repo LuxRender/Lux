@@ -90,7 +90,7 @@ public:
     }
 
     static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> *CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> *CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
     
 private:
     // BlenderMusgraveTexture3D Private Data
@@ -177,7 +177,7 @@ template <class T> Texture<float> *BlenderMusgraveTexture3D<T>::CreateFloatTextu
             map);
 }
 
-template <class T> Texture<Spectrum> *BlenderMusgraveTexture3D<T>::CreateSpectrumTexture(
+template <class T> Texture<RGBColor> *BlenderMusgraveTexture3D<T>::CreateRGBColorTexture(
         const Transform &tex2world,
         const TextureParams &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
@@ -186,8 +186,8 @@ template <class T> Texture<Spectrum> *BlenderMusgraveTexture3D<T>::CreateSpectru
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<Spectrum> > tex1 = tp.GetSpectrumTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<Spectrum> > tex2 = tp.GetSpectrumTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<RGBColor> > tex1 = tp.GetRGBColorTexture("tex1", 1.f);
+	boost::shared_ptr<Texture<RGBColor> > tex2 = tp.GetRGBColorTexture("tex2", 0.f);
 
     // Dade - decode the noise type
     short type = TEX_MFRACTAL;
@@ -237,7 +237,7 @@ template <class T> Texture<Spectrum> *BlenderMusgraveTexture3D<T>::CreateSpectru
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
-    return new BlenderMusgraveTexture3D<Spectrum>(
+    return new BlenderMusgraveTexture3D<RGBColor>(
 			tex1,
 			tex2,
             tp.FindFloat("h", 1.0f),

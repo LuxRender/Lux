@@ -34,8 +34,8 @@
 
 using namespace lux;
 
-CarPaint::CarPaint(boost::shared_ptr<Texture<Spectrum> > kd,
-                   boost::shared_ptr<Texture<Spectrum> > ks1, boost::shared_ptr<Texture<Spectrum> > ks2, boost::shared_ptr<Texture<Spectrum> > ks3,
+CarPaint::CarPaint(boost::shared_ptr<Texture<RGBColor> > kd,
+                   boost::shared_ptr<Texture<RGBColor> > ks1, boost::shared_ptr<Texture<RGBColor> > ks2, boost::shared_ptr<Texture<RGBColor> > ks3,
                    boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,
                    boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
                    boost::shared_ptr<Texture<float> > bump) {
@@ -123,10 +123,10 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
   return bsdf;
 }
 
-void DataFromName(const string name, boost::shared_ptr<Texture<Spectrum> > *Kd,
-                                     boost::shared_ptr<Texture<Spectrum> > *Ks1,
-                                     boost::shared_ptr<Texture<Spectrum> > *Ks2,
-                                     boost::shared_ptr<Texture<Spectrum> > *Ks3,
+void DataFromName(const string name, boost::shared_ptr<Texture<RGBColor> > *Kd,
+                                     boost::shared_ptr<Texture<RGBColor> > *Ks1,
+                                     boost::shared_ptr<Texture<RGBColor> > *Ks2,
+                                     boost::shared_ptr<Texture<RGBColor> > *Ks3,
                                      boost::shared_ptr<Texture<float> > *R1,
                                      boost::shared_ptr<Texture<float> > *R2,
                                      boost::shared_ptr<Texture<float> > *R3,
@@ -145,10 +145,10 @@ void DataFromName(const string name, boost::shared_ptr<Texture<Spectrum> > *Kd,
       break;
   }
 
-  boost::shared_ptr<Texture<Spectrum> > kd (new ConstantTexture<Spectrum>(carpaintdata[i].kd));
-  boost::shared_ptr<Texture<Spectrum> > ks1 (new ConstantTexture<Spectrum>(carpaintdata[i].ks1));
-  boost::shared_ptr<Texture<Spectrum> > ks2 (new ConstantTexture<Spectrum>(carpaintdata[i].ks2));
-  boost::shared_ptr<Texture<Spectrum> > ks3 (new ConstantTexture<Spectrum>(carpaintdata[i].ks3));
+  boost::shared_ptr<Texture<RGBColor> > kd (new ConstantTexture<RGBColor>(carpaintdata[i].kd));
+  boost::shared_ptr<Texture<RGBColor> > ks1 (new ConstantTexture<RGBColor>(carpaintdata[i].ks1));
+  boost::shared_ptr<Texture<RGBColor> > ks2 (new ConstantTexture<RGBColor>(carpaintdata[i].ks2));
+  boost::shared_ptr<Texture<RGBColor> > ks3 (new ConstantTexture<RGBColor>(carpaintdata[i].ks3));
   boost::shared_ptr<Texture<float> > r1 (new ConstantTexture<float>(carpaintdata[i].r1));
   boost::shared_ptr<Texture<float> > r2 (new ConstantTexture<float>(carpaintdata[i].r2));
   boost::shared_ptr<Texture<float> > r3 (new ConstantTexture<float>(carpaintdata[i].r3));
@@ -190,11 +190,11 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 
   string paintname = mp.FindString("name");
 
-  boost::shared_ptr<Texture<Spectrum> > Kd;
+  boost::shared_ptr<Texture<RGBColor> > Kd;
 
-  boost::shared_ptr<Texture<Spectrum> > Ks1;
-  boost::shared_ptr<Texture<Spectrum> > Ks2;
-  boost::shared_ptr<Texture<Spectrum> > Ks3;
+  boost::shared_ptr<Texture<RGBColor> > Ks1;
+  boost::shared_ptr<Texture<RGBColor> > Ks2;
+  boost::shared_ptr<Texture<RGBColor> > Ks3;
 
   boost::shared_ptr<Texture<float> > R1;
   boost::shared_ptr<Texture<float> > R2;
@@ -206,11 +206,11 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 
   if (paintname.length() < 1) {
     // we got no name, so try to read material properties directly
-    Kd = mp.GetSpectrumTexture("Kd", Spectrum(def_kd));
+    Kd = mp.GetRGBColorTexture("Kd", RGBColor(def_kd));
 
-    Ks1 = mp.GetSpectrumTexture("Ks1", Spectrum(def_ks1));
-    Ks2 = mp.GetSpectrumTexture("Ks2", Spectrum(def_ks2));
-    Ks3 = mp.GetSpectrumTexture("Ks3", Spectrum(def_ks3));
+    Ks1 = mp.GetRGBColorTexture("Ks1", RGBColor(def_ks1));
+    Ks2 = mp.GetRGBColorTexture("Ks2", RGBColor(def_ks2));
+    Ks3 = mp.GetRGBColorTexture("Ks3", RGBColor(def_ks3));
 
     R1 = mp.GetFloatTexture("R1", def_r[0]);
     R2 = mp.GetFloatTexture("R2", def_r[1]);

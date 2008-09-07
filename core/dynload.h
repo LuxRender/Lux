@@ -39,7 +39,7 @@ namespace lux
 	const Transform &mtl2world, const TextureParams &mp);
  boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
- boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+ boost::shared_ptr<Texture<RGBColor> > MakeRGBColorTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
  Light *MakeLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);

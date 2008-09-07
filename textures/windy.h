@@ -49,7 +49,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	// WindyTexture Private Data
 	TextureMapping3D *mapping;
@@ -66,14 +66,14 @@ template <class T> inline Texture<float> * WindyTexture<T>::CreateFloatTexture(c
 	return new WindyTexture<float>(map);
 }
 
-template <class T> inline Texture<Spectrum> * WindyTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T> inline Texture<RGBColor> * WindyTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
-	return new WindyTexture<Spectrum>(map);
+	return new WindyTexture<RGBColor>(map);
 }
 
 }//namespace lux

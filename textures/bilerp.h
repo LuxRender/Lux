@@ -56,7 +56,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 	
 private:
 	// BilerpTexture Private Data
@@ -95,7 +95,7 @@ template <class T> Texture<float>* BilerpTexture<T>::CreateFloatTexture(const Tr
 		tp.FindFloat("v10", 0.f), tp.FindFloat("v11", 1.f));
 }
 
-template <class T> Texture<Spectrum>* BilerpTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T> Texture<RGBColor>* BilerpTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
@@ -120,9 +120,9 @@ template <class T> Texture<Spectrum>* BilerpTexture<T>::CreateSpectrumTexture(co
 		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
-	return new BilerpTexture<Spectrum>(map,
-		tp.FindSpectrum("v00", 0.f), tp.FindSpectrum("v01", 1.f),
-		tp.FindSpectrum("v10", 0.f), tp.FindSpectrum("v11", 1.f));
+	return new BilerpTexture<RGBColor>(map,
+		tp.FindRGBColor("v00", 0.f), tp.FindRGBColor("v01", 1.f),
+		tp.FindRGBColor("v10", 0.f), tp.FindRGBColor("v11", 1.f));
 }
 
 }//namespace lux

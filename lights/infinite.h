@@ -35,7 +35,7 @@ namespace lux
 class InfiniteAreaLight : public Light {
 public:
 	// InfiniteAreaLight Public Methods
-	InfiniteAreaLight(const Transform &light2world, const Spectrum &l, int ns, const string &texmap,
+	InfiniteAreaLight(const Transform &light2world, const RGBColor &l, int ns, const string &texmap,
 		EnvironmentMapping *m, float gain, float gamma);
 	~InfiniteAreaLight();
 	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
@@ -43,7 +43,7 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                    &worldRadius);
-		Spectrum L = Lbase;
+		RGBColor L = Lbase;
 		if (radianceMap != NULL)
 			L *= radianceMap->Lookup(.5f, .5f, .5f);
 
@@ -66,8 +66,8 @@ public:
 private:
 	// InfiniteAreaLight Private Data
 	SPD *SPDbase;
-	Spectrum Lbase;
-	MIPMap<Spectrum> *radianceMap;
+	RGBColor Lbase;
+	MIPMap<RGBColor> *radianceMap;
 	EnvironmentMapping *mapping;
 };
 

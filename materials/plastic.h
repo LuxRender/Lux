@@ -31,8 +31,8 @@ namespace lux
 class Plastic : public Material {
 public:
 	// Plastic Public Methods
-	Plastic(boost::shared_ptr<Texture<Spectrum> > kd,
-			boost::shared_ptr<Texture<Spectrum> > ks,
+	Plastic(boost::shared_ptr<Texture<RGBColor> > kd,
+			boost::shared_ptr<Texture<RGBColor> > ks,
 			boost::shared_ptr<Texture<float> > i,
 			boost::shared_ptr<Texture<float> > u,
 			boost::shared_ptr<Texture<float> > v,
@@ -50,7 +50,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);	              
 private:
 	// Plastic Private Data
-	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
+	boost::shared_ptr<Texture<RGBColor> > Kd, Ks;
 	boost::shared_ptr<Texture<float> > index, nu, nv, bumpMap;
 };
 

@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry.h"
 #include "texture.h"
+#include "color.h"
 #include "spectrum.h"
 
 
@@ -86,8 +87,8 @@ public:
 	void AddNormal(const string &,
 	               const Normal *,
 				   int nItems = 1);
-	void AddSpectrum(const string &,
-	                const Spectrum *,
+	void AddRGBColor(const string &,
+	                const RGBColor *,
 					int nItems = 1);
 	void AddString(const string &,
 	              const string *,
@@ -100,7 +101,7 @@ public:
 	bool ErasePoint(const string &);
 	bool EraseVector(const string &);
 	bool EraseNormal(const string &);
-	bool EraseSpectrum(const string &);
+	bool EraseRGBColor(const string &);
 	bool EraseString(const string &);
 	bool EraseTexture(const string &);
 	float FindOneFloat(const string &, float d) const;
@@ -109,8 +110,8 @@ public:
 	Point FindOnePoint(const string &, const Point &d) const;
 	Vector FindOneVector(const string &, const Vector &d) const;
 	Normal FindOneNormal(const string &, const Normal &d) const;
-	Spectrum FindOneSpectrum(const string &,
-		const Spectrum &d) const;
+	RGBColor FindOneRGBColor(const string &,
+		const RGBColor &d) const;
 	string FindOneString(const string &, const string &d) const;
 	string FindTexture(const string &) const;
 	const float *FindFloat(const string &, int *nItems) const;
@@ -119,7 +120,7 @@ public:
 	const Point *FindPoint(const string &, int *nItems) const;
 	const Vector *FindVector(const string &, int *nItems) const;
 	const Normal *FindNormal(const string &, int *nItems) const;
-	const Spectrum *FindSpectrum(const string &,
+	const RGBColor *FindRGBColor(const string &,
 		int *nItems) const;
 	const string *FindString(const string &,
 		int *nItems) const;
@@ -139,7 +140,7 @@ private:
 	vector<ParamSetItem<Point> *> points;
 	vector<ParamSetItem<Vector> *> vectors;
 	vector<ParamSetItem<Normal> *> normals;
-	vector<ParamSetItem<Spectrum> *> spectra;
+	vector<ParamSetItem<RGBColor> *> spectra;
 	vector<ParamSetItem<string> *> strings;
 	vector<ParamSetItem<string> *> textures;
 	
@@ -281,14 +282,14 @@ public:
 	// TextureParams Public Methods
 	TextureParams(const ParamSet &geomp, const ParamSet &matp,
 			map<string, boost::shared_ptr<Texture<float> > > &ft,
-			map<string, boost::shared_ptr<Texture<Spectrum> > > &st)
+			map<string, boost::shared_ptr<Texture<RGBColor> > > &st)
 		: geomParams(geomp),
 		  materialParams(matp),
 		  floatTextures(ft),
-		  spectrumTextures(st) {
+		  RGBColorTextures(st) {
 	}
-	boost::shared_ptr<Texture<Spectrum> > GetSpectrumTexture(const string &name,
-			const Spectrum &def) const;
+	boost::shared_ptr<Texture<RGBColor> > GetRGBColorTexture(const string &name,
+			const RGBColor &def) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
 			float def) const;
 	float FindFloat(const string &n, float d) const {
@@ -313,8 +314,8 @@ public:
 	Normal FindNormal(const string &n, const Normal &d) const {
 	       return geomParams.FindOneNormal(n, materialParams.FindOneNormal(n, d));
 	}
-	Spectrum FindSpectrum(const string &n, const Spectrum &d) const {
-	       return geomParams.FindOneSpectrum(n, materialParams.FindOneSpectrum(n, d));
+	RGBColor FindRGBColor(const string &n, const RGBColor &d) const {
+	       return geomParams.FindOneRGBColor(n, materialParams.FindOneRGBColor(n, d));
 	}
 	void ReportUnused() const {
 		//geomParams.ReportUnused(); // note - radiance - incompatible with mix material. (must recursiveley pass)
@@ -328,7 +329,7 @@ private:
 	map<string,
 	    boost::shared_ptr<Texture<float> > > &floatTextures;
 	map<string,
-	    boost::shared_ptr<Texture<Spectrum> > > &spectrumTextures;
+	    boost::shared_ptr<Texture<RGBColor> > > &RGBColorTextures;
 };
 
 }//namespace lux

@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// spectrumwavelengths.cpp*
-#include "spectrumwavelengths.h"
+// Spectrumwavelengths.cpp*
+#include "Spectrumwavelengths.h"
 #include "regular.h"
 #include "spd.h"
 #include "memory.h"

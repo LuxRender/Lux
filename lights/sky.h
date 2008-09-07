@@ -67,14 +67,14 @@ public:
 		// internal methods
 	Vector		GetSunPosition() const;
 	void		SunThetaPhi(float &theta, float &phi) const;
-	Spectrum	GetSunSpectralRadiance() const;
+	RGBColor	GetSunSpectralRadiance() const;
 	float		GetSunSolidAngle() const;
 	void		GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const;
 	void		GetAtmosphericEffects(const Vector &viewer, const Vector &source,
-									Spectrum &atmAttenuation, Spectrum &atmInscatter ) const;
+									RGBColor &atmAttenuation, RGBColor &atmInscatter ) const;
 
 	void		InitSunThetaPhi();
-	void		ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
+	void		ChromaticityToRGBColor(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
 	float		PerezFunction(const float *lam, float theta, float phi, float lvz) const;
 
 private:

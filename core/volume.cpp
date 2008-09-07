@@ -56,13 +56,13 @@ float PhaseSchlick(const Vector &w,
 	return 1.f / (4.f * M_PI) * (1.f - k*k) /
 		((1.f - kcostheta) * (1.f - kcostheta));
 }
-Spectrum VolumeRegion::sigma_t(const Point &p,
+RGBColor VolumeRegion::sigma_t(const Point &p,
                                const Vector &w) const {
 	return sigma_a(p, w) + sigma_s(p, w);
 }
-DensityRegion::DensityRegion(const Spectrum &sa,
-		const Spectrum &ss, float gg,
-	 	const Spectrum &emit,
+DensityRegion::DensityRegion(const RGBColor &sa,
+		const RGBColor &ss, float gg,
+	 	const RGBColor &emit,
 		const Transform &VolumeToWorld)
 	: sig_a(sa), sig_s(ss), le(emit), g(gg)  {
 	WorldToVolume = VolumeToWorld.GetInverse();
@@ -73,21 +73,21 @@ AggregateVolume::
 	for (u_int i = 0; i < regions.size(); ++i)
 		bound = Union(bound, regions[i]->WorldBound());
 }
-Spectrum AggregateVolume::sigma_a(const Point &p,
+RGBColor AggregateVolume::sigma_a(const Point &p,
 		const Vector &w) const {
-	Spectrum s(0.);
+	RGBColor s(0.);
 	for (u_int i = 0; i < regions.size(); ++i)
 		s += regions[i]->sigma_a(p, w);
 	return s;
 }
-Spectrum AggregateVolume::sigma_s(const Point &p, const Vector &w) const {
-	Spectrum s(0.);
+RGBColor AggregateVolume::sigma_s(const Point &p, const Vector &w) const {
+	RGBColor s(0.);
 	for (u_int i = 0; i < regions.size(); ++i)
 		s += regions[i]->sigma_s(p, w);
 	return s;
 }
-Spectrum AggregateVolume::Lve(const Point &p, const Vector &w) const {
-	Spectrum L(0.);
+RGBColor AggregateVolume::Lve(const Point &p, const Vector &w) const {
+	RGBColor L(0.);
 	for (u_int i = 0; i < regions.size(); ++i)
 		L += regions[i]->Lve(p, w);
 	return L;
@@ -104,14 +104,14 @@ float AggregateVolume::p(const Point &p, const Vector &w, const Vector &wp) cons
 	}
 	return ph / sumWt;
 }
-Spectrum AggregateVolume::sigma_t(const Point &p, const Vector &w) const {
-	Spectrum s(0.);
+RGBColor AggregateVolume::sigma_t(const Point &p, const Vector &w) const {
+	RGBColor s(0.);
 	for (u_int i = 0; i < regions.size(); ++i)
 		s += regions[i]->sigma_t(p, w);
 	return s;
 }
-Spectrum AggregateVolume::Tau(const Ray &ray, float step, float offset) const {
-	Spectrum t(0.);
+RGBColor AggregateVolume::Tau(const Ray &ray, float step, float offset) const {
+	RGBColor t(0.);
 	for (u_int i = 0; i < regions.size(); ++i)
 		t += regions[i]->Tau(ray, step, offset);
 	return t;
@@ -136,7 +136,7 @@ AggregateVolume::~AggregateVolume() {
 BBox AggregateVolume::WorldBound() const {
 	return bound;
 }
-Spectrum DensityRegion::Tau(const Ray &r,
+RGBColor DensityRegion::Tau(const Ray &r,
 		float stepSize, float u) const {
 	float t0, t1;
 	float length = r.d.Length();
@@ -145,7 +145,7 @@ Spectrum DensityRegion::Tau(const Ray &r,
 	       r.mint * length,
 		   r.maxt * length);
 	if (!IntersectP(rn, &t0, &t1)) return 0.;
-	Spectrum tau(0.);
+	RGBColor tau(0.);
 	t0 += u * stepSize;
 	while (t0 < t1) {
 		tau += sigma_t(rn(t0), -rn.d);

@@ -31,7 +31,7 @@ Texture<float> * MarbleTexture::CreateFloatTexture(const Transform &tex2world,
 	return NULL;
 }
 
-Texture<Spectrum> * MarbleTexture::CreateSpectrumTexture(const Transform &tex2world,
+Texture<RGBColor> * MarbleTexture::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);

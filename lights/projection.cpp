@@ -33,7 +33,7 @@ using namespace lux;
 // ProjectionLight Method Definitions
 ProjectionLight::
 	ProjectionLight(const Transform &light2world,
-		const Spectrum &intensity, const string &texname,
+		const RGBColor &intensity, const string &texname,
 		float fov)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
@@ -44,7 +44,7 @@ ProjectionLight::
 	if (imgdata.get()!=NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		projectionMap =imgdata->createMIPMap<Spectrum>();
+		projectionMap =imgdata->createMIPMap<RGBColor>();
 	}
 	else 
 		projectionMap = NULL;
@@ -68,7 +68,7 @@ ProjectionLight::
 	cosTotalWidth = cosf(atanf(tanDiag));
 }
 ProjectionLight::~ProjectionLight() { delete projectionMap; }
-Spectrum ProjectionLight::Projection(const Vector &w) const {
+RGBColor ProjectionLight::Projection(const Vector &w) const {
 	Vector wl = WorldToLight(w);
 	// Discard directions behind projection light
 	if (wl.z < hither) return 0.;
@@ -102,7 +102,7 @@ float ProjectionLight::Pdf(const Point &, const Vector &) const {
 }
 Light* ProjectionLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	RGBColor I = paramSet.FindOneRGBColor("I", RGBColor(1.0));
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");
 	return new ProjectionLight(light2world, I, texname, fov);

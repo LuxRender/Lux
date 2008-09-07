@@ -28,9 +28,9 @@
 using namespace lux;
 
 // VolumeGrid Method Definitions
-VolumeGrid::VolumeGrid(const Spectrum &sa,
-		const Spectrum &ss, float gg,
- 		const Spectrum &emit, const BBox &e,
+VolumeGrid::VolumeGrid(const RGBColor &sa,
+		const RGBColor &ss, float gg,
+ 		const RGBColor &emit, const BBox &e,
 		const Transform &v2w,
 		int x, int y, int z, const float *d)
 	: DensityRegion(sa, ss, gg, emit, v2w),
@@ -63,10 +63,10 @@ float VolumeGrid::Density(const Point &Pobj) const {
 VolumeRegion * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {
 	// Initialize common volume region parameters
-	Spectrum sigma_a = params.FindOneSpectrum("sigma_a", 0.);
-	Spectrum sigma_s = params.FindOneSpectrum("sigma_s", 0.);
+	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", 0.);
+	RGBColor sigma_s = params.FindOneRGBColor("sigma_s", 0.);
 	float g = params.FindOneFloat("g", 0.);
-	Spectrum Le = params.FindOneSpectrum("Le", 0.);
+	RGBColor Le = params.FindOneRGBColor("Le", 0.);
 	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
 	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
 	int nitems;

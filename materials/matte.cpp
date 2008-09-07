@@ -51,7 +51,7 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Matte::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
+	boost::shared_ptr<Texture<RGBColor> > Kd = mp.GetRGBColorTexture("Kd", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
 	return new Matte(Kd, sigma, bumpMap);

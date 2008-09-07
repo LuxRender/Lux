@@ -22,6 +22,7 @@
 
 // perspective.cpp*
 #include "camera.h"
+#include "color.h"
 #include "spectrum.h"
 #include "sampling.h"
 #include "mc.h"

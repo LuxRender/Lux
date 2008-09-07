@@ -20,16 +20,18 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// spectrum.cpp*
+// RGBColor.cpp*
+#include "color.h"
 #include "spectrum.h"
-#include "spectrumwavelengths.h"
+#include "Spectrumwavelengths.h"
 #include "regular.h"
 #include "memory.h"
 
 using namespace lux;
 
-// Spectrum Method Definitions
-ostream &operator<<(ostream &os, const Spectrum &s) {
+/*
+// RGBColor Method Definitions
+ostream &operator<<(ostream &os, const RGBColor &s) {
 	for (int i = 0; i < COLOR_SAMPLES; ++i) {
 		os << s.c[i];
 		if (i != COLOR_SAMPLES-1)
@@ -37,15 +39,16 @@ ostream &operator<<(ostream &os, const Spectrum &s) {
 	}
 	return os;
 }
-float Spectrum::XWeight[COLOR_SAMPLES] = {
+float RGBColor::XWeight[COLOR_SAMPLES] = {
 	0.412453f, 0.357580f, 0.180423f
 };
-float Spectrum::YWeight[COLOR_SAMPLES] = {
+float RGBColor::YWeight[COLOR_SAMPLES] = {
 	0.212671f, 0.715160f, 0.072169f
 };
-float Spectrum::ZWeight[COLOR_SAMPLES] = {
+float RGBColor::ZWeight[COLOR_SAMPLES] = {
 	0.019334f, 0.119193f, 0.950227f
 };
+*/
 
 XYZColor SWCSpectrum::ToXYZ(const TsPack *tspack) const {
 	SpectrumWavelengths *sw = tspack->swl;
@@ -107,7 +110,7 @@ SWCSpectrum::SWCSpectrum(const TsPack *tspack, const SPD *s) {
 	}
 }
 
-SWCSpectrum::SWCSpectrum(const TsPack *tspack, Spectrum s) {
+SWCSpectrum::SWCSpectrum(const TsPack *tspack, RGBColor s) {
 	SpectrumWavelengths *sw = tspack->swl;
 	const float r = s.c[0];
 	const float g = s.c[1];

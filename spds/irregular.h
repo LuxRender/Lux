@@ -24,6 +24,7 @@
 #define LUX_IRREGULARSPD_H
 // irregular.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "regular.h"
 

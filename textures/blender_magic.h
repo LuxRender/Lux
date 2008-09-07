@@ -69,7 +69,7 @@ public:
     }
 
     static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> *CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> *CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
     // BlenderMagicTexture3D Private Data
 
@@ -100,7 +100,7 @@ template <class T> Texture<float> *BlenderMagicTexture3D<T>::CreateFloatTexture(
             map);
 }
 
-template <class T> Texture<Spectrum> *BlenderMagicTexture3D<T>::CreateSpectrumTexture(
+template <class T> Texture<RGBColor> *BlenderMagicTexture3D<T>::CreateRGBColorTexture(
         const Transform &tex2world,
         const TextureParams &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
@@ -109,10 +109,10 @@ template <class T> Texture<Spectrum> *BlenderMagicTexture3D<T>::CreateSpectrumTe
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<Spectrum> > tex1 = tp.GetSpectrumTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<Spectrum> > tex2 = tp.GetSpectrumTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<RGBColor> > tex1 = tp.GetRGBColorTexture("tex1", 1.f);
+	boost::shared_ptr<Texture<RGBColor> > tex2 = tp.GetRGBColorTexture("tex2", 0.f);
 
-    return new BlenderMagicTexture3D<Spectrum>(
+    return new BlenderMagicTexture3D<RGBColor>(
 			tex1,
 			tex2,
             (short)tp.FindInt("noisedepth", 2),

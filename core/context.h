@@ -282,7 +282,7 @@ private:
 		}
 		// Graphics State
 		map<string, boost::shared_ptr<Texture<float> > > floatTextures;
-		map<string, boost::shared_ptr<Texture<Spectrum> > > spectrumTextures;
+		map<string, boost::shared_ptr<Texture<RGBColor> > > RGBColorTextures;
 		ParamSet materialParams;
 		string material;
 		ParamSet areaLightParams;

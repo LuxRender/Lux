@@ -33,14 +33,14 @@ using namespace lux;
 // GonioPhotometricLight Method Definitions
 GonioPhotometricLight::GonioPhotometricLight(
 		const Transform &light2world,
-		const Spectrum &intensity, const string &texname)
+		const RGBColor &intensity, const string &texname)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
 	Intensity = intensity;
 	// Create _mipmap_ for _GonioPhotometricLight_
 	auto_ptr<ImageData> imgdata(ReadImage(texname));
 	if (imgdata.get()!=NULL) {
-		mipmap = imgdata->createMIPMap<Spectrum>();
+		mipmap = imgdata->createMIPMap<RGBColor>();
 	}
 	else 
 		mipmap = NULL;
@@ -65,7 +65,7 @@ float GonioPhotometricLight::Pdf(const Point &, const Vector &) const {
 }
 Light* GonioPhotometricLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	RGBColor I = paramSet.FindOneRGBColor("I", RGBColor(1.0));
 	string texname = paramSet.FindOneString("mapname", "");
 	return new GonioPhotometricLight(light2world, I, texname);
 }

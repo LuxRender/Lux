@@ -29,7 +29,7 @@ namespace lux
 {
 
 // UVTexture Declarations
-class UVTexture : public Texture<Spectrum> {
+class UVTexture : public Texture<RGBColor> {
 public:
 	// UVTexture Public Methods
 	UVTexture(TextureMapping2D *m) {
@@ -38,18 +38,18 @@ public:
 	~UVTexture() {
 		delete mapping;
 	}
-	Spectrum Evaluate(const DifferentialGeometry &dg) const {
+	RGBColor Evaluate(const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		float cs[COLOR_SAMPLES];
 		memset(cs, 0, COLOR_SAMPLES * sizeof(float));
 		cs[0] = s - Floor2Int(s);
 		cs[1] = t - Floor2Int(t);
-		return Spectrum(cs);
+		return RGBColor(cs);
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	TextureMapping2D *mapping;
 };

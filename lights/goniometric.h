@@ -34,11 +34,11 @@ namespace lux
 class GonioPhotometricLight : public Light {
 public:
 	// GonioPhotometricLight Public Methods
-	GonioPhotometricLight(const Transform &light2world, const Spectrum &, const
+	GonioPhotometricLight(const Transform &light2world, const RGBColor &, const
 	string &texname);
 	~GonioPhotometricLight() { delete mipmap; }
 	bool IsDeltaLight() const { return true; }
-	Spectrum Scale(const Vector &w) const {
+	RGBColor Scale(const Vector &w) const {
 		Vector wp = Normalize(WorldToLight(w));
 		swap(wp.y, wp.z);
 		float theta = SphericalTheta(wp);
@@ -61,8 +61,8 @@ public:
 private:
 	// GonioPhotometricLight Private Data
 	Point lightPos;
-	Spectrum Intensity;
-	MIPMap<Spectrum> *mipmap;
+	RGBColor Intensity;
+	MIPMap<RGBColor> *mipmap;
 
 };
 

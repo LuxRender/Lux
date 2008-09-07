@@ -24,6 +24,7 @@
 #define LUX_BLACKBODYSPD_H
 // blackbody.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "spd.h"
 

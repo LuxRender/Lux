@@ -25,6 +25,7 @@
 // light.h*
 #include "lux.h"
 #include "geometry.h"
+#include "color.h"
 #include "spectrum.h"
 #include "error.h"
 #include "rgbillum.h"
@@ -137,7 +138,7 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		const Spectrum &power, float g, int ns, const boost::shared_ptr<Shape> &shape);
+		const RGBColor &power, float g, int ns, const boost::shared_ptr<Shape> &shape);
 	~AreaLight() { delete LSPD; }
 	virtual SWCSpectrum L(const TsPack *tspack, const Point &p, const Normal &n,
 			const Vector &w) const {

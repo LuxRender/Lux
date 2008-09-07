@@ -29,7 +29,7 @@ using namespace lux;
 
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &light2world,
-		const Spectrum &intensity, float gain, float width, float fall)
+		const RGBColor &intensity, float gain, float width, float fall)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
 
@@ -73,7 +73,7 @@ SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 	return SWCSpectrum(tspack, LSPD) * Falloff(ray->d);
 }
 Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet) {
-	Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	RGBColor I = paramSet.FindOneRGBColor("I", RGBColor(1.0));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);

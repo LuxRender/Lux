@@ -32,7 +32,7 @@ namespace lux
 class PointLight : public Light {
 public:
 	// PointLight Public Methods
-	PointLight(const Transform &light2world, const Spectrum &le, float gain);
+	PointLight(const Transform &light2world, const RGBColor &le, float gain);
 	~PointLight() { delete LSPD; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return SWCSpectrum(tspack, LSPD) * 4.f * M_PI;

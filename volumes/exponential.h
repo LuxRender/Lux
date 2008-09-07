@@ -30,8 +30,8 @@ namespace lux
 class ExponentialDensity : public DensityRegion {
 public:
 	// ExponentialDensity Public Methods
-	ExponentialDensity(const Spectrum &sa, const Spectrum &ss,
-			float gg, const Spectrum &emit, const BBox &e,
+	ExponentialDensity(const RGBColor &sa, const RGBColor &ss,
+			float gg, const RGBColor &emit, const BBox &e,
 			const Transform &v2w, float aa, float bb,
 			const Vector &up)
 		: DensityRegion(sa, ss, gg, emit, v2w),

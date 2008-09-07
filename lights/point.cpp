@@ -29,7 +29,7 @@ using namespace lux;
 
 // PointLight Method Definitions
 PointLight::PointLight(const Transform &light2world,
-		const Spectrum &intensity, float gain)
+		const RGBColor &intensity, float gain)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
 	// Create SPD
@@ -57,7 +57,7 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum intensity = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+	RGBColor intensity = paramSet.FindOneRGBColor("I", RGBColor(1.0));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;

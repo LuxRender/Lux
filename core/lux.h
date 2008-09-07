@@ -154,7 +154,7 @@ namespace lux
   class Primitive;
   class Intersection;
   class GeometricPrimitive;
-  class Spectrum;
+  class RGBColor;
   class ImageData;
   class SWCSpectrum;
   class SpectrumWavelengths;

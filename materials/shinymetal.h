@@ -31,9 +31,9 @@ namespace lux
 class ShinyMetal : public Material {
 public:
 	// ShinyMetal Public Methods
-	ShinyMetal(boost::shared_ptr<Texture<Spectrum> > ks,
+	ShinyMetal(boost::shared_ptr<Texture<RGBColor> > ks,
 		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-			boost::shared_ptr<Texture<Spectrum> > kr, boost::shared_ptr<Texture<float> > bump) {
+			boost::shared_ptr<Texture<RGBColor> > kr, boost::shared_ptr<Texture<float> > bump) {
 		Ks = ks;
 		nu = u;
 		nv = v;
@@ -45,7 +45,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// ShinyMetal Private Data
-	boost::shared_ptr<Texture<Spectrum> > Ks, Kr;
+	boost::shared_ptr<Texture<RGBColor> > Ks, Kr;
 	boost::shared_ptr<Texture<float> > nu, nv;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };

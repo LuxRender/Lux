@@ -30,8 +30,8 @@ namespace lux
 class HomogeneousVolume : public VolumeRegion {
 public:
 	// HomogeneousVolume Public Methods
-	HomogeneousVolume(const Spectrum &sa, const Spectrum &ss, float gg,
-		 	const Spectrum &emit, const BBox &e,
+	HomogeneousVolume(const RGBColor &sa, const RGBColor &ss, float gg,
+		 	const RGBColor &emit, const BBox &e,
 			const Transform &v2w) {
 		WorldToVolume = v2w.GetInverse();
 		sig_a = sa;
@@ -47,23 +47,23 @@ public:
 		Ray ray = WorldToVolume(r);
 		return extent.IntersectP(ray, t0, t1);
 	}
-	Spectrum sigma_a(const Point &p, const Vector &) const {
+	RGBColor sigma_a(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? sig_a : 0.;
 	}
-	Spectrum sigma_s(const Point &p, const Vector &) const {
+	RGBColor sigma_s(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? sig_s : 0.;
 	}
-	Spectrum sigma_t(const Point &p, const Vector &) const {
-		return extent.Inside(WorldToVolume(p)) ? (sig_a + sig_s) : 0.;
+	RGBColor sigma_t(const Point &p, const Vector &) const {
+		return extent.Inside(WorldToVolume(p)) ? (sig_a + sig_s) : RGBColor(0.f);
 	}
-	Spectrum Lve(const Point &p, const Vector &) const {
+	RGBColor Lve(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? le : 0.;
 	}
 	float p(const Point &p, const Vector &wi, const Vector &wo) const {
 		if (!extent.Inside(WorldToVolume(p))) return 0.;
 		return PhaseHG(wi, wo, g);
 	}
-	Spectrum Tau(const Ray &ray, float, float) const {
+	RGBColor Tau(const Ray &ray, float, float) const {
 		float t0, t1;
 		if (!IntersectP(ray, &t0, &t1)) return 0.;
 
@@ -73,7 +73,7 @@ public:
 	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 private:
 	// HomogeneousVolume Private Data
-	Spectrum sig_a, sig_s, le;
+	RGBColor sig_a, sig_s, le;
 	float g;
 	BBox extent;
 	Transform WorldToVolume;

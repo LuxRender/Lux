@@ -43,11 +43,11 @@ BSDF *Plastic::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
   // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	Spectrum kd(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
+	RGBColor kd(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
   // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	Spectrum ks(Ks->Evaluate(dgs).Clamp(0.f, 1.f));
+	RGBColor ks(Ks->Evaluate(dgs).Clamp(0.f, 1.f));
 	// limit maximum output
-	Spectrum sum(kd + ks);
+	RGBColor sum(kd + ks);
 	float sumMax = 0.f;
 	for (int i = 0; i < COLOR_SAMPLES; ++i)
 		sumMax = max<float>(sumMax, sum.c[i]);
@@ -77,8 +77,8 @@ BSDF *Plastic::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 // Plastic Dynamic Creation Routine
 Material* Plastic::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<Spectrum> > Kd = mp.GetSpectrumTexture("Kd", Spectrum(1.f));
-	boost::shared_ptr<Texture<Spectrum> > Ks = mp.GetSpectrumTexture("Ks", Spectrum(1.f));
+	boost::shared_ptr<Texture<RGBColor> > Kd = mp.GetRGBColorTexture("Kd", RGBColor(1.f));
+	boost::shared_ptr<Texture<RGBColor> > Ks = mp.GetRGBColorTexture("Ks", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);

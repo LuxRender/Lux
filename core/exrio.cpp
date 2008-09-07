@@ -25,6 +25,7 @@
 #include "lux.h"
 #include "error.h"
 #include "color.h"
+#include "color.h"
 #include "spectrum.h"
 #include "imagereader.h"
 //#endif
@@ -126,7 +127,7 @@ namespace lux {
             TextureColor<float, 3 > *ret = new TextureColor<float, 3 > [width * height];
             ImageData* data = new ImageData(width, height, ImageData::FLOAT_TYPE, noChannels, ret);
 
-            // XXX should do real RGB -> Spectrum conversion here
+            // XXX should do real RGB -> RGBColor conversion here
             for (int i = 0; i < width * height; ++i) {
                 float c[3] = { rgb[(3 * i)], rgb[(3 * i) + 1], rgb[(3 * i) + 2] };
                 ret[i] = TextureColor<float, 3 > (c);
@@ -191,7 +192,7 @@ namespace lux {
             ImageData* data = new ImageData(width, height, type, noChannels, ret);
             T *c = new T[noChannels];
             c[0] = 0;
-            // XXX should do real RGB -> Spectrum conversion here
+            // XXX should do real RGB -> RGBColor conversion here
             for (int i = 0; i < width; ++i)
                 for (int j = 0; j < height; ++j) {
                     for (int k = 0; k < noChannels; ++k) {

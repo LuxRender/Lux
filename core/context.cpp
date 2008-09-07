@@ -309,7 +309,7 @@ void Context::texture(const string &name, const string &type, const string &texn
 	renderFarm->send("luxTexture", name, type, texname, params);
 
 	TextureParams tp(params, params, graphicsState->floatTextures,
-			graphicsState->spectrumTextures);
+			graphicsState->RGBColorTextures);
 	if (type == "float") {
 		// Create _float_ texture and store in _floatTextures_
 		if (graphicsState->floatTextures.find(name)
@@ -324,18 +324,18 @@ void Context::texture(const string &name, const string &type, const string &texn
 		if (ft)
 			graphicsState->floatTextures[name] = ft;
 	} else if (type == "color") {
-		// Create _color_ texture and store in _spectrumTextures_
-		if (graphicsState->spectrumTextures.find(name)
-				!= graphicsState->spectrumTextures.end()) {
+		// Create _color_ texture and store in _RGBColorTextures_
+		if (graphicsState->RGBColorTextures.find(name)
+				!= graphicsState->RGBColorTextures.end()) {
 			//Warning("Texture \"%s\" being redefined", name.c_str());
 			std::stringstream ss;
 			ss<<"Texture '"<<name<<"' being redefined.";
 			luxError(LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
 		}
-		boost::shared_ptr<Texture<Spectrum> > st = MakeSpectrumTexture(texname,
+		boost::shared_ptr<Texture<RGBColor> > st = MakeRGBColorTexture(texname,
 				curTransform, tp);
 		if (st)
-			graphicsState->spectrumTextures[name] = st;
+			graphicsState->RGBColorTextures[name] = st;
 	} else {
 		//Error("Texture type \"%s\" unknown.", type.c_str());
 		std::stringstream ss;
@@ -471,7 +471,7 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 
 	// Initialize material for shape (dummy)
 	TextureParams mp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->spectrumTextures);
+			graphicsState->floatTextures, graphicsState->RGBColorTextures);
 	boost::shared_ptr<Texture<float> > bump;
 	boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
 
@@ -489,7 +489,7 @@ void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materia
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-			graphicsState->floatTextures, graphicsState->spectrumTextures);
+			graphicsState->floatTextures, graphicsState->RGBColorTextures);
 			boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -513,7 +513,7 @@ void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materia
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-			graphicsState->floatTextures, graphicsState->spectrumTextures);
+			graphicsState->floatTextures, graphicsState->RGBColorTextures);
 			boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -550,7 +550,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 				graphicsState->areaLightParams, shape);
 	// Initialize material for shape
 	TextureParams mp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->spectrumTextures);
+			graphicsState->floatTextures, graphicsState->RGBColorTextures);
 	boost::shared_ptr<Texture<float> > bump;
 	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
 	if (!mtl)

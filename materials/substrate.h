@@ -31,7 +31,7 @@ namespace lux
 class Substrate : public Material {
 public:
 	// Substrate Public Methods
-	Substrate(boost::shared_ptr<Texture<Spectrum> > kd, boost::shared_ptr<Texture<Spectrum> > ks,
+	Substrate(boost::shared_ptr<Texture<RGBColor> > kd, boost::shared_ptr<Texture<RGBColor> > ks,
 			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
 			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
@@ -45,7 +45,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Substrate Private Data
-	boost::shared_ptr<Texture<Spectrum> > Kd, Ks;
+	boost::shared_ptr<Texture<RGBColor> > Kd, Ks;
 	boost::shared_ptr<Texture<float> > nu, nv;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };

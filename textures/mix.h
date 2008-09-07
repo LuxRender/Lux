@@ -47,7 +47,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 	boost::shared_ptr<Texture<float> > amount;
@@ -62,11 +62,11 @@ template <class T> Texture<float> * MixTexture<T>::CreateFloatTexture(const Tran
 		tp.GetFloatTexture("amount", 0.5f));
 }
 
-template <class T> Texture<Spectrum> * MixTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T> Texture<RGBColor> * MixTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new MixTexture<Spectrum>(
-		tp.GetSpectrumTexture("tex1", 0.f),
-		tp.GetSpectrumTexture("tex2", 1.f),
+	return new MixTexture<RGBColor>(
+		tp.GetRGBColorTexture("tex1", 0.f),
+		tp.GetRGBColorTexture("tex2", 1.f),
 		tp.GetFloatTexture("amount", 0.5f));
 }
 

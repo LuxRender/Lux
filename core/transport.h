@@ -24,6 +24,7 @@
 #define LUX_TRANSPORT_H
 // transport.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "bxdf.h"
 

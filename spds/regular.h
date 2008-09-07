@@ -24,6 +24,7 @@
 #define LUX_REGULARSPD_H
 // regular.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "spd.h"
 

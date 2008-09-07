@@ -82,7 +82,7 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 	}
 }
 
-Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2world,
+Texture<RGBColor> * Checkerboard::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	int dim = tp.FindInt("dimension", 2);
 	if (dim != 2 && dim != 3) {
@@ -92,8 +92,8 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
-	boost::shared_ptr<Texture<Spectrum> > tex1 = tp.GetSpectrumTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<Spectrum> > tex2 = tp.GetSpectrumTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<RGBColor> > tex1 = tp.GetRGBColorTexture("tex1", 1.f);
+	boost::shared_ptr<Texture<RGBColor> > tex2 = tp.GetRGBColorTexture("tex2", 0.f);
 	if (dim == 2) {
 		// Initialize 2D texture mapping _map_ from _tp_
 		TextureMapping2D *map = NULL;
@@ -120,7 +120,7 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 		}
 		string aamode = tp.FindString("aamode");
 		if (aamode == "") aamode = "closedform";
-		return new Checkerboard2D<Spectrum>(map, tex1, tex2, aamode);
+		return new Checkerboard2D<RGBColor>(map, tex1, tex2, aamode);
 	}
 	else {
 		// Initialize 3D texture mapping _map_ from _tp_
@@ -128,6 +128,6 @@ Texture<Spectrum> * Checkerboard::CreateSpectrumTexture(const Transform &tex2wor
 		// Apply texture specified transformation option for 3D mapping
 		IdentityMapping3D *imap = (IdentityMapping3D*) map;
 		imap->Apply3DTextureMappingOptions(tp);
-		return new Checkerboard3D<Spectrum>(map, tex1, tex2);
+		return new Checkerboard3D<RGBColor>(map, tex1, tex2);
 	}
 }

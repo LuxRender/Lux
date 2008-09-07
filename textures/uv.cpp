@@ -32,7 +32,7 @@ Texture<float> * UVTexture::CreateFloatTexture(const Transform &tex2world,
 	return NULL;
 }
 
-Texture<Spectrum> * UVTexture::CreateSpectrumTexture(const Transform &tex2world,
+Texture<RGBColor> * UVTexture::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;

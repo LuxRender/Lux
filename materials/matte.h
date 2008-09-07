@@ -31,7 +31,7 @@ namespace lux
 class Matte : public Material {
 public:
 	// Matte Public Methods
-	Matte(boost::shared_ptr<Texture<Spectrum> > kd,
+	Matte(boost::shared_ptr<Texture<RGBColor> > kd,
 			boost::shared_ptr<Texture<float> > sig,
 			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
@@ -44,7 +44,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Matte Private Data
-	boost::shared_ptr<Texture<Spectrum> > Kd;
+	boost::shared_ptr<Texture<RGBColor> > Kd;
 	boost::shared_ptr<Texture<float> > sigma, bumpMap;
 };
 

@@ -34,7 +34,7 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 }
 InfiniteAreaLightIS
 	::InfiniteAreaLightIS(const Transform &light2world,
-				const Spectrum &L, int ns,
+				const RGBColor &L, int ns,
 				const string &texmap)
 	: Light(light2world, ns)
 {
@@ -47,7 +47,7 @@ InfiniteAreaLightIS
 		{
 			width=imgdata->getWidth();
 			height=imgdata->getHeight();
-			radianceMap = imgdata->createMIPMap<Spectrum>();
+			radianceMap = imgdata->createMIPMap<RGBColor>();
 		}
 	}
 	if (radianceMap == NULL)
@@ -85,7 +85,7 @@ SWCSpectrum
 	InfiniteAreaLightIS::Le(const TsPack *tspack, const RayDifferential &r) const {
 	Vector w = r.d;
 	// Compute infinite light radiance for direction
-	Spectrum L = Lbase;
+	RGBColor L = Lbase;
 	if (radianceMap != NULL) {
 		Vector wh = Normalize(WorldToLight(w));
 		float s = SphericalPhi(wh) * INV_TWOPI;
@@ -153,7 +153,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *sce
 }
 Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 

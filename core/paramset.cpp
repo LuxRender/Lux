@@ -193,14 +193,14 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="inside") AddTexture(s,std::string(params[i]));
 		if(s=="outside") AddTexture(s,std::string(params[i]));
 		
-		//color (spectrum) parameters
-		if(s=="sigma_a") AddSpectrum(s, new Spectrum((float*)params[i]));
-		if(s=="sigma_s") AddSpectrum(s, new Spectrum((float*)params[i]));
-		if(s=="Le") AddSpectrum(s, new Spectrum((float*)params[i]));
-		if(s=="L") AddSpectrum(s, new Spectrum((float*)params[i]));
-		if(s=="I") AddSpectrum(s, new Spectrum((float*)params[i]));
-		if(s=="tex1") AddSpectrum(s, new Spectrum((float*)params[i]));
-		if(s=="tex2") AddSpectrum(s, new Spectrum((float*)params[i]));
+		//color (RGBColor) parameters
+		if(s=="sigma_a") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if(s=="sigma_s") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if(s=="Le") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if(s=="L") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if(s=="I") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if(s=="tex1") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if(s=="tex2") AddRGBColor(s, new RGBColor((float*)params[i]));
 		
 		//unknown parameter
 		/*
@@ -266,9 +266,9 @@ void ParamSet::AddNormal(const string &name, const Normal *data, int nItems) {
 	EraseNormal(name);
 	ADD_PARAM_TYPE(Normal, normals);
 }
-void ParamSet::AddSpectrum(const string &name, const Spectrum *data, int nItems) {
-	EraseSpectrum(name);
-	ADD_PARAM_TYPE(Spectrum, spectra);
+void ParamSet::AddRGBColor(const string &name, const RGBColor *data, int nItems) {
+	EraseRGBColor(name);
+	ADD_PARAM_TYPE(RGBColor, spectra);
 }
 void ParamSet::AddString(const string &name, const string *data, int nItems) {
 	EraseString(name);
@@ -332,7 +332,7 @@ bool ParamSet::EraseNormal(const string &n) {
 		}
 	return false;
 }
-bool ParamSet::EraseSpectrum(const string &n) {
+bool ParamSet::EraseRGBColor(const string &n) {
 	for (u_int i = 0; i < spectra.size(); ++i)
 		if (spectra[i]->name == n) {
 			delete spectra[i];
@@ -409,10 +409,10 @@ const Normal *ParamSet::FindNormal(const string &name, int *nItems) const {
 Normal ParamSet::FindOneNormal(const string &name, const Normal &d) const {
 	LOOKUP_ONE(normals);
 }
-const Spectrum *ParamSet::FindSpectrum(const string &name, int *nItems) const {
+const RGBColor *ParamSet::FindRGBColor(const string &name, int *nItems) const {
 	LOOKUP_PTR(spectra);
 }
-Spectrum ParamSet::FindOneSpectrum(const string &name, const Spectrum &d) const {
+RGBColor ParamSet::FindOneRGBColor(const string &name, const RGBColor &d) const {
 	LOOKUP_ONE(spectra);
 }
 const string *ParamSet::FindString(const string &name, int *nItems) const {
@@ -603,7 +603,7 @@ string ParamSet::ToString() const {
 	for (i = 0; i < spectra.size(); ++i) {
 		char *bufp = buf;
 		*bufp = '\0';
-		ParamSetItem<Spectrum> *item = spectra[i];
+		ParamSetItem<RGBColor> *item = spectra[i];
 		typeString = "color ";
 		// Print _ParamSetItem_ declaration, determine how many to print
 		int nPrint = item->nItems;
@@ -621,27 +621,27 @@ string ParamSet::ToString() const {
 	return ret;
 }
 // TextureParams Method Definitions
-boost::shared_ptr<Texture<Spectrum> >
-	TextureParams::GetSpectrumTexture(const string &n,
-             const Spectrum &def) const {
+boost::shared_ptr<Texture<RGBColor> >
+	TextureParams::GetRGBColorTexture(const string &n,
+             const RGBColor &def) const {
 	string name = geomParams.FindTexture(n);
 	if (name == "") name = materialParams.FindTexture(n);
 	if (name != "") {
-		if (spectrumTextures.find(name) !=
-		       spectrumTextures.end())
-			return spectrumTextures[name];
+		if (RGBColorTextures.find(name) !=
+		       RGBColorTextures.end())
+			return RGBColorTextures[name];
 		else
 		{
-			//Error("Couldn't find spectrum"
+			//Error("Couldn't find RGBColor"
 			//      "texture named \"%s\"", n.c_str());
 			std::stringstream ss;
-			ss<<"Couldn't find spectrum texture named '"<<n<<"'";
+			ss<<"Couldn't find RGBColor texture named '"<<n<<"'";
 			luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		}
 	}
-	Spectrum val = geomParams.FindOneSpectrum(n,
-		materialParams.FindOneSpectrum(n, def));
-	boost::shared_ptr<Texture<Spectrum> > o (new ConstantTexture<Spectrum>(val));
+	RGBColor val = geomParams.FindOneRGBColor(n,
+		materialParams.FindOneRGBColor(n, def));
+	boost::shared_ptr<Texture<RGBColor> > o (new ConstantTexture<RGBColor>(val));
 	return o;
 }
 boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n,

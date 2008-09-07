@@ -24,6 +24,7 @@
 #define LUX_VOLUME_H
 // volume.h*
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "geometry.h"
 #include "transport.h"
@@ -48,46 +49,46 @@ public:
 	virtual BBox WorldBound() const = 0;
 	virtual bool IntersectP(const Ray &ray, float *t0,
 		float *t1) const = 0;
-	virtual Spectrum sigma_a(const Point &,
+	virtual RGBColor sigma_a(const Point &,
 		const Vector &) const = 0;
-	virtual Spectrum sigma_s(const Point &,
+	virtual RGBColor sigma_s(const Point &,
 		const Vector &) const = 0;
 	virtual
-		Spectrum Lve(const Point &, const Vector &) const = 0;
+		RGBColor Lve(const Point &, const Vector &) const = 0;
 	virtual float p(const Point &, const Vector &,
 		const Vector &) const = 0;
-	virtual Spectrum sigma_t(const Point &, const Vector &) const;
-	virtual Spectrum Tau(const Ray &ray,
+	virtual RGBColor sigma_t(const Point &, const Vector &) const;
+	virtual RGBColor Tau(const Ray &ray,
 		float step = 1.f, float offset = 0.5) const = 0;
 };
 
 class  DensityRegion : public VolumeRegion {
 public:
 	// DensityRegion Public Methods
-	DensityRegion(const Spectrum &sig_a, const Spectrum &sig_s,
-		float g, const Spectrum &Le, const Transform &VolumeToWorld);
+	DensityRegion(const RGBColor &sig_a, const RGBColor &sig_s,
+		float g, const RGBColor &Le, const Transform &VolumeToWorld);
 	virtual float Density(const Point &Pobj) const = 0;
-	Spectrum sigma_a(const Point &p, const Vector &) const {
+	RGBColor sigma_a(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * sig_a;
 	}
-	Spectrum sigma_s(const Point &p, const Vector &) const {
+	RGBColor sigma_s(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * sig_s;
 	}
-	Spectrum sigma_t(const Point &p, const Vector &) const {
+	RGBColor sigma_t(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * (sig_a + sig_s);
 	}
-	Spectrum Lve(const Point &p, const Vector &) const {
+	RGBColor Lve(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * le;
 	}
 	float p(const Point &p, const Vector &w,
 			const Vector &wp) const {
 		return PhaseHG(w, wp, g);
 	}
-	Spectrum Tau(const Ray &r, float stepSize, float offset) const;
+	RGBColor Tau(const Ray &r, float stepSize, float offset) const;
 protected:
 	// DensityRegion Protected Data
 	Transform WorldToVolume;
-	Spectrum sig_a, sig_s, le;
+	RGBColor sig_a, sig_s, le;
 	float g;
 };
 
@@ -98,12 +99,12 @@ public:
 	~AggregateVolume();
 	BBox WorldBound() const;
 	bool IntersectP(const Ray &ray, float *t0, float *t1) const;
-	Spectrum sigma_a(const Point &, const Vector &) const;
-	Spectrum sigma_s(const Point &, const Vector &) const;
-	Spectrum Lve(const Point &, const Vector &) const;
+	RGBColor sigma_a(const Point &, const Vector &) const;
+	RGBColor sigma_s(const Point &, const Vector &) const;
+	RGBColor Lve(const Point &, const Vector &) const;
 	float p(const Point &, const Vector &, const Vector &) const;
-	Spectrum sigma_t(const Point &, const Vector &) const;
-	Spectrum Tau(const Ray &ray, float, float) const;
+	RGBColor sigma_t(const Point &, const Vector &) const;
+	RGBColor Tau(const Ray &ray, float, float) const;
 private:
 	// AggregateVolume Private Data
 	vector<VolumeRegion *> regions;

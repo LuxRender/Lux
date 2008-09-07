@@ -47,7 +47,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 	
 private:
 	// FBmTexture Private Data
@@ -69,7 +69,7 @@ template <class T> Texture<float> * FBmTexture<T>::CreateFloatTexture(const Tran
 		tp.FindFloat("roughness", .5f), map);
 }
 
-template <class T> Texture<Spectrum> * FBmTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T> Texture<RGBColor> * FBmTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
@@ -77,7 +77,7 @@ template <class T> Texture<Spectrum> * FBmTexture<T>::CreateSpectrumTexture(cons
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	return new FBmTexture<Spectrum>(tp.FindInt("octaves", 8),
+	return new FBmTexture<RGBColor>(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f), map);
 }
 

@@ -45,7 +45,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	boost::shared_ptr<Texture<T1> > tex1;
 	boost::shared_ptr<Texture<T2> > tex2;
@@ -58,11 +58,11 @@ template <class T, class U> inline Texture<float> * ScaleTexture<T,U>::CreateFlo
 		tp.GetFloatTexture("tex2", 1.f));
 }
 
-template <class T,class U> inline Texture<Spectrum> * ScaleTexture<T,U>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T,class U> inline Texture<RGBColor> * ScaleTexture<T,U>::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new ScaleTexture<Spectrum, Spectrum>(
-		tp.GetSpectrumTexture("tex1", Spectrum(1.f)),
-		tp.GetSpectrumTexture("tex2", Spectrum(1.f)));
+	return new ScaleTexture<RGBColor, RGBColor>(
+		tp.GetRGBColorTexture("tex1", RGBColor(1.f)),
+		tp.GetRGBColorTexture("tex2", RGBColor(1.f)));
 }
 
 }//namespace lux

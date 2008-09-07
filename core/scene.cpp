@@ -34,7 +34,7 @@
 #include "context.h"
 #include "bxdf.h"
 #include "light.h"
-#include "spectrumwavelengths.h"
+#include "Spectrumwavelengths.h"
 
 #include "randomgen.h"
 

@@ -52,6 +52,14 @@ public:
 			ret.c[0] += s2.c[0]; ret.c[1] += s2.c[1]; ret.c[2] += s2.c[2];
 		return ret;
 	}
+	Color &operator-=(const Color &s2) {
+			c[0] -= s2.c[0]; c[1] -= s2.c[1]; c[2] -= s2.c[2];
+		return *this;
+	}
+	Color &operator-=(float f) {
+			c[0] -= f; c[1] -= f; c[2] -= f;
+		return *this;
+	}
 	Color operator-(const Color &s2) const {
 		Color ret = *this;
 			ret.c[0] -= s2.c[0]; ret.c[1] -= s2.c[1]; ret.c[2] -= s2.c[2];
@@ -192,7 +200,7 @@ public:
 	RGBColor(float v = 0.f) {
 			c[0] = v; c[1] = v; c[2] = v;
 	}
-	RGBColor(float cs[3]) {
+	RGBColor(const float cs[3]) {
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
 	RGBColor(XYZColor xyz);

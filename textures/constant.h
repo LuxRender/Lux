@@ -31,7 +31,7 @@ namespace lux
 namespace Constant
 {
 Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 }
 
 }//namespace lux

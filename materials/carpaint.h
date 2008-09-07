@@ -32,8 +32,8 @@ namespace lux
 class CarPaint : public Material {
 public:
   // CarPaint Public Methods
-  CarPaint(boost::shared_ptr<Texture<Spectrum> > kd,
-           boost::shared_ptr<Texture<Spectrum> > ks1, boost::shared_ptr<Texture<Spectrum> > ks2, boost::shared_ptr<Texture<Spectrum> > ks3,
+  CarPaint(boost::shared_ptr<Texture<RGBColor> > kd,
+           boost::shared_ptr<Texture<RGBColor> > ks1, boost::shared_ptr<Texture<RGBColor> > ks2, boost::shared_ptr<Texture<RGBColor> > ks3,
            boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,
            boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
            boost::shared_ptr<Texture<float> > bump);
@@ -43,7 +43,7 @@ public:
   static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
   // CarPaint Private Data
-  boost::shared_ptr<Texture<Spectrum> > Kd, Ks1, Ks2, Ks3;
+  boost::shared_ptr<Texture<RGBColor> > Kd, Ks1, Ks2, Ks3;
   boost::shared_ptr<Texture<float> > R1, R2, R3, M1, M2, M3;
   boost::shared_ptr<Texture<float> > bumpMap;
 };

@@ -34,7 +34,7 @@ namespace lux
 #define HARLEQUIN_TEXTURE_PALETTE_SIZE 0x1f
 
 // Harlequin Declarations
-class HarlequinTexture : public Texture<Spectrum> {
+class HarlequinTexture : public Texture<RGBColor> {
 public:
 	// Harlequin Public Methods
 	HarlequinTexture() {
@@ -44,13 +44,12 @@ public:
 			c[1] = RadicalInverse(i * COLOR_SAMPLES + 1, 3);
 			c[2] = RadicalInverse(i * COLOR_SAMPLES + 1, 5);
 
-			XYZColor xyz = RGBColor(c).ToXYZ();
-			ColorLookupTable[i] = FromXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
+			ColorLookupTable[i] = RGBColor(c);
 		}
 	}
 	~HarlequinTexture() { }
 
-	Spectrum Evaluate(const DifferentialGeometry &dg) const {
+	RGBColor Evaluate(const DifferentialGeometry &dg) const {
 		// Dade - I assume object are 8 bytes aligned
 		u_long lookupIndex = (((u_long)dg.shape) &
 				((HARLEQUIN_TEXTURE_PALETTE_SIZE-1) << 3)) >> 3;
@@ -59,13 +58,13 @@ public:
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> *CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> *CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 
 private:
-	static Spectrum ColorLookupTable[];
+	static RGBColor ColorLookupTable[];
 };
 
-Spectrum HarlequinTexture::ColorLookupTable[HARLEQUIN_TEXTURE_PALETTE_SIZE];
+RGBColor HarlequinTexture::ColorLookupTable[HARLEQUIN_TEXTURE_PALETTE_SIZE];
 
 // Harlequin Method Definitions
 Texture<float> *HarlequinTexture::CreateFloatTexture(const Transform &tex2world,
@@ -73,7 +72,7 @@ Texture<float> *HarlequinTexture::CreateFloatTexture(const Transform &tex2world,
 	return NULL;
 }
 
-Texture<Spectrum> *HarlequinTexture::CreateSpectrumTexture(const Transform &tex2world,
+Texture<RGBColor> *HarlequinTexture::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	return new HarlequinTexture();
 }

@@ -31,7 +31,7 @@ Texture<float> * Constant::CreateFloatTexture(const Transform &tex2world,
 	return new ConstantTexture<float>(tp.FindFloat("value", 1.f));
 }
 
-Texture<Spectrum> * Constant::CreateSpectrumTexture(const Transform &tex2world,
+Texture<RGBColor> * Constant::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new ConstantTexture<Spectrum>(tp.FindSpectrum("value", Spectrum(1.f)));
+	return new ConstantTexture<RGBColor>(tp.FindRGBColor("value", RGBColor(1.f)));
 }

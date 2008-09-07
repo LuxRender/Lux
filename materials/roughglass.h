@@ -31,7 +31,7 @@ namespace lux
 class RoughGlass : public Material {
 public:
 	// RoughGlass Public Methods
-	RoughGlass(boost::shared_ptr<Texture<Spectrum> > r, boost::shared_ptr<Texture<Spectrum> > t, 
+	RoughGlass(boost::shared_ptr<Texture<RGBColor> > r, boost::shared_ptr<Texture<RGBColor> > t, 
 			boost::shared_ptr<Texture<float> > urough, boost::shared_ptr<Texture<float> > vrough,
 			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, boost::shared_ptr<Texture<float> > bump) {
 		Kr = r;
@@ -47,7 +47,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// RoughGlass Private Data
-	boost::shared_ptr<Texture<Spectrum> > Kr, Kt;
+	boost::shared_ptr<Texture<RGBColor> > Kr, Kt;
 	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > cauchyb;
 	boost::shared_ptr<Texture<float> > uroughness;

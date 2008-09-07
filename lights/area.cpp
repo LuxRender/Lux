@@ -34,7 +34,7 @@ using namespace lux;
 
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - add portal implementation
-		const Spectrum &le, float g, int ns,
+		const RGBColor &le, float g, int ns,
 		const boost::shared_ptr<Shape> &s)
 	: Light(light2world, ns) {
 	// Create SPD
@@ -175,7 +175,7 @@ SWCSpectrum AreaLight::Eval(const TsPack *tspack, const Normal &n, const Vector 
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
 		const boost::shared_ptr<Shape> &shape) {
-	Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
+	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	return new AreaLight(light2world, L, g, nSamples, shape);

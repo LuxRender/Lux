@@ -29,7 +29,7 @@ namespace lux
 {
 
 // MarbleTexture Declarations
-class MarbleTexture : public Texture<Spectrum> {
+class MarbleTexture : public Texture<RGBColor> {
 public:
 	// MarbleTexture Public Methods
 	~MarbleTexture() {
@@ -43,7 +43,7 @@ public:
 		scale = sc;
 		variation = var;
 	}
-	Spectrum Evaluate(const DifferentialGeometry &dg) const {
+	RGBColor Evaluate(const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		P *= scale;
@@ -58,11 +58,11 @@ public:
 		#define NSEG (NC-3)
 		int first = Floor2Int(t * NSEG);
 		t = (t * NSEG - first);
-		Spectrum c0(c[first]), c1(c[first+1]), c2(c[first+2]), c3(c[first+3]);
+		RGBColor c0(c[first]), c1(c[first+1]), c2(c[first+2]), c3(c[first+3]);
 		// Bezier spline evaluated with de Castilejau's algorithm
-		Spectrum s0 = (1.f - t) * c0 + t * c1;
-		Spectrum s1 = (1.f - t) * c1 + t * c2;
-		Spectrum s2 = (1.f - t) * c2 + t * c3;
+		RGBColor s0 = (1.f - t) * c0 + t * c1;
+		RGBColor s1 = (1.f - t) * c1 + t * c2;
+		RGBColor s2 = (1.f - t) * c2 + t * c3;
 		s0 = (1.f - t) * s0 + t * s1;
 		s1 = (1.f - t) * s1 + t * s2;
 		// Extra scale of 1.5 to increase variation among colors
@@ -70,7 +70,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	// MarbleTexture Private Data
 	int octaves;

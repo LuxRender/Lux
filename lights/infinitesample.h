@@ -62,7 +62,7 @@ struct Distribution1D {
 class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
-	InfiniteAreaLightIS(const Transform &light2world,	const Spectrum &power, int ns,
+	InfiniteAreaLightIS(const Transform &light2world,	const RGBColor &power, int ns,
 			  const string &texmap);
 	~InfiniteAreaLightIS();
 	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
@@ -86,8 +86,8 @@ public:
 
 private:
 	// InfiniteAreaLightIS Private Data
-	Spectrum Lbase;
-	MIPMap<Spectrum> *radianceMap;
+	RGBColor Lbase;
+	MIPMap<RGBColor> *radianceMap;
 	Distribution1D *uDistrib, **vDistribs;
 };
 

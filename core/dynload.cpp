@@ -450,137 +450,137 @@ if (plugin)
     return o;
 }
 
-boost::shared_ptr<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
+boost::shared_ptr<Texture<RGBColor> > MakeRGBColorTexture(const string &name,
         const Transform &tex2world, const TextureParams &tp) {
     /*TexturePlugin *plugin = GetPlugin<TexturePlugin>(name, texturePlugins,
                         PluginSearchPath);
 if (plugin)
 {
-    boost::shared_ptr<Texture<Spectrum> > ret =
-        plugin->CreateSpectrumTex(tex2world, tp);
+    boost::shared_ptr<Texture<RGBColor> > ret =
+        plugin->CreateRGBColorTex(tex2world, tp);
     tp.ReportUnused();
     return ret;
 }*/
     if(name=="bilerp") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BilerpTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BilerpTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="checkerboard") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Checkerboard::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(Checkerboard::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="constant") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(Constant::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(Constant::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="dots") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(DotsTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(DotsTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="fbm") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(FBmTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(FBmTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="imagemap") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ImageTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(ImageTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="marble") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MarbleTexture::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(MarbleTexture::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="mix") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(MixTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(MixTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="scale") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(ScaleTexture<Spectrum, Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(ScaleTexture<RGBColor, RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="uv") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(UVTexture::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(UVTexture::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="windy") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WindyTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(WindyTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="wrinkled") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(WrinkledTexture<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(WrinkledTexture<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="harlequin") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(HarlequinTexture::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(HarlequinTexture::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_musgrave") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderMusgraveTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderMusgraveTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_marble") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderMarbleTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderMarbleTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_wood") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderWoodTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderWoodTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_clouds") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderCloudsTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderCloudsTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_blend") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderBlendTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderBlendTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_distortednoise") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderDistortedNoiseTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderDistortedNoiseTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_stucci") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderStucciTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderStucciTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_noise") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderNoiseTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderNoiseTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_magic") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderMagicTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderMagicTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
     if(name=="blender_voronoi") {
-        boost::shared_ptr<Texture<Spectrum> >  ret = boost::shared_ptr<Texture<Spectrum> >(BlenderVoronoiTexture3D<Spectrum>::CreateSpectrumTexture(tex2world, tp));
+        boost::shared_ptr<Texture<RGBColor> >  ret = boost::shared_ptr<Texture<RGBColor> >(BlenderVoronoiTexture3D<RGBColor>::CreateRGBColorTexture(tex2world, tp));
         tp.ReportUnused();
         return ret;
     }
-    //Error("Static loading of spectrum texture '%s' failed.",name.c_str());
+    //Error("Static loading of RGBColor texture '%s' failed.",name.c_str());
     std::stringstream ss;
-    ss<<"Static loading of spectrum texture '"<<name<<"' failed.";
+    ss<<"Static loading of RGBColor texture '"<<name<<"' failed.";
     luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
-    boost::shared_ptr<Texture<Spectrum> > o;
+    boost::shared_ptr<Texture<RGBColor> > o;
     return o;
 }
 

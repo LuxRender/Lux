@@ -33,11 +33,11 @@ namespace lux
 class ProjectionLight : public Light {
 public:
 	// ProjectionLight Public Methods
-	ProjectionLight(const Transform &light2world, const Spectrum &intensity,
+	ProjectionLight(const Transform &light2world, const RGBColor &intensity,
 		const string &texname, float fov);
 	~ProjectionLight();
 	bool IsDeltaLight() const { return true; }
-	Spectrum Projection(const Vector &w) const;
+	RGBColor Projection(const Vector &w) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return SWCSpectrum(tspack, Intensity * 2.f * M_PI * (1.f - cosTotalWidth) *
 			projectionMap->Lookup(.5f, .5f, .5f));
@@ -52,9 +52,9 @@ public:
 		const ParamSet &paramSet);
 private:
 	// ProjectionLight Private Data
-	MIPMap<Spectrum> *projectionMap;
+	MIPMap<RGBColor> *projectionMap;
 	Point lightPos;
-	Spectrum Intensity;
+	RGBColor Intensity;
 	Transform lightProjection;
 	float hither, yon;
 	float screenX0, screenX1, screenY0, screenY1;

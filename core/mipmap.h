@@ -24,6 +24,7 @@
 #define LUX_MIPMAP_H
 
 #include "lux.h"
+#include "color.h"
 #include "spectrum.h"
 #include "texture.h"
 #include "texturecolor.h"
@@ -128,65 +129,65 @@ protected:
 
 	//template user specializations are not supported in vc++, so this hack
 	//----------------------------- Unsigned Chars -----------------------------
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
 	{
 		float c = static_cast<float>(internalValue.c[0]) * invMaxUnsignedChar;
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
+		outputValue = (RGBColor(c) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedChar;
 		}
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
+		outputValue = (RGBColor(c) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedChar;
 		}
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
+		outputValue = (RGBColor(c) * gain).Pow(gamma);
 	}
 
 	//---------------------------- Unsigned Shorts -----------------------------
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
 	{
 		float c = static_cast<float>(internalValue.c[0]) * invMaxUnsignedShort;
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
+		outputValue = (RGBColor(c) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedShort;
 		}
-		outputValue = (Spectrum(c) * gain).Pow(gamma);
+		outputValue = (RGBColor(c) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * invMaxUnsignedShort;
 		}
-		outputValue= (Spectrum(c) * gain).Pow(gamma);
+		outputValue= (RGBColor(c) * gain).Pow(gamma);
 	}
 
 	//--------------------------------- Floats ---------------------------------
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<float, 1> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<float, 1> &internalValue) const
 	{
-		outputValue = (Spectrum(internalValue.c[0]) * gain).Pow(gamma);
+		outputValue = (RGBColor(internalValue.c[0]) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<float, 3> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<float, 3> &internalValue) const
 	{
-		outputValue = (Spectrum(internalValue.c) * gain).Pow(gamma);
+		outputValue = (RGBColor(internalValue.c) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const TextureColor<float, 4> &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const TextureColor<float, 4> &internalValue) const
 	{
-		outputValue = (Spectrum(internalValue.c) * gain).Pow(gamma);
+		outputValue = (RGBColor(internalValue.c) * gain).Pow(gamma);
 	}
-	inline virtual void convert(Spectrum& outputValue, const Spectrum &internalValue) const
+	inline virtual void convert(RGBColor& outputValue, const RGBColor &internalValue) const
 	{
 		outputValue = (internalValue * gain).Pow(gamma);
 	}
@@ -194,7 +195,7 @@ protected:
 	template<class V, int n>
 	inline void convert(float& outputValue, const TextureColor<V, n> &internalValue) const
 	{
-		Spectrum specValue;
+		RGBColor specValue;
 		convert(specValue, internalValue);
 		outputValue = specValue.y();
 	}
@@ -260,7 +261,7 @@ private:
 
 	//equivalent of user specializations of template type
 	inline float clamp(float v) { return max(v, 0.f); }
-	inline Spectrum clamp(const Spectrum &v) { return v.Clamp(0.f, INFINITY); }
+	inline RGBColor clamp(const RGBColor &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned char, 1> clamp(const TextureColor<unsigned char, 1> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned char, 3> clamp(const TextureColor<unsigned char, 3> &v) { return v.Clamp(0.f, INFINITY); }
 	inline TextureColor<unsigned char, 4> clamp(const TextureColor<unsigned char, 4> &v) { return v.Clamp(0.f, INFINITY); }
@@ -639,67 +640,67 @@ public:
 private:
 	//template user specializations are not supported in vc++, so this hack
 	//----------------------------- Unsigned Chars -----------------------------
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<unsigned char, 1> &internalValue) const
 	{
 		float c = static_cast<float>(internalValue.c[0]) * MIPMapImpl<T, U>::invMaxUnsignedChar;
-		outputValue = Spectrum(c);
+		outputValue = RGBColor(c);
 	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<unsigned char, 3> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedChar;
 		}
-		outputValue = Spectrum(c);
+		outputValue = RGBColor(c);
 	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<unsigned char, 4> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedChar;
 		}
-		outputValue = Spectrum(c);
+		outputValue = RGBColor(c);
 	}
 
 	//---------------------------- Unsigned Shorts -----------------------------
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<unsigned short, 1> &internalValue) const
 	{
 		float c = static_cast<float>(internalValue.c[0]) * MIPMapImpl<T, U>::invMaxUnsignedShort;
-		outputValue = Spectrum(c);
+		outputValue = RGBColor(c);
 	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<unsigned short, 3> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedShort;
 		}
-		outputValue = Spectrum(c);
+		outputValue = RGBColor(c);
 	}
-	inline void convert(Spectrum& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<unsigned short, 4> &internalValue) const
 	{
 		float c[3];
 		for (int i = 0; i < 3; ++i) {
 			c[i] = static_cast<float>(internalValue.c[i]) * MIPMapImpl<T, U>::invMaxUnsignedShort;
 		}
-		outputValue = Spectrum(c);
+		outputValue = RGBColor(c);
 	}
 
 	//--------------------------------- Floats ---------------------------------
-	inline void convert(Spectrum& outputValue, const TextureColor<float, 1> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<float, 1> &internalValue) const
 	{
-		outputValue = Spectrum(internalValue.c[0]);
+		outputValue = RGBColor(internalValue.c[0]);
 	}
-	inline void convert(Spectrum& outputValue, const TextureColor<float, 3> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<float, 3> &internalValue) const
 	{
-		outputValue = Spectrum(internalValue.c);
+		outputValue = RGBColor(internalValue.c);
 	}
-	inline void convert(Spectrum& outputValue, const TextureColor<float, 4> &internalValue) const
+	inline void convert(RGBColor& outputValue, const TextureColor<float, 4> &internalValue) const
 	{
-		outputValue = Spectrum(internalValue.c);
+		outputValue = RGBColor(internalValue.c);
 	}
-	inline void convert(Spectrum& outputValue, const Spectrum &internalValue) const
+	inline void convert(RGBColor& outputValue, const RGBColor &internalValue) const
 	{
-		outputValue = Spectrum(internalValue.c);
+		outputValue = RGBColor(internalValue.c);
 	}
 
 	inline void convert(float& outputValue, const float internalValue) const

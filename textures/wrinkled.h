@@ -47,7 +47,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<Spectrum> * CreateSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	// WrinkledTexture Private Data
 	int octaves;
@@ -68,14 +68,14 @@ template <class T> inline Texture<float> * WrinkledTexture<T>::CreateFloatTextur
 		tp.FindFloat("roughness", .5f), map);
 }
 
-template <class T> inline Texture<Spectrum> * WrinkledTexture<T>::CreateSpectrumTexture(const Transform &tex2world,
+template <class T> inline Texture<RGBColor> * WrinkledTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
-	return new WrinkledTexture<Spectrum>(tp.FindInt("octaves", 8),
+	return new WrinkledTexture<RGBColor>(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f), map);
 }
 

@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SPECTRUM_H
-#define LUX_SPECTRUM_H
+#ifndef LUX_RGBColor_H
+#define LUX_RGBColor_H
 // spectrum.h*
 #include "lux.h"
 #include "spd.h"
@@ -36,97 +36,97 @@ namespace lux
 static const float inv_WAVELENGTH_SAMPLES = 1.f / WAVELENGTH_SAMPLES;
 
 
-// Spectrum Declarations
-
+/*
+// RGBColor Declarations
 #ifndef DISABLED_LUX_USE_SSE
 
-class  Spectrum {
+class  RGBColor {
 	friend class boost::serialization::access;
 public:
-	// Spectrum Public Methods
-	Spectrum(float v = 0.f) {
+	// RGBColor Public Methods
+	RGBColor(float v = 0.f) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = v;
 	}
 	
-	Spectrum(const float cs[COLOR_SAMPLES]) {
+	RGBColor(const float cs[COLOR_SAMPLES]) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = cs[i];
 	}
-	friend ostream &operator<<(ostream &, const Spectrum &);
-	Spectrum &operator+=(const Spectrum &s2) {
+	friend ostream &operator<<(ostream &, const RGBColor &);
+	RGBColor &operator+=(const RGBColor &s2) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] += s2.c[i];
 		return *this;
 	}
-	Spectrum &operator-=(const Spectrum &s2) {
+	RGBColor &operator-=(const RGBColor &s2) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] -= s2.c[i];
 		return *this;
 	}
-	Spectrum operator+(const Spectrum &s2) const {
-		Spectrum ret = *this;
+	RGBColor operator+(const RGBColor &s2) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] += s2.c[i];
 		return ret;
 	}
-	Spectrum operator-(const Spectrum &s2) const {
-		Spectrum ret = *this;
+	RGBColor operator-(const RGBColor &s2) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] -= s2.c[i];
 		return ret;
 	}
-	Spectrum operator/(const Spectrum &s2) const {
-		Spectrum ret = *this;
+	RGBColor operator/(const RGBColor &s2) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] /= s2.c[i];
 		return ret;
 	}
-	Spectrum operator*(const Spectrum &sp) const {
-		Spectrum ret = *this;
+	RGBColor operator*(const RGBColor &sp) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] *= sp.c[i];
 		return ret;
 	}
-	Spectrum &operator*=(const Spectrum &sp) {
+	RGBColor &operator*=(const RGBColor &sp) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] *= sp.c[i];
 		return *this;
 	}
-	Spectrum operator*(float a) const {
-		Spectrum ret = *this;
+	RGBColor operator*(float a) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] *= a;
 		return ret;
 	}
-	Spectrum &operator*=(float a) {
+	RGBColor &operator*=(float a) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] *= a;
 		return *this;
 	}
 	friend inline
-	Spectrum operator*(float a, const Spectrum &s) {
+	RGBColor operator*(float a, const RGBColor &s) {
 		return s * a;
 	}
-	Spectrum operator/(float a) const {
+	RGBColor operator/(float a) const {
 		return *this * (1.f / a);
 	}
-	Spectrum &operator/=(float a) {
+	RGBColor &operator/=(float a) {
 		float inv = 1.f / a;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] *= inv;
 		return *this;
 	}
-	void AddWeighted(float w, const Spectrum &s) {
+	void AddWeighted(float w, const RGBColor &s) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] += w * s.c[i];
 	}
-	bool operator==(const Spectrum &sp) const {
+	bool operator==(const RGBColor &sp) const {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			if (c[i] != sp.c[i]) return false;
 		return true;
 	}
-	bool operator!=(const Spectrum &sp) const {
+	bool operator!=(const RGBColor &sp) const {
 		return !(*this == sp);
 	}
 	bool Black() const {
@@ -134,39 +134,39 @@ public:
 			if (c[i] != 0.) return false;
 		return true;
 	}
-	Spectrum Sqrt() const {
-		Spectrum ret;
+	RGBColor Sqrt() const {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = sqrtf(c[i]);
 		return ret;
 	}
-	Spectrum Pow(const Spectrum &e) const {
-		Spectrum ret;
+	RGBColor Pow(const RGBColor &e) const {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = c[i] > 0 ? powf(c[i], e.c[i]) : 0.f;
 		return ret;
 	}
-	Spectrum Pow(const float e) const {
-		Spectrum ret;
+	RGBColor Pow(const float e) const {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = c[i] > 0 ? powf(c[i], e) : 0.f;
 		return ret;
 	}
-	Spectrum operator-() const {
-		Spectrum ret;
+	RGBColor operator-() const {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = -c[i];
 		return ret;
 	}
-	friend Spectrum Exp(const Spectrum &s) {
-		Spectrum ret;
+	friend RGBColor Exp(const RGBColor &s) {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = expf(s.c[i]);
 		return ret;
 	}
-	Spectrum Clamp(float low = 0.f,
+	RGBColor Clamp(float low = 0.f,
 	               float high = INFINITY) const {
-		Spectrum ret;
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = ::Clamp(c[i], low, high);
 		return ret;
@@ -196,20 +196,20 @@ public:
 			v += YWeight[i] * c[i];
 		return v;
 	}
-	bool operator<(const Spectrum &s2) const {
+	bool operator<(const RGBColor &s2) const {
 		return y() < s2.y();
 	}
 	friend class lux::ParamSet;
 	
-	// Spectrum Public Data
+	// RGBColor Public Data
 	float c[COLOR_SAMPLES];
 	
 protected:
-	// Spectrum Private Data
+	// RGBColor Private Data
 	static float XWeight[COLOR_SAMPLES];
 	static float YWeight[COLOR_SAMPLES];
 	static float ZWeight[COLOR_SAMPLES];
-	friend Spectrum FromXYZ(float x, float y, float z);
+	friend RGBColor FromXYZ(float x, float y, float z);
 	
 private:
 	template<class Archive>
@@ -224,31 +224,31 @@ private:
 
 #define COLOR_VECTORS 1
 
-class  _MM_ALIGN16 Spectrum {
+class  _MM_ALIGN16 RGBColor {
 public:
-	// Spectrum Public Methods
-	Spectrum(float v = 0.f) {
+	// RGBColor Public Methods
+	RGBColor(float v = 0.f) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = v;
 	}
-	Spectrum(float cs[COLOR_SAMPLES]) {
+	RGBColor(float cs[COLOR_SAMPLES]) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] = cs[i];
 	}
-	Spectrum(__m128 cv[COLOR_VECTORS])
+	RGBColor(__m128 cv[COLOR_VECTORS])
     {
     	for (int i = 0; i < COLOR_VECTORS; ++i)
     		cvec[i]=cv[i];
     }
 	
-	friend ostream &operator<<(ostream &, const Spectrum &);
-	Spectrum &operator+=(const Spectrum &s2) {
+	friend ostream &operator<<(ostream &, const RGBColor &);
+	RGBColor &operator+=(const RGBColor &s2) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] += s2.c[i];
 		return *this;
 	}
-	Spectrum operator+(const Spectrum &s2) const {
-		Spectrum ret;// = *this;
+	RGBColor operator+(const RGBColor &s2) const {
+		RGBColor ret;// = *this;
 		for (int i = 0; i < COLOR_VECTORS; ++i)
 			ret.cvec[i]=_mm_add_ps(cvec[i],s2.cvec[i]);
 		
@@ -256,30 +256,30 @@ public:
 		//	ret.c[i] += s2.c[i];
 		return ret;
 	}
-	Spectrum operator-(const Spectrum &s2) const {
-		Spectrum ret = *this;
+	RGBColor operator-(const RGBColor &s2) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] -= s2.c[i];
 		return ret;
 	}
-	Spectrum operator/(const Spectrum &s2) const {
-		Spectrum ret;// = *this;
+	RGBColor operator/(const RGBColor &s2) const {
+		RGBColor ret;// = *this;
 		for (int i = 0; i < COLOR_VECTORS; ++i)
 			ret.cvec[i]=_mm_div_ps(cvec[i],s2.cvec[i]);
 		//for (int i = 0; i < COLOR_SAMPLES; ++i)
 		//	ret.c[i] /= s2.c[i];
 		return ret;
 	}
-	Spectrum operator*(const Spectrum &sp) const {
-		Spectrum ret;// = *this;
+	RGBColor operator*(const RGBColor &sp) const {
+		RGBColor ret;// = *this;
 		for (int i = 0; i < COLOR_VECTORS; ++i)
 			ret.cvec[i]=_mm_mul_ps(cvec[i],sp.cvec[i]);
 		
-		/*for (int i = 0; i < COLOR_SAMPLES; ++i)
-			ret.c[i] *= sp.c[i];*/
+		//for (int i = 0; i < COLOR_SAMPLES; ++i)
+		//	ret.c[i] *= sp.c[i];
 		return ret;
 	}
-	Spectrum &operator*=(const Spectrum &sp) {
+	RGBColor &operator*=(const RGBColor &sp) {
 		//for (int i = 0; i < COLOR_SAMPLES; ++i)
 		//	c[i] *= sp.c[i];
 		
@@ -288,31 +288,31 @@ public:
 		
 		return *this;
 	}
-	Spectrum operator*(float a) const {
-		Spectrum ret = *this;
+	RGBColor operator*(float a) const {
+		RGBColor ret = *this;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] *= a;
 		return ret;
 	}
-	Spectrum &operator*=(float a) {
+	RGBColor &operator*=(float a) {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] *= a;
 		return *this;
 	}
 	friend inline
-	Spectrum operator*(float a, const Spectrum &s) {
+	RGBColor operator*(float a, const RGBColor &s) {
 		return s * a;
 	}
-	Spectrum operator/(float a) const {
+	RGBColor operator/(float a) const {
 		return *this * (1.f / a);
 	}
-	Spectrum &operator/=(float a) {
+	RGBColor &operator/=(float a) {
 		float inv = 1.f / a;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			c[i] *= inv;
 		return *this;
 	}
-	void AddWeighted(float w, const Spectrum &s) {
+	void AddWeighted(float w, const RGBColor &s) {
 		//for (int i = 0; i < COLOR_SAMPLES; ++i)
 		//	c[i] += w * s.c[i];
 		__m128 wvec=_mm_set_ps1(w);
@@ -320,7 +320,7 @@ public:
 		for (int i = 0; i < COLOR_VECTORS; ++i)
 			cvec[i]=_mm_add_ps(cvec[i],_mm_mul_ps(s.cvec[i],wvec));
 	}
-	bool operator==(const Spectrum &sp) const {
+	bool operator==(const RGBColor &sp) const {
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			if (c[i] != sp.c[i]) return false;
 		
@@ -328,7 +328,7 @@ public:
 		//	if(_mm_cmpneq_ps(cvec[i],sp.cvec[i])) return false;
 		return true;
 	}
-	bool operator!=(const Spectrum &sp) const {
+	bool operator!=(const RGBColor &sp) const {
 		return !(*this == sp);
 	}
 	bool Black() const {
@@ -336,8 +336,8 @@ public:
 			if (c[i] != 0.) return false;
 		return true;
 	}
-	Spectrum Sqrt() const {
-		Spectrum ret;
+	RGBColor Sqrt() const {
+		RGBColor ret;
 		//for (int i = 0; i < COLOR_SAMPLES; ++i)
 		//	ret.c[i] = sqrtf(c[i]);
 			
@@ -345,27 +345,27 @@ public:
 			ret.cvec[i]=_mm_sqrt_ps(cvec[i]);
 		return ret;
 	}
-	Spectrum Pow(const Spectrum &e) const {
-		Spectrum ret;
+	RGBColor Pow(const RGBColor &e) const {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = c[i] > 0 ? powf(c[i], e.c[i]) : 0.f;
 		return ret;
 	}
-	Spectrum operator-() const {
-		Spectrum ret;
+	RGBColor operator-() const {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = -c[i];
 		return ret;
 	}
-	friend Spectrum Exp(const Spectrum &s) {
-		Spectrum ret;
+	friend RGBColor Exp(const RGBColor &s) {
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = expf(s.c[i]);
 		return ret;
 	}
-	Spectrum Clamp(float low = 0.f,
+	RGBColor Clamp(float low = 0.f,
 	               float high = INFINITY) const {
-		Spectrum ret;
+		RGBColor ret;
 		for (int i = 0; i < COLOR_SAMPLES; ++i)
 			ret.c[i] = ::Clamp(c[i], low, high);
 		return ret;
@@ -393,12 +393,12 @@ public:
 			v += YWeight[i] * c[i];
 		return v;
 	}
-	bool operator<(const Spectrum &s2) const {
+	bool operator<(const RGBColor &s2) const {
 		return y() < s2.y();
 	}
 	friend class ParamSet;
 	
-	// Spectrum Public Data
+	// RGBColor Public Data
 	//float c[COLOR_SAMPLES];
 	
 	union
@@ -407,47 +407,47 @@ public:
       float c[COLOR_SAMPLES];
     };
 
-/*	
-	void* operator new(size_t t) { return _mm_malloc(t,16); }
-    void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
-    void* operator new[](size_t t) { return _mm_malloc(t,16); }
-    void operator delete[] (void* ptr) { _mm_free(ptr); }
-    void* operator new(long unsigned int i, Spectrum*) { return new Spectrum[i]; }
-    */
+	
+//	void* operator new(size_t t) { return _mm_malloc(t,16); }
+//    void operator delete(void* ptr, size_t t) { _mm_free(ptr); }
+//    void* operator new[](size_t t) { return _mm_malloc(t,16); }
+//    void operator delete[] (void* ptr) { _mm_free(ptr); }
+//    void* operator new(long unsigned int i, RGBColor*) { return new RGBColor[i]; }
+    
 	
 protected:
-	// Spectrum Private Data
+	// RGBColor Private Data
 	static float XWeight[COLOR_SAMPLES];
 	static float YWeight[COLOR_SAMPLES];
 	static float ZWeight[COLOR_SAMPLES];
-	friend Spectrum FromXYZ(float x, float y, float z);
+	friend RGBColor FromXYZ(float x, float y, float z);
 };
 
 #endif
 
-inline Spectrum FromXYZ(float x, float y, float z) {
+inline RGBColor FromXYZ(float x, float y, float z) {
 	float c[3];
 	c[0] =  3.240479f * x + -1.537150f * y + -0.498535f * z;
 	c[1] = -0.969256f * x +  1.875991f * y +  0.041556f * z;
 	c[2] =  0.055648f * x + -0.204043f * y +  1.057311f * z;
-	return Spectrum(c);
+	return RGBColor(c);
 }
 
-inline Spectrum FromXYZ(XYZColor c) {
+inline RGBColor FromXYZ(XYZColor c) {
 	return FromXYZ(c.c[0], c.c[1], c.c[2]);
 }
-
+*/
 #define Scalar float
 
 class SWCSpectrum {
 	friend class boost::serialization::access;
 public:
-	// Spectrum Public Methods
+	// RGBColor Public Methods
 	SWCSpectrum(Scalar v = 0.f) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = v;
 	}
-	SWCSpectrum(const TsPack *tspack, Spectrum s);							// Note -radiance- - REFACT - can inline now.
+	SWCSpectrum(const TsPack *tspack, RGBColor s);							// Note -radiance- - REFACT - can inline now.
 
 	SWCSpectrum(const TsPack *tspack, const SPD *s);
 
@@ -576,7 +576,7 @@ public:
 	Scalar filter(const TsPack *tspack) const;
 
 //	bool operator<(const SWCSpectrum &s2) const {
-//		return y() < s2.y();												// Note - radiance - REFACT - need to rewrite without use of spectrumwavelengths
+//		return y() < s2.y();												// Note - radiance - REFACT - need to rewrite without use of Spectrumwavelengths
 //		return false;
 //	}
 	friend class lux::ParamSet;
@@ -595,4 +595,4 @@ private:
 
 }//namespace lux
 
-#endif // LUX_SPECTRUM_H
+#endif // LUX_RGBColor_H

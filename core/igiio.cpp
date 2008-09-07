@@ -37,7 +37,7 @@ using namespace lux;
 
 namespace lux {
 // IGI Function Definitions
- Spectrum *ReadIgiImage(const string &name, int *width, int *height) {
+ RGBColor *ReadIgiImage(const string &name, int *width, int *height) {
 	// radiance - NOTE - unimplemented yet
 		printf("IGI file format input not implemented yet");
 		return NULL;

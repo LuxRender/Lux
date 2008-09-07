@@ -32,7 +32,7 @@ namespace lux
 class SpotLight : public Light {
 public:
 	// SpotLight Public Methods
-	SpotLight(const Transform &light2world, const Spectrum &, float gain, float width, float fall);
+	SpotLight(const Transform &light2world, const RGBColor &, float gain, float width, float fall);
 	~SpotLight() { delete LSPD; }
 	bool IsDeltaLight() const { return true; }
 	float Falloff(const Vector &w) const;

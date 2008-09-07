@@ -31,7 +31,7 @@ namespace lux
 class Mirror : public Material {
 public:
 	// Mirror Public Methods
-	Mirror(boost::shared_ptr<Texture<Spectrum> > r, boost::shared_ptr<Texture<float> > bump) {
+	Mirror(boost::shared_ptr<Texture<RGBColor> > r, boost::shared_ptr<Texture<float> > bump) {
 		Kr = r;
 		bumpMap = bump;
 	}
@@ -40,7 +40,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Mirror Private Data
-	boost::shared_ptr<Texture<Spectrum> > Kr;
+	boost::shared_ptr<Texture<RGBColor> > Kr;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
