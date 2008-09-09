@@ -142,7 +142,20 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
+	if (!havePortalShape)
+		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
+	else {
+		*pdfDirect = 0.f;
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			DifferentialGeometry dg;
+			RayDifferential ray(r);
+			ray.maxt = distance;
+			float d;
+			if (PortalShapes[i]->Intersect(ray, &d, &dg) && Dot(r.d, dg.nn) < .0f)
+				*pdfDirect += PortalShapes[i]->Pdf(r.o, r.d);
+		}
+		*pdfDirect *= AbsDot(r.d, ns) / (nrPortalShapes * distance * distance);
+	}
 	Vector wh = Normalize(WorldToLight(r.d));
 	const float phi = SphericalPhi(wh);
 	const float theta = SphericalTheta(wh);
@@ -173,27 +186,18 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 					 v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
 	} else {
 		// Sample a random Portal
-		int shapeidx = 0;
-		if(nrPortalShapes > 1)
-			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
-		Normal ns;
-		Point ps;
-		bool found = false;
-		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns);		// TODO - REFACT - add passed value from sample
-			*wi = Normalize(ps - p);
-
-			if (Dot(*wi, ns) < 0.f) {
-				found = true;
-				break;
-			}
-
-			if (++shapeidx >= nrPortalShapes)
-				shapeidx = 0;
+		int shapeIndex = 0;
+		if(nrPortalShapes > 1) {
+			shapeIndex = min<float>(nrPortalShapes - 1,
+					Floor2Int(u3 * nrPortalShapes));
+			u3 *= nrPortalShapes;
+			u3 -= shapeIndex;
 		}
-		if (found)
-			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+		Normal ns;
+		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		*wi = Normalize(ps - p);
+		if (Dot(*wi, ns) < 0.f)
+			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
 			return 0.f;
@@ -202,9 +206,22 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 	visibility->SetRay(p, *wi);
 	return Le(tspack, RayDifferential(p, *wi));
 }
-float SkyLight::Pdf(const Point &, const Normal &n,
+float SkyLight::Pdf(const Point &p, const Normal &n,
 		const Vector &wi) const {
-	return AbsDot(n, wi) * INV_TWOPI;
+	if (!havePortalShape)
+		return AbsDot(n, wi) * INV_TWOPI;
+	else {
+		float pdf = 0.f;
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			DifferentialGeometry dg;
+			RayDifferential ray(p, wi);
+			float d;
+			if (PortalShapes[i]->Intersect(ray, &d, &dg) && Dot(wi, dg.nn) < .0f)
+				pdf += PortalShapes[i]->Pdf(p, wi);
+		}
+		pdf /= nrPortalShapes;
+		return pdf;
+	}
 }
 SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
@@ -213,27 +230,19 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		*wi = UniformSampleSphere(u1, u2);
 		*pdf = UniformSpherePdf();
 	} else {
-	    // Sample a random Portal
-		int shapeidx = 0;
-		if(nrPortalShapes > 1)
-			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
-		Normal ns;
-		Point ps;
-		bool found = false;
-		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns);	// TODO - REFACT - add passed value from sample
-			*wi = Normalize(ps - p);
-			if (Dot(*wi, ns) < 0.f) {
-				found = true;
-				break;
-			}
-
-			if (++shapeidx >= nrPortalShapes)
-				shapeidx = 0;
+		// Sample a random Portal
+		int shapeIndex = 0;
+		if(nrPortalShapes > 1) {
+			shapeIndex = min<float>(nrPortalShapes - 1,
+					Floor2Int(u3 * nrPortalShapes));
+			u3 *= nrPortalShapes;
+			u3 -= shapeIndex;
 		}
-		if (found)
-			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
+		Normal ns;
+		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		*wi = Normalize(ps - p);
+		if (Dot(*wi, ns) < 0.f)
+			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
 			return 0.f;
@@ -248,12 +257,11 @@ float SkyLight::Pdf(const Point &, const Vector &) const {
 SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
-	if(!havePortalShape) {
+	if (!havePortalShape) {
 		// Choose two points _p1_ and _p2_ on scene bounding sphere
 		Point worldCenter;
 		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-											&worldRadius);
+		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 		worldRadius *= 1.01f;
 		Point p1 = worldCenter + worldRadius *
 			UniformSampleSphere(u1, u2);
@@ -265,8 +273,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		// Compute _SkyLight_ ray weight
 		Vector to_center = Normalize(worldCenter - p1);
 		float costheta = AbsDot(to_center,ray->d);
-		*pdf =
-			costheta / ((4.f * M_PI * worldRadius * worldRadius));
+		*pdf = costheta / ((4.f * M_PI * worldRadius * worldRadius));
 	} else {
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
@@ -277,7 +284,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 		Normal ns;
 		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
-		ray->d = UniformSampleSphere(u3, u4);
+		ray->d = UniformSampleSphere(u3, u4); //Jeanphi - FIXME this is wrong as it doesn't take the portal normal into account
 		if (Dot(ray->d, ns) < 0.) ray->d *= -1;
 
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
@@ -325,23 +332,16 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 	} else {
 		// Sample a random Portal
 		int shapeIndex = 0;
-		if(nrPortalShapes > 1)
-			shapeIndex = Floor2Int(tspack->rng->floatValue() * nrPortalShapes);  // TODO - REFACT - add passed value from sample
-		Normal ns;
-		Point ps;
-		bool found = false;
-		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
-			wi = Normalize(ps - p);
-			if (Dot(wi, ns) < 0.f) {
-				found = true;
-				break;
-			}
-			if (++shapeIndex >= nrPortalShapes)
-				shapeIndex = 0;
+		if(nrPortalShapes > 1) {
+			shapeIndex = Floor2Int(u3 * nrPortalShapes);
+			u3 *= nrPortalShapes;
+			u3 -= shapeIndex;
 		}
-		if (found)
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi);
+		Normal ns;
+		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		wi = Normalize(ps - p);
+		if (Dot(wi, ns) < 0.f)
+			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
 			*pdfDirect = 0.f;
@@ -441,7 +441,7 @@ void SkyLight::GetSkySpectralRadiance(const TsPack *tspack, const float theta, c
 	// Jeanphi - hard value to avoid problems with degraded spectra
 
 	// Note - radiance - added D65 whitepoint multiplication. - TODO must be optimized! might go into ChromacityToRGBColor()
-	*dst_spect *= SWCSpectrum(tspack, D65SPD);
+//	*dst_spect *= SWCSpectrum(tspack, D65SPD);
 }
 
 // note - lyc - removed redundant computations and optimised
