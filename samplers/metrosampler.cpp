@@ -205,7 +205,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->lensV = mutate(sampleImage[3], qrNumber(tspack, generation, scramble[3], 1 + orderOffset));
 			sample->time = mutate(sampleImage[4], qrNumber(tspack, generation, scramble[4], 0 + orderOffset));
 			sample->wavelengths = mutate(sampleImage[5], qrNumber(tspack, generation, scramble[5], 0 + orderOffset));
-			sample->singleWavelength = qrNumber(tspack, generation, scramble[6], 0 + orderOffset);//mutate(sampleImage[6], qrNumber(tspack, generation, scramble[6], 0 + orderOffset))
+			sample->singleWavelength = mutateScaled(sampleImage[6], qrNumber(tspack, generation, scramble[6], 0 + orderOffset), 0.f, 1.f, 1.f);//mutate(sampleImage[6], qrNumber(tspack, generation, scramble[6], 0 + orderOffset))
 			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
 				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], qrNumber(tspack, generation, scramble[i], (i & 1) + orderOffset));
 		}
