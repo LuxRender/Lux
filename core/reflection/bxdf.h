@@ -149,11 +149,10 @@ public:
 class  BRDFToBTDF : public BxDF {
 public:
 	// BRDFToBTDF Public Methods
-	BRDFToBTDF(BxDF *b)
+	BRDFToBTDF(BxDF *b, float ei = 1.f, float et = 1.f, float c = 0.f)
 		: BxDF(BxDFType(b->type ^
-		               (BSDF_REFLECTION | BSDF_TRANSMISSION))) {
-		brdf = b;
-	}
+			(BSDF_REFLECTION | BSDF_TRANSMISSION))),
+		etai(ei), etat(et), cb(c), brdf(b) {}
 	static Vector otherHemisphere(const Vector &w) {
 		return Vector(w.x, w.y, -w.z);
 	}
@@ -170,6 +169,7 @@ public:
 		bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
+	float etai, etat, cb;
 	BxDF *brdf;
 };
 

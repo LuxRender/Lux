@@ -63,10 +63,10 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 		// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 		if(urough == vrough)
 			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC( Microfacet)(T, fresnel,
-				BSDF_ALLOC( Blinn)(1.f / urough))));
+				BSDF_ALLOC( Blinn)(1.f / urough)), 1.f, ior, cb));
 		else
 			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC( Microfacet)(T, fresnel,
-				BSDF_ALLOC( Anisotropic)(1.f / urough, 1.f / vrough))));
+				BSDF_ALLOC( Anisotropic)(1.f / urough, 1.f / vrough)), 1.f, ior, cb));
 	}
 	return bsdf;
 }
