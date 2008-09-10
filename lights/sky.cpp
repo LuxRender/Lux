@@ -435,17 +435,17 @@ void SkyLight::GetSkySpectralRadiance(const TsPack *tspack, const float theta, c
 	const float y = PerezFunction(perez_y, theta_fin, gamma, zenith_y);
 	const float Y = PerezFunction(perez_Y, theta_fin, gamma, zenith_Y);
 
-	ChromaticityToRGBColor(tspack, x,y,dst_spect);
-	// Change to full RGBColor to have correct scale factor
+	ChromaticityToSpectrum(tspack, x, y, dst_spect);
+	// Change to full spectrum to have correct scale factor
 	*dst_spect *= (Y / 30.35/*dst_spect->y()*/ * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
 	// Jeanphi - hard value to avoid problems with degraded spectra
 
-	// Note - radiance - added D65 whitepoint multiplication. - TODO must be optimized! might go into ChromacityToRGBColor()
+	// Note - radiance - added D65 whitepoint multiplication. - TODO must be optimized! might go into ChromacityToSpectrum()
 //	*dst_spect *= SWCSpectrum(tspack, D65SPD);
 }
 
 // note - lyc - removed redundant computations and optimised
-void SkyLight::ChromaticityToRGBColor(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const
+void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const
 {
 	const float den = 1.0f / (0.0241f + 0.2562f * x - 0.7341f * y);
 	const float M1 = (-1.3515f -  1.7703f * x +  5.9114f * y) * den;

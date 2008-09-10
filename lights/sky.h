@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// sky.cpp*
+// sky.h*
 #include "lux.h"
 #include "light.h"
 #include "texture.h"
@@ -74,7 +74,7 @@ public:
 									RGBColor &atmAttenuation, RGBColor &atmInscatter ) const;
 
 	void		InitSunThetaPhi();
-	void		ChromaticityToRGBColor(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
+	void		ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
 	float		PerezFunction(const float *lam, float theta, float phi, float lvz) const;
 
 private:
