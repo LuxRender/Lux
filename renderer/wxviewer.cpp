@@ -24,17 +24,25 @@
 
 using namespace lux;
 
+
 // wxViewerSelection Definitions
-wxViewerSelection::wxViewerSelection(): m_x1(0), m_x2(0), m_y1(0), m_y2(0) {}
+wxViewerSelection::wxViewerSelection(int x1, int x2, int y1, int y2)
+	: m_x1(x1), m_x2(x2), m_y1(y1), m_y2(y2) {}
 
-wxViewerSelection::wxViewerSelection(int x1, int x2, int y1, int y2): m_x1(x1), m_x2(x2), m_y1(y1), m_y2(y2) {}
-
-void wxViewerSelection::GetBounds(int &x1, int &x2, int &y1, int &y2) {
+void wxViewerSelection::GetBounds(int &x1, int &x2, int &y1, int &y2) const {
 	x1 = m_x1;
 	x2 = m_x2;
 	y1 = m_y1;
 	y2 = m_y2;
 }
+
+void wxViewerSelection::SetBounds(int x1, int x2, int y1, int y2) {
+	m_x1 = x1;
+	m_x2 = x2;
+	m_y1 = y1;
+	m_y2 = y2;
+}
+
 
 // wxViewerEvent Definitions
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_VIEWER_SELECTION)
@@ -45,6 +53,7 @@ boost::shared_ptr<wxViewerSelection> wxViewerEvent::GetSelection() { return m_se
 
 wxEvent* wxViewerEvent::Clone() const { return new wxViewerEvent(*this); }
 
+
 // wxViewerBase Definitions
 wxViewerBase::wxViewerBase():m_viewerMode(STATIC) {}
 wxViewerBase::~wxViewerBase() {}
@@ -52,9 +61,9 @@ wxViewerBase::~wxViewerBase() {}
 wxViewerSelection wxViewerBase::GetSelection() { return wxViewerSelection(); }
 
 void wxViewerBase::SetMode(wxViewerMode mode) { m_viewerMode = mode; }
-void wxViewerBase::SetZoom(wxViewerSelection *selection) {}
-void wxViewerBase::SetSelection(wxViewerSelection *selection) {}
-void wxViewerBase::SetHighlight(wxViewerSelection *selection) {}
+void wxViewerBase::SetZoom(const wxViewerSelection *selection) {}
+void wxViewerBase::SetSelection(const wxViewerSelection *selection) {}
+void wxViewerBase::SetHighlight(const wxViewerSelection *selection) {}
 
 void wxViewerBase::Reload() {}
 void wxViewerBase::Reset() {}

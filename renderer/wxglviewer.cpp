@@ -41,11 +41,11 @@
 using namespace lux;
 
 BEGIN_EVENT_TABLE(LuxGLViewer, wxWindow)
-    EVT_PAINT            (LuxGLViewer::OnPaint)
+		EVT_PAINT            (LuxGLViewer::OnPaint)
 		EVT_SIZE             (LuxGLViewer::OnSize)
 		EVT_MOUSE_EVENTS     (LuxGLViewer::OnMouse)
 		EVT_ERASE_BACKGROUND (LuxGLViewer::OnEraseBackground)
-		EVT_TIMER  					 (wxID_ANY, LuxGLViewer::OnTimer)
+		EVT_TIMER            (wxID_ANY, LuxGLViewer::OnTimer)
 END_EVENT_TABLE()
 
 int glAttribList[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0};
@@ -66,13 +66,10 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 
 	m_stipple = 0x00FF; // Stipple pattern - dashes
 	m_animTimer = new wxTimer(this, ID_ANIMATIONUPDATE);
-	m_animTimer->Start(100, wxTIMER_CONTINUOUS); // Animation at 10fps
+	m_animTimer->Start(125, wxTIMER_CONTINUOUS); // Animation at 8fps
 
-	m_selX1 = 0.0;
-	m_selX2 = 0.0;
-	m_selY1 = 0.0;
-	m_selY2 = 0.0;
-	m_highlightSel = NULL;
+	m_selectionChanged = false;
+	m_refreshMarchingAntsOnly = false;
 
 	SetMode(PANZOOM);
 
@@ -86,11 +83,16 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 	SetCurrent(m_glContext);
 #endif
 	wxPaintDC(this);
-	glClearColor(0.5, 0.5, 0.5, 1.0);
+
+	if (!m_refreshMarchingAntsOnly) {
+		glClearColor(0.5, 0.5, 0.5, 1.0);
+	}
 	glViewport(0, 0, (GLint)GetSize().x, (GLint)GetSize().y);
 	glLoadIdentity();
 	glOrtho(0, GetSize().x, 0, GetSize().y, -1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	if (!m_refreshMarchingAntsOnly) {
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
 
 	if(luxStatistics("sceneIsReady")) {
 		if(m_firstDraw) {
@@ -131,41 +133,44 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 		glScalef(m_scale, m_scale, 1.f);
 		glTranslatef(-m_scaleXo, -m_scaleYo, 0.f);
 
-		glEnable (GL_TEXTURE_2D);
-		//draw the texture tiles
-		for(int y = 0; y < m_tilesY; y++){
-			for(int x = 0; x < m_tilesX; x++){
-				int offX = x*m_textureW;
-				int offY = y*m_textureH;
-				int tileW = min(m_textureW, m_imageW - offX);
-				int tileH = min(m_textureH, m_imageH - offY);
-				glBindTexture (GL_TEXTURE_2D, y*m_tilesX+x+1);
-				if(m_imageChanged)	{ //upload the textures only when needed (takes long...)
-					// NOTE - Ratow - loading texture tile in one pass
-					glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
-					glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
-					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_UNSIGNED_BYTE, luxFramebuffer());
+		if (!m_refreshMarchingAntsOnly) {
+			glEnable (GL_TEXTURE_2D);
+			//draw the texture tiles
+			for(int y = 0; y < m_tilesY; y++){
+				for(int x = 0; x < m_tilesX; x++){
+					int offX = x*m_textureW;
+					int offY = y*m_textureH;
+					int tileW = min(m_textureW, m_imageW - offX);
+					int tileH = min(m_textureH, m_imageH - offY);
+					glBindTexture (GL_TEXTURE_2D, y*m_tilesX+x+1);
+					if(m_imageChanged)	{ //upload the textures only when needed (takes long...)
+						// NOTE - Ratow - loading texture tile in one pass
+						glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
+						glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
+						glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_UNSIGNED_BYTE, luxFramebuffer());
+					}
+					glBegin(GL_QUADS);
+					glTexCoord2f(                 0.0f,                             0.0f);
+					glVertex3f(  x*m_textureW +   0.0f, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
+					glTexCoord2f(1.0f*tileW/m_textureW,                             0.0f);
+					glVertex3f(  x*m_textureW +  tileW, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
+					glTexCoord2f(1.0f*tileW/m_textureW,            1.0f*tileH/m_textureH);
+					glVertex3f(  x*m_textureW +  tileW, m_imageH - (y*m_textureH + tileH), 0.0f);
+					glTexCoord2f(                 0.0f,            1.0f*tileH/m_textureH);
+					glVertex3f(  x*m_textureW +   0.0f, m_imageH - (y*m_textureH + tileH), 0.0f);
+					glEnd();
 				}
-				glBegin(GL_QUADS);
-				glTexCoord2f(                 0.0f,                             0.0f);
-				glVertex3f(  x*m_textureW +   0.0f, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
-				glTexCoord2f(1.0f*tileW/m_textureW,                             0.0f);
-				glVertex3f(  x*m_textureW +  tileW, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
-				glTexCoord2f(1.0f*tileW/m_textureW,            1.0f*tileH/m_textureH);
-				glVertex3f(  x*m_textureW +  tileW, m_imageH - (y*m_textureH + tileH), 0.0f);
-				glTexCoord2f(                 0.0f,            1.0f*tileH/m_textureH);
-				glVertex3f(  x*m_textureW +   0.0f, m_imageH - (y*m_textureH + tileH), 0.0f);
-				glEnd();
 			}
+			glDisable(GL_TEXTURE_2D);
 		}
-		glDisable(GL_TEXTURE_2D);
 
-		if(m_viewerMode == SELECTION && m_selX1 != m_selX2 && m_selY1 != m_selY2)
-			DrawMarchingAnts(m_selX1, m_selX2, m_selY1, m_selY2, 1.0, 1.0, 1.0); // Draw current (white) selection area
-		if(m_highlightSel != NULL) {
-			int x1, x2, y1, y2;
-			m_highlightSel->GetBounds(x1,x2,y1,y2);
-			DrawMarchingAnts(x1, x2, y1, y2, 1.0, 0.0, 0.0); // Draw active (red) work area
+		if (m_selection.HasSize()) {
+			// Draw current (white) selection area
+			DrawMarchingAnts(m_selection, 1.0, 1.0, 1.0); 
+		}
+		if (m_highlightSel.HasSize()) {
+			// Draw active (red) work area
+			DrawMarchingAnts(m_highlightSel, 1.0, 0.0, 0.0); 
 		}
 
 		glPopMatrix();
@@ -173,7 +178,8 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 
 	glFlush();
 	SwapBuffers();
-	m_imageChanged=false;
+	m_imageChanged = false;
+	m_refreshMarchingAntsOnly = false;
 }
 
 void LuxGLViewer::OnEraseBackground(wxEraseEvent &event) {
@@ -286,18 +292,26 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 		}
 	} else if(m_viewerMode == SELECTION) {
 		if(event.GetEventType() == wxEVT_LEFT_DOWN) {
-			InverseTransformPoint(event.GetX(), event.GetY(), m_selX1, m_selY1);
-			m_selX2 = m_selX1;
-			m_selY2 = m_selY1;
+			int x, y;
+			InverseTransformPoint(event.GetX(), event.GetY(), x, y);
+			m_selection.SetBounds(x, x, y, y);
 		} else if(event.GetEventType() == wxEVT_LEFT_UP) {
-			InverseTransformPoint(event.GetX(), event.GetY(), m_selX2, m_selY2);
-
-			boost::shared_ptr<wxViewerSelection> selection(new wxViewerSelection(m_selX1, m_selX2, m_selY1, m_selY2));
+			boost::shared_ptr<wxViewerSelection> selection(new wxViewerSelection(m_selection));
+			int x, y;
+			InverseTransformPoint(event.GetX(), event.GetY(), x, y);
+			selection->SetCorner2(x, y);
 			wxViewerEvent viewerEvent(selection, wxEVT_LUX_VIEWER_SELECTION);
 			GetEventHandler()->AddPendingEvent(viewerEvent);
 		} else if(event.GetEventType() == wxEVT_MOTION) {
-			if(event.Dragging() && event.m_leftDown)
-				InverseTransformPoint(event.GetX(), event.GetY(), m_selX2, m_selY2);
+			if(event.Dragging() && event.m_leftDown) {
+				int oldX, oldY, newX, newY;
+				m_selection.GetCorner2(oldX, oldY);
+				InverseTransformPoint(event.GetX(), event.GetY(), newX, newY);
+				if ((newX != oldX) || (newY != oldY)) {
+					m_selection.SetCorner2(newX, newY);
+					m_selectionChanged = true;
+				}
+			}
 		}
 	}
 	m_lastX = event.GetX();
@@ -309,7 +323,7 @@ wxWindow* LuxGLViewer::GetWindow() {
 }
 
 wxViewerSelection LuxGLViewer::GetSelection() {
-	return wxViewerSelection(m_selX1, m_selX2, m_selY1, m_selY2);
+	return m_selection;
 }
 
 void LuxGLViewer::SetMode(wxViewerMode mode) {
@@ -317,7 +331,7 @@ void LuxGLViewer::SetMode(wxViewerMode mode) {
 	Refresh();
 }
 
-void LuxGLViewer::SetZoom(wxViewerSelection *selection) {
+void LuxGLViewer::SetZoom(const wxViewerSelection *selection) {
 	int W, H;
 	GetClientSize(&W, &H);
 	int x1, x2, y1, y2;
@@ -342,23 +356,21 @@ void LuxGLViewer::SetZoom(wxViewerSelection *selection) {
 	Refresh();
 }
 
-void LuxGLViewer::SetSelection(wxViewerSelection *selection) {
-	if(selection == NULL) {
-		m_selX1 = 0.0;
-		m_selX2 = 0.0;
-		m_selY1 = 0.0;
-		m_selY2 = 0.0;
+void LuxGLViewer::SetSelection(const wxViewerSelection *selection) {
+	if (!selection) {
+		m_selection.Clear();
 	} else {
-		selection->GetBounds(m_selX1,m_selX2,m_selY1,m_selY2);
+		m_selection = *selection;
 	}
 	Refresh();
 }
 
-void LuxGLViewer::SetHighlight(wxViewerSelection *selection) {
-	if(m_highlightSel != NULL)
-		delete m_highlightSel;
-	if(selection == NULL) m_highlightSel = NULL;
-	else m_highlightSel = new wxViewerSelection(*selection);
+void LuxGLViewer::SetHighlight(const wxViewerSelection *selection) {
+	if (!selection) {
+		m_highlightSel.Clear();
+	} else {
+		m_highlightSel = *selection;
+	}
 	Refresh();
 }
 
@@ -373,8 +385,13 @@ void LuxGLViewer::Reset() {
 }
 
 void LuxGLViewer::OnTimer(wxTimerEvent &event) {
+	if (!m_selection.HasSize() && !m_highlightSel.HasSize())	return;
+
 	m_stipple = ((m_stipple >> 15) | (m_stipple << 1)) & 0xFFFF;
-	// TODO - Ratow - repaint the marching ants only
+	if (!m_selectionChanged) {
+		m_refreshMarchingAntsOnly = true;
+	}
+	m_selectionChanged = false;
 	this->Refresh();
 }
 
@@ -386,9 +403,14 @@ void LuxGLViewer::InverseTransformPoint(int x, int y, int &invX, int &invY) {
 	invY = (height - y - m_offsetY - m_scaleYo2)/m_scale + m_scaleYo;
 }
 
-void LuxGLViewer::DrawMarchingAnts(int x1, int x2, int y1, int y2, float red, float green, float blue) {
+void LuxGLViewer::DrawMarchingAnts(const wxViewerSelection &selection, float red, float green, float blue) {
+	int x1, x2, y1, y2;
+	selection.GetBounds(x1, x2, y1, y2);
+
 	glEnable(GL_LINE_STIPPLE);
+
 	glLineWidth(2.0); // Perhaps we should change width according to zoom
+
 	glLineStipple(1, m_stipple);
 	glBegin(GL_LINE_STRIP);
 	glColor3f(0.0, 0.0, 0.0);
@@ -398,6 +420,7 @@ void LuxGLViewer::DrawMarchingAnts(int x1, int x2, int y1, int y2, float red, fl
 	glVertex3i(x2, y1, 0.0);
 	glVertex3i(x1, y1, 0.0);
 	glEnd();
+
 	glLineStipple(1, ~m_stipple);
 	glBegin(GL_LINE_STRIP);
 	glColor3f(red, green, blue);
@@ -407,6 +430,7 @@ void LuxGLViewer::DrawMarchingAnts(int x1, int x2, int y1, int y2, float red, fl
 	glVertex3i(x2, y1, 0.0);
 	glVertex3i(x1, y1, 0.0);
 	glEnd();
+
 	glDisable(GL_LINE_STIPPLE);
 }
 

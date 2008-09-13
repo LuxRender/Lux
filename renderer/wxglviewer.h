@@ -53,32 +53,34 @@ protected:
 	virtual wxWindow* GetWindow();
 	virtual wxViewerSelection GetSelection();
 	virtual void SetMode(wxViewerMode mode);
-	virtual void SetZoom(wxViewerSelection *selection);
-	virtual void SetSelection(wxViewerSelection *selection);
-	virtual void SetHighlight(wxViewerSelection *selection);
+	virtual void SetZoom(const wxViewerSelection *selection);
+	virtual void SetSelection(const wxViewerSelection *selection);
+	virtual void SetHighlight(const wxViewerSelection *selection);
 	virtual void Reload();
 	virtual void Reset();
 
 	void InverseTransformPoint(int x, int y, int &invX, int &invY);
-	void DrawMarchingAnts(int x1, int x2, int y1, int y2, float red, float green, float blue);
+	void DrawMarchingAnts(const wxViewerSelection &selection, float red, float green, float blue);
 
-	wxGLContext m_glContext;
+	wxGLContext        m_glContext;
 
-	int m_imageW, m_imageH;
-	int m_tilesX, m_tilesY, m_tilesNr;
-	bool m_firstDraw;
-	bool m_imageChanged;
-	const int m_textureW;
-	const int m_textureH;
-	int m_offsetX, m_offsetY, m_scaleXo2, m_scaleYo2, m_scaleXo, m_scaleYo, m_lastX, m_lastY;
-	float m_scale;
-	float m_scaleExp;
-	int m_lastW, m_lastH;
+	int                m_imageW, m_imageH;
+	int                m_tilesX, m_tilesY, m_tilesNr;
+	bool               m_firstDraw;
+	bool               m_imageChanged;
+	const int          m_textureW;
+	const int          m_textureH;
+	int                m_offsetX, m_offsetY, m_scaleXo2, m_scaleYo2, m_scaleXo, m_scaleYo, m_lastX, m_lastY;
+	float              m_scale;
+	float              m_scaleExp;
+	int                m_lastW, m_lastH;
 
-	wxTimer* m_animTimer;
-	int m_stipple;
-	int m_selX1, m_selX2, m_selY1, m_selY2;
-	wxViewerSelection* m_highlightSel;
+	wxTimer*           m_animTimer;
+	int                m_stipple;
+	wxViewerSelection  m_selection;
+	bool               m_selectionChanged;
+	wxViewerSelection  m_highlightSel;
+	bool               m_refreshMarchingAntsOnly;
 };
 
 #else // LUX_USE_OPENGL

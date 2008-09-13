@@ -33,9 +33,16 @@ namespace lux
 // wxViewerSelection Declarations - Used for zoom and other tools
 class wxViewerSelection {
 public:
-	wxViewerSelection();
+	inline wxViewerSelection(void)  { Clear(); }
 	wxViewerSelection(int x1, int x2, int y1, int y2);
-	void GetBounds(int &x1, int &x2, int &y1, int &y2);
+	inline void Clear(void)  { m_x1 = m_x2 = m_y1 = m_y2 = 0; }
+	void GetBounds(int &x1, int &x2, int &y1, int &y2) const;
+	void SetBounds(int x1, int x2, int y1, int y2);
+	inline void GetCorner1(int &x, int &y) const  { x = m_x1;  y = m_y1; }
+	inline void GetCorner2(int &x, int &y) const  { x = m_x2;  y = m_y2; }
+	inline void SetCorner1(int &x, int &y)  { m_x1 = x;  m_y1 = y; }
+	inline void SetCorner2(int &x, int &y)  { m_x2 = x;  m_y2 = y; }
+	inline bool HasSize(void) const  { return (m_x1 != m_x2) && (m_y1 != m_y2); }
 
 protected:
 	int m_x1, m_x2, m_y1, m_y2;
@@ -82,9 +89,9 @@ public:
 	virtual wxViewerSelection GetSelection();
 
 	virtual void SetMode(wxViewerMode mode);
-	virtual void SetZoom(wxViewerSelection *selection);
-	virtual void SetSelection(wxViewerSelection *selection);
-	virtual void SetHighlight(wxViewerSelection *selection);
+	virtual void SetZoom(const wxViewerSelection *selection);
+	virtual void SetSelection(const wxViewerSelection *selection);
+	virtual void SetHighlight(const wxViewerSelection *selection);
 
 	virtual void Reload();
 	virtual void Reset();

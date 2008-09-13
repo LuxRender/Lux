@@ -475,8 +475,8 @@ void LuxGui::OnSelection(wxViewerEvent& event) {
 		m_renderOutput->SetSelection(NULL);
 	} else if(m_viewerToolBar->GetToolState(ID_REFINETOOL) == true) {
 		// Highlight current selection
-		m_renderOutput->SetSelection(NULL);
 		m_renderOutput->SetHighlight(event.GetSelection().get());
+		m_renderOutput->SetSelection(NULL);
 		// TODO: Pass selection to the core for actual refinement
 	}
 }
