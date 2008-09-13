@@ -23,7 +23,6 @@
 // bxdf.cpp*
 #include "bxdf.h"
 #include "color.h"
-#include "color.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
 #include "mc.h"
@@ -34,7 +33,8 @@ using namespace lux;
 
 // BxDF Method Definitions
 SWCSpectrum BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
-                       const Vector &wi) const {
+                       const Vector &wi) const
+{
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
@@ -49,9 +49,14 @@ SWCSpectrum BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
 		swap(ei, et);
 	// Compute transmitted ray direction
 	const float eta = ei / et;
-	Vector H(eta * wo + wi);
-	Vector wiT(2.f * Dot(wo, H) * H - wo);
-	return brdf->f(tspack, wo, wiT) * fabsf(wi.z / wiT.z);
+	Vector H(Normalize(eta * wo + wi));
+	const float cos1 = Dot(wo, H);
+	if ((entering && cos1 < 0.f) || (!entering && cos1 > 0.f))
+		H = -H;
+	if (H.z < 0.f)
+		return 0.f;
+	Vector wiR(2.f * cos1 * H - wo);
+	return brdf->f(tspack, wo, wiR) * fabsf(wiR.z / (wi.z * eta * eta));
 }
 SWCSpectrum BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
@@ -88,8 +93,11 @@ SWCSpectrum BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector 
 	if (entering)
 		cost = -cost;
 	const float cos = wi->z;
-	*wi = (cost - eta * cosi) * H - eta * wo;
-	return f * fabsf(cos / wi->z);
+	*wi = (cost + eta * cosi) * H - eta * wo;
+	if (reverse)
+		return f * fabsf(eta2 * cos / wi->z);
+	else
+		return f * fabsf(cos / (wi->z * eta2));
 }
 
 SWCSpectrum BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
@@ -110,7 +118,8 @@ float BxDF::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const 
 		SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f;
 }
 float BRDFToBTDF::Pdf(const TsPack *tspack, const Vector &wo,
-		const Vector &wi) const {
+		const Vector &wi) const
+{
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
@@ -125,7 +134,12 @@ float BRDFToBTDF::Pdf(const TsPack *tspack, const Vector &wo,
 		swap(ei, et);
 	// Compute transmitted ray direction
 	const float eta = ei / et;
-	Vector H(eta * wo + wi);
+	Vector H(Normalize(eta * wo + wi));
+	const float cos1 = Dot(wo, H);
+	if ((entering && cos1 < 0.f) || (!entering && cos1 > 0.f))
+		H = -H;
+	if (H.z < 0.f)
+		return 0.f;
 	return brdf->Pdf(tspack, wo, 2.f * Dot(wo, H) * H - wo);
 }
 
@@ -288,4 +302,4 @@ SWCSpectrum BSDF::rho(const TsPack *tspack, const Vector &wo, BxDFType flags) co
 	return ret;
 }
 
-boost::thread_specific_ptr<MemoryArena> BSDF::arena;
+boost::thread_specific_ptr<MemoryArena> BSDF::arena; // TODO - REFACT - Include in tspack
