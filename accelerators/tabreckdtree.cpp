@@ -49,7 +49,7 @@ TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
     prims = (boost::shared_ptr<Primitive>*)AllocAligned(nPrims *
     		sizeof(boost::shared_ptr<Primitive>));
     for (u_int i = 0; i < nPrims; ++i)
-    	new (&prims[i]) boost::shared_ptr<Primitive>::shared_ptr(vPrims[i]);
+    	new (&prims[i]) boost::shared_ptr<Primitive>(vPrims[i]);
 
     // Build kd-tree for accelerator
     nextFreeNode = nAllocedNodes = 0;
