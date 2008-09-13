@@ -47,14 +47,14 @@ Light *MakeLight(const string &name, const Transform &light2world,
 	const ParamSet &paramSet);
 AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet,
-	const boost::shared_ptr<Shape> &shape);
+	const boost::shared_ptr<Primitive> &prim);
 VolumeRegion *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
 SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet);
 VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 	const ParamSet &paramSet);
-Primitive *MakeAccelerator(const string &name, const vector<Primitive*> &prims,
+boost::shared_ptr<Aggregate> MakeAccelerator(const string &name, const vector<boost::shared_ptr<Primitive> > &prims,
 	const ParamSet &paramSet);
 Camera *MakeCamera(const string &name, const Transform &world2cam,
 	const ParamSet &paramSet, Film *film);
@@ -64,7 +64,7 @@ Filter *MakeFilter(const string &name, const ParamSet &paramSet);
 ToneMap *MakeToneMap(const string &name, const ParamSet &paramSet);
 Film *MakeFilm(const string &name, const ParamSet &paramSet, Filter *filt);
 PixelSampler *MakePixelSampler(const string &name, const ParamSet &paramSet);
- 
+
 class DynamicLoader {
 	template <class T> class RegisterLoader {
 	public:
@@ -125,7 +125,7 @@ public:
 	};
 
 	typedef AreaLight *(*CreateAreaLight)(const Transform&, const ParamSet&,
-		const boost::shared_ptr<Shape>&);
+		const boost::shared_ptr<Primitive>&);
 	static map<string, CreateAreaLight> &registeredAreaLights();
 	template <class T> class RegisterAreaLight : public RegisterLoader<CreateAreaLight> {
 	public:
@@ -162,7 +162,7 @@ public:
 		virtual ~RegisterVolumeIntegrator<T>() {}
 	};
 
-	typedef Primitive *(*CreateAccelerator)(const vector<Primitive*>&,
+	typedef Aggregate *(*CreateAccelerator)(const vector<boost::shared_ptr<Primitive> >&,
 		const ParamSet&);
 	static map<string, CreateAccelerator> &registeredAccelerators();
 	template <class T> class RegisterAccelerator : public RegisterLoader<CreateAccelerator> {
@@ -229,5 +229,5 @@ public:
 };
 
 }//namespace lux
- 
+
 #endif // LUX_DYNLOAD_H

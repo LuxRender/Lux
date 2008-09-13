@@ -26,12 +26,14 @@
 namespace lux
 {
 
-enum MeshTriangleType { WALD_TRIANGLE, BARY_TRIANGLE };
-enum MeshQuadType { QUADRILATERAL };
-
 class Mesh : public Shape {
 public:
+	enum MeshTriangleType { TRI_WALD, TRI_BARY, TRI_AUTO };
+	enum MeshQuadType { QUAD_QUADRILATERAL };
+	enum MeshAccelType { ACCEL_KDTREE, ACCEL_GRID, ACCEL_NONE, ACCEL_AUTO };
+
 	Mesh(const Transform &o2w, bool ro,
+			MeshAccelType acceltype,
 			int nv, const Point *P, const Normal *N, const float *UV,
 			MeshTriangleType tritype, int trisCount, const int *tris,
 			MeshQuadType quadtype, int nquadsCount, const int *quads);
@@ -40,7 +42,9 @@ public:
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	bool CanIntersect() const { return false; }
-	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
+	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+			const PrimitiveRefinementHints &refineHints,
+			boost::shared_ptr<Primitive> thisPtr);
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;
@@ -49,6 +53,9 @@ public:
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 
 protected:
+	// Lotus - refinement data
+	MeshAccelType accelType;
+
 	// Dade - vertices data
 	int nverts;
 	Point *p;
@@ -59,29 +66,26 @@ protected:
 	MeshTriangleType triType;
 	int ntris;
 	int *triVertexIndex;
-	vector<boost::shared_ptr<Shape> > triPtrs;
 
 	// Dade - quad data
 	MeshQuadType quadType;
 	int nquads;
 	int *quadVertexIndex;
-	vector<boost::shared_ptr<Shape> > quadPtrs;
 };
 
 //------------------------------------------------------------------------------
 // Triangle shapes
 //------------------------------------------------------------------------------
 
-class MeshWaldTriangle : public Shape {
+class MeshWaldTriangle : public Primitive {
 public:
 	// WaldTriangle Public Methods
-	MeshWaldTriangle(const Transform &o2w, bool ro, Mesh *m, int n);
+	MeshWaldTriangle(const Mesh *m, int n);
 
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 
-	bool Intersect(const Ray &ray, float *tHit,
-			DifferentialGeometry *dg) const;
+	bool Intersect(const Ray &ray, Intersection *isect) const;
 	bool IntersectP(const Ray &ray) const;
 
 	float Area() const;
@@ -90,7 +94,8 @@ public:
 			DifferentialGeometry *dgShading) const;
 	Point Sample(float u1, float u2, float u3, Normal *Ns) const;
 
-private:	
+	bool isDegenerate() const;
+private:
 	void GetUVs(float uv[3][2]) const {
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2 * v[0]];
@@ -110,8 +115,8 @@ private:
 	}
 
 	// WaldTriangle Data
-	Mesh* mesh;
-	int *v;
+	const Mesh* mesh;
+	const int *v;
 
 	// Dade - Wald's precomputed values
 	enum IntersectionType {
@@ -123,30 +128,27 @@ private:
 		ORTHOGONAL_Z,
 		DEGENERATE
 	};
-
 	IntersectionType intersectionType;
 	float nu, nv, nd;
 	float bnu, bnv, bnd;
 	float cnu, cnv, cnd;
 
-	// Dade - procomputed values for filling the DifferentialGeometry
+	// Dade - precomputed values for filling the DifferentialGeometry
 	Vector dpdu, dpdv;
 	Normal normalizedNormal;
 };
 
-class MeshBaryTriangle : public Shape {
+class MeshBaryTriangle : public Primitive {
 public:
     // BaryTriangle Public Methods
-    MeshBaryTriangle(const Transform &o2w, bool ro,
-			Mesh *m, int n) : Shape(o2w, ro) {
-        mesh = m;
-        v = &mesh->triVertexIndex[3 * n];
+    MeshBaryTriangle(const Mesh *m, int n)
+		: mesh(m), v(&(mesh->triVertexIndex[3 * n]))
+	{
     }
 
     BBox ObjectBound() const;
     BBox WorldBound() const;
-    bool Intersect(const Ray &ray, float *tHit,
-            DifferentialGeometry *dg) const;
+    bool Intersect(const Ray &ray, Intersection *isect) const;
     bool IntersectP(const Ray &ray) const;
 
     float Area() const;
@@ -154,6 +156,10 @@ public:
             const DifferentialGeometry &dg,
             DifferentialGeometry *dgShading) const;
     Point Sample(float u1, float u2, Normal *Ns) const;
+
+	bool isDegenerate() const {
+		return false; //TODO check degenerate
+	}
 
 private:
 	void GetUVs(float uv[3][2]) const {
@@ -174,9 +180,9 @@ private:
 		}
 	}
 
-    // BaryTriangle Data
-    Mesh *mesh;
-    int *v;
+	// BaryTriangle Data
+	const Mesh *mesh;
+	const int *v;
 };
 
 //------------------------------------------------------------------------------
@@ -185,15 +191,14 @@ private:
 
 // Quadrilateral Declarations
 // assumes points form a strictly convex, planar quad
-class MeshQuadrilateral : public Shape {
+class MeshQuadrilateral : public Primitive {
 public:
 	// Quadrilateral Public Methods
-	MeshQuadrilateral(const lux::Transform &o2w, bool ro, Mesh *m, int n);
+	MeshQuadrilateral(const Mesh *m, int n);
 
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
-	               DifferentialGeometry *dg) const;
+	bool Intersect(const Ray &ray, Intersection *isect) const;
 	bool IntersectP(const Ray &ray) const;
 
 	float Area() const;
@@ -216,8 +221,13 @@ public:
 		Vector e1 = p2 - p0;
 
 		*Ns = Normalize(Normal(Cross(e0, e1)));
-		if (reverseOrientation) *Ns *= -1.f;
+		if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
+			*Ns *= -1.f;
 		return p;
+	}
+
+	bool isDegenerate() const {
+		return false; //TODO check degenerate
 	}
 
 	static bool IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
@@ -232,7 +242,7 @@ private:
 
 	static void ComputeV11BarycentricCoords(const Vector &e01, const Vector &e02, const Vector &e03, float *a11, float *b11);
 
-	void GetUVs(float uv[4][2]) const {		
+	void GetUVs(float uv[4][2]) const {
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2 * idx[0]];
 			uv[0][1] = mesh->uvs[2 * idx[0] + 1];
@@ -255,8 +265,9 @@ private:
 	}
 
 	// Quadrilateral Private Data
-	Mesh *mesh;
-	int *idx;
+	const Mesh *mesh;
+	const int *idx;
 };
 
 }//namespace lux
+

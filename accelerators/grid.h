@@ -36,11 +36,11 @@ struct Voxel;
 // GMailboxPrim Declarations
 
 struct GMailboxPrim {
-	GMailboxPrim(const Primitive* &p) {
-		primitive = (Primitive*) p;
+	GMailboxPrim(boost::shared_ptr<Primitive> p) {
+		primitive = p;
 		lastMailboxId = -1;
 	}
-	Primitive* primitive;
+	boost::shared_ptr<Primitive> primitive;
 	int lastMailboxId;
 };
 
@@ -90,15 +90,17 @@ struct Voxel {
 class  GridAccel : public Aggregate {
 public:
 	// GridAccel Public Methods
-	GridAccel(const vector<Primitive* > &p,
+	GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	          bool forRefined, bool refineImmediately);
 	BBox WorldBound() const;
 	bool CanIntersect() const { return true; }
 	~GridAccel();
 	bool Intersect(const Ray &ray, Intersection *isect) const;
 	bool IntersectP(const Ray &ray) const;
-	
-	static Primitive *CreateAccelerator(const vector<Primitive* > &prims, const ParamSet &ps);
+
+	void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+
+	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 private:
 	// GridAccel Private Methods
 	int PosToVoxel(const Point &P, int axis) const {

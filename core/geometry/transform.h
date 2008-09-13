@@ -34,8 +34,8 @@ class  Transform {
 public:
 	// Transform Public Methods
 	Transform() {
-		boost::shared_ptr<Matrix4x4> o (new Matrix4x4());
-		m = mInv = o;
+		// Lotus - use the preallocated identity matrix because it will never be changed
+		m = mInv = MAT_IDENTITY;
 	}
 	Transform(float mat[4][4]) {
 		boost::shared_ptr<Matrix4x4> o (new Matrix4x4(mat[0][0],mat[0][1],mat[0][2],mat[0][3],
@@ -73,6 +73,8 @@ public:
 private:
 	// Transform Private Data
 	boost::shared_ptr<Matrix4x4> m, mInv;
+
+	static const boost::shared_ptr<Matrix4x4> MAT_IDENTITY;
 };
 // Transform Inline Functions
 #ifdef LUX_USE_SSE

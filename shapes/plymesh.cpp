@@ -31,7 +31,7 @@ namespace lux
 {
 
 // rply vertex callback
-static int VertexCB(p_ply_argument argument) 
+static int VertexCB(p_ply_argument argument)
 {
 	long current_cmpnt = 0;
 	void* pointer_usrdata = NULL;
@@ -53,7 +53,7 @@ static int VertexCB(p_ply_argument argument)
 }
 
 // rply face callback
-static int FaceCB(p_ply_argument argument) 
+static int FaceCB(p_ply_argument argument)
 {
 	void* pointer_usrdata = NULL;
 	ply_get_argument_user_data(argument, &pointer_usrdata, NULL);
@@ -68,7 +68,7 @@ static int FaceCB(p_ply_argument argument)
 
 	if(value_index >= 0 && value_index < 3)
 	{
-		mesh->vertexIndex[(tri_index * 3) + value_index] = 
+		mesh->vertexIndex[(tri_index * 3) + value_index] =
 			(int)ply_get_argument_value(argument);
 	}
 
@@ -89,7 +89,7 @@ PlyMesh::PlyMesh(const Transform &o2w, bool ro, string filename, bool smooth)
 		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
 		return;
 	}
-    
+
 	if(!ply_read_header(plyfile)) {
 		std::stringstream ss;
 		ss<<"Unable to read PLY header '"<<filename<<"'";
@@ -200,14 +200,26 @@ BBox PlyMesh::WorldBound() const {
 	return worldBounds;
 }
 
-void
-PlyMesh::Refine(vector<boost::shared_ptr<Shape> > &refined)
-const {
+class WaldTriangleSharedPtr : public WaldTriangle {
+public:
+	WaldTriangleSharedPtr(WaldTriangleMesh* m, int n, boost::shared_ptr<Primitive> aPtr)
+	: WaldTriangle(m,n), ptr(aPtr)
+	{
+	}
+private:
+	boost::shared_ptr<Primitive> ptr;
+};
+
+void PlyMesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
+		const PrimitiveRefinementHints& refineHints,
+		boost::shared_ptr<Primitive> thisPtr)
+{
+	boost::shared_ptr<Primitive> o (
+			new WaldTriangleSharedPtr((WaldTriangleMesh *)this, 0, thisPtr));
+	refined.push_back(o);
 	for (int i = 0; i < ntris; ++i) {
-		boost::shared_ptr<Shape> o (new WaldTriangle(ObjectToWorld,
-		                               reverseOrientation,
-                                       (WaldTriangleMesh *)this,
-									   i));
+		boost::shared_ptr<Primitive> o (
+				new WaldTriangle((WaldTriangleMesh *)this, i));
 		refined.push_back(o);
 	}
 }

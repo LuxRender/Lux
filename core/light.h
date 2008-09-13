@@ -29,6 +29,7 @@
 #include "spectrum.h"
 #include "error.h"
 #include "rgbillum.h"
+#include "primitive.h"
 // Light Declarations
 
 namespace lux
@@ -73,7 +74,7 @@ public:
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return 0.f;}
 	virtual float Pdf(const Scene *scene, const Point &p) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Pdf"); return 0.f;}
 
-	void AddPortalShape(boost::shared_ptr<Shape> shape);
+	void AddPortalShape(boost::shared_ptr<Primitive> shape);
 
 	virtual void SamplePosition(float u1, float u2, float u3, Point *p, Normal *n, float *pdf) const
 	{
@@ -103,7 +104,7 @@ public:
 	const int nSamples;
 	bool havePortalShape;
 	int nrPortalShapes;
-	vector<boost::shared_ptr<Shape> > PortalShapes;
+	vector<boost::shared_ptr<Primitive> > PortalShapes;
 	float PortalArea;
 protected:
 	// Light Protected Data
@@ -138,7 +139,7 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		const RGBColor &power, float g, int ns, const boost::shared_ptr<Shape> &shape);
+		const RGBColor &power, float g, int ns, const boost::shared_ptr<Primitive> &prim);
 	~AreaLight() { delete LSPD; }
 	virtual SWCSpectrum L(const TsPack *tspack, const Point &p, const Normal &n,
 			const Vector &w) const {
@@ -166,13 +167,13 @@ public:
 	float EvalPositionPdf(const Point p, const Normal &n, const Vector &w) const;
 	float EvalDirectionPdf(const Point p, const Normal &n, const Vector &w) const;
 	SWCSpectrum Eval(const TsPack *tspack, const Normal &n,	const Vector &w) const;
-			
+
 	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
-		const boost::shared_ptr<Shape> &shape);
+		const boost::shared_ptr<Primitive> &prim);
 protected:
 	// AreaLight Protected Data
 	SPD *LSPD;
-	boost::shared_ptr<Shape> shape;
+	boost::shared_ptr<Primitive> prim;
 	float area;
 };
 

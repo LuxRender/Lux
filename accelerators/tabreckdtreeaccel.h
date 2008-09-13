@@ -34,7 +34,7 @@ namespace lux
 struct TaBRecKdAccelNode {
     // TaBRecKdAccelNode Methods
     void initLeaf(int *primNums, int np,
-            Primitive **prims, MemoryArena &arena) {
+            boost::shared_ptr<Primitive> *prims, MemoryArena &arena) {
         // Update kd leaf node allocation statistics
         // radiance - disabled for threading // static StatsCounter numLeafMade("Kd-Tree Accelerator","Leaf kd-tree nodes made");
         // radiance - disabled for threading // static StatsCounter maxDepth("Kd-Tree Accelerator","Maximum kd-tree depth");
@@ -50,12 +50,12 @@ struct TaBRecKdAccelNode {
         if (np == 0)
             onePrimitive = NULL;
         else if (np == 1)
-            onePrimitive = prims[primNums[0]];
+            onePrimitive = prims[primNums[0]].get();
         else {
             primitives = (Primitive **)arena.Alloc(np *
                     sizeof(Primitive **));
             for (int i = 0; i < np; ++i)
-                primitives[i] = prims[primNums[i]];
+                primitives[i] = prims[primNums[i]].get();
         }
     }
     void initInterior(int axis, float s) {
@@ -116,10 +116,10 @@ struct TaBRecBoundEdge {
 struct TaBRecInverseMailboxes {
     int indexFirstFree;
     Primitive *mailboxes[8];
-    
+
     TaBRecInverseMailboxes() {
         indexFirstFree = 0;
-        
+
         Primitive** mb = mailboxes;
         *mb++ = NULL; // mailboxes[0]
         *mb++ = NULL; // mailboxes[1]
@@ -130,15 +130,15 @@ struct TaBRecInverseMailboxes {
         *mb++ = NULL; // mailboxes[6]
         *mb = NULL; // mailboxes[7]
     }
-    
+
     void addChecked(Primitive *p) {
         mailboxes[indexFirstFree++] = p;
         indexFirstFree &= 0x7;
     }
-    
+
     bool alreadyChecked(const Primitive *p) const {
         Primitive* const* mb = mailboxes;
-        
+
         if (*mb++ == p) // mailboxes[0]
             return true;
         if (*mb++ == p) // mailboxes[1]
@@ -155,7 +155,7 @@ struct TaBRecInverseMailboxes {
             return true;
         if (*mb == p)   // mailboxes[7]
             return true;
-        
+
         return false;
     }
 };
@@ -164,7 +164,7 @@ struct TaBRecInverseMailboxes {
 class  TaBRecKdTreeAccel : public Aggregate {
 public:
     // TaBRecKdTreeAccel Public Methods
-    TaBRecKdTreeAccel(const vector<Primitive* > &p,
+    TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
             int icost, int scost,
             float ebonus, int maxp, int maxDepth);
     BBox WorldBound() const { return bounds; }
@@ -177,20 +177,22 @@ public:
             int *prims0, int *prims1, int badRefines = 0);
     bool Intersect(const Ray &ray, Intersection *isect) const;
     bool IntersectP(const Ray &ray) const;
-    
-    static Primitive *CreateAccelerator(const vector<Primitive* > &prims, const ParamSet &ps);
-    
+
+    void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+
+    static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
+
 private:
     // TaBRecKdTreeAccel Private Data
     BBox bounds;
     int isectCost, traversalCost, maxPrims;
     float emptyBonus;
-    
+
     u_int nPrims;
-    Primitive **prims;
+    boost::shared_ptr<Primitive> *prims;
     TaBRecKdAccelNode *nodes;
     int nAllocedNodes, nextFreeNode;
-    
+
     MemoryArena arena;
 };
 

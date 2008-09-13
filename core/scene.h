@@ -72,7 +72,7 @@ public:
     void Render();
     Scene(Camera *c, SurfaceIntegrator *in,
             VolumeIntegrator *vi, Sampler *s,
-            Primitive *accel, const vector<Light *> &lts,
+            boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
             VolumeRegion *vr);
     ~Scene();
     bool Intersect(const Ray &ray, Intersection *isect) const {
@@ -94,7 +94,7 @@ public:
     int AddThread(); //returns the thread ID
     void RemoveThread();
 	int getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
-	
+
 
     double GetNumberOfSamples();
     double Statistics_SamplesPSec();
@@ -117,7 +117,7 @@ public:
     void SignalThreads(ThreadSignals signal);
 
     // Scene Data
-    Primitive *aggregate;
+    boost::shared_ptr<Primitive> aggregate;
     vector<Light *> lights;
     Camera *camera;
     VolumeRegion *volumeRegion;

@@ -29,15 +29,15 @@
 #include "memory.h"
 
 namespace lux {
-    
+
 // UnsafeKdAccelNode Declarations
-    
+
 struct MailboxPrim {
-    MailboxPrim(const Primitive* &p) {
-        primitive = (Primitive*) p;
+    MailboxPrim(boost::shared_ptr<Primitive> p) {
+        primitive = p;
         lastMailboxId = -1;
     }
-    Primitive* primitive;
+    boost::shared_ptr<Primitive> primitive;
     int lastMailboxId;
 };
 
@@ -118,7 +118,7 @@ struct UnsafeKdAccelNode;
 class  UnsafeKdTreeAccel : public Aggregate {
 public:
     // UnsafeKdTreeAccel Public Methods
-    UnsafeKdTreeAccel(const vector<Primitive* > &p,
+    UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         int icost, int scost,
         float ebonus, int maxp, int maxDepth);
     BBox WorldBound() const { return bounds; }
@@ -132,9 +132,9 @@ public:
     bool Intersect(const Ray &ray, Intersection *isect) const;
     bool IntersectP(const Ray &ray) const;
 
-    static Primitive *CreateAccelerator(const vector<Primitive* > &prims, const ParamSet &ps);
+    void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
 
-
+    static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
 private:
     // UnsafeKdTreeAccel Private Data
@@ -154,7 +154,7 @@ struct KdToDo {
     const UnsafeKdAccelNode *node;
     float tmin, tmax;
 };
-    
+
 }//namespace lux
 
 #endif

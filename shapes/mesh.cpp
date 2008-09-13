@@ -26,9 +26,13 @@
 using namespace lux;
 
 Mesh::Mesh(const Transform &o2w, bool ro,
+			MeshAccelType acceltype,
 			int nv, const Point *P, const Normal *N, const float *UV,
 			MeshTriangleType tritype, int trisCount, const int *tris,
-			MeshQuadType quadtype, int nquadsCount, const int *quads) : Shape(o2w, ro) {
+			MeshQuadType quadtype, int nquadsCount, const int *quads) : Shape(o2w, ro)
+{
+	accelType = acceltype;
+
 	// TODO: use AllocAligned
 
 	// Dade - copy vertex data
@@ -59,7 +63,7 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 	if (nquads == 0)
 		quadVertexIndex = NULL;
 	else {
-		// Dade - check if quads are no planar and split them if required
+		// Dade - check if quads are not planar and split them if required
 		for (int i = 0; i < nquads; i++) {
 			const int idx = 4 * i;
 			const Point &p0 = p[quads[idx]];
@@ -103,7 +107,7 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 			(quadsToSplit.size() / 4) << " no-planar quads";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	// Dade - copy triangle data    
+	// Dade - copy triangle data
 	triType = tritype;
 	ntris = trisCount;
 	if (ntris == 0) {
@@ -174,59 +178,175 @@ BBox Mesh::WorldBound() const {
     return worldBounds;
 }
 
-void Mesh::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-	// TODO: skip degenerate shape
+template<class T>
+class MeshElemSharedPtr : public T {
+public:
+	MeshElemSharedPtr(const Mesh* m, int n,
+			boost::shared_ptr<Primitive> aPtr)
+	: T(m,n), ptr(aPtr)
+	{
+	}
+private:
+	const boost::shared_ptr<Primitive> ptr;
+};
 
-	std::stringstream ss;
-
+void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
+		const PrimitiveRefinementHints &refineHints,
+		boost::shared_ptr<Primitive> thisPtr)
+{
+	vector<boost::shared_ptr<Primitive> > refinedPrims;
+	refinedPrims.reserve(ntris + nquads);
 	// Dade - refine triangles
-	switch (triType) {
-		case WALD_TRIANGLE:
+	MeshTriangleType concreteTriType = triType;
+	if(triType == TRI_AUTO) {
+		// If there is 1 unique vertex (with normals and uv coordinates) for each triangle:
+		//  bary = 52 bytes/triangle
+		//  wald = 128 bytes/triangle
+		// Note: this ignores several factors (i.e. Primitive's, accel data, ...)
+		//  the following are accounted for: vertices, vertex indices & Mesh*Triangle data
+		//TODO Lotus - find good values
+		if(ntris <= 500000)
+			concreteTriType = TRI_WALD;
+		else
+			concreteTriType = TRI_BARY;
+	}
+	switch (concreteTriType) {
+		case TRI_WALD:
 			for (int i = 0; i < ntris; ++i) {
-				boost::shared_ptr<Shape> o(new MeshWaldTriangle(ObjectToWorld,
-						reverseOrientation,
-						(Mesh *)this,
-						i));
-				refined.push_back(o);
+				MeshWaldTriangle* currTri = new MeshWaldTriangle(this, i);
+				if(!currTri->isDegenerate()) {
+					if(refinedPrims.size() > 0) {
+						boost::shared_ptr<Primitive> o(currTri);
+						refinedPrims.push_back(o);
+					}
+					else {
+						delete currTri;
+						boost::shared_ptr<Primitive> o(
+								new MeshElemSharedPtr<MeshWaldTriangle>(this, i, thisPtr));
+						refinedPrims.push_back(o);
+					}
+				}
+				else
+					delete currTri;
 			}
 			break;
-		case BARY_TRIANGLE:
+		case TRI_BARY:
 			for (int i = 0; i < ntris; ++i) {
-				boost::shared_ptr<Shape> o(new MeshBaryTriangle(ObjectToWorld,
-						reverseOrientation,
-						(Mesh *)this,
-						i));
-				refined.push_back(o);
+				MeshBaryTriangle* currTri = new MeshBaryTriangle(this, i);
+				if(!currTri->isDegenerate()) {
+					if(refinedPrims.size() > 0) {
+						boost::shared_ptr<Primitive> o(currTri);
+						refinedPrims.push_back(o);
+					}
+					else {
+						delete currTri;
+						boost::shared_ptr<Primitive> o(
+								new MeshElemSharedPtr<MeshBaryTriangle>(this, i, thisPtr));
+						refinedPrims.push_back(o);
+					}
+				}
+				else
+					delete currTri;
 			}
 			break;
 		default:
-			ss.str("");
-            ss << "Unknow triangle type in a mesh: " << triType;
-            luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+			{
+				std::stringstream ss;
+				ss.str("");
+				ss << "Unknow triangle type in a mesh: " << concreteTriType;
+				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+			}
 			break;
 	}
 
 	// Dade - refine quads
 	switch (quadType) {
-		case QUADRILATERAL:
+		case QUAD_QUADRILATERAL:
 			for (int i = 0; i < nquads; ++i) {
-				boost::shared_ptr<Shape> o(new MeshQuadrilateral(ObjectToWorld,
-						reverseOrientation,
-						(Mesh *)this,
-						i));
-				refined.push_back(o);
+				MeshQuadrilateral* currQuad = new MeshQuadrilateral(this, i);
+				if(!currQuad->isDegenerate()) {
+					if(refinedPrims.size() > 0) {
+						boost::shared_ptr<Primitive> o(currQuad);
+						refinedPrims.push_back(o);
+					}
+					else {
+						delete currQuad;
+						boost::shared_ptr<Primitive> o(
+								new MeshElemSharedPtr<MeshQuadrilateral>(this, i, thisPtr));
+						refinedPrims.push_back(o);
+					}
+				}
+				else
+					delete currQuad;
 			}
 			break;
 		default:
-			ss.str("");
-            ss << "Unknow quad type in a mesh: " << quadType;
-            luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+			{
+				std::stringstream ss;
+				ss.str("");
+				ss << "Unknow quad type in a mesh: " << quadType;
+				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+			}
 			break;
+	}
+
+	// Lotus - Create acceleration structure
+	MeshAccelType concreteAccelType = accelType;
+	if(accelType == ACCEL_AUTO) {
+		//TODO find good values
+		if(refinedPrims.size() <= 3)
+			concreteAccelType = ACCEL_NONE;
+		else if(refinedPrims.size() <= 1200000)
+			concreteAccelType = ACCEL_KDTREE;
+		else
+			concreteAccelType = ACCEL_GRID;
+	}
+	if(concreteAccelType == ACCEL_NONE) {
+		// Copy primitives
+		for(u_int i=0; i < refinedPrims.size(); i++)
+			refined.push_back(refinedPrims[i]);
+	}
+	else  {
+		ParamSet paramset;
+		boost::shared_ptr<Aggregate> accel;
+		if(concreteAccelType == ACCEL_KDTREE) {
+			accel = MakeAccelerator("kdtree", refined, paramset);
+		}
+		else if(concreteAccelType == ACCEL_GRID) {
+			accel = MakeAccelerator("grid", refined, paramset);
+		}
+		else {
+			std::stringstream ss;
+			ss.str("");
+			ss << "Unknow accel type in a mesh: " << concreteAccelType;
+			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+		}
+		if(refineHints.forSampling) {
+			// Lotus - create primitive set to allow sampling
+			refined.push_back(boost::shared_ptr<Primitive>(new PrimitiveSet(accel)));
+		}
+		else {
+			refined.push_back(accel);
+		}
 	}
 }
 
 Shape *Mesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	// Lotus - read general data
+	MeshAccelType accelType;
+	string accelTypeStr = params.FindOneString("acceltype", "auto");
+	if (accelTypeStr == "kdtree") accelType = ACCEL_KDTREE;
+	else if (accelTypeStr == "grid") accelType = ACCEL_GRID;
+	else if (accelTypeStr == "none") accelType = ACCEL_NONE;
+	else if (accelTypeStr == "auto") accelType = ACCEL_AUTO;
+	else {
+		std::stringstream ss;
+		ss << "Acceleration structure type  '" << accelTypeStr << "' unknown. Using \"auto\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		accelType = ACCEL_AUTO;
+	}
+
 	// Dade - read vertex data
     int npi;
     const Point *P = params.FindPoint("P", &npi);
@@ -249,14 +369,15 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 
 	// Dade - read triangle data
 	MeshTriangleType triType;
-	string stype = params.FindOneString("tritype", "wald");
-	if (stype == "wald") triType = WALD_TRIANGLE;
-	else if (stype == "bary") triType = BARY_TRIANGLE;
+	string triTypeStr = params.FindOneString("tritype", "auto");
+	if (triTypeStr == "wald") triType = TRI_WALD;
+	else if (triTypeStr == "bary") triType = TRI_BARY;
+	else if (triTypeStr == "auto") triType = TRI_AUTO;
 	else {
 		std::stringstream ss;
-		ss << "Triangle type  '" << stype << "' unknown. Using \"wald\".";
+		ss << "Triangle type  '" << triTypeStr << "' unknown. Using \"auto\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		triType = WALD_TRIANGLE;
+		triType = TRI_AUTO;
 	}
 
 	int triIndicesCount;
@@ -271,20 +392,20 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 				return NULL;
 			}
 		}
-		
+
 		triIndicesCount /= 3;
 	} else
 		triIndicesCount = 0;
 
 	// Dade - read quad data
 	MeshQuadType quadType;
-	stype = params.FindOneString("quadtype", "quadrilateral");
-	if (stype == "quadrilateral") quadType = QUADRILATERAL;
+	string quadTypeStr = params.FindOneString("quadtype", "quadrilateral");
+	if (quadTypeStr == "quadrilateral") quadType = QUAD_QUADRILATERAL;
 	else {
 		std::stringstream ss;
-		ss << "Quad type  '" << stype << "' unknown. Using \"quadrilateral\".";
+		ss << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		quadType = QUADRILATERAL;
+		quadType = QUAD_QUADRILATERAL;
 	}
 
 	int quadIndicesCount;
@@ -299,7 +420,7 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 				return NULL;
 			}
 		}
-		
+
 		quadIndicesCount /= 4;
 	} else
 		quadIndicesCount = 0;
@@ -307,6 +428,7 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 	if ((!triIndices) && (!quadIndices)) return NULL;
 
     return new Mesh(o2w, reverseOrientation,
+			accelType,
 			npi, P, N, UV,
 			triType, triIndicesCount, triIndices,
 			quadType, quadIndicesCount, quadIndices);

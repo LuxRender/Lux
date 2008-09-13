@@ -36,10 +36,12 @@ public:
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	bool CanIntersect() const { return false; }
-	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
+	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+			const PrimitiveRefinementHints& refineHints,
+			boost::shared_ptr<Primitive> thisPtr);
 	friend class Triangle;
 	template <class T> friend class VertexTexture;
-	
+
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 public:
 	// PlyMesh Data

@@ -31,8 +31,8 @@ BBox MeshBaryTriangle::ObjectBound() const {
     const Point &p1 = mesh->p[v[0]];
     const Point &p2 = mesh->p[v[1]];
     const Point &p3 = mesh->p[v[2]];
-    return Union(BBox(WorldToObject(p1), WorldToObject(p2)),
-            WorldToObject(p3));
+    return Union(BBox(mesh->WorldToObject(p1), mesh->WorldToObject(p2)),
+    		mesh->WorldToObject(p3));
 }
 
 BBox MeshBaryTriangle::WorldBound() const {
@@ -43,8 +43,7 @@ BBox MeshBaryTriangle::WorldBound() const {
     return Union(BBox(p1, p2), p3);
 }
 
-bool MeshBaryTriangle::Intersect(const Ray &ray, float *tHit,
-        DifferentialGeometry *dg) const {
+bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const {
     Vector e1, e2, s1;
     // Compute $\VEC{s}_1$
     // Get triangle vertices in _p1_, _p2_, and _p3_
@@ -94,7 +93,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, float *tHit,
         dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
         dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
     }
-    
+
     // Interpolate $(u,v)$ triangle parametric coordinates
     const float b0 = 1 - b1 - b2;
     const float tu = b0*uvs[0][0] + b1*uvs[1][0] + b2*uvs[2][0];
@@ -103,22 +102,21 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, float *tHit,
 	// Dade - using the intepolated normal here in order to fix bug #340
 	Normal nn;
 	if (mesh->n)
-		nn = Normalize(ObjectToWorld(b0 * mesh->n[v[0]] +
+		nn = Normalize(mesh->ObjectToWorld(b0 * mesh->n[v[0]] +
 			b1 * mesh->n[v[1]] + b2 * mesh->n[v[2]]));
 	else
 		nn = Normal(Normalize(Cross(e1, e2)));
 
-	// Adjust normal based on orientation and handedness
-    if (reverseOrientation ^ transformSwapsHandedness)
-        nn *= -1.f;
-
-    *dg = DifferentialGeometry(ray(t),
+    isect->dg = DifferentialGeometry(ray(t),
 			nn,
 			dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
             tu, tv, this);
+    isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
 
-    *tHit = t;
+    isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
+	ray.maxt = t;
+
     return true;
 }
 
@@ -172,13 +170,15 @@ Point MeshBaryTriangle::Sample(float u1, float u2,
     Point p = b1 * p1 + b2 * p2 + (1.f - b1 - b2) * p3;
     Normal n = Normal(Cross(p2-p1, p3-p1));
     *Ns = Normalize(n);
-    if (reverseOrientation) *Ns *= -1.f;
+    if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
+    	*Ns *= -1.f;
     return p;
 }
 
 void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
-		DifferentialGeometry *dgShading) const {
+		DifferentialGeometry *dgShading) const
+{
 	if (!mesh->n) {
 		*dgShading = dg;
 		return;
@@ -211,8 +211,8 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
 		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
 
-		dndu = ObjectToWorld(dndu);
-		dndv = ObjectToWorld(dndu);
+		dndu = mesh->ObjectToWorld(dndu);
+		dndv = mesh->ObjectToWorld(dndu);
 	}
 
 	*dgShading = DifferentialGeometry(
@@ -220,7 +220,9 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 			ns,
 			ss, ts,
 			dndu, dndv,
-			dg.u, dg.v, dg.shape);
+			dg.u, dg.v, this);
+	dgShading->reverseOrientation = mesh->reverseOrientation;
+	dgShading->transformSwapsHandedness = mesh->transformSwapsHandedness;
 
 	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
 	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;

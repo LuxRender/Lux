@@ -34,14 +34,20 @@ using namespace lux;
 //static StatsRatio rayHits("Grid Accelerator", "Intersections found per ray"); // NOBOOK
 
 // GridAccel Method Definitions
-GridAccel::GridAccel(const vector<Primitive* > &p,
+GridAccel::GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		bool forRefined, bool refineImmediately)
 	: gridForRefined(forRefined) {
 	// Initialize _prims_ with primitives for grid
-	vector<Primitive* > prims;
-	if (refineImmediately)
-		for (u_int i = 0; i < p.size(); ++i)
-			p[i]->FullyRefine(prims);
+	vector<boost::shared_ptr<Primitive> > prims;
+	PrimitiveRefinementHints refineHints(false);
+	if (refineImmediately) {
+		for (u_int i = 0; i < p.size(); ++i) {
+			if(p[i]->CanIntersect())
+				prims.push_back(p[i]);
+			else
+				p[i]->Refine(prims, refineHints, p[i]);
+		}
+	}
 	else
 		prims = p;
 	// Initialize mailboxes for grid
@@ -49,7 +55,7 @@ GridAccel::GridAccel(const vector<Primitive* > &p,
 	mailboxes = (GMailboxPrim *)AllocAligned(nMailboxes *
 		sizeof(GMailboxPrim));
 	for (u_int i = 0; i < nMailboxes; ++i)
-		new (&mailboxes[i]) GMailboxPrim((const Primitive*&)prims[i]);
+		new (&mailboxes[i]) GMailboxPrim(prims[i]);
 	// Compute bounds and choose grid resolution
 	for (u_int i = 0; i < prims.size(); ++i)
 		bounds = Union(bounds, prims[i]->WorldBound());
@@ -208,13 +214,14 @@ bool Voxel::Intersect(const Ray &ray,
 			GMailboxPrim *mp = mpp[i];
 			// Refine primitive in _mp_ if it's not intersectable
 			if (!mp->primitive->CanIntersect()) {
-				vector<Primitive* > p;
-				mp->primitive->FullyRefine(p);
+				vector<boost::shared_ptr<Primitive> > p;
+				PrimitiveRefinementHints refineHints(false);
+				mp->primitive->Refine(p, refineHints, mp->primitive);
 				BOOST_ASSERT(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
 				else {
-					Primitive* o (new GridAccel(p, true, false));
+					boost::shared_ptr<Primitive> o (new GridAccel(p, true, false));
 					mp->primitive = o;
 				}
 			}
@@ -311,13 +318,14 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 			GMailboxPrim *mp = mpp[i];
 			// Refine primitive in _mp_ if it's not intersectable
 			if (!mp->primitive->CanIntersect()) {
-				vector<Primitive* > p;
-				mp->primitive->FullyRefine(p);
+				vector<boost::shared_ptr<Primitive> > p;
+				PrimitiveRefinementHints refineHints(false);
+				mp->primitive->Refine(p, refineHints, mp->primitive);
 				BOOST_ASSERT(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
 				else {
-					Primitive* o (new GridAccel(p, true, false));
+					boost::shared_ptr<Primitive> o (new GridAccel(p, true, false));
 					mp->primitive = o;
 				}
 			}
@@ -342,7 +350,13 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 	}
 	return false;
 }
-Primitive* GridAccel::CreateAccelerator(const vector<Primitive* > &prims,
+void GridAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+	primitives.reserve(nMailboxes);
+	for(u_int i=0; i < nMailboxes; i++) {
+		primitives.push_back(mailboxes[i].primitive);
+	}
+}
+Aggregate *GridAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
 		const ParamSet &ps) {
 	bool refineImmediately = ps.FindOneBool("refineimmediately", false);
 	return new GridAccel(prims, false, refineImmediately);

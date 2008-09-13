@@ -33,65 +33,56 @@ Shape::Shape(const Transform &o2w, bool ro)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
 	reverseOrientation(ro),
 	transformSwapsHandedness(o2w.SwapsHandedness()) {
+}
+Shape::Shape(const Transform &o2w, bool ro, boost::shared_ptr<Material> mat)
+	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
+	reverseOrientation(ro),
+	transformSwapsHandedness(o2w.SwapsHandedness()),
+	material(mat)
+{
 	// Update shape creation statistics
 	// radiance - disabled for threading // static StatsCounter nShapesMade("Geometry","Total shapes created");
 	// radiance - disabled for threading // ++nShapesMade;
 }
-// ShapeSet Method Definitions
-ShapeSet::ShapeSet(const vector<boost::shared_ptr<Shape> > &s,
-	const Transform &o2w, bool ro)
-	: Shape(o2w, ro) {
-	shapes = s;
-	area = 0;
-	vector<float> areas;
-	for (u_int i = 0; i < shapes.size(); ++i) {
-		float a = shapes[i]->Area();
-		area += a;
-		areas.push_back(a);
-	}
-	float prevCDF = 0;
-	for (u_int i = 0; i < shapes.size(); ++i) {
-		areaCDF.push_back(prevCDF + areas[i] / area);
-		prevCDF = areaCDF[i];
-	}
+
+// PrimitiveSet Method Definitions
+PrimitiveSet::PrimitiveSet(boost::shared_ptr<Aggregate> a) {
+	a->GetPrimitives(primitives);
+
+	initAreas();
+
+	accelerator = a;
+}
+PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
+	primitives = p;
+
+	initAreas();
 
 	// NOTE - ratow - Use accelerator for complex lights.
-	if(shapes.size() <= 16) {
-		accelerator = NULL;
+	if(primitives.size() <= 16) {
+		accelerator = boost::shared_ptr<Primitive>((Primitive*)NULL);
 		worldbound = WorldBound();
 		// NOTE - ratow - Correctly expands bounds when pMin is not negative or pMax is not positive.
 		worldbound.pMin -= (worldbound.pMax-worldbound.pMin)*0.01f;
 		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
 	} else {
-		vector<Primitive*> primitives;
-		for (u_int i = 0; i < shapes.size(); ++i) {
-			boost::shared_ptr<Material> emptyMtl;
-			Primitive* prim (new GeometricPrimitive(shapes[i], emptyMtl, NULL));
-			primitives.push_back(prim);
-		}
-		accelerator = MakeAccelerator("kdtree", primitives, ParamSet());
+		accelerator = boost::shared_ptr<Primitive>(
+				MakeAccelerator("kdtree", primitives, ParamSet()));
 		if (!accelerator)
 			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
 	}
 }
-bool ShapeSet::Intersect(const Ray &ray, float *t_hitp,
-		DifferentialGeometry *dg) const {
-	Ray bray = ray;
+bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
 	if(accelerator) {
-		Intersection isect;
-		if (!accelerator->Intersect(bray, &isect))
+		if (!accelerator->Intersect(ray, in))
 			return false;
 
-		*t_hitp = bray.maxt;
-		*dg = isect.dg;
 		return true;
-	} else if(worldbound.IntersectP(bray)) {
-		// NOTE - ratow - Testing each shape for intersections again because the _ShapeSet_ can be non-planar.
-		// _t_hitp_ and _dg_ are now set according to the nearest intersection.
+	} else if(worldbound.IntersectP(ray)) {
+		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
 		bool anyHit = false;
-		for (u_int i = 0; i < shapes.size(); ++i) {
-			if (shapes[i]->Intersect(bray, t_hitp, dg)) {
-				bray.maxt = *t_hitp;
+		for (u_int i = 0; i < primitives.size(); ++i) {
+			if (primitives[i]->Intersect(ray, in)) {
 				anyHit = true;
 			}
 		}
@@ -100,88 +91,18 @@ bool ShapeSet::Intersect(const Ray &ray, float *t_hitp,
 		return false;
 	}
 }
-// DifferentialGeometry Method Definitions
-DifferentialGeometry::DifferentialGeometry(const Point &P,
-		const Vector &DPDU, const Vector &DPDV,
-		const Vector &DNDU, const Vector &DNDV,
-		float uu, float vv, const Shape *sh)
-	: p(P), dpdu(DPDU), dpdv(DPDV), dndu((Normal)DNDU), dndv((Normal)DNDV) {
-	// Initialize _DifferentialGeometry_ from parameters
-	nn = Normal(Normalize(Cross(dpdu, dpdv)));
-	u = uu;
-	v = vv;
-	shape = sh;
-	dudx = dvdx = dudy = dvdy = 0;
-	// Adjust normal based on orientation and handedness
-	if (shape->reverseOrientation ^ shape->transformSwapsHandedness)
-		nn *= -1.f;
-}
-// Dade - added this costructor as a little optimization if the
-// normalized normal is already available
-DifferentialGeometry::DifferentialGeometry(const Point &P,
-		const Normal &NN,
-		const Vector &DPDU, const Vector &DPDV,
-		const Vector &DNDU, const Vector &DNDV,
-		float uu, float vv, const Shape *sh)
-	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu((Normal)DNDU), dndv((Normal)DNDV) {
-	// Initialize _DifferentialGeometry_ from parameters
-	u = uu;
-	v = vv;
-	shape = sh;
-	dudx = dvdx = dudy = dvdy = 0;
-}
-void DifferentialGeometry::ComputeDifferentials(
-		const RayDifferential &ray) const {
-	if (ray.hasDifferentials) {
-		// Estimate screen-space change in \pt and $(u,v)$
-		// Compute auxiliary intersection points with plane
-		float d = -Dot(nn, Vector(p.x, p.y, p.z));
-		Vector rxv(ray.rx.o.x, ray.rx.o.y, ray.rx.o.z);
-		float tx = -(Dot(nn, rxv) + d) / Dot(nn, ray.rx.d);
-		Point px = ray.rx.o + tx * ray.rx.d;
-		Vector ryv(ray.ry.o.x, ray.ry.o.y, ray.ry.o.z);
-		float ty = -(Dot(nn, ryv) + d) / Dot(nn, ray.ry.d);
-		Point py = ray.ry.o + ty * ray.ry.d;
-		dpdx = px - p;
-		dpdy = py - p;
-		// Compute $(u,v)$ offsets at auxiliary points
-		// Initialize _A_, _Bx_, and _By_ matrices for offset computation
-		float A[2][2], Bx[2], By[2], x[2];
-		int axes[2];
-		if (fabsf(nn.x) > fabsf(nn.y) && fabsf(nn.x) > fabsf(nn.z)) {
-			axes[0] = 1; axes[1] = 2;
-		}
-		else if (fabsf(nn.y) > fabsf(nn.z)) {
-			axes[0] = 0; axes[1] = 2;
-		}
-		else {
-			axes[0] = 0; axes[1] = 1;
-		}
-		// Initialize matrices for chosen projection plane
-		A[0][0] = dpdu[axes[0]];
-		A[0][1] = dpdv[axes[0]];
-		A[1][0] = dpdu[axes[1]];
-		A[1][1] = dpdv[axes[1]];
-		Bx[0] = px[axes[0]] - p[axes[0]];
-		Bx[1] = px[axes[1]] - p[axes[1]];
-		By[0] = py[axes[0]] - p[axes[0]];
-		By[1] = py[axes[1]] - p[axes[1]];
-		if (SolveLinearSystem2x2(A, Bx, x)) {
-			dudx = x[0]; dvdx = x[1];
-		}
-		else  {
-			dudx = 1.; dvdx = 0.;
-		}
-		if (SolveLinearSystem2x2(A, By, x)) {
-			dudy = x[0]; dvdy = x[1];
-		}
-		else {
-			dudy = 0.; dvdy = 1.;
-		}
+
+void PrimitiveSet::initAreas() {
+	area = 0;
+	vector<float> areas;
+	for (u_int i = 0; i < primitives.size(); ++i) {
+		float a = primitives[i]->Area();
+		area += a;
+		areas.push_back(a);
 	}
-	else {
-		dudx = dvdx = 0.;
-		dudy = dvdy = 0.;
-		dpdx = dpdy = Vector(0,0,0);
+	float prevCDF = 0;
+	for (u_int i = 0; i < primitives.size(); ++i) {
+		areaCDF.push_back(prevCDF + areas[i] / area);
+		prevCDF = areaCDF[i];
 	}
 }

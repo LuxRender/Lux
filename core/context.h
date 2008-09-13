@@ -41,7 +41,7 @@ public:
 	Context(std::string n="Lux default context") : name(n) {
             init();
 	}
-        
+
         ~Context() {
             free();
         }
@@ -110,7 +110,7 @@ public:
 	static void luxCleanup() { activeContext->cleanup(); }
 
 	//CORE engine control
-	//user interactive thread functions		
+	//user interactive thread functions
 	static void luxStart() { activeContext->start(); }
 	static void luxPause() { activeContext->pause(); }
 	static void luxExit() { activeContext->exit(); }
@@ -142,7 +142,7 @@ public:
 
 	//statistics
 	static double luxStatistics(const string &statName) { return activeContext->statistics(statName); }
-	
+
 	//film access (networking)
     static void luxTransmitFilm(std::basic_ostream<char> &stream) { activeContext->transmitFilm(stream); }
 
@@ -200,7 +200,7 @@ private:
 	void cleanup();
 
 	//CORE engine control
-	//user interactive thread functions		
+	//user interactive thread functions
 	void start();
 	void pause();
 	void exit();
@@ -266,10 +266,10 @@ private:
 		Transform WorldToCamera;
 		bool gotSearchPath;
 		mutable vector<Light *> lights;
-		mutable vector<Primitive* > primitives;
+		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<VolumeRegion *> volumeRegions;
-		map<string, vector<Primitive* > > instances;
-		vector<Primitive* > *currentInstance;
+		map<string, vector<boost::shared_ptr<Primitive> > > instances;
+		vector<boost::shared_ptr<Primitive> > *currentInstance;
         bool debugMode;
 	};
 

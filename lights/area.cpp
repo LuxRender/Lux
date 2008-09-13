@@ -36,57 +36,48 @@ using namespace lux;
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - add portal implementation
 		const RGBColor &le, float g, int ns,
-		const boost::shared_ptr<Shape> &s)
+		const boost::shared_ptr<Primitive> &p)
 	: Light(light2world, ns) {
 	// Create SPD
 	LSPD = new RGBIllumSPD(le);
 	LSPD->Scale(g);
 
-	if (s->CanIntersect())
-		shape = s;
+	if (p->CanIntersect() && p->CanSample())
+		prim = p;
 	else {
-		// Create _ShapeSet_ for _Shape_
-		boost::shared_ptr<Shape> shapeSet = s;
-		vector<boost::shared_ptr<Shape> > todo, done;
-		todo.push_back(shapeSet);
-		while (todo.size()) {
-			boost::shared_ptr<Shape> sh = todo.back();
-			todo.pop_back();
-			if (sh->CanIntersect())
-				done.push_back(sh);
-			else
-				sh->Refine(todo);
-		}
-		if (done.size() == 1) shape = done[0];
+		// Create _PrimitiveSet_ for _Primitive_
+		vector<boost::shared_ptr<Primitive> > refinedPrims;
+		PrimitiveRefinementHints refineHints(true);
+		p->Refine(refinedPrims, refineHints, p);
+		if (refinedPrims.size() == 1) prim = refinedPrims[0];
 		else {
-			boost::shared_ptr<Shape> o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
-			shape = o;
+			prim = boost::shared_ptr<Primitive>(new PrimitiveSet(refinedPrims));
 		}
 	}
-	area = shape->Area();
+	area = prim->Area();
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal ns;
-	Point ps = shape->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	Point ps = prim->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 	*wi = Normalize(ps - p);
-	*pdf = shape->Pdf(p, *wi);
+	*pdf = prim->Pdf(p, *wi);
 	visibility->SetSegment(p, ps);
 	return L(tspack, ps, ns, -*wi);
 }
 float AreaLight::Pdf(const Point &p, const Normal &N,
 		const Vector &wi) const {
-	return shape->Pdf(p, wi);
+	return prim->Pdf(p, wi);
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal Ns;
-	Point Ps = shape->Sample(P, u1, u2, tspack->rng->floatValue(), &Ns); // TODO - REFACT - add passed value from sample
+	Point Ps = prim->Sample(P, u1, u2, tspack->rng->floatValue(), &Ns); // TODO - REFACT - add passed value from sample
 	*wo = Normalize(Ps - P);
-	*pdf = shape->Pdf(P, *wo);
+	*pdf = prim->Pdf(P, *wo);
 	visibility->SetSegment(P, Ps);
 	return L(tspack, Ps, Ns, -*wo);
 }
@@ -94,25 +85,25 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	Normal ns;
-	ray->o = shape->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	ray->o = prim->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 	ray->d = UniformSampleSphere(u3, u4);
 	if (Dot(ray->d, ns) < 0.) ray->d *= -1;
-	*pdf = shape->Pdf(ray->o) * INV_TWOPI;
+	*pdf = prim->Pdf(ray->o) * INV_TWOPI;
 	return L(tspack, ray->o, ns, ray->d);
 }
 float AreaLight::Pdf(const Point &P, const Vector &w) const {
-	return shape->Pdf(P, w);
+	return prim->Pdf(P, w);
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
 {
 	Normal ns;
-	Point ps = shape->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	Point ps = prim->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
-	*pdf = shape->Pdf(ps);
+	*pdf = prim->Pdf(ps);
 	return L(tspack, ps, ns, Vector(ns)) /** M_PI*/;
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
@@ -120,10 +111,10 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const 
 	VisibilityTester *visibility) const
 {
 	Normal ns;
-	Point ps = shape->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	Point ps = prim->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
 	Vector wo(Normalize(ps - p));
-	*pdf = shape->Pdf(ps);
-	*pdfDirect = shape->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
+	*pdf = prim->Pdf(ps);
+	*pdfDirect = prim->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
@@ -134,21 +125,21 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const 
 }
 float AreaLight::Pdf(const Scene *scene, const Point &p) const
 {
-	return shape->Pdf(p);
+	return prim->Pdf(p);
 }
 SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	*bsdf = BSDF_ALLOC(BSDF)(dg, dg.nn);
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
-	*pdf = shape->Pdf(dg.p);
-	*pdfDirect = shape->Pdf(ray.o, ray.d) * AbsDot(ray.d, n) / DistanceSquared(dg.p, ray.o);
+	*pdf = prim->Pdf(dg.p);
+	*pdfDirect = prim->Pdf(ray.o, ray.d) * AbsDot(ray.d, n) / DistanceSquared(dg.p, ray.o);
 	return L(tspack, dg.p, dg.nn, -ray.d) /** M_PI*/;
 }
 
 void AreaLight::SamplePosition(float u1, float u2, float u3, Point *p, Normal *n, float *pdf) const
 {
-	*p = shape->Sample(u1, u2, u3, n);
-	*pdf = shape->Pdf(*p);
+	*p = prim->Sample(u1, u2, u3, n);
+	*pdf = prim->Pdf(*p);
 }
 void AreaLight::SampleDirection(float u1, float u2,const Normal &nn, Vector *wo, float *pdf) const
 {
@@ -163,7 +154,7 @@ void AreaLight::SampleDirection(float u1, float u2,const Normal &nn, Vector *wo,
 }
 float AreaLight::EvalPositionPdf(const Point p, const Normal &n, const Vector &w) const
 {
-	return Dot(n, w) > 0 ? shape->Pdf(p) : 0.;
+	return Dot(n, w) > 0 ? prim->Pdf(p) : 0.;
 }
 float AreaLight::EvalDirectionPdf(const Point p, const Normal &n, const Vector &w) const
 {
@@ -175,11 +166,11 @@ SWCSpectrum AreaLight::Eval(const TsPack *tspack, const Normal &n, const Vector 
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
-		const boost::shared_ptr<Shape> &shape) {
+		const boost::shared_ptr<Primitive> &prim) {
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new AreaLight(light2world, L, g, nSamples, shape);
+	return new AreaLight(light2world, L, g, nSamples, prim);
 }
 
 static DynamicLoader::RegisterAreaLight<AreaLight> r("area");

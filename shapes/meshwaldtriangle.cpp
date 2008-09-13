@@ -26,15 +26,12 @@
 
 using namespace lux;
 
-MeshWaldTriangle::MeshWaldTriangle(
-		const Transform &o2w, bool ro,
-        Mesh *m, int n) : Shape(o2w, ro) {
-    mesh = m;
-    v = &mesh->triVertexIndex[3 * n];
-
+MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, int n)
+	: mesh(m), v(&(mesh->triVertexIndex[3 * n]))
+{
     // Wald's precomputed values
 
-    // Look for the dominant axis    
+    // Look for the dominant axis
     const Point &v0 = mesh->p[v[0]];
     const Point &v1 = mesh->p[v[1]];
     const Point &v2 = mesh->p[v[2]];
@@ -50,7 +47,7 @@ MeshWaldTriangle::MeshWaldTriangle(
 
 	// Define the type of intersection to use according the normal
     // of the triangle
-    
+
     if ((normal.y == 0.0f) && (normal.z == 0.0f))
         intersectionType = ORTHOGONAL_X;
     else if((normal.x == 0.0f) &&  (normal.z == 0.0f))
@@ -143,20 +140,20 @@ MeshWaldTriangle::MeshWaldTriangle(
             // Dade - how can I report internal errors ?
             return;
     }
-    
+
     float det = bx * cy - by * cx;
     float invDet = 1.0f / det;
-    
+
     bnu = -by * invDet;
     bnv = bx * invDet;
     bnd = (by * ax - bx * ay) * invDet;
     cnu = cy * invDet;
     cnv = -cx * invDet;
     cnd = (cx * ay - cy * ax) * invDet;
-    
+
     // Dade - doing some precomputation for filling the _DifferentialGeometry_
     // in the intersection method
-    
+
     // Compute triangle partial derivatives
     float uvs[3][2];
     GetUVs(uvs);
@@ -175,14 +172,8 @@ MeshWaldTriangle::MeshWaldTriangle(
         dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
         dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
     }
-    
-    // NOTE - ratow - Invert generated normal in case it falls on the wrong side.
-    // Dade - this computation can be done at scene creation time too
-    normalizedNormal = Normal(Normalize(Cross(e1, e2)));
 
-    // Adjust normal based on orientation and handedness
-    if (this->reverseOrientation ^ this->transformSwapsHandedness)
-        normalizedNormal *= -1.f;
+    normalizedNormal = Normal(Normalize(Cross(e1, e2)));
 }
 
 BBox MeshWaldTriangle::ObjectBound() const {
@@ -190,8 +181,8 @@ BBox MeshWaldTriangle::ObjectBound() const {
     const Point &p1 = mesh->p[v[0]];
     const Point &p2 = mesh->p[v[1]];
     const Point &p3 = mesh->p[v[2]];
-    return Union(BBox(WorldToObject(p1), WorldToObject(p2)),
-            WorldToObject(p3));
+    return Union(BBox(mesh->WorldToObject(p1), mesh->WorldToObject(p2)),
+    		mesh->WorldToObject(p3));
 }
 
 BBox MeshWaldTriangle::WorldBound() const {
@@ -202,30 +193,29 @@ BBox MeshWaldTriangle::WorldBound() const {
     return Union(BBox(p1, p2), p3);
 }
 
-bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
-        DifferentialGeometry *dg) const {
+bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const {
     float uu, vv, t;
     switch (intersectionType) {
         case DOMINANT_X: {
             const float det = ray.d.x + nu * ray.d.y + nv * ray.d.z;
             if(det==0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / det;
             t = (nd - ray.o.x - nu * ray.o.y - nv * ray.o.z) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.y + t * ray.d.y;
             const float hv = ray.o.z + t * ray.d.z;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -236,22 +226,22 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
             const float det = ray.d.y + nu * ray.d.z + nv * ray.d.x;
             if(det==0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / det;
             t = (nd - ray.o.y - nu * ray.o.z - nv * ray.o.x) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.z + t * ray.d.z;
             const float hv = ray.o.x + t * ray.d.x;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -262,23 +252,23 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
             const float det = ray.d.z + nu * ray.d.x + nv * ray.d.y;
             if(det==0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / det;
             t = (nd - ray.o.z - nu * ray.o.x - nv * ray.o.y) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.x + t * ray.d.x;
             const float hv = ray.o.y + t * ray.d.y;
-            
+
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -288,22 +278,22 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
         case ORTHOGONAL_X: {
             if(ray.d.x == 0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / ray.d.x;
             t = (nd - ray.o.x) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.y + t * ray.d.y;
             const float hv = ray.o.z + t * ray.d.z;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -313,22 +303,22 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
         case ORTHOGONAL_Y: {
             if(ray.d.y == 0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / ray.d.y;
             t = (nd - ray.o.y) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.z + t * ray.d.z;
             const float hv = ray.o.x + t * ray.d.x;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -338,23 +328,23 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
         case ORTHOGONAL_Z: {
             if(ray.d.z == 0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / ray.d.z;
             t = (nd - ray.o.z) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
 
             const float hu = ray.o.x + t * ray.d.x;
             const float hv = ray.o.y + t * ray.d.y;
-            
+
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -379,22 +369,20 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, float *tHit,
 	// Dade - using the intepolated normal here in order to fix bug #340
 	Normal nn;
 	if (mesh->n)
-		nn = Normalize(ObjectToWorld(b0 * mesh->n[v[0]] +
+		nn = Normalize(mesh->ObjectToWorld(b0 * mesh->n[v[0]] +
 			uu * mesh->n[v[1]] + vv * mesh->n[v[2]]));
 	else
 		nn = normalizedNormal;
 
-	// Adjust normal based on orientation and handedness
-    if (this->reverseOrientation ^ this->transformSwapsHandedness)
-        nn *= -1.f;
-
-    *dg = DifferentialGeometry(ray(t),
+    isect->dg = DifferentialGeometry(ray(t),
             nn,
             dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
             tu, tv, this);
+    isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
+    isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial().get());
+    ray.maxt = t;
 
-    *tHit = t;
     return true;
 }
 
@@ -405,22 +393,22 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
             const float det = ray.d.x + nu * ray.d.y + nv * ray.d.z;
             if(det==0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / det;
             t = (nd - ray.o.x - nu * ray.o.y - nv * ray.o.z) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.y + t * ray.d.y;
             const float hv = ray.o.z + t * ray.d.z;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -431,22 +419,22 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
             const float det = ray.d.y + nu * ray.d.z + nv * ray.d.x;
             if(det==0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / det;
             t = (nd - ray.o.y - nu * ray.o.z - nv * ray.o.x) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.z + t * ray.d.z;
             const float hv = ray.o.x + t * ray.d.x;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -457,23 +445,23 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
             const float det = ray.d.z + nu * ray.d.x + nv * ray.d.y;
             if(det==0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / det;
             t = (nd - ray.o.z - nu * ray.o.x - nv * ray.o.y) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.x + t * ray.d.x;
             const float hv = ray.o.y + t * ray.d.y;
-            
+
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -483,22 +471,22 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
         case ORTHOGONAL_X: {
             if(ray.d.x == 0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / ray.d.x;
             t = (nd - ray.o.x) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.y + t * ray.d.y;
             const float hv = ray.o.z + t * ray.d.z;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -508,22 +496,22 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
         case ORTHOGONAL_Y: {
             if(ray.d.y == 0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / ray.d.y;
             t = (nd - ray.o.y) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.z + t * ray.d.z;
             const float hv = ray.o.x + t * ray.d.x;
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -533,23 +521,23 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
         case ORTHOGONAL_Z: {
             if(ray.d.z == 0.0f)
                 return false;
-            
+
             const float invDet = 1.0f / ray.d.z;
             t = (nd - ray.o.z) * invDet;
-            
+
             if (t < ray.mint || t > ray.maxt)
                 return false;
-            
+
             const float hu = ray.o.x + t * ray.d.x;
             const float hv = ray.o.y + t * ray.d.y;
-            
+
             uu = hu * bnu + hv * bnv + bnd;
-            
+
             if (uu < 0.0f)
                 return false;
-            
+
             vv = hu * cnu + hv * cnv + cnd;
-            
+
             if (vv < 0.0f)
                 return false;
             if (uu + vv > 1.0f)
@@ -563,7 +551,7 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const {
             // Dade - how can I report internal errors ?
             return false;
     }
-    
+
     return true;
 }
 
@@ -576,7 +564,7 @@ float MeshWaldTriangle::Area() const {
     return 0.5f * Cross(p2 - p1, p3 - p1).Length();
 }
 
-Point MeshWaldTriangle::Sample(float u1, float u2, float u3, 
+Point MeshWaldTriangle::Sample(float u1, float u2, float u3,
         Normal *Ns) const {
     float b1, b2;
     UniformSampleTriangle(u1, u2, &b1, &b2);
@@ -586,14 +574,18 @@ Point MeshWaldTriangle::Sample(float u1, float u2, float u3,
     const Point &p3 = mesh->p[v[2]];
     Point p = b1 * p1 + b2 * p2 + (1.f - b1 - b2) * p3;
 
-    *Ns = normalizedNormal;
+    if(mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
+    	*Ns = -normalizedNormal;
+    else
+    	*Ns = normalizedNormal;
 
     return p;
 }
 
 void MeshWaldTriangle::GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
-		DifferentialGeometry *dgShading) const {
+		DifferentialGeometry *dgShading) const
+{
 	if (!mesh->n) {
 		*dgShading = dg;
 		return;
@@ -626,8 +618,8 @@ void MeshWaldTriangle::GetShadingGeometry(const Transform &obj2world,
 		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
 		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
 
-		dndu = ObjectToWorld(dndu);
-		dndv = ObjectToWorld(dndu);
+		dndu = mesh->ObjectToWorld(dndu);
+		dndv = mesh->ObjectToWorld(dndu);
 	}
 
 	*dgShading = DifferentialGeometry(
@@ -635,9 +627,16 @@ void MeshWaldTriangle::GetShadingGeometry(const Transform &obj2world,
 			ns,
 			ss, ts,
 			dndu, dndv,
-			dg.u, dg.v, dg.shape);
+			dg.u, dg.v, this);
+	dgShading->reverseOrientation = mesh->reverseOrientation;
+	dgShading->transformSwapsHandedness = mesh->transformSwapsHandedness;
 
 	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
 	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
 	dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy;
 }
+
+bool MeshWaldTriangle::isDegenerate() const {
+	return intersectionType == DEGENERATE;
+}
+

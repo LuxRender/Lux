@@ -446,7 +446,7 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 		return;
 	params.ReportUnused();
 	// Initialize area light for shape									// TODO - radiance - add portalshape to area light & cleanup
-	AreaLight *area= NULL;
+	//AreaLight *area= NULL;
 	//if (graphicsState->areaLight != "")
 	//	area = MakeAreaLight(graphicsState->areaLight,
 	//	curTransform, graphicsState->areaLightParams, shape);
@@ -469,14 +469,15 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 		}
 	}
 
-	// Initialize material for shape (dummy)
-	TextureParams mp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->colorTextures);
-	boost::shared_ptr<Texture<float> > bump;
-	boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
+	// Lotus - this code does not seem to do anything usefull
 
+	// Initialize material for shape (dummy)
+	//TextureParams mp(params, graphicsState->materialParams,
+	//		graphicsState->floatTextures, graphicsState->spectrumTextures);
+	//boost::shared_ptr<Texture<float> > bump;
+	//boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
 	// Create primitive (for refining) (dummy)
-	Primitive* prim(new GeometricPrimitive(shape, mtl, area));
+	//Primitive* prim(new GeometricPrimitive(shape, mtl, area));
 }
 
 void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materialparams, boost::shared_ptr<Material> mtl) {
@@ -544,9 +545,10 @@ void Context::shape(const string &name, const ParamSet &params) {
 	params.ReportUnused();
 	// Initialize area light for shape
 	AreaLight *area= NULL;
-	if (graphicsState->areaLight != "")
+	if (graphicsState->areaLight != "") {
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
 				graphicsState->areaLightParams, shape);
+	}
 	// Initialize material for shape
 	TextureParams mp(params, graphicsState->materialParams,
 			graphicsState->floatTextures, graphicsState->colorTextures);
@@ -564,14 +566,21 @@ void Context::shape(const string &name, const ParamSet &params) {
 	}
 
 	// Create primitive and add to scene or current instance
-	Primitive* prim(new GeometricPrimitive(shape, mtl, area));
+	shape->SetMaterial(mtl); // Lotus - Set the material
+	boost::shared_ptr<Primitive> prim;
+	if(area) {
+		// Lotus - add a decorator to set the arealight field
+		prim = boost::shared_ptr<Primitive>(new AreaLightPrimitive(shape, area));
+	}
+	else
+		prim = shape;
 	if (renderOptions->currentInstance) {
 		if (area)
 			luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Area lights not supported with object instancing");
 		renderOptions->currentInstance->push_back(prim);
 	} else {
 		renderOptions->primitives.push_back(prim);
-		if (area != NULL) {
+		if (area) {
 			// Add area light for primitive to light vector
 			renderOptions->lights.push_back(area);
 		}
@@ -598,7 +607,7 @@ void Context::objectBegin(const string &name) {
 	luxAttributeBegin();
 	if (renderOptions->currentInstance)
 		luxError(LUX_NESTING,LUX_ERROR,"ObjectBegin called inside of instance definition");
-	renderOptions->instances[name] = vector<Primitive*>();
+	renderOptions->instances[name] = vector<boost::shared_ptr<Primitive> >();
 	renderOptions->currentInstance = &renderOptions->instances[name];
 }
 void Context::objectEnd() {
@@ -626,23 +635,23 @@ void Context::objectInstance(const string &name) {
 		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		return;
 	}
-	vector<Primitive* > &in = renderOptions->instances[name];
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[name];
 	if (in.size() == 0)
 		return;
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
-		Primitive* accel = MakeAccelerator(renderOptions->AcceleratorName, in,
-				renderOptions->AcceleratorParams);
+		boost::shared_ptr<Primitive> accel(MakeAccelerator(
+				renderOptions->AcceleratorName, in,
+				renderOptions->AcceleratorParams));
 		if (!accel)
-			accel = MakeAccelerator("kdtree", in, ParamSet());
+			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
 		if (!accel)
 			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
 		in.erase(in.begin(), in.end());
 		in.push_back(accel);
 	}
-	Primitive* o(new InstancePrimitive(in[0], curTransform));
-	Primitive* prim = o;
-	renderOptions->primitives.push_back(prim);
+	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform));
+	renderOptions->primitives.push_back(o);
 }
 
 void Context::worldEnd() {
@@ -703,7 +712,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 			SurfIntegratorName, SurfIntegratorParams);
 	VolumeIntegrator *volumeIntegrator = MakeVolumeIntegrator(
 			VolIntegratorName, VolIntegratorParams);
-	Primitive *accelerator = MakeAccelerator(AcceleratorName, primitives,
+	boost::shared_ptr<Primitive> accelerator = MakeAccelerator(AcceleratorName, primitives,
 			AcceleratorParams);
 	if (!accelerator) {
 		ParamSet ps;

@@ -147,11 +147,10 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	else {
 		*pdfDirect = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			DifferentialGeometry dg;
+			Intersection isect;
 			RayDifferential ray(r);
 			ray.maxt = distance;
-			float d;
-			if (PortalShapes[i]->Intersect(ray, &d, &dg) && Dot(r.d, dg.nn) < .0f)
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < .0f)
 				*pdfDirect += PortalShapes[i]->Pdf(r.o, r.d);
 		}
 		*pdfDirect *= AbsDot(r.d, ns) / (nrPortalShapes * distance * distance);
@@ -213,10 +212,9 @@ float SkyLight::Pdf(const Point &p, const Normal &n,
 	else {
 		float pdf = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			DifferentialGeometry dg;
+			Intersection isect;
 			RayDifferential ray(p, wi);
-			float d;
-			if (PortalShapes[i]->Intersect(ray, &d, &dg) && Dot(wi, dg.nn) < .0f)
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
 				pdf += PortalShapes[i]->Pdf(p, wi);
 		}
 		pdf /= nrPortalShapes;
@@ -278,7 +276,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
 		int shapeidx = 0;
-		if(nrPortalShapes > 1) 
+		if(nrPortalShapes > 1)
 			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 

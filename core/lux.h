@@ -149,11 +149,12 @@ namespace lux
   class Transform;
   class DifferentialGeometry;
   class TextureParams;
-  class Shape;
   class Scene;
   class Primitive;
+  class AreaLightPrimitive;
+  class InstancePrimitive;
+  class Aggregate;
   class Intersection;
-  class GeometricPrimitive;
   class RGBColor;
   class ImageData;
   class SWCSpectrum;
@@ -200,7 +201,8 @@ namespace lux
   class Light;
   struct VisibilityTester;
   class AreaLight;
-  class ShapeSet;
+  class Shape;
+  class PrimitiveSet;
   class Integrator;
   class SurfaceIntegrator;
   class VolumeIntegrator;

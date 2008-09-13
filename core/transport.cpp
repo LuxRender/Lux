@@ -92,7 +92,7 @@ SWCSpectrum UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	// Randomly choose a single light to sample, _light_
 	int nLights = int(scene->lights.size());
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
-	if (nLights == 0) 
+	if (nLights == 0)
 		return SWCSpectrum(0.f);
 	int lightNumber;
 	float ls1, ls2, ls3, bs1, bs2, bcs;
@@ -119,7 +119,7 @@ SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
 {
 	int nLights = int(scene->lights.size());
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
-	if (nLights == 0) 
+	if (nLights == 0)
 		return SWCSpectrum(0.f);
 	// Initialize _avgY_ array if necessary
 	if (!avgY) {
@@ -182,7 +182,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 	if (light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0)) {
 
 		// Dade - trace only a single shadow ray
-		
+
 		Vector wi;
 		float lightPdf;
 		VisibilityTester visibility;
@@ -234,7 +234,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					SWCSpectrum Li(0.f);
 					RayDifferential ray(p, wi);
 					if (scene->Intersect(ray, &lightIsect)) {
-						if (lightIsect.primitive->GetAreaLight() == light)
+						if (lightIsect.arealight == light)
 							Li = lightIsect.Le(tspack, -wi);
 					} else
 						Li = light->Le(tspack, ray);

@@ -37,8 +37,8 @@ static void LoadError(const string &type, const string &name)
 	ss << "Static loading of " << type << " '" << name << "' failed.";
 	luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
 
-}	
-    
+}
+
 boost::shared_ptr<Shape> MakeShape(const string &name,
 	const Transform &object2world, bool reverseOrientation,
 	const ParamSet &paramSet)
@@ -113,13 +113,13 @@ Light *MakeLight(const string &name,
 
 AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet,
-	const boost::shared_ptr<Shape> &shape)
+	const boost::shared_ptr<Primitive> &prim)
 {
 	if (DynamicLoader::registeredAreaLights().find(name) !=
 		DynamicLoader::registeredAreaLights().end()) {
 		AreaLight *ret =
 			DynamicLoader::registeredAreaLights()[name](light2world,
-				paramSet, shape);
+				paramSet, prim);
 		paramSet.ReportUnused();
 		return ret;
 	}
@@ -174,20 +174,20 @@ VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 	return NULL;
 }
 
-Primitive *MakeAccelerator(const string &name,
-	const vector<Primitive* > &prims, const ParamSet &paramSet)
+boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
+	const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &paramSet)
 {
 	if (DynamicLoader::registeredAccelerators().find(name) !=
 		DynamicLoader::registeredAccelerators().end()) {
-		Primitive *ret =
+		boost::shared_ptr<Aggregate> ret(
 			DynamicLoader::registeredAccelerators()[name](prims,
-				paramSet);
+				paramSet));
 		paramSet.ReportUnused();
 		return ret;
 	}
 
 	LoadError("accelerator", name);
-	return NULL;
+	return boost::shared_ptr<Aggregate>();
 }
 
 Camera *MakeCamera(const string &name,
@@ -262,7 +262,7 @@ Film *MakeFilm(const string &name,
 	LoadError("film", name);
 	return NULL;
 }
-    
+
 PixelSampler *MakePixelSampler(const string &name,
 	const ParamSet &paramSet)
 {
@@ -276,7 +276,7 @@ PixelSampler *MakePixelSampler(const string &name,
 	LoadError("pixel sampler", name);
 	return NULL;
 }
-    
+
 map<string, DynamicLoader::CreateShape> &DynamicLoader::registeredShapes()
 {
 	static map<string, DynamicLoader::CreateShape> *Map = new map<string, DynamicLoader::CreateShape>;

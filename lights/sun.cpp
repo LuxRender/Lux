@@ -175,13 +175,12 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	else {
 		*pdf = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			DifferentialGeometry dg;
-			float d;
+			Intersection isect;
 			RayDifferential ray(ps - Dot(r.d, sundir) * sundir, sundir);
-			if (PortalShapes[i]->Intersect(ray, &d, &dg)) {
-				float cosPortal = Dot(-sundir, dg.nn);
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
+				float cosPortal = Dot(-sundir, isect.dg.nn);
 				if (cosPortal > 0.f)
-					*pdf += PortalShapes[i]->Pdf(dg.p) / cosPortal;
+					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
 			}
 		}
 		*pdf /= nrPortalShapes;
@@ -194,15 +193,15 @@ bool SunLight::checkPortals(Ray portalRay) const {
 	if (!havePortalShape)
 		return true;
 
-	float tHit;
-	DifferentialGeometry portalDGeom;
+	Ray isectRay(portalRay);
+	Intersection isect;
 	bool found = false;
 	for (int i = 0; i < nrPortalShapes; ++i) {
 		// Dade - I need to use Intersect instead of IntersectP
 		// because of the normal
-		if (PortalShapes[i]->Intersect(portalRay, &tHit, &portalDGeom)) {
+		if (PortalShapes[i]->Intersect(isectRay, &isect)) {
 			// Dade - found a valid portal, check the orientation
-			if (Dot(portalRay.d, portalDGeom.nn) < 0.f) {
+			if (Dot(portalRay.d, isect.dg.nn) < 0.f) {
 				found = true;
 				break;
 			}
@@ -265,7 +264,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
 		int shapeidx = 0;
-		if(nrPortalShapes > 1) 
+		if(nrPortalShapes > 1)
 			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes)); // TODO - REFACT - add passed value from sample
 
@@ -343,7 +342,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 
 		samplePoint += (worldRadius - Dot(samplePoint - worldCenter, sundir)) * sundir;
 	}
-	
+
 	DifferentialGeometry dg(samplePoint, sampleNormal, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, sampleNormal);
 	(*bsdf)->Add(BSDF_ALLOC(SunBxDF)(sin2ThetaMax, worldRadius));
@@ -395,13 +394,12 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 	else {
 		*pdf = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			DifferentialGeometry dg;
-			float d;
+			Intersection isect;
 			RayDifferential ray(ps - Dot(wi, sundir) * sundir, sundir);
-			if (PortalShapes[i]->Intersect(ray, &d, &dg)) {
-				float cosPortal = Dot(-sundir, dg.nn);
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
+				float cosPortal = Dot(-sundir, isect.dg.nn);
 				if (cosPortal > 0.f)
-					*pdf += PortalShapes[i]->Pdf(dg.p) / cosPortal;
+					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
 			}
 		}
 		*pdf /= nrPortalShapes;

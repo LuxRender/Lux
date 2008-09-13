@@ -26,7 +26,7 @@
 #include "mc.h"
 
 namespace lux {
-    
+
 // BaryTriangleMesh Declarations
 class BaryTriangleMesh : public Shape {
 public:
@@ -39,7 +39,9 @@ public:
     BBox ObjectBound() const;
     BBox WorldBound() const;
     bool CanIntersect() const { return false; }
-    void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
+    void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+    		const PrimitiveRefinementHints& refineHints,
+    		boost::shared_ptr<Primitive> thisPtr);
     friend class BaryTriangle;
     template <class T> friend class VertexTexture;
 
@@ -55,12 +57,10 @@ protected:
     vector<boost::shared_ptr<Shape> > triPtrs;
 };
 
-class BaryTriangle : public Shape {
+class BaryTriangle : public Primitive {
 public:
     // BaryTriangle Public Methods
-    BaryTriangle(const Transform &o2w, bool ro,
-            BaryTriangleMesh *m, int n)
-    : Shape(o2w, ro) {
+    BaryTriangle(BaryTriangleMesh *m, int n) {
         mesh = m;
         v = &mesh->vertexIndex[3*n];
         // Update created triangles stats
@@ -69,8 +69,7 @@ public:
     }
     BBox ObjectBound() const;
     BBox WorldBound() const;
-    bool Intersect(const Ray &ray, float *tHit,
-            DifferentialGeometry *dg) const;
+    bool Intersect(const Ray &ray, Intersection* isect) const;
     bool IntersectP(const Ray &ray) const;
 
     float Area() const;
@@ -102,5 +101,5 @@ private:
     BaryTriangleMesh* mesh;
     int *v;
 };
-    
+
 }//namespace lux

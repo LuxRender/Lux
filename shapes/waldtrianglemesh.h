@@ -40,7 +40,9 @@ public:
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
 	bool CanIntersect() const { return false; }
-	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
+	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+	    		const PrimitiveRefinementHints& refineHints,
+	    		boost::shared_ptr<Primitive> thisPtr);
 	friend class WaldTriangle;
 	template <class T> friend class VertexTexture;
 
@@ -57,15 +59,13 @@ protected:
 	vector<boost::shared_ptr<Shape> > triPtrs;
 };
 
-class WaldTriangle : public Shape {
+class WaldTriangle : public Primitive {
 public:
 	// WaldTriangle Public Methods
-	WaldTriangle(const Transform &o2w, bool ro,
-			WaldTriangleMesh *m, int n);
+	WaldTriangle(WaldTriangleMesh *m, int n);
 	BBox ObjectBound() const;
 	BBox WorldBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
-			DifferentialGeometry *dg) const;
+	bool Intersect(const Ray &ray, Intersection* isect) const;
 	bool IntersectP(const Ray &ray) const;
 
 	float Area() const;
@@ -74,7 +74,7 @@ public:
 			DifferentialGeometry *dgShading) const;
 	Point Sample(float u1, float u2, float u3, Normal *Ns) const;
 
-private:	
+private:
 	void GetUVs(float uv[3][2]) const {
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2*v[0]];

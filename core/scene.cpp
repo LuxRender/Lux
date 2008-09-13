@@ -140,15 +140,15 @@ double Scene::Statistics(const string &statName) {
 // Control Implementations in Scene:
 double Scene::GetNumberOfSamples() {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
-			
+
     // collect samples from all threads
     double samples = 0.;
     for(unsigned int i=0;i<renderThreads.size();i++)
         samples +=renderThreads[i]->stat_Samples;
-    
+
     // Dade - add the samples received from network
     samples += numberOfSamplesFromNetwork;
-    
+
     return samples;
 }
 
@@ -170,7 +170,7 @@ double Scene::Statistics_SamplesPSec() {
     double elapsed = time - lastTime;
     lastSamples = samples;
     lastTime = time;
-    
+
     // return current samples / sec total
 	if (elapsed == 0.0)
 		return 0.0;
@@ -185,7 +185,7 @@ double Scene::Statistics_SamplesPTotSec() {
 
     double samples = GetNumberOfSamples();
     double time = s_Timer.Time();
-    
+
     // return current samples / total elapsed secs
     return samples / time;
 }
@@ -233,7 +233,7 @@ void RenderThread::render(RenderThread *myThread) {
     // initialize the thread's arena
     BSDF::arena.reset(new MemoryArena());
     myThread->stat_Samples = 0.;
-    
+
     // initialize the thread's rangen
     int seed = myThread->scene->seedBase + myThread->n;
     std::stringstream ss;
@@ -262,7 +262,7 @@ void RenderThread::render(RenderThread *myThread) {
 			if (myThread->scene->suspendThreadsWhenDone) {
 				myThread->signal = PAUSE;
 
-				// Dade - wait for a resume rendering or exit				
+				// Dade - wait for a resume rendering or exit
 				while(myThread->signal == PAUSE) {
 					boost::xtime xt;
 					boost::xtime_get(&xt, boost::TIME_UTC);
@@ -288,7 +288,7 @@ void RenderThread::render(RenderThread *myThread) {
 			myThread->sample->singleWavelength = 0.5f;
 			myThread->tspack->swl->Sample(0.5f, 0.5f);
 		}
-        
+
         while(myThread->signal == PAUSE) {
             boost::xtime xt;
             boost::xtime_get(&xt, boost::TIME_UTC);
@@ -345,7 +345,7 @@ void RenderThread::render(RenderThread *myThread) {
 		myThread->thread->yield();
 #endif
     }
-    
+
     delete useSampPos;
     return;
 }
@@ -360,10 +360,10 @@ int Scene::CreateRenderThread() {
             surfaceIntegrator,
             volumeIntegrator,
             sampler->clone(), camera, this);
-    
+
     renderThreads.push_back(rt);
     rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
-    
+
     return 0;
 }
 
@@ -406,18 +406,18 @@ void Scene::Render() {
 
 	// Dade - to support autofocus for some camera model
 	camera->AutoFocus(this);
-    
+
     sampPos = 0;
-    
+
     //start the timer
     s_Timer.Start();
 
     // Dade - preprocessing done
     preprocessDone = true;
-    
+
     // initial thread signal is paused
     CurThreadSignal = RUN;
-    
+
     // Dade - this code needs a fix, it must be removed in order to not create
     // 1 more thread than required
     //add a thread
@@ -427,7 +427,7 @@ void Scene::Render() {
     //wait all threads to finish their job
     for(unsigned int i = 0; i < renderThreads.size(); i++)
         renderThreads[i]->thread->join();
-    
+
     // Store final image
     camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 }
@@ -437,7 +437,7 @@ Scene::~Scene() {
     delete sampler;
     delete surfaceIntegrator;
     delete volumeIntegrator;
-    delete aggregate;
+    //delete aggregate;
     delete volumeRegion;
     for (u_int i = 0; i < lights.size(); ++i)
         delete lights[i];
@@ -445,7 +445,7 @@ Scene::~Scene() {
 
 Scene::Scene(Camera *cam, SurfaceIntegrator *si,
         VolumeIntegrator *vi, Sampler *s,
-        Primitive *accel, const vector<Light *> &lts,
+        boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
         VolumeRegion *vr) {
     lights = lts;
     aggregate = accel;

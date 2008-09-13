@@ -75,31 +75,23 @@ SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	return SWCSpectrum(0.f);
 }
 
-void Light::AddPortalShape(boost::shared_ptr<Shape> s) {
-	boost::shared_ptr<Shape> PortalShape;
+void Light::AddPortalShape(boost::shared_ptr<Primitive> s) {
+	boost::shared_ptr<Primitive> PortalShape;
 
-	if (s->CanIntersect())
+	if (s->CanIntersect() && s->CanSample())
 		PortalShape = s;
 	else {
 		// Create _ShapeSet_ for _Shape_
-		boost::shared_ptr<Shape> shapeSet = s;
-		vector<boost::shared_ptr<Shape> > todo, done;
-		todo.push_back(shapeSet);
-		while (todo.size()) {
-			boost::shared_ptr<Shape> sh = todo.back();
-			todo.pop_back();
-			if (sh->CanIntersect())
-				done.push_back(sh);
-			else
-				sh->Refine(todo);
-		}
+		vector<boost::shared_ptr<Primitive> > done;
+		PrimitiveRefinementHints refineHints(true);
+		s->Refine(done, refineHints, s);
 		if (done.size() == 1) PortalShape = done[0];
 		else {
-			boost::shared_ptr<Shape> o (new ShapeSet(done, s->ObjectToWorld, s->reverseOrientation));
+			boost::shared_ptr<Primitive> o (new PrimitiveSet(done));
 			PortalShape = o;
 		}
 	}
-	havePortalShape = true; 
+	havePortalShape = true;
 	// store
 	PortalArea += PortalShape->Area();
 	PortalShapes.push_back(PortalShape);

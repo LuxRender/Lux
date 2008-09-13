@@ -23,28 +23,34 @@
 // tabreckdtree.cpp*
 #include "tabreckdtreeaccel.h"
 #include "paramset.h"
+#include "error.h"
 #include "dynload.h"
 
 using namespace lux;
 
 // TaBRecKdTreeAccel Method Definitions
 TaBRecKdTreeAccel::
-TaBRecKdTreeAccel(const vector<Primitive* > &p,
+TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         int icost, int tcost,
         float ebonus, int maxp, int maxDepth)
 : isectCost(icost), traversalCost(tcost),
         maxPrims(maxp), emptyBonus(ebonus) {
-    vector<Primitive* > vPrims;
-    for (u_int i = 0; i < p.size(); ++i)
-        p[i]->FullyRefine(vPrims);
-    
+    vector<boost::shared_ptr<Primitive> > vPrims;
+    const PrimitiveRefinementHints refineHints(false);
+    for (u_int i = 0; i < p.size(); ++i) {
+    	if(p[i]->CanIntersect())
+    		vPrims.push_back(p[i]);
+    	else
+    		p[i]->Refine(vPrims, refineHints, p[i]);
+    }
+
     // Initialize primitives for _TaBRecKdTreeAccel_
     nPrims = vPrims.size();
-    prims = (Primitive **)AllocAligned(nPrims *
-            sizeof(Primitive **));
+    prims = (boost::shared_ptr<Primitive>*)AllocAligned(nPrims *
+    		sizeof(boost::shared_ptr<Primitive>));
     for (u_int i = 0; i < nPrims; ++i)
-        prims[i] = vPrims[i];
-    
+    	new (&prims[i]) boost::shared_ptr<Primitive>::shared_ptr(vPrims[i]);
+
     // Build kd-tree for accelerator
     nextFreeNode = nAllocedNodes = 0;
     if (maxDepth <= 0)
@@ -103,6 +109,8 @@ TaBRecKdTreeAccel(const vector<Primitive* > &p,
 }
 
 TaBRecKdTreeAccel::~TaBRecKdTreeAccel() {
+	for(u_int i=0; i<nPrims; i++)
+		prims[i].~shared_ptr();
     FreeAligned(prims);
     FreeAligned(nodes);
 }
@@ -235,26 +243,26 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
 
 	const float originalMint = ray.mint;
     const float originalMaxt = ray.maxt;
-    
+
     // Prepare to traverse kd-tree for ray
     Vector invDir(1.f/ray.d.x, 1.f/ray.d.y, 1.f/ray.d.z);
     #define MAX_TODO 64
     TaBRecKdNodeStack stack[MAX_TODO];
     int enPt = 0;
     stack[enPt].t = tmin;
-    
+
     // Distinguish between internal and external origin
     if (tmin >= 0.0f)
         stack[enPt].pb = ray.o + ray.d * tmin;
     else
         stack[enPt].pb = ray.o;
-    
+
     // Setup initial exit point in the stack
     int exPt = 1; // Pointer to the stack
     stack[exPt].t = tmax;
     stack[exPt].pb = ray.o + ray.d * tmax;
     stack[exPt].node = NULL; // Set termination flag
-    
+
     const TaBRecKdAccelNode *currNode = &nodes[0];
     const TaBRecKdAccelNode *farChild;
     while (currNode != NULL) {
@@ -262,7 +270,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
             // Retrieve position of splitting plane
             float splitVal = currNode->SplitPos();
             int axis = currNode->SplitAxis();
-            
+
             if (stack[enPt].pb[axis] <= splitVal) {
                 if (stack[exPt].pb[axis] <= splitVal) {
                     // Case N1, N2, N3, P5, Z2, and Z3
@@ -273,42 +281,42 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
                     currNode = &nodes[currNode->aboveChild];
                     continue; // case Z1
                 }
-                
+
                 // Case N4
-                
+
                 farChild = &nodes[currNode->aboveChild];
                 currNode = currNode + 1;
             } else {
                 if (splitVal < stack[exPt].pb[axis]) {
                     // Case P1, P2, P3, and N5
-                    
+
                     currNode = &nodes[currNode->aboveChild];
                     continue;
                 }
-                
+
                 // Case P4
                 farChild = currNode + 1;
                 currNode = &nodes[currNode->aboveChild];
             }
-            
+
             // Case P4 or N4 . . . traverse both children
-            
+
             // Signed distance to the splitting plane
             t = (splitVal - ray.o[axis]) * invDir[axis];
 
             // Setup the new exit point
-            
+
             int tmp = exPt++;
             // Possibly skip current entry point so not to overwrite the data
             if (exPt == enPt)
                 exPt++;
-            
+
             // Push values onto the stack
             stack[exPt].prev = tmp;
             stack[exPt].t = t;
             stack[exPt].node = farChild;
             stack[exPt].pb[axis] = splitVal;
-            
+
             if(axis == 0) {
                 stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
                 stack[exPt].pb[2] = ray.o[2] + t * ray.d[2];
@@ -320,16 +328,16 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
                 stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
             }
         }
-        
+
         // Dade - it looks like using mint/maxt here is faster than use the
         // inverse mailboxes
         ray.mint = max(stack[enPt].t, originalMint);
         ray.maxt = min(stack[exPt].t, originalMaxt);
-        
+
         // Check for intersections inside leaf node
         u_int nPrimitives = currNode->nPrimitives();
         bool hit = false;
-        
+
         // Dade - debugging code
         //std::stringstream ss;
         //ss<<"\n-----------------------------------------------------\n"<<
@@ -337,38 +345,38 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
         //   //" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt<<
         //    " tmin = "<<tmin<<" tmax = "<<tmax;
         //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-        
+
         if (nPrimitives == 1) {
             Primitive *pp = currNode->onePrimitive;
-            
+
             if (pp->Intersect(ray, isect))
                 hit = true;
         } else {
             Primitive **prims = currNode->primitives;
             for (u_int i = 0; i < nPrimitives; ++i) {
                 Primitive *pp = prims[i];
-                
+
                 if (pp->Intersect(ray, isect))
                     hit = true;
             }
         }
-        
+
         if (hit) {
 			ray.mint = originalMint;
             return true;
         }
-        
+
         // Pop from the stack
         enPt = exPt; // The signed distance intervals are adjacent
-        
+
         // Retrieve the pointer to the next node, it is possible that ray traversal terminates
         currNode = stack[exPt].node;
         exPt = stack[enPt].prev;
     }
-    
+
     ray.mint = originalMint;
     ray.maxt = originalMaxt;
-    
+
     return false;
 }
 
@@ -377,30 +385,30 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
     float t, tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
         return false;
-    
+
     // Dade - Prepare the local Mailboxes. I'm going to use an inverse mailboxes
     // in order to be thread-safe
     TaBRecInverseMailboxes mailboxes;
-    
+
     // Prepare to traverse kd-tree for ray
     Vector invDir(1.f/ray.d.x, 1.f/ray.d.y, 1.f/ray.d.z);
     #define MAX_TODO 64
     TaBRecKdNodeStack stack[MAX_TODO];
     int enPt = 0;
     stack[enPt].t = tmin;
-    
+
     // Distinguish between internal and external origin
     if (tmin >= 0.0f)
         stack[enPt].pb = ray.o + ray.d * tmin;
     else
         stack[enPt].pb = ray.o;
-    
+
     // Setup initial exit point in the stack
     int exPt = 1; // Pointer to the stack
     stack[exPt].t = tmax;
     stack[exPt].pb = ray.o + ray.d * tmax;
     stack[exPt].node = NULL; // Set termination flag
-    
+
     const TaBRecKdAccelNode *currNode = &nodes[0];
     const TaBRecKdAccelNode *farChild;
     while (currNode != NULL) {
@@ -408,7 +416,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
             // Retrieve position of splitting plane
             float splitVal = currNode->SplitPos();
             int axis = currNode->SplitAxis();
-            
+
             if (stack[enPt].pb[axis] <= splitVal) {
                 if (stack[exPt].pb[axis] <= splitVal) {
                     // Case N1, N2, N3, P5, Z2, and Z3
@@ -419,41 +427,41 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
                     currNode = &nodes[currNode->aboveChild];
                     continue; // case Z1
                 }
-                
+
                 // Case N4
-                
+
                 farChild = &nodes[currNode->aboveChild];
                 currNode = currNode + 1;
             } else {
                 if (splitVal < stack[exPt].pb[axis]) {
                     // Case P1, P2, P3, and N5
-                    
+
                     currNode = &nodes[currNode->aboveChild];
                     continue;
                 }
-                
+
                 // Case P4
                 farChild = currNode + 1;
                 currNode = &nodes[currNode->aboveChild];
             }
-            
+
             // Case P4 or N4 . . . traverse both children
-            
+
             // Signed distance to the splitting plane
             t = (splitVal - ray.o[axis]) * invDir[axis];
-            
+
             // Setup the new exit point
-            
+
             int tmp = exPt++;
             // Possibly skip current entry point so not to overwrite the data
             if (exPt == enPt)
                 exPt++;
-            
+
             // Push values onto the stack
             stack[exPt].prev = tmp;
             stack[exPt].t = t;
             stack[exPt].node = farChild;
-            
+
             stack[exPt].pb[axis] = splitVal;
             if(axis == 0) {
                 stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
@@ -466,56 +474,63 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
                 stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
             }
         }
-        
+
         // Check for intersections inside leaf node
         u_int nPrimitives = currNode->nPrimitives();
-        
+
         // Dade - debugging code
         //std::stringstream ss;
         //ss<<"\n-----------------------------------------------------\n"<<
         //       "nPrims = "<<nPrimitives<<
         //        " ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
         //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-        
+
         if (nPrimitives == 1) {
             Primitive *pp = currNode->onePrimitive;
-            
+
             // Dade - check with the mailboxes if we need to do
             // the intersection test
             if (!mailboxes.alreadyChecked(pp)) {
                 if (pp->IntersectP(ray))
                     return true;
-                
+
                 mailboxes.addChecked(pp);
             }
         } else {
             Primitive **prims = currNode->primitives;
             for (u_int i = 0; i < nPrimitives; ++i) {
                 Primitive *pp = prims[i];
-                
+
                 // Dade - check with the mailboxes if we need to do
                 // the intersection test
                 if (!mailboxes.alreadyChecked(pp)) {
                     if (pp->IntersectP(ray))
                         return true;
-                    
+
                     mailboxes.addChecked(pp);
                 }
             }
         }
-        
+
         // Pop from the stack
         enPt = exPt; // The signed distance intervals are adjacent
-        
+
         // Retrieve the pointer to the next node, it is possible that ray traversal terminates
         currNode = stack[exPt].node;
         exPt = stack[enPt].prev;
     }
-    
+
     return false;
 }
 
-Primitive* TaBRecKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
+void TaBRecKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+	primitives.reserve(nPrims);
+	for(u_int i=0; i<nPrims; i++) {
+		primitives.push_back(prims[i]);
+	}
+}
+
+Aggregate *TaBRecKdTreeAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
         const ParamSet &ps) {
     int isectCost = ps.FindOneInt("intersectcost", 80);
     int travCost = ps.FindOneInt("traversalcost", 1);

@@ -27,6 +27,9 @@
 namespace lux
 {
 
+const boost::shared_ptr<Matrix4x4> Transform::MAT_IDENTITY =
+	boost::shared_ptr<Matrix4x4>(new Matrix4x4());
+
 // Transform Method Definitions
 ostream &operator<<(ostream &os, const Transform &t) {
 	t.m->Print(os);
@@ -176,7 +179,7 @@ bool Transform::SwapsHandedness() const {
                    m->m[1][1] * m->m[2][0])));
 	//std::cout<<"Det:"<<det<<std::endl;
 	return det < 0.f;
-	
+
 }
 #else
 bool Transform::SwapsHandedness() const {
@@ -209,7 +212,7 @@ void TransformAccordingNormal(const Normal &nn, const Vector &woL, Vector *woW)
 		sn.x = nn.y/zz;
 		sn.y = -nn.x/zz;
 	}
-	tn = Cross(nn, sn);	
+	tn = Cross(nn, sn);
 	woW->x = sn.x * woL.x + tn.x * woL.y + nn.x * woL.z;
 	woW->y = sn.y * woL.x + tn.y * woL.y + nn.y * woL.z;
 	woW->z = sn.z * woL.x + tn.z * woL.y + nn.z * woL.z;

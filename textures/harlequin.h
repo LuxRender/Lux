@@ -22,10 +22,10 @@
 
 #include "lux.h"
 #include "texture.h"
-#include "shape.h"
 #include "color.h"
 #include "sampling.h"
 #include "paramset.h"
+#include "primitive.h"
 
 namespace lux
 {
@@ -51,7 +51,7 @@ public:
 
 	RGBColor Evaluate(const DifferentialGeometry &dg) const {
 		// Dade - I assume object are 8 bytes aligned
-		u_long lookupIndex = (((u_long)dg.shape) &
+		u_long lookupIndex = (((u_long)dg.prim) &
 				((HARLEQUIN_TEXTURE_PALETTE_SIZE-1) << 3)) >> 3;
 
 		return ColorLookupTable[lookupIndex];

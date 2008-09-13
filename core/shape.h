@@ -26,148 +26,118 @@
 #include "lux.h"
 #include "geometry.h"
 #include "error.h"
+#include "primitive.h"
 
 namespace lux
 {
 
-// DifferentialGeometry Declarations
-class  DifferentialGeometry {
-	public:
-
-	DifferentialGeometry() { u = v = 0.; shape = NULL; }
-	// DifferentialGeometry Public Methods
-	DifferentialGeometry(
-			const Point &P,
-			const Vector &DPDU,	const Vector &DPDV,
-			const Vector &DNDU, const Vector &DNDV,
-			float uu, float vv,
-			const Shape *sh);
-	DifferentialGeometry(
-			const Point &P, const Normal &NN,
-			const Vector &DPDU,	const Vector &DPDV, 
-			const Vector &DNDU, const Vector &DNDV, 
-			float uu, float vv,
-			const Shape *sh);
-	void ComputeDifferentials(const RayDifferential &r) const;
-	// DifferentialGeometry Public Data
-	Point p;
-	Normal nn;
-	Vector dpdu, dpdv;
-	Normal dndu, dndv;
-	mutable Vector dpdx, dpdy;
-	float u, v;
-	const Shape *shape;
-	mutable float dudx, dvdx, dudy, dvdy;
-
-	// Dade - shape specific data, useful to "transport" informatin between
-	// shape intersection method and GetShadingGeometry()
-	union {
-		float triangleBaryCoords[3];
-	};
-};
-
+// Lotus - A primitive implementation compatible with the old PBRT Shape class
 // Shape Declarations
-class  Shape {
+class Shape : public Primitive {
 public:
-	// Shape Interface
 	Shape(const Transform &o2w, bool ro);
-	virtual ~Shape() { }
-	virtual BBox ObjectBound() const = 0;
-	virtual BBox WorldBound() const {
-		return ObjectToWorld(ObjectBound());
+	Shape(const Transform &o2w, bool ro,
+			boost::shared_ptr<Material> material);
+
+	void SetMaterial(boost::shared_ptr<Material> mat) { this->material = mat; }
+	boost::shared_ptr<Material> GetMaterial() const { return material; }
+
+	BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
+	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+			const PrimitiveRefinementHints& refineHints,
+			boost::shared_ptr<Primitive> thisPtr)
+	{
+		vector<boost::shared_ptr<Shape> > todo;
+		Refine(todo); // Use shape refine method
+		for(u_int i=0; i<todo.size(); i++) {
+			boost::shared_ptr<Shape> shape = todo[i];
+			shape->SetMaterial(this->material);
+			if (shape->CanIntersect()) {
+				refined.push_back(shape);
+			}
+			else {
+				// Use primitive refine method
+				shape->Refine(refined, refineHints, shape);
+			}
+		}
 	}
-	virtual bool CanIntersect() const { return true; }
-	virtual void
-		Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-		//Severe("Unimplemented Shape::Refine() method called");
+
+	bool CanIntersect() const { return true; }
+	bool Intersect(const Ray &r, Intersection *isect) const {
+		float thit;
+		if (!Intersect(r, &thit, &isect->dg))
+			return false;
+		isect->dg.AdjustNormal(reverseOrientation, transformSwapsHandedness);
+		isect->Set(WorldToObject, this, material.get());
+		r.maxt = thit;
+		return true;
+	}
+
+	void GetShadingGeometry(const Transform &obj2world,
+			const DifferentialGeometry &dg,
+			DifferentialGeometry *dgShading) const
+	{
+		*dgShading = dg;
+	}
+
+	bool CanSample() const { return true; }
+
+	// Old PBRT Shape interface methods
+	virtual BBox ObjectBound() const {
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::ObjectBound method called!");
+		return BBox();
+	}
+	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Refine() method called");
 	}
-	virtual bool Intersect(const Ray &ray, float *tHit,
-			DifferentialGeometry *dg) const {
+	virtual bool Intersect(const Ray &ray, float *t_hitp,
+			DifferentialGeometry *dg) const
+	{
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Intersect() method called");
 		return false;
 	}
-	virtual bool IntersectP(const Ray &ray) const {
-		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::IntersectP() method called");
-		return false;
-	}
-	virtual void GetShadingGeometry(const Transform &obj2world,
-			const DifferentialGeometry &dg,
-			DifferentialGeometry *dgShading) const {
-		*dgShading = dg;
-	}
-	virtual float Area() const {
-		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Area() method called");
-		return 0.;
-	}
-	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
-		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Sample method called");
-		return Point();
-	}
-	virtual float Pdf(const Point &Pshape) const {
-		return 1.f / Area();
-	}
-	virtual Point Sample(const Point &P,
-			float u1, float u2, float u3, Normal *Ns) const {
-		return Sample(u1, u2, u3, Ns);
-	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		// Intersect sample ray with area light geometry
-		DifferentialGeometry dgLight;
-		Ray ray(p, wi);
-		float thit;
-		if (!Intersect(ray, &thit, &dgLight)) return 0.;
-		// Convert light sample weight to solid angle measure
-		float pdf = DistanceSquared(p, ray(thit)) /
-			(AbsDot(dgLight.nn, -wi) * Area());
-		if (AbsDot(dgLight.nn, -wi) == 0.f) pdf = INFINITY;
-		return pdf;
-	}
-	// Shape Public Data
+	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
 	const bool reverseOrientation, transformSwapsHandedness;
+protected:
+	boost::shared_ptr<Material> material;
 };
 
-class ShapeSet : public Shape {
+class PrimitiveSet : public Primitive {
 public:
-	// ShapeSet Public Methods
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
-		u_int sn;
-		for (sn = 0; sn < shapes.size()-1; ++sn)
-			if (u3 < areaCDF[sn]) break;
-		return shapes[sn]->Sample(u1, u2, u3, Ns);
-	}
-	ShapeSet(const vector<boost::shared_ptr<Shape> > &s,
-		const Transform &o2w, bool ro);
-	BBox ObjectBound() const {
-		BBox ob;
-		for (u_int i = 0; i < shapes.size(); ++i)
-			ob = Union(ob, shapes[i]->ObjectBound());
-		return ob;
-	}
+	// PrimitiveSet Public Methods
+	PrimitiveSet(boost::shared_ptr<Aggregate> a);
+	PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p);
+
+	BBox WorldBound() const { return worldbound; }
 	bool CanIntersect() const {
-		for (u_int i = 0; i < shapes.size(); ++i)
-			if (!shapes[i]->CanIntersect()) return false;
+		for (u_int i = 0; i < primitives.size(); ++i)
+			if (!primitives[i]->CanIntersect()) return false;
 		return true;
 	}
-	bool Intersect(const Ray &ray, float *t_hitp,
-			DifferentialGeometry *dg) const;
-	void Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-		for (u_int i = 0; i < shapes.size(); ++i) {
-			if (shapes[i]->CanIntersect())
-				refined.push_back(shapes[i]);
-			else shapes[i]->Refine(refined);
-		}
+	bool Intersect(const Ray &r, Intersection *in) const;
 
+	bool CanSample() {
+		for (u_int i = 0; i < primitives.size(); ++i)
+			if (!primitives[i]->CanSample()) return false;
+		return true;
+	}
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+		u_int sn;
+		for (sn = 0; sn < primitives.size()-1; ++sn)
+			if (u3 < areaCDF[sn]) break;
+		return primitives[sn]->Sample(u1, u2, u3, Ns);
 	}
 	float Area() const { return area; }
 private:
-	// ShapeSet Private Data
+	void initAreas();
+
+	// PrimitiveSet Private Data
 	float area;
 	vector<float> areaCDF;
-	vector<boost::shared_ptr<Shape> > shapes;
+	vector<boost::shared_ptr<Primitive> > primitives;
 	BBox worldbound;
-	Primitive *accelerator;
+	boost::shared_ptr<Primitive> accelerator;
 };
 
 }//namespace lux

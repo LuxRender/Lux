@@ -84,8 +84,8 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	dgBump->nn =
 		Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
-	if (dgs.shape->reverseOrientation ^
-		dgs.shape->transformSwapsHandedness)
+	if (dgs.reverseOrientation ^
+		dgs.transformSwapsHandedness)
 		dgBump->nn *= -1.f;
 
 	// Orient shading normal to match geometric normal

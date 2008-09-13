@@ -29,21 +29,26 @@ using namespace lux;
 
 // UnsafeKdTreeAccel Method Definitions
 UnsafeKdTreeAccel::
-UnsafeKdTreeAccel(const vector<Primitive* > &p,
+UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         int icost, int tcost,
         float ebonus, int maxp, int maxDepth)
 : isectCost(icost), traversalCost(tcost),
         maxPrims(maxp), emptyBonus(ebonus) {
-    vector<Primitive* > prims;
-    for (u_int i = 0; i < p.size(); ++i)
-        p[i]->FullyRefine(prims);
+    vector<boost::shared_ptr<Primitive> > prims;
+    PrimitiveRefinementHints refineHints(false);
+    for (u_int i = 0; i < p.size(); ++i) {
+    	if(p[i]->CanIntersect())
+    	    prims.push_back(p[i]);
+    	else
+    		p[i]->Refine(prims, refineHints, p[i]);
+    }
     // Initialize mailboxes for _UnsafeKdTreeAccel_
     curMailboxId = 0;
     nMailboxes = prims.size();
     mailboxPrims = (MailboxPrim *)AllocAligned(nMailboxes *
             sizeof(MailboxPrim));
     for (u_int i = 0; i < nMailboxes; ++i)
-        new (&mailboxPrims[i]) MailboxPrim((const Primitive*&)prims[i]);
+        new (&mailboxPrims[i]) MailboxPrim(prims[i]);
     // Build kd-tree for accelerator
     nextFreeNode = nAllocedNodes = 0;
     if (maxDepth <= 0)
@@ -387,7 +392,14 @@ bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 
-Primitive* UnsafeKdTreeAccel::CreateAccelerator(const vector<Primitive* > &prims,
+void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+	primitives.reserve(nMailboxes);
+	for(u_int i=0; i < nMailboxes; i++) {
+		primitives.push_back(mailboxPrims[i].primitive);
+	}
+}
+
+Aggregate *UnsafeKdTreeAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
         const ParamSet &ps) {
     int isectCost = ps.FindOneInt("intersectcost", 80);
     int travCost = ps.FindOneInt("traversalcost", 1);
