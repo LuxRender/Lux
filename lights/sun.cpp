@@ -83,7 +83,7 @@ SunLight::SunLight(const Transform &light2world,
 		sin2ThetaMax = 1.f;
 	}
 
-	float solidAngle = 2*M_PI*(1-cosThetaMax);
+//	float solidAngle = 2*M_PI*(1-cosThetaMax);
 
 	Vector wh = Normalize(sundir);
 	phiS = SphericalPhi(wh);
@@ -91,43 +91,44 @@ SunLight::SunLight(const Transform &light2world,
 
     // NOTE - lordcrc - sun_k_oWavelengths contains 64 elements, while sun_k_oAmplitudes contains 65?!?
 	SPD *k_oCurve  = new IrregularSPD(sun_k_oWavelengths,sun_k_oAmplitudes,  64);
-	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 2);
+	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 4);
 	SPD *k_waCurve = new IrregularSPD(sun_k_waWavelengths,sun_k_waAmplitudes,  13);
 
-	SPD *solCurve = new RegularSPD(sun_sun_irradiance, 380, 770, 79);  // every 5 nm
+//	SPD *solCurve = new RegularSPD(sun_sun_irradiance, 380, 770, 79);  // every 5 nm
+	SPD *solCurve = new RegularSPD(sun_solAmplitudes, 380, 750, 38);  // every 5 nm
 
-	float beta = 0.04608365822050 * turbidity - 0.04586025928522;
+	float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
 	float tauR, tauA, tauO, tauG, tauWA;
 
-	float m = 1.0/(cos(thetaS) + 0.000940 * pow(1.6386 - thetaS,-1.253));  // Relative Optical Mass
+	float m = 1.f / (cos(thetaS) + 0.00094f * powf(1.6386f - thetaS, -1.253f));  // Relative Optical Mass
 
 	int i;
 	float lambda;
     // NOTE - lordcrc - SPD stores data internally, no need for Ldata to stick around
     float Ldata[91];
-	for(i = 0, lambda = 350; i < 91; i++, lambda+=5) {
+	for(i = 0, lambda = 350.f; i < 91; ++i, lambda += 5.f) {
 			// Rayleigh Scattering
-		tauR = exp( -m * 0.008735 * pow(lambda/1000, float(-4.08)));
+		tauR = expf( -m * 0.008735f * powf(lambda / 1000.f, -4.08f));
 			// Aerosol (water + dust) attenuation
 			// beta - amount of aerosols present
 			// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
-		const float alpha = 1.3;
-		tauA = exp(-m * beta * pow(lambda/1000, -alpha));  // lambda should be in um
+		const float alpha = 1.3f;
+		tauA = expf(-m * beta * pow(lambda / 1000.f, -alpha));  // lambda should be in um
 			// Attenuation due to ozone absorption
 			// lOzone - amount of ozone in cm(NTP)
-		const float lOzone = .35;
-		tauO = exp(-m * k_oCurve->sample(lambda) * lOzone);
+		const float lOzone = .35f;
+		tauO = expf(-m * k_oCurve->sample(lambda) * lOzone);
 			// Attenuation due to mixed gases absorption
-		tauG = exp(-1.41 * k_gCurve->sample(lambda) * m / pow(1 + 118.93 * k_gCurve->sample(lambda) * m, 0.45));
+		tauG = expf(-1.41f * k_gCurve->sample(lambda) * m / powf(1.f + 118.93f * k_gCurve->sample(lambda) * m, 0.45f));
 			// Attenuation due to water vapor absorbtion
 			// w - precipitable water vapor in centimeters (standard = 2)
-		const float w = 2.0;
-		tauWA = exp(-0.2385 * k_waCurve->sample(lambda) * w * m /
-		pow(1 + 20.07 * k_waCurve->sample(lambda) * w * m, 0.45));
+		const float w = 2.0f;
+		tauWA = expf(-0.2385f * k_waCurve->sample(lambda) * w * m /
+		powf(1.f + 20.07f * k_waCurve->sample(lambda) * w * m, 0.45f));
 
 		// NOTE - Ratow - Transform unit to W*m^-2*nm^-1*sr-1
-		const float unitConv = 1./(solidAngle*1000000000.);
-		Ldata[i] = (solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA * unitConv);
+//		const float unitConv = 1./(solidAngle*1000000000.);
+		Ldata[i] = (solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA /** unitConv*/);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
 	LSPD->Scale(sunscale);
@@ -311,22 +312,25 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 
 	Point samplePoint;
 	Normal sampleNormal;
-	if (!havePortalShape) {//FIXME portal code isn't working correctly
+	if (!havePortalShape) {
 		float d1, d2;
 		ConcentricSampleDisk(u1, u2, &d1, &d2);
 		samplePoint = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
 		sampleNormal = Normal(-sundir);
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	} else  {
-		// Dade - choose a random portal. This strategy is quite bad if there
-		// is more than one portal.
-		int shapeidx = 0;
-		if(nrPortalShapes > 1) 
-			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
+		// Choose a random portal
+		int shapeIndex = 0;
+		float u3 = tspack->rng->floatValue(); //FIXME replace with sample value
+		if(nrPortalShapes > 1) {
+			shapeIndex = min<float>(nrPortalShapes - 1,
+				u3 * nrPortalShapes);
+			u3 *= nrPortalShapes;
+			u3 -= shapeIndex;
+		}
 
 		Normal ns;
-		samplePoint = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+		samplePoint = PortalShapes[shapeIndex]->Sample(u1, u2, u3, &ns);
 		sampleNormal = Normal(-sundir);
 		const float cosPortal = Dot(sampleNormal, ns);
 		if (cosPortal <= 0.) {
@@ -335,7 +339,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 			return SWCSpectrum(0.0f);
 		}
 
-		*pdf = PortalShapes[shapeidx]->Pdf(samplePoint) / (cosPortal * nrPortalShapes);
+		*pdf = PortalShapes[shapeIndex]->Pdf(samplePoint) / (cosPortal * nrPortalShapes);
 
 		samplePoint += (worldRadius - Dot(samplePoint - worldCenter, sundir)) * sundir;
 	}
@@ -420,4 +424,3 @@ Light* SunLight::CreateLight(const Transform &light2world,
 }
 
 static DynamicLoader::RegisterLight<SunLight> r("sun");
-

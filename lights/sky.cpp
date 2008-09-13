@@ -437,8 +437,11 @@ void SkyLight::GetSkySpectralRadiance(const TsPack *tspack, const float theta, c
 
 	ChromaticityToSpectrum(tspack, x, y, dst_spect);
 	// Change to full spectrum to have correct scale factor
-	*dst_spect *= (Y / 30.35/*dst_spect->y()*/ * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
-	// Jeanphi - hard value to avoid problems with degraded spectra
+//	*dst_spect *= (Y / 30.35/*dst_spect->y()*/ * 0.00000260f); // lyc - nasty scaling factor :( // radiance - tweaked - was 0.00000165f
+	// Normalize dst_spect:
+	// 31 is the mean intensity returned by ChromaticityToSpectrum
+	// 179 is the standard efficiency in lm/W since zenith_Y is in cd.m-2
+	*dst_spect *= Y / (31.f * 179.f);
 
 	// Note - radiance - added D65 whitepoint multiplication. - TODO must be optimized! might go into ChromacityToSpectrum()
 //	*dst_spect *= SWCSpectrum(tspack, D65SPD);
@@ -453,11 +456,11 @@ void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const
 
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
 	{
-		const float w = (tspack->swl->w[j] - 300.0f) * 0.1018867f;
+		const float w = (tspack->swl->w[j] - 300.0f) * 0.1f;
 		const int i  = Floor2Int(w);
-		const int i1 = i + 1;
+		const int i1 = min(i + 1, 53);
 
-		const float b = w - float(i);
+		const float b = w - i;
 		const float a = 1.0f - b;
 
 		const float t0 = S0Amplitudes[i] * a + S0Amplitudes[i1] * b;
@@ -469,4 +472,3 @@ void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const
 }
 
 static DynamicLoader::RegisterLight<SkyLight> r("sky");
-
