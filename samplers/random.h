@@ -32,7 +32,7 @@ class RandomSampler : public Sampler
 {
 public:
 	RandomSampler(int xstart, int xend, int ystart, int yend,
-		int xs, int ys, string pixelsampler);
+		int ps, string pixelsampler);
 	~RandomSampler();
 
 	u_int GetTotalSamplePos();
@@ -49,7 +49,7 @@ public:
 private:
 	// RandomSampler Private Data
 	bool jitterSamples;
-	int xPos, yPos, xPixelSamples, yPixelSamples;
+	int xPos, yPos, pixelSamples;
 	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
 		*singleWavelengthSamples;
 	int samplePos;

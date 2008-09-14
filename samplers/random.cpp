@@ -39,13 +39,12 @@ RandomSampler* RandomSampler::clone() const
  }
 
 RandomSampler::RandomSampler(int xstart, int xend,
-                             int ystart, int yend, int xs, int ys, string pixelsampler)
-        : Sampler(xstart, xend, ystart, yend, xs * ys)
+                             int ystart, int yend, int ps, string pixelsampler)
+        : Sampler(xstart, xend, ystart, yend, ps)
 {
     xPos = xPixelStart;
     yPos = yPixelStart;
-    xPixelSamples = xs;
-    yPixelSamples = ys;
+    pixelSamples = ps;
 
 	// Initialize PixelSampler
 	if(pixelsampler == "vegas")
@@ -64,14 +63,14 @@ RandomSampler::RandomSampler(int xstart, int xend,
 	TotalPixels = pixelSampler->GetTotalPixels();
 
 	// Get storage for a pixel's worth of stratified samples
-	imageSamples = (float *)AllocAligned(7 * xPixelSamples * yPixelSamples *
+	imageSamples = (float *)AllocAligned(7 * pixelSamples *
 		sizeof(float));
-	lensSamples = imageSamples + 2 * xPixelSamples * yPixelSamples;
-	timeSamples = lensSamples +  2 * xPixelSamples * yPixelSamples;
-	wavelengthsSamples = timeSamples + xPixelSamples * yPixelSamples;
-	singleWavelengthSamples = wavelengthsSamples + xPixelSamples * yPixelSamples;
+	lensSamples = imageSamples + 2 * pixelSamples;
+	timeSamples = lensSamples +  2 * pixelSamples;
+	wavelengthsSamples = timeSamples + pixelSamples;
+	singleWavelengthSamples = wavelengthsSamples + pixelSamples;
 
-	samplePos = xPixelSamples * yPixelSamples;
+	samplePos = pixelSamples;
 }
 
 RandomSampler::~RandomSampler()
@@ -91,7 +90,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 
 	// Compute new set of samples if needed for next pixel
 	bool haveMoreSample = true;
-	if (samplePos == xPixelSamples * yPixelSamples) {
+	if (samplePos == pixelSamples) {
 		// fetch next pixel from pixelsampler
 		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
 			// Dade - we are at a valid checkpoint where we can stop the
@@ -104,23 +103,18 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		} else
 			haveMoreSample = (!pixelSampler->renderingDone);
 
-		for (int i = 0; i < 7 * xPixelSamples * yPixelSamples; ++i) {
+		for (int i = 0; i < 7 * pixelSamples; ++i) {
 			imageSamples[i] = tspack->rng->floatValue();
 		}
 
-		// Shift image samples to pixel coordinates
-		for (int o = 0; o < 2 * xPixelSamples * yPixelSamples; o += 2) {
-			imageSamples[o] += xPos;
-			imageSamples[o + 1] += yPos;
-		}
 		samplePos = 0;
 	}
 	// reset so scene knows to increment
-	if (samplePos >= xPixelSamples * yPixelSamples-1)
+	if (samplePos >= pixelSamples-1)
 		*use_pos = -1;
 	// Return next \mono{RandomSampler} sample point
-	sample->imageX = imageSamples[2*samplePos];
-	sample->imageY = imageSamples[2*samplePos+1];
+	sample->imageX = xPos + imageSamples[2*samplePos];
+	sample->imageY = yPos + imageSamples[2*samplePos+1];
 	sample->lensU = lensSamples[2*samplePos];
 	sample->lensV = lensSamples[2*samplePos+1];
 	sample->time = timeSamples[samplePos];
@@ -151,14 +145,22 @@ float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 
 Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
-    int xsamp = params.FindOneInt("xsamples", 2);
-    int ysamp = params.FindOneInt("ysamples", 2);
+	int nsamp = params.FindOneInt("pixelsamples", -1);
+	// for backwards compatebility
+	if (nsamp < 0) {
+		luxError(LUX_NOERROR, LUX_WARNING, 
+			"Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead");
+		int xsamp = params.FindOneInt("xsamples", 2);
+		int ysamp = params.FindOneInt("ysamples", 2);
+		nsamp = xsamp*ysamp;
+	}
+
 	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,
                              ystart, yend,
-                             xsamp, ysamp, pixelsampler);
+                             nsamp, pixelsampler);
 }
 
 static DynamicLoader::RegisterSampler<RandomSampler> r("random");
