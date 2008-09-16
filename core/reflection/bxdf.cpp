@@ -33,7 +33,8 @@ using namespace lux;
 
 // BxDF Method Definitions
 void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
-                       const Vector &wi, SWCSpectrum *const f) const {
+	const Vector &wi, SWCSpectrum *const f) const
+{
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
@@ -55,13 +56,15 @@ void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
 	if (H.z < 0.f)
 		return;
 	Vector wiR(2.f * cos1 * H - wo);
-	SWCSpectrum tf = SWCSpectrum(0.f);
+	SWCSpectrum tf(0.f);
 	brdf->f(tspack, wo, wiR, &tf);
 	tf *= fabsf(wiR.z / (wi.z * eta * eta));
 	*f += tf;
 }
 bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
+	float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack,
+	bool reverse) const
+{
 	if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse))
 		return false;
 	Vector H(Normalize(wo + *wi));
@@ -105,8 +108,9 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 }
 
 bool BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-					float u1, float u2, SWCSpectrum *const f, float *pdf, 
-					float *pdfBack,	bool reverse) const {
+	float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack,
+	bool reverse) const
+{
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
 	if (wo.z < 0.) wi->z *= -1.f;
@@ -164,7 +168,7 @@ SWCSpectrum BxDF::rho(const TsPack *tspack, const Vector &w, int nSamples,
 		// Estimate one term of $\rho_{dh}$
 		Vector wi;
 		float pdf = 0.f;
-		SWCSpectrum f(0.0);		
+		SWCSpectrum f(0.f);		
 		if (Sample_f(tspack, w, &wi, samples[2*i], samples[2*i+1], &f, &pdf) && pdf > 0.) 
 			r.AddWeighted(fabsf(wi.z) / pdf, f);
 	}
@@ -182,15 +186,17 @@ SWCSpectrum BxDF::rho(const TsPack *tspack, int nSamples, float *samples) const 
 		Vector wo, wi;
 		wo = UniformSampleHemisphere(samples[4*i], samples[4*i+1]);
 		float pdf_o = INV_TWOPI, pdf_i = 0.f;
-		SWCSpectrum f(0.0);			
+		SWCSpectrum f(0.f);			
 		if (Sample_f(tspack, wo, &wi, samples[4*i+2], samples[4*i+3], &f, &pdf_i) && pdf_i > 0.)
 			r.AddWeighted(fabsf(wi.z * wo.z) / (pdf_o * pdf_i), f);
 	}
 	return r / (M_PI*nSamples);
 }
-bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW, float u1, float u2, 
-					float u3, SWCSpectrum *const f, float *pdf, BxDFType flags, 
-					BxDFType *sampledType, float *pdfBack, bool reverse) const {
+bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
+	float u1, float u2, float u3, SWCSpectrum *const f, float *pdf,
+	BxDFType flags, BxDFType *sampledType, float *pdfBack,
+	bool reverse) const
+{
 	// Choose which _BxDF_ to sample
 	int matchingComps = NumComponents(flags);
 	if (matchingComps == 0) {

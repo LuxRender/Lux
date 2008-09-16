@@ -40,9 +40,11 @@ bool SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	if (pdfBack)
 		*pdfBack = 1.f;
 	if (reverse)
-		*f = (fresnel->Evaluate(tspack, CosTheta(*wi)) * R) * (1.0 / fabsf(CosTheta(*wi)));
+		*f = fresnel->Evaluate(tspack, CosTheta(*wi));
 	else
-		*f = (fresnel->Evaluate(tspack, CosTheta(wo)) * R) * (1.0 / fabsf(CosTheta(*wi)));
+		*f = fresnel->Evaluate(tspack, CosTheta(wo));
+	*f *= R;
+	*f /= fabsf(CosTheta(*wi));
 	return true;
 }
 

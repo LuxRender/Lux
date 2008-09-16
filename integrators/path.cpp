@@ -107,6 +107,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (color.y() > 0.f)
 			sample->AddContribution(sample->imageX, sample->imageY,
 				color, alpha ? *alpha : 1.f, V);
+		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);

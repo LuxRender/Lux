@@ -115,14 +115,14 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == static_cast<int>(vertices.size()))
 			break;
-		v.f = SWCSpectrum(0.f);
+		bool sampled;
 		if (nVerts > 1)
-			v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2], data[3],
+			sampled = v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2], data[3],
 				 &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
 		else
-			v.bsdf->Sample_f(tspack, v.wo, &v.wi, sample->imageX, sample->imageY, 0.5, 
+			sampled = v.bsdf->Sample_f(tspack, v.wo, &v.wi, sample->imageX, sample->imageY, 0.5, 
 				&v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
-		if (!(v.pdfR > 0.f) || v.f.Black())
+		if (!sampled)
 			break;
 		v.flux = v.f * (AbsDot(v.wi, v.ns) / v.pdfR);
 		v.rrR = min<float>(1.f, v.flux.filter(tspack));
@@ -185,7 +185,6 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == static_cast<int>(vertices.size()))
 			break;
-		v.f = SWCSpectrum(0.f);
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2], data[3],
 			 &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
