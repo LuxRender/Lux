@@ -164,7 +164,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 					case SAMPLE_ALL_UNIFORM:
 						for (u_int i = 0; i < scene->lights.size(); ++i) {
 							L += invsamples * EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-								lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent );
+								sample, lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent);
 							// TODO add bsdf selection flags
 						}
 						break;
@@ -204,9 +204,8 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 					u3 = sample->oneD[diffuse_reflectComponentOffset][i];
 				} 
 
-				f = bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3,
-					&pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags);
-				if (pdf != .0f && !f.Black()) {
+				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
+					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags)) {
 					RayDifferential rd(p, wi);
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
 						* f * AbsDot(wi, n) / pdf;
@@ -230,9 +229,8 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 					u3 = sample->oneD[diffuse_refractComponentOffset][i];
 				} 
 
-				f = bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3,
-					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags);
-				if (pdf != .0f && !f.Black()) {
+				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
+					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags)) {
 					RayDifferential rd(p, wi);
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
 						* f * AbsDot(wi, n) / pdf;
@@ -258,9 +256,8 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 					u3 = sample->oneD[glossy_reflectComponentOffset][i];
 				} 
 
-				f = bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3,
-					&pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags);
-				if (pdf != .0f && !f.Black()) {
+				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
+					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags)) {
 					RayDifferential rd(p, wi);
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
 						* f * AbsDot(wi, n) / pdf;
@@ -284,9 +281,8 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 					u3 = sample->oneD[glossy_refractComponentOffset][i];
 				} 
 
-				f = bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3,
-					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags);
-				if (pdf != .0f && !f.Black()) {
+				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
+					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags)) {
 					RayDifferential rd(p, wi);
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
 						* f * AbsDot(wi, n) / pdf;
@@ -296,17 +292,15 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 		
 		// trace specular reflection & transmission rays
 		if (rayDepth < specularreflectDepth) {
-			f = bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &pdf,
-				BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
-			if (!f.Black()) {
+			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
+				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR))) {
 				RayDifferential rd(p, wi);
 				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true) * f * AbsDot(wi, n);
 			}
 		}
 		if (rayDepth < specularrefractDepth) {
-			f = bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &pdf,
-				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
-			if (!f.Black()) {
+			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
+				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR))) {
 				RayDifferential rd(p, wi);
 				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true) * f * AbsDot(wi, n);
 			}
@@ -319,7 +313,9 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 		if (alpha && L.Black()) *alpha = 0.;
 	}
 
-	return L * scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha) + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
+	//return L * scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha) + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
+	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
+	return L + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
 }
 
 SWCSpectrum DistributedPath::Li(const TsPack *tspack, const Scene *scene,

@@ -38,11 +38,11 @@ public:
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
 		  R(r), fresnel(f) {
 	}
-	SWCSpectrum f(const TsPack *tspack, const Vector &, const Vector &) const {
-		return SWCSpectrum(0.);
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+		
 	}
-	virtual SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return 0.;
 	}
@@ -56,8 +56,8 @@ class ArchitecturalReflection : public SpecularReflection {
 public:
 	ArchitecturalReflection(const SWCSpectrum &r, Fresnel *f)
 		: SpecularReflection(r, f) {}
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 };
 
 }//namespace lux

@@ -62,9 +62,9 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 	}
 }
 
-SWCSpectrum VisibilityTester::
-	Transmittance(const TsPack *tspack, const Scene *scene) const {
-	return scene->Transmittance(tspack, r);
+void VisibilityTester::Transmittance(const TsPack *tspack, const Scene *scene, 
+									 const Sample *sample, SWCSpectrum *const L) const {
+	return scene->Transmittance(tspack, r, sample, L);
 }
 SWCSpectrum Light::Le(const TsPack *tspack, const RayDifferential &) const {
 	return SWCSpectrum(0.);

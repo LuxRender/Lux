@@ -40,23 +40,24 @@ namespace lux
  SWCSpectrum FrDiel(float cosi, float cost,
                         const SWCSpectrum &etai,
 						const SWCSpectrum &etat) {
-        SWCSpectrum Rparl = ((etat * cosi) - (etai * cost)) /
-                         ((etat * cosi) + (etai * cost));
-        SWCSpectrum Rperp = ((etai * cosi) - (etat * cost)) /
-                         ((etai * cosi) + (etat * cost));
-	return (Rparl*Rparl + Rperp*Rperp) / 2.f;
+        SWCSpectrum Rparl = (etat * cosi - etai * cost) /
+                         (etat * cosi + etai * cost);
+        SWCSpectrum Rperp = (etai * cosi - etat * cost) /
+                         (etai * cosi + etat * cost);
+	return (Rparl*Rparl + Rperp*Rperp) * 0.5f;
 }
  SWCSpectrum FrCond(float cosi,
                          const SWCSpectrum &eta,
 					     const SWCSpectrum &k) {
-    SWCSpectrum tmp = (eta*eta + k*k) * cosi*cosi;
-    SWCSpectrum Rparl2 = (tmp - (2.f * eta * cosi) + 1) /
-    	(tmp + (2.f * eta * cosi) + 1);
-    SWCSpectrum tmp_f = eta*eta + k*k;
+    SWCSpectrum tmp = (eta*eta + k*k) * cosi*cosi + 1;
+    SWCSpectrum Rparl2 = 
+		(tmp - (2.f * eta * cosi)) /
+    	(tmp + (2.f * eta * cosi));
+    SWCSpectrum tmp_f = eta*eta + k*k + cosi*cosi;
     SWCSpectrum Rperp2 =
-		(tmp_f - (2.f * eta * cosi) + cosi*cosi) /
-	    (tmp_f + (2.f * eta * cosi) + cosi*cosi);
-    return (Rparl2 + Rperp2) / 2.f;
+		(tmp_f - (2.f * eta * cosi)) /
+	    (tmp_f + (2.f * eta * cosi));
+    return (Rparl2 + Rperp2) * 0.5f;
 }
  SWCSpectrum FresnelApproxEta(const SWCSpectrum &Fr) {
 	SWCSpectrum reflectance = Fr.Clamp(0.f, .999f);

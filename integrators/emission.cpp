@@ -33,16 +33,17 @@ void EmissionIntegrator::RequestSamples(Sample *sample,
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
-SWCSpectrum
-	EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
-		const Ray &ray, const Sample *sample,
-		float *alpha) const {
-	if (!scene->volumeRegion) return SWCSpectrum(1.f);
-	float step = sample ? stepSize : 4.f * stepSize;
+
+void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
+		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const {
+	if (!scene->volumeRegion) 
+		return;
+	//float step = sample ? stepSize : 4.f * stepSize;
+	float step = stepSize;
 	float offset = sample->oneD[tauSampleOffset][0];
 	SWCSpectrum tau =
 		SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
-	return Exp(-tau);
+	*L *= Exp(-tau);
 }
 SWCSpectrum EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,

@@ -35,13 +35,15 @@ void SingleScattering::RequestSamples(Sample *sample,
 	scatterSampleOffset = sample->Add1D(1);
 }
 
-SWCSpectrum SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
-		const Ray &ray, const Sample *sample, float *alpha) const {
-	if (!scene->volumeRegion) return SWCSpectrum(1.f);
-	float step = sample ? stepSize : 4.f * stepSize;
+void SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
+		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const {
+	if (!scene->volumeRegion) 
+		return;
+	//float step = sample ? stepSize : 4.f * stepSize;
+	float step = stepSize; // TODO - handle varying step size
 	float offset = sample->oneD[tauSampleOffset][0];
 	SWCSpectrum tau = SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
-	return Exp(-tau);
+	*L *= Exp(-tau);
 }
 
 SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
@@ -99,7 +101,8 @@ SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 			// Dade - use the new TestOcclusion() method
 			SWCSpectrum occlusion;
 			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(tspack, scene, &occlusion)) {	
-				SWCSpectrum Ld = L * occlusion * vis.Transmittance(tspack, scene);
+				SWCSpectrum Ld = L * occlusion;
+				vis.Transmittance(tspack, scene, sample, &Ld);
 				Lv += Tr * ss * vr->p(p, w, -wo) *
 					  Ld * float(nLights) / pdf;
 			}

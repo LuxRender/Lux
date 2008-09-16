@@ -75,7 +75,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				if (!L.Black())
 					sample->AddContribution(sample->imageX, sample->imageY,
 						L.ToXYZ(tspack), alpha ? *alpha : 1.f, V);
-				pathThroughput = scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha);
+				pathThroughput = 1.f;
+				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 			}
 
 			// Stop path sampling since no intersection was found
@@ -106,7 +107,6 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (color.y() > 0.f)
 			sample->AddContribution(sample->imageX, sample->imageY,
 				color, alpha ? *alpha : 1.f, V);
-		pathThroughput *= scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha);
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
@@ -154,9 +154,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		Vector wi;
 		float pdf;
 		BxDFType flags;
-		SWCSpectrum f = bsdf->Sample_f(tspack, wo, &wi, data[6], data[7], data[8],
-			&pdf, BSDF_ALL, &flags);
-		if (pdf == .0f || f.Black())
+		SWCSpectrum f;
+		if (!bsdf->Sample_f(tspack, wo, &wi, data[6], data[7], data[8], &f, &pdf, BSDF_ALL, &flags))
 			break;
 
 		const float dp = AbsDot(wi, n) / pdf;

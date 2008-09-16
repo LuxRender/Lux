@@ -43,7 +43,7 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens),
 		FocalDistance(FD), fov(f), xWidth(xW), yHeight(yH), Area(A),
 		p(pL), RasterToCamera(R2C) {}
-	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector wo0(wo);
 		wo0.y = -wo0.y;//FIXME
@@ -54,12 +54,10 @@ public:
 		wo0 *= RasterToCamera(Point(0, 0, 0)).z / wo0.z;
 		Point p0(RasterToCamera.GetInverse()(Point(wo0.x, wo0.y, wo0.z)));
 		if (p0.x < 0.f || p0.x > xWidth || p0.y < 0.f || p0.y > yHeight)
-			return SWCSpectrum(0.f);
-		else {
-			const float cos = Normalize(wo0).z;
-			const float cos2 = cos * cos;
-			return SWCSpectrum(1.f / (Area * cos2 * cos2));
-		}
+			return;
+		const float cos = Normalize(wo0).z;
+		const float cos2 = cos * cos;
+		*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
 	}
 	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const

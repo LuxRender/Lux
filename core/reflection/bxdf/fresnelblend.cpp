@@ -39,23 +39,24 @@ FresnelBlend::FresnelBlend(const SWCSpectrum &d,
 	  Rd(d), Rs(s) {
 	distribution = dist;
 }
-SWCSpectrum FresnelBlend::f(const TsPack *tspack, const Vector &wo,
-                         const Vector &wi) const {
-	SWCSpectrum diffuse = (28.f/(23.f*M_PI)) * Rd *
-		(SWCSpectrum(1.) - Rs) *
-		(1 - powf(1 - .5f * fabsf(CosTheta(wi)), 5)) *
-		(1 - powf(1 - .5f * fabsf(CosTheta(wo)), 5));
+void FresnelBlend::f(const TsPack *tspack, const Vector &wo, 
+					 const Vector &wi, SWCSpectrum *const f) const {
+	// diffuse part
+	f->AddWeighted((1 - powf(1 - .5f * fabsf(CosTheta(wi)), 5)) *
+		(1 - powf(1 - .5f * fabsf(CosTheta(wo)), 5)) *
+		(28.f/(23.f*M_PI)), Rd * (SWCSpectrum(1.) - Rs));
+
 	Vector H = Normalize(wi + wo);
-	SWCSpectrum specular = distribution->D(H) /
+	// specular part
+	f->AddWeighted(distribution->D(H) /
 		(4.f * AbsDot(wi, H) *
-		max(fabsf(CosTheta(wi)), fabsf(CosTheta(wo)))) *
-		SchlickFresnel(Dot(wi, H));
-	return diffuse + specular;
+		max(fabsf(CosTheta(wi)), fabsf(CosTheta(wo)))),
+		SchlickFresnel(Dot(wi, H)));	
 }
 
-SWCSpectrum FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo,
-	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const
-{
+bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+							float u1, float u2, SWCSpectrum *const f, float *pdf, 
+							float *pdfBack, bool reverse) const {
 	u1 *= 2.f;
 	if (u1 < 1.f) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
@@ -70,14 +71,19 @@ SWCSpectrum FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo,
 	if (*pdf == 0.f) {
 		if (pdfBack)
 			*pdfBack = 0.f;
-		return SWCSpectrum(0.f);
+		return false;
 	}
 	if (pdfBack)
 		*pdfBack = Pdf(tspack, *wi, wo);
-	if (reverse)
-		return f(tspack, *wi, wo) * (wo.z / wi->z);
+
+	*f = SWCSpectrum(0.f);
+	if (reverse) {
+		this->f(tspack, *wi, wo, f);
+		*f *= (wo.z / wi->z);	
+	}
 	else
-		return f(tspack, wo, *wi);
+		this->f(tspack, wo, *wi, f);
+	return true;
 }
 float FresnelBlend::Pdf(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const {

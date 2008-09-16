@@ -55,7 +55,7 @@ SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 			bs2 = sample->twoD[bsdfSampleOffset[i]][2 * j + 1];
 			bcs = sample->twoD[bsdfComponentOffset[i]][j];
 			Ld += EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-				ls1, ls2, ls3, bs1, bs2, bcs);
+				sample, ls1, ls2, ls3, bs1, bs2, bcs);
 		}
 		L += Ld / nSamples;
 	}
@@ -78,7 +78,7 @@ SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 	SWCSpectrum L(0.f);
 	for (u_int i = 0; i < scene->lights.size(); ++i) {
 		L += EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-			ls1, ls2, ls3, bs1, bs2, bcs);
+			sample, ls1, ls2, ls3, bs1, bs2, bcs);
 	}
 	return L;
 }
@@ -107,7 +107,7 @@ SWCSpectrum UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	bcs = *bsdfComponent;
 	return (float)nLights *
 		EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-			ls1, ls2, ls3, bs1, bs2, bcs);
+			sample, ls1, ls2, ls3, bs1, bs2, bcs);
 }
 
 SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
@@ -143,7 +143,7 @@ SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
 		Light *light = scene->lights[lightNumber];
 		// Sample one light uniformly and initialize luminance arrays
 		L = EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-			ls1, ls2, ls3, bs1, bs2, bcs);
+			sample, ls1, ls2, ls3, bs1, bs2, bcs);
 		float luminance = L.y(tspack);
 		overallAvgY = luminance;
 		for (int i = 0; i < nLights; ++i)
@@ -161,7 +161,7 @@ SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
 		ls3 = nLights * t - lightNumber;
 		Light *light = scene->lights[lightNumber];
 		L = EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-			ls1, ls2, ls3, bs1, bs2, bcs);
+			sample, ls1, ls2, ls3, bs1, bs2, bcs);
 		// Update _avgY_ array with reflected radiance due to light
 		float luminance = L.y(tspack);
 		avgY[lightNumber] = Lerp(.99f, luminance, avgY[lightNumber]);
@@ -172,7 +172,7 @@ SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
 }
 
 SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, const Sample *sample, 
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
 {
 	SWCSpectrum Ld(0.);
@@ -193,7 +193,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			SWCSpectrum fO;
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
-				Li *= visibility.Transmittance(tspack, scene);
+				visibility.Transmittance(tspack, scene, sample, &Li);
 				Li *= fO;
 
 				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
@@ -213,7 +213,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			SWCSpectrum fO;
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
-				Li *= visibility.Transmittance(tspack, scene);
+				visibility.Transmittance(tspack, scene, sample, &Li);
 				Li *= fO;
 
 				bsdfPdf = bsdf->Pdf(tspack, wo, wi);
@@ -223,9 +223,8 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 
 			// Sample BSDF with multiple importance sampling
 			BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
-			SWCSpectrum fBSDF = bsdf->Sample_f(tspack, wo, &wi,
-				bs1, bs2, bcs, &bsdfPdf, flags);
-			if (!fBSDF.Black() && bsdfPdf > 0.) {
+			SWCSpectrum fBSDF;
+			if (bsdf->Sample_f(tspack, wo, &wi,	bs1, bs2, bcs, &fBSDF, &bsdfPdf, flags)) {
 				lightPdf = light->Pdf(p, n, wi);
 				if (lightPdf > 0.) {
 					// Add light contribution from BSDF sampling
@@ -239,7 +238,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					} else
 						Li = light->Le(tspack, ray);
 					if (!Li.Black()) {
-						Li *= scene->Transmittance(tspack, ray);
+						scene->Transmittance(tspack, ray, sample, &Li);
 						Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
 					}
 				}

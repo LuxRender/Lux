@@ -38,7 +38,7 @@ public:
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance), RoverPI(reflectance * INV_PI) {
 	}
-	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum rho(const TsPack *tspack, const Vector &, int, float *) const {
 		return R;
 	}

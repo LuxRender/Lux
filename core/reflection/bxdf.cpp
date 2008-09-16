@@ -32,9 +32,8 @@
 using namespace lux;
 
 // BxDF Method Definitions
-SWCSpectrum BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
-                       const Vector &wi) const
-{
+void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
+                       const Vector &wi, SWCSpectrum *const f) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
@@ -54,13 +53,17 @@ SWCSpectrum BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
 	if ((entering && cos1 < 0.f) || (!entering && cos1 > 0.f))
 		H = -H;
 	if (H.z < 0.f)
-		return 0.f;
+		return;
 	Vector wiR(2.f * cos1 * H - wo);
-	return brdf->f(tspack, wo, wiR) * fabsf(wiR.z / (wi.z * eta * eta));
+	SWCSpectrum tf = SWCSpectrum(0.f);
+	brdf->f(tspack, wo, wiR, &tf);
+	tf *= fabsf(wiR.z / (wi.z * eta * eta));
+	*f += tf;
 }
-SWCSpectrum BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
-	SWCSpectrum f = brdf->Sample_f(tspack, wo, wi, u1, u2, pdf, pdfBack, reverse);
+bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
+	if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse))
+		return false;
 	Vector H(Normalize(wo + *wi));
 	if (H.z < 0.f)
 		H = -H;
@@ -87,7 +90,7 @@ SWCSpectrum BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector 
 		*pdf = 0.f;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		return 0.;
+		return false;
 	}
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering)
@@ -95,23 +98,29 @@ SWCSpectrum BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector 
 	const float cos = wi->z;
 	*wi = (cost + eta * cosi) * H - eta * wo;
 	if (reverse)
-		return f * fabsf(eta2 * cos / wi->z);
+		*f *= fabsf(eta2 * cos / wi->z);
 	else
-		return f * fabsf(cos / (wi->z * eta2));
+		*f *= fabsf(cos / (wi->z * eta2));
+	return true;
 }
 
-SWCSpectrum BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
+bool BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+					float u1, float u2, SWCSpectrum *const f, float *pdf, 
+					float *pdfBack,	bool reverse) const {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
 	if (wo.z < 0.) wi->z *= -1.f;
 	*pdf = Pdf(tspack, wo, *wi);
 	if (pdfBack)
 		*pdfBack = Pdf(tspack, *wi, wo);
-	if (reverse)
-		return f(tspack, *wi, wo) * (wo.z / wi->z);
+	*f = SWCSpectrum(0.f);
+	if (reverse) {
+		this->f(tspack, *wi, wo, f);
+		*f *= (wo.z / wi->z);	
+	}
 	else
-		return f(tspack, wo, *wi);
+		this->f(tspack, wo, *wi, f);
+	return true;
 }
 float BxDF::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 	return
@@ -155,9 +164,9 @@ SWCSpectrum BxDF::rho(const TsPack *tspack, const Vector &w, int nSamples,
 		// Estimate one term of $\rho_{dh}$
 		Vector wi;
 		float pdf = 0.f;
-		SWCSpectrum f =
-			Sample_f(tspack, w, &wi, samples[2*i], samples[2*i+1], &pdf);
-		if (pdf > 0.) r += f * fabsf(wi.z) / pdf;
+		SWCSpectrum f(0.0);		
+		if (Sample_f(tspack, w, &wi, samples[2*i], samples[2*i+1], &f, &pdf) && pdf > 0.) 
+			r.AddWeighted(fabsf(wi.z) / pdf, f);
 	}
 	return r / nSamples;
 }
@@ -173,25 +182,22 @@ SWCSpectrum BxDF::rho(const TsPack *tspack, int nSamples, float *samples) const 
 		Vector wo, wi;
 		wo = UniformSampleHemisphere(samples[4*i], samples[4*i+1]);
 		float pdf_o = INV_TWOPI, pdf_i = 0.f;
-		SWCSpectrum f =
-			Sample_f(tspack, wo, &wi, samples[4*i+2], samples[4*i+3],
-				&pdf_i);
-		if (pdf_i > 0.)
-			r += f * fabsf(wi.z * wo.z) / (pdf_o * pdf_i);
+		SWCSpectrum f(0.0);			
+		if (Sample_f(tspack, wo, &wi, samples[4*i+2], samples[4*i+3], &f, &pdf_i) && pdf_i > 0.)
+			r.AddWeighted(fabsf(wi.z * wo.z) / (pdf_o * pdf_i), f);
 	}
 	return r / (M_PI*nSamples);
 }
-SWCSpectrum BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, float *pdf,
-		BxDFType flags, BxDFType *sampledType, float *pdfBack,
-		bool reverse) const {
+bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW, float u1, float u2, 
+					float u3, SWCSpectrum *const f, float *pdf, BxDFType flags, 
+					BxDFType *sampledType, float *pdfBack, bool reverse) const {
 	// Choose which _BxDF_ to sample
 	int matchingComps = NumComponents(flags);
 	if (matchingComps == 0) {
 		*pdf = 0.f;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		return SWCSpectrum(0.f);
+		return false;
 	}
 	int which = min(Floor2Int(u3 * matchingComps),
 		matchingComps-1);
@@ -210,8 +216,9 @@ SWCSpectrum BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	*pdf = 0.f;
 	if (pdfBack)
 		*pdfBack = 0.f;
-	SWCSpectrum f = bxdf->Sample_f(tspack, wo, &wi, u1, u2, pdf, pdfBack, reverse);
-	if (*pdf == 0.f) return 0.f;
+	if (!bxdf->Sample_f(tspack, wo, &wi, u1, u2, f, pdf, pdfBack, reverse))
+		return false;
+	if (*pdf == 0.f) return false;
 	if (sampledType) *sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
 	// Compute overall PDF with all matching _BxDF_s
@@ -232,7 +239,7 @@ SWCSpectrum BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	}
 	// Compute value of BSDF for sampled direction
 	if (!(bxdf->type & BSDF_SPECULAR)) {
-		f = 0.;
+		*f = 0.;
 		if (Dot(*wiW, ng) * Dot(woW, ng) > 0)
 			// ignore BTDFs
 			flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -242,13 +249,13 @@ SWCSpectrum BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 		for (int i = 0; i < nBxDFs; ++i) {
 			if (bxdfs[i]->MatchesFlags(flags)) {
 				if (reverse)
-					f += bxdfs[i]->f(tspack, wi, wo);
+					bxdfs[i]->f(tspack, wi, wo, f);
 				else
-					f += bxdfs[i]->f(tspack, wo, wi);
+					bxdfs[i]->f(tspack, wo, wi, f);
 			}
 		}
 	}
-	return f;
+	return true;
 }
 float BSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 		BxDFType flags) const {
@@ -284,7 +291,7 @@ SWCSpectrum BSDF::f(const TsPack *tspack, const Vector &woW,
 	SWCSpectrum f = 0.;
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
-			f += bxdfs[i]->f(tspack, wo, wi);
+			bxdfs[i]->f(tspack, wo, wi, &f);
 	return f;
 }
 SWCSpectrum BSDF::rho(const TsPack *tspack, BxDFType flags) const {

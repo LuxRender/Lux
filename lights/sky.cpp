@@ -37,7 +37,7 @@ class SkyBxDF : public BxDF
 {
 public:
 	SkyBxDF(const SkyLight &sky, const Transform &WL, const Vector &x, const Vector &y, const Vector &z) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL), X(x), Y(y), Z(z) {}
-	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector w(wi.x * X.x + wi.y * Y.x + wi.z * Z.x, wi.x * X.y + wi.y * Y.y + wi.z * Z.y, wi.x * X.z + wi.y * Y.z + wi.z * Z.z);
 		w = -Normalize(WorldToLight(w));
@@ -45,7 +45,7 @@ public:
 		const float theta = SphericalTheta(w);
 		SWCSpectrum L;
 		skyLight.GetSkySpectralRadiance(tspack, theta, phi, &L);
-		return L;
+		*f += L;
 	}
 private:
 	const SkyLight &skyLight;

@@ -31,8 +31,8 @@
 
 using namespace lux;
 
-SWCSpectrum Lambertian::f(const TsPack *tspack, const Vector &wo,
-		const Vector &wi) const {
-	return RoverPI;
+void Lambertian::f(const TsPack *tspack, const Vector &wo, 
+				   const Vector &wi, SWCSpectrum *const f) const {
+	*f += RoverPI;
 }
 

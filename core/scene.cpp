@@ -488,6 +488,7 @@ SWCSpectrum Scene::Li(const RayDifferential &ray,
 	return 0.;
 }
 
-SWCSpectrum Scene::Transmittance(const TsPack *tspack, const Ray &ray) const {
-    return volumeIntegrator->Transmittance(tspack, this, ray, NULL, NULL);
+void Scene::Transmittance(const TsPack *tspack, const Ray &ray, 
+								 const Sample *sample, SWCSpectrum *const L) const {
+    volumeIntegrator->Transmittance(tspack, this, ray, sample, NULL, L);
 }

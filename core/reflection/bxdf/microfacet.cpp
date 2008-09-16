@@ -40,27 +40,34 @@ Microfacet::Microfacet(const SWCSpectrum &reflectance,
 	 R(reflectance), distribution(d), fresnel(f) {
 }
 
-SWCSpectrum Microfacet::f(const TsPack *tspack, const Vector &wo,
-                       const Vector &wi) const {
+void Microfacet::f(const TsPack *tspack, const Vector &wo, 
+				   const Vector &wi, SWCSpectrum *const f) const {
 	float cosThetaO = fabsf(CosTheta(wo));
 	float cosThetaI = fabsf(CosTheta(wi));
 	Vector wh = Normalize(wi + wo);
 	float cosThetaH = Dot(wi, wh);
 	SWCSpectrum F = fresnel->Evaluate(tspack, cosThetaH);
-	return R * distribution->D(wh) * G(wo, wi, wh) * F /
-		 (4.f * cosThetaI * cosThetaO);
+	f->AddWeighted(distribution->D(wh) * G(wo, wi, wh) /
+		(4.f * cosThetaI * cosThetaO), R * F);
 }
 
-SWCSpectrum Microfacet::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
+bool Microfacet::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+						  float u1, float u2, SWCSpectrum *const f, float *pdf, 
+						  float *pdfBack,	bool reverse) const {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
 	if (pdfBack)
 		*pdfBack = Pdf(tspack, *wi, wo);
-	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
-	if (reverse)
-		return f(tspack, *wi, wo) * (wo.z / wi->z);
+	if (!SameHemisphere(wo, *wi)) 
+		return false;
+
+	*f = SWCSpectrum(0.f);
+	if (reverse) {
+		this->f(tspack, *wi, wo, f);
+		*f *= (wo.z / wi->z);	
+	}
 	else
-		return f(tspack, wo, *wi);
+		this->f(tspack, wo, *wi, f);
+	return true;
 }
 float Microfacet::Pdf(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const {

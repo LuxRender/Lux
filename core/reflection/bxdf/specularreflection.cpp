@@ -32,29 +32,28 @@
 
 using namespace lux;
 
-SWCSpectrum SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
-	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
+bool SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
 	// Compute perfect specular reflection direction
 	*wi = Vector(-wo.x, -wo.y, wo.z);
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
 	if (reverse)
-		return fresnel->Evaluate(tspack, CosTheta(*wi)) * R /
-			fabsf(CosTheta(*wi));
+		*f = (fresnel->Evaluate(tspack, CosTheta(*wi)) * R) * (1.0 / fabsf(CosTheta(*wi)));
 	else
-		return fresnel->Evaluate(tspack, CosTheta(wo)) * R /
-			fabsf(CosTheta(*wi));
+		*f = (fresnel->Evaluate(tspack, CosTheta(wo)) * R) * (1.0 / fabsf(CosTheta(*wi)));
+	return true;
 }
 
-SWCSpectrum ArchitecturalReflection::Sample_f(const TsPack *tspack, const Vector &wo,
-	Vector *wi, float u1, float u2, float *pdf, float *pdfBack, bool reverse) const
+bool ArchitecturalReflection::Sample_f(const TsPack *tspack, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const
 {
 	if (wo.z <= 0.f) {
 		*pdf = 0.f;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		return 0.f;
+		return false;
 	}
-	return SpecularReflection::Sample_f(tspack, wo, wi, u1, u2, pdf, pdfBack, reverse);
+	return SpecularReflection::Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse);
 }

@@ -34,7 +34,7 @@ namespace lux
 class  OrenNayar : public BxDF {
 public:
 	// OrenNayar Public Methods
-	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	OrenNayar(const SWCSpectrum &reflectance, float sig)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance) {

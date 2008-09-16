@@ -39,8 +39,9 @@ public:
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		  T(t), etai(ei), etat(et), cb(cbf), architectural(archi),
 		  fresnel(ei, et) {}
-	SWCSpectrum f(const TsPack *tspack, const Vector &, const Vector &) const;
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		if (architectural && wi == -wo) return 1.f;
 		else return 0.f;

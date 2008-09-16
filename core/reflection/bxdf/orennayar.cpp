@@ -31,8 +31,8 @@
 
 using namespace lux;
 
-SWCSpectrum OrenNayar::f(const TsPack *tspack, const Vector &wo,
-		const Vector &wi) const {
+void OrenNayar::f(const TsPack *tspack, const Vector &wo, 
+				  const Vector &wi, SWCSpectrum *const f) const {
 	float sinthetai = SinTheta(wi);
 	float sinthetao = SinTheta(wo);
 	// Compute cosine term of Oren--Nayar model
@@ -53,7 +53,7 @@ SWCSpectrum OrenNayar::f(const TsPack *tspack, const Vector &wo,
 		sinalpha = sinthetai;
 		tanbeta = sinthetao / fabsf(CosTheta(wo));
 	}
-	return R * INV_PI *
-	       (A + B * maxcos * sinalpha * tanbeta);
+	// *f += R * INV_PI * (A + B * maxcos * sinalpha * tanbeta);
+	f->AddWeighted(INV_PI * (A + B * maxcos * sinalpha * tanbeta), R);
 }
 

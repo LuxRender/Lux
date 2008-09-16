@@ -43,20 +43,18 @@ Lafortune::Lafortune(const SWCSpectrum &r, u_int nl,
 	z = zz;
 	exponent = e;
 }
-SWCSpectrum Lafortune::f(const TsPack *tspack, const Vector &wo,
-                      const Vector &wi) const {
-	SWCSpectrum ret = R * INV_PI;
+void Lafortune::f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+	*f += R * INV_PI;
 	for (u_int i = 0; i < nLobes; ++i) {
 		// Add contribution for $i$th Phong lobe
 		SWCSpectrum v = x[i] * wo.x * wi.x + y[i] * wo.y * wi.y +
 			z[i] * wo.z * wi.z;
-		ret += v.Pow(exponent[i]);
+		*f += v.Pow(exponent[i]);
 	}
-	return ret;
 }
 
-SWCSpectrum Lafortune::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack, bool reverse) const {
+bool Lafortune::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
 			*pdf = 0.f;
 	u_int comp = tspack->rng->uintValue() % (nLobes+1);										/// TODO - REFACT - remove and add random value from sample
 	if (comp == nLobes) {
@@ -81,11 +79,16 @@ SWCSpectrum Lafortune::Sample_f(const TsPack *tspack, const Vector &wo, Vector *
 	*pdf = Pdf(tspack, wo, *wi);
 	if (pdfBack)
 		*pdfBack = Pdf(tspack, *wi, wo);
-	if (!SameHemisphere(wo, *wi)) return SWCSpectrum(0.f);
-	if (reverse)
-		return f(tspack, *wi, wo) * (wo.z / wi->z);
+	if (!SameHemisphere(wo, *wi)) 
+		return false;
+	*f = SWCSpectrum(0.0);
+	if (reverse) {
+		this->f(tspack, *wi, wo, f);
+		*f *= (wo.z / wi->z);
+	}
 	else
-		return f(tspack, wo, *wi);
+		this->f(tspack, wo, *wi, f);
+	return true;
 }
 
 

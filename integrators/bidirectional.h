@@ -26,6 +26,7 @@
 #include "transport.h"
 #include "scene.h"
 #include "mc.h"
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace lux
 {
@@ -39,7 +40,10 @@ public:
 	};
 //	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
-	BidirIntegrator(int ed, int ld, LightStrategy ls) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld) {}
+	BidirIntegrator(int ed, int ld, LightStrategy ls) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld) {
+		eyeBufferId = -1;
+		lightBufferId = -1;
+	}
 	// BidirIntegrator Public Methods
 	SWCSpectrum Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
@@ -51,6 +55,9 @@ private:
 	int lightNumOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
 	int eyeBufferId, lightBufferId;
+
+	// Used to request buffers
+	mutable boost::recursive_mutex bufferMutex;
 };
 
 }//namespace lux

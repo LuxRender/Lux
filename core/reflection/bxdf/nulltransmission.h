@@ -36,10 +36,12 @@ public:
 	// NullTransmission Public Methods
 	NullTransmission()
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
-	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-		return wo == -wi ? SWCSpectrum(1.f / fabsf(CosTheta(wi))) : SWCSpectrum(0.);
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+		*f += wo == -wi ? SWCSpectrum(1.f / fabsf(CosTheta(wi))) : SWCSpectrum(0.);
 	}
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
+		bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return wo == -wi ? 1.f : 0.f;
 	}

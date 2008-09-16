@@ -61,13 +61,14 @@ public:
 
 class VolumeIntegrator : public Integrator {
 public:
-	virtual SWCSpectrum Transmittance(const TsPack *tspack, const Scene *scene,
-		const Ray &ray, const Sample *sample,
-		float *alpha) const = 0;
+	// modulates the supplied SWCSpectrum with the transmittance along the ray
+	virtual void Transmittance(const TsPack *tspack, const Scene *scene,
+		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const = 0;
 };
 
  SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, 
+	const Sample *sample, 
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs);
  SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,

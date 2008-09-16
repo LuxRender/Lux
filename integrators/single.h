@@ -34,8 +34,8 @@ public:
 	// SingleScattering Public Methods
 	SingleScattering(float ss) : stepSize(ss) { }
 
-	SWCSpectrum Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
-		const Sample *sample, float *alpha) const;
+	void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
+		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	SWCSpectrum Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
 

@@ -84,7 +84,8 @@ public:
     const BBox &WorldBound() const;
     SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
             float *alpha = NULL) const;
-    SWCSpectrum Transmittance(const TsPack *tspack, const Ray &ray) const;
+	// modulates the supplied SWCSpectrum with the transmittance along the ray
+    void Transmittance(const TsPack *tspack, const Ray &ray, const Sample *sample, SWCSpectrum *const L) const;
 
     //Control methods
     void Start();

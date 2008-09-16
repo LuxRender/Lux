@@ -71,8 +71,12 @@ enum BxDFType {
 class  BSDF {
 public:
 	// BSDF Public Methods
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &o, Vector *wi, float u1, float u2,
-		float u3, float *pdf, BxDFType flags = BSDF_ALL,
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	bool Sample_f(const TsPack *tspack, const Vector &o, Vector *wi, float u1, float u2,
+		float u3, SWCSpectrum *const f, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo,
@@ -132,10 +136,18 @@ public:
 	bool MatchesFlags(BxDFType flags) const {
 		return (type & flags) == type;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &wo,
-	                   const Vector &wi) const = 0;
-	virtual SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL,
+	/**
+	 * Evaluates the BxDF.
+	 * Accumulates the result in the f parameter.
+	 */
+	virtual void f(const TsPack *tspack, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const = 0;
+	/**
+	 * Samples the BxDF.
+	 * Returns the result of the BxDF for the sampled direction in f.
+	 */
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
 	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
 	                     int nSamples = 16,
@@ -163,9 +175,9 @@ public:
 	SWCSpectrum rho(const TsPack *tspack, int nSamples, float *samples) const {
 		return brdf->rho(tspack, nSamples, samples);
 	}
-	SWCSpectrum f(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, float *pdf, float *pdfBack = NULL,
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:

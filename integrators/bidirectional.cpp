@@ -73,10 +73,13 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(1); //bsdf component for light path
 	sampleLightOffset = sample->AddxD(structure, maxLightDepth);
 	// Prepare image buffers
-	BufferType type = BUF_TYPE_PER_SCREEN;
-	scene->sampler->GetBufferType(&type);
-	eyeBufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
-	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
+    boost::recursive_mutex::scoped_lock lockSample(bufferMutex);
+	if (eyeBufferId < 0 && lightBufferId < 0) {
+		BufferType type = BUF_TYPE_PER_SCREEN;
+		scene->sampler->GetBufferType(&type);
+		eyeBufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+		lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
+	}
 }
 
 static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,//const Ray &r,
@@ -112,12 +115,13 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == static_cast<int>(vertices.size()))
 			break;
+		v.f = SWCSpectrum(0.f);
 		if (nVerts > 1)
-			v.f = v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2], data[3],
-				 &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
+			v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2], data[3],
+				 &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
 		else
-			v.f = v.bsdf->Sample_f(tspack, v.wo, &v.wi, sample->imageX, sample->imageY, 0.5,
-				&v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
+			v.bsdf->Sample_f(tspack, v.wo, &v.wi, sample->imageX, sample->imageY, 0.5, 
+				&v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
 		if (!(v.pdfR > 0.f) || v.f.Black())
 			break;
 		v.flux = v.f * (AbsDot(v.wi, v.ns) / v.pdfR);
@@ -181,9 +185,9 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == static_cast<int>(vertices.size()))
 			break;
-		v.f = v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2], data[3],
-			 &v.pdf, BSDF_ALL, &v.flags, &v.pdfR);
-		if (v.pdf == 0.f || v.f.Black())
+		v.f = SWCSpectrum(0.f);
+		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2], data[3],
+			 &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
 		v.flux = v.f * AbsDot(v.wo, v.ns) / v.pdf;
 		v.rr = min<float>(1.f, v.flux.filter(tspack));
