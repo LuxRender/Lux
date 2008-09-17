@@ -27,6 +27,7 @@
 #include <string>
 #include <sstream>
 #include <exception>
+#include <iostream>
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
@@ -41,6 +42,11 @@
 #include "error.h"
 #include "renderserver.h"
 #include "osfunc.h"
+
+#if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
@@ -99,6 +105,7 @@ int main(int ac, char *av[]) {
         generic.add_options()
                 ("version,v", "Print version string") ("help", "Produce help message")
                 ("server,s", "Launch in server mode")
+				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
                 ("debug,d", "Enable debug mode")
                 ;
 
@@ -233,6 +240,11 @@ int main(int ac, char *av[]) {
                     continue;
                 }
 
+				// Get pointer to framebuffer data if needed
+				unsigned char* fb;
+				if (vm.count("bindump"))
+					fb = luxFramebuffer();
+
                 //add rendering threads
                 int threadsToAdd = threads;
                 while (--threadsToAdd)
@@ -252,6 +264,19 @@ int main(int ac, char *av[]) {
                 ss.str("");
                 ss << "100% rendering done [" << threads << " threads] " << td;
                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				if (vm.count("bindump")) {
+					int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
+					luxUpdateFramebuffer();
+
+#if defined(WIN32) && !defined(__CYGWIN__) /* On WIN32 we need to set stdout to binary */
+					_setmode( _fileno( stdout ), _O_BINARY );
+#endif
+
+					// Dump RGB imagebuffer data to stdout
+					for(int i=0; i<w*h*3; i++)
+						std::cout << fb[i];
+				}
 
                 luxCleanup();
             }
