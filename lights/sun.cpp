@@ -43,13 +43,14 @@ public:
 			return;
 		*f += SWCSpectrum(1.);
 	}
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = UniformConePdf(cosThetaMax);
 		if (pdfBack)
 			*pdfBack = Pdf(*wi, wo);
-		return 1.f;
+		*f = SWCSpectrum(1.f);
+		return true;
 	}
 	float Pdf(const Vector &wi, const Vector &wo) const
 	{

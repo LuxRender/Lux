@@ -59,8 +59,8 @@ public:
 		const float cos2 = cos * cos;
 		*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
 	}
-	SWCSpectrum Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
-		float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
+		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		Point pS(RasterToCamera(Point(u1, u2, 0.f)));
 		*wi = Vector(pS.x, pS.y, pS.z);
@@ -75,7 +75,8 @@ public:
 		*pdf = 1.f / (Area * cos2 * cos);
 		if (pdfBack)
 			*pdfBack = *pdf;//FIXME
-		return SWCSpectrum(1.f / (Area * cos2 * cos2));
+		*f = SWCSpectrum(1.f / (Area * cos2 * cos2));
+		return true;
 	}
 	float Pdf(const Vector &wi, const Vector &wo) const
 	{
