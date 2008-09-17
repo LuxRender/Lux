@@ -82,6 +82,12 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	}
 }
 
+static float weightSegment(float pdf, const Normal &n, const Vector &w,
+	float distanceSquared)
+{
+	return pdf * AbsDot(n, w) / distanceSquared;
+}
+
 static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,//const Ray &r,
 	const Sample *sample, const int sampleOffset,
 	vector<BidirVertex> &vertices)
@@ -149,12 +155,11 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	for (int i = 0; i < nVerts - 1; ++i) {
 		if (vertices[i + 1].bsdf == NULL)
 			break;
-		vertices[i + 1].dARWeight = vertices[i].pdfR *
-			AbsDot(vertices[i + 1].wo, vertices[i + 1].ns) /
-			DistanceSquared(vertices[i].p, vertices[i + 1].p);
-		vertices[i].dAWeight = vertices[i + 1].pdf *
-			AbsDot(vertices[i].wi, vertices[i].ns) /
-			DistanceSquared(vertices[i].p, vertices[i + 1].p);
+		float distance2 = DistanceSquared(vertices[i].p, vertices[i + 1].p);
+		vertices[i + 1].dARWeight = weightSegment(vertices[i].pdfR,
+			vertices[i + 1].ns, vertices[i + 1].wo, distance2);
+		vertices[i].dAWeight = weightSegment(vertices[i + 1].pdf,
+			vertices[i].ns, vertices[i].wi, distance2);
 	}
 	return nVerts;
 }
@@ -206,12 +211,11 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 	}
 	// Initialize additional values in _vertices_
 	for (int i = 0; i < nVerts - 1; ++i) {
-		vertices[i + 1].dAWeight = vertices[i].pdf *
-			AbsDot(vertices[i + 1].wi, vertices[i + 1].ns) /
-			DistanceSquared(vertices[i].p, vertices[i + 1].p);
-		vertices[i].dARWeight = vertices[i + 1].pdfR *
-			AbsDot(vertices[i].wo, vertices[i].ns) /
-			DistanceSquared(vertices[i].p, vertices[i + 1].p);
+		float distance2 = DistanceSquared(vertices[i].p, vertices[i + 1].p);
+		vertices[i + 1].dAWeight = weightSegment(vertices[i].pdf,
+			vertices[i + 1].ns, vertices[i + 1].wi, distance2);
+		vertices[i].dARWeight = weightSegment(vertices[i + 1].pdfR,
+			vertices[i].ns, vertices[i].wo, distance2);
 	}
 	return nVerts;
 }
@@ -376,28 +380,28 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		if (L.Black())
 			return 0.f;
 		// Evaluate factors for path weighting
-		lightV.dARWeight = eyeV.pdfR * AbsDot(lightV.ns, lightV.wo) /
-			DistanceSquared(eyeV.p, lightV.p);
+		float dEL = DistanceSquared(eyeV.p, lightV.p);
+		lightV.dARWeight = weightSegment(eyeV.pdfR,
+			lightV.ns, lightV.wo, dEL);
 		if (nLight > 1) {
+			float dL = DistanceSquared(light[nLight - 2].p, lightV.p);
 			lWeight = light[nLight - 2].dARWeight;
-			light[nLight - 2].dARWeight = lightV.pdfR *
-				AbsDot(light[nLight - 2].ns, light[nLight - 2].wo) /
-				DistanceSquared(lightV.p, light[nLight - 2].p);
-			lightV.dAWeight = light[nLight - 2].pdf *
-				AbsDot(lightV.ns, lightV.wi) /
-				DistanceSquared(light[nLight - 2].p, lightV.p);
+			light[nLight - 2].dARWeight = weightSegment(lightV.pdfR,
+				light[nLight - 2].ns, light[nLight - 2].wo,
+				dL);
+			lightV.dAWeight = weightSegment(light[nLight - 2].pdf,
+				lightV.ns, lightV.wi, dL);
 		}
 		lightV.flags = BxDFType(~BSDF_SPECULAR);
-		eyeV.dAWeight = lightV.pdf * AbsDot(eyeV.ns, eyeV.wi) /
-			DistanceSquared(lightV.p, eyeV.p);
+		eyeV.dAWeight = weightSegment(lightV.pdf, eyeV.ns, eyeV.wi,
+			dEL);
 		if (nEye > 1) {
+			float dE = DistanceSquared(eye[nEye - 2].p, eyeV.p);
 			eWeight = eye[nEye - 2].dAWeight;
-			eye[nEye - 2].dAWeight = eyeV.pdf *
-				AbsDot(eye[nEye - 2].ns, eye[nEye - 2].wi) /
-				DistanceSquared(eyeV.p, eye[nEye - 2].p);
-			eyeV.dARWeight = eye[nEye - 2].pdfR *
-				AbsDot(eyeV.ns, eyeV.wo) /
-				DistanceSquared(eye[nEye - 2].p, eyeV.p);
+			eye[nEye - 2].dAWeight = weightSegment(eyeV.pdf,
+				eye[nEye - 2].ns, eye[nEye - 2].wi, dE);
+			eyeV.dARWeight = weightSegment(eye[nEye - 2].pdfR,
+				eyeV.ns, eyeV.wo, dE);
 		}
 		eyeV.flags = BxDFType(~BSDF_SPECULAR);
 	} else if (nEye > 1) { // Evaluate eye path without light path
@@ -408,11 +412,10 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		v.dAWeight = v.ePdf;
 		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ns), v.wo);
 		eWeight = eye[nEye - 2].dAWeight;
-		eye[nEye - 2].dAWeight = v.pdf *
-			AbsDot(eye[nEye - 2].ns, eye[nEye - 2].wi) /
-			distance2;
-		v.dARWeight = eye[nEye - 2].pdfR * AbsDot(v.ns, v.wo) /
-			distance2;
+		eye[nEye - 2].dAWeight = weightSegment(v.pdf,
+			eye[nEye - 2].ns, eye[nEye - 2].wi, distance2);
+		v.dARWeight = weightSegment(eye[nEye - 2].pdfR,
+			v.ns, v.wo, distance2);
 		v.flags = BxDFType(~BSDF_SPECULAR);
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
@@ -422,11 +425,10 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		v.dARWeight = v.ePdf;
 		v.pdfR = v.eBsdf->Pdf(tspack, Vector(v.ns), v.wi);
 		lWeight = light[nLight - 2].dARWeight;
-		light[nLight - 2].dARWeight = v.pdfR *
-			AbsDot(light[nLight - 2].ns, light[nLight - 2].wo) /
-			distance2;
-		v.dAWeight = light[nLight - 2].pdf * AbsDot(v.ns, v.wi) /
-			distance2;
+		light[nLight - 2].dARWeight = weightSegment(v.pdfR,
+			light[nLight - 2].ns, light[nLight - 2].wo, distance2);
+		v.dAWeight = weightSegment(light[nLight - 2].pdf,
+			v.ns, v.wi, distance2);
 		v.flags = BxDFType(~BSDF_SPECULAR);
 	}
 	else
