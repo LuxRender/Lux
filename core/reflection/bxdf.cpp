@@ -35,6 +35,10 @@ using namespace lux;
 void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f) const
 {
+	if (etai == etat) {
+		brdf->f(tspack, wo, otherHemisphere(wi), f);
+		return;
+	}
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
@@ -65,6 +69,13 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack,
 	bool reverse) const
 {
+	if (etai == etat) {
+		if (brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse)) {
+			*wi = otherHemisphere(*wi);
+			return true;
+		}
+		return false;
+	}
 	if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse))
 		return false;
 	Vector H(Normalize(wo + *wi));
@@ -133,6 +144,8 @@ float BxDF::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const 
 float BRDFToBTDF::Pdf(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const
 {
+	if (etai == etat)
+		return brdf->Pdf(tspack, wo, otherHemisphere(wi));
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
