@@ -240,11 +240,6 @@ int main(int ac, char *av[]) {
                     continue;
                 }
 
-				// Get pointer to framebuffer data if needed
-				unsigned char* fb;
-				if (vm.count("bindump"))
-					fb = luxFramebuffer();
-
                 //add rendering threads
                 int threadsToAdd = threads;
                 while (--threadsToAdd)
@@ -266,6 +261,9 @@ int main(int ac, char *av[]) {
                 luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 				if (vm.count("bindump")) {
+					// Get pointer to framebuffer data if needed
+					unsigned char* fb = luxFramebuffer();
+
 					int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
 					luxUpdateFramebuffer();
 
