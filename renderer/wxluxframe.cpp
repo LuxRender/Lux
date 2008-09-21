@@ -45,6 +45,41 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_menubar->Append( m_render, wxT("&Render") );
 	
+	m_view = new wxMenu();
+	wxMenuItem* m_toolBar;
+	m_toolBar = new wxMenuItem( m_view, ID_TOOL_BAR, wxString( wxT("&Tool Bar") ) , wxT("Toggle the toolbar display"), wxITEM_CHECK );
+	m_view->Append( m_toolBar );
+	m_toolBar->Check( true );
+	
+	wxMenuItem* m_statusBarMenu;
+	m_statusBarMenu = new wxMenuItem( m_view, ID_STATUS_BAR, wxString( wxT("&Status Bar") ) , wxT("Toggle the status bar display"), wxITEM_CHECK );
+	m_view->Append( m_statusBarMenu );
+	m_statusBarMenu->Check( true );
+	
+	m_view->AppendSeparator();
+	
+	wxMenuItem* m_panMode;
+	m_panMode = new wxMenuItem( m_view, ID_PAN_MODE, wxString( wxT("&Pan Mode") ) + wxT('\t') + wxT("CTRL+P"), wxT("Pan rendering with the mouse "), wxITEM_RADIO );
+	m_view->Append( m_panMode );
+	
+	wxMenuItem* m_zoomMode;
+	m_zoomMode = new wxMenuItem( m_view, ID_ZOOM_MODE, wxString( wxT("&Zoom Mode") ) + wxT('\t') + wxT("CTRL+Z"), wxT("Zoom rendering by selecting a area with the mouse"), wxITEM_RADIO );
+	m_view->Append( m_zoomMode );
+	
+	m_view->AppendSeparator();
+	
+	wxMenuItem* m_copy;
+	m_copy = new wxMenuItem( m_view, ID_RENDER_COPY, wxString( wxT("&Copy") ) , wxT("Copy rendering image to the clipboard"), wxITEM_NORMAL );
+	m_view->Append( m_copy );
+	
+	m_view->AppendSeparator();
+	
+	wxMenuItem* m_fullScreen;
+	m_fullScreen = new wxMenuItem( m_view, ID_FULL_SCREEN, wxString( wxT("&Full Screen") ) + wxT('\t') + wxT("CTRL+F"), wxT("Switch to full screen rendering"), wxITEM_NORMAL );
+	m_view->Append( m_fullScreen );
+	
+	m_menubar->Append( m_view, wxT("&View") );
+	
 	m_help = new wxMenu();
 	wxMenuItem* m_about;
 	m_about = new wxMenuItem( m_help, wxID_ABOUT, wxString( wxT("&About") ) + wxT('\t') + wxT("F1"), wxT("Show about dialog"), wxITEM_NORMAL );
@@ -121,6 +156,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( m_resume->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_pause->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_stop->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_toolBar->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_statusBarMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_panMode->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_zoomMode->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_copy->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_fullScreen->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_about->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_RESUMETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_PAUSETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -135,6 +176,12 @@ LuxMainFrame::~LuxMainFrame()
 	// Disconnect Events
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( LuxMainFrame::OnExit ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnOpen ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );

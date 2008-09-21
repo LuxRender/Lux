@@ -34,12 +34,18 @@ namespace lux
 	#define ID_RESUMEITEM 1000
 	#define ID_PAUSEITEM 1001
 	#define ID_STOPITEM 1002
-	#define ID_RESUMETOOL 1003
-	#define ID_PAUSETOOL 1004
-	#define ID_STOPTOOL 1005
-	#define ID_PANTOOL 1006
-	#define ID_ZOOMTOOL 1007
-	#define ID_REFINETOOL 1008
+	#define ID_TOOL_BAR 1003
+	#define ID_STATUS_BAR 1004
+	#define ID_PAN_MODE 1005
+	#define ID_ZOOM_MODE 1006
+	#define ID_RENDER_COPY 1007
+	#define ID_FULL_SCREEN 1008
+	#define ID_RESUMETOOL 1009
+	#define ID_PAUSETOOL 1010
+	#define ID_STOPTOOL 1011
+	#define ID_PANTOOL 1012
+	#define ID_ZOOMTOOL 1013
+	#define ID_REFINETOOL 1014
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -52,6 +58,7 @@ namespace lux
 			wxMenuBar* m_menubar;
 			wxMenu* m_file;
 			wxMenu* m_render;
+			wxMenu* m_view;
 			wxMenu* m_help;
 			wxAuiNotebook* m_auinotebook;
 			wxPanel* m_renderPage;

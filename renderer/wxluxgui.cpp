@@ -38,6 +38,7 @@
 #include "wx/filename.h"
 #include "wx/dcbuffer.h"
 #include "wx/splash.h"
+#include "wx/clipbrd.h" // CF
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "wxluxgui.h"
@@ -278,14 +279,78 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				ChangeRenderState(STOPPING);
 			}
 			break;
+		case ID_FULL_SCREEN: // CF
+			if ( !IsFullScreen() )
+			{
+				m_renderToolBar->Show( false );
+				m_viewerToolBar->Show( false );
+				ShowFullScreen( true );
+			}
+			else
+			{
+				ShowFullScreen( false );
+
+				if (m_view->IsChecked( ID_TOOL_BAR ) )
+				{
+					m_renderToolBar->Show( true );
+					m_viewerToolBar->Show( true );
+				}
+			}	
+			Layout();		
+			break;
+		case ID_TOOL_BAR: // CF
+			if ( m_renderToolBar->IsShown() )
+			{
+				m_renderToolBar->Show( false );
+				m_viewerToolBar->Show( false );
+			}
+			else
+			{
+				m_renderToolBar->Show( true );
+				m_viewerToolBar->Show( true );
+			}
+			Layout();
+			break;
+		case ID_STATUS_BAR: // CF
+			if ( m_statusBar->IsShown() )
+			{
+				m_statusBar->Show( false );
+			}
+			else
+			{
+				m_statusBar->Show( true );
+			}
+			Layout();
+			break;
+		case ID_RENDER_COPY: // CF
+			if (wxTheClipboard->Open()) 
+			{ 	
+				m_statusBar->SetStatusText(wxT("Copying..."), 0);
+				
+				// this looks weird, but if I delete any of these objects at runtime I get a segfault this is how they do in their example
+				// as far as I can tell this is not causing a leak but it bothers me doing it this way without being sure it will be cleaned up.
+				wxTheClipboard->SetData( new wxBitmapDataObject( *(new wxBitmap( *(new wxImage( luxStatistics("filmXres"), luxStatistics("filmYres"), luxFramebuffer()))))));
+				wxTheClipboard->Close();
+
+				m_statusBar->SetStatusText(wxT(""), 0);
+			}
+			break;
 		case wxID_ABOUT:
 			new wxSplashScreen(m_splashbmp, wxSPLASH_CENTRE_ON_PARENT, 0, this, -1);
 			break;
 		case wxID_EXIT:
 			Close(false);
 			break;
+		case ID_PAN_MODE: // CF
+			m_viewerToolBar->ToggleTool( ID_PANTOOL, true );
+			m_renderOutput->SetMode(PANZOOM);
+			break;
 		case ID_PANTOOL:
 			m_renderOutput->SetMode(PANZOOM);
+			break;
+		case ID_ZOOM_MODE: // CF
+			m_viewerToolBar->ToggleTool( ID_ZOOMTOOL, true );
+			m_renderOutput->SetMode(SELECTION);
 			break;
 		case ID_ZOOMTOOL:
 		case ID_REFINETOOL:
