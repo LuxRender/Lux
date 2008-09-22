@@ -42,9 +42,9 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	// Shift _dgEval_ _du_ in the $u$ direction and calculate bump map value
 	float du = .5f * (fabsf(dgs.dudx) + fabsf(dgs.dudy));
 	if (du == 0.f) du = .01f;
-	dgEval.p = dgs.p + du * dgs.dpdu;
-	dgEval.u = dgs.u + du;
-	dgEval.nn = Normalize((Normal)Cross(dgs.dpdu, dgs.dpdv) + du * dgs.dndu);
+	dgEval.p += du * dgs.dpdu;
+	dgEval.u += du;
+	dgEval.nn = Normalize(dgs.nn + du * dgs.dndu);
 	float uDisplace = d->Evaluate(dgEval);
 
 	// Shift _dgEval_ _dv_ in the $v$ direction and calculate bump map value
@@ -52,8 +52,8 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	if (dv == 0.f) dv = .01f;
 	dgEval.p = dgs.p + dv * dgs.dpdv;
 	dgEval.u = dgs.u;
-	dgEval.v = dgs.v + dv;
-	dgEval.nn = Normalize((Normal)Cross(dgs.dpdu, dgs.dpdv) + dv * dgs.dndv);
+	dgEval.v += dv;
+	dgEval.nn = Normalize(dgs.nn + dv * dgs.dndv);
 	float vDisplace = d->Evaluate(dgEval);
 
 	// Calculate bump map value at intersection point
@@ -61,8 +61,8 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	// Compute bump-mapped differential geometry
 	*dgBump = dgs;
-	dgBump->dpdu = dgs.dpdu + (uDisplace - displace) / du * Vector(dgs.nn);   // different to book, as displace*dgs.dndu creates artefacts
-	dgBump->dpdv = dgs.dpdv + (vDisplace - displace) / dv * Vector(dgs.nn);   // different to book, as displace*dgs.dndv creates artefacts
+	dgBump->dpdu += (uDisplace - displace) / du * Vector(dgs.nn);   // different to book, as displace*dgs.dndu creates artefacts
+	dgBump->dpdv += (vDisplace - displace) / dv * Vector(dgs.nn);   // different to book, as displace*dgs.dndv creates artefacts
 	dgBump->nn = Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
 	// INFO: We don't compute dgBump->dndu and dgBump->dndv as we need this
 	//       only here.
