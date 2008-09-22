@@ -644,8 +644,7 @@ boost::shared_ptr<Texture<RGBColor> >
 	boost::shared_ptr<Texture<RGBColor> > o (new ConstantTexture<RGBColor>(val));
 	return o;
 }
-boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n,
-		float def) const {
+boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
 	string name = geomParams.FindTexture(n);
 	if (name == "") name = materialParams.FindTexture(n);
 	if (name != "") {
@@ -659,8 +658,12 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 					luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		}
 	}
-	float val = geomParams.FindOneFloat(n,
-		materialParams.FindOneFloat(n, def));
-	boost::shared_ptr<Texture<float> > o (new ConstantTexture<float>(val));
-	return o;
+	return boost::shared_ptr<Texture<float> >();
+}
+boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n,
+		float def) const {
+	boost::shared_ptr<Texture<float> > texture = GetFloatTexture(n);
+	if (texture)  return texture;
+	float val = FindFloat(n, def);
+	return boost::shared_ptr<Texture<float> >(new ConstantTexture<float>(val));
 }

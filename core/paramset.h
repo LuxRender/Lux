@@ -74,25 +74,25 @@ public:
 	void AddFloat(const string &, const float *, int nItems = 1);
 	void AddInt(const string &,
 	            const int *,
-				int nItems = 1);
+	            int nItems = 1);
 	void AddBool(const string &,
 	             const bool *,
-				 int nItems = 1);
+	             int nItems = 1);
 	void AddPoint(const string &,
 	              const Point *,
-				  int nItems = 1);
+	              int nItems = 1);
 	void AddVector(const string &,
 	               const Vector *,
-				   int nItems = 1);
+	               int nItems = 1);
 	void AddNormal(const string &,
 	               const Normal *,
-				   int nItems = 1);
+	               int nItems = 1);
 	void AddRGBColor(const string &,
-	                const RGBColor *,
-					int nItems = 1);
+	                 const RGBColor *,
+	                 int nItems = 1);
 	void AddString(const string &,
 	              const string *,
-				  int nItems = 1);
+	              int nItems = 1);
 	void AddTexture(const string &,
 	                const string &);
 	bool EraseInt(const string &);
@@ -111,7 +111,7 @@ public:
 	Vector FindOneVector(const string &, const Vector &d) const;
 	Normal FindOneNormal(const string &, const Normal &d) const;
 	RGBColor FindOneRGBColor(const string &,
-		const RGBColor &d) const;
+	                         const RGBColor &d) const;
 	string FindOneString(const string &, const string &d) const;
 	string FindTexture(const string &) const;
 	const float *FindFloat(const string &, int *nItems) const;
@@ -121,9 +121,9 @@ public:
 	const Vector *FindVector(const string &, int *nItems) const;
 	const Normal *FindNormal(const string &, int *nItems) const;
 	const RGBColor *FindRGBColor(const string &,
-		int *nItems) const;
+	                             int *nItems) const;
 	const string *FindString(const string &,
-		int *nItems) const;
+	                         int *nItems) const;
 	void ReportUnused() const;
 	~ParamSet() {
 		Clear();
@@ -289,33 +289,34 @@ public:
 		  RGBColorTextures(st) {
 	}
 	boost::shared_ptr<Texture<RGBColor> > GetRGBColorTexture(const string &name,
-			const RGBColor &def) const;
+	                                                         const RGBColor &def) const;
+	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
-			float def) const;
+	                                                   float def) const;
 	float FindFloat(const string &n, float d) const {
 		return geomParams.FindOneFloat(n,
 			materialParams.FindOneFloat(n, d));
 	}
 	string FindString(const string &n) const {
-	       return geomParams.FindOneString(n, materialParams.FindOneString(n, ""));
+		return geomParams.FindOneString(n, materialParams.FindOneString(n, ""));
 	}
 	int FindInt(const string &n, int d) const {
-	       return geomParams.FindOneInt(n, materialParams.FindOneInt(n, d));
+		return geomParams.FindOneInt(n, materialParams.FindOneInt(n, d));
 	}
 	bool FindBool(const string &n, bool d) const {
-	       return geomParams.FindOneBool(n, materialParams.FindOneBool(n, d));
+		return geomParams.FindOneBool(n, materialParams.FindOneBool(n, d));
 	}
 	Point FindPoint(const string &n, const Point &d) const {
-	       return geomParams.FindOnePoint(n, materialParams.FindOnePoint(n, d));
+		return geomParams.FindOnePoint(n, materialParams.FindOnePoint(n, d));
 	}
 	Vector FindVector(const string &n, const Vector &d) const {
-	       return geomParams.FindOneVector(n, materialParams.FindOneVector(n, d));
+		return geomParams.FindOneVector(n, materialParams.FindOneVector(n, d));
 	}
 	Normal FindNormal(const string &n, const Normal &d) const {
-	       return geomParams.FindOneNormal(n, materialParams.FindOneNormal(n, d));
+		return geomParams.FindOneNormal(n, materialParams.FindOneNormal(n, d));
 	}
 	RGBColor FindRGBColor(const string &n, const RGBColor &d) const {
-	       return geomParams.FindOneRGBColor(n, materialParams.FindOneRGBColor(n, d));
+		return geomParams.FindOneRGBColor(n, materialParams.FindOneRGBColor(n, d));
 	}
 	void ReportUnused() const {
 		//geomParams.ReportUnused(); // note - radiance - incompatible with mix material. (must recursiveley pass)
@@ -326,10 +327,8 @@ public:
 private:
 	// TextureParams Private Data
 	const ParamSet &geomParams, &materialParams;
-	map<string,
-	    boost::shared_ptr<Texture<float> > > &floatTextures;
-	map<string,
-	    boost::shared_ptr<Texture<RGBColor> > > &RGBColorTextures;
+	map<string, boost::shared_ptr<Texture<float> > >    &floatTextures;
+	map<string, boost::shared_ptr<Texture<RGBColor> > > &RGBColorTextures;
 };
 
 }//namespace lux

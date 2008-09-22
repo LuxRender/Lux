@@ -225,7 +225,7 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
     // Pick from presets, fall back to the first if name not found
     DataFromName(paintname, &Kd, &Ks1, &Ks2, &Ks3, &R1, &R2, &R3, &M1, &M2, &M3);
 
-  boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+  boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 
   return new CarPaint(Kd, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap);
 }

@@ -67,7 +67,7 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<RGBColor> > Ks = mp.GetRGBColorTexture("Ks", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
-	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 	return new ShinyMetal(Ks, uroughness, vroughness, Kr, bumpMap);
 }
 

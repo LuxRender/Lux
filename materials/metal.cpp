@@ -409,7 +409,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
 
 	boost::shared_ptr<Texture<float> > uroughness = tp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = tp.GetFloatTexture("vroughness", .1f);
-  boost::shared_ptr<Texture<float> > bumpMap = tp.GetFloatTexture("bumpmap", 0.f);
+  boost::shared_ptr<Texture<float> > bumpMap = tp.GetFloatTexture("bumpmap");
 
   return new Metal(n, k, uroughness, vroughness, bumpMap);
 }

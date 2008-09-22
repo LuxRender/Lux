@@ -65,7 +65,7 @@ Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<RGBColor> > Kr = mp.GetRGBColorTexture("Kr", RGBColor(1.f));
 	boost::shared_ptr<Texture<RGBColor> > Kt = mp.GetRGBColorTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
-	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 	return new MatteTranslucent(Kr, Kt, sigma, bumpMap);
 }
 

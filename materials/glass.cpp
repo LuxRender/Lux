@@ -65,7 +65,7 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.f);				// Cauchy B coefficient
 	bool archi = mp.FindBool("architectural", false);
-	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap", 0.f);
+	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 	return new Glass(Kr, Kt, index, cbf, archi, bumpMap);
 }
 
