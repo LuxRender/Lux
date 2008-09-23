@@ -110,6 +110,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
+			m_view->Enable(ID_RENDER_COPY, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
@@ -121,6 +122,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, true);
 			m_render->Enable(ID_STOPITEM, true);
+			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, true);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
@@ -132,6 +134,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
+			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
@@ -142,6 +145,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, true);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
+			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
@@ -152,6 +156,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, true);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, true);
+			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
@@ -162,6 +167,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
+			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
@@ -295,8 +301,8 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 					m_renderToolBar->Show( true );
 					m_viewerToolBar->Show( true );
 				}
-			}	
-			Layout();		
+			}
+			Layout();
 			break;
 		case ID_TOOL_BAR: // CF
 			if ( m_renderToolBar->IsShown() )
@@ -323,10 +329,11 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			Layout();
 			break;
 		case ID_RENDER_COPY: // CF
-			if (wxTheClipboard->Open()) 
-			{ 	
+			if ( m_guiRenderState != WAITING &&
+				 wxTheClipboard->Open() )
+			{
 				m_statusBar->SetStatusText(wxT("Copying..."), 0);
-				
+
 				// this looks weird, but if I delete any of these objects at runtime I get a segfault this is how they do in their example
 				// as far as I can tell this is not causing a leak but it bothers me doing it this way without being sure it will be cleaned up.
 				wxTheClipboard->SetData( new wxBitmapDataObject( *(new wxBitmap( *(new wxImage( luxStatistics("filmXres"), luxStatistics("filmYres"), luxFramebuffer()))))));
