@@ -117,7 +117,7 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 
 SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha, int rayDepth, bool includeEmit) const {
+		float *alpha, int rayDepth, bool includeEmit, float &nrContribs) const {
 	Intersection isect;
 	SWCSpectrum L(0.);
 	if (alpha) *alpha = 1.;
@@ -134,8 +134,13 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 		const Normal &n = bsdf->dgShading.nn;
 
 		// Compute emitted light if ray hit an area light source
-		if(includeEmit)
-			L += isect.Le(tspack, wo);
+		if(includeEmit) {
+			const SWCSpectrum Le(isect.Le(tspack, wo));
+			if (Le.filter(tspack) > 0.f) {
+				L += Le;
+				++nrContribs;
+			}
+		}
 
 		// Compute direct lighting for _DistributedPath_ integrator
 		if (scene->lights.size() > 0) {
@@ -163,16 +168,26 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				switch (lightStrategy) {
 					case SAMPLE_ALL_UNIFORM:
 						for (u_int i = 0; i < scene->lights.size(); ++i) {
-							L += invsamples * EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-								sample, lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent);
+							const SWCSpectrum Ld(EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
+								sample, lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent));
+							if (Ld.filter(tspack) > 0.f) {
+								L += invsamples * Ld;
+								++nrContribs;
+							}
 							// TODO add bsdf selection flags
 						}
 						break;
 					case SAMPLE_ONE_UNIFORM:
-						L += invsamples * UniformSampleOneLight(tspack, scene, p, n,
-								wo, bsdf, sample,
-								lightSample, lightNum, bsdfSample, bsdfComponent);
+					{
+						const SWCSpectrum Ld(UniformSampleOneLight(tspack, scene, p, n,
+							wo, bsdf, sample,
+							lightSample, lightNum, bsdfSample, bsdfComponent));
+						if (Ld.filter(tspack) > 0.f) {
+							L += invsamples * Ld;
+							++nrContribs;
+						}
 						break;
+					}
 					default:
 						break;
 				}
@@ -207,7 +222,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags)) {
 					RayDifferential rd(p, wi);
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
+					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
 			}
@@ -232,7 +247,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags)) {
 					RayDifferential rd(p, wi);
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
+					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
 			}
@@ -259,7 +274,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags)) {
 					RayDifferential rd(p, wi);
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
+					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
 			}
@@ -284,7 +299,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags)) {
 					RayDifferential rd(p, wi);
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false)
+					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
 			}
@@ -295,21 +310,26 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR))) {
 				RayDifferential rd(p, wi);
-				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true) * f * AbsDot(wi, n);
+				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true, nrContribs) * f * AbsDot(wi, n);
 			}
 		}
 		if (rayDepth < specularrefractDepth) {
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR))) {
 				RayDifferential rd(p, wi);
-				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true) * f * AbsDot(wi, n);
+				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true, nrContribs) * f * AbsDot(wi, n);
 			}
 		} 
 
 	} else {
 		// Handle ray with no intersection
-		for (u_int i = 0; i < scene->lights.size(); ++i)
-			L += scene->lights[i]->Le(tspack, ray);
+		for (u_int i = 0; i < scene->lights.size(); ++i) {
+			const SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
+			if (Le.filter(tspack) > 0.f) {
+				L += scene->lights[i]->Le(tspack, ray);
+				++nrContribs;
+			}
+		}
 		if (alpha && L.Black()) *alpha = 0.;
 	}
 
@@ -322,12 +342,13 @@ SWCSpectrum DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		float *alpha) const {
 	SampleGuard guard(sample->sampler, sample);
+	float nrContribs = 0.f;
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		LiInternal(tspack, scene, ray, sample, alpha, 0, true).ToXYZ(tspack),
+		LiInternal(tspack, scene, ray, sample, alpha, 0, true, nrContribs).ToXYZ(tspack),
 		alpha ? *alpha : 1.f);
 
-	return SWCSpectrum(-1.f);
+	return nrContribs;
 }
 
 SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &params) {

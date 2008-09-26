@@ -51,7 +51,7 @@ public:
 
 private:
 	SWCSpectrum LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
-		const Sample *sample, float *alpha, int rayDepth, bool includeEmit) const;
+		const Sample *sample, float *alpha, int rayDepth, bool includeEmit, float &nrContribs) const;
 
 	// DistributedPath Private Data
 	LightStrategy lightStrategy;

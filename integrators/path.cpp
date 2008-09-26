@@ -56,6 +56,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		float *alpha) const
 {
 	SampleGuard guard(sample->sampler, sample);
+	float nrContribs = 0.f;
 	// Declare common path integration variables
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
@@ -72,9 +73,11 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
 				L = scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
 				color = L.ToXYZ(tspack);
-				if (!L.Black())
+				if (!L.Black()) {
 					sample->AddContribution(sample->imageX, sample->imageY,
 						L.ToXYZ(tspack), alpha ? *alpha : 1.f, V);
+					++nrContribs;
+				}
 				pathThroughput = 1.f;
 				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 			}
@@ -93,9 +96,11 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Set alpha channel
 			if (pathLength == 0 && alpha && !(color.y() > 0.f))
 				*alpha = 0.;
-			if (color.y() > 0.f)
+			if (color.y() > 0.f) {
 				sample->AddContribution(sample->imageX, sample->imageY,
 					color, alpha ? *alpha : 1.f, V);
+				++nrContribs;
+			}
 			break;
 		}
 		if (pathLength == 0)
@@ -104,9 +109,11 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		SWCSpectrum Lv(scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha));
 		Lv *= pathThroughput;
 		color = Lv.ToXYZ(tspack);
-		if (color.y() > 0.f)
+		if (color.y() > 0.f) {
 			sample->AddContribution(sample->imageX, sample->imageY,
 				color, alpha ? *alpha : 1.f, V);
+			++nrContribs;
+		}
 		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 
 		// Possibly add emitted light at path vertex
@@ -116,9 +123,11 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			Le *= pathThroughput;
 			L += Le;
 			color = Le.ToXYZ(tspack);
-			if (color.y() > 0.f)
+			if (color.y() > 0.f) {
 				sample->AddContribution(sample->imageX, sample->imageY,
 					color, alpha ? *alpha : 1.f, V);
+				++nrContribs;
+			}
 		}
 		if (pathLength == maxDepth)
 			break;
@@ -147,9 +156,11 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		Ll *= pathThroughput;
 		L += Ll;
 		color = Ll.ToXYZ(tspack);
-		if (color.y() > 0.f)
+		if (color.y() > 0.f) {
 			sample->AddContribution(sample->imageX, sample->imageY,
 				color, alpha ? *alpha : 1.f, V);
+			++nrContribs;
+		}
 
 		// Sample BSDF to get new path direction
 		Vector wi;
@@ -187,7 +198,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		ray = RayDifferential(p, wi);
 	}
 
-	return L;
+	return nrContribs;
 }
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {

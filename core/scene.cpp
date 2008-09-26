@@ -208,7 +208,7 @@ double Scene::Statistics_Efficiency() {
 		return 0.0;
 
     // return efficiency percentage
-    return 100. - (drops * (100/samples));
+    return (100.f * drops) / samples;
 }
 
 void Scene::SignalThreads(ThreadSignals signal) {
@@ -319,8 +319,10 @@ void RenderThread::render(RenderThread *myThread) {
                         SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
                         SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );*/
 
-            if (Lo.Black())
-                myThread->stat_blackSamples++;
+/*            if (Lo.Black())
+                myThread->stat_blackSamples++;*/
+	    // Jeanphi - Hijack statistics until volume integrator revamp
+	    myThread->stat_blackSamples += Lo.filter(myThread->tspack);
 
             // TODO: what about rayWeight?
             myThread->sampler->AddSample(*(myThread->sample));

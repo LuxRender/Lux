@@ -528,8 +528,10 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	const Sample *sample, float *alpha) const
 {
 	SampleGuard guard(sample->sampler, sample);
+	float nrContribs = 0.f;
 	vector<BidirVertex> eyePath(maxEyeDepth), lightPath(maxLightDepth);
 	SWCSpectrum L(0.f);
+	float variance = 0.f;
 	if (alpha)
 		*alpha = 1.f;
 	int numberOfLights = static_cast<int>(scene->lights.size());
@@ -541,7 +543,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	if (eyePdf > 0.f)
 		We /= eyePdf;
 	else
-		return 0.f;	//FIXME not necessarily true if special sampling for direct connection to the eye
+		return nrContribs;	//FIXME not necessarily true if special sampling for direct connection to the eye
 	int nEye = generateEyePath(tspack, scene, eyeBsdf, sample, sampleEyeOffset, eyePath);
 	// Light path cannot intersect camera (FIXME)
 	eyePath[0].dARWeight = 0.f;
@@ -588,17 +590,19 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 			SWCSpectrum Lh(0.f);
 			if (getEnvironmentLight(tspack, scene, eyePath, i, maxEyeDepth,
 				maxLightDepth, &Lh, &weight)) {
-				Lh *= We;
-				XYZColor color(Lh.ToXYZ(tspack));
-				if (color.y() > 0.f)
-					sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
+				if (!Lh.Black()) {
+					L += Lh;
+					variance += weight * Lh.filter(tspack);
+					++nrContribs;
+				}
 				break; //from now on the eye path does not intersect anything
 			} else if (getLightHit(tspack, scene, eyePath, i, maxEyeDepth,
 				maxLightDepth, &Lh, &weight)) {
-				Lh *= We;
-				XYZColor color(Lh.ToXYZ(tspack));
-				if (color.y() > 0.f)
-					sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
+				if (!Lh.Black()) {
+					L += Lh;
+					variance += weight * Lh.filter(tspack);
+					++nrContribs;
+				}
 			}
 		}
 		// Do direct lighting
@@ -615,17 +619,19 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 					scene->lights[lightDirectNumber],
 					data[0], data[1], portal, &Ld, &weight,
 					&w)) {
-					Ld *= We;
-					Ld *= numberOfLights;
-					XYZColor color(Ld.ToXYZ(tspack));
-					if (color.y() > 0.f) {
-						if (i > 1)
-							sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
-						else {
+					if (!Ld.Black()) {
+						Ld *= numberOfLights;
+						if (i > 1) {
+							L += Ld;
+							variance += weight * Ld.filter(tspack);
+						} else {
+							Ld *= We;
 							float xd, yd;
 							scene->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
+							XYZColor color(Ld.ToXYZ(tspack));
 							sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 						}
+						++nrContribs;
 					}
 				}
 				break;
@@ -637,16 +643,18 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 						scene->lights[l],
 						data[0], data[1], data[2], &Ld,
 						&weight, &w)) {
-						Ld *= We;
-						XYZColor color(Ld.ToXYZ(tspack));
-						if (color.y() > 0.f) {
-							if (i > 1)
-								sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
-							else {
+						if (!Ld.Black()) {
+							if (i > 1) {
+								L += Ld;
+								variance += weight * Ld.filter(tspack);
+							} else {
+								Ld *= We;
 								float xd, yd;
 								scene->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
+								XYZColor color(Ld.ToXYZ(tspack));
 								sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 							}
+							++nrContribs;
 						}
 					}
 				}
@@ -667,16 +675,18 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 				if (getLight(tspack, scene, eyePath, i, maxEyeDepth,
 					lightPath, j, maxLightDepth, directPdf, &Ll,
 					&weight)) {
-					Ll *= We;
-					XYZColor color(Ll.ToXYZ(tspack));
-					if (color.y() > 0.f) {
-						if (i > 1)
-							sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, weight, eyeBufferId);
-						else {
+					if (!Ll.Black()) {
+						if (i > 1) {
+							L += Ll;
+							variance += weight * Ll.filter(tspack);
+						} else {
+							Ll *= We;
 							float xl, yl;
 							scene->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
+							XYZColor color(Ll.ToXYZ(tspack));
 							sample->AddContribution(xl, yl, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 						}
+						++nrContribs;
 					}
 				}
 				// Use general direct lighting pdf for next events
@@ -685,7 +695,11 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 			}
 		}
 	}
-	return SWCSpectrum(1.f);
+	L *= We;
+	variance /= L.filter(tspack);
+	XYZColor color(L.ToXYZ(tspack));
+	sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, variance, eyeBufferId);
+	return nrContribs;
 }
 
 SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
