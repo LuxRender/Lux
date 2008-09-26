@@ -263,7 +263,10 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	}
 	// calculate meanIntensity
 	if (initCount < initSamples) {
-		meanIntensity += newLY / initSamples;
+		if (useVariance && newV > 0.f)
+			meanIntensity += newV / initSamples;
+		else if (newLY > 0.f)
+			meanIntensity += newLY / initSamples;
 		++(initCount);
 		if (initCount < initSamples)
 			return;
@@ -276,7 +279,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	if (LY > 0.f) {
 		accProb = min(1.f, newLY / LY);
 		if (useVariance && V > 0.f && newV > 0.f && newLY > 0.f)
-			factor = newV / (/*newLY **/ V * accProb);
+			factor = Clamp(newV / (V * accProb), min(LY / newLY, newLY / LY), 1.f / accProb);
 		else
 			factor = 1.f;
 	} else {
@@ -284,8 +287,8 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		factor = 1.f;
 	}
 	accProb2 = accProb * factor;
-	float newWeight = (accProb + (large ? 1.f : 0.f)) / (factor * newLY / meanIntensity + pLarge);
-	weight += (1.f - accProb) / (LY / (factor * meanIntensity) + pLarge);
+	float newWeight = (accProb + (large ? 1.f : 0.f)) / ((useVariance ? newV : newLY) / meanIntensity + pLarge);
+	weight += (1.f - accProb) / ((useVariance ? V : LY) / meanIntensity + pLarge);
 	// try or force accepting of the new sample
 	if (accProb2 == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb2) {
 		// Add accumulated contribution of previous reference sample
