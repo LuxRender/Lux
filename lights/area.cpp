@@ -61,7 +61,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal ns;
-	Point ps = prim->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	Point ps = prim->Sample(p, u1, u2, u3, &ns);
 	*wi = Normalize(ps - p);
 	*pdf = prim->Pdf(p, *wi);
 	visibility->SetSegment(p, ps);
@@ -75,7 +75,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	Normal Ns;
-	Point Ps = prim->Sample(P, u1, u2, tspack->rng->floatValue(), &Ns); // TODO - REFACT - add passed value from sample
+	Point Ps = prim->Sample(P, u1, u2, u3, &Ns);
 	*wo = Normalize(Ps - P);
 	*pdf = prim->Pdf(P, *wo);
 	visibility->SetSegment(P, Ps);
@@ -94,24 +94,24 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 float AreaLight::Pdf(const Point &P, const Vector &w) const {
 	return prim->Pdf(P, w);
 }
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
 {
 	Normal ns;
-	Point ps = prim->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	Point ps = prim->Sample(u1, u2, u3, &ns);
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(ps);
-	return L(tspack, ps, ns, Vector(ns)) /** M_PI*/;
+	return L(tspack, ps, ns, Vector(ns));
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility) const
 {
 	Normal ns;
-	Point ps = prim->Sample(p, u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+	Point ps = prim->Sample(p, u1, u2, u3, &ns);
 	Vector wo(Normalize(ps - p));
 	*pdf = prim->Pdf(ps);
 	*pdfDirect = prim->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
@@ -121,7 +121,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const 
 	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(Lambertian)(SWCSpectrum(1.f)));
 	visibility->SetSegment(p, ps);
-	return L(tspack, ps, ns, -wo) /** M_PI*/;
+	return L(tspack, ps, ns, -wo);
 }
 float AreaLight::Pdf(const Scene *scene, const Point &p) const
 {
@@ -134,35 +134,6 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, ray.d) * AbsDot(ray.d, n) / DistanceSquared(dg.p, ray.o);
 	return L(tspack, dg.p, dg.nn, -ray.d) /** M_PI*/;
-}
-
-void AreaLight::SamplePosition(float u1, float u2, float u3, Point *p, Normal *n, float *pdf) const
-{
-	*p = prim->Sample(u1, u2, u3, n);
-	*pdf = prim->Pdf(*p);
-}
-void AreaLight::SampleDirection(float u1, float u2,const Normal &nn, Vector *wo, float *pdf) const
-{
-	//*wo = UniformSampleSphere(u1, u2);
-	//if (Dot(*wo, nn) < 0.) *wo *= -1;
-	//*pdf = INV_TWOPI;
-
-	Vector v;
-	v = CosineSampleHemisphere(u1, u2);
-	TransformAccordingNormal(nn, v, wo);
-	*pdf = INV_PI * AbsDot(*wo,nn);
-}
-float AreaLight::EvalPositionPdf(const Point p, const Normal &n, const Vector &w) const
-{
-	return Dot(n, w) > 0 ? prim->Pdf(p) : 0.;
-}
-float AreaLight::EvalDirectionPdf(const Point p, const Normal &n, const Vector &w) const
-{
-	return Dot(n, w) > 0 ? INV_PI * AbsDot(w,n) : 0.;
-}
-SWCSpectrum AreaLight::Eval(const TsPack *tspack, const Normal &n, const Vector &w) const
-{
-	return Dot(n, w) > 0 ? SWCSpectrum(tspack, LSPD) : 0.;
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,

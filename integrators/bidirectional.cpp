@@ -54,6 +54,7 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	}
 
 	lightNumOffset = sample->Add1D(1);
+	lightComponentOffset = sample->Add1D(1);
 	lightPosOffset = sample->Add2D(1);
 	lightDirOffset = sample->Add2D(1);
 	vector<u_int> structure;
@@ -556,9 +557,10 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	lightNum = min<int>(lightNum, numberOfLights - 1);
 	Light *light = scene->lights[lightNum];
 	const float *data = sample->twoD[lightPosOffset];
+	const float component = sample->oneD[lightComponentOffset][0];
 	BSDF *lightBsdf;
 	float lightPdf;
-	SWCSpectrum Le = light->Sample_L(tspack, scene, data[0], data[1], &lightBsdf,
+	SWCSpectrum Le = light->Sample_L(tspack, scene, data[0], data[1], component, &lightBsdf,
 		&lightPdf);
 	int nLight = 0;
 	if (lightPdf == 0.f)

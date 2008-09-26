@@ -290,7 +290,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
-SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
 {
 	Point worldCenter;
 	float worldRadius;

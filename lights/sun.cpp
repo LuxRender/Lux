@@ -307,7 +307,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	}
 }
 
-SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
 {
 	SWCSpectrum result = SWCSpectrum(tspack, LSPD);
 	Point worldCenter;
@@ -325,7 +325,6 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 	} else  {
 		// Choose a random portal
 		int shapeIndex = 0;
-		float u3 = tspack->rng->floatValue(); //FIXME replace with sample value
 		if(nrPortalShapes > 1) {
 			shapeIndex = min<float>(nrPortalShapes - 1,
 				u3 * nrPortalShapes);

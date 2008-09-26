@@ -52,7 +52,7 @@ private:
 	// BidirIntegrator Data
 	LightStrategy lightStrategy;
 	int maxEyeDepth, maxLightDepth;
-	int lightNumOffset, lightPosOffset, lightDirOffset;
+	int lightNumOffset, lightComponentOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
 	int eyeBufferId, lightBufferId;
 
