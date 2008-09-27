@@ -42,6 +42,7 @@ public:
     void Refine(vector<boost::shared_ptr<Primitive> > &refined,
     		const PrimitiveRefinementHints& refineHints,
     		boost::shared_ptr<Primitive> thisPtr);
+    bool CanSample() const { return false; }
     friend class BaryTriangle;
     template <class T> friend class VertexTexture;
 
@@ -69,13 +70,17 @@ public:
     }
     BBox ObjectBound() const;
     BBox WorldBound() const;
+
+    bool CanIntersect() const { return true; }
     bool Intersect(const Ray &ray, Intersection* isect) const;
     bool IntersectP(const Ray &ray) const;
 
-    float Area() const;
-    virtual void GetShadingGeometry(const Transform &obj2world,
+    void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,
             DifferentialGeometry *dgShading) const;
+
+    bool CanSample() const { return true; }
+    float Area() const;
     Point Sample(float u1, float u2, float u3, Normal *Ns) const;
 
 private:

@@ -60,7 +60,7 @@ public:
 	/**
 	 * Returns whether this primitive can be intersected.
 	 */
-	virtual bool CanIntersect() const;
+	virtual bool CanIntersect() const = 0;
 	/**
 	 * Intersects this primitive with the given ray.
 	 * If an intersection is found, the ray will (i.e. r.tmax)
@@ -91,7 +91,7 @@ public:
 	/**
 	 * Returns whether this primitive can be sampled.
 	 */
-	virtual bool CanSample() const;
+	virtual bool CanSample() const = 0;
 	/**
 	 * Returns the area of this primitive.
 	 */
@@ -278,6 +278,20 @@ public:
 	bool CanIntersect() const { return instance->CanIntersect(); }
 	bool Intersect(const Ray &r, Intersection *in) const;
 	bool IntersectP(const Ray &r) const;
+
+	bool CanSample() const { return instance->CanSample(); }
+	float Area() const { return instance->Area(); }
+	Point Sample(float u1, float u2, float u3, Normal *Ns) const  {
+		return instance->Sample(u1, u2, u3, Ns);
+	}
+	float Pdf(const Point &p) const { return instance->Pdf(p); }
+	Point Sample(const Point &P,
+			float u1, float u2, float u3, Normal *Ns) const {
+		return instance->Sample(P, u1, u2, u3, Ns);
+	}
+	float Pdf(const Point &p, const Vector &wi) const {
+		return instance->Pdf(p, wi);
+	}
 private:
 	// InstancePrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
@@ -288,6 +302,7 @@ class Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	bool CanIntersect() const { return true; }
+	bool CanSample() const { return false; }
 
 	/**
 	 * Gives all primitives in this aggregate.

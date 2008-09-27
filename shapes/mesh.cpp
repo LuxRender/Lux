@@ -202,8 +202,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		// If there is 1 unique vertex (with normals and uv coordinates) for each triangle:
 		//  bary = 52 bytes/triangle
 		//  wald = 128 bytes/triangle
-		// Note: this ignores several factors (i.e. Primitive's, accel data, ...)
-		//  the following are accounted for: vertices, vertex indices & Mesh*Triangle data
+		// Note: this ignores some accel data
+		//  the following are accounted for: vertices, vertex indices, Mesh*Triangle data
+		//									 and one shared_ptr in the accel
 		//TODO Lotus - find good values
 		if(ntris <= 500000)
 			concreteTriType = TRI_WALD;

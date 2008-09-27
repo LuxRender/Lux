@@ -117,7 +117,7 @@ public:
 	}
 	bool Intersect(const Ray &r, Intersection *in) const;
 
-	bool CanSample() {
+	bool CanSample() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanSample()) return false;
 		return true;

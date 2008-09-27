@@ -37,9 +37,6 @@ void Primitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 }
 
 
-bool Primitive::CanIntersect() const {
-	return false;
-}
 bool Primitive::Intersect(const Ray &r, Intersection *in) const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Intersect method called!");
 	return false;
@@ -57,9 +54,6 @@ void Primitive::GetShadingGeometry(const Transform &obj2world,
 }
 
 
-bool Primitive::CanSample() const {
-	return false;
-}
 float Primitive::Area() const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Area method called!");
 	return 0.f;
