@@ -51,6 +51,8 @@ public:
 	}
 	bool IsDeltaLight() const { return false; }
 	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;
@@ -60,6 +62,8 @@ public:
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Normal &, const Vector &) const;
 	float Pdf(const Point &, const Vector &) const;
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const;
+	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
