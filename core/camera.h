@@ -38,8 +38,8 @@ public:
 		float sopen, float sclose, Film *film);
 	virtual ~Camera();
 	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
-	virtual SWCSpectrum Sample_W(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return 0.f;}
-	virtual SWCSpectrum Sample_W(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return 0.f;}
+	virtual SWCSpectrum Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return 0.f;}
+	virtual SWCSpectrum Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return 0.f;}
 	virtual float Pdf(const Point &p, const Normal &n, const Vector &wi) const {return 0.f;}
 	virtual void GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const {}
 	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;

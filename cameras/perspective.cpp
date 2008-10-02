@@ -238,7 +238,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	return 1.f;
 }
 
-SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, float u1, float u2, BSDF **bsdf, float *pdf) const
+SWCSpectrum PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
 {
 	Point psC(0.f);
 	ConcentricSampleDisk(u1, u2, &psC.x, &psC.y);
@@ -254,7 +254,7 @@ SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, float u1, float u2, 
 	*pdf = posPdf;
 	return SWCSpectrum(posPdf);
 }
-SWCSpectrum PerspectiveCamera::Sample_W(const Scene *scene, const Point &p, const Normal &n, float u1, float u2, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const
+SWCSpectrum PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const
 {
 	Point psC(0.f);
 	ConcentricSampleDisk(u1, u2, &psC.x, &psC.y);

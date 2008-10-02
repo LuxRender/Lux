@@ -540,8 +540,9 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	// Trace eye path
 	BSDF *eyeBsdf;
 	float eyePdf;
-	SWCSpectrum We = scene->camera->Sample_W(scene,
-		sample->lensU, sample->lensV, &eyeBsdf, &eyePdf);
+	//Jeanphi - Replace dummy .5f by a sampled value if needed
+	SWCSpectrum We = scene->camera->Sample_W(tspack, scene,
+		sample->lensU, sample->lensV, .5f, &eyeBsdf, &eyePdf);
 	if (eyePdf > 0.f)
 		We /= eyePdf;
 	else
