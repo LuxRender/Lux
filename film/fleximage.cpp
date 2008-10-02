@@ -168,7 +168,7 @@ void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alp
 
     // TODO: Find a group
     if (bufferGroups.empty()) {
-        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+        RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
         CreateBuffers();
     }
 
@@ -226,7 +226,7 @@ void FlexImageFilm::FlushSampleArray() {
     
     // TODO: Find a group
     if (bufferGroups.empty()) {
-        RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+        RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
         CreateBuffers();
     }
 
@@ -573,7 +573,7 @@ void FlexImageFilm::TransmitFilm(
 
 		// TODO: Find a group
 		if (bufferGroups.empty()) {
-			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+			RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
 			CreateBuffers();
 		}
 
@@ -644,7 +644,7 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
 
 		// TODO: Find a group
 		if (bufferGroups.empty()) {
-			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+			RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
 			CreateBuffers();
 		}
 

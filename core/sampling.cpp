@@ -47,13 +47,12 @@ void Sampler::AddSample(const Sample &sample)
 {
 	film->AddSampleCount(1.f); // TODO: add to correct buffer group
 	for (vector<Sample::Contribution>::const_iterator contribution = sample.contributions.begin(); contribution != sample.contributions.end(); ++contribution) {
-		if (!(*contribution).color.Black())
-			film->AddSample((*contribution).imageX,
-				(*contribution).imageY,
-				(*contribution).color,
-				(*contribution).alpha,
-				(*contribution).buffer,
-				(*contribution).bufferGroup);
+		film->AddSample((*contribution).imageX,
+			(*contribution).imageY,
+			(*contribution).color,
+			(*contribution).alpha,
+			(*contribution).buffer,
+			(*contribution).bufferGroup);
 	}
 }
 
