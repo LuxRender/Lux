@@ -60,12 +60,12 @@ public:
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
 	void AddSampleCount(float count, int bufferGroup = 0) {
-		// Dade - This fix (bug #361) is not thread safe and always lead to a crash
-		// on MacOS. I comment out the fix until we have a better one.
-		/*if (bufferGroups.empty()) {
-			RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+        	boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+		if (bufferGroups.empty()) {
+			RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
 			CreateBuffers();
-		}*/
+		}
+		lock.unlock();
 
 		if (!bufferGroups.empty()) {
 			bufferGroups[bufferGroup].numberOfSamples += count;
