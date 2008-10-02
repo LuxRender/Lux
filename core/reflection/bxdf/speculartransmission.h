@@ -42,6 +42,7 @@ public:
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		if (architectural && wi == -wo) return 1.f;
 		else return 0.f;

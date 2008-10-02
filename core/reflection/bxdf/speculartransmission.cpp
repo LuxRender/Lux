@@ -96,9 +96,65 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	}
 	return true;
 }
+float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool reverse) const
+{
+	// Figure out which $\eta$ is incident and which is transmitted
+	const bool entering = CosTheta(wo) > 0.f;
+	float ei = etai, et = etat;
+
+	if(cb != 0.f) {
+		// Handle dispersion using cauchy formula
+		const float w = tspack->swl->w[tspack->swl->single_w];
+		et += (cb * 1000000.f) / (w * w);
+	}
+
+	if (!entering && !architectural)
+		swap(ei, et);
+	// Compute transmitted ray direction
+	const float sini2 = SinTheta2(wo);
+	const float eta = ei / et;
+	const float eta2 = eta * eta;
+	const float sint2 = eta2 * sini2;
+	// Handle total internal reflection for transmission
+	if (sint2 > 1.f)
+		return 0.f;
+	float cost = sqrtf(max(0.f, 1.f - sint2));
+	if (entering) cost = -cost;
+	float F, factor;
+	bool single = tspack->swl->single;
+	tspack->swl->single = true;
+	if (!architectural) {
+		if (reverse) {
+			F = fresnel.Evaluate(tspack, cost).filter(tspack);
+			factor = eta2 / fabsf(cost);
+		} else {
+			F = fresnel.Evaluate(tspack, CosTheta(wo)).filter(tspack);
+			factor = 1.f / (fabsf(cost) * eta2);
+		}
+	} else {
+		if (reverse) {
+			if (entering) {
+				F = fresnel.Evaluate(tspack, -cost).filter(tspack);
+				factor = eta2 / fabsf(wo.z);
+			} else {
+				F = fresnel.Evaluate(tspack, -CosTheta(wo)).filter(tspack);
+				factor = 1.f / (fabsf(wo.z) * eta2);
+			}
+		} else {
+			if (entering) {
+				F = fresnel.Evaluate(tspack, CosTheta(wo)).filter(tspack);
+				factor = 1.f / (fabsf(wo.z) * eta2);
+			} else {
+				F = fresnel.Evaluate(tspack, -cost).filter(tspack);
+				factor = eta2 / fabsf(wo.z);
+			}
+		}
+	}
+	tspack->swl->single = single;
+	return (1.f - F) * factor;
+}
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 							 const Vector &wi, SWCSpectrum *const f) const {
-
 	if (!(architectural && wi == -wo))
 		return;
 	// Figure out which $\eta$ is incident and which is transmitted

@@ -88,6 +88,7 @@ public:
 	inline void Add(BxDF *bxdf);
 	int NumComponents() const { return nBxDFs; }
 	int NumComponents(BxDFType flags) const;
+	float WeightComponents(const TsPack *tspack, const Vector &wo, BxDFType flags) const;
 	bool HasShadingGeometry() const {
 		return (nn.x != ng.x || nn.y != ng.y || nn.z != ng.z);
 	}
@@ -154,6 +155,7 @@ public:
 		                 float *samples = NULL) const;
 	virtual SWCSpectrum rho(const TsPack *tspack, int nSamples = 16,
 	                     float *samples = NULL) const;
+	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
 	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 	// BxDF Public Data
 	const BxDFType type;
@@ -179,6 +181,9 @@ public:
 	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
+	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) {
+		return brdf->Weight(tspack, wo, reverse);
+	}
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
 	float etai, etat, cb;

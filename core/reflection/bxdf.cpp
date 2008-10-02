@@ -205,60 +205,74 @@ SWCSpectrum BxDF::rho(const TsPack *tspack, int nSamples, float *samples) const 
 	}
 	return r / (M_PI*nSamples);
 }
+float BxDF::Weight(const TsPack *tspack, const Vector &wo, bool reverse) const
+{
+	return 1.f;
+}
 bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
 {
+	float weights[MAX_BxDFS];
 	// Choose which _BxDF_ to sample
-	int matchingComps = NumComponents(flags);
-	if (matchingComps == 0) {
+	Vector wo = WorldToLocal(woW);
+	u_int matchingComps = 0;
+	float totalWeight = 0.f;
+	for (int i = 0; i < nBxDFs; ++i) {
+		if (bxdfs[i]->MatchesFlags(flags)) {
+			weights[i] = bxdfs[i]->Weight(tspack, wo, reverse);
+			totalWeight += weights[i];
+			++matchingComps;
+		} else
+			weights[i] = 0.f;
+	}
+	if (matchingComps == 0 || !(totalWeight > 0.f)) {
 		*pdf = 0.f;
 		if (pdfBack)
 			*pdfBack = 0.f;
 		return false;
 	}
-	int which = min(Floor2Int(u3 * matchingComps),
-		matchingComps-1);
-	BxDF *bxdf = NULL;
-	int count = which;
-	for (int i = 0; i < nBxDFs; ++i)
-		if (bxdfs[i]->MatchesFlags(flags))
-			if (count-- == 0) {
-				bxdf = bxdfs[i];
+	u3 *= totalWeight;
+	int which = 0;
+	for (int i = 0; i < nBxDFs; ++i) {
+		if (weights[i] > 0.f) {
+			which = i;
+			u3 -= weights[i];
+			if (u3 < 0.f) {
 				break;
 			}
+		}
+	}
+	BxDF *bxdf = bxdfs[which];
 	BOOST_ASSERT(bxdf); // NOBOOK
 	// Sample chosen _BxDF_
 	Vector wi;
-	Vector wo = WorldToLocal(woW);
 	*pdf = 0.f;
 	if (pdfBack)
 		*pdfBack = 0.f;
 	if (!bxdf->Sample_f(tspack, wo, &wi, u1, u2, f, pdf, pdfBack, reverse))
 		return false;
-	if (*pdf == 0.f) return false;
 	if (sampledType) *sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
+	*pdf *= weights[which];
+	if (pdfBack)
+		*pdfBack *= weights[which];
 	// Compute overall PDF with all matching _BxDF_s
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
 		for (int i = 0; i < nBxDFs; ++i) {
-			if (bxdfs[i] != bxdf &&
-			    bxdfs[i]->MatchesFlags(flags)) {
-				*pdf += bxdfs[i]->Pdf(tspack, wo, wi);
+			if (i != which && weights[i] > 0.f) {
+				*pdf += bxdfs[i]->Pdf(tspack, wo, wi) * weights[i];
 				if (pdfBack)
-					*pdfBack += bxdfs[i]->Pdf(tspack, wi, wo);
+					*pdfBack += bxdfs[i]->Pdf(tspack, wi, wo) * weights[i];
 			}
 		}
 	}
-	if (matchingComps > 1) {
-		*pdf /= matchingComps;
-		if (pdfBack)
-			*pdfBack /= matchingComps;
-	}
+	*pdf /= totalWeight;
+	if (pdfBack)
+		*pdfBack /= totalWeight;
 	// Compute value of BSDF for sampled direction
 	if (!(bxdf->type & BSDF_SPECULAR)) {
-		*f = 0.;
 		if (Dot(*wiW, ng) * Dot(woW, ng) > 0)
 			// ignore BTDFs
 			flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -266,7 +280,7 @@ bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 			// ignore BRDFs
 			flags = BxDFType(flags & ~BSDF_REFLECTION);
 		for (int i = 0; i < nBxDFs; ++i) {
-			if (bxdfs[i]->MatchesFlags(flags)) {
+			if (i != which && bxdfs[i]->MatchesFlags(flags)) {
 				if (reverse)
 					bxdfs[i]->f(tspack, wi, wo, f);
 				else
@@ -281,13 +295,14 @@ float BSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 	if (nBxDFs == 0.) return 0.;
 	Vector wo = WorldToLocal(woW), wi = WorldToLocal(wiW);
 	float pdf = 0.f;
-	int matchingComps = 0;
+	float totalWeight = 0.f;
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags)) {
-			++matchingComps;
-			pdf += bxdfs[i]->Pdf(tspack, wo, wi);
+			float weight = bxdfs[i]->Weight(tspack, wo, false);
+			pdf += bxdfs[i]->Pdf(tspack, wo, wi) * weight;
+			totalWeight += weight;
 		}
-	return matchingComps > 0 ? pdf / matchingComps : 0.f;
+	return totalWeight > 0.f ? pdf / totalWeight : 0.f;
 }
 BSDF::BSDF(const DifferentialGeometry &dg,
            const Normal &ngeom, float e)

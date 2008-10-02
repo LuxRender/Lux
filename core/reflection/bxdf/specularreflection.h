@@ -43,6 +43,7 @@ public:
 	}
 	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return 0.;
 	}
@@ -58,6 +59,7 @@ public:
 		: SpecularReflection(r, f) {}
 	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
 };
 
 }//namespace lux
