@@ -111,8 +111,8 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene, cons
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	if (!havePortalShape)
 		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
@@ -271,8 +271,8 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	return SWCSpectrum(1.f);
 }
@@ -329,8 +329,8 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);

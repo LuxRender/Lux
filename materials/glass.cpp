@@ -42,20 +42,20 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
 	float cb = cauchyb->Evaluate(dgs);
-	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, ior);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!R.Black()) {
 		if (architectural)
-			bsdf->Add(BSDF_ALLOC( ArchitecturalReflection)(R,
-				BSDF_ALLOC( FresnelDielectric)(1., ior)));
+			bsdf->Add(BSDF_ALLOC(tspack, ArchitecturalReflection)(R,
+				BSDF_ALLOC(tspack, FresnelDielectric)(1., ior)));
 		else
-			bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
-				BSDF_ALLOC( FresnelDielectric)(1., ior)));
+			bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
+				BSDF_ALLOC(tspack, FresnelDielectric)(1., ior)));
 	}
 	if (!T.Black())
-		bsdf->Add(BSDF_ALLOC( SpecularTransmission)(T, 1., ior, cb, architectural));
+		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, 1., ior, cb, architectural));
 	return bsdf;
 }
 Material* Glass::CreateMaterial(const Transform &xform,

@@ -38,12 +38,12 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC( SpecularReflection)(R,
-			BSDF_ALLOC( FresnelNoOp)()));
+		bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
+			BSDF_ALLOC(tspack, FresnelNoOp)()));
 	return bsdf;
 }
 Material* Mirror::CreateMaterial(const Transform &xform,

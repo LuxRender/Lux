@@ -105,8 +105,8 @@ public:
 	SWCSpectrum rho(const TsPack *tspack, BxDFType flags = BSDF_ALL) const;
 	SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
 	             BxDFType flags = BSDF_ALL) const;
-	static void *Alloc( u_int sz) { return arena->Alloc(sz); }		// TODO remove original memory arena
-	static void FreeAll() { arena->FreeAll(); }
+	static void *Alloc(const TsPack *tspack, u_int sz) { return tspack->arena->Alloc(sz); }		// TODO remove original memory arena
+	static void FreeAll(const TsPack *tspack) { tspack->arena->FreeAll(); }
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
@@ -124,10 +124,9 @@ private:
 	int nBxDFs;
 	#define MAX_BxDFS 8
 	BxDF * bxdfs[MAX_BxDFS];
-	static boost::thread_specific_ptr<MemoryArena> arena;
 	
 };
-#define BSDF_ALLOC(T)  new (BSDF::Alloc(sizeof(T))) T
+#define BSDF_ALLOC(TSPACK,T)  new (BSDF::Alloc((TSPACK), sizeof(T))) T
 // BxDF Declarations
 class  BxDF {
 public:

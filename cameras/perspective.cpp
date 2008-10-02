@@ -247,8 +247,8 @@ SWCSpectrum PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene
 	Point ps = CameraToWorld(psC);
 	Normal ns(CameraToWorld(Normal(0, 0, 1)));
 	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		xWidth * yHeight / (R * R), fov, psC, RasterToCamera,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
@@ -263,8 +263,8 @@ SWCSpectrum PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene
 	Point ps = CameraToWorld(psC);
 	Normal ns(CameraToWorld(Normal(0, 0, 1)));
 	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		xWidth * yHeight / (R * R), fov, psC, RasterToCamera,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;

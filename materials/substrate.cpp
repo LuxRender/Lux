@@ -39,7 +39,7 @@ BSDF *Substrate::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeo
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum d(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
 	SWCSpectrum s(tspack, Ks->Evaluate(dgs).Clamp(0.f, 1.f));
@@ -48,9 +48,9 @@ BSDF *Substrate::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeo
 	float v = nv->Evaluate(dgs);
 
 	if(u == v)
-		bsdf->Add(BSDF_ALLOC( FresnelBlend)(d, s, BSDF_ALLOC( Blinn)(1.f/u)));
+		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, BSDF_ALLOC(tspack, Blinn)(1.f/u)));
 	else
-		bsdf->Add(BSDF_ALLOC( FresnelBlend)(d, s, BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v)));
+		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v)));
 
 	return bsdf;
 }

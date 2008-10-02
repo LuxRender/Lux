@@ -40,7 +40,7 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 	else
 		dgs = dgShading;
 
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
@@ -48,15 +48,15 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 
 	if (!R.Black()) {
 		if (sig == 0.)
-			bsdf->Add(BSDF_ALLOC(Lambertian)(R));
+			bsdf->Add(BSDF_ALLOC(tspack, Lambertian)(R));
 		else
-			bsdf->Add(BSDF_ALLOC(OrenNayar)(R, sig));
+			bsdf->Add(BSDF_ALLOC(tspack, OrenNayar)(R, sig));
 	}
 	if (!T.Black()) {
 		if (sig == 0.)
-			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC(Lambertian)(T)));
+			bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Lambertian)(T)));
 		else
-			bsdf->Add(BSDF_ALLOC( BRDFToBTDF)(BSDF_ALLOC(OrenNayar)(T, sig)));
+			bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, OrenNayar)(T, sig)));
 	}
 	return bsdf;
 }

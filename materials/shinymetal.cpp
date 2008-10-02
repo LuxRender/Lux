@@ -41,7 +41,7 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
 	SWCSpectrum spec(tspack, Ks->Evaluate(dgs).Clamp());
 	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp());
 
@@ -50,15 +50,15 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 
 	MicrofacetDistribution *md;
 	if(u == v)
-		md = BSDF_ALLOC( Blinn)(1.f / u);
+		md = BSDF_ALLOC(tspack, Blinn)(1.f / u);
 	else
-		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
+		md = BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v);
 
 	SWCSpectrum k = 0.;
-	Fresnel *frMf = BSDF_ALLOC( FresnelConductor)(FresnelApproxEta(spec), k);
-	Fresnel *frSr = BSDF_ALLOC( FresnelConductor)(FresnelApproxEta(R), k);
-	bsdf->Add(BSDF_ALLOC( Microfacet)(1., frMf, md));
-	bsdf->Add(BSDF_ALLOC( SpecularReflection)(1., frSr));
+	Fresnel *frMf = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(spec), k);
+	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(R), k);
+	bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., frMf, md));
+	bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(1., frSr));
 	return bsdf;
 }
 Material* ShinyMetal::CreateMaterial(const Transform &xform,

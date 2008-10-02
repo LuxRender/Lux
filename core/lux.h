@@ -255,6 +255,7 @@ namespace lux {
 	struct TsPack {
 		SpectrumWavelengths *swl;
 		RandomGenerator *rng;
+		MemoryArena *arena;
 	};
 
 }

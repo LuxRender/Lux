@@ -231,7 +231,6 @@ void RenderThread::render(RenderThread *myThread) {
     }
 
     // initialize the thread's arena
-    BSDF::arena.reset(new MemoryArena());
     myThread->stat_Samples = 0.;
 
     // initialize the thread's rangen
@@ -246,7 +245,7 @@ void RenderThread::render(RenderThread *myThread) {
 	myThread->tspack->swl = new SpectrumWavelengths();
 	myThread->tspack->rng = new RandomGenerator();
 	myThread->tspack->rng->init(seed);
-	// TODO add bsdf arena
+	myThread->tspack->arena = new MemoryArena();
 
     myThread->sampler->SetTsPack(myThread->tspack);
 
@@ -328,7 +327,7 @@ void RenderThread::render(RenderThread *myThread) {
             myThread->sampler->AddSample(*(myThread->sample));
 
             // Free BSDF memory from computing image sample value
-            BSDF::FreeAll();
+            BSDF::FreeAll(myThread->tspack);
         }
 
         // update samples statistics
@@ -382,9 +381,6 @@ void Scene::Render() {
     // Dade - I have to do initiliaziation here for the current thread. It can
     // be used by the Preprocess() methods.
 
-    // initialize the thread's arena
-    BSDF::arena.reset(new MemoryArena());
-
     // initialize the thread's rangen
     int seed = seedBase - 1;
     std::stringstream ss;
@@ -396,7 +392,7 @@ void Scene::Render() {
 	tspack->swl = new SpectrumWavelengths();				// TODO - REFACT - check sample wavelengths
 	tspack->rng = new RandomGenerator();
 	tspack->rng->init(seed);
-	// TODO add bsdf arena
+	tspack->arena = new MemoryArena();
 
     sampler->SetTsPack(tspack);
 

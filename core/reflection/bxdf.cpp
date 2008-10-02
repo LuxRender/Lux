@@ -342,5 +342,3 @@ SWCSpectrum BSDF::rho(const TsPack *tspack, const Vector &wo, BxDFType flags) co
 			ret += bxdfs[i]->rho(tspack, wo);
 	return ret;
 }
-
-boost::thread_specific_ptr<MemoryArena> BSDF::arena; // TODO - REFACT - Include in tspack

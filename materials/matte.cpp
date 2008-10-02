@@ -39,15 +39,15 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
 	// Evaluate textures for _Matte_ material and allocate BRDF
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum r(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
 	float sig = Clamp(sigma->Evaluate(dgs), 0.f, 90.f);
 	if (sig == 0.)
-		bsdf->Add(BSDF_ALLOC(Lambertian)(r));
+		bsdf->Add(BSDF_ALLOC(tspack, Lambertian)(r));
 	else
-		bsdf->Add(BSDF_ALLOC(OrenNayar)(r, sig));
+		bsdf->Add(BSDF_ALLOC(tspack, OrenNayar)(r, sig));
 	return bsdf;
 }
 Material* Matte::CreateMaterial(const Transform &xform,

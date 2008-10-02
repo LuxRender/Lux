@@ -33,8 +33,8 @@ using namespace lux;
 BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn, 1.);
-	bsdf->Add(BSDF_ALLOC( NullTransmission)());
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn, 1.);
+	bsdf->Add(BSDF_ALLOC(tspack, NullTransmission)());
 	return bsdf;
 }
 Material* Null::CreateMaterial(const Transform &xform,

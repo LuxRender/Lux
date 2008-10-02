@@ -56,7 +56,7 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
   else
     dgs = dgShading;
 
-  BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+  BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
   SWCSpectrum n(tspack, N->Evaluate(dgs));
   SWCSpectrum k(tspack, K->Evaluate(dgs));
 
@@ -65,12 +65,12 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 
 	MicrofacetDistribution *md;
 	if(u == v)
-		md = BSDF_ALLOC( Blinn)(1.f / u);
+		md = BSDF_ALLOC(tspack, Blinn)(1.f / u);
 	else
-		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
+		md = BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v);
 
-  Fresnel *fresnel = BSDF_ALLOC( FresnelConductor)(n, k);
-  bsdf->Add(BSDF_ALLOC( Microfacet)(1., fresnel, md));
+  Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelConductor)(n, k);
+  bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., fresnel, md));
 
   return bsdf;
 }

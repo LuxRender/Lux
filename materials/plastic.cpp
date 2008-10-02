@@ -42,7 +42,7 @@ BSDF *Plastic::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC( BSDF)(dgs, dgGeom.nn);
+	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
   // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	RGBColor kd(Kd->Evaluate(dgs).Clamp(0.f, 1.f));
   // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
@@ -56,21 +56,21 @@ BSDF *Plastic::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		kd /= sumMax;
 		ks /= sumMax;
 	}
-	BxDF *diff = BSDF_ALLOC( Lambertian)(SWCSpectrum(tspack, kd));
+	BxDF *diff = BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(tspack, kd));
 	float ior = index->Evaluate(dgs);
 	Fresnel *fresnel =
-		BSDF_ALLOC( FresnelDielectric)(1.f, ior);
+		BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
 
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
 
 	MicrofacetDistribution *md;
 	if(u == v)
-		md = BSDF_ALLOC( Blinn)(1.f / u);
+		md = BSDF_ALLOC(tspack, Blinn)(1.f / u);
 	else
-		md = BSDF_ALLOC( Anisotropic)(1.f/u, 1.f/v);
+		md = BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v);
 
-	BxDF *spec = BSDF_ALLOC( Microfacet)(SWCSpectrum(tspack, ks), fresnel, md);
+	BxDF *spec = BSDF_ALLOC(tspack, Microfacet)(SWCSpectrum(tspack, ks), fresnel, md);
 	bsdf->Add(diff);
 	bsdf->Add(spec);
 	return bsdf;
