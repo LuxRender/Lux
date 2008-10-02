@@ -223,8 +223,10 @@ static float G(const BidirVertex &eye, const BidirVertex &light)
 static bool visible(const Scene *scene, const Point &P0,
 	const Point &P1)
 {
-	Vector w(P1 - P0);
 	const float distance = Distance(P0, P1);
+	if (distance < RAY_EPSILON)
+		return false;
+	Vector w(P1 - P0);
 	w /= distance;
 	return !scene->IntersectP(Ray(P0, w, RAY_EPSILON, distance - RAY_EPSILON));
 }
