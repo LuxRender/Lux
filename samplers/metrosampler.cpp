@@ -287,11 +287,12 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		factor = 1.f;
 	}
 	accProb2 = accProb * factor;
-	float newWeight = (accProb + (large ? 1.f : 0.f)) / ((useVariance ? newV : newLY) / meanIntensity + pLarge);
-	weight += (1.f - accProb) / ((useVariance ? V : LY) / meanIntensity + pLarge);
+	float newWeight = accProb + (large ? 1.f : 0.f);
+	weight += 1.f - accProb;
 	// try or force accepting of the new sample
 	if (accProb2 == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb2) {
 		// Add accumulated contribution of previous reference sample
+		weight /= (useVariance ? V : LY) / meanIntensity + pLarge;
 		for(u_int i = 0; i < oldContributions.size(); ++i) {
 			XYZColor color = oldContributions[i].color;
 			color *= weight;
@@ -320,6 +321,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
+		newWeight /= (useVariance ? newV : newLY) / meanIntensity + pLarge;
 		for(u_int i = 0; i < newContributions.size(); ++i) {
 			XYZColor color = newContributions[i].color;
 			color *= newWeight;
