@@ -34,7 +34,7 @@ class DistantLight : public Light {
 public:
 	// DistantLight Public Methods
 	DistantLight(const Transform &light2world, const RGBColor &radiance, float gain, const Vector &dir);
-	~DistantLight() { delete LSPD; }
+	~DistantLight();
 	bool IsDeltaLight() const { return true; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;

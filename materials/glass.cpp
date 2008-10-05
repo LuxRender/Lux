@@ -47,12 +47,13 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
 	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	if (!R.Black()) {
+		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
 		if (architectural)
 			bsdf->Add(BSDF_ALLOC(tspack, ArchitecturalReflection)(R,
-				BSDF_ALLOC(tspack, FresnelDielectric)(1., ior)));
+				fresnel));
 		else
 			bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
-				BSDF_ALLOC(tspack, FresnelDielectric)(1., ior)));
+				fresnel));
 	}
 	if (!T.Black())
 		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, 1., ior, cb, architectural));

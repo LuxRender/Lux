@@ -23,7 +23,6 @@
 // point.cpp*
 #include "lux.h"
 #include "light.h"
-#include "shape.h"
 
 namespace lux
 {
@@ -33,7 +32,7 @@ class PointLight : public Light {
 public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, const RGBColor &le, float gain);
-	~PointLight() { delete LSPD; }
+	~PointLight();
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return SWCSpectrum(tspack, LSPD) * 4.f * M_PI;
 	}

@@ -46,38 +46,10 @@ Camera::Camera(const Transform &world2cam,
 	if (WorldToCamera.HasScale())
 		luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-camera transformation!\n The system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 }
-bool Camera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
-{
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsVisibleFromEyes() method called");
-	return false;
-}
-float Camera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
-{
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetConnectingFactor() method called");
-	return 0;
-}
-void Camera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
-{
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::GetFlux2RadianceFactors() method called");
-}
 bool Camera::IsDelta() const
 {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
 	return true;
-}
-void Camera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
-{
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::SamplePosition() method called");
-}
-float Camera::EvalPositionPdf() const
-{
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::EvalPositionPdf() method called");
-	return 0;
-}
-bool Camera::Intersect(const Ray &ray, Intersection *isect) const
-{
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::Intersect() method called");
-	return false;
 }
 
 ProjectiveCamera::ProjectiveCamera(const Transform &w2c,

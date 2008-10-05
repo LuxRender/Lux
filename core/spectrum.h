@@ -24,7 +24,6 @@
 #define LUX_RGBColor_H
 // spectrum.h*
 #include "lux.h"
-#include "spd.h"
 #include "color.h"
 
 namespace lux

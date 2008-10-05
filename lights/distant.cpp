@@ -23,6 +23,8 @@
 // distant.cpp*
 #include "distant.h"
 #include "mc.h"
+#include "spd.h"
+#include "rgbillum.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -36,6 +38,10 @@ DistantLight::DistantLight(const Transform &light2world,
 	// Create SPD
 	LSPD = new RGBIllumSPD(radiance);
 	LSPD->Scale(gain);
+}
+DistantLight::~DistantLight()
+{
+	delete LSPD;
 }
 SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {

@@ -187,7 +187,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		// Sample a random Portal
 		int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
-			shapeIndex = min<float>(nrPortalShapes - 1,
+			shapeIndex = min(nrPortalShapes - 1,
 					Floor2Int(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
@@ -231,7 +231,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		// Sample a random Portal
 		int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
-			shapeIndex = min<float>(nrPortalShapes - 1,
+			shapeIndex = min(nrPortalShapes - 1,
 					Floor2Int(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
@@ -277,7 +277,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		// is more than one portal.
 		int shapeidx = 0;
 		if(nrPortalShapes > 1)
-			shapeidx = min<float>(nrPortalShapes - 1,
+			shapeidx = min(nrPortalShapes - 1,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		Normal ns;
@@ -290,7 +290,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
-SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
+bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -304,11 +304,12 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	return SWCSpectrum(skyScale);
+	*Le = SWCSpectrum(skyScale);
+	return true;
 }
-SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility) const
+	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
 	if(!havePortalShape) {
@@ -331,7 +332,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 		// Sample a random Portal
 		int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
-			shapeIndex = Floor2Int(u3 * nrPortalShapes);
+			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -341,9 +342,8 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 		if (Dot(wi, ns) < 0.f)
 			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi) / nrPortalShapes;
 		else {
-			*pdf = 0.f;
-			*pdfDirect = 0.f;
-			return 0.f;
+			*Le = 0.f;
+			return false;
 		}
 	}
 	Point worldCenter;
@@ -364,7 +364,8 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
-	return SWCSpectrum(skyScale);
+	*Le = SWCSpectrum(skyScale);
+	return true;
 }
 
 Light* SkyLight::CreateLight(const Transform &light2world,

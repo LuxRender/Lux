@@ -49,24 +49,19 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
 	float urough = uroughness->Evaluate(dgs);
 	float vrough = vroughness->Evaluate(dgs);
+	MicrofacetDistribution *md;
+	if(urough == vrough)
+		md = BSDF_ALLOC(tspack, Blinn)(1.f / urough);
+	else
+		md = BSDF_ALLOC(tspack, Anisotropic)(1.f / urough, 1.f / vrough);
 	if (!R.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
-		if(urough == vrough)
-			bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(R, fresnel,
-				BSDF_ALLOC(tspack, Blinn)(1.f / urough)));
-		else
-			bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(R, fresnel,
-				BSDF_ALLOC(tspack, Anisotropic)(1.f / urough, 1.f / vrough)));
+		bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(R, fresnel, md));
 	}
 	if (!T.Black()) {
 		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectricComplement)(1.f, ior, cb);
 		// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
-		if(urough == vrough)
-			bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Microfacet)(T, fresnel,
-				BSDF_ALLOC(tspack, Blinn)(1.f / urough)), 1.f, ior, cb));
-		else
-			bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Microfacet)(T, fresnel,
-				BSDF_ALLOC(tspack, Anisotropic)(1.f / urough, 1.f / vrough)), 1.f, ior, cb));
+		bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Microfacet)(T, fresnel, md), 1.f, ior, cb));
 	}
 	return bsdf;
 }

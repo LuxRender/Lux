@@ -23,6 +23,8 @@
 // point.cpp*
 #include "point.h"
 #include "mc.h"
+#include "spd.h"
+#include "rgbillum.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -36,6 +38,10 @@ PointLight::PointLight(const Transform &light2world,
 	// Create SPD
 	LSPD = new RGBIllumSPD(intensity);
 	LSPD->Scale(gain);
+}
+PointLight::~PointLight()
+{
+	delete LSPD;
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,

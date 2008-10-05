@@ -29,6 +29,7 @@
 #include "tilepx.h"
 #include "hilbertpx.h"
 #include "dynload.h"
+#include "error.h"
 
 using namespace lux;
 

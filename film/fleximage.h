@@ -40,7 +40,7 @@ public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
 		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
-		framebuffer(NULL), factor(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
+		framebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
@@ -51,7 +51,6 @@ public:
 		float g, int reject_warmup, bool debugmode);
 	~FlexImageFilm() {
 		delete[] framebuffer;
-		delete[] factor;
 	}
 
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
@@ -129,7 +128,6 @@ private:
 	boost::xtime lastWriteImageTime;
 
 	bool debug_mode;
-	float *factor;
 
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;

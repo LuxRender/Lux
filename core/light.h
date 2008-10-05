@@ -27,8 +27,6 @@
 #include "geometry.h"
 #include "spectrum.h"
 #include "error.h"
-#include "rgbillum.h"
-#include "primitive.h"
 // Light Declarations
 
 namespace lux
@@ -69,9 +67,8 @@ public:
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return 0.f;}
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return 0.f;}
-	virtual float Pdf(const Scene *scene, const Point &p) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Pdf"); return 0.f;}
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return false;}
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L"); return false;}
 
 	void AddPortalShape(boost::shared_ptr<Primitive> shape);
 
@@ -116,7 +113,7 @@ public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
 		const RGBColor &power, float g, int ns, const boost::shared_ptr<Primitive> &prim);
-	~AreaLight() { delete LSPD; }
+	~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack, const Point &p, const Normal &n,
 			const Vector &w) const {
 		return Dot(n, w) > 0 ? SWCSpectrum(tspack, LSPD) : 0.;
@@ -135,9 +132,8 @@ public:
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const;
-	virtual float Pdf(const Scene *scene, const Point &p) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
 	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
 		const boost::shared_ptr<Primitive> &prim);
 protected:

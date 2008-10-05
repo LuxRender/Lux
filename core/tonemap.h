@@ -25,7 +25,6 @@
 // tonemap.h*
 
 #include "lux.h"
-#include "color.h"
 
 namespace lux {
 

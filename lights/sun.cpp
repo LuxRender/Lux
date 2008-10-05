@@ -307,7 +307,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	}
 }
 
-SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
+bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	SWCSpectrum result = SWCSpectrum(tspack, LSPD);
 	Point worldCenter;
@@ -337,12 +337,15 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 		sampleNormal = Normal(-sundir);
 		const float cosPortal = Dot(sampleNormal, ns);
 		if (cosPortal <= 0.) {
-			*bsdf = NULL;
-			*pdf = 0.0f;
-			return SWCSpectrum(0.0f);
+			*Le = 0.f;
+			return false;
 		}
 
 		*pdf = PortalShapes[shapeIndex]->Pdf(samplePoint) / (cosPortal * nrPortalShapes);
+		if (!(*pdf > 0.f)) {
+			*Le = 0.f;
+			return false;
+		}
 
 		samplePoint += (worldRadius - Dot(samplePoint - worldCenter, sundir)) * sundir;
 	}
@@ -351,12 +354,13 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, sampleNormal);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 
-	return SWCSpectrum(tspack, LSPD);
+	*Le = SWCSpectrum(tspack, LSPD);
+	return true;
 }
 
-SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility) const
+	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
 	if(cosThetaMax == 1) {
@@ -411,7 +415,8 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
 
-	return SWCSpectrum(tspack, LSPD);
+	*Le = SWCSpectrum(tspack, LSPD);
+	return true;
 }
 
 Light* SunLight::CreateLight(const Transform &light2world,

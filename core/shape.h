@@ -24,9 +24,9 @@
 #define LUX_SHAPE_H
 // shape.h*
 #include "lux.h"
+#include "primitive.h"
 #include "geometry.h"
 #include "error.h"
-#include "primitive.h"
 
 namespace lux
 {

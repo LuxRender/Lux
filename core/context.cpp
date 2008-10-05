@@ -29,7 +29,7 @@
 #include "api.h"
 #include "camera.h"
 #include "light.h"
-#include "primitive.h"
+#include "shape.h"
 #include "volume.h"
 #include "material.h"
 #include "stats.h"

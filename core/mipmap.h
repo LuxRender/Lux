@@ -25,7 +25,6 @@
 
 #include "lux.h"
 #include "color.h"
-#include "spectrum.h"
 #include "texture.h"
 #include "texturecolor.h"
 #include "memory.h"

@@ -73,14 +73,14 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(2); //bsdf sampling for light path
 	structure.push_back(1); //bsdf component for light path
 	sampleLightOffset = sample->AddxD(structure, maxLightDepth);
+}
+void BidirIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
+{
 	// Prepare image buffers
-    boost::recursive_mutex::scoped_lock lockSample(bufferMutex);
-	if (eyeBufferId < 0 && lightBufferId < 0) {
-		BufferType type = BUF_TYPE_PER_SCREEN;
-		scene->sampler->GetBufferType(&type);
-		eyeBufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
-		lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
-	}
+	BufferType type = BUF_TYPE_PER_PIXEL;
+	scene->sampler->GetBufferType(&type);
+	eyeBufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
 }
 
 static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,//const Ray &r,
@@ -494,10 +494,8 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<Bidi
 	BidirVertex &vL(lightPath[0]);
 	VisibilityTester visibility;
 	// Sample the chosen light
-	*Ld = light->Sample_L(tspack, scene, vE.p, vE.ns, u0, u1, portal, &vL.bsdf,
-		&vL.dAWeight, &vL.ePdfDirect, &visibility);
-	// Test that there is light
-	if (!(vL.ePdfDirect > 0.f) || Ld->Black())
+	if (!light->Sample_L(tspack, scene, vE.p, vE.ns, u0, u1, portal, &vL.bsdf,
+		&vL.dAWeight, &vL.ePdfDirect, &visibility, Ld))
 		return false;
 	BidirVertex e(vE);
 	vL.p = vL.bsdf->dgShading.p;
@@ -541,12 +539,11 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	BSDF *eyeBsdf;
 	float eyePdf;
 	//Jeanphi - Replace dummy .5f by a sampled value if needed
-	SWCSpectrum We = scene->camera->Sample_W(tspack, scene,
-		sample->lensU, sample->lensV, .5f, &eyeBsdf, &eyePdf);
-	if (eyePdf > 0.f)
-		We /= eyePdf;
-	else
+	SWCSpectrum We;
+	if (!scene->camera->Sample_W(tspack, scene,
+		sample->lensU, sample->lensV, .5f, &eyeBsdf, &eyePdf, &We))
 		return nrContribs;	//FIXME not necessarily true if special sampling for direct connection to the eye
+	We /= eyePdf;
 	int nEye = generateEyePath(tspack, scene, eyeBsdf, sample, sampleEyeOffset, eyePath);
 	// Light path cannot intersect camera (FIXME)
 	eyePath[0].dARWeight = 0.f;
@@ -559,12 +556,10 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	const float component = sample->oneD[lightComponentOffset][0];
 	BSDF *lightBsdf;
 	float lightPdf;
-	SWCSpectrum Le = light->Sample_L(tspack, scene, data[0], data[1], component, &lightBsdf,
-		&lightPdf);
+	SWCSpectrum Le;
 	int nLight = 0;
-	if (lightPdf == 0.f)
-		Le = 0.f;
-	else {
+	if (light->Sample_L(tspack, scene, data[0], data[1], component, &lightBsdf,
+		&lightPdf, &Le)) {
 		Le *= numberOfLights / lightPdf;
 		nLight = generateLightPath(tspack, scene, lightBsdf, sample,
 			sampleLightOffset, lightPath);

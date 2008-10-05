@@ -24,9 +24,7 @@
 #define LUX_TRANSPORT_H
 // transport.h*
 #include "lux.h"
-#include "color.h"
 #include "spectrum.h"
-#include "bxdf.h"
 
 namespace lux
 {
@@ -49,10 +47,6 @@ public:
 
 class SurfaceIntegrator : public Integrator {
 public:
-	virtual bool IsFluxBased() {
-		return false;
-	}
-
 	// Dade - Exphotonmap is the only integrator not supporting SWC at the moment
 	virtual bool IsSWCSupported() {
 		return true;

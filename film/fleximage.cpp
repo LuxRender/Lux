@@ -28,8 +28,6 @@
 #include "fleximage.h"
 #include "error.h"
 #include "scene.h"		// for Scene
-#include "camera.h"		// for Camera
-#include "transport.h"	// for SurfaceIntegrator::IsFluxBased()
 #include "filter.h"
 #include "exrio.h"
 #include "igiio.h"
@@ -69,7 +67,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	filename(filename1), premultiplyAlpha(premult), buffersInited(false), gamma(g),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	framebuffer(NULL), debug_mode(debugmode), factor(NULL),
+	framebuffer(NULL), debug_mode(debugmode),
 	colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f)
 {
 	// Compute film image extent
@@ -413,10 +411,6 @@ void FlexImageFilm::WriteImage(ImageType type)
 	const int nPix = xPixelCount * yPixelCount;
 	vector<Color> pixels(nPix), pixels0(nPix);
 	vector<float> alpha(nPix), alpha0(nPix);
-	if (factor == NULL) {
-		factor = new float[nPix];
-		scene->camera->GetFlux2RadianceFactors(this, factor, xPixelCount, yPixelCount);
-	}
 
 	// Dade - in order to fix bug #360
 	for(int i=0;i<nPix;i++)
@@ -436,14 +430,10 @@ void FlexImageFilm::WriteImage(ImageType type)
 				}
 			}
 			if (bufferConfigs[i].output & BUF_STANDALONE) {
-				if (!(bufferConfigs[i].output & BUF_RAWDATA) && scene->surfaceIntegrator->IsFluxBased())
-					ScaleOutput(pixels, alpha, factor);
 				WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 			}
 		}
 
-		if (scene->surfaceIntegrator->IsFluxBased())
-			ScaleOutput(pixels0, alpha0, factor);
 		WriteImage2(type, pixels0, alpha0, "");
 	}
 }

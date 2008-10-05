@@ -53,10 +53,12 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 			bsdf->Add(BSDF_ALLOC(tspack, OrenNayar)(R, sig));
 	}
 	if (!T.Black()) {
+		BxDF *base;
 		if (sig == 0.)
-			bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Lambertian)(T)));
+			base = BSDF_ALLOC(tspack, Lambertian)(T);
 		else
-			bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, OrenNayar)(T, sig)));
+			base = BSDF_ALLOC(tspack, OrenNayar)(T, sig);
+		bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(base));
 	}
 	return bsdf;
 }

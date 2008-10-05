@@ -24,7 +24,8 @@
 #define LUX_PRIMITIVE_H
 // primitive.h*
 #include "lux.h"
-#include "geometry/transform.h"
+#include "geometry.h"
+#include "spectrum.h"
 
 namespace lux
 {

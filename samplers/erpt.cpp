@@ -28,6 +28,7 @@
 // erpt.cpp*
 #include "erpt.h"
 #include "dynload.h"
+#include "error.h"
 
 using namespace lux;
 
@@ -228,16 +229,6 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 }
 
 // interface for adding/accepting a new image sample.
-void ERPTSampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &newL, float newAlpha, int id)
-{
-	if (!isSampleEnd) {
-		sample.AddContribution(imageX, imageY, newL, newAlpha, id);
-	} else {	// backward compatible with multiimage.cpp and path.cpp
-		sample.contributions.clear();
-		sample.AddContribution(imageX, imageY, newL, newAlpha, id);
-	}
-}
-
 void ERPTSampler::AddSample(const Sample &sample)
 {
 	vector<Sample::Contribution> &newContributions(sample.contributions);

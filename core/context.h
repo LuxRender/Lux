@@ -23,10 +23,10 @@
 #ifndef LUX_CONTEXT_H
 #define LUX_CONTEXT_H
 
-#include <boost/thread/mutex.hpp>
-
 #include "lux.h"
 #include "renderfarm.h"
+
+#include <boost/thread/mutex.hpp>
 
 //TODO - jromang : convert to enum
 #define STATE_UNINITIALIZED  0

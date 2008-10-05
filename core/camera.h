@@ -25,7 +25,6 @@
 // camera.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "spectrum.h"
 #include "error.h"
 
 namespace lux
@@ -38,17 +37,10 @@ public:
 		float sopen, float sclose, Film *film);
 	virtual ~Camera();
 	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
-	virtual SWCSpectrum Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return 0.f;}
-	virtual SWCSpectrum Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return 0.f;}
-	virtual float Pdf(const Point &p, const Normal &n, const Vector &wi) const {return 0.f;}
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return false;}
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return false;}
 	virtual void GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const {}
-	virtual bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
-	virtual float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
-	virtual void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
 	virtual bool IsDelta() const;
-	virtual void SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const;
-	virtual float EvalPositionPdf() const;
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	virtual void AutoFocus(Scene* scene) { }
 
 	// Camera Public Data

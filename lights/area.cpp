@@ -56,6 +56,10 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 	}
 	area = prim->Area();
 }
+AreaLight::~AreaLight()
+{
+	delete LSPD;
+}
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
@@ -94,7 +98,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 float AreaLight::Pdf(const Point &P, const Vector &w) const {
 	return prim->Pdf(P, w);
 }
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
+bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	Normal ns;
 	Point ps = prim->Sample(u1, u2, u3, &ns);
@@ -104,28 +108,34 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(ps);
-	return L(tspack, ps, ns, Vector(ns));
+	if (*pdf > 0.f) {
+		*Le = L(tspack, ps, ns, Vector(ns));
+		return true;
+	}
+	*Le = 0.f;
+	return false;
 }
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility) const
+	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Normal ns;
 	Point ps = prim->Sample(p, u1, u2, u3, &ns);
 	Vector wo(Normalize(ps - p));
 	*pdf = prim->Pdf(ps);
 	*pdfDirect = prim->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
-	visibility->SetSegment(p, ps);
-	return L(tspack, ps, ns, -wo);
-}
-float AreaLight::Pdf(const Scene *scene, const Point &p) const
-{
-	return prim->Pdf(p);
+	if (*pdf > 0.f || *pdfDirect > 0.f) {
+		Vector dpdu, dpdv;
+		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
+		visibility->SetSegment(p, ps);
+		*Le = L(tspack, ps, ns, -wo);
+		return true;
+	}
+	*Le = 0.f;
+	return false;
 }
 SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {

@@ -27,7 +27,6 @@
 #include "geometry.h"
 #include "texture.h"
 #include "color.h"
-#include "spectrum.h"
 
 
 

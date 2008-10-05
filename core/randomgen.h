@@ -37,8 +37,6 @@
 
 #include "lux.h"
 
-#include <boost/thread/tss.hpp>
-
 namespace lux
 {
   void *AllocAligned(size_t size);

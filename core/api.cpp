@@ -25,6 +25,7 @@
 #include "api.h"
 #include "context.h"
 #include "paramset.h"
+#include "error.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <vector>

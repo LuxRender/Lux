@@ -58,8 +58,7 @@ BSDF *Plastic::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	}
 	BxDF *diff = BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(tspack, kd));
 	float ior = index->Evaluate(dgs);
-	Fresnel *fresnel =
-		BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
+	Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
 
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);

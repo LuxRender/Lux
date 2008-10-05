@@ -21,8 +21,9 @@
  ***************************************************************************/
 
 // maxwhite.cpp*
-#include "tonemap.h"
 #include "lux.h"
+#include "tonemap.h"
+#include "color.h"
 
 namespace lux
 {

@@ -34,6 +34,7 @@
 #include "bxdf.h"
 #include "light.h"
 #include "spectrumwavelengths.h"
+#include "transport.h"
 
 #include "randomgen.h"
 
@@ -230,7 +231,6 @@ void RenderThread::render(RenderThread *myThread) {
         boost::thread::sleep(xt);
     }
 
-    // initialize the thread's arena
     myThread->stat_Samples = 0.;
 
     // initialize the thread's rangen
@@ -240,7 +240,7 @@ void RenderThread::render(RenderThread *myThread) {
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	// initialize the threads tspack
-	myThread->tspack = new TsPack();									// TODO - radiance - remove
+	myThread->tspack = new TsPack();	// TODO - radiance - remove
 
 	myThread->tspack->swl = new SpectrumWavelengths();
 	myThread->tspack->rng = new RandomGenerator();

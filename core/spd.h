@@ -23,9 +23,6 @@
 #ifndef LUX_SPD_H
 #define LUX_SPD_H
 // spd.h*
-#include "lux.h"
-#include "color.h"
-#include "spectrum.h"
 
 namespace lux
 {

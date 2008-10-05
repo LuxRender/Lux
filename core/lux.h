@@ -207,6 +207,7 @@ namespace lux
   class SurfaceIntegrator;
   class VolumeIntegrator;
   class RandomGenerator;
+  class RenderFarm;
 }
 
 // Global Constants

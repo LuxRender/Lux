@@ -23,6 +23,8 @@
 // spot.cpp*
 #include "spot.h"
 #include "mc.h"
+#include "spd.h"
+#include "rgbillum.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -40,6 +42,10 @@ SpotLight::SpotLight(const Transform &light2world,
 
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
+}
+SpotLight::~SpotLight()
+{
+	delete LSPD;
 }
 float SpotLight::Falloff(const Vector &w) const {
 	Vector wl = Normalize(WorldToLight(w));

@@ -24,6 +24,7 @@
 #define LUX_SCENE_H
 // scene.h*
 #include "lux.h"
+#include "api.h"
 #include "primitive.h"
 #include "sampling.h"
 #include "timer.h"

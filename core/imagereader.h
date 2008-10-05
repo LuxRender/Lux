@@ -22,7 +22,6 @@
 
 #ifndef LUX_IMAGEREADER_H
 #define LUX_IMAGEREADER_H
-#include <memory>
 #include "lux.h"
 #include "texturecolor.h"
 #include "mipmap.h"

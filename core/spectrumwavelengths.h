@@ -24,9 +24,8 @@
 #define LUX_RGBColorWAVELENGTHS_H
 // Spectrumwavelengths.h*
 #include "lux.h"
-#include "spd.h"
-#include "color.h"
 #include "spectrum.h"
+#include "spd.h"
 
 #include "data/xyzbasis.h"
 

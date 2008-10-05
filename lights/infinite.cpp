@@ -260,7 +260,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 
 	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf) const
+bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -274,11 +274,12 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	return SWCSpectrum(1.f);
+	*Le = SWCSpectrum(1.f);
+	return true;
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility) const
+	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
 	if(!havePortalShape) {
@@ -311,9 +312,8 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 		if (Dot(wi, ns) < 0.f)
 			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi) / nrPortalShapes;
 		else {
-			*pdf = 0.f;
-			*pdfDirect = 0.f;
-			return 0.f;
+			*Le = 0.f;
+			return false;
 		}
 	}
 	Point worldCenter;
@@ -334,7 +334,8 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps);
-	return SWCSpectrum(1.f);
+	*Le = SWCSpectrum(1.f);
+	return true;
 }
 
 Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
