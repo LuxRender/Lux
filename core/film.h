@@ -163,7 +163,7 @@ public:
 					rgb[3*offset  ] *= inv;
 					rgb[3*offset+1] *= inv;
 					rgb[3*offset+2] *= inv;
-					alpha[offset] = pixel.alpha;
+					alpha[offset] = pixel.alpha * inv;
 				}
 			}
 		}
@@ -173,8 +173,9 @@ public:
 			*color = XYZColor(0.f);
 			*alpha = 0.f;
 		} else {
-			*color = (*pixels)(x, y).L / (*pixels)(x, y).weightSum;
-			*alpha = (*pixels)(x, y).alpha;
+			const float inv = 1.f / (*pixels)(x, y).weightSum;
+			*color = (*pixels)(x, y).L * inv;
+			*alpha = (*pixels)(x, y).alpha * inv;
 		}
 	}
 };
@@ -188,7 +189,7 @@ public:
 	~PerScreenNormalizedBuffer() { }
 
 	void GetData(float *rgb, float *alpha) const {
-		float inv = xPixelCount * yPixelCount / *numberOfSamples_;
+		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
 				Pixel &pixel = (*pixels)(x, y);
@@ -197,13 +198,14 @@ public:
 				rgb[3*offset  ] *= inv;
 				rgb[3*offset+1] *= inv;
 				rgb[3*offset+2] *= inv;
-				alpha[offset] = pixel.alpha;
+				alpha[offset] = pixel.alpha * inv;
 			}
 		}
 	}
 	void GetData(int x, int y, Color *color, float *alpha) const {
-		*color = (*pixels)(x, y).L * (xPixelCount * yPixelCount / *numberOfSamples_);
-		*alpha = (*pixels)(x, y).alpha;
+		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
+		*color = (*pixels)(x, y).L * inv;
+		*alpha = (*pixels)(x, y).alpha * inv;
 	}
 private:
 	const double *numberOfSamples_;
@@ -311,7 +313,6 @@ public:
 
     // Film Public Data
     int xResolution, yResolution;
-    float* flux2radiance;
 
 	// Dade - Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop
