@@ -39,6 +39,7 @@ public:
 	~ERPTSampler();
 
 	virtual ERPTSampler* clone() const;
+	void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
 	int RoundSize(int size) const { return baseSampler->RoundSize(size); }
 	bool GetNextSample(Sample *sample, u_int *use_pos);

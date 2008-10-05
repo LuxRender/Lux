@@ -23,6 +23,7 @@
 // distributedpath.cpp*
 #include "distributedpath.h"
 #include "bxdf.h"
+#include "camera.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -113,6 +114,13 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 	indirectglossy_refractSampleOffset = sample->Add2D(glossyrefractDepth);
 	indirectglossy_refractComponentOffset = sample->Add1D(glossyrefractDepth);
 
+}
+void DistributedPath::Preprocess(const TsPack *tspack, const Scene *scene)
+{
+	// Prepare image buffers
+	BufferType type = BUF_TYPE_PER_PIXEL;
+	scene->sampler->GetBufferType(&type);
+	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
 SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
@@ -346,7 +354,7 @@ SWCSpectrum DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 
 	sample->AddContribution(sample->imageX, sample->imageY,
 		LiInternal(tspack, scene, ray, sample, alpha, 0, true, nrContribs).ToXYZ(tspack),
-		alpha ? *alpha : 1.f);
+		alpha ? *alpha : 1.f, bufferId);
 
 	return nrContribs;
 }

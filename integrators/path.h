@@ -44,8 +44,10 @@ public:
 		lightStrategy = st;
 		rrStrategy = rst;
 		maxDepth = md;
-		continueProbability = cp; 
+		continueProbability = cp;
+		bufferId = -1;
 	}
+	void Preprocess(const TsPack *tspack, const Scene *scene);
 	virtual ~PathIntegrator() { }
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
@@ -55,7 +57,7 @@ private:
 	int maxDepth;
 	float continueProbability;
 	// Declare sample parameters for light source sampling
-	int sampleOffset;
+	int sampleOffset, bufferId;
 };
 
 }//namespace lux

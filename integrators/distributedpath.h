@@ -46,6 +46,7 @@ public:
 	SWCSpectrum Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
+	void Preprocess(const TsPack *tspack, const Scene *scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
@@ -62,7 +63,7 @@ private:
 		glossyrefractDepth, glossyrefractSamples, specularreflectDepth, specularrefractDepth, maxDepth;
 
 	// Declare sample parameters for light source sampling
-	int sampleOffset;
+	int sampleOffset, bufferId;
 	int lightSampleOffset, lightNumOffset, bsdfSampleOffset, bsdfComponentOffset;
 	int indirectlightSampleOffset, indirectlightNumOffset, indirectbsdfSampleOffset, indirectbsdfComponentOffset;
 	int diffuse_reflectSampleOffset, diffuse_reflectComponentOffset, indirectdiffuse_reflectSampleOffset, indirectdiffuse_reflectComponentOffset;

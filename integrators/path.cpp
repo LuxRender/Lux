@@ -24,6 +24,7 @@
 #include "path.h"
 #include "bxdf.h"
 #include "light.h"
+#include "camera.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -50,6 +51,13 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(1);	// continue sample
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
+void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
+{
+	// Prepare image buffers
+	BufferType type = BUF_TYPE_PER_PIXEL;
+	scene->sampler->GetBufferType(&type);
+	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+}
 
 SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
@@ -61,8 +69,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
 	SWCSpectrum L(0.0f);
-	XYZColor color;
-	float V = .1f;
+	float V = 0.f, VContrib = .1f;
 	bool specularBounce = true, specular = true;
 	if (alpha) *alpha = 1.;
 	for (int pathLength = 0; ; ++pathLength) {
@@ -72,12 +79,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
 				L = scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
-				color = L.ToXYZ(tspack);
-				if (!L.Black()) {
-					sample->AddContribution(sample->imageX, sample->imageY,
-						L.ToXYZ(tspack), alpha ? *alpha : 1.f, V);
-					++nrContribs;
-				}
+				if (!L.Black())
+					V += L.filter(tspack) * VContrib;
 				pathThroughput = 1.f;
 				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 			}
@@ -90,17 +93,15 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				for (u_int i = 0; i < scene->lights.size(); ++i)
 					Le += scene->lights[i]->Le(tspack, ray);
 				Le *= pathThroughput;
-				L += Le;
-				color = Le.ToXYZ(tspack);
+				if (!Le.Black()) {
+					L += Le;
+					V += Le.filter(tspack) * VContrib;
+					++nrContribs;
+				}
 			}
 			// Set alpha channel
-			if (pathLength == 0 && alpha && !(color.y() > 0.f))
+			if (pathLength == 0 && alpha && !L.Black())
 				*alpha = 0.;
-			if (color.y() > 0.f) {
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
-				++nrContribs;
-			}
 			break;
 		}
 		if (pathLength == 0)
@@ -108,10 +109,9 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		SWCSpectrum Lv(scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha));
 		Lv *= pathThroughput;
-		color = Lv.ToXYZ(tspack);
-		if (color.y() > 0.f) {
-			sample->AddContribution(sample->imageX, sample->imageY,
-				color, alpha ? *alpha : 1.f, V);
+		if (!Lv.Black()) {
+			L += Lv;
+			V += Lv.filter(tspack) * VContrib;
 			++nrContribs;
 		}
 		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
@@ -121,11 +121,9 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (specularBounce) {
 			SWCSpectrum Le(isect.Le(tspack, wo));
 			Le *= pathThroughput;
-			L += Le;
-			color = Le.ToXYZ(tspack);
-			if (color.y() > 0.f) {
-				sample->AddContribution(sample->imageX, sample->imageY,
-					color, alpha ? *alpha : 1.f, V);
+			if (!Le.Black()) {
+				L += Le;
+				V += Le.filter(tspack) * VContrib;
 				++nrContribs;
 			}
 		}
@@ -154,11 +152,9 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				Ll = 0.f;
 		}
 		Ll *= pathThroughput;
-		L += Ll;
-		color = Ll.ToXYZ(tspack);
-		if (color.y() > 0.f) {
-			sample->AddContribution(sample->imageX, sample->imageY,
-				color, alpha ? *alpha : 1.f, V);
+		if (!Ll.Black()) {
+			L += Ll;
+			V += Ll.filter(tspack) * VContrib;
 			++nrContribs;
 		}
 
@@ -193,10 +189,14 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		pathThroughput *= f;
 		pathThroughput *= dp;
 		if (!specular)
-			V += dp;
+			VContrib += dp;
 
 		ray = RayDifferential(p, wi);
 	}
+	if (!L.Black())
+		V /= L.filter(tspack);
+	sample->AddContribution(sample->imageX, sample->imageY,
+		L.ToXYZ(tspack), alpha ? *alpha : 1.f, V, bufferId);
 
 	return nrContribs;
 }
