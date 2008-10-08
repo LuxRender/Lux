@@ -142,8 +142,8 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(ray.o, ray.d) * AbsDot(ray.d, n) / DistanceSquared(dg.p, ray.o);
-	return L(tspack, dg.p, dg.nn, -ray.d) /** M_PI*/;
+	*pdfDirect = prim->Pdf(ray.o, ray.d) * AbsDot(ray.d, dg.nn) / DistanceSquared(dg.p, ray.o);
+	return L(tspack, dg.p, dg.nn, -ray.d);
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
