@@ -126,14 +126,14 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		v.cosi = AbsDot(v.wi, v.ns);
 		v.flux = v.f * (v.cosi / v.pdfR);
 		v.rrR = min<float>(1.f, v.flux.filter(tspack));
-		v.rr = min<float>(1.f, v.f.filter(tspack) * v.coso / v.pdf);
-		if (nVerts > 1)
-			v.flux *= vertices[nVerts - 2].flux;
 		if (nVerts > 3) {
 			if (v.rrR < data[0])
 				break;
 			v.flux /= v.rrR;
 		}
+		v.rr = min<float>(1.f, v.f.filter(tspack) * v.coso / v.pdf);
+		if (nVerts > 1)
+			v.flux *= vertices[nVerts - 2].flux;
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
 		if (!scene->Intersect(ray, &isect)) {
@@ -145,9 +145,9 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	}
 	// Initialize additional values in _vertices_
 	for (u_int i = 0; i < nVerts - 1; ++i) {
-		vertices[i].d2 = DistanceSquared(vertices[i].p, vertices[i + 1].p);
 		if (vertices[i + 1].bsdf == NULL)
 			break;
+		vertices[i].d2 = DistanceSquared(vertices[i].p, vertices[i + 1].p);
 		vertices[i + 1].dARWeight = vertices[i].pdfR *
 			vertices[i + 1].coso / vertices[i].d2;
 		vertices[i].dAWeight = vertices[i + 1].pdf *
@@ -189,14 +189,14 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 		v.coso = AbsDot(v.wo, v.ns);
 		v.flux = v.f * v.coso / v.pdf;
 		v.rr = min<float>(1.f, v.flux.filter(tspack));
+		if (nVerts > 3) {
+			if (v.rr < data[0])
+				break;
+			v.flux /= v.rr;
+		}
 		v.rrR = min<float>(1.f, v.f.filter(tspack) * v.cosi / v.pdfR);
 		if (nVerts > 1)
 			v.flux *= vertices[nVerts - 2].flux;
-		if (nVerts > 3) {
-			if (v.rrR < data[0])
-				break;
-			v.flux /= v.rrR;
-		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
 		if (!scene->Intersect(ray, &isect))
