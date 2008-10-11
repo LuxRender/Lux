@@ -737,10 +737,12 @@ Scene *Context::RenderOptions::MakeScene() const {
 	Scene *ret = new Scene(camera,
 			surfaceIntegrator, volumeIntegrator,
 			sampler, accelerator, lights, volumeRegion);
-	// Erase primitives, lights, and volume regions from _RenderOptions_
+	// Erase primitives, lights, volume regions and instances from _RenderOptions_
 	primitives.erase(primitives.begin(), primitives.end());
 	lights.erase(lights.begin(), lights.end());
 	volumeRegions.erase(volumeRegions.begin(), volumeRegions.end());
+	currentInstance = NULL;
+	instances.erase(instances.begin(), instances.end());
 
     // Dade - enable debug mode
     if (debugMode) {

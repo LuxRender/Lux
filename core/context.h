@@ -268,8 +268,8 @@ private:
 		mutable vector<Light *> lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<VolumeRegion *> volumeRegions;
-		map<string, vector<boost::shared_ptr<Primitive> > > instances;
-		vector<boost::shared_ptr<Primitive> > *currentInstance;
+		mutable map<string, vector<boost::shared_ptr<Primitive> > > instances;
+		mutable vector<boost::shared_ptr<Primitive> > *currentInstance;
         bool debugMode;
 	};
 
