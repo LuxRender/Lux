@@ -606,16 +606,16 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 		// Do direct lighting
 		SWCSpectrum Ld(0.f);
 		Vector w;
-		data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i);
+		const float *directData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i - 1);
 		switch(lightStrategy) {
 			case SAMPLE_ONE_UNIFORM: {
-				float portal = data[2] * numberOfLights;
+				float portal = directData[2] * numberOfLights;
 				const int lightDirectNumber = min(Floor2Int(portal), numberOfLights - 1);
 				portal -= lightDirectNumber;
 				if (getDirectLight(tspack, scene, eyePath, i,
 					maxEyeDepth, maxLightDepth,
 					scene->lights[lightDirectNumber],
-					data[0], data[1], portal, &Ld, &weight,
+					directData[0], directData[1], portal, &Ld, &weight,
 					&w)) {
 					if (!Ld.Black()) {
 						Ld *= numberOfLights;
@@ -639,7 +639,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 					if (getDirectLight(tspack, scene, eyePath, i,
 						maxEyeDepth, maxLightDepth,
 						scene->lights[l],
-						data[0], data[1], data[2], &Ld,
+						directData[0], directData[1], directData[2], &Ld,
 						&weight, &w)) {
 						if (!Ld.Black()) {
 							if (i > 1) {
