@@ -22,11 +22,7 @@
 
 // bidirectional.cpp*
 #include "lux.h"
-#include "reflection/bxdf.h"
 #include "transport.h"
-#include "scene.h"
-#include "mc.h"
-#include <boost/thread/recursive_mutex.hpp>
 
 namespace lux
 {
@@ -56,9 +52,6 @@ private:
 	int lightNumOffset, lightComponentOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
 	int eyeBufferId, lightBufferId;
-
-	// Used to request buffers
-	mutable boost::recursive_mutex bufferMutex;
 };
 
 }//namespace lux

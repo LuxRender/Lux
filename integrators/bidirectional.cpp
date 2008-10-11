@@ -22,8 +22,11 @@
 
 // bidirectional.cpp*
 #include "bidirectional.h"
+#include "reflection/bxdf.h"
 #include "light.h"
 #include "camera.h"
+#include "sampling.h"
+#include "scene.h"
 #include "paramset.h"
 #include "dynload.h"
 
