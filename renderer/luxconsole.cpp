@@ -62,7 +62,7 @@ bool parseError;
 
 void engineThread() {
     ParseFile(sceneFileName.c_str());
-    if (luxStatistics("sceneIsReady") == false)
+    if (luxStatistics("sceneIsReady") == 0.)
         parseError = true;
 }
 
