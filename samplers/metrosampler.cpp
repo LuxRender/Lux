@@ -54,8 +54,8 @@ static float qrNumber(const TsPack *tspack, u_int generation, u_int scramble, u_
 // mutate a value in the range [0-1]
 static float mutate(const float x, const float randomValue)
 {
-	static const float s1 = 1/1024., s2 = 1/16.;
-	float dx = s2 * exp(-log(s2/s1) * fabsf(2.f * randomValue - 1.f));
+	static const float s1 = 1024.f, s2 = 16.f;
+	const float dx = 1.f / (s2 + s1 * fabsf(2.f * randomValue - 1.f));
 	if (randomValue < 0.5) {
 		float x1 = x + dx;
 		return (x1 > 1) ? x1 - 1 : x1;
@@ -69,7 +69,7 @@ static float mutate(const float x, const float randomValue)
 static float mutateScaled(const float x, const float randomValue, const float mini, const float maxi, const float range)
 {
 	static const float s1 = 64.;
-	float dx = range * exp(-log(s1) * fabsf(2.f * randomValue - 1.f));
+	const float dx = range / (1.f + s1 * fabsf(2.f * randomValue - 1.f));
 	if (randomValue < 0.5) {
 		float x1 = x + dx;
 		return (x1 > maxi) ? x1 - maxi + mini : x1;
