@@ -33,28 +33,27 @@
 
 using namespace lux;
 
-//phase_diff(lambda, theta) = (4*PI*d/lambda)*sqrt(nf*nf-na*na*sin(theta)*sin(theta)) + PI
+// Compute reflectance weight for thin film interference with phase difference
+inline void PhaseDifference(const TsPack *tspack, const Vector &wo, float film, float filmindex, SWCSpectrum *const Pd) {
+	const float swo = SinTheta(wo);
+	const float s = sqrtf(filmindex*filmindex-1.0f*1.0f*swo*swo);
+	for(int i=0; i<WAVELENGTH_SAMPLES; i++) {
+		const float pd = (4*M_PI*film/tspack->swl->w[i]) * s + M_PI;
+		const float cpd = cosf(pd);
+		Pd->c[i] *= cpd*cpd;
+	}
+}
 
 bool SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
 	// Compute perfect specular reflection direction
-	float Rf = 1.f;
-
-	// Calculate reflectance weight for thin film interference
-	if(film > 0.f) {
-		const float w = tspack->swl->SampleSingle();
-		const float swo = SinTheta(wo);
-		const float pd = (4*M_PI*film/w)*sqrtf(filmindex*filmindex-1.0f*1.0f*swo*swo) + M_PI;
-		const float cpd = cosf(pd);
-		Rf = cpd*cpd;
-	}
-
 	*wi = Vector(-wo.x, -wo.y, wo.z);
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
 	fresnel->Evaluate(tspack, CosTheta(wo), f);
-	*f *= Rf * R;
+	if(film > 0.f) PhaseDifference(tspack, wo, film, filmindex, f);
+	*f *= R;
 	*f /= fabsf(CosTheta(wo));
 	return true;
 }
