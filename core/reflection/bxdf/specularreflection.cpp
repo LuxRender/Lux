@@ -53,14 +53,16 @@ bool SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	*f = Rf * fresnel->Evaluate(tspack, CosTheta(wo));
-	*f *= R;
+	fresnel->Evaluate(tspack, CosTheta(wo), f);
+	*f *= Rf * R;
 	*f /= fabsf(CosTheta(wo));
 	return true;
 }
 float SpecularReflection::Weight(const TsPack *tspack, const Vector &wo, bool reverse) const
 {
-	return fresnel->Evaluate(tspack, CosTheta(wo)).filter(tspack) / fabsf(CosTheta(wo));
+	SWCSpectrum F;
+	fresnel->Evaluate(tspack, CosTheta(wo), &F);
+	return F.filter(tspack) / fabsf(CosTheta(wo));
 }
 
 bool ArchitecturalReflection::Sample_f(const TsPack *tspack, const Vector &wo,

@@ -46,7 +46,8 @@ void Microfacet::f(const TsPack *tspack, const Vector &wo,
 	float cosThetaI = fabsf(CosTheta(wi));
 	Vector wh = Normalize(wi + wo);
 	float cosThetaH = Dot(wi, wh);
-	SWCSpectrum F = fresnel->Evaluate(tspack, cosThetaH);
+	SWCSpectrum F;
+	fresnel->Evaluate(tspack, cosThetaH, &F);
 	f->AddWeighted(distribution->D(wh) * G(wo, wi, wh) /
 		(4.f * cosThetaI * cosThetaO), R * F);
 }

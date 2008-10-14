@@ -32,7 +32,7 @@
 
 using namespace lux;
 
-SWCSpectrum FresnelDielectric::Evaluate(const TsPack *tspack, float cosi) const {
+void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
 	// Compute Fresnel reflectance for dielectric
 	cosi = Clamp(cosi, -1.f, 1.f);
 	// Compute indices of refraction for dielectric
@@ -51,11 +51,11 @@ SWCSpectrum FresnelDielectric::Evaluate(const TsPack *tspack, float cosi) const 
 	float sint = ei/et * sqrtf(max(0.f, 1.f - cosi*cosi));
 	if (sint > 1.) {
 		// Handle total internal reflection
-		return 1.;
+		*f = SWCSpectrum(1.);
 	}
 	else {
 		float cost = sqrtf(max(0.f, 1.f - sint*sint));
-		return FrDiel(fabsf(cosi), cost, ei, et);
+		FrDiel(fabsf(cosi), cost, ei, et, f);
 	}
 }
 

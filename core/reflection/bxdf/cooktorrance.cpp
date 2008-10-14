@@ -54,7 +54,9 @@ void CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi, S
 
   for (u_int i = 0; i < nLobes; i++) {
 	// Add contribution for $i$th Cook-Torrance lobe
-	*f += KS[i] * distribution[i]->D(wh) * cG * fresnel[i]->Evaluate(tspack, cosThetaH) / (M_PI * cosThetaI * cosThetaO);
+	  SWCSpectrum F;
+	  fresnel[i]->Evaluate(tspack, cosThetaH, &F);
+	*f += KS[i] * distribution[i]->D(wh) * cG * F / (M_PI * cosThetaI * cosThetaO);
   }
 }
 

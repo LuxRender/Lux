@@ -67,29 +67,30 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
+	SWCSpectrum F;
 	if (!architectural) {
 		if (reverse) {
-			SWCSpectrum F = fresnel.Evaluate(tspack, cost);
+			fresnel.Evaluate(tspack, cost, &F);
 			*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
 		} else {
-			SWCSpectrum F = fresnel.Evaluate(tspack, CosTheta(wo));
-			*f = (SWCSpectrum(1.f) - F) * T / (fabsf(cost) * eta2);
+			fresnel.Evaluate(tspack, CosTheta(wo), &F);
+			*f = (SWCSpectrum(1.f) - F) * T * (1 / (fabsf(cost) * eta2));
 		}
 	} else {
 		if (reverse) {
 			if (entering) {
-				SWCSpectrum F = fresnel.Evaluate(tspack, -cost);
+				fresnel.Evaluate(tspack, -cost, &F);
 				*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
 			} else {
-				SWCSpectrum F = fresnel.Evaluate(tspack, -CosTheta(wo));
-				*f = (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
+				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
+				*f = (SWCSpectrum(1.f) - F) * T * (1 / (fabsf(wi->z) * eta2));
 			}
 		} else {
 			if (entering) {
-				SWCSpectrum F = fresnel.Evaluate(tspack, CosTheta(wo));
-				*f = (SWCSpectrum(1.f) - F) * T / (fabsf(wi->z) * eta2);
+				fresnel.Evaluate(tspack, CosTheta(wo), &F);
+				*f = (SWCSpectrum(1.f) - F) * T * (1 / (fabsf(wi->z) * eta2));
 			} else {
-				SWCSpectrum F = fresnel.Evaluate(tspack, -cost);
+				fresnel.Evaluate(tspack, -cost, &F);
 				*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(wi->z));
 			}
 		}
@@ -120,38 +121,39 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool 
 		return 0.f;
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering) cost = -cost;
-	float F, factor;
+	float factor;
 	bool single = tspack->swl->single;
 	tspack->swl->single = true;
+	SWCSpectrum F;
 	if (!architectural) {
 		if (reverse) {
-			F = fresnel.Evaluate(tspack, cost).filter(tspack);
+			fresnel.Evaluate(tspack, cost, &F);
 			factor = eta2 / fabsf(cost);
 		} else {
-			F = fresnel.Evaluate(tspack, CosTheta(wo)).filter(tspack);
+			fresnel.Evaluate(tspack, CosTheta(wo), &F);
 			factor = 1.f / (fabsf(cost) * eta2);
 		}
 	} else {
 		if (reverse) {
 			if (entering) {
-				F = fresnel.Evaluate(tspack, -cost).filter(tspack);
+				fresnel.Evaluate(tspack, -cost, &F);
 				factor = eta2 / fabsf(wo.z);
 			} else {
-				F = fresnel.Evaluate(tspack, -CosTheta(wo)).filter(tspack);
+				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
 				factor = 1.f / (fabsf(wo.z) * eta2);
 			}
 		} else {
 			if (entering) {
-				F = fresnel.Evaluate(tspack, CosTheta(wo)).filter(tspack);
+				fresnel.Evaluate(tspack, CosTheta(wo), &F);
 				factor = 1.f / (fabsf(wo.z) * eta2);
 			} else {
-				F = fresnel.Evaluate(tspack, -cost).filter(tspack);
+				fresnel.Evaluate(tspack, -cost, &F);
 				factor = eta2 / fabsf(wo.z);
 			}
 		}
 	}
 	tspack->swl->single = single;
-	return (1.f - F) * factor;
+	return (1.f - F.filter(tspack)) * factor;
 }
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 							 const Vector &wi, SWCSpectrum *const f) const {
@@ -177,7 +179,8 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 		return;	
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering) cost = -cost;
-	SWCSpectrum F = fresnel.Evaluate(tspack, -cost);
+	SWCSpectrum F;
+	fresnel.Evaluate(tspack, -cost, &F);
 	if (entering)
 		f->AddWeighted(1.f / (fabsf(wi.z) * eta2), (SWCSpectrum(1.f) - F) * T);
 	else

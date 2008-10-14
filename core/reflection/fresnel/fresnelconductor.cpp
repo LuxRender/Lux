@@ -31,7 +31,7 @@
 
 using namespace lux;
 
-SWCSpectrum FresnelConductor::Evaluate(const TsPack *tspack, float cosi) const {
-	return FrCond(fabsf(cosi), eta, k);
+void FresnelConductor::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
+	FrCond(fabsf(cosi), eta, k, f);
 }
 

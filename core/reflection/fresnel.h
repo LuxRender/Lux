@@ -34,14 +34,14 @@ class  Fresnel {
 public:
 	// Fresnel Interface
 	virtual ~Fresnel();
-	virtual SWCSpectrum Evaluate(const TsPack *tspack, float cosi) const = 0;
+	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const = 0;
 };
 
-  SWCSpectrum FrDiel(float cosi, float cost,
-	const SWCSpectrum &etai, const SWCSpectrum &etat);
-  SWCSpectrum FrCond(float cosi, const SWCSpectrum &n, const SWCSpectrum &k);
-  SWCSpectrum FresnelApproxEta(const SWCSpectrum &intensity);
-  SWCSpectrum FresnelApproxK(const SWCSpectrum &intensity);
+void FrDiel(float cosi, float cost,
+	const SWCSpectrum &etai, const SWCSpectrum &etat, SWCSpectrum *const f);
+void FrCond(float cosi, const SWCSpectrum &n, const SWCSpectrum &k, SWCSpectrum *const f);
+SWCSpectrum FresnelApproxEta(const SWCSpectrum &intensity);
+SWCSpectrum FresnelApproxK(const SWCSpectrum &intensity);
 
 }//namespace lux
 
