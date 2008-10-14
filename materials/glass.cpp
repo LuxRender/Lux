@@ -42,6 +42,10 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(dgs);
 	float cb = cauchyb->Evaluate(dgs);
+
+	float flm = film->Evaluate(dgs);
+	float flmindex = filmindex->Evaluate(dgs);
+
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
@@ -50,10 +54,10 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
 		if (architectural)
 			bsdf->Add(BSDF_ALLOC(tspack, ArchitecturalReflection)(R,
-				fresnel));
+				fresnel, flm, flmindex));
 		else
 			bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
-				fresnel));
+				fresnel, flm, flmindex));
 	}
 	if (!T.Black())
 		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, 1., ior, cb, architectural));
@@ -65,9 +69,11 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<RGBColor> > Kt = mp.GetRGBColorTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.f);				// Cauchy B coefficient
+	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers
+	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
 	bool archi = mp.FindBool("architectural", false);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Glass(Kr, Kt, index, cbf, archi, bumpMap);
+	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap);
 }
 
 static DynamicLoader::RegisterMaterial<Glass> r("glass");

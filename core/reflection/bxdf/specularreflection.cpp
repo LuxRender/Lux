@@ -25,6 +25,7 @@
 #include "color.h"
 #include "color.h"
 #include "spectrum.h"
+#include "spectrumwavelengths.h"
 #include "mc.h"
 #include "sampling.h"
 #include "fresnel.h"
@@ -32,14 +33,27 @@
 
 using namespace lux;
 
+//phase_diff(lambda, theta) = (4*PI*d/lambda)*sqrt(nf*nf-na*na*sin(theta)*sin(theta)) + PI
+
 bool SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
 	// Compute perfect specular reflection direction
+	float Rf = 1.f;
+
+	// Calculate reflectance weight for thin film interference
+	if(film > 0.f) {
+		const float w = tspack->swl->SampleSingle();
+		const float swo = SinTheta(wo);
+		const float pd = (4*M_PI*film/w)*sqrtf(filmindex*filmindex-1.0f*1.0f*swo*swo) + M_PI;
+		const float cpd = cosf(pd);
+		Rf = cpd*cpd;
+	}
+
 	*wi = Vector(-wo.x, -wo.y, wo.z);
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	*f = fresnel->Evaluate(tspack, CosTheta(wo));
+	*f = Rf * fresnel->Evaluate(tspack, CosTheta(wo));
 	*f *= R;
 	*f /= fabsf(CosTheta(wo));
 	return true;

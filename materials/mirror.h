@@ -31,8 +31,12 @@ namespace lux
 class Mirror : public Material {
 public:
 	// Mirror Public Methods
-	Mirror(boost::shared_ptr<Texture<RGBColor> > r, boost::shared_ptr<Texture<float> > bump) {
+	Mirror(boost::shared_ptr<Texture<RGBColor> > r, 
+		boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex, 
+		boost::shared_ptr<Texture<float> > bump) {
 		Kr = r;
+		film = flm;
+		filmindex = flmindex;
 		bumpMap = bump;
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
@@ -41,6 +45,7 @@ public:
 private:
 	// Mirror Private Data
 	boost::shared_ptr<Texture<RGBColor> > Kr;
+	boost::shared_ptr<Texture<float> > film, filmindex;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
 

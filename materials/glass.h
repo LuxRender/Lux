@@ -32,11 +32,15 @@ class Glass : public Material {
 public:
 	// Glass Public Methods
 	Glass(boost::shared_ptr<Texture<RGBColor> > r, boost::shared_ptr<Texture<RGBColor> > t,
-			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, bool archi, boost::shared_ptr<Texture<float> > bump) {
+			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf,
+			boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex,
+			bool archi, boost::shared_ptr<Texture<float> > bump) {
 		Kr = r;
 		Kt = t;
 		index = i;
 		cauchyb = cbf;
+		film = flm;
+		filmindex = flmindex;
 		architectural = archi;
 		bumpMap = bump;
 	}
@@ -48,6 +52,7 @@ private:
 	boost::shared_ptr<Texture<RGBColor> > Kr, Kt;
 	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > cauchyb;
+	boost::shared_ptr<Texture<float> > film, filmindex;
 	boost::shared_ptr<Texture<float> > bumpMap;
 	bool architectural;
 };
