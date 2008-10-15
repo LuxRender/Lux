@@ -32,20 +32,21 @@ namespace lux
 
 class Metal : public Material {
 public:
-  // Metal Public Methods
-  Metal(boost::shared_ptr<Texture<SPD*> > n, boost::shared_ptr<Texture<SPD*> > k,
-    boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-	boost::shared_ptr<Texture<float> > bump);
+	// Metal Public Methods
+	Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k,
+		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
+		boost::shared_ptr<Texture<float> > bump);
 
-  BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
+	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
+		const DifferentialGeometry &dgShading, float u) const;
 
-  static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 
 private:
-  // Metal Private Data
-  boost::shared_ptr<Texture<SPD*> > N, K;
+	// Metal Private Data
+	boost::shared_ptr<SPD > N, K;
 	boost::shared_ptr<Texture<float> > nu, nv;
-  boost::shared_ptr<Texture<float> > bumpMap;
+	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 static string DEFAULT_METAL = "aluminum";
