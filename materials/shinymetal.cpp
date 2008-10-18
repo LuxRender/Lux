@@ -48,6 +48,9 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
 
+	float flm = film->Evaluate(dgs);
+	float flmindex = filmindex->Evaluate(dgs);
+
 	MicrofacetDistribution *md;
 	if(u == v)
 		md = BSDF_ALLOC(tspack, Blinn)(1.f / u);
@@ -58,7 +61,7 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	Fresnel *frMf = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(spec), k);
 	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(R), k);
 	bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., frMf, md));
-	bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(1., frSr, 0.f, 0.f));
+	bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(1., frSr, flm, flmindex));
 	return bsdf;
 }
 Material* ShinyMetal::CreateMaterial(const Transform &xform,
@@ -67,8 +70,10 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<RGBColor> > Ks = mp.GetRGBColorTexture("Ks", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
+	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers
+	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new ShinyMetal(Ks, uroughness, vroughness, Kr, bumpMap);
+	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap);
 }
 
 static DynamicLoader::RegisterMaterial<ShinyMetal> r("shinymetal");

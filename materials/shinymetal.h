@@ -33,11 +33,14 @@ public:
 	// ShinyMetal Public Methods
 	ShinyMetal(boost::shared_ptr<Texture<RGBColor> > ks,
 		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
+		boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex, 
 			boost::shared_ptr<Texture<RGBColor> > kr, boost::shared_ptr<Texture<float> > bump) {
 		Ks = ks;
+		Kr = kr;
 		nu = u;
 		nv = v;
-		Kr = kr;
+		film = flm;
+		filmindex = flmindex;
 		bumpMap = bump;
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
@@ -47,6 +50,7 @@ private:
 	// ShinyMetal Private Data
 	boost::shared_ptr<Texture<RGBColor> > Ks, Kr;
 	boost::shared_ptr<Texture<float> > nu, nv;
+	boost::shared_ptr<Texture<float> > film, filmindex;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
