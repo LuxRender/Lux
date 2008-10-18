@@ -29,27 +29,6 @@
 
 using namespace lux;
 
-/*
-// RGBColor Method Definitions
-ostream &operator<<(ostream &os, const RGBColor &s) {
-	for (int i = 0; i < COLOR_SAMPLES; ++i) {
-		os << s.c[i];
-		if (i != COLOR_SAMPLES-1)
-			os << ", ";
-	}
-	return os;
-}
-float RGBColor::XWeight[COLOR_SAMPLES] = {
-	0.412453f, 0.357580f, 0.180423f
-};
-float RGBColor::YWeight[COLOR_SAMPLES] = {
-	0.212671f, 0.715160f, 0.072169f
-};
-float RGBColor::ZWeight[COLOR_SAMPLES] = {
-	0.019334f, 0.119193f, 0.950227f
-};
-*/
-
 XYZColor SWCSpectrum::ToXYZ(const TsPack *tspack) const {
 	SpectrumWavelengths *sw = tspack->swl;
 	float xyz[3];
