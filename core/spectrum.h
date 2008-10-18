@@ -29,7 +29,7 @@
 namespace lux
 {
 
-#define WAVELENGTH_SAMPLES 8
+#define WAVELENGTH_SAMPLES 4
 #define WAVELENGTH_START 380.
 #define WAVELENGTH_END   720.
 static const float inv_WAVELENGTH_SAMPLES = 1.f / WAVELENGTH_SAMPLES;
