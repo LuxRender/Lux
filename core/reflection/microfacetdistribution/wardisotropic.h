@@ -24,8 +24,6 @@
 #define LUX_WARDISOTROPIC_H
 // wardisotropic.h*
 #include "lux.h"
-#include "bxdf.h"
-#include "geometry.h"
 #include "microfacetdistribution.h"
 
 namespace lux

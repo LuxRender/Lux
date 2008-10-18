@@ -24,9 +24,9 @@
 #define LUX_ANISOTROPIC_H
 // anisotropic.h*
 #include "lux.h"
+#include "microfacetdistribution.h"
 #include "bxdf.h"
 #include "geometry.h"
-#include "microfacetdistribution.h"
 
 namespace lux
 {

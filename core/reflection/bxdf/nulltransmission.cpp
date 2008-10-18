@@ -22,10 +22,7 @@
 
 // nulltransmission.cpp*
 #include "nulltransmission.h"
-#include "color.h"
-#include "color.h"
 #include "spectrum.h"
-#include <stdarg.h>
 
 using namespace lux;
 

@@ -22,12 +22,6 @@
 
 // fresnelnoop.cpp*
 #include "fresnelnoop.h"
-#include "color.h"
-#include "color.h"
-#include "spectrum.h"
-#include "mc.h"
-#include "sampling.h"
-#include <stdarg.h>
 
 using namespace lux;
 

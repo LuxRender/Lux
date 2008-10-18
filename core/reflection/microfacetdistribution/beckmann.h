@@ -24,8 +24,6 @@
 #define LUX_BECKMANN_H
 // beckmann.h*
 #include "lux.h"
-#include "bxdf.h"
-#include "geometry.h"
 #include "microfacetdistribution.h"
 
 namespace lux

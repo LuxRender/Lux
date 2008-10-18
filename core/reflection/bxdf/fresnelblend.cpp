@@ -22,13 +22,9 @@
 
 // fresnelblend.cpp*
 #include "fresnelblend.h"
-#include "color.h"
-#include "color.h"
 #include "spectrum.h"
 #include "mc.h"
-#include "sampling.h"
 #include "microfacetdistribution.h"
-#include <stdarg.h>
 
 using namespace lux;
 

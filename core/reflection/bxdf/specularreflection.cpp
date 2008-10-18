@@ -22,14 +22,9 @@
 
 // specularreflection.cpp*
 #include "specularreflection.h"
-#include "color.h"
-#include "color.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
-#include "mc.h"
-#include "sampling.h"
 #include "fresnel.h"
-#include <stdarg.h>
 
 using namespace lux;
 
