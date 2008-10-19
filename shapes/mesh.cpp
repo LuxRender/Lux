@@ -472,7 +472,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 						   const string& accelTypeStr, const string& triTypeStr,
 						   const int* triIndices, int triIndicesCount,
 						   const float* UV, int UVCount,
-						   int nSubdivLevels, const string& subdivSchemeStr ) {
+						   const string& subdivSchemeStr, int nSubdivLevels) {
 	// Lotus - read general data
 	Mesh::MeshAccelType accelType;
 	if (accelTypeStr == "kdtree") accelType = Mesh::ACCEL_KDTREE;
@@ -610,12 +610,12 @@ Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const Pa
 	int uvCoordinatesCount;
 	const float *uvCoordinates = params.FindFloat("UV", &uvCoordinatesCount);
 
-	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
+	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
 
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
 		triIndices, triIndicesCount, uvCoordinates, uvCoordinatesCount,
-		nsubdivlevels, subdivscheme);
+		subdivscheme, nsubdivlevels);
 }
 
 static DynamicLoader::RegisterShape<Mesh> r("mesh");
@@ -632,7 +632,7 @@ Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	}
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
-		0, "");
+		"loop", 0);
 }
 
 static DynamicLoader::RegisterShape<Mesh::BaryMesh> rbary("barytrianglemesh");
@@ -649,7 +649,7 @@ Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	}
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
-		0, "");
+		"loop", 0);
 }
 
 static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald1("waldtrianglemesh");
@@ -667,12 +667,12 @@ Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
 
-	int nsubdivlevels = params.FindOneInt("nlevels", 3);
 	string subdivscheme = params.FindOneString("scheme", "loop");
+	int nsubdivlevels = params.FindOneInt("nlevels", 3);
 
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
-		nsubdivlevels, subdivscheme);
+		subdivscheme, nsubdivlevels);
 }
 
 static DynamicLoader::RegisterShape<Mesh::LoopMesh> rloop("loopsubdiv");
