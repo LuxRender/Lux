@@ -49,6 +49,6 @@ private:
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
-static string DEFAULT_METAL = "aluminum";
+static string DEFAULT_METAL = "aluminium";
 
 }//namespace lux
