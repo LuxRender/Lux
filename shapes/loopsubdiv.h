@@ -136,6 +136,32 @@ public:
 	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
 			const ParamSet &params);
 
+	class SubdivResult {
+	public:
+		SubdivResult(int aNtris, int aNverts, const int* aIndices,
+			const Point *aP, const Normal *aN, const float *aUv)
+			: ntris(aNtris), nverts(aNverts), indices(aIndices),
+			P(aP), N(aN), uv(aUv)
+		{
+		}
+		~SubdivResult() {
+			delete[] indices;
+			delete[] P;
+			delete[] N;
+			if( uv )
+				delete[] uv;
+		}
+
+		const int ntris;
+		const int nverts;
+
+		const int * const indices;
+		const Point * const P;
+		const Normal * const N;
+		const float * const uv;
+	};
+	boost::shared_ptr<SubdivResult> Refine() const;
+
 private:
 	// LoopSubdiv Private Methods
 	float beta(int valence) const {
@@ -147,7 +173,7 @@ private:
 	float gamma(int valence) const {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
-	static void GenerateNormals(const vector<SDVertex *> verts, vector<Normal> &Ns);
+	static void GenerateNormals(const vector<SDVertex *> verts, Normal *Ns);
 
 	void ApplyDisplacementMap(
 			const vector<SDVertex *> verts,

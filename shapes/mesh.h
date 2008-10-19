@@ -31,12 +31,17 @@ public:
 	enum MeshTriangleType { TRI_WALD, TRI_BARY, TRI_AUTO };
 	enum MeshQuadType { QUAD_QUADRILATERAL };
 	enum MeshAccelType { ACCEL_KDTREE, ACCEL_GRID, ACCEL_NONE, ACCEL_AUTO };
+	enum MeshSubdivType { SUBDIV_LOOP };
 
 	Mesh(const Transform &o2w, bool ro,
 			MeshAccelType acceltype,
 			int nv, const Point *P, const Normal *N, const float *UV,
 			MeshTriangleType tritype, int trisCount, const int *tris,
-			MeshQuadType quadtype, int nquadsCount, const int *quads);
+			MeshQuadType quadtype, int nquadsCount, const int *quads,
+			MeshSubdivType subdivType, int nsubdivlevels, 
+			boost::shared_ptr<Texture<float> > displacementMap, 
+			float displacementMapScale, float displacementMapOffset, 
+			bool displacementMapNormalSmooth, bool displacementMapSharpBoundary);
 	~Mesh();
 
 	BBox ObjectBound() const;
@@ -52,6 +57,21 @@ public:
 	friend class MeshQuadrilateral;
 
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+
+	class BaryMesh {
+	public:
+		static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+	};
+
+	class WaldMesh {
+	public:
+		static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+	};
+
+	class LoopMesh {
+	public:
+		static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+	};
 
 protected:
 	// Lotus - refinement data
@@ -72,6 +92,16 @@ protected:
 	MeshQuadType quadType;
 	int nquads;
 	int *quadVertexIndex;
+
+	// Lotus - subdivision data
+	bool mustSubdivide;
+	int nSubdivLevels;
+	MeshSubdivType subdivType;
+	// optional displacement map
+	boost::shared_ptr<Texture<float> > displacementMap;
+	float displacementMapScale;
+	float displacementMapOffset;
+	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
 };
 
 //------------------------------------------------------------------------------

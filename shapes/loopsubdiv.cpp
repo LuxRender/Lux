@@ -139,14 +139,9 @@ bool LoopSubdiv::CanIntersect() const {
 	return false;
 }
 
-void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-	if(refinedShape) {
-		refined.push_back(refinedShape);
-		return;
-	}
-
+boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	std::stringstream ss;
-	ss << "Refining LoopSubdiv shape, cage mesh size: " << faces.size();
+	ss << "Applying " << nLevels << " levels of loop subdivision to " << faces.size() << " triangles";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	vector<SDFace *> f = faces;
@@ -293,17 +288,13 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	}
 	delete[] Vlimit;
 
-	// Dade - calculate normals
-	vector<Normal> Ns;
-	GenerateNormals(v, Ns);
-
 	// Create _TriangleMesh_ from subdivision mesh
 	u_int ntris = u_int(f.size());
+	u_int nverts = u_int(v.size());
 	int *verts = new int[3*ntris];
 	int *vp = verts;
-	u_int totVerts = u_int(v.size());
 	map<SDVertex *, int> usedVerts;
-	for (u_int i = 0; i < totVerts; ++i)
+	for (u_int i = 0; i < nverts; ++i)
 		usedVerts[v[i]] = i;
 	for (u_int i = 0; i < ntris; ++i) {
 		for (int j = 0; j < 3; ++j) {
@@ -312,24 +303,28 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		}
 	}
 
-	// Dade - create vertex UVs if required
+	// Dade - calculate normals
+	Normal* Ns = new Normal[ nverts ];
+	GenerateNormals(v, Ns);
+
+	// Dade - calculate vertex UVs if required
 	float *UVlimit = NULL;
 	if (hasUV) {
-		UVlimit = new float[2 * v.size()];
-		for (u_int i = 0; i < v.size(); ++i) {
+		UVlimit = new float[2 * nverts];
+		for (u_int i = 0; i < nverts; ++i) {
 			UVlimit[2 * i] = v[i]->u;
 			UVlimit[2 * i + 1] = v[i]->v;
 		}
 	}
 
 	ss.str("");
-	ss << "LoopSubdiv shape refined, triangles: " << f.size();
+	ss << "Subdivision complete, got " << ntris << " triangles";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	if (displacementMap.get() != NULL) {
 		// Dade - apply the displacement map
 
-		ApplyDisplacementMap(v, &Ns[0], UVlimit);
+		ApplyDisplacementMap(v, Ns, UVlimit);
 
 		if (displacementMapNormalSmooth) {
 			// Dade - recalculate normals after the displacement
@@ -338,31 +333,38 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	}
 
 	// Dade - create trianglemesh vertices
-	Point *Plimit = new Point[v.size()];
-	for (u_int i = 0; i < v.size(); ++i)
+	Point *Plimit = new Point[nverts];
+	for (u_int i = 0; i < nverts; ++i)
 		Plimit[i] = v[i]->P;
 
+	return boost::shared_ptr<SubdivResult>(new SubdivResult(ntris, nverts, verts, Plimit, Ns, UVlimit));
+}
+
+void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
+	if(refinedShape) {
+		refined.push_back(refinedShape);
+		return;
+	}
+
 	ParamSet paramSet;
-	paramSet.AddInt("indices", verts, 3*ntris);
-	paramSet.AddPoint("P", Plimit, totVerts);
-	paramSet.AddNormal("N", &Ns[0], int(Ns.size()));
-	if (hasUV)
-		paramSet.AddFloat("uv", UVlimit, 2 * v.size());
+
+	{
+		boost::shared_ptr<SubdivResult> res = Refine();
+
+		paramSet.AddInt("indices", res->indices, 3 * res->ntris);
+		paramSet.AddPoint("P", res->P, res->nverts);
+		paramSet.AddNormal("N", res->N, res->nverts);
+		if (res->uv)
+			paramSet.AddFloat("uv", res->uv, 2 * res->nverts);
+	}
 	
 	this->refinedShape = MakeShape("trianglemesh", ObjectToWorld,
 		reverseOrientation, paramSet);
 	refined.push_back(this->refinedShape);
-
-	delete[] verts;
-	delete[] Plimit;
-	if (UVlimit)
-		delete UVlimit;
 }
 
-void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, vector<Normal> &Ns) {
+void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
 	// Compute vertex tangents on limit surface
-	Ns.clear();
-	Ns.reserve(v.size());
 	int ringSize = 16;
 	Point *Pring = new Point[ringSize];
 	for (u_int i = 0; i < v.size(); ++i) {
@@ -402,7 +404,7 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, vector<Normal> &Ns)
 				T = -T;
 			}
 		}
-		Ns.push_back(Normal(Cross(T, S)));
+		Ns[i] = Normal(Cross(T, S));
 	}
 }
 
@@ -579,4 +581,5 @@ Shape *LoopSubdiv::CreateShape(
 		displacementMapNormalSmooth, displacementMapSharpBoundary);
 }
 
-static DynamicLoader::RegisterShape<LoopSubdiv> r("loopsubdiv");
+// Lotus - Handled by mesh shape
+//static DynamicLoader::RegisterShape<LoopSubdiv> r("loopsubdiv");

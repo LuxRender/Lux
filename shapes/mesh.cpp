@@ -22,6 +22,8 @@
 
 #include "mesh.h"
 #include "dynload.h"
+#include "context.h"
+#include "loopsubdiv.h"
 
 using namespace lux;
 
@@ -29,18 +31,38 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 			MeshAccelType acceltype,
 			int nv, const Point *P, const Normal *N, const float *UV,
 			MeshTriangleType tritype, int trisCount, const int *tris,
-			MeshQuadType quadtype, int nquadsCount, const int *quads) : Shape(o2w, ro)
+			MeshQuadType quadtype, int nquadsCount, const int *quads,
+			MeshSubdivType subdivtype, int nsubdivlevels, 
+			boost::shared_ptr<Texture<float> > dmMap, 
+			float dmScale, float dmOffset, 
+			bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
 {
 	accelType = acceltype;
+
+	subdivType = subdivtype;
+	nSubdivLevels = max(0, nsubdivlevels);
+	displacementMap = dmMap;
+	displacementMapScale = dmScale;
+	displacementMapOffset = dmOffset;
+	displacementMapNormalSmooth = dmNormalSmooth;
+	displacementMapSharpBoundary = dmSharpBoundary;
+	mustSubdivide = nSubdivLevels > 0;
 
 	// TODO: use AllocAligned
 
 	// Dade - copy vertex data
     nverts = nv;
 	p = new Point[nverts];
-    // Dade - transform mesh vertices to world space
-    for (int i  = 0; i < nverts; ++i)
-        p[i] = ObjectToWorld(P[i]);
+	if( !mustSubdivide ) {
+		// Dade - transform mesh vertices to world space
+		for (int i  = 0; i < nverts; ++i)
+			p[i] = ObjectToWorld(P[i]);
+	}
+	else {
+		// Lotus - dont transform the mesh vertices to world space yet if subdivision is required
+		for (int i  = 0; i < nverts; ++i)
+			p[i] = P[i];
+	}
 
 	// Dade - copy UV and N vertex data, if present
     if (UV) {
@@ -63,7 +85,7 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 	if (nquads == 0)
 		quadVertexIndex = NULL;
 	else {
-		// Dade - check if quads are not planar and split them if required
+		// Dade - check quads and split them if required
 		for (int i = 0; i < nquads; i++) {
 			const int idx = 4 * i;
 			const Point &p0 = p[quads[idx]];
@@ -71,13 +93,14 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 			const Point &p2 = p[quads[idx + 2]];
 			const Point &p3 = p[quads[idx + 3]];
 
-			if (MeshQuadrilateral::IsPlanar(p0, p1, p2, p3)) {
+			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar
+			if ( !mustSubdivide && MeshQuadrilateral::IsPlanar(p0, p1, p2, p3)) {
 				quadsOk.push_back(quads[idx]);
 				quadsOk.push_back(quads[idx + 1]);
 				quadsOk.push_back(quads[idx + 2]);
 				quadsOk.push_back(quads[idx + 3]);
 			} else {
-				// Dade - it is a no planar quad, I need to split in 2 x triangles
+				// Dade - split in 2 x triangle
 				quadsToSplit.push_back(quads[idx]);
 				quadsToSplit.push_back(quads[idx + 1]);
 				quadsToSplit.push_back(quads[idx + 2]);
@@ -100,12 +123,15 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 		}
 	}
 
-	std::stringstream ss;
-	ss << "Mesh: " <<
-			trisCount << " triangles  " <<
-			(quadsOk.size() / 4) << " planar quads  " <<
-			(quadsToSplit.size() / 4) << " no-planar quads";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	if ( !quadsToSplit.empty() ) {
+		std::stringstream ss;
+		ss << "Mesh: splitting " << (quadsToSplit.size() / 4) << " quads";
+		if( nSubdivLevels > 0 )
+			ss << " to allow subdivision";
+		else
+			ss << " because they are non-planar";
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	}
 
 	// Dade - copy triangle data
 	triType = tritype;
@@ -160,8 +186,10 @@ Mesh::~Mesh() {
     delete[] triVertexIndex;
 	delete[] quadVertexIndex;
     delete[] p;
-    delete[] n;
-    delete[] uvs;
+	if( n )
+		delete[] n;
+	if( uvs )
+		delete[] uvs;
 }
 
 BBox Mesh::ObjectBound() const {
@@ -194,6 +222,73 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
 		boost::shared_ptr<Primitive> thisPtr)
 {
+	if( ntris + nquads == 0 )
+		return;
+
+	// Possibly subdivide the triangles
+	if( mustSubdivide ) {
+		MeshSubdivType concreteSubdivType = subdivType;
+		switch( concreteSubdivType ) {
+			case SUBDIV_LOOP:
+				{
+					// Apply subdivision
+					boost::shared_ptr<LoopSubdiv::SubdivResult> res;
+					{
+						LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation, 
+							ntris, nverts, triVertexIndex, p, uvs, 
+							nSubdivLevels, displacementMap,
+							displacementMapScale, displacementMapScale,
+							displacementMapNormalSmooth, displacementMapSharpBoundary);
+						res = loopsubdiv.Refine();
+					}
+					// Check if subdivision was successfull
+					if( !res )
+						break;
+
+					// Remove the old mesh data
+					delete[] p;
+					if( n )
+						delete[] n;
+					if( uvs )
+						delete[] uvs;
+					delete[] triVertexIndex;
+
+					// Copy the new mesh data
+					nverts = res->nverts;
+					ntris = res->ntris;
+					triVertexIndex = new int[3 * ntris];
+					memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
+					p = new Point[nverts];
+					for( int i = 0; i< nverts; i++) {
+						p[i] = ObjectToWorld(res->P[i]);
+					}
+					if (res->uv) {
+						uvs = new float[2 * nverts];
+						memcpy(uvs, res->uv, 2 * nverts * sizeof(float));
+					} else
+						uvs = NULL;
+
+					if (res->N) {
+						n = new Normal[nverts];
+						memcpy(n, res->N, nverts * sizeof(Normal));
+					} else
+						n = NULL;
+
+					break;
+				}
+			default:
+				{
+					std::stringstream ss;
+					ss.str("");
+					ss << "Unknow subdivision type in a mesh: " << concreteSubdivType;
+					luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+				}
+				break;
+		}
+
+		mustSubdivide = false; // only subdivide on the first refine!!!
+	}
+
 	vector<boost::shared_ptr<Primitive> > refinedPrims;
 	refinedPrims.reserve(ntris + nquads);
 	// Dade - refine triangles
@@ -259,6 +354,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 	}
+	int numConcreteTris = refinedPrims.size();
 
 	// Dade - refine quads
 	switch (quadType) {
@@ -290,20 +386,23 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 	}
+	int numConcreteQuads = refinedPrims.size() - numConcreteTris;
 
 	// Lotus - Create acceleration structure
 	MeshAccelType concreteAccelType = accelType;
 	if(accelType == ACCEL_AUTO) {
 		//TODO find good values
-		if(refinedPrims.size() <= 3)
+		/*if(refinedPrims.size() <= 3)
 			concreteAccelType = ACCEL_NONE;
 		else if(refinedPrims.size() <= 1200000)
 			concreteAccelType = ACCEL_KDTREE;
 		else
-			concreteAccelType = ACCEL_GRID;
+			concreteAccelType = ACCEL_GRID;*/
+		concreteAccelType = ACCEL_NONE;
 	}
 	if(concreteAccelType == ACCEL_NONE) {
 		// Copy primitives
+		refined.reserve( refined.size() + refinedPrims.size() );
 		for(u_int i=0; i < refinedPrims.size(); i++)
 			refined.push_back(refinedPrims[i]);
 	}
@@ -311,10 +410,10 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		ParamSet paramset;
 		boost::shared_ptr<Aggregate> accel;
 		if(concreteAccelType == ACCEL_KDTREE) {
-			accel = MakeAccelerator("kdtree", refined, paramset);
+			accel = MakeAccelerator("kdtree", refinedPrims, paramset);
 		}
 		else if(concreteAccelType == ACCEL_GRID) {
-			accel = MakeAccelerator("grid", refined, paramset);
+			accel = MakeAccelerator("grid", refinedPrims, paramset);
 		}
 		else {
 			std::stringstream ss;
@@ -330,32 +429,69 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			refined.push_back(accel);
 		}
 	}
+
+	std::stringstream ss;
+	ss << "Mesh: ";
+	ss << "accel = ";
+	switch( concreteAccelType ) {
+		case ACCEL_NONE:
+			ss << "none";
+			break;
+		case ACCEL_GRID:
+			ss << "grid";
+			break;
+		case ACCEL_KDTREE:
+			ss << "kdtree";
+			break;
+		default:
+			ss << "?";
+	}
+	ss << ", triangles = " << numConcreteTris << " ";
+	switch( concreteTriType ) {
+		case TRI_BARY:
+			ss << "bary";
+			break;
+		case TRI_WALD:
+			ss << "wald";
+			break;
+		default:
+			ss << "?";
+	}
+	ss << ", quads= " << numConcreteQuads << " ";
+	switch( quadType ) {
+		case QUAD_QUADRILATERAL:
+			ss << "quadrilateral";
+			break;
+		default:
+			ss << "?";
+	}
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 }
 
-Shape *Mesh::CreateShape(const Transform &o2w,
-		bool reverseOrientation, const ParamSet &params) {
+static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params, 
+						   const string& accelTypeStr, const string& triTypeStr,
+						   const int* triIndices, int triIndicesCount,
+						   const float* UV, int UVCount,
+						   int nSubdivLevels, const string& subdivSchemeStr ) {
 	// Lotus - read general data
-	MeshAccelType accelType;
-	string accelTypeStr = params.FindOneString("acceltype", "auto");
-	if (accelTypeStr == "kdtree") accelType = ACCEL_KDTREE;
-	else if (accelTypeStr == "grid") accelType = ACCEL_GRID;
-	else if (accelTypeStr == "none") accelType = ACCEL_NONE;
-	else if (accelTypeStr == "auto") accelType = ACCEL_AUTO;
+	Mesh::MeshAccelType accelType;
+	if (accelTypeStr == "kdtree") accelType = Mesh::ACCEL_KDTREE;
+	else if (accelTypeStr == "grid") accelType = Mesh::ACCEL_GRID;
+	else if (accelTypeStr == "none") accelType = Mesh::ACCEL_NONE;
+	else if (accelTypeStr == "auto") accelType = Mesh::ACCEL_AUTO;
 	else {
 		std::stringstream ss;
 		ss << "Acceleration structure type  '" << accelTypeStr << "' unknown. Using \"auto\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		accelType = ACCEL_AUTO;
+		accelType = Mesh::ACCEL_AUTO;
 	}
 
 	// Dade - read vertex data
     int npi;
-    const Point *P = params.FindPoint("P", &npi);
-	int nuvi;
-    const float *UV = params.FindFloat("UV", &nuvi);
+    const Point *P = params.FindPoint("P", &npi);    
 
     // NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
-    if (UV && (nuvi != npi * 2)) {
+	if (UV && (UVCount != npi * 2)) {
         luxError(LUX_CONSISTENCY, LUX_ERROR, "Number of \"UV\"s for mesh must match \"P\"s");
         UV = NULL;
     }
@@ -369,20 +505,17 @@ Shape *Mesh::CreateShape(const Transform &o2w,
     }
 
 	// Dade - read triangle data
-	MeshTriangleType triType;
-	string triTypeStr = params.FindOneString("tritype", "auto");
-	if (triTypeStr == "wald") triType = TRI_WALD;
-	else if (triTypeStr == "bary") triType = TRI_BARY;
-	else if (triTypeStr == "auto") triType = TRI_AUTO;
+	Mesh::MeshTriangleType triType;
+	if (triTypeStr == "wald") triType = Mesh::TRI_WALD;
+	else if (triTypeStr == "bary") triType = Mesh::TRI_BARY;
+	else if (triTypeStr == "auto") triType = Mesh::TRI_AUTO;
 	else {
 		std::stringstream ss;
 		ss << "Triangle type  '" << triTypeStr << "' unknown. Using \"auto\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		triType = TRI_AUTO;
+		triType = Mesh::TRI_AUTO;
 	}
 
-	int triIndicesCount;
-	const int *triIndices = params.FindInt("triindices", &triIndicesCount);
 	if (triIndices) {
 		for (int i = 0; i < triIndicesCount; ++i) {
 			if (triIndices[i] >= npi) {
@@ -399,14 +532,14 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 		triIndicesCount = 0;
 
 	// Dade - read quad data
-	MeshQuadType quadType;
+	Mesh::MeshQuadType quadType;
 	string quadTypeStr = params.FindOneString("quadtype", "quadrilateral");
-	if (quadTypeStr == "quadrilateral") quadType = QUAD_QUADRILATERAL;
+	if (quadTypeStr == "quadrilateral") quadType = Mesh::QUAD_QUADRILATERAL;
 	else {
 		std::stringstream ss;
 		ss << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		quadType = QUAD_QUADRILATERAL;
+		quadType = Mesh::QUAD_QUADRILATERAL;
 	}
 
 	int quadIndicesCount;
@@ -428,11 +561,118 @@ Shape *Mesh::CreateShape(const Transform &o2w,
 
 	if ((!triIndices) && (!quadIndices)) return NULL;
 
+	// Lotus - read subdivision data
+	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
+
+	// Dade - the optional displacement map
+	string displacementMapName = params.FindOneString("displacementmap", "");
+	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
+	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
+	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
+	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
+
+	boost::shared_ptr<Texture<float> > displacementMap;
+	if (displacementMapName != "") {
+		displacementMap = (*floatTextures)[displacementMapName];
+
+		if (displacementMap.get() == NULL) {
+            std::stringstream ss;
+            ss << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
+            luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+		}
+	}
+
+	// don't actually use this for now...
+	Mesh::MeshSubdivType subdivType;
+	if (subdivSchemeStr == "loop") subdivType = Mesh::SUBDIV_LOOP;
+	else {
+		std::stringstream ss;
+		ss << "Subdivision type  '" << subdivSchemeStr << "' unknown. Using \"loop\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		subdivType = Mesh::SUBDIV_LOOP;
+	}
+
     return new Mesh(o2w, reverseOrientation,
-			accelType,
-			npi, P, N, UV,
-			triType, triIndicesCount, triIndices,
-			quadType, quadIndicesCount, quadIndices);
+		accelType,
+		npi, P, N, UV,
+		triType, triIndicesCount, triIndices,
+		quadType, quadIndicesCount, quadIndices,
+		subdivType, nSubdivLevels, displacementMap, displacementMapScale, displacementMapOffset, 
+		displacementMapNormalSmooth, displacementMapSharpBoundary);
+}
+
+Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
+	string accelTypeStr = params.FindOneString("acceltype", "auto");
+
+	string triTypeStr = params.FindOneString("tritype", "auto");
+	int triIndicesCount;
+	const int *triIndices = params.FindInt("triindices", &triIndicesCount);
+	int uvCoordinatesCount;
+	const float *uvCoordinates = params.FindFloat("UV", &uvCoordinatesCount);
+
+	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
+	string subdivscheme = params.FindOneString("subdivscheme", "loop");
+
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+		triIndices, triIndicesCount, uvCoordinates, uvCoordinatesCount,
+		nsubdivlevels, subdivscheme);
 }
 
 static DynamicLoader::RegisterShape<Mesh> r("mesh");
+
+Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
+	string accelTypeStr = "none";
+	string triTypeStr = "bary";
+	int indicesCount;
+	const int* indices = params.FindInt( "indices", &indicesCount );
+	int uvCoordinatesCount;
+	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
+	if( uvCoordinates == NULL ) {
+		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
+	}
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
+		0, "");
+}
+
+static DynamicLoader::RegisterShape<Mesh::BaryMesh> rbary("barytrianglemesh");
+
+Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
+	string accelTypeStr = "none";
+	string triTypeStr = "wald";
+	int indicesCount;
+	const int* indices = params.FindInt( "indices", &indicesCount );
+	int uvCoordinatesCount;
+	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
+	if( uvCoordinates == NULL ) {
+		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
+	}
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
+		0, "");
+}
+
+static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald1("waldtrianglemesh");
+static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald2("trianglemesh");
+
+Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
+	string accelTypeStr = "none";
+	string triTypeStr = "wald";
+
+	int indicesCount;
+	const int* indices = params.FindInt( "indices", &indicesCount );
+	int uvCoordinatesCount;
+	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
+	if( uvCoordinates == NULL ) {
+		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
+	}
+
+	int nsubdivlevels = params.FindOneInt("nlevels", 3);
+	string subdivscheme = params.FindOneString("scheme", "loop");
+
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
+		nsubdivlevels, subdivscheme);
+}
+
+static DynamicLoader::RegisterShape<Mesh::LoopMesh> rloop("loopsubdiv");

@@ -394,4 +394,5 @@ Shape* BaryTriangleMesh::CreateShape(const Transform &o2w,
             N, S, uvs);
 }
 
-static DynamicLoader::RegisterShape<BaryTriangleMesh> r("barytrianglemesh");
+// Lotus - Handled by mesh shape
+//static DynamicLoader::RegisterShape<BaryTriangleMesh> r("barytrianglemesh");

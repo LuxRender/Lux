@@ -822,5 +822,6 @@ Shape* WaldTriangleMesh::CreateShape(const Transform &o2w,
             N, S, uvs);
 }
 
-static DynamicLoader::RegisterShape<WaldTriangleMesh> r1("waldtrianglemesh");
-static DynamicLoader::RegisterShape<WaldTriangleMesh> r2("trianglemesh");
+// Lotus - Handled by mesh shape
+//static DynamicLoader::RegisterShape<WaldTriangleMesh> r1("waldtrianglemesh");
+//static DynamicLoader::RegisterShape<WaldTriangleMesh> r2("trianglemesh");
