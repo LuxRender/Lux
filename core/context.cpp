@@ -638,6 +638,11 @@ void Context::objectInstance(const string &name) {
 	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[name];
 	if (in.size() == 0)
 		return;
+	if( in.size() == 1 && !in[0]->CanIntersect() ) {
+		boost::shared_ptr<Primitive> prim = in[0];
+		in.clear();
+		prim->Refine(in, PrimitiveRefinementHints(false), prim);
+	}
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
 		boost::shared_ptr<Primitive> accel(MakeAccelerator(
