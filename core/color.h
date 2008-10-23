@@ -38,6 +38,8 @@ public:
 	// Color Public Methods
 	Color() {};
 
+	// !!! TODO !!! - Radiance - rewrite these to loops so icc vectorizer can vectorize them.
+
 	friend ostream &operator<<(ostream &, const Color &);
 	Color &operator+=(const Color &s2) {
 			c[0] += s2.c[0]; c[1] += s2.c[1]; c[2] += s2.c[2];

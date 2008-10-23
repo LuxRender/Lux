@@ -128,11 +128,10 @@ protected:
 	void OnExit(wxCloseEvent &event);
 	void OnError(wxLuxErrorEvent &event);
 	void OnTimer(wxTimerEvent& event);
-	void OnSpin(wxSpinEvent& event);
 	void OnCommand(wxCommandEvent &event);
 	void OnIconize(wxIconizeEvent& event);
 	void OnSelection(wxViewerEvent& event);
-
+	
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
 
@@ -157,6 +156,47 @@ protected:
 	wxTimer* m_statsTimer;
 
 	wxBitmap m_splashbmp;
+
+	// CF
+
+	class LuxOptions : public m_OptionsDialog {
+		public:
+
+		LuxOptions( LuxGui* parent );
+
+		protected:
+
+			void OnMenu( wxCommandEvent& event );
+			void OnScroll( wxScrollEvent& event ); 
+			void OnText(wxCommandEvent &event);
+			void OnClose( wxCloseEvent& event );
+			void OnSpin( wxSpinEvent& event );
+
+		public:
+
+			void ResetToneMapping( void );
+
+			double m_RH_pre;
+			double m_RH_post;
+			double m_RH_burn;
+
+			LuxGui *m_Parent;
+
+			void UpdateSysOptions( void );
+			void ApplySysOptions( void );
+
+			unsigned int m_DisplayInterval;
+			unsigned int m_WriteInterval;
+
+			bool m_UseFlm;
+			bool m_Write_TGA;
+			bool m_Write_TM_EXR;
+			bool m_Write_UTM_EXR;
+			bool m_Write_TM_IGI;
+			bool m_Write_UTM_IGI;
+	};
+
+	LuxOptions *m_LuxOptions;
 };
 
 
