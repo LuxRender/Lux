@@ -237,11 +237,13 @@ void ERPTSampler::AddSample(const Sample &sample)
 		newLY += newContributions[i].color.y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
-		meanIntensity += newLY;
+		if (meanIntensity > 0.f)
+			meanIntensity += newLY;
 		++(initCount);
 		if (initCount < initSamples)
 			return;
-		if (meanIntensity == 0.) meanIntensity = 1.;
+		if (!(meanIntensity > 0.f))
+			meanIntensity = 1.f;
 		meanIntensity /= initSamples;
 		mutation = -1;
 		return;
