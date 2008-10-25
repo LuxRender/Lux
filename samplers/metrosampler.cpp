@@ -257,9 +257,10 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	vector<Sample::Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f, newV = 0.f;
 	for(u_int i = 0; i < newContributions.size(); ++i) {
-		newLY += newContributions[i].color.y();
-		if (newContributions[i].color.y() > 0.f)
+		if (newContributions[i].color.y() > 0.f) {
+			newLY += newContributions[i].color.y();
 			newV += newContributions[i].color.y() * newContributions[i].variance;
+		}
 	}
 	// calculate meanIntensity
 	if (initCount < initSamples) {
@@ -270,7 +271,8 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		++(initCount);
 		if (initCount < initSamples)
 			return;
-		if (meanIntensity <= 0.f) meanIntensity = 1.f;
+		if (!(meanIntensity > 0.f))
+			meanIntensity = 1.f;
 	}
 //	newV = min(newLY / meanIntensity, newV);
 	film->AddSampleCount(1.f); // TODO: add to the correct buffer groups
