@@ -799,7 +799,11 @@ void LuxGui::EngineThread(wxString filename) {
 	boost::filesystem::path fullPath(boost::filesystem::initial_path());
 	fullPath = boost::filesystem::system_complete(boost::filesystem::path(filename.fn_str(), boost::filesystem::native));
 
-	chdir(fullPath.branch_path().string().c_str());
+	if (!chdir(fullPath.branch_path().string().c_str())) {
+		std::stringstream ss;
+		ss << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
+		luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+	}
 
 	ParseFile(fullPath.leaf().c_str());
 

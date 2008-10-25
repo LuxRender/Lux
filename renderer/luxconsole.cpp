@@ -220,7 +220,11 @@ int main(int ac, char *av[]) {
                 }
 
                 sceneFileName = fullPath.leaf();
-                chdir(fullPath.branch_path().string().c_str());
+                if (!chdir(fullPath.branch_path().string().c_str())) {
+			ss.str("");
+			ss << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
+			luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+		}
 
                 parseError = false;
                 boost::thread engine(&engineThread);
