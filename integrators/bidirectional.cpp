@@ -62,7 +62,7 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	lightDirOffset = sample->Add2D(1);
 	vector<u_int> structure;
 	// Direct lighting samples
-	for (int i = 0; i < scene->lights.size(); ++i) {
+	for (u_int i = 0; i < scene->lights.size(); ++i) {
 		structure.push_back(2);	//light position
 		structure.push_back(1);	//light number or portal
 		if (lightStrategy == SAMPLE_ONE_UNIFORM)
@@ -354,6 +354,8 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		BidirVertex &lightV(light[nLight - 1]);
 		// Check Connectability
 		eyeV.wi = Normalize(lightV.p - eyeV.p);
+		if ((Dot(eyeV.wi, eyeV.ns) > 0.f) * (Dot(eyeV.wi, eyeV.ng) <= 0.f))
+			return 0.f;
 		eyeV.pdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, eyeV.wi);
 		if (!(eyeV.pdfR > 0.f))
 			return 0.f;
@@ -361,6 +363,8 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		if (eyeV.f.Black())
 			return 0.f;
 		lightV.wo = -eyeV.wi;
+		if ((Dot(lightV.wo, lightV.ns) > 0.f) * (Dot(lightV.wo, lightV.ng) <= 0.f))
+			return 0.f;
 		lightV.pdf = lightV.bsdf->Pdf(tspack, lightV.wi, lightV.wo);
 		if (!(lightV.pdf > 0.f))
 			return 0.f;
@@ -484,6 +488,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 			continue;
 		v.p = v.eBsdf->dgShading.p;
 		v.ns = v.eBsdf->dgShading.nn;
+		v.ng = v.ns;
 		v.coso = AbsDot(v.wo, v.ns);
 		v.ePdf /= scene->lights.size();
 		v.ePdfDirect *= directWeight;
@@ -517,6 +522,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<Bidi
 		return false;
 	vL.p = vL.bsdf->dgShading.p;
 	vL.ns = vL.bsdf->dgShading.nn;
+	vL.ng = vL.ns;
 	vL.wi = Vector(vL.ns);
 	vL.cosi = AbsDot(vL.wi, vL.ns);
 	vL.dAWeight /= scene->lights.size();
