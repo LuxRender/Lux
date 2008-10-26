@@ -319,11 +319,11 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Check for direct path
 		// light path has at least 2 remaining vertices here
 		if (i == 1) {
-			pDirect = p * pdfLightDirect / light[i - 1].dAWeight;
+			pDirect = p * pdfLightDirect / light[0].dAWeight;
 			// The path can only be obtained if none of the vertices
 			// is specular
-			if ((light[i].flags & BSDF_SPECULAR) == 0 &&
-				(light[i - 1].flags & BSDF_SPECULAR) == 0)
+			if ((light[1].flags & BSDF_SPECULAR) == 0 &&
+				(light[0].flags & BSDF_SPECULAR) == 0)
 				weight += pDirect * pDirect;
 		}
 		// The path can only be obtained if none of the vertices
