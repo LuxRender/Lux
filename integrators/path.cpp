@@ -100,7 +100,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				}
 			}
 			// Set alpha channel
-			if (pathLength == 0 && alpha && !L.Black())
+			if (pathLength == 0 && alpha && L.Black())
 				*alpha = 0.;
 			break;
 		}
