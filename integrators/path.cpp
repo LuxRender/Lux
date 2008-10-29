@@ -34,7 +34,7 @@ using namespace lux;
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
 	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene->lights.size() > 5)
+		if (scene->sampler->IsMutating() || scene->lights.size() > 5)
 			lightStrategy = SAMPLE_ONE_UNIFORM;
 		else
 			lightStrategy = SAMPLE_ALL_UNIFORM;

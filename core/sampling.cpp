@@ -23,6 +23,7 @@
 // sampling.cpp*
 #include "lux.h"
 #include "sampling.h"
+#include "scene.h"
 #include "transport.h"
 #include "volume.h"
 #include "film.h"
@@ -45,14 +46,13 @@ float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 }
 void Sampler::AddSample(const Sample &sample)
 {
-	film->AddSampleCount(1.f); // TODO: add to correct buffer group
-	for (vector<Sample::Contribution>::const_iterator contribution = sample.contributions.begin(); contribution != sample.contributions.end(); ++contribution) {
-		film->AddSample((*contribution).imageX,
-			(*contribution).imageY,
-			(*contribution).color,
-			(*contribution).alpha,
-			(*contribution).buffer,
-			(*contribution).bufferGroup);
+	contribBuffer->AddSampleCount(1.f); // TODO: add to the correct buffer groups
+	for (u_int i=0; i<sample.contributions.size(); i++) {
+			// Radiance - added new use of contributionpool/buffers
+			if(!contribBuffer->Add(&sample.contributions[i], 1.f)) {
+				contribBuffer = film->scene->contribPool->Next(contribBuffer);
+				contribBuffer->Add(&sample.contributions[i], 1.f);
+			}
 	}
 }
 

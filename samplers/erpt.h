@@ -44,9 +44,11 @@ public:
 	int RoundSize(int size) const { return baseSampler->RoundSize(size); }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
+	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+
+	bool IsMutating() { return true; }
 
 	float LY, baseLY, gain, quantum;
 	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp, numMicro, posMicro;
@@ -55,7 +57,7 @@ public:
 	int *timeImage, *baseTimeImage, *currentTimeImage, *offset;
 	static int initCount, initSamples;
 	static float meanIntensity;
-	vector<Sample::Contribution> oldContributions, baseContributions;
+	vector<Contribution> oldContributions, baseContributions;
 	Sampler *baseSampler;
 };
 

@@ -43,10 +43,10 @@ public:
 	int RoundSize(int size) const { return size; }
 	bool GetNextSample(Sample *sample, u_int *use_pos);
 	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	void GetBufferType(BufferType *t) { *t = BUF_TYPE_PER_SCREEN; }
+	bool IsMutating() { return true; }
 
 	bool large;
 	float LY, V;
@@ -58,7 +58,7 @@ public:
 	u_int orderOffset, generation;
 	static int initCount, initSamples;
 	static float meanIntensity;
-	vector <Sample::Contribution> oldContributions;
+	vector <Contribution> oldContributions;
 	float *strataSamples;
 	int strataWidth, strataSqr, currentStrata;
 	bool useVariance;

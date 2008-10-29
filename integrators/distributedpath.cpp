@@ -56,7 +56,7 @@ DistributedPath::DistributedPath(LightStrategy st, bool da, int ds, bool dd, boo
 
 void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene->lights.size() > 16)
+		if (scene->sampler->IsMutating() || scene->lights.size() > 7)
 			lightStrategy = SAMPLE_ONE_UNIFORM;
 		else
 			lightStrategy = SAMPLE_ALL_UNIFORM;

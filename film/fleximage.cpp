@@ -100,20 +100,6 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 		}
 	}
 
-	// array allocation
-    // Dade - 2048 was a too small value for QuadCores, there was a memory fault
-    // because the second buffer was filled while we were still merging the first
-    // one. Bug #140.
-    // Dade - this problem is now solved with a dedicated mutex. Bug #147
-
-	int arrsize = 8 * 1024;
-	SampleArrptr = new ArrSample[arrsize];
-	SampleArr2ptr = new ArrSample[arrsize];
-
-	curSampleArrId = 0;
-    curSampleArr2Id = 0;
-	maxSampleArrId = arrsize-1;
-
 	maxY = 0.f;
 	warmupSamples = 0;
 	warmupComplete = false;
@@ -144,15 +130,12 @@ void FlexImageFilm::CreateBuffers()
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm && !restartResumeFlm) {
         // Dade - check if the film file exists
-
         string fname = filename+".flm";
 		std::ifstream ifs(fname.c_str(), std::ios_base::in | std::ios_base::binary);
 
         if(ifs.good()) {
             // Dade - read the data
-
             luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
-            
             UpdateFilm(NULL, ifs, 0, 0);
         }
 
@@ -160,174 +143,111 @@ void FlexImageFilm::CreateBuffers()
     }
 }
 
-void FlexImageFilm::AddSample(float sX, float sY, const XYZColor &xyz, float alpha, int buf_id, int bufferGroup)
-{
-    boost::recursive_mutex::scoped_lock lockSample(addSampleMutex);
+void FlexImageFilm::AddSampleCount(float count, int bufferGroup) {
+	if (bufferGroups.empty()) {
+		RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
+		CreateBuffers();
+	}
 
-    // TODO: Find a group
-    if (bufferGroups.empty()) {
-        RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-        CreateBuffers();
-    }
+	if (!bufferGroups.empty()) {
+		bufferGroups[bufferGroup].numberOfSamples += count;
 
-    // retrieve array position and increment for next AddSample()
-
-    // fetch arr_id and increment
-    int arr_id = curSampleArrId;
-    curSampleArrId++;
-
-    // Copy to array location
-    SampleArrptr[arr_id].sX = sX;
-    SampleArrptr[arr_id].sY = sY;
-    SampleArrptr[arr_id].xyz = xyz;
-    SampleArrptr[arr_id].alpha = alpha;
-    SampleArrptr[arr_id].buf_id = buf_id;
-    SampleArrptr[arr_id].bufferGroup = bufferGroup;
-
-    // check for end
-    if(curSampleArrId == maxSampleArrId) {
-        // Dade - lock the pointer mutex
-        boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
-
-        // swap SampleArrptrs
-		swap(SampleArrptr, SampleArr2ptr);
-
-        // Dade - save the amount of samples in the second buffer
-        curSampleArr2Id = curSampleArrId;
-        // enable merge and reset counter
-        curSampleArrId = 0;
-
-		// Dade - check time interval under mutex
-		boost::xtime currentTime;
-		boost::xtime_get(&currentTime, boost::TIME_UTC);
-		bool timeToWriteImage = (currentTime.sec - lastWriteImageTime.sec > writeInterval);
-		if (timeToWriteImage)
-			boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
-
-        // Dade - unlock the sample lock 
-        lockSample.unlock();
-
-        // Dade - merge buffers
-        MergeSampleArray();
-
-        // Dade - unlock the array lock 
-        lockArray.unlock();
-
-        // Possibly write out in-progress image
-        if (timeToWriteImage)
-            WriteImage(IMAGE_FILEOUTPUT);
-    }
+		// Dade - check if we have enough samples per pixel
+		if ((haltSamplePerPixel > 0) &&
+			(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
+					haltSamplePerPixel))
+			enoughSamplePerPixel = true;
+	}
 }
 
-void FlexImageFilm::FlushSampleArray() {
-    boost::recursive_mutex::scoped_lock lockSample(addSampleMutex);
-    
-    // TODO: Find a group
-    if (bufferGroups.empty()) {
-        RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-        CreateBuffers();
-    }
+void FlexImageFilm::AddSample(Contribution *contrib) {
+	if (bufferGroups.empty()) {
+		RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
+		CreateBuffers();
+	}
 
-    // Dade - lock the pointer mutex
-    boost::recursive_mutex::scoped_lock lockArray(arrSampleMutex);
+	const XYZColor xyz = contrib->color;
+	const float alpha = contrib->alpha;
 
-	// swap SampleArrptrs
-	swap(SampleArrptr, SampleArr2ptr);
-
-    // Dade - save the amount of samples in the second buffer
-    curSampleArr2Id = curSampleArrId;
-    // enable merge and reset counter
-    curSampleArrId = 0;
-
-    // Dade - unlock the sample lock 
-    lockSample.unlock();
-
-    // Dade - merge buffers
-    MergeSampleArray();
-}
-
-void FlexImageFilm::MergeSampleArray() {
-    // Dade - ATTENTION: you have to lock arrSampleMutex outside this method
-
-    if (curSampleArr2Id == 0) {
-        // Dade - nothing to do
-        return;
-    }
-        
-	for(int sArrId = 0; sArrId < curSampleArr2Id; ++sArrId) {
-		const XYZColor xyz = SampleArr2ptr[sArrId].xyz;
-		const float alpha = SampleArr2ptr[sArrId].alpha;
-
-		// Issue warning if unexpected radiance value returned
-		if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
-			if(debug_mode) {
-				std::stringstream ss;
-				ss << "Out of bound intensity in FlexImageFilm::AddSample: "
-				   << xyz.y() << ", sample discarded";
-				luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
-			}
-			continue;
+	// Issue warning if unexpected radiance value returned
+	if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
+		if(debug_mode) {
+			std::stringstream ss;
+			ss << "Out of bound intensity in FlexImageFilm::AddSample: "
+			   << xyz.y() << ", sample discarded";
+			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
 		}
+		return;
+	}
 
-		// Reject samples higher than max y() after warmup period
-		if (warmupComplete) {
-			if (xyz.y() > maxY)
-				continue;
+	// Reject samples higher than max y() after warmup period
+	if (warmupComplete) {
+		if (xyz.y() > maxY)
+			return;
+	} else {
+		if (debug_mode) {
+			maxY = INFINITY;
+			warmupComplete = true;
 		} else {
-			if (debug_mode) {
-				maxY = INFINITY;
+		 	maxY = max(maxY, xyz.y());
+			++warmupSamples;
+		 	if (warmupSamples >= reject_warmup_samples)
 				warmupComplete = true;
-			} else {
-			 	maxY = max(maxY, xyz.y());
-				++warmupSamples;
-			 	if (warmupSamples >= reject_warmup_samples)
-					warmupComplete = true;
-			}
 		}
+	}
 
-		BufferGroup &currentGroup = bufferGroups[SampleArr2ptr[sArrId].bufferGroup];
-		Buffer *buffer = currentGroup.getBuffer(SampleArr2ptr[sArrId].buf_id);
+	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
+	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-		// Compute sample's raster extent
-		float dImageX = SampleArr2ptr[sArrId].sX - 0.5f;
-		float dImageY = SampleArr2ptr[sArrId].sY - 0.5f;
-		int x0 = Ceil2Int (dImageX - filter->xWidth);
-		int x1 = Floor2Int(dImageX + filter->xWidth);
-		int y0 = Ceil2Int (dImageY - filter->yWidth);
-		int y1 = Floor2Int(dImageY + filter->yWidth);
-		x0 = max(x0, xPixelStart);
-		x1 = min(x1, xPixelStart + xPixelCount - 1);
-		y0 = max(y0, yPixelStart);
-		y1 = min(y1, yPixelStart + yPixelCount - 1);
-		if (x1 < x0 || y1 < y0) continue;
-		// Loop over filter support and add sample to pixel arrays
-		// Precompute $x$ and $y$ filter table offsets
-	//	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-		int ifx[32];
+	// Compute sample's raster extent
+	float dImageX = contrib->imageX - 0.5f;
+	float dImageY = contrib->imageY - 0.5f;
+	int x0 = Ceil2Int (dImageX - filter->xWidth);
+	int x1 = Floor2Int(dImageX + filter->xWidth);
+	int y0 = Ceil2Int (dImageY - filter->yWidth);
+	int y1 = Floor2Int(dImageY + filter->yWidth);
+	x0 = max(x0, xPixelStart);
+	x1 = min(x1, xPixelStart + xPixelCount - 1);
+	y0 = max(y0, yPixelStart);
+	y1 = min(y1, yPixelStart + yPixelCount - 1);
+	if (x1 < x0 || y1 < y0) return;
+	// Loop over filter support and add sample to pixel arrays
+	// Precompute $x$ and $y$ filter table offsets
+//	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
+	int ifx[32];
+	for (int x = x0; x <= x1; ++x) {
+		float fx = fabsf((x - dImageX) *
+			filter->invXWidth * FILTER_TABLE_SIZE);
+		ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
+	}
+//	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
+	int ify[32];
+	for (int y = y0; y <= y1; ++y) {
+		float fy = fabsf((y - dImageY) *
+			filter->invYWidth * FILTER_TABLE_SIZE);
+		ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
+	}
+
+	for (int y = y0; y <= y1; ++y) {
 		for (int x = x0; x <= x1; ++x) {
-			float fx = fabsf((x - dImageX) *
-				filter->invXWidth * FILTER_TABLE_SIZE);
-			ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
+			// Evaluate filter value at $(x,y)$ pixel
+			int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
+			float filterWt = filterTable[offset];
+			// Update pixel values with filtered sample contribution
+			buffer->Add(x - xPixelStart,y - yPixelStart,
+				xyz, alpha, filterWt);
 		}
-	//	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-		int ify[32];
-		for (int y = y0; y <= y1; ++y) {
-			float fy = fabsf((y - dImageY) *
-				filter->invYWidth * FILTER_TABLE_SIZE);
-			ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
-		}
+	}
 
-		for (int y = y0; y <= y1; ++y) {
-			for (int x = x0; x <= x1; ++x) {
-				// Evaluate filter value at $(x,y)$ pixel
-				int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-				float filterWt = filterTable[offset];
-				// Update pixel values with filtered sample contribution
-				buffer->Add(x - xPixelStart,y - yPixelStart,
-					xyz, alpha, filterWt);
-			}
-		}
+	// Check write output interval
+	boost::xtime currentTime;
+	boost::xtime_get(&currentTime, boost::TIME_UTC);
+	bool timeToWriteImage = (currentTime.sec - lastWriteImageTime.sec > writeInterval);
 
+	// Possibly write out in-progress image
+	if (timeToWriteImage) {
+		boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
+		WriteImage(IMAGE_FILEOUTPUT);
 	}
 }
 
@@ -403,10 +323,10 @@ void FlexImageFilm::ScaleOutput(vector<Color> &pixel, vector<float> &alpha, floa
 }
 void FlexImageFilm::WriteImage(ImageType type)
 {
-	boost::recursive_mutex::scoped_lock lock(imageMutex);
+//	boost::recursive_mutex::scoped_lock lock(imageMutex);
 
-	// Dade - flush the sample buffer before to save the image.
-	FlushSampleArray();
+//	// Dade - flush the sample buffer before to save the image.
+//	FlushSampleArray();
 
 	const int nPix = xPixelCount * yPixelCount;
 	vector<Color> pixels(nPix), pixels0(nPix);
@@ -558,8 +478,8 @@ void FlexImageFilm::TransmitFilm(
     BlockedArray<Pixel> *pixelBuf;
     float numberOfSamples;
     {
-        // Dade - collect data to transmit
-        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+//        // Dade - collect data to transmit
+//        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
 		// TODO: Find a group
 		if (bufferGroups.empty()) {
@@ -629,8 +549,8 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
         int buf_id, int bufferGroup) {
     BlockedArray<Pixel> *pixelBuf;
     {
-        // Dade - prepare buffer to receive data
-        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+//        // Dade - prepare buffer to receive data
+//        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
 		// TODO: Find a group
 		if (bufferGroups.empty()) {
@@ -672,7 +592,7 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
         // Dade - check stream i/o for errors
         if (in.good()) {
             // Dade - add all received pixels
-            boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+//            boost::recursive_mutex::scoped_lock lock(addSampleMutex);
 
             BufferGroup &currentGroup = bufferGroups[buf_id];
             Buffer *buffer = currentGroup.getBuffer(bufferGroup);
@@ -760,7 +680,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float gamma = params.FindOneFloat("gamma", 2.2f);
 
 	// Rejection mechanism
-	int reject_warmup = params.FindOneInt("reject_warmup", 3); // minimum samples/px before rejecting
+	int reject_warmup = params.FindOneInt("reject_warmup", 64); // minimum samples/px before rejecting
 
 	// Debugging mode (display erratic sample values and disable rejection mechanism)
 	bool debug_mode = params.FindOneBool("debug", false);

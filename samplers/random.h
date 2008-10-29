@@ -55,6 +55,7 @@ private:
 	int samplePos;
 	u_int TotalPixels;
 	PixelSampler* pixelSampler;
+	bool init;
 };
 
 }//namespace lux

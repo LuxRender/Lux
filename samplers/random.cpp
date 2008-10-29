@@ -27,6 +27,7 @@
 #include "lowdiscrepancypx.h"
 #include "linear.h"
 #include "tilepx.h"
+#include "scene.h"
 #include "hilbertpx.h"
 #include "dynload.h"
 #include "error.h"
@@ -46,6 +47,8 @@ RandomSampler::RandomSampler(int xstart, int xend,
     xPos = xPixelStart;
     yPos = yPixelStart;
     pixelSamples = ps;
+
+	init = true;
 
 	// Initialize PixelSampler
 	if(pixelsampler == "vegas")
@@ -88,6 +91,12 @@ u_int RandomSampler::GetTotalSamplePos()
 bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
+
+	if(init) {
+		init = false;
+		// Fetch first contribution buffer from pool
+		contribBuffer = film->scene->contribPool->Next(NULL);
+	}
 
 	// Compute new set of samples if needed for next pixel
 	bool haveMoreSample = true;
@@ -147,7 +156,7 @@ float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
 	int nsamp = params.FindOneInt("pixelsamples", -1);
-	// for backwards compatebility
+	// for backwards compatibility
 	if (nsamp < 0) {
 		luxError(LUX_NOERROR, LUX_WARNING, 
 			"Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead");

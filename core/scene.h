@@ -129,6 +129,8 @@ public:
     BBox bound;
     int seedBase;
 
+	ContributionPool *contribPool;
+
     // Dade - number of samples received from network
     double numberOfSamplesFromNetwork;
 

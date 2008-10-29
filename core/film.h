@@ -290,9 +290,7 @@ public:
 		invSamplePerPass =  1.0 / (xResolution * yResolution);
 	}
     virtual ~Film() { }
-
-    virtual void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buffer = 0, int bufferGroup = 0) = 0;
-
+	virtual void AddSample(Contribution *contrib) = 0;
     virtual void AddSampleCount(float count, int bufferGroup = 0) { }
     virtual void WriteImage(ImageType type) = 0;
     virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
@@ -319,9 +317,9 @@ public:
 	int haltSamplePerPixel;
 	bool enoughSamplePerPixel;
 
-protected:
-    Scene *scene;
+	Scene *scene;
 
+protected:
 	// Dade - 1.0 / (xResolution * yResolution)
 	double invSamplePerPass;
 };

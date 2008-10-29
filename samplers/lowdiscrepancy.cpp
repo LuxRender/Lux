@@ -27,6 +27,7 @@
 //#include "randompx.h"
 #include "lowdiscrepancypx.h"
 #include "tilepx.h"
+#include "scene.h"
 #include "linear.h"
 #include "hilbertpx.h"
 #include "dynload.h"
@@ -71,7 +72,6 @@ LDSampler::LDSampler(int xstart, int xend,
 		pixelSamples = ps;
 	samplePos = pixelSamples;
 	oneDSamples = twoDSamples = xDSamples = NULL;
-	// Dade - should use AllocAligned()
 	imageSamples = new float[7*pixelSamples];
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
@@ -117,6 +117,9 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		for (u_int i = 0; i < sample->nxD.size(); ++i)
 			xDSamples[i] = new float[sample->dxD[i] * sample->nxD[i] *
 		                               pixelSamples];
+
+		// Fetch first contribution buffer from pool
+		contribBuffer = film->scene->contribPool->Next(NULL);
 	}
 
 	bool haveMoreSample = true;

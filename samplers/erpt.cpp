@@ -28,6 +28,7 @@
 // erpt.cpp*
 #include "erpt.h"
 #include "dynload.h"
+#include "scene.h"
 #include "error.h"
 
 using namespace lux;
@@ -116,6 +117,9 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 	sampler->baseTimeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
 	sampler->baseSampler->SetTsPack(sampler->tspack);
 	sampler->mutation = -1;
+
+	// Fetch first contribution buffer from pool
+	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);
 }
 
 // interface for new ray/samples from scene
@@ -231,7 +235,7 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 // interface for adding/accepting a new image sample.
 void ERPTSampler::AddSample(const Sample &sample)
 {
-	vector<Sample::Contribution> &newContributions(sample.contributions);
+	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.0f;
 	for(u_int i = 0; i < newContributions.size(); ++i)
 		newLY += newContributions[i].color.y();
@@ -254,11 +258,11 @@ void ERPTSampler::AddSample(const Sample &sample)
 			weight *= gain * quantum / LY;
 			if (!isinf(weight) && LY > 0.f) {
 				for(u_int i = 0; i < oldContributions.size(); ++i) {
-					XYZColor color = oldContributions[i].color;
-					color *= weight;
-					film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
-						color, oldContributions[i].alpha,
-						oldContributions[i].buffer, oldContributions[i].bufferGroup);
+					// Radiance - added new use of contributionpool/buffers
+					if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
+						contribBuffer = film->scene->contribPool->Next(contribBuffer);
+						contribBuffer->Add(&oldContributions[i], weight);
+					}
 				}
 			}
 			weight = 0.f;
@@ -266,7 +270,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 		if (mutation == -1) {
 			meanIntensity = Lerp(1.f / initSamples, meanIntensity, newLY);
 			// calculate the number of chains on a new seed
-			film->AddSampleCount(1.f); // TODO: add to correct buffer groups
+			contribBuffer->AddSampleCount(1.f); // TODO: add to the correct buffer groups
 			if (!(newLY > 0.f))
 				return;
 			quantum = meanIntensity;
@@ -307,11 +311,11 @@ void ERPTSampler::AddSample(const Sample &sample)
 		weight *= gain * quantum / LY;
 		if (!isinf(weight) && LY > 0.f) {
 			for(u_int i = 0; i < oldContributions.size(); ++i) {
-				XYZColor color = oldContributions[i].color;
-				color *= weight;
-				film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
-					color, oldContributions[i].alpha,
-					oldContributions[i].buffer, oldContributions[i].bufferGroup);
+				// Radiance - added new use of contributionpool/buffers
+				if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
+					contribBuffer = film->scene->contribPool->Next(contribBuffer);
+					contribBuffer->Add(&oldContributions[i], weight);
+			}
 			}
 		}
 		weight = newWeight;
@@ -338,11 +342,11 @@ void ERPTSampler::AddSample(const Sample &sample)
 		newWeight *= gain * quantum / newLY;
 		if (!isinf(newWeight) && newLY > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i) {
-				XYZColor color = newContributions[i].color;
-				color *= newWeight;
-				film->AddSample(newContributions[i].imageX, newContributions[i].imageY,
-					color, newContributions[i].alpha,
-					newContributions[i].buffer, newContributions[i].bufferGroup);
+				// Radiance - added new use of contributionpool/buffers
+				if(!contribBuffer->Add(&newContributions[i], newWeight)) {
+					contribBuffer = film->scene->contribPool->Next(contribBuffer);
+					contribBuffer->Add(&newContributions[i], newWeight);
+				}
 			}
 		}
 
@@ -373,7 +377,7 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	string base = params.FindOneString("basesampler", "random");	// sampler for new chain seed
 	Sampler *sampler = MakeSampler(base, params, film);
 	if (sampler == NULL) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Could not obtain a valid sampler");
+		luxError(LUX_SYSTEM, LUX_SEVERE, "ERPTSampler: Could not obtain a valid sampler");
 		return NULL;
 	}
 	return new ERPTSampler(totMutations, microMutationProb, range, sampler);

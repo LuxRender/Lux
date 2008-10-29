@@ -387,6 +387,10 @@ void Scene::Render() {
     ss << "Preprocess thread uses seed: " << seed;
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
+	// initialize the contribution pool
+	contribPool = new ContributionPool();
+	contribPool->SetFilm(camera->film);
+
 	// initialize the preprocess thread's tspack
 	tspack = new TsPack();
 	tspack->swl = new SpectrumWavelengths();				// TODO - REFACT - check sample wavelengths
@@ -435,6 +439,7 @@ Scene::~Scene() {
     delete sampler;
     delete surfaceIntegrator;
     delete volumeIntegrator;
+	delete contribPool;					// TODO add proper destruction of contributionpool's buffers.
     //delete aggregate;
     delete volumeRegion;
     for (u_int i = 0; i < lights.size(); ++i)

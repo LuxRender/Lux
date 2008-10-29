@@ -30,7 +30,6 @@
 #include "tonemap.h"
 #include "sampling.h"
 #include <boost/thread/xtime.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 
 namespace lux {
 
@@ -57,25 +56,8 @@ public:
 	void CreateBuffers();
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
-	void AddSample(float sX, float sY, const XYZColor &L, float alpha, int buf_id = 0, int bufferGroup = 0);
-	void AddSampleCount(float count, int bufferGroup = 0) {
-        	boost::recursive_mutex::scoped_lock lock(addSampleMutex);
-		if (bufferGroups.empty()) {
-			RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-			CreateBuffers();
-		}
-		lock.unlock();
-
-		if (!bufferGroups.empty()) {
-			bufferGroups[bufferGroup].numberOfSamples += count;
-
-			// Dade - check if we have enough samples per pixel
-			if ((haltSamplePerPixel > 0) &&
-				(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
-						haltSamplePerPixel))
-				enoughSamplePerPixel = true;
-		}
-	}
+	void AddSample(Contribution *contrib);
+	void AddSampleCount(float count, int bufferGroup = 0);
 
 	void WriteImage(ImageType type);
 
@@ -132,20 +114,9 @@ private:
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
-	mutable boost::recursive_mutex addSampleMutex;
-	// Dade - this mutex is used to lock SampleArrptr/SampleArr2ptr pointers.
-	// Be aware of potential dealock with addSampleMutex mutex. Always lock 
-	// addSampleMutex first and then arrSampleMutex.
-	mutable boost::recursive_mutex arrSampleMutex;
-	// Dade - used by the WriteImage method
-	mutable boost::recursive_mutex imageMutex;
-
 	float maxY;
 	u_int warmupSamples;
 	bool warmupComplete;
-	ArrSample *SampleArrptr;
-	ArrSample *SampleArr2ptr;
-	int curSampleArrId, curSampleArr2Id, maxSampleArrId;
 	ColorSystem colorSpace;
 };
 

@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "film.h"
 #include "color.h"
+#include "contribution.h"
 #include "memory.h"
 
 namespace lux
@@ -82,20 +83,6 @@ public:
 		}
 	}
 
-	// Sample internal public type
-	class Contribution {
-	public:
-		Contribution(float x, float y, const XYZColor &c, float a,
-			float v, int b, int g) :
-			imageX(x), imageY(y), color(c), alpha(a), variance(v),
-			buffer(b), bufferGroup(g) { }
-
-		float imageX, imageY;
-		XYZColor color;
-		float alpha, variance;
-		int buffer, bufferGroup;
-	};
-
 	//Sample public data
 	// Reference to the sampler for lazy evaluation
 	Sampler *sampler;
@@ -139,12 +126,15 @@ public:
 	{
 		film = f;
 	}
-	virtual void GetBufferType(BufferType *t)
-	{}
-/*	virtual void AddSample(float imageX, float imageY, const Sample &sample,
-		const Ray &ray, const XYZColor &L, float alpha, int id = 0);*/
+	virtual void GetBufferType(BufferType *t) {}
 	virtual void AddSample(const Sample &sample);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
+
+	virtual bool IsMutating() { return false; }
+
+	void SetContributionPool(ContributionPool *p) {
+		contribPool = p;
+	}
 
 	void SetTsPack(TsPack *t) { tspack = t; }
 	TsPack *tspack;
@@ -154,6 +144,8 @@ public:
 	int samplesPerPixel;
 	Film *film;
 	bool isSampleEnd;
+	ContributionPool *contribPool;
+	ContributionBuffer *contribBuffer;
 };
 class SampleGuard
 {

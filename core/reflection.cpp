@@ -30,7 +30,6 @@
 
 using namespace lux;
 
-
 // NOTE - radiance - separated to /core/reflection/*
 
 

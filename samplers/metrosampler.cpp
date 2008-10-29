@@ -20,16 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-
-
-// initial metropolis light transport sample integrator
-// by radiance
-
 // TODO: add scaling of output image samples
 
 // metrosampler.cpp*
 #include "metrosampler.h"
 #include "memory.h"
+#include "scene.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -135,6 +131,9 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 	sampler->scramble = (u_int *)AllocAligned(sampler->totalSamples * sizeof(u_int));
 	for (int i = 0; i < sampler->totalSamples; ++i)
 		sampler->scramble[i] = sampler->tspack->rng->uintValue();
+
+	// Fetch first contribution buffer from pool
+	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);
 }
 
 // interface for new ray/samples from scene
@@ -241,20 +240,9 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	return data;
 }
 
-// interface for adding/accepting a new image sample.
-void MetropolisSampler::AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &newL, float newAlpha, int id)
-{
-	if (!isSampleEnd) {
-		sample.AddContribution(imageX, imageY, newL, newAlpha, id);
-	} else {	// backward compatible with multiimage.cpp and path.cpp
-		sample.contributions.clear();
-		sample.AddContribution(imageX, imageY, newL, newAlpha, id);
-	}
-}
-
 void MetropolisSampler::AddSample(const Sample &sample)
 {
-	vector<Sample::Contribution> &newContributions(sample.contributions);
+	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f, newV = 0.f;
 	for(u_int i = 0; i < newContributions.size(); ++i) {
 		if (newContributions[i].color.y() > 0.f) {
@@ -274,8 +262,9 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		if (!(meanIntensity > 0.f))
 			meanIntensity = 1.f;
 	}
-//	newV = min(newLY / meanIntensity, newV);
-	film->AddSampleCount(1.f); // TODO: add to the correct buffer groups
+
+	contribBuffer->AddSampleCount(1.f); // TODO: add to the correct buffer groups
+
 	// calculate accept probability from old and new image sample
 	float accProb, accProb2, factor;
 	if (LY > 0.f) {
@@ -296,11 +285,11 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		// Add accumulated contribution of previous reference sample
 		weight /= (useVariance ? V : LY) / meanIntensity + pLarge;
 		for(u_int i = 0; i < oldContributions.size(); ++i) {
-			XYZColor color = oldContributions[i].color;
-			color *= weight;
-			film->AddSample(oldContributions[i].imageX, oldContributions[i].imageY,
-				color, oldContributions[i].alpha,
-				oldContributions[i].buffer, oldContributions[i].bufferGroup);
+			// Radiance - added new use of contributionpool/buffers
+			if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
+				contribBuffer = film->scene->contribPool->Next(contribBuffer);
+				contribBuffer->Add(&oldContributions[i], weight);
+			}
 		}
 		// Save new contributions for reference
 		weight = newWeight;
@@ -325,11 +314,11 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		// Add contribution of new sample before rejecting it
 		newWeight /= (useVariance ? newV : newLY) / meanIntensity + pLarge;
 		for(u_int i = 0; i < newContributions.size(); ++i) {
-			XYZColor color = newContributions[i].color;
-			color *= newWeight;
-			film->AddSample(newContributions[i].imageX, newContributions[i].imageY,
-				color, newContributions[i].alpha,
-				newContributions[i].buffer, newContributions[i].bufferGroup);
+			// Radiance - added new use of contributionpool/buffers
+			if(!contribBuffer->Add(&newContributions[i], newWeight)) {
+				contribBuffer = film->scene->contribPool->Next(contribBuffer);
+				contribBuffer->Add(&newContributions[i], newWeight);
+			}
 		}
 		// Restart from previous reference
 		for (int i = 0; i < totalTimes; ++i)
@@ -349,7 +338,7 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	meanIntensity = 0.;
 	int maxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
-	float microMutationProb = params.FindOneFloat("micromutationprob", 0.f);	// probability of generating a large sample mutation
+	float microMutationProb = params.FindOneFloat("micromutationprob", 0.f);	// probability of generating a micro sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
 	bool useVariance = params.FindOneBool("usevariance", false);
