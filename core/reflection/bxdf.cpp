@@ -68,11 +68,10 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	bool reverse) const
 {
 	if (etai == etat) {
-		if (brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse)) {
-			*wi = otherHemisphere(*wi);
-			return true;
-		}
-		return false;
+		if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse))
+			return false;
+		*wi = otherHemisphere(*wi);
+		return true;
 	}
 	if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f, pdf, pdfBack, reverse))
 		return false;
@@ -109,9 +108,10 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		cost = -cost;
 	const float cos = wi->z;
 	*wi = (cost + eta * cosi) * H - eta * wo;
-	if (reverse)
-		*f *= fabsf(eta2 * cos / wi->z);
-	else
+	if (reverse) {
+		Vector w((cost / eta + cosi) * H - *wi / eta);
+		*f *= fabsf(eta2 * wi->z / w.z);
+	} else
 		*f *= fabsf(cos / (wi->z * eta2));
 	return true;
 }
@@ -129,7 +129,7 @@ bool BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	*f = SWCSpectrum(0.f);
 	if (reverse) {
 		this->f(tspack, *wi, wo, f);
-		*f *= (wo.z / wi->z);	
+//		*f *= (wo.z / wi->z);	
 	}
 	else
 		this->f(tspack, wo, *wi, f);

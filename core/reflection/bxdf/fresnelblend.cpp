@@ -75,7 +75,7 @@ bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	*f = SWCSpectrum(0.f);
 	if (reverse) {
 		this->f(tspack, *wi, wo, f);
-		*f *= (wo.z / wi->z);	
+//		*f *= (wo.z / wi->z);	
 	}
 	else
 		this->f(tspack, wo, *wi, f);
