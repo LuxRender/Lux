@@ -40,8 +40,7 @@ IrregularSPD::IrregularSPD(const float* const wavelengths, const float* const sa
 
   int sn = (lambdaMax - lambdaMin) / resolution + 1;
 
-  float *sam = new float[sn];
-  float *sd  = NULL;
+  vector<float> sam(sn);
 
   if (resamplignMethod == Linear) {
     int k = 0;
@@ -68,9 +67,9 @@ IrregularSPD::IrregularSPD(const float* const wavelengths, const float* const sa
     }
   }
   else {
-    sd  = new float[sn];
+    vector<float> sd(n);
 
-    calc_spline_data(wavelengths, samples, n, sd);
+    calc_spline_data(wavelengths, samples, n, &sd[0]);
 
     int k = 0;
     for (int i = 0; i < sn; i++) {
@@ -94,10 +93,7 @@ IrregularSPD::IrregularSPD(const float* const wavelengths, const float* const sa
     }
   }
 
-  init(lambdaMin, lambdaMax, sam, sn);
-
-  delete[] sam;
-  delete[] sd;
+  init(lambdaMin, lambdaMax, &sam[0], sn);
 }
 
 void IrregularSPD::init(float lMin, float lMax, const float* const s, int n) {
@@ -120,7 +116,7 @@ void IrregularSPD::init(float lMin, float lMax, const float* const s, int n) {
 // from Numerical Recipes in C
 void IrregularSPD::calc_spline_data(const float* const wavelengths,
 									const float* const amplitudes, int n, float *spline_data) {
-  float *u = new float[n-1];
+  vector<float> u(n-1);
 
   // natural spline
   spline_data[0] = u[0] = 0.f;
@@ -142,8 +138,6 @@ void IrregularSPD::calc_spline_data(const float* const wavelengths,
   for (int k = n-2; k >= 0; k--) {
     spline_data[k] = spline_data[k] * spline_data[k+1] + u[k];
   }
-
-  delete[] u;
 }
 
 
