@@ -32,9 +32,9 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 			int nv, const Point *P, const Normal *N, const float *UV,
 			MeshTriangleType tritype, int trisCount, const int *tris,
 			MeshQuadType quadtype, int nquadsCount, const int *quads,
-			MeshSubdivType subdivtype, int nsubdivlevels, 
-			boost::shared_ptr<Texture<float> > dmMap, 
-			float dmScale, float dmOffset, 
+			MeshSubdivType subdivtype, int nsubdivlevels,
+			boost::shared_ptr<Texture<float> > dmMap,
+			float dmScale, float dmOffset,
 			bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
 {
 	accelType = acceltype;
@@ -234,8 +234,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 					// Apply subdivision
 					boost::shared_ptr<LoopSubdiv::SubdivResult> res;
 					{
-						LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation, 
-							ntris, nverts, triVertexIndex, p, uvs, 
+						LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
+							ntris, nverts, triVertexIndex, p, uvs,
 							nSubdivLevels, displacementMap,
 							displacementMapScale, displacementMapScale,
 							displacementMapNormalSmooth, displacementMapSharpBoundary);
@@ -468,7 +468,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 }
 
-static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params, 
+static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
 						   const string& accelTypeStr, const string& triTypeStr,
 						   const int* triIndices, int triIndicesCount,
 						   const float* UV, int UVCount,
@@ -488,7 +488,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	// Dade - read vertex data
     int npi;
-    const Point *P = params.FindPoint("P", &npi);    
+    const Point *P = params.FindPoint("P", &npi);
 
     // NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
 	if (UV && (UVCount != npi * 2)) {
@@ -597,7 +597,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		npi, P, N, UV,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
-		subdivType, nSubdivLevels, displacementMap, displacementMapScale, displacementMapOffset, 
+		subdivType, nSubdivLevels, displacementMap, displacementMapScale, displacementMapOffset,
 		displacementMapNormalSmooth, displacementMapSharpBoundary);
 }
 
@@ -613,7 +613,7 @@ Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const Pa
 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
 
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		triIndices, triIndicesCount, uvCoordinates, uvCoordinatesCount,
 		subdivscheme, nsubdivlevels);
 }
@@ -630,7 +630,7 @@ Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	if( uvCoordinates == NULL ) {
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
 		"loop", 0);
 }
@@ -647,7 +647,7 @@ Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	if( uvCoordinates == NULL ) {
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
 		"loop", 0);
 }
@@ -670,7 +670,7 @@ Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	string subdivscheme = params.FindOneString("scheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nlevels", 3);
 
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr, 
+	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
 		subdivscheme, nsubdivlevels);
 }

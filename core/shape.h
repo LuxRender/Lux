@@ -116,6 +116,7 @@ public:
 		return true;
 	}
 	bool Intersect(const Ray &r, Intersection *in) const;
+	bool IntersectP(const Ray &r) const;
 
 	bool CanSample() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
@@ -124,8 +125,15 @@ public:
 	}
 	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		u_int sn;
-		for (sn = 0; sn < primitives.size()-1; ++sn)
-			if (u3 < areaCDF[sn]) break;
+		if( primitives.size() <= 16) {
+			for (sn = 0; sn < primitives.size()-1; ++sn)
+				if (u3 < areaCDF[sn]) break;
+		}
+		else {
+			sn = Clamp(
+				(u_int)(std::upper_bound(areaCDF.begin(), areaCDF.end(), u3) - areaCDF.begin()),
+				(u_int)(0), (u_int)(primitives.size() - 1));
+		}
 		return primitives[sn]->Sample(u1, u2, u3, Ns);
 	}
 	float Area() const { return area; }

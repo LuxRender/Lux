@@ -92,15 +92,35 @@ bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
 	}
 }
 
+bool PrimitiveSet::IntersectP(const Ray &ray) const {
+	if(accelerator) {
+		if (!accelerator->IntersectP(ray))
+			return false;
+
+		return true;
+	} else if(worldbound.IntersectP(ray)) {
+		for (u_int i = 0; i < primitives.size(); ++i) {
+			if (primitives[i]->IntersectP(ray)) {
+				return true;
+			}
+		}
+		return false;
+	} else {
+		return false;
+	}
+}
+
 void PrimitiveSet::initAreas() {
 	area = 0;
 	vector<float> areas;
+	areas.reserve(primitives.size());
 	for (u_int i = 0; i < primitives.size(); ++i) {
 		float a = primitives[i]->Area();
 		area += a;
 		areas.push_back(a);
 	}
 	float prevCDF = 0;
+	areaCDF.reserve(primitives.size());
 	for (u_int i = 0; i < primitives.size(); ++i) {
 		areaCDF.push_back(prevCDF + areas[i] / area);
 		prevCDF = areaCDF[i];

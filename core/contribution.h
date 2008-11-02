@@ -34,7 +34,7 @@ namespace lux
 
 // Size of a contribution buffer
 // 4096 seems best.
-#define CONTRIB_BUF_SIZE 4096 
+#define CONTRIB_BUF_SIZE 4096
 
 // Minimum number of buffers to keep alive/reuse
 // In practice usually up to twice this amount stays allocated
@@ -84,7 +84,7 @@ public:
 			film->AddSample(&contribs[i]);
 		film->AddSampleCount(sampleCount);
 	}
-	
+
 	void Reset() { pos = 0; sampleCount = 0.f; }
 
 private:
@@ -112,7 +112,7 @@ public:
 					<< total << " - Total mem used: " << total * CONTRIB_BUF_SIZE * sizeof(Contribution) << ".";
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 			}
-			
+
 			return cnew;
 		}
 		ContributionBuffer *cold = CFree[freepos-1];
@@ -137,7 +137,7 @@ public:
 
 			CFull.clear();
 		}
-		
+
 		PoolAction.unlock();
 
 		if(doSplat) {
