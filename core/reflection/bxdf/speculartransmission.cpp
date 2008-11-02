@@ -48,6 +48,7 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
 	if (sint2 > 1.) {
+		*f = 0.f;
 		*pdf = 0.f;
 		if (pdfBack)
 			*pdfBack = 0.f;
@@ -78,12 +79,12 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 				*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(CosTheta(wo)));
 			} else {
 				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
-				*f = (SWCSpectrum(1.f) - F) * T * (1.f / (fabsf(cost) * eta2));
+				*f = (SWCSpectrum(1.f) - F) * T * (1.f / (fabsf(CosTheta(wo)) * eta2));
 			}
 		} else {
 			if (entering) {
 				fresnel.Evaluate(tspack, CosTheta(wo), &F);
-				*f = (SWCSpectrum(1.f) - F) * T * (1 / (fabsf(cost) * eta2));
+				*f = (SWCSpectrum(1.f) - F) * T * (1 / (fabsf(CosTheta(wo)) * eta2));
 			} else {
 				fresnel.Evaluate(tspack, -cost, &F);
 				*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(CosTheta(wo)));
@@ -123,7 +124,7 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool 
 	if (!architectural) {
 		if (reverse) {
 			fresnel.Evaluate(tspack, cost, &F);
-			factor = eta2 / fabsf(cost);
+			factor = eta2 / fabsf(CosTheta(wo));
 		} else {
 			fresnel.Evaluate(tspack, CosTheta(wo), &F);
 			factor = 1.f / (fabsf(cost) * eta2);
@@ -131,19 +132,19 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool 
 	} else {
 		if (reverse) {
 			if (entering) {
-				fresnel.Evaluate(tspack, -cost, &F);
-				factor = eta2 / fabsf(wo.z);
+				fresnel.Evaluate(tspack, cost, &F);
+				factor = eta2 / fabsf(CosTheta(wo));
 			} else {
 				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
-				factor = 1.f / (fabsf(wo.z) * eta2);
+				factor = 1.f / (fabsf(CosTheta(wo)) * eta2);
 			}
 		} else {
 			if (entering) {
 				fresnel.Evaluate(tspack, CosTheta(wo), &F);
-				factor = 1.f / (fabsf(wo.z) * eta2);
+				factor = 1.f / (fabsf(CosTheta(wo)) * eta2);
 			} else {
 				fresnel.Evaluate(tspack, -cost, &F);
-				factor = eta2 / fabsf(wo.z);
+				factor = eta2 / fabsf(CosTheta(wo));
 			}
 		}
 	}

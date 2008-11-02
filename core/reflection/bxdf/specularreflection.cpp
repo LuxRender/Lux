@@ -46,7 +46,10 @@ bool SpecularReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	fresnel->Evaluate(tspack, CosTheta(wo), f);
+	if (reverse)
+		fresnel->Evaluate(tspack, -CosTheta(wo), f);
+	else
+		fresnel->Evaluate(tspack, CosTheta(wo), f);
 	if(film > 0.f) PhaseDifference(tspack, wo, film, filmindex, f);
 	*f *= R;
 	*f /= fabsf(CosTheta(wo));
