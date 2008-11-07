@@ -63,28 +63,27 @@ public:
  SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, 
 	const Sample *sample, 
-	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs);
+	float &ls1, float &ls2, float &ls3, float &bs1, float &bs2, float &bcs);
  SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, float *lightSample = NULL,
 	float *lightNum = NULL, float *bsdfSample = NULL,
 	float *bsdfComponent = NULL);
- SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, const Vector &wo,
-	BSDF *bsdf, const Sample *sample,
-	int *lightSampleOffset, int *bsdfSampleOffset,
-	int *bsdfComponentOffset);
  SWCSpectrum UniformSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, float *lightSample = NULL,
 	float *lightNum = NULL, float *bsdfSample = NULL,
 	float *bsdfComponent = NULL);
+
+// Note - Radiance - disabled as this code is broken. (not threadsafe)
+/*
  SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, int lightSampleOffset, int lightNumOffset,
 	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,
 	float *&avgYsample, float *&cdf, float &overallAvgY);
- 
+*/
+
 }//namespace lux
  
 #endif // LUX_TRANSPORT_H

@@ -37,48 +37,14 @@ Integrator::~Integrator() {
 SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
-	int *lightSampleOffset, int *bsdfSampleOffset, int *bsdfComponentOffset)
-{
-	SWCSpectrum L(0.);
-	for (u_int i = 0; i < scene->lights.size(); ++i) {
-		Light *light = scene->lights[i];
-		int nSamples = (sample && lightSampleOffset) ?
-			sample->n2D[lightSampleOffset[i]] : 1;
-		// Estimate direct lighting from _light_ samples
-		SWCSpectrum Ld(0.);
-		for (int j = 0; j < nSamples; ++j) {
-			float ls1, ls2, ls3, bs1, bs2, bcs;
-			ls1 = sample->twoD[lightSampleOffset[i]][2 * j];
-			ls2 = sample->twoD[lightSampleOffset[i]][2 * j + 1];
-			ls3 = tspack->rng->floatValue();										// TODO - REFACT - use value from sample
-			bs1 = sample->twoD[bsdfSampleOffset[i]][2 * j];
-			bs2 = sample->twoD[bsdfSampleOffset[i]][2 * j + 1];
-			bcs = sample->twoD[bsdfComponentOffset[i]][j];
-			Ld += EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-				sample, ls1, ls2, ls3, bs1, bs2, bcs);
-		}
-		L += Ld / nSamples;
-	}
-	return L;
-}
-
-SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample,
 	float *lightSample, float *lightNum,
 	float *bsdfSample, float *bsdfComponent)
 {
-	float ls1, ls2, ls3, bs1, bs2, bcs;
-	ls3 = *lightNum;
-	ls1 = lightSample[0];
-	ls2 = lightSample[1];
-	bs1 = bsdfSample[0];
-	bs2 = bsdfSample[1];
-	bcs = *bsdfComponent;
 	SWCSpectrum L(0.f);
 	for (u_int i = 0; i < scene->lights.size(); ++i) {
 		L += EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-			sample, ls1, ls2, ls3, bs1, bs2, bcs);
+			sample, lightSample[0], lightSample[1], *lightNum,
+			bsdfSample[0], bsdfSample[1], *bsdfComponent);
 	}
 	return L;
 }
@@ -90,26 +56,22 @@ SWCSpectrum UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	float *bsdfSample, float *bsdfComponent)
 {
 	// Randomly choose a single light to sample, _light_
-	int nLights = int(scene->lights.size());
-	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
+	int nLights = scene->lights.size();
 	if (nLights == 0)
 		return SWCSpectrum(0.f);
 	int lightNumber;
-	float ls1, ls2, ls3, bs1, bs2, bcs;
-	ls3 = *lightNum * nLights;
+	float ls3 = *lightNum * nLights;
 	lightNumber = min(Floor2Int(ls3), nLights - 1);
 	ls3 -= lightNumber;
 	Light *light = scene->lights[lightNumber];
-	ls1 = lightSample[0];
-	ls2 = lightSample[1];
-	bs1 = bsdfSample[0];
-	bs2 = bsdfSample[1];
-	bcs = *bsdfComponent;
 	return (float)nLights *
 		EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-			sample, ls1, ls2, ls3, bs1, bs2, bcs);
+			sample, lightSample[0], lightSample[1], ls3,
+			bsdfSample[0], bsdfSample[1], *bsdfComponent);
 }
 
+// Note - Radiance - disabled as this code is broken. (not threadsafe)
+/*
 SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
@@ -170,10 +132,11 @@ SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
 	}
 	return L;
 }
+*/
 
 SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, const Sample *sample, 
-	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
+	float &ls1, float &ls2, float &ls3, float &bs1, float &bs2, float &bcs)
 {
 	SWCSpectrum Ld(0.);
 
@@ -182,7 +145,6 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 	if (light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0)) {
 
 		// Dade - trace only a single shadow ray
-
 		Vector wi;
 		float lightPdf;
 		VisibilityTester visibility;
@@ -201,7 +163,6 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		}
 	} else {
 		// Dade - trace 2 shadow rays and use MIS
-
 		// Sample light source with multiple importance sampling
 		Vector wi;
 		float lightPdf, bsdfPdf;
