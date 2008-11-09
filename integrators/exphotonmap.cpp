@@ -657,10 +657,10 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		mapsFileName = new string(sfn);
 
 	bool debugEnableDirect = params.FindOneBool("dbg_enabledirect", true);
-	bool debugUseRadianceMap = params.FindOneBool("dbg_useradiancemap", false);
-	bool debugEnableCaustic = params.FindOneBool("dbg_enablecaustic", true);
-	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirect", true);
-	bool debugEnableSpecular = params.FindOneBool("dbg_enablespecular", true);
+	bool debugUseRadianceMap = params.FindOneBool("dbg_enableradiancemap", false);
+	bool debugEnableCaustic = params.FindOneBool("dbg_enableindircaustic", true);
+	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirdiffuse", true);
+	bool debugEnableSpecular = params.FindOneBool("dbg_enableindirspecular", true);
 
     return new ExPhotonIntegrator(renderingMode, estrategy,
 			nDirect, nCaustic, nIndirect, nRadiance,
