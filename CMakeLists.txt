@@ -369,7 +369,7 @@ SET(lux_lib_src
 		core/api.cpp core/camera.cpp core/color.cpp core/spectrum.cpp core/context.cpp core/dynload.cpp core/exrio.cpp core/film.cpp
 		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/renderfarm.cpp core/sampling.cpp
-        core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp
+        core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/photonmap.cpp
         core/transport.cpp core/util.cpp core/volume.cpp core/imagereader.cpp
         core/geometry/transform.cpp core/geometry/matrix4x4.cpp
         core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
@@ -392,9 +392,10 @@ SET(lux_lib_src
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/emission.cpp
         integrators/path.cpp integrators/single.cpp
-		integrators/distributedpath.cpp 
-		integrators/bidirectional.cpp
-		integrators/directlighting.cpp
+	integrators/distributedpath.cpp 
+	integrators/bidirectional.cpp
+	integrators/directlighting.cpp
+	integrators/exphotonmap.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp
