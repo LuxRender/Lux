@@ -277,8 +277,8 @@ void RenderThread::render(RenderThread *myThread) {
 				break;
 		}
 
-		// Dade - check if the integrator support SWC
-		if (myThread->surfaceIntegrator->IsSWCSupported()) {						// COCACOCA -> remove ?
+		// Dade - check if the integrator support SWC / NOTE - Radiance - This should probably be removed. Integrators should all support SWC.
+		if (myThread->surfaceIntegrator->IsSWCSupported()) {
 			// Sample new SWC thread wavelengths
 			myThread->tspack->swl->Sample(myThread->sample->wavelengths,
 					myThread->sample->singleWavelength);
@@ -302,28 +302,15 @@ void RenderThread::render(RenderThread *myThread) {
         float rayWeight = myThread->camera->GenerateRay(*(myThread->sample), &ray);
 
         if (rayWeight > 0.f) {
-            // Generate ray differentials for camera ray
-            ++(myThread->sample->imageX);
-            float wt1 = myThread->camera->GenerateRay(*(myThread->sample), &ray.rx);
-            --(myThread->sample->imageX);
-            ++(myThread->sample->imageY);
-            float wt2 = myThread->camera->GenerateRay(*(myThread->sample), &ray.ry);
-            ray.hasDifferentials = wt1 > 0.f && wt2 > 0.f;
-            --(myThread->sample->imageY);
-
             // Evaluate radiance along camera ray
             float alpha;
-            SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
-            /*			SWCSpectrum T = myThread->volumeIntegrator->Transmittance(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
-                        SWCSpectrum Lv = myThread->volumeIntegrator->Li(myThread->tspack, myThread->scene, ray, myThread->sample, &alpha);
-                        SWCSpectrum Ls = rayWeight * ( T * Lo + Lv );*/
+            SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->tspack,
+					myThread->scene, ray, myThread->sample, &alpha);
 
-/*            if (Lo.Black())
-                myThread->stat_blackSamples++;*/
-	    // Jeanphi - Hijack statistics until volume integrator revamp
-	    myThread->stat_blackSamples += Lo.filter(myThread->tspack);
+		    // Jeanphi - Hijack statistics until volume integrator revamp
+		    myThread->stat_blackSamples += Lo.filter(myThread->tspack);
 
-            // TODO: what about rayWeight?
+            // TODO - radiance - Add rayWeight to sample and take into account.
             myThread->sampler->AddSample(*(myThread->sample));
 
             // Free BSDF memory from computing image sample value
@@ -332,6 +319,7 @@ void RenderThread::render(RenderThread *myThread) {
 
         // update samples statistics
         myThread->stat_Samples++;
+
         // increment (locked) global sample pos if necessary (eg maxSampPos != 0)
         if(*useSampPos == -1 && maxSampPos != 0) {
             boost::mutex::scoped_lock lock(sampPosMutex);
