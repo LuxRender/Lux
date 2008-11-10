@@ -136,6 +136,10 @@ public:
 		contribPool = p;
 	}
 
+	void Cleanup() {
+		contribBuffer = contribPool->Next(contribBuffer);
+	}
+
 	void SetTsPack(TsPack *t) { tspack = t; }
 	TsPack *tspack;
 

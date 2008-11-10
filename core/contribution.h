@@ -62,6 +62,10 @@ public:
 		contribs = (Contribution *)AllocAligned(CONTRIB_BUF_SIZE * sizeof(Contribution));
 	}
 
+	~ContributionBuffer() {
+		FreeAligned(contribs);
+	}
+
 	bool Add(Contribution* c, float weight=1.f) {
 		if(pos == CONTRIB_BUF_SIZE)
 			return false;
@@ -158,6 +162,22 @@ public:
 		}
 
 		return cnew;
+	}
+
+	void Flush() {
+		for(u_int i=0; i<CSplat.size(); i++) {
+			CSplat[i]->Splat(film);
+			CSplat[i]->Reset();
+		}
+	}
+
+	void Delete() {
+		for(u_int i=0; i<CFree.size(); i++)
+			delete CFree[i];
+		for(u_int i=0; i<CFull.size(); i++)
+			delete CFull[i];
+		for(u_int i=0; i<CSplat.size(); i++)
+			delete CSplat[i];
 	}
 
 private:

@@ -335,6 +335,8 @@ void RenderThread::render(RenderThread *myThread) {
 #endif
     }
 
+	myThread->sampler->Cleanup();
+
     delete useSampPos;
     return;
 }
@@ -381,7 +383,7 @@ void Scene::Render() {
 
 	// initialize the preprocess thread's tspack
 	tspack = new TsPack();
-	tspack->swl = new SpectrumWavelengths();				// TODO - REFACT - check sample wavelengths
+	tspack->swl = new SpectrumWavelengths();
 	tspack->rng = new RandomGenerator();
 	tspack->rng->init(seed);
 	tspack->arena = new MemoryArena();
@@ -391,6 +393,7 @@ void Scene::Render() {
     // integrator preprocessing
     camera->film->SetScene(this);
     sampler->SetFilm(camera->film);
+	sampler->SetContributionPool(contribPool);
     surfaceIntegrator->Preprocess(tspack, this);
     volumeIntegrator->Preprocess(tspack, this);
 
@@ -418,6 +421,10 @@ void Scene::Render() {
     for(unsigned int i = 0; i < renderThreads.size(); i++)
         renderThreads[i]->thread->join();
 
+	// Flush the contribution pool
+	contribPool->Flush();
+	contribPool->Delete();
+
     // Store final image
     camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 }
@@ -427,7 +434,7 @@ Scene::~Scene() {
     delete sampler;
     delete surfaceIntegrator;
     delete volumeIntegrator;
-	delete contribPool;					// TODO add proper destruction of contributionpool's buffers.
+	delete contribPool;
     //delete aggregate;
     delete volumeRegion;
     for (u_int i = 0; i < lights.size(); ++i)
