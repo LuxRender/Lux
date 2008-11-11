@@ -173,7 +173,6 @@ protected:
 			void OnSpin( wxSpinEvent& event );
 
 		public:
-
 			void ResetToneMapping( void );
 
 			double m_RH_pre;

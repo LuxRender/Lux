@@ -121,11 +121,11 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_RENDER_COPY, false);
 			m_view->Enable(ID_RENDER_COPY, false);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, false);
 			m_viewerToolBar->Disable();
 			break;
 		case RENDERING:
@@ -133,11 +133,11 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, true);
 			m_render->Enable(ID_STOPITEM, true);
-			m_render->Enable(ID_RENDER_COPY, true);
 			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, true);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
 			m_viewerToolBar->Enable();
 			break;
 		case STOPPING:
@@ -145,44 +145,44 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_RENDER_COPY, true);
 			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
 			break;
 		case STOPPED:
 			// Rendering is stopped.
 			m_render->Enable(ID_RESUMEITEM, true);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_RENDER_COPY, true);
 			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
 			break;
 		case PAUSED:
 			// Rendering is paused.
 			m_render->Enable(ID_RESUMEITEM, true);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, true);
-			m_render->Enable(ID_RENDER_COPY, true);
 			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, true);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
 			break;
 		case FINISHED:
 			// Rendering is finished.
 			m_render->Enable(ID_RESUMEITEM, false);
 			m_render->Enable(ID_PAUSEITEM, false);
 			m_render->Enable(ID_STOPITEM, false);
-			m_render->Enable(ID_RENDER_COPY, true);
 			m_view->Enable(ID_RENDER_COPY, true);
 			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
 			break;
 	}
 	m_guiRenderState = state;
@@ -552,6 +552,9 @@ void LuxGui::LuxOptions::ApplySysOptions( void ){
 }
 
 void LuxGui::LuxOptions::OnClose( wxCloseEvent& event ){
+
+	Show( false );
+	m_Parent->m_view->Check( ID_OPTIONS, false );
 }
 
 void LuxGui::LuxOptions::ResetToneMapping(){
@@ -799,11 +802,7 @@ void LuxGui::EngineThread(wxString filename) {
 	boost::filesystem::path fullPath(boost::filesystem::initial_path());
 	fullPath = boost::filesystem::system_complete(boost::filesystem::path(filename.fn_str(), boost::filesystem::native));
 
-	if (chdir(fullPath.branch_path().string().c_str())) {
-		std::stringstream ss;
-		ss << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
-		luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
-	}
+	chdir(fullPath.branch_path().string().c_str());
 
 	ParseFile(fullPath.leaf().c_str());
 
@@ -840,7 +839,7 @@ void LuxGui::SetRenderThreads(int num) {
 		m_numThreads = num;
 	}
 
-	m_ThreadText->SetValue( wxString::Format( _("Threads: %d"), m_numThreads ) );
+	m_ThreadText->SetLabel( wxString::Format( _("Threads: %d"), m_numThreads ) );
 }
 
 void LuxGui::UpdateStatistics() {

@@ -17,15 +17,15 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/textctrl.h>
+#include <wx/stattext.h>
 #include <wx/toolbar.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
+#include <wx/textctrl.h>
 #include <wx/aui/auibook.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
 #include <wx/choice.h>
-#include <wx/stattext.h>
 #include <wx/slider.h>
 #include <wx/button.h>
 #include <wx/spinctrl.h>
@@ -50,24 +50,25 @@ namespace lux
 	#define ID_RESUMETOOL 1010
 	#define ID_PAUSETOOL 1011
 	#define ID_STOPTOOL 1012
-	#define ID_ADD_THREAD 1013
-	#define ID_REMOVE_THREAD 1014
-	#define ID_PANTOOL 1015
-	#define ID_ZOOMTOOL 1016
-	#define ID_REFINETOOL 1017
-	#define ID_TM_CHOICE 1018
-	#define ID_RH_PRESCALE 1019
-	#define ID_RH_PRESCALE_TEXT 1020
-	#define ID_RH_POSTSCALE 1021
-	#define ID_RH_POSTSCALE_TEXT 1022
-	#define ID_RH_BURN 1023
-	#define ID_RH_BURN_TEXT 1024
-	#define ID_TM_RESET 1025
-	#define ID_RENDER_REFRESH 1026
-	#define ID_SYS_DISPLAY_INT 1027
-	#define ID_SYS_WRITE_INT 1028
-	#define ID_WRITE_OPTIONS 1029
-	#define ID_SYS_APPLY 1030
+	#define ID_NUM_THREADS 1013
+	#define ID_ADD_THREAD 1014
+	#define ID_REMOVE_THREAD 1015
+	#define ID_PANTOOL 1016
+	#define ID_ZOOMTOOL 1017
+	#define ID_REFINETOOL 1018
+	#define ID_TM_CHOICE 1019
+	#define ID_RH_PRESCALE 1020
+	#define ID_RH_PRESCALE_TEXT 1021
+	#define ID_RH_POSTSCALE 1022
+	#define ID_RH_POSTSCALE_TEXT 1023
+	#define ID_RH_BURN 1024
+	#define ID_RH_BURN_TEXT 1025
+	#define ID_TM_RESET 1026
+	#define ID_RENDER_REFRESH 1027
+	#define ID_SYS_DISPLAY_INT 1028
+	#define ID_SYS_WRITE_INT 1029
+	#define ID_WRITE_OPTIONS 1030
+	#define ID_SYS_APPLY 1031
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -85,7 +86,7 @@ namespace lux
 			wxAuiNotebook* m_auinotebook;
 			wxPanel* m_renderPage;
 			wxToolBar* m_renderToolBar;
-			wxTextCtrl* m_ThreadText;
+			wxStaticText* m_ThreadText;
 			wxToolBar* m_viewerToolBar;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
@@ -130,8 +131,10 @@ namespace lux
 			
 			wxButton* m_refreshButton;
 			wxPanel* m_systemPanel;
+			
 			wxSpinCtrl* m_Display_spinCtrl;
 			wxStaticText* m_staticText2;
+			
 			wxSpinCtrl* m_Write_spinCtrl;
 			wxCheckListBox* m_writeOptions;
 			
@@ -146,7 +149,7 @@ namespace lux
 			
 		
 		public:
-			m_OptionsDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Luxrender Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxSTAY_ON_TOP );
+			m_OptionsDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Luxrender Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxCLOSE_BOX );
 			~m_OptionsDialog();
 		
 	};

@@ -110,11 +110,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_renderToolBar->AddTool( ID_PAUSETOOL, wxT("Pause"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Pause current rendering"), wxT("Pause current rendering") );
 	m_renderToolBar->AddTool( ID_STOPTOOL, wxT("Stop"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Stop current rendering"), wxT("Stop current rendering") );
 	m_renderToolBar->AddSeparator();
-	m_ThreadText = new wxTextCtrl( m_renderToolBar, wxID_ANY, wxT("Threads: 0"), wxDefaultPosition, wxSize( 86,-1 ), wxTE_READONLY|wxNO_BORDER );
-	m_ThreadText->SetMaxLength( 12 ); 
-	m_ThreadText->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_ACTIVEBORDER ) );
-	m_ThreadText->SetToolTip( wxT("Number of rendering threads") );
-	
+	m_ThreadText = new wxStaticText( m_renderToolBar, ID_NUM_THREADS, wxT("Threads: 0"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ThreadText->Wrap( -1 );
 	m_renderToolBar->AddControl( m_ThreadText );
 	m_renderToolBar->AddTool( ID_ADD_THREAD, wxT("Add Thread"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Add a rendering thread"), wxT("Add a rendering thread") );
 	m_renderToolBar->AddTool( ID_REMOVE_THREAD, wxT("Remove Thread"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Remove rendering thread"), wxT("Remove rendering thread") );
@@ -323,45 +320,64 @@ m_OptionsDialog::m_OptionsDialog( wxWindow* parent, wxWindowID id, const wxStrin
 	bSizer8->Fit( m_ToneMappingPanel );
 	m_Options_notebook->AddPage( m_ToneMappingPanel, wxT("Tone Mapping"), true );
 	m_systemPanel = new wxPanel( m_Options_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxFlexGridSizer* fgSizer1;
-	fgSizer1 = new wxFlexGridSizer( 1, 2, 2, 0 );
-	fgSizer1->SetFlexibleDirection( wxBOTH );
-	fgSizer1->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	wxBoxSizer* bSizer14;
+	bSizer14 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer15;
+	bSizer15 = new wxBoxSizer( wxHORIZONTAL );
 	
 	wxStaticText* m_staticText1;
 	m_staticText1 = new wxStaticText( m_systemPanel, wxID_ANY, wxT("Display Interval: "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText1->Wrap( -1 );
-	fgSizer1->Add( m_staticText1, 0, wxALL, 5 );
+	bSizer15->Add( m_staticText1, 0, wxALL, 5 );
+	
+	
+	bSizer15->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	m_Display_spinCtrl = new wxSpinCtrl( m_systemPanel, ID_SYS_DISPLAY_INT, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 10000000, 12 );
-	fgSizer1->Add( m_Display_spinCtrl, 0, 0, 5 );
+	bSizer15->Add( m_Display_spinCtrl, 0, wxEXPAND, 5 );
+	
+	bSizer14->Add( bSizer15, 1, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer16;
+	bSizer16 = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_staticText2 = new wxStaticText( m_systemPanel, wxID_ANY, wxT("Write Interval: "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText2->Wrap( -1 );
-	fgSizer1->Add( m_staticText2, 0, wxALL, 5 );
+	bSizer16->Add( m_staticText2, 0, wxALL, 5 );
+	
+	
+	bSizer16->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	m_Write_spinCtrl = new wxSpinCtrl( m_systemPanel, ID_SYS_WRITE_INT, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 10000000, 120 );
-	fgSizer1->Add( m_Write_spinCtrl, 0, 0, 5 );
+	bSizer16->Add( m_Write_spinCtrl, 0, wxEXPAND, 5 );
+	
+	bSizer14->Add( bSizer16, 1, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer17;
+	bSizer17 = new wxBoxSizer( wxVERTICAL );
 	
 	wxString m_writeOptionsChoices[] = { wxT("Write and Use FLM"), wxT("Tonemapped TGA"), wxT("Tonemapped EXR"), wxT("Untonemapped EXR"), wxT("Tonemapped IGI"), wxT("Untonemapped IGI") };
 	int m_writeOptionsNChoices = sizeof( m_writeOptionsChoices ) / sizeof( wxString );
 	m_writeOptions = new wxCheckListBox( m_systemPanel, ID_WRITE_OPTIONS, wxDefaultPosition, wxSize( -1,-1 ), m_writeOptionsNChoices, m_writeOptionsChoices, wxLB_NEEDED_SB );
 	m_writeOptions->SetToolTip( wxT("Save Options") );
 	
-	fgSizer1->Add( m_writeOptions, 0, wxALL, 5 );
+	bSizer17->Add( m_writeOptions, 0, wxALL|wxEXPAND, 5 );
 	
 	
-	fgSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
+	bSizer17->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	m_SysApplyButton = new wxButton( m_systemPanel, ID_SYS_APPLY, wxT("Apply Changes"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1->Add( m_SysApplyButton, 0, wxALL|wxSHAPED, 5 );
+	bSizer17->Add( m_SysApplyButton, 0, wxALL|wxSHAPED, 5 );
 	
-	m_systemPanel->SetSizer( fgSizer1 );
+	bSizer14->Add( bSizer17, 0, wxEXPAND, 5 );
+	
+	m_systemPanel->SetSizer( bSizer14 );
 	m_systemPanel->Layout();
-	fgSizer1->Fit( m_systemPanel );
+	bSizer14->Fit( m_systemPanel );
 	m_Options_notebook->AddPage( m_systemPanel, wxT("System"), false );
 	
-	bSizer7->Add( m_Options_notebook, 1, wxEXPAND | wxALL, 5 );
+	bSizer7->Add( m_Options_notebook, 0, wxALL, 5 );
 	
 	this->SetSizer( bSizer7 );
 	this->Layout();
