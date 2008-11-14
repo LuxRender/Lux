@@ -117,7 +117,7 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
   }
 
   // Clear coat and lambertian base
-  bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(kd, lobe_ks[2], lobe_dist[2]));
+  bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(kd, lobe_ks[2], SWCSpectrum(0.), 0., lobe_dist[2]));
 
   //bsdf->Add(BSDF_ALLOC(tspack, CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
 

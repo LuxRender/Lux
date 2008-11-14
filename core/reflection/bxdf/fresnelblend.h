@@ -36,6 +36,8 @@ public:
 	// FresnelBlend Public Methods
 	FresnelBlend(const SWCSpectrum &Rd,
 	             const SWCSpectrum &Rs,
+	             const SWCSpectrum &Alpha,
+	             float d,
 				 MicrofacetDistribution *dist);
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnel(float costheta) const {
@@ -49,7 +51,8 @@ public:
 	
 private:
 	// FresnelBlend Private Data
-	SWCSpectrum Rd, Rs;
+	SWCSpectrum Rd, Rs, Alpha;
+	float depth;
 	MicrofacetDistribution *distribution;
 };
 

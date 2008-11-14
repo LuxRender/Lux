@@ -30,17 +30,27 @@ using namespace lux;
 
 FresnelBlend::FresnelBlend(const SWCSpectrum &d,
                            const SWCSpectrum &s,
+						   const SWCSpectrum &a,
+						   float dep,
 						   MicrofacetDistribution *dist)
 	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-	  Rd(d), Rs(s) {
+	  Rd(d), Rs(s), Alpha(a), depth(dep) {
 	distribution = dist;
 }
 void FresnelBlend::f(const TsPack *tspack, const Vector &wo, 
 					 const Vector &wi, SWCSpectrum *const f) const {
+	// absorption
+	SWCSpectrum a(1.);
+	
+	if (depth > 0) {
+		float depthfactor = depth * (1 / fabsf(CosTheta(wi)) + 1 / fabsf(CosTheta(wo)));
+		a = Exp(Alpha * -depthfactor);
+	}
+
 	// diffuse part
 	f->AddWeighted((1 - powf(1 - .5f * fabsf(CosTheta(wi)), 5)) *
 		(1 - powf(1 - .5f * fabsf(CosTheta(wo)), 5)) *
-		(28.f/(23.f*M_PI)), Rd * (SWCSpectrum(1.) - Rs));
+		(28.f/(23.f*M_PI)), a * Rd * (SWCSpectrum(1.) - Rs));
 
 	Vector H = Normalize(wi + wo);
 	// specular part

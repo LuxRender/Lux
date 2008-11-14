@@ -43,14 +43,17 @@ BSDF *Substrate::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeo
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum d(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
 	SWCSpectrum s(tspack, Ks->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum a(tspack, Ka->Evaluate(dgs).Clamp(0.f, 1.f));
 
 	float u = nu->Evaluate(dgs);
 	float v = nv->Evaluate(dgs);
 
+	float ld = depth->Evaluate(dgs);
+
 	if(u == v)
-		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, BSDF_ALLOC(tspack, Blinn)(1.f/u)));
+		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Blinn)(1.f/u)));
 	else
-		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v)));
+		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v)));
 
 	return bsdf;
 }
@@ -58,10 +61,12 @@ Material* Substrate::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
 	boost::shared_ptr<Texture<RGBColor> > Kd = mp.GetRGBColorTexture("Kd", RGBColor(.5f));
 	boost::shared_ptr<Texture<RGBColor> > Ks = mp.GetRGBColorTexture("Ks", RGBColor(.5f));
+	boost::shared_ptr<Texture<RGBColor> > Ka = mp.GetRGBColorTexture("Ka", RGBColor(.0f));
+	boost::shared_ptr<Texture<float> > d = mp.GetFloatTexture("d", .0f);
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Substrate(Kd, Ks, uroughness, vroughness, bumpMap);
+	return new Substrate(Kd, Ks, Ka, d, uroughness, vroughness, bumpMap);
 }
 
 static DynamicLoader::RegisterMaterial<Substrate> r("substrate");
