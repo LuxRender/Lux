@@ -124,7 +124,7 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	Vector wo(Normalize(ps - p));
 	*pdf = prim->Pdf(ps);
 	*pdfDirect = prim->Pdf(p, wo) * AbsDot(wo, ns) / DistanceSquared(ps, p);
-	if (*pdf > 0.f || *pdfDirect > 0.f) {
+	if (*pdfDirect > 0.f) {
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
