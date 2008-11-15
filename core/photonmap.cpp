@@ -41,7 +41,7 @@ void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) {
 		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
 
 	// SWCSpectrum alpha
-	for (int i = 0; i < WAVELENGTH_SAMPLES; i++)
+	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
 
 	// Vector wi
@@ -55,7 +55,7 @@ void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream)
 		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
 
 	// SWCSpectrum alpha
-	for (int i = 0; i < WAVELENGTH_SAMPLES; i++)
+	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
 
 	// Normal n
@@ -63,7 +63,7 @@ void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream)
 		osWriteLittleEndianFloat(isLittleEndian, stream, n[i]);
 }
 
-SWCSpectrum LightPhotonMap::estimateE(const Point &p, const Normal &n) const {
+SWCSpectrum LightPhotonMap::estimateE(const TsPack *tspack, const Point &p, const Normal &n) const {
     if ((nPaths <= 0) || (!photonmap))
 		return 0.0f;
 
@@ -79,7 +79,7 @@ SWCSpectrum LightPhotonMap::estimateE(const Point &p, const Normal &n) const {
     SWCSpectrum E(0.);
 	for (u_int i = 0; i < proc.foundPhotons; ++i) {
 		if (Dot(n, photons[i].photon->wi) > 0.f)
-            E += photons[i].photon->alpha;
+            E += photons[i].photon->GetSWCSpectrum( tspack );
 	}
 
     return E / (float(nPaths) * md2 * M_PI);
@@ -121,7 +121,7 @@ SWCSpectrum LightPhotonMap::LPhoton(
 				          (Dot(Nf, p->wi) > 0.f ? BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION) );
             float k = Ekernel(p, isect.dg.p, distSquared);
 
-			const SWCSpectrum& alpha = p->alpha;
+			const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
 
             L += (k / nPaths) * bsdf->f(tspack, wo, p->wi, flag) * alpha;
         }
@@ -130,7 +130,7 @@ SWCSpectrum LightPhotonMap::LPhoton(
         SWCSpectrum Lr(0.), Lt(0.);
 
         for (u_int i = 0; i < nFound; ++i) {			
-			const SWCSpectrum& alpha = photons[i].photon->alpha;
+			const SWCSpectrum& alpha = photons[i].photon->GetSWCSpectrum( tspack );
 
             if (Dot(Nf, photons[i].photon->wi) > 0.f) {
                 float k = Ekernel(photons[i].photon, isect.dg.p, md2);
@@ -182,7 +182,7 @@ SWCSpectrum LightPhotonMap::LDiffusePhoton(
     SWCSpectrum Lr(0.), Lt(0.);
 
     for (u_int i = 0; i < nFound; ++i) {			
-		const SWCSpectrum& alpha = photons[i].photon->alpha;
+		const SWCSpectrum& alpha = photons[i].photon->GetSWCSpectrum( tspack );
 
         if (Dot(Nf, photons[i].photon->wi) > 0.f) {
             float k = Ekernel(photons[i].photon, isect.dg.p, md2);
@@ -263,7 +263,7 @@ void PhotonMapPreprocess(
 	bool finalGather = (nRadiancePhotons > 0);
 
     // Dade - shoot photons
-	ss << "Shooting photons (target: " << (nCausticPhotons + nIndirectPhotons) << ")";
+	ss << "Shooting photons (target: " << (nCausticPhotons + nIndirectPhotons) << ")...";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	vector<LightPhoton> directPhotons;
@@ -327,7 +327,9 @@ void PhotonMapPreprocess(
 	vector<SWCSpectrum> rpTransmittances;
 	rpTransmittances.reserve(nRadiancePhotons);
 
+	boost::xtime photonShootingStartTime;
 	boost::xtime lastUpdateTime;
+	boost::xtime_get(&photonShootingStartTime, boost::TIME_UTC);
 	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
 	int nshot = 0;
     while (!radianceDone || !directDone || !causticDone || !indirectDone) {
@@ -336,7 +338,7 @@ void PhotonMapPreprocess(
 		boost::xtime_get(&currentTime, boost::TIME_UTC);
 		if (currentTime.sec - lastUpdateTime.sec > 5) {
 			ss.str("");
-			ss << "Photon map progress: Direct[" << directPhotons.size();
+			ss << "Photon shooting progress: Direct[" << directPhotons.size();
 			if (nDirectPhotons > 0)
 				ss << " (" << (100 * directPhotons.size() / nDirectPhotons) << "% limit)";
 			else
@@ -419,10 +421,10 @@ void PhotonMapPreprocess(
                 //scene->Transmittance(tspack, photonRay, NULL, alpha);
                 Vector wo = -photonRay.d;
 
-                BSDF *photonBSDF = photonIsect.GetBSDF(tspack, photonRay, lux::random::floatValueP());
+				BSDF *photonBSDF = photonIsect.GetBSDF(tspack, photonRay, tspack->rng->floatValue());
                 if (photonBSDF->NumComponents(photonBxdfType) > 0) {
                     // Deposit photon at surface
-                    LightPhoton photon(photonIsect.dg.p, alpha, wo);
+					LightPhoton photon(photonIsect.dg.p, alpha.ToXYZ( tspack ).ToRGB(), wo);
 
                     if (nIntersections == 1) {
 						if (finalGather && (!directDone)) {
@@ -461,7 +463,7 @@ void PhotonMapPreprocess(
 					if (finalGather && 
 						(!radianceDone) && 
 						(photonBSDF->NumComponents(radianceBxdfType) > 0) && 
-						(lux::random::floatValueP() < 0.25f)) 
+						(tspack->rng->floatValue() < 0.25f)) 
 					{
 						SWCSpectrum rho_t = 
 							photonBSDF->rho(tspack, BxDFType(radianceBxdfType & BSDF_ALL_TRANSMISSION));
@@ -494,9 +496,9 @@ void PhotonMapPreprocess(
                     u2 = RadicalInverse(nshot, 17);
                     u3 = RadicalInverse(nshot, 19);
                 } else {
-                    u1 = lux::random::floatValueP();
-                    u2 = lux::random::floatValueP();
-                    u3 = lux::random::floatValueP();
+                    u1 = tspack->rng->floatValue();
+                    u2 = tspack->rng->floatValue();
+                    u3 = tspack->rng->floatValue();
                 }
 
                 // Compute new photon weight and possibly terminate with RR
@@ -505,7 +507,7 @@ void PhotonMapPreprocess(
                     break;
                 SWCSpectrum anew = alpha * fr * AbsDot(wi, photonBSDF->dgShading.nn) / pdf;
                 float continueProb = min<float>(1.0f, anew.filter(tspack) / alpha.filter(tspack));
-                if (lux::random::floatValueP() > continueProb || nIntersections > 10)
+                if (tspack->rng->floatValue() > continueProb || nIntersections > 10)
                     break;
 				alpha = anew / continueProb;
                 specularPath = (nIntersections == 1 || specularPath) &&
@@ -517,8 +519,14 @@ void PhotonMapPreprocess(
         BSDF::FreeAll(tspack);
     }
 
+	boost::xtime photonShootingEndTime;
+	boost::xtime_get(&photonShootingEndTime, boost::TIME_UTC);
+	ss.str("");
+	ss << "Photon shooting done (" << ( photonShootingEndTime.sec - photonShootingStartTime.sec ) << "s)";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
     if (finalGather) {
-		luxError(LUX_NOERROR, LUX_INFO, "Computing radiance photon map");
+		luxError(LUX_NOERROR, LUX_INFO, "Computing radiance photon map...");
 
 		// Precompute radiance at a subset of the photons
 		LightPhotonMap directMap(radianceMap->nLookup, radianceMap->maxDistSquared);
@@ -530,7 +538,7 @@ void PhotonMapPreprocess(
 			boost::xtime_get(&currentTime, boost::TIME_UTC);
 			if (currentTime.sec - lastUpdateTime.sec > 5) {
 				ss.str("");
-				ss << "Radiance photon map progress: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)";
+				ss << "Radiance photon map computation progress: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)";
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 				lastUpdateTime = currentTime;
@@ -542,25 +550,35 @@ void PhotonMapPreprocess(
             const SWCSpectrum &rho_t = rpTransmittances[i];
             const Point& p = rp.p;
             const Normal& n = rp.n;
+			SWCSpectrum alpha = 0.f;
 
             if (!rho_r.Black()) {
-                SWCSpectrum E = directMap.estimateE(p, n);
-				E += indirectMap->estimateE(p, n);
-				E += causticMap->estimateE(p, n);
+                SWCSpectrum E = directMap.estimateE(tspack, p, n);
+				E += indirectMap->estimateE(tspack, p, n);
+				E += causticMap->estimateE(tspack, p, n);
 
-                rp.alpha += E * INV_PI * rho_r;
+                alpha += E * INV_PI * rho_r;
             }
 
             if (!rho_t.Black()) {
-                SWCSpectrum E = directMap.estimateE(p, -n);
-				E += indirectMap->estimateE(p, -n);
-				E += causticMap->estimateE(p, -n);
+                SWCSpectrum E = directMap.estimateE(tspack, p, -n);
+				E += indirectMap->estimateE(tspack, p, -n);
+				E += causticMap->estimateE(tspack, p, -n);
 
-                rp.alpha += E * INV_PI * rho_t;
+                alpha += E * INV_PI * rho_t;
             }
+
+			rp.alpha = alpha.ToXYZ( tspack ).ToRGB();
         }
 
         radianceMap->init(radiancePhotons);
+
+		
+		boost::xtime radianceComputeEndTime;
+		boost::xtime_get(&radianceComputeEndTime, boost::TIME_UTC);
+		ss.str("");
+		ss << "Radiance photon map computed (" << ( radianceComputeEndTime.sec - photonShootingEndTime.sec ) << "s)";
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
     }
 
 	// Dade - check if we have to save maps to a file
@@ -714,7 +732,6 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 			Intersection gatherIsect;
 			if (scene->Intersect(bounceRay, &gatherIsect)) {
 				// Compute exitant radiance using precomputed irradiance
-				SWCSpectrum Lindir = 0.f;
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
 				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
@@ -722,7 +739,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
-					Lindir = proc.photon->alpha;
+					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum( tspack );
 
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for BSDF-sampled gather ray
@@ -792,7 +809,6 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 			Intersection gatherIsect;
 			if (scene->Intersect(bounceRay, &gatherIsect)) {
 				// Compute exitant radiance using precomputed irradiance
-				SWCSpectrum Lindir = 0.f;
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
 				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
@@ -800,7 +816,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
-					Lindir = proc.photon->alpha;
+					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum( tspack );
 
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for photon-sampled gather ray
@@ -876,7 +892,6 @@ SWCSpectrum PhotonMapFinalGather(
 			Intersection gatherIsect;
 			if (scene->Intersect(bounceRay, &gatherIsect)) {
 				// Compute exitant radiance using precomputed irradiance
-				SWCSpectrum Lindir = 0.f;
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
 				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
@@ -884,7 +899,7 @@ SWCSpectrum PhotonMapFinalGather(
 
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
-					Lindir = proc.photon->alpha;
+					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum( tspack );
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 
 					Li += fr * Lindir * (AbsDot(wi, n) / pdf);
@@ -913,7 +928,7 @@ void LightPhotonMap::load(std::basic_istream<char> &stream, LightPhotonMap *map)
 		for (int j = 0; j < 3; j++)
 			osReadLittleEndianFloat(isLittleEndian, stream, &p[j]);
 
-		SWCSpectrum alpha;
+		XYZColor alpha;
 		for (int j = 0; j < WAVELENGTH_SAMPLES; j++)
 			osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[j]);
 
@@ -960,7 +975,7 @@ void RadiancePhotonMap::load(std::basic_istream<char> &stream, RadiancePhotonMap
 		for (int j = 0; j < 3; j++)
 			osReadLittleEndianFloat(isLittleEndian, stream, &p[j]);
 
-		SWCSpectrum alpha;
+		XYZColor alpha;
 		for (int j = 0; j < WAVELENGTH_SAMPLES; j++)
 			osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[j]);
 

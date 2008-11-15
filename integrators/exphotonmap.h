@@ -64,10 +64,6 @@ public:
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const TsPack *tspack, const Scene *scene);
 
-	virtual bool IsSWCSupported() {
-		return false;
-	}
-
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
     SWCSpectrum LiDirectLightingMode(const TsPack *tspack, const Scene *scene, 
@@ -97,6 +93,8 @@ private:
 	// Dade - debug flags
 	bool debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,
 			debugEnableIndirect, debugEnableSpecular;
+
+	int bufferId;
 
 	// Declare sample parameters for light source sampling
 	int sampleOffset;

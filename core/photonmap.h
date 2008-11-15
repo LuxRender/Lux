@@ -41,7 +41,7 @@ namespace lux
 
 class BasicPhoton {
 public:
-	BasicPhoton(const Point &pp, const SWCSpectrum &wt)
+	BasicPhoton(const Point &pp, const RGBColor &wt)
 			: p(pp), alpha(wt) {
 	}
 
@@ -50,13 +50,17 @@ public:
 
 	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) = 0;
 
+	SWCSpectrum GetSWCSpectrum(const TsPack* tspack) const {
+		return SWCSpectrum( tspack, alpha );
+	}
+
 	Point p;
-	SWCSpectrum alpha;
+	RGBColor alpha;
 };
 
 class LightPhoton : public BasicPhoton {
 public:
-	LightPhoton(const Point &pp, const SWCSpectrum &wt, const Vector & w)
+	LightPhoton(const Point &pp, const RGBColor &wt, const Vector & w)
 			: BasicPhoton(pp, wt), wi(w) { }
 
 	LightPhoton() : BasicPhoton() { }
@@ -68,7 +72,7 @@ public:
 
 class RadiancePhoton : public BasicPhoton {
 public:
-	RadiancePhoton(const Point &pp, const SWCSpectrum &wt, const Normal & nn)
+	RadiancePhoton(const Point &pp, const RGBColor &wt, const Normal & nn)
 			: BasicPhoton(pp, wt), n(nn) { }
 	RadiancePhoton(const Point &pp, const Normal & nn)
 			: BasicPhoton(pp, 0.0f), n(nn) { }
@@ -212,7 +216,7 @@ public:
 		PhotonMap<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(),
 		nLookup(nl), maxDistSquared(md) { }
 
-	void init(const vector<RadiancePhoton> photons) {
+	void init(const vector<RadiancePhoton> &photons) {
 		photonCount = photons.size();
 		photonmap = new KdTree<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(photons);
 	}
@@ -232,7 +236,7 @@ public:
 		PhotonMap<LightPhoton, NearSetPhotonProcess<LightPhoton> >(),
 		nLookup(nl), maxDistSquared(md), nPaths(0) { }
 
-	void init(int npaths, const vector<LightPhoton> photons) {
+	void init(int npaths, const vector<LightPhoton> &photons) {
 		photonCount = photons.size();
 		nPaths = npaths;
 		photonmap = new KdTree<LightPhoton, NearSetPhotonProcess<LightPhoton> >(photons);
@@ -245,12 +249,13 @@ public:
 	/**
 	 * Estimates the irradiance divided by rho at a surface point.
 	 *
+	 * @param tspack The thread specific pack.
 	 * @param p      The position of the surface point.
 	 * @param n      The orientation of the surface.
 	 *
 	 * @return An irradiance estimate.
 	 */
-	SWCSpectrum estimateE(const Point &p, const Normal &n) const;
+	SWCSpectrum estimateE(const TsPack *tspack,const Point &p, const Normal &n) const;
 
 	/**
 	 * Estimates the outgoing radiance at a surface point in a single direction.

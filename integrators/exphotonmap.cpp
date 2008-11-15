@@ -27,6 +27,7 @@
 #include "paramset.h"
 #include "spectrumwavelengths.h"
 #include "dynload.h"
+#include "camera.h"
 
 #include <boost/thread/xtime.hpp>
 
@@ -146,6 +147,12 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 }
 
 void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
+	// Prepare image buffers
+	BufferType type = BUF_TYPE_PER_PIXEL;
+	scene->sampler->GetBufferType(&type);
+	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+
+	// Create the photon maps
 	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
 	indirectMap = new LightPhotonMap(nLookup, maxDistSquared);
 
@@ -186,7 +193,7 @@ SWCSpectrum ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	}
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		L.ToXYZ(tspack), alpha ? (*alpha) : 1.0f);
+		L.ToXYZ(tspack), alpha ? (*alpha) : 1.0f, bufferId);
 
     return 1.f;
 }
@@ -256,7 +263,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(
 
 			radianceMap->lookup(p, proc, md2);
 			if (proc.photon)
-				L += proc.photon->alpha;
+				L += proc.photon->GetSWCSpectrum( tspack );
 		}
 
 		if (debugEnableCaustic && (!causticMap->isEmpty())) {
@@ -477,7 +484,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 
 			radianceMap->lookup(p, proc, md2);
 			if (proc.photon)
-				currL += proc.photon->alpha;
+				currL += proc.photon->GetSWCSpectrum( tspack );
 		}
 
 		bool sampledDiffuse = true;
@@ -515,7 +522,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 
 								radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 								if (proc.photon) {
-									SWCSpectrum Lindir = proc.photon->alpha;
+									SWCSpectrum Lindir = proc.photon->GetSWCSpectrum( tspack );
 									scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 
 									currL += fr * Lindir * (AbsDot(wi, n) / pdf);
