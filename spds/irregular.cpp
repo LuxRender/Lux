@@ -109,7 +109,6 @@ void IrregularSPD::init(float lMin, float lMax, const float* const s, int n) {
   for (int i = 0; i < n; i++)
     samples[i] = s[i];
 
-  Clamp();
 }
 
 // computes data for natural spline interpolation

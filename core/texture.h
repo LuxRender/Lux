@@ -24,6 +24,7 @@
 #define LUX_TEXTURE_H
 // texture.h*
 #include "lux.h"
+#include "spectrum.h"
 #include "geometry.h"
 
 namespace lux
@@ -129,24 +130,13 @@ public:
 	VerticalCrossMapping() {}
 	virtual void Map(const Vector &wh, float *s, float *t) const;
 };
+
 template <class T> class Texture {
 public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
-	virtual T Evaluate(const DifferentialGeometry &) const = 0;
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const = 0;
 	virtual ~Texture() { }
-};
-// ConstantTexture Declarations
-template <class T>
-class ConstantTexture : public Texture<T> {
-public:
-	// ConstantTexture Public Methods
-	ConstantTexture(const T &v) { value = v; }
-	T Evaluate(const DifferentialGeometry &) const {
-		return value;
-	}
-private:
-	T value;
 };
 
   float Noise(float x, float y = .5f, float z = .5f);

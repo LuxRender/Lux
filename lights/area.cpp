@@ -26,7 +26,7 @@
 #include "primitive.h"
 #include "paramset.h"
 #include "rgbillum.h"
-#include "blackbody.h"
+#include "blackbodyspd.h"
 #include "reflection/bxdf.h"
 #include "reflection/bxdf/lambertian.h"
 #include "dynload.h"

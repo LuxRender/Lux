@@ -40,14 +40,14 @@ public:
 		tex2 = t2;
 		amount = amt;
 	}
-	T Evaluate(const DifferentialGeometry &dg) const {
-		T t1 = tex1->Evaluate(dg), t2 = tex2->Evaluate(dg);
-		float amt = amount->Evaluate(dg);
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
+		float amt = amount->Evaluate(tspack, dg);
 		return (1.f - amt) * t1 + amt * t2;
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 	boost::shared_ptr<Texture<float> > amount;
@@ -62,11 +62,11 @@ template <class T> Texture<float> * MixTexture<T>::CreateFloatTexture(const Tran
 		tp.GetFloatTexture("amount", 0.5f));
 }
 
-template <class T> Texture<RGBColor> * MixTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
+template <class T> Texture<SWCSpectrum> * MixTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new MixTexture<RGBColor>(
-		tp.GetRGBColorTexture("tex1", 0.f),
-		tp.GetRGBColorTexture("tex2", 1.f),
+	return new MixTexture<SWCSpectrum>(
+		tp.GetSWCSpectrumTexture("tex1", 0.f),
+		tp.GetSWCSpectrumTexture("tex2", 1.f),
 		tp.GetFloatTexture("amount", 0.5f));
 }
 

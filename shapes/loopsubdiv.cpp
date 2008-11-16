@@ -441,7 +441,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 
 		Vector displacement(nn);
 		displacement *=	- (
-				displacementMap.get()->Evaluate(dg) * displacementMapScale +
+				displacementMap.get()->Evaluate(NULL, dg) * displacementMapScale +
 				displacementMapOffset);
 
 		verts[i]->P += displacement;

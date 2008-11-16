@@ -27,4 +27,4 @@ using namespace lux;
 using namespace blender;
 
 static DynamicLoader::RegisterFloatTexture<BlenderStucciTexture3D<float> > r1("blender_stucci");
-static DynamicLoader::RegisterRGBColorTexture<BlenderStucciTexture3D<RGBColor> > r2("blender_stucci");
+static DynamicLoader::RegisterSWCSpectrumTexture<BlenderStucciTexture3D<SWCSpectrum> > r2("blender_stucci");

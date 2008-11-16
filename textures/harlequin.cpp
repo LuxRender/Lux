@@ -25,4 +25,4 @@
 
 using namespace lux;
 
-static DynamicLoader::RegisterRGBColorTexture<HarlequinTexture> r2("harlequin");
+static DynamicLoader::RegisterSWCSpectrumTexture<HarlequinTexture> r2("harlequin");

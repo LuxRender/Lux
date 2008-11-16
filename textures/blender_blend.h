@@ -55,7 +55,7 @@ public:
 		tex2 = c2;
     }
 
-    T Evaluate(const DifferentialGeometry &dg) const {
+    T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
         Vector dpdx, dpdy;
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
@@ -68,12 +68,12 @@ public:
         else
             texres.tr = texres.tg = texres.tb = texres.tin;
 
-		T t1 = tex1->Evaluate(dg), t2 = tex2->Evaluate(dg);
+		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
 		return (1.f - texres.tin) * t1 + texres.tin * t2;
     }
 
     static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> *CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
     // BlenderBlendTexture3D Private Data
 
@@ -132,7 +132,7 @@ template <class T> Texture<float> *BlenderBlendTexture3D<T>::CreateFloatTexture(
             map);
 }
 
-template <class T> Texture<RGBColor> *BlenderBlendTexture3D<T>::CreateRGBColorTexture(
+template <class T> Texture<SWCSpectrum> *BlenderBlendTexture3D<T>::CreateSWCSpectrumTexture(
         const Transform &tex2world,
         const TextureParams &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
@@ -141,8 +141,8 @@ template <class T> Texture<RGBColor> *BlenderBlendTexture3D<T>::CreateRGBColorTe
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<RGBColor> > tex1 = tp.GetRGBColorTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<RGBColor> > tex2 = tp.GetRGBColorTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("tex1", 1.f);
+	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("tex2", 0.f);
 
     // Decode the noise type
 	short type = TEX_LIN;
@@ -172,7 +172,7 @@ template <class T> Texture<RGBColor> *BlenderBlendTexture3D<T>::CreateRGBColorTe
 	if(sflag == true)
 		flag = TEX_FLIPBLEND;
 
-    return new BlenderBlendTexture3D<RGBColor>(
+    return new BlenderBlendTexture3D<SWCSpectrum>(
 			tex1,
 			tex2,
             type,

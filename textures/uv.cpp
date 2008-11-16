@@ -33,7 +33,7 @@ Texture<float> * UVTexture::CreateFloatTexture(const Transform &tex2world,
 	return NULL;
 }
 
-Texture<RGBColor> * UVTexture::CreateRGBColorTexture(const Transform &tex2world,
+Texture<SWCSpectrum> * UVTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
@@ -62,4 +62,4 @@ Texture<RGBColor> * UVTexture::CreateRGBColorTexture(const Transform &tex2world,
 }
 
 static DynamicLoader::RegisterFloatTexture<UVTexture> r1("uv");
-static DynamicLoader::RegisterRGBColorTexture<UVTexture> r2("uv");
+static DynamicLoader::RegisterSWCSpectrumTexture<UVTexture> r2("uv");

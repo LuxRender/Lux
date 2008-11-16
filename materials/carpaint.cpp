@@ -29,14 +29,15 @@
 #include "blinn.h"
 #include "fresnelslick.h"
 #include "microfacet.h"
+#include "constant.h"
 #include "fresnelblend.h"
 #include "paramset.h"
 #include "dynload.h"
 
 using namespace lux;
 
-CarPaint::CarPaint(boost::shared_ptr<Texture<RGBColor> > kd,
-                   boost::shared_ptr<Texture<RGBColor> > ks1, boost::shared_ptr<Texture<RGBColor> > ks2, boost::shared_ptr<Texture<RGBColor> > ks3,
+CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > kd,
+                   boost::shared_ptr<Texture<SWCSpectrum> > ks1, boost::shared_ptr<Texture<SWCSpectrum> > ks2, boost::shared_ptr<Texture<SWCSpectrum> > ks3,
                    boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,
                    boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
                    boost::shared_ptr<Texture<float> > bump) {
@@ -67,19 +68,19 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
   BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
 
   // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-  SWCSpectrum kd(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
-  SWCSpectrum ks1(tspack, Ks1->Evaluate(dgs).Clamp(0.f, 1.f));
-  SWCSpectrum ks2(tspack, Ks2->Evaluate(dgs).Clamp(0.f, 1.f));
-  SWCSpectrum ks3(tspack, Ks3->Evaluate(dgs).Clamp(0.f, 1.f));
+  SWCSpectrum kd = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+  SWCSpectrum ks1 = Ks1->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+  SWCSpectrum ks2 = Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+  SWCSpectrum ks3 = Ks3->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 
   // NOTE - lordcrc - added clamping to 0..1 to avoid >1 reflection
-  float r1 = Clamp(R1->Evaluate(dgs), 0.f, 1.f);
-  float r2 = Clamp(R2->Evaluate(dgs), 0.f, 1.f);
-  float r3 = Clamp(R3->Evaluate(dgs), 0.f, 1.f);
+  float r1 = Clamp(R1->Evaluate(tspack, dgs), 0.f, 1.f);
+  float r2 = Clamp(R2->Evaluate(tspack, dgs), 0.f, 1.f);
+  float r3 = Clamp(R3->Evaluate(tspack, dgs), 0.f, 1.f);
 
-  float m1 = M1->Evaluate(dgs);
-  float m2 = M2->Evaluate(dgs);
-  float m3 = M3->Evaluate(dgs);
+  float m1 = M1->Evaluate(tspack, dgs);
+  float m2 = M2->Evaluate(tspack, dgs);
+  float m3 = M3->Evaluate(tspack, dgs);
 
   MicrofacetDistribution *md1 = BSDF_ALLOC(tspack, Blinn)((2.0 * M_PI / (m1 * m1)) - 1.0);
   MicrofacetDistribution *md2 = BSDF_ALLOC(tspack, Blinn)((2.0 * M_PI / (m2 * m2)) - 1.0);
@@ -124,10 +125,10 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
   return bsdf;
 }
 
-void DataFromName(const string name, boost::shared_ptr<Texture<RGBColor> > *Kd,
-                                     boost::shared_ptr<Texture<RGBColor> > *Ks1,
-                                     boost::shared_ptr<Texture<RGBColor> > *Ks2,
-                                     boost::shared_ptr<Texture<RGBColor> > *Ks3,
+void DataFromName(const string name, boost::shared_ptr<Texture<SWCSpectrum> > *Kd,
+                                     boost::shared_ptr<Texture<SWCSpectrum> > *Ks1,
+                                     boost::shared_ptr<Texture<SWCSpectrum> > *Ks2,
+                                     boost::shared_ptr<Texture<SWCSpectrum> > *Ks3,
                                      boost::shared_ptr<Texture<float> > *R1,
                                      boost::shared_ptr<Texture<float> > *R2,
                                      boost::shared_ptr<Texture<float> > *R3,
@@ -146,16 +147,16 @@ void DataFromName(const string name, boost::shared_ptr<Texture<RGBColor> > *Kd,
       break;
   }
 
-  boost::shared_ptr<Texture<RGBColor> > kd (new ConstantTexture<RGBColor>(carpaintdata[i].kd));
-  boost::shared_ptr<Texture<RGBColor> > ks1 (new ConstantTexture<RGBColor>(carpaintdata[i].ks1));
-  boost::shared_ptr<Texture<RGBColor> > ks2 (new ConstantTexture<RGBColor>(carpaintdata[i].ks2));
-  boost::shared_ptr<Texture<RGBColor> > ks3 (new ConstantTexture<RGBColor>(carpaintdata[i].ks3));
-  boost::shared_ptr<Texture<float> > r1 (new ConstantTexture<float>(carpaintdata[i].r1));
-  boost::shared_ptr<Texture<float> > r2 (new ConstantTexture<float>(carpaintdata[i].r2));
-  boost::shared_ptr<Texture<float> > r3 (new ConstantTexture<float>(carpaintdata[i].r3));
-  boost::shared_ptr<Texture<float> > m1 (new ConstantTexture<float>(carpaintdata[i].m1));
-  boost::shared_ptr<Texture<float> > m2 (new ConstantTexture<float>(carpaintdata[i].m2));
-  boost::shared_ptr<Texture<float> > m3 (new ConstantTexture<float>(carpaintdata[i].m3));
+  boost::shared_ptr<Texture<SWCSpectrum> > kd (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].kd));
+  boost::shared_ptr<Texture<SWCSpectrum> > ks1 (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].ks1));
+  boost::shared_ptr<Texture<SWCSpectrum> > ks2 (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].ks2));
+  boost::shared_ptr<Texture<SWCSpectrum> > ks3 (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].ks3));
+  boost::shared_ptr<Texture<float> > r1 (new ConstantFloatTexture<float>(carpaintdata[i].r1));
+  boost::shared_ptr<Texture<float> > r2 (new ConstantFloatTexture<float>(carpaintdata[i].r2));
+  boost::shared_ptr<Texture<float> > r3 (new ConstantFloatTexture<float>(carpaintdata[i].r3));
+  boost::shared_ptr<Texture<float> > m1 (new ConstantFloatTexture<float>(carpaintdata[i].m1));
+  boost::shared_ptr<Texture<float> > m2 (new ConstantFloatTexture<float>(carpaintdata[i].m2));
+  boost::shared_ptr<Texture<float> > m3 (new ConstantFloatTexture<float>(carpaintdata[i].m3));
 
   *Kd = kd;
   *Ks1 = ks1;
@@ -191,11 +192,11 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 
   string paintname = mp.FindString("name");
 
-  boost::shared_ptr<Texture<RGBColor> > Kd;
+  boost::shared_ptr<Texture<SWCSpectrum> > Kd;
 
-  boost::shared_ptr<Texture<RGBColor> > Ks1;
-  boost::shared_ptr<Texture<RGBColor> > Ks2;
-  boost::shared_ptr<Texture<RGBColor> > Ks3;
+  boost::shared_ptr<Texture<SWCSpectrum> > Ks1;
+  boost::shared_ptr<Texture<SWCSpectrum> > Ks2;
+  boost::shared_ptr<Texture<SWCSpectrum> > Ks3;
 
   boost::shared_ptr<Texture<float> > R1;
   boost::shared_ptr<Texture<float> > R2;
@@ -207,11 +208,11 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 
   if (paintname.length() < 1) {
     // we got no name, so try to read material properties directly
-    Kd = mp.GetRGBColorTexture("Kd", RGBColor(def_kd));
+    Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(def_kd));
 
-    Ks1 = mp.GetRGBColorTexture("Ks1", RGBColor(def_ks1));
-    Ks2 = mp.GetRGBColorTexture("Ks2", RGBColor(def_ks2));
-    Ks3 = mp.GetRGBColorTexture("Ks3", RGBColor(def_ks3));
+    Ks1 = mp.GetSWCSpectrumTexture("Ks1", RGBColor(def_ks1));
+    Ks2 = mp.GetSWCSpectrumTexture("Ks2", RGBColor(def_ks2));
+    Ks3 = mp.GetSWCSpectrumTexture("Ks3", RGBColor(def_ks3));
 
     R1 = mp.GetFloatTexture("R1", def_r[0]);
     R2 = mp.GetFloatTexture("R2", def_r[1]);

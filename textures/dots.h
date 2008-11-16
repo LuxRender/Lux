@@ -42,7 +42,7 @@ public:
 		outsideDot = c1;
 		insideDot = c2;
 	}
-	T Evaluate(const DifferentialGeometry &dg) const {
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Compute cell indices for dots
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
@@ -57,12 +57,12 @@ public:
 				Noise(sCell + 4.5f, tCell + 9.8f);
 			float ds = s - sCenter, dt = t - tCenter;
 			if (ds*ds + dt*dt < radius*radius)
-				return insideDot->Evaluate(dg);
+				return insideDot->Evaluate(tspack, dg);
 		}
-		return outsideDot->Evaluate(dg);
+		return outsideDot->Evaluate(tspack, dg);
 	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 	
 private:
 	// DotsTexture Private Data
@@ -102,7 +102,7 @@ template <class T> inline Texture<float> * DotsTexture<T>::CreateFloatTexture(co
 		tp.GetFloatTexture("outside", 0.f));
 }
 
-template <class T> inline Texture<RGBColor> * DotsTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
+template <class T> inline Texture<SWCSpectrum> * DotsTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
@@ -127,9 +127,9 @@ template <class T> inline Texture<RGBColor> * DotsTexture<T>::CreateRGBColorText
 		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
 		map = new UVMapping2D;
 	}
-	return new DotsTexture<RGBColor>(map,
-		tp.GetRGBColorTexture("inside", 1.f),
-		tp.GetRGBColorTexture("outside", 0.f));
+	return new DotsTexture<SWCSpectrum>(map,
+		tp.GetSWCSpectrumTexture("inside", 1.f),
+		tp.GetSWCSpectrumTexture("outside", 0.f));
 }
 
 }//namespace lux

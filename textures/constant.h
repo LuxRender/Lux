@@ -23,16 +23,44 @@
 // constant.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "rgbrefl.h"
 #include "paramset.h"
 
 namespace lux
 {
 
+// ConstantTexture Declarations
+template <class T>
+class ConstantFloatTexture : public Texture<T> {
+public:
+	// ConstantTexture Public Methods
+	ConstantFloatTexture(const T &v) { value = v; }
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+		return value;
+	}
+private:
+	T value;
+};
+
+template <class T>
+class ConstantRGBColorTexture : public Texture<T> {
+public:
+	// ConstantTexture Public Methods
+	ConstantRGBColorTexture(const RGBColor &s) {
+		RGBSPD = new RGBReflSPD(s);
+	}
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+		return SWCSpectrum(tspack, RGBSPD);
+	}
+private:
+	RGBReflSPD* RGBSPD;
+};
+
 class Constant
 {
 public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 };
 
 }//namespace lux

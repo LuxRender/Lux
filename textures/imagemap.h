@@ -62,7 +62,7 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
 private:
 	// ImageTexture Private Methods
@@ -160,7 +160,7 @@ template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(co
 	return tex;
 }
 
-template <class T> inline Texture<RGBColor> *ImageTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
+template <class T> inline Texture<SWCSpectrum> *ImageTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
@@ -213,7 +213,7 @@ template <class T> inline Texture<RGBColor> *ImageTexture<T>::CreateRGBColorText
 	string filename = tp.FindString("filename");
 	int discardmm = tp.FindInt("discardmipmaps", 0);
 
-	ImageTexture<RGBColor> *tex = new ImageTexture<RGBColor>(map, filterType,
+	ImageTexture<SWCSpectrum> *tex = new ImageTexture<SWCSpectrum>(map, filterType,
 			filename, maxAniso, wrapMode, gain, gamma);
 
 	if ((discardmm > 0) &&

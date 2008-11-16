@@ -31,7 +31,7 @@ namespace lux
 class Glass : public Material {
 public:
 	// Glass Public Methods
-	Glass(boost::shared_ptr<Texture<RGBColor> > r, boost::shared_ptr<Texture<RGBColor> > t,
+	Glass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t,
 			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf,
 			boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex,
 			bool archi, boost::shared_ptr<Texture<float> > bump) {
@@ -49,7 +49,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// Glass Private Data
-	boost::shared_ptr<Texture<RGBColor> > Kr, Kt;
+	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;
 	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > cauchyb;
 	boost::shared_ptr<Texture<float> > film, filmindex;

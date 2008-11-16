@@ -25,7 +25,7 @@
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
-#include "blackbody.h"
+#include "blackbodyspd.h"
 #include "reflection/bxdf.h"
 #include "dynload.h"
 

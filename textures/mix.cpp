@@ -27,4 +27,4 @@
 using namespace lux;
 
 static DynamicLoader::RegisterFloatTexture<MixTexture<float> > r1("mix");
-static DynamicLoader::RegisterRGBColorTexture<MixTexture<RGBColor> > r2("mix");
+static DynamicLoader::RegisterSWCSpectrumTexture<MixTexture<SWCSpectrum> > r2("mix");

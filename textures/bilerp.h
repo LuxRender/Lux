@@ -30,23 +30,22 @@ namespace lux
 {
 
 // BilerpTexture Declarations
-template <class T>
-class BilerpTexture : public Texture<T> {
+class BilerpFloatTexture : public Texture<float> {
 public:
 	// BilerpTexture Public Methods
-	BilerpTexture(TextureMapping2D *m,
-				  const T &t00, const T &t01,
-			      const T &t10, const T &t11) {
+	BilerpFloatTexture(TextureMapping2D *m,
+				  const float &t00, const float &t01,
+			      const float &t10, const float &t11) {
 		mapping = m;
 		v00 = t00;
 		v01 = t01;
 		v10 = t10;
 		v11 = t11;
 	}
-	~BilerpTexture() {
+	~BilerpFloatTexture() {
 		delete mapping;
 	}
-	T Evaluate(const DifferentialGeometry &dg) const {
+	float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return (1-s)*(1-t) * v00 +
@@ -56,74 +55,44 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
 	
 private:
 	// BilerpTexture Private Data
 	TextureMapping2D *mapping;
-	T v00, v01, v10, v11;
+	float v00, v01, v10, v11;
 };
 
-// BilerpTexture Method Definitions
-template <class T> Texture<float>* BilerpTexture<T>::CreateFloatTexture(const Transform &tex2world, const TextureParams &tp)
-{
-	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindString("mapping");
-	if (type == "" || type == "uv") {
-		float su = tp.FindFloat("uscale", 1.);
-		float sv = tp.FindFloat("vscale", 1.);
-		float du = tp.FindFloat("udelta", 0.);
-		float dv = tp.FindFloat("vdelta", 0.);
-		map = new UVMapping2D(su, sv, du, dv);
+class BilerpSpectrumTexture : public Texture<SWCSpectrum> {
+public:
+	// BilerpTexture Public Methods
+	BilerpSpectrumTexture(TextureMapping2D *m,
+				  const RGBColor &t00, const RGBColor &t01,
+			      const RGBColor &t10, const RGBColor &t11) {
+		mapping = m;
+		v00 = t00;
+		v01 = t01;
+		v10 = t10;
+		v11 = t11;
 	}
-	else if (type == "spherical") map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical") map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindVector("v1", Vector(1,0,0)),
-			tp.FindVector("v2", Vector(0,1,0)),
-			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
-	else {
-		std::stringstream ss;
-		ss<<"2D texture mapping '"<<type<<"' unknown";
-		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
-		//luxError(LUX_UNIMPLEMENT,LUX_ERROR,"2D texture mapping \"%s\" unknown", type.c_str());
-		map = new UVMapping2D;
+	~BilerpSpectrumTexture() {
+		delete mapping;
 	}
-	return new BilerpTexture<float>(map,
-		tp.FindFloat("v00", 0.f), tp.FindFloat("v01", 1.f),
-		tp.FindFloat("v10", 0.f), tp.FindFloat("v11", 1.f));
-}
-
-template <class T> Texture<RGBColor>* BilerpTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindString("mapping");
-	if (type == "" || type == "uv") {
-		float su = tp.FindFloat("uscale", 1.);
-		float sv = tp.FindFloat("vscale", 1.);
-		float du = tp.FindFloat("udelta", 0.);
-		float dv = tp.FindFloat("vdelta", 0.);
-		map = new UVMapping2D(su, sv, du, dv);
+	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+		float s, t, dsdx, dtdx, dsdy, dtdy;
+		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
+		return SWCSpectrum(tspack, (1-s)*(1-t) * v00 +
+		       (1-s)*(  t) * v01 +
+			   (  s)*(1-t) * v10 +
+			   (  s)*(  t) * v11 );
 	}
-	else if (type == "spherical") map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical") map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindVector("v1", Vector(1,0,0)),
-			tp.FindVector("v2", Vector(0,1,0)),
-			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
-	else {
-		//Error("2D texture mapping \"%s\" unknown", type.c_str());
-		std::stringstream ss;
-		ss<<"2D texture mapping '"<<type<<"' unknown";
-		luxError(LUX_UNIMPLEMENT,LUX_ERROR,ss.str().c_str());
-		map = new UVMapping2D;
-	}
-	return new BilerpTexture<RGBColor>(map,
-		tp.FindRGBColor("v00", 0.f), tp.FindRGBColor("v01", 1.f),
-		tp.FindRGBColor("v10", 0.f), tp.FindRGBColor("v11", 1.f));
-}
+	
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	
+private:
+	// BilerpTexture Private Data
+	TextureMapping2D *mapping;
+	RGBColor v00, v01, v10, v11;
+};
 
 }//namespace lux
 

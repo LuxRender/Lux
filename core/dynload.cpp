@@ -82,18 +82,18 @@ boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	return boost::shared_ptr<Texture<float> >();
 }
 
-boost::shared_ptr<Texture<RGBColor> > MakeRGBColorTexture(const string &name,
+boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp)
 {
-	if (DynamicLoader::registeredRGBColorTextures().find(name) !=
-		DynamicLoader::registeredRGBColorTextures().end()) {
-		boost::shared_ptr<Texture<RGBColor> > ret(DynamicLoader::registeredRGBColorTextures()[name](tex2world, tp));
+	if (DynamicLoader::registeredSWCSpectrumTextures().find(name) !=
+		DynamicLoader::registeredSWCSpectrumTextures().end()) {
+		boost::shared_ptr<Texture<SWCSpectrum> > ret(DynamicLoader::registeredSWCSpectrumTextures()[name](tex2world, tp));
 		tp.ReportUnused();
 		return ret;
 	}
 
 	LoadError("color texture", name);
-	return boost::shared_ptr<Texture<RGBColor> >();
+	return boost::shared_ptr<Texture<SWCSpectrum> >();
 }
 
 Light *MakeLight(const string &name,
@@ -292,9 +292,9 @@ map<string, DynamicLoader::CreateFloatTexture> &DynamicLoader::registeredFloatTe
 	static map<string, DynamicLoader::CreateFloatTexture> *Map = new map<string, DynamicLoader::CreateFloatTexture>;
 	return *Map;
 }
-map<string, DynamicLoader::CreateRGBColorTexture> &DynamicLoader::registeredRGBColorTextures()
+map<string, DynamicLoader::CreateSWCSpectrumTexture> &DynamicLoader::registeredSWCSpectrumTextures()
 {
-	static map<string, DynamicLoader::CreateRGBColorTexture> *Map = new map<string, DynamicLoader::CreateRGBColorTexture>;
+	static map<string, DynamicLoader::CreateSWCSpectrumTexture> *Map = new map<string, DynamicLoader::CreateSWCSpectrumTexture>;
 	return *Map;
 }
 map<string, DynamicLoader::CreateLight> &DynamicLoader::registeredLights()

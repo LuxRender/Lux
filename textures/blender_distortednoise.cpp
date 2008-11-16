@@ -27,4 +27,4 @@ using namespace lux;
 using namespace blender;
 
 static DynamicLoader::RegisterFloatTexture<BlenderDistortedNoiseTexture3D<float> > r1("blender_distortednoise");
-static DynamicLoader::RegisterRGBColorTexture<BlenderDistortedNoiseTexture3D<RGBColor> > r2("blender_distortednoise");
+static DynamicLoader::RegisterSWCSpectrumTexture<BlenderDistortedNoiseTexture3D<SWCSpectrum> > r2("blender_distortednoise");

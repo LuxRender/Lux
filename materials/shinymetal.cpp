@@ -42,14 +42,14 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	else
 		dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
-	SWCSpectrum spec(tspack, Ks->Evaluate(dgs).Clamp());
-	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp());
+	SWCSpectrum spec = Ks->Evaluate(tspack, dgs).Clamp();
+	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp();
 
-	float u = nu->Evaluate(dgs);
-	float v = nv->Evaluate(dgs);
+	float u = nu->Evaluate(tspack, dgs);
+	float v = nv->Evaluate(tspack, dgs);
 
-	float flm = film->Evaluate(dgs);
-	float flmindex = filmindex->Evaluate(dgs);
+	float flm = film->Evaluate(tspack, dgs);
+	float flmindex = filmindex->Evaluate(tspack, dgs);
 
 	MicrofacetDistribution *md;
 	if(u == v)
@@ -66,8 +66,8 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 }
 Material* ShinyMetal::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<RGBColor> > Kr = mp.GetRGBColorTexture("Kr", RGBColor(1.f));
-	boost::shared_ptr<Texture<RGBColor> > Ks = mp.GetRGBColorTexture("Ks", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Kr = mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks = mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers

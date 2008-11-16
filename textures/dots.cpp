@@ -27,4 +27,4 @@
 using namespace lux;
 
 static DynamicLoader::RegisterFloatTexture<DotsTexture<float> > r1("dots");
-static DynamicLoader::RegisterRGBColorTexture<DotsTexture<RGBColor> > r2("dots");
+static DynamicLoader::RegisterSWCSpectrumTexture<DotsTexture<SWCSpectrum> > r2("dots");

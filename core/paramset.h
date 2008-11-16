@@ -281,13 +281,13 @@ public:
 	// TextureParams Public Methods
 	TextureParams(const ParamSet &geomp, const ParamSet &matp,
 			map<string, boost::shared_ptr<Texture<float> > > &ft,
-			map<string, boost::shared_ptr<Texture<RGBColor> > > &st)
+			map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &st)
 		: geomParams(geomp),
 		  materialParams(matp),
 		  floatTextures(ft),
-		  RGBColorTextures(st) {
+		  SWCSpectrumTextures(st) {
 	}
-	boost::shared_ptr<Texture<RGBColor> > GetRGBColorTexture(const string &name,
+	boost::shared_ptr<Texture<SWCSpectrum> > GetSWCSpectrumTexture(const string &name,
 	                                                         const RGBColor &def) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
@@ -296,6 +296,11 @@ public:
 		return geomParams.FindOneFloat(n,
 			materialParams.FindOneFloat(n, d));
 	}
+
+	const float *FindFloats(const string &n, int *nItems) const {
+		return geomParams.FindFloat(n, nItems);
+	}
+
 	string FindString(const string &n) const {
 		return geomParams.FindOneString(n, materialParams.FindOneString(n, ""));
 	}
@@ -327,7 +332,7 @@ private:
 	// TextureParams Private Data
 	const ParamSet &geomParams, &materialParams;
 	map<string, boost::shared_ptr<Texture<float> > >    &floatTextures;
-	map<string, boost::shared_ptr<Texture<RGBColor> > > &RGBColorTextures;
+	map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &SWCSpectrumTextures;
 };
 
 }//namespace lux

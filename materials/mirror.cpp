@@ -39,12 +39,12 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	else
 		dgs = dgShading;
 
-	float flm = film->Evaluate(dgs);
-	float flmindex = filmindex->Evaluate(dgs);
+	float flm = film->Evaluate(tspack, dgs);
+	float flmindex = filmindex->Evaluate(tspack, dgs);
 
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
+	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
 			BSDF_ALLOC(tspack, FresnelNoOp)(), flm, flmindex));
@@ -52,7 +52,7 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 }
 Material* Mirror::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<RGBColor> > Kr = mp.GetRGBColorTexture("Kr", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Kr = mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");

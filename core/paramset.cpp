@@ -23,6 +23,7 @@
 // paramset.cpp*
 #include "paramset.h"
 #include "error.h"
+#include "constant.h"
 #include <sstream>
 #include <string>
 
@@ -38,6 +39,9 @@ ParamSet::ParamSet(const ParamSet &p2) {
 ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[])
 {
 	//TODO - jromang : implement this using a std::map or string hashing
+
+	// NOTE - radiance - THIS NEEDS TO BE UPDATED! :)
+
 	std::string p(pluginName);
 	
 	for(int i=0;i<n;i++)
@@ -176,7 +180,7 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="roughness" && p=="plastic") AddTexture(s,std::string(params[i]));
 		if(s=="roughness" && p=="translucent") AddTexture(s,std::string(params[i]));
 		if(s=="roughness" && p=="shinymetal") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="substrate") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && p=="glossy") AddTexture(s,std::string(params[i]));
 		if(s=="roughness" && p=="uber") AddTexture(s,std::string(params[i]));
 		if(s=="reflect") AddTexture(s,std::string(params[i]));
 		if(s=="transmit") AddTexture(s,std::string(params[i]));
@@ -621,15 +625,15 @@ string ParamSet::ToString() const {
 	return ret;
 }
 // TextureParams Method Definitions
-boost::shared_ptr<Texture<RGBColor> >
-	TextureParams::GetRGBColorTexture(const string &n,
+boost::shared_ptr<Texture<SWCSpectrum> >
+	TextureParams::GetSWCSpectrumTexture(const string &n,
              const RGBColor &def) const {
 	string name = geomParams.FindTexture(n);
 	if (name == "") name = materialParams.FindTexture(n);
 	if (name != "") {
-		if (RGBColorTextures.find(name) !=
-		       RGBColorTextures.end())
-			return RGBColorTextures[name];
+		if (SWCSpectrumTextures.find(name) !=
+		       SWCSpectrumTextures.end())
+			return SWCSpectrumTextures[name];
 		else
 		{
 			//Error("Couldn't find RGBColor"
@@ -641,7 +645,7 @@ boost::shared_ptr<Texture<RGBColor> >
 	}
 	RGBColor val = geomParams.FindOneRGBColor(n,
 		materialParams.FindOneRGBColor(n, def));
-	boost::shared_ptr<Texture<RGBColor> > o (new ConstantTexture<RGBColor>(val));
+	boost::shared_ptr<Texture<SWCSpectrum> > o (new ConstantRGBColorTexture<SWCSpectrum>(val));
 	return o;
 }
 boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
@@ -665,5 +669,6 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 	boost::shared_ptr<Texture<float> > texture = GetFloatTexture(n);
 	if (texture)  return texture;
 	float val = FindFloat(n, def);
-	return boost::shared_ptr<Texture<float> >(new ConstantTexture<float>(val));
+	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture<float>(val));
 }
+

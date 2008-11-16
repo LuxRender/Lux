@@ -41,7 +41,7 @@ boost::shared_ptr<Material> MakeMaterial(const string &name,
 	const Transform &mtl2world, const TextureParams &mp);
 boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
-boost::shared_ptr<Texture<RGBColor> > MakeRGBColorTexture(const string &name,
+boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
 Light *MakeLight(const string &name, const Transform &light2world,
 	const ParamSet &paramSet);
@@ -105,14 +105,14 @@ public:
 		virtual ~RegisterFloatTexture<T>() {}
 	};
 
-	typedef Texture<RGBColor> *(*CreateRGBColorTexture)(const Transform&,
+	typedef Texture<SWCSpectrum> *(*CreateSWCSpectrumTexture)(const Transform&,
 		const TextureParams&);
-	static map<string, CreateRGBColorTexture> &registeredRGBColorTextures();
-	template <class T> class RegisterRGBColorTexture : public RegisterLoader<CreateRGBColorTexture> {
+	static map<string, CreateSWCSpectrumTexture> &registeredSWCSpectrumTextures();
+	template <class T> class RegisterSWCSpectrumTexture : public RegisterLoader<CreateSWCSpectrumTexture> {
 	public:
-		RegisterRGBColorTexture<T>(const string &name) :
-			RegisterLoader<CreateRGBColorTexture>(registeredRGBColorTextures(), name, &T::CreateRGBColorTexture) {}
-		virtual ~RegisterRGBColorTexture<T>() {}
+		RegisterSWCSpectrumTexture<T>(const string &name) :
+			RegisterLoader<CreateSWCSpectrumTexture>(registeredSWCSpectrumTextures(), name, &T::CreateSWCSpectrumTexture) {}
+		virtual ~RegisterSWCSpectrumTexture<T>() {}
 	};
 
 	typedef Light *(*CreateLight)(const Transform&, const ParamSet&);

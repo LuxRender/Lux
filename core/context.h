@@ -61,7 +61,7 @@ public:
 	static map<string, boost::shared_ptr<Texture<float> > > *getActiveFloatTextures() {
 		return &(activeContext->graphicsState->floatTextures);
 	}
-	static map<string, boost::shared_ptr<Texture<RGBColor> > > *getActiveRGBColorTextures() {
+	static map<string, boost::shared_ptr<Texture<SWCSpectrum> > > *getActiveSWCSpectrumTextures() {
 		return &(activeContext->graphicsState->colorTextures);
 	}
 
@@ -289,7 +289,7 @@ private:
 		}
 		// Graphics State
 		map<string, boost::shared_ptr<Texture<float> > > floatTextures;
-		map<string, boost::shared_ptr<Texture<RGBColor> > > colorTextures;
+		map<string, boost::shared_ptr<Texture<SWCSpectrum> > > colorTextures;
 		ParamSet materialParams;
 		string material;
 		ParamSet areaLightParams;

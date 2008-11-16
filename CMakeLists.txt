@@ -399,7 +399,7 @@ SET(lux_lib_src
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp
-        materials/glass.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp
+        materials/glass.cpp materials/glossy.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp
         materials/shinymetal.cpp
         materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
         materials/mixmaterial.cpp materials/null.cpp
@@ -409,11 +409,12 @@ SET(lux_lib_src
         textures/blender_wood.cpp textures/blender_musgrave.cpp textures/blender_marble.cpp textures/blender_noiselib.cpp textures/blender_texlib.cpp
 		textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp
 		textures/blender_stucci.cpp textures/harlequin.cpp textures/blender_voronoi.cpp
+	textures/blackbody.cpp textures/equalenergy.cpp textures/frequency.cpp textures/gaussian.cpp textures/irregulardata.cpp textures/regulardata.cpp
         tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
 		pixelsamplers/tilepx.cpp pixelsamplers/hilbertpx.cpp
-        spds/blackbody.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp
+        spds/blackbodyspd.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp spds/rgbrefl.cpp spds/equalspd.cpp spds/frequencyspd.cpp spds/gaussianspd.cpp
         core/spectrumwavelengths.cpp core/spd.cpp
         renderer/renderserver.cpp
 	)

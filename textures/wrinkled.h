@@ -40,14 +40,14 @@ public:
 		octaves = oct;
 		mapping = map;
 	}
-	T Evaluate(const DifferentialGeometry &dg) const {
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		return Turbulence(P, dpdx, dpdy, omega, octaves);
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	// WrinkledTexture Private Data
 	int octaves;
@@ -68,14 +68,14 @@ template <class T> inline Texture<float> * WrinkledTexture<T>::CreateFloatTextur
 		tp.FindFloat("roughness", .5f), map);
 }
 
-template <class T> inline Texture<RGBColor> * WrinkledTexture<T>::CreateRGBColorTexture(const Transform &tex2world,
+template <class T> inline Texture<SWCSpectrum> * WrinkledTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
-	return new WrinkledTexture<RGBColor>(tp.FindInt("octaves", 8),
+	return new WrinkledTexture<SWCSpectrum>(tp.FindInt("octaves", 8),
 		tp.FindFloat("roughness", .5f), map);
 }
 

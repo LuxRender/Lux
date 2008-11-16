@@ -45,7 +45,7 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	dgEval.p += du * dgs.dpdu;
 	dgEval.u += du;
 	dgEval.nn = Normalize(dgs.nn + du * dgs.dndu);
-	float uDisplace = d->Evaluate(dgEval);
+	float uDisplace = d->Evaluate(NULL, dgEval);
 
 	// Shift _dgEval_ _dv_ in the $v$ direction and calculate bump map value
 	float dv = .5f * (fabsf(dgs.dvdx) + fabsf(dgs.dvdy));
@@ -54,10 +54,10 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 	dgEval.u = dgs.u;
 	dgEval.v += dv;
 	dgEval.nn = Normalize(dgs.nn + dv * dgs.dndv);
-	float vDisplace = d->Evaluate(dgEval);
+	float vDisplace = d->Evaluate(NULL, dgEval);
 
 	// Calculate bump map value at intersection point
-	float displace = d->Evaluate(dgs);
+	float displace = d->Evaluate(NULL, dgs);
 
 	// Compute bump-mapped differential geometry
 	*dgBump = dgs;

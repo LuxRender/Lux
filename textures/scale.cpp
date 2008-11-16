@@ -27,4 +27,4 @@
 using namespace lux;
 
 static DynamicLoader::RegisterFloatTexture<ScaleTexture<float, float> > r1("scale");
-static DynamicLoader::RegisterRGBColorTexture<ScaleTexture<RGBColor, RGBColor> > r2("scale");
+static DynamicLoader::RegisterSWCSpectrumTexture<ScaleTexture<SWCSpectrum, SWCSpectrum> > r2("scale");

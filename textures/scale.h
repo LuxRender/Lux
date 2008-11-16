@@ -39,13 +39,12 @@ public:
 		tex1 = t1;
 		tex2 = t2;
 	}
-	T2 Evaluate(
-			const DifferentialGeometry &dg) const {
-		return tex1->Evaluate(dg) * tex2->Evaluate(dg);
+	T2 Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+		return tex1->Evaluate(tspack, dg) * tex2->Evaluate(tspack, dg);
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	boost::shared_ptr<Texture<T1> > tex1;
 	boost::shared_ptr<Texture<T2> > tex2;
@@ -58,11 +57,11 @@ template <class T, class U> inline Texture<float> * ScaleTexture<T,U>::CreateFlo
 		tp.GetFloatTexture("tex2", 1.f));
 }
 
-template <class T,class U> inline Texture<RGBColor> * ScaleTexture<T,U>::CreateRGBColorTexture(const Transform &tex2world,
+template <class T,class U> inline Texture<SWCSpectrum> * ScaleTexture<T,U>::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new ScaleTexture<RGBColor, RGBColor>(
-		tp.GetRGBColorTexture("tex1", RGBColor(1.f)),
-		tp.GetRGBColorTexture("tex2", RGBColor(1.f)));
+	return new ScaleTexture<SWCSpectrum, SWCSpectrum>(
+		tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f)),
+		tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
 }
 
 }//namespace lux

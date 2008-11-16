@@ -41,14 +41,14 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	else
 		dgs = dgShading;
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
-	float ior = index->Evaluate(dgs);
-	float cb = cauchyb->Evaluate(dgs);
+	float ior = index->Evaluate(tspack, dgs);
+	float cb = cauchyb->Evaluate(tspack, dgs);
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R(tspack, Kr->Evaluate(dgs).Clamp(0.f, 1.f));
-	SWCSpectrum T(tspack, Kt->Evaluate(dgs).Clamp(0.f, 1.f));
-	float urough = uroughness->Evaluate(dgs);
-	float vrough = vroughness->Evaluate(dgs);
+	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	float urough = uroughness->Evaluate(tspack, dgs);
+	float vrough = vroughness->Evaluate(tspack, dgs);
 	MicrofacetDistribution *md;
 	if(urough == vrough)
 		md = BSDF_ALLOC(tspack, Blinn)(1.f / urough);
@@ -67,8 +67,8 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 }
 Material* RoughGlass::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<RGBColor> > Kr = mp.GetRGBColorTexture("Kr", RGBColor(1.f));
-	boost::shared_ptr<Texture<RGBColor> > Kt = mp.GetRGBColorTexture("Kt", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Kr = mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Kt = mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .001f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .001f);
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);

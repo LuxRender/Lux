@@ -42,8 +42,8 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
 	// Evaluate textures for _Matte_ material and allocate BRDF
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum r(tspack, Kd->Evaluate(dgs).Clamp(0.f, 1.f));
-	float sig = Clamp(sigma->Evaluate(dgs), 0.f, 90.f);
+	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
 	if (sig == 0.)
 		bsdf->Add(BSDF_ALLOC(tspack, Lambertian)(r));
 	else
@@ -52,7 +52,7 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Matte::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<RGBColor> > Kd = mp.GetRGBColorTexture("Kd", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 	return new Matte(Kd, sigma, bumpMap);

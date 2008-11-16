@@ -66,7 +66,7 @@ public:
 	~Checkerboard2D() {
 		delete mapping;
 	}
-	T Evaluate(const DifferentialGeometry &dg) const {
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		if (aaMethod == CLOSEDFORM) {
@@ -80,8 +80,8 @@ public:
 				Floor2Int(t0) == Floor2Int(t1)) {
 				// Point sample _Checkerboard2D_
 				if ((Floor2Int(s) + Floor2Int(t)) % 2 == 0)
-					return tex1->Evaluate(dg);
-				return tex2->Evaluate(dg);
+					return tex1->Evaluate(tspack, dg);
+				return tex2->Evaluate(tspack, dg);
 			}
 			// Apply box-filter to checkerboard region
 			#define BUMPINT(x) \
@@ -92,8 +92,8 @@ public:
 			float area2 = sint + tint - 2.f * sint * tint;
 			if (ds > 1.f || dt > 1.f)
 				area2 = .5f;
-			return (1.f - area2) * tex1->Evaluate(dg) +
-				area2 * tex2->Evaluate(dg);
+			return (1.f - area2) * tex1->Evaluate(tspack, dg) +
+				area2 * tex2->Evaluate(tspack, dg);
 		}
 		else if (aaMethod == SUPERSAMPLE) {
 			// Supersample _Checkerboard2D_
@@ -121,17 +121,17 @@ public:
 				float wt = expf(-2.f * (dx*dx + dy*dy));
 				filterSum += wt;
 				if ((Floor2Int(ss) + Floor2Int(ts)) % 2 == 0)
-					value += wt * tex1->Evaluate(dgs);
+					value += wt * tex1->Evaluate(tspack, dgs);
 				else
-					value += wt * tex2->Evaluate(dgs);
+					value += wt * tex2->Evaluate(tspack, dgs);
 			}
 			return value / filterSum;
 			#undef N_SAMPLES // NOBOOK
 		}
 		// Point sample _Checkerboard2D_
 		if ((Floor2Int(s) + Floor2Int(t)) % 2 == 0)
-			return tex1->Evaluate(dg);
-		return tex2->Evaluate(dg);
+			return tex1->Evaluate(tspack, dg);
+		return tex2->Evaluate(tspack, dg);
 	}
 private:
 	// Checkerboard2D Private Data
@@ -148,7 +148,7 @@ public:
 		tex1 = c1;
 		tex2 = c2;
 	}
-	T Evaluate(const DifferentialGeometry &dg) const {
+	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Supersample _Checkerboard3D_
 		#define N_SAMPLES 4
 		float samples[2*N_SAMPLES*N_SAMPLES];
@@ -173,9 +173,9 @@ public:
 			float wt = expf(-2.f * (dx*dx + dy*dy));
 			filterSum += wt;
 			if ((Floor2Int(PP.x) + Floor2Int(PP.y) + Floor2Int(PP.z)) % 2 == 0)
-				value += wt * tex1->Evaluate(dgs);
+				value += wt * tex1->Evaluate(tspack, dgs);
 			else
-				value += wt * tex2->Evaluate(dgs);
+				value += wt * tex2->Evaluate(tspack, dgs);
 		}
 		return value / filterSum;
 	}
@@ -189,7 +189,7 @@ class Checkerboard
 {
 public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 };
 
 }//namespace lux

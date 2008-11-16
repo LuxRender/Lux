@@ -29,7 +29,7 @@ namespace lux
 {
 
 // MarbleTexture Declarations
-class MarbleTexture : public Texture<RGBColor> {
+class MarbleTexture : public Texture<SWCSpectrum> {
 public:
 	// MarbleTexture Public Methods
 	~MarbleTexture() {
@@ -43,7 +43,7 @@ public:
 		scale = sc;
 		variation = var;
 	}
-	RGBColor Evaluate(const DifferentialGeometry &dg) const {
+	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		P *= scale;
@@ -66,11 +66,11 @@ public:
 		s0 = (1.f - t) * s0 + t * s1;
 		s1 = (1.f - t) * s1 + t * s2;
 		// Extra scale of 1.5 to increase variation among colors
-		return 1.5f * ((1.f - t) * s0 + t * s1);
+		return SWCSpectrum(tspack, 1.5f * ((1.f - t) * s0 + t * s1));
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<RGBColor> * CreateRGBColorTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
 	// MarbleTexture Private Data
 	int octaves;

@@ -332,7 +332,7 @@ void Context::texture(const string &name, const string &type, const string &texn
 			ss<<"Texture '"<<name<<"' being redefined.";
 			luxError(LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
 		}
-		boost::shared_ptr<Texture<RGBColor> > st = MakeRGBColorTexture(texname,
+		boost::shared_ptr<Texture<SWCSpectrum> > st = MakeSWCSpectrumTexture(texname,
 				curTransform, tp);
 		if (st)
 			graphicsState->colorTextures[name] = st;

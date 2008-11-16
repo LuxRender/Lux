@@ -31,7 +31,7 @@ namespace lux
 class MatteTranslucent : public Material {
 public:
 	// MatteTranslucent Public Methods
-	MatteTranslucent(boost::shared_ptr<Texture<RGBColor> > kr, boost::shared_ptr<Texture<RGBColor> > kt,
+	MatteTranslucent(boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<SWCSpectrum> > kt,
 			boost::shared_ptr<Texture<float> > sig,
 			boost::shared_ptr<Texture<float> > bump) {
 		Kr = kr;
@@ -45,7 +45,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:
 	// MatteTranslucent Private Data
-	boost::shared_ptr<Texture<RGBColor> > Kr, Kt;
+	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;
 	boost::shared_ptr<Texture<float> > sigma, bumpMap;
 };
 

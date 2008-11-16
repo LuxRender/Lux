@@ -60,8 +60,8 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	SWCSpectrum n(tspack, N.get());
 	SWCSpectrum k(tspack, K.get());
 
-	float u = nu->Evaluate(dgs);
-	float v = nv->Evaluate(dgs);
+	float u = nu->Evaluate(tspack, dgs);
+	float v = nv->Evaluate(tspack, dgs);
 
 	MicrofacetDistribution *md;
 	if(u == v)

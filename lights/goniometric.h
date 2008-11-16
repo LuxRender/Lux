@@ -44,7 +44,7 @@ public:
 		float theta = SphericalTheta(wp);
 		float phi   = SphericalPhi(wp);
 		float s = phi * INV_TWOPI, t = theta * INV_PI;
-		return mipmap ? mipmap->Lookup(s, t) : 1.f;
+		return mipmap ? mipmap->Lookup(t, s) : 1.f;
 	}
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return SWCSpectrum(tspack, 4.f * M_PI * Intensity *
