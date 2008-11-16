@@ -33,21 +33,30 @@ using std::map;
 namespace lux
 {
 
-// ImageMapTexture Declarations
-template <class T>
-class ImageTexture : public Texture<T> {
+// ImageTexture Declarations
+class ImageFloatTexture : public Texture<float> {
 public:
-	// ImageTexture Public Methods
-	ImageTexture(
+	// ImageFloatTexture Public Methods
+	ImageFloatTexture(
 			TextureMapping2D *m,
 			ImageTextureFilterType type,
 			const string &filename,
 			float maxAniso,
 			ImageWrap wrapMode,
 			float gain,
-			float gamma);
-	T Evaluate(const DifferentialGeometry &) const;
-	~ImageTexture();
+			float gamma) {
+				filterType = type;
+				mapping = m;
+				mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
+	};
+
+	~ImageFloatTexture() { delete mapping; };
+
+	float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+		float s, t, dsdx, dtdx, dsdy, dtdy;
+		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
+		return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
+	};
 	
 	u_int getMemoryUsed() const {
 		if (mipmap)
@@ -62,11 +71,11 @@ public:
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	//static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
 private:
-	// ImageTexture Private Methods
-	static MIPMap<T> *GetTexture(
+	// ImageFloatTexture Private Methods
+	static MIPMap<float> *GetTexture(
 		ImageTextureFilterType filterType,
 		const string &filename,
 		float maxAniso,
@@ -80,177 +89,74 @@ private:
 		*to = from.y();
 	}
 		
-	// ImageTexture Private Data
-
+	// ImageFloatTexture Private Data
 	ImageTextureFilterType filterType;
-	MIPMap<T> *mipmap;
+	MIPMap<float> *mipmap;
 	TextureMapping2D *mapping;
 };
 
-template <class T> inline Texture<float> *ImageTexture<T>::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
+class ImageSpectrumTexture : public Texture<SWCSpectrum> {
+public:
+	// ImageSpectrumTexture Public Methods
+	ImageSpectrumTexture(
+			TextureMapping2D *m,
+			ImageTextureFilterType type,
+			const string &filename,
+			float maxAniso,
+			ImageWrap wrapMode,
+			float gain,
+			float gamma) {
+				filterType = type;
+				mapping = m;
+				mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
+	};
+
+	~ImageSpectrumTexture() { delete mapping; };
+
+	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+		float s, t, dsdx, dtdx, dsdy, dtdy;
+		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
+		return SWCSpectrum(tspack, mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy));
+	};
 	
-	string sFilterType = tp.FindString("filtertype");
-	ImageTextureFilterType filterType = BILINEAR;
-	if ((sFilterType == "") || (sFilterType == "bilinear")) {
-		filterType = BILINEAR;
-	} else if (sFilterType == "mipmap_trilinear") {
-		filterType = MIPMAP_TRILINEAR;
-	} else if (sFilterType == "mipmap_ewa") {
-		filterType = MIPMAP_EWA;
-	} else if (sFilterType == "nearest") {
-		filterType = NEAREST;
+	u_int getMemoryUsed() const {
+		if (mipmap)
+			return mipmap->getMemoryUsed();
+		else
+			return 0;
 	}
 
-	string type = tp.FindString("mapping");
-	if (type == "" || type == "uv") {
-		float su = tp.FindFloat("uscale", 1.);
-		float sv = tp.FindFloat("vscale", 1.);
-		float du = tp.FindFloat("udelta", 0.);
-		float dv = tp.FindFloat("vdelta", 0.);
-		map = new UVMapping2D(su, sv, du, dv);
+	void discardMipmaps(int n) {
+		if (mipmap)
+			mipmap->discardMipmaps(n);
 	}
-	else if (type == "spherical") map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical") map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindVector("v1", Vector(1,0,0)),
-			tp.FindVector("v2", Vector(0,1,0)),
-			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
-	else {
-		//Error("2D texture mapping \"%s\" unknown", type.c_str());
-		std::stringstream ss;
-		ss<<"2D texture mapping  '"<<type<<"' unknown";
-		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
-		map = new UVMapping2D;
-	}
-
-	// Initialize _ImageTexture_ parameters
-	float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
-	string wrap = tp.FindString("wrap");
-	ImageWrap wrapMode = TEXTURE_REPEAT;
-	if (wrap == "" || wrap == "repeat") wrapMode = TEXTURE_REPEAT;
-	else if (wrap == "black") wrapMode = TEXTURE_BLACK;
-	else if (wrap == "clamp") wrapMode = TEXTURE_CLAMP;
-
-	float gain = tp.FindFloat("gain", 1.0f);
-	float gamma = tp.FindFloat("gamma", 1.0f);
-
-	string filename = tp.FindString("filename");
-	int discardmm = tp.FindInt("discardmipmaps", 0);
-
-	ImageTexture<float> *tex = new ImageTexture<float>(map, filterType,
-			filename, maxAniso, wrapMode, gain, gamma);
-
-	if ((discardmm > 0) &&
-			((filterType == MIPMAP_TRILINEAR) || (filterType == MIPMAP_EWA))) {
-		tex->discardMipmaps(discardmm);
-
-		std::stringstream ss;
-		ss<<"Discarded " << discardmm << " mipmap levels";
-		luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-	}
-
-	std::stringstream ss;
-	ss<<"Memory used for imagemap '" << filename << "': " <<
-		(tex->getMemoryUsed() / 1024) << "KBytes";
-	luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-
-	return tex;
-}
-
-template <class T> inline Texture<SWCSpectrum> *ImageTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
 	
-	string sFilterType = tp.FindString("filtertype");
-	ImageTextureFilterType filterType = BILINEAR;
-	if ((sFilterType == "") || (sFilterType == "bilinear")) {
-		filterType = BILINEAR;
-	} else if (sFilterType == "mipmap_trilinear") {
-		filterType = MIPMAP_TRILINEAR;
-	} else if (sFilterType == "mipmap_ewa") {
-		filterType = MIPMAP_EWA;
-	} else if (sFilterType == "nearest") {
-		filterType = NEAREST;
-	}
+	//static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
-	string type = tp.FindString("mapping");
-	if (type == "" || type == "uv") {
-		float su = tp.FindFloat("uscale", 1.);
-		float sv = tp.FindFloat("vscale", 1.);
-		float du = tp.FindFloat("udelta", 0.);
-		float dv = tp.FindFloat("vdelta", 0.);
-		map = new UVMapping2D(su, sv, du, dv);
-	}
-	else if (type == "spherical") map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical") map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindVector("v1", Vector(1,0,0)),
-			tp.FindVector("v2", Vector(0,1,0)),
-			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
-	else {
-		//Error("2D texture mapping \"%s\" unknown", type.c_str());
-		std::stringstream ss;
-		ss<<"2D texture mapping  '"<<type<<"' unknown";
-		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
-		map = new UVMapping2D;
-	}
-
-	// Initialize _ImageTexture_ parameters
-	float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
-	string wrap = tp.FindString("wrap");
-	ImageWrap wrapMode = TEXTURE_REPEAT;
-	if (wrap == "" || wrap == "repeat") wrapMode = TEXTURE_REPEAT;
-	else if (wrap == "black") wrapMode = TEXTURE_BLACK;
-	else if (wrap == "clamp") wrapMode = TEXTURE_CLAMP;
-
-	float gain = tp.FindFloat("gain", 1.0f);
-	float gamma = tp.FindFloat("gamma", 1.0f);
-
-	string filename = tp.FindString("filename");
-	int discardmm = tp.FindInt("discardmipmaps", 0);
-
-	ImageTexture<SWCSpectrum> *tex = new ImageTexture<SWCSpectrum>(map, filterType,
-			filename, maxAniso, wrapMode, gain, gamma);
-
-	if ((discardmm > 0) &&
-			((filterType == MIPMAP_TRILINEAR) || (filterType == MIPMAP_EWA))) {
-		tex->discardMipmaps(discardmm);
-
-		std::stringstream ss;
-		ss<<"Discarded " << discardmm << " mipmap levels";
-		luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-	}
-
-	std::stringstream ss;
-	ss<<"Memory used for imagemap '" << filename << "': " <<
-		(tex->getMemoryUsed() / 1024) << "KBytes";
-	luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-
-	return tex;
-}
-
-// ImageMapTexture Method Definitions
-template <class T> inline 
-ImageTexture<T>::ImageTexture(
-		TextureMapping2D *m,
-		ImageTextureFilterType type,
+private:
+	// ImageSpectrumTexture Private Methods
+	static MIPMap<RGBColor> *GetTexture(
+		ImageTextureFilterType filterType,
 		const string &filename,
 		float maxAniso,
-		ImageWrap wrapMode,
+		ImageWrap wrap,
 		float gain,
-		float gamma) {
-	filterType = type;
-	mapping = m;
-	mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
-}
+		float gamma);
+	static void convert(const RGBColor &from, RGBColor *to) {
+		*to = from;
+	}
+	static void convert(const RGBColor &from, float *to) {
+		*to = from.y();
+	}
+		
+	// ImageSpectrumTexture Private Data
+	ImageTextureFilterType filterType;
+	MIPMap<RGBColor> *mipmap;
+	TextureMapping2D *mapping;
+};
 
-template <class T> inline ImageTexture<T>::~ImageTexture() {
-	delete mapping;
-}
+// ImageMapTexture Method Definitions
 
 struct TexInfo {
 	TexInfo(ImageTextureFilterType type, const string &f, float ma,
@@ -276,7 +182,7 @@ struct TexInfo {
 	}
 };
 
-template <class T> inline MIPMap<T> *ImageTexture<T>::
+inline MIPMap<float> *ImageFloatTexture::
 	GetTexture(
 		ImageTextureFilterType filterType,
 		const string &filename,
@@ -285,26 +191,23 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 		float gain,
 		float gamma) {
 	// Look for texture in texture cache
-	static map<TexInfo, MIPMap<T> *> textures;
+	static map<TexInfo, MIPMap<float> *> textures;
 	TexInfo texInfo(filterType, filename, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end())
 		return textures[texInfo];
-
-	// radiance - disabled for threading // static StatsCounter texLoaded("Texture", "Number of image maps loaded"); // NOBOOK
-	// radiance - disabled for threading // ++texLoaded; // NOBOOK
 	int width, height;
 	auto_ptr<ImageData> imgdata(ReadImage(filename));
-	MIPMap<T> *ret = NULL;
+	MIPMap<float> *ret = NULL;
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap<T>(filterType, maxAniso, wrap, gain, gamma);
+		ret = imgdata->createMIPMap<float>(filterType, maxAniso, wrap, gain, gamma);
 	} else {
 		// Create one-valued _MIPMap_
-		T *oneVal = new T[1];
+		float *oneVal = new float[1];
 		oneVal[0] = 1.;
 
-		ret = new MIPMapFastImpl<T,T>(filterType, 1, 1, oneVal);
+		ret = new MIPMapFastImpl<float,float>(filterType, 1, 1, oneVal);
 
 		delete[] oneVal;
 	}
@@ -313,12 +216,38 @@ template <class T> inline MIPMap<T> *ImageTexture<T>::
 	return ret;
 }
 
-template <class T> inline 
-T ImageTexture<T>::Evaluate(
-		const DifferentialGeometry &dg) const {
-	float s, t, dsdx, dtdx, dsdy, dtdy;
-	mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-	return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
+inline MIPMap<RGBColor> *ImageSpectrumTexture::
+	GetTexture(
+		ImageTextureFilterType filterType,
+		const string &filename,
+		float maxAniso,
+		ImageWrap wrap,
+		float gain,
+		float gamma) {
+	// Look for texture in texture cache
+	static map<TexInfo, MIPMap<RGBColor> *> textures;
+	TexInfo texInfo(filterType, filename, maxAniso, wrap, gain, gamma);
+	if (textures.find(texInfo) != textures.end())
+		return textures[texInfo];
+	int width, height;
+	auto_ptr<ImageData> imgdata(ReadImage(filename));
+	MIPMap<RGBColor> *ret = NULL;
+	if (imgdata.get() != NULL) {
+		width=imgdata->getWidth();
+		height=imgdata->getHeight();
+		ret = imgdata->createMIPMap<RGBColor>(filterType, maxAniso, wrap, gain, gamma);
+	} else {
+		// Create one-valued _MIPMap_
+		RGBColor *oneVal = new RGBColor[1];
+		oneVal[0] = 1.;
+
+		ret = new MIPMapFastImpl<RGBColor,RGBColor>(filterType, 1, 1, oneVal);
+
+		delete[] oneVal;
+	}
+	textures[texInfo] = ret;
+	
+	return ret;
 }
 
 }//namespace lux
