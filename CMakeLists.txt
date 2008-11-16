@@ -400,7 +400,7 @@ SET(lux_lib_src
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp
         materials/glass.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp
-        materials/shinymetal.cpp materials/substrate.cpp
+        materials/shinymetal.cpp
         materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
         materials/mixmaterial.cpp materials/null.cpp
         textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
