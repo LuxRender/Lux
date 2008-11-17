@@ -48,12 +48,17 @@ public:
 	// EqualEnergyTexture Public Methods
 	EqualEnergySpectrumTexture(const float &t) {
 		e = t;
+		weight = 1.f;
 	}
 	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return SWCSpectrum(e);
+		return SWCSpectrum(e * weight);
+	}
+	void SetPower(float power, float area) {
+		weight = power / (area * M_PI * 1.f);
 	}
 private:
 	float e;
+	float weight;
 };
 
 class EqualEnergyTexture

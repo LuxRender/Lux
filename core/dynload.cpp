@@ -112,14 +112,14 @@ Light *MakeLight(const string &name,
 }
 
 AreaLight *MakeAreaLight(const string &name,
-	const Transform &light2world, const ParamSet &paramSet,
+	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 	const boost::shared_ptr<Primitive> &prim)
 {
 	if (DynamicLoader::registeredAreaLights().find(name) !=
 		DynamicLoader::registeredAreaLights().end()) {
 		AreaLight *ret =
 			DynamicLoader::registeredAreaLights()[name](light2world,
-				paramSet, prim);
+				paramSet, tp, prim);
 		paramSet.ReportUnused();
 		return ret;
 	}

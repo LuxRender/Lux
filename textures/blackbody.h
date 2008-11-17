@@ -52,6 +52,10 @@ public:
 	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, BBSPD);
 	}
+	void SetPower(float power, float area) {
+		BBSPD->Scale(power / (area * M_PI * BBSPD->y()));
+	}
+
 private:
 	BlackbodySPD* BBSPD;
 };

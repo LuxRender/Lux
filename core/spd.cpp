@@ -89,3 +89,20 @@ void SPD::Whitepoint(float temp) {
 
 	bbvals.clear();
 }
+
+#include "data/xyzbasis.h"
+
+float SPD::y() {
+	float y = 0.f;
+
+	for(int i=0; i<nSamples; i++) {
+		float waveln = (lambdaMin + (delta*i));
+		// Interpolate Y Conversion weights
+		const float w0 = waveln - CIEstart;
+		int i0 = Floor2Int(w0);
+		const float b0 = w0 - i0;
+		y += samples[i] * Lerp(b0, CIE_Y[i0], CIE_Y[i0 + 1]);
+	}
+
+	return y/nSamples;
+}

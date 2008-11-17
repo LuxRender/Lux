@@ -567,7 +567,7 @@ Shape *LoopSubdiv::CreateShape(
 
 		if (displacementMap.get() == NULL) {
             std::stringstream ss;
-            ss << "Unknow float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
+            ss << "Unknown float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
             luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
 	}

@@ -46,7 +46,7 @@ boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &na
 Light *MakeLight(const string &name, const Transform &light2world,
 	const ParamSet &paramSet);
 AreaLight *MakeAreaLight(const string &name,
-	const Transform &light2world, const ParamSet &paramSet,
+	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 	const boost::shared_ptr<Primitive> &prim);
 VolumeRegion *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
@@ -124,7 +124,7 @@ public:
 		virtual ~RegisterLight<T>() {}
 	};
 
-	typedef AreaLight *(*CreateAreaLight)(const Transform&, const ParamSet&,
+	typedef AreaLight *(*CreateAreaLight)(const Transform&, const ParamSet&, const TextureParams&,
 		const boost::shared_ptr<Primitive>&);
 	static map<string, CreateAreaLight> &registeredAreaLights();
 	template <class T> class RegisterAreaLight : public RegisterLoader<CreateAreaLight> {

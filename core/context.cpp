@@ -543,12 +543,16 @@ void Context::shape(const string &name, const ParamSet &params) {
 	if (!shape)
 		return;
 	params.ReportUnused();
+
 	// Initialize area light for shape
 	AreaLight *area= NULL;
 	if (graphicsState->areaLight != "") {
+		TextureParams amp(params, graphicsState->areaLightParams,
+			graphicsState->floatTextures, graphicsState->colorTextures);
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
-				graphicsState->areaLightParams, shape);
+				graphicsState->areaLightParams, amp, shape);
 	}
+
 	// Initialize material for shape
 	TextureParams mp(params, graphicsState->materialParams,
 			graphicsState->floatTextures, graphicsState->colorTextures);

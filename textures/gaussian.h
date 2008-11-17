@@ -52,6 +52,9 @@ public:
 	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, GSPD);
 	}
+	void SetPower(float power, float area) {
+		GSPD->Scale(power / (area * M_PI * GSPD->y()));
+	}
 private:
 	GaussianSPD* GSPD;
 };

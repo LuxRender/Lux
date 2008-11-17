@@ -52,6 +52,9 @@ public:
 	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, SPD);
 	}
+	void SetPower(float power, float area) {
+		SPD->Scale(power / (area * M_PI * SPD->y()));
+	}
 private:
 	IrregularSPD* SPD;
 };

@@ -26,6 +26,8 @@
 #include "lux.h"
 #include "geometry.h"
 #include "spectrum.h"
+#include "texture.h"
+#include "primitive.h"
 #include "error.h"
 // Light Declarations
 
@@ -112,15 +114,15 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		const RGBColor &power, float g, int ns, const boost::shared_ptr<Primitive> &prim);
+		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e, int ns, const boost::shared_ptr<Primitive> &prim);
 	~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack, const Point &p, const Normal &n,
 			const Vector &w) const {
-		return Dot(n, w) > 0 ? SWCSpectrum(tspack, LSPD) : 0.;
+		return Dot(n, w) > 0 ? Le->Evaluate(tspack, dummydg) * gain : 0.;
 	}
 	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return SWCSpectrum(tspack, LSPD) * area * M_PI;
+		return Le->Evaluate(tspack, dummydg) * gain * area * M_PI;
 	}
 	bool IsDeltaLight() const { return false; }
 	float Pdf(const Point &, const Vector &) const;
@@ -134,13 +136,14 @@ public:
 			float u3, float u4, Ray *ray, float *pdf) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
-	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
+	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 		const boost::shared_ptr<Primitive> &prim);
 protected:
 	// AreaLight Protected Data
-	SPD *LSPD;
+	boost::shared_ptr<Texture<SWCSpectrum> > Le;
+	DifferentialGeometry dummydg;
 	boost::shared_ptr<Primitive> prim;
-	float area;
+	float gain, power, efficacy, area;
 };
 
 }//namespace lux

@@ -136,6 +136,8 @@ public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const = 0;
+	virtual void SetPower(float power, float area) { }
+	virtual void SetIlluminant() { }
 	virtual ~Texture() { }
 };
 

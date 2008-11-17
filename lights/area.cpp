@@ -24,6 +24,7 @@
 #include "light.h"
 #include "mc.h"
 #include "primitive.h"
+#include "context.h"
 #include "paramset.h"
 #include "rgbillum.h"
 #include "blackbodyspd.h"
@@ -34,13 +35,15 @@
 using namespace lux;
 
 // AreaLight Method Definitions
-AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - add portal implementation
-		const RGBColor &le, float g, int ns,
+AreaLight::AreaLight(const Transform &light2world,
+		boost::shared_ptr<Texture<SWCSpectrum> > le,
+		float g, float pow, float e, int ns,
 		const boost::shared_ptr<Primitive> &p)
 	: Light(light2world, ns) {
-	// Create SPD
-	LSPD = new RGBIllumSPD(le);
-	LSPD->Scale(g);
+	Le = le;
+	gain = g;
+	power = pow;
+	efficacy = e;
 
 	if (p->CanIntersect() && p->CanSample())
 		prim = p;
@@ -55,11 +58,13 @@ AreaLight::AreaLight(const Transform &light2world,								// TODO - radiance - a
 		}
 	}
 	area = prim->Area();
+	Le->SetIlluminant(); // Note - radiance - must set illuminant before SetPower()
+	Le->SetPower(power*efficacy, area);
 }
 AreaLight::~AreaLight()
 {
-	delete LSPD;
 }
+
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		const Normal &n, float u1, float u2, float u3,
 		Vector *wi, float *pdf,
@@ -146,12 +151,16 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 	return L(tspack, dg.p, dg.nn, -ray.d) * M_PI;
 }
 
-AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet,
+AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 		const boost::shared_ptr<Primitive> &prim) {
-	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
+	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+
 	float g = paramSet.FindOneFloat("gain", 1.f);
+	float p = paramSet.FindOneFloat("power", 100.f);		// Power/Lm in Watts
+	float e = paramSet.FindOneFloat("efficacy", 17.f);		// Efficacy Lm per Watt
+
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new AreaLight(light2world, L, g, nSamples, prim);
+	return new AreaLight(light2world, L, g, p, e, nSamples, prim);
 }
 
 static DynamicLoader::RegisterAreaLight<AreaLight> r("area");

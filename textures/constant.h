@@ -24,6 +24,7 @@
 #include "lux.h"
 #include "texture.h"
 #include "rgbrefl.h"
+#include "rgbillum.h"
 #include "paramset.h"
 
 namespace lux
@@ -47,13 +48,22 @@ class ConstantRGBColorTexture : public Texture<T> {
 public:
 	// ConstantTexture Public Methods
 	ConstantRGBColorTexture(const RGBColor &s) {
-		RGBSPD = new RGBReflSPD(s);
+		color = s;
+		RGBSPD = new RGBReflSPD(color);
 	}
 	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, RGBSPD);
 	}
+	void SetPower(float power, float area) {
+		RGBSPD->Scale(power / (area * M_PI * RGBSPD->y()));
+	}
+	void SetIlluminant() {
+		delete RGBSPD;
+		RGBSPD = new RGBIllumSPD(color);
+	}
 private:
-	RGBReflSPD* RGBSPD;
+	SPD* RGBSPD;
+	RGBColor color;
 };
 
 class Constant

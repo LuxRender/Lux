@@ -63,6 +63,7 @@ public:
       }
     }
 
+	float y();
 	void AllocateSamples(int n);
 	void FreeSamples();
 	void Normalize();
