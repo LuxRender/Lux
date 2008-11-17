@@ -30,6 +30,8 @@
 #include <map>
 using std::map;
 
+// TODO - radiance - add methods for Power and Illuminant propagation
+
 namespace lux
 {
 

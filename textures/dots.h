@@ -61,6 +61,16 @@ public:
 		}
 		return outsideDot->Evaluate(tspack, dg);
 	}
+	void SetPower(float power, float area) {
+		// Update sub-textures
+		outsideDot->SetPower(power, area);
+		insideDot->SetPower(power, area);
+	}
+	void SetIlluminant() {
+		// Update sub-textures
+		outsideDot->SetIlluminant();
+		insideDot->SetIlluminant();
+	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 	

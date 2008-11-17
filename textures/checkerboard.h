@@ -133,6 +133,16 @@ public:
 			return tex1->Evaluate(tspack, dg);
 		return tex2->Evaluate(tspack, dg);
 	}
+	void SetPower(float power, float area) {
+		// Update sub-textures
+		tex1->SetPower(power, area);
+		tex2->SetPower(power, area);
+	}
+	void SetIlluminant() {
+		// Update sub-textures
+		tex1->SetIlluminant();
+		tex2->SetIlluminant();
+	}
 private:
 	// Checkerboard2D Private Data
 	boost::shared_ptr<Texture<T> > tex1, tex2;
@@ -178,6 +188,16 @@ public:
 				value += wt * tex2->Evaluate(tspack, dgs);
 		}
 		return value / filterSum;
+	}
+	void SetPower(float power, float area) {
+		// Update sub-textures
+		tex1->SetPower(power, area);
+		tex2->SetPower(power, area);
+	}
+	void SetIlluminant() {
+		// Update sub-textures
+		tex1->SetIlluminant();
+		tex2->SetIlluminant();
 	}
 private:
 	// Checkerboard3D Private Data

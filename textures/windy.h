@@ -25,6 +25,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+// TODO - radiance - add methods for Power and Illuminant propagation
+
 namespace lux
 {
 

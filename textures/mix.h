@@ -45,7 +45,16 @@ public:
 		float amt = amount->Evaluate(tspack, dg);
 		return (1.f - amt) * t1 + amt * t2;
 	}
-	
+	void SetPower(float power, float area) {
+		// Update sub-textures
+		tex1->SetPower(power, area);
+		tex2->SetPower(power, area);
+	}
+	void SetIlluminant() {
+		// Update sub-textures
+		tex1->SetIlluminant();
+		tex2->SetIlluminant();
+	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 private:
