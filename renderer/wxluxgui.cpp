@@ -377,6 +377,9 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_statusBar->SetStatusText(wxT(""), 0);
 			}
 			break;
+		case ID_CLEAR_LOG: // CF
+			m_logTextCtrl->Clear();
+			break;
 		case ID_OPTIONS: // CF
 			if ( m_LuxOptions->IsShown() )
 			{
@@ -839,7 +842,7 @@ void LuxGui::SetRenderThreads(int num) {
 		m_numThreads = num;
 	}
 
-	m_ThreadText->SetLabel( wxString::Format( _("Threads: %d"), m_numThreads ) );
+	m_ThreadText->SetLabel( wxString::Format( _("Threads: %02d  "), m_numThreads ) );
 }
 
 void LuxGui::UpdateStatistics() {

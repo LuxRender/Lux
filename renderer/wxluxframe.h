@@ -46,29 +46,30 @@ namespace lux
 	#define ID_PAN_MODE 1006
 	#define ID_ZOOM_MODE 1007
 	#define ID_RENDER_COPY 1008
-	#define ID_FULL_SCREEN 1009
-	#define ID_RESUMETOOL 1010
-	#define ID_PAUSETOOL 1011
-	#define ID_STOPTOOL 1012
-	#define ID_NUM_THREADS 1013
-	#define ID_ADD_THREAD 1014
-	#define ID_REMOVE_THREAD 1015
-	#define ID_PANTOOL 1016
-	#define ID_ZOOMTOOL 1017
-	#define ID_REFINETOOL 1018
-	#define ID_TM_CHOICE 1019
-	#define ID_RH_PRESCALE 1020
-	#define ID_RH_PRESCALE_TEXT 1021
-	#define ID_RH_POSTSCALE 1022
-	#define ID_RH_POSTSCALE_TEXT 1023
-	#define ID_RH_BURN 1024
-	#define ID_RH_BURN_TEXT 1025
-	#define ID_TM_RESET 1026
-	#define ID_RENDER_REFRESH 1027
-	#define ID_SYS_DISPLAY_INT 1028
-	#define ID_SYS_WRITE_INT 1029
-	#define ID_WRITE_OPTIONS 1030
-	#define ID_SYS_APPLY 1031
+	#define ID_CLEAR_LOG 1009
+	#define ID_FULL_SCREEN 1010
+	#define ID_RESUMETOOL 1011
+	#define ID_PAUSETOOL 1012
+	#define ID_STOPTOOL 1013
+	#define ID_NUM_THREADS 1014
+	#define ID_ADD_THREAD 1015
+	#define ID_REMOVE_THREAD 1016
+	#define ID_PANTOOL 1017
+	#define ID_ZOOMTOOL 1018
+	#define ID_REFINETOOL 1019
+	#define ID_TM_CHOICE 1020
+	#define ID_RH_PRESCALE 1021
+	#define ID_RH_PRESCALE_TEXT 1022
+	#define ID_RH_POSTSCALE 1023
+	#define ID_RH_POSTSCALE_TEXT 1024
+	#define ID_RH_BURN 1025
+	#define ID_RH_BURN_TEXT 1026
+	#define ID_TM_RESET 1027
+	#define ID_RENDER_REFRESH 1028
+	#define ID_SYS_DISPLAY_INT 1029
+	#define ID_SYS_WRITE_INT 1030
+	#define ID_WRITE_OPTIONS 1031
+	#define ID_SYS_APPLY 1032
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
