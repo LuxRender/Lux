@@ -32,21 +32,6 @@ using namespace lux;
 
 #define SAMPLE_FLOATS 7
 
-// quasi random number generator
-static float qrNumber(const TsPack *tspack, u_int generation, u_int scramble, u_int order)
-{
-	switch (order) {
-	case 0:
-//		return VanDerCorput(generation, scramble);
-		return Halton(generation, scramble);
-	case 1:
-//		return Sobol2(generation, scramble);
-		return Halton2(generation, scramble);
-	default:
-		return tspack->rng->floatValue();
-	}
-}
-
 // mutate a value in the range [0-1]
 static float mutate(const float x, const float randomValue)
 {
@@ -78,7 +63,7 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		int maxRej, float largeProb, float microProb, float rng, int sw,
-		bool useV, bool useQR) :
+		bool useV) :
  Sampler(xStart, xEnd, yStart, yEnd, 1), large(true), LY(0.f), V(0.f),
  totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
  numMicro(-1), posMicro(-1), pLarge(largeProb), pMicro(microProb), range(rng),
@@ -89,10 +74,6 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	strataSqr = sw * sw;
 	strataSamples = (float *)AllocAligned(2 * strataSqr * sizeof(float));
 	currentStrata = strataSqr;
-	if (useQR)
-		orderOffset = 0;
-	else
-		orderOffset = 10;
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -128,9 +109,6 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 	}
 	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
-	sampler->scramble = (u_int *)AllocAligned(sampler->totalSamples * sizeof(u_int));
-	for (int i = 0; i < sampler->totalSamples; ++i)
-		sampler->scramble[i] = sampler->tspack->rng->uintValue();
 
 	// Fetch first contribution buffer from pool
 	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);
@@ -140,19 +118,11 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
-	++generation;
 	const float mutationSelector = tspack->rng->floatValue();
 	large = (mutationSelector < pLarge) || initCount < initSamples;
 	if (sampleImage == NULL) {
 		initMetropolis(this, sample);
-		generation = 0;
 		large = true;
-	}
-	if (generation >= 1024) {
-		// Change randomization to avoid artefacts
-		for (int i = 0; i < totalSamples; ++i)
-			scramble[i] = tspack->rng->uintValue();
-		generation = 0;
 	}
 
 	// Dade - we are at a valid checkpoint where we can stop the
@@ -173,13 +143,13 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		currentStrata++;
 
-		sample->lensU = qrNumber(tspack, generation, scramble[2], 0 + orderOffset);
-		sample->lensV = qrNumber(tspack, generation, scramble[3], 1 + orderOffset);
-		sample->time = qrNumber(tspack, generation, scramble[4], 0 + orderOffset);
-		sample->wavelengths = qrNumber(tspack, generation, scramble[5], 0 + orderOffset);
-		sample->singleWavelength = qrNumber(tspack, generation, scramble[6], 0 + orderOffset);
+		sample->lensU = tspack->rng->floatValue();
+		sample->lensV = tspack->rng->floatValue();
+		sample->time = tspack->rng->floatValue();
+		sample->wavelengths = tspack->rng->floatValue();
+		sample->singleWavelength = tspack->rng->floatValue();
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = qrNumber(tspack, generation, scramble[i], (i & 1) + orderOffset);
+			sample->oneD[0][i - SAMPLE_FLOATS] = tspack->rng->floatValue();
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -198,15 +168,15 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			posMicro = min<int>(sample->nxD[numMicro - 1] - 1, Float2Int(tspack->rng->floatValue() * maxPos));
 		} else {
 			posMicro = -1;
-			sample->imageX = mutateScaled(sampleImage[0], qrNumber(tspack, generation, scramble[0], 0 + orderOffset), xPixelStart, xPixelEnd, range);
-			sample->imageY = mutateScaled(sampleImage[1], qrNumber(tspack, generation, scramble[1], 1 + orderOffset), yPixelStart, yPixelEnd, range);
-			sample->lensU = mutate(sampleImage[2], qrNumber(tspack, generation, scramble[2], 0 + orderOffset));
-			sample->lensV = mutate(sampleImage[3], qrNumber(tspack, generation, scramble[3], 1 + orderOffset));
-			sample->time = mutate(sampleImage[4], qrNumber(tspack, generation, scramble[4], 0 + orderOffset));
-			sample->wavelengths = mutate(sampleImage[5], qrNumber(tspack, generation, scramble[5], 0 + orderOffset));
-			sample->singleWavelength = mutateScaled(sampleImage[6], qrNumber(tspack, generation, scramble[6], 0 + orderOffset), 0.f, 1.f, 1.f);//mutate(sampleImage[6], qrNumber(tspack, generation, scramble[6], 0 + orderOffset))
+			sample->imageX = mutateScaled(sampleImage[0], tspack->rng->floatValue(), xPixelStart, xPixelEnd, range);
+			sample->imageY = mutateScaled(sampleImage[1], tspack->rng->floatValue(), yPixelStart, yPixelEnd, range);
+			sample->lensU = mutate(sampleImage[2], tspack->rng->floatValue());
+			sample->lensV = mutate(sampleImage[3], tspack->rng->floatValue());
+			sample->time = mutate(sampleImage[4], tspack->rng->floatValue());
+			sample->wavelengths = mutate(sampleImage[5], tspack->rng->floatValue());
+			sample->singleWavelength = mutateScaled(sampleImage[6], tspack->rng->floatValue(), 0.f, 1.f, 1.f);
 			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], qrNumber(tspack, generation, scramble[i], (i & 1) + orderOffset));
+				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], tspack->rng->floatValue());
 		}
 		++(sample->stamp);
 	}
@@ -218,14 +188,14 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
 	const u_int size = sample->dxD[num];
 	float *data = sample->xD[num] + pos * size;
-	const int scrambleOffset = data - sample->oneD[0];
+//	const int scrambleOffset = data - sample->oneD[0];
 	int stampLimit = sample->stamp;
 	if (numMicro >= 0 && num != numMicro - 1 && pos != posMicro)
 		--stampLimit;
 	if (sample->timexD[num][pos] != stampLimit) {
 		if (sample->timexD[num][pos] == -1) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = qrNumber(tspack, generation - sample->stamp, scramble[scrambleOffset + i], (i & 1) + orderOffset);
+				data[i] = tspack->rng->floatValue();
 			sample->timexD[num][pos] = 0;
 		} else {
 			float *image = sampleImage + offset[num] + pos * size;
@@ -234,7 +204,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 		}
 		for (; sample->timexD[num][pos] < stampLimit; ++(sample->timexD[num][pos])) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = mutate(data[i], qrNumber(tspack, generation - sample->stamp + sample->timexD[num][pos] + 1, scramble[scrambleOffset + i], (i & 1) + orderOffset));
+				data[i] = mutate(data[i], tspack->rng->floatValue());
 		}
 	}
 	return data;
@@ -342,10 +312,9 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
 	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
 	bool useVariance = params.FindOneBool("usevariance", false);
-	bool useQR = params.FindOneBool("useqr", false);	// use quasi random number sequences
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects,
-			largeMutationProb, microMutationProb, range, stratawidth, useVariance, useQR);
+			largeMutationProb, microMutationProb, range, stratawidth, useVariance);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;

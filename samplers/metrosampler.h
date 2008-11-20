@@ -35,7 +35,7 @@ namespace lux
 class MetropolisSampler : public Sampler {
 public:
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-			int maxRej, float largeProb, float microProb, float rng, int sw, bool useV, bool useQR);
+			int maxRej, float largeProb, float microProb, float rng, int sw, bool useV);
 	~MetropolisSampler();
 
 	virtual MetropolisSampler* clone() const;
@@ -54,8 +54,6 @@ public:
 	float pLarge, pMicro, range, weight, alpha;
 	float *sampleImage;
 	int *timeImage, *offset;
-	u_int *scramble;
-	u_int orderOffset, generation;
 	static int initCount, initSamples;
 	static float meanIntensity;
 	vector <Contribution> oldContributions;
