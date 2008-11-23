@@ -237,6 +237,11 @@ public:
 	bool Intersect(const Ray &r, Intersection *in) const;
 	bool IntersectP(const Ray &r) const { return prim->IntersectP(r); }
 
+	void GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const {
+			prim->GetShadingGeometry(obj2world, dg, dgShading);
+	}
+
 	bool CanSample() const { return prim->CanSample(); }
 	float Area() const { return prim->Area(); }
 	Point Sample(float u1, float u2, float u3, Normal *Ns) const  {
