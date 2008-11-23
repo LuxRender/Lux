@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // gaussian.cpp*
-#include "gaussian.h"
+#include "gaussiantexture.h"
 #include "dynload.h"
 
 using namespace lux;

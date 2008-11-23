@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // frequency.cpp*
-#include "frequency.h"
+#include "frequencytexture.h"
 #include "dynload.h"
 
 using namespace lux;
