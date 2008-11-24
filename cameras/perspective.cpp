@@ -35,6 +35,9 @@
 
 using namespace lux;
 
+#define honeyRad 0.866025403
+#define radIndex 57.2957795
+
 class PerspectiveBxDF : public BxDF
 {
 public:
@@ -109,11 +112,12 @@ PerspectiveCamera::
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose,
 		float lensr, float focald, bool autofocus,
-		float fov1, Film *f)
+		float fov1, int dist, int sh, int pow, Film *f)
 	: ProjectiveCamera(world2cam,
 	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose,
-		lensr, focald, f), autoFocus(autofocus) {
+		lensr, focald, f), autoFocus(autofocus),
+		distribution(dist), shape(sh), power(pow) {
 	pos = CameraToWorld(Point(0,0,0));
 	normal = CameraToWorld(Normal(0,0,1));
 	fov = Radians(fov1);
@@ -218,7 +222,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 		Point lenP;
 		Point lenPCamera;
 		// Sample point on lens
-		ConcentricSampleDisk(sample.lensU, sample.lensV, &(lenPCamera.x), &(lenPCamera.y));
+		SampleLens(sample.lensU, sample.lensV, &(lenPCamera.x), &(lenPCamera.y));
 		lenPCamera.x *= LensRadius;
 		lenPCamera.y *= LensRadius;
 		lenPCamera.z = 0;
@@ -244,7 +248,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
 	Point psC(0.f);
-	ConcentricSampleDisk(u1, u2, &psC.x, &psC.y);
+	SampleLens(u1, u2, &psC.x, &psC.y);
 	psC.x *= LensRadius;
 	psC.y *= LensRadius;
 	Point ps = CameraToWorld(psC);
@@ -261,7 +265,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
 {
 	Point psC(0.f);
-	ConcentricSampleDisk(u1, u2, &psC.x, &psC.y);
+	SampleLens(u1, u2, &psC.x, &psC.y);
 	psC.x *= LensRadius;
 	psC.y *= LensRadius;
 	Point ps = CameraToWorld(psC);
@@ -297,6 +301,105 @@ void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, floa
 	}
 }
 
+void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) const
+{
+	if( shape < 3 ) {
+		ConcentricSampleDisk(u1, u2, dx, dy);
+		return;
+	}
+
+	int subDiv = 360 / (shape*2);
+
+	float r = 0;
+	float theta = 0;
+	int temp = rand()%(shape*2);
+
+	if( temp%2 == 0 && shape == 3)
+	{
+		theta = 2.0f * M_PI * (float(temp)/(shape*2) + (sqrt(u2))*(1.f/(shape*2.f)) );
+	}else{
+		theta = 2.0f * M_PI * (float(temp)/(shape*2) + (u2)*(1.f/(shape*2.f)) );
+	}
+
+	int sector = theta/(subDiv/radIndex);
+	float rho = theta - sector*(subDiv/radIndex);
+	float honeyRadius = 1.f * cosf(subDiv/radIndex);
+
+	if( sector%2 == 0)//handles left half of sector
+	{
+		switch(distribution)
+		{
+		case 0:
+			{
+				r = sqrt(u1) * honeyRadius/cosf( rho );
+				break;
+			}
+		case 1:
+			{
+				r = sqrt(ExponentialSampleDisk(u1, power)) * honeyRadius/cosf( rho );
+				break;
+			}
+		case 2:
+			{
+				r = sqrt(InverseExponentialSampleDisk(u1, power)) * honeyRadius/cosf( rho );
+				break;
+			}
+		case 3:
+			{
+				r = sqrt(GaussianSampleDisk(u1)) * honeyRadius/cosf( rho );
+				break;
+			}
+		case 4:
+			{
+				r = sqrt(InverseGaussianSampleDisk(u1)) * honeyRadius/cosf( rho );
+				break;
+			}
+		case 5:
+			{
+				r = sqrt(TriangularSampleDisk(u1)) * honeyRadius/cosf( rho );
+				break;
+			}
+		}
+	}else
+	{//handles right half of sector
+		switch(distribution)
+		{
+		case 0:
+			{
+				r = sqrt(u1) * honeyRadius/cosf( (subDiv/radIndex)-rho );
+				break;
+			}
+		case 1:
+			{
+				r = sqrt(ExponentialSampleDisk(u1, power)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
+				break;
+			}
+		case 2:
+			{
+				r = sqrt(InverseExponentialSampleDisk(u1, power)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
+				break;
+			}
+		case 3:
+			{
+				r = sqrt(GaussianSampleDisk(u1)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
+				break;
+			}
+		case 4:
+			{
+				r = sqrt(InverseGaussianSampleDisk(u1)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
+				break;
+			}
+		case 5:
+			{
+				r = sqrt(TriangularSampleDisk(u1)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
+				break;
+			}
+		}
+	}
+	*dx = r * cosf(theta);
+	*dy = r * sinf(theta);
+}
+
 Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
 	Film *film)
 {
@@ -328,9 +431,27 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamS
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
 	float fov = params.FindOneFloat("fov", 90.);
+
+	int distribution = 0;
+	string dist = params.FindOneString("distribution", "uniform");
+	if (dist == "uniform") distribution = 0;
+	else if (dist == "exponential") distribution = 1;
+	else if (dist == "inverse exponential") distribution = 2;
+	else if (dist == "gaussian") distribution = 3;
+	else if (dist == "inverse gaussian") distribution = 4;
+	else {
+		std::stringstream ss;
+		ss<<"Distribution  '"<<dist<<"' for perspective camera DOF sampling unknown. Using \"uniform\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		distribution = 0;
+	}
+
+	int shape = params.FindOneInt("blades", 0);
+	int power = params.FindOneInt("power", 3);
+
 	return new PerspectiveCamera(world2cam, screen, hither, yon,
 		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
-		fov, film);
+		fov, distribution, shape, power, film);
 }
 
 static DynamicLoader::RegisterCamera<PerspectiveCamera> r("perspective");
