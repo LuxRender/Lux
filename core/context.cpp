@@ -480,7 +480,24 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	//Primitive* prim(new GeometricPrimitive(shape, mtl, area));
 }
 
-void Context::makemixmaterial(const ParamSet shapeparams, const ParamSet materialparams, boost::shared_ptr<Material> mtl) {
+boost::shared_ptr<Material> Context::makematerial(const ParamSet& shapeparams) {
+	// Create base material
+	TextureParams mp(shapeparams, graphicsState->materialParams,
+		graphicsState->floatTextures, graphicsState->colorTextures);
+	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
+	if (!mtl)
+		mtl = MakeMaterial("matte", curTransform, mp);
+	if (!mtl)
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
+
+	// Set child materials if mix material
+	if(graphicsState->material == "mix") {
+		makemixmaterial(shapeparams, graphicsState->materialParams, mtl);
+	}
+	return mtl;
+}
+
+void Context::makemixmaterial(const ParamSet& shapeparams, const ParamSet& materialparams, boost::shared_ptr<Material> mtl) {
 	// create 1st material
 	string namedmaterial1 = materialparams.FindOneString("namedmaterial1", "-");
 	bool found = false;
@@ -554,20 +571,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 	}
 
 	// Initialize material for shape
-	TextureParams mp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->colorTextures);
-	boost::shared_ptr<Texture<float> > bump;
-	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
-	if (!mtl)
-		mtl = MakeMaterial("matte", curTransform, mp);
-	if (!mtl)
-		luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
-
-	// Set child materials if mix material
-
-	if(graphicsState->material == "mix") {
-		makemixmaterial(params, graphicsState->materialParams, mtl);
-	}
+	boost::shared_ptr<Material> mtl = makematerial(params);
 
 	// Create primitive and add to scene or current instance
 	shape->SetMaterial(mtl); // Lotus - Set the material
@@ -659,7 +663,12 @@ void Context::objectInstance(const string &name) {
 		in.erase(in.begin(), in.end());
 		in.push_back(accel);
 	}
-	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform));
+
+	// Initialize material for instance
+	ParamSet params;
+	boost::shared_ptr<Material> material = makematerial(params);
+
+	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform, material));
 	renderOptions->primitives.push_back(o);
 }
 

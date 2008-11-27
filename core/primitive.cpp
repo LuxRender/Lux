@@ -216,7 +216,7 @@ bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const {
 
 // InstancePrimitive Method Definitions
 bool InstancePrimitive::Intersect(const Ray &r,
-                               Intersection *isect) const {
+								  Intersection *isect) const {
 	Ray ray = WorldToInstance(r);
 	if (!instance->Intersect(ray, isect))
 		return false;
@@ -229,6 +229,8 @@ bool InstancePrimitive::Intersect(const Ray &r,
 	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
 	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
+	if(material)
+		isect->material = material.get();
 	return true;
 }
 bool InstancePrimitive::IntersectP(const Ray &r) const {

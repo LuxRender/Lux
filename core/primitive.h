@@ -265,16 +265,26 @@ private:
  * A decorator for instances of primitives.
  * This is achieved by changing the Object-to-World transformation
  * in the result and other transforming all intersection info that
- * was calculated.
+ * was calculated. Optionally the material can be changed too.
  */
 class InstancePrimitive : public Primitive {
 public:
 	// InstancePrimitive Public Methods
+	/**
+	 * Creates a new instance from the given primitive.
+	 *
+	 * @param i   The primitive to instance.
+	 * @param i2w The instance to world transformation.
+	 * @param mat The material this instance or NULL to use the 
+	 *            instanced primitive's material.
+	 */
 	InstancePrimitive(boost::shared_ptr<Primitive> i,
-	                  const Transform &i2w) {
+	                  const Transform &i2w,
+					  boost::shared_ptr<Material> mat) {
 		instance = i;
 		InstanceToWorld = i2w;
 		WorldToInstance = i2w.GetInverse();
+		material = mat;
 	}
 
 	BBox WorldBound() const  {
@@ -302,6 +312,7 @@ private:
 	// InstancePrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
 	Transform InstanceToWorld, WorldToInstance;
+	boost::shared_ptr<Material> material;
 };
 
 class Aggregate : public Primitive {
