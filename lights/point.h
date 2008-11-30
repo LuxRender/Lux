@@ -42,6 +42,12 @@ public:
 	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
+	bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
+	bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+		VisibilityTester *visibility, SWCSpectrum *Le) const;
+	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

@@ -24,6 +24,8 @@
 #include "point.h"
 #include "mc.h"
 #include "spd.h"
+#include "reflection/bxdf.h"
+#include "reflection/bxdf/lambertian.h"
 #include "rgbillum.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -61,6 +63,40 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 	ray->d = UniformSampleSphere(u1, u2);
 	*pdf = UniformSpherePdf();
 	return SWCSpectrum(tspack, LSPD);
+}
+bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+{
+	Normal ns = Normal(UniformSampleSphere(u1, u2));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
+	*pdf = .25f * INV_PI;
+	*Le = SWCSpectrum(tspack, LSPD);
+	return true;
+}
+bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+	VisibilityTester *visibility, SWCSpectrum *Le) const
+{
+	const Vector w(p - lightPos);
+	*pdfDirect = 1.f / w.LengthSquared();
+	Normal ns = Normal(w * *pdfDirect);
+	*pdf = .25f * INV_PI;
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
+	visibility->SetSegment(p, lightPos);
+	*Le = SWCSpectrum(tspack, LSPD);
+	return true;
+}
+SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	return SWCSpectrum(0.f);
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
