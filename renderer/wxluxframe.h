@@ -22,13 +22,15 @@
 #include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/textctrl.h>
+#include <wx/button.h>
+#include <wx/bmpbuttn.h>
+#include <wx/spinctrl.h>
+#include <wx/treectrl.h>
 #include <wx/aui/auibook.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
 #include <wx/choice.h>
 #include <wx/slider.h>
-#include <wx/button.h>
-#include <wx/spinctrl.h>
 #include <wx/checklst.h>
 #include <wx/notebook.h>
 #include <wx/dialog.h>
@@ -57,19 +59,24 @@ namespace lux
 	#define ID_PANTOOL 1017
 	#define ID_ZOOMTOOL 1018
 	#define ID_REFINETOOL 1019
-	#define ID_TM_CHOICE 1020
-	#define ID_RH_PRESCALE 1021
-	#define ID_RH_PRESCALE_TEXT 1022
-	#define ID_RH_POSTSCALE 1023
-	#define ID_RH_POSTSCALE_TEXT 1024
-	#define ID_RH_BURN 1025
-	#define ID_RH_BURN_TEXT 1026
-	#define ID_TM_RESET 1027
-	#define ID_RENDER_REFRESH 1028
-	#define ID_SYS_DISPLAY_INT 1029
-	#define ID_SYS_WRITE_INT 1030
-	#define ID_WRITE_OPTIONS 1031
-	#define ID_SYS_APPLY 1032
+	#define ID_NETWORK_TREE_REFRESH 1020
+	#define ID_ADD_SERVER 1021
+	#define ID_REMOVE_SERVER 1022
+	#define ID_SERVER_UPDATE_INT 1023
+	#define ID_NETWORK_TREE 1024
+	#define ID_TM_CHOICE 1025
+	#define ID_RH_PRESCALE 1026
+	#define ID_RH_PRESCALE_TEXT 1027
+	#define ID_RH_POSTSCALE 1028
+	#define ID_RH_POSTSCALE_TEXT 1029
+	#define ID_RH_BURN 1030
+	#define ID_RH_BURN_TEXT 1031
+	#define ID_TM_RESET 1032
+	#define ID_RENDER_REFRESH 1033
+	#define ID_SYS_DISPLAY_INT 1034
+	#define ID_SYS_WRITE_INT 1035
+	#define ID_WRITE_OPTIONS 1036
+	#define ID_SYS_APPLY 1037
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -91,12 +98,24 @@ namespace lux
 			wxToolBar* m_viewerToolBar;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
+			wxPanel* m_networkPage;
+			wxButton* m_NetworkTreeRefreshButton;
+			
+			wxTextCtrl* m_serverTextCtrl;
+			wxBitmapButton* m_AddServerButton;
+			wxBitmapButton* m_RemoveServerButton;
+			
+			wxStaticText* m_staticText6;
+			wxSpinCtrl* m_ServerUpdateSpin;
+			wxTreeCtrl* m_networkTreeCtrl;
 			wxStatusBar* m_statusBar;
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
+			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
 			
 		
 		public:

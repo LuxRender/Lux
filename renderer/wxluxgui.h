@@ -131,6 +131,7 @@ protected:
 	void OnCommand(wxCommandEvent &event);
 	void OnIconize(wxIconizeEvent& event);
 	void OnSelection(wxViewerEvent& event);
+	void OnSpin( wxSpinEvent& event );
 	
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
@@ -158,6 +159,27 @@ protected:
 	wxBitmap m_splashbmp;
 
 	// CF
+	class luxTreeData : public wxTreeItemData
+	{
+		public:
+
+		wxString m_SlaveName;
+		wxString m_SlaveFile;
+		wxString m_SlavePort;
+		wxString m_SlaveID;
+
+		unsigned int 	m_secsSinceLastContact;
+		double 			m_numberOfSamplesReceived;
+	};
+
+	wxString m_CurrentFile;
+
+	void UpdateNetworkTree( void );
+
+	void AddServer( void );
+	void RemoveServer( void );
+
+	void OnTreeSelChanged( wxTreeEvent& event );
 
 	class LuxOptions : public m_OptionsDialog {
 		public:

@@ -112,6 +112,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	// CF
 	m_LuxOptions = new LuxOptions( this );
+
+	m_ServerUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
 }
 
 void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
@@ -196,6 +198,8 @@ void LuxGui::LoadImages() {
 	wxIcon appIcon;
 	appIcon.CopyFromBitmap(wxMEMORY_BITMAP(luxicon_png));
 	SetIcon(appIcon);
+#else
+	SetIcon( wxIcon("WXDEFAULT_FRAME", wxBITMAP_TYPE_ICO_RESOURCE ));
 #endif
 
 	// wxMac has problems changing an existing tool's icon, so we remove and add then again...
@@ -238,6 +242,13 @@ void LuxGui::LoadImages() {
 	m_renderToolBar->InsertTool(8, copytool);
 	m_renderToolBar->Realize();
 
+	///////////////////////////////////////////////////////////////////////////////
+	// CF : network toolbar...
+
+	m_AddServerButton->SetBitmapLabel(wxMEMORY_BITMAP(plus_png));
+	m_RemoveServerButton->SetBitmapLabel(wxMEMORY_BITMAP(minus_png));
+
+	///////////////////////////////////////////////////////////////////////////////
 
 	// Pan toolbar tool
 	wxToolBarToolBase *pantool = m_viewerToolBar->RemoveTool(ID_PANTOOL);
@@ -257,10 +268,6 @@ void LuxGui::LoadImages() {
 	m_viewerToolBar->InsertTool(2, refinetool);
 	m_viewerToolBar->Realize();
 
-	// NOTE - Ratow - Temporarily disabling icons on menu items on the Windows platform.
-#ifndef __WXMSW__
-	// wxGTK has problems changing an existing menu item's icon, so we remove and add then again...
-	// Resume menu item
 	wxMenuItem *renderitem = m_render->Remove(ID_RESUMEITEM);
 	renderitem->SetBitmap(wxMEMORY_BITMAP(resume_png));
 	m_render->Insert(0,renderitem);
@@ -272,11 +279,10 @@ void LuxGui::LoadImages() {
 	wxMenuItem *stopitem = m_render->Remove(ID_STOPITEM);
 	stopitem->SetBitmap(wxMEMORY_BITMAP(stop_png));
 	m_render->Insert(2,stopitem);
-#endif
 
 	m_auinotebook->SetPageBitmap(0, wxMEMORY_BITMAP(render_png));
 	m_auinotebook->SetPageBitmap(1, wxMEMORY_BITMAP(info_png));
-	m_auinotebook->SetPageBitmap(2, wxMEMORY_BITMAP(output_png));
+	m_auinotebook->SetPageBitmap(2, wxMEMORY_BITMAP(network_png));
 
 	m_splashbmp = wxMEMORY_BITMAP(splash_png);
 }
@@ -288,6 +294,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			if(m_guiRenderState != RENDERING) {
 				// CF
 				m_LuxOptions->UpdateSysOptions();
+				UpdateNetworkTree();
 
 				// Start display update timer
 				m_renderOutput->Reload();
@@ -395,6 +402,15 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			break;
 		case ID_REMOVE_THREAD: // CF
 			if ( m_numThreads > 1 ) SetRenderThreads( m_numThreads - 1 );
+			break;
+		case ID_NETWORK_TREE_REFRESH: // CF
+			UpdateNetworkTree();
+			break;
+		case ID_ADD_SERVER: // CF
+			AddServer();
+			break;
+		case ID_REMOVE_SERVER: // CF
+			RemoveServer();
 			break;
 		case wxID_ABOUT:
 			new wxSplashScreen(m_splashbmp, wxSPLASH_CENTRE_ON_PARENT, 0, this, -1);
@@ -617,6 +633,92 @@ void LuxGui::LuxOptions::OnSpin( wxSpinEvent& event ) {
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Network panel...
+
+#define LUX_MAX_SLAVES	256
+
+void LuxGui::UpdateNetworkTree( void )
+{
+	m_ServerUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );	
+
+	m_networkTreeCtrl->DeleteAllItems();
+
+	wxTreeItemId idRootNode = m_networkTreeCtrl->AddRoot( _("Master") );
+
+	RenderingServerInfo *pInfoList = new RenderingServerInfo[LUX_MAX_SLAVES]; // hard coded max number of servers, needs to be fixed.
+
+	int nServers = luxGetRenderingServersStatus( pInfoList, LUX_MAX_SLAVES );
+
+	wxString sTemp;
+	wxTreeItemId idTempNode;
+
+	double sampDiv = luxStatistics("filmXres") * luxStatistics("filmYres");
+
+	for( int n1 = 0; n1 < nServers; n1++ )
+	{
+		luxTreeData *pTempData = new luxTreeData;
+
+		pTempData->m_SlaveFile 	= m_CurrentFile;
+
+		pTempData->m_SlaveName 	= wxString::FromUTF8(pInfoList[n1].name);
+		pTempData->m_SlavePort 	= wxString::FromUTF8(pInfoList[n1].port);
+		pTempData->m_SlaveID 	= wxString::FromUTF8(pInfoList[n1].sid);
+
+		pTempData->m_secsSinceLastContact 		= pInfoList[n1].secsSinceLastContact;
+		pTempData->m_numberOfSamplesReceived 	= pInfoList[n1].numberOfSamplesReceived;
+
+		sTemp = wxString::Format( _("Slave: %s - Port: %s - ID: %s - Samples Per Pixel: %lf"), 
+									pTempData->m_SlaveName.c_str(),
+									pTempData->m_SlavePort.c_str(),
+									pTempData->m_SlaveID.c_str(),
+									( pInfoList[n1].numberOfSamplesReceived / sampDiv ) );
+
+		idTempNode = m_networkTreeCtrl->AppendItem( idRootNode, sTemp, -1, -1, pTempData );
+						m_networkTreeCtrl->AppendItem( idTempNode, m_CurrentFile ); 
+ 	}
+
+	m_networkTreeCtrl->ExpandAll();	
+}
+
+void LuxGui::OnTreeSelChanged( wxTreeEvent& event )
+{
+	wxTreeItemId idTreeNode = event.GetItem();
+
+	luxTreeData *pNodeData = (luxTreeData *)m_networkTreeCtrl->GetItemData( idTreeNode );
+
+	if ( pNodeData != NULL )
+	{
+		m_serverTextCtrl->SetValue( pNodeData->m_SlaveName );
+	}	
+}
+
+void LuxGui::AddServer( void )
+{
+	wxString sServer( m_serverTextCtrl->GetValue() );
+
+	if ( !sServer.empty() )
+	{
+		luxAddServer( sServer.char_str() );
+
+		UpdateNetworkTree();
+	}	
+}
+
+void LuxGui::RemoveServer( void )
+{
+	// TODO: add support for this to luxApi.
+}
+
+
+void LuxGui::OnSpin( wxSpinEvent& event ) 
+{
+	if ( event.GetId() == ID_SERVER_UPDATE_INT ) 
+	{
+		luxSetNetworkServerUpdateInterval( event.GetPosition() );	
+	}
+}
+
 // CF
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -779,6 +881,13 @@ void lux::LuxGui::OnIconize( wxIconizeEvent& event )
 void LuxGui::RenderScenefile(wxString filename) {
 	wxFileName fn(filename);
 	SetTitle(wxT("LuxRender - ")+fn.GetName());
+
+	// CF
+	m_CurrentFile = filename;
+
+	// TODO: remove this once proper control flow is implemented.
+	m_AddServerButton->Enable( false );
+	m_RemoveServerButton->Enable( false );
 
 	// Start main render thread
 	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
