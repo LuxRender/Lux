@@ -119,7 +119,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			v.ePdfDirect *= directWeight;
 		}
 		v.ns = v.bsdf->dgShading.nn;
-		v.coso = AbsDot(v.wo, v.ns);
+		v.coso = AbsDot(v.wo, v.ng);
 		++nVerts;
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == vertices.size())
@@ -133,7 +133,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 				&v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true);
 		if (!sampled)
 			break;
-		v.cosi = AbsDot(v.wi, v.ns);
+		v.cosi = AbsDot(v.wi, v.ng);
+		v.f *= AbsDot(v.wi, v.ns) / v.cosi;
 		v.flux = v.f * (v.cosi / v.pdfR);
 		v.rrR = min<float>(1.f, v.flux.filter(tspack));
 		if (nVerts > 3) {
@@ -188,7 +189,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 			v.ng = isect.dg.nn;
 		}
 		v.ns = v.bsdf->dgShading.nn;
-		v.cosi = AbsDot(v.wi, v.ns);
+		v.cosi = AbsDot(v.wi, v.ng);
 		++nVerts;
 		// Possibly terminate bidirectional path sampling
 		if (nVerts == vertices.size())
@@ -196,8 +197,9 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2], data[3],
 			 &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
-		v.coso = AbsDot(v.wo, v.ns);
-		v.flux = v.f * v.coso / v.pdf;
+		v.coso = AbsDot(v.wo, v.ng);
+		v.f *= AbsDot(v.wi, v.ns) / v.cosi;
+		v.flux = v.f * (v.coso / v.pdf);
 		v.rr = min<float>(1.f, v.flux.filter(tspack));
 		if (nVerts > 3) {
 			if (v.rr < data[0])
@@ -374,14 +376,16 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		if (!visible(scene, eyeV.p, lightV.p))
 			return 0.f;
 		// Prepare eye vertex for connection
-		eyeV.cosi = AbsDot(eyeV.wi, eyeV.ns);
+		eyeV.cosi = AbsDot(eyeV.wi, eyeV.ng);
 		eyeV.d2 = DistanceSquared(eyeV.p, lightV.p);
+		eyeV.f *= AbsDot(eyeV.wi, eyeV.ns) / eyeV.cosi;
 		eyeV.flux = eyeV.f; // No pdf as it is a direct connection
 		if (nEye > 1)
 			eyeV.flux *= eye[nEye - 2].flux;
 		// Prepare light vertex for connection
-		lightV.coso = AbsDot(lightV.wo, lightV.ns);
+		lightV.coso = AbsDot(lightV.wo, lightV.ng);
 		lightV.d2 = eyeV.d2;
+		lightV.f *= AbsDot(lightV.wi, lightV.ng) / lightV.cosi;
 		lightV.flux = lightV.f; // No pdf as it is a direct connection
 		if (nLight > 1)
 			lightV.flux *= light[nLight - 2].flux;
@@ -489,7 +493,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		v.p = v.eBsdf->dgShading.p;
 		v.ns = v.eBsdf->dgShading.nn;
 		v.ng = v.ns;
-		v.coso = AbsDot(v.wo, v.ns);
+		v.coso = AbsDot(v.wo, v.ng);
 		v.ePdf /= scene->lights.size();
 		v.ePdfDirect *= directWeight;
 		// This can be overwritten as it won't be reused
@@ -524,7 +528,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<Bidi
 	vL.ns = vL.bsdf->dgShading.nn;
 	vL.ng = vL.ns;
 	vL.wi = Vector(vL.ns);
-	vL.cosi = AbsDot(vL.wi, vL.ns);
+	vL.cosi = AbsDot(vL.wi, vL.ng);
 	vL.dAWeight /= scene->lights.size();
 	vL.ePdfDirect *= directWeight;
 	BidirVertex e(vE);
