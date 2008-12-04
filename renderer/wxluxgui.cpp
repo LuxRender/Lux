@@ -114,6 +114,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_LuxOptions = new LuxOptions( this );
 
 	m_ServerUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
+
+	m_auinotebook->SetSelection( 0 );
 }
 
 void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
