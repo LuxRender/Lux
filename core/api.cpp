@@ -400,6 +400,9 @@ extern "C" void luxObjectEnd() {
 extern "C" void luxObjectInstance(const char *name) {
 	Context::luxObjectInstance(std::string(name));
 }
+extern "C" void luxMotionInstance(const char *name, float startTime, float endTime, const char *toTransform) {
+	Context::luxMotionInstance(std::string(name), startTime, endTime, std::string(toTransform));
+}
 extern "C" void luxWorldEnd() {
 	Context::luxWorldEnd();
 }

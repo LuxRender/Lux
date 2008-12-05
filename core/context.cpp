@@ -672,6 +672,62 @@ void Context::objectInstance(const string &name) {
 	renderOptions->primitives.push_back(o);
 }
 
+void Context::motionInstance(const string &name, float startTime, float endTime, const string &toTransform) {
+        VERIFY_WORLD("MotionInstance")
+        ;
+        renderFarm->send("luxMotionInstance", name);
+        // Object instance error checking
+        if (renderOptions->currentInstance) {
+                luxError(LUX_NESTING,LUX_ERROR,"MotionInstance can't be called inside instance definition");
+                return;
+        }
+        if (renderOptions->instances.find(name) == renderOptions->instances.end()) {
+                //Error("Unable to find instance named \"%s\"", name.c_str());
+                std::stringstream ss;
+                ss<<"Unable to find instance named '"<<name<<"'";
+                luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+                return;
+        }
+        vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[name];
+        if (in.size() == 0)
+                return;
+        if( in.size() == 1 && !in[0]->CanIntersect() ) {
+                boost::shared_ptr<Primitive> prim = in[0];
+                in.clear();
+                prim->Refine(in, PrimitiveRefinementHints(false), prim);
+        }
+        if (in.size() > 1 || !in[0]->CanIntersect()) {
+                // Refine instance _Primitive_s and create aggregate
+                boost::shared_ptr<Primitive> accel(MakeAccelerator(
+                                renderOptions->AcceleratorName, in,
+                                renderOptions->AcceleratorParams));
+                if (!accel)
+                        accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
+                if (!accel)
+                        luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
+                in.erase(in.begin(), in.end());
+                in.push_back(accel);
+        }
+
+	// Fetch named ToTransform coordinatesystem
+	Transform EndTransform;
+        if (namedCoordinateSystems.find(toTransform) != namedCoordinateSystems.end())
+                EndTransform = namedCoordinateSystems[toTransform];
+	else {
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to find named CoordinateSystem for MotionInstance."); // NOTE - radiance - TODO print name
+	}
+
+
+        // Initialize material for instance
+        ParamSet params;
+        boost::shared_ptr<Material> material = makematerial(params);
+
+        boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform, EndTransform, startTime, endTime));
+        renderOptions->primitives.push_back(o);
+}
+
+
+
 void Context::worldEnd() {
     VERIFY_WORLD("WorldEnd")
             ;

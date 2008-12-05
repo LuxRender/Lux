@@ -153,6 +153,7 @@ namespace lux
   class Primitive;
   class AreaLightPrimitive;
   class InstancePrimitive;
+  class MotionPrimitive;
   class Aggregate;
   class Intersection;
   class RGBColor;
@@ -211,6 +212,7 @@ namespace lux
   class Contribution;
   class ContributionBuffer;
   class ContributionSystem;
+  class MotionSystem;
 }
 
 // Global Constants

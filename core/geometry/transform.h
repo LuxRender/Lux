@@ -58,6 +58,9 @@ public:
 	Transform GetInverse() const {
 		return Transform(mInv, m);
 	}
+	boost::shared_ptr<Matrix4x4> GetMatrix() const {
+		return m;
+	}
 	bool HasScale() const;
 	inline Point operator()(const Point &pt) const;
 	inline void operator()(const Point &pt,Point *ptrans) const;
@@ -77,11 +80,11 @@ private:
 	static const boost::shared_ptr<Matrix4x4> MAT_IDENTITY;
 };
 // Transform Inline Functions
-#ifdef LUX_USE_SSE
-#include "transform-sse.inl"
-#else
+//#ifdef LUX_USE_SSE
+//#include "transform-sse.inl"
+//#else
 #include "transform.inl"
-#endif
+//#endif
 
 inline Ray Transform::operator()(const Ray &r) const {
 	Ray ret;

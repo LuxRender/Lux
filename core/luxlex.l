@@ -137,6 +137,7 @@ NamedMaterial		{ return NAMEDMATERIAL;		}
 ObjectBegin 		{ return OBJECTBEGIN;		}
 ObjectEnd 		{ return OBJECTEND;		}
 ObjectInstance 		{ return OBJECTINSTANCE;	}
+MotionInstance 		{ return MOTIONINSTANCE;	}
 PixelFilter 		{ return PIXELFILTER; 		}
 ReverseOrientation 	{ return REVERSEORIENTATION;	}
 Rotate			{ return ROTATE;		}

@@ -23,7 +23,7 @@
 // matrix4x4.cpp*
 #include "lux.h"
 
-#ifndef LUX_USE_SSE
+//#ifndef LUX_USE_SSE
 #include "matrix4x4.h"
 #include "error.h"
 
@@ -118,7 +118,7 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const
 
 }
 
-#else // LUX_USE_SSE
+/*#else // LUX_USE_SSE
 
 #include "matrix4x4-sse.h"
 
@@ -273,7 +273,7 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const
 
 }
 
-#endif // LUX_USE_SSE
+#endif // LUX_USE_SSE */
 
 
 

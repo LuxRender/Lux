@@ -25,6 +25,7 @@
 // primitive.h*
 #include "lux.h"
 #include "geometry.h"
+#include "motionsystem.h"
 #include "spectrum.h"
 
 namespace lux
@@ -327,6 +328,60 @@ public:
 	 */
 	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) = 0;
 };
+
+
+/**
+ * A decorator for instances of primitives with interpolated matrices for motion blur.
+ * This is achieved by changing the Object-to-World transformation
+ * in the result and other transforming all intersection info that
+ * was calculated, by interpolating between 2 matrices using the ray time. 
+ */
+class MotionPrimitive : public Primitive {
+public:
+        // MotionPrimitive Public Methods
+        /**
+         * Creates a new instance from the given primitive.
+         *
+         * @param i   The primitive to instance.
+         * @param i2ws The instance to world transformation at start time.
+         * @param i2we The instance to world transformation at end time.
+	 * @param s   The time at start.
+         * @param e   The time at end.
+         */
+        MotionPrimitive(boost::shared_ptr<Primitive> i,
+                          const Transform &i2ws,
+			  const Transform &i2we,
+			  float s, float e ) {
+                instance = i;
+		motionSystem = new MotionSystem(s, e, i2ws, i2we);
+        }
+	~MotionPrimitive() { delete motionSystem; }
+
+        BBox WorldBound() const; 
+
+        bool CanIntersect() const { return instance->CanIntersect(); }
+        bool Intersect(const Ray &r, Intersection *in) const;
+        bool IntersectP(const Ray &r) const;
+
+        bool CanSample() const { return instance->CanSample(); }
+        float Area() const { return instance->Area(); }
+        Point Sample(float u1, float u2, float u3, Normal *Ns) const  {
+                return instance->Sample(u1, u2, u3, Ns);
+        }
+        float Pdf(const Point &p) const { return instance->Pdf(p); }
+        Point Sample(const Point &P,
+                        float u1, float u2, float u3, Normal *Ns) const {
+                return instance->Sample(P, u1, u2, u3, Ns);
+        }
+        float Pdf(const Point &p, const Vector &wi) const {
+                return instance->Pdf(p, wi);
+        }
+private:
+        // MotionPrimitive Private Data
+        boost::shared_ptr<Primitive> instance;
+	MotionSystem *motionSystem;
+};
+
 
 }//namespace lux
 

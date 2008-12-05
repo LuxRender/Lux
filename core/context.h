@@ -101,6 +101,7 @@ public:
 	static void luxObjectBegin(const string &name) { activeContext->objectBegin(name); }
 	static void luxObjectEnd() { activeContext->objectEnd(); }
 	static void luxObjectInstance(const string &name) { activeContext->objectInstance(name); }
+	static void luxMotionInstance(const string &name, float startTime, float endTime, const string &toTransform) { activeContext->motionInstance(name, startTime, endTime, toTransform); }
 	static void luxWorldEnd() { activeContext->worldEnd(); }
 
 	/**
@@ -200,6 +201,7 @@ private:
 	void objectBegin(const string &name);
 	void objectEnd();
 	void objectInstance(const string &name);
+	void motionInstance(const string &name, float startTime, float endTime, const string &toTransform);
 	void worldEnd();
 
 	//TODO - jromang replace by a destructor or remove
