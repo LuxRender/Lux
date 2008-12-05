@@ -135,7 +135,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			break;
 		v.cosi = AbsDot(v.wi, v.ng);
 		v.f *= AbsDot(v.wi, v.ns) / v.cosi;
-		v.flux = v.f * (v.cosi / v.pdfR);
+		v.flux = v.f;
+		v.flux *= v.cosi / v.pdfR;
 		v.rrR = min<float>(1.f, v.flux.filter(tspack));
 		if (nVerts > 3) {
 			if (v.rrR < data[0])
@@ -199,7 +200,8 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 			break;
 		v.coso = AbsDot(v.wo, v.ng);
 		v.f *= AbsDot(v.wi, v.ns) / v.cosi;
-		v.flux = v.f * (v.coso / v.pdf);
+		v.flux = v.f;
+		v.flux *= v.coso / v.pdf;
 		v.rr = min<float>(1.f, v.flux.filter(tspack));
 		if (nVerts > 3) {
 			if (v.rr < data[0])
@@ -355,22 +357,20 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		BidirVertex &eyeV(eye[nEye - 1]);
 		BidirVertex &lightV(light[nLight - 1]);
 		// Check Connectability
+		eyeV.flags = BxDFType(~BSDF_SPECULAR);
 		eyeV.wi = Normalize(lightV.p - eyeV.p);
-		if ((Dot(eyeV.wi, eyeV.ns) > 0.f) * (Dot(eyeV.wi, eyeV.ng) <= 0.f))
-			return 0.f;
-		eyeV.pdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, eyeV.wi);
+		eyeV.pdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, eyeV.wi, eyeV.flags);
 		if (!(eyeV.pdfR > 0.f))
 			return 0.f;
-		eyeV.f = eyeV.bsdf->f(tspack, eyeV.wi, eyeV.wo);
+		eyeV.f = eyeV.bsdf->f(tspack, eyeV.wi, eyeV.wo, eyeV.flags);
 		if (eyeV.f.Black())
 			return 0.f;
+		lightV.flags = BxDFType(~BSDF_SPECULAR);
 		lightV.wo = -eyeV.wi;
-		if ((Dot(lightV.wo, lightV.ns) > 0.f) * (Dot(lightV.wo, lightV.ng) <= 0.f))
-			return 0.f;
-		lightV.pdf = lightV.bsdf->Pdf(tspack, lightV.wi, lightV.wo);
+		lightV.pdf = lightV.bsdf->Pdf(tspack, lightV.wi, lightV.wo, lightV.flags);
 		if (!(lightV.pdf > 0.f))
 			return 0.f;
-		lightV.f = lightV.bsdf->f(tspack, lightV.wi, lightV.wo);
+		lightV.f = lightV.bsdf->f(tspack, lightV.wi, lightV.wo, lightV.flags);
 		if (lightV.f.Black())
 			return 0.f;
 		if (!visible(scene, eyeV.p, lightV.p))
@@ -385,12 +385,12 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		// Prepare light vertex for connection
 		lightV.coso = AbsDot(lightV.wo, lightV.ng);
 		lightV.d2 = eyeV.d2;
-		lightV.f *= AbsDot(lightV.wi, lightV.ng) / lightV.cosi;
+		lightV.f *= AbsDot(lightV.wi, lightV.ns) / lightV.cosi;
 		lightV.flux = lightV.f; // No pdf as it is a direct connection
 		if (nLight > 1)
 			lightV.flux *= light[nLight - 2].flux;
 		// Connect eye and light vertices
-		L = eyeV.flux * lightV.flux * G(eyeV, lightV);
+		L = eyeV.flux * G(eyeV, lightV) * lightV.flux;
 		if (L.Black())
 			return 0.f;
 		// Evaluate factors for eye path weighting
@@ -407,7 +407,6 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 			eyeV.dARWeight = eye[nEye - 2].pdfR *
 				eyeV.coso / eye[nEye - 2].d2;
 		}
-		eyeV.flags = BxDFType(~BSDF_SPECULAR);
 		// Evaluate factors for light path weighting
 		lightV.pdfR = lightV.bsdf->Pdf(tspack, lightV.wo, lightV.wi);
 		lightV.rr = min<float>(1.f, lightV.f.filter(tspack) *
@@ -422,29 +421,28 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 			lightV.dAWeight = light[nLight - 2].pdf *
 				lightV.cosi / light[nLight - 2].d2;
 		}
-		lightV.flags = BxDFType(~BSDF_SPECULAR);
 	} else if (nEye > 1) { // Evaluate eye path without light path
 		BidirVertex &v(eye[nEye - 1]);
 		L = eye[nEye - 2].flux;
 		// Evaluate factors for path weighting
 		v.dAWeight = v.ePdf;
-		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ns), v.wo);
+		v.flags = BxDFType(~BSDF_SPECULAR);
+		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ns), v.wo, v.flags);
 		eWeight = eye[nEye - 2].dAWeight;
 		eye[nEye - 2].dAWeight = v.pdf *
 			eye[nEye - 2].cosi / eye[nEye - 2].d2;
 		v.dARWeight = eye[nEye - 2].pdfR * v.coso / eye[nEye - 2].d2;
-		v.flags = BxDFType(~BSDF_SPECULAR);
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
 		L = light[nLight - 2].flux;//FIXME: not implemented yet
 		// Evaluate factors for path weighting
 		v.dARWeight = v.ePdf;
-		v.pdfR = v.eBsdf->Pdf(tspack, v.wo, Vector(v.ns));
+		v.flags = BxDFType(~BSDF_SPECULAR);
+		v.pdfR = v.eBsdf->Pdf(tspack, v.wo, Vector(v.ns), v.flags);
 		lWeight = light[nLight - 2].dARWeight;
 		light[nLight - 2].dARWeight = v.pdfR *
 			light[nLight - 2].coso / light[nLight - 2].d2;
 		v.dAWeight = light[nLight - 2].pdf * v.cosi / light[nLight - 2].d2;
-		v.flags = BxDFType(~BSDF_SPECULAR);
 	} else
 		return 0.f;
 	float w = 1.f / weightPath(eye, nEye, eyeDepth, light, nLight, lightDepth,
