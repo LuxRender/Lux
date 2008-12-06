@@ -116,6 +116,7 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
 	sampler->baseTimeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
 	sampler->baseSampler->SetTsPack(sampler->tspack);
+	sampler->baseSampler->SetFilm(sampler->film);
 	sampler->mutation = -1;
 
 	// Fetch first contribution buffer from pool
@@ -241,14 +242,14 @@ void ERPTSampler::AddSample(const Sample &sample)
 		newLY += newContributions[i].color.y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
-		if (meanIntensity > 0.f)
+		if (newLY > 0.f)
 			meanIntensity += newLY;
 		++(initCount);
 		if (initCount < initSamples)
 			return;
+		meanIntensity /= initSamples;
 		if (!(meanIntensity > 0.f))
 			meanIntensity = 1.f;
-		meanIntensity /= initSamples;
 		mutation = -1;
 		return;
 	}
@@ -276,7 +277,10 @@ void ERPTSampler::AddSample(const Sample &sample)
 			quantum = meanIntensity;
 			gain = newLY / quantum;
 			numChains = max(1, Floor2Int(gain + .5f));
-			if (numChains > 100) printf("%d chains\n", numChains);
+			if (numChains > 100) {
+				printf("%d chains -> %d\n", numChains, totalMutations);
+				numChains = totalMutations;
+			}
 			gain /= numChains;
 			quantum /= totalSamples;
 			baseLY = newLY;
