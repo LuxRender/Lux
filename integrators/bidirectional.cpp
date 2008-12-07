@@ -234,15 +234,12 @@ static float G(const BidirVertex &eye, const BidirVertex &light)
 }
 
 // Visibility test
-static bool visible(const Scene *scene, const Point &P0,
-	const Point &P1)
+static bool visible(const TsPack *tspack, const Scene *scene, const Point &P0,
+	const Point &P1, SWCSpectrum *f)
 {
-	const float distance = Distance(P0, P1);
-	if (distance < RAY_EPSILON)
-		return false;
-	Vector w(P1 - P0);
-	w /= distance;
-	return !scene->IntersectP(Ray(P0, w, RAY_EPSILON, distance - RAY_EPSILON));
+	VisibilityTester vt;
+	vt.SetSegment(P0, P1);
+	return vt.TestOcclusion(tspack, scene, f);
 }
 
 // Weighting of path with regard to alternate methods of obtaining it
@@ -373,7 +370,8 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		lightV.f = lightV.bsdf->f(tspack, lightV.wi, lightV.wo, lightV.flags);
 		if (lightV.f.Black())
 			return 0.f;
-		if (!visible(scene, eyeV.p, lightV.p))
+		SWCSpectrum fConnect;
+		if (!visible(tspack, scene, lightV.p, eyeV.p, &fConnect))
 			return 0.f;
 		// Prepare eye vertex for connection
 		eyeV.cosi = AbsDot(eyeV.wi, eyeV.ng);
@@ -393,6 +391,7 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		L = eyeV.flux * G(eyeV, lightV) * lightV.flux;
 		if (L.Black())
 			return 0.f;
+		L *= fConnect;
 		// Evaluate factors for eye path weighting
 		eyeV.pdf = eyeV.bsdf->Pdf(tspack, eyeV.wi, eyeV.wo);
 		eyeV.rr = min<float>(1.f, eyeV.f.filter(tspack) *
