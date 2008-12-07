@@ -98,6 +98,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_renderTimer = new wxTimer(this, ID_RENDERUPDATE);
 	m_statsTimer = new wxTimer(this, ID_STATSUPDATE);
 	m_loadTimer = new wxTimer(this, ID_LOADUPDATE);
+	m_netTimer = new wxTimer(this, ID_NETUPDATE);
 
 	m_numThreads = 0;
 	m_engineThread = NULL;
@@ -113,7 +114,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	// CF
 	m_LuxOptions = new LuxOptions( this );
 
-	m_ServerUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
+	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
 
 	m_auinotebook->SetSelection( 0 );
 }
@@ -247,8 +248,8 @@ void LuxGui::LoadImages() {
 	///////////////////////////////////////////////////////////////////////////////
 	// CF : network toolbar...
 
-	m_AddServerButton->SetBitmapLabel(wxMEMORY_BITMAP(plus_png));
-	m_RemoveServerButton->SetBitmapLabel(wxMEMORY_BITMAP(minus_png));
+	m_addServerButton->SetBitmapLabel(wxMEMORY_BITMAP(plus_png));
+	m_removeServerButton->SetBitmapLabel(wxMEMORY_BITMAP(minus_png));
 
 	///////////////////////////////////////////////////////////////////////////////
 
@@ -302,6 +303,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_renderOutput->Reload();
 				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
+				m_netTimer->Start(1000, wxTIMER_CONTINUOUS);
 				if(m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 					luxStart();
 				if(m_guiRenderState == STOPPED)
@@ -405,9 +407,6 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_REMOVE_THREAD: // CF
 			if ( m_numThreads > 1 ) SetRenderThreads( m_numThreads - 1 );
 			break;
-		case ID_NETWORK_TREE_REFRESH: // CF
-			UpdateNetworkTree();
-			break;
 		case ID_ADD_SERVER: // CF
 			AddServer();
 			break;
@@ -460,7 +459,7 @@ void LuxGui::LuxOptions::OnText(wxCommandEvent& event) {
 
 				m_RH_preText->SetValue( st );
 
-				int val = (int)(( 100.0f / (RH_PRE_RANGE * 2.0f) ) * (m_RH_pre + RH_PRE_RANGE)); 
+				int val = (int)(( 100.0f / (RH_PRE_RANGE * 2.0f) ) * (m_RH_pre + RH_PRE_RANGE));
 
 				m_RH_prescaleSlider->SetValue( val );
 			}
@@ -479,7 +478,7 @@ void LuxGui::LuxOptions::OnText(wxCommandEvent& event) {
 
 				m_RH_postText->SetValue( st );
 
-				int val = (int)(( 100.0f / (RH_POST_RANGE * 2.0f) ) * (m_RH_post + RH_POST_RANGE)); 
+				int val = (int)(( 100.0f / (RH_POST_RANGE * 2.0f) ) * (m_RH_post + RH_POST_RANGE));
 
 				m_RH_postscaleSlider->SetValue( val );
 			}
@@ -497,7 +496,7 @@ void LuxGui::LuxOptions::OnText(wxCommandEvent& event) {
 
 				m_RH_burnText->SetValue( st );
 
-				int val = (int)(( 100.0f / RH_BURN_RANGE ) * m_RH_burn); 
+				int val = (int)(( 100.0f / RH_BURN_RANGE ) * m_RH_burn);
 
 				m_RH_burnSlider->SetValue( val );
 			}
@@ -505,13 +504,13 @@ void LuxGui::LuxOptions::OnText(wxCommandEvent& event) {
 		default:
 			break;
 	}
-} 
+}
 
 void LuxGui::LuxOptions::OnScroll( wxScrollEvent& event ){
 	switch (event.GetId()) {
 		case ID_RH_PRESCALE:
 			{
-				m_RH_pre = ( (double)event.GetPosition() / ( 100.0f / (RH_PRE_RANGE * 2.0f) ) ) - RH_PRE_RANGE; 
+				m_RH_pre = ( (double)event.GetPosition() / ( 100.0f / (RH_PRE_RANGE * 2.0f) ) ) - RH_PRE_RANGE;
 
 				wxString st = wxString::Format( _("%.02f"), m_RH_pre );
 				m_RH_preText->SetValue( st );
@@ -519,7 +518,7 @@ void LuxGui::LuxOptions::OnScroll( wxScrollEvent& event ){
 			break;
 		case ID_RH_POSTSCALE:
 			{
-				m_RH_post = ( (double)event.GetPosition() / ( 100.0f / (RH_POST_RANGE * 2.0f) ) ) - RH_POST_RANGE; 
+				m_RH_post = ( (double)event.GetPosition() / ( 100.0f / (RH_POST_RANGE * 2.0f) ) ) - RH_POST_RANGE;
 
 				wxString st = wxString::Format( _("%.02f"), m_RH_post );
 				m_RH_postText->SetValue( st );
@@ -527,7 +526,7 @@ void LuxGui::LuxOptions::OnScroll( wxScrollEvent& event ){
 			break;
 		case ID_RH_BURN:
 			{
-				m_RH_burn = (double)event.GetPosition() / ( 100.0f / RH_BURN_RANGE ); 
+				m_RH_burn = (double)event.GetPosition() / ( 100.0f / RH_BURN_RANGE );
 
 				wxString st = wxString::Format( _("%.02f"), m_RH_burn );
 				m_RH_burnText->SetValue( st );
@@ -536,7 +535,7 @@ void LuxGui::LuxOptions::OnScroll( wxScrollEvent& event ){
 		default:
 			break;
 	}
-} 
+}
 
 LuxGui::LuxOptions::LuxOptions( LuxGui *parent ) : m_OptionsDialog( parent ) {
 
@@ -583,7 +582,7 @@ void LuxGui::LuxOptions::ResetToneMapping(){
 	m_RH_pre = 1.0;
 	m_RH_post = 1.0;
 	m_RH_burn = 6.0;
-	
+
 	m_RH_prescaleSlider->SetValue( (int)(( 100.0f / (RH_PRE_RANGE * 2.0f) ) * (m_RH_pre + RH_PRE_RANGE)));
 	m_RH_preText->SetValue(_("1.00"));
 
@@ -608,7 +607,7 @@ void LuxGui::LuxOptions::OnMenu(wxCommandEvent& event) {
 		case ID_WRITE_OPTIONS:
 			{
 				int nSel = event.GetSelection();
-				
+
 				if ( nSel == 0 ) m_UseFlm = event.IsChecked();
 				else if ( nSel == 1 ) m_Write_TGA = event.IsChecked();
 				else if ( nSel == 2 ) m_Write_TM_EXR = event.IsChecked();
@@ -638,19 +637,17 @@ void LuxGui::LuxOptions::OnSpin( wxSpinEvent& event ) {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Network panel...
 
-#define LUX_MAX_SLAVES	256
-
 void LuxGui::UpdateNetworkTree( void )
 {
-	m_ServerUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );	
+	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
 
 	m_networkTreeCtrl->DeleteAllItems();
 
 	wxTreeItemId idRootNode = m_networkTreeCtrl->AddRoot( _("Master") );
 
-	RenderingServerInfo *pInfoList = new RenderingServerInfo[LUX_MAX_SLAVES]; // hard coded max number of servers, needs to be fixed.
-
-	int nServers = luxGetRenderingServersStatus( pInfoList, LUX_MAX_SLAVES );
+	int nServers = luxGetServerCount();
+	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
+	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
 
 	wxString sTemp;
 	wxTreeItemId idTempNode;
@@ -670,17 +667,17 @@ void LuxGui::UpdateNetworkTree( void )
 		pTempData->m_secsSinceLastContact 		= pInfoList[n1].secsSinceLastContact;
 		pTempData->m_numberOfSamplesReceived 	= pInfoList[n1].numberOfSamplesReceived;
 
-		sTemp = wxString::Format( _("Slave: %s - Port: %s - ID: %s - Samples Per Pixel: %lf"), 
+		sTemp = wxString::Format( _("Slave: %s - Port: %s - ID: %s - Samples Per Pixel: %lf"),
 									pTempData->m_SlaveName.c_str(),
 									pTempData->m_SlavePort.c_str(),
 									pTempData->m_SlaveID.c_str(),
 									( pInfoList[n1].numberOfSamplesReceived / sampDiv ) );
 
 		idTempNode = m_networkTreeCtrl->AppendItem( idRootNode, sTemp, -1, -1, pTempData );
-						m_networkTreeCtrl->AppendItem( idTempNode, m_CurrentFile ); 
+						m_networkTreeCtrl->AppendItem( idTempNode, m_CurrentFile );
  	}
 
-	m_networkTreeCtrl->ExpandAll();	
+	m_networkTreeCtrl->ExpandAll();
 }
 
 void LuxGui::OnTreeSelChanged( wxTreeEvent& event )
@@ -691,8 +688,8 @@ void LuxGui::OnTreeSelChanged( wxTreeEvent& event )
 
 	if ( pNodeData != NULL )
 	{
-		m_serverTextCtrl->SetValue( pNodeData->m_SlaveName );
-	}	
+		m_serverTextCtrl->SetValue( wxString::Format(_("%s:%s"), pNodeData->m_SlaveName.c_str(), pNodeData->m_SlavePort.c_str()));
+	}
 }
 
 void LuxGui::AddServer( void )
@@ -704,20 +701,27 @@ void LuxGui::AddServer( void )
 		luxAddServer( sServer.char_str() );
 
 		UpdateNetworkTree();
-	}	
+	}
 }
 
 void LuxGui::RemoveServer( void )
 {
-	// TODO: add support for this to luxApi.
+	wxString sServer( m_serverTextCtrl->GetValue() );
+
+	if ( !sServer.empty() )
+	{
+		luxRemoveServer( sServer.char_str() );
+
+		UpdateNetworkTree();
+	}
 }
 
 
-void LuxGui::OnSpin( wxSpinEvent& event ) 
+void LuxGui::OnSpin( wxSpinEvent& event )
 {
-	if ( event.GetId() == ID_SERVER_UPDATE_INT ) 
+	if ( event.GetId() == ID_SERVER_UPDATE_INT )
 	{
-		luxSetNetworkServerUpdateInterval( event.GetPosition() );	
+		luxSetNetworkServerUpdateInterval( event.GetPosition() );
 	}
 }
 
@@ -843,6 +847,9 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 				}
 			}
 			break;
+		case ID_NETUPDATE:
+			UpdateNetworkTree();
+			break;
 	}
 }
 
@@ -886,10 +893,6 @@ void LuxGui::RenderScenefile(wxString filename) {
 
 	// CF
 	m_CurrentFile = filename;
-
-	// TODO: remove this once proper control flow is implemented.
-	m_AddServerButton->Enable( false );
-	m_RemoveServerButton->Enable( false );
 
 	// Start main render thread
 	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));

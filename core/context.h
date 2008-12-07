@@ -107,7 +107,7 @@ public:
 	/**
 	 * Creates a material using the given shape parameters, the current
 	 * material and the current textures.
-	 * 
+	 *
 	 * @param shapeparams The parameters of the shape.
 	 */
 	boost::shared_ptr<Material> makematerial(const ParamSet& shapeparams);
@@ -145,6 +145,8 @@ public:
 	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->renderFarm->serverUpdateInterval = updateInterval; }
 	static int luxGetNetworkServerUpdateInterval() { return activeContext->renderFarm->serverUpdateInterval; }
     static void luxAddServer(const string &name) { activeContext->addServer(name); }
+    static void luxRemoveServer(const string &name) { activeContext->removeServer(name); }
+    static int luxGetServerCount() { return activeContext->getServerCount(); }
 	static int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) { return activeContext->getRenderingServersStatus(info, maxInfoCount); }
 
 	//statistics
@@ -237,6 +239,8 @@ private:
 	//statistics
 	double statistics(const string &statName);
 	void addServer(const string &name);
+	void removeServer(const string &name);
+	int getServerCount();
 	int getRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount);
 
     void enableDebugMode();

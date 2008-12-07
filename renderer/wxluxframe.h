@@ -22,8 +22,8 @@
 #include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/textctrl.h>
-#include <wx/button.h>
 #include <wx/bmpbuttn.h>
+#include <wx/button.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
 #include <wx/aui/auibook.h>
@@ -59,24 +59,23 @@ namespace lux
 	#define ID_PANTOOL 1017
 	#define ID_ZOOMTOOL 1018
 	#define ID_REFINETOOL 1019
-	#define ID_NETWORK_TREE_REFRESH 1020
-	#define ID_ADD_SERVER 1021
-	#define ID_REMOVE_SERVER 1022
-	#define ID_SERVER_UPDATE_INT 1023
-	#define ID_NETWORK_TREE 1024
-	#define ID_TM_CHOICE 1025
-	#define ID_RH_PRESCALE 1026
-	#define ID_RH_PRESCALE_TEXT 1027
-	#define ID_RH_POSTSCALE 1028
-	#define ID_RH_POSTSCALE_TEXT 1029
-	#define ID_RH_BURN 1030
-	#define ID_RH_BURN_TEXT 1031
-	#define ID_TM_RESET 1032
-	#define ID_RENDER_REFRESH 1033
-	#define ID_SYS_DISPLAY_INT 1034
-	#define ID_SYS_WRITE_INT 1035
-	#define ID_WRITE_OPTIONS 1036
-	#define ID_SYS_APPLY 1037
+	#define ID_ADD_SERVER 1020
+	#define ID_REMOVE_SERVER 1021
+	#define ID_SERVER_UPDATE_INT 1022
+	#define ID_NETWORK_TREE 1023
+	#define ID_TM_CHOICE 1024
+	#define ID_RH_PRESCALE 1025
+	#define ID_RH_PRESCALE_TEXT 1026
+	#define ID_RH_POSTSCALE 1027
+	#define ID_RH_POSTSCALE_TEXT 1028
+	#define ID_RH_BURN 1029
+	#define ID_RH_BURN_TEXT 1030
+	#define ID_TM_RESET 1031
+	#define ID_RENDER_REFRESH 1032
+	#define ID_SYS_DISPLAY_INT 1033
+	#define ID_SYS_WRITE_INT 1034
+	#define ID_WRITE_OPTIONS 1035
+	#define ID_SYS_APPLY 1036
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -99,14 +98,13 @@ namespace lux
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
 			wxPanel* m_networkPage;
-			wxButton* m_NetworkTreeRefreshButton;
-			
+			wxToolBar* m_networkToolBab;
+			wxStaticText* m_serverStaticText;
 			wxTextCtrl* m_serverTextCtrl;
-			wxBitmapButton* m_AddServerButton;
-			wxBitmapButton* m_RemoveServerButton;
-			
-			wxStaticText* m_staticText6;
-			wxSpinCtrl* m_ServerUpdateSpin;
+			wxBitmapButton* m_addServerButton;
+			wxBitmapButton* m_removeServerButton;
+			wxStaticText* m_updateStaticText;
+			wxSpinCtrl* m_serverUpdateSpin;
 			wxTreeCtrl* m_networkTreeCtrl;
 			wxStatusBar* m_statusBar;
 			

@@ -45,7 +45,7 @@ void luxPixelFilter(const char *name, ...);
 void luxPixelFilterV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
 void luxFilm(const char *name, ...);
 void luxFilmV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
-void luxSampler(const char *name, ...); 
+void luxSampler(const char *name, ...);
 void luxSamplerV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
 void luxAccelerator(const char *name, ...);
 void luxAcceleratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[]);
@@ -92,7 +92,7 @@ void luxExit();
 void luxWait();
 
 void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone);
-		
+
 /* Controlling number of threads */
 int luxAddThread();
 void luxRemoveThread();
@@ -112,6 +112,8 @@ unsigned char* luxFramebuffer();
 
 /* Networking */
 void luxAddServer(const char * name);
+void luxRemoveServer(const char * name);
+int luxGetServerCount();
 void luxUpdateFilmFromNetwork();
 void luxSetNetworkServerUpdateInterval(int updateInterval);
 int luxGetNetworkServerUpdateInterval();

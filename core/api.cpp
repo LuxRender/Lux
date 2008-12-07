@@ -82,6 +82,16 @@ extern "C" void luxAddServer(const char * name)
 	Context::luxAddServer(std::string(name));
 }
 
+extern "C" void luxRemoveServer(const char * name)
+{
+	Context::luxRemoveServer(std::string(name));
+}
+
+extern "C" int luxGetServerCount()
+{
+	return Context::luxGetServerCount();
+}
+
 extern "C" int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) {
 	return Context::luxGetRenderingServersStatus(info, maxInfoCount);
 }
@@ -130,7 +140,7 @@ extern "C" void luxCoordSysTransform(const char *name)
 extern "C" void luxPixelFilter(const char *name, ...) //
 {
 	EXTRACT_PARAMETERS( name )
-	luxPixelFilterV( name, PASS_PARAMETERS );		
+	luxPixelFilterV( name, PASS_PARAMETERS );
 }
 
 extern "C" void luxPixelFilterV (const char *name, int n, LuxToken tokens[], LuxPointer params[])
@@ -262,7 +272,7 @@ extern "C" void luxTransformEnd()
 /*
 void luxTexture(const char *name, const char *type, const char *texname,
 		const ParamSet &params)
-{	
+{
 	Context::luxTexture(std::string(name), std::string(type), std::string(texname), params);
 }*/
 extern "C" void luxTexture(const char *name, const char *type, const char *texname, ...)
@@ -425,14 +435,14 @@ extern "C" void luxInit() {
 	_control87(_PC_53, MCW_PC);
 #endif
 #endif // FAST_INT
-	
-	
+
+
 	// API Initialization
 	if (initialized)
 		luxError(LUX_ILLSTATE,LUX_ERROR,"luxInit() has already been called.");
 	else
 		Context::setActive(new Context());
-	
+
 	initialized=true;
 }
 
@@ -510,29 +520,29 @@ extern "C" int luxFilmYres() {
 
 extern "C" double luxStatistics(const char *statName) {
 	if(initialized) return Context::luxStatistics(statName);
-	else 
+	else
 		{
 			luxError(LUX_NOTSTARTED,LUX_SEVERE,"luxInit() must be called before calling  'luxStatistics'. Ignoring.");
 			return 0;
 		}
 }
 
-extern "C" void luxEnableDebugMode() {	
+extern "C" void luxEnableDebugMode() {
 	Context::luxEnableDebugMode();
 }
 
 extern "C" void luxUpdateFilmFromNetwork() {
-	
+
 	Context::luxUpdateFilmFromNetwork();
 }
 
 extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval) {
-	
+
 	Context::luxSetNetworkServerUpdateInterval(updateInterval);
 }
 
 extern "C" int luxGetNetworkServerUpdateInterval() {
-	
+
 	return Context::luxGetNetworkServerUpdateInterval();
 }
 

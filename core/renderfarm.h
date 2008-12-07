@@ -51,7 +51,7 @@ public:
         signal = SIG_EXIT;
         thread->join();
     }
-    
+
     friend class RenderFarm;
 private:
     static void updateFilm(FilmUpdaterThread *filmUpdaterThread);
@@ -59,7 +59,7 @@ private:
     RenderFarm *renderFarm;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
-    
+
     // Dade - used to send signals to the thread
     int signal;
     static const int SIG_NONE = 0;
@@ -75,9 +75,10 @@ public:
         }
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
-        // Dade - Disconnect from all servers
-        void disconnectAll();
-	
+	// Dade - Disconnect from all servers
+	void disconnectAll();
+	void disconnect(const string &serverName);
+
 	void send(const std::string &command);
 	void send(const std::string &command, const std::string &name, const ParamSet &params);
 	void send(const std::string &command, const std::string &name);
@@ -97,7 +98,7 @@ public:
     void startFilmUpdater(Scene *scene);
     void stopFilmUpdater();
     //!<Gets the films from the network, and merge them to the film given in parameter
-	void updateFilm(Scene *scene); 
+	void updateFilm(Scene *scene);
 
 public:
     // Dade - film update infromation
@@ -116,6 +117,9 @@ private:
 		boost::posix_time::ptime timeLastContact;
 		double numberOfSamplesReceived;
 	};
+
+	static void decodeServerName(const string &serverName, string &name, string &port);
+	void disconnect(const ExtRenderingServerInfo &serverInfo);
 
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 

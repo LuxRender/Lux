@@ -57,7 +57,7 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 
             if (filmUpdaterThread->signal == SIG_EXIT)
                 break;
-           
+
             if (xt.sec - reft.sec > filmUpdaterThread->renderFarm->serverUpdateInterval) {
                 reft = xt;
                 break;
@@ -75,7 +75,7 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 void RenderFarm::startFilmUpdater(Scene *scene) {
     filmUpdateThread = new FilmUpdaterThread(this, scene);
     filmUpdateThread->thread = new boost::thread(boost::bind(
-            FilmUpdaterThread::updateFilm, filmUpdateThread));    
+            FilmUpdaterThread::updateFilm, filmUpdateThread));
 }
 
 void RenderFarm::stopFilmUpdater() {
@@ -84,6 +84,20 @@ void RenderFarm::stopFilmUpdater() {
         delete filmUpdateThread;
         filmUpdateThread = NULL;
     }
+}
+
+void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
+	// Dade - check if the server name includes the port
+	size_t idx = serverName.find_last_of(':');
+	if (idx != string::npos) {
+		// Dade - the server name includes the port number
+
+		name = serverName.substr(0, idx);
+		port = serverName.substr(idx + 1);
+	} else {
+		name = serverName;
+		port = "18018";
+	}
 }
 
 bool RenderFarm::connect(const string &serverName) {
@@ -95,18 +109,8 @@ bool RenderFarm::connect(const string &serverName) {
         ss << "Connecting server: " << serverName;
         luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-		// Dade - check if the server name includes the port
-		size_t idx = serverName.find_last_of(':');
-		string name, port;
-		if (idx != string::npos) {
-			// Dade - the server name includes the port number
-
-			name = serverName.substr(0, idx);
-			port = serverName.substr(idx + 1);
-		} else {
-			name = serverName;
-			port = "18018";
-		}
+        string name, port;
+        decodeServerName(serverName, name, port);
 
         tcp::iostream stream(name, port);
         stream << "ServerConnect" << std::endl;
@@ -158,26 +162,43 @@ bool RenderFarm::connect(const string &serverName) {
         luxError(LUX_SYSTEM, LUX_ERROR, e.what());
         return false;
     }
-    
+
     return true;
 }
 
 void RenderFarm::disconnectAll() {
-    std::stringstream ss;
-	for (size_t i = 0; i < serverInfoList.size(); i++) {
-        try {
-            ss.str("");
-            ss << "Disconnect from server: " <<
-					serverInfoList[i].name << ":" << serverInfoList[i].port;
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    for (size_t i = 0; i < serverInfoList.size(); i++)
+		disconnect(serverInfoList[i]);
+	serverInfoList.clear();
+}
 
-            tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
-            stream << "ServerDisconnect" << std::endl;
-			stream << serverInfoList[i].sid << std::endl;
-        } catch (std::exception& e) {
-            luxError(LUX_SYSTEM, LUX_ERROR, e.what());
-        }
-    }
+void RenderFarm::disconnect(const string &serverName) {
+	string name, port;
+	decodeServerName(serverName, name, port);
+
+	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
+		if (name.compare(it->name) == 0 && port.compare(it->port) == 0) {
+			disconnect(*it);
+			serverInfoList.erase(it);
+			break;
+		}
+	}
+}
+
+void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
+	std::stringstream ss;
+	try {
+		ss.str("");
+		ss << "Disconnect from server: " <<
+				serverInfo.name << ":" << serverInfo.port;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+		tcp::iostream stream(serverInfo.name, serverInfo.port);
+		stream << "ServerDisconnect" << std::endl;
+		stream << serverInfo.sid << std::endl;
+	} catch (std::exception& e) {
+		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+	}
 }
 
 void RenderFarm::flush() {

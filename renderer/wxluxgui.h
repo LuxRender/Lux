@@ -38,7 +38,8 @@ namespace lux
 
 #define ID_RENDERUPDATE	2000
 #define ID_STATSUPDATE	2001
-#define ID_LOADUPDATE		2002
+#define ID_LOADUPDATE	2002
+#define ID_NETUPDATE	2003
 
 /*** LuxError and wxLuxErrorEvent ***/
 
@@ -132,7 +133,7 @@ protected:
 	void OnIconize(wxIconizeEvent& event);
 	void OnSelection(wxViewerEvent& event);
 	void OnSpin( wxSpinEvent& event );
-	
+
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
 
@@ -155,6 +156,7 @@ protected:
 	wxTimer* m_loadTimer;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;
+	wxTimer* m_netTimer;
 
 	wxBitmap m_splashbmp;
 
@@ -189,7 +191,7 @@ protected:
 		protected:
 
 			void OnMenu( wxCommandEvent& event );
-			void OnScroll( wxScrollEvent& event ); 
+			void OnScroll( wxScrollEvent& event );
 			void OnText(wxCommandEvent &event);
 			void OnClose( wxCloseEvent& event );
 			void OnSpin( wxSpinEvent& event );

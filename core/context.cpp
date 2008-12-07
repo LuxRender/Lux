@@ -115,6 +115,17 @@ void Context::addServer(const string &name) {
 	renderFarm->connect(name);
 }
 
+void Context::removeServer(const string &name) {
+	renderFarm->disconnect(name);
+}
+
+int Context::getServerCount() {
+	if (!renderFarm)
+		return 0;
+
+	return renderFarm->getServerCount();
+}
+
 int Context::getRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) {
 	if (!renderFarm)
 		return 0;
