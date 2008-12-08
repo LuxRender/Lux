@@ -128,6 +128,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 		float *alpha, int rayDepth, bool includeEmit, float &nrContribs) const {
 	Intersection isect;
 	SWCSpectrum L(0.);
+	const float time = ray.time; // save time for motion blur
 	if (alpha) *alpha = 1.;
 
 	if (scene->Intersect(ray, &isect)) {
@@ -230,6 +231,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags)) {
 					RayDifferential rd(p, wi);
+					rd.time = time;
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
@@ -255,6 +257,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags)) {
 					RayDifferential rd(p, wi);
+					rd.time = time;
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
@@ -282,6 +285,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags)) {
 					RayDifferential rd(p, wi);
+					rd.time = time;
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
@@ -307,6 +311,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags)) {
 					RayDifferential rd(p, wi);
+					rd.time = time;
 					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
 						* f * AbsDot(wi, n) / pdf;
 				}
@@ -318,6 +323,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR))) {
 				RayDifferential rd(p, wi);
+				rd.time = time;
 				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true, nrContribs) * f * AbsDot(wi, n);
 			}
 		}
@@ -325,6 +331,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR))) {
 				RayDifferential rd(p, wi);
+				rd.time = time;
 				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true, nrContribs) * f * AbsDot(wi, n);
 			}
 		} 

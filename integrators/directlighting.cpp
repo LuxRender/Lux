@@ -58,6 +58,7 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 	Intersection isect;
 	SWCSpectrum L(0.);
 	if (alpha) *alpha = 1.;
+    const float time = ray.time; // save time for motion blur
 
 	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
@@ -103,6 +104,7 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR))) {
 				// Compute ray differential _rd_ for specular reflection
 				RayDifferential rd(p, wi);
+				rd.time = time;
 				rd.hasDifferentials = true;
 				rd.rx.o = p + isect.dg.dpdx;
 				rd.ry.o = p + isect.dg.dpdy;
@@ -127,6 +129,7 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR))) {
 				// Compute ray differential _rd_ for specular transmission
 				RayDifferential rd(p, wi);
+				rd.time = time;
 				rd.hasDifferentials = true;
 				rd.rx.o = p + isect.dg.dpdx;
 				rd.ry.o = p + isect.dg.dpdy;

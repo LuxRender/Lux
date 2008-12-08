@@ -192,6 +192,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			VContrib += dp;
 
 		ray = RayDifferential(p, wi);
+		ray.time = r.time;
 	}
 	if (!L.Black())
 		V /= L.filter(tspack);
