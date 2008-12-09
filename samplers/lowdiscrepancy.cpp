@@ -182,7 +182,7 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	sample->lensV = lensSamples[2*samplePos+1];
 	sample->time = timeSamples[samplePos];
 	sample->wavelengths = wavelengthsSamples[samplePos];
-	sample->singleWavelength = tspack->rng->floatValue();//singleWavelengthSamples[samplePos]
+	sample->singleWavelength = singleWavelengthSamples[samplePos];
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		int startSamp = sample->n1D[i] * samplePos;
 		for (u_int j = 0; j < sample->n1D[i]; ++j)
