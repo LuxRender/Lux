@@ -116,8 +116,9 @@ PerspectiveCamera::
 	: ProjectiveCamera(world2cam,
 	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose,
-		lensr, focald, f), autoFocus(autofocus),
-		distribution(dist), shape(sh), power(pow) {
+		lensr, focald, f),
+		distribution(dist), shape(sh), power(pow),
+		autoFocus(autofocus) {
 	pos = CameraToWorld(Point(0,0,0));
 	normal = CameraToWorld(Normal(0,0,1));
 	fov = Radians(fov1);
