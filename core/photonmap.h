@@ -30,6 +30,7 @@
 #include "kdtree.h"
 #include "bxdf.h"
 #include "primitive.h"
+#include "mc.h"
 
 namespace lux
 {
@@ -41,8 +42,8 @@ namespace lux
 
 class BasicPhoton {
 public:
-	BasicPhoton(const Point &pp, const RGBColor &wt)
-			: p(pp), alpha(wt) {
+	BasicPhoton(const Point &pp)
+			: p(pp) {
 	}
 
 	BasicPhoton() {
@@ -50,38 +51,106 @@ public:
 
 	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) = 0;
 
+	Point p;
+};
+
+class BasicColorPhoton : public BasicPhoton {
+public:
+	BasicColorPhoton(const Point &pp, const RGBColor &wt)
+		: BasicPhoton(pp), alpha(wt) {
+	}
+
+	BasicColorPhoton() : BasicPhoton() { }
+
 	SWCSpectrum GetSWCSpectrum(const TsPack* tspack) const {
 		return SWCSpectrum( tspack, alpha );
 	}
 
-	Point p;
 	RGBColor alpha;
 };
 
-class LightPhoton : public BasicPhoton {
+class LightPhoton : public BasicColorPhoton {
 public:
 	LightPhoton(const Point &pp, const RGBColor &wt, const Vector & w)
-			: BasicPhoton(pp, wt), wi(w) { }
+		: BasicColorPhoton(pp, wt), wi(w) { }
 
-	LightPhoton() : BasicPhoton() { }
+	LightPhoton() : BasicColorPhoton() { }
 
 	void save(bool isLittleEndian, std::basic_ostream<char> &stream);
 
 	Vector wi;
 };
 
-class RadiancePhoton : public BasicPhoton {
+class RadiancePhoton : public BasicColorPhoton {
 public:
 	RadiancePhoton(const Point &pp, const RGBColor &wt, const Normal & nn)
-			: BasicPhoton(pp, wt), n(nn) { }
+		: BasicColorPhoton(pp, wt), n(nn) { }
 	RadiancePhoton(const Point &pp, const Normal & nn)
-			: BasicPhoton(pp, 0.0f), n(nn) { }
+		: BasicColorPhoton(pp, 0.0f), n(nn) { }
 
-	RadiancePhoton() : BasicPhoton() { }
+	RadiancePhoton() : BasicColorPhoton() { }
 
 	void save(bool isLittleEndian, std::basic_ostream<char> &stream);
 
 	Normal n;
+};
+
+class PdfPhoton : public BasicPhoton {
+public:
+	// Declare direction class
+	class Direction {
+	public:
+		Direction() { }
+		Direction(float aWeight) : weight(aWeight) { }
+		Direction(const Vector& aDir, float aRadius, float aWeight)
+			: dir(aDir), cosRadius(cosf(aRadius)), weight(aWeight) { }
+
+		bool operator < (const Direction& other) const {
+			return weight < other.weight;
+		}
+
+		Vector dir;
+		float cosRadius;
+		float weight;
+	};
+
+	PdfPhoton(const Point &pp, const vector<Direction>& aDirs)
+		: BasicPhoton(pp), dirs(aDirs)
+	{
+		float totWeight = 0.f;
+		for(u_int i = 0; i<dirs.size(); i++)
+			totWeight += dirs[i].weight;
+		for(u_int i = 0; i<dirs.size(); i++)
+			dirs[i].weight /= totWeight;
+	}
+
+	PdfPhoton() : BasicPhoton(), dirs(0) { }
+
+	void save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+	}
+
+	float Sample(const TsPack *tspack, Vector *wi, float u1, float u2, float u3) const {
+		u_int dn = Clamp(
+				(u_int)(std::upper_bound(dirs.begin(), dirs.end(), Direction(u3)) - dirs.begin()),
+				(u_int)(0), (u_int)(dirs.size() - 1));
+
+		Vector vx, vy;
+		CoordinateSystem(dirs[dn].dir, &vx, &vy);
+		*wi = UniformSampleCone(u1, u2, dirs[dn].cosRadius, vx, vy, dirs[dn].dir);
+
+		return Pdf(tspack, *wi);
+	}
+	float Pdf(const TsPack *tspack, const Vector &wi) const {
+		float pdf = 0.f;
+		for (u_int i = 0; i < dirs.size(); ++i) {
+			if (Dot(dirs[i].dir, wi) > dirs[i].cosRadius)
+				pdf += UniformConePdf(dirs[i].cosRadius);
+		}
+		return pdf;
+	}
+
+private:
+	vector<Direction> dirs;
 };
 
 //------------------------------------------------------------------------------
@@ -221,6 +290,21 @@ public:
 		photonmap = new KdTree<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(photons);
 	}
 
+	/**
+	 * Estimates the outgoing radiance at a surface point in a single direction.
+	 *
+	 * @param tspack   The thread specific pack.
+	 * @param isect    The surface point intersection.
+	 * @param wo       The outgoing direction.
+	 * @param bxdfType The bxdf types at the surface point to to take into account.
+	 *
+	 * @return A radiance estimate.
+	 */
+	SWCSpectrum LPhoton(const TsPack *tspack, 
+		const Intersection& isect, 
+		const Vector& wo, 
+		const BxDFType bxdfType) const;
+
 	void save(std::basic_ostream<char> &stream) const;
 
 	static void load(std::basic_istream<char> &stream, RadiancePhotonMap *map);
@@ -247,7 +331,7 @@ public:
 	}
 
 	/**
-	 * Estimates the irradiance divided by rho at a surface point.
+	 * Estimates the incoming irradiance at a surface point.
 	 *
 	 * @param tspack The thread specific pack.
 	 * @param p      The position of the surface point.
@@ -255,7 +339,10 @@ public:
 	 *
 	 * @return An irradiance estimate.
 	 */
-	SWCSpectrum estimateE(const TsPack *tspack,const Point &p, const Normal &n) const;
+	SWCSpectrum EPhoton(
+		const TsPack *tspack,
+		const Point &p, 
+		const Normal &n) const;
 
 	/**
 	 * Estimates the outgoing radiance at a surface point in a single direction.
@@ -269,6 +356,25 @@ public:
 	 * @return A radiance estimate.
 	 */
 	SWCSpectrum LPhoton(
+		const TsPack* tspack,
+		const BSDF *bsdf,
+		const Intersection &isect,
+		const Vector &wo,
+		const BxDFType bxdfType) const;
+
+	/**
+	 * Estimates the outgoing radiance at a surface point in a single direction
+	 * using a diffuse surface approximation.
+	 *
+	 * @param tspack   The thread specific pack.
+	 * @param bsdf     The bsdf of the surface point.
+	 * @param isect    The surface point intersection.
+	 * @param wo       The outgoing direction.
+	 * @param bxdfType The bxdf types at the surface point to to take into account.
+	 *
+	 * @return A radiance estimate.
+	 */
+	SWCSpectrum LPhotonDiffuseApprox(
 		const TsPack* tspack,
 		const BSDF *bsdf,
 		const Intersection &isect,

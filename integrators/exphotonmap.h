@@ -101,9 +101,9 @@ private:
 	int sampleFinalGather1Offset;
 	int sampleFinalGather2Offset;
 
-	mutable LightPhotonMap *causticMap;
-	mutable LightPhotonMap *indirectMap;
-	mutable RadiancePhotonMap *radianceMap;
+	LightPhotonMap *causticMap;
+	LightPhotonMap *indirectMap;
+	RadiancePhotonMap *radianceMap;
 };
 
 }//namespace lux

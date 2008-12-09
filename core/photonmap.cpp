@@ -63,9 +63,52 @@ void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream)
 		osWriteLittleEndianFloat(isLittleEndian, stream, n[i]);
 }
 
-SWCSpectrum LightPhotonMap::estimateE(const TsPack *tspack, const Point &p, const Normal &n) const {
-    if ((nPaths <= 0) || (!photonmap))
-		return 0.0f;
+SWCSpectrum RadiancePhotonMap::LPhoton(
+	const TsPack *tspack, 
+	const Intersection& isect, 
+	const Vector& wo, 
+	const BxDFType bxdfType) const 
+{
+	SWCSpectrum L(0.0f);
+	if (!photonmap)
+		return L;
+
+	Normal ng = isect.dg.nn;
+	if(Dot(wo, ng) < 0.f) ng = -ng;
+
+	const Point& p = isect.dg.p;
+
+	if( ( bxdfType & BSDF_REFLECTION ) != 0 ) {
+		// Add reflected radiance
+		NearPhotonProcess<RadiancePhoton> procRefl(p, ng);
+		float md2Refl = maxDistSquared;
+		lookup(p, procRefl, md2Refl);
+		if (procRefl.photon) {
+			L += procRefl.photon->GetSWCSpectrum( tspack );
+		}
+	}
+
+	if( ( bxdfType & BSDF_TRANSMISSION ) != 0 ) {
+		// Add transmitted radiance
+		NearPhotonProcess<RadiancePhoton> procTransm(p, -ng);
+		float md2Transm = maxDistSquared;
+		lookup(p, procTransm, md2Transm);
+		if (procTransm.photon) {
+			L += procTransm.photon->GetSWCSpectrum( tspack );
+		}
+	}
+
+	return L;
+}
+
+SWCSpectrum LightPhotonMap::EPhoton(
+	const TsPack *tspack, 
+	const Point &p, 
+	const Normal &n) const 
+{
+    SWCSpectrum E(0.0f);
+	if ((nPaths <= 0) || (!photonmap))
+		return E;
 
     // Lookup nearby photons at irradiance computation point
     NearSetPhotonProcess<LightPhoton> proc(nLookup, p);
@@ -76,7 +119,6 @@ SWCSpectrum LightPhotonMap::estimateE(const TsPack *tspack, const Point &p, cons
 
     // Accumulate irradiance value from nearby photons
     ClosePhoton<LightPhoton> *photons = proc.photons;
-    SWCSpectrum E(0.);
 	for (u_int i = 0; i < proc.foundPhotons; ++i) {
 		if (Dot(n, photons[i].photon->wi) > 0.f)
             E += photons[i].photon->GetSWCSpectrum( tspack );
@@ -111,41 +153,71 @@ SWCSpectrum LightPhotonMap::LPhoton(
     const ClosePhoton<LightPhoton> *photons = proc.photons;
     const u_int nFound = proc.foundPhotons;
     const Normal Nf = Dot(wo, isect.dg.nn) < 0 ? -isect.dg.nn : isect.dg.nn;
+	const float distSquared = md2;
 
-    /*if ((bxdfType & BSDF_GLOSSY) != 0) {
-        // Compute exitant radiance from photons for surface with a glossy component
-        for (u_int i = 0; i < nFound; ++i) {
-            const EPhoton *p = photons[i].photon;
-            BxDFType flag = 
-				BxdfType( bxdfType & 
-				          (Dot(Nf, p->wi) > 0.f ? BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION) );
-            float k = Ekernel(p, isect.dg.p, distSquared);
+    // Compute exitant radiance from photons for a surface
+    for (u_int i = 0; i < nFound; ++i) {
+		const LightPhoton *p = photons[i].photon;
+        BxDFType flag = 
+			BxDFType( bxdfType & 
+			          (Dot(Nf, p->wi) > 0.f ? BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION) );
+		float k = Ekernel(p, isect.dg.p, distSquared);
+		const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
 
-			const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
-
-            L += (k / nPaths) * bsdf->f(tspack, wo, p->wi, flag) * alpha;
-        }
-    } else*/ {
-        // Compute exitant radiance from photons, estimate is not-so-good for non-diffuse surface
-        SWCSpectrum Lr(0.), Lt(0.);
-
-        for (u_int i = 0; i < nFound; ++i) {			
-			const SWCSpectrum& alpha = photons[i].photon->GetSWCSpectrum( tspack );
-
-            if (Dot(Nf, photons[i].photon->wi) > 0.f) {
-                float k = Ekernel(photons[i].photon, isect.dg.p, md2);
-                Lr += (k / nPaths) * alpha;
-            } else {
-                float k = Ekernel(photons[i].photon, isect.dg.p, md2);
-                Lt += (k / nPaths) * alpha;
-            }
-        }
-
-		if( (bxdfType & BSDF_REFLECTION) != 0 )
-			L += Lr * bsdf->rho(tspack, wo, BxDFType(bxdfType & BSDF_ALL_REFLECTION)) * INV_PI;
-		if( (bxdfType & BSDF_TRANSMISSION) != 0 )
-			L += Lt * bsdf->rho(tspack, wo, BxDFType(bxdfType & BSDF_ALL_TRANSMISSION)) * INV_PI;
+        L += (k / nPaths) * bsdf->f(tspack, wo, p->wi, flag) * alpha;
     }
+
+    return L;
+}
+
+SWCSpectrum LightPhotonMap::LPhotonDiffuseApprox(
+	const TsPack* tspack,
+	const BSDF *bsdf,
+	const Intersection &isect,
+	const Vector &wo,
+	const BxDFType bxdfType) const 
+{
+    SWCSpectrum L(0.0f);
+	if ((nPaths <= 0) || (!photonmap))
+		return L;
+
+    if (bsdf->NumComponents(bxdfType) == 0)
+        return L;
+
+	// Initialize _PhotonProcess_ object, _proc_, for photon map lookups
+    NearSetPhotonProcess<LightPhoton> proc(nLookup, isect.dg.p);
+    proc.photons = 
+		(ClosePhoton<LightPhoton> *) alloca(nLookup * sizeof (ClosePhoton<LightPhoton>));
+    // Do photon map lookup
+	float md2 = maxDistSquared;
+    lookup(isect.dg.p, proc, md2);
+    // Accumulate light from nearby photons
+    // Estimate reflected light from photons
+    const ClosePhoton<LightPhoton> *photons = proc.photons;
+    const u_int nFound = proc.foundPhotons;
+    const Normal Nf = Dot(wo, isect.dg.nn) < 0 ? -isect.dg.nn : isect.dg.nn;
+	const float distSquared = md2;
+
+    // Compute exitant radiance from photons, estimate may be not-so-good for non-diffuse surface
+    SWCSpectrum Lr(0.), Lt(0.);
+
+	for (u_int i = 0; i < nFound; ++i) {
+		const LightPhoton *p = photons[i].photon;
+		const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
+
+        if (Dot(Nf, photons[i].photon->wi) > 0.f) {
+            float k = Ekernel(p, isect.dg.p, distSquared);
+            Lr += (k / nPaths) * alpha;
+        } else {
+            float k = Ekernel(p, isect.dg.p, distSquared);
+            Lt += (k / nPaths) * alpha;
+        }
+    }
+
+	if( (bxdfType & BSDF_REFLECTION) != 0 )
+		L += Lr * bsdf->rho(tspack, wo, BxDFType(bxdfType & BSDF_ALL_REFLECTION)) * INV_PI;
+	if( (bxdfType & BSDF_TRANSMISSION) != 0 )
+		L += Lt * bsdf->rho(tspack, wo, BxDFType(bxdfType & BSDF_ALL_TRANSMISSION)) * INV_PI;
 
     return L;
 }
@@ -177,18 +249,20 @@ SWCSpectrum LightPhotonMap::LDiffusePhoton(
     const ClosePhoton<LightPhoton> *photons = proc.photons;
     const u_int nFound = proc.foundPhotons;
 	const Normal Nf = Dot(wo, isect.dg.nn) < 0 ? -isect.dg.nn : isect.dg.nn;
+	const float distSquared = md2;
 
     // Compute exitant radiance from photons
     SWCSpectrum Lr(0.), Lt(0.);
 
-    for (u_int i = 0; i < nFound; ++i) {			
-		const SWCSpectrum& alpha = photons[i].photon->GetSWCSpectrum( tspack );
+    for (u_int i = 0; i < nFound; ++i) {
+		const LightPhoton *p = photons[i].photon;
+		const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
 
         if (Dot(Nf, photons[i].photon->wi) > 0.f) {
-            float k = Ekernel(photons[i].photon, isect.dg.p, md2);
+            float k = Ekernel(p, isect.dg.p, distSquared);
             Lr += (k / nPaths) * alpha;
         } else {
-            float k = Ekernel(photons[i].photon, isect.dg.p, md2);
+            float k = Ekernel(p, isect.dg.p, distSquared);
             Lt += (k / nPaths) * alpha;
         }
     }
@@ -553,17 +627,17 @@ void PhotonMapPreprocess(
 			SWCSpectrum alpha = 0.f;
 
             if (!rho_r.Black()) {
-                SWCSpectrum E = directMap.estimateE(tspack, p, n);
-				E += indirectMap->estimateE(tspack, p, n);
-				E += causticMap->estimateE(tspack, p, n);
+                SWCSpectrum E = directMap.EPhoton(tspack, p, n);
+				E += indirectMap->EPhoton(tspack, p, n);
+				E += causticMap->EPhoton(tspack, p, n);
 
                 alpha += E * INV_PI * rho_r;
             }
 
             if (!rho_t.Black()) {
-                SWCSpectrum E = directMap.estimateE(tspack, p, -n);
-				E += indirectMap->estimateE(tspack, p, -n);
-				E += causticMap->estimateE(tspack, p, -n);
+                SWCSpectrum E = directMap.EPhoton(tspack, p, -n);
+				E += indirectMap->EPhoton(tspack, p, -n);
+				E += causticMap->EPhoton(tspack, p, -n);
 
                 alpha += E * INV_PI * rho_t;
             }

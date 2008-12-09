@@ -168,7 +168,7 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 		scene, 
 		mapsFileName,
 		BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION),
-		BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION),
+		BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION),
 		nDirectPhotons,
 		nRadiancePhotons, radianceMap,
 		nIndirectPhotons, indirectMap,
