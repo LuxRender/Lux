@@ -110,7 +110,7 @@ public:
 	 *
 	 * @param shapeparams The parameters of the shape.
 	 */
-	boost::shared_ptr<Material> makematerial(const ParamSet& shapeparams);
+	boost::shared_ptr<Material> makematerial(const ParamSet& shapeparams, bool force);
 	void makemixmaterial(const ParamSet& shapeparams, const ParamSet& materialparams, boost::shared_ptr<Material> mtl);
 
 	//TODO - jromang replace by a destructor or remove
@@ -296,7 +296,7 @@ private:
 		// Graphics State Methods
 		GraphicsState() {
 			// GraphicsState Constructor Implementation
-			material = "matte";
+			material = "";
 			reverseOrientation = false;
 		}
 		// Graphics State

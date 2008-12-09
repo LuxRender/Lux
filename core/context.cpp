@@ -491,18 +491,19 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	//Primitive* prim(new GeometricPrimitive(shape, mtl, area));
 }
 
-boost::shared_ptr<Material> Context::makematerial(const ParamSet& shapeparams) {
+boost::shared_ptr<Material> Context::makematerial(const ParamSet& shapeparams, bool force) {
 	// Create base material
 	TextureParams mp(shapeparams, graphicsState->materialParams,
 		graphicsState->floatTextures, graphicsState->colorTextures);
 	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
-	if (!mtl)
+	if (!mtl && force) {
 		mtl = MakeMaterial("matte", curTransform, mp);
-	if (!mtl)
-		luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
+		if (!mtl)
+			luxError(LUX_BUG,LUX_SEVERE,"Unable to create \"matte\" material?!");
+	}
 
 	// Set child materials if mix material
-	if(graphicsState->material == "mix") {
+	if(mtl && graphicsState->material == "mix") {
 		makemixmaterial(shapeparams, graphicsState->materialParams, mtl);
 	}
 	return mtl;
@@ -582,7 +583,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 	}
 
 	// Initialize material for shape
-	boost::shared_ptr<Material> mtl = makematerial(params);
+	boost::shared_ptr<Material> mtl = makematerial(params, true);
 
 	// Create primitive and add to scene or current instance
 	shape->SetMaterial(mtl); // Lotus - Set the material
@@ -677,7 +678,7 @@ void Context::objectInstance(const string &name) {
 
 	// Initialize material for instance
 	ParamSet params;
-	boost::shared_ptr<Material> material = makematerial(params);
+	boost::shared_ptr<Material> material = makematerial(params, false);
 
 	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform, material));
 	renderOptions->primitives.push_back(o);
@@ -731,7 +732,7 @@ void Context::motionInstance(const string &name, float startTime, float endTime,
 
         // Initialize material for instance
         ParamSet params;
-        boost::shared_ptr<Material> material = makematerial(params);
+        boost::shared_ptr<Material> material = makematerial(params, false);
 
         boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform, EndTransform, startTime, endTime));
         renderOptions->primitives.push_back(o);

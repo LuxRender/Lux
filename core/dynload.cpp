@@ -64,7 +64,8 @@ boost::shared_ptr<Material> MakeMaterial(const string &name,
 		return ret;
 	}
 
-	LoadError("material", name);
+	if (name != "")
+		LoadError("material", name);
 	return boost::shared_ptr<Material>();
 }
 
