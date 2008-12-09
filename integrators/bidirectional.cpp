@@ -91,7 +91,7 @@ void BidirIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
 }
 
-static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,//const Ray &r,
+static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	const Sample *sample, const int sampleOffset,
 	vector<BidirVertex> &vertices, float directWeight)
 {
@@ -148,6 +148,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			v.flux *= vertices[nVerts - 2].flux;
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
+		ray.time = sample->time;
 		if (!scene->Intersect(ray, &isect)) {
 			vertices[nVerts].wo = -ray.d;
 			vertices[nVerts].bsdf = NULL;
@@ -213,6 +214,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 			v.flux *= vertices[nVerts - 2].flux;
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
+		ray.time = sample->time;
 		if (!scene->Intersect(ray, &isect))
 			break;
 	}
@@ -472,7 +474,7 @@ static bool getLightHit(const TsPack *tspack, const Scene *scene, vector<BidirVe
 
 static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	vector<BidirVertex> &eyePath, int length, int eyeDepth, int lightDepth,
-	SWCSpectrum *Le, float *weight, float directWeight)
+	SWCSpectrum *Le, float *weight, float directWeight, float time)
 {
 	BidirVertex &v(eyePath[length - 1]);
 	if (v.bsdf)
@@ -482,8 +484,9 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	float totalWeight = 0.f;
 	for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 		const Light *light = scene->lights[lightNumber];
-		v.Le = light->Le(tspack, scene, RayDifferential(eyePath[length - 2].p,
-				eyePath[length - 2].wi), eyePath[length - 2].ns,
+		RayDifferential ray(eyePath[length - 2].p, eyePath[length - 2].wi);
+		ray.time = time;
+		v.Le = light->Le(tspack, scene, ray, eyePath[length - 2].ns,
 			&v.eBsdf, &v.ePdf, &v.ePdfDirect);
 		if (v.eBsdf == NULL || !(v.ePdf > 0.f) || v.Le.Black())
 			continue;
@@ -616,7 +619,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 		if (i > 1) {
 			SWCSpectrum Lh(0.f);
 			if (getEnvironmentLight(tspack, scene, eyePath, i, maxEyeDepth,
-				maxLightDepth, &Lh, &weight, directWeight)) {
+				maxLightDepth, &Lh, &weight, directWeight, sample->time)) {
 				if (!Lh.Black()) {
 					L += Lh;
 					variance += weight * Lh.filter(tspack);
