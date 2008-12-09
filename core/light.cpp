@@ -41,16 +41,17 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 	*f = 1.f;
 	RayDifferential ray(r);
 	Intersection isect;
+	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 	while (true) {
 		if (!scene->Intersect(ray, &isect))
 			return true;
 		BSDF *bsdf = isect.GetBSDF(tspack, ray, tspack->rng->floatValue());							// TODO - REFACT - remove and add random value from sample
-		const float pdf = bsdf->Pdf(tspack, -ray.d, ray.d, BSDF_ALL_TRANSMISSION);
+		const float pdf = bsdf->Pdf(tspack, -ray.d, ray.d, flags);
 		if (!(pdf > 0.f))
 			return false;
 		*f *= AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d)) / pdf;
 
-		*f *= bsdf->f(tspack, -ray.d, ray.d);
+		*f *= bsdf->f(tspack, -ray.d, ray.d, flags);
 		if (f->Black())
 			return false;
 
