@@ -22,8 +22,6 @@
 #include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/textctrl.h>
-#include <wx/bmpbuttn.h>
-#include <wx/button.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
 #include <wx/aui/auibook.h>
@@ -31,6 +29,7 @@
 #include <wx/frame.h>
 #include <wx/choice.h>
 #include <wx/slider.h>
+#include <wx/button.h>
 #include <wx/checklst.h>
 #include <wx/notebook.h>
 #include <wx/dialog.h>
@@ -98,11 +97,9 @@ namespace lux
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
 			wxPanel* m_networkPage;
-			wxToolBar* m_networkToolBab;
+			wxToolBar* m_networkToolBar;
 			wxStaticText* m_serverStaticText;
 			wxTextCtrl* m_serverTextCtrl;
-			wxBitmapButton* m_addServerButton;
-			wxBitmapButton* m_removeServerButton;
 			wxStaticText* m_updateStaticText;
 			wxSpinCtrl* m_serverUpdateSpin;
 			wxTreeCtrl* m_networkTreeCtrl;

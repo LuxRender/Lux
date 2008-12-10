@@ -142,7 +142,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_renderPage->SetSizer( bRenderSizer );
 	m_renderPage->Layout();
 	bRenderSizer->Fit( m_renderPage );
-	m_auinotebook->AddPage( m_renderPage, wxT("Render"), true, wxNullBitmap );
+	m_auinotebook->AddPage( m_renderPage, wxT("Render"), false, wxNullBitmap );
 	m_logPage = new wxPanel( m_auinotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bLogSizer;
 	bLogSizer = new wxBoxSizer( wxVERTICAL );
@@ -158,39 +158,27 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bNetworkSizer;
 	bNetworkSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_networkToolBab = new wxToolBar( m_networkPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
-	m_serverStaticText = new wxStaticText( m_networkToolBab, wxID_ANY, wxT("Server: "), wxDefaultPosition, wxDefaultSize, 0 );
+	m_networkToolBar = new wxToolBar( m_networkPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
+	m_serverStaticText = new wxStaticText( m_networkToolBar, wxID_ANY, wxT("Server: "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_serverStaticText->Wrap( -1 );
-	m_networkToolBab->AddControl( m_serverStaticText );
-	m_serverTextCtrl = new wxTextCtrl( m_networkToolBab, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 200,-1 ), wxTE_PROCESS_ENTER );
+	m_networkToolBar->AddControl( m_serverStaticText );
+	m_serverTextCtrl = new wxTextCtrl( m_networkToolBar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 200,-1 ), wxTE_PROCESS_ENTER );
 	m_serverTextCtrl->SetToolTip( wxT("Type the address of a network server") );
 	
-	m_networkToolBab->AddControl( m_serverTextCtrl );
-	m_addServerButton = new wxBitmapButton( m_networkToolBab, ID_ADD_SERVER, wxBitmap( blank_xpm ), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|wxNO_BORDER );
-	m_addServerButton->SetToolTip( wxT("Add Server") );
-	
-	m_addServerButton->SetToolTip( wxT("Add Server") );
-	
-	m_networkToolBab->AddControl( m_addServerButton );
-	m_networkToolBab->AddControl( m_addServerButton );
-	m_removeServerButton = new wxBitmapButton( m_networkToolBab, ID_REMOVE_SERVER, wxBitmap( blank_xpm ), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|wxNO_BORDER );
-	m_removeServerButton->SetToolTip( wxT("Remove Server") );
-	
-	m_removeServerButton->SetToolTip( wxT("Remove Server") );
-	
-	m_networkToolBab->AddControl( m_removeServerButton );
-	m_networkToolBab->AddControl( m_removeServerButton );
-	m_networkToolBab->AddSeparator();
-	m_updateStaticText = new wxStaticText( m_networkToolBab, wxID_ANY, wxT("Update interval: "), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+	m_networkToolBar->AddControl( m_serverTextCtrl );
+	m_networkToolBar->AddTool( ID_ADD_SERVER, wxT("Add Server"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Add Server"), wxT("Add Server") );
+	m_networkToolBar->AddTool( ID_REMOVE_SERVER, wxT("Remove Server"), wxBitmap( blank_xpm ), wxNullBitmap, wxITEM_NORMAL, wxT("Remove Server"), wxT("Remove Server") );
+	m_networkToolBar->AddSeparator();
+	m_updateStaticText = new wxStaticText( m_networkToolBar, wxID_ANY, wxT("Update interval: "), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
 	m_updateStaticText->Wrap( -1 );
-	m_networkToolBab->AddControl( m_updateStaticText );
-	m_serverUpdateSpin = new wxSpinCtrl( m_networkToolBab, ID_SERVER_UPDATE_INT, wxT("240"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 10000000, 0 );
+	m_networkToolBar->AddControl( m_updateStaticText );
+	m_serverUpdateSpin = new wxSpinCtrl( m_networkToolBar, ID_SERVER_UPDATE_INT, wxT("240"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 10000000, 0 );
 	m_serverUpdateSpin->SetToolTip( wxT("Enter the number of seconds between server updates") );
 	
-	m_networkToolBab->AddControl( m_serverUpdateSpin );
-	m_networkToolBab->Realize();
+	m_networkToolBar->AddControl( m_serverUpdateSpin );
+	m_networkToolBar->Realize();
 	
-	bNetworkSizer->Add( m_networkToolBab, 0, wxEXPAND, 5 );
+	bNetworkSizer->Add( m_networkToolBar, 0, wxEXPAND, 5 );
 	
 	m_networkTreeCtrl = new wxTreeCtrl( m_networkPage, ID_NETWORK_TREE, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE );
 	bNetworkSizer->Add( m_networkTreeCtrl, 1, wxALL|wxEXPAND, 5 );
@@ -198,7 +186,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_networkPage->SetSizer( bNetworkSizer );
 	m_networkPage->Layout();
 	bNetworkSizer->Fit( m_networkPage );
-	m_auinotebook->AddPage( m_networkPage, wxT("Network"), false, wxNullBitmap );
+	m_auinotebook->AddPage( m_networkPage, wxT("Network"), true, wxNullBitmap );
 	
 	bSizer->Add( m_auinotebook, 1, wxEXPAND | wxALL, 5 );
 	
@@ -231,8 +219,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( ID_PANTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_ZOOMTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_REFINETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
-	m_addServerButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_removeServerButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	this->Connect( ID_ADD_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_serverUpdateSpin->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( LuxMainFrame::OnSpin ), NULL, this );
 	m_networkTreeCtrl->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( LuxMainFrame::OnTreeSelChanged ), NULL, this );
 }
@@ -264,8 +252,8 @@ LuxMainFrame::~LuxMainFrame()
 	this->Disconnect( ID_PANTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_ZOOMTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_REFINETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
-	m_addServerButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_removeServerButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	this->Disconnect( ID_ADD_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_serverUpdateSpin->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( LuxMainFrame::OnSpin ), NULL, this );
 	m_networkTreeCtrl->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( LuxMainFrame::OnTreeSelChanged ), NULL, this );
 }

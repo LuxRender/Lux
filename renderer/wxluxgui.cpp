@@ -248,8 +248,14 @@ void LuxGui::LoadImages() {
 	///////////////////////////////////////////////////////////////////////////////
 	// CF : network toolbar...
 
-	m_addServerButton->SetBitmapLabel(wxMEMORY_BITMAP(plus_png));
-	m_removeServerButton->SetBitmapLabel(wxMEMORY_BITMAP(minus_png));
+	// NOTE - Ratow - Network toolbar is now a real toolbar component
+	wxToolBarToolBase *addServertool = m_networkToolBar->RemoveTool(ID_ADD_SERVER);
+	addServertool->SetNormalBitmap(wxMEMORY_BITMAP(plus_png));
+	m_networkToolBar->InsertTool(2, addServertool);
+	wxToolBarToolBase *removeServertool = m_networkToolBar->RemoveTool(ID_REMOVE_SERVER);
+	removeServertool->SetNormalBitmap(wxMEMORY_BITMAP(minus_png));
+	m_networkToolBar->InsertTool(3, removeServertool);
+	m_networkToolBar->Realize();
 
 	///////////////////////////////////////////////////////////////////////////////
 
