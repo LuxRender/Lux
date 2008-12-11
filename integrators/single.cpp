@@ -107,7 +107,7 @@ SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 					  Ld * float(nLights) / pdf;
 			}
 		}
-		sampOffset += 3;
+		sampOffset += 4;
 	}
 	return Lv * step;
 }
