@@ -631,22 +631,17 @@ boost::shared_ptr<Texture<SWCSpectrum> >
 	string name = geomParams.FindTexture(n);
 	if (name == "") name = materialParams.FindTexture(n);
 	if (name != "") {
-		if (SWCSpectrumTextures.find(name) !=
-		       SWCSpectrumTextures.end())
+		if (SWCSpectrumTextures.find(name) != SWCSpectrumTextures.end())
 			return SWCSpectrumTextures[name];
-		else
-		{
-			//Error("Couldn't find RGBColor"
-			//      "texture named \"%s\"", n.c_str());
+		else {
 			std::stringstream ss;
-			ss<<"Couldn't find RGBColor texture named '"<<n<<"'";
-			luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+			ss << "Couldn't find color texture named '" << name << "' for " << n;
+			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		}
 	}
 	RGBColor val = geomParams.FindOneRGBColor(n,
 		materialParams.FindOneRGBColor(n, def));
-	boost::shared_ptr<Texture<SWCSpectrum> > o (new ConstantRGBColorTexture<SWCSpectrum>(val));
-	return o;
+	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture<SWCSpectrum>(val));
 }
 boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
 	string name = geomParams.FindTexture(n);
@@ -654,12 +649,10 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 	if (name != "") {
 		if (floatTextures.find(name) != floatTextures.end())
 			return floatTextures[name];
-		else
-		{
-					//Error("Couldn't find float texture named \"%s\"", n.c_str());
-					std::stringstream ss;
-					ss<<"Couldn't find float texture named '"<<n<<"'";
-					luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+		else {
+			std::stringstream ss;
+			ss << "Couldn't find float texture named '" << name << "' for " << n;
+			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		}
 	}
 	return boost::shared_ptr<Texture<float> >();
