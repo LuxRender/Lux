@@ -93,7 +93,7 @@ void BidirIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 
 static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	const Sample *sample, const int sampleOffset,
-	vector<BidirVertex> &vertices, float directWeight)
+	vector<BidirVertex> &vertices, float directWeight, float time)
 {
 	RayDifferential ray;
 	Intersection isect;
@@ -148,7 +148,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			v.flux *= vertices[nVerts - 2].flux;
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
-		ray.time = sample->time;
+		ray.time = time;
 		if (!scene->Intersect(ray, &isect)) {
 			vertices[nVerts].wo = -ray.d;
 			vertices[nVerts].bsdf = NULL;
@@ -171,7 +171,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 
 static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	const Sample *sample, const int sampleOffset,
-	vector<BidirVertex> &vertices)
+	vector<BidirVertex> &vertices, float time)
 {
 	RayDifferential ray;
 	Intersection isect;
@@ -214,7 +214,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 			v.flux *= vertices[nVerts - 2].flux;
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
-		ray.time = sample->time;
+		ray.time = time;
 		if (!scene->Intersect(ray, &isect))
 			break;
 	}
@@ -575,7 +575,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 		sample->lensU, sample->lensV, .5f, &eyeBsdf, &eyePdf, &We))
 		return nrContribs;	//FIXME not necessarily true if special sampling for direct connection to the eye
 	We /= eyePdf;
-	int nEye = generateEyePath(tspack, scene, eyeBsdf, sample, sampleEyeOffset, eyePath, directWeight);
+	int nEye = generateEyePath(tspack, scene, eyeBsdf, sample, sampleEyeOffset, eyePath, directWeight, ray.time);
 	// Light path cannot intersect camera (FIXME)
 	eyePath[0].dARWeight = 0.f;
 	// Choose light
@@ -594,7 +594,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 		lightPdf /= numberOfLights;
 		Le /= lightPdf;
 		nLight = generateLightPath(tspack, scene, lightBsdf, sample,
-			sampleLightOffset, lightPath);
+			sampleLightOffset, lightPath, ray.time);
 	}
 	float lightDirectPdf = 0.f;
 	if (nLight > 0) {
@@ -619,7 +619,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 		if (i > 1) {
 			SWCSpectrum Lh(0.f);
 			if (getEnvironmentLight(tspack, scene, eyePath, i, maxEyeDepth,
-				maxLightDepth, &Lh, &weight, directWeight, sample->time)) {
+				maxLightDepth, &Lh, &weight, directWeight, ray.time)) {
 				if (!Lh.Black()) {
 					L += Lh;
 					variance += weight * Lh.filter(tspack);
