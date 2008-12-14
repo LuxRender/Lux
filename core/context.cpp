@@ -113,10 +113,18 @@ void Context::free() {
 void Context::addServer(const string &name) {
 	//luxServerList.push_back(std::string(name));
 	renderFarm->connect(name);
+
+	// NOTE - Ratow - if this is the first server added during rendering, make sure update thread is started
+	if(getServerCount() == 1 && luxCurrentScene)
+		renderFarm->startFilmUpdater(luxCurrentScene);
 }
 
 void Context::removeServer(const string &name) {
 	renderFarm->disconnect(name);
+
+	// NOTE - Ratow - if this is the last server, make sure update thread is stopped
+	if(getServerCount() == 0)
+		renderFarm->stopFilmUpdater();
 }
 
 int Context::getServerCount() {

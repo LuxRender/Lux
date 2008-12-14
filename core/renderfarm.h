@@ -108,7 +108,7 @@ private:
 	struct ExtRenderingServerInfo {
 		ExtRenderingServerInfo(string n, string p, string id) : name(n),
 				port(p), sid(id), timeLastContact(boost::posix_time::second_clock::local_time()),
-				numberOfSamplesReceived(0.0) { }
+				numberOfSamplesReceived(0.0), flushed(false) { }
 
 		string name;
 		string port;
@@ -116,6 +116,8 @@ private:
 
 		boost::posix_time::ptime timeLastContact;
 		double numberOfSamplesReceived;
+
+		bool flushed;
 	};
 
 	static void decodeServerName(const string &serverName, string &name, string &port);

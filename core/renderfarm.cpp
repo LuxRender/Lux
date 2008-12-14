@@ -73,9 +73,13 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 
 // Dade - used to periodically update the film
 void RenderFarm::startFilmUpdater(Scene *scene) {
-    filmUpdateThread = new FilmUpdaterThread(this, scene);
-    filmUpdateThread->thread = new boost::thread(boost::bind(
-            FilmUpdaterThread::updateFilm, filmUpdateThread));
+	if (filmUpdateThread == NULL) {
+		filmUpdateThread = new FilmUpdaterThread(this, scene);
+		filmUpdateThread->thread = new boost::thread(boost::bind(
+			FilmUpdaterThread::updateFilm, filmUpdateThread));
+	} else {
+		luxError(LUX_ILLSTATE,LUX_ERROR,"RenderFarm::startFilmUpdater() called but update thread already started.");
+	}
 }
 
 void RenderFarm::stopFilmUpdater() {
@@ -83,7 +87,9 @@ void RenderFarm::stopFilmUpdater() {
         filmUpdateThread->interrupt();
         delete filmUpdateThread;
         filmUpdateThread = NULL;
-    }
+    } else {
+		luxError(LUX_ILLSTATE,LUX_ERROR,"RenderFarm::stopFilmUpdater() called but update thread not started.");
+	}
 }
 
 void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
@@ -163,6 +169,8 @@ bool RenderFarm::connect(const string &serverName) {
         return false;
     }
 
+    flush();
+
     return true;
 }
 
@@ -208,17 +216,21 @@ void RenderFarm::flush() {
 
     //flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
-        try {
-            ss.str("");
-            ss << "Sending commands to server: " <<
-					serverInfoList[i].name << ":" << serverInfoList[i].port;
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		if(serverInfoList[i].flushed == false) {
+			try {
+				ss.str("");
+				ss << "Sending commands to server: " <<
+						serverInfoList[i].name << ":" << serverInfoList[i].port;
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-            tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
-            stream << commands << std::endl;
-        } catch (std::exception& e) {
-            luxError(LUX_SYSTEM, LUX_ERROR, e.what());
-        }
+				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
+				stream << commands << std::endl;
+
+				serverInfoList[i].flushed = true;
+			} catch (std::exception& e) {
+				luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+			}
+		}
     }
 
     // Dade - write info only if there was the communication with some server
