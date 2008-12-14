@@ -142,7 +142,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_renderPage->SetSizer( bRenderSizer );
 	m_renderPage->Layout();
 	bRenderSizer->Fit( m_renderPage );
-	m_auinotebook->AddPage( m_renderPage, wxT("Render"), false, wxNullBitmap );
+	m_auinotebook->AddPage( m_renderPage, wxT("Render"), true, wxNullBitmap );
 	m_logPage = new wxPanel( m_auinotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bLogSizer;
 	bLogSizer = new wxBoxSizer( wxVERTICAL );
@@ -172,7 +172,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_updateStaticText = new wxStaticText( m_networkToolBar, wxID_ANY, wxT("Update interval: "), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
 	m_updateStaticText->Wrap( -1 );
 	m_networkToolBar->AddControl( m_updateStaticText );
-	m_serverUpdateSpin = new wxSpinCtrl( m_networkToolBar, ID_SERVER_UPDATE_INT, wxT("240"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 10000000, 0 );
+	m_serverUpdateSpin = new wxSpinCtrl( m_networkToolBar, ID_SERVER_UPDATE_INT, wxT("240"), wxDefaultPosition, wxSize( 60,-1 ), wxSP_ARROW_KEYS, 0, 10000, 0 );
 	m_serverUpdateSpin->SetToolTip( wxT("Enter the number of seconds between server updates") );
 	
 	m_networkToolBar->AddControl( m_serverUpdateSpin );
@@ -186,7 +186,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_networkPage->SetSizer( bNetworkSizer );
 	m_networkPage->Layout();
 	bNetworkSizer->Fit( m_networkPage );
-	m_auinotebook->AddPage( m_networkPage, wxT("Network"), true, wxNullBitmap );
+	m_auinotebook->AddPage( m_networkPage, wxT("Network"), false, wxNullBitmap );
 	
 	bSizer->Add( m_auinotebook, 1, wxEXPAND | wxALL, 5 );
 	
