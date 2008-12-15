@@ -88,19 +88,21 @@ protected:
 struct VisibilityTester {
 	// VisibilityTester Public Methods
 
-	void SetSegment(const Point &p1, const Point & p2) {
+	void SetSegment(const Point &p1, const Point & p2, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
 		Vector w = p2 - p1;
 		float epsilon = SHADOW_RAY_EPSILON / w.Length();
 		r = Ray(p1, w, epsilon, 1.f - epsilon);
+		r.time = time;
 	}
 
-	void SetRay(const Point &p, const Vector & w) {
+	void SetRay(const Point &p, const Vector & w, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
 		float epsilon = SHADOW_RAY_EPSILON / w.Length();
 		r = Ray(p, w, epsilon);
+		r.time = time;
 	}
 
 	bool Unoccluded(const Scene * scene) const;

@@ -47,7 +47,7 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	*wi = lightDir;
-	visibility->SetRay(p, *wi);
+	visibility->SetRay(p, *wi, tspack->time);
 	return SWCSpectrum(tspack, LSPD);
 }
 float DistantLight::Pdf(const Point &, const Vector &) const {

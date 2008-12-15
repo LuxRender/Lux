@@ -87,7 +87,7 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, floa
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;
-	visibility->SetSegment(p, lightPos);
+	visibility->SetSegment(p, lightPos, tspack->time);
 	return SWCSpectrum(tspack, Intensity * Projection(-*wi) / DistanceSquared(lightPos, p));
 }
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,

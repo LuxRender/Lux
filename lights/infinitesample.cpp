@@ -114,7 +114,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, 
 	// Compute PDF for sampled direction
 	*pdf = (pdfs[0] * pdfs[1]) / (2. * M_PI * M_PI * sintheta);
 	// Return radiance value for direction
-	visibility->SetRay(p, *wi);
+	visibility->SetRay(p, *wi, tspack->time);
 	return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(fu * uDistrib->invCount,
 		fv * vDistribs[u]->invCount));
 }

@@ -240,7 +240,7 @@ static bool visible(const TsPack *tspack, const Scene *scene, const Point &P0,
 	const Point &P1, SWCSpectrum *f)
 {
 	VisibilityTester vt;
-	vt.SetSegment(P0, P1);
+	vt.SetSegment(P0, P1, tspack->time);
 	return vt.TestOcclusion(tspack, scene, f);
 }
 

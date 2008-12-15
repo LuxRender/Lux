@@ -262,6 +262,7 @@ namespace lux {
 		SpectrumWavelengths *swl;
 		RandomGenerator *rng;
 		MemoryArena *arena;
+		float time;
 	};
 
 }

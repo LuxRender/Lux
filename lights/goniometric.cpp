@@ -51,7 +51,7 @@ SWCSpectrum GonioPhotometricLight::Sample_L(const TsPack *tspack, const Point &P
 		VisibilityTester *visibility) const {
 	*wo = Normalize(lightPos - P);
 	*pdf = 1.f;
-	visibility->SetSegment(P, lightPos);
+	visibility->SetSegment(P, lightPos, tspack->time);
 	return SWCSpectrum(tspack, Intensity * Scale(-*wo) / DistanceSquared(lightPos, P));
 }
 SWCSpectrum GonioPhotometricLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,

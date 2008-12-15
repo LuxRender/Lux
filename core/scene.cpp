@@ -249,6 +249,8 @@ void RenderThread::render(RenderThread *myThread) {
 
     myThread->sampler->SetTsPack(myThread->tspack);
 
+	myThread->tspack->time = 0.f;
+
     // allocate sample pos
     u_int *useSampPos = new u_int();
     *useSampPos = 0;
@@ -257,6 +259,7 @@ void RenderThread::render(RenderThread *myThread) {
     // Trace rays: The main loop
     while (true) {
 		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
+			
 			// Dade - we have done, check what we have to do now
 			if (myThread->scene->suspendThreadsWhenDone) {
 				myThread->signal = PAUSE;
@@ -276,6 +279,9 @@ void RenderThread::render(RenderThread *myThread) {
 			} else
 				break;
 		}
+
+		// Save ray time value to tspack for later use
+		myThread->tspack->time = myThread->sample->time;
 
 		// Dade - check if the integrator support SWC / NOTE - Radiance - This should probably be removed. Integrators should all support SWC.
 		if (myThread->surfaceIntegrator->IsSWCSupported()) {

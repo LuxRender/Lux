@@ -93,7 +93,7 @@ SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Point &p, float u1, 
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos);
+	visibility->SetSegment(p, lightPos, tspack->time);
 	return SWCSpectrum(tspack, LSPD) * Falloff(-*wi) /
 		DistanceSquared(lightPos, p);
 }
@@ -134,7 +134,7 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SpotBxDF)(cosTotalWidth, cosFalloffStart));
-	visibility->SetSegment(p, lightPos);
+	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;
 }

@@ -50,7 +50,7 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &p, float u1,
 		VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos);
+	visibility->SetSegment(p, lightPos, tspack->time);
 	return SWCSpectrum(tspack, LSPD) / DistanceSquared(lightPos, p);
 }
 float PointLight::Pdf(const Point &, const Vector &) const {
@@ -89,7 +89,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
-	visibility->SetSegment(p, lightPos);
+	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;
 }

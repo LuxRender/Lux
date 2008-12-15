@@ -229,7 +229,7 @@ double normsinv(double p)
                    return -(((((C1 * q + C2) * q + C3) * q + C4) * q + C5) * q + C6) /
 			   ((((D1 * q + D2) * q + D3) * q + D4) * q + 1);
 	} else {
-		return 1. / 0.;
+		return 1.;
 	}
 
 /* Under UNIX OR LINUX, The return value 'x' could be corrected by the following for better accuracy.

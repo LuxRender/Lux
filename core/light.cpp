@@ -40,6 +40,7 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f) const {
 	*f = 1.f;
 	RayDifferential ray(r);
+	ray.time = tspack->time;
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 	while (true) {
