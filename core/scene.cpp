@@ -280,9 +280,6 @@ void RenderThread::render(RenderThread *myThread) {
 				break;
 		}
 
-		// Save ray time value to tspack for later use
-		myThread->tspack->time = myThread->sample->time;
-
 		// Dade - check if the integrator support SWC / NOTE - Radiance - This should probably be removed. Integrators should all support SWC.
 		if (myThread->surfaceIntegrator->IsSWCSupported()) {
 			// Sample new SWC thread wavelengths
@@ -308,6 +305,9 @@ void RenderThread::render(RenderThread *myThread) {
         float rayWeight = myThread->camera->GenerateRay(*(myThread->sample), &ray);
 
         if (rayWeight > 0.f) {
+			// Save ray time value to tspack for later use
+			myThread->tspack->time = ray.time;
+
             // Evaluate radiance along camera ray
             float alpha;
             SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->tspack,
