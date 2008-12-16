@@ -169,7 +169,8 @@ bool RenderFarm::connect(const string &serverName) {
         return false;
     }
 
-    flush();
+    if (netBuffer.rdbuf()->in_avail() > 0)
+    	flush();  // Only flush if commands are written already.
 
     return true;
 }

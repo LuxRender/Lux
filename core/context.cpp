@@ -869,12 +869,14 @@ void Context::wait() {
 }
 
 void Context::exit() {
-    // Dade - stop the render farm too
-    activeContext->renderFarm->stopFilmUpdater();
-    // Dade - update the film for the last time
-    activeContext->renderFarm->updateFilm(luxCurrentScene);
-    // Dade - disconnect from all servers
-    activeContext->renderFarm->disconnectAll();
+	if(getServerCount() > 0) {
+		// Dade - stop the render farm too
+		activeContext->renderFarm->stopFilmUpdater();
+		// Dade - update the film for the last time
+		activeContext->renderFarm->updateFilm(luxCurrentScene);
+		// Dade - disconnect from all servers
+		activeContext->renderFarm->disconnectAll();
+	}
 
     luxCurrentScene->Exit();
 }
