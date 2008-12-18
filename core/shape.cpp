@@ -74,40 +74,30 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
 }
 bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
 	if(accelerator) {
-		if (!accelerator->Intersect(ray, in))
-			return false;
-
-		return true;
+		return accelerator->Intersect(ray, in);
 	} else if(worldbound.IntersectP(ray)) {
 		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
-		bool anyHit = false;
 		for (u_int i = 0; i < primitives.size(); ++i) {
 			if (primitives[i]->Intersect(ray, in)) {
-				anyHit = true;
+				return true;
+
 			}
 		}
-		return anyHit;
-	} else {
-		return false;
 	}
+	return false;
 }
 
 bool PrimitiveSet::IntersectP(const Ray &ray) const {
 	if(accelerator) {
-		if (!accelerator->IntersectP(ray))
-			return false;
-
-		return true;
+		return accelerator->IntersectP(ray);
 	} else if(worldbound.IntersectP(ray)) {
 		for (u_int i = 0; i < primitives.size(); ++i) {
 			if (primitives[i]->IntersectP(ray)) {
 				return true;
 			}
 		}
-		return false;
-	} else {
-		return false;
 	}
+	return false;
 }
 
 void PrimitiveSet::initAreas() {
