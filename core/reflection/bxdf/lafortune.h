@@ -33,18 +33,15 @@ namespace lux
 class  Lafortune : public BxDF {
 public:
 	// Lafortune Public Methods
-	Lafortune(const SWCSpectrum &r, u_int nl,
-	          const SWCSpectrum *x, const SWCSpectrum *y, const SWCSpectrum *z,
-			  const SWCSpectrum *e, BxDFType t);
+	Lafortune(const SWCSpectrum &x, const SWCSpectrum &y, const SWCSpectrum &z,
+		const SWCSpectrum &e, BxDFType t);
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	bool Sample_f(const TsPack *tspack, const Vector &wi, Vector *sampled_f,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 private:
 	// Lafortune Private Data
-	SWCSpectrum R;
-	u_int nLobes;
-	const SWCSpectrum *x, *y, *z, *exponent;
+	const SWCSpectrum x, y, z, exponent;
 };
 
 }//namespace lux
