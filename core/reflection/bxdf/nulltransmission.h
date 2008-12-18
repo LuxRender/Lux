@@ -36,13 +36,14 @@ public:
 	NullTransmission()
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
-		*f += wo == -wi ? SWCSpectrum(1.f / fabsf(CosTheta(wi))) : SWCSpectrum(0.);
+		if (fabsf(CosTheta(wo) + CosTheta(wi)) < SHADOW_RAY_EPSILON)
+			*f += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
 	}
 	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-		return wo == -wi ? 1.f : 0.f;
+		return fabsf(CosTheta(wo) + CosTheta(wi)) < SHADOW_RAY_EPSILON ? 1.f : 0.f;
 	}
 private:
 	// NullTransmission Private Data
