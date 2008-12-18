@@ -218,27 +218,20 @@ bool SunLight::checkPortals(Ray portalRay) const {
 
 SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
-	if(cosThetaMax == 1) {
-		*pdf = 1.f;
+	if(cosThetaMax == 1.f) {
 		*wi = sundir;
-		visibility->SetRay(p, *wi, tspack->time);
-
-		// Dade - check if the portals are excluding this ray
-/*		if (!checkPortals(Ray(p, *wi)))
-			return SWCSpectrum(0.f);*/
-
-		return SWCSpectrum(tspack, LSPD);
+		*pdf = 1.f;
 	} else {
 		*wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
 		*pdf = UniformConePdf(cosThetaMax);
-		visibility->SetRay(p, *wi, tspack->time);
-
-		// Dade - check if the portals are excluding this ray
-/*		if (!checkPortals(Ray(p, *wi)))
-			return SWCSpectrum(0.f);*/
-
-		return SWCSpectrum(tspack, LSPD);
 	}
+	visibility->SetRay(p, *wi, tspack->time);
+
+	// Dade - check if the portals are excluding this ray
+/*	if (!checkPortals(Ray(p, *wi)))
+		return SWCSpectrum(0.f);*/
+
+	return SWCSpectrum(tspack, LSPD);
 }
 float SunLight::Pdf(const Point &, const Vector &) const {
 	if(cosThetaMax == 1)
