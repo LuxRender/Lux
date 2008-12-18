@@ -41,24 +41,22 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 	*f = 1.f;
 	RayDifferential ray(r);
 	ray.time = tspack->time;
+	Vector d(Normalize(ray.d));
+	// Dade - need to scale the RAY_EPSILON value because the ray direction
+	// is not normalized (in order to avoid light leaks: bug #295)
+	const float epsilon = SHADOW_RAY_EPSILON / ray.d.Length();
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 	while (true) {
 		if (!scene->Intersect(ray, &isect))
 			return true;
 		BSDF *bsdf = isect.GetBSDF(tspack, ray, tspack->rng->floatValue());							// TODO - REFACT - remove and add random value from sample
-		const float pdf = bsdf->Pdf(tspack, -ray.d, ray.d, flags);
-		if (!(pdf > 0.f))
-			return false;
-		*f *= AbsDot(Normalize(bsdf->dgShading.nn), Normalize(ray.d)) / pdf;
 
-		*f *= bsdf->f(tspack, -ray.d, ray.d, flags);
+		*f *= bsdf->f(tspack, -d, d, flags);
 		if (f->Black())
 			return false;
+		*f *= AbsDot(bsdf->dgShading.nn, d);
 
-		// Dade - need to scale the RAY_EPSILON value because the ray direction
-		// is not normalized (in order to avoid light leaks: bug #295)
-		float epsilon = SHADOW_RAY_EPSILON / ray.d.Length();
 		ray.mint = ray.maxt + epsilon;
 		ray.maxt = r.maxt;
 	}
