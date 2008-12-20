@@ -108,8 +108,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			r.maxt = ray.maxt;
 
 		SWCSpectrum Lv(scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha));
-		Lv *= pathThroughput;
 		if (!Lv.Black()) {
+			Lv *= pathThroughput;
 			L += Lv;
 			V += Lv.filter(tspack) * VContrib;
 			++nrContribs;
@@ -120,8 +120,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		Vector wo(-ray.d);
 		if (specularBounce) {
 			SWCSpectrum Le(isect.Le(tspack, wo));
-			Le *= pathThroughput;
 			if (!Le.Black()) {
+				Le *= pathThroughput;
 				L += Le;
 				V += Le.filter(tspack) * VContrib;
 				++nrContribs;
@@ -151,8 +151,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			default:
 				Ll = 0.f;
 		}
-		Ll *= pathThroughput;
 		if (!Ll.Black()) {
+			Ll *= pathThroughput;
 			L += Ll;
 			V += Ll.filter(tspack) * VContrib;
 			++nrContribs;
@@ -163,7 +163,7 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f;
-		if (!bsdf->Sample_f(tspack, wo, &wi, data[6], data[7], data[8], &f, &pdf, BSDF_ALL, &flags))
+		if (!bsdf->Sample_f(tspack, wo, &wi, data[6], data[7], data[8], &f, &pdf, BSDF_ALL, &flags, NULL, true))
 			break;
 
 		const float dp = AbsDot(wi, n) / pdf;

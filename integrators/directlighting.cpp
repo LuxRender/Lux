@@ -101,7 +101,7 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 			// Trace rays for specular reflection and refraction
 			float pdf;
 			SWCSpectrum f;
-			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR))) {
+			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
 				RayDifferential rd(p, wi);
 				rd.time = time;
@@ -126,7 +126,7 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
 			}
 
-			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR))) {
+			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
 				// Compute ray differential _rd_ for specular transmission
 				RayDifferential rd(p, wi);
 				rd.time = time;

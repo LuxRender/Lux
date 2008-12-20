@@ -151,7 +151,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		SWCSpectrum Li = light->Sample_L(tspack, p, n,
 			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 		if (lightPdf > 0. && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wo, wi);
+			SWCSpectrum f = bsdf->f(tspack, wi, wo);
 			SWCSpectrum fO;
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
@@ -170,7 +170,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		SWCSpectrum Li = light->Sample_L(tspack, p, n,
 			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 		if (lightPdf > 0. && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wo, wi);
+			SWCSpectrum f = bsdf->f(tspack, wi, wo);
 			SWCSpectrum fO;
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
@@ -185,7 +185,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			// Sample BSDF with multiple importance sampling
 			BxDFType flags = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
 			SWCSpectrum fBSDF;
-			if (bsdf->Sample_f(tspack, wo, &wi,	bs1, bs2, bcs, &fBSDF, &bsdfPdf, flags)) {
+			if (bsdf->Sample_f(tspack, wo, &wi,	bs1, bs2, bcs, &fBSDF, &bsdfPdf, flags, NULL, NULL, true)) {
 				lightPdf = light->Pdf(p, n, wi);
 				if (lightPdf > 0.) {
 					// Add light contribution from BSDF sampling
