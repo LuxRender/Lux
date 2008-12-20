@@ -142,6 +142,7 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		LDShuffleScrambled2D(tspack, 1, pixelSamples, lensSamples);
 		LDShuffleScrambled1D(tspack, 1, pixelSamples, timeSamples);
 		LDShuffleScrambled1D(tspack, 1, pixelSamples, wavelengthsSamples);
+		LDShuffleScrambled1D(tspack, 1, pixelSamples, singleWavelengthSamples);
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
 			LDShuffleScrambled1D(tspack, sample->n1D[i], pixelSamples,
 				oneDSamples[i]);
