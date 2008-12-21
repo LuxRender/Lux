@@ -695,7 +695,7 @@ void Context::objectInstance(const string &name) {
 void Context::motionInstance(const string &name, float startTime, float endTime, const string &toTransform) {
         VERIFY_WORLD("MotionInstance")
         ;
-        renderFarm->send("luxMotionInstance", name);
+        renderFarm->send("luxMotionInstance", name, startTime, endTime, toTransform);
         // Object instance error checking
         if (renderOptions->currentInstance) {
                 luxError(LUX_NESTING,LUX_ERROR,"MotionInstance can't be called inside instance definition");

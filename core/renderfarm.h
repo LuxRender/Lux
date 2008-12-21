@@ -87,6 +87,7 @@ public:
 	void send(const std::string &command, float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz);
 	void send(const std::string &command, float tr[16]);
 	void send(const std::string &command, const string &name, const string &type, const string &texname, const ParamSet &params);
+	void send(const std::string &command, const std::string &name, float a, float b, const std::string &transform);
 
     //!< Sends immediately all commands in the buffer to the servers
 	void flush();

@@ -161,7 +161,7 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), basi
 static void processCommand(void (&f)(const string &, const ParamSet &), basic_istream<char> &stream) {
     string type;
 	getline(stream, type);
-	
+
 	ParamSet params;
     boost::archive::text_iarchive ia(stream);
     ia >> params;
@@ -190,6 +190,19 @@ static void processCommand(void (&f)(float[16]), basic_istream<char> &stream) {
         stream >> t[i];
     f(t);
 }
+
+static void processCommand(void (&f)(const string &, float, float, const string &), basic_istream<char> &stream) {
+	string name, transform;
+	float a, b;
+
+	stream >> name;
+	stream >> a;
+	stream >> b;
+	stream >> transform;
+
+	f(name, a, b, transform);
+}
+
 
 string RenderServer::createNewSessionID() {
 	char buf[4 * 4 + 4];
@@ -230,7 +243,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
             CMD_LUXREVERSEORIENTATION = 2027239206U, CMD_LUXVOLUME = 4138761078U, CMD_LUXOBJECTBEGIN = 1097337658U,
             CMD_LUXOBJECTEND = 229760620U, CMD_LUXOBJECTINSTANCE = 4125664042U, CMD_LUXWORLDEND = 1582674973U, CMD_LUXGETFILM = 859419430U,
             CMD_SERVER_DISCONNECT = 2500584742U, CMD_SERVER_CONNECT = 332355398U,
-            CMD_VOID = 5381U, CMD_SPACE = 177605U;
+            CMD_VOID = 5381U, CMD_SPACE = 177605U, CMD_MOTIONINSTANCE = 4223946185U;
 
     int listenPort = serverThread->renderServer->tcpPort;
     stringstream ss;
@@ -446,6 +459,8 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                         break;
                     case CMD_LUXOBJECTINSTANCE: processCommand(Context::luxObjectInstance, stream);
                         break;
+                    case CMD_MOTIONINSTANCE: processCommand(Context::luxMotionInstance, stream);
+						break;
                     case CMD_LUXWORLDEND:
                     {
                         serverThread->engineThread = new boost::thread(&luxWorldEnd);

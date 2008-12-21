@@ -362,6 +362,14 @@ void RenderFarm::send(const std::string &command, const string &name,
     }
 }
 
+void RenderFarm::send(const std::string &command, const std::string &name, float a, float b, const std::string &transform) {
+    try {
+        netBuffer << command << std::endl << name << ' ' << a << ' ' << b << ' ' << transform << std::endl;
+    } catch (std::exception& e) {
+        luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+    }
+}
+
 int RenderFarm::getServersStatus(RenderingServerInfo *info, int maxInfoCount) {
 	ptime now = second_clock::local_time();
 	for (size_t i = 0; i < min<size_t>(serverInfoList.size(), maxInfoCount); ++i) {
