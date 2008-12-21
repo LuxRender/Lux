@@ -25,6 +25,7 @@
 
 #include "lux.h"
 #include <fstream>
+#include <map>
 
 namespace lux {
 

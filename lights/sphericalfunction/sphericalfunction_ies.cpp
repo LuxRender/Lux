@@ -137,7 +137,7 @@ namespace lux {
 		delete[] vFuncs;
 
 		boost::shared_ptr< MIPMap<RGBColor> > ptr(
-			new MIPMapFastImpl<RGBColor, TextureColor<float, 1>>( BILINEAR, xRes, yRes, &img[0] )
+			new MIPMapFastImpl< RGBColor, TextureColor<float, 1> >( BILINEAR, xRes, yRes, &img[0] )
 		);
 		SetMipMap(ptr);
 
@@ -147,7 +147,7 @@ namespace lux {
 	void IESSphericalFunction::initDummy() {
 		TextureColor<float, 1> img[1] = {1.f};
 		boost::shared_ptr< MIPMap<RGBColor> > ptr(
-			new MIPMapFastImpl<RGBColor, TextureColor<float, 1>>( NEAREST, 1, 1, &img[0] )
+			new MIPMapFastImpl< RGBColor, TextureColor<float, 1> >( NEAREST, 1, 1, &img[0] )
 		);
 		SetMipMap(ptr);
 	}
