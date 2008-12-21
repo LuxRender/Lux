@@ -398,7 +398,9 @@ SET(lux_lib_src
 	integrators/exphotonmap.cpp
         lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
-        lights/sun.cpp lights/sky.cpp
+        lights/sun.cpp lights/sky.cpp 
+		lights/sphericalfunction/sphericalfunction.cpp lights/sphericalfunction/sphericalfunction_ies.cpp
+		lights/sphericalfunction/photometricdata_ies.cpp
         materials/glass.cpp materials/glossy.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp
         materials/shinymetal.cpp
         materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
@@ -429,7 +431,8 @@ INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
 					${CMAKE_SOURCE_DIR}/core/reflection ${CMAKE_SOURCE_DIR}/core/reflection/bxdf ${CMAKE_SOURCE_DIR}/spds
 					${CMAKE_SOURCE_DIR}/core/reflection/fresnel ${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
 					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
-					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
+					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/lights/sphericalfunction
+					${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
 					${CMAKE_SOURCE_DIR}/shapes ${CMAKE_SOURCE_DIR}/textures ${CMAKE_SOURCE_DIR}/tonemaps
 					${CMAKE_SOURCE_DIR}/volumes ${CMAKE_SOURCE_DIR}/integrationsamplers ${CMAKE_SOURCE_DIR}/pixelsamplers
 					${CMAKE_SOURCE_DIR}/renderer/include

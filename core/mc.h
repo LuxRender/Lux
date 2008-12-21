@@ -56,26 +56,26 @@ namespace lux
 	float TriangularSampleDisk(float u1);
 	void HoneycombSampleDisk(float u1, float u2, float *dx, float *dy);
 
-// MC Inline Functions
-inline Vector CosineSampleHemisphere(float u1, float u2)
-{
-	Vector ret;
-	ConcentricSampleDisk(u1, u2, &ret.x, &ret.y);
-	ret.z = sqrtf(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y));
-	return ret;
-}
-inline float CosineHemispherePdf(float costheta, float phi) {
-	return costheta * INV_PI;
-}
-inline float BalanceHeuristic(int nf, float fPdf, int ng, float gPdf)
-{
-	return (nf * fPdf) / (nf * fPdf + ng * gPdf);
-}
-inline float PowerHeuristic(int nf, float fPdf, int ng,	float gPdf)
-{
-	float f = nf * fPdf, g = ng * gPdf;
-	return (f * f) / (f * f + g * g);
-}
+	// MC Inline Functions
+	inline Vector CosineSampleHemisphere(float u1, float u2)
+	{
+		Vector ret;
+		ConcentricSampleDisk(u1, u2, &ret.x, &ret.y);
+		ret.z = sqrtf(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y));
+		return ret;
+	}
+	inline float CosineHemispherePdf(float costheta, float phi) {
+		return costheta * INV_PI;
+	}
+	inline float BalanceHeuristic(int nf, float fPdf, int ng, float gPdf)
+	{
+		return (nf * fPdf) / (nf * fPdf + ng * gPdf);
+	}
+	inline float PowerHeuristic(int nf, float fPdf, int ng,	float gPdf)
+	{
+		float f = nf * fPdf, g = ng * gPdf;
+		return (f * f) / (f * f + g * g);
+	}
 
 }//namespace lux
 

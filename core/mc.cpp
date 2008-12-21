@@ -27,6 +27,8 @@
 #include "mc.h"
 #include "volume.h"
 
+#include <limits>
+
 namespace lux
 {
 

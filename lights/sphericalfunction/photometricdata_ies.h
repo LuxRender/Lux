@@ -19,49 +19,75 @@
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
- 
-// infinitesample.cpp*
+
+#ifndef LUX_PHOTOMETRICDATAIES_H
+#define LUX_PHOTOMETRICDATAIES_H
+
 #include "lux.h"
-#include "light.h"
-#include "texture.h"
-#include "shape.h"
-#include "scene.h"
-#include "mipmap.h"
+#include <fstream>
 
-namespace lux
-{
-// InfiniteAreaLightIS Definitions
-class InfiniteAreaLightIS : public Light {
+namespace lux {
+
+class PhotometricDataIES {
 public:
-	// InfiniteAreaLightIS Public Methods
-	InfiniteAreaLightIS(const Transform &light2world,	const RGBColor &power, int ns,
-			  const string &texmap);
-	~InfiniteAreaLightIS();
-	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-			&worldRadius);
-		return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius);
-	}
-	bool IsDeltaLight() const { return false; }
-	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
+	PhotometricDataIES();
+	PhotometricDataIES( const char * );
 
-	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet);
+	~PhotometricDataIES();
+
+	///////////////////////////////////////////////
+	// Methods.
+	
+	bool IsValid() { return m_bValid; }
+	void Reset();
+	bool Load( const char* );
+	
+	//////////////////////////////////////////////
+	// Keywords and light descriptions.
+
+	std::string m_Version;
+	std::map<std::string,std::string> m_Keywords;
+
+	//////////////////////////////////////////////
+	// Light data.
+
+	enum PhotometricType {
+		PHOTOMETRIC_TYPE_C = 1,
+		PHOTOMETRIC_TYPE_B = 2,
+		PHOTOMETRIC_TYPE_A = 3
+	};
+
+	unsigned int 	m_NumberOfLamps;
+	double			m_LumensPerLamp;
+	double			m_CandelaMultiplier;
+	unsigned int	m_NumberOfVerticalAngles;
+	unsigned int	m_NumberOfHorizontalAngles;
+	PhotometricType m_PhotometricType;
+	unsigned int 	m_UnitsType;
+	double			m_LuminaireWidth;
+	double			m_LuminaireLength;
+	double			m_LuminaireHeight;
+
+	double			BallastFactor;
+	double			BallastLampPhotometricFactor;
+	double			InputWatts;
+
+	std::vector<double>	m_VerticalAngles; 
+	std::vector<double>	m_HorizontalAngles; 
+
+	std::vector< std::vector<double> > m_CandelaValues;
 
 private:
-	// InfiniteAreaLightIS Private Data
-	RGBColor Lbase;
-	MIPMap<RGBColor> *radianceMap;
-	Distribution1D *uDistrib, **vDistribs;
+	bool PrivateLoad( const char* );
+
+	bool 			BuildKeywordList();
+	void 			BuildDataLine( unsigned int, std::vector<double>& );
+	bool 			BuildLightData();
+	
+	bool 			m_bValid;
+	std::ifstream	m_fsIES;
 };
 
-}
+} //namespace lux
 
+#endif // LUX_PHOTOMETRICDATAIES_H

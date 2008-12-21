@@ -26,6 +26,7 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+#include "sphericalfunction.h"
 
 namespace lux
 {
@@ -34,22 +35,12 @@ namespace lux
 class GonioPhotometricLight : public Light {
 public:
 	// GonioPhotometricLight Public Methods
-	GonioPhotometricLight(const Transform &light2world, const RGBColor &, const
-	string &texname);
-	~GonioPhotometricLight() { delete mipmap; }
+	GonioPhotometricLight(const Transform &light2world, 
+		const RGBColor &intensity, float gain,
+		const string &texname, const string &iesname);
+	~GonioPhotometricLight();
 	bool IsDeltaLight() const { return true; }
-	RGBColor Scale(const Vector &w) const {
-		Vector wp = Normalize(WorldToLight(w));
-		swap(wp.y, wp.z);
-		float theta = SphericalTheta(wp);
-		float phi   = SphericalPhi(wp);
-		float s = phi * INV_TWOPI, t = theta * INV_PI;
-		return mipmap ? mipmap->Lookup(t, s) : 1.f;
-	}
-	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return SWCSpectrum(tspack, 4.f * M_PI * Intensity *
-			mipmap->Lookup(.5f, .5f, .5f));
-	}
+	SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
@@ -59,11 +50,11 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 private:
+	SWCSpectrum L(const TsPack *tspack, const Vector& w) const;
 	// GonioPhotometricLight Private Data
 	Point lightPos;
-	RGBColor Intensity;
-	MIPMap<RGBColor> *mipmap;
-
+	SPD *LSPD;
+	SampleableSphericalFunction *func;
 };
 
 }//namespace lux

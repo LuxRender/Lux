@@ -27,6 +27,7 @@
 #include "imagereader.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "mcdistribution.h"
 
 using namespace lux;
 

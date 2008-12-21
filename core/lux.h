@@ -213,6 +213,8 @@ namespace lux
   class ContributionBuffer;
   class ContributionSystem;
   class MotionSystem;
+  class Distribution1D;
+  class IrregularDistribution1D;
 }
 
 // Global Constants

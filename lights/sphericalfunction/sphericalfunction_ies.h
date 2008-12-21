@@ -19,49 +19,28 @@
  *   This project is based on PBRT ; see http://www.pbrt.org               *
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
- 
-// infinitesample.cpp*
+
+#ifndef LUX_SPHERICALFUNCTIONIES_H
+#define LUX_SPHERICALFUNCTIONIES_H
+
 #include "lux.h"
-#include "light.h"
-#include "texture.h"
-#include "shape.h"
-#include "scene.h"
-#include "mipmap.h"
+#include "sphericalfunction.h"
+#include "photometricdata_ies.h"
 
-namespace lux
-{
-// InfiniteAreaLightIS Definitions
-class InfiniteAreaLightIS : public Light {
-public:
-	// InfiniteAreaLightIS Public Methods
-	InfiniteAreaLightIS(const Transform &light2world,	const RGBColor &power, int ns,
-			  const string &texmap);
-	~InfiniteAreaLightIS();
-	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-			&worldRadius);
-		return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius);
-	}
-	bool IsDeltaLight() const { return false; }
-	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
+namespace lux {
 
-	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet);
+	/**
+	 * A spherical function based on measured IES data.
+	 */
+	class IESSphericalFunction : public MipMapSphericalFunction {
+	public:
+		IESSphericalFunction();
+		IESSphericalFunction(const PhotometricDataIES& data);
+	private:
+		void initDummy();
+	};
 
-private:
-	// InfiniteAreaLightIS Private Data
-	RGBColor Lbase;
-	MIPMap<RGBColor> *radianceMap;
-	Distribution1D *uDistrib, **vDistribs;
-};
 
-}
+} //namespace lux
 
+#endif //LUX_SPHERICALFUNCTIONIES_H
