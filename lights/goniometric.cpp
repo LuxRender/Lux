@@ -36,7 +36,7 @@ using namespace lux;
 // GonioPhotometricLight Method Definitions
 GonioPhotometricLight::GonioPhotometricLight(
 		const Transform &light2world,
-		const RGBColor &intensity, 
+		const RGBColor &intensity,
 		float gain,
 		const string &texname,
 		const string& iesname)
@@ -50,7 +50,7 @@ GonioPhotometricLight::GonioPhotometricLight(
 	if( texname.length() > 0 ) {
 		auto_ptr<ImageData> imgdata(ReadImage(texname));
 		if (imgdata.get()!=NULL) {
-			mipmapFunc = new MipMapSphericalFunction( 
+			mipmapFunc = new MipMapSphericalFunction(
 				boost::shared_ptr< MIPMap<RGBColor> >(imgdata->createMIPMap<RGBColor>())
 			);
 		}
@@ -62,6 +62,11 @@ GonioPhotometricLight::GonioPhotometricLight(
 		if( data.IsValid() ) {
 			iesFunc = new IESSphericalFunction( data );
 		}
+		else {
+			stringstream ss;
+			ss << "Invalid IES file: " << iesname;
+			luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
+		}
 	}
 	SphericalFunction *distrSimple;
 	if( !iesFunc && !mipmapFunc )
@@ -72,24 +77,24 @@ GonioPhotometricLight::GonioPhotometricLight(
 		distrSimple = iesFunc;
 	else {
 		CompositeSphericalFunction *compositeFunc = new CompositeSphericalFunction();
-		compositeFunc->Add( 
+		compositeFunc->Add(
 			boost::shared_ptr<const SphericalFunction>(mipmapFunc) );
-		compositeFunc->Add( 
+		compositeFunc->Add(
 			boost::shared_ptr<const SphericalFunction>(iesFunc) );
 		distrSimple = compositeFunc;
 	}
-	func = new SampleableSphericalFunction( 
-		boost::shared_ptr<const SphericalFunction>(distrSimple), 
-		512, 256 
+	func = new SampleableSphericalFunction(
+		boost::shared_ptr<const SphericalFunction>(distrSimple),
+		512, 256
 	);
 
 	/*float* data = new float[512*256*3];
 	float* dataA = new float[512*256];
 	for(int j=0; j<256; j++) {
 		for(int i=0; i<512; i++) {
-			RGBColor val = distr->f( 
-				((i + .5f) * 2.f * M_PI)/512.f, 
-				((j + .5f) * M_PI)/256.f 
+			RGBColor val = distr->f(
+				((i + .5f) * 2.f * M_PI)/512.f,
+				((j + .5f) * M_PI)/256.f
 			);
 			data[3 * (j*512 + i) + 0] = val.c[0];
 			data[3 * (j*512 + i) + 1] = val.c[1];
