@@ -133,6 +133,8 @@ protected:
 	void OnIconize(wxIconizeEvent& event);
 	void OnSelection(wxViewerEvent& event);
 	void OnSpin( wxSpinEvent& event );
+	void OnScroll( wxScrollEvent& event );
+	void OnText(wxCommandEvent &event);
 
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
@@ -152,7 +154,10 @@ protected:
 	LuxGuiWindowState m_guiWindowState;
 
 	wxProgressDialog* m_progDialog;
+
 	wxViewerBase* m_renderOutput;
+	wxViewerBase* m_outputOutput; // CF ;)
+
 	wxTimer* m_loadTimer;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;
@@ -183,6 +188,12 @@ protected:
 
 	void OnTreeSelChanged( wxTreeEvent& event );
 
+	void ResetToneMapping( void );
+
+	double m_RH_pre;
+	double m_RH_post;
+	double m_RH_burn;
+
 	class LuxOptions : public m_OptionsDialog {
 		public:
 
@@ -191,17 +202,10 @@ protected:
 		protected:
 
 			void OnMenu( wxCommandEvent& event );
-			void OnScroll( wxScrollEvent& event );
-			void OnText(wxCommandEvent &event);
 			void OnClose( wxCloseEvent& event );
 			void OnSpin( wxSpinEvent& event );
 
 		public:
-			void ResetToneMapping( void );
-
-			double m_RH_pre;
-			double m_RH_post;
-			double m_RH_burn;
 
 			LuxGui *m_Parent;
 

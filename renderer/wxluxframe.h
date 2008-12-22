@@ -24,14 +24,14 @@
 #include <wx/textctrl.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
+#include <wx/button.h>
+#include <wx/choice.h>
+#include <wx/slider.h>
+#include <wx/notebook.h>
 #include <wx/aui/auibook.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
-#include <wx/choice.h>
-#include <wx/slider.h>
-#include <wx/button.h>
 #include <wx/checklst.h>
-#include <wx/notebook.h>
 #include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -62,15 +62,15 @@ namespace lux
 	#define ID_REMOVE_SERVER 1021
 	#define ID_SERVER_UPDATE_INT 1022
 	#define ID_NETWORK_TREE 1023
-	#define ID_TM_CHOICE 1024
-	#define ID_RH_PRESCALE 1025
-	#define ID_RH_PRESCALE_TEXT 1026
-	#define ID_RH_POSTSCALE 1027
-	#define ID_RH_POSTSCALE_TEXT 1028
-	#define ID_RH_BURN 1029
-	#define ID_RH_BURN_TEXT 1030
-	#define ID_TM_RESET 1031
-	#define ID_RENDER_REFRESH 1032
+	#define ID_OUTPUT_REFRESH 1024
+	#define ID_TM_CHOICE 1025
+	#define ID_RH_PRESCALE 1026
+	#define ID_RH_PRESCALE_TEXT 1027
+	#define ID_RH_POSTSCALE 1028
+	#define ID_RH_POSTSCALE_TEXT 1029
+	#define ID_RH_BURN 1030
+	#define ID_RH_BURN_TEXT 1031
+	#define ID_TM_RESET 1032
 	#define ID_SYS_DISPLAY_INT 1033
 	#define ID_SYS_WRITE_INT 1034
 	#define ID_WRITE_OPTIONS 1035
@@ -103,6 +103,24 @@ namespace lux
 			wxStaticText* m_updateStaticText;
 			wxSpinCtrl* m_serverUpdateSpin;
 			wxTreeCtrl* m_networkTreeCtrl;
+			wxPanel* m_outputPage;
+			wxToolBar* m_outputToolBar;
+			wxButton* m_refreshOutputButton;
+			wxNotebook* m_outputNotebook;
+			wxPanel* m_lightGroupsPanel;
+			wxPanel* m_FilterPanel;
+			wxPanel* m_tonemapPanel;
+			wxChoice* m_TM_choice;
+			wxStaticText* m_staticText4;
+			wxSlider* m_RH_prescaleSlider;
+			wxTextCtrl* m_RH_preText;
+			wxStaticText* m_staticText5;
+			wxSlider* m_RH_postscaleSlider;
+			wxTextCtrl* m_RH_postText;
+			wxStaticText* m_staticText6;
+			wxSlider* m_RH_burnSlider;
+			wxTextCtrl* m_RH_burnText;
+			wxButton* m_TM_resetButton;
 			wxStatusBar* m_statusBar;
 			
 			// Virtual event handlers, overide them in your derived class
@@ -111,6 +129,8 @@ namespace lux
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
 			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
+			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
+			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
 			
 		
 		public:
@@ -128,23 +148,6 @@ namespace lux
 		
 		protected:
 			wxNotebook* m_Options_notebook;
-			wxPanel* m_ToneMappingPanel;
-			wxChoice* m_TM_choice;
-			wxStaticText* m_staticText4;
-			
-			wxSlider* m_RH_prescaleSlider;
-			wxTextCtrl* m_RH_preText;
-			wxStaticText* m_staticText5;
-			
-			wxSlider* m_RH_postscaleSlider;
-			wxTextCtrl* m_RH_postText;
-			wxStaticText* m_staticText6;
-			
-			wxSlider* m_RH_burnSlider;
-			wxTextCtrl* m_RH_burnText;
-			wxButton* m_TM_resetButton;
-			
-			wxButton* m_refreshButton;
 			wxPanel* m_systemPanel;
 			
 			wxSpinCtrl* m_Display_spinCtrl;
@@ -157,10 +160,8 @@ namespace lux
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnClose( wxCloseEvent& event ){ event.Skip(); }
-			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
-			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
+			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
 			
 		
 		public:

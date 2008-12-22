@@ -83,11 +83,22 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	// Add custom output viewer window
 	if(m_opengl)
+	{
 		m_renderOutput = new LuxGLViewer(m_renderPage);
+		m_outputOutput = new LuxGLViewer(m_outputPage); // CF
+	}
 	else
+	{
 		m_renderOutput = new LuxOutputWin(m_renderPage);
+		m_outputOutput = new LuxOutputWin(m_outputPage); // CF
+	}
+
 	m_renderPage->GetSizer()->Add(m_renderOutput->GetWindow(), 1, wxALL | wxEXPAND, 5);
 	m_renderPage->Layout();
+
+	// CF
+	m_outputPage->GetSizer()->GetItem( 1 )->GetSizer()->GetItem( 1 )->GetSizer()->Add( m_outputOutput->GetWindow(), 1, wxALL | wxEXPAND, 5 );
+	m_outputPage->Layout();
 
 	// Trick to generate resize event and show output window
 	// http://lists.wxwidgets.org/pipermail/wx-users/2007-February/097829.html
@@ -117,6 +128,14 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
 
 	m_auinotebook->SetSelection( 0 );
+
+	ResetToneMapping();
+
+	wxTextValidator vt( wxFILTER_NUMERIC );
+
+	m_RH_preText->SetValidator( vt );
+	m_RH_postText->SetValidator( vt );
+	m_RH_burnText->SetValidator( vt );
 }
 
 void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
@@ -292,6 +311,7 @@ void LuxGui::LoadImages() {
 	m_auinotebook->SetPageBitmap(0, wxMEMORY_BITMAP(render_png));
 	m_auinotebook->SetPageBitmap(1, wxMEMORY_BITMAP(info_png));
 	m_auinotebook->SetPageBitmap(2, wxMEMORY_BITMAP(network_png));
+	m_auinotebook->SetPageBitmap(3, wxMEMORY_BITMAP(output_png));
 
 	m_splashbmp = wxMEMORY_BITMAP(splash_png);
 }
@@ -419,6 +439,12 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_REMOVE_SERVER: // CF
 			RemoveServer();
 			break;
+		case ID_OUTPUT_REFRESH: // CF
+			m_outputOutput->Reload();
+			break;
+		case ID_TM_RESET:
+			ResetToneMapping();
+			break;
 		case wxID_ABOUT:
 			new wxSplashScreen(m_splashbmp, wxSPLASH_CENTRE_ON_PARENT, 0, this, -1);
 			break;
@@ -447,7 +473,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // CF
 
-void LuxGui::LuxOptions::OnText(wxCommandEvent& event) {
+void LuxGui::OnText(wxCommandEvent& event) {
 	if ( event.GetEventType() != wxEVT_COMMAND_TEXT_ENTER ) return;
 
 	switch (event.GetId()) {
@@ -512,7 +538,7 @@ void LuxGui::LuxOptions::OnText(wxCommandEvent& event) {
 	}
 }
 
-void LuxGui::LuxOptions::OnScroll( wxScrollEvent& event ){
+void LuxGui::OnScroll( wxScrollEvent& event ){
 	switch (event.GetId()) {
 		case ID_RH_PRESCALE:
 			{
@@ -547,14 +573,6 @@ LuxGui::LuxOptions::LuxOptions( LuxGui *parent ) : m_OptionsDialog( parent ) {
 
 	m_Parent = parent;
 
-	ResetToneMapping();
-
-	wxTextValidator vt( wxFILTER_NUMERIC );
-
-	m_RH_preText->SetValidator( vt );
-	m_RH_postText->SetValidator( vt );
-	m_RH_burnText->SetValidator( vt );
-
 	UpdateSysOptions();
 }
 
@@ -583,7 +601,7 @@ void LuxGui::LuxOptions::OnClose( wxCloseEvent& event ){
 	m_Parent->m_view->Check( ID_OPTIONS, false );
 }
 
-void LuxGui::LuxOptions::ResetToneMapping(){
+void LuxGui::ResetToneMapping(){
 
 	m_RH_pre = 1.0;
 	m_RH_post = 1.0;
@@ -601,12 +619,6 @@ void LuxGui::LuxOptions::ResetToneMapping(){
 
 void LuxGui::LuxOptions::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
-		case ID_RENDER_REFRESH:
-			if ( m_Parent != NULL ) m_Parent->m_renderOutput->Reload();
-			break;
-		case ID_TM_RESET:
-			ResetToneMapping();
-			break;
 		case ID_SYS_APPLY:
 			ApplySysOptions();
 			break;
