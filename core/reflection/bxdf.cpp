@@ -60,7 +60,7 @@ void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
 	Vector wiR(2.f * cos1 * H - wo);
 	SWCSpectrum tf(0.f);
 	brdf->f(tspack, wo, wiR, &tf);
-	tf *= fabsf(wiR.z / (wi.z * eta * eta));
+	tf *= fabsf(wiR.z / wi.z);
 	*f += tf;
 }
 bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
@@ -106,11 +106,13 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering)
 		cost = -cost;
+	float factor = wi->z;
 	*wi = (cost + eta * cosi) * H - eta * wo;
+	factor /= wi->z;
 	if (reverse)
-		*f *= eta2;
+		*f /= fabsf(factor) * eta2;
 	else
-		*f /= eta2;
+		*f /= fabsf(factor);
 	return true;
 }
 
