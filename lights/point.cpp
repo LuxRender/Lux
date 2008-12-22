@@ -82,7 +82,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f / w.LengthSquared();
-	Normal ns = Normal(w * *pdfDirect);
+	Normal ns = Normal(w * sqrtf(*pdfDirect));
 	*pdf = .25f * INV_PI;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
