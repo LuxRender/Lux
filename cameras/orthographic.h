@@ -33,7 +33,7 @@ public:
 	OrthoCamera(const Transform &world2cam,
 	            const float Screen[4],
 		        float hither, float yon,
-				float sopen, float sclose,
+				float sopen, float sclose, int sdist, 
 				float lensr, float focald, bool autofocus, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
 	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;

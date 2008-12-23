@@ -110,12 +110,12 @@ private:
 PerspectiveCamera::
     PerspectiveCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
-		float sopen, float sclose,
+		float sopen, float sclose, int sdist,
 		float lensr, float focald, bool autofocus,
 		float fov1, int dist, int sh, int pow, Film *f)
 	: ProjectiveCamera(world2cam,
 	    Perspective(fov1, hither, yon),
-		Screen, hither, yon, sopen, sclose,
+		Screen, hither, yon, sopen, sclose, sdist,
 		lensr, focald, f),
 		distribution(dist), shape(sh), power(pow),
 		autoFocus(autofocus) {
@@ -216,7 +216,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	ray->o = Pcamera;
 	ray->d = Vector(Pcamera.x, Pcamera.y, Pcamera.z);
 	// Set ray time value
-	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
+	ray->time = GetTime(sample.time);
 	// Modify ray for depth of field
 	if (LensRadius > 0.)
 	{
@@ -407,8 +407,20 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamS
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
 	float yon = min(params.FindOneFloat("yon", 1e30f), 1e30f);
+
 	float shutteropen = params.FindOneFloat("shutteropen", 0.f);
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
+	int shutterdist = 0;
+	string shutterdistribution = params.FindOneString("shutterdistribution", "uniform");
+	if (shutterdistribution == "uniform") shutterdist = 0;
+	else if (shutterdistribution == "gaussian") shutterdist = 1;
+	else {
+		std::stringstream ss;
+		ss<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		shutterdist = 0;
+	}
+
 	float lensradius = params.FindOneFloat("lensradius", 0.f);
 	float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
 	bool autofocus = params.FindOneBool("autofocus", false);
@@ -451,7 +463,7 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamS
 	int power = params.FindOneInt("power", 3);
 
 	return new PerspectiveCamera(world2cam, screen, hither, yon,
-		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
+		shutteropen, shutterclose, shutterdist, lensradius, focaldistance, autofocus,
 		fov, distribution, shape, power, film);
 }
 

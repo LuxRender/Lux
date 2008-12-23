@@ -32,7 +32,7 @@ public:
 	// PerspectiveCamera Public Methods
 	PerspectiveCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
-		float sopen, float sclose,
+		float sopen, float sclose, int sdist,
 		float lensr, float focald, bool autofocus, float fov,
 		int distribution, int shape, int power,
 		Film *film);

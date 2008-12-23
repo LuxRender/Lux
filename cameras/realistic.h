@@ -41,7 +41,7 @@ class RealisticCamera : public Camera {
 public:
   RealisticCamera(const Transform &world2cam, const float Screen[4],
 		  float hither, float yon, float sopen,
-		  float sclose, float filmdistance, float aperture_diameter, string specfile,
+		  float sclose, int sdist, float filmdistance, float aperture_diameter, string specfile,
 		  float filmdiag, Film *film);
   ~RealisticCamera(void);
   float GenerateRay(const Sample &sample, Ray *) const;

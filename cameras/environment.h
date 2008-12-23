@@ -31,7 +31,7 @@ class EnvironmentCamera : public Camera {
 public:
 	// EnvironmentCamera Public Methods
 	EnvironmentCamera(const Transform &world2cam, float hither,
-		float yon, float sopen, float sclose, Film *film);
+		float yon, float sopen, float sclose, int sdist, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
 	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
 	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;

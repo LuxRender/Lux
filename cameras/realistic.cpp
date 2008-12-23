@@ -43,10 +43,10 @@ using namespace lux;
 RealisticCamera::RealisticCamera(const Transform &world2cam,
                  const float Screen[4],
 				 float hither, float yon, 
-				 float sopen, float sclose, 
+				 float sopen, float sclose, int sdist,
 				 float filmdistance, float aperture_diameter, string specfile, 
 				 float filmdiag, Film *f)
-	: Camera(world2cam, hither, yon, sopen, sclose, f) 
+	: Camera(world2cam, hither, yon, sopen, sclose, sdist, f) 
 {
     filmDistance = filmdistance;
     filmDist2 = filmDistance * filmDistance;
@@ -83,7 +83,7 @@ float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
 
     ray->o = PCamera;
     ray->d = Normalize(PBack - PCamera);
-    ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
+    ray->time = GetTime(sample.time);
     ray->mint = 0.;
     ray->maxt = INFINITY;
 
@@ -196,8 +196,19 @@ Camera* RealisticCamera::CreateCamera(const Transform &world2cam, const ParamSet
 	// Extract common camera parameters from \use{ParamSet}
 	float hither = params.FindOneFloat("hither", 1e-3f);
 	float yon = params.FindOneFloat("yon", 1e30f);
+
 	float shutteropen = params.FindOneFloat("shutteropen", 0.f);
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
+	int shutterdist = 0;
+	string shutterdistribution = params.FindOneString("shutterdistribution", "uniform");
+	if (shutterdistribution == "uniform") shutterdist = 0;
+	else if (shutterdistribution == "gaussian") shutterdist = 1;
+	else {
+		std::stringstream ss;
+		ss<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		shutterdist = 0;
+	}
 
 	// Realistic camera-specific parameters
 	string specfile = params.FindOneString("specfile", "");
@@ -224,7 +235,7 @@ Camera* RealisticCamera::CreateCamera(const Transform &world2cam, const ParamSet
         screen[3] =  1.f / frame;
     }
 	return new RealisticCamera(world2cam, screen, hither, yon,
-				   shutteropen, shutterclose, filmdistance, fstop, 
+				   shutteropen, shutterclose, shutterdist, filmdistance, fstop, 
 				   specfile, filmdiag, film);
 }
 

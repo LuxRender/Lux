@@ -34,10 +34,10 @@ using namespace lux;
 // OrthographicCamera Definitions
 OrthoCamera::OrthoCamera(const Transform &world2cam,
 		const float Screen[4], float hither, float yon,
-		float sopen, float sclose, float lensr,
+		float sopen, float sclose, int sdist, float lensr,
 		float focald, bool autofocus, Film *f)
 	: ProjectiveCamera(world2cam, Orthographic(hither, yon),
-		 Screen, hither, yon, sopen, sclose,
+		 Screen, hither, yon, sopen, sclose, sdist,
 		 lensr, focald, f), autoFocus(autofocus) {
 	 screenDx = Screen[1] - Screen[0];
 	 screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
@@ -98,7 +98,7 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	ray->o = Pcamera;
 	ray->d = Vector(0,0,1);
 	// Set ray time value
-	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
+	ray->time = GetTime(sample.time);
 
 	// Modify ray for depth of field
 	if (LensRadius > 0.) {
@@ -173,8 +173,20 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2cam, const ParamSet &pa
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
 	float yon = min(params.FindOneFloat("yon", 1e30f), 1e30f);
+
 	float shutteropen = params.FindOneFloat("shutteropen", 0.f);
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
+	int shutterdist = 0;
+	string shutterdistribution = params.FindOneString("shutterdistribution", "uniform");
+	if (shutterdistribution == "uniform") shutterdist = 0;
+	else if (shutterdistribution == "gaussian") shutterdist = 1;
+	else {
+		std::stringstream ss;
+		ss<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		shutterdist = 0;
+	}
+
 	float lensradius = params.FindOneFloat("lensradius", 0.f);
 	float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
 	bool autofocus = params.FindOneBool("autofocus", false);
@@ -198,7 +210,7 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2cam, const ParamSet &pa
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
 	return new OrthoCamera(world2cam, screen, hither, yon,
-		shutteropen, shutterclose, lensradius, focaldistance, autofocus,
+		shutteropen, shutterclose, shutterdist, lensradius, focaldistance, autofocus,
 		film);
 }
 

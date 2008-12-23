@@ -33,9 +33,9 @@ using namespace lux;
 // EnvironmentCamera Method Definitions
 EnvironmentCamera::
     EnvironmentCamera(const Transform &world2cam,
-		float hither, float yon, float sopen, float sclose,
+		float hither, float yon, float sopen, float sclose, int sdist,
 		Film *film)
-	: Camera(world2cam, hither, yon, sopen, sclose, film) {
+	: Camera(world2cam, hither, yon, sopen, sclose, sdist, film) {
 	rayOrigin = CameraToWorld(Point(0,0,0));
 }
 float EnvironmentCamera::GenerateRay(const Sample &sample,
@@ -48,7 +48,7 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 		sinf(theta) * sinf(phi));
 	CameraToWorld(dir, &ray->d);
 	// Set ray time value
-	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
+	ray->time = GetTime(sample.time);
 	ray->mint = ClipHither;
 	ray->maxt = ClipYon;
 	return 1.f;
@@ -124,8 +124,20 @@ Camera* EnvironmentCamera::CreateCamera(const Transform &world2cam, const ParamS
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
 	float yon = min(params.FindOneFloat("yon", 1e30f), 1e30f);
+
 	float shutteropen = params.FindOneFloat("shutteropen", 0.f);
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
+	int shutterdist = 0;
+	string shutterdistribution = params.FindOneString("shutterdistribution", "uniform");
+	if (shutterdistribution == "uniform") shutterdist = 0;
+	else if (shutterdistribution == "gaussian") shutterdist = 1;
+	else {
+		std::stringstream ss;
+		ss<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		shutterdist = 0;
+	}
+
 	float lensradius = params.FindOneFloat("lensradius", 0.f);
 	float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
 	float frame = params.FindOneFloat("frameaspectratio",
@@ -150,7 +162,7 @@ Camera* EnvironmentCamera::CreateCamera(const Transform &world2cam, const ParamS
 	(void) lensradius; // don't need this
 	(void) focaldistance; // don't need this
 	return new EnvironmentCamera(world2cam, hither, yon,
-		shutteropen, shutterclose, film);
+		shutteropen, shutterclose, shutterdist, film);
 }
 
 static DynamicLoader::RegisterCamera<EnvironmentCamera> r("environment");
