@@ -255,8 +255,8 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	float weight = 1.f, p = 1.f, pDirect = 0.f;
 	if (nLight == 1) {
 		pDirect = pdfLightDirect;
-		if (light[0].dAWeight > 0.f)
-			pDirect /= light[0].dAWeight;
+		if (light[0].dAWeight != 0.f)
+			pDirect /= fabsf(light[0].dAWeight);
 		else
 			p = 0.f;
 		// Unconditional add since the last eye vertex can't be specular
@@ -266,7 +266,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// If the light is unidirectional the path can only be obtained
 		// by sampling the light directly
 		if ((light[0].flags & BSDF_SPECULAR) != 0 ||
-			!(light[0].dAWeight > 0.f))
+			!(light[0].dAWeight != 0.f))
 			weight -= 1.f;
 	}
 	// Find other paths by extending light path toward eye path
@@ -602,10 +602,12 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	if (nLight > 0) {
 		// Give the light point probability for the weighting
 		// if the light is not delta
-		if (lightPdf > 0.f && !light->IsDeltaLight())
+		if (lightPdf > 0.f)
 			lightPath[0].dAWeight = lightPdf;
 		else
 			lightPath[0].dAWeight = 0.f;
+		if (light->IsDeltaLight())
+			lightPath[0].dAWeight = -lightPath[0].dAWeight;
 		if (nLight > 1)
 			lightDirectPdf = light->Pdf(lightPath[1].p, lightPath[1].ng,
 				lightPath[1].wi) / //FIXME

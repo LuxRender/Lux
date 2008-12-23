@@ -148,7 +148,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(ns, dpdu, dpdv, func));
+	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	*pdf = .25f * INV_PI;
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;
@@ -158,14 +158,14 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	const Vector w(p - lightPos);
-	*pdfDirect = 1.f / w.LengthSquared();
-	Normal ns = Normal(w * sqrtf(*pdfDirect));
+	Normal ns = Normal(w / sqrtf(w.LengthSquared()));
+	*pdfDirect = 1.f;
 	*pdf = .25f * INV_PI;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(ns, dpdu, dpdv, func));
+	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;
