@@ -35,28 +35,38 @@ Camera::~Camera() {
 }
 Camera::Camera(const Transform &world2cam,
                float hither, float yon,
-		       float sopen, float sclose, Film *f) {
+		       float sopen, float sclose, int sdist, Film *f) {
 	WorldToCamera = world2cam;
 	CameraToWorld = WorldToCamera.GetInverse();
 	ClipHither = hither;
 	ClipYon = yon;
 	ShutterOpen = sopen;
 	ShutterClose = sclose;
+	ShutterDistribution = sdist;
 	film = f;
 	if (WorldToCamera.HasScale())
 		luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-camera transformation!\n The system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
 }
-bool Camera::IsDelta() const
-{
+bool Camera::IsDelta() const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
 	return true;
+}
+
+float Camera::GetTime(float u1) const {
+	if(ShutterDistribution == 0)
+		return Lerp(u1, ShutterOpen, ShutterClose);
+	else { // gaussian distribution
+			// TODO - radiance
+	}
+
+	return 0.f;
 }
 
 ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
 		const Transform &proj, const float Screen[4],
 		float hither, float yon, float sopen,
-		float sclose, float lensr, float focald, Film *f)
-	: Camera(w2c, hither, yon, sopen, sclose, f) {
+		float sclose, int sdist, float lensr, float focald, Film *f)
+	: Camera(w2c, hither, yon, sopen, sclose, sdist, f) {
 	// Initialize depth of field parameters
 	LensRadius = lensr;
 	FocalDistance = focald;

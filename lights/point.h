@@ -23,22 +23,26 @@
 // point.cpp*
 #include "lux.h"
 #include "light.h"
+#include "shape.h"
+#include "scene.h"
+#include "mipmap.h"
+#include "sphericalfunction.h"
 
 namespace lux
 {
 
-// PointLight Classes
+// PointLight Declarations
 class PointLight : public Light {
 public:
 	// PointLight Public Methods
-	PointLight(const Transform &light2world, const RGBColor &le, float gain);
+	PointLight(const Transform &light2world, 
+		const RGBColor &intensity, float gain,
+		const string &texname, const string &iesname, bool fZ, bool SqF);
 	~PointLight();
-	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return SWCSpectrum(tspack, LSPD) * 4.f * M_PI;
-	}
 	bool IsDeltaLight() const { return true; }
+	SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
-			Vector *wo, float *pdf, VisibilityTester *visibility) const;
+		Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
@@ -52,9 +56,12 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 private:
+	SWCSpectrum L(const TsPack *tspack, const Vector& w) const;
 	// PointLight Private Data
 	Point lightPos;
+	bool flipZ, squareFalloff;
 	SPD *LSPD;
+	SampleableSphericalFunction *func;
 };
 
 }//namespace lux

@@ -30,7 +30,7 @@ namespace lux {
 		initDummy();
 	}
 
-	IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data) {
+	IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data, bool flipZ) {
 		if( data.m_PhotometricType != PhotometricDataIES::PHOTOMETRIC_TYPE_C ) {
 			luxError( LUX_UNIMPLEMENT, LUX_WARNING, "unsupported photometric type IES file, result may be wrong" );
 		}
@@ -127,7 +127,9 @@ namespace lux {
 				float du;
 				int u1 = uFunc->IndexOf(s, &du);
 				int u2 = min(nVFuncs - 1, u1 + 1);
-				img[ x + y*xRes ] = 
+				int tgtY = y;
+				if(flipZ) tgtY = yRes-y;
+				img[ x + tgtY*xRes ] = 
 					vFuncs[u1]->Eval(t) * (1.f - du) + vFuncs[u2]->Eval(t) * du;
 			}
 		}

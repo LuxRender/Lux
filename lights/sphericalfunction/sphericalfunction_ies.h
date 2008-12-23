@@ -35,7 +35,7 @@ namespace lux {
 	class IESSphericalFunction : public MipMapSphericalFunction {
 	public:
 		IESSphericalFunction();
-		IESSphericalFunction(const PhotometricDataIES& data);
+		IESSphericalFunction(const PhotometricDataIES& data, bool flipZ);
 	private:
 		void initDummy();
 	};

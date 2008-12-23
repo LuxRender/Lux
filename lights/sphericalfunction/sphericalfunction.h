@@ -71,7 +71,7 @@ namespace lux {
 	class MipMapSphericalFunction : public SphericalFunction {
 	public:
 		MipMapSphericalFunction();
-		MipMapSphericalFunction(boost::shared_ptr< const MIPMap<RGBColor> > aMipMap);
+		MipMapSphericalFunction(boost::shared_ptr< const MIPMap<RGBColor> > aMipMap, bool flipZ);
 
 		void SetMipMap( boost::shared_ptr< const MIPMap<RGBColor> > aMipMap ) {
 			mipMap = aMipMap;

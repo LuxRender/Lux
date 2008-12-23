@@ -34,7 +34,7 @@ class  Camera {
 public:
 	// Camera Interface
 	Camera(const Transform &world2cam, float hither, float yon,
-		float sopen, float sclose, Film *film);
+		float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
 	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return false;}
@@ -43,6 +43,8 @@ public:
 	virtual bool IsDelta() const;
 	virtual void AutoFocus(Scene* scene) { }
 
+	float GetTime(float u1) const;
+
 	// Camera Public Data
 	Film *film;
 protected:
@@ -50,6 +52,7 @@ protected:
 	Transform WorldToCamera, CameraToWorld;
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
+	int ShutterDistribution;
 };
 class  ProjectiveCamera : public Camera {
 public:
@@ -57,7 +60,7 @@ public:
 	ProjectiveCamera(const Transform &world2cam,
 	    const Transform &proj, const float Screen[4],
 		float hither, float yon,
-		float sopen, float sclose,
+		float sopen, float sclose, int sdist,
 		float lensr, float focald, Film *film);
 protected:
 	bool GenerateSample(const Point &p, Sample *sample) const;

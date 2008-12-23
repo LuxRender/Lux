@@ -396,7 +396,7 @@ SET(lux_lib_src
 	integrators/bidirectional.cpp
 	integrators/directlighting.cpp
 	integrators/exphotonmap.cpp
-        lights/area.cpp lights/distant.cpp lights/goniometric.cpp lights/infinite.cpp
+        lights/area.cpp lights/distant.cpp lights/infinite.cpp
         lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
         lights/sun.cpp lights/sky.cpp 
 		lights/sphericalfunction/sphericalfunction.cpp lights/sphericalfunction/sphericalfunction_ies.cpp
