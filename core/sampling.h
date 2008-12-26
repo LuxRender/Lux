@@ -137,7 +137,8 @@ public:
 	}
 
 	void Cleanup() {
-		contribBuffer = contribPool->Next(contribBuffer);
+		contribPool->End(contribBuffer);
+		contribBuffer = NULL;
 	}
 
 	void SetTsPack(TsPack *t) { tspack = t; }

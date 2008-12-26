@@ -216,7 +216,8 @@ void Scene::SignalThreads(ThreadSignals signal) {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 
     for(unsigned int i=0;i<renderThreads.size();i++) {
-        renderThreads[i]->signal=signal;
+		if(renderThreads[i])
+			renderThreads[i]->signal=signal;
     }
     CurThreadSignal = signal;
 }

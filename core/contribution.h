@@ -84,7 +84,7 @@ public:
 	}
 
 	void Splat(Film *film) {
-		for (short int i=0; i<CONTRIB_BUF_SIZE; i++)
+		for (short int i=0; i<pos; i++)
 			film->AddSample(&contribs[i]);
 		film->AddSampleCount(sampleCount);
 	}
@@ -123,6 +123,11 @@ public:
 		CFree.pop_back();
 		cold->Reset();
 		return cold;
+	}
+
+	void End(ContributionBuffer *c) {
+		boost::recursive_mutex::scoped_lock PoolAction(PoolMutex);
+		if(c) CFull.push_back(c);
 	}
 
 	ContributionBuffer* Next(ContributionBuffer *c) {
@@ -164,7 +169,14 @@ public:
 		return cnew;
 	}
 
+	// Flush() and Delete() are not renderthread safe,
+	// they can only be called by Scene after rendering is finished.
 	void Flush() {
+		for(u_int i=0; i<CFull.size(); i++)
+			CSplat.push_back(CFull[i]);
+
+		CFull.clear();
+
 		for(u_int i=0; i<CSplat.size(); i++) {
 			CSplat[i]->Splat(film);
 			CSplat[i]->Reset();
