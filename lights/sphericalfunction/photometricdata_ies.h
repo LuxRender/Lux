@@ -43,6 +43,12 @@ public:
 	void Reset();
 	bool Load( const char* );
 	
+	void inline ReadLine( std::string & sLine )
+	{
+		memset( &sLine[0], 0, sLine.size() );
+		m_fsIES.getline( &sLine[0], 256, 0x0A );
+	}
+
 	//////////////////////////////////////////////
 	// Keywords and light descriptions.
 

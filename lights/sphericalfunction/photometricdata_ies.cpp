@@ -91,18 +91,18 @@ bool PhotometricDataIES::PrivateLoad(  const char *sFileName )
 
 	if ( !m_fsIES.good() ) return false;
 
-	std::string tempLine( 256, 0 );
+	std::string templine( 256, 0 );
 
 	///////////////////////////////////////////////
 	// Check for valid IES file and get version
 
-	m_fsIES.getline( &tempLine[0], 255 );
+	ReadLine( templine );
 
-	size_t vpos = tempLine.find_first_of( "IESNA" );
+	size_t vpos = templine.find_first_of( "IESNA" );
 
 	if ( vpos != std::string::npos )
 	{
-		m_Version = tempLine.substr( tempLine.find_first_of( ":" ) + 1 );	
+		m_Version = templine.substr( templine.find_first_of( ":" ) + 1 );	
 	}
 	else return false;
 
@@ -126,15 +126,15 @@ bool PhotometricDataIES::BuildKeywordList()
 
 	m_Keywords.clear();
 
-	std::string tempLine( 256, 0 );
+	std::string templine( 256, 0 );
 
 	//////////////////////////////////////////////////////////////////	
 	// Find the start of the keyword section...
 
 	m_fsIES.seekg( 0 );
-	m_fsIES.getline( &tempLine[0], 256 );
+	ReadLine( templine );
 
-	if ( tempLine.find( "IESNA" ) == std::string::npos )
+	if ( templine.find( "IESNA" ) == std::string::npos )
 	{
 		return false; // Invalid file.
 	}	
@@ -146,21 +146,20 @@ bool PhotometricDataIES::BuildKeywordList()
 
 	while( m_fsIES.good() )
 	{
-		memset( &tempLine[0], 0, tempLine.size() );
-		m_fsIES.getline( &tempLine[0], 256 );
+		ReadLine( templine );
 
-		if ( tempLine.find( "TILT" ) != std::string::npos ) break;
+		if ( templine.find( "TILT" ) != std::string::npos ) break;
 
-		size_t kwStartPos 	= tempLine.find_first_of( "[" );
-		size_t kwEndPos 	= tempLine.find_first_of( "]" );
+		size_t kwStartPos 	= templine.find_first_of( "[" );
+		size_t kwEndPos 	= templine.find_first_of( "]" );
 
 		if( kwStartPos != std::string::npos && 
 			kwEndPos != std::string::npos && 
 			kwEndPos > kwStartPos )
 		{
-			std::string sTemp = tempLine.substr( kwStartPos + 1, ( kwEndPos - kwStartPos ) - 1 ); 
+			std::string sTemp = templine.substr( kwStartPos + 1, ( kwEndPos - kwStartPos ) - 1 ); 
 
-			if ( tempLine.find( "MORE" ) == std::string::npos && !sTemp.empty() )
+			if ( templine.find( "MORE" ) == std::string::npos && !sTemp.empty() )
 			{	
 				if ( !sVal.empty() )
 				{		
@@ -168,12 +167,12 @@ bool PhotometricDataIES::BuildKeywordList()
 				}
 
 				sKey = sTemp;
-				sVal = tempLine.substr( kwEndPos + 1, tempLine.size() - ( kwEndPos + 1 ) );
+				sVal = templine.substr( kwEndPos + 1, templine.size() - ( kwEndPos + 1 ) );
 
 			}
 			else
 			{
-				sVal += " " + tempLine.substr( kwEndPos + 1, tempLine.size() - ( kwEndPos + 1 ) );
+				sVal += " " + templine.substr( kwEndPos + 1, templine.size() - ( kwEndPos + 1 ) );
 			}
 		}
 	}
@@ -207,7 +206,7 @@ bool PhotometricDataIES::BuildLightData()
 {
 	if ( !m_fsIES.good() ) return false;
 
-	std::string tempLine( 1024, 0 );
+	std::string templine( 1024, 0 );
 
 	//////////////////////////////////////////////////////////////////	
 	// Find the start of the light data...
@@ -216,25 +215,23 @@ bool PhotometricDataIES::BuildLightData()
 
 	while( m_fsIES.good() )
 	{
-		memset( &tempLine[0], 0, tempLine.size() );
-		m_fsIES.getline( &tempLine[0], 256 );
+		ReadLine( templine );
 
-		if ( tempLine.find( "TILT" ) != std::string::npos ) break;
+		if ( templine.find( "TILT" ) != std::string::npos ) break;
 	}
 	
 	////////////////////////////////////////
 	// Only supporting TILT=NONE right now
 
-	if ( tempLine.find( "TILT=NONE" ) == std::string::npos ) return false;
+	if ( templine.find( "TILT=NONE" ) == std::string::npos ) return false;
 
 	//////////////////////////////////////////////////////////////////	
 	// Read first two lines containing light vars.
 
-	memset( &tempLine[0], 0, tempLine.size() );
-	m_fsIES.getline( &tempLine[0], 256 );
+	ReadLine( templine );
 
 	unsigned int photometricTypeInt;
-	sscanf( &tempLine[0], "%u %lf %lf %u %u %u %u %lf %lf %lf", 
+	sscanf( &templine[0], "%u %lf %lf %u %u %u %u %lf %lf %lf", 
 			&m_NumberOfLamps,
 			&m_LumensPerLamp,
 			&m_CandelaMultiplier,
@@ -247,10 +244,9 @@ bool PhotometricDataIES::BuildLightData()
 			&m_LuminaireHeight );
 	m_PhotometricType = PhotometricType(photometricTypeInt);
 
-	memset( &tempLine[0], 0, tempLine.size() );
-	m_fsIES.getline( &tempLine[0], 256 );
+	ReadLine( templine );
 
-	sscanf( &tempLine[0], "%lf %lf %lf", 
+	sscanf( &templine[0], "%lf %lf %lf", 
 			&BallastFactor,
 			&BallastLampPhotometricFactor,
 			&InputWatts );
