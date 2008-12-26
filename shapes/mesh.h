@@ -269,6 +269,7 @@ public:
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 
 		float uv[4][2];
+		GetUVs(uv);
 		dg->u = b0*uv[0][0] + b1*uv[1][0] + b2*uv[2][0] + b3*uv[3][0];
 		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
 	}
