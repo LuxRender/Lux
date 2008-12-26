@@ -153,13 +153,14 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1, u3 * nrPortalShapes);
-		Normal ns;
+		DifferentialGeometry dg;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &ns);
+			PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &dg);
+			ps = dg.p;
 			*wi = Normalize(ps - p);
-			if (Dot(*wi, ns) < 0.f) {
+			if (Dot(*wi, dg.nn) < 0.f) {
 				found = true;
 				break;
 			}
@@ -193,13 +194,14 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		int shapeidx = 0;
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1, u3 * nrPortalShapes);
-		Normal ns;
+		DifferentialGeometry dg;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
-			ps = PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &ns);
+			PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &dg);
+			ps = dg.p;
 			*wi = Normalize(ps - p);
-			if (Dot(*wi, ns) < 0.f) {
+			if (Dot(*wi, dg.nn) < 0.f) {
 				found = true;
 				break;
 			}
@@ -250,10 +252,11 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
-		Normal ns;
-		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+		DifferentialGeometry dg;
+		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
+		ray->o = dg.p;
 		ray->d = UniformSampleSphere(u3, u4);
-		if (Dot(ray->d, ns) < 0.) ray->d *= -1;
+		if (Dot(ray->d, dg.nn) < 0.) ray->d *= -1;
 
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
 	}
@@ -306,10 +309,11 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
-		Normal ns;
-		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		DifferentialGeometry dg;
+		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		Point ps = dg.p;
 		wi = Normalize(ps - p);
-		if (Dot(wi, ns) < 0.f)
+		if (Dot(wi, dg.nn) < 0.f)
 			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi) / nrPortalShapes;
 		else {
 			*Le = 0.f;

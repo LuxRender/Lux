@@ -251,20 +251,25 @@ float BaryTriangle::Area() const {
     return 0.5f * Cross(p2-p1, p3-p1).Length();
 }
 
-Point BaryTriangle::Sample(float u1, float u2, float u3,
-        Normal *Ns) const {
+void BaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
     float b1, b2;
-    UniformSampleTriangle(u1, u2, &b1, &b2);
-    // Get triangle vertices in _p1_, _p2_, and _p3_
-    const Point &p1 = mesh->p[v[0]];
-    const Point &p2 = mesh->p[v[1]];
-    const Point &p3 = mesh->p[v[2]];
-    Point p = b1 * p1 + b2 * p2 + (1.f - b1 - b2) * p3;
-    Normal n = Normal(Cross(p2-p1, p3-p1));
-    *Ns = Normalize(n);
-    if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
-    	*Ns *= -1.f;
-    return p;
+	UniformSampleTriangle(u1, u2, &b1, &b2);
+	// Get triangle vertices in _p1_, _p2_, and _p3_
+	const Point &p1 = mesh->p[v[0]];
+	const Point &p2 = mesh->p[v[1]];
+	const Point &p3 = mesh->p[v[2]];
+	float b3 = 1.f - b1 - b2;
+	dg->p = b1 * p1 + b2 * p2 + b3 * p3;
+
+	dg->nn = Normalize(Normal(Cross(p2-p1, p3-p1)));
+	if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
+		dg->nn = -dg->nn;
+	CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
+
+    float uv[3][2];
+    GetUVs(uv);
+    dg->u = b1 * uv[0][0] + b2 * uv[1][0] + b3 * uv[2][0];
+    dg->v = b1 * uv[0][1] + b2 * uv[1][1] + b3 * uv[2][1];
 }
 
 void BaryTriangle::GetShadingGeometry(const Transform &obj2world,

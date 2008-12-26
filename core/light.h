@@ -118,14 +118,8 @@ public:
 	AreaLight(const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e, int ns, const boost::shared_ptr<Primitive> &prim);
 	~AreaLight();
-	virtual SWCSpectrum L(const TsPack *tspack, const Point &p, const Normal &n,
-			const Vector &w) const {
-		Vector dpdu, dpdv;
-		CoordinateSystem(Vector(n), &dpdu, &dpdv);
-		DifferentialGeometry dg(p, n, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-		// TODO - radiance - add shading geometry for uv coordinates
-
-		return Dot(n, w) > 0 ? Le->Evaluate(tspack, dg) * gain : 0.;
+	virtual SWCSpectrum L(const TsPack *tspack, const DifferentialGeometry &dg, const Vector& w) const {
+		return Dot(dg.nn, w) > 0 ? Le->Evaluate(tspack, dg) * gain : 0.;
 	}
 	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {

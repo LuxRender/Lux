@@ -192,10 +192,11 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
-		Normal ns;
-		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		DifferentialGeometry dg;
+		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		Point ps = dg.p;
 		*wi = Normalize(ps - p);
-		if (Dot(*wi, ns) < 0.f)
+		if (Dot(*wi, dg.nn) < 0.f)
 			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
@@ -236,10 +237,11 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
-		Normal ns;
-		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		DifferentialGeometry dg;
+		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		Point ps = dg.p;
 		*wi = Normalize(ps - p);
-		if (Dot(*wi, ns) < 0.f)
+		if (Dot(*wi, dg.nn) < 0.f)
 			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
@@ -280,10 +282,11 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 			shapeidx = min(nrPortalShapes - 1,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
-		Normal ns;
-		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+		DifferentialGeometry dg;
+		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
+		ray->o = dg.p;
 		ray->d = UniformSampleSphere(u3, u4); //Jeanphi - FIXME this is wrong as it doesn't take the portal normal into account
-		if (Dot(ray->d, ns) < 0.) ray->d *= -1;
+		if (Dot(ray->d, dg.nn) < 0.) ray->d *= -1;
 
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
 	}
@@ -336,10 +339,11 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
-		Normal ns;
-		Point ps = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &ns);
+		DifferentialGeometry dg;
+		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		Point ps = dg.p;
 		wi = Normalize(ps - p);
-		if (Dot(wi, ns) < 0.f)
+		if (Dot(wi, dg.nn) < 0.f)
 			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi) / nrPortalShapes;
 		else {
 			*Le = 0.f;

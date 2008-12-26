@@ -81,6 +81,18 @@ public:
 	}
 
 	bool CanSample() const { return true; }
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		dg->p = Sample(u1, u2, u3, &dg->nn);
+		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
+		//TODO fill in uv coordinates
+		dg->u = dg->v = .5f;
+	}
+	void Sample(const Point &p, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		dg->p = Sample(p, u1, u2, u3, &dg->nn);
+		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
+		//TODO fill in uv coordinates
+		dg->u = dg->v = .5f;
+	}
 
 	// Old PBRT Shape interface methods
 	virtual BBox ObjectBound() const {
@@ -95,6 +107,13 @@ public:
 	{
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Intersect() method called");
 		return false;
+	}
+	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Sample() method called");
+		return Point();
+	}
+	virtual Point Sample(const Point &p, float u1, float u2, float u3, Normal *Ns) const {
+		return Sample(u1, u2, u3, Ns);
 	}
 	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
@@ -123,7 +142,7 @@ public:
 			if (!primitives[i]->CanSample()) return false;
 		return true;
 	}
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		u_int sn;
 		if( primitives.size() <= 16) {
 			for (sn = 0; sn < primitives.size()-1; ++sn)
@@ -134,7 +153,7 @@ public:
 				(u_int)(std::upper_bound(areaCDF.begin(), areaCDF.end(), u3) - areaCDF.begin()),
 				(u_int)(0), (u_int)(primitives.size() - 1));
 		}
-		return primitives[sn]->Sample(u1, u2, u3, Ns);
+		primitives[sn]->Sample(u1, u2, u3, dg);
 	}
 	float Area() const { return area; }
 private:

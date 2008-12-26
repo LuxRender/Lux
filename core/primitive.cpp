@@ -59,17 +59,16 @@ float Primitive::Area() const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Area method called!");
 	return 0.f;
 }
-Point Primitive::Sample(float u1, float u2, float u3, Normal *Ns) const {
+void Primitive::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Sample method called!");
-	return Point();
 }
 float Primitive::Pdf(const Point &p) const {
 	return 1.f / Area();
 }
-Point Primitive::Sample(const Point &p,
-		float u1, float u2, float u3, Normal *Ns) const
+void Primitive::Sample(const Point &p,
+		float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
-	return Sample(u1, u2, u3, Ns);
+	Sample(u1, u2, u3, dg);
 }
 float Primitive::Pdf(const Point &p, const Vector &wi) const {
 	// Intersect sample ray with area light geometry
@@ -177,7 +176,7 @@ BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray, fl
 	return material->GetBSDF(tspack, dg, dgShading, u);
 }
 SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const {
-	return arealight ? arealight->L(tspack, dg.p, dg.nn, w) : SWCSpectrum(0.);
+	return arealight ? arealight->L(tspack, dg, w) : SWCSpectrum(0.);
 }
 SWCSpectrum Intersection::Le(const TsPack *tspack, const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {

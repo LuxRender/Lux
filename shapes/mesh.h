@@ -38,9 +38,9 @@ public:
 			int nv, const Point *P, const Normal *N, const float *UV,
 			MeshTriangleType tritype, int trisCount, const int *tris,
 			MeshQuadType quadtype, int nquadsCount, const int *quads,
-			MeshSubdivType subdivType, int nsubdivlevels, 
-			boost::shared_ptr<Texture<float> > displacementMap, 
-			float displacementMapScale, float displacementMapOffset, 
+			MeshSubdivType subdivType, int nsubdivlevels,
+			boost::shared_ptr<Texture<float> > displacementMap,
+			float displacementMapScale, float displacementMapOffset,
 			bool displacementMapNormalSmooth, bool displacementMapSharpBoundary);
 	~Mesh();
 
@@ -126,7 +126,7 @@ public:
 
 	bool CanSample() const { return true; }
 	float Area() const;
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const;
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 
 	bool isDegenerate() const;
 private:
@@ -193,7 +193,7 @@ public:
 
     bool CanSample() const { return true; }
     float Area() const;
-    Point Sample(float u1, float u2, Normal *Ns) const;
+    void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 
 	bool isDegenerate() const {
 		return false; //TODO check degenerate
@@ -247,24 +247,30 @@ public:
 
 	bool CanSample() const { return true; }
 	float Area() const;
-	Point Sample(float u1, float u2, Normal *Ns) const {
-		Point p;
-
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		const Point &p0 = mesh->p[idx[0]];
 		const Point &p1 = mesh->p[idx[1]];
 		const Point &p2 = mesh->p[idx[2]];
 	    const Point &p3 = mesh->p[idx[3]];
 
-		p = (1.f-u1)*(1.f-u2)*p0 + u1*(1.f-u2)*p1
-			+u1*u2*p2 + (1.f-u1)*u2*p3;
+	    float b0 = (1.f-u1)*(1.f-u2);
+	    float b1 = u1*(1.f-u2);
+	    float b2 = u1*u2;
+	    float b3 = (1.f-u1)*u2;
+
+		dg->p = b0*p0 + b1*p1 +b2*p2 + b3*p3;
 
 		Vector e0 = p1 - p0;
 		Vector e1 = p2 - p0;
 
-		*Ns = Normalize(Normal(Cross(e0, e1)));
+		dg->nn = Normalize(Normal(Cross(e0, e1)));
 		if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
-			*Ns *= -1.f;
-		return p;
+			dg->nn = -dg->nn;
+		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
+
+		float uv[4][2];
+		dg->u = b0*uv[0][0] + b1*uv[1][0] + b2*uv[2][0] + b3*uv[3][0];
+		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
 	}
 
 	bool isDegenerate() const {

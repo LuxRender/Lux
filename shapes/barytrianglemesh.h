@@ -81,7 +81,7 @@ public:
 
     bool CanSample() const { return true; }
     float Area() const;
-    Point Sample(float u1, float u2, float u3, Normal *Ns) const;
+    void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 
 private:
 	void GetUVs(float uv[3][2]) const {

@@ -266,8 +266,9 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 			shapeidx = min<float>(nrPortalShapes - 1,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes)); // TODO - REFACT - add passed value from sample
 
-		Normal ns;
-		ray->o = PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &ns); // TODO - REFACT - add passed value from sample
+		DifferentialGeometry dg;
+		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
+		ray->o = dg.p;
 		float pdfPortal = PortalShapes[shapeidx]->Pdf(ray->o) / nrPortalShapes;
 
 		ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
@@ -293,7 +294,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 		*pdf = pdfSun * pdfPortal;
 
-		if (Dot(ray->d, ns) < 0.)
+		if (Dot(ray->d, dg.nn) < 0.)
 			return SWCSpectrum(0.0f);
 		else
 			return SWCSpectrum(tspack, LSPD);
@@ -325,10 +326,11 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 			u3 -= shapeIndex;
 		}
 
-		Normal ns;
-		samplePoint = PortalShapes[shapeIndex]->Sample(u1, u2, u3, &ns);
+		DifferentialGeometry dg;
+		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
+		samplePoint = dg.p;
 		sampleNormal = Normal(-sundir);
-		const float cosPortal = Dot(sampleNormal, ns);
+		const float cosPortal = Dot(sampleNormal, dg.nn);
 		if (cosPortal <= 0.) {
 			*Le = 0.f;
 			return false;

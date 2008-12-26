@@ -99,14 +99,15 @@ public:
 	 */
 	virtual float Area() const;
 	/**
-	 * Samples a point on this primitive.
+	 * Samples a point on this primitive. Only the p, nn, dpdu, dpdv, u and v
+	 * need to be calculated.
+	 *
 	 * @param u1 The point coordinate in the first dimension.
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
-	 * @param Ns The destination for the normal in the sampled point.
-	 * @return The sampled point.
+	 * @param dg The destination to store the sampled point in.
 	 */
-	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const;
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	/**
 	 * Returns the probablity density for sampling the given point
 	 * (@see Primitive::Sample(float,float,float,Normal*) const).
@@ -116,16 +117,17 @@ public:
 	virtual float Pdf(const Point &p) const;
 	/**
 	 * Samples a point on this primitive that will be tested for visibility
-	 * from a given point.
+	 * from a given point. Only the p, nn, dpdu, dpdv, u and v need to be
+	 * calculated.
+	 *
 	 * @param p  The point that will be tested for visibility with the result.
 	 * @param u1 The point coordinate in the first dimension.
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
-	 * @param Ns The destination for the normal in the sampled point.
-	 * @return The sampled point.
+	 * @param dg The destination to store the sampled point in.
 	 */
-	virtual Point Sample(const Point &p,
-			float u1, float u2, float u3, Normal *Ns) const;
+	virtual void Sample(const Point &p,
+			float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	/**
 	 * Returns the probability density for sampling the given point.
 	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
@@ -245,13 +247,13 @@ public:
 
 	bool CanSample() const { return prim->CanSample(); }
 	float Area() const { return prim->Area(); }
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const  {
-		return prim->Sample(u1, u2, u3, Ns);
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+		prim->Sample(u1, u2, u3, dg);
 	}
 	float Pdf(const Point &p) const { return prim->Pdf(p); }
-	Point Sample(const Point &P,
-			float u1, float u2, float u3, Normal *Ns) const {
-		return prim->Sample(P, u1, u2, u3, Ns);
+	void Sample(const Point &P,
+			float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		prim->Sample(P, u1, u2, u3, dg);
 	}
 	float Pdf(const Point &p, const Vector &wi) const {
 		return prim->Pdf(p, wi);
@@ -276,7 +278,7 @@ public:
 	 *
 	 * @param i   The primitive to instance.
 	 * @param i2w The instance to world transformation.
-	 * @param mat The material this instance or NULL to use the 
+	 * @param mat The material this instance or NULL to use the
 	 *            instanced primitive's material.
 	 */
 	InstancePrimitive(boost::shared_ptr<Primitive> i,
@@ -298,13 +300,13 @@ public:
 
 	bool CanSample() const { return instance->CanSample(); }
 	float Area() const { return instance->Area(); }
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const  {
-		return instance->Sample(u1, u2, u3, Ns);
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+		instance->Sample(u1, u2, u3, dg);
 	}
 	float Pdf(const Point &p) const { return instance->Pdf(p); }
-	Point Sample(const Point &P,
-			float u1, float u2, float u3, Normal *Ns) const {
-		return instance->Sample(P, u1, u2, u3, Ns);
+	void Sample(const Point &P,
+			float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		instance->Sample(P, u1, u2, u3, dg);
 	}
 	float Pdf(const Point &p, const Vector &wi) const {
 		return instance->Pdf(p, wi);
@@ -334,51 +336,51 @@ public:
  * A decorator for instances of primitives with interpolated matrices for motion blur.
  * This is achieved by changing the Object-to-World transformation
  * in the result and other transforming all intersection info that
- * was calculated, by interpolating between 2 matrices using the ray time. 
+ * was calculated, by interpolating between 2 matrices using the ray time.
  */
 class MotionPrimitive : public Primitive {
 public:
-        // MotionPrimitive Public Methods
-        /**
-         * Creates a new instance from the given primitive.
-         *
-         * @param i   The primitive to instance.
-         * @param i2ws The instance to world transformation at start time.
-         * @param i2we The instance to world transformation at end time.
+	// MotionPrimitive Public Methods
+	/**
+     * Creates a new instance from the given primitive.
+     *
+     * @param i   The primitive to instance.
+     * @param i2ws The instance to world transformation at start time.
+     * @param i2we The instance to world transformation at end time.
 	 * @param s   The time at start.
-         * @param e   The time at end.
-         */
-        MotionPrimitive(boost::shared_ptr<Primitive> i,
-                          const Transform &i2ws,
-			  const Transform &i2we,
-			  float s, float e ) {
-                instance = i;
+     * @param e   The time at end.
+     */
+	MotionPrimitive(boost::shared_ptr<Primitive> i,
+		const Transform &i2ws,
+		const Transform &i2we,
+		float s, float e )
+	{
+		instance = i;
 		motionSystem = new MotionSystem(s, e, i2ws, i2we);
-        }
+	}
 	~MotionPrimitive() { delete motionSystem; }
 
-        BBox WorldBound() const; 
+    BBox WorldBound() const;
 
-        bool CanIntersect() const { return instance->CanIntersect(); }
-        bool Intersect(const Ray &r, Intersection *in) const;
-        bool IntersectP(const Ray &r) const;
+    bool CanIntersect() const { return instance->CanIntersect(); }
+    bool Intersect(const Ray &r, Intersection *in) const;
+    bool IntersectP(const Ray &r) const;
 
-        bool CanSample() const { return instance->CanSample(); }
-        float Area() const { return instance->Area(); }
-        Point Sample(float u1, float u2, float u3, Normal *Ns) const  {
-                return instance->Sample(u1, u2, u3, Ns);
-        }
-        float Pdf(const Point &p) const { return instance->Pdf(p); }
-        Point Sample(const Point &P,
-                        float u1, float u2, float u3, Normal *Ns) const {
-                return instance->Sample(P, u1, u2, u3, Ns);
-        }
-        float Pdf(const Point &p, const Vector &wi) const {
-                return instance->Pdf(p, wi);
-        }
+    bool CanSample() const { return instance->CanSample(); }
+    float Area() const { return instance->Area(); }
+    void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+            return instance->Sample(u1, u2, u3, dg);
+    }
+    float Pdf(const Point &p) const { return instance->Pdf(p); }
+    void Sample(const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		instance->Sample(P, u1, u2, u3, dg);
+	}
+    float Pdf(const Point &p, const Vector &wi) const {
+        return instance->Pdf(p, wi);
+     }
 private:
-        // MotionPrimitive Private Data
-        boost::shared_ptr<Primitive> instance;
+    // MotionPrimitive Private Data
+    boost::shared_ptr<Primitive> instance;
 	MotionSystem *motionSystem;
 };
 
