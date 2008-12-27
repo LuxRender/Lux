@@ -25,7 +25,7 @@
 #include "light.h"
 #include "shape.h"
 #include "scene.h"
-#include "mipmap.h"
+#include "texture.h"
 #include "sphericalfunction.h"
 
 namespace lux
@@ -36,7 +36,7 @@ class PointLight : public Light {
 public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, 
-		const RGBColor &intensity, float gain,
+		const boost::shared_ptr< Texture<SWCSpectrum> > intensity, float gain,
 		const string &texname, const string &iesname, bool fZ, bool SqF);
 	~PointLight();
 	bool IsDeltaLight() const { return true; }
@@ -54,13 +54,15 @@ public:
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet);
+		const ParamSet &paramSet, const TextureParams &tp);
 private:
 	SWCSpectrum L(const TsPack *tspack, const Vector& w) const;
 	// PointLight Private Data
 	Point lightPos;
 	bool flipZ, squareFalloff;
-	SPD *LSPD;
+	boost::shared_ptr< Texture<SWCSpectrum> > I;
+	DifferentialGeometry dummydg;
+	float gain;
 	SampleableSphericalFunction *func;
 };
 

@@ -155,7 +155,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *sce
 	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
 Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet) {
+		const ParamSet &paramSet, const TextureParams &tp) {
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);

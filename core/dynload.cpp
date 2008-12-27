@@ -98,12 +98,12 @@ boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &na
 }
 
 Light *MakeLight(const string &name,
-	const Transform &light2world, const ParamSet &paramSet)
+	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp)
 {
 	if (DynamicLoader::registeredLights().find(name) !=
 		DynamicLoader::registeredLights().end()) {
 		Light *ret = DynamicLoader::registeredLights()[name](light2world,
-			paramSet);
+			paramSet, tp);
 		paramSet.ReportUnused();
 		return ret;
 	}

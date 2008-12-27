@@ -74,7 +74,7 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	return SWCSpectrum(tspack, LSPD);
 }
 Light* DistantLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet) {
+		const ParamSet &paramSet, const TextureParams &tp) {
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	Point from = paramSet.FindOnePoint("from", Point(0,0,0));

@@ -25,9 +25,7 @@
 #include "imagereader.h"
 #include "sphericalfunction_ies.h"
 #include "mc.h"
-#include "spd.h"
 #include "reflection/bxdf.h"
-#include "rgbillum.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -52,16 +50,15 @@ private:
 // PointLight Method Definitions
 PointLight::PointLight(
 		const Transform &light2world,
-		const RGBColor &intensity,
-		float gain,
+		const boost::shared_ptr< Texture<SWCSpectrum> > intensity,
+		float g,
 		const string &texname,
-		const string& iesname,
+		const string &iesname,
 		bool fZ, bool SqF)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
-	// Create SPD
-	LSPD = new RGBIllumSPD(intensity);
-	LSPD->Scale(gain);
+	I = intensity;
+	gain = g;
 
 	flipZ = fZ;
 	squareFalloff = SqF;
@@ -110,11 +107,10 @@ PointLight::PointLight(
 	);
 }
 PointLight::~PointLight() {
-	delete LSPD;
 	delete func;
 }
 SWCSpectrum PointLight::Power(const TsPack *tspack, const Scene *) const {
-	return SWCSpectrum(tspack, LSPD) * 4.f * M_PI * func->Average_f();
+	return I->Evaluate(tspack, dummydg) * gain * 4.f * M_PI * func->Average_f();
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1, float u2,
 		float u3, Vector *wo, float *pdf,
@@ -133,13 +129,13 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 	Vector w;
 	RGBColor f = func->Sample_f(u1, u2, &w, pdf);
 	ray->d = Normalize(LightToWorld(w));
-	return SWCSpectrum(tspack, LSPD) * SWCSpectrum(tspack, f);
+	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, f);
 }
 float PointLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
 SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
-	return SWCSpectrum(tspack, LSPD) * SWCSpectrum(tspack, func->f(w));
+	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, func->f(w));
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
@@ -150,7 +146,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	*pdf = .25f * INV_PI;
-	*Le = SWCSpectrum(tspack, LSPD);
+	*Le = I->Evaluate(tspack, dummydg) * gain;
 	return true;
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
@@ -167,7 +163,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	visibility->SetSegment(p, lightPos, tspack->time);
-	*Le = SWCSpectrum(tspack, LSPD);
+	*Le = I->Evaluate(tspack, dummydg) * gain;
 	return true;
 }
 SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
@@ -176,8 +172,8 @@ SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &
 	return SWCSpectrum(0.f);
 }
 Light* PointLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet) {
-	RGBColor I = paramSet.FindOneRGBColor("I", RGBColor(1.0));
+		const ParamSet &paramSet, const TextureParams &tp) {
+	boost::shared_ptr<Texture<SWCSpectrum> > I = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 
 	string texname = paramSet.FindOneString("mapname", "");

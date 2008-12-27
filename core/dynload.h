@@ -44,7 +44,7 @@ boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
 Light *MakeLight(const string &name, const Transform &light2world,
-	const ParamSet &paramSet);
+	const ParamSet &paramSet, const TextureParams &tp);
 AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 	const boost::shared_ptr<Primitive> &prim);
@@ -115,7 +115,7 @@ public:
 		virtual ~RegisterSWCSpectrumTexture<T>() {}
 	};
 
-	typedef Light *(*CreateLight)(const Transform&, const ParamSet&);
+	typedef Light *(*CreateLight)(const Transform&, const ParamSet&, const TextureParams &tp);
 	static map<string, CreateLight> &registeredLights();
 	template <class T> class RegisterLight : public RegisterLoader<CreateLight> {
 	public:

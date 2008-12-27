@@ -49,7 +49,7 @@ public:
 	float Pdf(const Point &, const Vector &) const;
 	
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet);
+		const ParamSet &paramSet, const TextureParams &tp);
 private:
 	// ProjectionLight Private Data
 	MIPMap<RGBColor> *projectionMap;

@@ -102,7 +102,7 @@ float ProjectionLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
 Light* ProjectionLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet) {
+		const ParamSet &paramSet, const TextureParams &tp) {
 	RGBColor I = paramSet.FindOneRGBColor("I", RGBColor(1.0));
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");

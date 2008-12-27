@@ -407,9 +407,12 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 	;
 	renderFarm->send("luxLightSource", name, params);
 
+	TextureParams tp(params, graphicsState->materialParams,
+			graphicsState->floatTextures, graphicsState->colorTextures);
+
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
-		Light *lt_sun = MakeLight("sun", curTransform, params);
+		Light *lt_sun = MakeLight("sun", curTransform, params, tp);
 		if (lt_sun == NULL) {
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sun unknown.");
 			graphicsState->currentLightPtr0 = NULL;
@@ -418,7 +421,7 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 			graphicsState->currentLight = name;
 			graphicsState->currentLightPtr0 = lt_sun;
 		}
-		Light *lt_sky = MakeLight("sky", curTransform, params);
+		Light *lt_sky = MakeLight("sky", curTransform, params, tp);
 		if (lt_sky == NULL) {
 			luxError(LUX_SYNTAX,LUX_ERROR,"luxLightSource: light type sky unknown.");
 			graphicsState->currentLightPtr1 = NULL;
@@ -429,7 +432,7 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 		}
 	} else {
 		// other lightsource type
-		Light *lt = MakeLight(name, curTransform, params);
+		Light *lt = MakeLight(name, curTransform, params, tp);
 		if (lt == NULL) {
 			//Error("luxLightSource: light type "
 			//      "\"%s\" unknown.", name.c_str());

@@ -415,7 +415,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 }
 
 Light* SunLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet) {
+		const ParamSet &paramSet, const TextureParams &tp) {
 	//NOTE - Ratow - Added relsize param and reactivated nsamples
 	float scale = paramSet.FindOneFloat("gain", 1.f);				// gain (aka scale) factor to apply to sun/skylight (0.005)
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
