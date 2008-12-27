@@ -133,6 +133,10 @@ bool ReadSOPRAData(std::ifstream &fs, vector<float> &wl, vector<float> &n, vecto
 	n.clear();
 	k.clear();
 
+	wl.resize(count);
+	n.resize(count);
+	k.resize(count);
+
 	// we want lambda to go from low to high
 	// so reverse direction
 	for (int i = count-1; i >= 0; i--) {
@@ -145,9 +149,9 @@ bool ReadSOPRAData(std::ifstream &fs, vector<float> &wl, vector<float> &n, vecto
 
 		// linearly interpolate units in file
 		// then convert to wavelength in nm
-		wl.push_back(tolambda(lambda_first + (lambda_last - lambda_first) * i / (float)count));
-		n.push_back(boost::lexical_cast<float>(m[1]));
-		k.push_back(boost::lexical_cast<float>(m[2]));
+		wl[i] = tolambda(lambda_first + (lambda_last - lambda_first) * i / (float)count);
+		n[i] = boost::lexical_cast<float>(m[1]);
+		k[i] = boost::lexical_cast<float>(m[2]);
 	}
 
 	return true;
