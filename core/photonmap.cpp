@@ -26,6 +26,7 @@
 #include "spectrumwavelengths.h"
 #include "error.h"
 #include "osfunc.h"
+#include "mc.h"
 
 #include <fstream>
 #include <boost/thread/xtime.hpp>
