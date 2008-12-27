@@ -42,6 +42,7 @@ public:
 	          float t20, float t21, float t22, float t23,
 	          float t30, float t31, float t32, float t33);
 	boost::shared_ptr<Matrix4x4> Transpose() const;
+	float Determinant() const;
 	void Print(ostream &os) const {
 		os << "[ ";
 		for (int i = 0; i < 4; ++i) {

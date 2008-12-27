@@ -55,6 +55,49 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Transpose() const
 	return o;
 }
 
+// TODO - lordcrc - move to proper header file
+float Det2x2(const float a00, const float a01, const float a10, const float a11) {
+	return a00*a11 - a01*a10;
+}
+
+// TODO - lordcrc - move to proper header file
+float Det3x3(float A[3][3]) {
+	return 
+		A[0][0] * Det2x2(A[1][1], A[1][2], A[2][1], A[2][2]) -
+		A[0][1] * Det2x2(A[1][0], A[1][2], A[2][0], A[2][2]) +
+		A[0][2] * Det2x2(A[1][0], A[1][1], A[2][0], A[2][1]);
+}
+
+float Matrix4x4::Determinant() const {
+
+	// row expansion along the last row
+	// for most matrices this would be most efficient
+
+	float result = 0;
+	float s = 1;
+
+	float A[3][3];
+
+	// initialize for first expansion
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++)
+			A[i][j] = m[i][j+1];
+	}
+
+	for (int k = 0; k < 4; k++) {
+		if (m[3][k] != 0.f)
+			result += s * Det3x3(A);
+
+		s *= -1;
+
+		// copy column for next expansion
+		for (int i = 0; i < 3; i++)
+			A[i][k] = m[i][k];
+	}
+
+	return result;
+}
+
 boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const
 {
 	int indxc[4], indxr[4];
