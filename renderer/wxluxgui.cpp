@@ -314,7 +314,14 @@ void LuxGui::LoadImages() {
 	m_auinotebook->SetPageBitmap(3, wxMEMORY_BITMAP(output_png));
 
 	m_splashbmp = wxMEMORY_BITMAP(splash_png);
+
+	/////////////////////////////////////////////////////////////
+	// TODO: comment out the below to reenable the output tab...
+	m_outputPage->Show( false );		
+	m_auinotebook->RemovePage( 3 );
+	/////////////////////////////////////////////////////////////
 }
+
 
 void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
