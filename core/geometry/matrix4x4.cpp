@@ -74,7 +74,7 @@ float Matrix4x4::Determinant() const {
 	// for most matrices this would be most efficient
 
 	float result = 0;
-	float s = 1;
+	float s = -1;
 
 	float A[3][3];
 
@@ -86,7 +86,7 @@ float Matrix4x4::Determinant() const {
 
 	for (int k = 0; k < 4; k++) {
 		if (m[3][k] != 0.f)
-			result += s * Det3x3(A);
+			result += s * m[3][k] * Det3x3(A);
 
 		s *= -1;
 
