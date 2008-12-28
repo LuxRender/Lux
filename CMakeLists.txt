@@ -388,6 +388,7 @@ SET(lux_lib_src
         shapes/meshquadrilateral.cpp samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
         samplers/random.cpp
         accelerators/grid.cpp accelerators/unsafekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
+        accelerators/bvhaccel.cpp
         cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp film/fleximage.cpp
         filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
         integrators/emission.cpp
