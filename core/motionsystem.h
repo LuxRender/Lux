@@ -59,6 +59,10 @@ public:
 		startMat = start.GetMatrix();
 		endMat = end.GetMatrix();
 
+		// initialize to false
+		hasTranslationX = hasTranslationY = hasTranslationZ =
+			hasScaleX = hasScaleY = hasScaleZ = hasRotation = false;
+
 		if (!DecomposeMatrix(startMat, startT)) {
 			luxError(LUX_MATH, LUX_WARNING, "Singular start matrix in MotionSystem, interpolation disabled");
 			return;
@@ -99,6 +103,10 @@ public:
 	~MotionSystem() {};
 
 	Transform Sample(float time) {
+
+		if (!IsActive())
+			return start;
+
 		// Determine interpolation value
 		if(time <= startTime)
 			return start;
@@ -110,12 +118,11 @@ public:
 		float le = d / w; 		
 
 		// Initialize Identity interMatrix
+		static const float IdentityMatrix[4][4] = {
+			{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+
 		float interMatrix[4][4];
-		for (int i = 0; i < 4; i++)
-			interMatrix[i][0] = interMatrix[i][1] = 
-				interMatrix[i][2] = interMatrix[i][3] = 0;
-		interMatrix[0][0] = interMatrix[1][1] = 
-			interMatrix[2][2] = interMatrix[3][3] = 1;
+		memcpy(interMatrix, IdentityMatrix, sizeof(float) * 16);
 
 		if(hasRotation) {
 			// Quaternion interpolation of rotation / also does scale
@@ -158,6 +165,13 @@ public:
              		tbox = Union(tbox, t(ibox));
        	}
        	return tbox;
+	}
+
+	bool IsActive() {
+		// returns false if start and end transformations
+		// are identical
+		return hasTranslationX || hasTranslationY || hasTranslationZ ||
+			hasScaleX || hasScaleY || hasScaleZ || hasRotation;
 	}
 
 protected:
@@ -300,6 +314,7 @@ protected:
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;
 	bool hasScaleX, hasScaleY, hasScaleZ;
 };
+
 
 }//namespace lux
 
