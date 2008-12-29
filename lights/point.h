@@ -36,8 +36,8 @@ class PointLight : public Light {
 public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, 
-		const boost::shared_ptr< Texture<SWCSpectrum> > intensity, float gain,
-		const string &texname, const string &iesname, bool fZ);
+		const boost::shared_ptr< Texture<SWCSpectrum> > L, float gain,
+		SampleableSphericalFunction *ssf);
 	~PointLight();
 	bool IsDeltaLight() const { return true; }
 	bool IsRadianceBased() const { return false; }
@@ -61,7 +61,7 @@ private:
 	// PointLight Private Data
 	Point lightPos;
 	bool flipZ;
-	boost::shared_ptr< Texture<SWCSpectrum> > I;
+	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
 	DifferentialGeometry dummydg;
 	float gain;
 	SampleableSphericalFunction *func;

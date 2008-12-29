@@ -20,8 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// TODO - Port SPD interfaces
-
 // projection.cpp*
 #include "projection.h"
 #include "imagereader.h"
@@ -34,13 +32,13 @@ using namespace lux;
 // ProjectionLight Method Definitions
 ProjectionLight::
 	ProjectionLight(const Transform &light2world,
-		const boost::shared_ptr< Texture<SWCSpectrum> > intensity, 
+		const boost::shared_ptr< Texture<SWCSpectrum> > L, 
 		float g, const string &texname,
 		float fov)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
-	I = intensity;
-	I->SetIlluminant();
+	Lbase = L;
+	Lbase->SetIlluminant();
 	gain = g;
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
@@ -91,7 +89,7 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, floa
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;
 	visibility->SetSegment(p, lightPos, tspack->time);
-	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(-*wi)) / DistanceSquared(lightPos, p);
+	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(-*wi)) / DistanceSquared(lightPos, p);
 }
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
@@ -99,18 +97,18 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, 
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
-	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(ray->d));
+	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(ray->d));
 }
 float ProjectionLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
 Light* ProjectionLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > I = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");
-	return new ProjectionLight(light2world, I, g, texname, fov);
+	return new ProjectionLight(light2world, L, g, texname, fov);
 }
 
 static DynamicLoader::RegisterLight<ProjectionLight> r("projection");

@@ -22,8 +22,6 @@
 
 // point.cpp*
 #include "point.h"
-#include "imagereader.h"
-#include "sphericalfunction_ies.h"
 #include "mc.h"
 #include "reflection/bxdf.h"
 #include "paramset.h"
@@ -34,83 +32,37 @@ using namespace lux;
 class GonioBxDF : public BxDF {
 public:
 	GonioBxDF(const Normal &ns, const Vector &du, const Vector &dv, const SampleableSphericalFunction *func) :
-		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), x(du), y(dv), z(Vector(ns)), map(func) {}
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), x(du), y(dv), z(Vector(ns)), sf(func) {}
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		const Vector wL(wi.x * x.x + wi.y * y.x + wi.z * z.x,
 				wi.x * x.y + wi.y * y.y + wi.z * z.y,
 				wi.x * x.z + wi.y * y.z + wi.z * z.z);
-		*F += SWCSpectrum(tspack, map->f(SphericalPhi(wL), SphericalTheta(wL)));
+		*F += SWCSpectrum(tspack, sf->f(wL));
 	}
 private:
 	Vector x, y, z;
-	const SampleableSphericalFunction *map;
+	const SampleableSphericalFunction *sf;
 };
 
 
 // PointLight Method Definitions
 PointLight::PointLight(
 		const Transform &light2world,
-		const boost::shared_ptr< Texture<SWCSpectrum> > intensity,
+		const boost::shared_ptr< Texture<SWCSpectrum> > L,
 		float g,
-		const string &texname,
-		const string &iesname,
-		bool fZ)
+		SampleableSphericalFunction *ssf)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
-	I = intensity;
-	I->SetIlluminant();
+	Lbase = L;
+	Lbase->SetIlluminant();
 	gain = g;
-
-	flipZ = fZ;
-
-	// Create _mipmap_ for _PointLight_
-	SphericalFunction *mipmapFunc = NULL;
-	if( texname.length() > 0 ) {
-		auto_ptr<ImageData> imgdata(ReadImage(texname));
-		if (imgdata.get()!=NULL) {
-			mipmapFunc = new MipMapSphericalFunction(
-				boost::shared_ptr< MIPMap<RGBColor> >(imgdata->createMIPMap<RGBColor>()), flipZ
-			);
-		}
-	}
-	// Create IES distribution
-	SphericalFunction *iesFunc = NULL;
-	if( iesname.length() > 0 ) {
-		PhotometricDataIES data(iesname.c_str());
-		if( data.IsValid() ) {
-			iesFunc = new IESSphericalFunction( data, flipZ );
-		}
-		else {
-			stringstream ss;
-			ss << "Invalid IES file: " << iesname;
-			luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
-		}
-	}
-	SphericalFunction *distrSimple;
-	if( !iesFunc && !mipmapFunc )
-		distrSimple = new NoopSphericalFunction();
-	else if( !iesFunc )
-		distrSimple = mipmapFunc;
-	else if( !mipmapFunc )
-		distrSimple = iesFunc;
-	else {
-		CompositeSphericalFunction *compositeFunc = new CompositeSphericalFunction();
-		compositeFunc->Add(
-			boost::shared_ptr<const SphericalFunction>(mipmapFunc) );
-		compositeFunc->Add(
-			boost::shared_ptr<const SphericalFunction>(iesFunc) );
-		distrSimple = compositeFunc;
-	}
-	func = new SampleableSphericalFunction(
-		boost::shared_ptr<const SphericalFunction>(distrSimple),
-		512, 256
-	);
+	func = ssf;
 }
 PointLight::~PointLight() {
 	delete func;
 }
 SWCSpectrum PointLight::Power(const TsPack *tspack, const Scene *) const {
-	return I->Evaluate(tspack, dummydg) * gain * 4.f * M_PI * func->Average_f();
+	return Lbase->Evaluate(tspack, dummydg) * gain * 4.f * M_PI * func->Average_f();
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1, float u2,
 		float u3, Vector *wo, float *pdf,
@@ -126,13 +78,13 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 	Vector w;
 	RGBColor f = func->Sample_f(u1, u2, &w, pdf);
 	ray->d = Normalize(LightToWorld(w));
-	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, f);
+	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, f);
 }
 float PointLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
 SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
-	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, func->f(w));
+	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, func->f(w));
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
@@ -143,7 +95,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	*pdf = .25f * INV_PI;
-	*Le = I->Evaluate(tspack, dummydg) * gain;
+	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
@@ -160,7 +112,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	visibility->SetSegment(p, lightPos, tspack->time);
-	*Le = I->Evaluate(tspack, dummydg) * gain;
+	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;
 }
 SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
@@ -170,17 +122,15 @@ SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > I = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 
-	string texname = paramSet.FindOneString("mapname", "");
-	string iesname = paramSet.FindOneString("iesname", "");
-	
-	bool flipZ = paramSet.FindOneBool("flipz", false); // flip Z orientation of ies/tex map
+	SampleableSphericalFunction *ssf = 
+		SampleableSphericalFunction::Create(paramSet, tp);
 
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
-	return new PointLight(l2w, I, g, texname, iesname, flipZ);
+	return new PointLight(l2w, L, g, ssf);
 }
 
 static DynamicLoader::RegisterLight<PointLight> r("point");

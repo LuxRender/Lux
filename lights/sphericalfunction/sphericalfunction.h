@@ -117,7 +117,11 @@ namespace lux {
 		using SphericalFunction::f;
 		RGBColor f(float phi, float theta) const;
 		RGBColor Sample_f(float u1, float u2, Vector *w, float *pdf) const;
+		float Pdf(const Vector& w) const;
 		float Average_f() const;
+
+		static SampleableSphericalFunction *Create(
+			const ParamSet &paramSet, const TextureParams &tp);
 	private:
 		int nVDistribs;
 		Distribution1D* uDistrib;

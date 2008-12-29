@@ -21,8 +21,11 @@
  ***************************************************************************/
 
 #include "sphericalfunction.h"
+#include "sphericalfunction_ies.h"
 #include "mipmap.h"
 #include "mcdistribution.h"
+#include "paramset.h"
+#include "imagereader.h"
 
 namespace lux {
 
@@ -105,8 +108,71 @@ namespace lux {
 		return f(phi, theta);
 	}
 
+	float SampleableSphericalFunction::Pdf(const Vector& w) const {
+		float theta = SphericalTheta(w), phi = SphericalPhi(w);
+		int u = Clamp(Float2Int(phi * INV_TWOPI * uDistrib->count),
+					  0, uDistrib->count-1);
+		int v = Clamp(Float2Int(theta * INV_PI * vDistribs[u]->count),
+					  0, vDistribs[u]->count-1);
+		return (uDistrib->func[u] * vDistribs[u]->func[v]) /
+			   (uDistrib->funcInt * vDistribs[u]->funcInt) *
+			   1.f / (2.f * M_PI * M_PI * sin(theta));
+	}
+
 	float SampleableSphericalFunction::Average_f() const {
 		return uDistrib->funcInt;
+	}
+
+	SampleableSphericalFunction *SampleableSphericalFunction::Create(
+		const ParamSet &paramSet, const TextureParams &tp) 
+	{
+		bool flipZ = paramSet.FindOneBool("flipz", false);
+		string texname = paramSet.FindOneString("mapname", "");
+		string iesname = paramSet.FindOneString("iesname", "");
+
+		// Create _mipmap_ for _PointLight_
+		SphericalFunction *mipmapFunc = NULL;
+		if( texname.length() > 0 ) {
+			auto_ptr<ImageData> imgdata(ReadImage(texname));
+			if (imgdata.get()!=NULL) {
+				mipmapFunc = new MipMapSphericalFunction(
+					boost::shared_ptr< MIPMap<RGBColor> >(imgdata->createMIPMap<RGBColor>()), flipZ
+				);
+			}
+		}
+		// Create IES distribution
+		SphericalFunction *iesFunc = NULL;
+		if( iesname.length() > 0 ) {
+			PhotometricDataIES data(iesname.c_str());
+			if( data.IsValid() ) {
+				iesFunc = new IESSphericalFunction( data, flipZ );
+			}
+			else {
+				stringstream ss;
+				ss << "Invalid IES file: " << iesname;
+				luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
+			}
+		}
+		SphericalFunction *distrSimple;
+		if( !iesFunc && !mipmapFunc )
+			distrSimple = new NoopSphericalFunction();
+		else if( !iesFunc )
+			distrSimple = mipmapFunc;
+		else if( !mipmapFunc )
+			distrSimple = iesFunc;
+		else {
+			CompositeSphericalFunction *compositeFunc = new CompositeSphericalFunction();
+			compositeFunc->Add(
+				boost::shared_ptr<const SphericalFunction>(mipmapFunc) );
+			compositeFunc->Add(
+				boost::shared_ptr<const SphericalFunction>(iesFunc) );
+			distrSimple = compositeFunc;
+		}
+
+		return new SampleableSphericalFunction(
+			boost::shared_ptr<const SphericalFunction>(distrSimple),
+			512, 256
+		);
 	}
 
 } //namespace lux

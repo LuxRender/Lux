@@ -25,6 +25,7 @@
 #include "light.h"
 #include "shape.h"
 #include "scene.h"
+#include "texture.h"
 
 namespace lux
 {
@@ -33,7 +34,9 @@ namespace lux
 class DistantLight : public Light {
 public:
 	// DistantLight Public Methods
-	DistantLight(const Transform &light2world, const RGBColor &radiance, float gain, const Vector &dir);
+	DistantLight(const Transform &light2world, 
+		const boost::shared_ptr< Texture<SWCSpectrum> > L, float gain, 
+		const Vector &dir);
 	~DistantLight();
 	bool IsDeltaLight() const { return true; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
@@ -41,7 +44,7 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                   &worldRadius);
-		return SWCSpectrum(tspack, LSPD) * M_PI * worldRadius * worldRadius;
+		return Lbase->Evaluate(tspack, dummydg) * gain * M_PI * worldRadius * worldRadius;
 	}
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
@@ -54,7 +57,9 @@ public:
 private:
 	// DistantLight Private Data
 	Vector lightDir;
-	SPD *LSPD;
+	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
+	DifferentialGeometry dummydg;
+	float gain;
 };
 
 }//namespace lux

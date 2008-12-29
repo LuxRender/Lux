@@ -23,8 +23,6 @@
 // distant.cpp*
 #include "distant.h"
 #include "mc.h"
-#include "spd.h"
-#include "rgbillum.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -32,23 +30,23 @@ using namespace lux;
 
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
-		const RGBColor &radiance, float gain, const Vector &dir)
+						   const boost::shared_ptr< Texture<SWCSpectrum> > L, 
+						   float g, const Vector &dir)
 	: Light(light2world) {
 	lightDir = Normalize(LightToWorld(dir));
-	// Create SPD
-	LSPD = new RGBIllumSPD(radiance);
-	LSPD->Scale(gain);
+	Lbase = L;
+	Lbase->SetIlluminant();
+	gain = g;
 }
 DistantLight::~DistantLight()
 {
-	delete LSPD;
 }
 SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
 	*wi = lightDir;
 	visibility->SetRay(p, *wi, tspack->time);
-	return SWCSpectrum(tspack, LSPD);
+	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
 float DistantLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
@@ -71,11 +69,11 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	ray->o = Pdisk + worldRadius * lightDir;
 	ray->d = -lightDir;
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
-	return SWCSpectrum(tspack, LSPD);
+	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
 Light* DistantLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
-	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
+	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	Point from = paramSet.FindOnePoint("from", Point(0,0,0));
 	Point to = paramSet.FindOnePoint("to", Point(0,0,1));

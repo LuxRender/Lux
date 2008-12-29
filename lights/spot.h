@@ -32,13 +32,13 @@ namespace lux
 class SpotLight : public Light {
 public:
 	// SpotLight Public Methods
-	SpotLight(const Transform &light2world, const boost::shared_ptr< Texture<SWCSpectrum> > intensity, 
+	SpotLight(const Transform &light2world, const boost::shared_ptr< Texture<SWCSpectrum> > L, 
 		float gain, float width, float fall);
 	~SpotLight();
 	bool IsDeltaLight() const { return true; }
 	float Falloff(const Vector &w) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return I->Evaluate(tspack, dummydg) * gain * 2.f * M_PI *
+		return Lbase->Evaluate(tspack, dummydg) * gain * 2.f * M_PI *
 			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
 	}
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
@@ -59,7 +59,7 @@ private:
 	// SpotLight Private Data
 	float cosTotalWidth, cosFalloffStart;
 	Point lightPos;
-	boost::shared_ptr< Texture<SWCSpectrum> > I;
+	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
 	DifferentialGeometry dummydg;
 	float gain;
 };
