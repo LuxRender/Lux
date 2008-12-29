@@ -40,6 +40,7 @@ public:
 		const string &texname, const string &iesname, bool fZ);
 	~PointLight();
 	bool IsDeltaLight() const { return true; }
+	bool IsRadianceBased() const { return false; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
