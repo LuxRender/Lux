@@ -38,7 +38,7 @@ MotionSystem::MotionSystem(float st, float et,
 
 	// initialize to false
 	hasTranslationX = hasTranslationY = hasTranslationZ =
-		hasScaleX = hasScaleY = hasScaleZ = hasRotation = false;
+		hasScaleX = hasScaleY = hasScaleZ = hasRotation = isActive = false;
 
 	if (!DecomposeMatrix(startMat, startT)) {
 		luxError(LUX_MATH, LUX_WARNING, "Singular start matrix in MotionSystem, interpolation disabled");
@@ -86,7 +86,6 @@ MotionSystem::MotionSystem(float st, float et,
 }
 
 Transform MotionSystem::Sample(float time) const {
-
 	if (!isActive)
 		return start;
 
@@ -105,9 +104,12 @@ Transform MotionSystem::Sample(float time) const {
 	// if translation only, just modify start matrix
 	if (hasTranslation && !(hasScale || hasRotation)) {
 		memcpy(interMatrix, startMat->m, sizeof(float) * 16);
-		interMatrix[0][3] = Lerp(le, startT.Tx, endT.Tx);
-		interMatrix[1][3] = Lerp(le, startT.Ty, endT.Ty);
-		interMatrix[2][3] = Lerp(le, startT.Tz, endT.Tz);
+		if (hasTranslationX)
+			interMatrix[0][3] = Lerp(le, startT.Tx, endT.Tx);
+		if (hasTranslationY)
+			interMatrix[1][3] = Lerp(le, startT.Ty, endT.Ty);
+		if (hasTranslationZ)
+			interMatrix[2][3] = Lerp(le, startT.Tz, endT.Tz);
 		return Transform(interMatrix);
 	}
 
@@ -133,23 +135,42 @@ Transform MotionSystem::Sample(float time) const {
 	return T * S * R;
 */
 
-	if (hasScale || hasTranslation) {
+	if (hasScale) {
 		float Sx = Lerp(le, startT.Sx, endT.Sx);
 		float Sy = Lerp(le, startT.Sy, endT.Sy); 
 		float Sz = Lerp(le, startT.Sz, endT.Sz);
 
-		float Tx = Lerp(le, startT.Tx, endT.Tx);
-		float Ty = Lerp(le, startT.Ty, endT.Ty); 
-		float Tz = Lerp(le, startT.Tz, endT.Tz);
-
 		// T * S * R
-		for (int j = 0; j < 4; j++) {
-			interMatrix[0][j] = Sx * interMatrix[0][j] + Tx * interMatrix[3][j];
-			interMatrix[1][j] = Sy * interMatrix[1][j] + Ty * interMatrix[3][j];
-			interMatrix[2][j] = Sz * interMatrix[2][j] + Tz * interMatrix[3][j];
+		for (int j = 0; j < 3; j++) {
+			interMatrix[0][j] = Sx * interMatrix[0][j];
+			interMatrix[1][j] = Sy * interMatrix[1][j];
+			interMatrix[2][j] = Sz * interMatrix[2][j];
+		}
+	} else {
+		for (int j = 0; j < 3; j++) {
+			interMatrix[0][j] = startT.Sx * interMatrix[0][j];
+			interMatrix[1][j] = startT.Sy * interMatrix[1][j];
+			interMatrix[2][j] = startT.Sz * interMatrix[2][j];
 		}
 	}
-	// else possibly use transpose of interMatrix as inverse for final Transform
+
+	if (hasTranslationX) {
+		interMatrix[0][3] = Lerp(le, startT.Tx, endT.Tx);
+	} else {
+		interMatrix[0][3] = startT.Tx;
+	}
+
+	if (hasTranslationY) {
+		interMatrix[1][3] = Lerp(le, startT.Ty, endT.Ty);
+	} else {
+		interMatrix[1][3] = startT.Ty;
+	}
+
+	if (hasTranslationZ) {
+		interMatrix[2][3] = Lerp(le, startT.Tz, endT.Tz);
+	} else {
+		interMatrix[2][3] = startT.Tz;
+	}
 
 	return Transform(interMatrix);
 }
@@ -172,8 +193,9 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 		pmat->m[i][3] = 0;
 	pmat->m[3][3] = 1;
 
-	if ( pmat->Determinant() == 0.0 )
-		return false;
+	// Note - radiance - disables as memory bug on win32
+//	if ( pmat->Determinant() == 0.0 )
+//		return false;
 
 	/* First, isolate perspective.  This is the messiest. */
 	if ( locmat->m[3][0] != 0 || locmat->m[3][1] != 0 ||
