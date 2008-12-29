@@ -77,6 +77,7 @@ SpotLight::SpotLight(const Transform &light2world,
 	lightPos = LightToWorld(Point(0,0,0));
 
 	I = intensity;
+	I->SetIlluminant();
 	gain = g;
 
 	cosTotalWidth = cosf(Radians(width));

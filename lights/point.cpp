@@ -58,6 +58,7 @@ PointLight::PointLight(
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
 	I = intensity;
+	I->SetIlluminant();
 	gain = g;
 
 	flipZ = fZ;

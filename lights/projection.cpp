@@ -40,6 +40,7 @@ ProjectionLight::
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
 	I = intensity;
+	I->SetIlluminant();
 	gain = g;
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
