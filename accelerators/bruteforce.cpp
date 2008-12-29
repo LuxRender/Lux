@@ -90,4 +90,5 @@ Aggregate* BruteForceAccel::CreateAccelerator(const vector<boost::shared_ptr<Pri
 	return new BruteForceAccel(prims);
 }
 
-static DynamicLoader::RegisterAccelerator<BruteForceAccel> r("none");
+static DynamicLoader::RegisterAccelerator<BruteForceAccel> r("bruteforce");
+static DynamicLoader::RegisterAccelerator<BruteForceAccel> r2("none");

@@ -59,10 +59,6 @@ public:
 		startMat = start.GetMatrix();
 		endMat = end.GetMatrix();
 
-		// initialize to false
-		hasTranslationX = hasTranslationY = hasTranslationZ =
-			hasScaleX = hasScaleY = hasScaleZ = hasRotation = false;
-
 		if (!DecomposeMatrix(startMat, startT)) {
 			luxError(LUX_MATH, LUX_WARNING, "Singular start matrix in MotionSystem, interpolation disabled");
 			return;
@@ -103,10 +99,6 @@ public:
 	~MotionSystem() {};
 
 	Transform Sample(float time) {
-
-		if (!IsActive())
-			return start;
-
 		// Determine interpolation value
 		if(time <= startTime)
 			return start;
@@ -118,11 +110,12 @@ public:
 		float le = d / w; 		
 
 		// Initialize Identity interMatrix
-		static const float IdentityMatrix[4][4] = {
-			{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-
 		float interMatrix[4][4];
-		memcpy(interMatrix, IdentityMatrix, sizeof(float) * 16);
+		for (int i = 0; i < 4; i++)
+			interMatrix[i][0] = interMatrix[i][1] = 
+				interMatrix[i][2] = interMatrix[i][3] = 0;
+		interMatrix[0][0] = interMatrix[1][1] = 
+			interMatrix[2][2] = interMatrix[3][3] = 1;
 
 		if(hasRotation) {
 			// Quaternion interpolation of rotation / also does scale
@@ -149,8 +142,14 @@ public:
 
 		// Interpolate Translation linearly
 		if (hasTranslationX) interMatrix[0][3] = Lerp(le, startT.Tx, endT.Tx);
+		else
+			interMatrix[0][3] = startT.Tx;
 		if (hasTranslationY) interMatrix[1][3] = Lerp(le, startT.Ty, endT.Ty);
+		else
+			interMatrix[1][3] = startT.Ty;
 		if (hasTranslationZ) interMatrix[2][3] = Lerp(le, startT.Tz, endT.Tz);
+		else
+			interMatrix[2][3] = startT.Tz;
 
 		return Transform(interMatrix);
 	}
@@ -165,13 +164,6 @@ public:
              		tbox = Union(tbox, t(ibox));
        	}
        	return tbox;
-	}
-
-	bool IsActive() {
-		// returns false if start and end transformations
-		// are identical
-		return hasTranslationX || hasTranslationY || hasTranslationZ ||
-			hasScaleX || hasScaleY || hasScaleZ || hasRotation;
 	}
 
 protected:
@@ -198,8 +190,8 @@ protected:
 			pmat->m[i][3] = 0;
 		pmat->m[3][3] = 1;
 
-		if ( pmat->Determinant() == 0.0 )
-			return false;
+	//	if ( pmat->Determinant() == 0.0 )
+	//		return false;
 
 		/* First, isolate perspective.  This is the messiest. */
 		if ( locmat->m[3][0] != 0 || locmat->m[3][1] != 0 ||
@@ -314,7 +306,6 @@ protected:
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;
 	bool hasScaleX, hasScaleY, hasScaleZ;
 };
-
 
 }//namespace lux
 

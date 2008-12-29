@@ -301,7 +301,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		//  the following are accounted for: vertices, vertex indices, Mesh*Triangle data
 		//									 and one shared_ptr in the accel
 		//TODO Lotus - find good values
-		if(ntris <= 500000)
+		if(ntris <= 200000)
 			concreteTriType = TRI_WALD;
 		else
 			concreteTriType = TRI_BARY;
@@ -388,57 +388,35 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	}
 	int numConcreteQuads = refinedPrims.size() - numConcreteTris;
 
-	// Lotus - Create acceleration structure
+	// Select best acceleration structure
 	MeshAccelType concreteAccelType = accelType;
 	if(accelType == ACCEL_AUTO) {
-		//TODO find good values
-		/*if(refinedPrims.size() <= 3)
+		if(refinedPrims.size() <= 250000)
 			concreteAccelType = ACCEL_NONE;
-		else if(refinedPrims.size() <= 1200000)
+		else if(refinedPrims.size() <= 500000)
 			concreteAccelType = ACCEL_KDTREE;
+		else if(refinedPrims.size() <= 8000000)
+			concreteAccelType = ACCEL_BVH;
 		else
-			concreteAccelType = ACCEL_GRID;*/
-		concreteAccelType = ACCEL_NONE;
-	}
-	if(concreteAccelType == ACCEL_NONE) {
-		// Copy primitives
-		refined.reserve( refined.size() + refinedPrims.size() );
-		for(u_int i=0; i < refinedPrims.size(); i++)
-			refined.push_back(refinedPrims[i]);
-	}
-	else  {
-		ParamSet paramset;
-		boost::shared_ptr<Aggregate> accel;
-		if(concreteAccelType == ACCEL_KDTREE) {
-			accel = MakeAccelerator("kdtree", refinedPrims, paramset);
-		}
-		else if(concreteAccelType == ACCEL_GRID) {
-			accel = MakeAccelerator("grid", refinedPrims, paramset);
-		}
-		else {
-			std::stringstream ss;
-			ss.str("");
-			ss << "Unknow accel type in a mesh: " << concreteAccelType;
-			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
-		}
-		if(refineHints.forSampling) {
-			// Lotus - create primitive set to allow sampling
-			refined.push_back(boost::shared_ptr<Primitive>(new PrimitiveSet(accel)));
-		}
-		else {
-			refined.push_back(accel);
-		}
+			concreteAccelType = ACCEL_GRID;
 	}
 
+	// Report selections used
 	std::stringstream ss;
 	ss << "Mesh: ";
 	ss << "accel = ";
 	switch( concreteAccelType ) {
 		case ACCEL_NONE:
-			ss << "none";
+			ss << "none (global)";
+			break;
+		case ACCEL_BVH:
+			ss << "bvh";
 			break;
 		case ACCEL_GRID:
 			ss << "grid";
+			break;
+		case ACCEL_BRUTEFORCE:
+			ss << "bruteforce";
 			break;
 		case ACCEL_KDTREE:
 			ss << "kdtree";
@@ -466,6 +444,43 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			ss << "?";
 	}
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+	// Build acceleration structure
+	if(concreteAccelType == ACCEL_NONE) {
+		// Copy primitives
+		refined.reserve( refined.size() + refinedPrims.size() );
+		for(u_int i=0; i < refinedPrims.size(); i++)
+			refined.push_back(refinedPrims[i]);
+	}
+	else  {
+		ParamSet paramset;
+		boost::shared_ptr<Aggregate> accel;
+		if(concreteAccelType == ACCEL_KDTREE) {
+			accel = MakeAccelerator("kdtree", refinedPrims, paramset);
+		}
+		else if(concreteAccelType == ACCEL_BVH) {
+			accel = MakeAccelerator("bvh", refinedPrims, paramset);
+		}
+		else if(concreteAccelType == ACCEL_GRID) {
+			accel = MakeAccelerator("grid", refinedPrims, paramset);
+		}
+		else if(concreteAccelType == ACCEL_BRUTEFORCE) {
+			accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
+		}
+		else {
+			std::stringstream ss;
+			ss.str("");
+			ss << "Unknow accel type in a mesh: " << concreteAccelType;
+			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+		}
+		if(refineHints.forSampling) {
+			// Lotus - create primitive set to allow sampling
+			refined.push_back(boost::shared_ptr<Primitive>(new PrimitiveSet(accel)));
+		}
+		else {
+			refined.push_back(accel);
+		}
+	}
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
@@ -476,6 +491,8 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	// Lotus - read general data
 	Mesh::MeshAccelType accelType;
 	if (accelTypeStr == "kdtree") accelType = Mesh::ACCEL_KDTREE;
+	else if (accelTypeStr == "bvh") accelType = Mesh::ACCEL_BVH;
+	else if (accelTypeStr == "bruteforce") accelType = Mesh::ACCEL_BRUTEFORCE;
 	else if (accelTypeStr == "grid") accelType = Mesh::ACCEL_GRID;
 	else if (accelTypeStr == "none") accelType = Mesh::ACCEL_NONE;
 	else if (accelTypeStr == "auto") accelType = Mesh::ACCEL_AUTO;
@@ -621,7 +638,7 @@ Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const Pa
 static DynamicLoader::RegisterShape<Mesh> r("mesh");
 
 Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = "none";
+	string accelTypeStr = "auto";
 	string triTypeStr = "bary";
 	int indicesCount;
 	const int* indices = params.FindInt( "indices", &indicesCount );
@@ -638,8 +655,8 @@ Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 static DynamicLoader::RegisterShape<Mesh::BaryMesh> rbary("barytrianglemesh");
 
 Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = "none";
-	string triTypeStr = "wald";
+	string accelTypeStr = "auto";
+	string triTypeStr = "auto";
 	int indicesCount;
 	const int* indices = params.FindInt( "indices", &indicesCount );
 	int uvCoordinatesCount;
@@ -656,8 +673,8 @@ static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald1("waldtrianglemesh");
 static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald2("trianglemesh");
 
 Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = "none";
-	string triTypeStr = "wald";
+	string accelTypeStr = "auto";
+	string triTypeStr = "auto";
 
 	int indicesCount;
 	const int* indices = params.FindInt( "indices", &indicesCount );
