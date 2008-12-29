@@ -33,14 +33,14 @@ namespace lux
 class ProjectionLight : public Light {
 public:
 	// ProjectionLight Public Methods
-	ProjectionLight(const Transform &light2world, const RGBColor &intensity,
-		const string &texname, float fov);
+	ProjectionLight(const Transform &light2world, const boost::shared_ptr< Texture<SWCSpectrum> > intensity, 
+		float g, const string &texname, float fov);
 	~ProjectionLight();
 	bool IsDeltaLight() const { return true; }
 	RGBColor Projection(const Vector &w) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return SWCSpectrum(tspack, Intensity * 2.f * M_PI * (1.f - cosTotalWidth) *
-			projectionMap->Lookup(.5f, .5f, .5f));
+		return I->Evaluate(tspack, dummydg) * gain * 2.f * M_PI * (1.f - cosTotalWidth) *
+			SWCSpectrum(tspack, projectionMap->Lookup(.5f, .5f, .5f));
 	}
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
@@ -53,8 +53,10 @@ public:
 private:
 	// ProjectionLight Private Data
 	MIPMap<RGBColor> *projectionMap;
+	DifferentialGeometry dummydg;
 	Point lightPos;
-	RGBColor Intensity;
+	boost::shared_ptr< Texture<SWCSpectrum> > I;
+	float gain;
 	Transform lightProjection;
 	float hither, yon;
 	float screenX0, screenX1, screenY0, screenY1;

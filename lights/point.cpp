@@ -54,14 +54,13 @@ PointLight::PointLight(
 		float g,
 		const string &texname,
 		const string &iesname,
-		bool fZ, bool SqF)
+		bool fZ)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
 	I = intensity;
 	gain = g;
 
 	flipZ = fZ;
-	squareFalloff = SqF;
 
 	// Create _mipmap_ for _PointLight_
 	SphericalFunction *mipmapFunc = NULL;
@@ -118,10 +117,7 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1,
 	*wo = Normalize(lightPos - P);
 	*pdf = 1.f;
 	visibility->SetSegment(P, lightPos, tspack->time);
-	if(squareFalloff)
-		return L(tspack, Normalize(WorldToLight(-*wo))) / DistanceSquared(lightPos, P);
-	else
-		return L(tspack, Normalize(WorldToLight(-*wo)));
+	return L(tspack, Normalize(WorldToLight(-*wo)));
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
@@ -180,11 +176,10 @@ Light* PointLight::CreateLight(const Transform &light2world,
 	string iesname = paramSet.FindOneString("iesname", "");
 	
 	bool flipZ = paramSet.FindOneBool("flipz", false); // flip Z orientation of ies/tex map
-	bool squarefalloff = paramSet.FindOneBool("squarefalloff", true); // use square intensity falloff - should be disabled when using IES diagram
 
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
-	return new PointLight(l2w, I, g, texname, iesname, flipZ, squarefalloff);
+	return new PointLight(l2w, I, g, texname, iesname, flipZ);
 }
 
 static DynamicLoader::RegisterLight<PointLight> r("point");

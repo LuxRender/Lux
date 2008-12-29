@@ -37,7 +37,7 @@ public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, 
 		const boost::shared_ptr< Texture<SWCSpectrum> > intensity, float gain,
-		const string &texname, const string &iesname, bool fZ, bool SqF);
+		const string &texname, const string &iesname, bool fZ);
 	~PointLight();
 	bool IsDeltaLight() const { return true; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
@@ -59,7 +59,7 @@ private:
 	SWCSpectrum L(const TsPack *tspack, const Vector& w) const;
 	// PointLight Private Data
 	Point lightPos;
-	bool flipZ, squareFalloff;
+	bool flipZ;
 	boost::shared_ptr< Texture<SWCSpectrum> > I;
 	DifferentialGeometry dummydg;
 	float gain;

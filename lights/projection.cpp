@@ -34,11 +34,13 @@ using namespace lux;
 // ProjectionLight Method Definitions
 ProjectionLight::
 	ProjectionLight(const Transform &light2world,
-		const RGBColor &intensity, const string &texname,
+		const boost::shared_ptr< Texture<SWCSpectrum> > intensity, 
+		float g, const string &texname,
 		float fov)
 	: Light(light2world) {
 	lightPos = LightToWorld(Point(0,0,0));
-	Intensity = intensity;
+	I = intensity;
+	gain = g;
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
 	auto_ptr<ImageData> imgdata(ReadImage(texname));
@@ -88,7 +90,7 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, floa
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;
 	visibility->SetSegment(p, lightPos, tspack->time);
-	return SWCSpectrum(tspack, Intensity * Projection(-*wi) / DistanceSquared(lightPos, p));
+	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(-*wi)) / DistanceSquared(lightPos, p);
 }
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
@@ -96,17 +98,18 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, 
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
-	return SWCSpectrum(tspack, Intensity * Projection(ray->d));
+	return I->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(ray->d));
 }
 float ProjectionLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
 Light* ProjectionLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
-	RGBColor I = paramSet.FindOneRGBColor("I", RGBColor(1.0));
+	boost::shared_ptr<Texture<SWCSpectrum> > I = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	float g = paramSet.FindOneFloat("gain", 1.f);
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");
-	return new ProjectionLight(light2world, I, texname, fov);
+	return new ProjectionLight(light2world, I, g, texname, fov);
 }
 
 static DynamicLoader::RegisterLight<ProjectionLight> r("projection");
