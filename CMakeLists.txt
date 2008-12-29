@@ -370,7 +370,7 @@ SET(lux_lib_src
 		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/renderfarm.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/photonmap.cpp
-        core/transport.cpp core/util.cpp core/volume.cpp core/imagereader.cpp
+        core/transport.cpp core/util.cpp core/volume.cpp core/imagereader.cpp core/motionsystem.cpp
         core/geometry/transform.cpp core/geometry/matrix4x4.cpp core/geometry/quaternion.cpp
         core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
         core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
