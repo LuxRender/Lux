@@ -55,7 +55,8 @@ MotionSystem::MotionSystem(float st, float et,
 		RotateY(Degrees(startT.Ry)) * 
 		RotateZ(Degrees(startT.Rz));
 
-	startQ = Quaternion(rot.GetMatrix());
+	startRot = rot.GetMatrix();
+	startQ = Quaternion(startRot);
 	startQ.Normalize();
 
 	rot = RotateX(Degrees(endT.Rx)) * 
@@ -68,19 +69,25 @@ MotionSystem::MotionSystem(float st, float et,
 	hasTranslationX = startT.Tx != endT.Tx;
 	hasTranslationY = startT.Ty != endT.Ty;
 	hasTranslationZ = startT.Tz != endT.Tz;
+	hasTranslation = hasTranslationX || 
+		hasTranslationY || hasTranslationZ;
 
 	hasScaleX = startT.Sx != endT.Sx;
 	hasScaleY = startT.Sy != endT.Sy;
 	hasScaleZ = startT.Sz != endT.Sz;
+	hasScale = hasScaleX || hasScaleY || hasScaleZ;
 
 	hasRotation = (startT.Rx != endT.Rx) ||
 		(startT.Ry != endT.Ry) ||
 		(startT.Rz != endT.Rz);
+
+	isActive = hasTranslation ||
+		hasScale || hasRotation;
 }
 
 Transform MotionSystem::Sample(float time) const {
 
-	if (!IsActive())
+	if (!isActive)
 		return start;
 
 	// Determine interpolation value
@@ -95,13 +102,24 @@ Transform MotionSystem::Sample(float time) const {
 
 	float interMatrix[4][4];
 
+	// if translation only, just modify start matrix
+	if (hasTranslation && !(hasScale || hasRotation)) {
+		memcpy(interMatrix, startMat->m, sizeof(float) * 16);
+		interMatrix[0][3] = Lerp(le, startT.Tx, endT.Tx);
+		interMatrix[1][3] = Lerp(le, startT.Ty, endT.Ty);
+		interMatrix[2][3] = Lerp(le, startT.Tz, endT.Tz);
+		return Transform(interMatrix);
+	}
+
 	if (hasRotation) {
 		// Quaternion interpolation of rotation
 		Quaternion between_quat = slerp(le, startQ, endQ);
 		toMatrix(between_quat, interMatrix);
 	} else
-		toMatrix(startQ, interMatrix);
+		//toMatrix(startQ, interMatrix);
+		memcpy(interMatrix, startRot->m, sizeof(float) * 16);
 
+/*
 	Transform R(interMatrix);
 	Transform S = Scale(
 		Lerp(le, startT.Sx, endT.Sx), 
@@ -113,6 +131,27 @@ Transform MotionSystem::Sample(float time) const {
 		Lerp(le, startT.Tz, endT.Tz)));
 
 	return T * S * R;
+*/
+
+	if (hasScale || hasTranslation) {
+		float Sx = Lerp(le, startT.Sx, endT.Sx);
+		float Sy = Lerp(le, startT.Sy, endT.Sy); 
+		float Sz = Lerp(le, startT.Sz, endT.Sz);
+
+		float Tx = Lerp(le, startT.Tx, endT.Tx);
+		float Ty = Lerp(le, startT.Ty, endT.Ty); 
+		float Tz = Lerp(le, startT.Tz, endT.Tz);
+
+		// T * S * R
+		for (int j = 0; j < 4; j++) {
+			interMatrix[0][j] = Sx * interMatrix[0][j] + Tx * interMatrix[3][j];
+			interMatrix[1][j] = Sy * interMatrix[1][j] + Ty * interMatrix[3][j];
+			interMatrix[2][j] = Sz * interMatrix[2][j] + Tz * interMatrix[3][j];
+		}
+	}
+	// else possibly use transpose of interMatrix as inverse for final Transform
+
+	return Transform(interMatrix);
 }
 
 bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transforms &trans) const {
@@ -237,36 +276,4 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 	/* All done! */
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

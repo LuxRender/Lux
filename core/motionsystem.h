@@ -75,12 +75,8 @@ public:
        	return tbox;
 	}
 
-	bool IsActive() const {
-		// returns false if start and end transformations
-		// are identical
-		return hasTranslationX || hasTranslationY || hasTranslationZ ||
-			hasScaleX || hasScaleY || hasScaleZ || hasRotation;
-	}
+	// false if start and end transformations are identical
+	bool isActive;
 
 protected:
 
@@ -95,8 +91,9 @@ protected:
 	Transform start, end;
 	Transforms startT, endT;
 	boost::shared_ptr<Matrix4x4> startMat, endMat;
+	boost::shared_ptr<Matrix4x4> startRot;
 	Quaternion startQ, endQ;
-	bool hasRotation;
+	bool hasRotation, hasTranslation, hasScale;
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;
 	bool hasScaleX, hasScaleY, hasScaleZ;
 };
