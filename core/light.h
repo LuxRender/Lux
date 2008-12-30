@@ -49,7 +49,6 @@ public:
 	}
 	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *) const = 0;
 	virtual bool IsDeltaLight() const = 0;
-	virtual bool IsRadianceBased() const { return true; }
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;

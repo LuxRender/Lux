@@ -172,7 +172,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 
 static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	const Sample *sample, const int sampleOffset,
-	vector<BidirVertex> &vertices, bool isRadianceBased)
+	vector<BidirVertex> &vertices)
 {
 	RayDifferential ray;
 	Intersection isect;
@@ -214,8 +214,6 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 		v.rrR = min<float>(1.f, v.f.filter(tspack) * v.cosi / v.pdfR);
 		if (nVerts > 1) {
 			vertices[nVerts - 2].d2 = DistanceSquared(vertices[nVerts - 2].p, v.p);
-			if (nVerts == 2 && !isRadianceBased)
-				vertices[nVerts - 2].flux *= vertices[nVerts - 2].d2;
 			v.flux *= vertices[nVerts - 2].flux;
 		}
 		// Initialize _ray_ for next segment of path
@@ -519,7 +517,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<BidirVertex> &eyePath,
 	int length, int eyeDepth, int lightDepth, const Light *light,
 	float u0, float u1, float portal, SWCSpectrum *Ld, float *weight,
-	Vector *w, float directWeight, bool isRadianceBased)
+	Vector *w, float directWeight)
 {
 	vector<BidirVertex> lightPath(1);
 	BidirVertex &vE(eyePath[length - 1]);
@@ -540,10 +538,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<Bidi
 	*Ld *= evalPath(tspack, scene, eyePath, length, eyeDepth,
 		lightPath, 1, lightDepth, vL.ePdfDirect, true, weight);
 	vE = e;
-	if (isRadianceBased)
-		*Ld /= vL.ePdfDirect;
-	else
-		*Ld *= vL.d2 / vL.ePdfDirect;
+	*Ld /= vL.ePdfDirect;
 	if (length == 1)
 		*w = -vL.wo;
 	return !Ld->Black();
@@ -552,13 +547,11 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<Bidi
 static bool getLight(const TsPack *tspack, const Scene *scene,
 	vector<BidirVertex> &eyePath, int nEye, int eyeDepth,
 	vector<BidirVertex> &lightPath, int nLight, int lightDepth,
-	float lightDirectPdf, SWCSpectrum *Ll, float *weight, bool isRadianceBased)
+	float lightDirectPdf, SWCSpectrum *Ll, float *weight)
 {
 	BidirVertex vE(eyePath[nEye - 1]), vL(lightPath[nLight - 1]);
 	*Ll *= evalPath(tspack, scene, eyePath, nEye, eyeDepth,
 		lightPath, nLight, lightDepth, lightDirectPdf, false, weight);
-	if (nLight == 1 && !isRadianceBased)
-		*Ll *= vL.d2;
 	eyePath[nEye - 1] = vE;
 	lightPath[nLight - 1] = vL;
 	return !Ll->Black();
@@ -599,13 +592,12 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	float lightPdf;
 	SWCSpectrum Le;
 	int nLight = 0;
-	bool isRadianceBased = light->IsRadianceBased();
 	if (light->Sample_L(tspack, scene, data[0], data[1], component, &lightBsdf,
 		&lightPdf, &Le)) {
 		lightPdf /= numberOfLights;
 		Le /= lightPdf;
 		nLight = generateLightPath(tspack, scene, lightBsdf, sample,
-			sampleLightOffset, lightPath, isRadianceBased);
+			sampleLightOffset, lightPath);
 	}
 	float lightDirectPdf = 0.f;
 	if (nLight > 0) {
@@ -661,7 +653,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 					maxEyeDepth, maxLightDepth,
 					scene->lights[lightDirectNumber],
 					directData[0], directData[1], portal, &Ld, &weight,
-					&w, directWeight, isRadianceBased)) {
+					&w, directWeight)) {
 					if (!Ld.Black()) {
 						if (i > 1) {
 							L += Ld;
@@ -684,7 +676,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 						maxEyeDepth, maxLightDepth,
 						scene->lights[l],
 						directData[0], directData[1], directData[2], &Ld,
-						&weight, &w, directWeight, isRadianceBased)) {
+						&weight, &w, directWeight)) {
 						if (!Ld.Black()) {
 							if (i > 1) {
 								L += Ld;
@@ -719,7 +711,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 				SWCSpectrum Ll(Le);
 				if (getLight(tspack, scene, eyePath, i, maxEyeDepth,
 					lightPath, j, maxLightDepth, directPdf, &Ll,
-					&weight, isRadianceBased)) {
+					&weight)) {
 					if (!Ll.Black()) {
 						if (i > 1) {
 							L += Ll;
