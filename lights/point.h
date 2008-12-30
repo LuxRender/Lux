@@ -56,6 +56,14 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp);
 private:
+	/**
+	 * Return the emmitted radiance in the given diretion.
+	 *
+	 * @param tspack The thread specific pack.
+	 * @param w      The normalized direction in LOCAL coordinates.
+	 * 
+	 * @return The emmitted radiance.
+	 */
 	SWCSpectrum L(const TsPack *tspack, const Vector& w) const;
 	// PointLight Private Data
 	Point lightPos;

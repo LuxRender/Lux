@@ -123,9 +123,7 @@ namespace lux {
 		return uDistrib->funcInt;
 	}
 
-	SampleableSphericalFunction *SampleableSphericalFunction::Create(
-		const ParamSet &paramSet, const TextureParams &tp) 
-	{
+	SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet, const TextureParams &tp) {
 		bool flipZ = paramSet.FindOneBool("flipz", false);
 		string texname = paramSet.FindOneString("mapname", "");
 		string iesname = paramSet.FindOneString("iesname", "");
@@ -153,26 +151,21 @@ namespace lux {
 				luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
 			}
 		}
-		SphericalFunction *distrSimple;
+
 		if( !iesFunc && !mipmapFunc )
-			distrSimple = new NoopSphericalFunction();
+			return NULL;
 		else if( !iesFunc )
-			distrSimple = mipmapFunc;
+			return mipmapFunc;
 		else if( !mipmapFunc )
-			distrSimple = iesFunc;
+			return iesFunc;
 		else {
 			CompositeSphericalFunction *compositeFunc = new CompositeSphericalFunction();
 			compositeFunc->Add(
 				boost::shared_ptr<const SphericalFunction>(mipmapFunc) );
 			compositeFunc->Add(
 				boost::shared_ptr<const SphericalFunction>(iesFunc) );
-			distrSimple = compositeFunc;
+			return compositeFunc;
 		}
-
-		return new SampleableSphericalFunction(
-			boost::shared_ptr<const SphericalFunction>(distrSimple),
-			512, 256
-		);
 	}
 
 } //namespace lux

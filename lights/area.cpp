@@ -34,16 +34,29 @@
 
 using namespace lux;
 
+class GonioAreaBxDF : public BxDF {
+public:
+	GonioAreaBxDF(const SampleableSphericalFunction *func) :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sf(func) {}
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+		*F += SWCSpectrum(tspack, sf->f(wi));
+	}
+private:
+	const SampleableSphericalFunction *sf;
+};
+
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > le,
-		float g, float pow, float e, int ns,
-		const boost::shared_ptr<Primitive> &p)
+		float g, float pow, float e, 
+		SampleableSphericalFunction *ssf,
+		int ns, const boost::shared_ptr<Primitive> &p)
 	: Light(light2world, ns) {
 	Le = le;
 	gain = g;
 	power = pow;
 	efficacy = e;
+	func = ssf;
 
 	if (p->CanIntersect() && p->CanSample())
 		prim = p;
@@ -61,8 +74,9 @@ AreaLight::AreaLight(const Transform &light2world,
 	Le->SetIlluminant(); // Note - radiance - must set illuminant before SetPower()
 	Le->SetPower(power*efficacy, area);
 }
-AreaLight::~AreaLight()
-{
+AreaLight::~AreaLight() {
+	if(func)
+		delete func;
 }
 
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
@@ -109,7 +123,10 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 	DifferentialGeometry dg;
 	prim->Sample(u1, u2, u3, &dg);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
+	if(func)
+		(*bsdf)->Add(BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
+	else
+		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
 		*Le = L(tspack, dg, Vector(dg.nn)) * M_PI;
@@ -129,7 +146,10 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	*pdfDirect = prim->Pdf(p, wo) * AbsDot(wo, dg.nn) / DistanceSquared(dg.p, p);
 	if (*pdfDirect > 0.f) {
 		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
-		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
+		if(func)
+			(*bsdf)->Add(BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
+		else
+			(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 		visibility->SetSegment(p, dg.p, tspack->time);
 		*Le = L(tspack, dg, -wo) * M_PI;
 		return true;
@@ -140,11 +160,24 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
+	if(func)
+		(*bsdf)->Add(BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
+	else
+		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, ray.d) * AbsDot(ray.d, dg.nn) / DistanceSquared(dg.p, ray.o);
 	return L(tspack, dg, -ray.d);
 }
+
+class HemiSphereSphericalFunction : public SphericalFunction {
+public:
+	HemiSphereSphericalFunction(const boost::shared_ptr<const SphericalFunction> aSF) : sf(aSF) {}
+	RGBColor f(float phi, float theta) const {
+		return theta > 0.f ? sf->f(phi, theta) : 0.f;
+	}
+private:
+	const boost::shared_ptr<const SphericalFunction> sf;
+};
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 		const boost::shared_ptr<Primitive> &prim) {
@@ -154,8 +187,18 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamS
 	float p = paramSet.FindOneFloat("power", 100.f);		// Power/Lm in Watts
 	float e = paramSet.FindOneFloat("efficacy", 17.f);		// Efficacy Lm per Watt
 
+	const SphericalFunction *sf = 
+		new HemiSphereSphericalFunction(
+			boost::shared_ptr<const SphericalFunction>(
+				CreateSphericalFunction(paramSet, tp)
+			)
+		);
+	SampleableSphericalFunction *ssf = NULL;
+	if(sf)
+		ssf = new SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));
+
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new AreaLight(light2world, L, g, p, e, nSamples, prim);
+	return new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
 }
 
 static DynamicLoader::RegisterAreaLight<AreaLight> r("area");

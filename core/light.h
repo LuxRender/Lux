@@ -29,6 +29,7 @@
 #include "texture.h"
 #include "primitive.h"
 #include "error.h"
+#include "sphericalfunction.h"
 // Light Declarations
 
 namespace lux
@@ -116,14 +117,29 @@ class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
-		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e, int ns, const boost::shared_ptr<Primitive> &prim);
+		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e,
+		SampleableSphericalFunction *ssf,
+		int ns, const boost::shared_ptr<Primitive> &prim);
 	~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack, const DifferentialGeometry &dg, const Vector& w) const {
-		return Dot(dg.nn, w) > 0 ? Le->Evaluate(tspack, dg) * gain : 0.;
+		if( Dot(dg.nn, w) > 0 ) {
+			SWCSpectrum L = Le->Evaluate(tspack, dg) * gain;
+			if(func) {
+				// Transform to the local coordinate system around the point
+				const Vector wLocal(
+					Dot(dg.dpdu, w), Dot(dg.dpdv, w), Dot(dg.nn, w)
+				);
+				L *= SWCSpectrum(tspack, func->f(wLocal));
+			}
+			return L;
+		}
+		else {
+			return 0.f;
+		}
 	}
 	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return Le->Evaluate(tspack, dummydg) * gain * area * M_PI;
+		return Le->Evaluate(tspack, dummydg) * gain * area * M_PI * (func ? 2.f * func->Average_f() : 1.f);
 	}
 	bool IsDeltaLight() const { return false; }
 	float Pdf(const Point &, const Vector &) const;
@@ -145,6 +161,7 @@ protected:
 	DifferentialGeometry dummydg;
 	boost::shared_ptr<Primitive> prim;
 	float gain, power, efficacy, area;
+	SampleableSphericalFunction *func;
 };
 
 }//namespace lux

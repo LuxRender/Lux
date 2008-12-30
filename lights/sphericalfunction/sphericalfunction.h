@@ -111,23 +111,57 @@ namespace lux {
 	 */
 	class SampleableSphericalFunction : public SphericalFunction {
 	public:
-		SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction> aFunc, int xRes, int yRes);
+		SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction> aFunc, 
+			int xRes = 512, int yRes = 256);
 		~SampleableSphericalFunction();
 
 		using SphericalFunction::f;
 		RGBColor f(float phi, float theta) const;
-		RGBColor Sample_f(float u1, float u2, Vector *w, float *pdf) const;
-		float Pdf(const Vector& w) const;
-		float Average_f() const;
 
-		static SampleableSphericalFunction *Create(
-			const ParamSet &paramSet, const TextureParams &tp);
+		/**
+		 * Samples this spherical function.
+		 *
+		 * @param u1  The first random value.
+		 * @param u2  The second random value.
+		 * @param w   The address to store the sampled direction in.
+		 * @param pdf The address to store the pdf (w.r.t. solid angle) of the 
+		 *            sample direction in.
+		 *
+		 * @return The function value of the sampled direction.
+		 */
+		RGBColor Sample_f(float u1, float u2, Vector *w, float *pdf) const;
+
+		/**
+		 * Computes the pdf for sampling the given direction.
+		 *
+		 * @param w The direction.
+		 *
+		 * @return The pdf (w.r.t. solid angle) for the direction.
+		 */
+		float Pdf(const Vector& w) const;
+
+		/**
+		 * Returns the average function value over the entire sphere.
+		 *
+		 * @return The average function value.
+		 */
+		float Average_f() const;
 	private:
 		int nVDistribs;
 		Distribution1D* uDistrib;
 		Distribution1D** vDistribs;
 		boost::shared_ptr<const SphericalFunction> func;
 	};
+
+	/**
+	 * Creates a spherical function from the given parameters.
+	 *
+	 * @param ps The regular parameters.
+	 * @param tp The texture parameters.
+	 *
+	 * @return A spherical function or NULL.
+	 */
+	SphericalFunction *CreateSphericalFunction(const ParamSet &ps, const TextureParams &tp);
 
 } // namespace lux
 
