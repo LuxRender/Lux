@@ -187,15 +187,12 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamS
 	float p = paramSet.FindOneFloat("power", 100.f);		// Power/Lm in Watts
 	float e = paramSet.FindOneFloat("efficacy", 17.f);		// Efficacy Lm per Watt
 
-	const SphericalFunction *sf = 
-		new HemiSphereSphericalFunction(
-			boost::shared_ptr<const SphericalFunction>(
-				CreateSphericalFunction(paramSet, tp)
-			)
-		);
+	const SphericalFunction *sf = CreateSphericalFunction(paramSet, tp);
 	SampleableSphericalFunction *ssf = NULL;
-	if(sf)
+	if (sf) {
+		sf = new HemiSphereSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));
 		ssf = new SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));
+	}
 
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	return new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
