@@ -70,7 +70,7 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1,
 	*wo = Normalize(lightPos - P);
 	*pdf = 1.f;
 	visibility->SetSegment(P, lightPos, tspack->time);
-	return L(tspack, Normalize(WorldToLight(-*wo)));
+	return L(tspack, Normalize(WorldToLight(-*wo))) / DistanceSquared(lightPos, P);
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
