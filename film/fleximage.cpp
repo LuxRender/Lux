@@ -136,7 +136,7 @@ void FlexImageFilm::CreateBuffers()
         if(ifs.good()) {
             // Dade - read the data
             luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
-            UpdateFilm(NULL, ifs, 0, 0);
+            UpdateFilm(NULL, ifs);
         }
 
         ifs.close();
@@ -255,8 +255,15 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 {
 	if (type & IMAGE_FILEOUTPUT) {
 		// write out untonemapped EXR
-		if (writeUtmExr)
-			WriteEXRImage(color, alpha, filename + postfix + "_untonemapped.exr");
+		if (writeUtmExr) {
+			// convert to rgb
+			const u_int nPix = xPixelCount * yPixelCount;
+			vector<Color> rgbColor(nPix);
+			for ( u_int i = 0; i < nPix; i++ )
+				rgbColor[i] = colorSpace.ToRGBConstrained( XYZColor(color[i].c) );
+
+			WriteEXRImage(rgbColor, alpha, filename + postfix + "_untonemapped.exr");
+		}
 		// write out untonemapped IGI
 		if (writeUtmIgi)
 			WriteIGIImage(color, alpha, filename + postfix + "_untonemapped.igi"); // TODO add samples
@@ -304,7 +311,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 				WriteEXRImage(color, alpha, filename + postfix + ".exr");
 
 			// write out tonemapped IGI
-			if (writeTmIgi)
+			if (writeTmIgi) //TODO color should be XYZ values
 				WriteIGIImage(color, alpha, filename + postfix + ".igi"); // TODO add samples
 //            }
 		}
@@ -400,7 +407,7 @@ void FlexImageFilm::WriteResumeFilm(const string &filename)
 		return;
 	}
 
-    TransmitFilm(filestr,0,0,false);
+    TransmitFilm(filestr,false);
 
     filestr.close();
 }
@@ -473,58 +480,67 @@ void FlexImageFilm::WriteIGIImage(vector<Color> &rgb, vector<float> &alpha, cons
 
 void FlexImageFilm::TransmitFilm(
         std::basic_ostream<char> &stream,
-        int buf_id, int bufferGroup,
-        bool clearGroup) {
-    BlockedArray<Pixel> *pixelBuf;
-    float numberOfSamples;
-    {
-//        // Dade - collect data to transmit
-//        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
-
-		// TODO: Find a group
-		if (bufferGroups.empty()) {
-			RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-			CreateBuffers();
-		}
-
-		BufferGroup &currentGroup = bufferGroups[buf_id];
-		Buffer *buffer = currentGroup.getBuffer(bufferGroup);
-
-		pixelBuf = new BlockedArray<Pixel>(*buffer->pixels);
-		numberOfSamples = currentGroup.numberOfSamples;
-
-		if(clearGroup) {
-			// Dade - reset the rendering buffer
-			buffer->Clear();
-			currentGroup.numberOfSamples = 0;
-		}
-    }
+        bool clearBuffers) 
+{
+	// Ensure we have a buffer group
+	if (bufferGroups.empty()) {
+		RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
+		CreateBuffers();
+	}
 
     bool isLittleEndian = osIsLittleEndian();
 
     std::stringstream ss;
-    ss << "Transfering " << (pixelBuf->uSize() * pixelBuf->uSize()) << 
-            " pixels (" <<numberOfSamples << " samples, little endian " <<
-            (isLittleEndian ? "true" : "false") << ")";
+    ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
     std::stringstream os;
-    osWriteLittleEndianFloat(isLittleEndian, os, numberOfSamples);
+	// Write #buffer groups and buffer configs for verification
+	osWriteLittleEndianInt(isLittleEndian, os, (int)bufferGroups.size());
+	osWriteLittleEndianInt(isLittleEndian, os, (int)bufferConfigs.size());
+	for (u_int i = 0; i < bufferConfigs.size(); i++)
+		osWriteLittleEndianInt(isLittleEndian, os, (int)bufferConfigs[i].type);
+	// Write each buffer group
+	for (u_int i = 0; i < bufferGroups.size(); i++) {
+		BufferGroup& bufferGroup = bufferGroups[i];
+		// Write number of samples
+		osWriteLittleEndianFloat(isLittleEndian, os, bufferGroup.numberOfSamples);
 
-	for (int y = 0; y < pixelBuf->vSize(); ++y) {
-		for (int x = 0; x < pixelBuf->uSize(); ++x) {
-			Pixel &pixel = (*pixelBuf)(x, y);
-			osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
-			osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
-			osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
-			osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
-			osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
+		// Write each buffer
+		for (u_int j = 0; j < bufferConfigs.size(); j++) {
+			Buffer* buffer = bufferGroup.getBuffer(j);
+
+			// Write buffer width/height
+			osWriteLittleEndianInt(isLittleEndian, os, buffer->xPixelCount);
+			osWriteLittleEndianInt(isLittleEndian, os, buffer->yPixelCount);
+
+			// Write pixels
+			const BlockedArray<Pixel>* pixelBuf = buffer->pixels;
+			for (int y = 0; y < pixelBuf->vSize(); ++y) {
+				for (int x = 0; x < pixelBuf->uSize(); ++x) {
+					const Pixel &pixel = (*pixelBuf)(x, y);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
+				}
+			}
+
+			if(clearBuffers) {
+				// Dade - reset the rendering buffer
+				buffer->Clear();
+			}
+		}
+
+		if(clearBuffers) {
+			// Dade - reset the rendering buffer
+			bufferGroup.numberOfSamples = 0;
 		}
 	}
 
 	if(!os.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error preparing data for film resume file");
-		delete pixelBuf;
+		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while preparing film data for transmission");
 		return;
 	}
 
@@ -533,98 +549,169 @@ void FlexImageFilm::TransmitFilm(
     in.push(os);
     std::streamsize size = boost::iostreams::copy(in, stream);
 	if(!stream.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error writing film resume file");
-		delete pixelBuf;
+		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while transmitting film");
 		return;
 	}
 
     ss.str("");
-    ss << "Pixels transmition done (" << (size / 1024.0f) << " Kbytes sent)";
+    ss << "Film transmission done (" << (size / 1024.0f) << " Kbytes sent)";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-    delete pixelBuf;
 }
 
-float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
-        int buf_id, int bufferGroup) {
-    BlockedArray<Pixel> *pixelBuf;
-    {
-//        // Dade - prepare buffer to receive data
-//        boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) {
+	// Ensure we have a buffer group
+	if (bufferGroups.empty()) {
+		RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
+		CreateBuffers();
+	}
 
-		// TODO: Find a group
-		if (bufferGroups.empty()) {
-			RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-			CreateBuffers();
-		}
-
-        BufferGroup &currentGroup = bufferGroups[buf_id];
-        Buffer *buffer = currentGroup.getBuffer(bufferGroup);
-
-        pixelBuf = new BlockedArray<Pixel>(buffer->xPixelCount, buffer->yPixelCount);
-    }
+	bool isLittleEndian = osIsLittleEndian();
 
     filtering_stream<input> in;
     in.push(gzip_decompressor());
     in.push(stream);
 
-    bool isLittleEndian = osIsLittleEndian();
+	std::stringstream ss;
+	ss << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
+	luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
-    float numberOfSamples;
-    osReadLittleEndianFloat(isLittleEndian, in, &numberOfSamples);
-    if (in.good()) {
-        std::stringstream ss;
-        ss << "Receiving " <<  numberOfSamples << " samples (little endian " <<
-                (isLittleEndian ? "true" : "false") << ")";
-        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	// Read and verify #buffer groups and buffer configs
+    int nBufferGroups;
+    osReadLittleEndianInt(isLittleEndian, in, &nBufferGroups);
+	if (!in.good()) {
+		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+		return 0.0f;
+	}
+	else if(nBufferGroups != (int)bufferGroups.size()) {
+		ss.str("");
+		ss << "Invalid number of buffer groups (expected=" << (int)bufferGroups.size() 
+			<< ",received=" << nBufferGroups << ")";
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		return 0.0f;
+	}
+	int nBuffers;
+	osReadLittleEndianInt(isLittleEndian, in, &nBuffers);
+	if (!in.good()) {
+		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+		return 0.0f;
+	}
+	else if(nBuffers != (int)bufferConfigs.size()) {
+		ss.str("");
+		ss << "Invalid number of buffers (expected=" << (int)bufferConfigs.size() 
+			<< ",received=" << nBuffers << ")";
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		return 0.0f;
+	}
+	for( u_int i = 0; i < bufferConfigs.size(); i++) {
+		int type;
+		osReadLittleEndianInt(isLittleEndian, in, &type);
+		if (!in.good()) {
+			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+			return 0.0f;
+		}
+		else if(type != (int)bufferConfigs[i].type) {
+			ss.str("");
+			ss << "Invalid buffer type for buffer " << i << " (expected=" << (int)bufferConfigs[i].type
+				<< ",received=" << type << ")";
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			return 0.0f;
+		}
+	}
 
-        for (int y = 0; y < pixelBuf->vSize(); ++y) {
-            for (int x = 0; x < pixelBuf->uSize(); ++x) {
-                Pixel &pixel = (*pixelBuf)(x, y);
-                osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[0]);
-                osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[1]);
-                osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[2]);
-                osReadLittleEndianFloat(isLittleEndian, in, &pixel.alpha);
-                osReadLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
-            }
-        }
+	// Read buffer groups
+	bool err = false; // flag for data errors
+	vector<float> bufferGroupNumSamples(bufferGroups.size());
+	vector<BlockedArray<Pixel>*> tmpPixelArrays(bufferGroups.size() * bufferConfigs.size());
+	for(u_int i = 0; i < bufferGroups.size(); i++) {
+		float numberOfSamples;
+		osReadLittleEndianFloat(isLittleEndian, in, &numberOfSamples);
+		if(!in.good() || err) break;
+		bufferGroupNumSamples[i] = numberOfSamples;
 
-        // Dade - check stream i/o for errors
-        if (in.good()) {
-            // Dade - add all received pixels
-//            boost::recursive_mutex::scoped_lock lock(addSampleMutex);
+		// Read buffers
+		for(u_int j = 0; j < bufferConfigs.size(); j++) {
+			const Buffer* localBuffer = bufferGroups[i].getBuffer(j);
 
-            BufferGroup &currentGroup = bufferGroups[buf_id];
-            Buffer *buffer = currentGroup.getBuffer(bufferGroup);
+			int xRes, yRes;
+			osReadLittleEndianInt(isLittleEndian, in, &xRes);
+			osReadLittleEndianInt(isLittleEndian, in, &yRes);
+			if(!in.good() || err) break;
+			if(xRes != localBuffer->xPixelCount || yRes != localBuffer->xPixelCount) {
+				ss.str("");
+				ss << "Invalid resolution for buffer " << j << " in group " << i;
+				ss << " (expected=" << localBuffer->xPixelCount << "x" << localBuffer->yPixelCount;
+				ss << ",received=" << xRes << "x" << yRes << ")";
+				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+				err = true;
+				break;
+			}
 
-            for (int y = 0; y < buffer->yPixelCount; ++y) {
-                for (int x = 0; x < buffer->xPixelCount; ++x) {
-                    Pixel &pixel = (*pixelBuf)(x, y);
-                    Pixel &pixelResult = (*buffer->pixels)(x, y);
+			// Read pixels
+			BlockedArray<Pixel> *tmpPixelArr = new BlockedArray<Pixel>(
+				localBuffer->xPixelCount, localBuffer->yPixelCount);
+			tmpPixelArrays[i*bufferConfigs.size() + j] = tmpPixelArr;
+			for (int y = 0; y < tmpPixelArr->vSize(); ++y) {
+				for (int x = 0; x < tmpPixelArr->uSize(); ++x) {
+					Pixel &pixel = (*tmpPixelArr)(x, y);
+					osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[0]);
+					osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[1]);
+					osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[2]);
+					osReadLittleEndianFloat(isLittleEndian, in, &pixel.alpha);
+					osReadLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
+				}
+			}
+			if(!in.good() || err) break;
+		}
+		if(!in.good() || err) break;
+	}
 
-                    pixelResult.L.c[0] += pixel.L.c[0];
-                    pixelResult.L.c[1] += pixel.L.c[1];
-                    pixelResult.L.c[2] += pixel.L.c[2];
-                    pixelResult.alpha += pixel.alpha;
-                    pixelResult.weightSum += pixel.weightSum;
-                }
-            }
+    // Dade - check for errors
+	float totNumberOfSamples = 0.f;
+    if (in.good() && !err) {
+        // Dade - add all received data
+		for(u_int i = 0; i < bufferGroups.size(); i++) {
+			BufferGroup &currentGroup = bufferGroups[i];
+			for(u_int j = 0; j < bufferConfigs.size(); j++) {
+				const BlockedArray<Pixel> *receivedPixels = tmpPixelArrays[ i * bufferConfigs.size() + j ];
+				Buffer *buffer = currentGroup.getBuffer(j);
 
-            currentGroup.numberOfSamples += numberOfSamples;
+				for (int y = 0; y < buffer->yPixelCount; ++y) {
+					for (int x = 0; x < buffer->xPixelCount; ++x) {
+						const Pixel &pixel = (*receivedPixels)(x, y);
+						Pixel &pixelResult = (*buffer->pixels)(x, y);
 
-            if(scene != NULL)
-                scene->numberOfSamplesFromNetwork += numberOfSamples;
-        } else {
-            luxError(LUX_SYSTEM, LUX_ERROR, "Error while reading samples");
-        }
-    } else {
-        luxError(LUX_SYSTEM, LUX_ERROR, "Error while reading samples");
-		numberOfSamples = 0.0f;
+						pixelResult.L.c[0] += pixel.L.c[0];
+						pixelResult.L.c[1] += pixel.L.c[1];
+						pixelResult.L.c[2] += pixel.L.c[2];
+						pixelResult.alpha += pixel.alpha;
+						pixelResult.weightSum += pixel.weightSum;
+					}
+				}
+			}
+
+			currentGroup.numberOfSamples += bufferGroupNumSamples[i];
+			totNumberOfSamples += bufferGroupNumSamples[i];
+		}
+
+        if(scene != NULL)
+            scene->numberOfSamplesFromNetwork += totNumberOfSamples;
+
+		std::stringstream ss;
+		ss << "Received film with " << totNumberOfSamples << " samples";
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+    } else if( err ) {
+        luxError(LUX_SYSTEM, LUX_ERROR, "Data error while receiving film buffers");
+    } else if( !in.good() ) {
+        luxError(LUX_SYSTEM, LUX_ERROR, "IO error while receiving film buffers");
     }
 
-    delete pixelBuf;
+	// Clean up
+	for(u_int i = 0; i < tmpPixelArrays.size(); i++) {
+		if( tmpPixelArrays[i] )
+			delete tmpPixelArrays[i];
+	}
 
-	return numberOfSamples;
+	return totNumberOfSamples;
 }
 
 void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name, float values[2]) {

@@ -78,7 +78,8 @@ namespace lux {
 	header.height = yRes;
 	header.supersample_factor = 1;
 	header.zipped = false;
-	header.image_data_size = xyzSize * 4;
+	header.image_data_size = xyzSize * 12;
+	header.colour_space = 0;
 
 	// write header
 	file.write((const char*)&header, sizeof(header));

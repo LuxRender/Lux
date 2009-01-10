@@ -70,19 +70,18 @@ public:
 	}
 
 	// Dade - method useful for transmitting the samples to a client
-	void TransmitFilm(std::basic_ostream<char> &stream,
-		int buf_id = 0, int bufferGroup = 0, bool clearBuffer = true);
-	float UpdateFilm(Scene *scene, std::basic_istream<char> &stream,
-		int buf_id = 0, int bufferGroup = 0);
+	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true);
+	float UpdateFilm(Scene *scene, std::basic_istream<char> &stream);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
 
-	void FlushSampleArray();
+	// Lotus - the implementations of these 2 methods seem to be removed
+	//void FlushSampleArray();
 	// Dade - using this method requires to lock arrSampleMutex
-	void MergeSampleArray();
+	//void MergeSampleArray();
 
 	void WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix);
 	void WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
