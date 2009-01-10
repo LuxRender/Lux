@@ -573,7 +573,7 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 
 	std::stringstream ss;
 	ss << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
-	luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	// Read and verify #buffer groups and buffer configs
     int nBufferGroups;
@@ -698,7 +698,7 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 
 		std::stringstream ss;
 		ss << "Received film with " << totNumberOfSamples << " samples";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
     } else if( err ) {
         luxError(LUX_SYSTEM, LUX_ERROR, "Data error while receiving film buffers");
     } else if( !in.good() ) {
