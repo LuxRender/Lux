@@ -896,10 +896,20 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		ChangeRenderState(FINISHED);
 		// Stop timers and update output one last time.
 		m_renderTimer->Stop();
+#ifdef __WXOSX_COCOA__
+		wxTimerEvent rendUpdEvent(*m_renderTimer);
+		rendUpdEvent.SetId(ID_RENDERUPDATE);
+#else
 		wxTimerEvent rendUpdEvent(ID_RENDERUPDATE, GetId());
+#endif
 		GetEventHandler()->AddPendingEvent(rendUpdEvent);
 		m_statsTimer->Stop();
+#ifdef __WXOSX_COCOA__
+		wxTimerEvent statUpdEvent(*m_renderTimer);
+		rendUpdEvent.SetId(ID_RENDERUPDATE);
+#else
 		wxTimerEvent statUpdEvent(ID_STATSUPDATE, GetId());
+#endif
 		GetEventHandler()->AddPendingEvent(statUpdEvent);
 	}
 }

@@ -25,7 +25,7 @@
 #include "wxglviewer.h"
 
 // include OpenGL
-#ifdef __WXMAC__
+#if defined(__WXOSX_COCOA__) || defined(__WXCOCOA__) || defined(__WXMAC__)
 #include "OpenGL/glu.h"
 #include "OpenGL/gl.h"
 #else
@@ -51,8 +51,8 @@ END_EVENT_TABLE()
 int glAttribList[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0};
 
 LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
-#ifdef __WXMAC__
-      : wxGLCanvas(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxGLCanvasName, glAttribList), wxViewerBase(), m_glContext(NULL,this,wxNullPalette,NULL), m_textureW(textureW), m_textureH(textureH){
+#if defined(__WXOSX_COCOA__) || defined(__WXCOCOA__) || defined(__WXMAC__)
+      : wxGLCanvas(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxGLCanvasName, glAttribList), wxViewerBase(), m_glContext(this), m_textureW(textureW), m_textureH(textureH){
 #else
       : wxGLCanvas(parent, wxID_ANY, glAttribList), wxViewerBase(), m_glContext(this), m_textureW(textureW), m_textureH(textureH) {
 #endif
@@ -77,11 +77,7 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 }
 
 void LuxGLViewer::OnPaint(wxPaintEvent& event) {
-#ifdef __WXMAC__
-	SetCurrent();
-#else
 	SetCurrent(m_glContext);
-#endif
 	wxPaintDC(this);
 
 	if (!m_refreshMarchingAntsOnly) {

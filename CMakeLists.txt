@@ -98,30 +98,22 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-IF(APPLE)
-	SET(Boost_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/../macos/boost/include)
-	IF(APPLE_64)
-		SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/../macos/boost/lib/x64)
-	ELSE(APPLE_64)
-		SET(Boost_LIBRARY_DIRS ${CMAKE_BINARY_DIR}/../macos/boost/lib/x86)
-	ENDIF(APPLE_64)
-	SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1 boost_regex-mt-1_34_1)
-ELSE(APPLE)
-	FIND_PACKAGE(Boost REQUIRED)
-	IF(Boost_FOUND)
-		MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
-		MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
-		IF(CYGWIN)
-			SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
-		ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-			SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem boost_serialization boost_iostreams boost_regex)
-		ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-			SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
-		ENDIF(CYGWIN)
-	ELSE(Boost_FOUND)
-		MESSAGE(FATAL_ERROR "Could not find Boost")
-	ENDIF(Boost_FOUND)
-ENDIF(APPLE)
+FIND_PACKAGE(Boost REQUIRED)
+IF(Boost_FOUND)
+	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
+	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
+	IF(CYGWIN)
+		SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
+	ELSEIF(APPLE)
+		SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1 boost_regex-mt-1_34_1)
+	ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem boost_serialization boost_iostreams boost_regex)
+	ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
+	ENDIF(CYGWIN)
+ELSE(Boost_FOUND)
+	MESSAGE(FATAL_ERROR "Could not find Boost")
+ENDIF(Boost_FOUND)
 
 
 #############################################################################
@@ -129,27 +121,18 @@ ENDIF(APPLE)
 ######################### OPENEXR LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-IF(APPLE)
-	IF(APPLE_64)
-		SET(OPENEXR_LIB_DIRS ${CMAKE_BINARY_DIR}/../macos/openexr-1.4.0/lib/64bit)
-	ELSE(APPLE_64)
-		SET(OPENEXR_LIB_DIRS ${CMAKE_BINARY_DIR}/../macos/openexr-1.4.0/lib)
-	ENDIF(APPLE_64)
-	SET(OPENEXR_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/../macos/openexr-1.4.0/include)
-	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
-ELSE(APPLE)
-	FIND_PATH(OPENEXR_INCLUDE_DIRS
-		ImfXdr.h
-		PATHS
-		/usr/local/include/OpenEXR
-		/usr/include/OpenEXR
-		/sw/include/OpenEXR
-		/opt/local/include/OpenEXR
-		/opt/csw/include/OpenEXR
-		/opt/include/OpenEXR
-	) 
-	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
-ENDIF(APPLE)
+FIND_PATH(OPENEXR_INCLUDE_DIRS
+	ImfXdr.h
+	PATHS
+	/usr/local/include/OpenEXR
+	/usr/include/OpenEXR
+	/sw/include/OpenEXR
+	/opt/local/include/OpenEXR
+	/opt/csw/include/OpenEXR
+	/opt/include/OpenEXR
+) 
+SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
+#SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
 
 
 #############################################################################
@@ -168,17 +151,11 @@ ENDIF(APPLE)
 #  PNG_LIBRARY, where to find the PNG library.
 # None of the above will be defined unles zlib can be found.
 # PNG depends on Zlib
-IF(APPLE)
-	SET(PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/../macos/png/include)
-	SET(PNG_LIBRARY ${CMAKE_BINARY_DIR}/../macos/png/lib)
-	SET(PNG_LIBRARIES png png12)
-ELSE(APPLE)
 INCLUDE(FindPNG)
 IF(PNG_FOUND)
 ELSE(PNG_FOUND)
 	MESSAGE( STATUS "Warning : could not find PNG - building without png support")
 ENDIF(PNG_FOUND)
-ENDIF(APPLE)
 #FIND_PACKAGE(PNG REQUIRED)
 
 
@@ -195,19 +172,13 @@ ENDIF(APPLE)
 #  TIFF_FOUND, If false, do not try to use TIFF.
 # also defined, but not for general use are
 #  TIFF_LIBRARY, where to find the TIFF library.
-IF(APPLE)
-	SET(TIFF_INCLUDE_DIR ${CMAKE_BINARY_DIR}/../macos/tiff/include)
-	SET(TIFF_LIBRARY ${CMAKE_BINARY_DIR}/../macos/tiff/lib)
-	SET(TIFF_LIBRARIES tiff tiffxx)
-ELSE(APPLE)
-	INCLUDE(FindTIFF)
-	#FIND_PACKAGE(TIFF REQUIRED)
-	IF(TIFF_FOUND)
-		MESSAGE( STATUS "Found TIFF: " ${TIFF_LIBRARIES} )
-	ELSE(TIFF_FOUND)
-		MESSAGE( STATUS "Warning : could not find TIFF - building without tiff support")
-	ENDIF(TIFF_FOUND)
-ENDIF(APPLE)
+INCLUDE(FindTIFF)
+#FIND_PACKAGE(TIFF REQUIRED)
+IF(TIFF_FOUND)
+	MESSAGE( STATUS "Found TIFF: " ${TIFF_LIBRARIES} )
+ELSE(TIFF_FOUND)
+	MESSAGE( STATUS "Warning : could not find TIFF - building without tiff support")
+ENDIF(TIFF_FOUND)
 
 
 #############################################################################
@@ -223,19 +194,13 @@ ENDIF(APPLE)
 #  JPEG_FOUND, If false, do not try to use JPEG.
 # also defined, but not for general use are
 #  JPEG_LIBRARY, where to find the JPEG library.
-IF(APPLE)
-	SET(JPEG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/../macos/jpeg/include)
-	SET(JPEG_LIBRARY ${CMAKE_BINARY_DIR}/../macos/jpeg/lib)
-	SET(JPEG_LIBRARIES libjpeg.a)
-ELSE(APPLE)
-	INCLUDE(FindJPEG)
-	#FIND_PACKAGE(JPEG REQUIRED)
-	IF(JPEG_FOUND)
-		MESSAGE( STATUS "JPEG include directory: " ${JPEG_INCLUDE_DIR} )
-	ELSE(JPEG_FOUND)
-		MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
-	ENDIF(JPEG_FOUND)
-ENDIF(APPLE)
+INCLUDE(FindJPEG)
+#FIND_PACKAGE(JPEG REQUIRED)
+IF(JPEG_FOUND)
+	MESSAGE( STATUS "JPEG include directory: " ${JPEG_INCLUDE_DIR} )
+ELSE(JPEG_FOUND)
+	MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
+ENDIF(JPEG_FOUND)
 
 
 #############################################################################
@@ -246,7 +211,7 @@ ENDIF(APPLE)
 # Here you can define what libraries of wxWidgets you need for your
 # application. You can figure out what libraries you need here;
 # http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-SET(wxWidgets_USE_LIBS base core gl aui adv)
+SET(wxWidgets_USE_LIBS base core gl aui adv )
 FIND_PACKAGE(wxWidgets)
 IF(wxWidgets_FOUND)
     # Include wxWidgets macros
@@ -272,7 +237,7 @@ FIND_PACKAGE(Threads REQUIRED)
 #############################################################################
 #############################################################################
 IF(APPLE)
-	SET(SYS_LIBRARIES z)
+	SET(SYS_LIBRARIES z )
 ENDIF(APPLE)
 IF(CYGWIN)
 	SET(SYS_LIBRARIES wsock32 ws2_32)
@@ -300,6 +265,11 @@ ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -D
 #############################################################################
 # Compiler flags for specific setup
 #############################################################################
+
+# Jens - default Mac compiler options with OpenGL
+ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+# Jens - testing Mac compiler options (debug)
+#ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
 #ADD_DEFINITIONS(-pg -g -O2 -march=-msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
@@ -386,9 +356,9 @@ IF(APPLE)
 	COMMAND mkdir LuxRender.app 
 	COMMAND mkdir LuxRender.app/Contents 
 	COMMAND mkdir LuxRender.app/Contents/MacOS 
-	COMMAND mkdir LuxRender.app/Contents/Resource 
+	COMMAND mkdir LuxRender.app/Contents/Resources
 	COMMAND cp ../macos/Info.plist LuxRender.app/Contents
-	COMMAND cp ../macos/LuxRender.icns LuxRender.app/Contents/Resource
+	COMMAND cp LuxRender.icns LuxRender.app/Contents/Resources
 	COMMAND echo APPLnone > LuxRender.app/Contents/PkgInfo
 	COMMAND cp luxrender LuxRender.app/Contents/MacOS/LuxRender)
 ENDIF(APPLE)
@@ -494,7 +464,7 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 #############################################################################
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
@@ -509,7 +479,7 @@ IF(APPLE)
 	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
 	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
 	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
-	# SET(MACOSX_BUNDLE_ICON_FILE "myicon.icns")
+	SET(MACOSX_BUNDLE_ICON_FILE "LuxRender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
@@ -536,7 +506,7 @@ IF(wxWidgets_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefiend -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
 		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
