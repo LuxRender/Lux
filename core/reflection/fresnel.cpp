@@ -56,6 +56,16 @@ void FrCond(float cosi,
 		(tmp_f + (2.f * eta * cosi));
 	*f = (Rparl2 + Rperp2) * 0.5f;
 }
+void FrFull(float cosi, const SWCSpectrum &cost, const SWCSpectrum &eta, const SWCSpectrum &k, SWCSpectrum *f)
+{
+	SWCSpectrum tmp = (eta * eta + k * k) * (cosi * cosi) + (cost * cost);
+	SWCSpectrum Rparl2 = (tmp - (2.f * cosi * cost) * eta) /
+		(tmp + (2.f * cosi * cost) * eta);
+	SWCSpectrum tmp_f = (eta * eta + k * k) * (cost * cost) + (cosi * cosi);
+	SWCSpectrum Rperp2 = (tmp_f - (2.f * cosi * cost) * eta) /
+		(tmp_f + (2.f * cosi * cost) * eta);
+	*f = (Rparl2 + Rperp2) * 0.5f;
+}
 SWCSpectrum FresnelApproxEta(const SWCSpectrum &Fr) {
 	SWCSpectrum sqrtReflectance = Fr.Clamp(0.f, .999f).Sqrt();
 	return (SWCSpectrum(1.) + sqrtReflectance) /
