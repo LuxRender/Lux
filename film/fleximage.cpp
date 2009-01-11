@@ -636,7 +636,7 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 			osReadLittleEndianInt(isLittleEndian, in, &xRes);
 			osReadLittleEndianInt(isLittleEndian, in, &yRes);
 			if(!in.good() || err) break;
-			if(xRes != localBuffer->xPixelCount || yRes != localBuffer->xPixelCount) {
+			if(xRes != localBuffer->xPixelCount || yRes != localBuffer->yPixelCount) {
 				ss.str("");
 				ss << "Invalid resolution for buffer " << j << " in group " << i;
 				ss << " (expected=" << localBuffer->xPixelCount << "x" << localBuffer->yPixelCount;
@@ -696,7 +696,7 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
         if(scene != NULL)
             scene->numberOfSamplesFromNetwork += totNumberOfSamples;
 
-		std::stringstream ss;
+		ss.str("");
 		ss << "Received film with " << totNumberOfSamples << " samples";
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
     } else if( err ) {
