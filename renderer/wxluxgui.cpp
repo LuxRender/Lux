@@ -1015,7 +1015,9 @@ void LuxGui::UpdateStatistics() {
 /*** LuxOutputWin ***/
 
 BEGIN_EVENT_TABLE(LuxOutputWin, wxWindow)
+#ifndef __WXOSX_COCOA__
     EVT_PAINT (LuxOutputWin::OnPaint)
+#endif
 END_EVENT_TABLE()
 
 LuxOutputWin::LuxOutputWin(wxWindow *parent)
