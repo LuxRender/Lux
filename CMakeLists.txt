@@ -4,7 +4,7 @@ IF(COMMAND cmake_policy)
 ENDIF(COMMAND cmake_policy)
 
 PROJECT(lux)
-SET(VERSION 0.5)
+SET(VERSION 0.6)
 
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
@@ -23,6 +23,41 @@ IF(APPLE)
 		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
 	ENDIF(APPLE_64)
 ENDIF(APPLE)
+
+
+#############################################################################
+#############################################################################
+### check for the CPU we build for                                        ###
+#############################################################################
+#############################################################################
+
+EXECUTE_PROCESS(
+    COMMAND ${CMAKE_C_COMPILER} -dumpmachine
+    OUTPUT_VARIABLE MACHINE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+MESSAGE(STATUS "Building for target ${MACHINE}")
+
+STRING(REGEX MATCH "(i.86-*)|(athlon-*)|(pentium-*)" _mach_x86 ${MACHINE})
+IF (_mach_x86)
+    SET(ARCH_X86 1)
+ENDIF (_mach_x86)
+
+STRING(REGEX MATCH "(x86_64-*)|(X86_64-*)|(AMD64-*)|(amd64-*)" _mach_x86_64 ${MACHINE})
+IF (_mach_x86_64)
+    SET(ARCH_X86_64 1)
+    SET(LIB_SUFFIX 64)
+    #jromang - Hack to avoid boost bug on x64  Ubuntu 8.10 and Fedora 10 (http://www.luxrender.net/mantis/view.php?id=433)
+    ADD_DEFINITIONS(-DBOOST_NO_INTRINSIC_INT64_T)
+ENDIF (_mach_x86_64)
+
+STRING(REGEX MATCH "(ppc-*)|(powerpc-*)" _mach_ppc ${MACHINE})
+IF (_mach_ppc)
+    SET(ARCH_PPC 1)
+ENDIF (_mach_ppc)
+
+
+
 
 
 #############################################################################
@@ -508,6 +543,7 @@ IF(wxWidgets_FOUND)
 ENDIF(wxWidgets_FOUND)
 
 
+
 #############################################################################
 
 #Install target
@@ -517,9 +553,10 @@ INSTALL(TARGETS luxrender luxconsole
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
-INSTALL(TARGETS lux
-	ARCHIVE DESTINATION lib/
-)
+INSTALL(TARGETS lux DESTINATION lib${LIB_SUFFIX})
+#	ELSE(FIND_LIBRARY_USE_LIB64_PATHS) ARCHIVE DESTINATION lib
+#	ENDIF(FIND_LIBRARY_USE_LIB64_PATHS)
+
 
 #Install Desktop files
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.svg DESTINATION share/pixmaps/)
