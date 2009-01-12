@@ -419,7 +419,7 @@ SET(lux_lib_src
 		textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp
 		textures/blender_stucci.cpp textures/harlequin.cpp textures/blender_voronoi.cpp
 	textures/blackbody.cpp textures/equalenergy.cpp textures/frequencytexture.cpp textures/gaussiantexture.cpp textures/irregulardata.cpp textures/regulardata.cpp
-        tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp
+        tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp tonemaps/lineartonemap.cpp 
         volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp
         pixelsamplers/linear.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
 		pixelsamplers/tilepx.cpp pixelsamplers/hilbertpx.cpp
