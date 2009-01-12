@@ -14,7 +14,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if 0%{?suse_version}
 BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils wxGTK-devel gcc gcc-c++ Mesa-devel cmake update-desktop-files
-Requires:       libpng libjpeg libtiff OpenEXR IlmBase wxGTK libboost_thread libboost_program_options libboost_filesystem libboost_serialization libboost_iostreams libboost_regex
+Requires:       libpng libjpeg libtiff OpenEXR IlmBase wxGTK libboost_thread1_36_0 libboost_program_options1_36_0 libboost_filesystem1_36_0 libboost_serialization1_36_0 libboost_iostreams1_36_0 libboost_regex1_36_0
 %endif
 
 %if 0%{?mandriva_version} 
