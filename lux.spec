@@ -1,12 +1,12 @@
 Name:           lux
 Version:        0.6
-Release:        beta1%{?dist}
+Release:        1
 Summary:        Lux Renderer, an unbiased rendering system
 
 Group:          Applications/Multimedia
 License:        GPLv3
 URL:            http://www.luxrender.net
-Packager:	J.F. Romang <jeanfrancois.romang@laposte.net>
+Packager:		J.F. Romang <jeanfrancois.romang@laposte.net>
 Source0:        %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
