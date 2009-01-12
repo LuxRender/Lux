@@ -33,6 +33,10 @@
 
 #include "error.h"
 
+#include <functional>
+using std::bind2nd;
+using std::ptr_fun;
+
 using namespace lux;
 
 // BVHAccel Method Definitions
@@ -95,17 +99,14 @@ BVHAccel::~BVHAccel() {
 }
 
 // Build an array of comparators for each axis
-bool bvh_lt_x(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) { return n1->bbox.pMax.x+n1->bbox.pMin.x < n2->bbox.pMax.x+n2->bbox.pMin.x; }
-bool bvh_lt_y(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) { return n1->bbox.pMax.y+n1->bbox.pMin.y < n2->bbox.pMax.y+n2->bbox.pMin.y; }
-bool bvh_lt_z(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) { return n1->bbox.pMax.z+n1->bbox.pMin.z < n2->bbox.pMax.z+n2->bbox.pMin.z; }
-bool (* const bvh_lt[3])(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) = {bvh_lt_x, bvh_lt_y, bvh_lt_z};
-bool bvh_gt_x(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) { return n1->bbox.pMax.x+n1->bbox.pMin.x > n2->bbox.pMax.x+n2->bbox.pMin.x; }
-bool bvh_gt_y(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) { return n1->bbox.pMax.y+n1->bbox.pMin.y > n2->bbox.pMax.y+n2->bbox.pMin.y; }
-bool bvh_gt_z(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) { return n1->bbox.pMax.z+n1->bbox.pMin.z > n2->bbox.pMax.z+n2->bbox.pMin.z; }
-bool (* const bvh_gt[3])(boost::shared_ptr<BVHAccelTreeNode> n1, boost::shared_ptr<BVHAccelTreeNode> n2) = {bvh_gt_x, bvh_gt_y, bvh_gt_z};
+bool bvh_ltf_x(boost::shared_ptr<BVHAccelTreeNode> n, float v) { return n->bbox.pMax.x+n->bbox.pMin.x < v; }
+bool bvh_ltf_y(boost::shared_ptr<BVHAccelTreeNode> n, float v) { return n->bbox.pMax.y+n->bbox.pMin.y < v; }
+bool bvh_ltf_z(boost::shared_ptr<BVHAccelTreeNode> n, float v) { return n->bbox.pMax.z+n->bbox.pMin.z < v; }
+bool (* const bvh_ltf[3])(boost::shared_ptr<BVHAccelTreeNode> n, float v) = {bvh_ltf_x, bvh_ltf_y, bvh_ltf_z};
 
 boost::shared_ptr<BVHAccelTreeNode> BVHAccel::BuildHierarchy(vector<boost::shared_ptr<BVHAccelTreeNode> > &list, u_int begin, u_int end, u_int axis) {
-	u_int splitIndex, splitAxis = axis;
+	u_int splitAxis = axis;
+	float splitValue;
 
 	nNodes += 1;
 	if(end-begin == 1) // Only a single item in list so return it
@@ -116,45 +117,41 @@ boost::shared_ptr<BVHAccelTreeNode> BVHAccel::BuildHierarchy(vector<boost::share
 
 	vector<u_int> splits; splits.reserve(treeType+1);
 	splits.push_back(begin); splits.push_back(end);
-	for(u_int i = 1, begin = 0; i < treeType; i++) {  //Calculate splits, according to tree type and partially sort
+	for(u_int i = 2; i <= treeType; i *= 2) {  //Calculate splits, according to tree type and do partition
+		for(u_int j = 0, offset = 0; j+offset < i && splits.size() > j+1; j += 2) {
+			/* These are the splits and inserts done, depending on the treeType:
+			// Binary-tree
+			FindBestSplit(list, splits[0], splits[1], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+1, middle);
+			// Quad-tree
+			FindBestSplit(list, splits[0], splits[1], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+1, middle);
+			FindBestSplit(list, splits[2], splits[3], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+3, middle);
+			// Oc-tree
+			FindBestSplit(list, splits[0], splits[1], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+1, middle);
+			FindBestSplit(list, splits[2], splits[3], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+3, middle);
+			FindBestSplit(list, splits[4], splits[5], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+5, middle);
+			FindBestSplit(list, splits[6], splits[7], &splitValue, &splitAxis);
+			splits.insert(splits.begin()+7, middle);
+			*/
 
-		/* These are the splits and inserts done, depending on the treeType:
-		// Binary-tree
-		FindBestSplit(list, splits[0], splits[1], &splitIndex, &splitAxis);
-		splits.insert(splits.begin()+1, splitIndex);
-		// Quad-tree
-		FindBestSplit(list, splits[0], splits[1], &splitAxis);
-		splits.insert(splits.begin()+1, splitIndex);
-		FindBestSplit(list, splits[2], splits[3] &splitAxis);
-		splits.insert(splits.begin()+3, splitIndex);
-		// Oc-tree
-		FindBestSplit(list, splits[0], splits[1], &splitAxis);
-		splits.insert(splits.begin()+1, splitIndex);
-		FindBestSplit(list, splits[2], splits[3], &splitAxis);
-		splits.insert(splits.begin()+3, splitIndex);
-		FindBestSplit(list, splits[4], splits[5], &splitAxis);
-		splits.insert(splits.begin()+5, splitIndex);
-		FindBestSplit(list, splits[6], splits[7], &splitAxis);
-		splits.insert(splits.begin()+7, splitIndex);
-		*/
+			if(splits[j+1] - splits[j] < 2) {
+				j--; offset++;
+				continue; // Less than two elements: no need to split
+			}
 
-		if(splits[begin+1] - splits[begin] < 2) {
-			begin = (begin+1)%(i+1);
-			continue; // Less than two elements: no need to split
+			FindBestSplit(list, splits[j], splits[j+1], &splitValue, &splitAxis);
+
+			vector<boost::shared_ptr<BVHAccelTreeNode> >::iterator it =
+				partition(list.begin()+splits[j], list.begin()+splits[j+1], bind2nd(ptr_fun(bvh_ltf[splitAxis]), splitValue));
+			u_int middle = distance(list.begin(), it);
+			middle = max(splits[j]+1, min(splits[j+1]-1, middle)); // Make sure coincidental BBs are still split
+			splits.insert(splits.begin()+j+1, middle);
 		}
-
-		FindBestSplit(list, splits[begin], splits[begin+1], &splitIndex, &splitAxis);
-		if(splits[begin+1]-splitIndex <= splitIndex-splits[begin]) {
-			splits.insert(splits.begin()+begin+1, splitIndex);
-			partial_sort(list.begin()+splits[begin], list.begin()+splits[begin+1], list.begin()+splits[begin+2], bvh_lt[splitAxis]); // sort on axis
-		} else {
-			// Rearrange so that partial_sort does less work
-			splitIndex = splits[begin] + splits[begin+1] - splitIndex;
-			splits.insert(splits.begin()+begin+1, splitIndex);
-			partial_sort(list.begin()+splits[begin], list.begin()+splits[begin+1], list.begin()+splits[begin+2], bvh_gt[splitAxis]); // sort on axis
-		}
-
-		begin = (begin+2)%(i+1); // Generates the sequence (0  0 2  0 2 4 6)
 	}
 
 	boost::shared_ptr<BVHAccelTreeNode> child, lastChild;
@@ -175,31 +172,50 @@ boost::shared_ptr<BVHAccelTreeNode> BVHAccel::BuildHierarchy(vector<boost::share
 	return parent;
 }
 
-void BVHAccel::FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list, u_int begin, u_int end, u_int *bestIndex, u_int *bestAxis) {
-	float bestCost = INFINITY;
-
+void BVHAccel::FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list, u_int begin, u_int end, float *splitValue, u_int *bestAxis) {
 	if(end-begin == 2) {
 		// Trivial case with two elements
-		*bestIndex = begin+1;
+		*splitValue = (list[begin]->bbox.pMax[0]+list[begin]->bbox.pMin[0]+
+					   list[end-1]->bbox.pMax[0]+list[end-1]->bbox.pMin[0])/2;
 		*bestAxis = 0;
 	} else {
-		BBox nodeBounds;
+		// Calculate BBs mean center (times 2)
+		Point mean2(0,0,0), var(0,0,0);
 		for(u_int i = begin; i < end; i++)
-			nodeBounds = Union(nodeBounds, list[i]->bbox);
-		*bestAxis = nodeBounds.MaximumExtent();
+			mean2 += list[i]->bbox.pMax+list[i]->bbox.pMin;
+		mean2 /= end-begin;
+
+		// Calculate variance
+		for(u_int i = begin; i < end; i++) {
+			Vector v = list[i]->bbox.pMax+list[i]->bbox.pMin - mean2;
+			v.x *= v.x; v.y *= v.y; v.z *= v.z;
+			var += v;
+		}
+		// Select axis with more variance
+		if (var.x > var.y && var.x > var.z)
+			*bestAxis = 0;
+		else if (var.y > var.z)
+			*bestAxis = 1;
+		else
+			*bestAxis = 2;
 
 		if(costSamples > 1) {
+			BBox nodeBounds;
+			for(u_int i = begin; i < end; i++)
+				nodeBounds = Union(nodeBounds, list[i]->bbox);
+
 			Vector d = nodeBounds.pMax - nodeBounds.pMin;
 			float totalSA = (2.f * (d.x*d.y + d.x*d.z + d.y*d.z));
 			float invTotalSA = 1.f / totalSA;
 
 			// Sample cost for split at some points
-			float increment = d[*bestAxis]/(costSamples+1);
-			for(float splitVal = nodeBounds.pMin[*bestAxis]+increment; splitVal < nodeBounds.pMax[*bestAxis]; splitVal += increment) {
+			float increment = 2*d[*bestAxis]/(costSamples+1);
+			float bestCost = INFINITY;
+			for(float splitVal = 2*nodeBounds.pMin[*bestAxis]+increment; splitVal < 2*nodeBounds.pMax[*bestAxis]; splitVal += increment) {
 				int nBelow = 0, nAbove = 0;
 				BBox bbBelow, bbAbove;
 				for(u_int j = begin; j < end; j++) {
-					if((list[j]->bbox.pMax[*bestAxis]+list[j]->bbox.pMin[*bestAxis]) < 2*splitVal) {
+					if((list[j]->bbox.pMax[*bestAxis]+list[j]->bbox.pMin[*bestAxis]) < splitVal) {
 						nBelow++;
 						bbBelow = Union(bbBelow, list[j]->bbox);
 					} else {
@@ -218,17 +234,13 @@ void BVHAccel::FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list,
 				// Update best split if this is lowest cost so far
 				if (cost < bestCost)  {
 					bestCost = cost;
-					*bestIndex = begin+nBelow;
+					*splitValue = splitVal;
 				}
 			}
 		} else {
-			// Split in half
-			*bestIndex = (begin+end)/2;
+			// Split in half around the mean center
+			*splitValue = mean2[*bestAxis];
 		}
-
-		// Make sure the split is valid
-		*bestIndex = max(*bestIndex,begin+1);
-		*bestIndex = min(*bestIndex,end-1);
 	}
 }
 

@@ -60,7 +60,7 @@ public:
 private:
 	// BVHAccel Private Methods
 	boost::shared_ptr<BVHAccelTreeNode> BuildHierarchy(vector<boost::shared_ptr<BVHAccelTreeNode> > &list, u_int begin, u_int end, u_int axis);
-	void FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list, u_int begin, u_int end, u_int *bestIndex, u_int *bestAxis);
+	void FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list, u_int begin, u_int end, float *splitValue, u_int *bestAxis);
 	u_int BuildArray(boost::shared_ptr<BVHAccelTreeNode> node, u_int offset);
 
 	// BVHAccel Private Data
