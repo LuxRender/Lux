@@ -1,3 +1,6 @@
+#LuxRender spec file for RPM building
+#Jean-Francois Romang <jeanfrancois.romang@laposte.net>
+
 Name:           lux
 Version:        0.6
 Release:        1
@@ -6,23 +9,22 @@ Summary:        Lux Renderer, an unbiased rendering system
 Group:          Applications/Multimedia
 License:        GPLv3
 URL:            http://www.luxrender.net
-Packager:		J.F. Romang <jeanfrancois.romang@laposte.net>
 Source0:        %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if 0%{?suse_version}
 BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils wxGTK-devel gcc gcc-c++ Mesa-devel cmake update-desktop-files
-Requires:       libpng libjpeg libtiff OpenEXR IlmBase boost-devel wxGTK
-%else
+Requires:       libpng libjpeg libtiff OpenEXR IlmBase wxGTK libboost_thread libboost_program_options libboost_filesystem libboost_serialization libboost_iostreams libboost_regex
+%endif
 
 %if 0%{?mandriva_version} 
 BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils libwxgtk2.8-devel gcc gcc-c++ mesa-common-devel cmake
 Requires:       libpng libjpeg libtiff OpenEXR IlmBase boost libwxgtk2.8
-%else
-BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils wxGTK-devel gcc gcc-c++ Mesa-devel cmake
-Requires:       libpng libjpeg libtiff OpenEXR IlmBase boost wxGTK
 %endif
 
+%if 0%{?fedora_version} 
+BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils wxGTK-devel gcc gcc-c++ Mesa-devel cmake
+Requires:       libpng libjpeg libtiff OpenEXR IlmBase boost wxGTK
 %endif
 
 
@@ -41,6 +43,7 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
+mkdir $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 desktop-file-install --vendor="" --dir=%{buildroot}%{_datadir}/applications/ renderer/luxrender.desktop
 %if 0%{?suse_version}
