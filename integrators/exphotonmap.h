@@ -29,7 +29,6 @@
 #include "transport.h"
 #include "scene.h"
 #include "kdtree.h"
-#include "mc.h"
 #include "sampling.h"
 #include "photonmap.h"
 

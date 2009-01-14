@@ -36,12 +36,12 @@ using namespace lux;
 namespace lux
 {
 
-void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const {
 	// Point p
 	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
 
-	// SWCSpectrum alpha
+	// RGBColor alpha
 	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
 
@@ -50,18 +50,46 @@ void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) {
 		osWriteLittleEndianFloat(isLittleEndian, stream, wi[i]);
 }
 
-void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+void LightPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream) {
+	// Point p
+	for (int i = 0; i < 3; i++)
+		osReadLittleEndianFloat(isLittleEndian, stream, &p[i]);
+
+	// RGBColor alpha
+	for (int i = 0; i < 3; i++)
+		osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[i]);
+
+	// Vector wi
+	for (int i = 0; i < 3; i++)
+		osReadLittleEndianFloat(isLittleEndian, stream, &wi[i]);
+}
+
+void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const {
 	// Point p
 	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
 
-	// SWCSpectrum alpha
+	// RGBColor alpha
 	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
 
 	// Normal n
 	for (int i = 0; i < 3; i++)
 		osWriteLittleEndianFloat(isLittleEndian, stream, n[i]);
+}
+
+void RadiancePhoton::load(bool isLittleEndian, std::basic_istream<char> &stream) {
+	// Point p
+	for (int i = 0; i < 3; i++)
+		osReadLittleEndianFloat(isLittleEndian, stream, &p[i]);
+
+	// RGBColor alpha
+	for (int i = 0; i < 3; i++)
+		osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[i]);
+
+	// Normal n
+	for (int i = 0; i < 3; i++)
+		osReadLittleEndianFloat(isLittleEndian, stream, &n[i]);
 }
 
 SWCSpectrum RadiancePhotonMap::LPhoton(
@@ -163,7 +191,7 @@ SWCSpectrum LightPhotonMap::LPhoton(
 			BxDFType( bxdfType & 
 			          (Dot(Nf, p->wi) > 0.f ? BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION) );
 		float k = Ekernel(p, isect.dg.p, distSquared);
-		const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
+		const SWCSpectrum alpha = p->GetSWCSpectrum( tspack );
 
         L += (k / nPaths) * bsdf->f(tspack, wo, p->wi, flag) * alpha;
     }
@@ -204,7 +232,7 @@ SWCSpectrum LightPhotonMap::LPhotonDiffuseApprox(
 
 	for (u_int i = 0; i < nFound; ++i) {
 		const LightPhoton *p = photons[i].photon;
-		const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
+		const SWCSpectrum alpha = p->GetSWCSpectrum( tspack );
 
         if (Dot(Nf, photons[i].photon->wi) > 0.f) {
             float k = Ekernel(p, isect.dg.p, distSquared);
@@ -257,7 +285,7 @@ SWCSpectrum LightPhotonMap::LDiffusePhoton(
 
     for (u_int i = 0; i < nFound; ++i) {
 		const LightPhoton *p = photons[i].photon;
-		const SWCSpectrum& alpha = p->GetSWCSpectrum( tspack );
+		const SWCSpectrum alpha = p->GetSWCSpectrum( tspack );
 
         if (Dot(Nf, photons[i].photon->wi) > 0.f) {
             float k = Ekernel(p, isect.dg.p, distSquared);
@@ -293,51 +321,109 @@ void PhotonMapPreprocess(
 
 	std::stringstream ss;
 
-	// Dade - read the photon maps from file if required
-	bool mapsFileExist = false;
+	// Dade - try to read the photon maps from file
 	if (mapFileName) {
 		// Dade - check if the maps file exists
 		std::ifstream ifs(mapFileName->c_str(), std::ios_base::in | std::ios_base::binary);
 
         if(ifs.good()) {
-			mapsFileExist = true;
-
 			ss.str("");
-			ss << "Reading photon maps file: " << (*mapFileName);
+			ss << "Found photon maps file: " << (*mapFileName);
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-			// Dade - read the maps from the file
-			luxError(LUX_NOERROR, LUX_INFO, "Reading radiance photon map...");
-			RadiancePhotonMap::load(ifs, radianceMap);
-			ss.str("");
-			ss << "Read " << radianceMap->getPhotonCount() << " radiance photons";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			bool isLittleEndian = osIsLittleEndian();
 
-			luxError(LUX_NOERROR, LUX_INFO, "Reading indirect photon map...");
-			LightPhotonMap::load(ifs, indirectMap);
-			ss.str("");
-			ss << "Read " << indirectMap->getPhotonCount() << " light photons";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			bool ok = true; // flag indicating whether all is ok or not
 
-			luxError(LUX_NOERROR, LUX_INFO, "Reading caustic photon map...");
-			LightPhotonMap::load(ifs, causticMap);
-			ss.str("");
-			ss << "Read " << causticMap->getPhotonCount() << " light photons";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			// Dade - read the settings
+			int storedPhotonBxdfType;
+			int storedRadianceBxdfType;
+			int storedNDirectPhotons;
+			int storedNRadiancePhotons;
+			int storedNIndirectPhotons;
+			int storedNCausticPhotons;
+			osReadLittleEndianInt(isLittleEndian, ifs, &storedPhotonBxdfType);
+			osReadLittleEndianInt(isLittleEndian, ifs, &storedRadianceBxdfType);
+			osReadLittleEndianInt(isLittleEndian, ifs, &storedNDirectPhotons);
+			osReadLittleEndianInt(isLittleEndian, ifs, &storedNRadiancePhotons);
+			osReadLittleEndianInt(isLittleEndian, ifs, &storedNIndirectPhotons);
+			osReadLittleEndianInt(isLittleEndian, ifs, &storedNCausticPhotons);
+			if( storedPhotonBxdfType != (int)photonBxdfType ||
+				storedRadianceBxdfType != (int)radianceBxdfType ||
+				storedNDirectPhotons != (int)nDirectPhotons ||
+				storedNRadiancePhotons != (int)nRadiancePhotons ||
+				storedNIndirectPhotons != (int)nIndirectPhotons ||
+				storedNCausticPhotons != (int)nCausticPhotons)
+			{
+				luxError(LUX_NOERROR, LUX_INFO, "Some photon map settings changed, rebuilding photon maps...");
+				ok = false;
+			}
+			if( ok ) {
+				//TODO should compare a scene hash or something
+				int storedNLights;
+				osReadLittleEndianInt(isLittleEndian, ifs, &storedNLights);
+				if( storedNLights != (int)scene->lights.size() ) {
+					luxError(LUX_NOERROR, LUX_INFO, "Scene changed, rebuilding photon maps...");
+					ok = false;
+				}
+			}
 
+			// Dade - read the data
+			if( ok ) {
+				luxError(LUX_NOERROR, LUX_INFO, "Reading radiance photon map...");
+				RadiancePhotonMap::load(ifs, radianceMap);
+				ss.str("");
+				ss << "Read " << radianceMap->getPhotonCount() << " radiance photons";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				if( !ifs.good() ) {
+					luxError(LUX_NOERROR, LUX_INFO, "Failed to read all photon maps");
+					ok = false;
+				}
+			}
+			if( ok ) {
+				luxError(LUX_NOERROR, LUX_INFO, "Reading indirect photon map...");
+				LightPhotonMap::load(ifs, indirectMap);
+				ss.str("");
+				ss << "Read " << indirectMap->getPhotonCount() << " light photons";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				if( !ifs.good() ) {
+					luxError(LUX_NOERROR, LUX_INFO, "Failed to read all photon maps");
+					ok = false;
+				}
+			}
+			if( ok ) {
+				luxError(LUX_NOERROR, LUX_INFO, "Reading caustic photon map...");
+				LightPhotonMap::load(ifs, causticMap);
+				ss.str("");
+				ss << "Read " << causticMap->getPhotonCount() << " light photons";
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+				if( !ifs.good() ) {
+					luxError(LUX_NOERROR, LUX_INFO, "Failed to read all photon maps");
+					ok = false;
+				}
+			}
+			
+			// Close file
 			ifs.close();
 
-			return;
+			// Return if all is ok
+			if( ok ) {
+				return;
+			}
 		} else {
 			luxError(LUX_NOERROR, LUX_INFO, "Photon maps file doesn't exist yet");
 			ifs.close();
 		}
 	}
 
-	// Dade - check if have to build the radiancem map
-	bool finalGather = (nRadiancePhotons > 0);
+	// Dade - check if have to build the radiancemap
+	bool computeRadianceMap = (nRadiancePhotons > 0);
 
     // Dade - shoot photons
+	ss.str("");
 	ss << "Shooting photons (target: " << (nCausticPhotons + nIndirectPhotons) << ")...";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
@@ -473,6 +559,7 @@ void PhotonMapPreprocess(
 		int lightNum = Floor2Int(SampleStep1d(lightPower, lightCDF,
 				totalPower, nLights, uln, &lightPdf) * nLights);
 		lightNum = min(lightNum, nLights - 1);
+		lightPdf /= nLights;
 		const Light *light = scene->lights[lightNum];
 
         // Generate _photonRay_ from light source and initialize _alpha_
@@ -502,7 +589,7 @@ void PhotonMapPreprocess(
 					LightPhoton photon(photonIsect.dg.p, alpha.ToXYZ( tspack ).ToRGB(), wo);
 
                     if (nIntersections == 1) {
-						if (finalGather && (!directDone)) {
+						if (computeRadianceMap && (!directDone)) {
 							// Deposit direct photon
 							directPhotons.push_back(photon);
 
@@ -535,7 +622,7 @@ void PhotonMapPreprocess(
                         }
                     }
 
-					if (finalGather && 
+					if (computeRadianceMap && 
 						(!radianceDone) && 
 						(photonBSDF->NumComponents(radianceBxdfType) > 0) && 
 						(tspack->rng->floatValue() < 0.25f)) 
@@ -600,7 +687,7 @@ void PhotonMapPreprocess(
 	ss << "Photon shooting done (" << ( photonShootingEndTime.sec - photonShootingStartTime.sec ) << "s)";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-    if (finalGather) {
+    if (computeRadianceMap) {
 		luxError(LUX_NOERROR, LUX_INFO, "Computing radiance photon map...");
 
 		// Precompute radiance at a subset of the photons
@@ -657,19 +744,27 @@ void PhotonMapPreprocess(
     }
 
 	// Dade - check if we have to save maps to a file
-	if (mapFileName && !mapsFileExist) {
+	if (mapFileName) {
 		luxError(LUX_NOERROR, LUX_INFO, "Saving photon maps to file" );
 
 		std::ofstream ofs(mapFileName->c_str(), std::ios_base::out | std::ios_base::binary);
         if(ofs.good()) {
-            // Dade - read the data
-
 			ss.str("");
 			ss << "Writing photon maps to '" << (*mapFileName) << "'...";
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 			bool isLittleEndian = osIsLittleEndian();
 
+			// Write settings
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)photonBxdfType);
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)radianceBxdfType);
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)nDirectPhotons);
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)nRadiancePhotons);
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)nIndirectPhotons);
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)nCausticPhotons);
+			osWriteLittleEndianInt(isLittleEndian, ofs, (int)scene->lights.size());
+
+            // Dade - write the data
 			// Dade - save radiance photon map
 			if (radianceMap) {
 				radianceMap->save(ofs);
@@ -988,6 +1083,9 @@ SWCSpectrum PhotonMapFinalGather(
 }
 
 void LightPhotonMap::load(std::basic_istream<char> &stream, LightPhotonMap *map) {
+	if (!map)
+		return;
+
 	bool isLittleEndian = osIsLittleEndian();
 
 	// Dade - read the size of the map
@@ -997,28 +1095,12 @@ void LightPhotonMap::load(std::basic_istream<char> &stream, LightPhotonMap *map)
 	int npaths;
 	osReadLittleEndianInt(isLittleEndian, stream, &npaths);
 
-	vector<LightPhoton> photons;
+	vector<LightPhoton> photons(count);
 	for (int i = 0; i < count; i++) {
-		Point p;
-		for (int j = 0; j < 3; j++)
-			osReadLittleEndianFloat(isLittleEndian, stream, &p[j]);
-
-		XYZColor alpha;
-		for (int j = 0; j < WAVELENGTH_SAMPLES; j++)
-			osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[j]);
-
-		Vector wi;
-		for (int j = 0; j < 3; j++)
-			osReadLittleEndianFloat(isLittleEndian, stream, &wi[j]);
-
-		if (map) {
-			LightPhoton lp(p, alpha, wi);
-
-			photons.push_back(lp);
-		}
+		photons[i].load(isLittleEndian, stream);
 	}
 
-	if (map && (count > 0))
+	if (count > 0)
 		map->init(npaths, photons);
 }
 
@@ -1038,34 +1120,21 @@ void LightPhotonMap::save(
 }
 
 void RadiancePhotonMap::load(std::basic_istream<char> &stream, RadiancePhotonMap *map) {
+	if(!map)
+		return;
+
 	bool isLittleEndian = osIsLittleEndian();
 
 	// Dade - read the size of the map
 	int count;
 	osReadLittleEndianInt(isLittleEndian, stream, &count);
 
-	vector<RadiancePhoton> photons;
+	vector<RadiancePhoton> photons(count);
 	for (int i = 0; i < count; i++) {
-		Point p;
-		for (int j = 0; j < 3; j++)
-			osReadLittleEndianFloat(isLittleEndian, stream, &p[j]);
-
-		XYZColor alpha;
-		for (int j = 0; j < WAVELENGTH_SAMPLES; j++)
-			osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[j]);
-
-		Normal n;
-		for (int j = 0; j < 3; j++)
-			osReadLittleEndianFloat(isLittleEndian, stream, &n[j]);
-
-		if (map) {
-			RadiancePhoton lp(p, alpha, n);
-
-			photons.push_back(lp);
-		}
+		photons[i].load(isLittleEndian, stream);
 	}
 
-	if (map && (count > 0))
+	if (count > 0)
 		map->init(photons);
 }
 

@@ -28,6 +28,7 @@
 #include "spectrumwavelengths.h"
 #include "dynload.h"
 #include "camera.h"
+#include "mc.h"
 
 #include <boost/thread/xtime.hpp>
 
@@ -476,15 +477,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 
 		if (debugUseRadianceMap) {
 			// Dade - for debugging
-			Normal nGather = isect.dg.nn;
-			if (Dot(nGather, wo) < 0) nGather = -nGather;
-
-			NearPhotonProcess<RadiancePhoton> proc(p, nGather);
-			float md2 = radianceMap->maxDistSquared;
-
-			radianceMap->lookup(p, proc, md2);
-			if (proc.photon)
-				currL += proc.photon->GetSWCSpectrum( tspack );
+			currL += radianceMap->LPhoton( tspack, isect, wo, BSDF_ALL );
 		}
 
 		bool sampledDiffuse = true;
@@ -515,16 +508,10 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 
 							if (bounceRay.maxt > distanceThreshold) {
 								// Compute exitant radiance using precomputed irradiance
-								Normal nGather = gatherIsect.dg.nn;
-								if (Dot(nGather, bounceRay.d) > 0) nGather = -nGather;
-								NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
-								float md2 = radianceMap->maxDistSquared;
-
-								radianceMap->lookup(gatherIsect.dg.p, proc, md2);
-								if (proc.photon) {
-									SWCSpectrum Lindir = proc.photon->GetSWCSpectrum( tspack );
+								SWCSpectrum Lindir = radianceMap->LPhoton( tspack, gatherIsect, 
+									-bounceRay.d, BSDF_ALL );
+								if (!Lindir.Black()) {
 									scene->Transmittance(tspack, bounceRay, sample, &Lindir);
-
 									currL += fr * Lindir * (AbsDot(wi, n) / pdf);
 								}
 							} else {

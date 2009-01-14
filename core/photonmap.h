@@ -49,7 +49,8 @@ public:
 	BasicPhoton() {
 	}
 
-	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) = 0;
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const = 0;
+	virtual void load(bool isLittleEndian, std::basic_istream<char> &stream) = 0;
 
 	Point p;
 };
@@ -71,26 +72,28 @@ public:
 
 class LightPhoton : public BasicColorPhoton {
 public:
-	LightPhoton(const Point &pp, const RGBColor &wt, const Vector & w)
+	LightPhoton(const Point &pp, const RGBColor &wt, const Vector &w)
 		: BasicColorPhoton(pp, wt), wi(w) { }
 
 	LightPhoton() : BasicColorPhoton() { }
 
-	void save(bool isLittleEndian, std::basic_ostream<char> &stream);
+	void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
+	void load(bool isLittleEndian, std::basic_istream<char> &stream);
 
 	Vector wi;
 };
 
 class RadiancePhoton : public BasicColorPhoton {
 public:
-	RadiancePhoton(const Point &pp, const RGBColor &wt, const Normal & nn)
+	RadiancePhoton(const Point &pp, const RGBColor &wt, const Normal &nn)
 		: BasicColorPhoton(pp, wt), n(nn) { }
 	RadiancePhoton(const Point &pp, const Normal & nn)
 		: BasicColorPhoton(pp, 0.0f), n(nn) { }
 
 	RadiancePhoton() : BasicColorPhoton() { }
 
-	void save(bool isLittleEndian, std::basic_ostream<char> &stream);
+	void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
+	void load(bool isLittleEndian, std::basic_istream<char> &stream);
 
 	Normal n;
 };
