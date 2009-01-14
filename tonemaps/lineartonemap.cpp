@@ -32,7 +32,8 @@ ToneMap * LinearOp::CreateToneMap(const ParamSet &ps) {
 	float sensitivity = ps.FindOneFloat("sensitivity", 100.f);
 	float exposure = ps.FindOneFloat("exposure", 1.f / 1000.f);
 	float fstop = ps.FindOneFloat("fstop", 2.8f);
-	return new LinearOp(sensitivity, exposure, fstop);
+	float gamma = ps.FindOneFloat("gamma", 2.2f);
+	return new LinearOp(sensitivity, exposure, fstop, gamma);
 }
 
 static DynamicLoader::RegisterToneMap<LinearOp> r("linear");

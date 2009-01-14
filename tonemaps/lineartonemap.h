@@ -32,7 +32,8 @@ namespace lux
 class LinearOp : public ToneMap {
 public:
 	// LinearOp Public Methods
-	LinearOp(float sensitivity, float exposure, float fstop) : factor(exposure / (fstop * fstop) * sensitivity / 10.f * 118.f / 25.f) { }
+	LinearOp(float sensitivity, float exposure, float fstop, float gamma) :
+		factor(exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma)) { }
 	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
 		const int numPixels = xRes * yRes;
 		for (int i = 0; i < numPixels; ++i)
