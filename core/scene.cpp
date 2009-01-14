@@ -118,24 +118,26 @@ double Scene::Statistics(const string &statName) {
 			return 0.0;
 	} else if(statName=="samplesSec")
 		return Statistics_SamplesPSec();
-    else if(statName=="samplesTotSec")
+	else if(statName=="samplesTotSec")
 		return Statistics_SamplesPTotSec();
-    else if(statName=="samplesPx")
-        return Statistics_SamplesPPx();
-    else if(statName=="efficiency")
-        return Statistics_Efficiency();
-    else if(statName=="filmXres")
-        return FilmXres();
-    else if(statName=="filmYres")
-        return FilmYres();
-    else if(statName=="displayInterval")
-        return DisplayInterval();
-    else {
-        std::string eString("luxStatistics - requested an invalid data : ");
-        eString+=statName;
-        luxError(LUX_BADTOKEN, LUX_ERROR, eString.c_str());
-        return 0.;
-    }
+	else if(statName=="samplesPx")
+		return Statistics_SamplesPPx();
+	else if(statName=="efficiency")
+		return Statistics_Efficiency();
+	else if(statName=="filmXres")
+		return FilmXres();
+	else if(statName=="filmYres")
+		return FilmYres();
+	else if(statName=="displayInterval")
+		return DisplayInterval();
+	else if(statName == "filmEV")
+		return camera->film->EV;
+	else {
+		std::string eString("luxStatistics - requested an invalid data : ");
+		eString+=statName;
+		luxError(LUX_BADTOKEN, LUX_ERROR, eString.c_str());
+		return 0.;
+	}
 }
 
 // Control Implementations in Scene:

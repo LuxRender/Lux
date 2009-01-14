@@ -1001,14 +1001,15 @@ void LuxGui::UpdateStatistics() {
 	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
 	double samplesPx = luxStatistics("samplesPx");
 	int efficiency = Floor2Int(luxStatistics("efficiency"));
+	int EV = luxStatistics("filmEV");
 
 	int secs = (secElapsed) % 60;
 	int mins = (secElapsed / 60) % 60;
 	int hours = (secElapsed / 3600);
 
 	wxString stats;
-	stats.Printf(wxT("%02d:%02d:%02d - %d S/s - %d TotS/s - %.2f S/px - %i%% eff"),
-	             hours, mins, secs, samplesSec, samplesTotSec, samplesPx, efficiency);
+	stats.Printf(wxT("%02d:%02d:%02d - %d S/s - %d TotS/s - %.2f S/px - %i%% eff - EV = %d"),
+	             hours, mins, secs, samplesSec, samplesTotSec, samplesPx, efficiency, EV);
 	m_statusBar->SetStatusText(stats, 1);
 }
 

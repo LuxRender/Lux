@@ -311,6 +311,7 @@ public:
 
     // Film Public Data
     int xResolution, yResolution;
+    float EV;
 
 	// Dade - Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop

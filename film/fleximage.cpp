@@ -278,7 +278,8 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
 		// Apply the imaging/tonemapping pipeline
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-			0., 0., "reinhard", &toneParams, gamma, 0.);
+			0., 0., "linear", &toneParams, gamma, 0.);
+//			0., 0., "reinhard", &toneParams, gamma, 0.);
 
 		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 			// Copy to framebuffer pixels
@@ -339,12 +340,11 @@ void FlexImageFilm::WriteImage(ImageType type)
 	vector<Color> pixels(nPix), pixels0(nPix);
 	vector<float> alpha(nPix), alpha0(nPix);
 
-	// Dade - in order to fix bug #360
-	for(int i=0;i<nPix;i++)
-		pixels[i].c[0] = pixels[i].c[1] = pixels[i].c[2] =
-				pixels0[i].c[0] = pixels0[i].c[1] = pixels0[i].c[2] = 0.0f;
-
+	float Y = 0.f;
 	for(u_int j = 0; j < bufferGroups.size(); ++j) {
+		// Dade - in order to fix bug #360
+		fill(pixels0.begin(), pixels0.end(), XYZColor(0.f));
+
 		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
 			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
 			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
@@ -360,9 +360,13 @@ void FlexImageFilm::WriteImage(ImageType type)
 				WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 			}
 		}
-
+		float Ybuffer = 0.f;
+		for (int pix = 0; pix < nPix; ++pix)
+			Ybuffer += pixels0[pix].c[1];
+		Y += Ybuffer / nPix;
 		WriteImage2(type, pixels0, alpha0, "");
 	}
+	EV = logf(Y * 10.f) / logf(2.f);
 }
 
 // GUI display methods
