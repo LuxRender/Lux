@@ -87,14 +87,12 @@ void ApplyImagingPipeline(vector<Color> &pixels,
 			pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
 	}
 	// Apply tone reproduction to image
-	ToneMap *toneMap = NULL;
 	if (toneMapName) {
-		toneMap = MakeToneMap(toneMapName,
+		ToneMap *toneMap = MakeToneMap(toneMapName,
 			toneMapParams ? *toneMapParams : ParamSet());
-		if (toneMap) {
+		if (toneMap)
 			toneMap->Map(pixels, xResolution, yResolution, 100.f);
-			delete toneMap;
-		}
+		delete toneMap;
 	}
 	// Convert to RGB
 	const float invGamma = 1.f / gamma;
