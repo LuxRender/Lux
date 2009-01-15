@@ -278,8 +278,8 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
 		// Apply the imaging/tonemapping pipeline
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-			0., 0., "linear", &toneParams, gamma, 0.);
-//			0., 0., "reinhard", &toneParams, gamma, 0.);
+//			0., 0., "linear", &toneParams, gamma, 0.);
+			0., 0., "reinhard", &toneParams, gamma, 0.);
 
 		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 			// Copy to framebuffer pixels
