@@ -87,6 +87,7 @@ bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
 		}
 		return anyHit;
 	}
+	return false;
 }
 
 bool PrimitiveSet::IntersectP(const Ray &ray) const {
