@@ -61,7 +61,9 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
 	// NOTE - ratow - Use accelerator for complex lights.
 	if(primitives.size() <= 16) {
 		accelerator = boost::shared_ptr<Primitive>((Primitive*)NULL);
-		worldbound = WorldBound();
+		worldbound = BBox();
+		for(u_int i = 0; i < primitives.size(); i++)
+			worldbound = Union(worldbound, primitives[i]->WorldBound());
 		// NOTE - ratow - Correctly expands bounds when pMin is not negative or pMax is not positive.
 		worldbound.pMin -= (worldbound.pMax-worldbound.pMin)*0.01f;
 		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
@@ -77,14 +79,14 @@ bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
 		return accelerator->Intersect(ray, in);
 	} else if(worldbound.IntersectP(ray)) {
 		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
+		bool anyHit = false;
 		for (u_int i = 0; i < primitives.size(); ++i) {
 			if (primitives[i]->Intersect(ray, in)) {
-				return true;
-
+				anyHit = true;
 			}
 		}
+		return anyHit;
 	}
-	return false;
 }
 
 bool PrimitiveSet::IntersectP(const Ray &ray) const {
