@@ -36,7 +36,7 @@ public:
 	};
 //	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
-	BidirIntegrator(int ed, int ld, LightStrategy ls) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld) {
+	BidirIntegrator(int ed, int ld, LightStrategy ls, bool d) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld), debug(d) {
 		eyeBufferId = -1;
 		lightBufferId = -1;
 	}
@@ -52,6 +52,7 @@ private:
 	int lightNumOffset, lightComponentOffset, lightPosOffset, lightDirOffset;
 	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
 	int eyeBufferId, lightBufferId;
+	bool debug;
 };
 
 }//namespace lux

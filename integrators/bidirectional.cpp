@@ -85,10 +85,13 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 void BidirIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 {
 	// Prepare image buffers
+	BufferOutputConfig config = BUF_FRAMEBUFFER;
+	if (debug)
+		config = BufferOutputConfig(config | BUF_STANDALONE);
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene->sampler->GetBufferType(&type);
-	eyeBufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
-	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "light");
+	eyeBufferId = scene->camera->film->RequestBuffer(type, config, "eye");
+	lightBufferId = scene->camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN, config, "light");
 }
 
 static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
@@ -754,7 +757,8 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		estrategy = SAMPLE_AUTOMATIC;
 	}
-	return new BidirIntegrator(eyeDepth, lightDepth, estrategy);
+	bool debug = params.FindOneBool("debug", false);
+	return new BidirIntegrator(eyeDepth, lightDepth, estrategy, debug);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");
