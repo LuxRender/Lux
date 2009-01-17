@@ -131,9 +131,12 @@ FIND_PATH(OPENEXR_INCLUDE_DIRS
 	/opt/csw/include/OpenEXR
 	/opt/include/OpenEXR
 ) 
-SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
-#SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+IF(APPLE)
+   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
 
+ELSE(APPLE)
+   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
