@@ -84,6 +84,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 #else
 	SetCurrent(m_glContext);
 #endif
+	wxPaintDC(this);
 
 	if (!m_refreshMarchingAntsOnly) {
 		glClearColor(0.5, 0.5, 0.5, 1.0);
