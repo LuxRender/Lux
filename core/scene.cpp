@@ -319,11 +319,11 @@ void RenderThread::render(RenderThread *myThread) {
 
             // Evaluate radiance along camera ray
             float alpha;
-            SWCSpectrum Lo = myThread->surfaceIntegrator->Li(myThread->tspack,
-					myThread->scene, ray, myThread->sample, &alpha);
+            SWCSpectrum dummy;
+	// Jeanphi - Hijack statistics until volume integrator revamp
+	    myThread->stat_blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
+					myThread->scene, ray, myThread->sample, &dummy, &alpha);
 
-		    // Jeanphi - Hijack statistics until volume integrator revamp
-		    myThread->stat_blackSamples += Lo.filter(myThread->tspack);
 
             // TODO - radiance - Add rayWeight to sample and take into account.
             myThread->sampler->AddSample(*(myThread->sample));
@@ -459,8 +459,9 @@ Scene::~Scene() {
 Scene::Scene(Camera *cam, SurfaceIntegrator *si,
         VolumeIntegrator *vi, Sampler *s,
         boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
-        VolumeRegion *vr) {
+        const vector<string> &lg, VolumeRegion *vr) {
     lights = lts;
+    lightGroups = lg;
     aggregate = accel;
     camera = cam;
     sampler = s;

@@ -24,6 +24,7 @@
 #include "emission.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "context.h"
 
 using namespace lux;
 
@@ -45,14 +46,14 @@ void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
 		SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
 	*L *= Exp(-tau);
 }
-SWCSpectrum EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
+int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha) const {
+		SWCSpectrum *Lv, float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;
 	float t0, t1;
 	if (!vr || !vr->IntersectP(ray, &t0, &t1)) return 0.f;
 	// Do emission-only volume integration in _vr_
-	SWCSpectrum Lv(0.);
+	*Lv = 0.f;
 	// Prepare for volume integration stepping
 	int N = Ceil2Int((t1-t0) / stepSize);
 	float step = (t1 - t0) / N;
@@ -74,13 +75,14 @@ SWCSpectrum EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
+		*Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
 	}
-	return Lv * step;
+	*Lv *= step;
+	return group;
 }
 VolumeIntegrator* EmissionIntegrator::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
-	return new EmissionIntegrator(stepSize);
+	return new EmissionIntegrator(stepSize, Context::getActiveLightGroup());
 }
 
 static DynamicLoader::RegisterVolumeIntegrator<EmissionIntegrator> r("emission");

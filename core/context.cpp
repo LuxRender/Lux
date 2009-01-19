@@ -413,6 +413,22 @@ void Context::namedmaterial(const string &name, const ParamSet &params) {
 	}
 }
 
+void Context::lightGroup(const string &name, const ParamSet &params)
+{
+	VERIFY_WORLD("LightGroup");
+	renderFarm->send("luxLightGroup", name, params);
+
+	u_int i = 0;
+	for (;i < renderOptions->lightGroups.size(); ++i) {
+		if (name == renderOptions->lightGroups[i])
+			break;
+	}
+	if (i == renderOptions->lightGroups.size())
+		renderOptions->lightGroups.push_back(name);
+	graphicsState->currentLightGroup = name;
+}
+
+
 void Context::lightSource(const string &name, const ParamSet &params) {
 	VERIFY_WORLD("LightSource")
 	;
@@ -420,6 +436,13 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 
 	TextureParams tp(params, graphicsState->materialParams,
 			graphicsState->floatTextures, graphicsState->colorTextures);
+	u_int lightGroup = 0;
+	for (;lightGroup < renderOptions->lightGroups.size(); ++lightGroup) {
+		if (graphicsState->currentLightGroup == renderOptions->lightGroups[lightGroup])
+			break;
+	}
+	if (lightGroup == renderOptions->lightGroups.size())
+		lightGroup = 0;
 
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
@@ -431,6 +454,7 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 			renderOptions->lights.push_back(lt_sun);
 			graphicsState->currentLight = name;
 			graphicsState->currentLightPtr0 = lt_sun;
+			lt_sun->group = lightGroup;
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params, tp);
 		if (lt_sky == NULL) {
@@ -440,6 +464,7 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 			renderOptions->lights.push_back(lt_sky);
 			graphicsState->currentLight = name;
 			graphicsState->currentLightPtr1 = lt_sky;
+			lt_sky->group = lightGroup;
 		}
 	} else {
 		// other lightsource type
@@ -455,6 +480,7 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 			graphicsState->currentLight = name;
 			graphicsState->currentLightPtr0 = lt;
 			graphicsState->currentLightPtr1 = NULL;
+			lt->group = lightGroup;
 		}
 	}
 }
@@ -600,8 +626,17 @@ void Context::shape(const string &name, const ParamSet &params) {
 	if (graphicsState->areaLight != "") {
 		TextureParams amp(params, graphicsState->areaLightParams,
 			graphicsState->floatTextures, graphicsState->colorTextures);
+		u_int lightGroup = 0;
+		for (;lightGroup < renderOptions->lightGroups.size(); ++lightGroup) {
+			if (graphicsState->currentLightGroup == renderOptions->lightGroups[lightGroup])
+				break;
+		}
+		if (lightGroup == renderOptions->lightGroups.size())
+			lightGroup = 0;
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
 				graphicsState->areaLightParams, amp, shape);
+		if (area)
+			area->group = lightGroup;
 	}
 
 	// Initialize material for shape
@@ -844,7 +879,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 	}
 	Scene *ret = new Scene(camera,
 			surfaceIntegrator, volumeIntegrator,
-			sampler, accelerator, lights, volumeRegion);
+			sampler, accelerator, lights, lightGroups, volumeRegion);
 	// Erase primitives, lights, volume regions and instances from _RenderOptions_
 	primitives.erase(primitives.begin(), primitives.end());
 	lights.erase(lights.begin(), lights.end());

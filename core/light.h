@@ -81,6 +81,7 @@ public:
 	int nrPortalShapes;
 	vector<boost::shared_ptr<Primitive> > PortalShapes;
 	float PortalArea;
+	int group;
 protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;

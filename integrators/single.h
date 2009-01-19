@@ -37,7 +37,7 @@ public:
 	void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	SWCSpectrum Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
 
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 

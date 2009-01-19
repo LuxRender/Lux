@@ -43,8 +43,8 @@ public:
 	DirectLightingIntegrator(LightStrategy ls, int md);
 	~DirectLightingIntegrator() { }
 
-	SWCSpectrum Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	int Li(const TsPack *tspack, const Scene *scene,
+		const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);

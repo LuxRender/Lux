@@ -64,6 +64,16 @@ public:
 	static map<string, boost::shared_ptr<Texture<SWCSpectrum> > > *getActiveSWCSpectrumTextures() {
 		return &(activeContext->graphicsState->colorTextures);
 	}
+	static int getActiveLightGroup() {
+		u_int lightGroup = 0;
+		for (;lightGroup < activeContext->renderOptions->lightGroups.size(); ++lightGroup) {
+			if (activeContext->graphicsState->currentLightGroup == activeContext->renderOptions->lightGroups[lightGroup])
+				break;
+		}
+		if (lightGroup == activeContext->renderOptions->lightGroups.size())
+			lightGroup = 0;
+		return lightGroup;
+	}
 
 	//'static' API
 	//static void luxPixelFilter(const char *, const ParamSet &params) { activeContext->pixelFilter(std::string(name), params); }
@@ -92,6 +102,7 @@ public:
 	static void luxMaterial(const string &name, const ParamSet &params) { activeContext->material(name, params); }
 	static void luxMakeNamedMaterial(const string &name, const ParamSet &params) { activeContext->makenamedmaterial(name, params); }
 	static void luxNamedMaterial(const string &name, const ParamSet &params) { activeContext->namedmaterial(name, params); }
+	static void luxLightGroup(const string &name, const ParamSet &params) { activeContext->lightGroup(name, params); }
 	static void luxLightSource(const string &name, const ParamSet &params) { activeContext->lightSource(name, params); }
 	static void luxAreaLightSource(const string &name, const ParamSet &params) { activeContext->areaLightSource(name, params); }
 	static void luxPortalShape(const string &name, const ParamSet &params) { activeContext->portalShape(name, params); }
@@ -194,6 +205,7 @@ private:
 	void material(const string &name, const ParamSet &params);
 	void makenamedmaterial(const string &name, const ParamSet &params);
 	void namedmaterial(const string &name, const ParamSet &params);
+	void lightGroup(const string &name, const ParamSet &params);
 	void lightSource(const string &name, const ParamSet &params);
 	void areaLightSource(const string &name, const ParamSet &params);
 	void portalShape(const string &name, const ParamSet &params);
@@ -258,7 +270,8 @@ private:
 			VolIntegratorName = "emission";
 			CameraName = "perspective";
 			currentInstance = NULL;
-            debugMode = false;
+			debugMode = false;
+			lightGroups = vector<string>(1, "default");
 		}
 
 		Scene *MakeScene() const;
@@ -283,7 +296,8 @@ private:
 		mutable vector<VolumeRegion *> volumeRegions;
 		mutable map<string, vector<boost::shared_ptr<Primitive> > > instances;
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstance;
-        bool debugMode;
+		bool debugMode;
+		mutable vector<string> lightGroups;
 	};
 
 	struct NamedMaterial {
@@ -308,6 +322,7 @@ private:
 		ParamSet areaLightParams;
 		string areaLight;
 		string currentLight;
+		string currentLightGroup;
 		// Dade - some light source like skysun is composed by 2 lights. So
 		// we can have 2 current light sources (i.e. Portal have to be applied
 		// to both sources, see bug #297)

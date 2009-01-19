@@ -87,10 +87,14 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 						lightSample, lightNum, bsdfSample, bsdfComponent);
 					break;
 				case SAMPLE_ONE_UNIFORM:
-					L += UniformSampleOneLight(tspack, scene, p, n,
+				{
+					SWCSpectrum Ld;
+					UniformSampleOneLight(tspack, scene, p, n,
 						wo, bsdf, sample,
-						lightSample, lightNum, bsdfSample, bsdfComponent);
+						lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
+					L += Ld;
 					break;
+				}
 				default:
 					break;
 			}
@@ -162,23 +166,23 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 		if (alpha && L.Black()) *alpha = 0.;
 	}
 
-	SWCSpectrum Tr(1.f);
-	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Tr);
-	SWCSpectrum VLi = scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
+	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
+	SWCSpectrum VLi;
+	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &VLi, alpha);
 
-	return L * Tr + VLi;
+	return L + VLi;
 }
 
-SWCSpectrum DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
+int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha) const {
+		SWCSpectrum *Li, float *alpha) const {
 	SampleGuard guard(sample->sampler, sample);
 
 	sample->AddContribution(sample->imageX, sample->imageY,
 		LiInternal(tspack, scene, ray, sample, alpha, 0).ToXYZ(tspack),
 		alpha ? *alpha : 1.f);
 
-	return SWCSpectrum(1.f);
+	return 1;
 }
 
 SurfaceIntegrator* DirectLightingIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {

@@ -129,6 +129,7 @@ CoordinateSystem	{ return COORDINATESYSTEM;	}
 CoordSysTransform	{ return COORDSYSTRANSFORM;	}
 Film	 		{ return FILM;	 		}
 Identity		{ return IDENTITY;		}
+LightGroup		{ return LIGHTGROUP;		}
 LightSource 		{ return LIGHTSOURCE;		}
 LookAt			{ return LOOKAT;		}
 Material		{ return MATERIAL;		}

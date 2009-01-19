@@ -46,14 +46,14 @@ void SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
 	*L *= Exp(-tau);
 }
 
-SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
+int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha) const {
+		SWCSpectrum *Lv, float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;
 	float t0, t1;
 	if (!vr || !vr->IntersectP(ray, &t0, &t1)) return 0.f;
 	// Do single scattering volume integration in _vr_
-	SWCSpectrum Lv(0.);
+	*Lv = 0.f;
 	// Prepare for volume integration stepping
 	int N = Ceil2Int((t1-t0) / stepSize);
 	float step = (t1 - t0) / N;
@@ -61,9 +61,13 @@ SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 	Point p = ray(t0), pPrev;
 	Vector w = -ray.d;
 	t0 += sample->oneD[scatterSampleOffset][0] * step;
+	int nLights = scene->lights.size();
+	int lightNum = min(Floor2Int(tspack->rng->floatValue() * nLights), nLights-1); //TODO - REFACT - remove and add random value from sample
+	Light *light = scene->lights[lightNum];
+
 	// Compute sample patterns for single scattering samples
-	float *samp = (float *)alloca(4 * N * sizeof(float));
-	LatinHypercube(tspack, samp, N, 4);
+	float *samp = (float *)alloca(3 * N * sizeof(float));
+	LatinHypercube(tspack, samp, N, 3);
 	int sampOffset = 0;
 	for (int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
@@ -81,21 +85,15 @@ SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 		}
 
 		// Compute single-scattering source term at _p_
-		Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
+		*Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
 
 		SWCSpectrum ss = SWCSpectrum(tspack, vr->sigma_s(p, w));
 		if (!ss.Black() && scene->lights.size() > 0) {
-			int nLights = scene->lights.size();
-			int lightNum =
-				min(Floor2Int(samp[sampOffset] * nLights),
-					nLights-1);
-			Light *light = scene->lights[lightNum];
-
 			// Add contribution of _light_ due to scattering at _p_
 			float pdf;
 			VisibilityTester vis;
 			Vector wo;
-			float u1 = samp[sampOffset+1], u2 = samp[sampOffset+2], u3 = samp[sampOffset+3];
+			float u1 = samp[sampOffset], u2 = samp[sampOffset+1], u3 = samp[sampOffset+2];
 			SWCSpectrum L = light->Sample_L(tspack, p, u1, u2, u3, &wo, &pdf, &vis);
 
 			// Dade - use the new TestOcclusion() method
@@ -103,13 +101,14 @@ SWCSpectrum SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(tspack, scene, &occlusion)) {	
 				SWCSpectrum Ld = L * occlusion;
 				vis.Transmittance(tspack, scene, sample, &Ld);
-				Lv += Tr * ss * vr->p(p, w, -wo) *
+				*Lv += Tr * ss * vr->p(p, w, -wo) *
 					  Ld * float(nLights) / pdf;
 			}
 		}
-		sampOffset += 4;
+		sampOffset += 3;
 	}
-	return Lv * step;
+	*Lv *= step;
+	return light->group;
 }
 
 VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &params) {

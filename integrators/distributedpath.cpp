@@ -188,9 +188,10 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 						break;
 					case SAMPLE_ONE_UNIFORM:
 					{
-						const SWCSpectrum Ld(UniformSampleOneLight(tspack, scene, p, n,
+						SWCSpectrum Ld;
+						UniformSampleOneLight(tspack, scene, p, n,
 							wo, bsdf, sample,
-							lightSample, lightNum, bsdfSample, bsdfComponent));
+							lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
 						if (Ld.filter(tspack) > 0.f) {
 							L += invsamples * Ld;
 							++nrContribs;
@@ -350,12 +351,14 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 
 	//return L * scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha) + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
 	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
-	return L + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
+	SWCSpectrum Lv;
+	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+	return L + Lv;
 }
 
-SWCSpectrum DistributedPath::Li(const TsPack *tspack, const Scene *scene,
+int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha) const {
+		SWCSpectrum *Li, float *alpha) const {
 	SampleGuard guard(sample->sampler, sample);
 	float nrContribs = 0.f;
 

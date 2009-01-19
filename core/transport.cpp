@@ -49,25 +49,28 @@ SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 	return L;
 }
 
-SWCSpectrum UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
+int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample,
 	float *lightSample, float *lightNum,
-	float *bsdfSample, float *bsdfComponent)
+	float *bsdfSample, float *bsdfComponent, SWCSpectrum *L)
 {
 	// Randomly choose a single light to sample, _light_
 	int nLights = scene->lights.size();
-	if (nLights == 0)
-		return SWCSpectrum(0.f);
+	if (nLights == 0) {
+		*L = 0.f;
+		return 0;
+	}
 	int lightNumber;
 	float ls3 = *lightNum * nLights;
 	lightNumber = min(Floor2Int(ls3), nLights - 1);
 	ls3 -= lightNumber;
 	Light *light = scene->lights[lightNumber];
-	return (float)nLights *
+	*L = (float)nLights *
 		EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
 			sample, lightSample[0], lightSample[1], ls3,
 			bsdfSample[0], bsdfSample[1], *bsdfComponent);
+	return scene->lights[lightNumber]->group;
 }
 
 // Note - Radiance - disabled as this code is broken. (not threadsafe)

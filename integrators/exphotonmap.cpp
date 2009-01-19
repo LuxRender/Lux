@@ -176,27 +176,27 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 		nCausticPhotons, causticMap);
 }
 
-SWCSpectrum ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
-								   const RayDifferential &ray, const Sample *sample, float *alpha) const 
+int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
+								   const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const 
 {
     SampleGuard guard(sample->sampler, sample);
 
-	SWCSpectrum L = 0.0f;
+	*L = 0.0f;
 	switch(renderingMode) {
 		case RM_DIRECTLIGHTING:
-			L = LiDirectLightingMode(tspack, scene, ray, sample, alpha, 0, true);
+			*L = LiDirectLightingMode(tspack, scene, ray, sample, alpha, 0, true);
 			break;
 		case RM_PATH:
-			L = LiPathMode(tspack, scene, ray, sample, alpha);
+			*L = LiPathMode(tspack, scene, ray, sample, alpha);
 			break;
 		default:
 			BOOST_ASSERT(false);
 	}
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		L.ToXYZ(tspack), alpha ? (*alpha) : 1.0f, bufferId);
+		L->ToXYZ(tspack), alpha ? (*alpha) : 1.0f, bufferId);
 
-    return 1.f;
+    return 1;
 }
 
 SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(
@@ -246,9 +246,13 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(
 						wo, bsdf, sample, lightSample, lightNum, bsdfSample, bsdfComponent);
 					break;
 				case SAMPLE_ONE_UNIFORM:
-					L += UniformSampleOneLight(tspack, scene, p, ns,
-						wo, bsdf, sample, lightSample, lightNum, bsdfSample, bsdfComponent);
+				{
+					SWCSpectrum Ld;
+					UniformSampleOneLight(tspack, scene, p, ns,
+						wo, bsdf, sample, lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
+					L += Ld;
 					break;
+				}
 				default:
 					break;
 			}
@@ -373,8 +377,9 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(
     }
 
 	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
-	L += scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
-    return L;
+	SWCSpectrum Lv;
+	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+	return L + Lv;
 }
 
 SWCSpectrum ExPhotonIntegrator::LiPathMode(
@@ -398,7 +403,10 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
 			// Stop path sampling since no intersection was found
-			L += scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha) * pathThroughput;
+			SWCSpectrum Lv;
+			scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+			Lv *= pathThroughput;
+			L += Lv;
 
 			// Possibly add emitted light if this was a specular reflection
 			if (specularBounce) {
@@ -418,7 +426,10 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 		if (pathLength == 0)
 			r.maxt = ray.maxt;
 
-		L += scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha) * pathThroughput;
+		SWCSpectrum Lv;
+		scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+		Lv *= pathThroughput;
+		L += Lv;
 
 		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 
@@ -467,9 +478,13 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 						wo, bsdf, sample, lightSample, lightNum, bsdfSample, bsdfComponent);
 					break;
 				case SAMPLE_ONE_UNIFORM:
-					currL += UniformSampleOneLight(tspack, scene, p, n,
-						wo, bsdf, sample, lightSample, lightNum, bsdfSample, bsdfComponent);
+				{
+					SWCSpectrum Ld;
+					UniformSampleOneLight(tspack, scene, p, n,
+						wo, bsdf, sample, lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
+					currL += Ld;
 					break;
+				}
 				default:
 					BOOST_ASSERT(false);
 			}

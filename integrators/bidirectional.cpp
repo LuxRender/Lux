@@ -562,8 +562,8 @@ static bool getLight(const TsPack *tspack, const Scene *scene,
 	return !Ll->Black();
 }
 
-SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
-	const Sample *sample, float *alpha) const
+int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
+	const Sample *sample, SWCSpectrum *Li, float *alpha) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	float nrContribs = 0.f;

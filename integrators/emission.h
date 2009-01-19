@@ -32,15 +32,16 @@ namespace lux
 class EmissionIntegrator : public VolumeIntegrator {
 public:
 	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss) { stepSize = ss; }
+	EmissionIntegrator(float ss, int g) : group(g) { stepSize = ss; }
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
-	SWCSpectrum Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// EmissionIntegrator Private Data
 	float stepSize;
+	const int group;
 	int tauSampleOffset, scatterSampleOffset;
 };
 

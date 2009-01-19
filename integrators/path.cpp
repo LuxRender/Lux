@@ -59,17 +59,18 @@ void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
-SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
+int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &r, const Sample *sample,
-		float *alpha) const
+		SWCSpectrum *Li, float *alpha) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	float nrContribs = 0.f;
 	// Declare common path integration variables
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
-	SWCSpectrum L(0.0f);
-	float V = 0.f, VContrib = .1f;
+	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
+	vector<float> V(scene->lightGroups.size(), 0.f);
+	float VContrib = .1f;
 	bool specularBounce = true, specular = true;
 	if (alpha) *alpha = 1.;
 	for (int pathLength = 0; ; ++pathLength) {
@@ -78,9 +79,13 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!scene->Intersect(ray, &isect)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
-				L = scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
-				if (!L.Black())
-					V += L.filter(tspack) * VContrib;
+				SWCSpectrum Lv;
+				int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+				if (!Lv.Black()) {
+					L[g] = Lv;
+					V[g] += Lv.filter(tspack) * VContrib;
+					++nrContribs;
+				}
 				pathThroughput = 1.f;
 				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 			}
@@ -89,29 +94,30 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Possibly add emitted light
 			// NOTE - Added by radiance - adds horizon in render & reflections
 			if (specularBounce) {
-				SWCSpectrum Le(0.f);
-				for (u_int i = 0; i < scene->lights.size(); ++i)
-					Le += scene->lights[i]->Le(tspack, ray);
-				Le *= pathThroughput;
-				if (!Le.Black()) {
-					L += Le;
-					V += Le.filter(tspack) * VContrib;
-					++nrContribs;
+				for (u_int i = 0; i < scene->lights.size(); ++i) {
+					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
+					Le *= pathThroughput;
+					if (!Le.Black()) {
+						L[scene->lights[i]->group] += Le;
+						V[scene->lights[i]->group] += Le.filter(tspack) * VContrib;
+						++nrContribs;
+					}
 				}
 			}
 			// Set alpha channel
-			if (pathLength == 0 && alpha && L.Black())
+			if (pathLength == 0 && alpha && nrContribs)
 				*alpha = 0.;
 			break;
 		}
 		if (pathLength == 0)
 			r.maxt = ray.maxt;
 
-		SWCSpectrum Lv(scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha));
+		SWCSpectrum Lv;
+		int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
 		if (!Lv.Black()) {
 			Lv *= pathThroughput;
-			L += Lv;
-			V += Lv.filter(tspack) * VContrib;
+			L[g] += Lv;
+			V[g] += Lv.filter(tspack) * VContrib;
 			++nrContribs;
 		}
 		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
@@ -122,8 +128,8 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			SWCSpectrum Le(isect.Le(tspack, wo));
 			if (!Le.Black()) {
 				Le *= pathThroughput;
-				L += Le;
-				V += Le.filter(tspack) * VContrib;
+				L[isect.arealight->group] += Le;
+				V[isect.arealight->group] += Le.filter(tspack) * VContrib;
 				++nrContribs;
 			}
 		}
@@ -138,23 +144,25 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		SWCSpectrum Ll;
 		switch (lightStrategy) {
-			case SAMPLE_ALL_UNIFORM:
+			case SAMPLE_ALL_UNIFORM://FIXME
 				Ll = UniformSampleAllLights(tspack, scene, p, n,
 					wo, bsdf, sample,
 					data, data + 2, data + 3, data + 5);
+				g = 0;
 				break;
 			case SAMPLE_ONE_UNIFORM:
-				Ll = UniformSampleOneLight(tspack, scene, p, n,
+				g = UniformSampleOneLight(tspack, scene, p, n,
 					wo, bsdf, sample,
-					data, data + 2, data + 3, data + 5);
+					data, data + 2, data + 3, data + 5, &Ll);
 				break;
 			default:
 				Ll = 0.f;
+				g = 0;
 		}
 		if (!Ll.Black()) {
 			Ll *= pathThroughput;
-			L += Ll;
-			V += Ll.filter(tspack) * VContrib;
+			L[g] += Ll;
+			V[g] += Ll.filter(tspack) * VContrib;
 			++nrContribs;
 		}
 
@@ -194,10 +202,12 @@ SWCSpectrum PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		ray = RayDifferential(p, wi);
 		ray.time = r.time;
 	}
-	if (!L.Black())
-		V /= L.filter(tspack);
-	sample->AddContribution(sample->imageX, sample->imageY,
-		L.ToXYZ(tspack), alpha ? *alpha : 1.f, V, bufferId);
+	for (u_int i = 0; i < scene->lightGroups.size(); ++i) {
+		if (!L[i].Black())
+			V[i] /= L[i].filter(tspack);
+		sample->AddContribution(sample->imageX, sample->imageY,
+			L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, V[i], bufferId, i);
+	}
 
 	return nrContribs;
 }

@@ -74,7 +74,7 @@ public:
     Scene(Camera *c, SurfaceIntegrator *in,
             VolumeIntegrator *vi, Sampler *s,
             boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
-            VolumeRegion *vr);
+            const vector<string> &lg, VolumeRegion *vr);
     ~Scene();
     bool Intersect(const Ray &ray, Intersection *isect) const {
         return aggregate->Intersect(ray, isect);
@@ -121,6 +121,7 @@ public:
     // Scene Data
     boost::shared_ptr<Primitive> aggregate;
     vector<Light *> lights;
+    vector<string> lightGroups;
     Camera *camera;
     VolumeRegion *volumeRegion;
     SurfaceIntegrator *surfaceIntegrator;

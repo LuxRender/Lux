@@ -34,9 +34,10 @@ class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
-	virtual SWCSpectrum Li(const TsPack *tspack, const Scene *scene,
+	virtual int Li(const TsPack *tspack, const Scene *scene,
 					    const RayDifferential &ray,
 					    const Sample *sample,
+					    SWCSpectrum *L,
 					    float *alpha) const = 0;
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene) {
 	}
@@ -69,11 +70,11 @@ public:
 	const Sample *sample, float *lightSample = NULL,
 	float *lightNum = NULL, float *bsdfSample = NULL,
 	float *bsdfComponent = NULL);
- SWCSpectrum UniformSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
+ int UniformSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, float *lightSample = NULL,
-	float *lightNum = NULL, float *bsdfSample = NULL,
-	float *bsdfComponent = NULL);
+	const Sample *sample, float *lightSample,
+	float *lightNum, float *bsdfSample,
+	float *bsdfComponent, SWCSpectrum *L);
 
 // Note - Radiance - disabled as this code is broken. (not threadsafe)
 /*
