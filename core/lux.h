@@ -264,6 +264,7 @@ namespace lux {
 		SpectrumWavelengths *swl;
 		RandomGenerator *rng;
 		MemoryArena *arena;
+		Camera *camera;
 		float time;
 	};
 

@@ -72,14 +72,71 @@ Quaternion::Quaternion(const boost::shared_ptr<Matrix4x4> m) {
 	memcpy(ortho, m->m, sizeof(float) * 16);
 	orthoNormalize(ortho);
 
-	float s = 2*sqrt(ortho[0][0] + ortho[1][1] + ortho[2][2] + 1.0);
-	
-	w = 0.25 * s;
+	float trace = ortho[0][0] + ortho[1][1] + ortho[2][2] + 1.0;
 
-	v.x = ( ortho[2][1] - ortho[1][2] ) / s;
-	v.y = ( ortho[0][2] - ortho[2][0] ) / s;
-	v.z = ( ortho[1][0] - ortho[0][1] ) / s;
+	if (trace > 1e-6) {
+		float s = sqrtf(trace) * 2;
+		v.x = ( ortho[1][2] - ortho[2][1] ) / s;
+		v.y = ( ortho[2][0] - ortho[0][2] ) / s;
+		v.z = ( ortho[0][1] - ortho[1][0] ) / s;
+		w = 0.25 * s;
+	} else {
+		if ( ortho[0][0] > ortho[1][1] && ortho[0][0] > ortho[2][2] )  {	// Column 0: 
+			float s  = sqrtf( 1.0 + ortho[0][0] - ortho[1][1] - ortho[2][2] ) * 2;
+			v.x = 0.25 * s;
+			v.y = (ortho[0][1] + ortho[1][0] ) / s;
+			v.z = (ortho[2][0] + ortho[0][2] ) / s;
+			w = (ortho[1][2] - ortho[2][1] ) / s;
+		} else if ( ortho[1][1] > ortho[2][2] ) {			// Column 1: 
+			float s  = sqrtf( 1.0 + ortho[1][1] - ortho[0][0] - ortho[2][2] ) * 2;
+			v.x = (ortho[0][1] + ortho[1][0] ) / s;
+			v.y = 0.25 * s;
+			v.z = (ortho[1][2] + ortho[2][1] ) / s;
+			w = (ortho[2][0] - ortho[0][2] ) / s;
+		} else {						// Column 2:
+			float s  = sqrtf( 1.0 + ortho[2][2] - ortho[0][0] - ortho[1][1] ) * 2;
+			v.x = (ortho[2][0] + ortho[0][2] ) / s;
+			v.y = (ortho[1][2] + ortho[2][1] ) / s;
+			v.z = 0.25 * s;
+			w = (ortho[0][1] - ortho[1][0] ) / s;
+		}
+	}
 
+/*
+	if (trace > 1e-6) {
+		float s = 2*sqrt(trace);
+		
+		w = 0.25 * s;
+
+		v.x = ( ortho[2][1] - ortho[1][2] ) / s;
+		v.y = ( ortho[0][2] - ortho[2][0] ) / s;
+		v.z = ( ortho[1][0] - ortho[0][1] ) / s;
+	} else {
+		// determine largest diagonal element
+		if ( ortho[0][0] > ortho[1][1] && ortho[0][0] > ortho[2][2] )  {	
+			// Column 0: 
+			float s = sqrt( 1.0 + ortho[0][0] - ortho[1][1] - ortho[2][2] ) * 2;
+			v.x = 0.25 * s;
+			v.y = (ortho[2][0] + ortho[0][1] ) / s;
+			v.z = (ortho[1][2] + ortho[2][0] ) / s;
+			w = (ortho[2][1] - ortho[1][2] ) / s;
+		} else if ( ortho[1][1] > ortho[1][1] ) {			
+			// Column 1: 
+			float s = sqrt( 1.0 + ortho[1][1] - ortho[0][0] - ortho[2][2] ) * 2;
+			v.x = (ortho[2][0] + ortho[0][1] ) / s;
+			v.y = 0.25 * s;
+			v.z = (ortho[2][1] + ortho[1][2] ) / s;
+			w = (ortho[1][2] - ortho[2][0] ) / s;
+		} else {						
+			// Column 2:
+			float s = sqrt( 1.0 + ortho[2][2] - ortho[0][0] - ortho[1][1] ) * 2;
+			v.x = (ortho[1][2] + ortho[2][0] ) / s;
+			v.y = (ortho[2][1] + ortho[1][2] ) / s;
+			v.z = 0.25 * s;
+			w = (ortho[2][0] - ortho[0][1] ) / s;
+		}
+	}
+*/
 }
 
 Quaternion::Quaternion(const Quaternion &q) {
@@ -91,44 +148,61 @@ Quaternion::Quaternion() {
 	w = 1.0;
 }
 
-float dot(const Quaternion &q1, const Quaternion &q2) {
-        return q1.w *q2.w + Dot(q1.v, q2.v);
-}
+Quaternion Quaternion::Slerp(float t, const Quaternion &q1, const Quaternion &q2) {
 
-Quaternion slerp(float t, const Quaternion &q1, const Quaternion &q2) {
+	float cos_phi = Dot(q1, q2);
+	float sign = (cos_phi > 0) ? 1 : -1;
+	
+	cos_phi *= sign;
 
-        float cos_o = dot(q1, q2);
-        float o = acos(cos_o);
+	float f1, f2;
+	if (1 - cos_phi > 1e-6) {
+	
+		float phi = acosf(cos_phi);
+		float sin_phi = sinf(phi);	
+		f1 = sin((1-t)*phi) / sin_phi;
+		f2 = sin(t*phi) / sin_phi;
+	} else {
+		// start and end are very close
+		// perform linear interpolation
+		f1 = 1-t;
+		f2 = t;
+	}
 
-        return (sin( (1-t)*o )/sin(o))*q1 + (sin( t*o )/sin(o))*q2;
+	return f1 * q1 + (sign*f2) * q2;
 }
 
 // get the rotation matrix from quaternion
-void toMatrix(const Quaternion &q, float m[4][4]) {
-  float xx = q.v.x * q.v.x;
-  float yy = q.v.y * q.v.y;
-  float zz = q.v.z * q.v.z;
-  float xy = q.v.x * q.v.y;
-  float xz = q.v.x * q.v.z;
-  float yz = q.v.y * q.v.z;
-  float wx = q.w * q.v.x;
-  float wy = q.w * q.v.y;
-  float wz = q.w * q.v.z;
-  m[0][0] = 1 - 2*(yy + zz); m[0][1] =  2.0 * (xy - wz); m[0][2] = 2.0 * (xz + wy);
-  m[1][0] = 2.0 * (xy + wz); m[1][1] =  1 - 2*(xx + zz); m[1][2] = 2.0 * (yz - wx);
-  m[2][0] = 2.0 * (wy - xz); m[2][1] = -2.0 * (yz + wx); m[2][2] = 2.0*(xx + yy)-1;
+void Quaternion::ToMatrix(float m[4][4]) const {
+	const float xx = v.x * v.x;
+	const float yy = v.y * v.y;
+	const float zz = v.z * v.z;
+	const float xy = v.x * v.y;
+	const float xz = v.x * v.z;
+	const float yz = v.y * v.z;
+	const float xw = v.x * w;
+	const float yw = v.y * w;
+	const float zw = v.z * w;
 
-  // flip signs on third row 
-  m[2][0] = -m[2][0];
-  m[2][1] = -m[2][1];
-  m[2][2] = -m[2][2];
+	m[0][0] = 1 - 2 * ( yy + zz );
+	m[1][0] =     2 * ( xy - zw );
+	m[2][0] =     2 * ( xz + yw );
+	m[0][1] =     2 * ( xy + zw );
+	m[1][1] = 1 - 2 * ( xx + zz );
+	m[2][1] =     2 * ( yz - xw );
+	m[0][2] =     2 * ( xz - yw );
+	m[1][2] =     2 * ( yz + xw );
+	m[2][2] = 1 - 2 * ( xx + yy );
 
-  // complete matrix
-  m[0][3] = m[1][3] = m[2][3] = 0;
-  m[3][0] =  m[3][1] = m[3][2] = 0;
-  m[3][3] = 1;
+	// complete matrix
+	m[0][3] = m[1][3] = m[2][3] = 0;
+	m[3][0] = m[3][1] = m[3][2] = 0;
+	m[3][3] = 1;
 }
 
+float Dot(const Quaternion &q1, const Quaternion &q2) {
+	return q1.w * q2.w + Dot(q1.v, q2.v);
+}
 
 }//namespace lux
 

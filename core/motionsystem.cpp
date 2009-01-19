@@ -49,22 +49,11 @@ MotionSystem::MotionSystem(float st, float et,
 		return;
 	}
 
-	Transform rot;
-	
-	rot = RotateX(Degrees(startT.Rx)) * 
-		RotateY(Degrees(startT.Ry)) * 
-		RotateZ(Degrees(startT.Rz));
-
-	startRot = rot.GetMatrix();
-	startQ = Quaternion(startRot);
+	startQ = Quaternion(startT.R);
 	startQ.Normalize();
 
-	rot = RotateX(Degrees(endT.Rx)) * 
-		RotateY(Degrees(endT.Ry)) * 
-		RotateZ(Degrees(endT.Rz));
-
-	endQ = Quaternion(rot.GetMatrix());
-	endQ.Normalize();	
+	endQ = Quaternion(endT.R);
+	endQ.Normalize();
 
 	hasTranslationX = startT.Tx != endT.Tx;
 	hasTranslationY = startT.Ty != endT.Ty;
@@ -77,9 +66,7 @@ MotionSystem::MotionSystem(float st, float et,
 	hasScaleZ = startT.Sz != endT.Sz;
 	hasScale = hasScaleX || hasScaleY || hasScaleZ;
 
-	hasRotation = (startT.Rx != endT.Rx) ||
-		(startT.Ry != endT.Ry) ||
-		(startT.Rz != endT.Rz);
+	hasRotation = fabsf(Dot(startQ, endQ) - 1) >= 1e-6;
 
 	isActive = hasTranslation ||
 		hasScale || hasRotation;
@@ -92,6 +79,7 @@ Transform MotionSystem::Sample(float time) const {
 	// Determine interpolation value
 	if(time <= startTime)
 		return start;
+//		time = startTime;
 	if(time >= endTime)
 		return end;
 
@@ -115,11 +103,10 @@ Transform MotionSystem::Sample(float time) const {
 
 	if (hasRotation) {
 		// Quaternion interpolation of rotation
-		Quaternion between_quat = slerp(le, startQ, endQ);
-		toMatrix(between_quat, interMatrix);
+		Quaternion interQ = Quaternion::Slerp(le, startQ, endQ);
+		interQ.ToMatrix(interMatrix);
 	} else
-		//toMatrix(startQ, interMatrix);
-		memcpy(interMatrix, startRot->m, sizeof(float) * 16);
+		memcpy(interMatrix, startT.R->m, sizeof(float) * 16);
 
 /*
 	Transform R(interMatrix);
@@ -175,6 +162,13 @@ Transform MotionSystem::Sample(float time) const {
 	return Transform(interMatrix);
 }
 
+void V4MulByMatrix(const boost::shared_ptr<Matrix4x4> &A, const float x[4], float b[4]) {
+	b[0] = A->m[0][0]*x[0] + A->m[0][1]*x[1] + A->m[0][2]*x[2] + A->m[0][3]*x[3];
+	b[1] = A->m[1][0]*x[0] + A->m[1][1]*x[1] + A->m[1][2]*x[2] + A->m[1][3]*x[3];
+	b[2] = A->m[2][0]*x[0] + A->m[2][1]*x[1] + A->m[2][2]*x[2] + A->m[2][3]*x[3];
+	b[3] = A->m[3][0]*x[0] + A->m[3][1]*x[1] + A->m[3][2]*x[2] + A->m[3][3]*x[3];
+}
+
 bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transforms &trans) const {
 
 	boost::shared_ptr<Matrix4x4> locmat(new Matrix4x4(m->m));
@@ -194,18 +188,18 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 	pmat->m[3][3] = 1;
 
 	// Note - radiance - disables as memory bug on win32
-//	if ( pmat->Determinant() == 0.0 )
-//		return false;
+	if ( pmat->Determinant() == 0.0 )
+		return false;
 
 	/* First, isolate perspective.  This is the messiest. */
 	if ( locmat->m[3][0] != 0 || locmat->m[3][1] != 0 ||
 		locmat->m[3][2] != 0 ) {
 		/* prhs is the right hand side of the equation. */
-		//float prhs[4];
-		//prhs[0] = locmat->m[3][0];
-		//prhs[1] = locmat->m[3][1];
-		//prhs[2] = locmat->m[3][2];
-		//prhs[3] = locmat->m[3][3];
+		float prhs[4];
+		prhs[0] = locmat->m[3][0];
+		prhs[1] = locmat->m[3][1];
+		prhs[2] = locmat->m[3][2];
+		prhs[3] = locmat->m[3][3];
 
 		/* Solve the equation by inverting pmat and multiplying
 		 * prhs by the inverse.  (This is the easiest way, not
@@ -213,18 +207,20 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 		 * inverse function (and det4x4, above) from the Matrix
 		 * Inversion gem in the first volume.
 		 */
-		//boost::shared_ptr<Matrix4x4> tinvpmat = pmat->Inverse()->Transpose();
-		//V4MulPointByMatrix(&prhs, &tinvpmat, &psol);
+		boost::shared_ptr<Matrix4x4> tinvpmat = 
+			pmat->Inverse()->Transpose();
+		float psol[4];
+		V4MulByMatrix(tinvpmat, prhs, psol);
  
 		/* Stuff the answer away. */
-		//tran[U_PERSPX] = psol.x;
-		//tran[U_PERSPY] = psol.y;
-		//tran[U_PERSPZ] = psol.z;
-		//tran[U_PERSPW] = psol.w;
-		trans.Px = trans.Py = trans.Pz = trans.Pw = 0;
+		trans.Px = psol[0];
+		trans.Py = psol[1];
+		trans.Pz = psol[2];
+		trans.Pw = psol[3];
+		//trans.Px = trans.Py = trans.Pz = trans.Pw = 0;
 		/* Clear the perspective partition. */
-		locmat->m[0][3] = locmat->m[1][3] =
-			locmat->m[2][3] = 0;
+		locmat->m[3][0] = locmat->m[3][1] =
+			locmat->m[3][2] = 0;
 		locmat->m[3][3] = 1;
 	};
 //	else		/* No perspective. */
@@ -286,15 +282,13 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 		}
 	}
 
-	/* Now, get the rotations out, as described in the gem. */
-	trans.Ry = -asinf(-row[0].z);
-	if ( cosf(trans.Ry) != 0 ) {
-		trans.Rx = -atan2f(row[1].z, row[2].z);
-		trans.Rz = -atan2f(row[0].y, row[0].x);
-	} else {
-		trans.Rx = -atan2f(-row[2].x, row[1].y);
-		trans.Rz = 0;
+	/* Now, get the rotations out */
+	for (int i = 0; i < 3; i++ ) {
+		locmat->m[i][0] = row[i].x;
+		locmat->m[i][1] = row[i].y;
+		locmat->m[i][2] = row[i].z;
 	}
+	trans.R = locmat;
 	/* All done! */
 	return true;
 }

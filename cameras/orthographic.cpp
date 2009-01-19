@@ -32,11 +32,12 @@
 using namespace lux;
 
 // OrthographicCamera Definitions
-OrthoCamera::OrthoCamera(const Transform &world2cam,
+OrthoCamera::OrthoCamera(const Transform &world2camStart,
+	    const Transform &world2camEnd,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, int sdist, float lensr,
 		float focald, bool autofocus, Film *f)
-	: ProjectiveCamera(world2cam, Orthographic(hither, yon),
+	: ProjectiveCamera(world2camStart, world2camEnd, Orthographic(hither, yon),
 		 Screen, hither, yon, sopen, sclose, sdist,
 		 lensr, focald, f), autoFocus(autofocus) {
 	 screenDx = Screen[1] - Screen[0];
@@ -167,8 +168,8 @@ float OrthoCamera::EvalPositionPdf() const
 	return 1.0f/(screenDx*screenDy);
 }
 
-Camera* OrthoCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
-	Film *film)
+Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd,
+	const ParamSet &params,	Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -209,7 +210,7 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2cam, const ParamSet &pa
 	const float *sw = params.FindFloat("screenwindow", &swi);
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
-	return new OrthoCamera(world2cam, screen, hither, yon,
+	return new OrthoCamera(world2camStart, world2camEnd, screen, hither, yon,
 		shutteropen, shutterclose, shutterdist, lensradius, focaldistance, autofocus,
 		film);
 }

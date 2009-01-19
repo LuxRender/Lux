@@ -275,6 +275,15 @@ void Context::camera(const string &name, const ParamSet &params) {
 	renderOptions->CameraParams = params;
 	renderOptions->WorldToCamera = curTransform;
 	namedCoordinateSystems["camera"] = curTransform.GetInverse();
+
+	string endTransform = params.FindOneString("endtransform", "");
+	//params.EraseString("endtransform");
+
+	if (namedCoordinateSystems.find(endTransform) != namedCoordinateSystems.end())
+		renderOptions->WorldToCameraEnd = namedCoordinateSystems[endTransform];
+	else
+		renderOptions->WorldToCameraEnd = curTransform;
+
 }
 void Context::worldBegin() {
 	VERIFY_OPTIONS("WorldBegin")
@@ -305,14 +314,16 @@ void Context::attributeEnd() {
 	pushedTransforms.pop_back();
 }
 void Context::transformBegin() {
-	VERIFY_WORLD("TransformBegin")
-	;
+	// NOTE - lordcrc - disabled to enable camera motion blur
+//	VERIFY_WORLD("TransformBegin")
+//	;
 	renderFarm->send("luxTransformBegin");
 	pushedTransforms.push_back(curTransform);
 }
 void Context::transformEnd() {
-	VERIFY_WORLD("TransformEnd")
-	;
+	// NOTE - lordcrc - disabled to enable camera motion blur
+//	VERIFY_WORLD("TransformEnd")
+//	;
 	renderFarm->send("luxTransformEnd");
 	if (!pushedTransforms.size()) {
 		luxError(LUX_ILLSTATE,LUX_ERROR,"Unmatched luxTransformEnd() encountered. Ignoring it.");
@@ -803,7 +814,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 	Film *film = MakeFilm(FilmName, FilmParams, filter);
 	if (std::string(FilmName)=="film")
 		luxError(LUX_NOERROR,LUX_WARNING,"Warning: Legacy PBRT 'film' does not provide tonemapped output or GUI film display. Use 'multifilm' instead.");
-	Camera *camera = MakeCamera(CameraName, WorldToCamera, CameraParams, film);
+	Camera *camera = MakeCamera(CameraName, WorldToCamera, WorldToCameraEnd, CameraParams, film);
 	Sampler *sampler = MakeSampler(SamplerName, SamplerParams, film);
 	SurfaceIntegrator *surfaceIntegrator = MakeSurfaceIntegrator(
 			SurfIntegratorName, SurfIntegratorParams);

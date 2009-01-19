@@ -39,14 +39,19 @@ struct Lens {
 
 class RealisticCamera : public Camera {
 public:
-  RealisticCamera(const Transform &world2cam, const float Screen[4],
+  RealisticCamera(const Transform &world2camStart, const Transform &world2camEnd, 
+		  const float Screen[4],
 		  float hither, float yon, float sopen,
 		  float sclose, int sdist, float filmdistance, float aperture_diameter, string specfile,
 		  float filmdiag, Film *film);
   ~RealisticCamera(void);
   float GenerateRay(const Sample &sample, Ray *) const;
 
-  static Camera *CreateCamera(const Transform &world2cam, const ParamSet &params, Film *film);
+  RealisticCamera* Clone() const {
+	  return new RealisticCamera(*this);
+  }
+
+  static Camera *CreateCamera(const Transform &world2cam, const Transform &world2camEnd, const ParamSet &params, Film *film);
   
 private:
     float ParseLensData(const string& specfile);

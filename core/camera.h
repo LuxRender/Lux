@@ -25,6 +25,7 @@
 // camera.h*
 #include "lux.h"
 #include "geometry/transform.h"
+#include "motionsystem.h"
 #include "error.h"
 
 namespace lux
@@ -33,7 +34,7 @@ namespace lux
 class  Camera {
 public:
 	// Camera Interface
-	Camera(const Transform &world2cam, float hither, float yon,
+	Camera(const Transform &w2cstart, const Transform &w2cend, float hither, float yon,
 		float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
 	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
@@ -45,11 +46,16 @@ public:
 
 	float GetTime(float u1) const;
 
+	virtual void SampleMotion(float time);
+
+	virtual Camera* Clone() const = 0;
+
 	// Camera Public Data
 	Film *film;
 protected:
 	// Camera Protected Data
 	Transform WorldToCamera, CameraToWorld;
+	MotionSystem CameraMotion;
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
 	int ShutterDistribution;
@@ -58,10 +64,14 @@ class  ProjectiveCamera : public Camera {
 public:
 	// ProjectiveCamera Public Methods
 	ProjectiveCamera(const Transform &world2cam,
+		const Transform &world2camEnd,
 	    const Transform &proj, const float Screen[4],
 		float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, Film *film);
+
+	void SampleMotion(float time);
+
 protected:
 	bool GenerateSample(const Point &p, Sample *sample) const;
 	// ProjectiveCamera Protected Data

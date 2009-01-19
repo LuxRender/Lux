@@ -276,6 +276,7 @@ private:
 		string CameraName;
 		ParamSet CameraParams;
 		Transform WorldToCamera;
+		Transform WorldToCameraEnd;
 		bool gotSearchPath;
 		mutable vector<Light *> lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;

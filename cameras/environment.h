@@ -30,7 +30,7 @@ namespace lux
 class EnvironmentCamera : public Camera {
 public:
 	// EnvironmentCamera Public Methods
-	EnvironmentCamera(const Transform &world2cam, float hither,
+	EnvironmentCamera(const Transform &world2camStart, const Transform &world2camEnd, float hither,
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
 	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
@@ -70,11 +70,16 @@ public:
 	//{
 	//	return SWCSpectrum(1.0f);
 	//}
-	static Camera *CreateCamera(const Transform &world2cam, const ParamSet &params, Film *film);
+
+	EnvironmentCamera* Clone() const {
+		return new EnvironmentCamera(*this);
+	}
+
+	static Camera *CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params, Film *film);
 private:
 	bool GenerateSample(const Point &p, Sample *sample) const;
 	// EnvironmentCamera Private Data
-	Point rayOrigin;
+	//Point rayOrigin;
 };
 
 }//namespace lux

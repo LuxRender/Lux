@@ -108,12 +108,13 @@ private:
 
 // PerspectiveCamera Method Definitions
 PerspectiveCamera::
-    PerspectiveCamera(const Transform &world2cam,
+    PerspectiveCamera(const Transform &world2camStart,
+		const Transform &world2camEnd,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, bool autofocus,
 		float fov1, int dist, int sh, int pow, Film *f)
-	: ProjectiveCamera(world2cam,
+	: ProjectiveCamera(world2camStart, world2camEnd,
 	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose, sdist,
 		lensr, focald, f),
@@ -401,7 +402,7 @@ void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) con
 	*dy = r * sinf(theta);
 }
 
-Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
+Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params,
 	Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
@@ -462,7 +463,7 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2cam, const ParamS
 	int shape = params.FindOneInt("blades", 0);
 	int power = params.FindOneInt("power", 3);
 
-	return new PerspectiveCamera(world2cam, screen, hither, yon,
+	return new PerspectiveCamera(world2camStart, world2camEnd, screen, hither, yon,
 		shutteropen, shutterclose, shutterdist, lensradius, focaldistance, autofocus,
 		fov, distribution, shape, power, film);
 }

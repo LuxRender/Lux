@@ -57,7 +57,7 @@ VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 boost::shared_ptr<Aggregate> MakeAccelerator(const string &name, const vector<boost::shared_ptr<Primitive> > &prims,
 	const ParamSet &paramSet);
 Camera *MakeCamera(const string &name, const Transform &world2cam,
-	const ParamSet &paramSet, Film *film);
+	const Transform &world2camEnd, const ParamSet &paramSet, Film *film);
 Sampler *MakeSampler(const string &name, const ParamSet &paramSet,
 	const Film *film);
 Filter *MakeFilter(const string &name, const ParamSet &paramSet);
@@ -172,7 +172,7 @@ public:
 		virtual ~RegisterAccelerator<T>() {}
 	};
 
-	typedef Camera *(*CreateCamera)(const Transform&, const ParamSet&,
+	typedef Camera *(*CreateCamera)(const Transform&, const Transform&, const ParamSet&,
 		Film*);
 	static map<string, CreateCamera> &registeredCameras();
 	template <class T> class RegisterCamera : public RegisterLoader<CreateCamera> {

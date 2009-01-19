@@ -40,13 +40,14 @@ using std::ifstream;
 
 using namespace lux;
 
-RealisticCamera::RealisticCamera(const Transform &world2cam,
+RealisticCamera::RealisticCamera(const Transform &world2camStart,
+				 const Transform &world2camEnd,
                  const float Screen[4],
 				 float hither, float yon, 
 				 float sopen, float sclose, int sdist,
 				 float filmdistance, float aperture_diameter, string specfile, 
 				 float filmdiag, Film *f)
-	: Camera(world2cam, hither, yon, sopen, sclose, sdist, f) 
+	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose, sdist, f) 
 {
     filmDistance = filmdistance;
     filmDist2 = filmDistance * filmDistance;
@@ -190,8 +191,8 @@ float RealisticCamera::ParseLensData(const string& specfile) {
     return accumdist;
 }
 
-Camera* RealisticCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
-	Film *film)
+Camera* RealisticCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, 
+	const ParamSet &params,	Film *film)
 {
 	// Extract common camera parameters from \use{ParamSet}
 	float hither = params.FindOneFloat("hither", 1e-3f);
@@ -234,7 +235,7 @@ Camera* RealisticCamera::CreateCamera(const Transform &world2cam, const ParamSet
         screen[2] = -1.f / frame;
         screen[3] =  1.f / frame;
     }
-	return new RealisticCamera(world2cam, screen, hither, yon,
+	return new RealisticCamera(world2camStart, world2camEnd, screen, hither, yon,
 				   shutteropen, shutterclose, shutterdist, filmdistance, fstop, 
 				   specfile, filmdiag, film);
 }

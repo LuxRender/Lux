@@ -33,10 +33,12 @@ using namespace lux;
 Camera::~Camera() {
 	delete film;
 }
-Camera::Camera(const Transform &world2cam,
+Camera::Camera(const Transform &w2cstart,
+			   const Transform &w2cend,
                float hither, float yon,
-		       float sopen, float sclose, int sdist, Film *f) {
-	WorldToCamera = world2cam;
+			   float sopen, float sclose, int sdist, Film *f) 
+			   : CameraMotion(sopen, sclose, w2cstart, w2cend) {
+	WorldToCamera = w2cstart;
 	CameraToWorld = WorldToCamera.GetInverse();
 	ClipHither = hither;
 	ClipYon = yon;
@@ -51,7 +53,13 @@ bool Camera::IsDelta() const {
 	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
 	return true;
 }
+void Camera::SampleMotion(float time) {
+	if (!CameraMotion.isActive)
+		return;
 
+	WorldToCamera = CameraMotion.Sample(time);
+	CameraToWorld = WorldToCamera.GetInverse();
+}
 float Camera::GetTime(float u1) const {
 	if(ShutterDistribution == 0)
 		return Lerp(u1, ShutterOpen, ShutterClose);
@@ -62,11 +70,12 @@ float Camera::GetTime(float u1) const {
 	return 0.f;
 }
 
-ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
+ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
+	    const Transform &w2ce,
 		const Transform &proj, const float Screen[4],
 		float hither, float yon, float sopen,
 		float sclose, int sdist, float lensr, float focald, Film *f)
-	: Camera(w2c, hither, yon, sopen, sclose, sdist, f) {
+	: Camera(w2cs, w2ce, hither, yon, sopen, sclose, sdist, f) {
 	// Initialize depth of field parameters
 	LensRadius = lensr;
 	FocalDistance = focald;
@@ -81,6 +90,18 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2c,
 		 Translate(Vector(-Screen[0], -Screen[3], 0.f));
 	RasterToScreen = ScreenToRaster.GetInverse();
 	RasterToCamera = CameraToScreen.GetInverse() * RasterToScreen;
+	WorldToRaster = ScreenToRaster * WorldToScreen;
+	RasterToWorld = WorldToRaster.GetInverse();
+}
+void ProjectiveCamera::SampleMotion(float time) {
+
+	if (!CameraMotion.isActive)
+		return;
+
+	// call base method to sample transform
+	Camera::SampleMotion(time);
+	// then update derivative transforms
+	WorldToScreen = CameraToScreen * WorldToCamera;
 	WorldToRaster = ScreenToRaster * WorldToScreen;
 	RasterToWorld = WorldToRaster.GetInverse();
 }

@@ -35,7 +35,7 @@ class Transforms {
 public:
 	Transforms() : Sx(0), Sy(0), Sz(0),
 		Sxy(0), Sxz(0), Syz(0), 
-		Rx(0), Ry(0), Rz(0),
+		R(new Matrix4x4()),
 		Tx(0), Ty(0), Tz(0),
 		Px(0), Py(0), Pz(0), Pw(0) {
 	}
@@ -45,7 +45,7 @@ public:
 	// Shearing
 	float Sxy, Sxz, Syz;
 	// Rotation
-	float Rx, Ry, Rz;
+	boost::shared_ptr<Matrix4x4> R;
 	// Translation
 	float Tx, Ty, Tz;
 	// Perspective
@@ -91,7 +91,6 @@ protected:
 	Transform start, end;
 	Transforms startT, endT;
 	boost::shared_ptr<Matrix4x4> startMat, endMat;
-	boost::shared_ptr<Matrix4x4> startRot;
 	Quaternion startQ, endQ;
 	bool hasRotation, hasTranslation, hasScale;
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;

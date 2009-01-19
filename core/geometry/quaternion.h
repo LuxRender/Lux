@@ -75,15 +75,14 @@ public:
 		w = w/len;
 		v = v * (1.0/len);
 	}
-	
+
+	// get the rotation matrix from quaternion
+	void ToMatrix(float m[4][4]) const;
+
+	static Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2);
 };
 
-float dot(const Quaternion &q1, const Quaternion &q2);
-
-Quaternion slerp(float t, const Quaternion &q1, const Quaternion &q2);
-
-// get the rotation matrix from quaternion
-void toMatrix(const Quaternion &q, float m[4][4]);
+float Dot(const Quaternion &q1, const Quaternion &q2);
 
 }//namespace lux
 

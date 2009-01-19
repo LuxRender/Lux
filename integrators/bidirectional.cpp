@@ -579,7 +579,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	float eyePdf;
 	//Jeanphi - Replace dummy .5f by a sampled value if needed
 	SWCSpectrum We;
-	if (!scene->camera->Sample_W(tspack, scene,
+	if (!tspack->camera->Sample_W(tspack, scene,
 		sample->lensU, sample->lensV, .5f, &eyeBsdf, &eyePdf, &We))
 		return nrContribs;	//FIXME not necessarily true if special sampling for direct connection to the eye
 	We /= eyePdf;
@@ -621,7 +621,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 	}
 	// Get back normal image position
 	float x, y;
-	scene->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
+	tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
 	// Connect paths
 	for (int i = 1; i <= nEye; ++i) {
 		float weight;
@@ -666,7 +666,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 						} else {
 							Ld *= We;
 							float xd, yd;
-							scene->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
+							tspack->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
 							XYZColor color(Ld.ToXYZ(tspack));
 							sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 						}
@@ -689,7 +689,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 							} else {
 								Ld *= We;
 								float xd, yd;
-								scene->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
+								tspack->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
 								XYZColor color(Ld.ToXYZ(tspack));
 								sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 							}
@@ -724,7 +724,7 @@ SWCSpectrum BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const 
 						} else {
 							Ll *= We;
 							float xl, yl;
-							scene->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
+							tspack->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
 							XYZColor color(Ll.ToXYZ(tspack));
 							sample->AddContribution(xl, yl, color, alpha ? *alpha : 1.f, weight, lightBufferId);
 						}

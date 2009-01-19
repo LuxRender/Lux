@@ -32,15 +32,14 @@ using namespace lux;
 
 // EnvironmentCamera Method Definitions
 EnvironmentCamera::
-    EnvironmentCamera(const Transform &world2cam,
+    EnvironmentCamera(const Transform &world2camStart, const Transform &world2camEnd, 
 		float hither, float yon, float sopen, float sclose, int sdist,
 		Film *film)
-	: Camera(world2cam, hither, yon, sopen, sclose, sdist, film) {
-	rayOrigin = CameraToWorld(Point(0,0,0));
+	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose, sdist, film) {
 }
 float EnvironmentCamera::GenerateRay(const Sample &sample,
 		Ray *ray) const {
-	ray->o = rayOrigin;
+	ray->o = CameraToWorld(Point(0,0,0));
 	// Generate environment camera ray direction
 	float theta = M_PI * sample.imageY / film->yResolution;
 	float phi = 2 * M_PI * sample.imageX / film->xResolution;
@@ -55,7 +54,7 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 }
 bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
 {
-	Vector dir_world(p-rayOrigin);
+	Vector dir_world(p - CameraToWorld(Point(0,0,0)));
 	Vector dir_camera;
 	WorldToCamera(dir_world, &dir_camera);
 	dir_camera = Normalize(dir_camera);
@@ -110,7 +109,7 @@ void EnvironmentCamera::GetFlux2RadianceFactors(Film *film, float *factors, int 
 }
 void EnvironmentCamera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
 {
-	*p = rayOrigin;
+	*p = CameraToWorld(Point(0,0,0));
 	*pdf = 1.0f;
 }
 float EnvironmentCamera::EvalPositionPdf() const
@@ -118,8 +117,8 @@ float EnvironmentCamera::EvalPositionPdf() const
 	return 1.0f;
 }
 	
-Camera* EnvironmentCamera::CreateCamera(const Transform &world2cam, const ParamSet &params,
-	Film *film)
+Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, 
+	const ParamSet &params,	Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -161,7 +160,7 @@ Camera* EnvironmentCamera::CreateCamera(const Transform &world2cam, const ParamS
 		memcpy(screen, sw, 4*sizeof(float));
 	(void) lensradius; // don't need this
 	(void) focaldistance; // don't need this
-	return new EnvironmentCamera(world2cam, hither, yon,
+	return new EnvironmentCamera(world2camStart, world2camEnd, hither, yon,
 		shutteropen, shutterclose, shutterdist, film);
 }
 

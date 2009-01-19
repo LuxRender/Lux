@@ -249,6 +249,7 @@ void RenderThread::render(RenderThread *myThread) {
 	myThread->tspack->rng = new RandomGenerator();
 	myThread->tspack->rng->init(seed);
 	myThread->tspack->arena = new MemoryArena();
+	myThread->tspack->camera = myThread->scene->camera->Clone();
 
     myThread->sampler->SetTsPack(myThread->tspack);
 
@@ -283,6 +284,11 @@ void RenderThread::render(RenderThread *myThread) {
 				break;
 		}
 
+		// sample camera transformation
+		float camtime = myThread->tspack->camera->GetTime(myThread->sample->time);
+		myThread->tspack->camera->SampleMotion(camtime);
+		//myThread->tspack->camera->SampleMotion(0.5);
+
 		// Dade - check if the integrator support SWC / NOTE - Radiance - This should probably be removed. Integrators should all support SWC.
 		if (myThread->surfaceIntegrator->IsSWCSupported()) {
 			// Sample new SWC thread wavelengths
@@ -305,7 +311,7 @@ void RenderThread::render(RenderThread *myThread) {
 
 		// Find camera ray for _sample_
         RayDifferential ray;
-        float rayWeight = myThread->camera->GenerateRay(*(myThread->sample), &ray);
+        float rayWeight = myThread->tspack->camera->GenerateRay(*(myThread->sample), &ray);
 
         if (rayWeight > 0.f) {
 			// Save ray time value to tspack for later use
