@@ -19,7 +19,7 @@ Requires:       libpng libjpeg libtiff OpenEXR IlmBase wxGTK libboost_thread1_36
 
 %if 0%{?mandriva_version} 
 BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils libwxgtk2.8-devel gcc gcc-c++ mesa-common-devel cmake
-Requires:       libpng libjpeg libtiff OpenEXR ilmBase boost libwxgtk2.8
+Requires:       libpng libjpeg libtiff OpenEXR libilmbase6 boost libwxgtk2.8
 %endif
 
 %if 0%{?fedora_version} 
