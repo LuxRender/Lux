@@ -79,7 +79,7 @@ public:
 		return true;
 	}
 
-	void AddSampleCount(float c, int bufferGroup = 0) { // TODO add support for buffergroup
+	void AddSampleCount(float c) {
 		sampleCount += c;
 	}
 

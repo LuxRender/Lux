@@ -271,7 +271,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 		if (mutation == -1) {
 			meanIntensity = Lerp(1.f / initSamples, meanIntensity, newLY);
 			// calculate the number of chains on a new seed
-			contribBuffer->AddSampleCount(1.f); // TODO: add to the correct buffer groups
+			contribBuffer->AddSampleCount(1.f);
 			if (!(newLY > 0.f))
 				return;
 			quantum = meanIntensity;

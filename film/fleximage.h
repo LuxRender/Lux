@@ -52,12 +52,13 @@ public:
 		delete[] framebuffer;
 	}
 
+	void RequestBufferGroups(const vector<string> &bg);
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(Contribution *contrib);
-	void AddSampleCount(float count, int bufferGroup = 0);
+	void AddSampleCount(float count);
 
 	void WriteImage(ImageType type);
 

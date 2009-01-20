@@ -214,7 +214,7 @@ private:
 
 class BufferGroup {
 public:
-	BufferGroup() : numberOfSamples(0.f) { }
+	BufferGroup(const string &n) : numberOfSamples(0.f), name(n) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
 			delete *buffer;
@@ -243,6 +243,7 @@ public:
 	}
 	double numberOfSamples;
 	vector<Buffer *> buffers;
+	string name;
 };
 
 //class FlexImageFilm;
@@ -287,17 +288,16 @@ public:
     Film(int xres, int yres, int haltspp) :
 		xResolution(xres), yResolution(yres), haltSamplePerPixel(haltspp),
 		enoughSamplePerPixel(false) {
-		invSamplePerPass =  1.0 / (xResolution * yResolution);
+		samplePerPass =  1.0 / (xResolution * yResolution);
 	}
     virtual ~Film() { }
 	virtual void AddSample(Contribution *contrib) = 0;
-    virtual void AddSampleCount(float count, int bufferGroup = 0) { }
+    virtual void AddSampleCount(float count) { }
     virtual void WriteImage(ImageType type) = 0;
     virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
 
-    virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) {
-        return 0;
-    }
+    virtual void RequestBufferGroups(const vector<string> &bg) = 0;
+    virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) = 0;
 
     virtual void CreateBuffers() {
     }
@@ -321,8 +321,8 @@ public:
 	Scene *scene;
 
 protected:
-	// Dade - 1.0 / (xResolution * yResolution)
-	double invSamplePerPass;
+	// Dade - (xResolution * yResolution)
+	double samplePerPass;
 };
 
 // Image Pipeline Declarations

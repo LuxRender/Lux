@@ -411,6 +411,7 @@ void Scene::Render() {
 	sampler->SetContributionPool(contribPool);
     surfaceIntegrator->Preprocess(tspack, this);
     volumeIntegrator->Preprocess(tspack, this);
+    camera->film->CreateBuffers();
 
 	// Dade - to support autofocus for some camera model
 	camera->AutoFocus(this);
@@ -485,6 +486,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 
     preprocessDone = false;
 	suspendThreadsWhenDone = false;
+	camera->film->RequestBufferGroups(lightGroups);
 }
 
 const BBox &Scene::WorldBound() const {

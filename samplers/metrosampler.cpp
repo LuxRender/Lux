@@ -233,7 +233,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			meanIntensity = 1.f;
 	}
 
-	contribBuffer->AddSampleCount(1.f); // TODO: add to the correct buffer groups
+	contribBuffer->AddSampleCount(1.f);
 
 	// calculate accept probability from old and new image sample
 	float accProb, accProb2, factor;

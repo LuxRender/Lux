@@ -46,7 +46,7 @@ float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 }
 void Sampler::AddSample(const Sample &sample)
 {
-	contribBuffer->AddSampleCount(1.f); // TODO: add to the correct buffer groups
+	contribBuffer->AddSampleCount(1.f);
 	for (u_int i=0; i<sample.contributions.size(); i++) {
 			// Radiance - added new use of contributionpool/buffers
 			if(!contribBuffer->Add(&sample.contributions[i], 1.f)) {

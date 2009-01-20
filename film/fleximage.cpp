@@ -114,6 +114,12 @@ void FlexImageFilm::GetSampleExtent(int *xstart, int *xend,
 	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth);
 }
 
+void FlexImageFilm::RequestBufferGroups(const vector<string> &bg)
+{
+	for (u_int i = 0; i < bg.size(); ++i)
+		bufferGroups.push_back(BufferGroup(bg[i]));
+}
+
 int FlexImageFilm::RequestBuffer(BufferType type, BufferOutputConfig output,
 	const string& filePostfix)
 {
@@ -123,9 +129,10 @@ int FlexImageFilm::RequestBuffer(BufferType type, BufferOutputConfig output,
 
 void FlexImageFilm::CreateBuffers()
 {
-	// TODO: more groups for multilight
-	bufferGroups.push_back(BufferGroup());
-	bufferGroups.back().CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
+	if (bufferGroups.size() == 0)
+		bufferGroups.push_back(BufferGroup("default"));
+	for (u_int i = 0; i < bufferGroups.size(); ++i)
+		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
 
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm && !restartResumeFlm) {
@@ -143,29 +150,18 @@ void FlexImageFilm::CreateBuffers()
     }
 }
 
-void FlexImageFilm::AddSampleCount(float count, int bufferGroup) {
-	if (bufferGroups.empty()) {
-		RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-		CreateBuffers();
-	}
-
-	if (!bufferGroups.empty()) {
-		bufferGroups[bufferGroup].numberOfSamples += count;
+void FlexImageFilm::AddSampleCount(float count) {
+	for (u_int i = 0; i < bufferGroups.size(); ++i) {
+		bufferGroups[i].numberOfSamples += count;
 
 		// Dade - check if we have enough samples per pixel
 		if ((haltSamplePerPixel > 0) &&
-			(bufferGroups[bufferGroup].numberOfSamples * invSamplePerPass >= 
-					haltSamplePerPixel))
+			(bufferGroups[i].numberOfSamples  >= haltSamplePerPixel * samplePerPass))
 			enoughSamplePerPixel = true;
 	}
 }
 
 void FlexImageFilm::AddSample(Contribution *contrib) {
-	if (bufferGroups.empty()) {
-		RequestBuffer(BUF_TYPE_PER_SCREEN, BUF_FRAMEBUFFER, "");
-		CreateBuffers();
-	}
-
 	const XYZColor xyz = contrib->color;
 	const float alpha = contrib->alpha;
 
@@ -486,12 +482,6 @@ void FlexImageFilm::TransmitFilm(
         std::basic_ostream<char> &stream,
         bool clearBuffers) 
 {
-	// Ensure we have a buffer group
-	if (bufferGroups.empty()) {
-		RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-		CreateBuffers();
-	}
-
     bool isLittleEndian = osIsLittleEndian();
 
     std::stringstream ss;
@@ -563,12 +553,6 @@ void FlexImageFilm::TransmitFilm(
 }
 
 float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) {
-	// Ensure we have a buffer group
-	if (bufferGroups.empty()) {
-		RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "");
-		CreateBuffers();
-	}
-
 	bool isLittleEndian = osIsLittleEndian();
 
     filtering_stream<input> in;
