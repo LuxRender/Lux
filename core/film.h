@@ -288,7 +288,7 @@ public:
     Film(int xres, int yres, int haltspp) :
 		xResolution(xres), yResolution(yres), haltSamplePerPixel(haltspp),
 		enoughSamplePerPixel(false) {
-		samplePerPass =  1.0 / (xResolution * yResolution);
+		samplePerPass = (double)xResolution * (double)yResolution;
 	}
     virtual ~Film() { }
 	virtual void AddSample(Contribution *contrib) = 0;
