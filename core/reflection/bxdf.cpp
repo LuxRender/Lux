@@ -110,9 +110,9 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	*wi = (cost + eta * cosi) * H - eta * wo;
 	factor /= wi->z;
 	if (reverse)
-		*f /= fabsf(factor) * eta2;
+		*f *= fabsf(factor) * eta2;
 	else
-		*f /= fabsf(factor);
+		*f *= fabsf(factor);
 	return true;
 }
 

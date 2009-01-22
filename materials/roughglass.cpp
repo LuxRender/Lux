@@ -55,7 +55,7 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	else
 		md = BSDF_ALLOC(tspack, Anisotropic)(1.f / urough, 1.f / vrough);
 	if (!R.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
+		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior, cb);
 		bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(R, fresnel, md));
 	}
 	if (!T.Black()) {
