@@ -144,26 +144,41 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		SWCSpectrum Ll;
 		switch (lightStrategy) {
-			case SAMPLE_ALL_UNIFORM://FIXME
-				Ll = UniformSampleAllLights(tspack, scene, p, n,
-					wo, bsdf, sample,
-					data, data + 2, data + 3, data + 5);
-				g = 0;
+			case SAMPLE_ALL_UNIFORM:
+			{
+				const u_int nLights = scene->lights.size();
+				if (nLights == 0)
+					break;
+				const float lIncrement = 1.f / nLights;
+				float l = data[2] * lIncrement;
+				for (u_int i = 0; i < nLights; ++i, l += lIncrement) {
+					g = UniformSampleOneLight(tspack, scene, p, n,
+						wo, bsdf, sample,
+						data, &l, data + 3, data + 5, &Ll);
+					if (!Ll.Black()) {
+						Ll *= pathThroughput;
+						Ll *= lIncrement;
+						L[g] += Ll;
+						V[g] += Ll.filter(tspack) * VContrib;
+						++nrContribs;
+					}
+				}
 				break;
+			}
 			case SAMPLE_ONE_UNIFORM:
 				g = UniformSampleOneLight(tspack, scene, p, n,
 					wo, bsdf, sample,
 					data, data + 2, data + 3, data + 5, &Ll);
+				if (!Ll.Black()) {
+					Ll *= pathThroughput;
+					L[g] += Ll;
+					V[g] += Ll.filter(tspack) * VContrib;
+					++nrContribs;
+				}
 				break;
 			default:
 				Ll = 0.f;
 				g = 0;
-		}
-		if (!Ll.Black()) {
-			Ll *= pathThroughput;
-			L[g] += Ll;
-			V[g] += Ll.filter(tspack) * VContrib;
-			++nrContribs;
 		}
 
 		// Sample BSDF to get new path direction
