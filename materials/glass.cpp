@@ -51,7 +51,7 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	if (!R.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior);
+		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior, cb);
 		if (architectural)
 			bsdf->Add(BSDF_ALLOC(tspack, ArchitecturalReflection)(R,
 				fresnel, flm, flmindex));
