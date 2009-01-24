@@ -24,8 +24,6 @@
 #define LUX_SAMPLING_H
 // sampling.h*
 #include "lux.h"
-#include "film.h"
-#include "color.h"
 #include "contribution.h"
 #include "memory.h"
 

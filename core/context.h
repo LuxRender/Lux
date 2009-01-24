@@ -24,9 +24,11 @@
 #define LUX_CONTEXT_H
 
 #include "lux.h"
-#include "renderfarm.h"
+#include "paramset.h"
 
 #include <boost/thread/mutex.hpp>
+#include <map>
+using std::map;
 
 //TODO - jromang : convert to enum
 #define STATE_UNINITIALIZED  0
@@ -153,8 +155,8 @@ public:
 
 	//film access (networking)
 	static void luxUpdateFilmFromNetwork() { activeContext->updateFilmFromNetwork(); }
-	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->renderFarm->serverUpdateInterval = updateInterval; }
-	static int luxGetNetworkServerUpdateInterval() { return activeContext->renderFarm->serverUpdateInterval; }
+	static void luxSetNetworkServerUpdateInterval(int updateInterval) { activeContext->setNetworkServerUpdateInterval(updateInterval); }
+	static int luxGetNetworkServerUpdateInterval() { return activeContext->getNetworkServerUpdateInterval(); }
     static void luxAddServer(const string &name) { activeContext->addServer(name); }
     static void luxRemoveServer(const string &name) { activeContext->removeServer(name); }
     static int luxGetServerCount() { return activeContext->getServerCount(); }
@@ -246,6 +248,8 @@ private:
 
 	// Dade - network rendering
 	void updateFilmFromNetwork();
+	void setNetworkServerUpdateInterval(int updateInterval);
+	int getNetworkServerUpdateInterval();
     void transmitFilm(std::basic_ostream<char> &stream);
 
 	//statistics

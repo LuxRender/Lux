@@ -53,7 +53,7 @@ public:
 
 	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Dade - I assume object are 8 bytes aligned
-		u_long lookupIndex = (((u_long)dg.prim) &
+		u_long lookupIndex = (((u_long)dg.handle) &
 				((HARLEQUIN_TEXTURE_PALETTE_SIZE-1) << 3)) >> 3;
 
 		return SWCSpectrum(tspack, ColorLookupTable[lookupIndex]);

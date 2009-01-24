@@ -29,6 +29,7 @@
 #include "anisotropic.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "error.h"
 
 #include "irregular.h"
 

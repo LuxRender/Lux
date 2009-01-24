@@ -23,7 +23,10 @@
 #ifndef LUX_VECTOR_H
 #define LUX_VECTOR_H
 
+#include <cmath>
 #include <iostream>
+using std::ostream;
+#include <boost/serialization/access.hpp>
 
 
 namespace lux
@@ -83,12 +86,12 @@ public:
 		return Vector(-x, -y, -z);
 	}
 	float operator[](int i) const {
-		BOOST_ASSERT(i >= 0 && i <= 2);
+//		BOOST_ASSERT(i >= 0 && i <= 2);
 		return (&x)[i];
 	}
 	
 	float &operator[](int i) {
-		BOOST_ASSERT(i >= 0 && i <= 2);
+//		BOOST_ASSERT(i >= 0 && i <= 2);
 		return (&x)[i];
 	}
 	float LengthSquared() const { return x*x + y*y + z*z; }

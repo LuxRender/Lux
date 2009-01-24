@@ -27,6 +27,7 @@
 
 #include "vector.h"
 #include "point.h"
+#include "normal.h"
 #include "ray.h"
 
 namespace lux
@@ -49,6 +50,53 @@ public:
 	bool hasDifferentials;
 	
 
+};
+
+// DifferentialGeometry Declarations
+class DifferentialGeometry {
+public:
+	DifferentialGeometry() { u = v = 0.; handle = NULL; }
+	// DifferentialGeometry Public Methods
+	DifferentialGeometry(
+			const Point &P,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Vector &DNDU, const Vector &DNDV,
+			float uu, float vv,
+			const void *pr);
+	DifferentialGeometry(
+			const Point &P, const Normal &NN,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Vector &DNDU, const Vector &DNDV,
+			float uu, float vv,
+			const void *pr);
+	void AdjustNormal(bool ro, bool swapsHandedness) {
+		reverseOrientation = ro;
+		transformSwapsHandedness = swapsHandedness;
+		// Adjust normal based on orientation and handedness
+		if (reverseOrientation ^ transformSwapsHandedness) {
+			nn.x = -nn.x;
+			nn.y = -nn.y;
+			nn.z = -nn.z;
+		}
+	}
+	void ComputeDifferentials(const RayDifferential &r) const;
+	// DifferentialGeometry Public Data
+	Point p;
+	Normal nn;
+	Vector dpdu, dpdv;
+	Normal dndu, dndv;
+	mutable Vector dpdx, dpdy;
+	float u, v;
+	const void* handle;
+	bool reverseOrientation;
+	bool transformSwapsHandedness;
+	mutable float dudx, dvdx, dudy, dvdy;
+
+	// Dade - shape specific data, useful to "transport" informatin between
+	// shape intersection method and GetShadingGeometry()
+	union {
+		float triangleBaryCoords[3];
+	};
 };
 
 }//namespace lux

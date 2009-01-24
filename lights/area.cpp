@@ -23,7 +23,7 @@
 // area.cpp*
 #include "light.h"
 #include "mc.h"
-#include "primitive.h"
+#include "shape.h"
 #include "context.h"
 #include "paramset.h"
 #include "rgbillum.h"

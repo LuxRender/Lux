@@ -23,8 +23,10 @@
 #ifndef LUX_POINT_H
 #define LUX_POINT_H
 
-#include <iostream>
 #include "vector.h"
+#include <iostream>
+using std::ostream;
+#include <boost/serialization/access.hpp>
 
 namespace lux
 {

@@ -23,6 +23,7 @@
 // light.cpp*
 #include "light.h"
 #include "scene.h"
+#include "shape.h"
 #include "reflection/bxdf.h"
 
 using namespace lux;

@@ -971,3 +971,11 @@ void Context::transmitFilm(std::basic_ostream<char> &stream) {
 void Context::updateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
 }
+void Context::setNetworkServerUpdateInterval(int updateInterval)
+{
+	activeContext->renderFarm->serverUpdateInterval = updateInterval;
+}
+int Context::getNetworkServerUpdateInterval()
+{
+	return activeContext->renderFarm->serverUpdateInterval;
+}

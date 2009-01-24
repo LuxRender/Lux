@@ -25,7 +25,6 @@
 // bxdf.h*
 #include "lux.h"
 #include "geometry.h"
-#include "shape.h"
 #include "spectrum.h"
 #include "memory.h"
 
