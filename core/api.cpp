@@ -531,6 +531,10 @@ extern "C" void luxEnableDebugMode() {
 	Context::luxEnableDebugMode();
 }
 
+extern "C" void luxDisableRandomMode() {
+	Context::luxDisableRandomMode();
+}
+
 extern "C" void luxUpdateFilmFromNetwork() {
 
 	Context::luxUpdateFilmFromNetwork();

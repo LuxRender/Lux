@@ -74,8 +74,9 @@ bool LuxGuiApp::ProcessCommandLine() {
 		po::options_description generic("Generic options");
 		generic.add_options()
 			("version,v", "Print version string")
-			("help", "Produce help message")
+			("help,h", "Produce help message")
 			("debug,d", "Enable debug mode")
+			("fixedseed,f", "Disable random seed mode")
 		;
 
 		// Declare a group of options that will be
@@ -161,6 +162,9 @@ bool LuxGuiApp::ProcessCommandLine() {
 			luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
 			luxEnableDebugMode();
 		}
+
+		if (vm.count("fixedseed"))
+			luxDisableRandomMode();
 
 		int serverInterval;
 		if(vm.count("serverinterval")) {

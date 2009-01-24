@@ -103,10 +103,12 @@ int main(int ac, char *av[]) {
         // allowed only on command line
         po::options_description generic("Generic options");
         generic.add_options()
-                ("version,v", "Print version string") ("help", "Produce help message")
+                ("version,v", "Print version string")
+                ("help,h", "Produce help message")
                 ("server,s", "Launch in server mode")
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
                 ("debug,d", "Enable debug mode")
+				("fixedseed,f", "Disable random seed mode")
                 ;
 
         // Declare a group of options that will be
@@ -181,6 +183,13 @@ int main(int ac, char *av[]) {
             luxEnableDebugMode();
         }
 
+        if (vm.count("fixedseed")) {
+        	if(!vm.count("server"))
+        		luxDisableRandomMode();
+        	else // Slaves should always have a different seed than the master
+        		luxError(LUX_CONSISTENCY, LUX_WARNING, "Using random seed for server");
+        }
+
         int serverInterval;
         if (vm.count("serverinterval")) {
             serverInterval = vm["serverinterval"].as<int>();
@@ -195,7 +204,7 @@ int main(int ac, char *av[]) {
                 luxAddServer((*i).c_str());
 
             useServer = true;
-            
+
             ss.str("");
             ss << "Server requests interval: " << serverInterval << " secs";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -204,7 +213,7 @@ int main(int ac, char *av[]) {
 		int serverPort = RenderServer::DEFAULT_TCP_PORT;
 		if (vm.count("serverport"))
             serverPort = vm["serverport"].as<int>();
-			
+
         if (vm.count("input-file")) {
             const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
             for (unsigned int i = 0; i < v.size(); i++) {

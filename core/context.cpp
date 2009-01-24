@@ -220,10 +220,18 @@ void Context::coordSysTransform(const string &name) {
 }
 void Context::enableDebugMode() {
     VERIFY_OPTIONS("EnableDebugMode")
-	;
+    ;
     // Dade - I avoid to transmit the EnableDebugMode option to the renderFarm
     renderOptions->debugMode = true;
 }
+
+void Context::disableRandomMode() {
+    VERIFY_OPTIONS("DisableRandomMode")
+    ;
+    // Slaves needs random seeds
+    renderOptions->randomMode = false;
+}
+
 void Context::pixelFilter(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("PixelFilter")
 	;
@@ -887,11 +895,9 @@ Scene *Context::RenderOptions::MakeScene() const {
 	currentInstance = NULL;
 	instances.erase(instances.begin(), instances.end());
 
-    // Dade - enable debug mode
-    if (debugMode) {
-        // Dade -  set the scene seed to zero
-        ret->seedBase = 0;
-    }
+	// Set a fixed seed for animations or debugging
+    if (debugMode || !randomMode)
+        ret->seedBase = 1000;
 
 	return ret;
 }

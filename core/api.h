@@ -138,6 +138,7 @@ double luxStatistics(const char *statName);
 
 // Dade - enable debug mode
 void luxEnableDebugMode();
+void luxDisableRandomMode();
 
 /* Error Handlers */
 extern int luxLastError; /*  Keeps track of the last error code */

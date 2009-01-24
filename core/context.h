@@ -171,6 +171,9 @@ public:
     // dade enable debug mode
     static void luxEnableDebugMode() { activeContext->enableDebugMode(); }
 
+    // Note - Ratow - Adding specific call to disable random seed
+    static void luxDisableRandomMode() { activeContext->disableRandomMode(); }
+
 private:
 	static Context *activeContext;
 	string name;
@@ -260,6 +263,7 @@ private:
 	int getRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount);
 
     void enableDebugMode();
+    void disableRandomMode();
 
 	// API Local Classes
 	struct RenderOptions {
@@ -275,6 +279,7 @@ private:
 			CameraName = "perspective";
 			currentInstance = NULL;
 			debugMode = false;
+			randomMode = true;
 			lightGroups = vector<string>(1, "default");
 		}
 
@@ -301,6 +306,7 @@ private:
 		mutable map<string, vector<boost::shared_ptr<Primitive> > > instances;
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstance;
 		bool debugMode;
+		bool randomMode;
 		mutable vector<string> lightGroups;
 	};
 
