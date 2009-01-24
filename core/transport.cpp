@@ -196,6 +196,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					Intersection lightIsect;
 					SWCSpectrum Li(0.f);
 					RayDifferential ray(p, wi);
+					ray.time = tspack->time;
 					if (scene->Intersect(ray, &lightIsect)) {
 						if (lightIsect.arealight == light)
 							Li = lightIsect.Le(tspack, -wi);
