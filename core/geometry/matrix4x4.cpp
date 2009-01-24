@@ -84,15 +84,23 @@ float Matrix4x4::Determinant() const {
 			A[i][j] = m[i][j+1];
 	}
 
-	for (int k = 0; k < 4; k++) {
+	int k = 0;
+	
+	while (true) {
 		if (m[3][k] != 0.f)
 			result += s * m[3][k] * Det3x3(A);
+
+		// we're done
+		if (k >= 3)
+			break;
 
 		s *= -1;
 
 		// copy column for next expansion
 		for (int i = 0; i < 3; i++)
 			A[i][k] = m[i][k];
+
+		k++;
 	}
 
 	return result;
