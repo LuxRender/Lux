@@ -79,8 +79,8 @@ protected:
 
 	// Dade - vertices data
 	int nverts;
-	Point *p;
-	Normal *n;
+	Point *p; // in world space if no subdivision is needed, object space otherwise
+	Normal *n; // in object space
 	float *uvs;
 
 	// Dade - triangle data

@@ -536,6 +536,9 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 			InvA[1][0] * dn01.x + InvA[1][1] * dn02.x + InvA[1][2] * dn03.x,
 			InvA[1][0] * dn01.y + InvA[1][1] * dn02.y + InvA[1][2] * dn03.y,
 			InvA[1][0] * dn01.z + InvA[1][1] * dn02.z + InvA[1][2] * dn03.z);
+
+		dndu = obj2world(dndu);
+		dndv = obj2world(dndv);
 	}
 
 	*dgShading = DifferentialGeometry(

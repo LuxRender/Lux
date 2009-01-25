@@ -216,8 +216,8 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
 		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
 
-		dndu = mesh->ObjectToWorld(dndu);
-		dndv = mesh->ObjectToWorld(dndu);
+		dndu = obj2world(dndu);
+		dndv = obj2world(dndv);
 	}
 
 	*dgShading = DifferentialGeometry(
