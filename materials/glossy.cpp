@@ -44,12 +44,18 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum s = Ks->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
+	float i = index->Evaluate(tspack, dgs);
+	if(i > 0.0) {
+		const float ti = (i-1)/(i+1);
+		s *= ti*ti;
+	}
+	s.Clamp(0.f, 1.f);
+
 	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 
 	float u = nu->Evaluate(tspack, dgs);
 	float v = nv->Evaluate(tspack, dgs);
-
 	float ld = depth->Evaluate(tspack, dgs);
 
 	if(u == v)
@@ -61,14 +67,15 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 }
 Material* Glossy::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(.5f));
-	boost::shared_ptr<Texture<SWCSpectrum> > Ks = mp.GetSWCSpectrumTexture("Ks", RGBColor(.5f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks = mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f));
+	boost::shared_ptr<Texture<float> > i = mp.GetFloatTexture("index", 0.0f);
 	boost::shared_ptr<Texture<float> > d = mp.GetFloatTexture("d", .0f);
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Glossy(Kd, Ks, Ka, d, uroughness, vroughness, bumpMap);
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy");

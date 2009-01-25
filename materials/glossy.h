@@ -32,12 +32,13 @@ class Glossy : public Material {
 public:
 	// Glossy Public Methods
 	Glossy(boost::shared_ptr<Texture<SWCSpectrum> > kd, boost::shared_ptr<Texture<SWCSpectrum> > ks,
-			boost::shared_ptr<Texture<SWCSpectrum> > ka, boost::shared_ptr<Texture<float> > d,
+			boost::shared_ptr<Texture<SWCSpectrum> > ka, boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > d,
 			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
 			boost::shared_ptr<Texture<float> > bump) {
 		Kd = kd;
 		Ks = ks;
 		Ka = ka;
+		index = i;
 		depth = d;
 		nu = u;
 		nv = v;
@@ -49,7 +50,7 @@ public:
 private:
 	// Glossy Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;
-	boost::shared_ptr<Texture<float> > depth;
+	boost::shared_ptr<Texture<float> > depth, index;
 	boost::shared_ptr<Texture<float> > nu, nv;
 	boost::shared_ptr<Texture<float> > bumpMap;
 };
