@@ -42,6 +42,13 @@ void FrDiel(float cosi, float cost,
 						(etai * cosi + etat * cost);
 	*f = (Rparl*Rparl + Rperp*Rperp) * 0.5f;
 }
+void FrDiel2(float cosi, const SWCSpectrum &cost, const SWCSpectrum &eta, SWCSpectrum *f)
+{
+	SWCSpectrum R(eta * cost);
+	R = (SWCSpectrum(cosi) - R) / (SWCSpectrum(cosi) + R);
+	R *= R;
+	*f = R;
+}
 void FrCond(float cosi,
 			const SWCSpectrum &eta,
 			const SWCSpectrum &k,

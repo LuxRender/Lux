@@ -38,6 +38,7 @@ public:
 
 void FrDiel(float cosi, float cost,
 	const SWCSpectrum &etai, const SWCSpectrum &etat, SWCSpectrum *const f);
+void FrDiel2(float cosi, const SWCSpectrum &cost, const SWCSpectrum &eta, SWCSpectrum *f);
 void FrCond(float cosi, const SWCSpectrum &n, const SWCSpectrum &k, SWCSpectrum *const f);
 void FrFull(float cosi, const SWCSpectrum &cost, const SWCSpectrum &n, const SWCSpectrum &k, SWCSpectrum *const f);
 SWCSpectrum FresnelApproxEta(const SWCSpectrum &intensity);
