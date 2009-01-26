@@ -127,8 +127,7 @@ namespace lux {
 				float du;
 				int u1 = uFunc->IndexOf(s, &du);
 				int u2 = min(nVFuncs - 1, u1 + 1);
-				int tgtY = y;
-				if(flipZ) tgtY = yRes-y;
+				int tgtY = flipZ ? (yRes-1)-y : y;
 				img[ x + tgtY*xRes ] = 
 					vFuncs[u1]->Eval(t) * (1.f - du) + vFuncs[u2]->Eval(t) * du;
 			}
