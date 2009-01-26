@@ -28,29 +28,43 @@
 using namespace lux;
 
 void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
-	// Compute Fresnel reflectance for dielectric
-	cosi = Clamp(cosi, -1.f, 1.f);
-	// Compute indices of refraction for dielectric
-	bool entering = cosi > 0.;
-	float ei = eta_i, et = eta_t;
+	if (cb != 0.f && !tspack->swl->single) {
+		SWCSpectrum eta = SWCSpectrum(tspack->swl->w);
+		eta *= eta;
+		eta = SWCSpectrum(eta_t) + SWCSpectrum(cb * 1000000) / eta;
+		eta /= SWCSpectrum(eta_i);
+		SWCSpectrum cost(sqrtf(max(0.f, 1.f - cosi * cosi)));
+		if (cosi > 0.f)
+			cost /= eta;
+		else
+			cost *= eta;
+		cost.Clamp(0.f, 1.f);
+		cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
+		FrDiel2(fabsf(cosi), cost, eta, f);
+	} else {
+		// Compute Fresnel reflectance for dielectric
+		cosi = Clamp(cosi, -1.f, 1.f);
+		// Compute indices of refraction for dielectric
+		bool entering = cosi > 0.;
+		float ei = eta_i, et = eta_t;
 
-	if(cb != 0.) {
-		// Handle dispersion using cauchy formula
-		float w = tspack->swl->SampleSingle();
-		et = eta_t + (cb * 1000000) / (w*w);
-	}
+		if(cb != 0.) {
+			// Handle dispersion using cauchy formula
+			float w = tspack->swl->SampleSingle();
+			et = eta_t + (cb * 1000000) / (w*w);
+		}
 
-	if (!entering)
-		swap(ei, et);
-	// Compute _sint_ using Snell's law
-	float sint = ei/et * sqrtf(max(0.f, 1.f - cosi*cosi));
-	if (sint > 1.) {
-		// Handle total internal reflection
-		*f = SWCSpectrum(1.);
-	}
-	else {
-		float cost = sqrtf(max(0.f, 1.f - sint*sint));
-		FrDiel(fabsf(cosi), cost, ei, et, f);
+		if (!entering)
+			swap(ei, et);
+		// Compute _sint_ using Snell's law
+		const float sint = ei/et * sqrtf(max(0.f, 1.f - cosi*cosi));
+		if (sint > 1.) {
+			// Handle total internal reflection
+			*f = SWCSpectrum(1.);
+		} else {
+			float cost = sqrtf(max(0.f, 1.f - sint*sint));
+			FrDiel(fabsf(cosi), cost, ei, et, f);
+		}
 	}
 }
 
