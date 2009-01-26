@@ -53,16 +53,16 @@ public:
 			c[i] = cs[i];
 	}
 	friend ostream &operator<<(ostream &, const SWCSpectrum &);
-	SWCSpectrum &operator+=(const SWCSpectrum &s2) {
-		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			c[i] += s2.c[i];
-		return *this;
-	}
 	SWCSpectrum operator+(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			ret.c[i] += s2.c[i];
 		return ret;
+	}
+	SWCSpectrum &operator+=(const SWCSpectrum &s2) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] += s2.c[i];
+		return *this;
 	}
 	SWCSpectrum operator-(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
@@ -70,11 +70,21 @@ public:
 			ret.c[i] -= s2.c[i];
 		return ret;
 	}
+	SWCSpectrum &operator-=(const SWCSpectrum &s2) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] -= s2.c[i];
+		return *this;
+	}
 	SWCSpectrum operator/(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			ret.c[i] /= s2.c[i];
 		return ret;
+	}
+	SWCSpectrum &operator/=(const SWCSpectrum &sp) {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			c[i] /= sp.c[i];
+		return *this;
 	}
 	SWCSpectrum operator*(const SWCSpectrum &sp) const {
 		SWCSpectrum ret = *this;
@@ -106,10 +116,7 @@ public:
 		return *this * (1.f / a);
 	}
 	SWCSpectrum &operator/=(Scalar a) {
-		Scalar inv = 1.f / a;
-		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			c[i] *= inv;
-		return *this;
+		return *this *= (1.f / a);
 	}
 	void AddWeighted(Scalar w, const SWCSpectrum &s) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
