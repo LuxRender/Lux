@@ -402,7 +402,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	}
 
 	// Report selections used
-	std::stringstream ss;
+	/*std::stringstream ss;
 	ss << "Mesh: ";
 	ss << "accel = ";
 	switch( concreteAccelType ) {
@@ -443,7 +443,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		default:
 			ss << "?";
 	}
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());*/
 
 	// Build acceleration structure
 	if(concreteAccelType == ACCEL_NONE) {
