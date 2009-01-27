@@ -237,7 +237,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 						LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
 							ntris, nverts, triVertexIndex, p, uvs,
 							nSubdivLevels, displacementMap,
-							displacementMapScale, displacementMapScale,
+							displacementMapScale, displacementMapOffset,
 							displacementMapNormalSmooth, displacementMapSharpBoundary);
 						res = loopsubdiv.Refine();
 					}
