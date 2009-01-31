@@ -23,6 +23,7 @@
 // directlighting.cpp*
 #include "directlighting.h"
 #include "bxdf.h"
+#include "camera.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -50,6 +51,14 @@ void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene
 	structure.push_back(1);	// bsdf component sample for light
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+}
+
+void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
+{
+	// Prepare image buffers
+	BufferType type = BUF_TYPE_PER_PIXEL;
+	scene->sampler->GetBufferType(&type);
+	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
 SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
@@ -180,7 +189,7 @@ int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 	sample->AddContribution(sample->imageX, sample->imageY,
 		LiInternal(tspack, scene, ray, sample, alpha, 0).ToXYZ(tspack),
-		alpha ? *alpha : 1.f);
+		alpha ? *alpha : 1.f, bufferId);
 
 	return 1;
 }

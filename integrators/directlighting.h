@@ -46,6 +46,7 @@ public:
 	int Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
+	void Preprocess(const TsPack *tspack, const Scene *scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
@@ -58,7 +59,7 @@ private:
 
 	int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
-	int sampleOffset;
+	int sampleOffset, bufferId;
 };
 
 }//namespace lux
