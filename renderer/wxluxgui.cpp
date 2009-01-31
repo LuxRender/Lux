@@ -138,6 +138,13 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_RH_burnText->SetValidator( vt );
 }
 
+LuxGui::~LuxGui() {
+	delete m_renderTimer;
+	delete m_statsTimer;
+	delete m_loadTimer;
+	delete m_netTimer;
+}
+
 void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 	switch(state) {
 		case WAITING:
@@ -789,6 +796,11 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 }
 
 void LuxGui::OnExit(wxCloseEvent& event) {
+	m_renderTimer->Stop();
+	m_statsTimer->Stop();;
+	m_loadTimer->Stop();;
+	m_netTimer->Stop();;
+
 	//if we have a scene file
   if(m_guiRenderState != WAITING) {
 		if(m_updateThread)

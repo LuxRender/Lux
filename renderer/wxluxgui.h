@@ -117,6 +117,7 @@ class LuxGui : public LuxMainFrame {
 public:
 	/** Constructor */
 	LuxGui(wxWindow* parent, bool opengl, bool copylog2console);
+	~LuxGui();
 
 	void RenderScenefile(wxString filename);
 	void SetRenderThreads(int num);
