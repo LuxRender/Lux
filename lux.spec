@@ -24,7 +24,7 @@ Requires:       libpng libjpeg libtiff OpenEXR libilmbase6 boost libwxgtk2.8
 
 %if 0%{?fedora_version} 
 BuildRequires:  libpng-devel libjpeg-devel libtiff-devel OpenEXR-devel flex bison boost-devel desktop-file-utils wxGTK-devel gcc gcc-c++ Mesa-devel cmake
-Requires:       libpng libjpeg libtiff OpenEXR IlmBase boost wxGTK
+Requires:       libpng libjpeg libtiff OpenEXR ilmbase boost wxGTK
 %endif
 
 
