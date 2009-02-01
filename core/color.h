@@ -205,7 +205,7 @@ public:
 	RGBColor(const float cs[3]) {
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
-	RGBColor(XYZColor xyz);
+	RGBColor(const XYZColor& xyz);
 	RGBColor(const Color &color) { // so that operators work
 		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
 	}
@@ -251,7 +251,7 @@ public:
 	XYZColor(float cs[3]) {
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
-	XYZColor(RGBColor rgb);
+	XYZColor(const RGBColor& rgb);
 
 	// RGB Color output methods
 	void ToRGB(float &r, float &g, float &b) const {
@@ -335,8 +335,8 @@ inline ostream &operator<<(ostream &os, const RGBColor &s) {
 	return os;
 }
 
-inline RGBColor::RGBColor(XYZColor xyz) {
-	ToXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
+inline RGBColor::RGBColor(const XYZColor& xyz) {
+	FromXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
 }
 
 inline void RGBColor::ToXYZ(XYZColor xyz) const {
@@ -363,8 +363,8 @@ inline ostream &operator<<(ostream &os, const XYZColor &s) {
 	return os;
 }
 
-inline XYZColor::XYZColor(RGBColor rgb) {
-	ToRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
+inline XYZColor::XYZColor(const RGBColor& rgb) {
+	FromRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
 }
 
 inline void XYZColor::ToRGB(RGBColor rgb) const {
