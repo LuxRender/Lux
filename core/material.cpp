@@ -41,7 +41,7 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	// Shift _dgEval_ _du_ in the $u$ direction and calculate bump map value
 	float du = .5f * (fabsf(dgs.dudx) + fabsf(dgs.dudy));
-	if (du == 0.f) du = .01f;
+	if (du == 0.f) du = .005f;
 	dgEval.p += du * dgs.dpdu;
 	dgEval.u += du;
 	dgEval.nn = Normalize(dgs.nn + du * dgs.dndu);
@@ -49,7 +49,7 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	// Shift _dgEval_ _dv_ in the $v$ direction and calculate bump map value
 	float dv = .5f * (fabsf(dgs.dvdx) + fabsf(dgs.dvdy));
-	if (dv == 0.f) dv = .01f;
+	if (dv == 0.f) dv = .005f;
 	dgEval.p = dgs.p + dv * dgs.dpdv;
 	dgEval.u = dgs.u;
 	dgEval.v += dv;
