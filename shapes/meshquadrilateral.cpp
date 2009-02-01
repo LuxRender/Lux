@@ -492,9 +492,14 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 
 	// Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and _ts_
 	Normal ns = dg.nn;
-	Vector ss = Normalize(dg.dpdu);
+	float lenDpDu = dg.dpdu.Length();
+	float lenDpDv = dg.dpdv.Length();
+	Vector ss = dg.dpdu / lenDpDu;
 	Vector ts = Normalize(Cross(ss, ns));
 	ss = Cross(ts, ns);
+	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+	ss *= lenDpDu;
+	ts *= lenDpDv;
 
 	// compute partial differentials
 	// see bugtracker ID 324 for derivation
