@@ -114,10 +114,14 @@ void Scene::SetParameterValue(Component comp, ComponentParameters param, double 
 double Scene::GetParameterValue(Component comp, ComponentParameters param) {
 	if(comp == LUX_FILM)
 		return camera->film->GetParameterValue(param);
+	else
+		return 0.;
 }
 double Scene::GetDefaultParameterValue(Component comp, ComponentParameters param) {
 	if(comp == LUX_FILM)
 		return camera->film->GetDefaultParameterValue(param);
+	else
+		return 0.;
 }
 
 int Scene::DisplayInterval() {
