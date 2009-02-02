@@ -1263,7 +1263,7 @@ void LuxGui::UpdateTonemapWidgetValues() {
 void LuxGui::ResetToneMappingFromFilm(){
 	m_TM_kernel = (int) luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
 
-	m_TM_reinhard_autoywa = (bool) ((int) luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA));
+	m_TM_reinhard_autoywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA) != 0.0;
 	m_TM_reinhard_ywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_YWA);
 	m_TM_reinhard_prescale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
 	m_TM_reinhard_postscale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
