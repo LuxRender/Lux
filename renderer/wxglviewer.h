@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_WXGLVIEWER_H
-#define LUX_WXGLVIEWER_H
+#ifndef LUX_WXGLPIPELINE_H
+#define LUX_WXGLPIPELINE_H
 
 #include "wxviewer.h"
 
@@ -59,6 +59,8 @@ protected:
 	virtual void Reload();
 	virtual void Reset();
 
+	void setShaders();
+
 	void InverseTransformPoint(int x, int y, int &invX, int &invY);
 	void DrawMarchingAnts(const wxViewerSelection &selection, float red, float green, float blue);
 
@@ -81,6 +83,35 @@ protected:
 	bool               m_selectionChanged;
 	wxViewerSelection  m_highlightSel;
 	bool               m_refreshMarchingAntsOnly;
+
+	bool				m_GLAcceleration;
+
+	// fragment program handles
+	GLuint			   m_v, m_f, m_p;
+
+	// fragment program parameters
+	GLfloat			   m_tm_exposure;
+	GLfloat            m_tm_Ywa;
+	GLfloat			   m_tm_pre_scale;
+	GLfloat			   m_tm_post_scale;
+	GLfloat			   m_tm_burn;
+	GLfloat			   m_tm_gamma;
+
+	GLint				m_tm_exposure_LOC;
+	GLint				m_tm_Ywa_LOC;
+	GLint				m_tm_pre_scale_LOC;
+	GLint				m_tm_post_scale_LOC;
+	GLint				m_tm_burn_LOC;
+	GLint				m_tm_gamma_LOC;
+
+	GLint				m_TEX_LOC;
+
+	void SetTmExposure(float v) { m_tm_exposure = v;  }
+	void SetTmYwa(float v) { m_tm_Ywa = v; }
+	void SetTmPreScale(float v);
+	void SetTmPostScale(float v);
+	void SetTmBurn(float v);
+	void SetTmGamma(float v) { m_tm_gamma = v; }
 };
 
 #else // LUX_USE_OPENGL
@@ -96,4 +127,4 @@ public:
 
 }//namespace lux
 
-#endif // LUX_WXGLVIEWER_H
+#endif // LUX_WXGLPIPELINE_H

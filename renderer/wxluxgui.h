@@ -146,6 +146,7 @@ protected:
 	int m_numThreads;
 
 	void UpdateStatistics();
+	void ApplyTonemapping();
 
 	boost::thread *m_engineThread, *m_updateThread;
 	bool m_opengl;
@@ -157,7 +158,6 @@ protected:
 	wxProgressDialog* m_progDialog;
 
 	wxViewerBase* m_renderOutput;
-	wxViewerBase* m_outputOutput; // CF ;)
 
 	wxTimer* m_loadTimer;
 	wxTimer* m_renderTimer;
@@ -165,6 +165,8 @@ protected:
 	wxTimer* m_netTimer;
 
 	wxBitmap m_splashbmp;
+
+	bool m_GLAcceleration; // false = no accel, true = opengl accerelation
 
 	// CF
 	class luxTreeData : public wxTreeItemData
@@ -188,12 +190,39 @@ protected:
 	void RemoveServer( void );
 
 	void OnTreeSelChanged( wxTreeEvent& event );
-
+	
+	void UpdateTonemapWidgetValues( void );
 	void ResetToneMapping( void );
+	void ResetToneMappingFromFilm( void );
 
-	double m_RH_pre;
-	double m_RH_post;
-	double m_RH_burn;
+	void SetColorSpacePreset(int choice);
+	void SetTonemapKernel(int choice);
+
+	// Tonemapping/ToRGB variables
+
+	bool m_auto_tonemap;
+	int m_TM_kernel;
+
+	bool m_TM_reinhard_autoywa;
+	double m_TM_reinhard_ywa;
+	double m_TM_reinhard_prescale;
+	double m_TM_reinhard_postscale;
+	double m_TM_reinhard_burn;
+
+	double m_TM_linear_exposure;
+	double m_TM_linear_sensitivity;
+	double m_TM_linear_fstop;
+	double m_TM_linear_gamma;
+
+	double m_TM_contrast_ywa;
+
+	double m_TORGB_xwhite, m_TORGB_ywhite;
+	double m_TORGB_xred, m_TORGB_yred;
+	double m_TORGB_xgreen, m_TORGB_ygreen;
+	double m_TORGB_xblue, m_TORGB_yblue;
+
+	double m_TORGB_gamma;
+
 
 	class LuxOptions : public m_OptionsDialog {
 		public:

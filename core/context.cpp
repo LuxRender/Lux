@@ -961,6 +961,26 @@ unsigned char* Context::framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
 }
 
+//HDR framebuffer access
+void Context::updateHDRFramebuffer() {
+	luxCurrentScene->UpdateHDRFramebuffer();
+}
+
+float* Context::hdrframebuffer() {
+	return luxCurrentScene->GetHDRFramebuffer();
+}
+
+// Parameter Access functions
+void Context::SetParameterValue(Component comp, ComponentParameters param, double value) { 
+	return luxCurrentScene->SetParameterValue(comp, param, value);
+}
+double Context::GetParameterValue(Component comp, ComponentParameters param) {
+	return luxCurrentScene->GetParameterValue(comp, param);
+}
+double Context::GetDefaultParameterValue(Component comp, ComponentParameters param) {
+	return luxCurrentScene->GetDefaultParameterValue(comp, param);
+}
+
 double Context::statistics(const string &statName) {
 	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL);
 	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);

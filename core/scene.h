@@ -106,6 +106,14 @@ public:
     //framebuffer access
     void UpdateFramebuffer();
     unsigned char* GetFramebuffer();
+    void UpdateHDRFramebuffer();
+    float* GetHDRFramebuffer();
+
+	// Parameter Access functions
+	void SetParameterValue(Component comp, ComponentParameters param, double value);
+	double GetParameterValue(Component comp, ComponentParameters param);
+	double GetDefaultParameterValue(Component comp, ComponentParameters param);
+
     int DisplayInterval();
     int FilmXres();
     int FilmYres();

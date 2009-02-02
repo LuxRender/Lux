@@ -36,7 +36,8 @@ enum ImageType {
     IMAGE_NONE = 0, // Don't write anything
     IMAGE_FILEOUTPUT = 1 << 1, // Write image to file
     IMAGE_FRAMEBUFFER = 1 << 2, // Display image
-    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
+	IMAGE_HDRFRAMEBUFFER = 1 << 3, // HDRDisplay image
+    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER | IMAGE_HDRFRAMEBUFFER
 };
 
 // Buffer types
@@ -303,11 +304,18 @@ public:
     }
     virtual unsigned char* getFrameBuffer() = 0;
     virtual void updateFrameBuffer() = 0;
+    virtual float* getHDRFrameBuffer() = 0;
+    virtual void updateHDRFrameBuffer() = 0;
     virtual float getldrDisplayInterval() = 0;
 
     void SetScene(Scene *scene1) {
         scene = scene1;
     }
+
+	// Parameter Access functions
+	virtual void SetParameterValue(ComponentParameters param, double value) = 0;
+	virtual double GetParameterValue(ComponentParameters param) = 0;
+	virtual double GetDefaultParameterValue(ComponentParameters param) = 0;
 
     // Film Public Data
     int xResolution, yResolution;

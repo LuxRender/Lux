@@ -41,7 +41,7 @@ void ContrastOp::Map(vector<Color> &xyz, int xRes, int yRes,
 		xyz[i] *= s;
 }
 ToneMap * ContrastOp::CreateToneMap(const ParamSet &ps) {
-	float day = ps.FindOneFloat("displayadaptationY", 50.f);
+	float day = ps.FindOneFloat("ywa", 50.f);
 	return new ContrastOp(day);
 }
 

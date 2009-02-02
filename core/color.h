@@ -315,7 +315,7 @@ public:
 		Constrain(lum, rgb);
 		return rgb;
 	}
-protected:
+//protected:
 	bool Constrain(float lum, RGBColor &rgb) const;
 	float xRed, yRed; //!<Red coordinates
 	float xGreen, yGreen; //!<Green coordinates

@@ -475,12 +475,10 @@ extern "C" void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPi
 //controlling number of threads
 extern "C" int luxAddThread() {
 	return Context::luxAddThread();
-	//return luxCurrentScene->AddThread();
 }
 
 extern "C" void luxRemoveThread() {
 	Context::luxRemoveThread();
-	//luxCurrentScene->RemoveThread();
 }
 
 extern "C" int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
@@ -490,33 +488,30 @@ extern "C" int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxIn
 //framebuffer access
 extern "C" void luxUpdateFramebuffer() {
 	Context::luxUpdateFramebuffer();
-	//luxCurrentScene->UpdateFramebuffer();
+}
+
+extern "C" void luxUpdateHDRFramebuffer() {
+	Context::luxUpdateHDRFramebuffer();
 }
 
 extern "C" unsigned char* luxFramebuffer() {
 	return Context::luxFramebuffer();
-	//return luxCurrentScene->GetFramebuffer();
 }
 
-/*
-//TODO - jromang : remove & replace by luxstatistics
-extern "C" int luxDisplayInterval() {
-	return Context::luxDisplayInterval();
-	//return luxCurrentScene->DisplayInterval();
+extern "C" float* luxHDRFramebuffer() {
+	return Context::luxHDRFramebuffer();
 }
 
-
-//TODO - jromang : remove & replace by luxstatistics
-extern "C" int luxFilmXres() {
-	return Context::luxFilmXres();
-	//return luxCurrentScene->FilmXres();
+// Parameter Access functions
+extern "C" void luxSetParameterValue(Component comp, ComponentParameters param, double value) {
+	return Context::luxSetParameterValue(comp, param, value);
 }
-
-//TODO - jromang : remove & replace by luxstatistics
-extern "C" int luxFilmYres() {
-	return Context::luxFilmYres();
-	//return luxCurrentScene->FilmYres();
-}*/
+extern "C" double luxGetParameterValue(Component comp, ComponentParameters param) {
+	return Context::luxGetParameterValue(comp, param);
+}
+extern "C" double luxGetDefaultParameterValue(Component comp, ComponentParameters param) {
+	return Context::luxGetDefaultParameterValue(comp, param);
+}
 
 extern "C" double luxStatistics(const char *statName) {
 	if(initialized) return Context::luxStatistics(statName);

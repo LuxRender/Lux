@@ -96,6 +96,13 @@ public:
 	virtual void Reload();
 	virtual void Reset();
 
+	virtual void SetTmExposure(float v) {};
+	virtual void SetTmYwa(float v) {};
+	virtual void SetTmPreScale(float v) {};
+	virtual void SetTmPostScale(float v) {};
+	virtual void SetTmBurn(float v) {};
+	virtual void SetTmGamma(float v) {};
+
 protected:
 	wxViewerMode m_viewerMode;
 };

@@ -108,7 +108,50 @@ int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
 
 /* Framebuffer access */
 void luxUpdateFramebuffer();
+void luxUpdateHDRFramebuffer();
 unsigned char* luxFramebuffer();
+float* luxHDRFramebuffer();
+
+
+/* Parameter access */
+// Exposed Parameters
+
+enum Component {			LUX_FILM
+};
+
+enum ComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
+
+							LUX_FILM_TM_REINHARD_AUTOYWA,
+							LUX_FILM_TM_REINHARD_YWA,
+							LUX_FILM_TM_REINHARD_PRESCALE,
+							LUX_FILM_TM_REINHARD_POSTSCALE,
+							LUX_FILM_TM_REINHARD_BURN,
+
+							LUX_FILM_TM_LINEAR_SENSITIVITY,
+							LUX_FILM_TM_LINEAR_EXPOSURE,
+							LUX_FILM_TM_LINEAR_FSTOP,
+							LUX_FILM_TM_LINEAR_GAMMA,
+
+							LUX_FILM_TM_CONTRAST_YWA,
+
+							LUX_FILM_TORGB_X_WHITE,
+							LUX_FILM_TORGB_Y_WHITE,
+							LUX_FILM_TORGB_X_RED,
+							LUX_FILM_TORGB_Y_RED,
+							LUX_FILM_TORGB_X_GREEN,
+							LUX_FILM_TORGB_Y_GREEN,
+							LUX_FILM_TORGB_X_BLUE,
+							LUX_FILM_TORGB_Y_BLUE,
+
+							LUX_FILM_TORGB_GAMMA
+
+};
+
+// Parameter Access functions
+void luxSetParameterValue(Component comp, ComponentParameters param, double value);
+double luxGetParameterValue(Component comp, ComponentParameters param);
+double luxGetDefaultParameterValue(Component comp, ComponentParameters param);
+
 
 /* Networking */
 void luxAddServer(const char * name);

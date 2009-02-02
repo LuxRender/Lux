@@ -29,7 +29,7 @@ namespace lux
 // ReinhardOp Declarations
 class ReinhardOp : public ToneMap {
 public:
-	ReinhardOp(float prS, float poS, float b);
+	ReinhardOp(bool ayw, float yw, float prS, float poS, float b);
 	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const;
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 	
@@ -37,6 +37,8 @@ private:
 	float pre_scale;
 	float post_scale;
 	float burn;
+	bool autoYwa;
+	float mYwa;
 };
 
 }//namespace lux

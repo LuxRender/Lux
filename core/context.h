@@ -148,10 +148,20 @@ public:
 
 	//framebuffer access
 	static void luxUpdateFramebuffer() { activeContext->updateFramebuffer(); }
+	static void luxUpdateHDRFramebuffer() { activeContext->updateHDRFramebuffer(); }
 	static unsigned char* luxFramebuffer() { return activeContext->framebuffer(); }
-	//static int luxDisplayInterval() { return activeContext->displayInterval(); }
-	//static int luxFilmXres() { return activeContext->filmXres(); }
-	//static int luxFilmYres() { return activeContext->filmYres(); }
+	static float* luxHDRFramebuffer() { return activeContext->hdrframebuffer(); }
+
+	// Parameter Access functions
+	static void luxSetParameterValue(Component comp, ComponentParameters param, double value) { 
+		activeContext->SetParameterValue(comp, param, value);
+	}
+	static double luxGetParameterValue(Component comp, ComponentParameters param) {
+		return activeContext->GetParameterValue(comp, param);
+	}
+	static double luxGetDefaultParameterValue(Component comp, ComponentParameters param) {
+		return activeContext->GetDefaultParameterValue(comp, param);
+	}
 
 	//film access (networking)
 	static void luxUpdateFilmFromNetwork() { activeContext->updateFilmFromNetwork(); }
@@ -244,6 +254,14 @@ private:
 	//framebuffer access
 	void updateFramebuffer();
 	unsigned char* framebuffer();
+	void updateHDRFramebuffer();
+	float* hdrframebuffer();
+
+	// Parameter Access functions
+	void Context::SetParameterValue(Component comp, ComponentParameters param, double value);
+	double Context::GetParameterValue(Component comp, ComponentParameters param);
+	double Context::GetDefaultParameterValue(Component comp, ComponentParameters param);
+
 	/*
 	int displayInterval();
 	int filmXres();

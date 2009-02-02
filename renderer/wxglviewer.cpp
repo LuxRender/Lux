@@ -22,21 +22,25 @@
 
 #ifdef LUX_USE_OPENGL
 
-#include "wxglviewer.h"
-
 // include OpenGL
 #if defined(__WXOSX_COCOA__) || defined(__WXCOCOA__) || defined(__WXMAC__)
 #include "OpenGL/glu.h"
 #include "OpenGL/gl.h"
 #else
-#include <GL/glu.h>
-#include <GL/gl.h>
+#include <GL/glew.h>
+//#include <GL/glu.h>
+//#include <GL/gl.h>
 #endif
 
 #include <cmath>
 
+#include "wxglviewer.h"
+
 #include "lux.h"
 #include "api.h"
+
+#include "error.h"
+//#pragma comment( lib, "glew32.lib" )
 
 using namespace lux;
 
@@ -73,9 +77,163 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 	m_selectionChanged = false;
 	m_refreshMarchingAntsOnly = false;
 
+	m_GLAcceleration = false;
+
+	// Set default params for fragment program
+	m_tm_exposure = 1.0;
+	m_tm_Ywa = 1.0;
+	m_tm_pre_scale = 1.0;
+	m_tm_post_scale = 1.2; 
+	m_tm_burn = 6.0;
+	m_tm_gamma = 2.2;
+
+	// NOTE - radiance - OPENGL stuff is not working yet, commit will follow in a few days.
+
+/*	SetCurrent(m_glContext);
+    glewInit();
+    if (glewIsSupported("GL_VERSION_2_0"))
+            printf("Ready for OpenGL 2.0\n");
+    else {
+            printf("OpenGL 2.0 not supported\n");
+            exit(1);
+    }
+
+	setShaders(); */
+
 	SetMode(PANZOOM);
 
 	SetCursor(wxCURSOR_CROSS);
+}
+
+char *textFileRead(char *fn) {
+	FILE *fp;
+	char *content = NULL;
+
+	int count=0;
+
+	if (fn != NULL) {
+		fp = fopen(fn,"rt");
+
+		if (fp != NULL) {
+
+			fseek(fp, 0, SEEK_END);
+			count = ftell(fp);
+			rewind(fp);
+
+			if (count > 0) {
+				content = (char *)malloc(sizeof(char) * (count+1));
+				count = fread(content,sizeof(char),count,fp);
+				content[count] = '\0';
+			}
+			fclose(fp);
+		}
+	}
+	return content;
+}
+
+void printShaderInfoLog(GLuint obj)
+{
+	int infologLength = 0;
+	int charsWritten  = 0;
+	char *infoLog;
+
+	glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+
+	if (infologLength > 0)
+	{
+		infoLog = (char *)malloc(infologLength);
+		glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
+		std::stringstream ss;
+		ss << infoLog;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		//printf("%s\n",infoLog);
+		free(infoLog);
+	}
+}
+
+void printProgramInfoLog(GLuint obj)
+{
+	int infologLength = 0;
+	int charsWritten  = 0;
+	char *infoLog;
+
+	glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+
+	if (infologLength > 0)
+	{
+		infoLog = (char *)malloc(infologLength);
+		glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
+		std::stringstream ss;
+		ss << infoLog;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		//printf("%s\n",infoLog);
+		free(infoLog);
+	}
+}
+
+void LuxGLViewer::setShaders() {
+	char *vs,*fs;
+
+	m_v = glCreateShader(GL_VERTEX_SHADER);
+	m_f = glCreateShader(GL_FRAGMENT_SHADER);	
+
+	vs = textFileRead("tonemap.vs");
+	fs = textFileRead("tonemap.fs");
+
+	const char * vv = vs;
+	const char * ff = fs;
+
+	glShaderSource(m_v, 1, &vv,NULL);
+	glShaderSource(m_f, 1, &ff,NULL);
+
+	free(vs);free(fs);
+
+	glCompileShader(m_v);
+	printShaderInfoLog(m_v);
+	glCompileShader(m_f);
+	printShaderInfoLog(m_f);
+
+	m_p = glCreateProgram();
+
+	glAttachShader(m_p,m_v);
+	glAttachShader(m_p,m_f);
+
+	glLinkProgram(m_p);
+	printProgramInfoLog(m_p);
+
+	m_tm_exposure_LOC = glGetUniformLocation(m_p, "exposure");
+	m_tm_Ywa_LOC = glGetUniformLocation(m_p, "Ywa");
+	m_tm_pre_scale_LOC = glGetUniformLocation(m_p, "pre_scale");
+	m_tm_post_scale_LOC = glGetUniformLocation(m_p, "post_scale");
+	m_tm_burn_LOC = glGetUniformLocation(m_p, "burn");
+	m_tm_gamma_LOC = glGetUniformLocation(m_p, "gamma");
+
+	m_TEX_LOC = glGetUniformLocation(m_p, "tex");
+	//glUseProgram(m_p);
+}
+
+void LuxGLViewer::SetTmPreScale(float v) {
+	wxClientDC(this);
+	m_tm_pre_scale = v;
+	SetCurrent(m_glContext);
+	glUniform1f(m_tm_pre_scale_LOC,m_tm_pre_scale);
+	Refresh();
+}
+
+void LuxGLViewer::SetTmPostScale(float v) {
+	wxClientDC(this);
+	m_tm_post_scale = v;
+	SetCurrent(m_glContext);
+	glUniform1f(m_tm_post_scale_LOC,m_tm_post_scale);
+	Refresh();
+}
+
+void LuxGLViewer::SetTmBurn(float v) {
+	wxClientDC(this);
+	m_tm_burn = v;
+	SetCurrent(m_glContext);
+	glUniform1f(m_tm_burn_LOC,m_tm_burn);
+	Refresh();
 }
 
 void LuxGLViewer::OnPaint(wxPaintEvent& event) {
@@ -96,6 +254,16 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 
+/*	glUniform1f(m_tm_exposure_LOC,m_tm_exposure);
+	glUniform1f(m_tm_Ywa_LOC,m_tm_Ywa);
+	glUniform1f(m_tm_pre_scale_LOC,m_tm_pre_scale);
+	glUniform1f(m_tm_post_scale_LOC,m_tm_post_scale);
+	glUniform1f(m_tm_burn_LOC,m_tm_burn);
+	glUniform1f(m_tm_gamma_LOC,m_tm_gamma);
+
+	glUniform1i(m_TEX_LOC, 0);
+	glUseProgram(m_p); */
+	 
 	if(luxStatistics("sceneIsReady")) {
 		if(m_firstDraw) {
 			m_firstDraw = false;
@@ -116,6 +284,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //GL_LINEAR); //'linear' causes seams to show on my ati card - zcott
 				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); //warning: the texture isn't initialized, don't display before uploading
+				//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, m_textureW, m_textureH, 0, GL_RGB, GL_FLOAT, NULL);
 			}
 			m_imageChanged = true;
 			//move to center of window
@@ -149,6 +318,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 						// NOTE - Ratow - loading texture tile in one pass
 						glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
 						glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
+						//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_FLOAT, luxHDRFramebuffer());
 						glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_UNSIGNED_BYTE, luxFramebuffer());
 					}
 					glBegin(GL_QUADS);

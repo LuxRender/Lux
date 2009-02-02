@@ -59,15 +59,17 @@ using namespace lux;
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM,
-	int haltspp, float reinhard_prescale, float reinhard_postscale, float reinhard_burn, 
+	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
+	int p_TonemapKernel, bool p_ReinhardAutoYwa, float p_ReinhardYwa, float p_ReinhardPreScale, float p_ReinhardPostScale,
+	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
+	float p_ContrastYwa, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-	float g, int reject_warmup, bool debugmode) :
+	int reject_warmup, bool debugmode) :
 	Film(xres, yres, haltspp), filter(filt), writeInterval(wI), displayInterval(dI),
-	filename(filename1), premultiplyAlpha(premult), buffersInited(false), gamma(g),
+	filename(filename1), premultiplyAlpha(premult), buffersInited(false),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	framebuffer(NULL), debug_mode(debugmode),
+	framebuffer(NULL), hdrframebuffer(NULL), debug_mode(debugmode),
 	colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f)
 {
 	// Compute film image extent
@@ -77,10 +79,31 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
 	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
 
-	// Set tonemapper params
-	toneParams.AddFloat("prescale", &reinhard_prescale, 1);
-	toneParams.AddFloat("postscale", &reinhard_postscale, 1);
-	toneParams.AddFloat("burn", &reinhard_burn, 1);
+	// Set use and default runtime changeable parameters
+	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
+
+	m_ReinhardAutoYwa = d_ReinhardAutoYwa = p_ReinhardAutoYwa;
+	m_ReinhardYwa = d_ReinhardYwa = p_ReinhardYwa;
+	m_ReinhardPreScale = d_ReinhardPreScale = p_ReinhardPreScale;
+	m_ReinhardPostScale = d_ReinhardPostScale = p_ReinhardPostScale;
+	m_ReinhardBurn = d_ReinhardBurn = p_ReinhardBurn;
+
+	m_LinearSensitivity = d_LinearSensitivity = p_LinearSensitivity;
+	m_LinearExposure = d_LinearExposure = p_LinearExposure;
+	m_LinearFStop = d_LinearFStop = p_LinearFStop;
+	m_LinearGamma = d_LinearGamma = p_LinearGamma;
+
+	m_ContrastYwa = d_ContrastYwa = p_ContrastYwa;
+
+	m_RGB_X_White = d_RGB_X_White = whitepoint[0];
+	m_RGB_Y_White = d_RGB_Y_White = whitepoint[1];
+	m_RGB_X_Red = d_RGB_X_Red = cs_red[0];
+	m_RGB_Y_Red = d_RGB_Y_Red = cs_red[1];
+	m_RGB_X_Green = d_RGB_X_Green = cs_green[0];
+	m_RGB_Y_Green = d_RGB_Y_Green = cs_green[1];
+	m_RGB_X_Blue = d_RGB_X_Blue = cs_blue[0];
+	m_RGB_Y_Blue = d_RGB_Y_Blue = cs_blue[1];
+	m_Gamma = d_Gamma = p_Gamma;
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
@@ -103,6 +126,223 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	maxY = 0.f;
 	warmupSamples = 0;
 	warmupComplete = false;
+}
+
+// Parameter Access functions
+void FlexImageFilm::SetParameterValue(ComponentParameters param, double value){
+	 switch (param) {
+		 case LUX_FILM_TM_TONEMAPKERNEL: {
+			 m_TonemapKernel = (int) value;
+			} break;
+
+		 case LUX_FILM_TM_REINHARD_AUTOYWA: {
+			 m_ReinhardAutoYwa = bool(Floor2Int(value));
+			} break;
+		 case LUX_FILM_TM_REINHARD_YWA: {
+			 m_ReinhardYwa = float(value);
+			} break;
+		 case LUX_FILM_TM_REINHARD_PRESCALE: {
+			 m_ReinhardPreScale = float(value);
+			} break;
+		 case LUX_FILM_TM_REINHARD_POSTSCALE: {
+			 m_ReinhardPostScale = float(value);
+			} break;
+		 case LUX_FILM_TM_REINHARD_BURN: {
+			 m_ReinhardBurn = float(value);
+			} break;
+
+		 case LUX_FILM_TM_LINEAR_SENSITIVITY: {
+			 m_LinearSensitivity = float(value);
+			} break;
+		 case LUX_FILM_TM_LINEAR_EXPOSURE: {
+			 m_LinearExposure = float(value);
+			} break;
+		 case LUX_FILM_TM_LINEAR_FSTOP: {
+			 m_LinearFStop = float(value);
+			} break;
+		 case LUX_FILM_TM_LINEAR_GAMMA: {
+			 m_LinearGamma = float(value);
+			} break;
+
+		 case LUX_FILM_TM_CONTRAST_YWA: {
+			 m_ContrastYwa = float(value);
+			} break;
+
+		 case LUX_FILM_TORGB_X_WHITE: {
+			 m_RGB_X_White = float(value);
+			} break;
+		 case LUX_FILM_TORGB_Y_WHITE: {
+			 m_RGB_Y_White = float(value);
+			} break;
+		 case LUX_FILM_TORGB_X_RED: {
+			 m_RGB_X_Red = float(value);
+			} break;
+		 case LUX_FILM_TORGB_Y_RED: {
+			 m_RGB_Y_Red = float(value);
+			} break;
+		 case LUX_FILM_TORGB_X_GREEN: {
+			 m_RGB_X_Green = float(value);
+			} break;
+		 case LUX_FILM_TORGB_Y_GREEN: {
+			 m_RGB_Y_Green = float(value);
+			} break;
+		 case LUX_FILM_TORGB_X_BLUE: {
+			 m_RGB_X_Blue = float(value);
+			} break;
+		 case LUX_FILM_TORGB_Y_BLUE: {
+			 m_RGB_Y_Blue = float(value);
+			} break;
+		 case LUX_FILM_TORGB_GAMMA: {
+			 m_Gamma = float(value);
+			} break;
+
+		 default: {
+			} break;
+	 }
+}
+double FlexImageFilm::GetParameterValue(ComponentParameters param) {
+	 switch (param) {
+		 case LUX_FILM_TM_TONEMAPKERNEL: {
+			 return float(m_TonemapKernel);
+			} break;
+
+		 case LUX_FILM_TM_REINHARD_AUTOYWA: {
+			 return float(int(m_ReinhardAutoYwa));
+			} break;
+		 case LUX_FILM_TM_REINHARD_YWA: {
+			 return m_ReinhardYwa;
+			} break;
+		 case LUX_FILM_TM_REINHARD_PRESCALE: {
+			 return m_ReinhardPreScale;
+			} break;
+		 case LUX_FILM_TM_REINHARD_POSTSCALE: {
+			 return m_ReinhardPostScale;
+			} break;
+		 case LUX_FILM_TM_REINHARD_BURN: {
+			 return m_ReinhardBurn;
+			} break;
+
+		 case LUX_FILM_TM_LINEAR_SENSITIVITY: {
+			 return m_LinearSensitivity;
+			} break;
+		 case LUX_FILM_TM_LINEAR_EXPOSURE: {
+			 return m_LinearExposure;
+			} break;
+		 case LUX_FILM_TM_LINEAR_FSTOP: {
+			 return m_LinearFStop;
+			} break;
+		 case LUX_FILM_TM_LINEAR_GAMMA: {
+			 return m_LinearGamma;
+			} break;
+
+		 case LUX_FILM_TM_CONTRAST_YWA: {
+			 return m_ContrastYwa;
+			} break;
+
+		 case LUX_FILM_TORGB_X_WHITE: {
+			 return m_RGB_X_White;
+			} break;
+		 case LUX_FILM_TORGB_Y_WHITE: {
+			 return m_RGB_Y_White;
+			} break;
+		 case LUX_FILM_TORGB_X_RED: {
+			 return m_RGB_X_Red;
+			} break;
+		 case LUX_FILM_TORGB_Y_RED: {
+			 return m_RGB_Y_Red;
+			} break;
+		 case LUX_FILM_TORGB_X_GREEN: {
+			 return m_RGB_X_Green;
+			} break;
+		 case LUX_FILM_TORGB_Y_GREEN: {
+			 return m_RGB_Y_Green;
+			} break;
+		 case LUX_FILM_TORGB_X_BLUE: {
+			 return m_RGB_X_Blue;
+			} break;
+		 case LUX_FILM_TORGB_Y_BLUE: {
+			 return m_RGB_Y_Blue;
+			} break;
+		 case LUX_FILM_TORGB_GAMMA: {
+			 return m_Gamma;
+			} break;
+
+		 default: {
+			} break;
+	 }
+	 return 0.;
+}
+double FlexImageFilm::GetDefaultParameterValue(ComponentParameters param) {
+	 switch (param) {
+		 case LUX_FILM_TM_TONEMAPKERNEL: {
+			 return float(d_TonemapKernel);
+			} break;
+
+		 case LUX_FILM_TM_REINHARD_AUTOYWA: {
+			 return float(int(d_ReinhardAutoYwa));
+			} break;
+		 case LUX_FILM_TM_REINHARD_YWA: {
+			 return d_ReinhardYwa;
+			} break;
+		 case LUX_FILM_TM_REINHARD_PRESCALE: {
+			 return d_ReinhardPreScale;
+			} break;
+		 case LUX_FILM_TM_REINHARD_POSTSCALE: {
+			 return d_ReinhardPostScale;
+			} break;
+		 case LUX_FILM_TM_REINHARD_BURN: {
+			 return d_ReinhardBurn;
+			} break;
+
+		 case LUX_FILM_TM_LINEAR_SENSITIVITY: {
+			 return d_LinearSensitivity;
+			} break;
+		 case LUX_FILM_TM_LINEAR_EXPOSURE: {
+			 return d_LinearExposure;
+			} break;
+		 case LUX_FILM_TM_LINEAR_FSTOP: {
+			 return d_LinearFStop;
+			} break;
+		 case LUX_FILM_TM_LINEAR_GAMMA: {
+			 return d_LinearGamma;
+			} break;
+
+		 case LUX_FILM_TM_CONTRAST_YWA: {
+			 return d_ContrastYwa;
+			} break;
+
+		 case LUX_FILM_TORGB_X_WHITE: {
+			 return d_RGB_X_White;
+			} break;
+		 case LUX_FILM_TORGB_Y_WHITE: {
+			 return d_RGB_Y_White;
+			} break;
+		 case LUX_FILM_TORGB_X_RED: {
+			 return d_RGB_X_Red;
+			} break;
+		 case LUX_FILM_TORGB_Y_RED: {
+			 return d_RGB_Y_Red;
+			} break;
+		 case LUX_FILM_TORGB_X_GREEN: {
+			 return d_RGB_X_Green;
+			} break;
+		 case LUX_FILM_TORGB_Y_GREEN: {
+			 return d_RGB_Y_Green;
+			} break;
+		 case LUX_FILM_TORGB_X_BLUE: {
+			 return d_RGB_X_Blue;
+			} break;
+		 case LUX_FILM_TORGB_Y_BLUE: {
+			 return d_RGB_Y_Blue;
+			} break;
+		 case LUX_FILM_TORGB_GAMMA: {
+			 return d_Gamma;
+			} break;
+
+		 default: {
+			} break;
+	 }
+	 return 0.;
 }
 
 void FlexImageFilm::GetSampleExtent(int *xstart, int *xend,
@@ -269,13 +509,54 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			WriteResumeFilm(filename + ".flm");
 	}
 
+	if ((type & IMAGE_HDRFRAMEBUFFER) && hdrframebuffer) {
+		// Copy to framebuffer pixels
+		const u_int nPix = xPixelCount * yPixelCount;
+		for (u_int i = 0; i < nPix; i++) {
+			hdrframebuffer[3 * i] = color[i].c[0];
+			hdrframebuffer[3 * i + 1] = color[i].c[1];
+			hdrframebuffer[3 * i + 2] = color[i].c[2];
+		}
+	}
+
 	// Dade - check if I have to run ApplyImagingPipeline
 	if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
 		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
+		// Construct ColorSystem from values
+		colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
+			m_RGB_X_Green, m_RGB_Y_Green,
+			m_RGB_X_Blue, m_RGB_Y_Blue,
+			m_RGB_X_White, m_RGB_Y_White, 1.f);
+
 		// Apply the imaging/tonemapping pipeline
-		ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-//			0., 0., "linear", &toneParams, gamma, 0.);
-			0., 0., "reinhard", &toneParams, gamma, 0.);
+		ParamSet toneParams;
+		if(m_TonemapKernel == 0) {
+			// Reinhard Tonemapper
+			toneParams.AddBool("autoywa", &m_ReinhardAutoYwa, 1);
+			toneParams.AddFloat("ywa", &m_ReinhardYwa, 1);
+			toneParams.AddFloat("prescale", &m_ReinhardPreScale, 1);
+			toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
+			toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+				0., 0., "reinhard", &toneParams, m_Gamma, 0.);
+		} else if(m_TonemapKernel == 1) {
+			// Linear Tonemapper
+			toneParams.AddFloat("sensitivity", &m_LinearSensitivity, 1);
+			toneParams.AddFloat("exposure", &m_LinearExposure, 1);
+			toneParams.AddFloat("fstop", &m_LinearFStop, 1);
+			toneParams.AddFloat("gamma", &m_LinearGamma, 1);
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+				0., 0., "linear", &toneParams, m_Gamma, 0.);
+		} else if(m_TonemapKernel == 2) {
+			// Contrast Tonemapper
+			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+				0., 0., "contrast", &toneParams, m_Gamma, 0.);
+		} else {
+			// MaxWhite Tonemapper
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+				0., 0., "maxwhite", &toneParams, m_Gamma, 0.);
+		}
 
 		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 			// Copy to framebuffer pixels
@@ -292,17 +573,6 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			if (writeTmTga)
 				WriteTGAImage(color, alpha, filename + postfix + ".tga");
 
-/*            if (writeTmExr || writeTmIgi) {
-                // Map display range 0.-255. back to float range 0.-1.
-                // and reverse the gamma correction
-                // necessary for EXR/IGI formats
-                int nPix = xResolution * yResolution;
-                for (int i = 0; i < 3 * nPix; ++i) {
-                    rgb[i] /= 255;
-                    if (gamma != 1.f)
-                        rgb[i] = powf(rgb[i], gamma);
-                }
-*/
 			// write out tonemapped EXR
 			if (writeTmExr)
 				WriteEXRImage(color, alpha, filename + postfix + ".exr");
@@ -310,8 +580,8 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			// write out tonemapped IGI
 			if (writeTmIgi) //TODO color should be XYZ values
 				WriteIGIImage(color, alpha, filename + postfix + ".igi"); // TODO add samples
-//            }
 		}
+
 	}
 }
 
@@ -327,11 +597,6 @@ void FlexImageFilm::ScaleOutput(vector<Color> &pixel, vector<float> &alpha, floa
 }
 void FlexImageFilm::WriteImage(ImageType type)
 {
-//	boost::recursive_mutex::scoped_lock lock(imageMutex);
-
-//	// Dade - flush the sample buffer before to save the image.
-//	FlushSampleArray();
-
 	const int nPix = xPixelCount * yPixelCount;
 	vector<Color> pixels(nPix), pixels0(nPix);
 	vector<float> alpha(nPix), alpha0(nPix);
@@ -365,7 +630,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	EV = logf(Y * 10.f) / logf(2.f);
 }
 
-// GUI display methods
+// GUI LDR framebuffer access methods
 void FlexImageFilm::createFrameBuffer()
 {
 	// allocate pixels
@@ -375,15 +640,14 @@ void FlexImageFilm::createFrameBuffer()
 	// zero it out
 	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
 }
-
 void FlexImageFilm::updateFrameBuffer()
 {
-	if(!framebuffer)
+	if(!framebuffer) {
 		createFrameBuffer();
+	}
 
 	WriteImage(IMAGE_FRAMEBUFFER);
 }
-
 unsigned char* FlexImageFilm::getFrameBuffer()
 {
 	if(!framebuffer)
@@ -391,6 +655,32 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 
 	return framebuffer;
 }
+
+// GUI HDR (for OpenGL acceleration) framebuffer access methods
+void FlexImageFilm::createHDRFrameBuffer()
+{
+	// allocate pixels
+	unsigned int nPix = xPixelCount * yPixelCount;
+	hdrframebuffer = new float[3*nPix];			// TODO delete data
+
+	// zero it out
+	memset(hdrframebuffer,0.,sizeof(*hdrframebuffer)*3*nPix);    
+}
+void FlexImageFilm::updateHDRFrameBuffer()
+{
+	if(!hdrframebuffer)
+		createHDRFrameBuffer();
+
+	WriteImage(IMAGE_HDRFRAMEBUFFER);
+}
+float* FlexImageFilm::getHDRFrameBuffer()
+{
+	if(!hdrframebuffer)
+		createHDRFrameBuffer();
+
+	return hdrframebuffer;
+}
+
 
 void FlexImageFilm::WriteResumeFilm(const string &filename)
 {
@@ -747,13 +1037,6 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	int writeInterval = params.FindOneInt("writeinterval", 60);
 	int displayInterval = params.FindOneInt("displayinterval", 12);
 
-	// Default tonemapping options (reinhard)
-	float reinhard_prescale = params.FindOneFloat("reinhard_prescale", 1.0f);
-	float reinhard_postscale = params.FindOneFloat("reinhard_postscale", 1.0f);
-	float reinhard_burn = params.FindOneFloat("reinhard_burn", 6.0f);
-	// Gamma correction
-	float gamma = params.FindOneFloat("gamma", 2.2f);
-
 	// Rejection mechanism
 	int reject_warmup = params.FindOneInt("reject_warmup", 64); // minimum samples/px before rejecting
 
@@ -776,11 +1059,40 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float white[2] = {0.314275f, 0.329411f};
 	GetColorspaceParam(params, "colorspace_white", white);
 
+	// Tonemapping
+	int s_TonemapKernel = 0;
+	string tmkernelStr = params.FindOneString("tonemapkernel", "reinhard");
+	if (tmkernelStr == "reinhard") s_TonemapKernel = 0;
+	else if (tmkernelStr == "linear") s_TonemapKernel = 1;
+	else if (tmkernelStr == "contrast") s_TonemapKernel = 2;
+	else if (tmkernelStr == "maxwhite") s_TonemapKernel = 3;
+	else {
+		std::stringstream ss;
+		ss << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"reinhard\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		s_TonemapKernel = 0;
+	}
+
+	bool s_ReinhardAutoYwa = params.FindOneBool("reinhard_autoywa", true);
+	float s_ReinhardYwa = params.FindOneFloat("reinhard_ywa", 1.f);
+	float s_ReinhardPreScale = params.FindOneFloat("reinhard_prescale", 1.f);
+	float s_ReinhardPostScale = params.FindOneFloat("reinhard_postscale", 1.f);
+	float s_ReinhardBurn = params.FindOneFloat("reinhard_burn", 6.f);
+	float s_LinearSensitivity = params.FindOneFloat("linear_sensitivity", 100.f);
+	float s_LinearExposure = params.FindOneFloat("linear_exposure", 1.f/1000.f);
+	float s_LinearFStop = params.FindOneFloat("linear_fstop", 2.8f);
+	float s_LinearGamma = params.FindOneFloat("linear_gamma", 1.0f);
+	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 100.f);
+	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
+
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
-		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM, restart_resume_FLM,
-		haltspp, reinhard_prescale, reinhard_postscale, reinhard_burn, red, green, blue, white,
-		gamma, reject_warmup, debug_mode);
+		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM, restart_resume_FLM, haltspp,
+
+		s_TonemapKernel, s_ReinhardAutoYwa, s_ReinhardYwa, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
+		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_Gamma,
+
+		red, green, blue, white, reject_warmup, debug_mode);
 }
 
 static DynamicLoader::RegisterFilm<FlexImageFilm> r1("fleximage");

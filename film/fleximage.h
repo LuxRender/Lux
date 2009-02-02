@@ -39,17 +39,19 @@ public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
 		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
-		framebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
+		framebuffer(NULL), hdrframebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
 		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-		bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM,
-		int haltspp, float reinhard_prescale, float reinhard_postscale,	float reinhard_burn, 
+		bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
+		int p_TonemapKernel, bool p_ReinhardAutoYwa, float p_ReinhardYwa, float p_ReinhardPreScale, float p_ReinhardPostScale,
+		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
+		float p_ContrastDisplayAdaptionY, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-		float g, int reject_warmup, bool debugmode);
+		int reject_warmup, bool debugmode);
 	~FlexImageFilm() {
-		delete[] framebuffer;
+		delete[] framebuffer; delete[] hdrframebuffer;
 	}
 
 	void RequestBufferGroups(const vector<string> &bg);
@@ -66,9 +68,17 @@ public:
 	void updateFrameBuffer();
 	unsigned char* getFrameBuffer();
 	void createFrameBuffer();
+	void updateHDRFrameBuffer();
+	float* getHDRFrameBuffer();
+	void createHDRFrameBuffer();
 	float getldrDisplayInterval() {
 		return displayInterval;
 	}
+
+	// Parameter Access functions
+	void SetParameterValue(ComponentParameters param, double value);
+	double GetParameterValue(ComponentParameters param);
+	double GetDefaultParameterValue(ComponentParameters param);
 
 	// Dade - method useful for transmitting the samples to a client
 	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true);
@@ -78,11 +88,6 @@ public:
 
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
-
-	// Lotus - the implementations of these 2 methods seem to be removed
-	//void FlushSampleArray();
-	// Dade - using this method requires to lock arrSampleMutex
-	//void MergeSampleArray();
 
 	void WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix);
 	void WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
@@ -99,14 +104,14 @@ private:
 	bool premultiplyAlpha, buffersInited;
 	float cropWindow[4], *filterTable;
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
-	ParamSet toneParams;
-	float gamma;
+	//ParamSet toneParams;
+	//float gamma;
 	float reject_warmup_samples;
 	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga, writeResumeFlm, restartResumeFlm;
 
 	unsigned char *framebuffer;
-	// Dade - timer is broken under Linux when using multiple threads, using
-	// instead
+	float *hdrframebuffer;
+
 	boost::xtime lastWriteImageTime;
 
 	bool debug_mode;
@@ -118,6 +123,28 @@ private:
 	u_int warmupSamples;
 	bool warmupComplete;
 	ColorSystem colorSpace;
+
+	int m_TonemapKernel, d_TonemapKernel;
+	bool m_ReinhardAutoYwa, d_ReinhardAutoYwa;
+	float m_ReinhardYwa, d_ReinhardYwa;
+	float m_ReinhardPreScale, d_ReinhardPreScale;
+	float m_ReinhardPostScale, d_ReinhardPostScale;
+	float m_ReinhardBurn, d_ReinhardBurn;
+	float m_LinearSensitivity, d_LinearSensitivity;
+	float m_LinearExposure, d_LinearExposure;
+	float m_LinearFStop, d_LinearFStop;
+	float m_LinearGamma, d_LinearGamma;
+	float m_ContrastYwa, d_ContrastYwa;
+	float m_RGB_X_White, d_RGB_X_White;
+	float m_RGB_Y_White, d_RGB_Y_White;
+	float m_RGB_X_Red, d_RGB_X_Red;
+	float m_RGB_Y_Red, d_RGB_Y_Red;
+	float m_RGB_X_Green, d_RGB_X_Green;
+	float m_RGB_Y_Green, d_RGB_Y_Green;
+	float m_RGB_X_Blue, d_RGB_X_Blue;
+	float m_RGB_Y_Blue, d_RGB_Y_Blue;
+	float m_Gamma, d_Gamma;
+
 };
 
 }//namespace lux

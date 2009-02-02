@@ -50,11 +50,27 @@ using namespace lux;
 /*** LuxGui ***/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-// CF
 
-#define RH_PRE_RANGE	8.0f
-#define RH_POST_RANGE	6.0f
-#define RH_BURN_RANGE	10.0f
+#define FLOAT_SLIDER_RES 512.f
+
+#define TM_REINHARD_YWA_RANGE 10000.0f
+#define TM_REINHARD_PRESCALE_RANGE 8.0f
+#define TM_REINHARD_POSTSCALE_RANGE 8.0f
+#define TM_REINHARD_BURN_RANGE 12.0f
+#define TM_LINEAR_EXPOSURE_RANGE 10000.0f
+#define TM_LINEAR_SENSITIVITY_RANGE 1.0f
+#define TM_LINEAR_FSTOP_RANGE 64.0f
+#define TM_LINEAR_GAMMA_RANGE 5.0f
+#define TM_CONTRAST_YWA_RANGE 10000.0f
+#define TORGB_XWHITE_RANGE 1.0f
+#define TORGB_YWHITE_RANGE 1.0f
+#define TORGB_XRED_RANGE 1.0f
+#define TORGB_YRED_RANGE 1.0f
+#define TORGB_XGREEN_RANGE 1.0f
+#define TORGB_YGREEN_RANGE 1.0f
+#define TORGB_XBLUE_RANGE 1.0f
+#define TORGB_YBLUE_RANGE 1.0f
+#define TORGB_GAMMA_RANGE 5.0f
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -83,22 +99,12 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	// Add custom output viewer window
 	if(m_opengl)
-	{
 		m_renderOutput = new LuxGLViewer(m_renderPage);
-		m_outputOutput = new LuxGLViewer(m_outputPage); // CF
-	}
 	else
-	{
 		m_renderOutput = new LuxOutputWin(m_renderPage);
-		m_outputOutput = new LuxOutputWin(m_outputPage); // CF
-	}
 
-	m_renderPage->GetSizer()->Add(m_renderOutput->GetWindow(), 1, wxALL | wxEXPAND, 5);
+	m_renderPage->GetSizer()->GetItem( 1 )->GetSizer()->GetItem( 1 )->GetSizer()->Add( m_renderOutput->GetWindow(), 1, wxALL | wxEXPAND, 5 );
 	m_renderPage->Layout();
-
-	// CF
-	m_outputPage->GetSizer()->GetItem( 1 )->GetSizer()->GetItem( 1 )->GetSizer()->Add( m_outputOutput->GetWindow(), 1, wxALL | wxEXPAND, 5 );
-	m_outputPage->Layout();
 
 	// Trick to generate resize event and show output window
 	// http://lists.wxwidgets.org/pipermail/wx-users/2007-February/097829.html
@@ -130,12 +136,15 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_auinotebook->SetSelection( 0 );
 
 	ResetToneMapping();
+	m_auto_tonemap = true;
 
 	wxTextValidator vt( wxFILTER_NUMERIC );
 
-	m_RH_preText->SetValidator( vt );
-	m_RH_postText->SetValidator( vt );
-	m_RH_burnText->SetValidator( vt );
+	m_TM_Reinhard_prescaleText->SetValidator( vt );
+	m_TM_Reinhard_postscaleText->SetValidator( vt );
+	m_TM_Reinhard_burnText->SetValidator( vt );
+
+	m_GLAcceleration = false;
 }
 
 LuxGui::~LuxGui() {
@@ -251,28 +260,24 @@ void LuxGui::LoadImages() {
 	m_renderToolBar->Realize();
 
 	// Add Thread toolbar tool
-	// CF
 	wxToolBarToolBase *addtheadtool = m_renderToolBar->RemoveTool(ID_ADD_THREAD);
 	addtheadtool->SetNormalBitmap(wxMEMORY_BITMAP(plus_png));
 	m_renderToolBar->InsertTool(5, addtheadtool);
 	m_renderToolBar->Realize();
 
 	// Add Thread toolbar tool
-	// CF
 	wxToolBarToolBase *remtheadtool = m_renderToolBar->RemoveTool(ID_REMOVE_THREAD);
 	remtheadtool->SetNormalBitmap(wxMEMORY_BITMAP(minus_png));
 	m_renderToolBar->InsertTool(6, remtheadtool);
 	m_renderToolBar->Realize();
 
 	// Copy toolbar tool
-	// CF
 	wxToolBarToolBase *copytool = m_renderToolBar->RemoveTool(ID_RENDER_COPY);
 	copytool->SetNormalBitmap(wxMEMORY_BITMAP(edit_copy_png));
 	m_renderToolBar->InsertTool(8, copytool);
 	m_renderToolBar->Realize();
 
 	///////////////////////////////////////////////////////////////////////////////
-	// CF : network toolbar...
 
 	// NOTE - Ratow - Network toolbar is now a real toolbar component
 	wxToolBarToolBase *addServertool = m_networkToolBar->RemoveTool(ID_ADD_SERVER);
@@ -320,13 +325,17 @@ void LuxGui::LoadImages() {
 	m_auinotebook->SetPageBitmap(2, wxMEMORY_BITMAP(network_png));
 	m_auinotebook->SetPageBitmap(3, wxMEMORY_BITMAP(output_png));
 
-	m_splashbmp = wxMEMORY_BITMAP(splash_png);
+	//m_outputNotebook->SetPageBitmap(0, wxMEMORY_BITMAP(n_lightgroup_png));
+	//m_outputNotebook->SetPageBitmap(1, wxMEMORY_BITMAP(n_tonemap_png));
+	//m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
+	m_outputNotebook->SetPageBitmap(0, wxMEMORY_BITMAP(n_tonemap_png));
 
-	/////////////////////////////////////////////////////////////
-	// TODO: comment out the below to reenable the output tab...
-	m_outputPage->Show( false );		
-	m_auinotebook->RemovePage( 3 );
-	/////////////////////////////////////////////////////////////
+	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(n_tonemap_png));
+	//m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(n_lightgroup_png));
+	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(n_color_png));
+	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(n_gamma_png));
+
+	m_splashbmp = wxMEMORY_BITMAP(splash_png);
 }
 
 
@@ -453,9 +462,6 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_REMOVE_SERVER: // CF
 			RemoveServer();
 			break;
-		case ID_OUTPUT_REFRESH: // CF
-			m_outputOutput->Reload();
-			break;
 		case ID_TM_RESET:
 			ResetToneMapping();
 			break;
@@ -480,71 +486,349 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_REFINETOOL:
 			m_renderOutput->SetMode(SELECTION);
 			break;
+		case ID_TM_APPLY:
+			{
+				// Apply tonemapping
+				ApplyTonemapping();
+			}
+			break;
+		case ID_TM_KERNELCHOICE:
+			{
+				// Change tonemapping kernel
+				int choice = event.GetInt();
+				SetTonemapKernel(choice);
+			}
+			break;
+		case ID_TORGB_COLORSPACECHOICE:
+			{
+				// Change colorspace preset
+				int choice = event.GetInt();
+				SetColorSpacePreset(choice);
+			}
+			break;
 		default:
 			break;
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
-// CF
+
+void LuxGui::ApplyTonemapping() {
+	if(m_updateThread == NULL && luxStatistics("sceneIsReady") &&
+    (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
+		luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
+		m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
+		m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
+	}
+}
+
+void UpdateParam(Component comp, ComponentParameters param, double value) {
+	if(luxStatistics("sceneIsReady")) {
+	// Update OpenGL viewer
+	// m_renderOutput->SetComponentParameter(comp, param, value);
+	// Update lux's film
+	luxSetParameterValue(comp, param, value);
+	}
+}
 
 void LuxGui::OnText(wxCommandEvent& event) {
 	if ( event.GetEventType() != wxEVT_COMMAND_TEXT_ENTER ) return;
 
 	switch (event.GetId()) {
-		case ID_RH_PRESCALE_TEXT:
-			if( m_RH_preText->IsModified() )
+		// Reinhard tonemapper options
+		case ID_TM_REINHARD_PRESCALE_TEXT:
+			if( m_TM_Reinhard_prescaleText->IsModified() )
 			{
-				wxString st = m_RH_preText->GetValue();
+				wxString st = m_TM_Reinhard_prescaleText->GetValue();
+				st.ToDouble( &m_TM_reinhard_prescale );
 
-				st.ToDouble( &m_RH_pre );
+				if ( m_TM_reinhard_prescale > TM_REINHARD_PRESCALE_RANGE ) m_TM_reinhard_prescale = TM_REINHARD_PRESCALE_RANGE;
+				else if ( m_TM_reinhard_prescale < 0.f ) m_TM_reinhard_prescale = 0.f;
 
-				if ( m_RH_pre > RH_PRE_RANGE ) m_RH_pre = RH_PRE_RANGE;
-				else if ( m_RH_pre < -RH_PRE_RANGE ) m_RH_pre = -RH_PRE_RANGE;
-
-				st = wxString::Format( _("%.02f"), m_RH_pre );
-
-				m_RH_preText->SetValue( st );
-
-				int val = (int)(( 100.0f / (RH_PRE_RANGE * 2.0f) ) * (m_RH_pre + RH_PRE_RANGE));
-
-				m_RH_prescaleSlider->SetValue( val );
+				st = wxString::Format( _("%.02f"), m_TM_reinhard_prescale );
+				m_TM_Reinhard_prescaleText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_REINHARD_PRESCALE_RANGE ) * (m_TM_reinhard_prescale));
+				m_TM_Reinhard_prescaleSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		case ID_RH_POSTSCALE_TEXT:
-			if ( m_RH_postText->IsModified() )
+		case ID_TM_REINHARD_POSTSCALE_TEXT:
+			if ( m_TM_Reinhard_postscaleText->IsModified() )
 			{
-				wxString st = m_RH_postText->GetValue();
+				wxString st = m_TM_Reinhard_postscaleText->GetValue();
+				st.ToDouble( &m_TM_reinhard_postscale );
 
-				st.ToDouble( &m_RH_post );
+				if ( m_TM_reinhard_postscale > TM_REINHARD_POSTSCALE_RANGE ) m_TM_reinhard_postscale = TM_REINHARD_POSTSCALE_RANGE;
+				else if ( m_TM_reinhard_postscale < 0.f ) m_TM_reinhard_postscale = 0.f;
 
-				if ( m_RH_post > RH_POST_RANGE ) m_RH_post = RH_POST_RANGE;
-				else if ( m_RH_post < -RH_POST_RANGE ) m_RH_post = -RH_POST_RANGE;
-
-				st = wxString::Format( _("%.02f"), m_RH_post );
-
-				m_RH_postText->SetValue( st );
-
-				int val = (int)(( 100.0f / (RH_POST_RANGE * 2.0f) ) * (m_RH_post + RH_POST_RANGE));
-
-				m_RH_postscaleSlider->SetValue( val );
+				st = wxString::Format( _("%.02f"), m_TM_reinhard_postscale );
+				m_TM_Reinhard_postscaleText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_REINHARD_POSTSCALE_RANGE ) * (m_TM_reinhard_postscale));
+				m_TM_Reinhard_postscaleSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		case ID_RH_BURN_TEXT:
-			if ( m_RH_burnText->IsModified() )
+		case ID_TM_REINHARD_BURN_TEXT:
+			if ( m_TM_Reinhard_burnText->IsModified() )
 			{
-				wxString st = m_RH_burnText->GetValue();
+				wxString st = m_TM_Reinhard_burnText->GetValue();
+				st.ToDouble( &m_TM_reinhard_burn );
 
-				st.ToDouble( &m_RH_burn );
-				if ( m_RH_burn > RH_BURN_RANGE ) m_RH_burn = RH_BURN_RANGE;
-				else if ( m_RH_burn < 0 ) m_RH_burn = 0;
+				if ( m_TM_reinhard_burn > TM_REINHARD_BURN_RANGE ) m_TM_reinhard_burn = TM_REINHARD_BURN_RANGE;
+				else if ( m_TM_reinhard_burn < 0 ) m_TM_reinhard_burn = 0;
 
-				st = wxString::Format( _("%.02f"), m_RH_burn );
+				st = wxString::Format( _("%.02f"), m_TM_reinhard_burn );
+				m_TM_Reinhard_burnText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_REINHARD_BURN_RANGE ) * (m_TM_reinhard_burn));
+				m_TM_Reinhard_burnSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_REINHARD_BURN, m_TM_reinhard_burn);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
 
-				m_RH_burnText->SetValue( st );
+		// Linear tonemapper options
+		case ID_TM_LINEAR_SENSITIVITY_TEXT:
+			if ( m_TM_Linear_sensitivityText->IsModified() )
+			{
+				wxString st = m_TM_Linear_sensitivityText->GetValue();
+				st.ToDouble( &m_TM_linear_sensitivity );
 
-				int val = (int)(( 100.0f / RH_BURN_RANGE ) * m_RH_burn);
+				if ( m_TM_linear_sensitivity > TM_LINEAR_SENSITIVITY_RANGE ) m_TM_linear_sensitivity = TM_LINEAR_SENSITIVITY_RANGE;
+				else if ( m_TM_linear_sensitivity < 0 ) m_TM_linear_sensitivity = 0;
 
-				m_RH_burnSlider->SetValue( val );
+				st = wxString::Format( _("%.02f"), m_TM_linear_sensitivity );
+				m_TM_Linear_sensitivityText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_LINEAR_SENSITIVITY_RANGE ) * (m_TM_linear_sensitivity));
+				m_TM_Linear_sensitivitySlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY, m_TM_linear_sensitivity);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TM_LINEAR_EXPOSURE_TEXT:
+			if ( m_TM_Linear_exposureText->IsModified() )
+			{
+				wxString st = m_TM_Linear_exposureText->GetValue();
+				st.ToDouble( &m_TM_linear_exposure );
+
+				if ( m_TM_linear_exposure > TM_LINEAR_EXPOSURE_RANGE ) m_TM_linear_exposure = TM_LINEAR_EXPOSURE_RANGE;
+				else if ( m_TM_linear_exposure < 0 ) m_TM_linear_exposure = 0;
+
+				st = wxString::Format( _("%.02f"), m_TM_linear_exposure );
+				m_TM_Linear_exposureText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_LINEAR_EXPOSURE_RANGE ) * (m_TM_linear_exposure));
+				m_TM_Linear_exposureSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TM_LINEAR_FSTOP_TEXT:
+			if ( m_TM_Linear_fstopText->IsModified() )
+			{
+				wxString st = m_TM_Linear_fstopText->GetValue();
+				st.ToDouble( &m_TM_linear_fstop );
+
+				if ( m_TM_linear_fstop > TM_LINEAR_FSTOP_RANGE ) m_TM_linear_fstop = TM_LINEAR_FSTOP_RANGE;
+				else if ( m_TM_linear_fstop < 0 ) m_TM_linear_fstop = 0;
+
+				st = wxString::Format( _("%.02f"), m_TM_linear_fstop );
+				m_TM_Linear_fstopText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_LINEAR_FSTOP_RANGE ) * (m_TM_linear_fstop));
+				m_TM_Linear_fstopSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP, m_TM_linear_fstop);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TM_LINEAR_GAMMA_TEXT:
+			if ( m_TM_Linear_gammaText->IsModified() )
+			{
+				wxString st = m_TM_Linear_gammaText->GetValue();
+				st.ToDouble( &m_TM_linear_gamma );
+
+				if ( m_TM_linear_gamma > TM_LINEAR_GAMMA_RANGE ) m_TM_linear_gamma = TM_LINEAR_GAMMA_RANGE;
+				else if ( m_TM_linear_gamma < 0 ) m_TM_linear_gamma = 0;
+
+				st = wxString::Format( _("%.02f"), m_TM_linear_gamma );
+				m_TM_Linear_gammaText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_LINEAR_GAMMA_RANGE ) * (m_TM_linear_gamma));
+				m_TM_Linear_gammaSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA, m_TM_linear_gamma);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+		// Contrast tonemapper options
+		case ID_TM_CONTRAST_YWA_TEXT:
+			if ( m_TM_contrast_ywaText->IsModified() )
+			{
+				wxString st = m_TM_contrast_ywaText->GetValue();
+				st.ToDouble( &m_TM_contrast_ywa );
+
+				if ( m_TM_contrast_ywa > TM_CONTRAST_YWA_RANGE ) m_TM_contrast_ywa = TM_CONTRAST_YWA_RANGE;
+				else if ( m_TM_contrast_ywa < 0 ) m_TM_contrast_ywa = 0;
+
+				st = wxString::Format( _("%.02f"), m_TM_contrast_ywa );
+				m_TM_contrast_ywaText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TM_CONTRAST_YWA_RANGE ) * (m_TM_contrast_ywa));
+				m_TM_contrast_ywaSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+
+		// Colorspace options
+		case ID_TORGB_XWHITE_TEXT:
+			if ( m_TORGB_xwhiteText->IsModified() )
+			{
+				wxString st = m_TORGB_xwhiteText->GetValue();
+				st.ToDouble( &m_TORGB_xwhite );
+
+				if ( m_TORGB_xwhite > TORGB_XWHITE_RANGE ) m_TORGB_xwhite = TORGB_XWHITE_RANGE;
+				else if ( m_TORGB_xwhite < 0 ) m_TORGB_xwhite = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_xwhite );
+				m_TORGB_xwhiteText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_XWHITE_RANGE ) * (m_TORGB_xwhite));
+				m_TORGB_xwhiteSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YWHITE_TEXT:
+			if ( m_TORGB_ywhiteText->IsModified() )
+			{
+				wxString st = m_TORGB_ywhiteText->GetValue();
+				st.ToDouble( &m_TORGB_ywhite );
+
+				if ( m_TORGB_ywhite > TORGB_YWHITE_RANGE ) m_TORGB_ywhite = TORGB_YWHITE_RANGE;
+				else if ( m_TORGB_ywhite < 0 ) m_TORGB_ywhite = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_ywhite );
+				m_TORGB_ywhiteText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_YWHITE_RANGE ) * (m_TORGB_ywhite));
+				m_TORGB_ywhiteSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_XRED_TEXT:
+			if ( m_TORGB_xredText->IsModified() )
+			{
+				wxString st = m_TORGB_xredText->GetValue();
+				st.ToDouble( &m_TORGB_xred );
+
+				if ( m_TORGB_xred > TORGB_XRED_RANGE ) m_TORGB_xred = TORGB_XRED_RANGE;
+				else if ( m_TORGB_xred < 0 ) m_TORGB_xred = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_xred );
+				m_TORGB_xredText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_XRED_RANGE ) * (m_TORGB_xred));
+				m_TORGB_xredSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YRED_TEXT:
+			if ( m_TORGB_yredText->IsModified() )
+			{
+				wxString st = m_TORGB_yredText->GetValue();
+				st.ToDouble( &m_TORGB_yred );
+
+				if ( m_TORGB_yred > TORGB_YRED_RANGE ) m_TORGB_yred = TORGB_YRED_RANGE;
+				else if ( m_TORGB_yred < 0 ) m_TORGB_yred = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_yred );
+				m_TORGB_yredText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_YRED_RANGE ) * (m_TORGB_yred));
+				m_TORGB_yredSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_XGREEN_TEXT:
+			if ( m_TORGB_xgreenText->IsModified() )
+			{
+				wxString st = m_TORGB_xgreenText->GetValue();
+				st.ToDouble( &m_TORGB_xgreen );
+
+				if ( m_TORGB_xgreen > TORGB_XGREEN_RANGE ) m_TORGB_xgreen = TORGB_XGREEN_RANGE;
+				else if ( m_TORGB_xgreen < 0 ) m_TORGB_xgreen = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_xgreen );
+				m_TORGB_xgreenText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_XGREEN_RANGE ) * (m_TORGB_xgreen));
+				m_TORGB_xgreenSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YGREEN_TEXT:
+			if ( m_TORGB_ygreenText->IsModified() )
+			{
+				wxString st = m_TORGB_ygreenText->GetValue();
+				st.ToDouble( &m_TORGB_ygreen );
+
+				if ( m_TORGB_ygreen > TORGB_YGREEN_RANGE ) m_TORGB_ygreen = TORGB_YGREEN_RANGE;
+				else if ( m_TORGB_ygreen < 0 ) m_TORGB_ygreen = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_ygreen );
+				m_TORGB_ygreenText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_YGREEN_RANGE ) * (m_TORGB_ygreen));
+				m_TORGB_ygreenSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_XBLUE_TEXT:
+			if ( m_TORGB_xblueText->IsModified() )
+			{
+				wxString st = m_TORGB_xblueText->GetValue();
+				st.ToDouble( &m_TORGB_xblue );
+
+				if ( m_TORGB_xblue > TORGB_XBLUE_RANGE ) m_TORGB_xblue = TORGB_XBLUE_RANGE;
+				else if ( m_TORGB_xblue < 0 ) m_TORGB_xblue = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_xblue );
+				m_TORGB_xblueText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_XBLUE_RANGE ) * (m_TORGB_xblue));
+				m_TORGB_xblueSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YBLUE_TEXT:
+			if ( m_TORGB_yblueText->IsModified() )
+			{
+				wxString st = m_TORGB_yblueText->GetValue();
+				st.ToDouble( &m_TORGB_yblue );
+
+				if ( m_TORGB_yblue > TORGB_YBLUE_RANGE ) m_TORGB_yblue = TORGB_YBLUE_RANGE;
+				else if ( m_TORGB_yblue < 0 ) m_TORGB_yblue = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_yblue );
+				m_TORGB_yblueText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_YBLUE_RANGE ) * (m_TORGB_yblue));
+				m_TORGB_yblueSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_GAMMA_TEXT:
+			if ( m_TORGB_gammaText->IsModified() )
+			{
+				wxString st = m_TORGB_gammaText->GetValue();
+				st.ToDouble( &m_TORGB_gamma );
+
+				if ( m_TORGB_gamma > TORGB_GAMMA_RANGE ) m_TORGB_gamma = TORGB_GAMMA_RANGE;
+				else if ( m_TORGB_gamma < 0 ) m_TORGB_gamma = 0;
+
+				st = wxString::Format( _("%.02f"), m_TORGB_gamma );
+				m_TORGB_gammaText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE ) * (m_TORGB_gamma));
+				m_TORGB_gammaSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 		default:
@@ -554,28 +838,164 @@ void LuxGui::OnText(wxCommandEvent& event) {
 
 void LuxGui::OnScroll( wxScrollEvent& event ){
 	switch (event.GetId()) {
-		case ID_RH_PRESCALE:
+		// Reinhard tonemapper options
+		case ID_TM_REINHARD_PRESCALE:
 			{
-				m_RH_pre = ( (double)event.GetPosition() / ( 100.0f / (RH_PRE_RANGE * 2.0f) ) ) - RH_PRE_RANGE;
-
-				wxString st = wxString::Format( _("%.02f"), m_RH_pre );
-				m_RH_preText->SetValue( st );
+				m_TM_reinhard_prescale = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_REINHARD_PRESCALE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_reinhard_prescale );
+				m_TM_Reinhard_prescaleText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		case ID_RH_POSTSCALE:
+		case ID_TM_REINHARD_POSTSCALE:
 			{
-				m_RH_post = ( (double)event.GetPosition() / ( 100.0f / (RH_POST_RANGE * 2.0f) ) ) - RH_POST_RANGE;
-
-				wxString st = wxString::Format( _("%.02f"), m_RH_post );
-				m_RH_postText->SetValue( st );
+				m_TM_reinhard_postscale = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_REINHARD_POSTSCALE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_reinhard_postscale );
+				m_TM_Reinhard_postscaleText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		case ID_RH_BURN:
+		case ID_TM_REINHARD_BURN:
 			{
-				m_RH_burn = (double)event.GetPosition() / ( 100.0f / RH_BURN_RANGE );
+				m_TM_reinhard_burn = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_REINHARD_BURN_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_reinhard_burn );
+				m_TM_Reinhard_burnText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_REINHARD_BURN, m_TM_reinhard_burn);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
 
-				wxString st = wxString::Format( _("%.02f"), m_RH_burn );
-				m_RH_burnText->SetValue( st );
+		// Linear tonemapper options
+		case ID_TM_LINEAR_SENSITIVITY:
+			{
+				m_TM_linear_sensitivity = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_LINEAR_SENSITIVITY_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_linear_sensitivity );
+				m_TM_Linear_sensitivityText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY, m_TM_linear_sensitivity);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TM_LINEAR_EXPOSURE:
+			{
+				m_TM_linear_exposure = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_LINEAR_EXPOSURE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_linear_exposure );
+				m_TM_Linear_exposureText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TM_LINEAR_FSTOP:
+			{
+				m_TM_linear_fstop = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_LINEAR_FSTOP_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_linear_fstop );
+				m_TM_Linear_fstopText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP, m_TM_linear_fstop);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TM_LINEAR_GAMMA:
+			{
+				m_TM_linear_gamma = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_LINEAR_GAMMA_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_linear_gamma );
+				m_TM_Linear_gammaText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA, m_TM_linear_gamma);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+		// Contrast tonemapper options
+		case ID_TM_CONTRAST_YWA:
+			{
+				m_TM_contrast_ywa = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_CONTRAST_YWA_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TM_contrast_ywa );
+				m_TM_contrast_ywaText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+		// Colorspace options
+		case ID_TORGB_XWHITE:
+			{
+				m_TORGB_xwhite = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_XWHITE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_xwhite );
+				m_TORGB_xwhiteText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YWHITE:
+			{
+				m_TORGB_ywhite = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_YWHITE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_ywhite );
+				m_TORGB_ywhiteText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_XRED:
+			{
+				m_TORGB_xred = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_XRED_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_xred );
+				m_TORGB_xredText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YRED:
+			{
+				m_TORGB_yred = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_YRED_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_yred );
+				m_TORGB_yredText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_XGREEN:
+			{
+				m_TORGB_xgreen = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_XGREEN_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_xgreen );
+				m_TORGB_xgreenText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YGREEN:
+			{
+				m_TORGB_ygreen = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_YGREEN_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_ygreen );
+				m_TORGB_ygreenText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_XBLUE:
+			{
+				m_TORGB_xblue = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_XBLUE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_xblue );
+				m_TORGB_xblueText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_YBLUE:
+			{
+				m_TORGB_yblue = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_YBLUE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_yblue );
+				m_TORGB_yblueText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_TORGB_GAMMA:
+			{
+				m_TORGB_gamma = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_TORGB_gamma );
+				m_TORGB_gammaText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 		default:
@@ -583,20 +1003,130 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 	}
 }
 
+void LuxGui::SetTonemapKernel(int choice) {
+	m_TM_kernelChoice->SetSelection(choice);
+	UpdateParam(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL, choice);
+	m_TM_kernel = choice;
+	switch (choice) {
+		case 0: {
+				// Reinhard
+				m_TonemapReinhardOptionsPanel->Show();
+				m_TonemapLinearOptionsPanel->Hide();
+				m_TonemapContrastOptionsPanel->Hide(); }
+			break;
+		case 1: {
+				// Linear
+				m_TonemapReinhardOptionsPanel->Hide();
+				m_TonemapLinearOptionsPanel->Show();
+				m_TonemapContrastOptionsPanel->Hide(); }
+			break;
+		case 2: {
+				// Contrast
+				m_TonemapReinhardOptionsPanel->Hide();
+				m_TonemapLinearOptionsPanel->Hide();
+				m_TonemapContrastOptionsPanel->Show(); }
+			break;
+		case 3: {
+				// MaxWhite
+				m_TonemapReinhardOptionsPanel->Hide();
+				m_TonemapLinearOptionsPanel->Hide();
+				m_TonemapContrastOptionsPanel->Hide(); }
+			break;
+		default:
+			break;
+	}
+	m_Tonemap->GetSizer()->Layout();
+	Refresh();
+	if(m_auto_tonemap) ApplyTonemapping();
+}
+
+void LuxGui::SetColorSpacePreset(int choice) {
+	m_TORGB_colorspaceChoice->SetSelection(choice);
+	switch (choice) {
+		case 0: {
+				// sRGB - HDTV (ITU-R BT.709-5)
+				m_TORGB_xwhite = 0.314275f; m_TORGB_ywhite = 0.329411f;
+				m_TORGB_xred = 0.63f; m_TORGB_yred = 0.34f;
+				m_TORGB_xgreen = 0.31f; m_TORGB_ygreen = 0.595f;
+				m_TORGB_xblue = 0.155f; m_TORGB_yblue = 0.07f; }
+			break;
+		case 1: {
+				// ROMM RGB
+				m_TORGB_xwhite = 0.346f; m_TORGB_ywhite = 0.359f;
+				m_TORGB_xred = 0.7347f; m_TORGB_yred = 0.2653f;
+				m_TORGB_xgreen = 0.1596f; m_TORGB_ygreen = 0.8404f;
+				m_TORGB_xblue = 0.0366f; m_TORGB_yblue = 0.0001f; }
+			break;
+		case 2: {
+				// Adobe RGB 98
+				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
+				m_TORGB_xred = 0.64f; m_TORGB_yred = 0.34f;
+				m_TORGB_xgreen = 0.21f; m_TORGB_ygreen = 0.71f;
+				m_TORGB_xblue = 0.15f; m_TORGB_yblue = 0.06f; }
+			break;
+		case 3: {
+				// Apple RGB
+				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
+				m_TORGB_xred = 0.625f; m_TORGB_yred = 0.34f;
+				m_TORGB_xgreen = 0.28f; m_TORGB_ygreen = 0.595f;
+				m_TORGB_xblue = 0.155f; m_TORGB_yblue = 0.07f; }
+			break;
+		case 4: {
+				// NTSC (FCC 1953, ITU-R BT.470-2 System M)
+				m_TORGB_xwhite = 0.310f; m_TORGB_ywhite = 0.316f;
+				m_TORGB_xred = 0.67f; m_TORGB_yred = 0.33f;
+				m_TORGB_xgreen = 0.21f; m_TORGB_ygreen = 0.71f;
+				m_TORGB_xblue = 0.14f; m_TORGB_yblue = 0.08f; }
+			break;
+		case 5: {
+				// NTSC (1979) (SMPTE C, SMPTE-RP 145)
+				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
+				m_TORGB_xred = 0.63f; m_TORGB_yred = 0.34f;
+				m_TORGB_xgreen = 0.31f; m_TORGB_ygreen = 0.595f;
+				m_TORGB_xblue = 0.155f; m_TORGB_yblue = 0.07f; }
+			break;
+		case 6: {
+				// PAL/SECAM (EBU 3213, ITU-R BT.470-6)
+				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
+				m_TORGB_xred = 0.64f; m_TORGB_yred = 0.33f;
+				m_TORGB_xgreen = 0.29f; m_TORGB_ygreen = 0.60f;
+				m_TORGB_xblue = 0.15f; m_TORGB_yblue = 0.06f; }
+			break;
+		case 7: {
+				// CIE (1931) E
+				m_TORGB_xwhite = 0.333f; m_TORGB_ywhite = 0.333f;
+				m_TORGB_xred = 0.7347f; m_TORGB_yred = 0.2653f;
+				m_TORGB_xgreen = 0.2738f; m_TORGB_ygreen = 0.7174f;
+				m_TORGB_xblue = 0.1666f; m_TORGB_yblue = 0.0089f; }
+			break;
+		default:
+			break;
+	}
+
+	// Update values in film trough API
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
+
+	UpdateTonemapWidgetValues();
+	Refresh();
+	if(m_auto_tonemap) ApplyTonemapping();
+}
+
 LuxGui::LuxOptions::LuxOptions( LuxGui *parent ) : m_OptionsDialog( parent ) {
-
 	m_Parent = parent;
-
 	UpdateSysOptions();
 }
 
 void LuxGui::LuxOptions::UpdateSysOptions( void ) {
-
 	m_DisplayInterval = luxStatistics("displayInterval");
 	m_Display_spinCtrl->SetValue( m_DisplayInterval );
-
 	m_WriteInterval = 120;
-
 	m_UseFlm = false;
 	m_Write_TGA = false;
 	m_Write_TM_EXR = false;
@@ -616,19 +1146,172 @@ void LuxGui::LuxOptions::OnClose( wxCloseEvent& event ){
 }
 
 void LuxGui::ResetToneMapping(){
+	if(luxStatistics("sceneIsReady")) {
+		ResetToneMappingFromFilm();
+		return;
+	}
 
-	m_RH_pre = 1.0;
-	m_RH_post = 1.0;
-	m_RH_burn = 6.0;
+	m_TM_kernel = 0; // *
 
-	m_RH_prescaleSlider->SetValue( (int)(( 100.0f / (RH_PRE_RANGE * 2.0f) ) * (m_RH_pre + RH_PRE_RANGE)));
-	m_RH_preText->SetValue(_("1.00"));
+	m_TM_reinhard_autoywa = true; // *
+	m_TM_reinhard_ywa = 100.0;
+	m_TM_reinhard_prescale = 1.0;
+	m_TM_reinhard_postscale = 1.0;
+	m_TM_reinhard_burn = 6.0;
 
-	m_RH_postscaleSlider->SetValue( (int)(( 100.0f / (RH_POST_RANGE * 2.0f) ) * (m_RH_post + RH_POST_RANGE)));
-	m_RH_postText->SetValue(_("1.00"));
+	m_TM_linear_exposure = 100.0f;
+	m_TM_linear_sensitivity = 1.f / 1000.f;
+	m_TM_linear_fstop = 2.8;
+	m_TM_linear_gamma = 1.0;
 
-	m_RH_burnSlider->SetValue( (int)(( 100.0f / RH_BURN_RANGE ) * m_RH_burn));
-	m_RH_burnText->SetValue(_("6.00"));
+	m_TM_contrast_ywa = 100.0;
+
+	m_TORGB_xwhite = 0.314275f;
+	m_TORGB_ywhite = 0.329411f;
+	m_TORGB_xred = 0.63f;
+	m_TORGB_yred = 0.34f;
+	m_TORGB_xgreen = 0.31f;
+	m_TORGB_ygreen = 0.595f;
+	m_TORGB_xblue = 0.155f;
+	m_TORGB_yblue = 0.07f;
+	m_TORGB_gamma = 2.2f;
+
+	UpdateTonemapWidgetValues();
+	m_outputNotebook->Enable( false );
+	Refresh();
+}
+
+void LuxGui::UpdateTonemapWidgetValues() {
+	// Tonemap kernel selection
+	SetTonemapKernel(m_TM_kernel);
+
+	// Reinhard widgets
+	m_TM_Reinhard_ywaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_YWA_RANGE) * m_TM_reinhard_ywa) );
+	wxString st = wxString::Format( _("%.02f"), m_TM_reinhard_ywa );
+	m_TM_Reinhard_ywaText->SetValue(st);
+
+	m_TM_Reinhard_prescaleSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_PRESCALE_RANGE) * m_TM_reinhard_prescale) );
+	st = wxString::Format( _("%.02f"), m_TM_reinhard_prescale );
+	m_TM_Reinhard_prescaleText->SetValue(st);
+
+	m_TM_Reinhard_postscaleSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_POSTSCALE_RANGE) * (m_TM_reinhard_postscale)));
+	st = wxString::Format( _("%.02f"), m_TM_reinhard_postscale );
+	m_TM_Reinhard_postscaleText->SetValue(st);
+
+	m_TM_Reinhard_burnSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_BURN_RANGE) * m_TM_reinhard_burn));
+	st = wxString::Format( _("%.02f"), m_TM_reinhard_burn );
+	m_TM_Reinhard_burnText->SetValue(st);
+
+	// Linear widgets
+	m_TM_Linear_exposureSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_LINEAR_EXPOSURE_RANGE) * m_TM_linear_exposure) );
+	st = wxString::Format( _("%.02f"), m_TM_linear_exposure );
+	m_TM_Linear_exposureText->SetValue(st);
+
+	m_TM_Linear_sensitivitySlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_LINEAR_SENSITIVITY_RANGE) * m_TM_linear_sensitivity) );
+	st = wxString::Format( _("%.02f"), m_TM_linear_sensitivity );
+	m_TM_Linear_sensitivityText->SetValue(st);
+
+	m_TM_Linear_fstopSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_LINEAR_FSTOP_RANGE) * (m_TM_linear_fstop)));
+	st = wxString::Format( _("%.02f"), m_TM_linear_fstop );
+	m_TM_Linear_fstopText->SetValue(st);
+
+	m_TM_Linear_gammaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_LINEAR_GAMMA_RANGE) * m_TM_linear_gamma));
+	st = wxString::Format( _("%.02f"), m_TM_linear_gamma );
+	m_TM_Linear_gammaText->SetValue(st);
+
+	// Contrast widgets
+	m_TM_contrast_ywaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_CONTRAST_YWA_RANGE) * m_TM_contrast_ywa) );
+	st = wxString::Format( _("%.02f"), m_TM_contrast_ywa );
+	m_TM_contrast_ywaText->SetValue(st);
+
+	// Colorspace widgets
+	m_TORGB_xwhiteSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_XWHITE_RANGE) * m_TORGB_xwhite));
+	st = wxString::Format( _("%.02f"), m_TORGB_xwhite );
+	m_TORGB_xwhiteText->SetValue(st);
+	m_TORGB_ywhiteSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_YWHITE_RANGE) * m_TORGB_ywhite));
+	st = wxString::Format( _("%.02f"), m_TORGB_ywhite );
+	m_TORGB_ywhiteText->SetValue(st);
+
+	m_TORGB_xredSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_XRED_RANGE) * m_TORGB_xred));
+	st = wxString::Format( _("%.02f"), m_TORGB_xred );
+	m_TORGB_xredText->SetValue(st);
+	m_TORGB_yredSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_YRED_RANGE) * m_TORGB_yred));
+	st = wxString::Format( _("%.02f"), m_TORGB_yred );
+	m_TORGB_yredText->SetValue(st);
+
+	m_TORGB_xgreenSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_XGREEN_RANGE) * m_TORGB_xgreen));
+	st = wxString::Format( _("%.02f"), m_TORGB_xgreen );
+	m_TORGB_xgreenText->SetValue(st);
+	m_TORGB_ygreenSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_YGREEN_RANGE) * m_TORGB_ygreen));
+	st = wxString::Format( _("%.02f"), m_TORGB_ygreen );
+	m_TORGB_ygreenText->SetValue(st);
+
+	m_TORGB_xblueSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_XBLUE_RANGE) * m_TORGB_xblue));
+	st = wxString::Format( _("%.02f"), m_TORGB_xblue );
+	m_TORGB_xblueText->SetValue(st);
+	m_TORGB_yblueSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_YBLUE_RANGE) * m_TORGB_yblue));
+	st = wxString::Format( _("%.02f"), m_TORGB_yblue );
+	m_TORGB_yblueText->SetValue(st);
+
+	m_TORGB_gammaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma));
+	st = wxString::Format( _("%.02f"), m_TORGB_gamma );
+	m_TORGB_gammaText->SetValue(st);
+
+	Refresh();
+}
+
+void LuxGui::ResetToneMappingFromFilm(){
+	m_TM_kernel = (int) luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
+
+	m_TM_reinhard_autoywa = (bool) ((int) luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA));
+	m_TM_reinhard_ywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_YWA);
+	m_TM_reinhard_prescale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
+	m_TM_reinhard_postscale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
+	m_TM_reinhard_burn = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN);
+
+	m_TM_linear_exposure = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
+	m_TM_linear_sensitivity = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE);
+	m_TM_linear_fstop = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
+	m_TM_linear_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
+
+	m_TM_contrast_ywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
+
+	m_TORGB_xwhite = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_WHITE);
+	m_TORGB_ywhite = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_WHITE);
+	m_TORGB_xred = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_RED);
+	m_TORGB_yred = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_RED);
+	m_TORGB_xgreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_GREEN);
+	m_TORGB_ygreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_GREEN);
+	m_TORGB_xblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE);
+	m_TORGB_yblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
+	m_TORGB_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL, m_TM_kernel);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA, m_TM_reinhard_autoywa);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_YWA, m_TM_reinhard_ywa);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN, m_TM_reinhard_burn);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY, m_TM_linear_exposure);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_sensitivity);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP, m_TM_linear_fstop);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA, m_TM_linear_gamma);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+
+	UpdateTonemapWidgetValues();
+	if(m_auto_tonemap) ApplyTonemapping();
 }
 
 void LuxGui::LuxOptions::OnMenu(wxCommandEvent& event) {
@@ -850,7 +1533,6 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 		case ID_STATSUPDATE:
 			if(luxStatistics("sceneIsReady")) {
 				UpdateStatistics();
-
 				if(m_guiRenderState == STOPPING && m_samplesSec == 0.0) {
 					// Render threads stopped, do one last render update
 					luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
@@ -881,6 +1563,11 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					// Start updating the display by faking a resume menu item click.
 					wxCommandEvent startEvent(wxEVT_COMMAND_MENU_SELECTED, ID_RESUMEITEM);
 					GetEventHandler()->AddPendingEvent(startEvent);
+
+					// Enable tonemapping options and reset from values trough API
+					m_outputNotebook->Enable( true );
+					ResetToneMapping();
+					Refresh();
 				}
 			}
 			break;
@@ -985,7 +1672,11 @@ void LuxGui::EngineThread(wxString filename) {
 }
 
 void LuxGui::UpdateThread() {
-	luxUpdateFramebuffer();
+	if(m_GLAcceleration == false)
+		luxUpdateFramebuffer();
+	else
+		luxUpdateHDRFramebuffer();
+
 	wxCommandEvent endEvent(wxEVT_LUX_TONEMAPPED, GetId());
 	GetEventHandler()->AddPendingEvent(endEvent);
 }

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 21 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -20,15 +20,18 @@
 #include <wx/stattext.h>
 #include <wx/toolbar.h>
 #include <wx/sizer.h>
+#include <wx/statbmp.h>
+#include <wx/choice.h>
 #include <wx/panel.h>
+#include <wx/checkbox.h>
+#include <wx/slider.h>
 #include <wx/textctrl.h>
+#include <wx/button.h>
+#include <wx/scrolwin.h>
+#include <wx/aui/auibook.h>
+#include <wx/notebook.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
-#include <wx/button.h>
-#include <wx/choice.h>
-#include <wx/slider.h>
-#include <wx/notebook.h>
-#include <wx/aui/auibook.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
 #include <wx/checklst.h>
@@ -58,23 +61,63 @@ namespace lux
 	#define ID_PANTOOL 1017
 	#define ID_ZOOMTOOL 1018
 	#define ID_REFINETOOL 1019
-	#define ID_ADD_SERVER 1020
-	#define ID_REMOVE_SERVER 1021
-	#define ID_SERVER_UPDATE_INT 1022
-	#define ID_NETWORK_TREE 1023
-	#define ID_OUTPUT_REFRESH 1024
-	#define ID_TM_CHOICE 1025
-	#define ID_RH_PRESCALE 1026
-	#define ID_RH_PRESCALE_TEXT 1027
-	#define ID_RH_POSTSCALE 1028
-	#define ID_RH_POSTSCALE_TEXT 1029
-	#define ID_RH_BURN 1030
-	#define ID_RH_BURN_TEXT 1031
-	#define ID_TM_RESET 1032
-	#define ID_SYS_DISPLAY_INT 1033
-	#define ID_SYS_WRITE_INT 1034
-	#define ID_WRITE_OPTIONS 1035
-	#define ID_SYS_APPLY 1036
+	#define ID_TONEMAP 1020
+	#define ID_TONEMAPOPTIONSPANEL 1021
+	#define ID_TM_KERNELCHOICE 1022
+	#define ID_TONEMAPREINHARDOPTIONSPANEL 1023
+	#define ID_TM_REINHARD_AUTOYWA 1024
+	#define ID_TM_REINHARD_YWA 1025
+	#define ID_TM_REINHARD_YWA_TEXT 1026
+	#define ID_TM_REINHARD_PRESCALE 1027
+	#define ID_TM_REINHARD_PRESCALE_TEXT 1028
+	#define ID_TM_REINHARD_POSTSCALE 1029
+	#define ID_TM_REINHARD_POSTSCALE_TEXT 1030
+	#define ID_TM_REINHARD_BURN 1031
+	#define ID_TM_REINHARD_BURN_TEXT 1032
+	#define ID_TONEMAPLINEAROPTIONSPANEL 1033
+	#define ID_TM_LINEAR_SENSITIVITY 1034
+	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1035
+	#define ID_TM_LINEAR_EXPOSURE 1036
+	#define ID_TM_LINEAR_EXPOSURE_TEXT 1037
+	#define ID_TM_LINEAR_FSTOP 1038
+	#define ID_TM_LINEAR_FSTOP_TEXT 1039
+	#define ID_TM_LINEAR_GAMMA 1040
+	#define ID_TM_LINEAR_GAMMA_TEXT 1041
+	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1042
+	#define ID_TM_CONTRAST_YWA 1043
+	#define ID_TM_CONTRAST_YWA_TEXT 1044
+	#define ID_COLORSPACEOPTIONSPANEL 1045
+	#define ID_TORGB_COLORSPACECHOICE 1046
+	#define ID_TORGB_XWHITE 1047
+	#define ID_TORGB_XWHITE_TEXT 1048
+	#define ID_TORGB_YWHITE 1049
+	#define ID_TORGB_YWHITE_TEXT 1050
+	#define ID_TORGB_XRED 1051
+	#define ID_TORGB_XRED_TEXT 1052
+	#define ID_TORGB_YRED 1053
+	#define ID_TORGB_YRED_TEXT 1054
+	#define ID_TORGB_XGREEN 1055
+	#define ID_TORGB_XGREEN_TEXT 1056
+	#define ID_TORGB_YGREEN 1057
+	#define ID_TORGB_YGREEN_TEXT 1058
+	#define ID_TORGB_XBLUE 1059
+	#define ID_TORGB_XBLUE_TEXT 1060
+	#define ID_TORGB_YBLUE 1061
+	#define ID_TORGB_YBLUE_TEXT 1062
+	#define ID_GAMMAOPTIONSPANEL 1063
+	#define ID_TORGB_GAMMA 1064
+	#define ID_TORGB_GAMMA_TEXT 1065
+	#define ID_TM_RESET 1066
+	#define ID_AUTO_TONEMAP 1067
+	#define ID_TM_APPLY 1068
+	#define ID_ADD_SERVER 1069
+	#define ID_REMOVE_SERVER 1070
+	#define ID_SERVER_UPDATE_INT 1071
+	#define ID_NETWORK_TREE 1072
+	#define ID_SYS_DISPLAY_INT 1073
+	#define ID_SYS_WRITE_INT 1074
+	#define ID_WRITE_OPTIONS 1075
+	#define ID_SYS_APPLY 1076
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -94,6 +137,74 @@ namespace lux
 			wxToolBar* m_renderToolBar;
 			wxStaticText* m_ThreadText;
 			wxToolBar* m_viewerToolBar;
+			wxAuiNotebook* m_outputNotebook;
+			wxScrolledWindow* m_Tonemap;
+			wxPanel* m_TonemapOptionsPanel;
+			wxStaticBitmap* m_tonemapBitmap;
+			wxStaticText* m_tonemappingkernelStaticText;
+			wxChoice* m_TM_kernelChoice;
+			wxPanel* m_TonemapReinhardOptionsPanel;
+			wxStaticText* m_TM_Reinhard_YwaStaticText;
+			wxCheckBox* m_TM_Reinhard_autoywaCheckbox;
+			wxSlider* m_TM_Reinhard_ywaSlider;
+			wxTextCtrl* m_TM_Reinhard_ywaText;
+			wxStaticText* m_TM_Reinhard_prescaleStaticText;
+			wxSlider* m_TM_Reinhard_prescaleSlider;
+			wxTextCtrl* m_TM_Reinhard_prescaleText;
+			wxStaticText* m_TM_Reinhard_postscaleStaticText;
+			wxSlider* m_TM_Reinhard_postscaleSlider;
+			wxTextCtrl* m_TM_Reinhard_postscaleText;
+			wxStaticText* m_TM_Reinhard_burnStaticText;
+			wxSlider* m_TM_Reinhard_burnSlider;
+			wxTextCtrl* m_TM_Reinhard_burnText;
+			wxPanel* m_TonemapLinearOptionsPanel;
+			wxStaticText* m_TM_Linear_sensitivityStaticText;
+			wxSlider* m_TM_Linear_sensitivitySlider;
+			wxTextCtrl* m_TM_Linear_sensitivityText;
+			wxStaticText* m_TM_Linear_exposureStaticText;
+			wxSlider* m_TM_Linear_exposureSlider;
+			wxTextCtrl* m_TM_Linear_exposureText;
+			wxStaticText* m_TM_Linear_fstopStaticText;
+			wxSlider* m_TM_Linear_fstopSlider;
+			wxTextCtrl* m_TM_Linear_fstopText;
+			wxStaticText* m_TM_Linear_gammaStaticText;
+			wxSlider* m_TM_Linear_gammaSlider;
+			wxTextCtrl* m_TM_Linear_gammaText;
+			wxPanel* m_TonemapContrastOptionsPanel;
+			wxStaticText* m_TM_contrast_YwaStaticText;
+			wxSlider* m_TM_contrast_ywaSlider;
+			wxTextCtrl* m_TM_contrast_ywaText;
+			wxPanel* m_ColorSpaceOptionsPanel;
+			wxStaticBitmap* m_colorspaceBitmap;
+			wxStaticText* m_TORGB_colorspacepresetsStaticText;
+			wxChoice* m_TORGB_colorspaceChoice;
+			wxStaticText* m_TORGB_whitexyStaticText;
+			wxSlider* m_TORGB_xwhiteSlider;
+			wxTextCtrl* m_TORGB_xwhiteText;
+			wxSlider* m_TORGB_ywhiteSlider;
+			wxTextCtrl* m_TORGB_ywhiteText;
+			wxStaticText* m_TORGB_rgbxyStaticText;
+			wxSlider* m_TORGB_xredSlider;
+			wxTextCtrl* m_TORGB_xredText;
+			wxSlider* m_TORGB_yredSlider;
+			wxTextCtrl* m_TORGB_yredText;
+			wxSlider* m_TORGB_xgreenSlider;
+			wxTextCtrl* m_TORGB_xgreenText;
+			wxSlider* m_TORGB_ygreenSlider;
+			wxTextCtrl* m_TORGB_ygreenText;
+			wxSlider* m_TORGB_xblueSlider;
+			wxTextCtrl* m_TORGB_xblueText;
+			wxSlider* m_TORGB_yblueSlider;
+			wxTextCtrl* m_TORGB_yblueText;
+			wxPanel* m_GammaOptionsPanel;
+			wxStaticBitmap* m_gammaBitmap;
+			wxStaticText* m_TORGB_gammaStaticText;
+			wxSlider* m_TORGB_gammaSlider;
+			wxTextCtrl* m_TORGB_gammaText;
+			wxButton* m_TM_resetButton;
+			wxCheckBox* m_auto_tonemapCheckBox;
+			wxButton* m_TM_applyButton;
+			wxNotebook* m_outputNotebook2;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
 			wxPanel* m_networkPage;
@@ -103,34 +214,16 @@ namespace lux
 			wxStaticText* m_updateStaticText;
 			wxSpinCtrl* m_serverUpdateSpin;
 			wxTreeCtrl* m_networkTreeCtrl;
-			wxPanel* m_outputPage;
-			wxToolBar* m_outputToolBar;
-			wxButton* m_refreshOutputButton;
-			wxNotebook* m_outputNotebook;
-			wxPanel* m_lightGroupsPanel;
-			wxPanel* m_FilterPanel;
-			wxPanel* m_tonemapPanel;
-			wxChoice* m_TM_choice;
-			wxStaticText* m_staticText4;
-			wxSlider* m_RH_prescaleSlider;
-			wxTextCtrl* m_RH_preText;
-			wxStaticText* m_staticText5;
-			wxSlider* m_RH_postscaleSlider;
-			wxTextCtrl* m_RH_postText;
-			wxStaticText* m_staticText6;
-			wxSlider* m_RH_burnSlider;
-			wxTextCtrl* m_RH_burnText;
-			wxButton* m_TM_resetButton;
 			wxStatusBar* m_statusBar;
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
-			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
+			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
 			
 		
 		public:
