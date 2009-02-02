@@ -390,6 +390,38 @@ void FlexImageFilm::CreateBuffers()
     }
 }
 
+vector<string> FlexImageFilm::GetGroupsName() const
+{
+	vector<string> names;
+	for (u_int i = 0; i < bufferGroups.size(); ++i)
+		names.push_back(bufferGroups[i].name);
+	return names;
+}
+void FlexImageFilm::SetGroupEnable(u_int index, bool status)
+{
+	if (index >= bufferGroups.size())
+		return;
+	bufferGroups[index].enable = status;
+}
+bool FlexImageFilm::GetGroupEnable(u_int index) const
+{
+	if (index >= bufferGroups.size())
+		return false;
+	return bufferGroups[index].enable;
+}
+void FlexImageFilm::SetGroupScale(u_int index, float value)
+{
+	if (index >= bufferGroups.size())
+		return;
+	bufferGroups[index].scale = value;
+}
+float FlexImageFilm::GetGroupScale(u_int index) const
+{
+	if (index >= bufferGroups.size())
+		return 0.f;
+	return bufferGroups[index].scale;
+}
+
 void FlexImageFilm::AddSampleCount(float count) {
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 		bufferGroups[i].numberOfSamples += count;
@@ -602,17 +634,19 @@ void FlexImageFilm::WriteImage(ImageType type)
 	vector<float> alpha(nPix), alpha0(nPix);
 
 	float Y = 0.f;
+	// in order to fix bug #360
+	// ouside loop not to trash the complete picture
+	// if there are several buffer groups
+	fill(pixels0.begin(), pixels0.end(), XYZColor(0.f));
 	for(u_int j = 0; j < bufferGroups.size(); ++j) {
-		// Dade - in order to fix bug #360
-		fill(pixels0.begin(), pixels0.end(), XYZColor(0.f));
 
 		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
 			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
 			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
 				for (int x = 0; x < xPixelCount; ++x,++offset) {
 					buffer.GetData(x, y, &(pixels[offset]), &(alpha[offset]));
-					if (bufferConfigs[i].output & BUF_FRAMEBUFFER) {
-						pixels0[offset] += pixels[offset];
+					if (bufferConfigs[i].output & BUF_FRAMEBUFFER && bufferGroups[j].enable) {
+						pixels0[offset] += pixels[offset] * bufferGroups[j].scale;
 						alpha0[offset] += alpha[offset];
 					}
 				}
@@ -621,12 +655,12 @@ void FlexImageFilm::WriteImage(ImageType type)
 				WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 			}
 		}
-		float Ybuffer = 0.f;
-		for (int pix = 0; pix < nPix; ++pix)
-			Ybuffer += pixels0[pix].c[1];
-		Y += Ybuffer / nPix;
-		WriteImage2(type, pixels0, alpha0, "");
 	}
+	// outside loop in order to write complete image
+	for (int pix = 0; pix < nPix; ++pix)
+		Y += pixels0[pix].c[1];
+	Y /= nPix;
+	WriteImage2(type, pixels0, alpha0, "");
 	EV = logf(Y * 10.f) / logf(2.f);
 }
 

@@ -57,6 +57,12 @@ public:
 	void RequestBufferGroups(const vector<string> &bg);
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
+	u_int GetGroupsNumber() const { return bufferGroups.size(); }
+	vector<string> GetGroupsName() const;
+	void SetGroupEnable(u_int index, bool status);
+	bool GetGroupEnable(u_int index) const;
+	void SetGroupScale(u_int index, float value);
+	float GetGroupScale(u_int index) const;
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(Contribution *contrib);

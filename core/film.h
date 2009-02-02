@@ -215,7 +215,8 @@ private:
 
 class BufferGroup {
 public:
-	BufferGroup(const string &n) : numberOfSamples(0.f), name(n) { }
+	BufferGroup(const string &n) : numberOfSamples(0.f), name(n),
+		enable(true), scale(1.f) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
 			delete *buffer;
@@ -245,6 +246,8 @@ public:
 	double numberOfSamples;
 	vector<Buffer *> buffers;
 	string name;
+	bool enable;
+	float scale;
 };
 
 //class FlexImageFilm;
@@ -302,6 +305,12 @@ public:
 
     virtual void CreateBuffers() {
     }
+    virtual u_int GetGroupsNumber() const = 0;
+    virtual vector<string> GetGroupsName() const = 0;
+    virtual void SetGroupEnable(u_int index, bool status) = 0;
+    virtual bool GetGroupEnable(u_int index) const = 0;
+    virtual void SetGroupScale(u_int index, float value) = 0;
+    virtual float GetGroupScale(u_int index) const = 0;
     virtual unsigned char* getFrameBuffer() = 0;
     virtual void updateFrameBuffer() = 0;
     virtual float* getHDRFrameBuffer() = 0;
