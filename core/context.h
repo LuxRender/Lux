@@ -258,9 +258,9 @@ private:
 	float* hdrframebuffer();
 
 	// Parameter Access functions
-	void Context::SetParameterValue(Component comp, ComponentParameters param, double value);
-	double Context::GetParameterValue(Component comp, ComponentParameters param);
-	double Context::GetDefaultParameterValue(Component comp, ComponentParameters param);
+	void SetParameterValue(Component comp, ComponentParameters param, double value);
+	double GetParameterValue(Component comp, ComponentParameters param);
+	double GetDefaultParameterValue(Component comp, ComponentParameters param);
 
 	/*
 	int displayInterval();
