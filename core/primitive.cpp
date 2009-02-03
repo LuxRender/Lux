@@ -155,30 +155,32 @@ bool InstancePrimitive::IntersectP(const Ray &r) const {
 }
 
 // MotionPrimitive Method Definitions
-bool MotionPrimitive::Intersect(const Ray &r,
-                                                                  Intersection *isect) const {
+bool MotionPrimitive::Intersect(const Ray &r, 
+								Intersection *isect) const {
+
 	Transform InstanceToWorld = motionSystem->Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
-        Ray ray = WorldToInstance(r);
-        if (!instance->Intersect(ray, isect))
-                return false;
-        r.maxt = ray.maxt;
-        isect->WorldToObject = isect->WorldToObject * WorldToInstance;
-        // Transform instance's differential geometry to world space
-        isect->dg.p = InstanceToWorld(isect->dg.p);
-        isect->dg.nn = Normalize(InstanceToWorld(isect->dg.nn));
-        isect->dg.dpdu = InstanceToWorld(isect->dg.dpdu);
-        isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
-        isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
-        isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
-        return true;
+	Ray ray = WorldToInstance(r);
+	if (!instance->Intersect(ray, isect))
+		return false;
+	r.maxt = ray.maxt;
+	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
+	// Transform instance's differential geometry to world space
+	isect->dg.p = InstanceToWorld(isect->dg.p);
+	isect->dg.nn = Normalize(InstanceToWorld(isect->dg.nn));
+	isect->dg.dpdu = InstanceToWorld(isect->dg.dpdu);
+	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
+	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
+	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
+	return true;
 }
-bool MotionPrimitive::IntersectP(const Ray &r) const {
-        Transform InstanceToWorld = motionSystem->Sample(r.time);
-        Transform WorldToInstance = InstanceToWorld.GetInverse();
 
-        return instance->IntersectP(WorldToInstance(r));
+bool MotionPrimitive::IntersectP(const Ray &r) const {
+	Transform InstanceToWorld = motionSystem->Sample(r.time);
+	Transform WorldToInstance = InstanceToWorld.GetInverse();
+
+	return instance->IntersectP(WorldToInstance(r));
 }
 
 BBox MotionPrimitive::WorldBound() const  {
