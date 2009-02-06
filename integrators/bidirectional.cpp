@@ -33,17 +33,21 @@
 using namespace lux;
 
 struct BidirVertex {
-	BidirVertex() : bsdf(NULL), eBsdf(NULL), pdf(0.f), dAWeight(0.f),
-		rr(1.f), pdfR(0.f), dARWeight(0.f), rrR(1.f),
-		ePdf(0.f), ePdfDirect(0.f), flags(BxDFType(0)),
-		f(0.f), flux(0.f), Le(0.f) {}
-	BSDF *bsdf, *eBsdf;
-	Point p;
-	Normal ng, ns;
-	Vector wi, wo;
-	float cosi, coso, d2, pdf, dAWeight, rr, pdfR, dARWeight, rrR, ePdf, ePdfDirect;
+	BidirVertex() : pdf(0.f), pdfR(0.f), dAWeight(0.f), dARWeight(0.f),
+		rr(1.f), rrR(1.f), flux(0.f), bsdf(NULL), flags(BxDFType(0)),
+		f(0.f), Le(0.f), ePdf(0.f), ePdfDirect(0.f), eBsdf(NULL) {}
+	float cosi, coso, pdf, pdfR, dAWeight, dARWeight, rr, rrR;
+	SWCSpectrum flux;
+	BSDF *bsdf;
 	BxDFType flags;
-	SWCSpectrum f, flux, Le;
+	Vector wi, wo;
+	Normal ng, ns;
+	Point p;
+	float d2;
+	SWCSpectrum f, Le;
+	float  ePdf, ePdfDirect;
+	BSDF *eBsdf;
+	int eGroup;
 };
 
 // Bidirectional Method Definitions
@@ -117,8 +121,11 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		} else {
 			v.bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * data[3] - 1.f));
 			v.Le = isect.Le(tspack, ray, vertices[nVerts - 1].ng, &v.eBsdf, &v.ePdf, &v.ePdfDirect);
-			v.ePdf /= scene->lights.size();
-			v.ePdfDirect *= directWeight;
+			if (v.eBsdf) {
+				v.ePdf /= scene->lights.size();
+				v.ePdfDirect *= directWeight;
+				v.eGroup = isect.arealight->group;
+			}
 		}
 		v.wo = -ray.d;
 		v.p = isect.dg.p;
@@ -487,23 +494,31 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 }
 
 static bool getLightHit(const TsPack *tspack, const Scene *scene, vector<BidirVertex> &eyePath,
-	int length, int eyeDepth, int lightDepth, SWCSpectrum *Le, float *weight)
+	int length, int eyeDepth, int lightDepth,
+	vector<SWCSpectrum> &Le, vector<float> &weight)
 {
 	BidirVertex &v(eyePath[length - 1]);
 	if (!(v.ePdf > 0.f) || v.Le.Black())
 		return false;
-	*Le = v.Le;
 	vector<BidirVertex> path(0);
 	BidirVertex e(v);
-	*Le *= evalPath(tspack, scene, eyePath, length, eyeDepth, path, 0, lightDepth,
-		v.ePdfDirect, false, weight);
+	float totalWeight;
+	v.Le *= evalPath(tspack, scene, eyePath, length, eyeDepth, path, 0, lightDepth,
+		v.ePdfDirect, false, &totalWeight);
+	if (v.Le.Black()) {
+		v = e;
+		return false;
+	}
+	Le[v.eGroup] += v.Le;
+	weight[v.eGroup] += v.Le.filter(tspack) * totalWeight;
 	v = e;
-	return !Le->Black();
+	return true;
 }
 
 static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	vector<BidirVertex> &eyePath, int length, int eyeDepth, int lightDepth,
-	SWCSpectrum *Le, float *weight, float directWeight)
+	float directWeight, vector<SWCSpectrum> &Le, vector<float> &weight,
+	int *nrContribs)
 {
 	BidirVertex &v(eyePath[length - 1]);
 	if (v.bsdf)
@@ -511,7 +526,6 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	// The eye path has at least 2 vertices
 	vector<BidirVertex> path(0);
 	float totalWeight = 0.f;
-	*Le = 0.f;
 	for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 		const Light *light = scene->lights[lightNumber];
 		RayDifferential ray(eyePath[length - 2].p, eyePath[length - 2].wi);
@@ -529,30 +543,30 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		// This can be overwritten as it won't be reused
 		eyePath[length - 2].d2 = DistanceSquared(eyePath[length - 2].p, v.p);
 		v.Le *= evalPath(tspack, scene, eyePath, length, eyeDepth, path, 0,
-			lightDepth, v.ePdfDirect, false, weight);
+			lightDepth, v.ePdfDirect, false, &totalWeight);
 		if (!v.Le.Black()) {
-			*Le += v.Le;
-			totalWeight += v.Le.filter(tspack) * *weight;
+			Le[light->group] += v.Le;
+			weight[light->group] += totalWeight *
+				Le[light->group].filter(tspack);
+			++nrContribs;
 		}
 	}
-	if (totalWeight > 0.f)
-		totalWeight /= Le->filter(tspack);
-	*weight = totalWeight;
 	return true;
 }
 
 static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<BidirVertex> &eyePath,
 	int length, int eyeDepth, int lightDepth, const Light *light,
-	float u0, float u1, float portal, SWCSpectrum *Ld, float *weight,
-	Vector *w, float directWeight)
+	float u0, float u1, float portal, float directWeight, const SWCSpectrum &We, int lightBufferId, const Sample *sample, float *alpha,
+	vector<SWCSpectrum> &Ld, vector<float> &weight)
 {
 	vector<BidirVertex> lightPath(1);
 	BidirVertex &vE(eyePath[length - 1]);
 	BidirVertex &vL(lightPath[0]);
 	VisibilityTester visibility;
+	SWCSpectrum L;
 	// Sample the chosen light
 	if (!light->Sample_L(tspack, scene, vE.p, vE.ng, u0, u1, portal, &vL.bsdf,
-		&vL.dAWeight, &vL.ePdfDirect, &visibility, Ld))
+		&vL.dAWeight, &vL.ePdfDirect, &visibility, &L))
 		return false;
 	vL.p = vL.bsdf->dgShading.p;
 	vL.ns = vL.bsdf->dgShading.nn;
@@ -562,13 +576,26 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene, vector<Bidi
 	vL.dAWeight /= scene->lights.size();
 	vL.ePdfDirect *= directWeight;
 	BidirVertex e(vE);
-	*Ld *= evalPath(tspack, scene, eyePath, length, eyeDepth,
-		lightPath, 1, lightDepth, vL.ePdfDirect, true, weight);
+	float totalWeight;
+	L *= evalPath(tspack, scene, eyePath, length, eyeDepth,
+		lightPath, 1, lightDepth, vL.ePdfDirect, true, &totalWeight);
+	if (L.Black()) {
+		vE = e;
+		return false;
+	}
+	L /= vL.ePdfDirect;
+	if (length > 1) {
+		Ld[light->group] += L;
+		weight[light->group] += L.filter(tspack) * totalWeight;
+	} else {
+		float xd, yd;
+		tspack->camera->GetSamplePosition(eyePath[0].p, vE.wi, &xd, &yd);
+		L *= We;
+		XYZColor color(L.ToXYZ(tspack));
+		sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, totalWeight, lightBufferId, light->group);
+	}
 	vE = e;
-	*Ld /= vL.ePdfDirect;
-	if (length == 1)
-		*w = -vL.wo;
-	return !Ld->Black();
+	return true;
 }
 
 static bool getLight(const TsPack *tspack, const Scene *scene,
@@ -588,10 +615,8 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 	const Sample *sample, SWCSpectrum *Li, float *alpha) const
 {
 	SampleGuard guard(sample->sampler, sample);
-	float nrContribs = 0.f;
+	int nrContribs = 0;
 	vector<BidirVertex> eyePath(maxEyeDepth), lightPath(maxLightDepth);
-	SWCSpectrum L(0.f);
-	float variance = 0.f;
 	if (alpha)
 		*alpha = 1.f;
 	int numberOfLights = static_cast<int>(scene->lights.size());
@@ -609,10 +634,12 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 	// Light path cannot intersect camera (FIXME)
 	eyePath[0].dARWeight = 0.f;
 	// Choose light
+	const int nGroups = scene->lightGroups.size();
 	int lightNum = Floor2Int(sample->oneD[lightNumOffset][0] *
 		numberOfLights);
 	lightNum = min<int>(lightNum, numberOfLights - 1);
 	Light *light = scene->lights[lightNum];
+	const int lightGroup = light->group;
 	const float *data = sample->twoD[lightPosOffset];
 	const float component = sample->oneD[lightComponentOffset][0];
 	BSDF *lightBsdf;
@@ -641,34 +668,28 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 				lightPath[1].wi) / //FIXME
 				lightPath[0].d2 * lightPath[0].coso * directWeight;
 	}
+	vector<SWCSpectrum> vecL(nGroups, SWCSpectrum(0.f));
+	SWCSpectrum &L(vecL[lightGroup]);
+	vector<float> vecV(nGroups, 0.f);
+	float &variance(vecV[lightGroup]);
 	// Get back normal image position
 	float x, y;
 	tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
 	// Connect paths
 	for (int i = 1; i <= nEye; ++i) {
-		float weight;
 		// Check eye path light intersection
 		if (i > 1) {
-			SWCSpectrum Lh(0.f);
 			if (getEnvironmentLight(tspack, scene, eyePath, i, maxEyeDepth,
-				maxLightDepth, &Lh, &weight, directWeight)) {
-				if (!Lh.Black()) {
-					L += Lh;
-					variance += weight * Lh.filter(tspack);
-					++nrContribs;
-				}
+				maxLightDepth, directWeight, vecL, vecV, &nrContribs)) {
 				break; //from now on the eye path does not intersect anything
 			} else if (getLightHit(tspack, scene, eyePath, i, maxEyeDepth,
-				maxLightDepth, &Lh, &weight)) {
-				if (!Lh.Black()) {
-					L += Lh;
-					variance += weight * Lh.filter(tspack);
-					++nrContribs;
-				}
+				maxLightDepth, vecL, vecV)) {
+				++nrContribs;
 			}
 		}
 		// Do direct lighting
 		SWCSpectrum Ld(0.f);
+		float weight;
 		Vector w;
 		const float *directData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, i - 1);
 		switch(lightStrategy) {
@@ -679,21 +700,10 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 				if (getDirectLight(tspack, scene, eyePath, i,
 					maxEyeDepth, maxLightDepth,
 					scene->lights[lightDirectNumber],
-					directData[0], directData[1], portal, &Ld, &weight,
-					&w, directWeight)) {
-					if (!Ld.Black()) {
-						if (i > 1) {
-							L += Ld;
-							variance += weight * Ld.filter(tspack);
-						} else {
-							Ld *= We;
-							float xd, yd;
-							tspack->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
-							XYZColor color(Ld.ToXYZ(tspack));
-							sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
-						}
-						++nrContribs;
-					}
+					directData[0], directData[1], portal,
+					directWeight, We, lightBufferId,
+					sample, alpha, vecL, vecV)) {
+					++nrContribs;
 				}
 				break;
 			}
@@ -702,21 +712,10 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 					if (getDirectLight(tspack, scene, eyePath, i,
 						maxEyeDepth, maxLightDepth,
 						scene->lights[l],
-						directData[0], directData[1], directData[2], &Ld,
-						&weight, &w, directWeight)) {
-						if (!Ld.Black()) {
-							if (i > 1) {
-								L += Ld;
-								variance += weight * Ld.filter(tspack);
-							} else {
-								Ld *= We;
-								float xd, yd;
-								tspack->camera->GetSamplePosition(eyePath[0].p, w, &xd, &yd);
-								XYZColor color(Ld.ToXYZ(tspack));
-								sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, weight, lightBufferId);
-							}
-							++nrContribs;
-						}
+						directData[0], directData[1], directData[2],
+						directWeight, We, lightBufferId,
+						sample, alpha, vecL, vecV)) {
+						++nrContribs;
 					}
 					directData += 3;
 				}
@@ -748,7 +747,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 							float xl, yl;
 							tspack->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
 							XYZColor color(Ll.ToXYZ(tspack));
-							sample->AddContribution(xl, yl, color, alpha ? *alpha : 1.f, weight, lightBufferId);
+							sample->AddContribution(xl, yl, color, alpha ? *alpha : 1.f, weight, lightBufferId, lightGroup);
 						}
 						++nrContribs;
 					}
@@ -759,10 +758,13 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene, const RayDiffe
 			}
 		}
 	}
-	L *= We;
-	variance /= L.filter(tspack);
-	XYZColor color(L.ToXYZ(tspack));
-	sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, variance, eyeBufferId);
+	for (int i = 0; i < nGroups; ++i) {
+		if (!vecL[i].Black())
+			vecV[i] /= vecL[i].filter(tspack);
+		vecL[i] *= We;
+		XYZColor color(vecL[i].ToXYZ(tspack));
+		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, vecV[i], eyeBufferId, lightGroup);
+	}
 	return nrContribs;
 }
 
