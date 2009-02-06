@@ -599,9 +599,8 @@ void MeshWaldTriangle::GetShadingGeometry(const Transform &obj2world,
 	Normal ns = dg.nn;
 	float lenDpDu = dg.dpdu.Length();
 	float lenDpDv = dg.dpdv.Length();
-	Vector ss = dg.dpdu / lenDpDu;
-	Vector ts = Normalize(Cross(ss, ns));
-	ss = Cross(ts, ns);
+	Vector ts = Normalize(Cross(dg.dpdu, ns));
+	Vector ss = Cross(ts, ns);
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
 	ss *= lenDpDu;
 	ts *= lenDpDv;
