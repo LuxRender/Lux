@@ -162,7 +162,7 @@ public:
 		// Supersample _Checkerboard3D_
 		#define N_SAMPLES 4
 		float samples[2*N_SAMPLES*N_SAMPLES];
-//		StratifiedSample2D(samples, N_SAMPLES, N_SAMPLES);									// COCACOLA - fix
+		StratifiedSample2D(tspack, samples, N_SAMPLES, N_SAMPLES);									// COCACOLA - fix
 		T value = 0.;
 		float filterSum = 0.;
 		for (int i = 0; i < N_SAMPLES*N_SAMPLES; ++i) {
