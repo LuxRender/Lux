@@ -108,6 +108,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	u_int nVerts = 0;
 	const float dummy[] = {0.f, sample->imageX, sample->imageY, 0.5f};
 	const float *data = (const float *)&dummy;
+	bool through = false;
 	while (true) {
 		// Find next vertex in path and initialize _vertices_
 		BidirVertex &v = vertices[nVerts];
@@ -131,21 +132,31 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		if (!v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2], data[3],
 				&v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
 			break;
-		v.wi = Normalize(v.wi);
-		v.cosi = AbsDot(v.wi, v.ng);
-		const float cosins = AbsDot(v.wi, v.ns);
-		v.flux = v.f;
-		v.f *= cosins / v.cosi;
-		v.flux *= cosins / v.pdfR;
-		v.rrR = min<float>(1.f, v.flux.filter(tspack));
-		if (nVerts > 3) {
-			if (v.rrR < data[0])
-				break;
-			v.flux /= v.rrR;
+		if (through) {
+			v.flux *= v.f;
+			through = false;
+		} else
+			v.flux = v.f;
+		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) || Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
+			v.cosi = AbsDot(v.wi, v.ng);
+			const float cosins = AbsDot(v.wi, v.ns);
+			v.f *= cosins / v.cosi;
+			v.flux *= cosins / v.pdfR;
+			v.rrR = min<float>(1.f, v.flux.filter(tspack));
+			if (nVerts > 3) {
+				if (v.rrR < data[0])
+					break;
+				v.flux /= v.rrR;
+			}
+			v.rr = min<float>(1.f, v.f.filter(tspack) * v.coso / v.pdf);
+			if (nVerts > 1)
+				v.flux *= vertices[nVerts - 2].flux;
+		} else {
+			const float cosins = AbsDot(v.wi, v.ns);
+			v.flux *= cosins;
+			through = true;
+			--nVerts;
 		}
-		v.rr = min<float>(1.f, v.f.filter(tspack) * v.coso / v.pdf);
-		if (nVerts > 1)
-			v.flux *= vertices[nVerts - 2].flux;
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
 		ray.time = tspack->time;
@@ -182,6 +193,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 	isect.dg.p = bsdf->dgShading.p;
 	isect.dg.nn = bsdf->dgShading.nn;
 	u_int nVerts = 0;
+	bool through = false;
 	while (true) {
 		BidirVertex &v = vertices[nVerts];
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
@@ -202,21 +214,31 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene, BSDF *bsd
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2], data[3],
 			 &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
-		v.wo = Normalize(v.wo);
-		v.coso = AbsDot(v.wo, v.ng);
-		v.f *= AbsDot(v.wi, v.ns) / v.cosi;
-		v.flux = v.f;
-		v.flux *= v.coso / v.pdf;
-		v.rr = min<float>(1.f, v.flux.filter(tspack));
-		if (nVerts > 3) {
-			if (v.rr < data[0])
-				break;
-			v.flux /= v.rr;
-		}
-		v.rrR = min<float>(1.f, v.f.filter(tspack) * v.cosi / v.pdfR);
-		if (nVerts > 1) {
-			vertices[nVerts - 2].d2 = DistanceSquared(vertices[nVerts - 2].p, v.p);
-			v.flux *= vertices[nVerts - 2].flux;
+		if (through) {
+			v.flux *= v.f;
+			through = false;
+		} else
+			v.flux = v.f;
+		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) || Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
+			v.coso = AbsDot(v.wo, v.ng);
+			const float cosins = AbsDot(v.wi, v.ns);
+			v.flux *= cosins / v.cosi * v.coso / v.pdf;
+			v.rr = min<float>(1.f, v.flux.filter(tspack));
+			if (nVerts > 3) {
+				if (v.rr < data[0])
+					break;
+				v.flux /= v.rr;
+			}
+			v.rrR = min<float>(1.f, v.f.filter(tspack) * cosins / v.pdfR);
+			if (nVerts > 1) {
+				vertices[nVerts - 2].d2 = DistanceSquared(vertices[nVerts - 2].p, v.p);
+				v.flux *= vertices[nVerts - 2].flux;
+			}
+		} else {
+			const float cosins = AbsDot(v.wi, v.ns);
+			v.flux *= cosins;
+			through = true;
+			--nVerts;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
@@ -385,28 +407,28 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		eyeV.d2 = DistanceSquared(eyeV.p, lightV.p);
 		if (eyeV.d2 < SHADOW_RAY_EPSILON)
 			return 0.f;
-		const float cosins = AbsDot(eyeV.wi, eyeV.ns);
+		const float ecosins = AbsDot(eyeV.wi, eyeV.ns);
 		eyeV.flux = eyeV.f; // No pdf as it is a direct connection
-		eyeV.f *= cosins / eyeV.cosi;
 		if (nEye > 1)
 			eyeV.flux *= eye[nEye - 2].flux;
 		// Prepare light vertex for connection
 		lightV.coso = AbsDot(lightV.wo, lightV.ng);
 		lightV.d2 = eyeV.d2;
-		lightV.f *= AbsDot(lightV.wi, lightV.ns) / lightV.cosi;
+		const float lcosins = AbsDot(lightV.wi, lightV.ns);
 		lightV.flux = lightV.f; // No pdf as it is a direct connection
+		lightV.flux *= lcosins / lightV.cosi;
 		if (nLight > 1)
 			lightV.flux *= light[nLight - 2].flux;
 		// Connect eye and light vertices
-		L *= eyeV.flux * G(cosins, lightV.coso, eyeV.d2) * lightV.flux;
+		L *= eyeV.flux * G(ecosins, lightV.coso, eyeV.d2) * lightV.flux;
 		if (L.Black())
 			return 0.f;
 		// Evaluate factors for eye path weighting
 		eyeV.pdf = eyeV.bsdf->Pdf(tspack, eyeV.wi, eyeV.wo);
 		eyeV.rr = min<float>(1.f, eyeV.f.filter(tspack) *
-			eyeV.coso / eyeV.pdf);
+			ecosins / eyeV.cosi * eyeV.coso / eyeV.pdf);
 		eyeV.rrR = min<float>(1.f, eyeV.f.filter(tspack) *
-			eyeV.cosi / eyeV.pdfR);
+			ecosins / eyeV.pdfR);
 		eyeV.dAWeight = lightV.pdf * eyeV.cosi / eyeV.d2;
 		if (nEye > 1) {
 			eWeight = eye[nEye - 2].dAWeight;
@@ -418,9 +440,9 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		// Evaluate factors for light path weighting
 		lightV.pdfR = lightV.bsdf->Pdf(tspack, lightV.wo, lightV.wi);
 		lightV.rr = min<float>(1.f, lightV.f.filter(tspack) *
-			lightV.coso / lightV.pdf);
+			lcosins / lightV.cosi * lightV.coso / lightV.pdf);
 		lightV.rrR = min<float>(1.f, lightV.f.filter(tspack) *
-			lightV.cosi / lightV.pdfR);
+			lcosins / lightV.pdfR);
 		lightV.dARWeight = eyeV.pdfR * lightV.coso / lightV.d2;
 		if (nLight > 1) {
 			lWeight = light[nLight - 2].dARWeight;
