@@ -129,7 +129,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 }
 
 // Parameter Access functions
-void FlexImageFilm::SetParameterValue(ComponentParameters param, double value){
+void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value){
 	 switch (param) {
 		 case LUX_FILM_TM_TONEMAPKERNEL: {
 			 m_TonemapKernel = (int) value;
@@ -200,7 +200,7 @@ void FlexImageFilm::SetParameterValue(ComponentParameters param, double value){
 			} break;
 	 }
 }
-double FlexImageFilm::GetParameterValue(ComponentParameters param) {
+double FlexImageFilm::GetParameterValue(luxComponentParameters param) {
 	 switch (param) {
 		 case LUX_FILM_TM_TONEMAPKERNEL: {
 			 return float(m_TonemapKernel);
@@ -272,7 +272,7 @@ double FlexImageFilm::GetParameterValue(ComponentParameters param) {
 	 }
 	 return 0.;
 }
-double FlexImageFilm::GetDefaultParameterValue(ComponentParameters param) {
+double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param) {
 	 switch (param) {
 		 case LUX_FILM_TM_TONEMAPKERNEL: {
 			 return float(d_TonemapKernel);

@@ -110,9 +110,9 @@ public:
     float* GetHDRFramebuffer();
 
 	// Parameter Access functions
-	void SetParameterValue(Component comp, ComponentParameters param, double value);
-	double GetParameterValue(Component comp, ComponentParameters param);
-	double GetDefaultParameterValue(Component comp, ComponentParameters param);
+	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value);
+	double GetParameterValue(luxComponent comp, luxComponentParameters param);
+	double GetDefaultParameterValue(luxComponent comp, luxComponentParameters param);
 
     int DisplayInterval();
     int FilmXres();

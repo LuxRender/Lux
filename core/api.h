@@ -116,10 +116,10 @@ float* luxHDRFramebuffer();
 /* Parameter access */
 // Exposed Parameters
 
-enum Component {			LUX_FILM
+enum luxComponent {			LUX_FILM
 };
 
-enum ComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
+enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 
 							LUX_FILM_TM_REINHARD_AUTOYWA,
 							LUX_FILM_TM_REINHARD_YWA,
@@ -148,9 +148,9 @@ enum ComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 };
 
 // Parameter Access functions
-void luxSetParameterValue(Component comp, ComponentParameters param, double value);
-double luxGetParameterValue(Component comp, ComponentParameters param);
-double luxGetDefaultParameterValue(Component comp, ComponentParameters param);
+void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value);
+double luxGetParameterValue(luxComponent comp, luxComponentParameters param);
+double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param);
 
 
 /* Networking */

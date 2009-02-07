@@ -82,9 +82,9 @@ public:
 	}
 
 	// Parameter Access functions
-	void SetParameterValue(ComponentParameters param, double value);
-	double GetParameterValue(ComponentParameters param);
-	double GetDefaultParameterValue(ComponentParameters param);
+	void SetParameterValue(luxComponentParameters param, double value);
+	double GetParameterValue(luxComponentParameters param);
+	double GetDefaultParameterValue(luxComponentParameters param);
 
 	// Dade - method useful for transmitting the samples to a client
 	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true);

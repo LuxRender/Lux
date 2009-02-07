@@ -107,17 +107,17 @@ float* Scene::GetHDRFramebuffer() {
 
 
 // Parameter Access functions
-void Scene::SetParameterValue(Component comp, ComponentParameters param, double value) { 
+void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value) { 
 	if(comp == LUX_FILM)
 		camera->film->SetParameterValue(param, value);
 }
-double Scene::GetParameterValue(Component comp, ComponentParameters param) {
+double Scene::GetParameterValue(luxComponent comp, luxComponentParameters param) {
 	if(comp == LUX_FILM)
 		return camera->film->GetParameterValue(param);
 	else
 		return 0.;
 }
-double Scene::GetDefaultParameterValue(Component comp, ComponentParameters param) {
+double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
 	if(comp == LUX_FILM)
 		return camera->film->GetDefaultParameterValue(param);
 	else

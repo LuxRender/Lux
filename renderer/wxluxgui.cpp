@@ -325,13 +325,12 @@ void LuxGui::LoadImages() {
 	m_auinotebook->SetPageBitmap(2, wxMEMORY_BITMAP(network_png));
 	m_auinotebook->SetPageBitmap(3, wxMEMORY_BITMAP(output_png));
 
-	//m_outputNotebook->SetPageBitmap(0, wxMEMORY_BITMAP(n_lightgroup_png));
-	//m_outputNotebook->SetPageBitmap(1, wxMEMORY_BITMAP(n_tonemap_png));
-	//m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
-	m_outputNotebook->SetPageBitmap(0, wxMEMORY_BITMAP(n_tonemap_png));
+	m_outputNotebook->SetPageBitmap(0, wxMEMORY_BITMAP(n_lightgroup_png));
+	m_outputNotebook->SetPageBitmap(1, wxMEMORY_BITMAP(n_tonemap_png));
+	m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
 
 	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(n_tonemap_png));
-	//m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(n_lightgroup_png));
+	m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(n_lightgroup_png));
 	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(n_color_png));
 	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(n_gamma_png));
 
@@ -521,7 +520,7 @@ void LuxGui::ApplyTonemapping() {
 	}
 }
 
-void UpdateParam(Component comp, ComponentParameters param, double value) {
+void UpdateParam(luxComponent comp, luxComponentParameters param, double value) {
 	if(luxStatistics("sceneIsReady")) {
 	// Update OpenGL viewer
 	// m_renderOutput->SetComponentParameter(comp, param, value);

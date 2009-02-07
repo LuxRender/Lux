@@ -503,13 +503,13 @@ extern "C" float* luxHDRFramebuffer() {
 }
 
 // Parameter Access functions
-extern "C" void luxSetParameterValue(Component comp, ComponentParameters param, double value) {
+extern "C" void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value) {
 	return Context::luxSetParameterValue(comp, param, value);
 }
-extern "C" double luxGetParameterValue(Component comp, ComponentParameters param) {
+extern "C" double luxGetParameterValue(luxComponent comp, luxComponentParameters param) {
 	return Context::luxGetParameterValue(comp, param);
 }
-extern "C" double luxGetDefaultParameterValue(Component comp, ComponentParameters param) {
+extern "C" double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
 	return Context::luxGetDefaultParameterValue(comp, param);
 }
 

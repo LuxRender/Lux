@@ -322,9 +322,9 @@ public:
     }
 
 	// Parameter Access functions
-	virtual void SetParameterValue(ComponentParameters param, double value) = 0;
-	virtual double GetParameterValue(ComponentParameters param) = 0;
-	virtual double GetDefaultParameterValue(ComponentParameters param) = 0;
+	virtual void SetParameterValue(luxComponentParameters param, double value) = 0;
+	virtual double GetParameterValue(luxComponentParameters param) = 0;
+	virtual double GetDefaultParameterValue(luxComponentParameters param) = 0;
 
     // Film Public Data
     int xResolution, yResolution;

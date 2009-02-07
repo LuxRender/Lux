@@ -971,13 +971,13 @@ float* Context::hdrframebuffer() {
 }
 
 // Parameter Access functions
-void Context::SetParameterValue(Component comp, ComponentParameters param, double value) { 
+void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value) { 
 	return luxCurrentScene->SetParameterValue(comp, param, value);
 }
-double Context::GetParameterValue(Component comp, ComponentParameters param) {
+double Context::GetParameterValue(luxComponent comp, luxComponentParameters param) {
 	return luxCurrentScene->GetParameterValue(comp, param);
 }
-double Context::GetDefaultParameterValue(Component comp, ComponentParameters param) {
+double Context::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
 	return luxCurrentScene->GetDefaultParameterValue(comp, param);
 }
 

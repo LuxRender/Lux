@@ -153,13 +153,13 @@ public:
 	static float* luxHDRFramebuffer() { return activeContext->hdrframebuffer(); }
 
 	// Parameter Access functions
-	static void luxSetParameterValue(Component comp, ComponentParameters param, double value) { 
+	static void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value) { 
 		activeContext->SetParameterValue(comp, param, value);
 	}
-	static double luxGetParameterValue(Component comp, ComponentParameters param) {
+	static double luxGetParameterValue(luxComponent comp, luxComponentParameters param) {
 		return activeContext->GetParameterValue(comp, param);
 	}
-	static double luxGetDefaultParameterValue(Component comp, ComponentParameters param) {
+	static double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
 		return activeContext->GetDefaultParameterValue(comp, param);
 	}
 
@@ -258,9 +258,9 @@ private:
 	float* hdrframebuffer();
 
 	// Parameter Access functions
-	void SetParameterValue(Component comp, ComponentParameters param, double value);
-	double GetParameterValue(Component comp, ComponentParameters param);
-	double GetDefaultParameterValue(Component comp, ComponentParameters param);
+	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value);
+	double GetParameterValue(luxComponent comp, luxComponentParameters param);
+	double GetDefaultParameterValue(luxComponent comp, luxComponentParameters param);
 
 	/*
 	int displayInterval();
