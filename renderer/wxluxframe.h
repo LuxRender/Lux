@@ -21,15 +21,17 @@
 #include <wx/toolbar.h>
 #include <wx/sizer.h>
 #include <wx/statbmp.h>
-#include <wx/choice.h>
-#include <wx/panel.h>
 #include <wx/checkbox.h>
 #include <wx/slider.h>
 #include <wx/textctrl.h>
-#include <wx/button.h>
-#include <wx/scrolwin.h>
-#include <wx/aui/auibook.h>
+#include <wx/clrpicker.h>
+#include <wx/panel.h>
 #include <wx/notebook.h>
+#include <wx/scrolwin.h>
+#include <wx/choice.h>
+#include <wx/button.h>
+#include <wx/statline.h>
+#include <wx/aui/auibook.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
 #include <wx/statusbr.h>
@@ -61,63 +63,67 @@ namespace lux
 	#define ID_PANTOOL 1017
 	#define ID_ZOOMTOOL 1018
 	#define ID_REFINETOOL 1019
-	#define ID_TONEMAP 1020
-	#define ID_TONEMAPOPTIONSPANEL 1021
-	#define ID_TM_KERNELCHOICE 1022
-	#define ID_TONEMAPREINHARDOPTIONSPANEL 1023
-	#define ID_TM_REINHARD_AUTOYWA 1024
-	#define ID_TM_REINHARD_YWA 1025
-	#define ID_TM_REINHARD_YWA_TEXT 1026
-	#define ID_TM_REINHARD_PRESCALE 1027
-	#define ID_TM_REINHARD_PRESCALE_TEXT 1028
-	#define ID_TM_REINHARD_POSTSCALE 1029
-	#define ID_TM_REINHARD_POSTSCALE_TEXT 1030
-	#define ID_TM_REINHARD_BURN 1031
-	#define ID_TM_REINHARD_BURN_TEXT 1032
-	#define ID_TONEMAPLINEAROPTIONSPANEL 1033
-	#define ID_TM_LINEAR_SENSITIVITY 1034
-	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1035
-	#define ID_TM_LINEAR_EXPOSURE 1036
-	#define ID_TM_LINEAR_EXPOSURE_TEXT 1037
-	#define ID_TM_LINEAR_FSTOP 1038
-	#define ID_TM_LINEAR_FSTOP_TEXT 1039
-	#define ID_TM_LINEAR_GAMMA 1040
-	#define ID_TM_LINEAR_GAMMA_TEXT 1041
-	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1042
-	#define ID_TM_CONTRAST_YWA 1043
-	#define ID_TM_CONTRAST_YWA_TEXT 1044
-	#define ID_COLORSPACEOPTIONSPANEL 1045
-	#define ID_TORGB_COLORSPACECHOICE 1046
-	#define ID_TORGB_XWHITE 1047
-	#define ID_TORGB_XWHITE_TEXT 1048
-	#define ID_TORGB_YWHITE 1049
-	#define ID_TORGB_YWHITE_TEXT 1050
-	#define ID_TORGB_XRED 1051
-	#define ID_TORGB_XRED_TEXT 1052
-	#define ID_TORGB_YRED 1053
-	#define ID_TORGB_YRED_TEXT 1054
-	#define ID_TORGB_XGREEN 1055
-	#define ID_TORGB_XGREEN_TEXT 1056
-	#define ID_TORGB_YGREEN 1057
-	#define ID_TORGB_YGREEN_TEXT 1058
-	#define ID_TORGB_XBLUE 1059
-	#define ID_TORGB_XBLUE_TEXT 1060
-	#define ID_TORGB_YBLUE 1061
-	#define ID_TORGB_YBLUE_TEXT 1062
-	#define ID_GAMMAOPTIONSPANEL 1063
-	#define ID_TORGB_GAMMA 1064
-	#define ID_TORGB_GAMMA_TEXT 1065
-	#define ID_TM_RESET 1066
-	#define ID_AUTO_TONEMAP 1067
-	#define ID_TM_APPLY 1068
-	#define ID_ADD_SERVER 1069
-	#define ID_REMOVE_SERVER 1070
-	#define ID_SERVER_UPDATE_INT 1071
-	#define ID_NETWORK_TREE 1072
-	#define ID_SYS_DISPLAY_INT 1073
-	#define ID_SYS_WRITE_INT 1074
-	#define ID_WRITE_OPTIONS 1075
-	#define ID_SYS_APPLY 1076
+	#define ID_LIGHTGROUPS 1020
+	#define ID_RH_PRESCALE 1021
+	#define ID_RH_PRESCALE_TEXT 1022
+	#define ID_TONEMAP 1023
+	#define ID_TONEMAPOPTIONSPANEL 1024
+	#define ID_TM_KERNELCHOICE 1025
+	#define ID_TONEMAPREINHARDOPTIONSPANEL 1026
+	#define ID_TM_REINHARD_AUTOYWA 1027
+	#define ID_TM_REINHARD_YWA 1028
+	#define ID_TM_REINHARD_YWA_TEXT 1029
+	#define ID_TM_REINHARD_PRESCALE 1030
+	#define ID_TM_REINHARD_PRESCALE_TEXT 1031
+	#define ID_TM_REINHARD_POSTSCALE 1032
+	#define ID_TM_REINHARD_POSTSCALE_TEXT 1033
+	#define ID_TM_REINHARD_BURN 1034
+	#define ID_TM_REINHARD_BURN_TEXT 1035
+	#define ID_TONEMAPLINEAROPTIONSPANEL 1036
+	#define ID_TM_LINEAR_SENSITIVITY 1037
+	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1038
+	#define ID_TM_LINEAR_EXPOSURE 1039
+	#define ID_TM_LINEAR_EXPOSURE_TEXT 1040
+	#define ID_TM_LINEAR_FSTOP 1041
+	#define ID_TM_LINEAR_FSTOP_TEXT 1042
+	#define ID_TM_LINEAR_GAMMA 1043
+	#define ID_TM_LINEAR_GAMMA_TEXT 1044
+	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1045
+	#define ID_TM_CONTRAST_YWA 1046
+	#define ID_TM_CONTRAST_YWA_TEXT 1047
+	#define ID_COLORSPACEOPTIONSPANEL 1048
+	#define ID_TORGB_COLORSPACECHOICE 1049
+	#define ID_TORGB_XWHITE 1050
+	#define ID_TORGB_XWHITE_TEXT 1051
+	#define ID_TORGB_YWHITE 1052
+	#define ID_TORGB_YWHITE_TEXT 1053
+	#define ID_TORGB_XRED 1054
+	#define ID_TORGB_XRED_TEXT 1055
+	#define ID_TORGB_YRED 1056
+	#define ID_TORGB_YRED_TEXT 1057
+	#define ID_TORGB_XGREEN 1058
+	#define ID_TORGB_XGREEN_TEXT 1059
+	#define ID_TORGB_YGREEN 1060
+	#define ID_TORGB_YGREEN_TEXT 1061
+	#define ID_TORGB_XBLUE 1062
+	#define ID_TORGB_XBLUE_TEXT 1063
+	#define ID_TORGB_YBLUE 1064
+	#define ID_TORGB_YBLUE_TEXT 1065
+	#define ID_GAMMAOPTIONSPANEL 1066
+	#define ID_TORGB_GAMMA 1067
+	#define ID_TORGB_GAMMA_TEXT 1068
+	#define ID_TM_RESET 1069
+	#define ID_AUTO_TONEMAP 1070
+	#define ID_TM_APPLY 1071
+	#define ID_SYSTEMOPTIONS 1072
+	#define ID_ADD_SERVER 1073
+	#define ID_REMOVE_SERVER 1074
+	#define ID_SERVER_UPDATE_INT 1075
+	#define ID_NETWORK_TREE 1076
+	#define ID_SYS_DISPLAY_INT 1077
+	#define ID_SYS_WRITE_INT 1078
+	#define ID_WRITE_OPTIONS 1079
+	#define ID_SYS_APPLY 1080
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -138,6 +144,22 @@ namespace lux
 			wxStaticText* m_ThreadText;
 			wxToolBar* m_viewerToolBar;
 			wxAuiNotebook* m_outputNotebook;
+			wxScrolledWindow* m_LightGroups;
+			wxPanel* m_panel40;
+			wxStaticBitmap* m_lightgroupBitmap;
+			wxStaticText* m_tonemappingkernelText111;
+			wxStaticText* m_tonemappingkernelText11;
+			wxCheckBox* m_checkBox151;
+			wxNotebook* m_notebook4;
+			wxPanel* m_panel37;
+			wxStaticText* m_prescaleText311;
+			wxSlider* m_RH_prescaleSlider111;
+			wxTextCtrl* m_RH_preText111;
+			wxStaticText* m_prescaleText3111;
+			wxColourPickerCtrl* m_colourPicker3;
+			wxSlider* m_RH_prescaleSlider1111;
+			wxTextCtrl* m_RH_preText1111;
+			wxPanel* m_panel14;
 			wxScrolledWindow* m_Tonemap;
 			wxPanel* m_TonemapOptionsPanel;
 			wxStaticBitmap* m_tonemapBitmap;
@@ -204,6 +226,11 @@ namespace lux
 			wxButton* m_TM_resetButton;
 			wxCheckBox* m_auto_tonemapCheckBox;
 			wxButton* m_TM_applyButton;
+			wxScrolledWindow* m_SystemOptions;
+			wxCheckBox* m_checkBox1;
+			wxStaticLine* m_staticline1;
+			wxStaticText* m_staticText9;
+			wxChoice* m_choice2;
 			wxNotebook* m_outputNotebook2;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
