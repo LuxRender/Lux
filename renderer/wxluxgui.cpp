@@ -86,7 +86,9 @@ BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_PARSEERROR, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_FINISHED, LuxGui::OnCommand)
+#if defined (__WXMSW__) ||  defined (__WXGTK__)
 	EVT_ICONIZE   (LuxGui::OnIconize)
+#endif
 END_EVENT_TABLE()
 
 // Dade - global variable used by LuxGuiErrorHandler()
@@ -1612,6 +1614,7 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 	}
 }
 
+#if defined (__WXMSW__) ||  defined (__WXGTK__)
 void lux::LuxGui::OnIconize( wxIconizeEvent& event )
 {
 	if(!event.Iconized())
@@ -1619,6 +1622,7 @@ void lux::LuxGui::OnIconize( wxIconizeEvent& event )
 	else
 		m_guiWindowState = HIDDEN;
 }
+#endif
 
 void LuxGui::RenderScenefile(wxString filename) {
 	wxFileName fn(filename);
