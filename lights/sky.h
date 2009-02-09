@@ -75,6 +75,7 @@ public:
 
 	void		InitSunThetaPhi();
 	void		ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
+	float		PerezFunction(const float *lam, float theta, float phi, float lvz) const;
 
 private:
 	// SkyLight Private Data
