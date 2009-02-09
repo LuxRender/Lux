@@ -247,7 +247,9 @@ public:
 	vector<Buffer *> buffers;
 	string name;
 	bool enable;
-	float scale;
+	float globalScale;
+	RGBColor rgbScale;
+	XYZColor scale;
 };
 
 //class FlexImageFilm;
@@ -311,6 +313,8 @@ public:
     virtual bool GetGroupEnable(u_int index) const = 0;
     virtual void SetGroupScale(u_int index, float value) = 0;
     virtual float GetGroupScale(u_int index) const = 0;
+    virtual void SetGroupRGBScale(u_int index, const RGBColor &value) = 0;
+    virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
     virtual unsigned char* getFrameBuffer() = 0;
     virtual void updateFrameBuffer() = 0;
     virtual float* getHDRFrameBuffer() = 0;

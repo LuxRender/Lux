@@ -63,6 +63,9 @@ public:
 	bool GetGroupEnable(u_int index) const;
 	void SetGroupScale(u_int index, float value);
 	float GetGroupScale(u_int index) const;
+	void SetGroupRGBScale(u_int index, const RGBColor &value);
+	RGBColor GetGroupRGBScale(u_int index) const;
+	void ComputeGroupScale(u_int index);
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(Contribution *contrib);

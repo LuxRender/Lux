@@ -413,13 +413,32 @@ void FlexImageFilm::SetGroupScale(u_int index, float value)
 {
 	if (index >= bufferGroups.size())
 		return;
-	bufferGroups[index].scale = value;
+	bufferGroups[index].globalScale = value;
+	ComputeGroupScale(index);
 }
 float FlexImageFilm::GetGroupScale(u_int index) const
 {
 	if (index >= bufferGroups.size())
 		return 0.f;
-	return bufferGroups[index].scale;
+	return bufferGroups[index].globalScale;
+}
+void FlexImageFilm::SetGroupRGBScale(u_int index, const RGBColor &value)
+{
+	if (index >= bufferGroups.size())
+		return;
+	bufferGroups[index].rgbScale = value;
+	ComputeGroupScale(index);
+}
+RGBColor FlexImageFilm::GetGroupRGBScale(u_int index) const
+{
+	if (index >= bufferGroups.size())
+		return 0.f;
+	return bufferGroups[index].rgbScale;
+}
+void FlexImageFilm::ComputeGroupScale(u_int index)
+{
+	bufferGroups[index].scale = colorSpace.ToXYZ(bufferGroups[index].rgbScale);
+	bufferGroups[index].scale *= bufferGroups[index].globalScale;
 }
 
 void FlexImageFilm::AddSampleCount(float count) {
