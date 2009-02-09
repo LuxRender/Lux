@@ -39,7 +39,7 @@ static float determinent(const float matrix[3][3])
 	temp -= matrix[2][0] * matrix[0][2] * matrix[1][1];
 	return temp;
 }
-static void inverse(float matrix[3][3])
+static void inverse(const float matrix[3][3], float result[3][3])
 {
 	float det = determinent(matrix);
 	if (det == 0.f)
@@ -48,15 +48,15 @@ static void inverse(float matrix[3][3])
 		d = matrix[1][0], e = matrix[1][1], f = matrix[1][2],
 		g = matrix[2][0], h = matrix[2][1], i = matrix[2][2];
 
-	matrix[0][0] = (e * i - f * h) / det;
-	matrix[0][1] = (c * h - b * i) / det;
-	matrix[0][2] = (b * f - c * e) / det;
-	matrix[1][0] = (f * g - d * i) / det;
-	matrix[1][1] = (a * i - c * g) / det;
-	matrix[1][2] = (c * d - a * f) / det;
-	matrix[2][0] = (d * h - e * g) / det;
-	matrix[2][1] = (b * g - a * h) / det;
-	matrix[2][2] = (a * e - b * d) / det;
+	result[0][0] = (e * i - f * h) / det;
+	result[0][1] = (c * h - b * i) / det;
+	result[0][2] = (b * f - c * e) / det;
+	result[1][0] = (f * g - d * i) / det;
+	result[1][1] = (a * i - c * g) / det;
+	result[1][2] = (c * d - a * f) / det;
+	result[2][0] = (d * h - e * g) / det;
+	result[2][1] = (b * g - a * h) / det;
+	result[2][2] = (a * e - b * d) / det;
 }
 static void multiply(const float matrix[3][3], const float vector[3], float result[3])
 {
@@ -110,7 +110,7 @@ ColorSystem::ColorSystem(float xR, float yR, float xG, float yG, float xB, float
 	rgb[0][0] = red[0]; rgb[1][0] = red[1]; rgb[2][0] = red[2];
 	rgb[0][1] = green[0]; rgb[1][1] = green[1]; rgb[2][1] = green[2];
 	rgb[0][2] = blue[0]; rgb[1][2] = blue[1]; rgb[2][2] = blue[2];
-	inverse(rgb);
+	inverse(rgb, rgb);
 	float y[3];
 	multiply(rgb, white, y);
 	float x[3] = {y[0] * red[0], y[1] * green[0], y[2] * blue[0]};
@@ -128,9 +128,10 @@ ColorSystem::ColorSystem(float xR, float yR, float xG, float yG, float xB, float
 	matrix[0][2] = (dot(z, x) + white[0] * white[2]) * luminance;
 	matrix[1][2] = (dot(z, y) + white[1] * white[2]) * luminance;
 	matrix[2][2] = (dot(z, z) + white[2] * white[2]) * luminance;
-	inverse(matrix);
+	inverse(matrix, matrix);
 	//C=R*Tt*(T*Tt)^-1
-	multiply(rgb, matrix, conversion);
+	multiply(rgb, matrix, XYZToRGB);
+	inverse(XYZToRGB, RGBToXYZ);
 }
 
 //!

@@ -308,12 +308,23 @@ public:
 	RGBColor ToRGBConstrained(const XYZColor &color) const {
 		const float lum = color.y();
 		float c[3];
-		c[0] = conversion[0][0] * color.c[0] + conversion[0][1] * color.c[1] + conversion[0][2] * color.c[2];
-		c[1] = conversion[1][0] * color.c[0] + conversion[1][1] * color.c[1] + conversion[1][2] * color.c[2];
-		c[2] = conversion[2][0] * color.c[0] + conversion[2][1] * color.c[1] + conversion[2][2] * color.c[2];
+		c[0] = XYZToRGB[0][0] * color.c[0] + XYZToRGB[0][1] * color.c[1] + XYZToRGB[0][2] * color.c[2];
+		c[1] = XYZToRGB[1][0] * color.c[0] + XYZToRGB[1][1] * color.c[1] + XYZToRGB[1][2] * color.c[2];
+		c[2] = XYZToRGB[2][0] * color.c[0] + XYZToRGB[2][1] * color.c[1] + XYZToRGB[2][2] * color.c[2];
 		RGBColor rgb(c);
 		Constrain(lum, rgb);
 		return rgb;
+	}
+//!
+//! \param[in] color A color in RGB space
+//! \return The color converted in XYZ space
+//!
+	RGBColor ToXYZ(const RGBColor &color) const {
+		float c[3];
+		c[0] = RGBToXYZ[0][0] * color.c[0] + RGBToXYZ[0][1] * color.c[1] + RGBToXYZ[0][2] * color.c[2];
+		c[1] = RGBToXYZ[1][0] * color.c[0] + RGBToXYZ[1][1] * color.c[1] + RGBToXYZ[1][2] * color.c[2];
+		c[2] = RGBToXYZ[2][0] * color.c[0] + RGBToXYZ[2][1] * color.c[1] + RGBToXYZ[2][2] * color.c[2];
+		return XYZColor(c);
 	}
 //protected:
 	bool Constrain(float lum, RGBColor &rgb) const;
@@ -322,7 +333,8 @@ public:
 	float xBlue, yBlue; //!<Blue coordinates
 	float xWhite, yWhite; //!<White coordinates
 	float luminance; //!<White intensity
-	float conversion[3][3]; //!<Corresponding conversion matrix from XYZ to RGB
+	float XYZToRGB[3][3]; //!<Corresponding conversion matrix from XYZ to RGB
+	float RGBToXYZ[3][3]; //!<Corresponding conversion matrix from RGB to XYZ
 };
 
 // RGBColor Method Definitions
