@@ -75,7 +75,6 @@ public:
 
 	void		InitSunThetaPhi();
 	void		ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
-	float		PerezFunction(const float *lam, float theta, float phi, float lvz) const;
 
 private:
 	// SkyLight Private Data
@@ -85,7 +84,6 @@ private:
 	float	thetaS, phiS;
 	float zenith_Y, zenith_x, zenith_y;
 	float perez_Y[6], perez_x[6], perez_y[6];
-	SPD *D65SPD;
 };
 
 }//namespace lux
