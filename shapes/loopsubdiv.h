@@ -147,7 +147,8 @@ public:
 		~SubdivResult() {
 			delete[] indices;
 			delete[] P;
-			delete[] N;
+			if( N )
+				delete[] N;
 			if( uv )
 				delete[] uv;
 		}

@@ -337,6 +337,11 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	for (u_int i = 0; i < nverts; ++i)
 		Plimit[i] = v[i]->P;
 
+	if( !displacementMapNormalSmooth ) {
+		delete[] Ns;
+		Ns = NULL;
+	}
+
 	return boost::shared_ptr<SubdivResult>(new SubdivResult(ntris, nverts, verts, Plimit, Ns, UVlimit));
 }
 
