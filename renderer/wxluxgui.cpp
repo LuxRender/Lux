@@ -75,17 +75,30 @@ using namespace lux;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_ERROR)
+#if defined(__WXOSX_COCOA__) // wx 2.9 and later //
+wxDEFINE_EVENT(EVT_LUX_PARSEERROR, wxCommandEvent);
+wxDEFINE_EVENT(EVT_LUX_FINISHED, wxCommandEvent);
+wxDEFINE_EVENT(EVT_LUX_TONEMAPPED, wxCommandEvent);
+#else
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_PARSEERROR)
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_FINISHED)
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_TONEMAPPED)
+#endif
 
 BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 	EVT_LUX_ERROR (wxID_ANY, LuxGui::OnError)
 	EVT_LUX_VIEWER_SELECTION (wxID_ANY, LuxGui::OnSelection)
 	EVT_TIMER     (wxID_ANY, LuxGui::OnTimer)
+#if defined(__WXOSX_COCOA__)
+	EVT_COMMAND   (wxID_ANY, EVT_LUX_TONEMAPPED, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, EVT_LUX_PARSEERROR, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, EVT_LUX_FINISHED, LuxGui::OnCommand)
+#else
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_PARSEERROR, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_FINISHED, LuxGui::OnCommand)
+#endif
+
 #if defined (__WXMSW__) ||  defined (__WXGTK__)
 	EVT_ICONIZE   (LuxGui::OnIconize)
 #endif
