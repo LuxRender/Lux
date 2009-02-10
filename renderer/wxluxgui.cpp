@@ -104,6 +104,12 @@ BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 #endif
 END_EVENT_TABLE()
 
+#if defined(__WXOSX_COCOA__) // wx 2.9 and later //
+#define wxEVT_LUX_TONEMAPPED EVT_LUX_TONEMAPPED
+#define wxEVT_LUX_PARSEERROR EVT_LUX_PARSEERROR
+#define wxEVT_LUX_FINISHED EVT_LUX_FINISHED
+#endif
+
 // Dade - global variable used by LuxGuiErrorHandler()
 bool copyLog2Console = false;
 
