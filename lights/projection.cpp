@@ -102,6 +102,11 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, 
 float ProjectionLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
+float ProjectionLight::Pdf(const Point &p, const Normal &n,
+	const Point &po, const Normal &ns) const
+{
+	return 0.f;
+}
 Light* ProjectionLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));

@@ -49,7 +49,12 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u
 	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
 float DistantLight::Pdf(const Point &, const Vector &) const {
-	return 0.;
+	return 0.f;
+}
+float DistantLight::Pdf(const Point &p, const Normal &N,
+	const Point &po, const Normal &ns) const
+{
+	return 0.f;
 }
 SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,

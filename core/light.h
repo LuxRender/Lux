@@ -67,6 +67,8 @@ public:
 			const Vector &wi) const {
 		return Pdf(p, wi);
 	}
+	virtual float Pdf(const Point &p, const Normal &n,
+		const Point &po, const Normal &ns) const = 0;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
@@ -145,6 +147,8 @@ public:
 	bool IsDeltaLight() const { return false; }
 	float Pdf(const Point &, const Vector &) const;
 	float Pdf(const Point &, const Normal &, const Vector &) const;
+	float Pdf(const Point &p, const Normal &n,
+		const Point &po, const Normal &ns) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, const Normal &N,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const;

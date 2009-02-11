@@ -94,6 +94,11 @@ float AreaLight::Pdf(const Point &p, const Normal &N,
 		const Vector &wi) const {
 	return prim->Pdf(p, wi);
 }
+float AreaLight::Pdf(const Point &p, const Normal &N,
+	const Point &po, const Normal &ns) const
+{
+	return prim->Pdf(p, po);
+}
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
@@ -143,7 +148,7 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	prim->Sample(p, u1, u2, u3, &dg);
 	Vector wo(Normalize(dg.p - p));
 	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(p, wo) * AbsDot(wo, dg.nn) / DistanceSquared(dg.p, p);
+	*pdfDirect = prim->Pdf(p, dg.p);
 	if (*pdfDirect > 0.f) {
 		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
 		if(func)
@@ -165,7 +170,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 	else
 		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(ray.o, ray.d) * AbsDot(ray.d, dg.nn) / DistanceSquared(dg.p, ray.o);
+	*pdfDirect = prim->Pdf(ray.o, dg.p);
 	return L(tspack, dg, -ray.d);
 }
 

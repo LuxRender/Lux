@@ -81,6 +81,9 @@ float Primitive::Pdf(const Point &p, const Vector &wi) const {
 	if (AbsDot(isect.dg.nn, -wi) == 0.f) pdf = INFINITY;
 	return pdf;
 }
+float Primitive::Pdf(const Point &p, const Point &po) const {
+	return 1.f / Area();
+}
 
 // Intersection Method Definitions
 BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray, float u)

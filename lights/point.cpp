@@ -92,6 +92,11 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 float PointLight::Pdf(const Point &, const Vector &) const {
 	return 0.;
 }
+float PointLight::Pdf(const Point &p, const Normal &n,
+	const Point &po, const Normal &ns) const
+{
+	return AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);
+}
 SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
 	return Lbase->Evaluate(tspack, dummydg) * SWCSpectrum(tspack, gain * (func ? func->f(w) : 1.f));
 }

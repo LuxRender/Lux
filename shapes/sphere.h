@@ -82,6 +82,19 @@ public:
 			DistanceSquared(p, Pcenter)));
 		return UniformConePdf(cosThetaMax);
 	}
+	float Pdf(const Point &p, const Point &po) const {
+		Point Pcenter = ObjectToWorld(Point(0,0,0));
+		// Return uniform weight if point inside sphere
+		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
+			return Shape::Pdf(p, po);
+		// Compute general sphere weight
+		const float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
+			DistanceSquared(p, Pcenter)));
+		const Vector w(p - po);
+		const float d2 = w.LengthSquared();
+		return UniformConePdf(cosThetaMax) * AbsDot(w, po - Pcenter) /
+			(d2 * sqrtf(d2) * radius);
+	}
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 private:

@@ -239,6 +239,14 @@ float SunLight::Pdf(const Point &, const Vector &) const {
 	else
 		return UniformConePdf(cosThetaMax);
 }
+float SunLight::Pdf(const Point &p, const Normal &n,
+	const Point &po, const Normal &ns) const
+{
+	if(cosThetaMax == 1)
+		return 0.;
+	else
+		return UniformConePdf(cosThetaMax) * AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);
+}
 
 SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,

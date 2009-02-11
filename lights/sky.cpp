@@ -157,9 +157,9 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 			RayDifferential ray(r);
 			ray.maxt = distance;
 			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < .0f)
-				*pdfDirect += PortalShapes[i]->Pdf(r.o, r.d);
+				*pdfDirect += PortalShapes[i]->Pdf(r.o, isect.dg.p);
 		}
-		*pdfDirect *= AbsDot(r.d, ns) / (nrPortalShapes * distance * distance);
+		*pdfDirect /= nrPortalShapes;
 	}
 	Vector wh = Normalize(WorldToLight(r.d));
 	const float phi = SphericalPhi(wh);
@@ -223,6 +223,27 @@ float SkyLight::Pdf(const Point &p, const Normal &n,
 			RayDifferential ray(p, wi);
 			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
 				pdf += PortalShapes[i]->Pdf(p, wi);
+		}
+		pdf /= nrPortalShapes;
+		return pdf;
+	}
+}
+float SkyLight::Pdf(const Point &p, const Normal &n,
+	const Point &po, const Normal &ns) const
+{
+	Vector wi(po - p);
+	if (!havePortalShape) {
+		const float d2 = wi.LengthSquared();
+		return AbsDot(n, wi) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
+	} else {
+		float pdf = 0.f;
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			Intersection isect;
+			RayDifferential ray(p, wi);
+			ray.maxt = 1.f;
+			if (PortalShapes[i]->Intersect(ray, &isect) &&
+				Dot(wi, isect.dg.nn) < .0f)
+				pdf += PortalShapes[i]->Pdf(p, isect.dg.p);
 		}
 		pdf /= nrPortalShapes;
 		return pdf;
@@ -350,7 +371,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
 		if (Dot(wi, dg.nn) < 0.f)
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, wi) / nrPortalShapes;
+			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps) / nrPortalShapes;
 		else {
 			*Le = 0.f;
 			return false;
@@ -372,7 +393,8 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
+	if (!havePortalShape)
+		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(skyScale);
 	return true;

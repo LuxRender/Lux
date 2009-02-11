@@ -136,6 +136,15 @@ public:
 	 * @return The pdf value (w.r.t. solid angle) for the given point.
 	 */
 	virtual float Pdf(const Point &p, const Vector &wi) const;
+	/**
+	 * Returns the probability density for sampling the given point.
+	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
+	 * No visibility test is done here.
+	 * @param p  The point that was to be tested for visibility with the result.
+	 * @param po The point that was sampled.
+	 * @return The pdf value (w.r.t. surface area) for the given point.
+	 */
+	virtual float Pdf(const Point &p, const Point &po) const;
 };
 
 class PrimitiveRefinementHints {
@@ -211,6 +220,9 @@ public:
 	float Pdf(const Point &p, const Vector &wi) const {
 		return prim->Pdf(p, wi);
 	}
+	float Pdf(const Point &p, const Point &po) const {
+		return prim->Pdf(p, po);
+	}
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;
@@ -263,6 +275,9 @@ public:
 	}
 	float Pdf(const Point &p, const Vector &wi) const {
 		return instance->Pdf(p, wi);
+	}
+	float Pdf(const Point &p, const Point &po) const {
+		return instance->Pdf(p, po);
 	}
 private:
 	// InstancePrimitive Private Data
@@ -330,6 +345,9 @@ public:
 	}
     float Pdf(const Point &p, const Vector &wi) const {
         return instance->Pdf(p, wi);
+     }
+    float Pdf(const Point &p, const Point &po) const {
+        return instance->Pdf(p, po);
      }
 private:
     // MotionPrimitive Private Data

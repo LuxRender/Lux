@@ -131,6 +131,19 @@ float InfiniteAreaLightIS::Pdf(const Point &,
            (uDistrib->funcInt * vDistribs[u]->funcInt) *
            1.f / (2.f * M_PI * M_PI * sin(theta));
 }
+float InfiniteAreaLightIS::Pdf(const Point &p, const Normal &n,
+	const Point &po, const Normal &ns) const
+{
+	Vector wi = WorldToLight(Normalize(po - p));
+	float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
+	int u = Clamp(Float2Int(phi * INV_TWOPI * uDistrib->count),
+                  0, uDistrib->count-1);
+	int v = Clamp(Float2Int(theta * INV_PI * vDistribs[u]->count),
+                  0, vDistribs[u]->count-1);
+	return (uDistrib->func[u] * vDistribs[u]->func[v]) /
+           (uDistrib->funcInt * vDistribs[u]->funcInt) *
+           1.f / (2.f * M_PI * M_PI * sin(theta)) * AbsDot(wi, ns) / DistanceSquared(p, po);
+}
 SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {

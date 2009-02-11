@@ -51,6 +51,8 @@ public:
 	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
 	float Pdf(const Point &, const Vector &) const;
+	float Pdf(const Point &p, const Normal &n,
+		const Point &po, const Normal &ns) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp);
