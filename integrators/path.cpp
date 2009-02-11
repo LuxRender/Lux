@@ -93,7 +93,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Stop path sampling since no intersection was found
 			// Possibly add emitted light
 			// NOTE - Added by radiance - adds horizon in render & reflections
-			if (specularBounce && !through) {
+			if (specularBounce) {
 				for (u_int i = 0; i < scene->lights.size(); ++i) {
 					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
 					Le *= pathThroughput;
@@ -109,7 +109,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				*alpha = 0.;
 			break;
 		}
-		if (pathLength == 0)
+		if (pathLength == 0 && !through)
 			r.maxt = ray.maxt;
 
 		SWCSpectrum Lv;
@@ -124,7 +124,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce && !through) {
+		if (specularBounce) {
 			SWCSpectrum Le(isect.Le(tspack, wo));
 			if (!Le.Black()) {
 				Le *= pathThroughput;
@@ -207,9 +207,12 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 		}
 
-		specularBounce = (flags & BSDF_SPECULAR) != 0;
-		specular = specular && specularBounce;
 		through = flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && Dot(wo,wi) < SHADOW_RAY_EPSILON - 1.f;
+		if (!through)
+			specularBounce = (flags & BSDF_SPECULAR) != 0;
+		else
+			--pathLength;
+		specular = specular && specularBounce;
 		pathThroughput *= f;
 		pathThroughput *= dp;
 		if (!specular)
