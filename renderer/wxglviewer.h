@@ -40,6 +40,7 @@ namespace lux
 class LuxGLViewer : public wxGLCanvas, public wxViewerBase {
 public:
 	LuxGLViewer(wxWindow *parent, int textureW = 256, int textureH = 256);
+	~LuxGLViewer();
 
 protected:
 	DECLARE_EVENT_TABLE()

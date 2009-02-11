@@ -78,6 +78,12 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 	SetCursor(wxCURSOR_CROSS);
 }
 
+LuxGLViewer::~LuxGLViewer() {
+	if(m_animTimer->IsRunning())
+		m_animTimer->Stop();
+	delete m_animTimer;
+}
+
 void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 #if defined(__WXMAC__)
 	SetCurrent();
