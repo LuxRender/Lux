@@ -526,7 +526,7 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
 	vert->oneRing(Vring);
 
-	if(displacementMapSharpBoundary) {
+	if(!displacementMapSharpBoundary) {
 		Point P = (1 - 2 * beta) * vert->P;
 		P += beta * Vring[0]->P;
 		P += beta * Vring[valence - 1]->P;
