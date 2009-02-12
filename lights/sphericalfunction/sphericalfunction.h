@@ -35,6 +35,8 @@ namespace lux {
 	 */
 	class SphericalFunction {
 	public:
+		virtual ~SphericalFunction() {};
+
 		/**
 		 * Evaluates this function for the given direction.
 		 * 

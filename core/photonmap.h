@@ -49,6 +49,8 @@ public:
 	BasicPhoton() {
 	}
 
+	virtual ~BasicPhoton() {}
+
 	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const = 0;
 	virtual void load(bool isLittleEndian, std::basic_istream<char> &stream) = 0;
 
