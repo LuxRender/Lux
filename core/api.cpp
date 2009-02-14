@@ -546,11 +546,22 @@ extern "C" int luxGetNetworkServerUpdateInterval() {
 }
 
 //error handling
-LuxErrorHandler luxError=luxErrorPrint;
+static LuxErrorHandler luxErrorDelegate=luxErrorPrint;
 int luxLastError=LUX_NOERROR;
+int luxLogFilter = -99;
+
+void luxErrorFilter(int code, int severity, const char *message) {
+	if (severity >= luxLogFilter) {
+		luxErrorDelegate(code, severity, message);
+	}
+}
+// The internal error handling function. It cannot changed through the 
+// API and allows to perform filtering on the errors before passing them to 
+// the (changeable) error handler 'luxErrorDelegate'.
+LuxErrorHandler luxError=luxErrorFilter;
 
 extern "C" void luxErrorHandler(LuxErrorHandler handler) {
-	luxError=handler;
+	luxErrorDelegate=handler;
 }
 
 extern "C" void luxErrorAbort(int code, int severity, const char *message) {
@@ -563,12 +574,22 @@ extern "C" void luxErrorIgnore(int code, int severity, const char *message) {
 	luxLastError=code;
 }
 
+extern "C" void luxErrorPrintFilter(int code, int severity, const char *message) {
+	if (severity >= luxLogFilter) {
+		luxErrorPrint(code, severity, message);
+	}
+}
+
+
 extern "C" void luxErrorPrint(int code, int severity, const char *message) {
 	luxLastError=code;
 	std::cerr<<"[";
 #ifndef WIN32 //windows does not support ANSI escape codes
 	//set the color
 	switch (severity) {
+	case LUX_DEBUG:
+		std::cerr<<"\033[0;34m";
+		break;
 	case LUX_INFO:
 		std::cerr<<"\033[0;32m";
 		break;
@@ -586,6 +607,9 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message) {
 	std::cerr<<"Lux ";
 	std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
 	switch (severity) {
+	case LUX_DEBUG:
+		std::cerr<<"DEBUG";
+		break;
 	case LUX_INFO:
 		std::cerr<<"INFO";
 		break;

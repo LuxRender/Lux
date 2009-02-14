@@ -1544,6 +1544,8 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 	std::stringstream ss("");
 	ss << boost::posix_time::second_clock::local_time() << ' ';
 	switch(event.GetError()->GetSeverity()) {
+		case LUX_DEBUG:
+			ss << "Debug: "; break;
 		case LUX_INFO:
 			ss << "Info: ";	break;
 		case LUX_WARNING:

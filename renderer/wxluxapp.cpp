@@ -77,6 +77,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 			("help,h", "Produce help message")
 			("debug,d", "Enable debug mode")
 			("fixedseed,f", "Disable random seed mode")
+			("verbosity,V", po::value< int >(), "Log output verbosity")
 		;
 
 		// Declare a group of options that will be
@@ -138,6 +139,9 @@ bool LuxGuiApp::ProcessCommandLine() {
 			std::cout << visible << std::endl;
 			return false;
 		}
+
+		if (vm.count("verbosity"))
+        	luxLogFilter = vm["verbosity"].as<int>();
 
 		if(vm.count("version")) {
 			std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;

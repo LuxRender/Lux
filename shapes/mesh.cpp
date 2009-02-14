@@ -443,7 +443,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		default:
 			ss << "?";
 	}
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 	// Build acceleration structure
 	if(concreteAccelType == ACCEL_NONE) {

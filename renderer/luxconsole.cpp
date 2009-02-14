@@ -109,6 +109,7 @@ int main(int ac, char *av[]) {
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
                 ("debug,d", "Enable debug mode")
 				("fixedseed,f", "Disable random seed mode")
+				("verbosity,V", po::value< int >(), "Log output verbosity")
                 ;
 
         // Declare a group of options that will be
@@ -158,6 +159,9 @@ int main(int ac, char *av[]) {
             luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
             return 0;
         }
+
+        if (vm.count("verbosity"))
+        	luxLogFilter = vm["verbosity"].as<int>();
 
         ss.str("");
         ss << "Lux version " << LUX_VERSION << " of " << __DATE__ << " at " << __TIME__;

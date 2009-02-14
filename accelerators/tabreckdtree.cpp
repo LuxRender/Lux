@@ -95,7 +95,7 @@ TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
 
 	std::stringstream ss;
 	ss << "Building KDTree, primitives: " << nPrims;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
     // Start recursive construction of kd-tree
     buildTree(0, bounds, primBounds, primNums,
             vPrims.size(), maxDepth, edges,

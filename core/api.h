@@ -185,6 +185,7 @@ void luxDisableRandomMode();
 
 /* Error Handlers */
 extern int luxLastError; /*  Keeps track of the last error code */
+extern int luxLogFilter; /* Level of severity to report */
 typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
 extern void luxErrorHandler(LuxErrorHandler handler);
 extern void luxErrorAbort(int code, int severity, const char *message);
@@ -234,6 +235,8 @@ extern void luxErrorPrint(int code, int severity, const char *message);
 #define LUX_MATH           61       /* Zerodivide, noninvert matrix, etc. */
 
 /* Error severity levels */
+
+#define LUX_DEBUG			-1		/* Debugging output */
 
 #define LUX_INFO            0       /* Rendering stats & other info */
 #define LUX_WARNING         1       /* Something seems wrong, maybe okay */
