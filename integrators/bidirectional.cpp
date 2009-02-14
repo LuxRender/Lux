@@ -531,7 +531,7 @@ static bool getLightHit(const TsPack *tspack, const Scene *scene,
 static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	vector<BidirVertex> &eyePath, int length, int eyeDepth, int lightDepth,
 	float directWeight, vector<SWCSpectrum> &Le, vector<float> &weight,
-	int *nrContribs)
+	int &nrContribs)
 {
 	BidirVertex &v(eyePath[length - 1]);
 	if (v.bsdf)
@@ -697,7 +697,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (i > 1) {
 			if (getEnvironmentLight(tspack, scene, eyePath, i,
 				maxEyeDepth, maxLightDepth, directWeight,
-				vecL, vecV, &nrContribs))
+				vecL, vecV, nrContribs))
 				break; //from now on the eye path does not intersect anything
 			else if (getLightHit(tspack, scene, eyePath, i,
 				maxEyeDepth, maxLightDepth, vecL, vecV))
