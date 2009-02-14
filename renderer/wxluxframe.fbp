@@ -238,6 +238,21 @@
                     </object>
                     <object class="wxMenuItem" expanded="1">
                         <property name="bitmap"></property>
+                        <property name="checked">1</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Toggle the side pane display</property>
+                        <property name="id">ID_SIDE_PANE</property>
+                        <property name="kind">wxITEM_CHECK</property>
+                        <property name="label">S&amp;ide Pane</property>
+                        <property name="name">m_sidePane</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">CTRL+I</property>
+                        <property name="unchecked_bitmap"></property>
+                        <event name="OnMenuSelection">OnMenu</event>
+                        <event name="OnUpdateUI"></event>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
                         <property name="checked">0</property>
                         <property name="enabled">1</property>
                         <property name="help">Program Options and additional controls</property>
@@ -357,7 +372,7 @@
                     </object>
                 </object>
             </object>
-            <object class="wxBoxSizer" expanded="1">
+            <object class="wxBoxSizer" expanded="0">
                 <property name="minimum_size"></property>
                 <property name="name">bSizer</property>
                 <property name="orient">wxVERTICAL</property>
@@ -474,7 +489,7 @@
                                         <property name="border">0</property>
                                         <property name="flag">wxEXPAND</property>
                                         <property name="proportion">0</property>
-                                        <object class="wxBoxSizer" expanded="0">
+                                        <object class="wxBoxSizer" expanded="1">
                                             <property name="minimum_size"></property>
                                             <property name="name">bRenderToolSizer</property>
                                             <property name="orient">wxHORIZONTAL</property>
@@ -1208,7 +1223,7 @@
                                                                                             <object class="notebookpage" expanded="1">
                                                                                                 <property name="bitmap">; Load From File</property>
                                                                                                 <property name="label">begin</property>
-                                                                                                <property name="select">0</property>
+                                                                                                <property name="select">1</property>
                                                                                                 <object class="wxPanel" expanded="1">
                                                                                                     <property name="bg"></property>
                                                                                                     <property name="context_help"></property>
@@ -1347,7 +1362,7 @@
                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                 <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                <property name="tooltip">Reinhard Prescale</property>
+                                                                                                                                <property name="tooltip"></property>
                                                                                                                                 <property name="value">50</property>
                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                 <property name="window_name"></property>
@@ -1418,7 +1433,7 @@
                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                                                <property name="tooltip"></property>
                                                                                                                                 <property name="value">1.0</property>
                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                 <property name="window_name"></property>
@@ -1598,7 +1613,7 @@
                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                <property name="tooltip">Reinhard Prescale</property>
+                                                                                                                                <property name="tooltip"></property>
                                                                                                                                 <property name="value">50</property>
                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                 <property name="window_name"></property>
@@ -1669,7 +1684,7 @@
                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                                                <property name="tooltip"></property>
                                                                                                                                 <property name="value">1.0</property>
                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                 <property name="window_name"></property>
@@ -4122,7 +4137,7 @@
                                                                                             <property name="selection">0</property>
                                                                                             <property name="size"></property>
                                                                                             <property name="subclass"></property>
-                                                                                            <property name="tooltip">Select type of Tone Mapping</property>
+                                                                                            <property name="tooltip">Select Color Space</property>
                                                                                             <property name="window_extra_style"></property>
                                                                                             <property name="window_name"></property>
                                                                                             <property name="window_style"></property>
@@ -4245,7 +4260,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">White X</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4316,7 +4331,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">White X</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4383,7 +4398,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">White Y</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4454,7 +4469,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">White Y</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4583,7 +4598,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">Red X</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4654,7 +4669,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">Red X</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4721,7 +4736,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">Red Y</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4792,7 +4807,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">Red Y</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4870,7 +4885,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">Green X</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -4941,7 +4956,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">Green X</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5008,7 +5023,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">Green Y</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5079,7 +5094,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">Green Y</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5157,7 +5172,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">Blue X</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5228,7 +5243,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">Blue X</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5295,7 +5310,7 @@
                                                                                                     <property name="size">-1,-1</property>
                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                    <property name="tooltip">Blue Y</property>
                                                                                                     <property name="value">50</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5366,7 +5381,7 @@
                                                                                                     <property name="size">36,-1</property>
                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                     <property name="subclass"></property>
-                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                    <property name="tooltip">Blue Y</property>
                                                                                                     <property name="value">1.0</property>
                                                                                                     <property name="window_extra_style"></property>
                                                                                                     <property name="window_name"></property>
@@ -5600,7 +5615,7 @@
                                                                                             <property name="size">-1,-1</property>
                                                                                             <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
                                                                                             <property name="subclass"></property>
-                                                                                            <property name="tooltip">Reinhard Prescale</property>
+                                                                                            <property name="tooltip">Gamma Value</property>
                                                                                             <property name="value">50</property>
                                                                                             <property name="window_extra_style"></property>
                                                                                             <property name="window_name"></property>
@@ -5671,7 +5686,7 @@
                                                                                             <property name="size">36,-1</property>
                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                             <property name="subclass"></property>
-                                                                                            <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                            <property name="tooltip">Gamma Value</property>
                                                                                             <property name="value">1.0</property>
                                                                                             <property name="window_extra_style"></property>
                                                                                             <property name="window_name"></property>
@@ -5865,7 +5880,7 @@
                                                                                         <property name="size">-1,-1</property>
                                                                                         <property name="style">wxBU_EXACTFIT</property>
                                                                                         <property name="subclass"></property>
-                                                                                        <property name="tooltip">Reset Tone Mapping to default values</property>
+                                                                                        <property name="tooltip">Apply changes</property>
                                                                                         <property name="window_extra_style"></property>
                                                                                         <property name="window_name"></property>
                                                                                         <property name="window_style"></property>
@@ -6344,7 +6359,7 @@
                             <property name="bitmap"></property>
                             <property name="label">Network</property>
                             <property name="select">0</property>
-                            <object class="wxPanel" expanded="1">
+                            <object class="wxPanel" expanded="0">
                                 <property name="bg"></property>
                                 <property name="context_help"></property>
                                 <property name="enabled">1</property>

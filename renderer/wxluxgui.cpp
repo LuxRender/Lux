@@ -407,6 +407,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			{
 				m_renderToolBar->Show( false );
 				m_viewerToolBar->Show( false );
+				m_outputNotebook->Show( false );
 				ShowFullScreen( true );
 			}
 			else
@@ -418,8 +419,13 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 					m_renderToolBar->Show( true );
 					m_viewerToolBar->Show( true );
 				}
+				if (m_view->IsChecked( ID_SIDE_PANE ) )
+				{
+					m_outputNotebook->Show( true );
+				}
 			}
 			Layout();
+			m_renderPage->Layout();
 			break;
 		case ID_TOOL_BAR: // CF
 			if ( m_renderToolBar->IsShown() )
@@ -432,7 +438,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_renderToolBar->Show( true );
 				m_viewerToolBar->Show( true );
 			}
-			Layout();
+			m_renderPage->Layout();
 			break;
 		case ID_STATUS_BAR: // CF
 			if ( m_statusBar->IsShown() )
@@ -444,6 +450,19 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_statusBar->Show( true );
 			}
 			Layout();
+			break;
+		case ID_SIDE_PANE: // CF
+			if ( m_outputNotebook->IsShown() )
+			{
+				m_outputNotebook->Show( false );
+				m_view->Check( ID_SIDE_PANE, false );
+			}
+			else
+			{
+				m_outputNotebook->Show( true );
+				m_view->Check( ID_SIDE_PANE, true );
+			}
+			m_renderPage->Layout();
 			break;
 		case ID_RENDER_COPY: // CF
 			if ( m_guiRenderState != WAITING &&
