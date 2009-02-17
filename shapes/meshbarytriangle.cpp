@@ -196,8 +196,17 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	Vector ts = Normalize(Cross(dg.dpdu, ns));
 	Vector ss = Cross(ts, ns);
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
-	ss *= lenDpDu;
-	ts *= lenDpDv;
+	if(mesh->uvs) {
+		ss *= lenDpDu;
+		ts *= lenDpDv;
+	}
+	else {
+		const BBox bounds = MeshBaryTriangle::WorldBound();
+		int maxExtent = bounds.MaximumExtent();
+		float maxSize = bounds.pMax[maxExtent] - bounds.pMin[maxExtent];
+		ss *= maxSize * .1f;
+		ts *= maxSize * .1f;
+	}
 
 	Vector dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
