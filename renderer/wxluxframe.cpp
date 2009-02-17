@@ -205,7 +205,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_RH_prescaleSlider111 = new wxSlider( m_panel37, ID_RH_PRESCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_SELRANGE );
 	bSizer10111->Add( m_RH_prescaleSlider111, 1, wxALL|wxEXPAND, 5 );
 	
-	m_RH_preText111 = new wxTextCtrl( m_panel37, ID_RH_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_RH_preText111 = new wxTextCtrl( m_panel37, ID_RH_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_RH_preText111->SetMaxLength( 5 ); 
 	bSizer10111->Add( m_RH_preText111, 0, wxALL|wxFIXED_MINSIZE, 2 );
 	
@@ -229,7 +229,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_RH_prescaleSlider1111 = new wxSlider( m_panel37, ID_RH_PRESCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	bSizer101111->Add( m_RH_prescaleSlider1111, 1, wxALL|wxEXPAND, 5 );
 	
-	m_RH_preText1111 = new wxTextCtrl( m_panel37, ID_RH_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_RH_preText1111 = new wxTextCtrl( m_panel37, ID_RH_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_RH_preText1111->SetMaxLength( 5 ); 
 	bSizer101111->Add( m_RH_preText1111, 0, wxALL|wxFIXED_MINSIZE, 2 );
 	
@@ -308,7 +308,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer104->Add( m_TM_Reinhard_ywaSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Reinhard_ywaText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_YWA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Reinhard_ywaText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_YWA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_ywaText->SetMaxLength( 5 ); 
 	m_TM_Reinhard_ywaText->Enable( false );
 	m_TM_Reinhard_ywaText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
@@ -329,7 +329,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer10->Add( m_TM_Reinhard_prescaleSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Reinhard_prescaleText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Reinhard_prescaleText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_prescaleText->SetMaxLength( 5 ); 
 	m_TM_Reinhard_prescaleText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
 	
@@ -349,7 +349,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer12->Add( m_TM_Reinhard_postscaleSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Reinhard_postscaleText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_POSTSCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Reinhard_postscaleText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_POSTSCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_postscaleText->SetMaxLength( 5 ); 
 	m_TM_Reinhard_postscaleText->SetToolTip( wxT("Please enter a new Reinhard Postscale value and press enter.") );
 	
@@ -369,7 +369,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer13->Add( m_TM_Reinhard_burnSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Reinhard_burnText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_BURN_TEXT, wxT("6.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Reinhard_burnText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_BURN_TEXT, wxT("6.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_burnText->SetMaxLength( 5 ); 
 	m_TM_Reinhard_burnText->SetToolTip( wxT("Please enter a new Reinhard Burn value and press enter.") );
 	
@@ -400,7 +400,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1041->Add( m_TM_Linear_sensitivitySlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Linear_sensitivityText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Linear_sensitivityText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_sensitivityText->SetMaxLength( 5 ); 
 	m_TM_Linear_sensitivityText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
 	
@@ -420,7 +420,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer105->Add( m_TM_Linear_exposureSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Linear_exposureText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Linear_exposureText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_exposureText->SetMaxLength( 5 ); 
 	m_TM_Linear_exposureText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
 	
@@ -440,7 +440,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer121->Add( m_TM_Linear_fstopSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Linear_fstopText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Linear_fstopText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_fstopText->SetMaxLength( 5 ); 
 	m_TM_Linear_fstopText->SetToolTip( wxT("Please enter a new Reinhard Postscale value and press enter.") );
 	
@@ -460,7 +460,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer131->Add( m_TM_Linear_gammaSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_Linear_gammaText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA_TEXT, wxT("6.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_Linear_gammaText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA_TEXT, wxT("6.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_gammaText->SetMaxLength( 5 ); 
 	m_TM_Linear_gammaText->SetToolTip( wxT("Please enter a new Reinhard Burn value and press enter.") );
 	
@@ -491,7 +491,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1042->Add( m_TM_contrast_ywaSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TM_contrast_ywaText = new wxTextCtrl( m_TonemapContrastOptionsPanel, ID_TM_CONTRAST_YWA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TM_contrast_ywaText = new wxTextCtrl( m_TonemapContrastOptionsPanel, ID_TM_CONTRAST_YWA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_contrast_ywaText->SetMaxLength( 5 ); 
 	m_TM_contrast_ywaText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
 	
@@ -543,7 +543,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1012->Add( m_TORGB_xwhiteSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_xwhiteText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XWHITE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_xwhiteText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XWHITE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_xwhiteText->SetMaxLength( 5 ); 
 	m_TORGB_xwhiteText->SetToolTip( wxT("White X") );
 	
@@ -559,7 +559,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1022->Add( m_TORGB_ywhiteSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_ywhiteText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YWHITE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_ywhiteText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YWHITE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_ywhiteText->SetMaxLength( 5 ); 
 	m_TORGB_ywhiteText->SetToolTip( wxT("White Y") );
 	
@@ -584,7 +584,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1013->Add( m_TORGB_xredSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_xredText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XRED_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_xredText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XRED_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_xredText->SetMaxLength( 5 ); 
 	m_TORGB_xredText->SetToolTip( wxT("Red X") );
 	
@@ -600,7 +600,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1023->Add( m_TORGB_yredSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_yredText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YRED_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_yredText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YRED_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_yredText->SetMaxLength( 5 ); 
 	m_TORGB_yredText->SetToolTip( wxT("Red Y") );
 	
@@ -621,7 +621,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer10131->Add( m_TORGB_xgreenSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_xgreenText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XGREEN_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_xgreenText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XGREEN_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_xgreenText->SetMaxLength( 5 ); 
 	m_TORGB_xgreenText->SetToolTip( wxT("Green X") );
 	
@@ -637,7 +637,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer10231->Add( m_TORGB_ygreenSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_ygreenText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YGREEN_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_ygreenText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YGREEN_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_ygreenText->SetMaxLength( 5 ); 
 	m_TORGB_ygreenText->SetToolTip( wxT("Green Y") );
 	
@@ -658,7 +658,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer10132->Add( m_TORGB_xblueSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_xblueText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XBLUE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_xblueText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_XBLUE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_xblueText->SetMaxLength( 5 ); 
 	m_TORGB_xblueText->SetToolTip( wxT("Blue X") );
 	
@@ -674,7 +674,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer10232->Add( m_TORGB_yblueSlider, 1, wxALL|wxEXPAND, 1 );
 	
-	m_TORGB_yblueText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YBLUE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_yblueText = new wxTextCtrl( m_ColorSpaceOptionsPanel, ID_TORGB_YBLUE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_yblueText->SetMaxLength( 5 ); 
 	m_TORGB_yblueText->SetToolTip( wxT("Blue Y") );
 	
@@ -713,7 +713,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer103->Add( m_TORGB_gammaSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TORGB_gammaText = new wxTextCtrl( m_GammaOptionsPanel, ID_TORGB_GAMMA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER|wxTAB_TRAVERSAL );
+	m_TORGB_gammaText = new wxTextCtrl( m_GammaOptionsPanel, ID_TORGB_GAMMA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_gammaText->SetMaxLength( 5 ); 
 	m_TORGB_gammaText->SetToolTip( wxT("Gamma Value") );
 	
