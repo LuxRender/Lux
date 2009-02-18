@@ -201,7 +201,7 @@ bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
 		}
 
 		// Now finally compute the gamut-constrained RGB weights.
-		rgb = Lerp(parameter, RGBColor(l), rgb);
+		rgb = Lerp(parameter, RGBColor(l), rgb).Clamp();
 		constrain = true;	// Colour modified to fit RGB gamut
 	}
 	// The following is disabled to better preserve color instead of luminance
