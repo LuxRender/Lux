@@ -181,7 +181,8 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		*pdf = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(ps - Dot(r.d, sundir) * sundir, sundir);
+			RayDifferential ray(ps, sundir);
+			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosPortal = Dot(-sundir, isect.dg.nn);
 				if (cosPortal > 0.f)
@@ -328,8 +329,8 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		// Choose a random portal
 		int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
-			shapeIndex = min<float>(nrPortalShapes - 1,
-				u3 * nrPortalShapes);
+			shapeIndex = min(nrPortalShapes - 1,
+				Floor2Int(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -406,9 +407,10 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(ps - Dot(wi, sundir) * sundir, sundir);
+			RayDifferential ray(ps, sundir);
+			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
-				float cosPortal = Dot(-sundir, isect.dg.nn);
+				float cosPortal = Dot(ns, isect.dg.nn);
 				if (cosPortal > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
 			}

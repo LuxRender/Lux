@@ -101,7 +101,6 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene, cons
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	worldRadius *= 1.01f;
 	Vector toCenter(worldCenter - r.o);
 	float centerDistance = Dot(toCenter, toCenter);
 	float approach = Dot(toCenter, r.d);
@@ -121,9 +120,9 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene, cons
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(r);
-			ray.maxt = distance;
-			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < .0f)
-				*pdfDirect += PortalShapes[i]->Pdf(r.o, isect.dg.p);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
+				*pdfDirect += PortalShapes[i]->Pdf(r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
 		}
 		*pdfDirect /= nrPortalShapes;
 	}
@@ -186,22 +185,22 @@ float InfiniteAreaLight::Pdf(const Point &, const Normal &n,
 float InfiniteAreaLight::Pdf(const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
-	Vector wi(po - p);
-	if(!havePortalShape) {
-		// Compute _pdf_ for cosine-weighted infinite light direction
+	const Vector wi(po - p);
+	if (!havePortalShape) {
 		const float d2 = wi.LengthSquared();
-		return AbsDot(wi, n) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
+		return AbsDot(n, wi) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
 	} else {
 		float pdf = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(p, wi);
-			ray.maxt = 1.f;
+			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
-				pdf += PortalShapes[i]->Pdf(p, isect.dg.p);
+				pdf += PortalShapes[i]->Pdf(p, isect.dg.p) * DistanceSquared(p, isect.dg.p) / DistanceSquared(p, po) * AbsDot(wi, ns) / AbsDot(wi, isect.dg.nn);
 		}
-		return pdf / nrPortalShapes;
+		pdf /= nrPortalShapes;
+		return pdf;
 	}
 }
 SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
@@ -289,7 +288,6 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	worldRadius *= 1.01f;
 	Point ps = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
 	Normal ns = Normal(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
@@ -326,7 +324,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 		// Sample a random Portal
 		int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
-			shapeIndex = Floor2Int(u3 * nrPortalShapes);
+			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -334,9 +332,10 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
-		if (Dot(wi, dg.nn) < 0.f)
+		if (Dot(wi, dg.nn) < 0.f) {
 			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps) / nrPortalShapes;
-		else {
+			*pdfDirect *= DistanceSquared(p, dg.p) / AbsDot(wi, dg.nn);
+		} else {
 			*Le = 0.f;
 			return false;
 		}
@@ -344,7 +343,6 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	worldRadius *= 1.01f;
 	Vector toCenter(worldCenter - p);
 	float centerDistance = Dot(toCenter, toCenter);
 	float approach = Dot(toCenter, wi);
@@ -357,8 +355,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	if(!havePortalShape)
-		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
+	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(1.f);
 	return true;
