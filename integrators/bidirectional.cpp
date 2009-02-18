@@ -122,7 +122,9 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		} else {
 			v.bsdf = isect.GetBSDF(tspack, ray,
 				fabsf(2.f * data[3] - 1.f));
-			v.Le = isect.Le(tspack, ray, vertices[nVerts - 1].ng,
+			RayDifferential r(vertices[nVerts - 1].p, vertices[nVerts - 1].wi);
+			r.time = tspack->time;
+			v.Le = isect.Le(tspack, r, vertices[nVerts - 1].ng,
 				&v.eBsdf, &v.ePdf, &v.ePdfDirect);
 			if (v.eBsdf) {
 				v.ePdf /= scene->lights.size();
@@ -176,6 +178,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		if (!scene->Intersect(ray, &isect)) {
 			vertices[nVerts].wo = -ray.d;
 			vertices[nVerts].bsdf = NULL;
+			if (!through)
+				vertices[nVerts].flux = SWCSpectrum(1.f);
 			++nVerts;
 			break;
 		}
@@ -318,27 +322,27 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Exit if the path is impossible
 		if (!(eye[i].dARWeight > 0.f))
 			break;
+		if (i > 3)
+			p /= eye[i - 1].rrR;
+		// Check for direct path
+		// only possible if the eye path hit a light
+		// So the eye path has at least 2 vertices
+		if (nLight == 0 && i == nEye - 1) {
+			pDirect = p * pdfLightDirect / eye[i].dARWeight;
+			// The light vertex cannot be specular otherwise
+			// the eye path wouldn't have received any light
+			if ((eye[i - 1].flags & BSDF_SPECULAR) == 0)
+				weight += pDirect * pDirect;
+		}
 		// Exit if the path is impossible
 		if (!(eye[i].dAWeight > 0.f))
 			break;
 		p *= eye[i].dAWeight / eye[i].dARWeight;
-		if (i > 3)
-			p /= eye[i - 1].rrR;
 		if (nLight + nEye - i > 3) {
 			if (i == nEye - 1)
 				p *= light[nLight - 1].rr;
 			else
 				p *= eye[i + 1].rr;
-		}
-		// Check for direct path
-		// only possible if the eye path hit a light
-		// So the eye path has at least 2 vertices
-		if (nLight == 0 && i == nEye - 1) {
-			pDirect = p * pdfLightDirect / eye[i].dAWeight;
-			// The light vertex cannot be specular otherwise
-			// the eye path wouldn't have received any light
-			if ((eye[i - 1].flags & BSDF_SPECULAR) == 0)
-				weight += pDirect * pDirect;
 		}
 		// The path can only be obtained if none of the vertices
 		// is specular
@@ -354,9 +358,13 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		if (!(light[i].dARWeight > 0.f))
 			break;
 		// Exit if the path is impossible
-		if (!(light[i].dAWeight > 0.f))
-			break;
-		p *= light[i].dARWeight / light[i].dAWeight;
+		if (!(light[i].dAWeight > 0.f)) {
+			if (i == 0 && pdfLightDirect > 0.f)
+				p *= light[i].dARWeight / pdfLightDirect;
+			else
+				break;
+		} else
+			p *= light[i].dARWeight / light[i].dAWeight;
 		if (i > 3)
 			p /= light[i - 1].rr;
 		if (nEye + nLight - i > 3) {
@@ -478,8 +486,9 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		v.flags = BxDFType(~BSDF_SPECULAR);
 		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ng), v.wo, v.flags);
 		eWeight = eye[nEye - 2].dAWeight;
-		eye[nEye - 2].dAWeight = v.pdf *
-			eye[nEye - 2].cosi / eye[nEye - 2].d2;
+		if (nEye > 2)
+			eye[nEye - 2].dAWeight = v.pdf *
+				eye[nEye - 2].cosi / eye[nEye - 2].d2;
 		v.dARWeight = eye[nEye - 2].pdfR * v.coso / eye[nEye - 2].d2;
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
@@ -539,6 +548,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	// The eye path has at least 2 vertices
 	vector<BidirVertex> path(0);
 	float totalWeight = 0.f;
+	SWCSpectrum filter(v.flux);
 	for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 		const Light *light = scene->lights[lightNumber];
 		RayDifferential ray(eyePath[length - 2].p,
@@ -546,7 +556,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		ray.time = tspack->time;
 		v.Le = light->Le(tspack, scene, ray, eyePath[length - 2].ng,
 			&v.eBsdf, &v.ePdf, &v.ePdfDirect);
-		if (v.eBsdf == NULL || !(v.ePdf > 0.f) || v.Le.Black())
+		if (v.eBsdf == NULL || v.Le.Black())
 			continue;
 		v.p = v.eBsdf->dgShading.p;
 		v.ns = v.eBsdf->dgShading.nn;
@@ -557,6 +567,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		// This can be overwritten as it won't be reused
 		eyePath[length - 2].d2 =
 			DistanceSquared(eyePath[length - 2].p, v.p);
+		v.Le *= filter;
 		v.Le *= evalPath(tspack, scene, eyePath, length, eyeDepth, path,
 			0, lightDepth, v.ePdfDirect, false, &totalWeight);
 		if (!v.Le.Black()) {
@@ -606,7 +617,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 		weight[light->group] += L.filter(tspack) * totalWeight;
 	} else {
 		float xd, yd;
-		tspack->camera->GetSamplePosition(eyePath[0].p, vE.wi, &xd, &yd);
+		tspack->camera->GetSamplePosition(vE.p, vE.wi, &xd, &yd);
 		L *= We;
 		XYZColor color(L.ToXYZ(tspack));
 		sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, totalWeight, lightBufferId, light->group);
