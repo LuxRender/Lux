@@ -161,9 +161,24 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	wxTextValidator vt( wxFILTER_NUMERIC );
 
+	m_TM_Reinhard_ywaText->SetValidator( vt );
 	m_TM_Reinhard_prescaleText->SetValidator( vt );
 	m_TM_Reinhard_postscaleText->SetValidator( vt );
 	m_TM_Reinhard_burnText->SetValidator( vt );
+	m_TM_Linear_sensitivityText->SetValidator( vt );
+	m_TM_Linear_exposureText->SetValidator( vt );
+	m_TM_Linear_fstopText->SetValidator( vt );
+	m_TM_Linear_gammaText->SetValidator( vt );
+	m_TM_contrast_ywaText->SetValidator( vt );
+	m_TORGB_xwhiteText->SetValidator( vt );
+	m_TORGB_ywhiteText->SetValidator( vt );
+	m_TORGB_xredText->SetValidator( vt );
+	m_TORGB_yredText->SetValidator( vt );
+	m_TORGB_xgreenText->SetValidator( vt );
+	m_TORGB_ygreenText->SetValidator( vt );
+	m_TORGB_xblueText->SetValidator( vt );
+	m_TORGB_yblueText->SetValidator( vt );
+	m_TORGB_gammaText->SetValidator( vt );
 
 	m_GLAcceleration = false;
 }
@@ -1040,6 +1055,72 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 		default:
 			break;
 	}
+}
+
+void LuxGui::OnFocus( wxFocusEvent& event ){
+	//set text control's contents to current value when losing focus
+	if( event.GetEventType() != wxEVT_KILL_FOCUS ) return;
+
+	switch (event.GetId()) {
+		// Reinhard tonemapper options
+		case ID_TM_REINHARD_PRESCALE_TEXT:
+			m_TM_Reinhard_prescaleText->SetValue( wxString::Format( _("%.02f"), m_TM_reinhard_prescale ) );
+			break;
+		case ID_TM_REINHARD_POSTSCALE_TEXT:
+			m_TM_Reinhard_postscaleText->SetValue( wxString::Format( _("%.02f"), m_TM_reinhard_postscale ) );
+			break;
+		case ID_TM_REINHARD_BURN_TEXT:
+			m_TM_Reinhard_burnText->SetValue( wxString::Format( _("%.02f"), m_TM_reinhard_burn ) );
+			break;
+		// Linear tonemapper options
+		case ID_TM_LINEAR_SENSITIVITY_TEXT:
+			m_TM_Linear_sensitivityText->SetValue( wxString::Format( _("%.02f"), m_TM_linear_sensitivity ) );
+			break;
+		case ID_TM_LINEAR_EXPOSURE_TEXT:
+			m_TM_Linear_exposureText->SetValue( wxString::Format( _("%.02f"), m_TM_linear_exposure ) );
+			break;
+		case ID_TM_LINEAR_FSTOP_TEXT:
+			m_TM_Linear_fstopText->SetValue( wxString::Format( _("%.02f"), m_TM_linear_fstop ) );
+			break;
+		case ID_TM_LINEAR_GAMMA_TEXT:
+			m_TM_Linear_gammaText->SetValue( wxString::Format( _("%.02f"), m_TM_linear_gamma ) );
+			break;
+		// Contrast tonemapper options
+		case ID_TM_CONTRAST_YWA_TEXT:
+			m_TM_contrast_ywaText->SetValue( wxString::Format( _("%.02f"), m_TM_contrast_ywa ) );
+			break;
+		// Colorspace options
+		case ID_TORGB_XWHITE_TEXT:
+			m_TORGB_xwhiteText->SetValue( wxString::Format( _("%.02f"), m_TORGB_xwhite ) );
+			break;
+		case ID_TORGB_YWHITE_TEXT:
+			m_TORGB_ywhiteText->SetValue( wxString::Format( _("%.02f"), m_TORGB_ywhite ) );
+			break;
+		case ID_TORGB_XRED_TEXT:
+			m_TORGB_xredText->SetValue( wxString::Format( _("%.02f"), m_TORGB_xred ) );
+			break;
+		case ID_TORGB_YRED_TEXT:
+			m_TORGB_yredText->SetValue( wxString::Format( _("%.02f"), m_TORGB_yred ) );
+			break;
+		case ID_TORGB_XGREEN_TEXT:
+			m_TORGB_xgreenText->SetValue( wxString::Format( _("%.02f"), m_TORGB_xgreen ) );
+			break;
+		case ID_TORGB_YGREEN_TEXT:
+			m_TORGB_ygreenText->SetValue( wxString::Format( _("%.02f"), m_TORGB_ygreen ) );
+			break;
+		case ID_TORGB_XBLUE_TEXT:
+			m_TORGB_xblueText->SetValue( wxString::Format( _("%.02f"), m_TORGB_xblue ) );
+			break;
+		case ID_TORGB_YBLUE_TEXT:
+			m_TORGB_yblueText->SetValue( wxString::Format( _("%.02f"), m_TORGB_yblue ) );
+			break;
+		case ID_TORGB_GAMMA_TEXT:
+			m_TORGB_gammaText->SetValue( wxString::Format( _("%.02f"), m_TORGB_gamma ) );
+			break;
+		default:
+			break;
+	}
+
 }
 
 void LuxGui::SetTonemapKernel(int choice) {

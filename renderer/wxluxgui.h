@@ -136,6 +136,7 @@ protected:
 	void OnSpin( wxSpinEvent& event );
 	void OnScroll( wxScrollEvent& event );
 	void OnText(wxCommandEvent &event);
+	void OnFocus( wxFocusEvent& event );
 
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
