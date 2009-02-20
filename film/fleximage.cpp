@@ -1131,11 +1131,11 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_ReinhardPreScale = params.FindOneFloat("reinhard_prescale", 1.f);
 	float s_ReinhardPostScale = params.FindOneFloat("reinhard_postscale", 1.f);
 	float s_ReinhardBurn = params.FindOneFloat("reinhard_burn", 6.f);
-	float s_LinearSensitivity = params.FindOneFloat("linear_sensitivity", 100.f);
+	float s_LinearSensitivity = params.FindOneFloat("linear_sensitivity", 50.f);
 	float s_LinearExposure = params.FindOneFloat("linear_exposure", 1.f/1000.f);
 	float s_LinearFStop = params.FindOneFloat("linear_fstop", 2.8f);
 	float s_LinearGamma = params.FindOneFloat("linear_gamma", 1.0f);
-	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 100.f);
+	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 1.f);
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 
 	return new FlexImageFilm(xres, yres, filter, crop,
