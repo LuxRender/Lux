@@ -1274,17 +1274,17 @@ void LuxGui::ResetToneMapping(){
 	m_TM_kernel = 0; // *
 
 	m_TM_reinhard_autoywa = true; // *
-	m_TM_reinhard_ywa = 100.0;
+	m_TM_reinhard_ywa = 1.0;
 	m_TM_reinhard_prescale = 1.0;
 	m_TM_reinhard_postscale = 1.0;
 	m_TM_reinhard_burn = 6.0;
 
-	m_TM_linear_exposure = 100.0f;
+	m_TM_linear_exposure = 50.0f;
 	m_TM_linear_sensitivity = 1.f / 1000.f;
 	m_TM_linear_fstop = 2.8;
 	m_TM_linear_gamma = 1.0;
 
-	m_TM_contrast_ywa = 100.0;
+	m_TM_contrast_ywa = 1.0;
 
 	m_TORGB_xwhite = 0.314275f;
 	m_TORGB_ywhite = 0.329411f;
