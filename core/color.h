@@ -252,6 +252,9 @@ public:
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
 	XYZColor(const RGBColor& rgb);
+	XYZColor(const Color &color) { // so that operators work
+		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
+	}
 
 	// RGB Color output methods
 	void ToRGB(float &r, float &g, float &b) const {
