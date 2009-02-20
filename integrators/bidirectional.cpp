@@ -113,7 +113,6 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	u_int nVerts = 0;
 	const float dummy[] = {0.f, sample->imageX, sample->imageY, 0.5f};
 	const float *data = (const float *)&dummy;
-	bool through = false;
 	while (true) {
 		// Find next vertex in path and initialize _vertices_
 		BidirVertex &v = vertices[nVerts];
@@ -145,13 +144,9 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			data[3], &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf,
 			true))
 			break;
-		if (through) {
-			v.flux *= v.f;
-			through = false;
-		} else
-			v.flux = v.f;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
+			v.flux = v.f;
 			v.cosi = AbsDot(v.wi, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
 			v.f *= cosins / v.cosi;
@@ -167,9 +162,9 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			if (nVerts > 1)
 				v.flux *= vertices[nVerts - 2].flux;
 		} else {
+			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
-			v.flux *= cosins;
-			through = true;
+			vertices[nVerts - 2].flux *= cosins;
 			--nVerts;
 		}
 		// Initialize _ray_ for next segment of path
@@ -178,8 +173,6 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		if (!scene->Intersect(ray, &isect)) {
 			vertices[nVerts].wo = -ray.d;
 			vertices[nVerts].bsdf = NULL;
-			if (!through)
-				vertices[nVerts].flux = SWCSpectrum(1.f);
 			++nVerts;
 			break;
 		}
@@ -211,7 +204,6 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 	isect.dg.p = bsdf->dgShading.p;
 	isect.dg.nn = bsdf->dgShading.nn;
 	u_int nVerts = 0;
-	bool through = false;
 	while (true) {
 		BidirVertex &v = vertices[nVerts];
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, nVerts);
@@ -233,13 +225,9 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2],
 			data[3], &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
-		if (through) {
-			v.flux *= v.f;
-			through = false;
-		} else
-			v.flux = v.f;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
+			v.flux = v.f;
 			v.coso = AbsDot(v.wo, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
 			v.flux *= cosins / v.cosi * v.coso / v.pdf;
@@ -258,9 +246,9 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 				v.flux *= vertices[nVerts - 2].flux;
 			}
 		} else {
+			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
-			v.flux *= cosins;
-			through = true;
+			vertices[nVerts - 2].flux *= cosins;
 			--nVerts;
 		}
 		// Initialize _ray_ for next segment of path
@@ -548,7 +536,6 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	// The eye path has at least 2 vertices
 	vector<BidirVertex> path(0);
 	float totalWeight = 0.f;
-	SWCSpectrum filter(v.flux);
 	for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 		const Light *light = scene->lights[lightNumber];
 		RayDifferential ray(eyePath[length - 2].p,
@@ -567,7 +554,6 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		// This can be overwritten as it won't be reused
 		eyePath[length - 2].d2 =
 			DistanceSquared(eyePath[length - 2].p, v.p);
-		v.Le *= filter;
 		v.Le *= evalPath(tspack, scene, eyePath, length, eyeDepth, path,
 			0, lightDepth, v.ePdfDirect, false, &totalWeight);
 		if (!v.Le.Black()) {
