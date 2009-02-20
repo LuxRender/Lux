@@ -136,7 +136,9 @@ protected:
 	void OnSpin( wxSpinEvent& event );
 	void OnScroll( wxScrollEvent& event );
 	void OnText(wxCommandEvent &event);
-	void OnFocus( wxFocusEvent& event );
+	void OnFocus(wxFocusEvent &event);
+	void OnCheckBox(wxCommandEvent &event);
+	void OnColourChanged(wxColourPickerEvent &event);
 
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
@@ -224,6 +226,11 @@ protected:
 
 	double m_TORGB_gamma;
 
+	bool m_LG_enable;
+	double m_LG_scale;
+	double m_LG_temperature;
+	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
+	double m_LG_scaleX, m_LG_scaleY;
 
 	class LuxOptions : public m_OptionsDialog {
 		public:

@@ -372,7 +372,7 @@
                     </object>
                 </object>
             </object>
-            <object class="wxBoxSizer" expanded="0">
+            <object class="wxBoxSizer" expanded="1">
                 <property name="minimum_size"></property>
                 <property name="name">bSizer</property>
                 <property name="orient">wxVERTICAL</property>
@@ -489,7 +489,7 @@
                                         <property name="border">0</property>
                                         <property name="flag">wxEXPAND</property>
                                         <property name="proportion">0</property>
-                                        <object class="wxBoxSizer" expanded="1">
+                                        <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">bRenderToolSizer</property>
                                             <property name="orient">wxHORIZONTAL</property>
@@ -919,7 +919,7 @@
                                                                                 <property name="id">wxID_ANY</property>
                                                                                 <property name="maximum_size"></property>
                                                                                 <property name="minimum_size"></property>
-                                                                                <property name="name">m_panel40</property>
+                                                                                <property name="name">m_LG_Panel0</property>
                                                                                 <property name="permission">protected</property>
                                                                                 <property name="pos"></property>
                                                                                 <property name="size"></property>
@@ -1029,7 +1029,7 @@
                                                                                                     <property name="label">Group:</property>
                                                                                                     <property name="maximum_size"></property>
                                                                                                     <property name="minimum_size"></property>
-                                                                                                    <property name="name">m_tonemappingkernelText111</property>
+                                                                                                    <property name="name">m_LG_nameLabel</property>
                                                                                                     <property name="permission">protected</property>
                                                                                                     <property name="pos"></property>
                                                                                                     <property name="size"></property>
@@ -1076,11 +1076,11 @@
                                                                                                     <property name="fg"></property>
                                                                                                     <property name="font">,90,92,-1,70,0</property>
                                                                                                     <property name="hidden">0</property>
-                                                                                                    <property name="id">wxID_ANY</property>
+                                                                                                    <property name="id">ID_LG_NAME</property>
                                                                                                     <property name="label">default</property>
                                                                                                     <property name="maximum_size"></property>
                                                                                                     <property name="minimum_size"></property>
-                                                                                                    <property name="name">m_tonemappingkernelText11</property>
+                                                                                                    <property name="name">m_LG_name</property>
                                                                                                     <property name="permission">protected</property>
                                                                                                     <property name="pos"></property>
                                                                                                     <property name="size"></property>
@@ -1128,11 +1128,11 @@
                                                                                                     <property name="fg"></property>
                                                                                                     <property name="font"></property>
                                                                                                     <property name="hidden">0</property>
-                                                                                                    <property name="id">wxID_ANY</property>
+                                                                                                    <property name="id">ID_LG_ENABLE</property>
                                                                                                     <property name="label">Enabled</property>
                                                                                                     <property name="maximum_size"></property>
                                                                                                     <property name="minimum_size"></property>
-                                                                                                    <property name="name">m_checkBox151</property>
+                                                                                                    <property name="name">m_LG_enableCheckbox</property>
                                                                                                     <property name="permission">protected</property>
                                                                                                     <property name="pos"></property>
                                                                                                     <property name="size"></property>
@@ -1143,7 +1143,7 @@
                                                                                                     <property name="window_name"></property>
                                                                                                     <property name="window_style"></property>
                                                                                                     <event name="OnChar"></event>
-                                                                                                    <event name="OnCheckBox"></event>
+                                                                                                    <event name="OnCheckBox">OnCheckBox</event>
                                                                                                     <event name="OnEnterWindow"></event>
                                                                                                     <event name="OnEraseBackground"></event>
                                                                                                     <event name="OnKeyDown"></event>
@@ -1222,7 +1222,7 @@
                                                                                             <event name="OnUpdateUI"></event>
                                                                                             <object class="notebookpage" expanded="1">
                                                                                                 <property name="bitmap">; Load From File</property>
-                                                                                                <property name="label">begin</property>
+                                                                                                <property name="label">basic</property>
                                                                                                 <property name="select">1</property>
                                                                                                 <object class="wxPanel" expanded="1">
                                                                                                     <property name="bg"></property>
@@ -1231,10 +1231,10 @@
                                                                                                     <property name="fg"></property>
                                                                                                     <property name="font"></property>
                                                                                                     <property name="hidden">0</property>
-                                                                                                    <property name="id">wxID_ANY</property>
+                                                                                                    <property name="id">ID_LG_BASICPANEL</property>
                                                                                                     <property name="maximum_size"></property>
                                                                                                     <property name="minimum_size"></property>
-                                                                                                    <property name="name">m_panel37</property>
+                                                                                                    <property name="name">m_LG_basicPanel</property>
                                                                                                     <property name="permission">protected</property>
                                                                                                     <property name="pos"></property>
                                                                                                     <property name="size"></property>
@@ -1295,7 +1295,7 @@
                                                                                                                         <property name="label">Scale/Intensity</property>
                                                                                                                         <property name="maximum_size"></property>
                                                                                                                         <property name="minimum_size"></property>
-                                                                                                                        <property name="name">m_prescaleText311</property>
+                                                                                                                        <property name="name">m_LG_scaleLabel</property>
                                                                                                                         <property name="permission">protected</property>
                                                                                                                         <property name="pos"></property>
                                                                                                                         <property name="size"></property>
@@ -1351,19 +1351,19 @@
                                                                                                                                 <property name="fg"></property>
                                                                                                                                 <property name="font"></property>
                                                                                                                                 <property name="hidden">0</property>
-                                                                                                                                <property name="id">ID_RH_PRESCALE</property>
+                                                                                                                                <property name="id">ID_LG_SCALE</property>
                                                                                                                                 <property name="maxValue">512</property>
                                                                                                                                 <property name="maximum_size"></property>
                                                                                                                                 <property name="minValue">0</property>
                                                                                                                                 <property name="minimum_size"></property>
-                                                                                                                                <property name="name">m_RH_prescaleSlider111</property>
+                                                                                                                                <property name="name">m_LG_scaleSlider</property>
                                                                                                                                 <property name="permission">protected</property>
                                                                                                                                 <property name="pos"></property>
                                                                                                                                 <property name="size">-1,-1</property>
-                                                                                                                                <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
+                                                                                                                                <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                 <property name="subclass"></property>
                                                                                                                                 <property name="tooltip"></property>
-                                                                                                                                <property name="value">50</property>
+                                                                                                                                <property name="value">5</property>
                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                 <property name="window_name"></property>
                                                                                                                                 <property name="window_style"></property>
@@ -1423,11 +1423,11 @@
                                                                                                                                 <property name="fg"></property>
                                                                                                                                 <property name="font"></property>
                                                                                                                                 <property name="hidden">0</property>
-                                                                                                                                <property name="id">ID_RH_PRESCALE_TEXT</property>
+                                                                                                                                <property name="id">ID_LG_SCALE_TEXT</property>
                                                                                                                                 <property name="maximum_size"></property>
                                                                                                                                 <property name="maxlength">5</property>
                                                                                                                                 <property name="minimum_size"></property>
-                                                                                                                                <property name="name">m_RH_preText111</property>
+                                                                                                                                <property name="name">m_LG_scaleText</property>
                                                                                                                                 <property name="permission">protected</property>
                                                                                                                                 <property name="pos"></property>
                                                                                                                                 <property name="size">36,-1</property>
@@ -1495,7 +1495,7 @@
                                                                                                                         <property name="label">RGB Colour / Blackbody Temperature</property>
                                                                                                                         <property name="maximum_size"></property>
                                                                                                                         <property name="minimum_size"></property>
-                                                                                                                        <property name="name">m_prescaleText3111</property>
+                                                                                                                        <property name="name">m_LG_rgbLabel</property>
                                                                                                                         <property name="permission">protected</property>
                                                                                                                         <property name="pos"></property>
                                                                                                                         <property name="size"></property>
@@ -1552,10 +1552,10 @@
                                                                                                                                 <property name="fg"></property>
                                                                                                                                 <property name="font"></property>
                                                                                                                                 <property name="hidden">0</property>
-                                                                                                                                <property name="id">wxID_ANY</property>
+                                                                                                                                <property name="id">ID_LG_RGBCOLOR</property>
                                                                                                                                 <property name="maximum_size"></property>
                                                                                                                                 <property name="minimum_size"></property>
-                                                                                                                                <property name="name">m_colourPicker3</property>
+                                                                                                                                <property name="name">m_LG_rgbPicker</property>
                                                                                                                                 <property name="permission">protected</property>
                                                                                                                                 <property name="pos"></property>
                                                                                                                                 <property name="size"></property>
@@ -1566,7 +1566,7 @@
                                                                                                                                 <property name="window_name"></property>
                                                                                                                                 <property name="window_style"></property>
                                                                                                                                 <event name="OnChar"></event>
-                                                                                                                                <event name="OnColourChanged"></event>
+                                                                                                                                <event name="OnColourChanged">OnColourChanged</event>
                                                                                                                                 <event name="OnEnterWindow"></event>
                                                                                                                                 <event name="OnEraseBackground"></event>
                                                                                                                                 <event name="OnKeyDown"></event>
@@ -1602,12 +1602,12 @@
                                                                                                                                 <property name="fg"></property>
                                                                                                                                 <property name="font"></property>
                                                                                                                                 <property name="hidden">0</property>
-                                                                                                                                <property name="id">ID_RH_PRESCALE</property>
+                                                                                                                                <property name="id">ID_LG_TEMPERATURE</property>
                                                                                                                                 <property name="maxValue">512</property>
                                                                                                                                 <property name="maximum_size"></property>
                                                                                                                                 <property name="minValue">0</property>
                                                                                                                                 <property name="minimum_size"></property>
-                                                                                                                                <property name="name">m_RH_prescaleSlider1111</property>
+                                                                                                                                <property name="name">m_LG_temperatureSlider</property>
                                                                                                                                 <property name="permission">protected</property>
                                                                                                                                 <property name="pos"></property>
                                                                                                                                 <property name="size">-1,-1</property>
@@ -1674,11 +1674,11 @@
                                                                                                                                 <property name="fg"></property>
                                                                                                                                 <property name="font"></property>
                                                                                                                                 <property name="hidden">0</property>
-                                                                                                                                <property name="id">ID_RH_PRESCALE_TEXT</property>
+                                                                                                                                <property name="id">ID_LG_TEMPERATURE_TEXT</property>
                                                                                                                                 <property name="maximum_size"></property>
                                                                                                                                 <property name="maxlength">5</property>
                                                                                                                                 <property name="minimum_size"></property>
-                                                                                                                                <property name="name">m_RH_preText1111</property>
+                                                                                                                                <property name="name">m_LG_temperatureText</property>
                                                                                                                                 <property name="permission">protected</property>
                                                                                                                                 <property name="pos"></property>
                                                                                                                                 <property name="size">36,-1</property>
@@ -1727,7 +1727,7 @@
                                                                                             </object>
                                                                                             <object class="notebookpage" expanded="1">
                                                                                                 <property name="bitmap"></property>
-                                                                                                <property name="label">end</property>
+                                                                                                <property name="label">advanced</property>
                                                                                                 <property name="select">0</property>
                                                                                                 <object class="wxPanel" expanded="1">
                                                                                                     <property name="bg"></property>
@@ -1736,10 +1736,10 @@
                                                                                                     <property name="fg"></property>
                                                                                                     <property name="font"></property>
                                                                                                     <property name="hidden">0</property>
-                                                                                                    <property name="id">wxID_ANY</property>
+                                                                                                    <property name="id">ID_LG_ADVANCEDPANEL</property>
                                                                                                     <property name="maximum_size"></property>
                                                                                                     <property name="minimum_size"></property>
-                                                                                                    <property name="name">m_panel14</property>
+                                                                                                    <property name="name">m_LG_advancedPanel</property>
                                                                                                     <property name="permission">protected</property>
                                                                                                     <property name="pos"></property>
                                                                                                     <property name="size"></property>
@@ -2224,7 +2224,7 @@
                                                                                             <property name="permission">protected</property>
                                                                                             <property name="pos"></property>
                                                                                             <property name="size">-1,-1</property>
-                                                                                            <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
+                                                                                            <property name="style">wxSL_HORIZONTAL</property>
                                                                                             <property name="subclass"></property>
                                                                                             <property name="tooltip">Reinhard Prescale</property>
                                                                                             <property name="value">50</property>
@@ -2413,7 +2413,7 @@
                                                                                             <property name="permission">protected</property>
                                                                                             <property name="pos"></property>
                                                                                             <property name="size">-1,-1</property>
-                                                                                            <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
+                                                                                            <property name="style">wxSL_HORIZONTAL</property>
                                                                                             <property name="subclass"></property>
                                                                                             <property name="tooltip">Reinhard Prescale</property>
                                                                                             <property name="value">50</property>
@@ -2602,7 +2602,7 @@
                                                                                             <property name="permission">protected</property>
                                                                                             <property name="pos"></property>
                                                                                             <property name="size">-1,-1</property>
-                                                                                            <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
+                                                                                            <property name="style">wxSL_HORIZONTAL</property>
                                                                                             <property name="subclass"></property>
                                                                                             <property name="tooltip">Reinhard Postscale</property>
                                                                                             <property name="value">50</property>
@@ -2766,7 +2766,7 @@
                                                                                 <property name="border">5</property>
                                                                                 <property name="flag">wxEXPAND</property>
                                                                                 <property name="proportion">0</property>
-                                                                                <object class="wxBoxSizer" expanded="1">
+                                                                                <object class="wxBoxSizer" expanded="0">
                                                                                     <property name="minimum_size"></property>
                                                                                     <property name="name">bSizer13</property>
                                                                                     <property name="orient">wxHORIZONTAL</property>
@@ -2791,7 +2791,7 @@
                                                                                             <property name="permission">protected</property>
                                                                                             <property name="pos"></property>
                                                                                             <property name="size">-1,-1</property>
-                                                                                            <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
+                                                                                            <property name="style">wxSL_HORIZONTAL</property>
                                                                                             <property name="subclass"></property>
                                                                                             <property name="tooltip">Reinhard Burn</property>
                                                                                             <property name="value">50</property>
@@ -5613,7 +5613,7 @@
                                                                                             <property name="permission">protected</property>
                                                                                             <property name="pos"></property>
                                                                                             <property name="size">-1,-1</property>
-                                                                                            <property name="style">wxSL_HORIZONTAL|wxSL_SELRANGE</property>
+                                                                                            <property name="style">wxSL_HORIZONTAL</property>
                                                                                             <property name="subclass"></property>
                                                                                             <property name="tooltip">Gamma Value</property>
                                                                                             <property name="value">50</property>

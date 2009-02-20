@@ -57,8 +57,8 @@ using namespace lux;
 #define TM_REINHARD_PRESCALE_RANGE 8.0f
 #define TM_REINHARD_POSTSCALE_RANGE 8.0f
 #define TM_REINHARD_BURN_RANGE 12.0f
-#define TM_LINEAR_EXPOSURE_RANGE 1.0f
-#define TM_LINEAR_SENSITIVITY_RANGE 100.0f
+#define TM_LINEAR_EXPOSURE_RANGE 60.0f
+#define TM_LINEAR_SENSITIVITY_RANGE 10000.0f
 #define TM_LINEAR_FSTOP_RANGE 64.0f
 #define TM_LINEAR_GAMMA_RANGE 5.0f
 #define TM_CONTRAST_YWA_RANGE 1.0f
@@ -71,6 +71,8 @@ using namespace lux;
 #define TORGB_XBLUE_RANGE 1.0f
 #define TORGB_YBLUE_RANGE 1.0f
 #define TORGB_GAMMA_RANGE 5.0f
+#define LG_SCALE_RANGE 100.f
+#define LG_TEMPERATURE_RANGE 20000.f
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -885,6 +887,59 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+		// Light groups options
+		case ID_LG_SCALE_TEXT:
+			if (m_LG_scaleText->IsModified()) {
+				wxString st = m_LG_scaleText->GetValue();
+				st.ToDouble(&m_LG_scale);
+				if (m_LG_scale > LG_SCALE_RANGE)
+					m_LG_scale = LG_SCALE_RANGE;
+				else if (m_LG_scale < 0.f)
+					m_LG_scale = 0.f;
+				st = wxString::Format(_("%.02f"), m_LG_scale);
+				m_LG_scaleText->SetValue(st);
+				const int val = static_cast<int>(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
+				m_LG_scaleSlider->SetValue(val);
+				UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale);
+				if (m_auto_tonemap)
+					ApplyTonemapping();
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void LuxGui::OnCheckBox(wxCommandEvent& event)
+{
+	if (event.GetEventType() != wxEVT_COMMAND_CHECKBOX_CLICKED)
+		return;
+
+	switch (event.GetId()) {
+		case ID_LG_ENABLE:
+			m_LG_enable = m_LG_enableCheckbox->GetValue();
+			UpdateParam(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable);
+			if (m_auto_tonemap)
+				ApplyTonemapping();
+			break;
+		default:
+			break;
+	}
+}
+
+void LuxGui::OnColourChanged(wxColourPickerEvent &event)
+{
+	switch (event.GetId()) {
+		case ID_LG_RGBCOLOR:
+			m_LG_scaleRed = event.GetColour().Red();
+			m_LG_scaleGreen = event.GetColour().Green();
+			m_LG_scaleBlue = event.GetColour().Blue();
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed / 255.);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen / 255.);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue / 255.);
+			if (m_auto_tonemap)
+				ApplyTonemapping();
+			break;
 		default:
 			break;
 	}
@@ -1052,6 +1107,17 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+		// Light groups options
+		case ID_LG_SCALE:
+		{
+			m_LG_scale = event.GetPosition() * LG_SCALE_RANGE / FLOAT_SLIDER_RES;
+			wxString st = wxString::Format(_("%.02f"), m_LG_scale);
+			m_LG_scaleText->SetValue(st);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale);
+			if (m_auto_tonemap)
+				ApplyTonemapping();
+			break;
+		}
 		default:
 			break;
 	}
@@ -1296,6 +1362,15 @@ void LuxGui::ResetToneMapping(){
 	m_TORGB_yblue = 0.07f;
 	m_TORGB_gamma = 2.2f;
 
+	m_LG_enable = true;
+	m_LG_scale = 1.f;
+	m_LG_temperature = 6500.f;
+	m_LG_scaleRed = 1.f;
+	m_LG_scaleGreen = 1.f;
+	m_LG_scaleBlue = 1.f;
+	m_LG_scaleX = 1.f;
+	m_LG_scaleY = 1.f;
+
 	UpdateTonemapWidgetValues();
 	m_outputNotebook->Enable( false );
 	Refresh();
@@ -1377,6 +1452,14 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	st = wxString::Format( _("%.02f"), m_TORGB_gamma );
 	m_TORGB_gammaText->SetValue(st);
 
+	// Light groups widgets
+	m_LG_scaleSlider->SetValue(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
+	st = wxString::Format(_("%.02f"), m_LG_scale);
+	m_LG_scaleText->SetValue(st);
+	m_LG_temperatureSlider->SetValue(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
+	st = wxString::Format(_("%.02f"), m_LG_temperature);
+	m_LG_temperatureText->SetValue(st);
+
 	Refresh();
 }
 
@@ -1405,6 +1488,12 @@ void LuxGui::ResetToneMappingFromFilm(){
 	m_TORGB_xblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE);
 	m_TORGB_yblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
 	m_TORGB_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	m_LG_enable = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE) != 0.f;
+	m_LG_scale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE);
+	m_LG_temperature = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_TEMPERATURE);
+	m_LG_scaleRed = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED);
+	m_LG_scaleGreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN);
+	m_LG_scaleBlue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL, m_TM_kernel);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA, m_TM_reinhard_autoywa);
@@ -1429,6 +1518,11 @@ void LuxGui::ResetToneMappingFromFilm(){
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue);
 
 	UpdateTonemapWidgetValues();
 	if(m_auto_tonemap) ApplyTonemapping();
