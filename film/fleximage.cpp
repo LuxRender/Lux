@@ -129,218 +129,275 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 }
 
 // Parameter Access functions
-void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value){
+void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value)
+{
 	 switch (param) {
-		 case LUX_FILM_TM_TONEMAPKERNEL: {
-			 m_TonemapKernel = (int) value;
-			} break;
+		case LUX_FILM_TM_TONEMAPKERNEL:
+			m_TonemapKernel = Floor2Int(value);
+			break;
 
-		 case LUX_FILM_TM_REINHARD_AUTOYWA: {
-			 m_ReinhardAutoYwa = bool(Floor2Int(value));
-			} break;
-		 case LUX_FILM_TM_REINHARD_YWA: {
-			 m_ReinhardYwa = float(value);
-			} break;
-		 case LUX_FILM_TM_REINHARD_PRESCALE: {
-			 m_ReinhardPreScale = float(value);
-			} break;
-		 case LUX_FILM_TM_REINHARD_POSTSCALE: {
-			 m_ReinhardPostScale = float(value);
-			} break;
-		 case LUX_FILM_TM_REINHARD_BURN: {
-			 m_ReinhardBurn = float(value);
-			} break;
+		case LUX_FILM_TM_REINHARD_AUTOYWA:
+			m_ReinhardAutoYwa = (value != 0.f);
+			break;
+		case LUX_FILM_TM_REINHARD_YWA:
+			m_ReinhardYwa = value;
+			break;
+		case LUX_FILM_TM_REINHARD_PRESCALE:
+			m_ReinhardPreScale = value;
+			break;
+		case LUX_FILM_TM_REINHARD_POSTSCALE:
+			m_ReinhardPostScale = value;
+			break;
+		case LUX_FILM_TM_REINHARD_BURN:
+			m_ReinhardBurn = value;
+			break;
 
-		 case LUX_FILM_TM_LINEAR_SENSITIVITY: {
-			 m_LinearSensitivity = float(value);
-			} break;
-		 case LUX_FILM_TM_LINEAR_EXPOSURE: {
-			 m_LinearExposure = float(value);
-			} break;
-		 case LUX_FILM_TM_LINEAR_FSTOP: {
-			 m_LinearFStop = float(value);
-			} break;
-		 case LUX_FILM_TM_LINEAR_GAMMA: {
-			 m_LinearGamma = float(value);
-			} break;
+		case LUX_FILM_TM_LINEAR_SENSITIVITY:
+			m_LinearSensitivity = value;
+			break;
+		case LUX_FILM_TM_LINEAR_EXPOSURE:
+			m_LinearExposure = value;
+			break;
+		case LUX_FILM_TM_LINEAR_FSTOP:
+			m_LinearFStop = value;
+			break;
+		case LUX_FILM_TM_LINEAR_GAMMA:
+			m_LinearGamma = value;
+			break;
 
-		 case LUX_FILM_TM_CONTRAST_YWA: {
-			 m_ContrastYwa = float(value);
-			} break;
+		case LUX_FILM_TM_CONTRAST_YWA:
+			m_ContrastYwa = value;
+			break;
 
-		 case LUX_FILM_TORGB_X_WHITE: {
-			 m_RGB_X_White = float(value);
-			} break;
-		 case LUX_FILM_TORGB_Y_WHITE: {
-			 m_RGB_Y_White = float(value);
-			} break;
-		 case LUX_FILM_TORGB_X_RED: {
-			 m_RGB_X_Red = float(value);
-			} break;
-		 case LUX_FILM_TORGB_Y_RED: {
-			 m_RGB_Y_Red = float(value);
-			} break;
-		 case LUX_FILM_TORGB_X_GREEN: {
-			 m_RGB_X_Green = float(value);
-			} break;
-		 case LUX_FILM_TORGB_Y_GREEN: {
-			 m_RGB_Y_Green = float(value);
-			} break;
-		 case LUX_FILM_TORGB_X_BLUE: {
-			 m_RGB_X_Blue = float(value);
-			} break;
-		 case LUX_FILM_TORGB_Y_BLUE: {
-			 m_RGB_Y_Blue = float(value);
-			} break;
-		 case LUX_FILM_TORGB_GAMMA: {
-			 m_Gamma = float(value);
-			} break;
+		case LUX_FILM_TORGB_X_WHITE:
+			m_RGB_X_White = value;
+			break;
+		case LUX_FILM_TORGB_Y_WHITE:
+			m_RGB_Y_White = value;
+			break;
+		case LUX_FILM_TORGB_X_RED:
+			m_RGB_X_Red = value;
+			break;
+		case LUX_FILM_TORGB_Y_RED:
+			m_RGB_Y_Red = value;
+			break;
+		case LUX_FILM_TORGB_X_GREEN:
+			m_RGB_X_Green = value;
+			break;
+		case LUX_FILM_TORGB_Y_GREEN:
+			m_RGB_Y_Green = value;
+			break;
+		case LUX_FILM_TORGB_X_BLUE:
+			m_RGB_X_Blue = value;
+			break;
+		case LUX_FILM_TORGB_Y_BLUE:
+			m_RGB_Y_Blue = value;
+			break;
+		case LUX_FILM_TORGB_GAMMA:
+			m_Gamma = value;
+			break;
+		case LUX_FILM_LG_SCALE:
+			SetGroupScale(0, value);
+			break;
+		case LUX_FILM_LG_ENABLE:
+			SetGroupEnable(0, value != 0.f);
+			break;
+		case LUX_FILM_LG_SCALE_RED: {
+			RGBColor color(GetGroupRGBScale(0));
+			color.c[0] = value;
+			SetGroupRGBScale(0, color);
+			break;
+		}
+		case LUX_FILM_LG_SCALE_GREEN: {
+			RGBColor color(GetGroupRGBScale(0));
+			color.c[1] = value;
+			SetGroupRGBScale(0, color);
+			break;
+		}
+		case LUX_FILM_LG_SCALE_BLUE: {
+			RGBColor color(GetGroupRGBScale(0));
+			color.c[2] = value;
+			SetGroupRGBScale(0, color);
+			break;
+		}
 
-		 default: {
-			} break;
+		 default:
+			break;
 	 }
 }
-double FlexImageFilm::GetParameterValue(luxComponentParameters param) {
+double FlexImageFilm::GetParameterValue(luxComponentParameters param)
+{
 	 switch (param) {
-		 case LUX_FILM_TM_TONEMAPKERNEL: {
-			 return float(m_TonemapKernel);
-			} break;
+		case LUX_FILM_TM_TONEMAPKERNEL:
+			return m_TonemapKernel;
+			break;
 
-		 case LUX_FILM_TM_REINHARD_AUTOYWA: {
-			 return float(int(m_ReinhardAutoYwa));
-			} break;
-		 case LUX_FILM_TM_REINHARD_YWA: {
-			 return m_ReinhardYwa;
-			} break;
-		 case LUX_FILM_TM_REINHARD_PRESCALE: {
-			 return m_ReinhardPreScale;
-			} break;
-		 case LUX_FILM_TM_REINHARD_POSTSCALE: {
-			 return m_ReinhardPostScale;
-			} break;
-		 case LUX_FILM_TM_REINHARD_BURN: {
-			 return m_ReinhardBurn;
-			} break;
+		case LUX_FILM_TM_REINHARD_AUTOYWA:
+			return m_ReinhardAutoYwa;
+			break;
+		case LUX_FILM_TM_REINHARD_YWA:
+			return m_ReinhardYwa;
+			break;
+		case LUX_FILM_TM_REINHARD_PRESCALE:
+			return m_ReinhardPreScale;
+			break;
+		case LUX_FILM_TM_REINHARD_POSTSCALE:
+			return m_ReinhardPostScale;
+			break;
+		case LUX_FILM_TM_REINHARD_BURN:
+			return m_ReinhardBurn;
+			break;
 
-		 case LUX_FILM_TM_LINEAR_SENSITIVITY: {
-			 return m_LinearSensitivity;
-			} break;
-		 case LUX_FILM_TM_LINEAR_EXPOSURE: {
-			 return m_LinearExposure;
-			} break;
-		 case LUX_FILM_TM_LINEAR_FSTOP: {
-			 return m_LinearFStop;
-			} break;
-		 case LUX_FILM_TM_LINEAR_GAMMA: {
-			 return m_LinearGamma;
-			} break;
+		case LUX_FILM_TM_LINEAR_SENSITIVITY:
+			return m_LinearSensitivity;
+			break;
+		case LUX_FILM_TM_LINEAR_EXPOSURE:
+			return m_LinearExposure;
+			break;
+		case LUX_FILM_TM_LINEAR_FSTOP:
+			return m_LinearFStop;
+			break;
+		case LUX_FILM_TM_LINEAR_GAMMA:
+			return m_LinearGamma;
+			break;
 
-		 case LUX_FILM_TM_CONTRAST_YWA: {
-			 return m_ContrastYwa;
-			} break;
+		case LUX_FILM_TM_CONTRAST_YWA:
+			return m_ContrastYwa;
+			break;
 
-		 case LUX_FILM_TORGB_X_WHITE: {
-			 return m_RGB_X_White;
-			} break;
-		 case LUX_FILM_TORGB_Y_WHITE: {
-			 return m_RGB_Y_White;
-			} break;
-		 case LUX_FILM_TORGB_X_RED: {
-			 return m_RGB_X_Red;
-			} break;
-		 case LUX_FILM_TORGB_Y_RED: {
-			 return m_RGB_Y_Red;
-			} break;
-		 case LUX_FILM_TORGB_X_GREEN: {
-			 return m_RGB_X_Green;
-			} break;
-		 case LUX_FILM_TORGB_Y_GREEN: {
-			 return m_RGB_Y_Green;
-			} break;
-		 case LUX_FILM_TORGB_X_BLUE: {
-			 return m_RGB_X_Blue;
-			} break;
-		 case LUX_FILM_TORGB_Y_BLUE: {
-			 return m_RGB_Y_Blue;
-			} break;
-		 case LUX_FILM_TORGB_GAMMA: {
-			 return m_Gamma;
-			} break;
+		case LUX_FILM_TORGB_X_WHITE:
+			return m_RGB_X_White;
+			break;
+		case LUX_FILM_TORGB_Y_WHITE:
+			return m_RGB_Y_White;
+			break;
+		case LUX_FILM_TORGB_X_RED:
+			return m_RGB_X_Red;
+			break;
+		case LUX_FILM_TORGB_Y_RED:
+			return m_RGB_Y_Red;
+			break;
+		case LUX_FILM_TORGB_X_GREEN:
+			return m_RGB_X_Green;
+			break;
+		case LUX_FILM_TORGB_Y_GREEN:
+			return m_RGB_Y_Green;
+			break;
+		case LUX_FILM_TORGB_X_BLUE:
+			return m_RGB_X_Blue;
+			break;
+		case LUX_FILM_TORGB_Y_BLUE:
+			return m_RGB_Y_Blue;
+			break;
+		case LUX_FILM_TORGB_GAMMA:
+			return m_Gamma;
+			break;
+		case LUX_FILM_LG_ENABLE:
+			return GetGroupEnable(0);
+			break;
+		case LUX_FILM_LG_SCALE:
+			return GetGroupScale(0);
+			break;
+		case LUX_FILM_LG_SCALE_RED:
+			return GetGroupRGBScale(0).c[0];
+			break;
+		case LUX_FILM_LG_SCALE_GREEN:
+			return GetGroupRGBScale(0).c[1];
+			break;
+		case LUX_FILM_LG_SCALE_BLUE:
+			return GetGroupRGBScale(0).c[2];
+			break;
 
-		 default: {
-			} break;
+		default:
+			break;
 	 }
 	 return 0.;
 }
-double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param) {
+double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param)
+{
 	 switch (param) {
-		 case LUX_FILM_TM_TONEMAPKERNEL: {
-			 return float(d_TonemapKernel);
-			} break;
+		case LUX_FILM_TM_TONEMAPKERNEL:
+			return d_TonemapKernel;
+			break;
 
-		 case LUX_FILM_TM_REINHARD_AUTOYWA: {
-			 return float(int(d_ReinhardAutoYwa));
-			} break;
-		 case LUX_FILM_TM_REINHARD_YWA: {
-			 return d_ReinhardYwa;
-			} break;
-		 case LUX_FILM_TM_REINHARD_PRESCALE: {
-			 return d_ReinhardPreScale;
-			} break;
-		 case LUX_FILM_TM_REINHARD_POSTSCALE: {
-			 return d_ReinhardPostScale;
-			} break;
-		 case LUX_FILM_TM_REINHARD_BURN: {
-			 return d_ReinhardBurn;
-			} break;
+		case LUX_FILM_TM_REINHARD_AUTOYWA:
+			return d_ReinhardAutoYwa;
+			break;
+		case LUX_FILM_TM_REINHARD_YWA:
+			return d_ReinhardYwa;
+			break;
+		case LUX_FILM_TM_REINHARD_PRESCALE:
+			return d_ReinhardPreScale;
+			break;
+		case LUX_FILM_TM_REINHARD_POSTSCALE:
+			return d_ReinhardPostScale;
+			break;
+		case LUX_FILM_TM_REINHARD_BURN:
+			return d_ReinhardBurn;
+			break;
 
-		 case LUX_FILM_TM_LINEAR_SENSITIVITY: {
-			 return d_LinearSensitivity;
-			} break;
-		 case LUX_FILM_TM_LINEAR_EXPOSURE: {
-			 return d_LinearExposure;
-			} break;
-		 case LUX_FILM_TM_LINEAR_FSTOP: {
-			 return d_LinearFStop;
-			} break;
-		 case LUX_FILM_TM_LINEAR_GAMMA: {
-			 return d_LinearGamma;
-			} break;
+		case LUX_FILM_TM_LINEAR_SENSITIVITY:
+			return d_LinearSensitivity;
+			break;
+		case LUX_FILM_TM_LINEAR_EXPOSURE:
+			return d_LinearExposure;
+			break;
+		case LUX_FILM_TM_LINEAR_FSTOP:
+			return d_LinearFStop;
+			break;
+		case LUX_FILM_TM_LINEAR_GAMMA:
+			return d_LinearGamma;
+			break;
 
-		 case LUX_FILM_TM_CONTRAST_YWA: {
-			 return d_ContrastYwa;
-			} break;
+		case LUX_FILM_TM_CONTRAST_YWA:
+			return d_ContrastYwa;
+			break;
 
-		 case LUX_FILM_TORGB_X_WHITE: {
-			 return d_RGB_X_White;
-			} break;
-		 case LUX_FILM_TORGB_Y_WHITE: {
-			 return d_RGB_Y_White;
-			} break;
-		 case LUX_FILM_TORGB_X_RED: {
-			 return d_RGB_X_Red;
-			} break;
-		 case LUX_FILM_TORGB_Y_RED: {
-			 return d_RGB_Y_Red;
-			} break;
-		 case LUX_FILM_TORGB_X_GREEN: {
-			 return d_RGB_X_Green;
-			} break;
-		 case LUX_FILM_TORGB_Y_GREEN: {
-			 return d_RGB_Y_Green;
-			} break;
-		 case LUX_FILM_TORGB_X_BLUE: {
-			 return d_RGB_X_Blue;
-			} break;
-		 case LUX_FILM_TORGB_Y_BLUE: {
-			 return d_RGB_Y_Blue;
-			} break;
-		 case LUX_FILM_TORGB_GAMMA: {
-			 return d_Gamma;
-			} break;
+		case LUX_FILM_TORGB_X_WHITE:
+			return d_RGB_X_White;
+			break;
+		case LUX_FILM_TORGB_Y_WHITE:
+			return d_RGB_Y_White;
+			break;
+		case LUX_FILM_TORGB_X_RED:
+			return d_RGB_X_Red;
+			break;
+		case LUX_FILM_TORGB_Y_RED:
+			return d_RGB_Y_Red;
+			break;
+		case LUX_FILM_TORGB_X_GREEN:
+			return d_RGB_X_Green;
+			break;
+		case LUX_FILM_TORGB_Y_GREEN:
+			return d_RGB_Y_Green;
+			break;
+		case LUX_FILM_TORGB_X_BLUE:
+			return d_RGB_X_Blue;
+			break;
+		case LUX_FILM_TORGB_Y_BLUE:
+			return d_RGB_Y_Blue;
+			break;
+		case LUX_FILM_TORGB_GAMMA:
+			return d_Gamma;
+			break;
+		case LUX_FILM_LG_ENABLE:
+			return true;
+			break;
+		case LUX_FILM_LG_SCALE:
+			return 1.f;
+			break;
+		case LUX_FILM_LG_SCALE_RED:
+			return 1.f;
+			break;
+		case LUX_FILM_LG_SCALE_GREEN:
+			return 1.f;
+			break;
+		case LUX_FILM_LG_SCALE_BLUE:
+			return 1.f;
+			break;
 
-		 default: {
-			} break;
+		default:
+			break;
 	 }
 	 return 0.;
 }
@@ -437,7 +494,8 @@ RGBColor FlexImageFilm::GetGroupRGBScale(u_int index) const
 }
 void FlexImageFilm::ComputeGroupScale(u_int index)
 {
-	bufferGroups[index].scale = colorSpace.ToXYZ(bufferGroups[index].rgbScale);
+	bufferGroups[index].scale = colorSpace.ToXYZ(bufferGroups[index].rgbScale) /
+		colorSpace.ToXYZ(RGBColor(1.f));
 	bufferGroups[index].scale *= bufferGroups[index].globalScale;
 }
 
