@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 21 2008)
+// C++ code generated with wxFormBuilder (version Apr 16 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -20,24 +20,24 @@
 #include <wx/stattext.h>
 #include <wx/toolbar.h>
 #include <wx/sizer.h>
+#include <wx/scrolwin.h>
 #include <wx/statbmp.h>
+#include <wx/choice.h>
+#include <wx/panel.h>
 #include <wx/checkbox.h>
 #include <wx/slider.h>
 #include <wx/textctrl.h>
-#include <wx/clrpicker.h>
-#include <wx/panel.h>
-#include <wx/notebook.h>
-#include <wx/scrolwin.h>
-#include <wx/choice.h>
 #include <wx/button.h>
 #include <wx/statline.h>
 #include <wx/aui/auibook.h>
+#include <wx/notebook.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
 #include <wx/checklst.h>
 #include <wx/dialog.h>
+#include <wx/clrpicker.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -65,73 +65,73 @@ namespace lux
 	#define ID_ZOOMTOOL 1019
 	#define ID_REFINETOOL 1020
 	#define ID_LIGHTGROUPS 1021
-	#define ID_LG_NAME 1022
-	#define ID_LG_ENABLE 1023
-	#define ID_LG_BASICPANEL 1024
-	#define ID_LG_SCALE 1025
-	#define ID_LG_SCALE_TEXT 1026
-	#define ID_LG_RGBCOLOR 1027
-	#define ID_LG_TEMPERATURE 1028
-	#define ID_LG_TEMPERATURE_TEXT 1029
-	#define ID_LG_ADVANCEDPANEL 1030
-	#define ID_TONEMAP 1031
-	#define ID_TONEMAPOPTIONSPANEL 1032
-	#define ID_TM_KERNELCHOICE 1033
-	#define ID_TONEMAPREINHARDOPTIONSPANEL 1034
-	#define ID_TM_REINHARD_AUTOYWA 1035
-	#define ID_TM_REINHARD_YWA 1036
-	#define ID_TM_REINHARD_YWA_TEXT 1037
-	#define ID_TM_REINHARD_PRESCALE 1038
-	#define ID_TM_REINHARD_PRESCALE_TEXT 1039
-	#define ID_TM_REINHARD_POSTSCALE 1040
-	#define ID_TM_REINHARD_POSTSCALE_TEXT 1041
-	#define ID_TM_REINHARD_BURN 1042
-	#define ID_TM_REINHARD_BURN_TEXT 1043
-	#define ID_TONEMAPLINEAROPTIONSPANEL 1044
-	#define ID_TM_LINEAR_SENSITIVITY 1045
-	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1046
-	#define ID_TM_LINEAR_EXPOSURE 1047
-	#define ID_TM_LINEAR_EXPOSURE_TEXT 1048
-	#define ID_TM_LINEAR_FSTOP 1049
-	#define ID_TM_LINEAR_FSTOP_TEXT 1050
-	#define ID_TM_LINEAR_GAMMA 1051
-	#define ID_TM_LINEAR_GAMMA_TEXT 1052
-	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1053
-	#define ID_TM_CONTRAST_YWA 1054
-	#define ID_TM_CONTRAST_YWA_TEXT 1055
-	#define ID_COLORSPACEOPTIONSPANEL 1056
-	#define ID_TORGB_COLORSPACECHOICE 1057
-	#define ID_TORGB_XWHITE 1058
-	#define ID_TORGB_XWHITE_TEXT 1059
-	#define ID_TORGB_YWHITE 1060
-	#define ID_TORGB_YWHITE_TEXT 1061
-	#define ID_TORGB_XRED 1062
-	#define ID_TORGB_XRED_TEXT 1063
-	#define ID_TORGB_YRED 1064
-	#define ID_TORGB_YRED_TEXT 1065
-	#define ID_TORGB_XGREEN 1066
-	#define ID_TORGB_XGREEN_TEXT 1067
-	#define ID_TORGB_YGREEN 1068
-	#define ID_TORGB_YGREEN_TEXT 1069
-	#define ID_TORGB_XBLUE 1070
-	#define ID_TORGB_XBLUE_TEXT 1071
-	#define ID_TORGB_YBLUE 1072
-	#define ID_TORGB_YBLUE_TEXT 1073
-	#define ID_GAMMAOPTIONSPANEL 1074
-	#define ID_TORGB_GAMMA 1075
-	#define ID_TORGB_GAMMA_TEXT 1076
-	#define ID_TM_RESET 1077
-	#define ID_AUTO_TONEMAP 1078
-	#define ID_TM_APPLY 1079
-	#define ID_SYSTEMOPTIONS 1080
-	#define ID_ADD_SERVER 1081
-	#define ID_REMOVE_SERVER 1082
-	#define ID_SERVER_UPDATE_INT 1083
-	#define ID_NETWORK_TREE 1084
-	#define ID_SYS_DISPLAY_INT 1085
-	#define ID_SYS_WRITE_INT 1086
-	#define ID_WRITE_OPTIONS 1087
-	#define ID_SYS_APPLY 1088
+	#define ID_TONEMAP 1022
+	#define ID_TONEMAPOPTIONSPANEL 1023
+	#define ID_TM_KERNELCHOICE 1024
+	#define ID_TONEMAPREINHARDOPTIONSPANEL 1025
+	#define ID_TM_REINHARD_AUTOYWA 1026
+	#define ID_TM_REINHARD_YWA 1027
+	#define ID_TM_REINHARD_YWA_TEXT 1028
+	#define ID_TM_REINHARD_PRESCALE 1029
+	#define ID_TM_REINHARD_PRESCALE_TEXT 1030
+	#define ID_TM_REINHARD_POSTSCALE 1031
+	#define ID_TM_REINHARD_POSTSCALE_TEXT 1032
+	#define ID_TM_REINHARD_BURN 1033
+	#define ID_TM_REINHARD_BURN_TEXT 1034
+	#define ID_TONEMAPLINEAROPTIONSPANEL 1035
+	#define ID_TM_LINEAR_SENSITIVITY 1036
+	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1037
+	#define ID_TM_LINEAR_EXPOSURE 1038
+	#define ID_TM_LINEAR_EXPOSURE_TEXT 1039
+	#define ID_TM_LINEAR_FSTOP 1040
+	#define ID_TM_LINEAR_FSTOP_TEXT 1041
+	#define ID_TM_LINEAR_GAMMA 1042
+	#define ID_TM_LINEAR_GAMMA_TEXT 1043
+	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1044
+	#define ID_TM_CONTRAST_YWA 1045
+	#define ID_TM_CONTRAST_YWA_TEXT 1046
+	#define ID_COLORSPACEOPTIONSPANEL 1047
+	#define ID_TORGB_COLORSPACECHOICE 1048
+	#define ID_TORGB_XWHITE 1049
+	#define ID_TORGB_XWHITE_TEXT 1050
+	#define ID_TORGB_YWHITE 1051
+	#define ID_TORGB_YWHITE_TEXT 1052
+	#define ID_TORGB_XRED 1053
+	#define ID_TORGB_XRED_TEXT 1054
+	#define ID_TORGB_YRED 1055
+	#define ID_TORGB_YRED_TEXT 1056
+	#define ID_TORGB_XGREEN 1057
+	#define ID_TORGB_XGREEN_TEXT 1058
+	#define ID_TORGB_YGREEN 1059
+	#define ID_TORGB_YGREEN_TEXT 1060
+	#define ID_TORGB_XBLUE 1061
+	#define ID_TORGB_XBLUE_TEXT 1062
+	#define ID_TORGB_YBLUE 1063
+	#define ID_TORGB_YBLUE_TEXT 1064
+	#define ID_GAMMAOPTIONSPANEL 1065
+	#define ID_TORGB_GAMMA 1066
+	#define ID_TORGB_GAMMA_TEXT 1067
+	#define ID_TM_RESET 1068
+	#define ID_AUTO_TONEMAP 1069
+	#define ID_TM_APPLY 1070
+	#define ID_SYSTEMOPTIONS 1071
+	#define ID_ADD_SERVER 1072
+	#define ID_REMOVE_SERVER 1073
+	#define ID_SERVER_UPDATE_INT 1074
+	#define ID_NETWORK_TREE 1075
+	#define ID_SYS_DISPLAY_INT 1076
+	#define ID_SYS_WRITE_INT 1077
+	#define ID_WRITE_OPTIONS 1078
+	#define ID_SYS_APPLY 1079
+	#define ID_LG_NAME 1080
+	#define ID_LG_ENABLE 1081
+	#define ID_LG_BASICPANEL 1082
+	#define ID_LG_SCALE 1083
+	#define ID_LG_SCALE_TEXT 1084
+	#define ID_LG_RGBCOLOR 1085
+	#define ID_LG_TEMPERATURE 1086
+	#define ID_LG_TEMPERATURE_TEXT 1087
+	#define ID_LG_ADVANCEDPANEL 1088
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -153,21 +153,7 @@ namespace lux
 			wxToolBar* m_viewerToolBar;
 			wxAuiNotebook* m_outputNotebook;
 			wxScrolledWindow* m_LightGroups;
-			wxPanel* m_LG_Panel0;
-			wxStaticBitmap* m_lightgroupBitmap;
-			wxStaticText* m_LG_nameLabel;
-			wxStaticText* m_LG_name;
-			wxCheckBox* m_LG_enableCheckbox;
-			wxNotebook* m_notebook4;
-			wxPanel* m_LG_basicPanel;
-			wxStaticText* m_LG_scaleLabel;
-			wxSlider* m_LG_scaleSlider;
-			wxTextCtrl* m_LG_scaleText;
-			wxStaticText* m_LG_rgbLabel;
-			wxColourPickerCtrl* m_LG_rgbPicker;
-			wxSlider* m_LG_temperatureSlider;
-			wxTextCtrl* m_LG_temperatureText;
-			wxPanel* m_LG_advancedPanel;
+			wxBoxSizer* m_LightGroupsSizer;
 			wxScrolledWindow* m_Tonemap;
 			wxPanel* m_TonemapOptionsPanel;
 			wxStaticBitmap* m_tonemapBitmap;
@@ -255,11 +241,9 @@ namespace lux
 			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnCheckBox( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnColourChanged( wxColourPickerEvent& event ){ event.Skip(); }
 			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
 			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
 			
@@ -298,6 +282,43 @@ namespace lux
 		public:
 			m_OptionsDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Luxrender Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxCLOSE_BOX );
 			~m_OptionsDialog();
+		
+	};
+	
+	///////////////////////////////////////////////////////////////////////////////
+	/// Class LightGroupPanel
+	///////////////////////////////////////////////////////////////////////////////
+	class LightGroupPanel : public wxPanel 
+	{
+		private:
+		
+		protected:
+			wxStaticBitmap* m_lightgroupBitmap;
+			wxStaticText* m_LG_nameLabel;
+			wxStaticText* m_LG_name;
+			wxCheckBox* m_LG_enableCheckbox;
+			wxNotebook* m_notebook4;
+			wxPanel* m_LG_basicPanel;
+			wxStaticText* m_LG_scaleLabel;
+			wxSlider* m_LG_scaleSlider;
+			wxTextCtrl* m_LG_scaleText;
+			wxStaticText* m_LG_rgbLabel;
+			wxColourPickerCtrl* m_LG_rgbPicker;
+			wxSlider* m_LG_temperatureSlider;
+			wxTextCtrl* m_LG_temperatureText;
+			wxPanel* m_LG_advancedPanel;
+			
+			// Virtual event handlers, overide them in your derived class
+			virtual void OnCheckBox( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
+			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
+			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnColourChanged( wxColourPickerEvent& event ){ event.Skip(); }
+			
+		
+		public:
+			LightGroupPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL );
+			~LightGroupPanel();
 		
 	};
 	

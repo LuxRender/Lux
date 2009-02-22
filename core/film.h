@@ -308,7 +308,7 @@ public:
     virtual void CreateBuffers() {
     }
     virtual u_int GetGroupsNumber() const = 0;
-    virtual vector<string> GetGroupsName() const = 0;
+    virtual string GetGroupName(u_int index) const = 0;
     virtual void SetGroupEnable(u_int index, bool status) = 0;
     virtual bool GetGroupEnable(u_int index) const = 0;
     virtual void SetGroupScale(u_int index, float value) = 0;
@@ -326,9 +326,10 @@ public:
     }
 
 	// Parameter Access functions
-	virtual void SetParameterValue(luxComponentParameters param, double value) = 0;
-	virtual double GetParameterValue(luxComponentParameters param) = 0;
-	virtual double GetDefaultParameterValue(luxComponentParameters param) = 0;
+	virtual void SetParameterValue(luxComponentParameters param, double value, int index) = 0;
+	virtual double GetParameterValue(luxComponentParameters param, int index) = 0;
+	virtual double GetDefaultParameterValue(luxComponentParameters param, int index) = 0;
+	virtual string GetStringParameterValue(luxComponentParameters param, int index) = 0;
 
     // Film Public Data
     int xResolution, yResolution;

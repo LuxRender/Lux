@@ -444,13 +444,7 @@ void Context::lightSource(const string &name, const ParamSet &params) {
 
 	TextureParams tp(params, graphicsState->materialParams,
 			graphicsState->floatTextures, graphicsState->colorTextures);
-	u_int lightGroup = 0;
-	for (;lightGroup < renderOptions->lightGroups.size(); ++lightGroup) {
-		if (graphicsState->currentLightGroup == renderOptions->lightGroups[lightGroup])
-			break;
-	}
-	if (lightGroup == renderOptions->lightGroups.size())
-		lightGroup = 0;
+	u_int lightGroup = GetActiveLightGroup();
 
 	if (name == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
@@ -634,13 +628,7 @@ void Context::shape(const string &name, const ParamSet &params) {
 	if (graphicsState->areaLight != "") {
 		TextureParams amp(params, graphicsState->areaLightParams,
 			graphicsState->floatTextures, graphicsState->colorTextures);
-		u_int lightGroup = 0;
-		for (;lightGroup < renderOptions->lightGroups.size(); ++lightGroup) {
-			if (graphicsState->currentLightGroup == renderOptions->lightGroups[lightGroup])
-				break;
-		}
-		if (lightGroup == renderOptions->lightGroups.size())
-			lightGroup = 0;
+		u_int lightGroup = GetActiveLightGroup();
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
 				graphicsState->areaLightParams, amp, shape);
 		if (area)
@@ -971,14 +959,48 @@ float* Context::hdrframebuffer() {
 }
 
 // Parameter Access functions
-void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value) { 
-	return luxCurrentScene->SetParameterValue(comp, param, value);
+void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
+	return luxCurrentScene->SetParameterValue(comp, param, value, index);
 }
-double Context::GetParameterValue(luxComponent comp, luxComponentParameters param) {
-	return luxCurrentScene->GetParameterValue(comp, param);
+double Context::GetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return luxCurrentScene->GetParameterValue(comp, param, index);
 }
-double Context::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
-	return luxCurrentScene->GetDefaultParameterValue(comp, param);
+double Context::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return luxCurrentScene->GetDefaultParameterValue(comp, param, index);
+}
+void Context::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index) { 
+	return luxCurrentScene->SetStringParameterValue(comp, param, value, index);
+}
+string Context::GetStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return luxCurrentScene->GetStringParameterValue(comp, param, index);
+}
+string Context::GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return luxCurrentScene->GetDefaultStringParameterValue(comp, param, index);
+}
+
+u_int Context::GetActiveLightGroup() {
+	if(graphicsState->currentLightGroup == "")
+		graphicsState->currentLightGroup = "default";
+	u_int lightGroup = 0;
+	for (;lightGroup < renderOptions->lightGroups.size(); ++lightGroup) {
+		if (graphicsState->currentLightGroup == renderOptions->lightGroups[lightGroup])
+			break;
+	}
+	if (lightGroup == renderOptions->lightGroups.size()) {
+		if(graphicsState->currentLightGroup == "default") {
+			renderOptions->lightGroups.push_back("default");
+			lightGroup = renderOptions->lightGroups.size() - 1;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Undefined lightgroup '" << graphicsState->currentLightGroup << "', ";
+			ss << "using 'default' instead";
+			luxError(LUX_BADFILE,LUX_ERROR, ss.str().c_str());
+			graphicsState->currentLightGroup == "";
+			lightGroup = getActiveLightGroup();
+		}
+	}
+	return lightGroup;
 }
 
 double Context::statistics(const string &statName) {

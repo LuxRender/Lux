@@ -139,7 +139,9 @@ enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 				LUX_FILM_TORGB_X_BLUE,
 				LUX_FILM_TORGB_Y_BLUE,
 				LUX_FILM_TORGB_GAMMA,
+				LUX_FILM_LG_COUNT,
 				LUX_FILM_LG_ENABLE,
+				LUX_FILM_LG_NAME,
 				LUX_FILM_LG_SCALE,
 				LUX_FILM_LG_SCALE_RED,
 				LUX_FILM_LG_SCALE_BLUE,
@@ -151,9 +153,13 @@ enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 };
 
 // Parameter Access functions
-void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value);
-double luxGetParameterValue(luxComponent comp, luxComponentParameters param);
-double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param);
+void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index = 0);
+double luxGetParameterValue(luxComponent comp, luxComponentParameters param, int index = 0);
+double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index = 0);
+void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
+// an 0-terminated string is copied to dst (a buffer of at least dstlen chars), the length of the entire string is returned
+int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, int dstlen, int index = 0);
+int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, int dstlen, int index = 0);
 
 
 /* Networking */

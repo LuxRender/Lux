@@ -58,7 +58,7 @@ public:
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
 	u_int GetGroupsNumber() const { return bufferGroups.size(); }
-	vector<string> GetGroupsName() const;
+	string GetGroupName(u_int index) const;
 	void SetGroupEnable(u_int index, bool status);
 	bool GetGroupEnable(u_int index) const;
 	void SetGroupScale(u_int index, float value);
@@ -85,9 +85,10 @@ public:
 	}
 
 	// Parameter Access functions
-	void SetParameterValue(luxComponentParameters param, double value);
-	double GetParameterValue(luxComponentParameters param);
-	double GetDefaultParameterValue(luxComponentParameters param);
+	void SetParameterValue(luxComponentParameters param, double value, int index);
+	double GetParameterValue(luxComponentParameters param, int index);
+	double GetDefaultParameterValue(luxComponentParameters param, int index);
+	string GetStringParameterValue(luxComponentParameters param, int index);
 
 	// Dade - method useful for transmitting the samples to a client
 	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true);

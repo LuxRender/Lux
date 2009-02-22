@@ -190,6 +190,13 @@ LuxGui::~LuxGui() {
 	delete m_statsTimer;
 	delete m_loadTimer;
 	delete m_netTimer;
+
+	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
+		LuxLightGroupPanel *currPanel = *it;
+		m_LightGroupsSizer->Remove(currPanel);
+		delete currPanel;
+	}
+	m_LightGroupPanels.clear();
 }
 
 void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
@@ -368,7 +375,6 @@ void LuxGui::LoadImages() {
 	m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
 
 	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(n_tonemap_png));
-	m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(n_lightgroup_png));
 	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(n_color_png));
 	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(n_gamma_png));
 
@@ -577,12 +583,21 @@ void LuxGui::ApplyTonemapping() {
 	}
 }
 
-void UpdateParam(luxComponent comp, luxComponentParameters param, double value) {
+void UpdateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0) {
 	if(luxStatistics("sceneIsReady")) {
 	// Update OpenGL viewer
 	// m_renderOutput->SetComponentParameter(comp, param, value);
 	// Update lux's film
-	luxSetParameterValue(comp, param, value);
+	luxSetParameterValue(comp, param, value, index);
+	}
+}
+
+void UpdateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0) {
+	if(luxStatistics("sceneIsReady")) {
+	// Update OpenGL viewer
+	// m_renderOutput->SetComponentParameter(comp, param, value);
+	// Update lux's film
+	luxSetStringParameterValue(comp, param, value, index);
 	}
 }
 
@@ -887,24 +902,6 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		// Light groups options
-		case ID_LG_SCALE_TEXT:
-			if (m_LG_scaleText->IsModified()) {
-				wxString st = m_LG_scaleText->GetValue();
-				st.ToDouble(&m_LG_scale);
-				if (m_LG_scale > LG_SCALE_RANGE)
-					m_LG_scale = LG_SCALE_RANGE;
-				else if (m_LG_scale < 0.f)
-					m_LG_scale = 0.f;
-				st = wxString::Format(_("%.02f"), m_LG_scale);
-				m_LG_scaleText->SetValue(st);
-				const int val = static_cast<int>(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
-				m_LG_scaleSlider->SetValue(val);
-				UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale);
-				if (m_auto_tonemap)
-					ApplyTonemapping();
-			}
-			break;
 		default:
 			break;
 	}
@@ -912,37 +909,10 @@ void LuxGui::OnText(wxCommandEvent& event) {
 
 void LuxGui::OnCheckBox(wxCommandEvent& event)
 {
-	if (event.GetEventType() != wxEVT_COMMAND_CHECKBOX_CLICKED)
-		return;
-
-	switch (event.GetId()) {
-		case ID_LG_ENABLE:
-			m_LG_enable = m_LG_enableCheckbox->GetValue();
-			UpdateParam(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable);
-			if (m_auto_tonemap)
-				ApplyTonemapping();
-			break;
-		default:
-			break;
-	}
 }
 
 void LuxGui::OnColourChanged(wxColourPickerEvent &event)
 {
-	switch (event.GetId()) {
-		case ID_LG_RGBCOLOR:
-			m_LG_scaleRed = event.GetColour().Red();
-			m_LG_scaleGreen = event.GetColour().Green();
-			m_LG_scaleBlue = event.GetColour().Blue();
-			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed / 255.);
-			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen / 255.);
-			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue / 255.);
-			if (m_auto_tonemap)
-				ApplyTonemapping();
-			break;
-		default:
-			break;
-	}
 }
 
 void LuxGui::OnScroll( wxScrollEvent& event ){
@@ -1107,17 +1077,6 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		// Light groups options
-		case ID_LG_SCALE:
-		{
-			m_LG_scale = event.GetPosition() * LG_SCALE_RANGE / FLOAT_SLIDER_RES;
-			wxString st = wxString::Format(_("%.02f"), m_LG_scale);
-			m_LG_scaleText->SetValue(st);
-			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale);
-			if (m_auto_tonemap)
-				ApplyTonemapping();
-			break;
-		}
 		default:
 			break;
 	}
@@ -1362,18 +1321,15 @@ void LuxGui::ResetToneMapping(){
 	m_TORGB_yblue = 0.07f;
 	m_TORGB_gamma = 2.2f;
 
-	m_LG_enable = true;
-	m_LG_scale = 1.f;
-	m_LG_temperature = 6500.f;
-	m_LG_scaleRed = 1.f;
-	m_LG_scaleGreen = 1.f;
-	m_LG_scaleBlue = 1.f;
-	m_LG_scaleX = 1.f;
-	m_LG_scaleY = 1.f;
+	ResetLightGroups();
 
 	UpdateTonemapWidgetValues();
 	m_outputNotebook->Enable( false );
 	Refresh();
+}
+
+void LuxGui::UpdatedTonemapParam() {
+	if(m_auto_tonemap) ApplyTonemapping();
 }
 
 void LuxGui::UpdateTonemapWidgetValues() {
@@ -1453,12 +1409,7 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_TORGB_gammaText->SetValue(st);
 
 	// Light groups widgets
-	m_LG_scaleSlider->SetValue(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
-	st = wxString::Format(_("%.02f"), m_LG_scale);
-	m_LG_scaleText->SetValue(st);
-	m_LG_temperatureSlider->SetValue(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
-	st = wxString::Format(_("%.02f"), m_LG_temperature);
-	m_LG_temperatureText->SetValue(st);
+	UpdateLightGroupWidgetValues();
 
 	Refresh();
 }
@@ -1488,12 +1439,6 @@ void LuxGui::ResetToneMappingFromFilm(){
 	m_TORGB_xblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE);
 	m_TORGB_yblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
 	m_TORGB_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
-	m_LG_enable = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE) != 0.f;
-	m_LG_scale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE);
-	m_LG_temperature = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_TEMPERATURE);
-	m_LG_scaleRed = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED);
-	m_LG_scaleGreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN);
-	m_LG_scaleBlue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL, m_TM_kernel);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA, m_TM_reinhard_autoywa);
@@ -1518,14 +1463,39 @@ void LuxGui::ResetToneMappingFromFilm(){
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue);
+
+	ResetLightGroupsFromFilm();
 
 	UpdateTonemapWidgetValues();
 	if(m_auto_tonemap) ApplyTonemapping();
+}
+
+void LuxGui::UpdateLightGroupWidgetValues() {
+	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
+		(*it)->UpdateWidgetValues();
+	}
+}
+void LuxGui::ResetLightGroups( void ) {
+	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
+		LuxLightGroupPanel *currPanel = *it;
+		m_LightGroupsSizer->Remove(currPanel);
+		delete currPanel;
+	}
+	m_LightGroupPanels.clear();
+	m_LightGroups->Layout();
+}
+void LuxGui::ResetLightGroupsFromFilm( void ) {
+	int numLightGroups = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
+	for(int i = 0; i < numLightGroups; i++) {
+		LuxLightGroupPanel *currPanel = new LuxLightGroupPanel(
+			this, m_LightGroups
+		);
+		currPanel->SetIndex(i);
+		currPanel->ResetValuesFromFilm();
+		m_LightGroupsSizer->Add(currPanel, 0, wxEXPAND | wxALL, 1);
+		m_LightGroupPanels.push_back(currPanel);
+	}
+	m_LightGroups->Layout();
 }
 
 void LuxGui::LuxOptions::OnMenu(wxCommandEvent& event) {
@@ -1558,6 +1528,168 @@ void LuxGui::LuxOptions::OnSpin( wxSpinEvent& event ) {
 		case ID_SYS_WRITE_INT:
 			m_WriteInterval = event.GetPosition();
 			break;
+		default:
+			break;
+	}
+}
+
+LuxGui::LuxLightGroupPanel::LuxLightGroupPanel(
+	LuxGui *gui,
+	wxWindow* parent, 
+	wxWindowID id, 
+	const wxPoint& pos, 
+	const wxSize& size, 
+	long style )
+	: LightGroupPanel(parent, id, pos, size, style), m_Gui(gui)
+{
+	m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(n_lightgroup_png));
+	m_Index = -1;
+}
+
+int LuxGui::LuxLightGroupPanel::GetIndex() const {
+	return m_Index;
+}
+
+void LuxGui::LuxLightGroupPanel::SetIndex( int index ) {
+	m_Index = index;
+}
+
+void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
+	wxString st;
+	m_LG_scaleSlider->SetValue(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
+	st = wxString::Format(_("%.02f"), m_LG_scale);
+	m_LG_scaleText->SetValue(st);
+	m_LG_temperatureSlider->SetValue(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
+	st = wxString::Format(_("%.02f"), m_LG_temperature);
+	m_LG_temperatureText->SetValue(st);
+}
+void LuxGui::LuxLightGroupPanel::ResetValues() {
+	m_LG_enable = true;
+	m_LG_scale = 1.f;
+	m_LG_temperature = 6500.f;
+	m_LG_scaleRed = 1.f;
+	m_LG_scaleGreen = 1.f;
+	m_LG_scaleBlue = 1.f;
+	m_LG_scaleX = 1.f;
+	m_LG_scaleY = 1.f;
+}
+void LuxGui::LuxLightGroupPanel::ResetValuesFromFilm() {
+	char tmpStr[256];
+	luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, &tmpStr[0], 256, m_Index);
+	m_LG_name->SetLabel(wxString::FromAscii(tmpStr));
+	m_LG_enable = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_Index) != 0.f;
+	m_LG_scale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_Index);
+	m_LG_temperature = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_Index);
+	m_LG_scaleRed = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_Index);
+	m_LG_scaleGreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_Index);
+	m_LG_scaleBlue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_Index);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed, m_Index);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen, m_Index);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue, m_Index);
+}
+
+void LuxGui::LuxLightGroupPanel::OnText(wxCommandEvent& event) {
+	if ( event.GetEventType() != wxEVT_COMMAND_TEXT_ENTER ) return;
+
+	switch(event.GetId()) {
+		case ID_LG_SCALE_TEXT:
+			if (m_LG_scaleText->IsModified()) {
+				wxString st = m_LG_scaleText->GetValue();
+				st.ToDouble(&m_LG_scale);
+				if (m_LG_scale > LG_SCALE_RANGE)
+					m_LG_scale = LG_SCALE_RANGE;
+				else if (m_LG_scale < 0.f)
+					m_LG_scale = 0.f;
+				st = wxString::Format(_("%.02f"), m_LG_scale);
+				m_LG_scaleText->SetValue(st);
+				const int val = static_cast<int>(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
+				m_LG_scaleSlider->SetValue(val);
+				UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
+				m_Gui->UpdatedTonemapParam();
+			}
+			break;
+		case ID_LG_TEMPERATURE_TEXT:
+			if (m_LG_temperatureText->IsModified()) {
+				wxString st = m_LG_temperatureText->GetValue();
+				st.ToDouble(&m_LG_temperature);
+				if (m_LG_temperature > LG_TEMPERATURE_RANGE)
+					m_LG_temperature = LG_TEMPERATURE_RANGE;
+				else if (m_LG_temperature < 0.f)
+					m_LG_temperature = 0.f;
+				st = wxString::Format(_("%.02f"), m_LG_temperature);
+				m_LG_temperatureText->SetValue(st);
+				const int val = static_cast<int>(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
+				m_LG_temperatureSlider->SetValue(val);
+				UpdateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_LG_temperature, m_Index);
+				m_Gui->UpdatedTonemapParam();
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void LuxGui::LuxLightGroupPanel::OnCheckBox(wxCommandEvent& event)
+{
+	if (event.GetEventType() != wxEVT_COMMAND_CHECKBOX_CLICKED)
+		return;
+
+	switch (event.GetId()) {
+		case ID_LG_ENABLE:
+			m_LG_enable = m_LG_enableCheckbox->GetValue();
+			m_LG_scaleSlider->Enable(m_LG_enable);
+			m_LG_scaleText->Enable(m_LG_enable);
+			m_LG_rgbPicker->Enable(m_LG_enable);
+			m_LG_temperatureSlider->Enable(m_LG_enable);
+			m_LG_temperatureText->Enable(m_LG_enable);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
+			m_Gui->UpdatedTonemapParam();
+			break;
+		default:
+			break;
+	}
+}
+
+void LuxGui::LuxLightGroupPanel::OnColourChanged(wxColourPickerEvent &event)
+{
+	switch (event.GetId()) {
+		case ID_LG_RGBCOLOR:
+			m_LG_scaleRed = event.GetColour().Red();
+			m_LG_scaleGreen = event.GetColour().Green();
+			m_LG_scaleBlue = event.GetColour().Blue();
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed / 255., m_Index);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen / 255., m_Index);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue / 255., m_Index);
+			m_Gui->UpdatedTonemapParam();
+			break;
+		default:
+			break;
+	}
+}
+
+void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
+	switch(event.GetId()) {
+		case ID_LG_SCALE:
+		{
+			m_LG_scale = event.GetPosition() * LG_SCALE_RANGE / FLOAT_SLIDER_RES;
+			wxString st = wxString::Format(_("%.02f"), m_LG_scale);
+			m_LG_scaleText->SetValue(st);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
+			m_Gui->UpdatedTonemapParam();
+			break;
+		}
+		case ID_LG_TEMPERATURE:
+		{
+			m_LG_temperature = event.GetPosition() * LG_TEMPERATURE_RANGE / FLOAT_SLIDER_RES;
+			wxString st = wxString::Format(_("%.02f"), m_LG_temperature);
+			m_LG_temperatureText->SetValue(st);
+			UpdateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_LG_temperature, m_Index);
+			m_Gui->UpdatedTonemapParam();
+			break;
+		}
 		default:
 			break;
 	}

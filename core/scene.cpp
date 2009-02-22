@@ -107,21 +107,32 @@ float* Scene::GetHDRFramebuffer() {
 
 
 // Parameter Access functions
-void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value) { 
+void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
 	if(comp == LUX_FILM)
-		camera->film->SetParameterValue(param, value);
+		camera->film->SetParameterValue(param, value, index);
 }
-double Scene::GetParameterValue(luxComponent comp, luxComponentParameters param) {
+double Scene::GetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
 	if(comp == LUX_FILM)
-		return camera->film->GetParameterValue(param);
+		return camera->film->GetParameterValue(param, index);
 	else
 		return 0.;
 }
-double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
+double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index) {
 	if(comp == LUX_FILM)
-		return camera->film->GetDefaultParameterValue(param);
+		return camera->film->GetDefaultParameterValue(param, index);
 	else
 		return 0.;
+}
+void Scene::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index) { 
+}
+string Scene::GetStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	if(comp == LUX_FILM)
+		return camera->film->GetStringParameterValue(param, index);
+	else
+		return "";
+}
+string Scene::GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return "";
 }
 
 int Scene::DisplayInterval() {

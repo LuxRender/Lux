@@ -129,7 +129,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 }
 
 // Parameter Access functions
-void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value)
+void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value, int index)
 {
 	 switch (param) {
 		case LUX_FILM_TM_TONEMAPKERNEL:
@@ -196,28 +196,29 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 		case LUX_FILM_TORGB_GAMMA:
 			m_Gamma = value;
 			break;
+
 		case LUX_FILM_LG_SCALE:
-			SetGroupScale(0, value);
+			SetGroupScale(index, value);
 			break;
 		case LUX_FILM_LG_ENABLE:
-			SetGroupEnable(0, value != 0.f);
+			SetGroupEnable(index, value != 0.f);
 			break;
 		case LUX_FILM_LG_SCALE_RED: {
-			RGBColor color(GetGroupRGBScale(0));
+			RGBColor color(GetGroupRGBScale(index));
 			color.c[0] = value;
-			SetGroupRGBScale(0, color);
+			SetGroupRGBScale(index, color);
 			break;
 		}
 		case LUX_FILM_LG_SCALE_GREEN: {
-			RGBColor color(GetGroupRGBScale(0));
+			RGBColor color(GetGroupRGBScale(index));
 			color.c[1] = value;
-			SetGroupRGBScale(0, color);
+			SetGroupRGBScale(index, color);
 			break;
 		}
 		case LUX_FILM_LG_SCALE_BLUE: {
-			RGBColor color(GetGroupRGBScale(0));
+			RGBColor color(GetGroupRGBScale(index));
 			color.c[2] = value;
-			SetGroupRGBScale(0, color);
+			SetGroupRGBScale(index, color);
 			break;
 		}
 
@@ -225,7 +226,7 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 	 }
 }
-double FlexImageFilm::GetParameterValue(luxComponentParameters param)
+double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 {
 	 switch (param) {
 		case LUX_FILM_TM_TONEMAPKERNEL:
@@ -292,20 +293,24 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param)
 		case LUX_FILM_TORGB_GAMMA:
 			return m_Gamma;
 			break;
+
+		case LUX_FILM_LG_COUNT:
+			return GetGroupsNumber();
+			break;
 		case LUX_FILM_LG_ENABLE:
-			return GetGroupEnable(0);
+			return GetGroupEnable(index);
 			break;
 		case LUX_FILM_LG_SCALE:
-			return GetGroupScale(0);
+			return GetGroupScale(index);
 			break;
 		case LUX_FILM_LG_SCALE_RED:
-			return GetGroupRGBScale(0).c[0];
+			return GetGroupRGBScale(index).c[0];
 			break;
 		case LUX_FILM_LG_SCALE_GREEN:
-			return GetGroupRGBScale(0).c[1];
+			return GetGroupRGBScale(index).c[1];
 			break;
 		case LUX_FILM_LG_SCALE_BLUE:
-			return GetGroupRGBScale(0).c[2];
+			return GetGroupRGBScale(index).c[2];
 			break;
 
 		default:
@@ -313,7 +318,7 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param)
 	 }
 	 return 0.;
 }
-double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param)
+double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int index)
 {
 	 switch (param) {
 		case LUX_FILM_TM_TONEMAPKERNEL:
@@ -380,6 +385,7 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param)
 		case LUX_FILM_TORGB_GAMMA:
 			return d_Gamma;
 			break;
+
 		case LUX_FILM_LG_ENABLE:
 			return true;
 			break;
@@ -400,6 +406,16 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param)
 			break;
 	 }
 	 return 0.;
+}
+
+string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, int index) {
+	switch(param) {
+		case LUX_FILM_LG_NAME:
+			return GetGroupName(index);
+		default:
+			break;
+	}
+	return "";
 }
 
 void FlexImageFilm::GetSampleExtent(int *xstart, int *xend,
@@ -447,12 +463,11 @@ void FlexImageFilm::CreateBuffers()
     }
 }
 
-vector<string> FlexImageFilm::GetGroupsName() const
+string FlexImageFilm::GetGroupName(u_int index) const
 {
-	vector<string> names;
-	for (u_int i = 0; i < bufferGroups.size(); ++i)
-		names.push_back(bufferGroups[i].name);
-	return names;
+	if (index >= bufferGroups.size())
+		return "";
+	return bufferGroups[index].name;
 }
 void FlexImageFilm::SetGroupEnable(u_int index, bool status)
 {

@@ -66,15 +66,8 @@ public:
 	static map<string, boost::shared_ptr<Texture<SWCSpectrum> > > *getActiveSWCSpectrumTextures() {
 		return &(activeContext->graphicsState->colorTextures);
 	}
-	static int getActiveLightGroup() {
-		u_int lightGroup = 0;
-		for (;lightGroup < activeContext->renderOptions->lightGroups.size(); ++lightGroup) {
-			if (activeContext->graphicsState->currentLightGroup == activeContext->renderOptions->lightGroups[lightGroup])
-				break;
-		}
-		if (lightGroup == activeContext->renderOptions->lightGroups.size())
-			lightGroup = 0;
-		return lightGroup;
+	static u_int getActiveLightGroup() {
+		return activeContext->GetActiveLightGroup();
 	}
 
 	//'static' API
@@ -153,14 +146,23 @@ public:
 	static float* luxHDRFramebuffer() { return activeContext->hdrframebuffer(); }
 
 	// Parameter Access functions
-	static void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value) { 
-		activeContext->SetParameterValue(comp, param, value);
+	static void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
+		activeContext->SetParameterValue(comp, param, value, index);
 	}
-	static double luxGetParameterValue(luxComponent comp, luxComponentParameters param) {
-		return activeContext->GetParameterValue(comp, param);
+	static double luxGetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+		return activeContext->GetParameterValue(comp, param, index);
 	}
-	static double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
-		return activeContext->GetDefaultParameterValue(comp, param);
+	static double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+		return activeContext->GetDefaultParameterValue(comp, param, index);
+	}
+	static void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index) { 
+		activeContext->SetStringParameterValue(comp, param, value, index);
+	}
+	static string luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+		return activeContext->GetStringParameterValue(comp, param, index);
+	}
+	static string luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+		return activeContext->GetDefaultStringParameterValue(comp, param, index);
 	}
 
 	//film access (networking)
@@ -258,10 +260,14 @@ private:
 	float* hdrframebuffer();
 
 	// Parameter Access functions
-	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value);
-	double GetParameterValue(luxComponent comp, luxComponentParameters param);
-	double GetDefaultParameterValue(luxComponent comp, luxComponentParameters param);
+	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index);
+	double GetParameterValue(luxComponent comp, luxComponentParameters param, int index);
+	double GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index);
+	void SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index);
+	string GetStringParameterValue(luxComponent comp, luxComponentParameters param, int index);
+	string GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index);
 
+	u_int GetActiveLightGroup();
 	/*
 	int displayInterval();
 	int filmXres();
@@ -298,7 +304,6 @@ private:
 			currentInstance = NULL;
 			debugMode = false;
 			randomMode = true;
-			lightGroups = vector<string>(1, "default");
 		}
 
 		Scene *MakeScene() const;
@@ -340,6 +345,7 @@ private:
 		GraphicsState() {
 			// GraphicsState Constructor Implementation
 			material = "";
+			currentLightGroup = "";
 			reverseOrientation = false;
 		}
 		// Graphics State

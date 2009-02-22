@@ -26,6 +26,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 #include <string>
+#include <vector>
 
 #include <wx/scrolwin.h>
 #include <wx/progdlg.h>
@@ -194,9 +195,14 @@ protected:
 
 	void OnTreeSelChanged( wxTreeEvent& event );
 	
+	void UpdatedTonemapParam();
 	void UpdateTonemapWidgetValues( void );
 	void ResetToneMapping( void );
 	void ResetToneMappingFromFilm( void );
+
+	void UpdateLightGroupWidgetValues( void );
+	void ResetLightGroups( void );
+	void ResetLightGroupsFromFilm( void );
 
 	void SetColorSpacePreset(int choice);
 	void SetTonemapKernel(int choice);
@@ -225,12 +231,6 @@ protected:
 	double m_TORGB_xblue, m_TORGB_yblue;
 
 	double m_TORGB_gamma;
-
-	bool m_LG_enable;
-	double m_LG_scale;
-	double m_LG_temperature;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
 
 	class LuxOptions : public m_OptionsDialog {
 		public:
@@ -262,6 +262,42 @@ protected:
 	};
 
 	LuxOptions *m_LuxOptions;
+
+	// Lightgroups
+
+	class LuxLightGroupPanel : public LightGroupPanel {
+	public:
+		LuxLightGroupPanel( 
+			LuxGui* gui,
+			wxWindow* parent, wxWindowID id = wxID_ANY, 
+			const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), 
+			long style = wxTAB_TRAVERSAL );
+
+		void SetIndex( int index );
+		int GetIndex() const;
+		
+		void UpdateWidgetValues();
+		void ResetValues();
+		void ResetValuesFromFilm();
+
+	protected:
+		void OnText(wxCommandEvent& event);
+		void OnCheckBox(wxCommandEvent &event);
+		void OnColourChanged(wxColourPickerEvent &event);
+		void OnScroll(wxScrollEvent& event);
+
+	private:
+		LuxGui* const m_Gui;
+		int m_Index;
+
+		bool m_LG_enable;
+		double m_LG_scale;
+		double m_LG_temperature;
+		double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
+		double m_LG_scaleX, m_LG_scaleY;
+	};
+
+	std::vector<LuxLightGroupPanel*> m_LightGroupPanels;
 };
 
 

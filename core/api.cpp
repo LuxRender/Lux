@@ -503,14 +503,32 @@ extern "C" float* luxHDRFramebuffer() {
 }
 
 // Parameter Access functions
-extern "C" void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value) {
-	return Context::luxSetParameterValue(comp, param, value);
+extern "C" void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) {
+	return Context::luxSetParameterValue(comp, param, value, index);
 }
-extern "C" double luxGetParameterValue(luxComponent comp, luxComponentParameters param) {
-	return Context::luxGetParameterValue(comp, param);
+extern "C" double luxGetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return Context::luxGetParameterValue(comp, param, index);
 }
-extern "C" double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param) {
-	return Context::luxGetDefaultParameterValue(comp, param);
+extern "C" double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+	return Context::luxGetDefaultParameterValue(comp, param, index);
+}
+
+extern "C" void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, int index) {
+	return Context::luxSetStringParameterValue(comp, param, value, index);
+}
+extern "C" int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, int dstlen, int index) {
+	const string str = Context::luxGetStringParameterValue(comp, param, index);
+	int nToCopy = int(str.length()) < dstlen - 1 ? int(str.length()) : dstlen - 1;
+	strncpy(dst, str.c_str(), nToCopy); 
+	dst[nToCopy] = '\0';
+	return str.length();
+}
+extern "C" int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, int dstlen, int index) {
+	const string str = Context::luxGetDefaultStringParameterValue(comp, param, index);
+	int nToCopy = int(str.length()) < dstlen - 1 ? int(str.length()) : dstlen - 1;
+	strncpy(dst, str.c_str(), nToCopy); 
+	dst[nToCopy] = '\0';
+	return str.length();
 }
 
 extern "C" double luxStatistics(const char *statName) {
