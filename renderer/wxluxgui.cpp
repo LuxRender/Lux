@@ -193,7 +193,7 @@ LuxGui::~LuxGui() {
 
 	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
 		LuxLightGroupPanel *currPanel = *it;
-		m_LightGroupsSizer->Remove(currPanel);
+		m_LightGroupsSizer->Detach(currPanel);
 		delete currPanel;
 	}
 	m_LightGroupPanels.clear();
@@ -1478,7 +1478,7 @@ void LuxGui::UpdateLightGroupWidgetValues() {
 void LuxGui::ResetLightGroups( void ) {
 	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
 		LuxLightGroupPanel *currPanel = *it;
-		m_LightGroupsSizer->Remove(currPanel);
+		m_LightGroupsSizer->Detach(currPanel);
 		delete currPanel;
 	}
 	m_LightGroupPanels.clear();
