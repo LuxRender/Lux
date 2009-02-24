@@ -160,6 +160,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	ResetToneMapping();
 	m_auto_tonemap = true;
+	ResetLightGroups();
 
 	wxTextValidator vt( wxFILTER_NUMERIC );
 
@@ -1321,8 +1322,6 @@ void LuxGui::ResetToneMapping(){
 	m_TORGB_yblue = 0.07f;
 	m_TORGB_gamma = 2.2f;
 
-	ResetLightGroups();
-
 	UpdateTonemapWidgetValues();
 	m_outputNotebook->Enable( false );
 	Refresh();
@@ -1408,9 +1407,6 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	st = wxString::Format( _("%.02f"), m_TORGB_gamma );
 	m_TORGB_gammaText->SetValue(st);
 
-	// Light groups widgets
-	UpdateLightGroupWidgetValues();
-
 	Refresh();
 }
 
@@ -1464,8 +1460,6 @@ void LuxGui::ResetToneMappingFromFilm(){
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
 
-	ResetLightGroupsFromFilm();
-
 	UpdateTonemapWidgetValues();
 	if(m_auto_tonemap) ApplyTonemapping();
 }
@@ -1474,17 +1468,35 @@ void LuxGui::UpdateLightGroupWidgetValues() {
 	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
 		(*it)->UpdateWidgetValues();
 	}
+	Refresh();
 }
 void LuxGui::ResetLightGroups( void ) {
+	if(luxStatistics("sceneIsReady")) {
+		ResetLightGroupsFromFilm();
+		return;
+	}
+
+	// Remove the lightgroups
 	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
 		LuxLightGroupPanel *currPanel = *it;
 		m_LightGroupsSizer->Detach(currPanel);
 		delete currPanel;
 	}
 	m_LightGroupPanels.clear();
+
+	// Update
 	m_LightGroups->Layout();
 }
 void LuxGui::ResetLightGroupsFromFilm( void ) {
+	// Remove the old lightgroups
+	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
+		LuxLightGroupPanel *currPanel = *it;
+		m_LightGroupsSizer->Detach(currPanel);
+		delete currPanel;
+	}
+	m_LightGroupPanels.clear();
+
+	// Add the new lightgroups
 	int numLightGroups = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 	for(int i = 0; i < numLightGroups; i++) {
 		LuxLightGroupPanel *currPanel = new LuxLightGroupPanel(
@@ -1495,6 +1507,9 @@ void LuxGui::ResetLightGroupsFromFilm( void ) {
 		m_LightGroupsSizer->Add(currPanel, 0, wxEXPAND | wxALL, 1);
 		m_LightGroupPanels.push_back(currPanel);
 	}
+
+	// Update
+	UpdateLightGroupWidgetValues();
 	m_LightGroups->Layout();
 }
 
@@ -1915,6 +1930,7 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					// Enable tonemapping options and reset from values trough API
 					m_outputNotebook->Enable( true );
 					ResetToneMapping();
+					ResetLightGroups();
 					Refresh();
 				}
 			}
