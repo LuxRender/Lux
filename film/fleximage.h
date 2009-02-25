@@ -150,6 +150,10 @@ private:
 	float m_RGB_X_Blue, d_RGB_X_Blue;
 	float m_RGB_Y_Blue, d_RGB_Y_Blue;
 	float m_Gamma, d_Gamma;
+
+	Color * m_bloomImage; // Persisting bloom layer image 
+	bool m_BloomUpdateLayer;
+	bool m_HaveBloomImage;
 	float m_BloomRadius, d_BloomRadius;
 	float m_BloomWeight, d_BloomWeight;
 

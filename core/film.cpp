@@ -33,58 +33,69 @@ namespace lux
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(vector<Color> &pixels,
 	int xResolution, int yResolution, ColorSystem &colorSpace,
-	float bloomRadius, float bloomWeight,
+	bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
 	const char *toneMapName, const ParamSet *toneMapParams,
 	float gamma, float dither)
 {
 	const int nPix = xResolution * yResolution ;
 	// Possibly apply bloom effect to image
 	if (bloomRadius > 0.f && bloomWeight > 0.f) {
-		// Compute image-space extent of bloom effect
-		const int bloomSupport = Float2Int(bloomRadius *
-			max(xResolution, yResolution));
-		const int bloomWidth = bloomSupport / 2;
-		// Initialize bloom filter table
-		vector<float> bloomFilter(bloomWidth * bloomWidth);
-		for (int i = 0; i < bloomWidth * bloomWidth; ++i) {
-			float dist = sqrtf(float(i)) / float(bloomWidth);
-			bloomFilter[i] = powf(max(0.f, 1.f - dist), 4.f);
-		}
-		// Apply bloom filter to image pixels
-		vector<Color> bloomImage(nPix);
-		ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK
-		for (int y = 0; y < yResolution; ++y) {
-			for (int x = 0; x < xResolution; ++x) {
-				// Compute bloom for pixel _(x,y)_
-				// Compute extent of pixels contributing bloom
-				int x0 = max(0, x - bloomWidth);
-				int x1 = min(x + bloomWidth, xResolution - 1);
-				int y0 = max(0, y - bloomWidth);
-				int y1 = min(y + bloomWidth, yResolution - 1);
-				int offset = y * xResolution + x;
-				float sumWt = 0.;
-				for (int by = y0; by <= y1; ++by) {
-					for (int bx = x0; bx <= x1; ++bx) {
-						// Accumulate bloom from pixel $(bx,by)$
-						int dx = x - bx, dy = y - by;
-						if (dx == 0 && dy == 0) continue;
-						int dist2 = dx*dx + dy*dy;
-						if (dist2 < bloomWidth * bloomWidth) {
-							int bloomOffset = bx + by * xResolution;
-							float wt = bloomFilter[dist2];
-							sumWt += wt;
-							bloomImage[offset].AddWeighted(wt, pixels[bloomOffset]);
+		if(bloomUpdate) {
+			// Compute image-space extent of bloom effect
+			const int bloomSupport = Float2Int(bloomRadius *
+				max(xResolution, yResolution));
+			const int bloomWidth = bloomSupport / 2;
+			// Initialize bloom filter table
+			vector<float> bloomFilter(bloomWidth * bloomWidth);
+			for (int i = 0; i < bloomWidth * bloomWidth; ++i) {
+				float dist = sqrtf(float(i)) / float(bloomWidth);
+				bloomFilter[i] = powf(max(0.f, 1.f - dist), 4.f);
+			}
+
+			// Allocate persisting bloom image layer if unallocated
+			if(!haveBloomImage) {
+				bloomImage = new Color[nPix];
+				haveBloomImage = true;
+			}
+
+			// Apply bloom filter to image pixels
+//			vector<Color> bloomImage(nPix);
+			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK
+			for (int y = 0; y < yResolution; ++y) {
+				for (int x = 0; x < xResolution; ++x) {
+					// Compute bloom for pixel _(x,y)_
+					// Compute extent of pixels contributing bloom
+					int x0 = max(0, x - bloomWidth);
+					int x1 = min(x + bloomWidth, xResolution - 1);
+					int y0 = max(0, y - bloomWidth);
+					int y1 = min(y + bloomWidth, yResolution - 1);
+					int offset = y * xResolution + x;
+					float sumWt = 0.;
+					for (int by = y0; by <= y1; ++by) {
+						for (int bx = x0; bx <= x1; ++bx) {
+							// Accumulate bloom from pixel $(bx,by)$
+							int dx = x - bx, dy = y - by;
+							if (dx == 0 && dy == 0) continue;
+							int dist2 = dx*dx + dy*dy;
+							if (dist2 < bloomWidth * bloomWidth) {
+								int bloomOffset = bx + by * xResolution;
+								float wt = bloomFilter[dist2];
+								sumWt += wt;
+								bloomImage[offset].AddWeighted(wt, pixels[bloomOffset]);
+							}
 						}
 					}
+					bloomImage[offset] /= sumWt;
 				}
-				bloomImage[offset] /= sumWt;
+				prog.Update(); //NOBOOK
 			}
-			prog.Update(); //NOBOOK
+			prog.Done(); //NOBOOK
 		}
-		prog.Done(); //NOBOOK
+
 		// Mix bloom effect into each pixel
-		for (int i = 0; i < nPix; ++i)
-			pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
+		if(haveBloomImage && bloomImage != NULL)
+			for (int i = 0; i < nPix; ++i)
+				pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
 	}
 	// Apply tone reproduction to image
 	if (toneMapName) {

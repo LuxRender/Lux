@@ -382,6 +382,23 @@ void LuxGui::LoadImages() {
 	m_splashbmp = wxMEMORY_BITMAP(splash_png);
 }
 
+void UpdateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0) {
+	if(luxStatistics("sceneIsReady")) {
+	// Update OpenGL viewer
+	// m_renderOutput->SetComponentParameter(comp, param, value);
+	// Update lux's film
+	luxSetParameterValue(comp, param, value, index);
+	}
+}
+
+void UpdateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0) {
+	if(luxStatistics("sceneIsReady")) {
+	// Update OpenGL viewer
+	// m_renderOutput->SetComponentParameter(comp, param, value);
+	// Update lux's film
+	luxSetStringParameterValue(comp, param, value, index);
+	}
+}
 
 void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
@@ -557,36 +574,30 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				SetColorSpacePreset(choice);
 			}
 			break;
+		case ID_COMPUTEBLOOMLAYER:
+			{
+				// Signal film to update bloom layer at next tonemap
+				UpdateParam(LUX_FILM, LUX_FILM_UPDATEBLOOMLAYER, 1.0f);
+				ApplyTonemapping(true);
+			}
+			break;
 		default:
 			break;
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LuxGui::ApplyTonemapping() {
+void LuxGui::ApplyTonemapping(bool withbloomcomputation) {
 	if(m_updateThread == NULL && luxStatistics("sceneIsReady") &&
     (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
-		luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
-		m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
+		if(!withbloomcomputation) {
+			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
+			m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
+		} else {
+			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer/Computing Bloom Layer...");
+			m_statusBar->SetStatusText(wxT("Computing Bloom Layer & Tonemapping..."), 0);
+		}
 		m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
-	}
-}
-
-void UpdateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0) {
-	if(luxStatistics("sceneIsReady")) {
-	// Update OpenGL viewer
-	// m_renderOutput->SetComponentParameter(comp, param, value);
-	// Update lux's film
-	luxSetParameterValue(comp, param, value, index);
-	}
-}
-
-void UpdateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0) {
-	if(luxStatistics("sceneIsReady")) {
-	// Update OpenGL viewer
-	// m_renderOutput->SetComponentParameter(comp, param, value);
-	// Update lux's film
-	luxSetStringParameterValue(comp, param, value, index);
 	}
 }
 

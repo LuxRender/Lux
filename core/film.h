@@ -346,8 +346,8 @@ protected:
 
 // Image Pipeline Declarations
 extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution,
-        ColorSystem &colorSpace, float bloomRadius = .2f,
-        float bloomWeight = 0.f, const char *tonemap = NULL,
+        ColorSystem &colorSpace, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
+		float bloomRadius = .2f, float bloomWeight = 0.f, const char *tonemap = NULL,
         const ParamSet *toneMapParams = NULL, float gamma = 2.2,
         float dither = 0.5f);
 

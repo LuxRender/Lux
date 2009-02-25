@@ -968,6 +968,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TORGB_bloomradiusText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_bloomradiusText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_bloomradiusText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_computebloomlayer->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1245,6 +1246,7 @@ LuxMainFrame::~LuxMainFrame()
 	m_TORGB_bloomradiusText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_bloomradiusText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_bloomradiusText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_computebloomlayer->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );

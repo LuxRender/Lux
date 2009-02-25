@@ -150,7 +150,7 @@ protected:
 	int m_numThreads;
 
 	void UpdateStatistics();
-	void ApplyTonemapping();
+	void ApplyTonemapping(bool withbloomcomputation = false);
 
 	boost::thread *m_engineThread, *m_updateThread;
 	bool m_opengl;

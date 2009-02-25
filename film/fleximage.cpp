@@ -105,6 +105,8 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_RGB_Y_Blue = d_RGB_Y_Blue = cs_blue[1];
 	m_Gamma = d_Gamma = p_Gamma;
 
+	m_BloomUpdateLayer = false;
+	m_HaveBloomImage = false;
 	m_BloomRadius = d_BloomRadius = 0.07f;
 	m_BloomWeight = d_BloomWeight = 0.25f;
 
@@ -199,10 +201,16 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 		case LUX_FILM_TORGB_GAMMA:
 			m_Gamma = value;
 			break;
-		 case LUX_FILM_BLOOMRADIUS:
+		case LUX_FILM_UPDATEBLOOMLAYER:
+			if(value != 0.f)
+				m_BloomUpdateLayer = true;
+			else
+				m_BloomUpdateLayer = false;
+			break;
+		case LUX_FILM_BLOOMRADIUS:
 			 m_BloomRadius = value;
 			break;
-		 case LUX_FILM_BLOOMWEIGHT:
+		case LUX_FILM_BLOOMWEIGHT:
 			 m_BloomWeight = value;
 			break;
 		case LUX_FILM_LG_SCALE:
@@ -671,7 +679,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			toneParams.AddFloat("prescale", &m_ReinhardPreScale, 1);
 			toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
 			toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 				m_BloomRadius, m_BloomWeight, "reinhard", &toneParams, m_Gamma, 0.);
 		} else if(m_TonemapKernel == 1) {
 			// Linear Tonemapper
@@ -679,18 +687,21 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			toneParams.AddFloat("exposure", &m_LinearExposure, 1);
 			toneParams.AddFloat("fstop", &m_LinearFStop, 1);
 			toneParams.AddFloat("gamma", &m_LinearGamma, 1);
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 				m_BloomRadius, m_BloomWeight, "linear", &toneParams, m_Gamma, 0.);
 		} else if(m_TonemapKernel == 2) {
 			// Contrast Tonemapper
 			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 				m_BloomRadius, m_BloomWeight, "contrast", &toneParams, m_Gamma, 0.);
 		} else {
 			// MaxWhite Tonemapper
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
+			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 				m_BloomRadius, m_BloomWeight, "maxwhite", &toneParams, m_Gamma, 0.);
 		}
+
+		// Disable further bloom layer updates if used.
+		m_BloomUpdateLayer = false;
 
 		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 			// Copy to framebuffer pixels

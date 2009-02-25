@@ -70,7 +70,7 @@
             <event name="OnSetFocus"></event>
             <event name="OnSize"></event>
             <event name="OnUpdateUI"></event>
-            <object class="wxMenuBar" expanded="1">
+            <object class="wxMenuBar" expanded="0">
                 <property name="bg"></property>
                 <property name="context_help"></property>
                 <property name="enabled">1</property>
@@ -357,7 +357,7 @@
                     </object>
                 </object>
             </object>
-            <object class="wxBoxSizer" expanded="1">
+            <object class="wxBoxSizer" expanded="0">
                 <property name="minimum_size"></property>
                 <property name="name">bSizer</property>
                 <property name="orient">wxVERTICAL</property>
@@ -3381,7 +3381,7 @@
                                                                                             <property name="window_extra_style"></property>
                                                                                             <property name="window_name"></property>
                                                                                             <property name="window_style"></property>
-                                                                                            <event name="OnButtonClick"></event>
+                                                                                            <event name="OnButtonClick">OnMenu</event>
                                                                                             <event name="OnChar"></event>
                                                                                             <event name="OnEnterWindow"></event>
                                                                                             <event name="OnEraseBackground"></event>
