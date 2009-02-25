@@ -96,16 +96,6 @@ unsigned char* Scene::GetFramebuffer() {
     return camera->film->getFrameBuffer();
 }
 
-// HDR Framebuffer Access for GUI
-void Scene::UpdateHDRFramebuffer() {
-    camera->film->updateHDRFrameBuffer();
-}
-
-float* Scene::GetHDRFramebuffer() {
-    return camera->film->getHDRFrameBuffer();
-}
-
-
 // Parameter Access functions
 void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
 	if(comp == LUX_FILM)

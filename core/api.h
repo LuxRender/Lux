@@ -108,9 +108,7 @@ int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
 
 /* Framebuffer access */
 void luxUpdateFramebuffer();
-void luxUpdateHDRFramebuffer();
 unsigned char* luxFramebuffer();
-float* luxHDRFramebuffer();
 
 
 /* Parameter access */
@@ -139,6 +137,8 @@ enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 				LUX_FILM_TORGB_X_BLUE,
 				LUX_FILM_TORGB_Y_BLUE,
 				LUX_FILM_TORGB_GAMMA,
+				LUX_FILM_BLOOMRADIUS,
+				LUX_FILM_BLOOMWEIGHT,
 				LUX_FILM_LG_COUNT,
 				LUX_FILM_LG_ENABLE,
 				LUX_FILM_LG_NAME,

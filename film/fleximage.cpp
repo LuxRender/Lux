@@ -69,7 +69,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	filename(filename1), premultiplyAlpha(premult), buffersInited(false),
 	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
 	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	framebuffer(NULL), hdrframebuffer(NULL), debug_mode(debugmode),
+	framebuffer(NULL), debug_mode(debugmode),
 	colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f)
 {
 	// Compute film image extent
@@ -104,6 +104,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_RGB_X_Blue = d_RGB_X_Blue = cs_blue[0];
 	m_RGB_Y_Blue = d_RGB_Y_Blue = cs_blue[1];
 	m_Gamma = d_Gamma = p_Gamma;
+
+	m_BloomRadius = d_BloomRadius = 0.07f;
+	m_BloomWeight = d_BloomWeight = 0.25f;
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
@@ -196,7 +199,12 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 		case LUX_FILM_TORGB_GAMMA:
 			m_Gamma = value;
 			break;
-
+		 case LUX_FILM_BLOOMRADIUS:
+			 m_BloomRadius = value;
+			break;
+		 case LUX_FILM_BLOOMWEIGHT:
+			 m_BloomWeight = value;
+			break;
 		case LUX_FILM_LG_SCALE:
 			SetGroupScale(index, value);
 			break;
@@ -293,7 +301,12 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 		case LUX_FILM_TORGB_GAMMA:
 			return m_Gamma;
 			break;
-
+		case LUX_FILM_BLOOMRADIUS:
+			return m_BloomRadius;
+			break;
+		case LUX_FILM_BLOOMWEIGHT:
+			return m_BloomWeight;
+			break;
 		case LUX_FILM_LG_COUNT:
 			return GetGroupsNumber();
 			break;
@@ -384,6 +397,13 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			break;
 		case LUX_FILM_TORGB_GAMMA:
 			return d_Gamma;
+			break;
+
+		case LUX_FILM_BLOOMRADIUS:
+			return d_BloomRadius;
+			break;
+		case LUX_FILM_BLOOMWEIGHT:
+			return d_BloomWeight;
 			break;
 
 		case LUX_FILM_LG_ENABLE:
@@ -633,16 +653,6 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			WriteResumeFilm(filename + ".flm");
 	}
 
-	if ((type & IMAGE_HDRFRAMEBUFFER) && hdrframebuffer) {
-		// Copy to framebuffer pixels
-		const u_int nPix = xPixelCount * yPixelCount;
-		for (u_int i = 0; i < nPix; i++) {
-			hdrframebuffer[3 * i] = color[i].c[0];
-			hdrframebuffer[3 * i + 1] = color[i].c[1];
-			hdrframebuffer[3 * i + 2] = color[i].c[2];
-		}
-	}
-
 	// Dade - check if I have to run ApplyImagingPipeline
 	if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
 		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
@@ -662,7 +672,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
 			toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
 			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-				0., 0., "reinhard", &toneParams, m_Gamma, 0.);
+				m_BloomRadius, m_BloomWeight, "reinhard", &toneParams, m_Gamma, 0.);
 		} else if(m_TonemapKernel == 1) {
 			// Linear Tonemapper
 			toneParams.AddFloat("sensitivity", &m_LinearSensitivity, 1);
@@ -670,16 +680,16 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			toneParams.AddFloat("fstop", &m_LinearFStop, 1);
 			toneParams.AddFloat("gamma", &m_LinearGamma, 1);
 			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-				0., 0., "linear", &toneParams, m_Gamma, 0.);
+				m_BloomRadius, m_BloomWeight, "linear", &toneParams, m_Gamma, 0.);
 		} else if(m_TonemapKernel == 2) {
 			// Contrast Tonemapper
 			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
 			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-				0., 0., "contrast", &toneParams, m_Gamma, 0.);
+				m_BloomRadius, m_BloomWeight, "contrast", &toneParams, m_Gamma, 0.);
 		} else {
 			// MaxWhite Tonemapper
 			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace,
-				0., 0., "maxwhite", &toneParams, m_Gamma, 0.);
+				m_BloomRadius, m_BloomWeight, "maxwhite", &toneParams, m_Gamma, 0.);
 		}
 
 		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
@@ -781,32 +791,6 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 
 	return framebuffer;
 }
-
-// GUI HDR (for OpenGL acceleration) framebuffer access methods
-void FlexImageFilm::createHDRFrameBuffer()
-{
-	// allocate pixels
-	unsigned int nPix = xPixelCount * yPixelCount;
-	hdrframebuffer = new float[3*nPix];			// TODO delete data
-
-	// zero it out
-	memset(hdrframebuffer,0.,sizeof(*hdrframebuffer)*3*nPix);    
-}
-void FlexImageFilm::updateHDRFrameBuffer()
-{
-	if(!hdrframebuffer)
-		createHDRFrameBuffer();
-
-	WriteImage(IMAGE_HDRFRAMEBUFFER);
-}
-float* FlexImageFilm::getHDRFrameBuffer()
-{
-	if(!hdrframebuffer)
-		createHDRFrameBuffer();
-
-	return hdrframebuffer;
-}
-
 
 void FlexImageFilm::WriteResumeFilm(const string &filename)
 {
@@ -1205,7 +1189,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_ReinhardPostScale = params.FindOneFloat("reinhard_postscale", 1.f);
 	float s_ReinhardBurn = params.FindOneFloat("reinhard_burn", 6.f);
 	float s_LinearSensitivity = params.FindOneFloat("linear_sensitivity", 50.f);
-	float s_LinearExposure = params.FindOneFloat("linear_exposure", 1.f/1000.f);
+	float s_LinearExposure = params.FindOneFloat("linear_exposure", 1.f);
 	float s_LinearFStop = params.FindOneFloat("linear_fstop", 2.8f);
 	float s_LinearGamma = params.FindOneFloat("linear_gamma", 1.0f);
 	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 1.f);

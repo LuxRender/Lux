@@ -106,8 +106,6 @@ public:
     //framebuffer access
     void UpdateFramebuffer();
     unsigned char* GetFramebuffer();
-    void UpdateHDRFramebuffer();
-    float* GetHDRFramebuffer();
 
 	// Parameter Access functions
 	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index);

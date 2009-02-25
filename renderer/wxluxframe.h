@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -35,8 +35,6 @@
 #include <wx/treectrl.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
-#include <wx/checklst.h>
-#include <wx/dialog.h>
 #include <wx/clrpicker.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -49,89 +47,90 @@ namespace lux
 	#define ID_TOOL_BAR 1003
 	#define ID_STATUS_BAR 1004
 	#define ID_SIDE_PANE 1005
-	#define ID_OPTIONS 1006
-	#define ID_PAN_MODE 1007
-	#define ID_ZOOM_MODE 1008
-	#define ID_RENDER_COPY 1009
-	#define ID_CLEAR_LOG 1010
-	#define ID_FULL_SCREEN 1011
-	#define ID_RESUMETOOL 1012
-	#define ID_PAUSETOOL 1013
-	#define ID_STOPTOOL 1014
-	#define ID_NUM_THREADS 1015
-	#define ID_ADD_THREAD 1016
-	#define ID_REMOVE_THREAD 1017
-	#define ID_PANTOOL 1018
-	#define ID_ZOOMTOOL 1019
-	#define ID_REFINETOOL 1020
-	#define ID_LIGHTGROUPS 1021
-	#define ID_TONEMAP 1022
-	#define ID_TONEMAPOPTIONSPANEL 1023
-	#define ID_TM_KERNELCHOICE 1024
-	#define ID_TONEMAPREINHARDOPTIONSPANEL 1025
-	#define ID_TM_REINHARD_AUTOYWA 1026
-	#define ID_TM_REINHARD_YWA 1027
-	#define ID_TM_REINHARD_YWA_TEXT 1028
-	#define ID_TM_REINHARD_PRESCALE 1029
-	#define ID_TM_REINHARD_PRESCALE_TEXT 1030
-	#define ID_TM_REINHARD_POSTSCALE 1031
-	#define ID_TM_REINHARD_POSTSCALE_TEXT 1032
-	#define ID_TM_REINHARD_BURN 1033
-	#define ID_TM_REINHARD_BURN_TEXT 1034
-	#define ID_TONEMAPLINEAROPTIONSPANEL 1035
-	#define ID_TM_LINEAR_SENSITIVITY 1036
-	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1037
-	#define ID_TM_LINEAR_EXPOSURE 1038
-	#define ID_TM_LINEAR_EXPOSURE_TEXT 1039
-	#define ID_TM_LINEAR_FSTOP 1040
-	#define ID_TM_LINEAR_FSTOP_TEXT 1041
-	#define ID_TM_LINEAR_GAMMA 1042
-	#define ID_TM_LINEAR_GAMMA_TEXT 1043
-	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1044
-	#define ID_TM_CONTRAST_YWA 1045
-	#define ID_TM_CONTRAST_YWA_TEXT 1046
-	#define ID_COLORSPACEOPTIONSPANEL 1047
-	#define ID_TORGB_COLORSPACECHOICE 1048
-	#define ID_TORGB_XWHITE 1049
-	#define ID_TORGB_XWHITE_TEXT 1050
-	#define ID_TORGB_YWHITE 1051
-	#define ID_TORGB_YWHITE_TEXT 1052
-	#define ID_TORGB_XRED 1053
-	#define ID_TORGB_XRED_TEXT 1054
-	#define ID_TORGB_YRED 1055
-	#define ID_TORGB_YRED_TEXT 1056
-	#define ID_TORGB_XGREEN 1057
-	#define ID_TORGB_XGREEN_TEXT 1058
-	#define ID_TORGB_YGREEN 1059
-	#define ID_TORGB_YGREEN_TEXT 1060
-	#define ID_TORGB_XBLUE 1061
-	#define ID_TORGB_XBLUE_TEXT 1062
-	#define ID_TORGB_YBLUE 1063
-	#define ID_TORGB_YBLUE_TEXT 1064
-	#define ID_GAMMAOPTIONSPANEL 1065
-	#define ID_TORGB_GAMMA 1066
-	#define ID_TORGB_GAMMA_TEXT 1067
-	#define ID_TM_RESET 1068
-	#define ID_AUTO_TONEMAP 1069
-	#define ID_TM_APPLY 1070
-	#define ID_SYSTEMOPTIONS 1071
-	#define ID_ADD_SERVER 1072
-	#define ID_REMOVE_SERVER 1073
-	#define ID_SERVER_UPDATE_INT 1074
-	#define ID_NETWORK_TREE 1075
-	#define ID_SYS_DISPLAY_INT 1076
-	#define ID_SYS_WRITE_INT 1077
-	#define ID_WRITE_OPTIONS 1078
-	#define ID_SYS_APPLY 1079
-	#define ID_LG_NAME 1080
-	#define ID_LG_ENABLE 1081
-	#define ID_LG_BASICPANEL 1082
-	#define ID_LG_SCALE 1083
-	#define ID_LG_SCALE_TEXT 1084
-	#define ID_LG_RGBCOLOR 1085
-	#define ID_LG_TEMPERATURE 1086
-	#define ID_LG_TEMPERATURE_TEXT 1087
-	#define ID_LG_ADVANCEDPANEL 1088
+	#define ID_PAN_MODE 1006
+	#define ID_ZOOM_MODE 1007
+	#define ID_RENDER_COPY 1008
+	#define ID_CLEAR_LOG 1009
+	#define ID_FULL_SCREEN 1010
+	#define ID_RESUMETOOL 1011
+	#define ID_PAUSETOOL 1012
+	#define ID_STOPTOOL 1013
+	#define ID_NUM_THREADS 1014
+	#define ID_ADD_THREAD 1015
+	#define ID_REMOVE_THREAD 1016
+	#define ID_PANTOOL 1017
+	#define ID_ZOOMTOOL 1018
+	#define ID_REFINETOOL 1019
+	#define ID_LIGHTGROUPS 1020
+	#define ID_TONEMAP 1021
+	#define ID_TONEMAPOPTIONSPANEL 1022
+	#define ID_TM_KERNELCHOICE 1023
+	#define ID_TONEMAPREINHARDOPTIONSPANEL 1024
+	#define ID_TM_REINHARD_AUTOYWA 1025
+	#define ID_TM_REINHARD_YWA 1026
+	#define ID_TM_REINHARD_YWA_TEXT 1027
+	#define ID_TM_REINHARD_PRESCALE 1028
+	#define ID_TM_REINHARD_PRESCALE_TEXT 1029
+	#define ID_TM_REINHARD_POSTSCALE 1030
+	#define ID_TM_REINHARD_POSTSCALE_TEXT 1031
+	#define ID_TM_REINHARD_BURN 1032
+	#define ID_TM_REINHARD_BURN_TEXT 1033
+	#define ID_TONEMAPLINEAROPTIONSPANEL 1034
+	#define ID_TM_LINEAR_SENSITIVITY 1035
+	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1036
+	#define ID_TM_LINEAR_EXPOSURE 1037
+	#define ID_TM_LINEAR_EXPOSURE_TEXT 1038
+	#define ID_TM_LINEAR_FSTOP 1039
+	#define ID_TM_LINEAR_FSTOP_TEXT 1040
+	#define ID_TM_LINEAR_GAMMA 1041
+	#define ID_TM_LINEAR_GAMMA_TEXT 1042
+	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1043
+	#define ID_TM_CONTRAST_YWA 1044
+	#define ID_TM_CONTRAST_YWA_TEXT 1045
+	#define ID_BLOOMOPTIONSPANEL 1046
+	#define ID_TORGB_BLOOMRADIUS 1047
+	#define ID_TORGB_BLOOMRADIUS_TEXT 1048
+	#define ID_COMPUTEBLOOMLAYER 1049
+	#define ID_TORGB_BLOOMWEIGHT 1050
+	#define ID_TORGB_BLOOMWEIGHT_TEXT 1051
+	#define ID_COLORSPACEOPTIONSPANEL 1052
+	#define ID_TORGB_COLORSPACECHOICE 1053
+	#define ID_TORGB_XWHITE 1054
+	#define ID_TORGB_XWHITE_TEXT 1055
+	#define ID_TORGB_YWHITE 1056
+	#define ID_TORGB_YWHITE_TEXT 1057
+	#define ID_TORGB_XRED 1058
+	#define ID_TORGB_XRED_TEXT 1059
+	#define ID_TORGB_YRED 1060
+	#define ID_TORGB_YRED_TEXT 1061
+	#define ID_TORGB_XGREEN 1062
+	#define ID_TORGB_XGREEN_TEXT 1063
+	#define ID_TORGB_YGREEN 1064
+	#define ID_TORGB_YGREEN_TEXT 1065
+	#define ID_TORGB_XBLUE 1066
+	#define ID_TORGB_XBLUE_TEXT 1067
+	#define ID_TORGB_YBLUE 1068
+	#define ID_TORGB_YBLUE_TEXT 1069
+	#define ID_GAMMAOPTIONSPANEL 1070
+	#define ID_TORGB_GAMMA 1071
+	#define ID_TORGB_GAMMA_TEXT 1072
+	#define ID_TM_RESET 1073
+	#define ID_AUTO_TONEMAP 1074
+	#define ID_TM_APPLY 1075
+	#define ID_SYSTEMOPTIONS 1076
+	#define ID_ADD_SERVER 1077
+	#define ID_REMOVE_SERVER 1078
+	#define ID_SERVER_UPDATE_INT 1079
+	#define ID_NETWORK_TREE 1080
+	#define ID_LG_NAME 1081
+	#define ID_LG_ENABLE 1082
+	#define ID_LG_BASICPANEL 1083
+	#define ID_LG_SCALE 1084
+	#define ID_LG_SCALE_TEXT 1085
+	#define ID_LG_RGBCOLOR 1086
+	#define ID_LG_TEMPERATURE 1087
+	#define ID_LG_TEMPERATURE_TEXT 1088
+	#define ID_LG_ADVANCEDPANEL 1089
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -190,6 +189,15 @@ namespace lux
 			wxStaticText* m_TM_contrast_YwaStaticText;
 			wxSlider* m_TM_contrast_ywaSlider;
 			wxTextCtrl* m_TM_contrast_ywaText;
+			wxPanel* m_BloomOptionsPanel;
+			wxStaticBitmap* m_bloomBitmap;
+			wxStaticText* m_TORGB_bloomText;
+			wxSlider* m_TORGB_bloomradiusSlider;
+			wxTextCtrl* m_TORGB_bloomradiusText;
+			wxButton* m_computebloomlayer;
+			wxStaticText* m_TORGB_bloomweightStaticText;
+			wxSlider* m_TORGB_bloomweightSlider;
+			wxTextCtrl* m_TORGB_bloomweightText;
 			wxPanel* m_ColorSpaceOptionsPanel;
 			wxStaticBitmap* m_colorspaceBitmap;
 			wxStaticText* m_TORGB_colorspacepresetsStaticText;
@@ -251,37 +259,6 @@ namespace lux
 		public:
 			LuxMainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("LuxRender"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1024,768 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 			~LuxMainFrame();
-		
-	};
-	
-	///////////////////////////////////////////////////////////////////////////////
-	/// Class m_OptionsDialog
-	///////////////////////////////////////////////////////////////////////////////
-	class m_OptionsDialog : public wxDialog 
-	{
-		private:
-		
-		protected:
-			wxNotebook* m_Options_notebook;
-			wxPanel* m_systemPanel;
-			
-			wxSpinCtrl* m_Display_spinCtrl;
-			wxStaticText* m_staticText2;
-			
-			wxSpinCtrl* m_Write_spinCtrl;
-			wxCheckListBox* m_writeOptions;
-			
-			wxButton* m_SysApplyButton;
-			
-			// Virtual event handlers, overide them in your derived class
-			virtual void OnClose( wxCloseEvent& event ){ event.Skip(); }
-			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
-			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
-			
-		
-		public:
-			m_OptionsDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Luxrender Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxCLOSE_BOX );
-			~m_OptionsDialog();
 		
 	};
 	

@@ -949,15 +949,6 @@ unsigned char* Context::framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
 }
 
-//HDR framebuffer access
-void Context::updateHDRFramebuffer() {
-	luxCurrentScene->UpdateHDRFramebuffer();
-}
-
-float* Context::hdrframebuffer() {
-	return luxCurrentScene->GetHDRFramebuffer();
-}
-
 // Parameter Access functions
 void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
 	return luxCurrentScene->SetParameterValue(comp, param, value, index);

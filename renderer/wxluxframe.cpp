@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -60,10 +60,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_sidePane = new wxMenuItem( m_view, ID_SIDE_PANE, wxString( wxT("S&ide Pane") ) + wxT('\t') + wxT("CTRL+I"), wxT("Toggle the side pane display"), wxITEM_CHECK );
 	m_view->Append( m_sidePane );
 	m_sidePane->Check( true );
-	
-	wxMenuItem* m_options;
-	m_options = new wxMenuItem( m_view, ID_OPTIONS, wxString( wxT("O&ptions") ) + wxT('\t') + wxT("CTRL+P"), wxT("Program Options and additional controls"), wxITEM_CHECK );
-	m_view->Append( m_options );
 	
 	m_view->AppendSeparator();
 	
@@ -404,6 +400,66 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TonemapContrastOptionsPanel->Layout();
 	bSizer332->Fit( m_TonemapContrastOptionsPanel );
 	bTonemapSizer->Add( m_TonemapContrastOptionsPanel, 0, wxEXPAND | wxALL, 1 );
+	
+	m_BloomOptionsPanel = new wxPanel( m_Tonemap, ID_BLOOMOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer33221;
+	bSizer33221 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer10311;
+	bSizer10311 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_bloomBitmap = new wxStaticBitmap( m_BloomOptionsPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer10311->Add( m_bloomBitmap, 0, wxALL, 5 );
+	
+	m_TORGB_bloomText = new wxStaticText( m_BloomOptionsPanel, wxID_ANY, wxT("Bloom Radius"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_bloomText->Wrap( -1 );
+	bSizer10311->Add( m_TORGB_bloomText, 0, wxALL, 5 );
+	
+	bSizer33221->Add( bSizer10311, 1, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer1032;
+	bSizer1032 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TORGB_bloomradiusSlider = new wxSlider( m_BloomOptionsPanel, ID_TORGB_BLOOMRADIUS, 35, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_TORGB_bloomradiusSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1032->Add( m_TORGB_bloomradiusSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_TORGB_bloomradiusText = new wxTextCtrl( m_BloomOptionsPanel, ID_TORGB_BLOOMRADIUS_TEXT, wxT("0.07"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_TORGB_bloomradiusText->SetMaxLength( 5 ); 
+	m_TORGB_bloomradiusText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1032->Add( m_TORGB_bloomradiusText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	m_computebloomlayer = new wxButton( m_BloomOptionsPanel, ID_COMPUTEBLOOMLAYER, wxT("Compute Layer"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer1032->Add( m_computebloomlayer, 0, wxALL, 5 );
+	
+	bSizer33221->Add( bSizer1032, 0, wxEXPAND, 5 );
+	
+	m_TORGB_bloomweightStaticText = new wxStaticText( m_BloomOptionsPanel, wxID_ANY, wxT("Weight/Amount"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_bloomweightStaticText->Wrap( -1 );
+	bSizer33221->Add( m_TORGB_bloomweightStaticText, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer10321;
+	bSizer10321 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TORGB_bloomweightSlider = new wxSlider( m_BloomOptionsPanel, ID_TORGB_BLOOMWEIGHT, 128, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_TORGB_bloomweightSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10321->Add( m_TORGB_bloomweightSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_TORGB_bloomweightText = new wxTextCtrl( m_BloomOptionsPanel, ID_TORGB_BLOOMWEIGHT_TEXT, wxT("0.25"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_TORGB_bloomweightText->SetMaxLength( 5 ); 
+	m_TORGB_bloomweightText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10321->Add( m_TORGB_bloomweightText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer33221->Add( bSizer10321, 1, wxEXPAND, 5 );
+	
+	m_BloomOptionsPanel->SetSizer( bSizer33221 );
+	m_BloomOptionsPanel->Layout();
+	bSizer33221->Fit( m_BloomOptionsPanel );
+	bTonemapSizer->Add( m_BloomOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_ColorSpaceOptionsPanel = new wxPanel( m_Tonemap, ID_COLORSPACEOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer3321;
@@ -776,7 +832,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( m_toolBar->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_statusBarMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_sidePane->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
-	this->Connect( m_options->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_panMode->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_zoomMode->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_copy->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -901,6 +956,30 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TM_contrast_ywaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TM_contrast_ywaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_contrast_ywaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_TORGB_bloomradiusText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomradiusText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_TORGB_bloomweightText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomweightText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_colorspaceChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1036,7 +1115,6 @@ LuxMainFrame::~LuxMainFrame()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
-	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_RESUMETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_PAUSETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_STOPTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -1155,6 +1233,30 @@ LuxMainFrame::~LuxMainFrame()
 	m_TM_contrast_ywaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TM_contrast_ywaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_contrast_ywaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomradiusText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_TORGB_bloomradiusText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomradiusText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_bloomweightText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_TORGB_bloomweightText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_bloomweightText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_colorspaceChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1270,100 +1372,6 @@ LuxMainFrame::~LuxMainFrame()
 	this->Disconnect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_serverUpdateSpin->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( LuxMainFrame::OnSpin ), NULL, this );
 	m_networkTreeCtrl->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( LuxMainFrame::OnTreeSelChanged ), NULL, this );
-}
-
-m_OptionsDialog::m_OptionsDialog( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
-{
-	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-	
-	wxBoxSizer* bSizer7;
-	bSizer7 = new wxBoxSizer( wxVERTICAL );
-	
-	m_Options_notebook = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-	m_systemPanel = new wxPanel( m_Options_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxBoxSizer* bSizer14;
-	bSizer14 = new wxBoxSizer( wxVERTICAL );
-	
-	wxBoxSizer* bSizer15;
-	bSizer15 = new wxBoxSizer( wxHORIZONTAL );
-	
-	wxStaticText* m_staticText1;
-	m_staticText1 = new wxStaticText( m_systemPanel, wxID_ANY, wxT("Display Interval: "), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText1->Wrap( -1 );
-	bSizer15->Add( m_staticText1, 0, wxALL, 5 );
-	
-	
-	bSizer15->Add( 0, 0, 1, wxEXPAND, 5 );
-	
-	m_Display_spinCtrl = new wxSpinCtrl( m_systemPanel, ID_SYS_DISPLAY_INT, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 10000000, 12 );
-	bSizer15->Add( m_Display_spinCtrl, 0, wxEXPAND, 5 );
-	
-	bSizer14->Add( bSizer15, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer16;
-	bSizer16 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_staticText2 = new wxStaticText( m_systemPanel, wxID_ANY, wxT("Write Interval: "), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText2->Wrap( -1 );
-	bSizer16->Add( m_staticText2, 0, wxALL, 5 );
-	
-	
-	bSizer16->Add( 0, 0, 1, wxEXPAND, 5 );
-	
-	m_Write_spinCtrl = new wxSpinCtrl( m_systemPanel, ID_SYS_WRITE_INT, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 10000000, 120 );
-	bSizer16->Add( m_Write_spinCtrl, 0, wxEXPAND, 5 );
-	
-	bSizer14->Add( bSizer16, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer17;
-	bSizer17 = new wxBoxSizer( wxVERTICAL );
-	
-	wxString m_writeOptionsChoices[] = { wxT("Write and Use FLM"), wxT("Tonemapped TGA"), wxT("Tonemapped EXR"), wxT("Untonemapped EXR"), wxT("Tonemapped IGI"), wxT("Untonemapped IGI") };
-	int m_writeOptionsNChoices = sizeof( m_writeOptionsChoices ) / sizeof( wxString );
-	m_writeOptions = new wxCheckListBox( m_systemPanel, ID_WRITE_OPTIONS, wxDefaultPosition, wxSize( -1,-1 ), m_writeOptionsNChoices, m_writeOptionsChoices, wxLB_NEEDED_SB );
-	m_writeOptions->SetToolTip( wxT("Save Options") );
-	
-	bSizer17->Add( m_writeOptions, 0, wxALL|wxEXPAND, 5 );
-	
-	
-	bSizer17->Add( 0, 0, 1, wxEXPAND, 5 );
-	
-	m_SysApplyButton = new wxButton( m_systemPanel, ID_SYS_APPLY, wxT("Apply Changes"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer17->Add( m_SysApplyButton, 0, wxALL|wxSHAPED, 5 );
-	
-	bSizer14->Add( bSizer17, 0, wxEXPAND, 5 );
-	
-	m_systemPanel->SetSizer( bSizer14 );
-	m_systemPanel->Layout();
-	bSizer14->Fit( m_systemPanel );
-	m_Options_notebook->AddPage( m_systemPanel, wxT("System"), false );
-	
-	bSizer7->Add( m_Options_notebook, 0, wxALL, 5 );
-	
-	this->SetSizer( bSizer7 );
-	this->Layout();
-	bSizer7->Fit( this );
-	
-	// Connect Events
-	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( m_OptionsDialog::OnClose ) );
-	m_Display_spinCtrl->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( m_OptionsDialog::OnSpin ), NULL, this );
-	m_Write_spinCtrl->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( m_OptionsDialog::OnSpin ), NULL, this );
-	m_writeOptions->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-	m_writeOptions->Connect( wxEVT_COMMAND_LISTBOX_DOUBLECLICKED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-	m_writeOptions->Connect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-	m_SysApplyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-}
-
-m_OptionsDialog::~m_OptionsDialog()
-{
-	// Disconnect Events
-	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( m_OptionsDialog::OnClose ) );
-	m_Display_spinCtrl->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( m_OptionsDialog::OnSpin ), NULL, this );
-	m_Write_spinCtrl->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( m_OptionsDialog::OnSpin ), NULL, this );
-	m_writeOptions->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-	m_writeOptions->Disconnect( wxEVT_COMMAND_LISTBOX_DOUBLECLICKED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-	m_writeOptions->Disconnect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
-	m_SysApplyButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( m_OptionsDialog::OnMenu ), NULL, this );
 }
 
 LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style ) : wxPanel( parent, id, pos, size, style )

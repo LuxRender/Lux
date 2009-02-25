@@ -490,16 +490,8 @@ extern "C" void luxUpdateFramebuffer() {
 	Context::luxUpdateFramebuffer();
 }
 
-extern "C" void luxUpdateHDRFramebuffer() {
-	Context::luxUpdateHDRFramebuffer();
-}
-
 extern "C" unsigned char* luxFramebuffer() {
 	return Context::luxFramebuffer();
-}
-
-extern "C" float* luxHDRFramebuffer() {
-	return Context::luxHDRFramebuffer();
 }
 
 // Parameter Access functions

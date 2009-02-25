@@ -39,7 +39,7 @@ public:
 	// FlexImageFilm Public Methods
 	FlexImageFilm(int xres, int yres) :
 		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
-		framebuffer(NULL), hdrframebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
+		framebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
@@ -51,7 +51,7 @@ public:
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 		int reject_warmup, bool debugmode);
 	~FlexImageFilm() {
-		delete[] framebuffer; delete[] hdrframebuffer;
+		delete[] framebuffer;
 	}
 
 	void RequestBufferGroups(const vector<string> &bg);
@@ -77,9 +77,6 @@ public:
 	void updateFrameBuffer();
 	unsigned char* getFrameBuffer();
 	void createFrameBuffer();
-	void updateHDRFrameBuffer();
-	float* getHDRFrameBuffer();
-	void createHDRFrameBuffer();
 	float getldrDisplayInterval() {
 		return displayInterval;
 	}
@@ -120,7 +117,6 @@ private:
 	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga, writeResumeFlm, restartResumeFlm;
 
 	unsigned char *framebuffer;
-	float *hdrframebuffer;
 
 	boost::xtime lastWriteImageTime;
 
@@ -154,6 +150,8 @@ private:
 	float m_RGB_X_Blue, d_RGB_X_Blue;
 	float m_RGB_Y_Blue, d_RGB_Y_Blue;
 	float m_Gamma, d_Gamma;
+	float m_BloomRadius, d_BloomRadius;
+	float m_BloomWeight, d_BloomWeight;
 
 };
 

@@ -36,8 +36,7 @@ enum ImageType {
     IMAGE_NONE = 0, // Don't write anything
     IMAGE_FILEOUTPUT = 1 << 1, // Write image to file
     IMAGE_FRAMEBUFFER = 1 << 2, // Display image
-	IMAGE_HDRFRAMEBUFFER = 1 << 3, // HDRDisplay image
-    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER | IMAGE_HDRFRAMEBUFFER
+    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
 };
 
 // Buffer types
@@ -317,8 +316,6 @@ public:
     virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
     virtual unsigned char* getFrameBuffer() = 0;
     virtual void updateFrameBuffer() = 0;
-    virtual float* getHDRFrameBuffer() = 0;
-    virtual void updateHDRFrameBuffer() = 0;
     virtual float getldrDisplayInterval() = 0;
 
     void SetScene(Scene *scene1) {

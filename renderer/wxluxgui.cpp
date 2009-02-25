@@ -71,6 +71,8 @@ using namespace lux;
 #define TORGB_XBLUE_RANGE 1.0f
 #define TORGB_YBLUE_RANGE 1.0f
 #define TORGB_GAMMA_RANGE 5.0f
+#define BLOOMRADIUS_RANGE 1.0f
+#define BLOOMWEIGHT_RANGE 1.0f
 #define LG_SCALE_RANGE 100.f
 #define LG_TEMPERATURE_RANGE 20000.f
 
@@ -151,9 +153,6 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	ChangeRenderState(WAITING);
 	m_guiWindowState = SHOWN;
 
-	// CF
-	m_LuxOptions = new LuxOptions( this );
-
 	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
 
 	m_auinotebook->SetSelection( 0 );
@@ -182,8 +181,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_TORGB_xblueText->SetValidator( vt );
 	m_TORGB_yblueText->SetValidator( vt );
 	m_TORGB_gammaText->SetValidator( vt );
-
-	m_GLAcceleration = false;
+	m_TORGB_bloomradiusText->SetValidator( vt );
+	m_TORGB_bloomweightText->SetValidator( vt );
 }
 
 LuxGui::~LuxGui() {
@@ -376,6 +375,7 @@ void LuxGui::LoadImages() {
 	m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
 
 	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(n_tonemap_png));
+	m_bloomBitmap->SetBitmap(wxMEMORY_BITMAP(bloomicon_png));
 	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(n_color_png));
 	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(n_gamma_png));
 
@@ -388,8 +388,6 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_RESUMEITEM:
 		case ID_RESUMETOOL:
 			if(m_guiRenderState != RENDERING) {
-				// CF
-				m_LuxOptions->UpdateSysOptions();
 				UpdateNetworkTree();
 
 				// Start display update timer
@@ -502,16 +500,6 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			break;
 		case ID_CLEAR_LOG: // CF
 			m_logTextCtrl->Clear();
-			break;
-		case ID_OPTIONS: // CF
-			if ( m_LuxOptions->IsShown() )
-			{
-				m_LuxOptions->Show( false );
-			}
-			else
-			{
-				m_LuxOptions->Show( true );
-			}
 			break;
 		case ID_ADD_THREAD: // CF
 			if ( m_numThreads < 16 ) SetRenderThreads( m_numThreads + 1 );
@@ -903,6 +891,39 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+		case ID_TORGB_BLOOMRADIUS_TEXT:
+			if ( m_TORGB_bloomradiusText->IsModified() )
+			{
+				wxString st = m_TORGB_bloomradiusText->GetValue();
+				st.ToDouble( &m_bloomradius );
+
+				if ( m_bloomradius > BLOOMRADIUS_RANGE ) m_bloomradius = BLOOMRADIUS_RANGE;
+				else if ( m_bloomradius < 0 ) m_bloomradius = 0;
+
+				st = wxString::Format( _("%.02f"), m_bloomradius );
+				m_TORGB_bloomradiusText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE ) * (m_bloomradius));
+				m_TORGB_bloomradiusSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
+			}
+			break;
+		case ID_TORGB_BLOOMWEIGHT_TEXT:
+			if ( m_TORGB_bloomweightText->IsModified() )
+			{
+				wxString st = m_TORGB_bloomweightText->GetValue();
+				st.ToDouble( &m_bloomweight );
+
+				if ( m_bloomweight > BLOOMWEIGHT_RANGE ) m_bloomweight = BLOOMWEIGHT_RANGE;
+				else if ( m_bloomweight < 0 ) m_bloomweight = 0;
+
+				st = wxString::Format( _("%.02f"), m_bloomweight );
+				m_TORGB_bloomweightText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE ) * (m_bloomweight));
+				m_TORGB_bloomweightSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
 		default:
 			break;
 	}
@@ -1078,6 +1099,23 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+		case ID_TORGB_BLOOMRADIUS:
+			{
+				m_bloomradius = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_bloomradius );
+				m_TORGB_bloomradiusText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
+			}
+			break;
+		case ID_TORGB_BLOOMWEIGHT:
+			{
+				m_bloomweight = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_bloomweight );
+				m_TORGB_bloomweightText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
 		default:
 			break;
 	}
@@ -1142,6 +1180,13 @@ void LuxGui::OnFocus( wxFocusEvent& event ){
 			break;
 		case ID_TORGB_GAMMA_TEXT:
 			m_TORGB_gammaText->SetValue( wxString::Format( _("%.02f"), m_TORGB_gamma ) );
+			break;
+		// Bloom options
+		case ID_TORGB_BLOOMRADIUS_TEXT:
+			m_TORGB_bloomradiusText->SetValue( wxString::Format( _("%.02f"), m_bloomradius ) );
+			break;
+		case ID_TORGB_BLOOMWEIGHT_TEXT:
+			m_TORGB_bloomweightText->SetValue( wxString::Format( _("%.02f"), m_bloomweight ) );
 			break;
 		default:
 			break;
@@ -1264,33 +1309,6 @@ void LuxGui::SetColorSpacePreset(int choice) {
 	if(m_auto_tonemap) ApplyTonemapping();
 }
 
-LuxGui::LuxOptions::LuxOptions( LuxGui *parent ) : m_OptionsDialog( parent ) {
-	m_Parent = parent;
-	UpdateSysOptions();
-}
-
-void LuxGui::LuxOptions::UpdateSysOptions( void ) {
-	m_DisplayInterval = luxStatistics("displayInterval");
-	m_Display_spinCtrl->SetValue( m_DisplayInterval );
-	m_WriteInterval = 120;
-	m_UseFlm = false;
-	m_Write_TGA = false;
-	m_Write_TM_EXR = false;
-	m_Write_UTM_EXR = false;
-	m_Write_TM_IGI = false;
-	m_Write_UTM_IGI = false;
-}
-
-void LuxGui::LuxOptions::ApplySysOptions( void ){
-// TODO
-}
-
-void LuxGui::LuxOptions::OnClose( wxCloseEvent& event ){
-
-	Show( false );
-	m_Parent->m_view->Check( ID_OPTIONS, false );
-}
-
 void LuxGui::ResetToneMapping(){
 	if(luxStatistics("sceneIsReady")) {
 		ResetToneMappingFromFilm();
@@ -1305,12 +1323,15 @@ void LuxGui::ResetToneMapping(){
 	m_TM_reinhard_postscale = 1.0;
 	m_TM_reinhard_burn = 6.0;
 
-	m_TM_linear_exposure = 50.0f;
-	m_TM_linear_sensitivity = 1.f / 1000.f;
+	m_TM_linear_exposure = 1.f;
+	m_TM_linear_sensitivity = 50.0f;
 	m_TM_linear_fstop = 2.8;
 	m_TM_linear_gamma = 1.0;
 
 	m_TM_contrast_ywa = 1.0;
+
+	m_bloomradius = 0.07f;
+	m_bloomweight = 0.25f;
 
 	m_TORGB_xwhite = 0.314275f;
 	m_TORGB_ywhite = 0.329411f;
@@ -1406,6 +1427,15 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_TORGB_gammaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma));
 	st = wxString::Format( _("%.02f"), m_TORGB_gamma );
 	m_TORGB_gammaText->SetValue(st);
+	
+	// Bloom widgets
+	m_TORGB_bloomradiusSlider->SetValue( (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomradius));
+	st = wxString::Format( _("%.02f"), m_bloomradius );
+	m_TORGB_bloomradiusText->SetValue(st);
+
+	m_TORGB_bloomweightSlider->SetValue( (int)((FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE) * m_bloomweight));
+	st = wxString::Format( _("%.02f"), m_bloomweight );
+	m_TORGB_bloomweightText->SetValue(st);
 
 	Refresh();
 }
@@ -1419,8 +1449,8 @@ void LuxGui::ResetToneMappingFromFilm(){
 	m_TM_reinhard_postscale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
 	m_TM_reinhard_burn = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN);
 
-	m_TM_linear_exposure = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
-	m_TM_linear_sensitivity = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE);
+	m_TM_linear_exposure = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE);
+	m_TM_linear_sensitivity = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
 	m_TM_linear_fstop = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
 	m_TM_linear_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
 
@@ -1435,6 +1465,9 @@ void LuxGui::ResetToneMappingFromFilm(){
 	m_TORGB_xblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE);
 	m_TORGB_yblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
 	m_TORGB_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+
+	m_bloomradius = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS);
+	m_bloomweight = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL, m_TM_kernel);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA, m_TM_reinhard_autoywa);
@@ -1459,6 +1492,9 @@ void LuxGui::ResetToneMappingFromFilm(){
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
 
 	UpdateTonemapWidgetValues();
 	if(m_auto_tonemap) ApplyTonemapping();
@@ -1511,41 +1547,6 @@ void LuxGui::ResetLightGroupsFromFilm( void ) {
 	// Update
 	UpdateLightGroupWidgetValues();
 	m_LightGroups->Layout();
-}
-
-void LuxGui::LuxOptions::OnMenu(wxCommandEvent& event) {
-	switch (event.GetId()) {
-		case ID_SYS_APPLY:
-			ApplySysOptions();
-			break;
-		case ID_WRITE_OPTIONS:
-			{
-				int nSel = event.GetSelection();
-
-				if ( nSel == 0 ) m_UseFlm = event.IsChecked();
-				else if ( nSel == 1 ) m_Write_TGA = event.IsChecked();
-				else if ( nSel == 2 ) m_Write_TM_EXR = event.IsChecked();
-				else if ( nSel == 3 ) m_Write_UTM_EXR = event.IsChecked();
-				else if ( nSel == 4 ) m_Write_TM_IGI = event.IsChecked();
-				else if ( nSel == 5 ) m_Write_UTM_IGI = event.IsChecked();
-			}
-			break;
-		default:
-			break;
-	}
-}
-
-void LuxGui::LuxOptions::OnSpin( wxSpinEvent& event ) {
-	switch (event.GetId()) {
-		case ID_SYS_DISPLAY_INT:
-			m_DisplayInterval = event.GetPosition();
-			break;
-		case ID_SYS_WRITE_INT:
-			m_WriteInterval = event.GetPosition();
-			break;
-		default:
-			break;
-	}
 }
 
 LuxGui::LuxLightGroupPanel::LuxLightGroupPanel(
@@ -2038,10 +2039,7 @@ void LuxGui::EngineThread(wxString filename) {
 }
 
 void LuxGui::UpdateThread() {
-	if(m_GLAcceleration == false)
-		luxUpdateFramebuffer();
-	else
-		luxUpdateHDRFramebuffer();
+	luxUpdateFramebuffer();
 
 	wxCommandEvent endEvent(wxEVT_LUX_TONEMAPPED, GetId());
 	GetEventHandler()->AddPendingEvent(endEvent);

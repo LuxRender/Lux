@@ -170,8 +170,6 @@ protected:
 
 	wxBitmap m_splashbmp;
 
-	bool m_GLAcceleration; // false = no accel, true = opengl accerelation
-
 	// CF
 	class luxTreeData : public wxTreeItemData
 	{
@@ -231,37 +229,7 @@ protected:
 	double m_TORGB_xblue, m_TORGB_yblue;
 
 	double m_TORGB_gamma;
-
-	class LuxOptions : public m_OptionsDialog {
-		public:
-
-		LuxOptions( LuxGui* parent );
-
-		protected:
-
-			void OnMenu( wxCommandEvent& event );
-			void OnClose( wxCloseEvent& event );
-			void OnSpin( wxSpinEvent& event );
-
-		public:
-
-			LuxGui *m_Parent;
-
-			void UpdateSysOptions( void );
-			void ApplySysOptions( void );
-
-			unsigned int m_DisplayInterval;
-			unsigned int m_WriteInterval;
-
-			bool m_UseFlm;
-			bool m_Write_TGA;
-			bool m_Write_TM_EXR;
-			bool m_Write_UTM_EXR;
-			bool m_Write_TM_IGI;
-			bool m_Write_UTM_IGI;
-	};
-
-	LuxOptions *m_LuxOptions;
+	double m_bloomradius, m_bloomweight;
 
 	// Lightgroups
 

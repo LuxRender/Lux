@@ -141,9 +141,7 @@ public:
 
 	//framebuffer access
 	static void luxUpdateFramebuffer() { activeContext->updateFramebuffer(); }
-	static void luxUpdateHDRFramebuffer() { activeContext->updateHDRFramebuffer(); }
 	static unsigned char* luxFramebuffer() { return activeContext->framebuffer(); }
-	static float* luxHDRFramebuffer() { return activeContext->hdrframebuffer(); }
 
 	// Parameter Access functions
 	static void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
@@ -256,8 +254,6 @@ private:
 	//framebuffer access
 	void updateFramebuffer();
 	unsigned char* framebuffer();
-	void updateHDRFramebuffer();
-	float* hdrframebuffer();
 
 	// Parameter Access functions
 	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index);
