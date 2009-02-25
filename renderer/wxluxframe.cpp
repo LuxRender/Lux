@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 19 2008)
+// C++ code generated with wxFormBuilder (version Apr 21 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -1399,10 +1399,13 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	
 	bSizer3321121->Add( m_LG_name, 0, wxALIGN_CENTER|wxALL, 2 );
 	
+	
+	bSizer3321121->Add( 0, 0, 1, wxEXPAND, 5 );
+	
 	m_LG_enableCheckbox = new wxCheckBox( this, ID_LG_ENABLE, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_LG_enableCheckbox->SetValue(true);
 	
-	bSizer3321121->Add( m_LG_enableCheckbox, 1, wxALL, 5 );
+	bSizer3321121->Add( m_LG_enableCheckbox, 0, wxALL, 5 );
 	
 	bSizer183->Add( bSizer3321121, 0, wxEXPAND, 5 );
 	

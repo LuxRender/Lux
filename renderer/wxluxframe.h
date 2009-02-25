@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 19 2008)
+// C++ code generated with wxFormBuilder (version Apr 21 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -273,6 +273,7 @@ namespace lux
 			wxStaticBitmap* m_lightgroupBitmap;
 			wxStaticText* m_LG_nameLabel;
 			wxStaticText* m_LG_name;
+			
 			wxCheckBox* m_LG_enableCheckbox;
 			wxNotebook* m_notebook4;
 			wxPanel* m_LG_basicPanel;
