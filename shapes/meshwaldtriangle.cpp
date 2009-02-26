@@ -164,7 +164,7 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, int n)
     const float dv2 = uvs[1][1] - uvs[2][1];
     const Vector dp1 = v0 - v2, dp2 = v1 - v2;
     const float determinant = du1 * dv2 - dv1 * du2;
-    if (determinant == 0.f) {
+    if (determinant < 1e-3f) {
         // Handle zero determinant for triangle partial derivative matrix
         CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
     } else {
@@ -174,6 +174,15 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, int n)
     }
 
     normalizedNormal = Normal(Normalize(Cross(e1, e2)));
+
+	if(!mesh->uvs) {
+		// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+		const BBox bounds = MeshWaldTriangle::WorldBound();
+		int maxExtent = bounds.MaximumExtent();
+		float maxSize = bounds.pMax[maxExtent] - bounds.pMin[maxExtent];
+		dpdu *= (maxSize * .1f) / dpdu.Length();
+		dpdv *= (maxSize * .1f) / dpdv.Length();
+	}
 }
 
 BBox MeshWaldTriangle::ObjectBound() const {
@@ -628,7 +637,7 @@ void MeshWaldTriangle::GetShadingGeometry(const Transform &obj2world,
 	Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
 	float determinant = du1 * dv2 - dv1 * du2;
 
-	if (determinant == 0)
+	if (determinant < 1e-3f)
 		dndu = dndv = Vector(0, 0, 0);
 	else {
 		float invdet = 1.f / determinant;

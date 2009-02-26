@@ -146,7 +146,7 @@ float MeshQuadrilateral::Det3x3(float A[3][3]) {
 bool MeshQuadrilateral::Invert3x3(float A[3][3], float InvA[3][3]) {
 
 	float determinant = Det3x3(A);
-	if (determinant == 0.f)
+	if (determinant < 1e-3f)
 		return false;
 
 	float invdet = 1.f / determinant;
@@ -487,6 +487,14 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 {
 	if (!mesh->n) {
 		*dgShading = dg;
+		if(!mesh->uvs) {
+			// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+			const BBox bounds = MeshQuadrilateral::WorldBound();
+			int maxExtent = bounds.MaximumExtent();
+			float maxSize = bounds.pMax[maxExtent] - bounds.pMin[maxExtent];
+			dgShading->dpdu *= (maxSize * .1f) / dgShading->dpdu.Length();
+			dgShading->dpdv *= (maxSize * .1f) / dgShading->dpdv.Length();
+		}
 		return;
 	}
 

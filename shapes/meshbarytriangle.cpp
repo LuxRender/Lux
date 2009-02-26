@@ -84,7 +84,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const {
     const float dv2 = uvs[1][1] - uvs[2][1];
     const Vector dp1 = p1 - p3, dp2 = p2 - p3;
     const float determinant = du1 * dv2 - dv1 * du2;
-    if (determinant == 0.f) {
+    if (determinant < 1e-3f) {
         // Handle zero determinant for triangle partial derivative matrix
         CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
     }
@@ -186,6 +186,14 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 {
 	if (!mesh->n) {
 		*dgShading = dg;
+		if(!mesh->uvs) {
+			// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+			const BBox bounds = MeshBaryTriangle::WorldBound();
+			int maxExtent = bounds.MaximumExtent();
+			float maxSize = bounds.pMax[maxExtent] - bounds.pMin[maxExtent];
+			dgShading->dpdu *= (maxSize * .1f) / dgShading->dpdu.Length();
+			dgShading->dpdv *= (maxSize * .1f) / dgShading->dpdv.Length();
+		}
 		return;
 	}
 
@@ -222,7 +230,7 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
 	float determinant = du1 * dv2 - dv1 * du2;
 
-	if (determinant == 0)
+	if (determinant < 1e-3f)
 		dndu = dndv = Vector(0, 0, 0);
 	else {
 		float invdet = 1.f / determinant;
