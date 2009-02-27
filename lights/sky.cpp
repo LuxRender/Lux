@@ -456,9 +456,8 @@ void SkyLight::GetSkySpectralRadiance(const TsPack *tspack, const float theta, c
 
 	ChromaticityToSpectrum(tspack, x, y, dst_spect);
 	// Normalize dst_spect:
-	// 31 is the mean intensity returned by ChromaticityToSpectrum
-	// 179 is the standard efficiency in lm/W since zenith_Y is in cd.m-2
-	*dst_spect *= Y / (31.f * 179.f);
+	// 1e7 is the mean intensity returned by ChromaticityToSpectrum
+	*dst_spect *= Y * 1e-7;
 }
 
 // note - lyc - removed redundant computations and optimised

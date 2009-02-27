@@ -62,10 +62,6 @@ SpectrumWavelengths::SpectrumWavelengths() {
 	spd_b = new RegularSPD(refrgb2spect_blue,
 		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
 	spd_b->Scale(refrgb2spect_scale);
-
-	cie_X = (float *)AllocAligned(WAVELENGTH_SAMPLES * sizeof(float));
-	cie_Y = (float *)AllocAligned(WAVELENGTH_SAMPLES * sizeof(float));
-	cie_Z = (float *)AllocAligned(WAVELENGTH_SAMPLES * sizeof(float));
 }
 
 

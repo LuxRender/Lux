@@ -64,6 +64,7 @@ public:
     }
 
 	float y();
+	XYZColor ToXYZ();
 	void AllocateSamples(int n);
 	void FreeSamples();
 	void Normalize();

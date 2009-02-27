@@ -23,7 +23,9 @@
 // spd.cpp*
 #include "lux.h"
 #include "spd.h"
+#include "color.h"
 #include "memory.h"
+#include "data/xyzbasis.h"
 
 using namespace lux;
 
@@ -90,19 +92,19 @@ void SPD::Whitepoint(float temp) {
 	bbvals.clear();
 }
 
-#include "data/xyzbasis.h"
-
 float SPD::y() {
 	float y = 0.f;
-
-	for(int i=0; i<nSamples; i++) {
-		float waveln = (lambdaMin + (delta*i));
-		// Interpolate Y Conversion weights
-		const float w0 = waveln - CIEstart;
-		int i0 = Floor2Int(w0);
-		const float b0 = w0 - i0;
-		y += samples[i] * Lerp(b0, CIE_Y[i0], CIE_Y[i0 + 1]);
+	for (int i = 0; i < nCIE; ++i)
+		y += sample(i + CIEstart) * CIE_Y[i];
+	return y * 683.f;
+}
+XYZColor SPD::ToXYZ() {
+	XYZColor c(0.f);
+	for (int i = 0; i < nCIE; ++i) {
+		float s = sample(i + CIEstart);
+		c.c[0] += s * CIE_X[i];
+		c.c[1] += s * CIE_Y[i];
+		c.c[2] += s * CIE_Z[i];
 	}
-
-	return y/nSamples;
+	return c * 683.f;
 }

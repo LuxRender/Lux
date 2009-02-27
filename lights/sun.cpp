@@ -88,8 +88,6 @@ SunLight::SunLight(const Transform &light2world,
 		sin2ThetaMax = 1.f;
 	}
 
-//	float solidAngle = 2*M_PI*(1-cosThetaMax);
-
 	Vector wh = Normalize(sundir);
 	phiS = SphericalPhi(wh);
 	thetaS = SphericalTheta(wh);
@@ -99,7 +97,6 @@ SunLight::SunLight(const Transform &light2world,
 	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 4);
 	SPD *k_waCurve = new IrregularSPD(sun_k_waWavelengths,sun_k_waAmplitudes,  13);
 
-//	SPD *solCurve = new RegularSPD(sun_sun_irradiance, 380, 770, 79);  // every 5 nm
 	SPD *solCurve = new RegularSPD(sun_solAmplitudes, 380, 750, 38);  // every 5 nm
 
 	float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
@@ -131,15 +128,10 @@ SunLight::SunLight(const Transform &light2world,
 		tauWA = expf(-0.2385f * k_waCurve->sample(lambda) * w * m /
 		powf(1.f + 20.07f * k_waCurve->sample(lambda) * w * m, 0.45f));
 
-		// NOTE - Ratow - Transform unit to W*m^-2*nm^-1*sr-1
-//		const float unitConv = 1./(solidAngle*1000000000.);
-		Ldata[i] = (solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA /** unitConv*/);
+		Ldata[i] = (solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
 	LSPD->Scale(sunscale);
-
-	// Note - radiance - added D65 whitepoint for sun/sky
-//	LSPD->Whitepoint(6500.f);
 
     delete k_oCurve;
     delete k_gCurve;

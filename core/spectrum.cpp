@@ -44,9 +44,6 @@ XYZColor SWCSpectrum::ToXYZ(const TsPack *tspack) const {
 			xyz[1] += sw->cie_Y[j] * c[j];
 			xyz[2] += sw->cie_Z[j] * c[j];
 		}
-		xyz[0] *= inv_WAVELENGTH_SAMPLES;
-		xyz[1] *= inv_WAVELENGTH_SAMPLES;
-		xyz[2] *= inv_WAVELENGTH_SAMPLES;
 	} 
 
 	return XYZColor(xyz);
@@ -63,7 +60,6 @@ Scalar SWCSpectrum::y(const TsPack *tspack) const {
 		for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
 			y += sw->cie_Y[j] * c[j];
 		}
-		y *= inv_WAVELENGTH_SAMPLES;
 	}
 
 	return y;

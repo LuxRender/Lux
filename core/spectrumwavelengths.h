@@ -44,6 +44,7 @@ public:
 
 		// Sample new stratified wavelengths and precompute RGB/XYZ data
 		const float offset = float(WAVELENGTH_END - WAVELENGTH_START) * inv_WAVELENGTH_SAMPLES;
+		const float scale = (683.f * nCIE) / WAVELENGTH_SAMPLES;
 		float waveln = WAVELENGTH_START + u1 * offset;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
 			// Interpolate RGB Conversion SPDs
@@ -58,20 +59,28 @@ public:
 			const float w0 = waveln - CIEstart;
 			int i0 = Floor2Int(w0);
 			const float b0 = w0 - i0;
-			cie_X[i] = Lerp(b0, CIE_X[i0], CIE_X[i0 + 1]);
-			cie_Y[i] = Lerp(b0, CIE_Y[i0], CIE_Y[i0 + 1]);
-			cie_Z[i] = Lerp(b0, CIE_Z[i0], CIE_Z[i0 + 1]);
+			cie_X[i] = Lerp(b0, CIE_X[i0], CIE_X[i0 + 1]) * scale;
+			cie_Y[i] = Lerp(b0, CIE_Y[i0], CIE_Y[i0 + 1]) * scale;
+			cie_Z[i] = Lerp(b0, CIE_Z[i0], CIE_Z[i0 + 1]) * scale;
 			w[i] = waveln;
 			waveln += offset;
 		}
 	}
 
 	inline float SampleSingle() {
-		single = true;
+		if (!single) {
+			single = true;
+			for (int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
+				cie_X[i] *= WAVELENGTH_SAMPLES;
+				cie_Y[i] *= WAVELENGTH_SAMPLES;
+				cie_Z[i] *= WAVELENGTH_SAMPLES;
+			}
+		}
 		return w[single_w];
 	}
 
 	float w[WAVELENGTH_SAMPLES]; // Wavelengths in nm
+	float cie_X[WAVELENGTH_SAMPLES], cie_Y[WAVELENGTH_SAMPLES], cie_Z[WAVELENGTH_SAMPLES]; // CIE XYZ weights
 
 	bool single; // Split to single
 	int  single_w; // Chosen single wavelength bin
@@ -80,7 +89,6 @@ public:
 	SWCSpectrum spect_y, spect_r, spect_g;	// yellow, red, green
 	SWCSpectrum spect_b;	// blue
 
-	float *cie_X, *cie_Y, *cie_Z; // CIE XYZ weights
 
 private:
 	SPD *spd_w, *spd_c, *spd_m, *spd_y,
