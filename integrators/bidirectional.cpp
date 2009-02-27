@@ -164,7 +164,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
-			vertices[nVerts - 2].flux *= cosins;
+			vertices[nVerts - 2].flux *= cosins / v.pdfR;
 			--nVerts;
 		}
 		// Initialize _ray_ for next segment of path
@@ -248,7 +248,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
-			vertices[nVerts - 2].flux *= cosins;
+			vertices[nVerts - 2].flux *= cosins / v.cosi * AbsDot(v.wi, v.ng) / v.pdf;
 			--nVerts;
 		}
 		// Initialize _ray_ for next segment of path
