@@ -34,13 +34,11 @@
 using namespace lux;
 
 // ReinhardOp Method Definitions
-ReinhardOp::ReinhardOp(bool ayw, float yw, float prS, float poS, float b)
+ReinhardOp::ReinhardOp(float prS, float poS, float b)
 {
 	pre_scale = prS;
 	post_scale = poS;
 	burn = b;
-	autoYwa = ayw;
-	mYwa = yw;
 }
 
 void ReinhardOp::Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const
@@ -49,16 +47,12 @@ void ReinhardOp::Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) 
 	const int numPixels = xRes * yRes;
 
 	float Ywa = 0.f;
-	if(autoYwa) {
-		// Compute world adaptation luminance, _Ywa_
-		for (int i = 0; i < numPixels; ++i)
-			if (xyz[i].c[1] > 0.f) Ywa += xyz[i].c[1];
-		Ywa /= numPixels;
-		if (Ywa == 0.f)
-			Ywa = 1.f;
-	} else {
-		Ywa = mYwa;
-	}
+	// Compute world adaptation luminance, _Ywa_
+	for (int i = 0; i < numPixels; ++i)
+		if (xyz[i].c[1] > 0.f) Ywa += xyz[i].c[1];
+	Ywa /= numPixels;
+	if (Ywa == 0.f)
+		Ywa = 1.f;
 
 	const float Yw = pre_scale * alpha * burn;
 	const float invY2 = 1.f / (Yw * Yw);
@@ -71,12 +65,10 @@ void ReinhardOp::Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) 
 }
 
 ToneMap * ReinhardOp::CreateToneMap(const ParamSet &ps) {
-	bool auto_ywa = ps.FindOneBool("autoywa", true);
-	float pywa = ps.FindOneFloat("ywa", 1.f);
 	float pre_scale = ps.FindOneFloat("prescale", 1.f);
 	float post_scale = ps.FindOneFloat("postscale", 1.f);
 	float burn = ps.FindOneFloat("burn", 7.f);
-	return new ReinhardOp(auto_ywa, pywa, pre_scale, post_scale, burn);
+	return new ReinhardOp(pre_scale, post_scale, burn);
 }
 
 static DynamicLoader::RegisterToneMap<ReinhardOp> r("reinhard");

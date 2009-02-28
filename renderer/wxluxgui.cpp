@@ -57,11 +57,14 @@ using namespace lux;
 #define TM_REINHARD_PRESCALE_RANGE 8.0f
 #define TM_REINHARD_POSTSCALE_RANGE 8.0f
 #define TM_REINHARD_BURN_RANGE 12.0f
+
 #define TM_LINEAR_EXPOSURE_RANGE 60.0f
 #define TM_LINEAR_SENSITIVITY_RANGE 10000.0f
 #define TM_LINEAR_FSTOP_RANGE 64.0f
 #define TM_LINEAR_GAMMA_RANGE 5.0f
+
 #define TM_CONTRAST_YWA_RANGE 1.0f
+
 #define TORGB_XWHITE_RANGE 1.0f
 #define TORGB_YWHITE_RANGE 1.0f
 #define TORGB_XRED_RANGE 1.0f
@@ -70,9 +73,22 @@ using namespace lux;
 #define TORGB_YGREEN_RANGE 1.0f
 #define TORGB_XBLUE_RANGE 1.0f
 #define TORGB_YBLUE_RANGE 1.0f
+
 #define TORGB_GAMMA_RANGE 5.0f
+
 #define BLOOMRADIUS_RANGE 1.0f
 #define BLOOMWEIGHT_RANGE 1.0f
+
+#define GREYC_AMPLITUDE_RANGE 200.0f
+#define GREYC_SHARPNESS_RANGE 2.0f
+#define GREYC_ANISOTROPY_RANGE 1.0f
+#define GREYC_ALPHA_RANGE 12.0f
+#define GREYC_SIGMA_RANGE 12.0f
+#define GREYC_GAUSSPREC_RANGE 12.0f
+#define GREYC_DL_RANGE 1.0f
+#define GREYC_DA_RANGE 90.0f
+#define GREYC_NB_ITER_RANGE 16.0f
+
 #define LG_SCALE_RANGE 100.f
 #define LG_TEMPERATURE_RANGE 20000.f
 
@@ -154,7 +170,6 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_guiWindowState = SHOWN;
 
 	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
-
 	m_auinotebook->SetSelection( 0 );
 
 	ResetToneMapping();
@@ -163,15 +178,17 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	wxTextValidator vt( wxFILTER_NUMERIC );
 
-	m_TM_Reinhard_ywaText->SetValidator( vt );
 	m_TM_Reinhard_prescaleText->SetValidator( vt );
 	m_TM_Reinhard_postscaleText->SetValidator( vt );
 	m_TM_Reinhard_burnText->SetValidator( vt );
+
 	m_TM_Linear_sensitivityText->SetValidator( vt );
 	m_TM_Linear_exposureText->SetValidator( vt );
 	m_TM_Linear_fstopText->SetValidator( vt );
 	m_TM_Linear_gammaText->SetValidator( vt );
+
 	m_TM_contrast_ywaText->SetValidator( vt );
+
 	m_TORGB_xwhiteText->SetValidator( vt );
 	m_TORGB_ywhiteText->SetValidator( vt );
 	m_TORGB_xredText->SetValidator( vt );
@@ -180,9 +197,21 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_TORGB_ygreenText->SetValidator( vt );
 	m_TORGB_xblueText->SetValidator( vt );
 	m_TORGB_yblueText->SetValidator( vt );
+
 	m_TORGB_gammaText->SetValidator( vt );
+
 	m_TORGB_bloomradiusText->SetValidator( vt );
 	m_TORGB_bloomweightText->SetValidator( vt );
+
+	m_greyc_iterationsText->SetValidator( vt );
+	m_greyc_amplitudeText->SetValidator( vt );
+	m_greyc_gaussprecText->SetValidator( vt );
+	m_greyc_alphaText->SetValidator( vt );
+	m_greyc_sigmaText->SetValidator( vt );
+	m_greyc_sharpnessText->SetValidator( vt );
+	m_greyc_anisoText->SetValidator( vt );
+	m_greyc_spatialText->SetValidator( vt );
+	m_greyc_angularText->SetValidator( vt );
 }
 
 LuxGui::~LuxGui() {
@@ -379,6 +408,8 @@ void LuxGui::LoadImages() {
 	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(n_color_png));
 	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(n_gamma_png));
 
+	m_NoiseReductionBitmap->SetBitmap(wxMEMORY_BITMAP(noiseicon_png));
+
 	m_splashbmp = wxMEMORY_BITMAP(splash_png);
 }
 
@@ -560,6 +591,15 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				ApplyTonemapping();
 			}
 			break;
+		case ID_AUTO_TONEMAP:
+			{
+				// Set auto tonemapping
+				if(m_auto_tonemapCheckBox->IsChecked())
+					m_auto_tonemap = true;
+				else
+					m_auto_tonemap = false;
+			}
+			break;
 		case ID_TM_KERNELCHOICE:
 			{
 				// Change tonemapping kernel
@@ -579,6 +619,37 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				// Signal film to update bloom layer at next tonemap
 				UpdateParam(LUX_FILM, LUX_FILM_UPDATEBLOOMLAYER, 1.0f);
 				ApplyTonemapping(true);
+			}
+			break;
+		// GREYC Enable/Disable checkbox
+		case ID_GREYC_ENABLED:
+			{
+				if(m_greyc_EnabledCheckBox->IsChecked())
+					m_GREYC_enabled = true;
+				else
+					m_GREYC_enabled = false;
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED, m_GREYC_enabled);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		// GREYC Enable/Disable fast approximation checkbox
+		case ID_GREYC_FASTAPPROX:
+			{
+				if(m_greyc_fastapproxCheckBox->IsChecked())
+					m_GREYC_fast_approx = true;
+				else
+					m_GREYC_fast_approx = false;
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX, m_GREYC_fast_approx);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		// GREYC interpolation mode
+		case ID_GREYC_INTERPOLATIONCHOICE:
+			{
+				// Change interpolation mode
+				m_GREYC_interp = event.GetInt();
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP, m_GREYC_interp);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
 			}
 			break;
 		default:
@@ -885,6 +956,8 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+
+		// Gamma
 		case ID_TORGB_GAMMA_TEXT:
 			if ( m_TORGB_gammaText->IsModified() )
 			{
@@ -902,6 +975,8 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+
+		// Bloom
 		case ID_TORGB_BLOOMRADIUS_TEXT:
 			if ( m_TORGB_bloomradiusText->IsModified() )
 			{
@@ -935,6 +1010,161 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+
+		// GREYCStoration
+		case ID_GREYC_ITERATIONS_TEXT:
+			if ( m_greyc_iterationsText->IsModified() )
+			{
+				wxString st = m_greyc_iterationsText->GetValue();
+				st.ToDouble( &m_GREYC_nb_iter );
+
+				if ( m_GREYC_nb_iter > GREYC_NB_ITER_RANGE ) m_GREYC_nb_iter = GREYC_NB_ITER_RANGE;
+				else if ( m_GREYC_nb_iter < 1 ) m_GREYC_nb_iter = 1;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_nb_iter );
+				m_greyc_iterationsText->SetValue( st );
+				int val = (int) m_GREYC_nb_iter;
+				m_greyc_iterationsSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER, m_GREYC_nb_iter);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_AMPLITUDE_TEXT:
+			if ( m_greyc_amplitudeText->IsModified() )
+			{
+				wxString st = m_greyc_amplitudeText->GetValue();
+				st.ToDouble( &m_GREYC_amplitude );
+
+				if ( m_GREYC_amplitude > GREYC_AMPLITUDE_RANGE ) m_GREYC_amplitude = GREYC_AMPLITUDE_RANGE;
+				else if ( m_GREYC_amplitude < 0 ) m_GREYC_amplitude = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_amplitude );
+				m_greyc_amplitudeText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_AMPLITUDE_RANGE ) * (m_GREYC_amplitude));
+				m_greyc_amplitudeSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_AMPLITUDE, m_GREYC_amplitude);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_GAUSSPREC_TEXT:
+			if ( m_greyc_gaussprecText->IsModified() )
+			{
+				wxString st = m_greyc_gaussprecText->GetValue();
+				st.ToDouble( &m_GREYC_gauss_prec );
+
+				if ( m_GREYC_gauss_prec > GREYC_GAUSSPREC_RANGE ) m_GREYC_gauss_prec = GREYC_GAUSSPREC_RANGE;
+				else if ( m_GREYC_gauss_prec < 0 ) m_GREYC_gauss_prec = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_gauss_prec );
+				m_greyc_gaussprecText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_GAUSSPREC_RANGE ) * (m_GREYC_gauss_prec));
+				m_greyc_gausprecSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_GAUSSPREC, m_GREYC_gauss_prec);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_ALPHA_TEXT:
+			if ( m_greyc_alphaText->IsModified() )
+			{
+				wxString st = m_greyc_alphaText->GetValue();
+				st.ToDouble( &m_GREYC_alpha );
+
+				if ( m_GREYC_alpha > GREYC_ALPHA_RANGE ) m_GREYC_alpha = GREYC_ALPHA_RANGE;
+				else if ( m_GREYC_alpha < 0 ) m_GREYC_alpha = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_alpha );
+				m_greyc_alphaText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_ALPHA_RANGE ) * (m_GREYC_alpha));
+				m_greyc_alphaSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_ALPHA, m_GREYC_alpha);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_SIGMA_TEXT:
+			if ( m_greyc_sigmaText->IsModified() )
+			{
+				wxString st = m_greyc_sigmaText->GetValue();
+				st.ToDouble( &m_GREYC_sigma );
+
+				if ( m_GREYC_sigma > GREYC_SIGMA_RANGE ) m_GREYC_sigma = GREYC_SIGMA_RANGE;
+				else if ( m_GREYC_sigma < 0 ) m_GREYC_sigma = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_sigma );
+				m_greyc_sigmaText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_SIGMA_RANGE ) * (m_GREYC_sigma));
+				m_greyc_sigmaSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_SIGMA, m_GREYC_sigma);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_SHARPNESS_TEXT:
+			if ( m_greyc_sharpnessText->IsModified() )
+			{
+				wxString st = m_greyc_sharpnessText->GetValue();
+				st.ToDouble( &m_GREYC_sharpness );
+
+				if ( m_GREYC_sharpness > GREYC_SHARPNESS_RANGE ) m_GREYC_sharpness = GREYC_SHARPNESS_RANGE;
+				else if ( m_GREYC_sharpness < 0 ) m_GREYC_sharpness = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_sharpness );
+				m_greyc_sharpnessText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_SHARPNESS_RANGE ) * (m_GREYC_sharpness));
+				m_greyc_sharpnessSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_SHARPNESS, m_GREYC_sharpness);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_ANISO_TEXT:
+			if ( m_greyc_anisoText->IsModified() )
+			{
+				wxString st = m_greyc_anisoText->GetValue();
+				st.ToDouble( &m_GREYC_anisotropy );
+
+				if ( m_GREYC_anisotropy > GREYC_ANISOTROPY_RANGE ) m_GREYC_anisotropy = GREYC_ANISOTROPY_RANGE;
+				else if ( m_GREYC_anisotropy < 0 ) m_GREYC_anisotropy = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_anisotropy );
+				m_greyc_anisoText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_ANISOTROPY_RANGE ) * (m_GREYC_anisotropy));
+				m_greyc_anisoSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_ANISOTROPY, m_GREYC_anisotropy);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_SPATIAL_TEXT:
+			if ( m_greyc_spatialText->IsModified() )
+			{
+				wxString st = m_greyc_spatialText->GetValue();
+				st.ToDouble( &m_GREYC_dl );
+
+				if ( m_GREYC_dl > GREYC_DL_RANGE ) m_GREYC_dl = GREYC_DL_RANGE;
+				else if ( m_GREYC_dl < 0 ) m_GREYC_dl = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_dl );
+				m_greyc_spatialText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_DL_RANGE ) * (m_GREYC_dl));
+				m_greyc_spatialSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_DL, m_GREYC_dl);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_GREYC_ANGULAR_TEXT:
+			if ( m_greyc_angularText->IsModified() )
+			{
+				wxString st = m_greyc_angularText->GetValue();
+				st.ToDouble( &m_GREYC_da );
+
+				if ( m_GREYC_da > GREYC_DA_RANGE ) m_GREYC_da = GREYC_DA_RANGE;
+				else if ( m_GREYC_da < 0 ) m_GREYC_da = 0;
+
+				st = wxString::Format( _("%.02f"), m_GREYC_da );
+				m_greyc_angularText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / GREYC_DA_RANGE ) * (m_GREYC_da));
+				m_greyc_angularSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_DA, m_GREYC_da);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
 		default:
 			break;
 	}
@@ -942,6 +1172,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 
 void LuxGui::OnCheckBox(wxCommandEvent& event)
 {
+// Radiance - event does'nt work ? use OnMenu redirection for now.
 }
 
 void LuxGui::OnColourChanged(wxColourPickerEvent &event)
@@ -1127,6 +1358,98 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+
+		// GREYCStoration
+		case ID_GREYC_ITERATIONS:
+			{
+				m_GREYC_nb_iter = (double)event.GetPosition();
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_nb_iter );
+				m_greyc_iterationsText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER, m_GREYC_nb_iter);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_AMPLITUDE:
+			{
+				m_GREYC_amplitude = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_AMPLITUDE_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_amplitude );
+				m_greyc_amplitudeText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_AMPLITUDE, m_GREYC_amplitude);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_GAUSSPREC:
+			{
+				m_GREYC_gauss_prec = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_GAUSSPREC_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_gauss_prec );
+				m_greyc_gaussprecText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_GAUSSPREC, m_GREYC_gauss_prec);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_ALPHA:
+			{
+				m_GREYC_alpha = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_ALPHA_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_alpha );
+				m_greyc_alphaText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_ALPHA, m_GREYC_alpha);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_SIGMA:
+			{
+				m_GREYC_sigma = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_SIGMA_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_sigma );
+				m_greyc_sigmaText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_SIGMA, m_GREYC_sigma);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_SHARPNESS:
+			{
+				m_GREYC_sharpness = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_SHARPNESS_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_sharpness );
+				m_greyc_sharpnessText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_SHARPNESS, m_GREYC_sharpness);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_ANISO:
+			{
+				m_GREYC_anisotropy = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_ANISOTROPY_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_anisotropy );
+				m_greyc_anisoText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_ANISOTROPY, m_GREYC_anisotropy);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_SPATIAL:
+			{
+				m_GREYC_dl = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_DL_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_dl );
+				m_greyc_spatialText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_DL, m_GREYC_dl);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
+		case ID_GREYC_ANGULAR:
+			{
+				m_GREYC_da = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GREYC_DA_RANGE );
+				wxString st = wxString::Format( _("%.02f"), m_GREYC_da );
+				m_greyc_angularText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_DA, m_GREYC_da);
+				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+				
+			}
+			break;
 		default:
 			break;
 	}
@@ -1198,6 +1521,34 @@ void LuxGui::OnFocus( wxFocusEvent& event ){
 			break;
 		case ID_TORGB_BLOOMWEIGHT_TEXT:
 			m_TORGB_bloomweightText->SetValue( wxString::Format( _("%.02f"), m_bloomweight ) );
+			break;
+		// GREYC options
+		case ID_GREYC_ITERATIONS_TEXT:
+			m_greyc_iterationsText->SetValue( wxString::Format( _("%.02f"), m_GREYC_nb_iter ) );
+			break;
+		case ID_GREYC_AMPLITUDE_TEXT:
+			m_greyc_amplitudeText->SetValue( wxString::Format( _("%.02f"), m_GREYC_amplitude ) );
+			break;
+		case ID_GREYC_GAUSSPREC_TEXT:
+			m_greyc_gaussprecText->SetValue( wxString::Format( _("%.02f"), m_GREYC_gauss_prec ) );
+			break;
+		case ID_GREYC_ALPHA_TEXT:
+			m_greyc_alphaText->SetValue( wxString::Format( _("%.02f"), m_GREYC_alpha ) );
+			break;
+		case ID_GREYC_SIGMA_TEXT:
+			m_greyc_sigmaText->SetValue( wxString::Format( _("%.02f"), m_GREYC_sigma ) );
+			break;
+		case ID_GREYC_SHARPNESS_TEXT:
+			m_greyc_sharpnessText->SetValue( wxString::Format( _("%.02f"), m_GREYC_sharpness ) );
+			break;
+		case ID_GREYC_ANISO_TEXT:
+			m_greyc_anisoText->SetValue( wxString::Format( _("%.02f"), m_GREYC_anisotropy ) );
+			break;
+		case ID_GREYC_SPATIAL_TEXT:
+			m_greyc_spatialText->SetValue( wxString::Format( _("%.02f"), m_GREYC_dl ) );
+			break;
+		case ID_GREYC_ANGULAR_TEXT:
+			m_greyc_angularText->SetValue( wxString::Format( _("%.02f"), m_GREYC_da ) );
 			break;
 		default:
 			break;
@@ -1328,8 +1679,6 @@ void LuxGui::ResetToneMapping(){
 
 	m_TM_kernel = 0; // *
 
-	m_TM_reinhard_autoywa = true; // *
-	m_TM_reinhard_ywa = 1.0;
 	m_TM_reinhard_prescale = 1.0;
 	m_TM_reinhard_postscale = 1.0;
 	m_TM_reinhard_burn = 6.0;
@@ -1354,6 +1703,19 @@ void LuxGui::ResetToneMapping(){
 	m_TORGB_yblue = 0.07f;
 	m_TORGB_gamma = 2.2f;
 
+	m_GREYC_enabled = false;
+	m_GREYC_fast_approx = true;
+	m_GREYC_amplitude = 40.0;
+	m_GREYC_sharpness = 0.8;
+	m_GREYC_anisotropy = 0.2;
+	m_GREYC_alpha = 0.8;
+	m_GREYC_sigma = 1.1;
+	m_GREYC_gauss_prec = 2.0;
+	m_GREYC_dl = 0.8;
+	m_GREYC_da = 30.0;
+	m_GREYC_nb_iter = 1;
+	m_GREYC_interp = 0;
+
 	UpdateTonemapWidgetValues();
 	m_outputNotebook->Enable( false );
 	Refresh();
@@ -1368,12 +1730,8 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	SetTonemapKernel(m_TM_kernel);
 
 	// Reinhard widgets
-	m_TM_Reinhard_ywaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_YWA_RANGE) * m_TM_reinhard_ywa) );
-	wxString st = wxString::Format( _("%.02f"), m_TM_reinhard_ywa );
-	m_TM_Reinhard_ywaText->SetValue(st);
-
 	m_TM_Reinhard_prescaleSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_PRESCALE_RANGE) * m_TM_reinhard_prescale) );
-	st = wxString::Format( _("%.02f"), m_TM_reinhard_prescale );
+	wxString st = wxString::Format( _("%.02f"), m_TM_reinhard_prescale );
 	m_TM_Reinhard_prescaleText->SetValue(st);
 
 	m_TM_Reinhard_postscaleSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_REINHARD_POSTSCALE_RANGE) * (m_TM_reinhard_postscale)));
@@ -1448,14 +1806,54 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	st = wxString::Format( _("%.02f"), m_bloomweight );
 	m_TORGB_bloomweightText->SetValue(st);
 
+	// GREYC widgets
+	m_greyc_iterationsSlider->SetValue( (int) m_GREYC_nb_iter );
+	st = wxString::Format( _("%.02f"), m_GREYC_nb_iter );
+	m_greyc_iterationsText->SetValue(st);
+
+	m_greyc_amplitudeSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_AMPLITUDE_RANGE) * m_GREYC_amplitude));
+	st = wxString::Format( _("%.02f"), m_GREYC_amplitude );
+	m_greyc_amplitudeText->SetValue(st);
+
+	m_greyc_gausprecSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_GAUSSPREC_RANGE) * m_GREYC_gauss_prec));
+	st = wxString::Format( _("%.02f"), m_GREYC_gauss_prec );
+	m_greyc_gaussprecText->SetValue(st);
+
+	m_greyc_alphaSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_ALPHA_RANGE) * m_GREYC_alpha));
+	st = wxString::Format( _("%.02f"), m_GREYC_alpha );
+	m_greyc_alphaText->SetValue(st);
+
+	m_greyc_sigmaSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_SIGMA_RANGE) * m_GREYC_sigma));
+	st = wxString::Format( _("%.02f"), m_GREYC_sigma );
+	m_greyc_sigmaText->SetValue(st);
+
+	m_greyc_sharpnessSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_SHARPNESS_RANGE) * m_GREYC_sharpness));
+	st = wxString::Format( _("%.02f"), m_GREYC_sharpness );
+	m_greyc_iterationsText->SetValue(st);
+
+	m_greyc_anisoSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_ANISOTROPY_RANGE) * m_GREYC_anisotropy));
+	st = wxString::Format( _("%.02f"), m_GREYC_anisotropy );
+	m_greyc_anisoText->SetValue(st);
+
+	m_greyc_spatialSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_DL_RANGE) * m_GREYC_dl));
+	st = wxString::Format( _("%.02f"), m_GREYC_dl );
+	m_greyc_spatialText->SetValue(st);
+
+	m_greyc_angularSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_DA_RANGE) * m_GREYC_da));
+	st = wxString::Format( _("%.02f"), m_GREYC_da );
+	m_greyc_angularText->SetValue(st);
+
+	m_GREYCinterpolationChoice->SetSelection( m_GREYC_interp );
+
+	m_greyc_EnabledCheckBox->SetValue( m_GREYC_enabled );
+	m_greyc_fastapproxCheckBox->SetValue( m_GREYC_fast_approx );
+
 	Refresh();
 }
 
 void LuxGui::ResetToneMappingFromFilm(){
 	m_TM_kernel = (int) luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
 
-	m_TM_reinhard_autoywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA) != 0.0;
-	m_TM_reinhard_ywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_YWA);
 	m_TM_reinhard_prescale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
 	m_TM_reinhard_postscale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
 	m_TM_reinhard_burn = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN);
@@ -1480,9 +1878,24 @@ void LuxGui::ResetToneMappingFromFilm(){
 	m_bloomradius = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS);
 	m_bloomweight = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT);
 
-	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL, m_TM_kernel);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_AUTOYWA, m_TM_reinhard_autoywa);
-	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_YWA, m_TM_reinhard_ywa);
+	double t = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED);
+	if(t != 0.0) m_GREYC_enabled = true;
+	else m_GREYC_enabled = false;
+	t = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX);
+	if(t != 0.0) m_GREYC_fast_approx = true;
+	else m_GREYC_fast_approx = false;
+
+	m_GREYC_amplitude = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_AMPLITUDE);
+	m_GREYC_sharpness = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_SHARPNESS);
+	m_GREYC_anisotropy = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ANISOTROPY);
+	m_GREYC_alpha = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ALPHA);
+	m_GREYC_sigma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_SIGMA);
+	m_GREYC_gauss_prec = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_GAUSSPREC);
+	m_GREYC_dl = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_DL);
+	m_GREYC_da = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_DA);
+	m_GREYC_nb_iter = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER);
+	m_GREYC_interp = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP);
+
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN, m_TM_reinhard_burn);
@@ -1506,6 +1919,19 @@ void LuxGui::ResetToneMappingFromFilm(){
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED, m_GREYC_enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX, m_GREYC_fast_approx);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_AMPLITUDE, m_GREYC_amplitude);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_SHARPNESS, m_GREYC_sharpness);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ANISOTROPY, m_GREYC_anisotropy);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ALPHA, m_GREYC_alpha);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_SIGMA, m_GREYC_sigma);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_GAUSSPREC, m_GREYC_gauss_prec);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_DL, m_GREYC_dl);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_DA, m_GREYC_da);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER, m_GREYC_nb_iter);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP, m_GREYC_interp);
 
 	UpdateTonemapWidgetValues();
 	if(m_auto_tonemap) ApplyTonemapping();

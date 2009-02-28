@@ -45,7 +45,7 @@ public:
 		const string &filename1, bool premult, int wI, int dI,
 		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 		bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
-		int p_TonemapKernel, bool p_ReinhardAutoYwa, float p_ReinhardYwa, float p_ReinhardPreScale, float p_ReinhardPostScale,
+		int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 		float p_ContrastDisplayAdaptionY, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
@@ -131,8 +131,6 @@ private:
 	ColorSystem colorSpace;
 
 	int m_TonemapKernel, d_TonemapKernel;
-	bool m_ReinhardAutoYwa, d_ReinhardAutoYwa;
-	float m_ReinhardYwa, d_ReinhardYwa;
 	float m_ReinhardPreScale, d_ReinhardPreScale;
 	float m_ReinhardPostScale, d_ReinhardPostScale;
 	float m_ReinhardBurn, d_ReinhardBurn;
@@ -150,6 +148,8 @@ private:
 	float m_RGB_X_Blue, d_RGB_X_Blue;
 	float m_RGB_Y_Blue, d_RGB_Y_Blue;
 	float m_Gamma, d_Gamma;
+
+	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 
 	Color * m_bloomImage; // Persisting bloom layer image 
 	bool m_BloomUpdateLayer;

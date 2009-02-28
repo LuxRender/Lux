@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 21 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -187,39 +187,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer33;
 	bSizer33 = new wxBoxSizer( wxVERTICAL );
 	
-	m_TM_Reinhard_YwaStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Ywa (Display/World Adaption Luminance)"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Reinhard_YwaStaticText->Wrap( -1 );
-	bSizer33->Add( m_TM_Reinhard_YwaStaticText, 0, wxALL, 5 );
-	
-	wxBoxSizer* bSizer104;
-	bSizer104 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_TM_Reinhard_autoywaCheckbox = new wxCheckBox( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_AUTOYWA, wxT("auto"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_TM_Reinhard_autoywaCheckbox->SetValue(true);
-	
-	bSizer104->Add( m_TM_Reinhard_autoywaCheckbox, 0, wxALIGN_CENTER|wxALL, 5 );
-	
-	m_TM_Reinhard_ywaSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_YWA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Reinhard_ywaSlider->Enable( false );
-	m_TM_Reinhard_ywaSlider->SetToolTip( wxT("Reinhard Prescale") );
-	
-	bSizer104->Add( m_TM_Reinhard_ywaSlider, 1, wxALL|wxEXPAND, 2 );
-	
-	m_TM_Reinhard_ywaText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_YWA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
-	m_TM_Reinhard_ywaText->SetMaxLength( 5 ); 
-	m_TM_Reinhard_ywaText->Enable( false );
-	m_TM_Reinhard_ywaText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
-	
-	bSizer104->Add( m_TM_Reinhard_ywaText, 0, wxALIGN_CENTER, 0 );
-	
-	bSizer33->Add( bSizer104, 0, wxEXPAND, 5 );
-	
-	m_TM_Reinhard_prescaleStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Prescale "), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Reinhard_prescaleStaticText->Wrap( -1 );
-	bSizer33->Add( m_TM_Reinhard_prescaleStaticText, 0, wxALL|wxFIXED_MINSIZE, 2 );
-	
 	wxBoxSizer* bSizer10;
 	bSizer10 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Reinhard_prescaleStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Prescale "), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
+	m_TM_Reinhard_prescaleStaticText->Wrap( -1 );
+	bSizer10->Add( m_TM_Reinhard_prescaleStaticText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 2 );
 	
 	m_TM_Reinhard_prescaleSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_PRESCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Reinhard_prescaleSlider->SetToolTip( wxT("Reinhard Prescale") );
@@ -234,12 +207,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer33->Add( bSizer10, 0, wxEXPAND, 5 );
 	
-	m_TM_Reinhard_postscaleStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Postscale"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Reinhard_postscaleStaticText->Wrap( -1 );
-	bSizer33->Add( m_TM_Reinhard_postscaleStaticText, 0, wxALL|wxEXPAND|wxFIXED_MINSIZE, 2 );
-	
 	wxBoxSizer* bSizer12;
 	bSizer12 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Reinhard_postscaleStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Postscale"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
+	m_TM_Reinhard_postscaleStaticText->Wrap( -1 );
+	bSizer12->Add( m_TM_Reinhard_postscaleStaticText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 2 );
 	
 	m_TM_Reinhard_postscaleSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_POSTSCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Reinhard_postscaleSlider->SetToolTip( wxT("Reinhard Postscale") );
@@ -254,12 +227,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer33->Add( bSizer12, 0, wxEXPAND, 5 );
 	
-	m_TM_Reinhard_burnStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Burn"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Reinhard_burnStaticText->Wrap( -1 );
-	bSizer33->Add( m_TM_Reinhard_burnStaticText, 0, wxALL|wxEXPAND|wxFIXED_MINSIZE, 2 );
-	
 	wxBoxSizer* bSizer13;
 	bSizer13 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Reinhard_burnStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Burn"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
+	m_TM_Reinhard_burnStaticText->Wrap( -1 );
+	bSizer13->Add( m_TM_Reinhard_burnStaticText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 2 );
 	
 	m_TM_Reinhard_burnSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_BURN, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Reinhard_burnSlider->SetToolTip( wxT("Reinhard Burn") );
@@ -292,7 +265,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer1041;
 	bSizer1041 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TM_Linear_sensitivitySlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_SELRANGE );
+	m_TM_Linear_sensitivitySlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_sensitivitySlider->SetToolTip( wxT("Reinhard Prescale") );
 	
 	bSizer1041->Add( m_TM_Linear_sensitivitySlider, 1, wxALL|wxEXPAND, 2 );
@@ -312,7 +285,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer105;
 	bSizer105 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TM_Linear_exposureSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_SELRANGE );
+	m_TM_Linear_exposureSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_exposureSlider->SetToolTip( wxT("Reinhard Prescale") );
 	
 	bSizer105->Add( m_TM_Linear_exposureSlider, 1, wxALL|wxEXPAND, 2 );
@@ -332,7 +305,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer121;
 	bSizer121 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TM_Linear_fstopSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_SELRANGE );
+	m_TM_Linear_fstopSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_fstopSlider->SetToolTip( wxT("Reinhard Postscale") );
 	
 	bSizer121->Add( m_TM_Linear_fstopSlider, 1, wxALL|wxEXPAND, 2 );
@@ -352,7 +325,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer131;
 	bSizer131 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TM_Linear_gammaSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_SELRANGE );
+	m_TM_Linear_gammaSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_gammaSlider->SetToolTip( wxT("Reinhard Burn") );
 	
 	bSizer131->Add( m_TM_Linear_gammaSlider, 1, wxALL|wxEXPAND, 2 );
@@ -383,7 +356,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer1042;
 	bSizer1042 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TM_contrast_ywaSlider = new wxSlider( m_TonemapContrastOptionsPanel, ID_TM_CONTRAST_YWA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_SELRANGE );
+	m_TM_contrast_ywaSlider = new wxSlider( m_TonemapContrastOptionsPanel, ID_TM_CONTRAST_YWA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_contrast_ywaSlider->SetToolTip( wxT("Reinhard Prescale") );
 	
 	bSizer1042->Add( m_TM_contrast_ywaSlider, 1, wxALL|wxEXPAND, 2 );
@@ -411,50 +384,66 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_bloomBitmap = new wxStaticBitmap( m_BloomOptionsPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer10311->Add( m_bloomBitmap, 0, wxALL, 5 );
 	
-	m_TORGB_bloomText = new wxStaticText( m_BloomOptionsPanel, wxID_ANY, wxT("Bloom Radius"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TORGB_bloomText->Wrap( -1 );
-	bSizer10311->Add( m_TORGB_bloomText, 0, wxALL, 5 );
+	m_TORGB_lensfxText = new wxStaticText( m_BloomOptionsPanel, wxID_ANY, wxT("Lens Effects"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_lensfxText->Wrap( -1 );
+	bSizer10311->Add( m_TORGB_lensfxText, 0, wxALL, 5 );
 	
-	bSizer33221->Add( bSizer10311, 1, wxEXPAND, 5 );
+	bSizer33221->Add( bSizer10311, 0, wxEXPAND, 5 );
+	
+	m_notebook5 = new wxNotebook( m_BloomOptionsPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_bloomPanel = new wxPanel( m_notebook5, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer74;
+	bSizer74 = new wxBoxSizer( wxVERTICAL );
 	
 	wxBoxSizer* bSizer1032;
 	bSizer1032 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TORGB_bloomradiusSlider = new wxSlider( m_BloomOptionsPanel, ID_TORGB_BLOOMRADIUS, 35, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_TORGB_bloomweightStaticText11 = new wxStaticText( m_bloomPanel, wxID_ANY, wxT("Radius"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_bloomweightStaticText11->Wrap( -1 );
+	bSizer1032->Add( m_TORGB_bloomweightStaticText11, 0, wxALL, 5 );
+	
+	m_TORGB_bloomradiusSlider = new wxSlider( m_bloomPanel, ID_TORGB_BLOOMRADIUS, 35, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TORGB_bloomradiusSlider->SetToolTip( wxT("Gamma Value") );
 	
 	bSizer1032->Add( m_TORGB_bloomradiusSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TORGB_bloomradiusText = new wxTextCtrl( m_BloomOptionsPanel, ID_TORGB_BLOOMRADIUS_TEXT, wxT("0.07"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_TORGB_bloomradiusText = new wxTextCtrl( m_bloomPanel, ID_TORGB_BLOOMRADIUS_TEXT, wxT("0.07"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_bloomradiusText->SetMaxLength( 5 ); 
 	m_TORGB_bloomradiusText->SetToolTip( wxT("Gamma Value") );
 	
 	bSizer1032->Add( m_TORGB_bloomradiusText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
-	m_computebloomlayer = new wxButton( m_BloomOptionsPanel, ID_COMPUTEBLOOMLAYER, wxT("Compute Layer"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_computebloomlayer = new wxButton( m_bloomPanel, ID_COMPUTEBLOOMLAYER, wxT("Compute Layer"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer1032->Add( m_computebloomlayer, 0, wxALL, 5 );
 	
-	bSizer33221->Add( bSizer1032, 0, wxEXPAND, 5 );
-	
-	m_TORGB_bloomweightStaticText = new wxStaticText( m_BloomOptionsPanel, wxID_ANY, wxT("Weight/Amount"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TORGB_bloomweightStaticText->Wrap( -1 );
-	bSizer33221->Add( m_TORGB_bloomweightStaticText, 0, wxALL, 5 );
+	bSizer74->Add( bSizer1032, 1, wxEXPAND, 5 );
 	
 	wxBoxSizer* bSizer10321;
 	bSizer10321 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TORGB_bloomweightSlider = new wxSlider( m_BloomOptionsPanel, ID_TORGB_BLOOMWEIGHT, 128, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_TORGB_bloomweightStaticText1 = new wxStaticText( m_bloomPanel, wxID_ANY, wxT("Amount"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_bloomweightStaticText1->Wrap( -1 );
+	bSizer10321->Add( m_TORGB_bloomweightStaticText1, 0, wxALL, 5 );
+	
+	m_TORGB_bloomweightSlider = new wxSlider( m_bloomPanel, ID_TORGB_BLOOMWEIGHT, 128, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TORGB_bloomweightSlider->SetToolTip( wxT("Gamma Value") );
 	
 	bSizer10321->Add( m_TORGB_bloomweightSlider, 1, wxALL|wxEXPAND, 2 );
 	
-	m_TORGB_bloomweightText = new wxTextCtrl( m_BloomOptionsPanel, ID_TORGB_BLOOMWEIGHT_TEXT, wxT("0.25"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_TORGB_bloomweightText = new wxTextCtrl( m_bloomPanel, ID_TORGB_BLOOMWEIGHT_TEXT, wxT("0.25"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_bloomweightText->SetMaxLength( 5 ); 
 	m_TORGB_bloomweightText->SetToolTip( wxT("Gamma Value") );
 	
 	bSizer10321->Add( m_TORGB_bloomweightText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
-	bSizer33221->Add( bSizer10321, 1, wxEXPAND, 5 );
+	bSizer74->Add( bSizer10321, 1, wxEXPAND, 5 );
+	
+	m_bloomPanel->SetSizer( bSizer74 );
+	m_bloomPanel->Layout();
+	bSizer74->Fit( m_bloomPanel );
+	m_notebook5->AddPage( m_bloomPanel, wxT("Gaussian Bloom"), true );
+	
+	bSizer33221->Add( m_notebook5, 1, wxEXPAND | wxALL, 1 );
 	
 	m_BloomOptionsPanel->SetSizer( bSizer33221 );
 	m_BloomOptionsPanel->Layout();
@@ -683,6 +672,310 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer3322->Fit( m_GammaOptionsPanel );
 	bTonemapSizer->Add( m_GammaOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
+	m_NoiseOptionsPanel = new wxPanel( m_Tonemap, ID_NOISEOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer33222;
+	bSizer33222 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer10312;
+	bSizer10312 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_NoiseReductionBitmap = new wxStaticBitmap( m_NoiseOptionsPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer10312->Add( m_NoiseReductionBitmap, 0, wxALL, 5 );
+	
+	m_NoiseReductionStaticText = new wxStaticText( m_NoiseOptionsPanel, wxID_ANY, wxT("Noise Reduction"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_NoiseReductionStaticText->Wrap( -1 );
+	bSizer10312->Add( m_NoiseReductionStaticText, 0, wxALL, 5 );
+	
+	bSizer33222->Add( bSizer10312, 0, wxEXPAND, 5 );
+	
+	m_notebook3 = new wxNotebook( m_NoiseOptionsPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_GREYCPanel = new wxPanel( m_notebook3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer65;
+	bSizer65 = new wxBoxSizer( wxVERTICAL );
+	
+	m_GREYCNotebook = new wxNotebook( m_GREYCPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_LEFT );
+	m_GREYCRegPanel = new wxPanel( m_GREYCNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer66;
+	bSizer66 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer10342;
+	bSizer10342 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_greyc_EnabledCheckBox = new wxCheckBox( m_GREYCRegPanel, ID_GREYC_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	bSizer10342->Add( m_greyc_EnabledCheckBox, 0, wxALL, 5 );
+	
+	m_greyc_fastapproxCheckBox = new wxCheckBox( m_GREYCRegPanel, ID_GREYC_FASTAPPROX, wxT("Fast approximation"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_greyc_fastapproxCheckBox->SetValue(true);
+	
+	bSizer10342->Add( m_greyc_fastapproxCheckBox, 1, wxALL, 5 );
+	
+	bSizer66->Add( bSizer10342, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer1034;
+	bSizer1034 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCIterationsStaticText = new wxStaticText( m_GREYCRegPanel, wxID_ANY, wxT("Iterations"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCIterationsStaticText->Wrap( -1 );
+	bSizer1034->Add( m_GREYCIterationsStaticText, 0, wxALL, 5 );
+	
+	m_greyc_iterationsSlider = new wxSlider( m_GREYCRegPanel, ID_GREYC_ITERATIONS, 1, 1, 16, wxDefaultPosition, wxSize( -1,-1 ), wxSL_AUTOTICKS|wxSL_HORIZONTAL );
+	m_greyc_iterationsSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1034->Add( m_greyc_iterationsSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_iterationsText = new wxTextCtrl( m_GREYCRegPanel, ID_GREYC_ITERATIONS_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_iterationsText->SetMaxLength( 5 ); 
+	m_greyc_iterationsText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1034->Add( m_greyc_iterationsText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer66->Add( bSizer1034, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer1035;
+	bSizer1035 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCamplitureStaticText = new wxStaticText( m_GREYCRegPanel, wxID_ANY, wxT("Amplitude"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCamplitureStaticText->Wrap( -1 );
+	bSizer1035->Add( m_GREYCamplitureStaticText, 0, wxALL, 5 );
+	
+	m_greyc_amplitudeSlider = new wxSlider( m_GREYCRegPanel, ID_GREYC_AMPLITUDE, 102, 1, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_amplitudeSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1035->Add( m_greyc_amplitudeSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_amplitudeText = new wxTextCtrl( m_GREYCRegPanel, ID_GREYC_AMPLITUDE_TEXT, wxT("40.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_amplitudeText->SetMaxLength( 5 ); 
+	m_greyc_amplitudeText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1035->Add( m_greyc_amplitudeText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer66->Add( bSizer1035, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer10352;
+	bSizer10352 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCgaussprecStaticText = new wxStaticText( m_GREYCRegPanel, wxID_ANY, wxT("Gaussian Precision"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCgaussprecStaticText->Wrap( -1 );
+	bSizer10352->Add( m_GREYCgaussprecStaticText, 0, wxALL, 5 );
+	
+	m_greyc_gausprecSlider = new wxSlider( m_GREYCRegPanel, ID_GREYC_GAUSSPREC, 85, 1, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_gausprecSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10352->Add( m_greyc_gausprecSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_gaussprecText = new wxTextCtrl( m_GREYCRegPanel, ID_GREYC_GAUSSPREC_TEXT, wxT("2.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_gaussprecText->SetMaxLength( 5 ); 
+	m_greyc_gaussprecText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10352->Add( m_greyc_gaussprecText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer66->Add( bSizer10352, 0, wxEXPAND, 5 );
+	
+	m_GREYCRegPanel->SetSizer( bSizer66 );
+	m_GREYCRegPanel->Layout();
+	bSizer66->Fit( m_GREYCRegPanel );
+	m_GREYCNotebook->AddPage( m_GREYCRegPanel, wxT("regularization"), true );
+	m_GREYCFilterPanel = new wxPanel( m_GREYCNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer661;
+	bSizer661 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer10341;
+	bSizer10341 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCAlphaStaticText = new wxStaticText( m_GREYCFilterPanel, wxID_ANY, wxT("Alpha"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCAlphaStaticText->Wrap( -1 );
+	bSizer10341->Add( m_GREYCAlphaStaticText, 0, wxALL, 5 );
+	
+	m_greyc_alphaSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_ALPHA, 34, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_alphaSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10341->Add( m_greyc_alphaSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_alphaText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_ALPHA_TEXT, wxT("0.8"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_alphaText->SetMaxLength( 5 ); 
+	m_greyc_alphaText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10341->Add( m_greyc_alphaText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer661->Add( bSizer10341, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer10351;
+	bSizer10351 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCSigmaStaticText = new wxStaticText( m_GREYCFilterPanel, wxID_ANY, wxT("Sigma"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCSigmaStaticText->Wrap( -1 );
+	bSizer10351->Add( m_GREYCSigmaStaticText, 0, wxALL, 5 );
+	
+	m_greyc_sigmaSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_SIGMA, 47, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_sigmaSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10351->Add( m_greyc_sigmaSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_sigmaText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_SIGMA_TEXT, wxT("1.1"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_sigmaText->SetMaxLength( 5 ); 
+	m_greyc_sigmaText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer10351->Add( m_greyc_sigmaText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer661->Add( bSizer10351, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer103411;
+	bSizer103411 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCsharpnessStaticText = new wxStaticText( m_GREYCFilterPanel, wxID_ANY, wxT("Sharpness"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCsharpnessStaticText->Wrap( -1 );
+	bSizer103411->Add( m_GREYCsharpnessStaticText, 0, wxALL, 5 );
+	
+	m_greyc_sharpnessSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_SHARPNESS, 205, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_sharpnessSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103411->Add( m_greyc_sharpnessSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_sharpnessText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_SHARPNESS_TEXT, wxT("0.8"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_sharpnessText->SetMaxLength( 5 ); 
+	m_greyc_sharpnessText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103411->Add( m_greyc_sharpnessText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer661->Add( bSizer103411, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer103412;
+	bSizer103412 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCAnisoStaticText = new wxStaticText( m_GREYCFilterPanel, wxID_ANY, wxT("Aniso"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCAnisoStaticText->Wrap( -1 );
+	bSizer103412->Add( m_GREYCAnisoStaticText, 0, wxALL, 5 );
+	
+	m_greyc_anisoSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_ANISO, 102, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_anisoSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103412->Add( m_greyc_anisoSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_anisoText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_ANISO_TEXT, wxT("0.2"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_anisoText->SetMaxLength( 5 ); 
+	m_greyc_anisoText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103412->Add( m_greyc_anisoText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer661->Add( bSizer103412, 0, wxEXPAND, 5 );
+	
+	m_GREYCFilterPanel->SetSizer( bSizer661 );
+	m_GREYCFilterPanel->Layout();
+	bSizer661->Fit( m_GREYCFilterPanel );
+	m_GREYCNotebook->AddPage( m_GREYCFilterPanel, wxT("filter"), false );
+	m_GREYCAdvancedPanel = new wxPanel( m_GREYCNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer6611;
+	bSizer6611 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer103413;
+	bSizer103413 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCspatialStaticText = new wxStaticText( m_GREYCAdvancedPanel, wxID_ANY, wxT("Spatial Integration"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCspatialStaticText->Wrap( -1 );
+	bSizer103413->Add( m_GREYCspatialStaticText, 0, wxALL, 5 );
+	
+	m_greyc_spatialSlider = new wxSlider( m_GREYCAdvancedPanel, ID_GREYC_SPATIAL, 410, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_spatialSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103413->Add( m_greyc_spatialSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_spatialText = new wxTextCtrl( m_GREYCAdvancedPanel, ID_GREYC_SPATIAL_TEXT, wxT("0.8"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_spatialText->SetMaxLength( 5 ); 
+	m_greyc_spatialText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103413->Add( m_greyc_spatialText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer6611->Add( bSizer103413, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer103511;
+	bSizer103511 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCangularStaticText = new wxStaticText( m_GREYCAdvancedPanel, wxID_ANY, wxT("Angular Integration"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCangularStaticText->Wrap( -1 );
+	bSizer103511->Add( m_GREYCangularStaticText, 0, wxALL, 5 );
+	
+	m_greyc_angularSlider = new wxSlider( m_GREYCAdvancedPanel, ID_GREYC_ANGULAR, 171, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_greyc_angularSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103511->Add( m_greyc_angularSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_greyc_angularText = new wxTextCtrl( m_GREYCAdvancedPanel, ID_GREYC_ANGULAR_TEXT, wxT("30.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_greyc_angularText->SetMaxLength( 5 ); 
+	m_greyc_angularText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer103511->Add( m_greyc_angularText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer6611->Add( bSizer103511, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer1034111;
+	bSizer1034111 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_GREYCinterpolationStaticText = new wxStaticText( m_GREYCAdvancedPanel, wxID_ANY, wxT("Interpolation Type"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_GREYCinterpolationStaticText->Wrap( -1 );
+	bSizer1034111->Add( m_GREYCinterpolationStaticText, 0, wxALL, 5 );
+	
+	wxString m_GREYCinterpolationChoiceChoices[] = { wxT("Nearest-Neighbour"), wxT("Linear"), wxT("Runge-Kutta") };
+	int m_GREYCinterpolationChoiceNChoices = sizeof( m_GREYCinterpolationChoiceChoices ) / sizeof( wxString );
+	m_GREYCinterpolationChoice = new wxChoice( m_GREYCAdvancedPanel, ID_GREYC_INTERPOLATIONCHOICE, wxDefaultPosition, wxDefaultSize, m_GREYCinterpolationChoiceNChoices, m_GREYCinterpolationChoiceChoices, 0 );
+	m_GREYCinterpolationChoice->SetSelection( 0 );
+	bSizer1034111->Add( m_GREYCinterpolationChoice, 1, wxALL, 2 );
+	
+	bSizer6611->Add( bSizer1034111, 0, wxEXPAND, 5 );
+	
+	m_GREYCAdvancedPanel->SetSizer( bSizer6611 );
+	m_GREYCAdvancedPanel->Layout();
+	bSizer6611->Fit( m_GREYCAdvancedPanel );
+	m_GREYCNotebook->AddPage( m_GREYCAdvancedPanel, wxT("adv"), false );
+	
+	bSizer65->Add( m_GREYCNotebook, 1, wxEXPAND | wxALL, 1 );
+	
+	m_GREYCPanel->SetSizer( bSizer65 );
+	m_GREYCPanel->Layout();
+	bSizer65->Fit( m_GREYCPanel );
+	m_notebook3->AddPage( m_GREYCPanel, wxT("GREYCStoration"), true );
+	m_ChiuPanel = new wxPanel( m_notebook3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_ChiuPanel->Hide();
+	
+	wxBoxSizer* bSizer61;
+	bSizer61 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_enableChiuCheckBox = new wxCheckBox( m_ChiuPanel, wxID_ANY, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	bSizer61->Add( m_enableChiuCheckBox, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer1033;
+	bSizer1033 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_ChiuRadiusSlider = new wxSlider( m_ChiuPanel, ID_CHIU_RADIUS, 3, 1, 9, wxDefaultPosition, wxSize( -1,-1 ), wxSL_AUTOTICKS|wxSL_HORIZONTAL );
+	m_ChiuRadiusSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1033->Add( m_ChiuRadiusSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	m_TORGB_gammaText1 = new wxTextCtrl( m_ChiuPanel, ID_TORGB_GAMMA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_TORGB_gammaText1->SetMaxLength( 5 ); 
+	m_TORGB_gammaText1->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1033->Add( m_TORGB_gammaText1, 0, wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer61->Add( bSizer1033, 1, wxEXPAND, 5 );
+	
+	m_checkBox6 = new wxCheckBox( m_ChiuPanel, wxID_ANY, wxT("Include Center"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	bSizer61->Add( m_checkBox6, 0, wxALL, 5 );
+	
+	m_ChiuPanel->SetSizer( bSizer61 );
+	m_ChiuPanel->Layout();
+	bSizer61->Fit( m_ChiuPanel );
+	m_notebook3->AddPage( m_ChiuPanel, wxT("Chiu"), false );
+	
+	bSizer33222->Add( m_notebook3, 1, wxEXPAND | wxALL, 1 );
+	
+	m_NoiseOptionsPanel->SetSizer( bSizer33222 );
+	m_NoiseOptionsPanel->Layout();
+	bSizer33222->Fit( m_NoiseOptionsPanel );
+	bTonemapSizer->Add( m_NoiseOptionsPanel, 0, wxEXPAND | wxALL, 1 );
+	
 	wxBoxSizer* bTonemapButtonsSizer;
 	bTonemapButtonsSizer = new wxBoxSizer( wxVERTICAL );
 	
@@ -848,18 +1141,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( ID_ZOOMTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_REFINETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_TM_kernelChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
-	m_TM_Reinhard_ywaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
-	m_TM_Reinhard_ywaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1090,7 +1371,131 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TORGB_gammaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_EnabledCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_greyc_fastapproxCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_iterationsText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_iterationsText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_amplitudeText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_amplitudeText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gaussprecText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_gaussprecText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_gaussprecText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_alphaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_alphaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_sigmaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sigmaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_sharpnessText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sharpnessText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_anisoText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_anisoText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_spatialText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_spatialText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_angularText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_angularText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_GREYCinterpolationChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_gammaText1->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_TORGB_gammaText1->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_gammaText1->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_resetButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_auto_tonemapCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_applyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	this->Connect( ID_ADD_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -1126,18 +1531,6 @@ LuxMainFrame::~LuxMainFrame()
 	this->Disconnect( ID_ZOOMTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_REFINETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_TM_kernelChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TM_Reinhard_ywaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
-	m_TM_Reinhard_ywaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
-	m_TM_Reinhard_ywaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1368,7 +1761,131 @@ LuxMainFrame::~LuxMainFrame()
 	m_TORGB_gammaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_EnabledCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_greyc_fastapproxCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_iterationsText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_iterationsText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_iterationsText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_amplitudeText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_amplitudeText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_amplitudeText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gausprecSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_gaussprecText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_gaussprecText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_gaussprecText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_alphaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_alphaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_alphaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sigmaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_sigmaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sigmaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_sharpnessText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_sharpnessText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_sharpnessText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_anisoText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_anisoText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_anisoText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_spatialText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_spatialText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_spatialText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_greyc_angularText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_greyc_angularText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_greyc_angularText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_GREYCinterpolationChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_TORGB_gammaText1->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_TORGB_gammaText1->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_TORGB_gammaText1->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_resetButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_auto_tonemapCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_applyButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	this->Disconnect( ID_ADD_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -1438,7 +1955,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	wxBoxSizer* bSizer159111;
 	bSizer159111 = new wxBoxSizer( wxVERTICAL );
 	
-	m_LG_rgbLabel = new wxStaticText( m_LG_basicPanel, wxID_ANY, wxT("RGB Colour / Blackbody Temperature"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_LG_rgbLabel = new wxStaticText( m_LG_basicPanel, wxID_ANY, wxT("Colour"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_LG_rgbLabel->Wrap( -1 );
 	bSizer159111->Add( m_LG_rgbLabel, 0, wxALL, 5 );
 	
@@ -1448,7 +1965,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_rgbPicker = new wxColourPickerCtrl( m_LG_basicPanel, ID_LG_RGBCOLOR, wxColour( 255, 255, 255 ), wxDefaultPosition, wxDefaultSize, wxCLRP_DEFAULT_STYLE );
 	bSizer101111->Add( m_LG_rgbPicker, 0, wxALL, 5 );
 	
-	m_LG_temperatureSlider = new wxSlider( m_LG_basicPanel, ID_LG_TEMPERATURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_LG_temperatureSlider = new wxSlider( m_LG_basicPanel, ID_LG_TEMPERATURE, 50, 0, 512, wxDefaultPosition, wxSize( 220,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
 	bSizer101111->Add( m_LG_temperatureSlider, 1, wxALL|wxEXPAND, 5 );
 	
 	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );

@@ -206,12 +206,9 @@ protected:
 	void SetTonemapKernel(int choice);
 
 	// Tonemapping/ToRGB variables
-
 	bool m_auto_tonemap;
 	int m_TM_kernel;
 
-	bool m_TM_reinhard_autoywa;
-	double m_TM_reinhard_ywa;
 	double m_TM_reinhard_prescale;
 	double m_TM_reinhard_postscale;
 	double m_TM_reinhard_burn;
@@ -231,8 +228,13 @@ protected:
 	double m_TORGB_gamma;
 	double m_bloomradius, m_bloomweight;
 
-	// Lightgroups
+	bool m_GREYC_enabled, m_GREYC_fast_approx;
+	double m_GREYC_amplitude, m_GREYC_sharpness, m_GREYC_anisotropy,
+		m_GREYC_alpha, m_GREYC_sigma, m_GREYC_gauss_prec, m_GREYC_dl, m_GREYC_da;
+	double m_GREYC_nb_iter;
+	int m_GREYC_interp;
 
+	// Lightgroups
 	class LuxLightGroupPanel : public LightGroupPanel {
 	public:
 		LuxLightGroupPanel( 

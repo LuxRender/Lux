@@ -284,8 +284,36 @@ public:
     int bufferGroup;
 };
 
-// Film Declarations
+// GREYCStoration Noise Reduction Filter Parameter structure
+class GREYCStorationParams {
+public:
+	GREYCStorationParams() {
+		Reset();
+	}
+	void Reset() {
+		enabled = false;		 // GREYCStoration is enabled/disabled
+		amplitude = 40.0f;		 // Regularization strength for one iteration (>=0)
+		nb_iter = 2;			 // Number of regularization iterations (>0)
+		sharpness = 0.8f;		 // Contour preservation for regularization (>=0)
+		anisotropy = 0.2f;		 // Regularization anisotropy (0<=a<=1)
+		alpha = 0.8f;			 // Noise scale(>=0)
+		sigma = 1.1f;			 // Geometry regularity (>=0)
+		fast_approx = true;		 // Use fast approximation for regularization (0 or 1)
+		gauss_prec = 2.0f;		 // Precision of the gaussian function for regularization (>0)
+		dl = 0.8f;				 // Spatial integration step for regularization (0<=dl<=1)
+		da = 30.0f;				 // Angular integration step for regulatization (0<=da<=90)
+		interp = 0;			     // Interpolation type (0=Nearest-neighbor, 1=Linear, 2=Runge-Kutta)
+		tile = 0;				 // Use tiled mode (reduce memory usage)
+		btile = 4;				 // Size of tile overlapping regions
+		threads = 1;		     // Number of threads used
+	}
 
+	bool enabled, fast_approx;
+	unsigned int nb_iter, interp, tile, btile, threads;
+	float amplitude, sharpness, anisotropy, alpha, sigma, gauss_prec, dl, da;
+};
+
+// Film Declarations
 class Film {
 public:
     // Film Interface
@@ -346,6 +374,7 @@ protected:
 
 // Image Pipeline Declarations
 extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution,
+	    GREYCStorationParams &GREYCParams, 
         ColorSystem &colorSpace, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
 		float bloomRadius = .2f, float bloomWeight = 0.f, const char *tonemap = NULL,
         const ParamSet *toneMapParams = NULL, float gamma = 2.2,

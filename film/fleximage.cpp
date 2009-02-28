@@ -60,7 +60,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	const string &filename1, bool premult, int wI, int dI,
 	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
 	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
-	int p_TonemapKernel, bool p_ReinhardAutoYwa, float p_ReinhardYwa, float p_ReinhardPreScale, float p_ReinhardPostScale,
+	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
@@ -82,8 +82,6 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
 
-	m_ReinhardAutoYwa = d_ReinhardAutoYwa = p_ReinhardAutoYwa;
-	m_ReinhardYwa = d_ReinhardYwa = p_ReinhardYwa;
 	m_ReinhardPreScale = d_ReinhardPreScale = p_ReinhardPreScale;
 	m_ReinhardPostScale = d_ReinhardPostScale = p_ReinhardPostScale;
 	m_ReinhardBurn = d_ReinhardBurn = p_ReinhardBurn;
@@ -109,6 +107,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_HaveBloomImage = false;
 	m_BloomRadius = d_BloomRadius = 0.07f;
 	m_BloomWeight = d_BloomWeight = 0.25f;
+
+	m_GREYCStorationParams.Reset();
+	d_GREYCStorationParams.Reset();
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
@@ -141,12 +142,6 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			m_TonemapKernel = Floor2Int(value);
 			break;
 
-		case LUX_FILM_TM_REINHARD_AUTOYWA:
-			m_ReinhardAutoYwa = (value != 0.f);
-			break;
-		case LUX_FILM_TM_REINHARD_YWA:
-			m_ReinhardYwa = value;
-			break;
 		case LUX_FILM_TM_REINHARD_PRESCALE:
 			m_ReinhardPreScale = value;
 			break;
@@ -207,12 +202,66 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			else
 				m_BloomUpdateLayer = false;
 			break;
+
 		case LUX_FILM_BLOOMRADIUS:
 			 m_BloomRadius = value;
 			break;
 		case LUX_FILM_BLOOMWEIGHT:
 			 m_BloomWeight = value;
 			break;
+
+		case LUX_FILM_NOISE_GREYC_ENABLED:
+			if(value != 0.f)
+				m_GREYCStorationParams.enabled = true;
+			else
+				m_GREYCStorationParams.enabled = false;
+			break;
+		case LUX_FILM_NOISE_GREYC_AMPLITUDE:
+			m_GREYCStorationParams.amplitude = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_NBITER:
+			m_GREYCStorationParams.nb_iter = int(value);
+			break;
+		case LUX_FILM_NOISE_GREYC_SHARPNESS:
+			m_GREYCStorationParams.sharpness = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_ANISOTROPY:
+			m_GREYCStorationParams.anisotropy = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_ALPHA:
+			m_GREYCStorationParams.alpha = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_SIGMA:
+			m_GREYCStorationParams.sigma = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_FASTAPPROX:
+			if(value != 0.f)
+				m_GREYCStorationParams.fast_approx = true;
+			else
+				m_GREYCStorationParams.fast_approx = false;
+			break;
+		case LUX_FILM_NOISE_GREYC_GAUSSPREC:
+			m_GREYCStorationParams.gauss_prec = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_DL:
+			m_GREYCStorationParams.dl = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_DA:
+			m_GREYCStorationParams.da = value;
+			break;
+		case LUX_FILM_NOISE_GREYC_INTERP:
+			m_GREYCStorationParams.interp = (int) value;
+			break;
+		case LUX_FILM_NOISE_GREYC_TILE:
+			m_GREYCStorationParams.tile = (int) value;
+			break;
+		case LUX_FILM_NOISE_GREYC_BTILE:
+			m_GREYCStorationParams.btile = (int) value;
+			break;
+		case LUX_FILM_NOISE_GREYC_THREADS:
+			m_GREYCStorationParams.threads = (int) value;
+			break;
+
 		case LUX_FILM_LG_SCALE:
 			SetGroupScale(index, value);
 			break;
@@ -249,12 +298,6 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 			return m_TonemapKernel;
 			break;
 
-		case LUX_FILM_TM_REINHARD_AUTOYWA:
-			return m_ReinhardAutoYwa;
-			break;
-		case LUX_FILM_TM_REINHARD_YWA:
-			return m_ReinhardYwa;
-			break;
 		case LUX_FILM_TM_REINHARD_PRESCALE:
 			return m_ReinhardPreScale;
 			break;
@@ -315,6 +358,53 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 		case LUX_FILM_BLOOMWEIGHT:
 			return m_BloomWeight;
 			break;
+
+		case LUX_FILM_NOISE_GREYC_ENABLED:
+			return m_GREYCStorationParams.enabled;
+			break;
+		case LUX_FILM_NOISE_GREYC_AMPLITUDE:
+			return m_GREYCStorationParams.amplitude;
+			break;
+		case LUX_FILM_NOISE_GREYC_NBITER:
+			return m_GREYCStorationParams.nb_iter;
+			break;
+		case LUX_FILM_NOISE_GREYC_SHARPNESS:
+			return m_GREYCStorationParams.sharpness;
+			break;
+		case LUX_FILM_NOISE_GREYC_ANISOTROPY:
+			return m_GREYCStorationParams.anisotropy;
+			break;
+		case LUX_FILM_NOISE_GREYC_ALPHA:
+			return m_GREYCStorationParams.alpha;
+			break;
+		case LUX_FILM_NOISE_GREYC_SIGMA:
+			return m_GREYCStorationParams.sigma;
+			break;
+		case LUX_FILM_NOISE_GREYC_FASTAPPROX:
+			return m_GREYCStorationParams.fast_approx;
+			break;
+		case LUX_FILM_NOISE_GREYC_GAUSSPREC:
+			return m_GREYCStorationParams.gauss_prec;
+			break;
+		case LUX_FILM_NOISE_GREYC_DL:
+			return m_GREYCStorationParams.dl;
+			break;
+		case LUX_FILM_NOISE_GREYC_DA:
+			return m_GREYCStorationParams.da;
+			break;
+		case LUX_FILM_NOISE_GREYC_INTERP:
+			return m_GREYCStorationParams.interp;
+			break;
+		case LUX_FILM_NOISE_GREYC_TILE:
+			return m_GREYCStorationParams.tile;
+			break;
+		case LUX_FILM_NOISE_GREYC_BTILE:
+			return m_GREYCStorationParams.btile;
+			break;
+		case LUX_FILM_NOISE_GREYC_THREADS:
+			return m_GREYCStorationParams.threads;
+			break;
+
 		case LUX_FILM_LG_COUNT:
 			return GetGroupsNumber();
 			break;
@@ -346,12 +436,6 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			return d_TonemapKernel;
 			break;
 
-		case LUX_FILM_TM_REINHARD_AUTOYWA:
-			return d_ReinhardAutoYwa;
-			break;
-		case LUX_FILM_TM_REINHARD_YWA:
-			return d_ReinhardYwa;
-			break;
 		case LUX_FILM_TM_REINHARD_PRESCALE:
 			return d_ReinhardPreScale;
 			break;
@@ -412,6 +496,52 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			break;
 		case LUX_FILM_BLOOMWEIGHT:
 			return d_BloomWeight;
+			break;
+
+		case LUX_FILM_NOISE_GREYC_ENABLED:
+			return d_GREYCStorationParams.enabled;
+			break;
+		case LUX_FILM_NOISE_GREYC_AMPLITUDE:
+			return d_GREYCStorationParams.amplitude;
+			break;
+		case LUX_FILM_NOISE_GREYC_NBITER:
+			return d_GREYCStorationParams.nb_iter;
+			break;
+		case LUX_FILM_NOISE_GREYC_SHARPNESS:
+			return d_GREYCStorationParams.sharpness;
+			break;
+		case LUX_FILM_NOISE_GREYC_ANISOTROPY:
+			return d_GREYCStorationParams.anisotropy;
+			break;
+		case LUX_FILM_NOISE_GREYC_ALPHA:
+			return d_GREYCStorationParams.alpha;
+			break;
+		case LUX_FILM_NOISE_GREYC_SIGMA:
+			return d_GREYCStorationParams.sigma;
+			break;
+		case LUX_FILM_NOISE_GREYC_FASTAPPROX:
+			return d_GREYCStorationParams.fast_approx;
+			break;
+		case LUX_FILM_NOISE_GREYC_GAUSSPREC:
+			return d_GREYCStorationParams.gauss_prec;
+			break;
+		case LUX_FILM_NOISE_GREYC_DL:
+			return d_GREYCStorationParams.dl;
+			break;
+		case LUX_FILM_NOISE_GREYC_DA:
+			return d_GREYCStorationParams.da;
+			break;
+		case LUX_FILM_NOISE_GREYC_INTERP:
+			return d_GREYCStorationParams.interp;
+			break;
+		case LUX_FILM_NOISE_GREYC_TILE:
+			return d_GREYCStorationParams.tile;
+			break;
+		case LUX_FILM_NOISE_GREYC_BTILE:
+			return d_GREYCStorationParams.btile;
+			break;
+		case LUX_FILM_NOISE_GREYC_THREADS:
+			return d_GREYCStorationParams.threads;
 			break;
 
 		case LUX_FILM_LG_ENABLE:
@@ -672,33 +802,33 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 
 		// Apply the imaging/tonemapping pipeline
 		ParamSet toneParams;
+		std::string tmkernel = "reinhard";
 		if(m_TonemapKernel == 0) {
 			// Reinhard Tonemapper
-			toneParams.AddBool("autoywa", &m_ReinhardAutoYwa, 1);
-			toneParams.AddFloat("ywa", &m_ReinhardYwa, 1);
 			toneParams.AddFloat("prescale", &m_ReinhardPreScale, 1);
 			toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
 			toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-				m_BloomRadius, m_BloomWeight, "reinhard", &toneParams, m_Gamma, 0.);
+			tmkernel = "reinhard";
 		} else if(m_TonemapKernel == 1) {
 			// Linear Tonemapper
 			toneParams.AddFloat("sensitivity", &m_LinearSensitivity, 1);
 			toneParams.AddFloat("exposure", &m_LinearExposure, 1);
 			toneParams.AddFloat("fstop", &m_LinearFStop, 1);
 			toneParams.AddFloat("gamma", &m_LinearGamma, 1);
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-				m_BloomRadius, m_BloomWeight, "linear", &toneParams, m_Gamma, 0.);
+			tmkernel = "linear";
 		} else if(m_TonemapKernel == 2) {
 			// Contrast Tonemapper
 			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-				m_BloomRadius, m_BloomWeight, "contrast", &toneParams, m_Gamma, 0.);
-		} else {
+			tmkernel = "contrast";
+		} else {		
 			// MaxWhite Tonemapper
-			ApplyImagingPipeline(color, xPixelCount, yPixelCount, colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-				m_BloomRadius, m_BloomWeight, "maxwhite", &toneParams, m_Gamma, 0.);
+			tmkernel = "maxwhite";
 		}
+
+		// Apply chosen tonemapper
+		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams,
+			colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
+			m_BloomRadius, m_BloomWeight, tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.
 		m_BloomUpdateLayer = false;
@@ -1194,8 +1324,6 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		s_TonemapKernel = 0;
 	}
 
-	bool s_ReinhardAutoYwa = params.FindOneBool("reinhard_autoywa", true);
-	float s_ReinhardYwa = params.FindOneFloat("reinhard_ywa", 1.f);
 	float s_ReinhardPreScale = params.FindOneFloat("reinhard_prescale", 1.f);
 	float s_ReinhardPostScale = params.FindOneFloat("reinhard_postscale", 1.f);
 	float s_ReinhardBurn = params.FindOneFloat("reinhard_burn", 6.f);
@@ -1210,7 +1338,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		filename, premultiplyAlpha, writeInterval, displayInterval,
 		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM, restart_resume_FLM, haltspp,
 
-		s_TonemapKernel, s_ReinhardAutoYwa, s_ReinhardYwa, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
+		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_Gamma,
 
 		red, green, blue, white, reject_warmup, debug_mode);
