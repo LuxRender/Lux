@@ -225,7 +225,7 @@ void BVHAccel::FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list,
 						bbAbove = Union(bbAbove, list[j]->bbox);
 					}
 				}
-				Vector dBelow = bbBelow.pMax - bbBelow.pMax;
+				Vector dBelow = bbBelow.pMax - bbBelow.pMin;
 				Vector dAbove = bbAbove.pMax - bbAbove.pMin;
 				float belowSA = 2 * ((dBelow.x*dBelow.y + dBelow.x*dBelow.z + dBelow.y*dBelow.z));
 				float aboveSA = 2 * ((dAbove.x*dAbove.y + dAbove.x*dAbove.z + dAbove.y*dAbove.z));
