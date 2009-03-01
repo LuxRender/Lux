@@ -1589,6 +1589,7 @@ void LuxGui::SetTonemapKernel(int choice) {
 			break;
 	}
 	m_Tonemap->GetSizer()->Layout();
+	m_Tonemap->GetSizer()->FitInside(m_Tonemap);
 	Refresh();
 	if(m_auto_tonemap) ApplyTonemapping();
 }
