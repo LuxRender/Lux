@@ -151,7 +151,6 @@ namespace lux
 
 		// Add vignetting & chromatic abberation effect
 		// These are paired in 1 loop as they can share quite a few calculations
-
 		if(VignettingEnabled && VignetScale != 0.0f) {
 			//for each pixel in the source image
 			for(int y=0; y<yResolution; ++y)
@@ -261,52 +260,21 @@ namespace lux
 				}
 			}
 
-			static const CImg<unsigned char> empty_mask;
-
-			img.blur_anisotropic(empty_mask, GREYCParams.amplitude,
-				GREYCParams.sharpness,
-				GREYCParams.anisotropy,
-				GREYCParams.alpha,
-				GREYCParams.sigma,
-				GREYCParams.dl,
-				GREYCParams.da,
-				GREYCParams.gauss_prec,
-				GREYCParams.interp,
-				GREYCParams.fast_approx,
-				1.0f); // gfact? 1.0f.
-
-			/*			// Begin iteration loop
 			for (unsigned int iter=0; iter<GREYCParams.nb_iter; iter++) {
-			// This function will start a thread running one iteration of the GREYCstoration filter.
-			// It returns immediately, so you can do what you want after (update a progress bar for instance).
-			img.greycstoration_run(GREYCParams.amplitude,
-			GREYCParams.sharpness,
-			GREYCParams.anisotropy,
-			GREYCParams.alpha,
-			GREYCParams.sigma,
-			1.0f,
-			GREYCParams.dl,
-			GREYCParams.da,
-			GREYCParams.gauss_prec,
-			GREYCParams.interp,
-			GREYCParams.fast_approx,
-			GREYCParams.tile,
-			GREYCParams.btile,
-			GREYCParams.threads);
+				static const CImg<unsigned char> empty_mask;
 
-			// Here, we print the overall progress percentage.
-			do {
-			// pr_iteration is the progress percentage for the current iteration
-			const float pr_iteration = img.greycstoration_progress();
-			// This simply computes the global progression indice (including all iterations)
-			const unsigned int pr_global = (unsigned int)((iter*100 + pr_iteration)/GREYCParams.nb_iter);
-			// Wait a little bit
-			cimg::wait(100);
-			// Interrupt example
-			// img.greycstoration_stop();
-			} while (img.greycstoration_is_running());
+				img.blur_anisotropic(empty_mask, GREYCParams.amplitude,
+					GREYCParams.sharpness,
+					GREYCParams.anisotropy,
+					GREYCParams.alpha,
+					GREYCParams.sigma,
+					GREYCParams.dl,
+					GREYCParams.da,
+					GREYCParams.gauss_prec,
+					GREYCParams.interp,
+					GREYCParams.fast_approx,
+					1.0f); // gfact
 			}
-			*/
 
 			// Copy data from cimg buffer back to pixels vector
 			const float inv_byte = 1.f/255;
@@ -317,9 +285,6 @@ namespace lux
 						pixels[index].c[j] = img(x, y, 0, j) * inv_byte;
 				}
 			}
-
-			// remove used intermediate cimg buffer
-			//img.~CImg();
 		}
 
 		// Dither image
