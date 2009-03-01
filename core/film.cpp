@@ -172,17 +172,6 @@ namespace lux
 				}
 		}
 
-		/*
-			const Vec2 normed_pos(x/(float)out.getWidth(), y/(float)out.getHeight());
-			const Vec2 offset = normed_pos - Vec2(0.5f, 0.5f);
-			const float offset_term = offset.length();
-			const Vec2 rb_pos = Vec2(0.5f, 0.5f) + offset * (1.f + offset_term*amount);
-			const Vec2 g_pos = Vec2(0.5f, 0.5f) + offset * (1.f - offset_term*amount);
-
-			out.getPixel(x, y) += Colour3(1.f, 0.f, 1.f) * bilinearSampleImage(in, Vec2(rb_pos.x*(float)out.getWidth(), rb_pos.y*(float)out.getHeight()));
-			out.getPixel(x, y) += Colour3(0.f, 1.f, 0.f) * bilinearSampleImage(in, Vec2(g_pos.x*(float)out.getWidth(), g_pos.y*(float)out.getHeight()));
-*/
-
 		// remove / automate
 		int chiu_radius = 0;
 		bool chiu_includecenter = true;
@@ -318,6 +307,7 @@ namespace lux
 			} while (img.greycstoration_is_running());
 			}
 			*/
+
 			// Copy data from cimg buffer back to pixels vector
 			const float inv_byte = 1.f/255;
 			for(int y=0; y<yResolution; y++) {
