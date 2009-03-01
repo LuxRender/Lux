@@ -152,22 +152,26 @@ namespace lux
 		// Add vignetting & chromatic abberation effect
 		// These are paired in 1 loop as they can share quite a few calculations
 		if(VignettingEnabled && VignetScale != 0.0f) {
+			const float invxRes = 1.f / xResolution;
+			const float invyRes = 1.f / yResolution;
 			//for each pixel in the source image
 			for(int y=0; y<yResolution; ++y)
 				for(int x=0; x<xResolution; ++x)
 				{
-					const float nPx = (float)x/xResolution;
-					const float nPy = (float)y/yResolution;
+					const float nPx = (float)x * invxRes;
+					const float nPy = (float)y * invyRes;
 					const float xOffset = nPx - 0.5f;
 					const float yOffset = nPy - 0.5f;
 					float tOffset = sqrtf(xOffset*xOffset + yOffset*yOffset);
-
-					// normalize to range [0.f - 1.f]
-					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42);
-
+					
 					// Vignetting
-					for(int i=0;i<3;i++)
-						pixels[xResolution*y + x].c[i] *= invNtOffset * VignetScale;
+					if(VignettingEnabled && VignetScale != 0.0f) {
+						// normalize to range [0.f - 1.f]
+						const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42);
+						float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
+						for(int i=0;i<3;i++)
+							pixels[xResolution*y + x].c[i] *= vWeight;
+					}
 				}
 		}
 

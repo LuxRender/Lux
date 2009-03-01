@@ -441,7 +441,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_bloomPanel->SetSizer( bSizer74 );
 	m_bloomPanel->Layout();
 	bSizer74->Fit( m_bloomPanel );
-	m_notebook5->AddPage( m_bloomPanel, wxT("Gaussian Bloom"), false );
+	m_notebook5->AddPage( m_bloomPanel, wxT("Gaussian Bloom"), true );
 	m_vignettingPanel = new wxPanel( m_notebook5, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer741;
 	bSizer741 = new wxBoxSizer( wxVERTICAL );
@@ -481,7 +481,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer79->Add( bSizer80, 0, wxEXPAND, 5 );
 	
-	m_vignettingamountSlider = new wxSlider( m_vignettingPanel, ID_VIGNETTINGAMOUNT, 358, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_vignettingamountSlider = new wxSlider( m_vignettingPanel, ID_VIGNETTINGAMOUNT, 358, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
 	m_vignettingamountSlider->SetToolTip( wxT("Gamma Value") );
 	
 	bSizer79->Add( m_vignettingamountSlider, 1, wxALL|wxEXPAND, 2 );
@@ -499,7 +499,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_vignettingPanel->SetSizer( bSizer741 );
 	m_vignettingPanel->Layout();
 	bSizer741->Fit( m_vignettingPanel );
-	m_notebook5->AddPage( m_vignettingPanel, wxT("Vignetting"), true );
+	m_notebook5->AddPage( m_vignettingPanel, wxT("Vignetting"), false );
 	
 	bSizer33221->Add( m_notebook5, 1, wxEXPAND | wxALL, 1 );
 	
@@ -2049,7 +2049,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_rgbPicker = new wxColourPickerCtrl( m_LG_basicPanel, ID_LG_RGBCOLOR, wxColour( 255, 255, 255 ), wxDefaultPosition, wxDefaultSize, wxCLRP_DEFAULT_STYLE );
 	bSizer101111->Add( m_LG_rgbPicker, 0, wxALL, 5 );
 	
-	m_LG_temperatureSlider = new wxSlider( m_LG_basicPanel, ID_LG_TEMPERATURE, 50, 0, 512, wxDefaultPosition, wxSize( 220,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
+	m_LG_temperatureSlider = new wxSlider( m_LG_basicPanel, ID_LG_TEMPERATURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
 	bSizer101111->Add( m_LG_temperatureSlider, 1, wxALL|wxEXPAND, 5 );
 	
 	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );

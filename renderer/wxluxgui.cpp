@@ -1042,8 +1042,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if ( m_Vignetting_Scale >= 0.f )	
 					val = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
 				else {
-
-					val = (int)(( FLOAT_SLIDER_RES / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
+					val = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - fabsf(m_Vignetting_Scale)));
 				}
 				m_vignettingamountSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
@@ -1381,6 +1380,8 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+
+		// Bloom
 		case ID_TORGB_BLOOMRADIUS:
 			{
 				m_bloomradius = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE );
@@ -1395,6 +1396,20 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				wxString st = wxString::Format( _("%.02f"), m_bloomweight );
 				m_TORGB_bloomweightText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+		// Vignetting
+		case ID_VIGNETTINGAMOUNT:
+			{
+				double pos = (double)event.GetPosition() / FLOAT_SLIDER_RES;
+				pos -= 0.5f;
+				pos *= BLOOMWEIGHT_RANGE * 2.f;
+				m_Vignetting_Scale = pos;
+				wxString st = wxString::Format( _("%.02f"), m_Vignetting_Scale );
+				m_vignettingamountText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
