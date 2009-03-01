@@ -27,8 +27,8 @@
 #include <wx/slider.h>
 #include <wx/textctrl.h>
 #include <wx/button.h>
-#include <wx/notebook.h>
 #include <wx/checkbox.h>
+#include <wx/notebook.h>
 #include <wx/statline.h>
 #include <wx/aui/auibook.h>
 #include <wx/spinctrl.h>
@@ -90,67 +90,70 @@ namespace lux
 	#define ID_COMPUTEBLOOMLAYER 1046
 	#define ID_TORGB_BLOOMWEIGHT 1047
 	#define ID_TORGB_BLOOMWEIGHT_TEXT 1048
-	#define ID_COLORSPACEOPTIONSPANEL 1049
-	#define ID_TORGB_COLORSPACECHOICE 1050
-	#define ID_TORGB_XWHITE 1051
-	#define ID_TORGB_XWHITE_TEXT 1052
-	#define ID_TORGB_YWHITE 1053
-	#define ID_TORGB_YWHITE_TEXT 1054
-	#define ID_TORGB_XRED 1055
-	#define ID_TORGB_XRED_TEXT 1056
-	#define ID_TORGB_YRED 1057
-	#define ID_TORGB_YRED_TEXT 1058
-	#define ID_TORGB_XGREEN 1059
-	#define ID_TORGB_XGREEN_TEXT 1060
-	#define ID_TORGB_YGREEN 1061
-	#define ID_TORGB_YGREEN_TEXT 1062
-	#define ID_TORGB_XBLUE 1063
-	#define ID_TORGB_XBLUE_TEXT 1064
-	#define ID_TORGB_YBLUE 1065
-	#define ID_TORGB_YBLUE_TEXT 1066
-	#define ID_GAMMAOPTIONSPANEL 1067
-	#define ID_TORGB_GAMMA 1068
-	#define ID_TORGB_GAMMA_TEXT 1069
-	#define ID_NOISEOPTIONSPANEL 1070
-	#define ID_GREYC_ENABLED 1071
-	#define ID_GREYC_FASTAPPROX 1072
-	#define ID_GREYC_ITERATIONS 1073
-	#define ID_GREYC_ITERATIONS_TEXT 1074
-	#define ID_GREYC_AMPLITUDE 1075
-	#define ID_GREYC_AMPLITUDE_TEXT 1076
-	#define ID_GREYC_GAUSSPREC 1077
-	#define ID_GREYC_GAUSSPREC_TEXT 1078
-	#define ID_GREYC_ALPHA 1079
-	#define ID_GREYC_ALPHA_TEXT 1080
-	#define ID_GREYC_SIGMA 1081
-	#define ID_GREYC_SIGMA_TEXT 1082
-	#define ID_GREYC_SHARPNESS 1083
-	#define ID_GREYC_SHARPNESS_TEXT 1084
-	#define ID_GREYC_ANISO 1085
-	#define ID_GREYC_ANISO_TEXT 1086
-	#define ID_GREYC_SPATIAL 1087
-	#define ID_GREYC_SPATIAL_TEXT 1088
-	#define ID_GREYC_ANGULAR 1089
-	#define ID_GREYC_ANGULAR_TEXT 1090
-	#define ID_GREYC_INTERPOLATIONCHOICE 1091
-	#define ID_CHIU_RADIUS 1092
-	#define ID_TM_RESET 1093
-	#define ID_AUTO_TONEMAP 1094
-	#define ID_TM_APPLY 1095
-	#define ID_SYSTEMOPTIONS 1096
-	#define ID_ADD_SERVER 1097
-	#define ID_REMOVE_SERVER 1098
-	#define ID_SERVER_UPDATE_INT 1099
-	#define ID_NETWORK_TREE 1100
-	#define ID_LG_NAME 1101
-	#define ID_LG_ENABLE 1102
-	#define ID_LG_BASICPANEL 1103
-	#define ID_LG_SCALE 1104
-	#define ID_LG_SCALE_TEXT 1105
-	#define ID_LG_RGBCOLOR 1106
-	#define ID_LG_TEMPERATURE 1107
-	#define ID_LG_TEMPERATURE_TEXT 1108
-	#define ID_LG_ADVANCEDPANEL 1109
+	#define ID_VIGNETTING_ENABLED 1049
+	#define ID_VIGNETTINGAMOUNT 1050
+	#define ID_VIGNETTINGAMOUNT_TEXT 1051
+	#define ID_COLORSPACEOPTIONSPANEL 1052
+	#define ID_TORGB_COLORSPACECHOICE 1053
+	#define ID_TORGB_XWHITE 1054
+	#define ID_TORGB_XWHITE_TEXT 1055
+	#define ID_TORGB_YWHITE 1056
+	#define ID_TORGB_YWHITE_TEXT 1057
+	#define ID_TORGB_XRED 1058
+	#define ID_TORGB_XRED_TEXT 1059
+	#define ID_TORGB_YRED 1060
+	#define ID_TORGB_YRED_TEXT 1061
+	#define ID_TORGB_XGREEN 1062
+	#define ID_TORGB_XGREEN_TEXT 1063
+	#define ID_TORGB_YGREEN 1064
+	#define ID_TORGB_YGREEN_TEXT 1065
+	#define ID_TORGB_XBLUE 1066
+	#define ID_TORGB_XBLUE_TEXT 1067
+	#define ID_TORGB_YBLUE 1068
+	#define ID_TORGB_YBLUE_TEXT 1069
+	#define ID_GAMMAOPTIONSPANEL 1070
+	#define ID_TORGB_GAMMA 1071
+	#define ID_TORGB_GAMMA_TEXT 1072
+	#define ID_NOISEOPTIONSPANEL 1073
+	#define ID_GREYC_ENABLED 1074
+	#define ID_GREYC_FASTAPPROX 1075
+	#define ID_GREYC_ITERATIONS 1076
+	#define ID_GREYC_ITERATIONS_TEXT 1077
+	#define ID_GREYC_AMPLITUDE 1078
+	#define ID_GREYC_AMPLITUDE_TEXT 1079
+	#define ID_GREYC_GAUSSPREC 1080
+	#define ID_GREYC_GAUSSPREC_TEXT 1081
+	#define ID_GREYC_ALPHA 1082
+	#define ID_GREYC_ALPHA_TEXT 1083
+	#define ID_GREYC_SIGMA 1084
+	#define ID_GREYC_SIGMA_TEXT 1085
+	#define ID_GREYC_SHARPNESS 1086
+	#define ID_GREYC_SHARPNESS_TEXT 1087
+	#define ID_GREYC_ANISO 1088
+	#define ID_GREYC_ANISO_TEXT 1089
+	#define ID_GREYC_SPATIAL 1090
+	#define ID_GREYC_SPATIAL_TEXT 1091
+	#define ID_GREYC_ANGULAR 1092
+	#define ID_GREYC_ANGULAR_TEXT 1093
+	#define ID_GREYC_INTERPOLATIONCHOICE 1094
+	#define ID_CHIU_RADIUS 1095
+	#define ID_TM_RESET 1096
+	#define ID_AUTO_TONEMAP 1097
+	#define ID_TM_APPLY 1098
+	#define ID_SYSTEMOPTIONS 1099
+	#define ID_ADD_SERVER 1100
+	#define ID_REMOVE_SERVER 1101
+	#define ID_SERVER_UPDATE_INT 1102
+	#define ID_NETWORK_TREE 1103
+	#define ID_LG_NAME 1104
+	#define ID_LG_ENABLE 1105
+	#define ID_LG_BASICPANEL 1106
+	#define ID_LG_SCALE 1107
+	#define ID_LG_SCALE_TEXT 1108
+	#define ID_LG_RGBCOLOR 1109
+	#define ID_LG_TEMPERATURE 1110
+	#define ID_LG_TEMPERATURE_TEXT 1111
+	#define ID_LG_ADVANCEDPANEL 1112
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -217,6 +220,14 @@ namespace lux
 			wxStaticText* m_TORGB_bloomweightStaticText1;
 			wxSlider* m_TORGB_bloomweightSlider;
 			wxTextCtrl* m_TORGB_bloomweightText;
+			wxPanel* m_vignettingPanel;
+			wxCheckBox* m_vignettingenabledCheckBox;
+			wxStaticText* m_vignettingamountStaticText;
+			wxStaticText* m_staticText39;
+			wxStaticText* m_staticText40;
+			wxStaticText* m_staticText41;
+			wxSlider* m_vignettingamountSlider;
+			wxTextCtrl* m_vignettingamountText;
 			wxPanel* m_ColorSpaceOptionsPanel;
 			wxStaticBitmap* m_colorspaceBitmap;
 			wxStaticText* m_TORGB_colorspacepresetsStaticText;

@@ -157,6 +157,9 @@ private:
 	float m_BloomRadius, d_BloomRadius;
 	float m_BloomWeight, d_BloomWeight;
 
+	bool m_VignettingEnabled, d_VignettingEnabled;
+	float m_VignettingScale, d_VignettingScale;
+
 };
 
 }//namespace lux

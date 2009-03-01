@@ -108,6 +108,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_BloomRadius = d_BloomRadius = 0.07f;
 	m_BloomWeight = d_BloomWeight = 0.25f;
 
+	m_VignettingEnabled = d_VignettingEnabled = false;
+	m_VignettingScale = d_VignettingScale = 0.4f;
+
 	m_GREYCStorationParams.Reset();
 	d_GREYCStorationParams.Reset();
 
@@ -208,6 +211,16 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 		case LUX_FILM_BLOOMWEIGHT:
 			 m_BloomWeight = value;
+			break;
+
+		case LUX_FILM_VIGNETTING_ENABLED:
+			if(value != 0.f)
+				m_VignettingEnabled = true;
+			else
+				m_VignettingEnabled = false;
+			break;
+		case LUX_FILM_VIGNETTING_SCALE:
+			 m_VignettingScale = value;
 			break;
 
 		case LUX_FILM_NOISE_GREYC_ENABLED:
@@ -352,11 +365,19 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 		case LUX_FILM_TORGB_GAMMA:
 			return m_Gamma;
 			break;
+
 		case LUX_FILM_BLOOMRADIUS:
 			return m_BloomRadius;
 			break;
 		case LUX_FILM_BLOOMWEIGHT:
 			return m_BloomWeight;
+			break;
+
+		case LUX_FILM_VIGNETTING_ENABLED:
+			return m_VignettingEnabled;
+			break;
+		case LUX_FILM_VIGNETTING_SCALE:
+			return m_VignettingScale;
 			break;
 
 		case LUX_FILM_NOISE_GREYC_ENABLED:
@@ -496,6 +517,13 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			break;
 		case LUX_FILM_BLOOMWEIGHT:
 			return d_BloomWeight;
+			break;
+
+		case LUX_FILM_VIGNETTING_ENABLED:
+			return d_VignettingEnabled;
+			break;
+		case LUX_FILM_VIGNETTING_SCALE:
+			return d_VignettingScale;
 			break;
 
 		case LUX_FILM_NOISE_GREYC_ENABLED:
@@ -828,7 +856,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams,
 			colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-			m_BloomRadius, m_BloomWeight, tmkernel.c_str(), &toneParams, m_Gamma, 0.);
+			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.
 		m_BloomUpdateLayer = false;

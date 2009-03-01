@@ -22154,7 +22154,7 @@ namespace cimg_library {
                 }
                 if (S>0) cimg_forV(dest,k) dest(x,y,z,k)+=tmp[k]/S;
                 else cimg_forV(dest,k) dest(x,y,z,k)+=(ftype)((*this)(x,y,z,k));
-                cimg_plugin_greycstoration_count;
+//                cimg_plugin_greycstoration_count;
               }
             }
           } else
@@ -22279,7 +22279,7 @@ namespace cimg_library {
                 }
                 if (S>0) cimg_forV(dest,k) dest(x,y,0,k)+=tmp[k]/S;
                 else cimg_forV(dest,k) dest(x,y,0,k)+=(ftype)((*this)(x,y,0,k));
-                cimg_plugin_greycstoration_count;
+//                cimg_plugin_greycstoration_count;
               }
             }
         const ftype *ptrs = dest.data+dest.size();
@@ -22352,7 +22352,7 @@ namespace cimg_library {
               G(x,y,z,4) = n1*(uy*uz + vy*vz) + n2*wy*wz;
               G(x,y,z,5) = n1*(uz*uz + vz*vz) + n2*wz*wz;
             } else G(x,y,z,0) = G(x,y,z,1) = G(x,y,z,2) = G(x,y,z,3) = G(x,y,z,4) = G(x,y,z,5) = 0;
-            cimg_plugin_greycstoration_count;
+//            cimg_plugin_greycstoration_count;
           }
           cimg_plugin_greycstoration_unlock;
           blur_anisotropic(G,amplitude,dl,da,gauss_prec,interpolation,fast_approx);
@@ -22372,7 +22372,7 @@ namespace cimg_library {
               G(x,y,0,1) = n1*ux*uy + n2*vx*vy;
               G(x,y,0,2) = n1*uy*uy + n2*vy*vy;
             } else G(x,y,0,0) = G(x,y,0,1) = G(x,y,0,2) = 0;
-            cimg_plugin_greycstoration_count;
+//            cimg_plugin_greycstoration_count;
           }
           cimg_plugin_greycstoration_unlock;
           blur_anisotropic(G,amplitude,dl,da,gauss_prec,interpolation,fast_approx);

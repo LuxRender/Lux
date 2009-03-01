@@ -228,6 +228,9 @@ protected:
 	double m_TORGB_gamma;
 	double m_bloomradius, m_bloomweight;
 
+	bool m_Vignetting_Enabled;
+	double m_Vignetting_Scale;
+
 	bool m_GREYC_enabled, m_GREYC_fast_approx;
 	double m_GREYC_amplitude, m_GREYC_sharpness, m_GREYC_anisotropy,
 		m_GREYC_alpha, m_GREYC_sigma, m_GREYC_gauss_prec, m_GREYC_dl, m_GREYC_da;

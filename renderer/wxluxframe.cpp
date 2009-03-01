@@ -441,7 +441,65 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_bloomPanel->SetSizer( bSizer74 );
 	m_bloomPanel->Layout();
 	bSizer74->Fit( m_bloomPanel );
-	m_notebook5->AddPage( m_bloomPanel, wxT("Gaussian Bloom"), true );
+	m_notebook5->AddPage( m_bloomPanel, wxT("Gaussian Bloom"), false );
+	m_vignettingPanel = new wxPanel( m_notebook5, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer741;
+	bSizer741 = new wxBoxSizer( wxVERTICAL );
+	
+	m_vignettingenabledCheckBox = new wxCheckBox( m_vignettingPanel, ID_VIGNETTING_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	bSizer741->Add( m_vignettingenabledCheckBox, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer1036;
+	bSizer1036 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_vignettingamountStaticText = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("Amount"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
+	m_vignettingamountStaticText->Wrap( -1 );
+	bSizer1036->Add( m_vignettingamountStaticText, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer79;
+	bSizer79 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer80;
+	bSizer80 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_staticText39 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("-1.0"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
+	m_staticText39->Wrap( -1 );
+	m_staticText39->SetMinSize( wxSize( 50,-1 ) );
+	
+	bSizer80->Add( m_staticText39, 0, wxALL, 5 );
+	
+	m_staticText40 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("0.0"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+	m_staticText40->Wrap( -1 );
+	bSizer80->Add( m_staticText40, 1, wxALL, 5 );
+	
+	m_staticText41 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("+1.0"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_RIGHT );
+	m_staticText41->Wrap( -1 );
+	m_staticText41->SetMinSize( wxSize( 50,-1 ) );
+	
+	bSizer80->Add( m_staticText41, 0, wxALL, 5 );
+	
+	bSizer79->Add( bSizer80, 0, wxEXPAND, 5 );
+	
+	m_vignettingamountSlider = new wxSlider( m_vignettingPanel, ID_VIGNETTINGAMOUNT, 358, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_vignettingamountSlider->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer79->Add( m_vignettingamountSlider, 1, wxALL|wxEXPAND, 2 );
+	
+	bSizer1036->Add( bSizer79, 1, wxEXPAND, 5 );
+	
+	m_vignettingamountText = new wxTextCtrl( m_vignettingPanel, ID_VIGNETTINGAMOUNT_TEXT, wxT("0.4"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_vignettingamountText->SetMaxLength( 5 ); 
+	m_vignettingamountText->SetToolTip( wxT("Gamma Value") );
+	
+	bSizer1036->Add( m_vignettingamountText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	
+	bSizer741->Add( bSizer1036, 1, wxEXPAND, 5 );
+	
+	m_vignettingPanel->SetSizer( bSizer741 );
+	m_vignettingPanel->Layout();
+	bSizer741->Fit( m_vignettingPanel );
+	m_notebook5->AddPage( m_vignettingPanel, wxT("Vignetting"), true );
 	
 	bSizer33221->Add( m_notebook5, 1, wxEXPAND | wxALL, 1 );
 	
@@ -1262,6 +1320,19 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TORGB_bloomweightText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_bloomweightText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_bloomweightText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_vignettingenabledCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_vignettingamountText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_vignettingamountText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_colorspaceChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1652,6 +1723,19 @@ LuxMainFrame::~LuxMainFrame()
 	m_TORGB_bloomweightText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_bloomweightText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_bloomweightText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_vignettingenabledCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_vignettingamountText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_vignettingamountText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_vignettingamountText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_colorspaceChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );

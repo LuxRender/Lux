@@ -54,6 +54,7 @@
 #define cimg_debug 0     // Disable modal window in CImg exceptions.
 // Include the CImg Library, with the GREYCstoration plugin included
 #define cimg_plugin "greycstoration.h"
+
 #include "cimg.h"
 using namespace cimg_library;
 #if cimg_OS!=2
@@ -68,6 +69,7 @@ namespace lux
 	void ApplyImagingPipeline(vector<Color> &pixels,
 		int xResolution, int yResolution, GREYCStorationParams &GREYCParams, ColorSystem &colorSpace,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
+		bool VignettingEnabled, float VignetScale,
 		const char *toneMapName, const ParamSet *toneMapParams,
 		float gamma, float dither)
 	{
@@ -147,6 +149,41 @@ namespace lux
 			pixels[i] = pixels[i].Pow(invGamma);
 		}
 
+		// Add vignetting & chromatic abberation effect
+		// These are paired in 1 loop as they can share quite a few calculations
+
+		if(VignettingEnabled && VignetScale != 0.0f) {
+			//for each pixel in the source image
+			for(int y=0; y<yResolution; ++y)
+				for(int x=0; x<xResolution; ++x)
+				{
+					const float nPx = (float)x/xResolution;
+					const float nPy = (float)y/yResolution;
+					const float xOffset = nPx - 0.5f;
+					const float yOffset = nPy - 0.5f;
+					float tOffset = sqrtf(xOffset*xOffset + yOffset*yOffset);
+
+					// normalize to range [0.f - 1.f]
+					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42);
+
+					// Vignetting
+					for(int i=0;i<3;i++)
+						pixels[xResolution*y + x].c[i] *= invNtOffset * VignetScale;
+				}
+		}
+
+		/*
+			const Vec2 normed_pos(x/(float)out.getWidth(), y/(float)out.getHeight());
+			const Vec2 offset = normed_pos - Vec2(0.5f, 0.5f);
+			const float offset_term = offset.length();
+			const Vec2 rb_pos = Vec2(0.5f, 0.5f) + offset * (1.f + offset_term*amount);
+			const Vec2 g_pos = Vec2(0.5f, 0.5f) + offset * (1.f - offset_term*amount);
+
+			out.getPixel(x, y) += Colour3(1.f, 0.f, 1.f) * bilinearSampleImage(in, Vec2(rb_pos.x*(float)out.getWidth(), rb_pos.y*(float)out.getHeight()));
+			out.getPixel(x, y) += Colour3(0.f, 1.f, 0.f) * bilinearSampleImage(in, Vec2(g_pos.x*(float)out.getWidth(), g_pos.y*(float)out.getHeight()));
+*/
+
+		// remove / automate
 		int chiu_radius = 0;
 		bool chiu_includecenter = true;
 
@@ -235,38 +272,52 @@ namespace lux
 				}
 			}
 
-			// Begin iteration loop
+			static const CImg<unsigned char> empty_mask;
+
+			img.blur_anisotropic(empty_mask, GREYCParams.amplitude,
+				GREYCParams.sharpness,
+				GREYCParams.anisotropy,
+				GREYCParams.alpha,
+				GREYCParams.sigma,
+				GREYCParams.dl,
+				GREYCParams.da,
+				GREYCParams.gauss_prec,
+				GREYCParams.interp,
+				GREYCParams.fast_approx,
+				1.0f); // gfact? 1.0f.
+
+			/*			// Begin iteration loop
 			for (unsigned int iter=0; iter<GREYCParams.nb_iter; iter++) {
-				// This function will start a thread running one iteration of the GREYCstoration filter.
-				// It returns immediately, so you can do what you want after (update a progress bar for instance).
-				img.greycstoration_run(GREYCParams.amplitude,
-					GREYCParams.sharpness,
-					GREYCParams.anisotropy,
-					GREYCParams.alpha,
-					GREYCParams.sigma,
-					1.0f,
-					GREYCParams.dl,
-					GREYCParams.da,
-					GREYCParams.gauss_prec,
-					GREYCParams.interp,
-					GREYCParams.fast_approx,
-					GREYCParams.tile,
-					GREYCParams.btile,
-					GREYCParams.threads);
+			// This function will start a thread running one iteration of the GREYCstoration filter.
+			// It returns immediately, so you can do what you want after (update a progress bar for instance).
+			img.greycstoration_run(GREYCParams.amplitude,
+			GREYCParams.sharpness,
+			GREYCParams.anisotropy,
+			GREYCParams.alpha,
+			GREYCParams.sigma,
+			1.0f,
+			GREYCParams.dl,
+			GREYCParams.da,
+			GREYCParams.gauss_prec,
+			GREYCParams.interp,
+			GREYCParams.fast_approx,
+			GREYCParams.tile,
+			GREYCParams.btile,
+			GREYCParams.threads);
 
-				// Here, we print the overall progress percentage.
-				do {
-					// pr_iteration is the progress percentage for the current iteration
-					const float pr_iteration = img.greycstoration_progress();
-					// This simply computes the global progression indice (including all iterations)
-					const unsigned int pr_global = (unsigned int)((iter*100 + pr_iteration)/GREYCParams.nb_iter);
-					// Wait a little bit
-					cimg::wait(100);
-					// Interrupt example
-					// img.greycstoration_stop();
-				} while (img.greycstoration_is_running());
+			// Here, we print the overall progress percentage.
+			do {
+			// pr_iteration is the progress percentage for the current iteration
+			const float pr_iteration = img.greycstoration_progress();
+			// This simply computes the global progression indice (including all iterations)
+			const unsigned int pr_global = (unsigned int)((iter*100 + pr_iteration)/GREYCParams.nb_iter);
+			// Wait a little bit
+			cimg::wait(100);
+			// Interrupt example
+			// img.greycstoration_stop();
+			} while (img.greycstoration_is_running());
 			}
-
+			*/
 			// Copy data from cimg buffer back to pixels vector
 			const float inv_byte = 1.f/255;
 			for(int y=0; y<yResolution; y++) {
@@ -278,7 +329,7 @@ namespace lux
 			}
 
 			// remove used intermediate cimg buffer
-			img.~CImg();
+			//img.~CImg();
 		}
 
 		// Dither image

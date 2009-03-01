@@ -470,12 +470,13 @@ static void* greycstoration_thread(void *arg) {
     return 0;
   }
 
-
+/*
 #define cimg_plugin_greycstoration_count \
   if (!*(greycstoration_params->stop_request)) ++(*greycstoration_params->counter); else return *this;
 #define cimg_plugin_greycstoration_lock \
   greycstoration_mutex_lock(greycstoration_params[0]);
 #define cimg_plugin_greycstoration_unlock \
   greycstoration_mutex_unlock(greycstoration_params[0]);
+*/
 
 #endif

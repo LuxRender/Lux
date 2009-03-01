@@ -79,6 +79,8 @@ using namespace lux;
 #define BLOOMRADIUS_RANGE 1.0f
 #define BLOOMWEIGHT_RANGE 1.0f
 
+#define VIGNETTING_SCALE_RANGE 1.0f
+
 #define GREYC_AMPLITUDE_RANGE 200.0f
 #define GREYC_SHARPNESS_RANGE 2.0f
 #define GREYC_ANISOTROPY_RANGE 1.0f
@@ -202,6 +204,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	m_TORGB_bloomradiusText->SetValidator( vt );
 	m_TORGB_bloomweightText->SetValidator( vt );
+
+	m_vignettingamountText->SetValidator( vt );
 
 	m_greyc_iterationsText->SetValidator( vt );
 	m_greyc_amplitudeText->SetValidator( vt );
@@ -621,6 +625,17 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				ApplyTonemapping(true);
 			}
 			break;
+		// Vignetting Enable/Disable checkbox
+		case ID_VIGNETTING_ENABLED:
+			{
+				if(m_vignettingenabledCheckBox->IsChecked())
+					m_Vignetting_Enabled = true;
+				else
+					m_Vignetting_Enabled = false;
+				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
 		// GREYC Enable/Disable checkbox
 		case ID_GREYC_ENABLED:
 			{
@@ -1007,6 +1022,31 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int)(( FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE ) * (m_bloomweight));
 				m_TORGB_bloomweightSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+		// Vignetting
+		case ID_VIGNETTINGAMOUNT_TEXT:
+			if ( m_vignettingamountText->IsModified() )
+			{
+				wxString st = m_vignettingamountText->GetValue();
+				st.ToDouble( &m_Vignetting_Scale );
+
+				if ( m_Vignetting_Scale > VIGNETTING_SCALE_RANGE ) m_Vignetting_Scale = VIGNETTING_SCALE_RANGE;
+				else if ( VIGNETTING_SCALE_RANGE < -VIGNETTING_SCALE_RANGE ) m_Vignetting_Scale = -VIGNETTING_SCALE_RANGE;
+
+				st = wxString::Format( _("%.02f"), m_Vignetting_Scale );
+				m_vignettingamountText->SetValue( st );
+				int val;
+				if ( m_Vignetting_Scale >= 0.f )	
+					val = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
+				else {
+
+					val = (int)(( FLOAT_SLIDER_RES / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
+				}
+				m_vignettingamountSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
