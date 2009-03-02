@@ -494,6 +494,11 @@ extern "C" unsigned char* luxFramebuffer() {
 	return Context::luxFramebuffer();
 }
 
+//histogram access
+extern "C" void luxGetHistogramImage(unsigned char *outPixels, int width, int height, int options) {
+	Context::luxGetHistogramImage(outPixels, width, height, options);
+}
+
 // Parameter Access functions
 extern "C" void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) {
 	return Context::luxSetParameterValue(comp, param, value, index);

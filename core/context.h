@@ -143,6 +143,9 @@ public:
 	static void luxUpdateFramebuffer() { activeContext->updateFramebuffer(); }
 	static unsigned char* luxFramebuffer() { return activeContext->framebuffer(); }
 
+	//histogram access
+	static void luxGetHistogramImage(unsigned char *outPixels, int width, int height, int options){ activeContext->getHistogramImage(outPixels, width, height, options); }
+
 	// Parameter Access functions
 	static void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
 		activeContext->SetParameterValue(comp, param, value, index);
@@ -254,6 +257,9 @@ private:
 	//framebuffer access
 	void updateFramebuffer();
 	unsigned char* framebuffer();
+
+	//histogram access
+	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
 
 	// Parameter Access functions
 	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index);

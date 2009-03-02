@@ -313,6 +313,23 @@ public:
 	float amplitude, sharpness, anisotropy, alpha, sigma, gauss_prec, dl, da;
 };
 
+//Histogram Declarations
+class Histogram {
+	public:
+		Histogram();
+		~Histogram();
+		void Calculate(vector<Color> &pixels, unsigned int width, unsigned int height);
+		void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
+	private:
+		int m_bucketNr;
+		float* m_buckets;
+		float m_maxVal[4];
+		int m_zones[11];
+		float m_lowRange, m_highRange, m_bucketSize;
+		float m_displayGamma;
+		bool m_isReady;
+};
+
 // Film Declarations
 class Film {
 public:
@@ -345,6 +362,7 @@ public:
     virtual unsigned char* getFrameBuffer() = 0;
     virtual void updateFrameBuffer() = 0;
     virtual float getldrDisplayInterval() = 0;
+	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
 
     void SetScene(Scene *scene1) {
         scene = scene1;
@@ -367,15 +385,16 @@ public:
 
 	Scene *scene;
 
+	Histogram m_histogram;
+
 protected:
 	// Dade - (xResolution * yResolution)
 	double samplePerPass;
 };
 
 // Image Pipeline Declarations
-extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution,
-	    GREYCStorationParams &GREYCParams, 
-        ColorSystem &colorSpace, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
+extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution, GREYCStorationParams &GREYCParams, 
+        ColorSystem &colorSpace, Histogram &histogram, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
 		float bloomRadius = .2f, float bloomWeight = 0.f, bool VignettingEnabled = false, float VignetScale = 0.f, const char *tonemap = NULL,
         const ParamSet *toneMapParams = NULL, float gamma = 2.2,
         float dither = 0.5f);

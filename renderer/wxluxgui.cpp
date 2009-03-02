@@ -140,6 +140,16 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	// Load images and icons from header.
 	LoadImages();
 
+	// Add histogram image window
+	m_HistogramWindow = new ImageWindow(m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxSize(300+5*2,100));
+	wxImage tmp_img(300+5*2, 100, true);
+	m_HistogramWindow->SetImage(tmp_img); //empty image
+	m_HistogramPanel->GetSizer()->GetItem(2)->GetSizer()->Add(m_HistogramWindow, 0, wxEXPAND|wxALIGN_CENTER);
+	m_HistogramPanel->GetSizer()->Hide(1);
+	m_HistogramPanel->GetSizer()->Hide(2);
+	m_HistogramPanel->GetSizer()->Layout();
+	m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+
 	// Add custom output viewer window
 	if(m_opengl)
 		m_renderOutput = new LuxGLViewer(m_renderPage);
@@ -444,6 +454,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 
 				// Start display update timer
 				m_renderOutput->Reload();
+				UpdateHistogramImage();
 				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
 				m_netTimer->Start(1000, wxTIMER_CONTINUOUS);
@@ -665,6 +676,22 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_GREYC_interp = event.GetInt();
 				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP, m_GREYC_interp);
 				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		case ID_HISTOGRAM_SHOW:
+			{
+				if( m_HistogramPanel->GetSizer()->IsShown(2) ){
+					m_HistogramPanel->GetSizer()->Hide(1);
+					m_HistogramPanel->GetSizer()->Hide(2);
+					((wxButton*)event.GetEventObject())->SetLabel(wxString("Show"));
+				}else{
+					m_HistogramPanel->GetSizer()->Show(1, true);
+					m_HistogramPanel->GetSizer()->Show(2, true);
+					((wxButton*)event.GetEventObject())->SetLabel(wxString("Hide"));
+				}
+				m_HistogramPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+				m_Tonemap->Refresh();
 			}
 			break;
 		default:
@@ -2042,6 +2069,15 @@ void LuxGui::ResetLightGroupsFromFilm( void ) {
 	m_LightGroups->Layout();
 }
 
+void LuxGui::UpdateHistogramImage(){
+	wxImage img(300+5*2, 100, true);
+	luxGetHistogramImage(img.GetData(), 300+5*2, 100, 0);
+	m_HistogramWindow->SetImage(img);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// LuxLightGroupPanel
+
 LuxGui::LuxLightGroupPanel::LuxLightGroupPanel(
 	LuxGui *gui,
 	wxWindow* parent, 
@@ -2203,6 +2239,36 @@ void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
 			break;
 	}
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// ImageWindow
+
+LuxGui::ImageWindow::ImageWindow(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+	wxWindow(parent, id, pos, size, style, name)
+{
+	this->Connect(wxEVT_PAINT, wxPaintEventHandler(LuxGui::ImageWindow::OnPaint));
+	this->Connect(wxEVT_ERASE_BACKGROUND, wxEraseEventHandler(LuxGui::ImageWindow::OnEraseBackground));
+	m_bitmap = NULL;
+}
+
+LuxGui::ImageWindow::~ImageWindow(){
+	if(m_bitmap!=NULL) delete m_bitmap;
+}
+void LuxGui::ImageWindow::SetImage(const wxImage& img){
+	if(m_bitmap!=NULL) delete m_bitmap;
+	m_bitmap = new wxBitmap(img, 24);
+	Refresh();
+}
+
+void LuxGui::ImageWindow::OnPaint(wxPaintEvent& event){
+	wxPaintDC dc(this);
+	if(m_bitmap!=NULL) dc.DrawBitmap(*m_bitmap, 0, 0, false);
+}
+
+void LuxGui::ImageWindow::OnEraseBackground(wxEraseEvent& event){
+	//empty handler to reduce redraw flicker
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Network panel...
@@ -2443,6 +2509,7 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		m_updateThread = NULL;
 		m_statusBar->SetStatusText(wxT(""), 0);
 		m_renderOutput->Reload();
+		UpdateHistogramImage();
 
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);

@@ -96,6 +96,12 @@ unsigned char* Scene::GetFramebuffer() {
     return camera->film->getFrameBuffer();
 }
 
+// histogram access for GUI
+void Scene::getHistogramImage(unsigned char *outPixels, int width, int height, int options){
+	camera->film->getHistogramImage(outPixels, width, height, options);
+}
+
+
 // Parameter Access functions
 void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
 	if(comp == LUX_FILM)

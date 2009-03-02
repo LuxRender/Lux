@@ -855,7 +855,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams,
-			colorSpace, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
+			colorSpace, m_histogram, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.

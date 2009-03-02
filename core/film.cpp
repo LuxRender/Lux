@@ -67,7 +67,7 @@ namespace lux
 
 	// Image Pipeline Function Definitions
 	void ApplyImagingPipeline(vector<Color> &pixels,
-		int xResolution, int yResolution, GREYCStorationParams &GREYCParams, ColorSystem &colorSpace,
+		int xResolution, int yResolution, GREYCStorationParams &GREYCParams, ColorSystem &colorSpace, Histogram &histogram,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
 		bool VignettingEnabled, float VignetScale,
 		const char *toneMapName, const ParamSet *toneMapParams,
@@ -148,6 +148,8 @@ namespace lux
 			// Do gamma correction
 			pixels[i] = pixels[i].Pow(invGamma);
 		}
+		// Calculate histogram
+		histogram.Calculate(pixels, xResolution, yResolution);
 
 		// Add vignetting & chromatic abberation effect
 		// These are paired in 1 loop as they can share quite a few calculations
@@ -296,6 +298,199 @@ namespace lux
 			for (int i = 0; i < nPix; ++i)
 				pixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
 	}
+
+// Film Function Definitions
+
+void Film::getHistogramImage(unsigned char *outPixels, int width, int height, int options){
+	m_histogram.MakeImage(outPixels, width, height, options);
+}
+
+// Histogram Function Definitions
+
+Histogram::Histogram(){
+	m_isReady = false;
+	m_bucketNr = 300;
+	m_displayGamma = 2.2;
+	m_buckets = new float[m_bucketNr*4];
+	int i;
+	for(i=0;i<m_bucketNr*4;i++) m_buckets[i]=0;
+	for(i=0;i<4;i++) m_maxVal[i]=0;
+	for(i=0;i<11;i++) m_zones[i]=0;
+	m_lowRange=0; m_highRange=0; m_bucketSize=0;
+}
+
+Histogram::~Histogram(){
+	if(m_buckets != NULL) delete[] m_buckets;
+}
+
+void Histogram::Calculate(vector<Color> &pixels, unsigned int width, unsigned int height){
+	if(pixels.empty() || width==0 || height==0) return;
+	unsigned int i, j;
+	unsigned int pixelNr=width*height;
+	float value;
+	m_isReady = false;
+
+	//calculate visible plot range
+	value = -log(pow(1.f/2,10*1.f/m_displayGamma)); //size of 10 EV zones
+	m_lowRange = -2*value;
+	m_highRange = value;
+
+	//empty buckets
+	for(i=0;i<(u_int)m_bucketNr*4;i++) m_buckets[i]=0;
+	for(i=0;i<4;i++) m_maxVal[i]=0;
+
+	//fill buckets
+	m_bucketSize = (m_highRange-m_lowRange)/m_bucketNr;
+	int bucket;
+	for(i=0;i<pixelNr;i++){
+		for(j=0;j<3;j++){ //each color channel
+			value = pixels[i].c[j];
+			if(value>0){
+				value = log(value);
+				bucket = (value-m_lowRange)/m_bucketSize;
+				bucket = Clamp(bucket,0,m_bucketNr-1);
+				m_buckets[bucket*4+j] += 1;
+			}
+		}
+		value = ( pixels[i].c[0] + pixels[i].c[1] + pixels[i].c[2] )/3; //brightness
+		if(value>0){
+			value = log(value);
+			bucket = (value-m_lowRange)/m_bucketSize;
+			bucket = Clamp(bucket,0,m_bucketNr-1);
+			m_buckets[bucket*4+3] += 1;
+		}
+	}
+
+	//find max value per channel
+	for(i=0;i<(u_int)m_bucketNr;i++){
+		if(i==0 || i==m_bucketNr-1) continue; //skip extremes
+		if(m_buckets[i*4]>m_maxVal[0]) m_maxVal[0]=m_buckets[i*4];
+		if(m_buckets[i*4+1]>m_maxVal[1]) m_maxVal[1]=m_buckets[i*4+1];
+		if(m_buckets[i*4+2]>m_maxVal[2]) m_maxVal[2]=m_buckets[i*4+2];
+		if(m_buckets[i*4+3]>m_maxVal[3]) m_maxVal[3]=m_buckets[i*4+3];
+	}
+
+	//calculate EV zone tick positions
+	float zoneValue = 1.0;
+	for (i=0;i<11;i++){
+		value = log(pow(zoneValue,1.f/m_displayGamma));
+		bucket = (value-m_lowRange)/m_bucketSize;
+		bucket = Clamp(bucket,0,m_bucketNr-1);
+		m_zones[i] = bucket;
+		zoneValue = zoneValue/2;
+	}
+
+	m_isReady = true;
+}
+
+void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsigned int canvasH, int options){
+	#define PIXELIDX(x,y,w) ((y)*(w)*3+(x)*3)
+	unsigned int i,x,y,idx;
+	unsigned char color;
+	unsigned int borderW = 5; //size of the plot border in pixels
+	unsigned int guideW = 3; //size of the brightness guide bar in pixels
+	unsigned int plotH = canvasH-borderW-5-(borderW-2);
+	unsigned int plotW = m_bucketNr;
+	if(canvasW!=m_bucketNr+2*borderW) return;  //width is forced for now
+
+	if(!m_isReady) return; //TODO: add a lock so that drawing and tonemapping threads don't collide
+
+	//clear drawing area
+	color=64;
+	for(x=0;x<plotW;x++)
+		for(y=0;y<plotH;y++){
+			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			outPixels[idx]=color;
+			outPixels[idx+1]=color;
+			outPixels[idx+2]=color;
+		}
+
+	//draw histogram bars
+	int barHeight;
+	float scale;
+	switch(0){
+		case 0: {
+			float max=m_maxVal[0]>m_maxVal[1]?m_maxVal[0]:m_maxVal[1];
+			max=m_maxVal[2]>max?m_maxVal[2]:max;
+			if(max>0){
+				scale = plotH/max;
+				for(x=0;x<plotW;x++){
+					for(i=0;i<3;i++){
+						barHeight=plotH-m_buckets[x*4+i]*scale;
+						barHeight=Clamp(barHeight,0,(int)plotH);
+						for(y=barHeight;y<plotH;y++)
+							outPixels[PIXELIDX(x+borderW,y+borderW,plotW+borderW*2)+i]=255;
+					}
+				}
+			}
+		} break;
+		case 1:	{
+			if(m_maxVal[3]>0){
+				scale = (float)plotH/m_maxVal[3];
+				for(x=0;x<plotW;x++){
+					barHeight=plotH-m_buckets[x*4+3]*scale;
+					barHeight=Clamp(barHeight,0,(int)plotH);
+					for(y=barHeight;y<plotH;y++){
+						idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+						outPixels[idx]=255;
+						outPixels[idx+1]=255;
+						outPixels[idx+2]=255;
+					}
+				}
+			}
+		} break;
+		default: break;
+	}
+
+	//draw brightness guide
+	for(x=0;x<plotW;x++){
+		for(y=plotH+2;y<plotH+2+guideW;y++){
+			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			color=Clamp( exp((x*m_bucketSize+m_lowRange)*m_displayGamma*1.f/m_displayGamma)*256.f, 0.f, 255.f );
+			outPixels[idx]=color;
+			outPixels[idx+1]=color;
+			outPixels[idx+2]=color;
+		}
+	}
+
+	//draw EV zone markers
+	for(i=0;i<11;i++){
+		switch(i){
+			case 0:  color=128; break;
+			case 10: color=128; break;
+			default: color=0; break;
+		}
+		x=m_zones[i];
+		for(y=plotH+2;y<plotH+2+guideW;y++){
+			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			outPixels[idx]=color;
+			outPixels[idx+1]=color;
+			outPixels[idx+2]=color;
+		}
+	}
+
+	//draw zone boundaries on the plot
+	for(i=0;i<2;i++){
+		switch(i){
+			case 0: x=m_zones[0]; break;  //white
+			case 1: x=m_zones[10]; break; //black
+		}
+		for(y=0;y<plotH;y++){
+			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			if(outPixels[idx]==255 && outPixels[idx+1]==255 && outPixels[idx+2]==255){
+				outPixels[idx]=128;
+				outPixels[idx+1]=128;
+				outPixels[idx+2]=128;
+			}else{
+				if(outPixels[idx]==64) outPixels[idx]=128;
+				if(outPixels[idx+1]==64) outPixels[idx+1]=128;
+				if(outPixels[idx+2]==64) outPixels[idx+2]=128;
+			}
+		}
+	}
+
+}
+
 
 }//namespace lux
 

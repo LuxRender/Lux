@@ -107,6 +107,9 @@ public:
     void UpdateFramebuffer();
     unsigned char* GetFramebuffer();
 
+	//histogram access
+	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
+
 	// Parameter Access functions
 	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index);
 	double GetParameterValue(luxComponent comp, luxComponentParameters param, int index);

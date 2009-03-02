@@ -205,6 +205,8 @@ protected:
 	void SetColorSpacePreset(int choice);
 	void SetTonemapKernel(int choice);
 
+	void UpdateHistogramImage();
+
 	// Tonemapping/ToRGB variables
 	bool m_auto_tonemap;
 	int m_TM_kernel;
@@ -271,6 +273,22 @@ protected:
 	};
 
 	std::vector<LuxLightGroupPanel*> m_LightGroupPanels;
+
+	// ImageWindow - helper class for 24b image display
+	class ImageWindow : public wxWindow {
+		public:
+			ImageWindow(wxWindow *parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = wxPanelNameStr);
+			~ImageWindow();
+			void SetImage(const wxImage& img);
+		protected:
+			void OnPaint(wxPaintEvent& event);
+			void OnEraseBackground(wxEraseEvent& event);
+		private:
+			wxBitmap* m_bitmap;
+	};
+
+	ImageWindow *m_HistogramWindow;
+
 };
 
 

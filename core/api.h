@@ -110,6 +110,9 @@ int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();
 
+/* Histogram access */
+void luxGetHistogramImage(unsigned char *outPixels, int width, int height, int options);
+
 
 /* Parameter access */
 // Exposed Parameters

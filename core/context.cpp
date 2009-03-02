@@ -949,6 +949,11 @@ unsigned char* Context::framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
 }
 
+//histogram access
+void Context::getHistogramImage(unsigned char *outPixels, int width, int height, int options){
+	luxCurrentScene->getHistogramImage(outPixels, width, height, options);
+}
+
 // Parameter Access functions
 void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
 	return luxCurrentScene->SetParameterValue(comp, param, value, index);

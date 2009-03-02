@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 19 2008)
+// C++ code generated with wxFormBuilder (version Apr 16 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -373,6 +373,40 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TonemapContrastOptionsPanel->Layout();
 	bSizer332->Fit( m_TonemapContrastOptionsPanel );
 	bTonemapSizer->Add( m_TonemapContrastOptionsPanel, 0, wxEXPAND | wxALL, 1 );
+	
+	m_HistogramPanel = new wxPanel( m_Tonemap, ID_HISTOGRAMPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer83;
+	bSizer83 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer75;
+	bSizer75 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_HistogramstaticText = new wxStaticText( m_HistogramPanel, wxID_ANY, wxT("HDR Histogram"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_HistogramstaticText->Wrap( -1 );
+	bSizer75->Add( m_HistogramstaticText, 0, wxALL, 6 );
+	
+	wxBoxSizer* bSizer77;
+	bSizer77 = new wxBoxSizer( wxVERTICAL );
+	
+	bSizer75->Add( bSizer77, 1, wxEXPAND, 5 );
+	
+	m_HistogramShowbutton = new wxButton( m_HistogramPanel, ID_HISTOGRAM_SHOW, wxT("Show"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT );
+	bSizer75->Add( m_HistogramShowbutton, 0, wxALL, 1 );
+	
+	bSizer83->Add( bSizer75, 0, wxEXPAND, 5 );
+	
+	m_staticline2 = new wxStaticLine( m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	bSizer83->Add( m_staticline2, 0, wxEXPAND | wxALL, 0 );
+	
+	wxBoxSizer* bSizer76;
+	bSizer76 = new wxBoxSizer( wxHORIZONTAL );
+	
+	bSizer83->Add( bSizer76, 0, wxALL|wxEXPAND, 5 );
+	
+	m_HistogramPanel->SetSizer( bSizer83 );
+	m_HistogramPanel->Layout();
+	bSizer83->Fit( m_HistogramPanel );
+	bTonemapSizer->Add( m_HistogramPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_BloomOptionsPanel = new wxPanel( m_Tonemap, ID_BLOOMOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer33221;
@@ -1295,6 +1329,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TM_contrast_ywaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TM_contrast_ywaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_contrast_ywaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_HistogramShowbutton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1698,6 +1733,7 @@ LuxMainFrame::~LuxMainFrame()
 	m_TM_contrast_ywaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TM_contrast_ywaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_contrast_ywaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_HistogramShowbutton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
