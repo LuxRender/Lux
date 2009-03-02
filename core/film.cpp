@@ -446,7 +446,7 @@ void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsign
 	for(x=0;x<plotW;x++){
 		for(y=plotH+2;y<plotH+2+guideW;y++){
 			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
-			color=Clamp( exp((x*m_bucketSize+m_lowRange)*m_displayGamma*1.f/m_displayGamma)*256.f, 0.f, 255.f );
+			color=Clamp( expf((x*m_bucketSize+m_lowRange)*m_displayGamma*1.f/m_displayGamma)*256.f, 0.f, 255.f );
 			outPixels[idx]=color;
 			outPixels[idx+1]=color;
 			outPixels[idx+2]=color;

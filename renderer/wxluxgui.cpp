@@ -683,11 +683,11 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if( m_HistogramPanel->GetSizer()->IsShown(2) ){
 					m_HistogramPanel->GetSizer()->Hide(1);
 					m_HistogramPanel->GetSizer()->Hide(2);
-					((wxButton*)event.GetEventObject())->SetLabel(wxString("Show"));
+					((wxButton*)event.GetEventObject())->SetLabel(wxT("Show"));
 				}else{
 					m_HistogramPanel->GetSizer()->Show(1, true);
 					m_HistogramPanel->GetSizer()->Show(2, true);
-					((wxButton*)event.GetEventObject())->SetLabel(wxString("Hide"));
+					((wxButton*)event.GetEventObject())->SetLabel(wxT("Hide"));
 				}
 				m_HistogramPanel->GetSizer()->Layout();
 				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
