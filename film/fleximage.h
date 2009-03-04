@@ -126,7 +126,7 @@ private:
 	std::vector<BufferGroup> bufferGroups;
 
 	float maxY;
-	u_int warmupSamples;
+	double warmupSamples;
 	bool warmupComplete;
 	ColorSystem colorSpace;
 
