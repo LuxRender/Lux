@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -22,15 +22,15 @@
 #include <wx/sizer.h>
 #include <wx/scrolwin.h>
 #include <wx/statbmp.h>
-#include <wx/choice.h>
 #include <wx/panel.h>
+#include <wx/choice.h>
 #include <wx/slider.h>
 #include <wx/textctrl.h>
 #include <wx/button.h>
-#include <wx/statline.h>
 #include <wx/checkbox.h>
-#include <wx/notebook.h>
 #include <wx/aui/auibook.h>
+#include <wx/notebook.h>
+#include <wx/statline.h>
 #include <wx/spinctrl.h>
 #include <wx/treectrl.h>
 #include <wx/statusbr.h>
@@ -64,98 +64,103 @@ namespace lux
 	#define ID_LIGHTGROUPS 1020
 	#define ID_TONEMAP 1021
 	#define ID_TONEMAPOPTIONSPANEL 1022
-	#define ID_TM_KERNELCHOICE 1023
-	#define ID_TONEMAPREINHARDOPTIONSPANEL 1024
-	#define ID_TM_REINHARD_PRESCALE 1025
-	#define ID_TM_REINHARD_PRESCALE_TEXT 1026
-	#define ID_TM_REINHARD_POSTSCALE 1027
-	#define ID_TM_REINHARD_POSTSCALE_TEXT 1028
-	#define ID_TM_REINHARD_BURN 1029
-	#define ID_TM_REINHARD_BURN_TEXT 1030
-	#define ID_TONEMAPLINEAROPTIONSPANEL 1031
-	#define ID_TM_LINEAR_SENSITIVITY 1032
-	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1033
-	#define ID_TM_LINEAR_EXPOSURE 1034
-	#define ID_TM_LINEAR_EXPOSURE_TEXT 1035
-	#define ID_TM_LINEAR_FSTOP 1036
-	#define ID_TM_LINEAR_FSTOP_TEXT 1037
-	#define ID_TM_LINEAR_GAMMA 1038
-	#define ID_TM_LINEAR_GAMMA_TEXT 1039
-	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1040
-	#define ID_TM_CONTRAST_YWA 1041
-	#define ID_TM_CONTRAST_YWA_TEXT 1042
-	#define ID_HISTOGRAMPANEL 1043
-	#define ID_HISTOGRAM_SHOW 1044
-	#define ID_BLOOMOPTIONSPANEL 1045
-	#define ID_TORGB_BLOOMRADIUS 1046
-	#define ID_TORGB_BLOOMRADIUS_TEXT 1047
-	#define ID_COMPUTEBLOOMLAYER 1048
-	#define ID_TORGB_BLOOMWEIGHT 1049
-	#define ID_TORGB_BLOOMWEIGHT_TEXT 1050
-	#define ID_VIGNETTING_ENABLED 1051
-	#define ID_VIGNETTINGAMOUNT 1052
-	#define ID_VIGNETTINGAMOUNT_TEXT 1053
-	#define ID_COLORSPACEOPTIONSPANEL 1054
-	#define ID_TORGB_COLORSPACECHOICE 1055
-	#define ID_TORGB_XWHITE 1056
-	#define ID_TORGB_XWHITE_TEXT 1057
-	#define ID_TORGB_YWHITE 1058
-	#define ID_TORGB_YWHITE_TEXT 1059
-	#define ID_TORGB_XRED 1060
-	#define ID_TORGB_XRED_TEXT 1061
-	#define ID_TORGB_YRED 1062
-	#define ID_TORGB_YRED_TEXT 1063
-	#define ID_TORGB_XGREEN 1064
-	#define ID_TORGB_XGREEN_TEXT 1065
-	#define ID_TORGB_YGREEN 1066
-	#define ID_TORGB_YGREEN_TEXT 1067
-	#define ID_TORGB_XBLUE 1068
-	#define ID_TORGB_XBLUE_TEXT 1069
-	#define ID_TORGB_YBLUE 1070
-	#define ID_TORGB_YBLUE_TEXT 1071
-	#define ID_GAMMAOPTIONSPANEL 1072
-	#define ID_TORGB_GAMMA 1073
-	#define ID_TORGB_GAMMA_TEXT 1074
-	#define ID_NOISEOPTIONSPANEL 1075
-	#define ID_GREYC_ENABLED 1076
-	#define ID_GREYC_FASTAPPROX 1077
-	#define ID_GREYC_ITERATIONS 1078
-	#define ID_GREYC_ITERATIONS_TEXT 1079
-	#define ID_GREYC_AMPLITUDE 1080
-	#define ID_GREYC_AMPLITUDE_TEXT 1081
-	#define ID_GREYC_GAUSSPREC 1082
-	#define ID_GREYC_GAUSSPREC_TEXT 1083
-	#define ID_GREYC_ALPHA 1084
-	#define ID_GREYC_ALPHA_TEXT 1085
-	#define ID_GREYC_SIGMA 1086
-	#define ID_GREYC_SIGMA_TEXT 1087
-	#define ID_GREYC_SHARPNESS 1088
-	#define ID_GREYC_SHARPNESS_TEXT 1089
-	#define ID_GREYC_ANISO 1090
-	#define ID_GREYC_ANISO_TEXT 1091
-	#define ID_GREYC_SPATIAL 1092
-	#define ID_GREYC_SPATIAL_TEXT 1093
-	#define ID_GREYC_ANGULAR 1094
-	#define ID_GREYC_ANGULAR_TEXT 1095
-	#define ID_GREYC_INTERPOLATIONCHOICE 1096
-	#define ID_CHIU_RADIUS 1097
-	#define ID_TM_RESET 1098
-	#define ID_AUTO_TONEMAP 1099
-	#define ID_TM_APPLY 1100
-	#define ID_SYSTEMOPTIONS 1101
-	#define ID_ADD_SERVER 1102
-	#define ID_REMOVE_SERVER 1103
-	#define ID_SERVER_UPDATE_INT 1104
-	#define ID_NETWORK_TREE 1105
-	#define ID_LG_NAME 1106
-	#define ID_LG_ENABLE 1107
-	#define ID_LG_BASICPANEL 1108
-	#define ID_LG_SCALE 1109
-	#define ID_LG_SCALE_TEXT 1110
-	#define ID_LG_RGBCOLOR 1111
-	#define ID_LG_TEMPERATURE 1112
-	#define ID_LG_TEMPERATURE_TEXT 1113
-	#define ID_LG_ADVANCEDPANEL 1114
+	#define ID_TAB_TONEMAP 1023
+	#define ID_TM_KERNELCHOICE 1024
+	#define ID_TONEMAPREINHARDOPTIONSPANEL 1025
+	#define ID_TM_REINHARD_PRESCALE 1026
+	#define ID_TM_REINHARD_PRESCALE_TEXT 1027
+	#define ID_TM_REINHARD_POSTSCALE 1028
+	#define ID_TM_REINHARD_POSTSCALE_TEXT 1029
+	#define ID_TM_REINHARD_BURN 1030
+	#define ID_TM_REINHARD_BURN_TEXT 1031
+	#define ID_TONEMAPLINEAROPTIONSPANEL 1032
+	#define ID_TM_LINEAR_SENSITIVITY 1033
+	#define ID_TM_LINEAR_SENSITIVITY_TEXT 1034
+	#define ID_TM_LINEAR_EXPOSURE 1035
+	#define ID_TM_LINEAR_EXPOSURE_TEXT 1036
+	#define ID_TM_LINEAR_FSTOP 1037
+	#define ID_TM_LINEAR_FSTOP_TEXT 1038
+	#define ID_TM_LINEAR_GAMMA 1039
+	#define ID_TM_LINEAR_GAMMA_TEXT 1040
+	#define ID_TONEMAPCONTRASTOPTIONSPANEL 1041
+	#define ID_TM_CONTRAST_YWA 1042
+	#define ID_TM_CONTRAST_YWA_TEXT 1043
+	#define ID_HISTOGRAMPANEL 1044
+	#define ID_TAB_HISTOGRAM 1045
+	#define ID_BLOOMOPTIONSPANEL 1046
+	#define ID_TAB_LENSEFFECTS 1047
+	#define ID_TORGB_BLOOMRADIUS 1048
+	#define ID_TORGB_BLOOMRADIUS_TEXT 1049
+	#define ID_COMPUTEBLOOMLAYER 1050
+	#define ID_TORGB_BLOOMWEIGHT 1051
+	#define ID_TORGB_BLOOMWEIGHT_TEXT 1052
+	#define ID_VIGNETTING_ENABLED 1053
+	#define ID_VIGNETTINGAMOUNT 1054
+	#define ID_VIGNETTINGAMOUNT_TEXT 1055
+	#define ID_COLORSPACEOPTIONSPANEL 1056
+	#define ID_TAB_COLORSPACE 1057
+	#define ID_TORGB_COLORSPACECHOICE 1058
+	#define ID_TORGB_XWHITE 1059
+	#define ID_TORGB_XWHITE_TEXT 1060
+	#define ID_TORGB_YWHITE 1061
+	#define ID_TORGB_YWHITE_TEXT 1062
+	#define ID_TORGB_XRED 1063
+	#define ID_TORGB_XRED_TEXT 1064
+	#define ID_TORGB_YRED 1065
+	#define ID_TORGB_YRED_TEXT 1066
+	#define ID_TORGB_XGREEN 1067
+	#define ID_TORGB_XGREEN_TEXT 1068
+	#define ID_TORGB_YGREEN 1069
+	#define ID_TORGB_YGREEN_TEXT 1070
+	#define ID_TORGB_XBLUE 1071
+	#define ID_TORGB_XBLUE_TEXT 1072
+	#define ID_TORGB_YBLUE 1073
+	#define ID_TORGB_YBLUE_TEXT 1074
+	#define ID_GAMMAOPTIONSPANEL 1075
+	#define ID_TAB_GAMMA 1076
+	#define ID_TORGB_GAMMA 1077
+	#define ID_TORGB_GAMMA_TEXT 1078
+	#define ID_NOISEOPTIONSPANEL 1079
+	#define ID_TAB_NOISEREDUCTION 1080
+	#define ID_GREYC_ENABLED 1081
+	#define ID_GREYC_FASTAPPROX 1082
+	#define ID_GREYC_ITERATIONS 1083
+	#define ID_GREYC_ITERATIONS_TEXT 1084
+	#define ID_GREYC_AMPLITUDE 1085
+	#define ID_GREYC_AMPLITUDE_TEXT 1086
+	#define ID_GREYC_GAUSSPREC 1087
+	#define ID_GREYC_GAUSSPREC_TEXT 1088
+	#define ID_GREYC_ALPHA 1089
+	#define ID_GREYC_ALPHA_TEXT 1090
+	#define ID_GREYC_SIGMA 1091
+	#define ID_GREYC_SIGMA_TEXT 1092
+	#define ID_GREYC_SHARPNESS 1093
+	#define ID_GREYC_SHARPNESS_TEXT 1094
+	#define ID_GREYC_ANISO 1095
+	#define ID_GREYC_ANISO_TEXT 1096
+	#define ID_GREYC_SPATIAL 1097
+	#define ID_GREYC_SPATIAL_TEXT 1098
+	#define ID_GREYC_ANGULAR 1099
+	#define ID_GREYC_ANGULAR_TEXT 1100
+	#define ID_GREYC_INTERPOLATIONCHOICE 1101
+	#define ID_CHIU_RADIUS 1102
+	#define ID_TM_RESET 1103
+	#define ID_AUTO_TONEMAP 1104
+	#define ID_TM_APPLY 1105
+	#define ID_SYSTEMOPTIONS 1106
+	#define ID_ADD_SERVER 1107
+	#define ID_REMOVE_SERVER 1108
+	#define ID_SERVER_UPDATE_INT 1109
+	#define ID_NETWORK_TREE 1110
+	#define ID_LG_NAME 1111
+	#define ID_LG_ENABLE 1112
+	#define ID_LG_BASICPANEL 1113
+	#define ID_LG_SCALE 1114
+	#define ID_LG_SCALE_TEXT 1115
+	#define ID_LG_RGBCOLOR 1116
+	#define ID_LG_TEMPERATURE 1117
+	#define ID_LG_TEMPERATURE_TEXT 1118
+	#define ID_LG_ADVANCEDPANEL 1119
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -180,8 +185,14 @@ namespace lux
 			wxBoxSizer* m_LightGroupsSizer;
 			wxScrolledWindow* m_Tonemap;
 			wxPanel* m_TonemapOptionsPanel;
+			wxPanel* m_Tab_ToneMapPanel;
 			wxStaticBitmap* m_tonemapBitmap;
-			wxStaticText* m_tonemappingkernelStaticText;
+			wxStaticText* m_ToneMapStaticText;
+			
+			wxStaticBitmap* m_Tab_ToneMapToggleIcon;
+			wxStaticBitmap* m_Tab_ToneMapIcon;
+			wxPanel* m_Tab_Control_ToneMapPanel;
+			wxStaticText* m_ToneMapKernelStaticText;
 			wxChoice* m_TM_kernelChoice;
 			wxPanel* m_TonemapReinhardOptionsPanel;
 			wxStaticText* m_TM_Reinhard_prescaleStaticText;
@@ -211,13 +222,22 @@ namespace lux
 			wxSlider* m_TM_contrast_ywaSlider;
 			wxTextCtrl* m_TM_contrast_ywaText;
 			wxPanel* m_HistogramPanel;
+			wxPanel* m_Tab_HistogramPanel;
+			wxStaticBitmap* m_histogramBitmap;
 			wxStaticText* m_HistogramstaticText;
-			wxButton* m_HistogramShowbutton;
-			wxStaticLine* m_staticline2;
+			
+			wxStaticBitmap* m_Tab_HistogramToggleIcon;
+			wxStaticBitmap* m_Tab_HistogramIcon;
+			wxPanel* m_Tab_Control_HistogramPanel;
 			wxPanel* m_BloomOptionsPanel;
+			wxPanel* m_Tab_LensEffectsPanel;
 			wxStaticBitmap* m_bloomBitmap;
-			wxStaticText* m_TORGB_lensfxText;
-			wxNotebook* m_notebook5;
+			wxStaticText* m_TORGB_lensfxStaticText;
+			
+			wxStaticBitmap* m_Tab_LensEffectsToggleIcon;
+			wxStaticBitmap* m_Tab_LensEffectsIcon;
+			wxPanel* m_Tab_Control_LensEffectsPanel;
+			wxAuiNotebook* m_LensEffectsAuiNotebook;
 			wxPanel* m_bloomPanel;
 			wxStaticText* m_TORGB_bloomweightStaticText11;
 			wxSlider* m_TORGB_bloomradiusSlider;
@@ -235,14 +255,23 @@ namespace lux
 			wxSlider* m_vignettingamountSlider;
 			wxTextCtrl* m_vignettingamountText;
 			wxPanel* m_ColorSpaceOptionsPanel;
+			wxPanel* m_Tab_ColorSpacePanel;
 			wxStaticBitmap* m_colorspaceBitmap;
+			wxStaticText* m_TORGB_colorspaceStaticText;
+			
+			wxStaticBitmap* m_Tab_ColorSpaceToggleIcon;
+			wxStaticBitmap* m_Tab_ColorSpaceIcon;
+			wxPanel* m_Tab_Control_ColorSpacePanel;
 			wxStaticText* m_TORGB_colorspacepresetsStaticText;
 			wxChoice* m_TORGB_colorspaceChoice;
+			wxAuiNotebook* m_ColorSpaceAuiNotebook;
+			wxPanel* m_ColorSpaceWhitepointPanel;
 			wxStaticText* m_TORGB_whitexyStaticText;
 			wxSlider* m_TORGB_xwhiteSlider;
 			wxTextCtrl* m_TORGB_xwhiteText;
 			wxSlider* m_TORGB_ywhiteSlider;
 			wxTextCtrl* m_TORGB_ywhiteText;
+			wxPanel* m_ColorSpaceRGBPanel;
 			wxStaticText* m_TORGB_rgbxyStaticText;
 			wxSlider* m_TORGB_xredSlider;
 			wxTextCtrl* m_TORGB_xredText;
@@ -257,14 +286,24 @@ namespace lux
 			wxSlider* m_TORGB_yblueSlider;
 			wxTextCtrl* m_TORGB_yblueText;
 			wxPanel* m_GammaOptionsPanel;
+			wxPanel* m_Tab_GammaPanel;
 			wxStaticBitmap* m_gammaBitmap;
-			wxStaticText* m_TORGB_gammaStaticText;
+			wxStaticText* m_GammaStaticText;
+			
+			wxStaticBitmap* m_Tab_GammaToggleIcon;
+			wxStaticBitmap* m_Tab_GammaIcon;
+			wxPanel* m_Tab_Control_GammaPanel;
 			wxSlider* m_TORGB_gammaSlider;
 			wxTextCtrl* m_TORGB_gammaText;
 			wxPanel* m_NoiseOptionsPanel;
+			wxPanel* m_Tab_LensEffectsPanel1;
 			wxStaticBitmap* m_NoiseReductionBitmap;
 			wxStaticText* m_NoiseReductionStaticText;
-			wxNotebook* m_notebook3;
+			
+			wxStaticBitmap* m_Tab_NoiseReductionToggleIcon;
+			wxStaticBitmap* m_Tab_NoiseReductionIcon;
+			wxPanel* m_Tab_Control_NoiseReductionPanel;
+			wxAuiNotebook* m_NoiseReductionAuiNotebook;
 			wxPanel* m_GREYCPanel;
 			wxNotebook* m_GREYCNotebook;
 			wxPanel* m_GREYCRegPanel;
@@ -330,6 +369,7 @@ namespace lux
 			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnMenu( wxMouseEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }

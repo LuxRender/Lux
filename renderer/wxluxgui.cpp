@@ -144,10 +144,11 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_HistogramWindow = new ImageWindow(m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxSize(300+5*2,100));
 	wxImage tmp_img(300+5*2, 100, true);
 	m_HistogramWindow->SetImage(tmp_img); //empty image
-	m_HistogramPanel->GetSizer()->GetItem(2)->GetSizer()->Add(m_HistogramWindow, 0, wxEXPAND|wxALIGN_CENTER);
-	m_HistogramPanel->GetSizer()->Hide(1);
-	m_HistogramPanel->GetSizer()->Hide(2);
+	m_Tab_Control_HistogramPanel->GetSizer()->Add(m_HistogramWindow, 0, wxEXPAND|wxALIGN_CENTER);
+	//m_HistogramPanel->GetSizer()->Add(m_HistogramWindow, 0, wxEXPAND|wxALIGN_CENTER);
+	m_Tab_Control_HistogramPanel->Hide();
 	m_HistogramPanel->GetSizer()->Layout();
+	m_Tonemap->GetSizer()->Layout();
 	m_Tonemap->GetSizer()->FitInside(m_Tonemap);
 
 	// Add custom output viewer window
@@ -417,14 +418,33 @@ void LuxGui::LoadImages() {
 	m_outputNotebook->SetPageBitmap(1, wxMEMORY_BITMAP(n_tonemap_png));
 	m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
 
-	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(n_tonemap_png));
-	m_bloomBitmap->SetBitmap(wxMEMORY_BITMAP(bloomicon_png));
-	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(n_color_png));
-	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(n_gamma_png));
-
-	m_NoiseReductionBitmap->SetBitmap(wxMEMORY_BITMAP(noiseicon_png));
+	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(tab_tonemap_png));
+	m_histogramBitmap->SetBitmap(wxMEMORY_BITMAP(tab_histogram_png));
+	m_bloomBitmap->SetBitmap(wxMEMORY_BITMAP(tab_lenseffects_png));
+	m_colorspaceBitmap->SetBitmap(wxMEMORY_BITMAP(tab_colorspace_png));
+	m_gammaBitmap->SetBitmap(wxMEMORY_BITMAP(tab_gamma_png));
+	m_NoiseReductionBitmap->SetBitmap(wxMEMORY_BITMAP(tab_noisereduction_png));
 
 	m_splashbmp = wxMEMORY_BITMAP(splash_png);
+
+	// window collapse/enable icons/buttons
+	m_Tab_ToneMapIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_ToneMapToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+
+	m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+	m_Tab_HistogramToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+
+	m_Tab_LensEffectsIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_LensEffectsToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+
+	m_Tab_ColorSpaceIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_ColorSpaceToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+
+	m_Tab_GammaIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_GammaToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+
+	m_Tab_NoiseReductionIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_NoiseReductionToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
 }
 
 void UpdateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0) {
@@ -678,18 +698,102 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
 			}
 			break;
-		case ID_HISTOGRAM_SHOW:
+		default:
+			break;
+	}
+}
+
+void LuxGui::OnMenu(wxMouseEvent &event) {
+	switch (event.GetId()) {
+		// TABS Hide/Show(collapse)
+		case ID_TAB_HISTOGRAM:
 			{
-				if( m_HistogramPanel->GetSizer()->IsShown(2) ){
-					m_HistogramPanel->GetSizer()->Hide(1);
-					m_HistogramPanel->GetSizer()->Hide(2);
-					((wxButton*)event.GetEventObject())->SetLabel(wxT("Show"));
+				if( m_Tab_Control_HistogramPanel->IsShown() ){
+					m_Tab_Control_HistogramPanel->Hide();
+					m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
 				}else{
-					m_HistogramPanel->GetSizer()->Show(1, true);
-					m_HistogramPanel->GetSizer()->Show(2, true);
-					((wxButton*)event.GetEventObject())->SetLabel(wxT("Hide"));
+					m_Tab_Control_HistogramPanel->Show(true);
+					m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
 				}
 				m_HistogramPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+				m_Tonemap->Refresh();
+			}
+			break;
+		case ID_TAB_TONEMAP:
+			{
+				if( m_Tab_Control_ToneMapPanel->IsShown() ){
+					m_Tab_Control_ToneMapPanel->Hide();
+					m_Tab_ToneMapIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+				}else{
+					m_Tab_Control_ToneMapPanel->Show(true);
+					m_Tab_ToneMapIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+				}
+				m_TonemapOptionsPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+				m_Tonemap->Refresh();
+			}
+			break;
+
+
+		case ID_TAB_LENSEFFECTS:
+			{
+				if( m_Tab_Control_LensEffectsPanel->IsShown() ){
+					m_Tab_Control_LensEffectsPanel->Hide();
+					m_Tab_LensEffectsIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+				}else{
+					m_Tab_Control_LensEffectsPanel->Show(true);
+					m_Tab_LensEffectsIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+				}
+				m_BloomOptionsPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+				m_Tonemap->Refresh();
+			}
+			break;
+		case ID_TAB_COLORSPACE:
+			{
+				if( m_Tab_Control_ColorSpacePanel->IsShown() ){
+					m_Tab_Control_ColorSpacePanel->Hide();
+					m_Tab_ColorSpaceIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+				}else{
+					m_Tab_Control_ColorSpacePanel->Show(true);
+					m_Tab_ColorSpaceIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+				}
+				m_ColorSpaceOptionsPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+				m_Tonemap->Refresh();
+			}
+			break;
+		case ID_TAB_GAMMA:
+			{
+				if( m_Tab_Control_GammaPanel->IsShown() ){
+					m_Tab_Control_GammaPanel->Hide();
+					m_Tab_GammaIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+				}else{
+					m_Tab_Control_GammaPanel->Show(true);
+					m_Tab_GammaIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+				}
+				m_GammaOptionsPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
+				m_Tonemap->Refresh();
+			}
+			break;
+		case ID_TAB_NOISEREDUCTION:
+			{
+				if( m_Tab_Control_NoiseReductionPanel->IsShown() ){
+					m_Tab_Control_NoiseReductionPanel->Hide();
+					m_Tab_NoiseReductionIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+				}else{
+					m_Tab_Control_NoiseReductionPanel->Show(true);
+					m_Tab_NoiseReductionIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+				}
+				m_NoiseOptionsPanel->GetSizer()->Layout();
+				m_Tonemap->GetSizer()->Layout();
 				m_Tonemap->GetSizer()->FitInside(m_Tonemap);
 				m_Tonemap->Refresh();
 			}
@@ -698,6 +802,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			break;
 	}
 }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LuxGui::ApplyTonemapping(bool withbloomcomputation) {

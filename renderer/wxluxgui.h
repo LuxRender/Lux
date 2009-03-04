@@ -127,6 +127,7 @@ protected:
 	DECLARE_EVENT_TABLE()
 	// Handlers for LuxMainFrame events.
 	void OnMenu(wxCommandEvent &event);
+	void OnMenu(wxMouseEvent &event);
 	void OnOpen(wxCommandEvent &event);
 	void OnExit(wxCloseEvent &event);
 	void OnError(wxLuxErrorEvent &event);
