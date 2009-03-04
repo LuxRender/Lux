@@ -118,7 +118,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 
 	// calculate reject warmup samples
-	reject_warmup_samples = (float) (xResolution * yResolution * reject_warmup);
+	reject_warmup_samples = ((double)xResolution * (double)yResolution) * reject_warmup;
 
 	// Precompute filter weight table
 	#define FILTER_TABLE_SIZE 16

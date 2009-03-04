@@ -113,7 +113,7 @@ private:
 	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
 	//ParamSet toneParams;
 	//float gamma;
-	float reject_warmup_samples;
+	double reject_warmup_samples;
 	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga, writeResumeFlm, restartResumeFlm;
 
 	unsigned char *framebuffer;
