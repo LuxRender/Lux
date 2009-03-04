@@ -60,6 +60,8 @@
 
 
 #define cimg_debug 0     // Disable modal window in CImg exceptions.
+// Include the CImg Library, with the GREYCstoration plugin included
+#define cimg_plugin "greycstoration.h"
 #include "cimg.h"
 using namespace cimg_library;
 
@@ -345,50 +347,41 @@ namespace lux {
             vector<float> &alpha, int xRes, int yRes,
             int totalXRes, int totalYRes,
             int xOffset, int yOffset) {
-        Header header(totalXRes, totalYRes);
-        Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
-        header.dataWindow() = dataWindow;
-        header.channels().insert("R", Channel(Imf::FLOAT));
-        header.channels().insert("G", Channel(Imf::FLOAT));
-        header.channels().insert("B", Channel(Imf::FLOAT));
-        header.channels().insert("A", Channel(Imf::FLOAT));
+		Header header(totalXRes, totalYRes);
+		Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
+		header.dataWindow() = dataWindow;
+		header.channels().insert("R", Channel(Imf::FLOAT));
+		header.channels().insert("G", Channel(Imf::FLOAT));
+		header.channels().insert("B", Channel(Imf::FLOAT));
+		header.channels().insert("A", Channel(Imf::FLOAT));
 
-	const int numPixels = xRes * yRes;
-        float *hrgb = new float[3 * numPixels];
-        for (int i = 0; i < numPixels; ++i) {
-            hrgb[3 * i] = pixels[i].c[0];
-            hrgb[3 * i + 1] = pixels[i].c[1];
-            hrgb[3 * i + 2] = pixels[i].c[2];
-	}
-        float *ha = new float[numPixels];
-        for (int i = 0; i < numPixels; ++i)
-            ha[i] = alpha[i];
+		const int numPixels = xRes * yRes;
+		// NOTE - lordcrc - No need to perform a local copy of the pixels
+		float *hrgb = &pixels[0].c[0];
+		float *ha = &alpha[0];
 
-        hrgb -= 3 * (xOffset + yOffset * xRes);
-        ha -= (xOffset + yOffset * xRes);
+		hrgb -= 3 * (xOffset + yOffset * xRes);
+		ha -= (xOffset + yOffset * xRes);
 
-        FrameBuffer fb;
-        fb.insert("R", Slice(Imf::FLOAT, (char *) hrgb, 3 * sizeof (float),
-                3 * xRes * sizeof (float)));
-        fb.insert("G", Slice(Imf::FLOAT, (char *) hrgb + sizeof (float), 3 * sizeof (float),
-                3 * xRes * sizeof (float)));
-        fb.insert("B", Slice(Imf::FLOAT, (char *) hrgb + 2 * sizeof (float), 3 * sizeof (float),
-                3 * xRes * sizeof (float)));
-        fb.insert("A", Slice(Imf::FLOAT, (char *) ha, sizeof (float), xRes * sizeof (float)));
+		FrameBuffer fb;
+		fb.insert("R", Slice(Imf::FLOAT, (char *) hrgb, sizeof (Color),
+				xRes * sizeof (Color)));
+		fb.insert("G", Slice(Imf::FLOAT, (char *) hrgb + sizeof (float), sizeof (Color),
+				xRes * sizeof (Color)));
+		fb.insert("B", Slice(Imf::FLOAT, (char *) hrgb + 2 * sizeof (float), sizeof (Color),
+				xRes * sizeof (Color)));
+		fb.insert("A", Slice(Imf::FLOAT, (char *) ha, sizeof (float), xRes * sizeof (float)));
 
-        try {
-            OutputFile file(name.c_str(), header);
-            file.setFrameBuffer(fb);
-            file.writePixels(yRes);
-        } catch (const std::exception &e) {
-            //Error("Unable to write image file \"%s\": %s", name.c_str(),
-            //	e.what());
-            std::stringstream ss;
-            ss << "Unable to write image file '" << name << "': " << e.what();
-            luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
-        }
-
-        delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
-        delete[] (ha + (xOffset + yOffset * xRes));
+		try {
+			OutputFile file(name.c_str(), header);
+			file.setFrameBuffer(fb);
+			file.writePixels(yRes);
+		} catch (const std::exception &e) {
+			//Error("Unable to write image file \"%s\": %s", name.c_str(),
+			//	e.what());
+			std::stringstream ss;
+			ss << "Unable to write image file '" << name << "': " << e.what();
+			luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
+		}
     }
 }
