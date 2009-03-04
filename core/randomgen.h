@@ -45,10 +45,11 @@ namespace lux
 
 #define LCG(n) ((69069UL * n) & 0xffffffffUL)
 #define MASK 0xffffffffUL
+#define FLOATMASK 0x00ffffffUL
 
 #define RAN_BUFFER_AMOUNT 2048
 
-static const float invUI = ((float)1.0/(float)4294967296.0);
+static const float invUI = ((float)1.0/(float)16777216.0);
 
 namespace lux
 {
@@ -119,7 +120,7 @@ public:
 
 	  unsigned long int ii = buf[bufid];
 	  bufid++;
-	  return ii * invUI; 
+	  return (ii & FLOATMASK) * invUI; 
 	}
 
 private:
@@ -137,7 +138,7 @@ inline float floatValueP() {
 		PGen = new RandomGenerator();
 		PGen->taus113_set(1);
 	}
-	return PGen->nobuf_generateUInt() * invUI;
+	return (PGen->nobuf_generateUInt() & FLOATMASK) * invUI;
 }
 inline unsigned long uintValueP() { 
 	if(!PGen) {
