@@ -143,6 +143,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	// Add histogram image window
 	m_HistogramWindow = new LuxHistogramWindow(m_Tab_Control_HistogramPanel, wxID_ANY);
 	m_Tab_Control_HistogramPanel->GetSizer()->GetItem(1)->GetSizer()->Add(m_HistogramWindow, 1, wxEXPAND);
+	m_Tab_Control_HistogramPanel->Layout();
 
 	// Tabs hidden by default
 	m_Tab_Control_ColorSpacePanel->Hide();
@@ -2388,7 +2389,7 @@ LuxGui::ImageWindow::~ImageWindow(){
 }
 void LuxGui::ImageWindow::SetImage(const wxImage& img){
 	if(m_bitmap!=NULL) delete m_bitmap;
-	m_bitmap = new wxBitmap(img, 24);
+	m_bitmap = new wxBitmap(img);
 	Refresh();
 }
 
