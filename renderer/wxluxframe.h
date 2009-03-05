@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 19 2008)
+// C++ code generated with wxFormBuilder (version Apr 16 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -369,7 +369,7 @@ namespace lux
 			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnMenu( wxMouseEvent& event ){ event.Skip(); }
+			virtual void OnMouse( wxMouseEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }

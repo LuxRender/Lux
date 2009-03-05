@@ -703,7 +703,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 	}
 }
 
-void LuxGui::OnMenu(wxMouseEvent &event) {
+void LuxGui::OnMouse(wxMouseEvent &event) {
 	switch (event.GetId()) {
 		// TABS Hide/Show(collapse)
 		case ID_TAB_HISTOGRAM:

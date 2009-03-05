@@ -1240,7 +1240,7 @@
                                                                                                         <event name="OnLeaveWindow"></event>
                                                                                                         <event name="OnLeftDClick"></event>
                                                                                                         <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp">OnMenu</event>
+                                                                                                        <event name="OnLeftUp">OnMouse</event>
                                                                                                         <event name="OnMiddleDClick"></event>
                                                                                                         <event name="OnMiddleDown"></event>
                                                                                                         <event name="OnMiddleUp"></event>
@@ -3408,7 +3408,7 @@
                                                                                                         <event name="OnLeaveWindow"></event>
                                                                                                         <event name="OnLeftDClick"></event>
                                                                                                         <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp">OnMenu</event>
+                                                                                                        <event name="OnLeftUp">OnMouse</event>
                                                                                                         <event name="OnMiddleDClick"></event>
                                                                                                         <event name="OnMiddleDown"></event>
                                                                                                         <event name="OnMiddleUp"></event>
@@ -3789,7 +3789,7 @@
                                                                                                         <event name="OnLeaveWindow"></event>
                                                                                                         <event name="OnLeftDClick"></event>
                                                                                                         <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp">OnMenu</event>
+                                                                                                        <event name="OnLeftUp">OnMouse</event>
                                                                                                         <event name="OnMiddleDClick"></event>
                                                                                                         <event name="OnMiddleDown"></event>
                                                                                                         <event name="OnMiddleUp"></event>
@@ -5183,7 +5183,7 @@
                                                                                                         <event name="OnLeaveWindow"></event>
                                                                                                         <event name="OnLeftDClick"></event>
                                                                                                         <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp">OnMenu</event>
+                                                                                                        <event name="OnLeftUp">OnMouse</event>
                                                                                                         <event name="OnMiddleDClick"></event>
                                                                                                         <event name="OnMiddleDown"></event>
                                                                                                         <event name="OnMiddleUp"></event>
@@ -7083,7 +7083,7 @@
                                                                                                         <event name="OnLeaveWindow"></event>
                                                                                                         <event name="OnLeftDClick"></event>
                                                                                                         <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp">OnMenu</event>
+                                                                                                        <event name="OnLeftUp">OnMouse</event>
                                                                                                         <event name="OnMiddleDClick"></event>
                                                                                                         <event name="OnMiddleDown"></event>
                                                                                                         <event name="OnMiddleUp"></event>
@@ -7591,7 +7591,7 @@
                                                                                                         <event name="OnLeaveWindow"></event>
                                                                                                         <event name="OnLeftDClick"></event>
                                                                                                         <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp">OnMenu</event>
+                                                                                                        <event name="OnLeftUp">OnMouse</event>
                                                                                                         <event name="OnMiddleDClick"></event>
                                                                                                         <event name="OnMiddleDown"></event>
                                                                                                         <event name="OnMiddleUp"></event>
