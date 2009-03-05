@@ -422,59 +422,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer33211->Fit( m_TonemapOptionsPanel );
 	bTonemapSizer->Add( m_TonemapOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
-	m_HistogramPanel = new wxPanel( m_Tonemap, ID_HISTOGRAMPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
-	wxBoxSizer* bSizer83;
-	bSizer83 = new wxBoxSizer( wxVERTICAL );
-	
-	m_Tab_HistogramPanel = new wxPanel( m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSTATIC_BORDER|wxTAB_TRAVERSAL );
-	m_Tab_HistogramPanel->SetBackgroundColour( wxColour( 128, 128, 128 ) );
-	
-	wxBoxSizer* bSizer1031115;
-	bSizer1031115 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_histogramBitmap = new wxStaticBitmap( m_Tab_HistogramPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1031115->Add( m_histogramBitmap, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 1 );
-	
-	m_HistogramstaticText = new wxStaticText( m_Tab_HistogramPanel, wxID_ANY, wxT("HDR Histogram"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_HistogramstaticText->Wrap( -1 );
-	m_HistogramstaticText->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 90, false, wxEmptyString ) );
-	m_HistogramstaticText->SetForegroundColour( wxColour( 255, 255, 255 ) );
-	
-	bSizer1031115->Add( m_HistogramstaticText, 0, wxALIGN_CENTER|wxALL, 3 );
-	
-	
-	bSizer1031115->Add( 0, 0, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer885;
-	bSizer885 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_Tab_HistogramToggleIcon = new wxStaticBitmap( m_Tab_HistogramPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer885->Add( m_Tab_HistogramToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
-	
-	m_Tab_HistogramIcon = new wxStaticBitmap( m_Tab_HistogramPanel, ID_TAB_HISTOGRAM, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer885->Add( m_Tab_HistogramIcon, 0, wxALL, 1 );
-	
-	bSizer1031115->Add( bSizer885, 0, wxEXPAND, 5 );
-	
-	m_Tab_HistogramPanel->SetSizer( bSizer1031115 );
-	m_Tab_HistogramPanel->Layout();
-	bSizer1031115->Fit( m_Tab_HistogramPanel );
-	bSizer83->Add( m_Tab_HistogramPanel, 0, wxEXPAND | wxALL, 2 );
-	
-	m_Tab_Control_HistogramPanel = new wxPanel( m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER );
-	wxBoxSizer* bSizer125;
-	bSizer125 = new wxBoxSizer( wxVERTICAL );
-	
-	m_Tab_Control_HistogramPanel->SetSizer( bSizer125 );
-	m_Tab_Control_HistogramPanel->Layout();
-	bSizer125->Fit( m_Tab_Control_HistogramPanel );
-	bSizer83->Add( m_Tab_Control_HistogramPanel, 1, wxEXPAND | wxALL, 0 );
-	
-	m_HistogramPanel->SetSizer( bSizer83 );
-	m_HistogramPanel->Layout();
-	bSizer83->Fit( m_HistogramPanel );
-	bTonemapSizer->Add( m_HistogramPanel, 0, wxEXPAND | wxALL, 1 );
-	
 	m_BloomOptionsPanel = new wxPanel( m_Tonemap, ID_BLOOMOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer33221;
 	bSizer33221 = new wxBoxSizer( wxVERTICAL );
@@ -949,6 +896,94 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_GammaOptionsPanel->Layout();
 	bSizer3322->Fit( m_GammaOptionsPanel );
 	bTonemapSizer->Add( m_GammaOptionsPanel, 0, wxEXPAND | wxALL, 1 );
+	
+	m_HistogramPanel = new wxPanel( m_Tonemap, ID_HISTOGRAMPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer83;
+	bSizer83 = new wxBoxSizer( wxVERTICAL );
+	
+	m_Tab_HistogramPanel = new wxPanel( m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSTATIC_BORDER|wxTAB_TRAVERSAL );
+	m_Tab_HistogramPanel->SetBackgroundColour( wxColour( 128, 128, 128 ) );
+	
+	wxBoxSizer* bSizer1031115;
+	bSizer1031115 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_histogramBitmap = new wxStaticBitmap( m_Tab_HistogramPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer1031115->Add( m_histogramBitmap, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 1 );
+	
+	m_HistogramstaticText = new wxStaticText( m_Tab_HistogramPanel, wxID_ANY, wxT("HDR Histogram"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_HistogramstaticText->Wrap( -1 );
+	m_HistogramstaticText->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 90, false, wxEmptyString ) );
+	m_HistogramstaticText->SetForegroundColour( wxColour( 255, 255, 255 ) );
+	
+	bSizer1031115->Add( m_HistogramstaticText, 0, wxALIGN_CENTER|wxALL, 3 );
+	
+	
+	bSizer1031115->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer885;
+	bSizer885 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_Tab_HistogramToggleIcon = new wxStaticBitmap( m_Tab_HistogramPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer885->Add( m_Tab_HistogramToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
+	
+	m_Tab_HistogramIcon = new wxStaticBitmap( m_Tab_HistogramPanel, ID_TAB_HISTOGRAM, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer885->Add( m_Tab_HistogramIcon, 0, wxALL, 1 );
+	
+	bSizer1031115->Add( bSizer885, 0, wxEXPAND, 5 );
+	
+	m_Tab_HistogramPanel->SetSizer( bSizer1031115 );
+	m_Tab_HistogramPanel->Layout();
+	bSizer1031115->Fit( m_Tab_HistogramPanel );
+	bSizer83->Add( m_Tab_HistogramPanel, 0, wxEXPAND | wxALL, 2 );
+	
+	m_Tab_Control_HistogramPanel = new wxPanel( m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER );
+	wxBoxSizer* bSizer125;
+	bSizer125 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer95;
+	bSizer95 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Input channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText43->Wrap( -1 );
+	bSizer95->Add( m_staticText43, 0, wxBOTTOM|wxLEFT, 5 );
+	
+	m_HistogramRgbAddRadioBtn = new wxRadioButton( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_RGB_ADD, wxT("R+G+B"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
+	m_HistogramRgbAddRadioBtn->SetValue( true ); 
+	bSizer95->Add( m_HistogramRgbAddRadioBtn, 0, wxBOTTOM|wxLEFT, 5 );
+	
+	m_HistogramRgbRadioBtn = new wxRadioButton( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_RGB, wxT("RGB"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer95->Add( m_HistogramRgbRadioBtn, 0, wxBOTTOM|wxLEFT, 5 );
+	
+	m_HistogramValueRadioBtn = new wxRadioButton( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_VALUE, wxT("Value"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer95->Add( m_HistogramValueRadioBtn, 0, wxBOTTOM|wxLEFT, 5 );
+	
+	
+	bSizer95->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticText431 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Output:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText431->Wrap( -1 );
+	bSizer95->Add( m_staticText431, 0, wxBOTTOM|wxLEFT, 5 );
+	
+	m_HistogramLogCheckBox = new wxCheckBox( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_LOG, wxT("Log"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	bSizer95->Add( m_HistogramLogCheckBox, 0, wxBOTTOM|wxLEFT, 5 );
+	
+	bSizer125->Add( bSizer95, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer96;
+	bSizer96 = new wxBoxSizer( wxHORIZONTAL );
+	
+	bSizer125->Add( bSizer96, 1, wxEXPAND, 5 );
+	
+	m_Tab_Control_HistogramPanel->SetSizer( bSizer125 );
+	m_Tab_Control_HistogramPanel->Layout();
+	bSizer125->Fit( m_Tab_Control_HistogramPanel );
+	bSizer83->Add( m_Tab_Control_HistogramPanel, 1, wxEXPAND | wxALL, 0 );
+	
+	m_HistogramPanel->SetSizer( bSizer83 );
+	m_HistogramPanel->Layout();
+	bSizer83->Fit( m_HistogramPanel );
+	bTonemapSizer->Add( m_HistogramPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_NoiseOptionsPanel = new wxPanel( m_Tonemap, ID_NOISEOPTIONSPANEL, wxDefaultPosition, wxSize( -1,-1 ), wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer33222;
@@ -1550,7 +1585,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TM_contrast_ywaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TM_contrast_ywaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_contrast_ywaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
-	m_Tab_HistogramIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_LensEffectsIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomradiusSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1701,6 +1735,11 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TORGB_gammaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_Tab_HistogramIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
+	m_HistogramRgbAddRadioBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramRgbRadioBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramValueRadioBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramLogCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_Tab_NoiseReductionIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_greyc_EnabledCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_greyc_fastapproxCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
@@ -1959,7 +1998,6 @@ LuxMainFrame::~LuxMainFrame()
 	m_TM_contrast_ywaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TM_contrast_ywaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TM_contrast_ywaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
-	m_Tab_HistogramIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_LensEffectsIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_bloomradiusSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -2110,6 +2148,11 @@ LuxMainFrame::~LuxMainFrame()
 	m_TORGB_gammaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_Tab_HistogramIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
+	m_HistogramRgbAddRadioBtn->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramRgbRadioBtn->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramValueRadioBtn->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramLogCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_Tab_NoiseReductionIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_greyc_EnabledCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_greyc_fastapproxCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );

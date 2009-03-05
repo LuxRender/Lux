@@ -321,9 +321,8 @@ class Histogram {
 		void Calculate(vector<Color> &pixels, unsigned int width, unsigned int height);
 		void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 	private:
-		int m_bucketNr;
-		float* m_buckets;
-		float m_maxVal[4];
+		int m_bucketNr, m_newBucketNr;
+		unsigned int* m_buckets;
 		int m_zones[11];
 		float m_lowRange, m_highRange, m_bucketSize;
 		float m_displayGamma;

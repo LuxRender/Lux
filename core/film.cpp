@@ -310,11 +310,11 @@ void Film::getHistogramImage(unsigned char *outPixels, int width, int height, in
 Histogram::Histogram(){
 	m_isReady = false;
 	m_bucketNr = 300;
+	m_newBucketNr = -1;
 	m_displayGamma = 2.2;
-	m_buckets = new float[m_bucketNr*4];
+	m_buckets = new unsigned int[m_bucketNr*4];
 	int i;
 	for(i=0;i<m_bucketNr*4;i++) m_buckets[i]=0;
-	for(i=0;i<4;i++) m_maxVal[i]=0;
 	for(i=0;i<11;i++) m_zones[i]=0;
 	m_lowRange=0; m_highRange=0; m_bucketSize=0;
 }
@@ -330,14 +330,20 @@ void Histogram::Calculate(vector<Color> &pixels, unsigned int width, unsigned in
 	float value;
 	m_isReady = false;
 
+	if(m_newBucketNr>0){
+		m_bucketNr=m_newBucketNr;
+		m_newBucketNr=-1;
+		if(m_buckets != NULL) delete[] m_buckets;
+		m_buckets = new unsigned int[m_bucketNr*4];
+	}
+
 	//calculate visible plot range
-	value = -log(pow(1.f/2,10*1.f/m_displayGamma)); //size of 10 EV zones
-	m_lowRange = -2*value;
-	m_highRange = value;
+	value = -log(pow(1.f/2,10*1.f/m_displayGamma)); //size of 10 EV zones, display-gamma corrected
+	m_lowRange = -1.75*value;
+	m_highRange = 0.75*value;
 
 	//empty buckets
 	for(i=0;i<(u_int)m_bucketNr*4;i++) m_buckets[i]=0;
-	for(i=0;i<4;i++) m_maxVal[i]=0;
 
 	//fill buckets
 	m_bucketSize = (m_highRange-m_lowRange)/m_bucketNr;
@@ -361,15 +367,6 @@ void Histogram::Calculate(vector<Color> &pixels, unsigned int width, unsigned in
 		}
 	}
 
-	//find max value per channel
-	for(i=0;i<(u_int)m_bucketNr;i++){
-		if(i==0 || i==m_bucketNr-1) continue; //skip extremes
-		if(m_buckets[i*4]>m_maxVal[0]) m_maxVal[0]=m_buckets[i*4];
-		if(m_buckets[i*4+1]>m_maxVal[1]) m_maxVal[1]=m_buckets[i*4+1];
-		if(m_buckets[i*4+2]>m_maxVal[2]) m_maxVal[2]=m_buckets[i*4+2];
-		if(m_buckets[i*4+3]>m_maxVal[3]) m_maxVal[3]=m_buckets[i*4+3];
-	}
-
 	//calculate EV zone tick positions
 	float zoneValue = 1.0;
 	for (i=0;i<11;i++){
@@ -385,21 +382,22 @@ void Histogram::Calculate(vector<Color> &pixels, unsigned int width, unsigned in
 
 void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsigned int canvasH, int options){
 	#define PIXELIDX(x,y,w) ((y)*(w)*3+(x)*3)
-	unsigned int i,x,y,idx;
+	#define GETMAX(x,y) ((x)>(y)?(x):(y))
+	unsigned int i,x,y,idx, bucket;
 	unsigned char color;
-	unsigned int borderW = 5; //size of the plot border in pixels
+	unsigned int borderW = 3; //size of the plot border in pixels
 	unsigned int guideW = 3; //size of the brightness guide bar in pixels
-	unsigned int plotH = canvasH-borderW-5-(borderW-2);
-	unsigned int plotW = m_bucketNr;
-	if(canvasW!=m_bucketNr+2*borderW) return;  //width is forced for now
-
+	unsigned int plotH = canvasH-borderW-(guideW+2)-(borderW-1);
+	unsigned int plotW = canvasW-2*borderW;
+	if(canvasW<50 || canvasH<25) return; //too small
 	if(!m_isReady) return; //TODO: add a lock so that drawing and tonemapping threads don't collide
-
+	if(canvasW-2*borderW!=m_bucketNr) m_newBucketNr=canvasW-2*borderW;
+	
 	//clear drawing area
 	color=64;
 	for(x=0;x<plotW;x++)
 		for(y=0;y<plotH;y++){
-			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			idx=PIXELIDX(x+borderW,y+borderW,canvasW);
 			outPixels[idx]=color;
 			outPixels[idx+1]=color;
 			outPixels[idx+2]=color;
@@ -407,34 +405,104 @@ void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsign
 
 	//draw histogram bars
 	int barHeight;
-	float scale;
-	switch(0){
-		case 0: {
-			float max=m_maxVal[0]>m_maxVal[1]?m_maxVal[0]:m_maxVal[1];
-			max=m_maxVal[2]>max?m_maxVal[2]:max;
+	float scale, max, maxExtrL, maxExtrR;
+	switch( options & ( LUX_HISTOGRAM_RGB | LUX_HISTOGRAM_RGB_ADD | LUX_HISTOGRAM_VALUE ) ){
+		case LUX_HISTOGRAM_RGB: {
+			//get maxima for scaling
+			for(i=1*4,max=0;i<(u_int)(m_bucketNr-1)*4;i++)
+				if(i%4!=3 && m_buckets[i]>max) max=m_buckets[i];
+			i=0;
+			maxExtrL = GETMAX(m_buckets[i*4],GETMAX(m_buckets[i*4+1],m_buckets[i*4+2]));
+			i=m_bucketNr-1;
+			maxExtrR = GETMAX(m_buckets[i*4],GETMAX(m_buckets[i*4+1],m_buckets[i*4+2]));
+			if(options&LUX_HISTOGRAM_LOG){
+				max=log(1.f+max);
+				maxExtrL=log(1.f+maxExtrL);
+				maxExtrR=log(1.f+maxExtrR);
+			}
 			if(max>0){
-				scale = plotH/max;
+				//draw bars
 				for(x=0;x<plotW;x++){
+					bucket=Clamp((int)(x*m_bucketNr/(plotW-1)), 0, m_bucketNr-1);
+					if(bucket==0 && maxExtrL>max) scale = (float)plotH/maxExtrL;
+					else if(bucket==m_bucketNr-1 && maxExtrR>max) scale = (float)plotH/maxExtrR;
+					else scale = (float)plotH/max;
 					for(i=0;i<3;i++){
-						barHeight=plotH-m_buckets[x*4+i]*scale;
+						if(options&LUX_HISTOGRAM_LOG)
+							barHeight=plotH-(u_int)(log(1.f+m_buckets[bucket*4+i])*scale+0.5);
+						else
+							barHeight=plotH-(u_int)((float)m_buckets[bucket*4+i]*scale+0.5);
 						barHeight=Clamp(barHeight,0,(int)plotH);
 						for(y=barHeight;y<plotH;y++)
-							outPixels[PIXELIDX(x+borderW,y+borderW,plotW+borderW*2)+i]=255;
+							outPixels[PIXELIDX(x+borderW,y+borderW,canvasW)+i]=255;
 					}
 				}
 			}
 		} break;
-		case 1:	{
-			if(m_maxVal[3]>0){
-				scale = (float)plotH/m_maxVal[3];
+		case LUX_HISTOGRAM_VALUE: {
+			//get maxima for scaling
+			for(i=1,max=0;i<(u_int)m_bucketNr-1;i++)
+				if(m_buckets[i*4+3]>max) max=m_buckets[i*4+3];
+			if(max>0){
+				if(options&LUX_HISTOGRAM_LOG)
+					scale = (float)plotH/log(1.f+max);
+				else
+					scale = (float)plotH/max;
+				//draw bars
 				for(x=0;x<plotW;x++){
-					barHeight=plotH-m_buckets[x*4+3]*scale;
+					bucket=Clamp((int)(x*m_bucketNr/(plotW-1)), 0, m_bucketNr-1);
+					if(options&LUX_HISTOGRAM_LOG)
+						barHeight=plotH-(u_int)(log(1.f+m_buckets[bucket*4+3])*scale+0.5);
+					else
+						barHeight=plotH-(u_int)((float)m_buckets[bucket*4+3]*scale+0.5);
 					barHeight=Clamp(barHeight,0,(int)plotH);
 					for(y=barHeight;y<plotH;y++){
-						idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+						idx=PIXELIDX(x+borderW,y+borderW,canvasW);
 						outPixels[idx]=255;
 						outPixels[idx+1]=255;
 						outPixels[idx+2]=255;
+					}
+				}
+			}
+		} break;
+		case LUX_HISTOGRAM_RGB_ADD: {
+			//calculate maxima for scaling
+			if(options&LUX_HISTOGRAM_LOG){
+				for(i=1,max=0; i<(u_int)m_bucketNr-1; i++)
+					if( log(1.f+m_buckets[i*4])+log(1.f+m_buckets[i*4+1])+log(1.f+m_buckets[i*4+2]) > max ) max=log(1.f+m_buckets[i*4])+log(1.f+m_buckets[i*4+1])+log(1.f+m_buckets[i*4+2]);
+				i=0;
+				maxExtrL = log(1.f+m_buckets[i*4])+log(1.f+m_buckets[i*4+1])+log(1.f+m_buckets[i*4+2]);
+				i=m_bucketNr-1;
+				maxExtrR = log(1.f+m_buckets[i*4])+log(1.f+m_buckets[i*4+1])+log(1.f+m_buckets[i*4+2]);
+			}else{
+				for(i=1,max=0; i<(u_int)m_bucketNr-1; i++)
+					if( m_buckets[i*4]+m_buckets[i*4+1]+m_buckets[i*4+2] > max ) max=m_buckets[i*4]+m_buckets[i*4+1]+m_buckets[i*4+2];
+				i=0;
+				maxExtrL = m_buckets[i*4]+m_buckets[i*4+1]+m_buckets[i*4+2];
+				i=m_bucketNr-1;
+				maxExtrR = m_buckets[i*4]+m_buckets[i*4+1]+m_buckets[i*4+2];
+			}
+			if(max>0){
+				//draw bars
+				for(x=0;x<plotW;x++){
+					bucket=Clamp((int)(x*m_bucketNr/(plotW-1)), 0, m_bucketNr-1);
+					if(bucket==0 && maxExtrL>max) scale = (float)plotH/maxExtrL;
+					else if(bucket==m_bucketNr-1 && maxExtrR>max) scale = (float)plotH/maxExtrR;
+					else scale = (float)plotH/max;
+					if(options&LUX_HISTOGRAM_LOG)
+						barHeight=plotH-(u_int)(log(1.f+m_buckets[bucket*4])*scale+0.5)-(u_int)(log(1.f+m_buckets[bucket*4+1])*scale+0.5)-(u_int)(log(1.f+m_buckets[bucket*4+2])*scale+0.5);
+					else
+						barHeight=plotH-(u_int)((float)m_buckets[bucket*4]*scale+0.5)-(u_int)((float)m_buckets[bucket*4+1]*scale+0.5)-(u_int)((float)m_buckets[bucket*4+2]*scale+0.5);
+					barHeight=Clamp(barHeight,0,(int)plotH);
+					int newHeight;
+					for(i=0;i<3;i++){
+						if(options&LUX_HISTOGRAM_LOG)
+							newHeight=barHeight+(u_int)(log(1.f+m_buckets[bucket*4+i])*scale+0.5);
+						else
+							newHeight=barHeight+(u_int)((float)m_buckets[bucket*4+i]*scale+0.5);
+						for(y=barHeight;y<(u_int)newHeight;y++)
+							outPixels[PIXELIDX(x+borderW,y+borderW,canvasW)+i]=255;
+						barHeight=newHeight;
 					}
 				}
 			}
@@ -444,9 +512,10 @@ void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsign
 
 	//draw brightness guide
 	for(x=0;x<plotW;x++){
+		bucket=Clamp((int)(x*m_bucketNr/(plotW-1)), 0, m_bucketNr-1);
 		for(y=plotH+2;y<plotH+2+guideW;y++){
-			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
-			color=Clamp( expf((x*m_bucketSize+m_lowRange)*m_displayGamma*1.f/m_displayGamma)*256.f, 0.f, 255.f );
+			idx=PIXELIDX(x+borderW,y+borderW,canvasW);
+			color=Clamp( expf((bucket*m_bucketSize+m_lowRange))*256.f, 0.f, 255.f ); //no need to gamma-correct, as we're already in display-gamma space
 			outPixels[idx]=color;
 			outPixels[idx+1]=color;
 			outPixels[idx+2]=color;
@@ -460,9 +529,10 @@ void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsign
 			case 10: color=128; break;
 			default: color=0; break;
 		}
-		x=m_zones[i];
+		bucket=m_zones[i];
+		x=Clamp((int)(bucket*plotW/(m_bucketNr-1)), 0, (int)plotW-1);
 		for(y=plotH+2;y<plotH+2+guideW;y++){
-			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			idx=PIXELIDX(x+borderW,y+borderW,canvasW);
 			outPixels[idx]=color;
 			outPixels[idx+1]=color;
 			outPixels[idx+2]=color;
@@ -472,11 +542,12 @@ void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsign
 	//draw zone boundaries on the plot
 	for(i=0;i<2;i++){
 		switch(i){
-			case 0: x=m_zones[0]; break;  //white
-			case 1: x=m_zones[10]; break; //black
+			case 0: bucket=m_zones[0]; break;  //white
+			case 1: bucket=m_zones[10]; break; //black
 		}
+		x=Clamp((int)(bucket*plotW/(m_bucketNr-1)), 0, (int)plotW-1);
 		for(y=0;y<plotH;y++){
-			idx=PIXELIDX(x+borderW,y+borderW,plotW+borderW*2);
+			idx=PIXELIDX(x+borderW,y+borderW,canvasW);
 			if(outPixels[idx]==255 && outPixels[idx+1]==255 && outPixels[idx+2]==255){
 				outPixels[idx]=128;
 				outPixels[idx+1]=128;

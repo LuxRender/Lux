@@ -206,8 +206,6 @@ protected:
 	void SetColorSpacePreset(int choice);
 	void SetTonemapKernel(int choice);
 
-	void UpdateHistogramImage();
-
 	// Tonemapping/ToRGB variables
 	bool m_auto_tonemap;
 	int m_TM_kernel;
@@ -288,7 +286,22 @@ protected:
 			wxBitmap* m_bitmap;
 	};
 
-	ImageWindow *m_HistogramWindow;
+	// LuxHistogramWindow
+	class LuxHistogramWindow : public ImageWindow {
+		public:
+			LuxHistogramWindow(wxWindow *parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition);
+			~LuxHistogramWindow();
+			void Update();
+			void SetOption(int option);
+			void ClearOption(int option);
+		protected:
+			void OnSize(wxSizeEvent& event);
+		private:
+			int m_Options;
+			bool m_Enabled;
+	};
+
+	LuxHistogramWindow *m_HistogramWindow;
 
 };
 

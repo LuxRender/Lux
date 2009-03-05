@@ -112,6 +112,11 @@ unsigned char* luxFramebuffer();
 
 /* Histogram access */
 void luxGetHistogramImage(unsigned char *outPixels, int width, int height, int options);
+//histogram drawing options
+#define    LUX_HISTOGRAM_RGB    	1
+#define    LUX_HISTOGRAM_RGB_ADD	2
+#define    LUX_HISTOGRAM_VALUE  	4
+#define    LUX_HISTOGRAM_LOG    	8
 
 
 /* Parameter access */

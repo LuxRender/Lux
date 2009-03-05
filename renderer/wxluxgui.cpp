@@ -141,13 +141,15 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	LoadImages();
 
 	// Add histogram image window
-	m_HistogramWindow = new ImageWindow(m_HistogramPanel, wxID_ANY, wxDefaultPosition, wxSize(300+5*2,100));
-	wxImage tmp_img(300+5*2, 100, true);
-	m_HistogramWindow->SetImage(tmp_img); //empty image
-	m_Tab_Control_HistogramPanel->GetSizer()->Add(m_HistogramWindow, 0, wxEXPAND|wxALIGN_CENTER);
-	//m_HistogramPanel->GetSizer()->Add(m_HistogramWindow, 0, wxEXPAND|wxALIGN_CENTER);
+	m_HistogramWindow = new LuxHistogramWindow(m_Tab_Control_HistogramPanel, wxID_ANY);
+	m_Tab_Control_HistogramPanel->GetSizer()->GetItem(1)->GetSizer()->Add(m_HistogramWindow, 1, wxEXPAND);
+
+	// Tabs hidden by default
+	m_Tab_Control_ColorSpacePanel->Hide();
+	m_Tab_Control_GammaPanel->Hide();
 	m_Tab_Control_HistogramPanel->Hide();
-	m_HistogramPanel->GetSizer()->Layout();
+	m_Tab_Control_NoiseReductionPanel->Hide();
+
 	m_Tonemap->GetSizer()->Layout();
 	m_Tonemap->GetSizer()->FitInside(m_Tonemap);
 
@@ -431,19 +433,19 @@ void LuxGui::LoadImages() {
 	m_Tab_ToneMapIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
 	m_Tab_ToneMapToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
 
-	m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
-	m_Tab_HistogramToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
-
 	m_Tab_LensEffectsIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
 	m_Tab_LensEffectsToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
 
-	m_Tab_ColorSpaceIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_ColorSpaceIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
 	m_Tab_ColorSpaceToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
 
-	m_Tab_GammaIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_GammaIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
 	m_Tab_GammaToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
 
-	m_Tab_NoiseReductionIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+	m_Tab_HistogramToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+
+	m_Tab_NoiseReductionIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
 	m_Tab_NoiseReductionToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
 }
 
@@ -474,7 +476,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 
 				// Start display update timer
 				m_renderOutput->Reload();
-				UpdateHistogramImage();
+				m_HistogramWindow->Update();
 				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
 				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
 				m_netTimer->Start(1000, wxTIMER_CONTINUOUS);
@@ -696,6 +698,34 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_GREYC_interp = event.GetInt();
 				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP, m_GREYC_interp);
 				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		// Histogram options
+		case ID_HISTOGRAM_RGB:
+			{
+				m_HistogramWindow->SetOption(LUX_HISTOGRAM_RGB);
+				m_HistogramWindow->Update();
+			}
+			break;
+		case ID_HISTOGRAM_RGB_ADD:
+			{
+				m_HistogramWindow->SetOption(LUX_HISTOGRAM_RGB_ADD);
+				m_HistogramWindow->Update();
+			}
+			break;
+		case ID_HISTOGRAM_VALUE:
+			{
+				m_HistogramWindow->SetOption(LUX_HISTOGRAM_VALUE);
+				m_HistogramWindow->Update();
+			}
+			break;
+		case ID_HISTOGRAM_LOG:
+			{
+				if(event.IsChecked())
+					m_HistogramWindow->SetOption(LUX_HISTOGRAM_LOG);
+				else
+					m_HistogramWindow->ClearOption(LUX_HISTOGRAM_LOG);
+				m_HistogramWindow->Update();
 			}
 			break;
 		default:
@@ -2174,11 +2204,6 @@ void LuxGui::ResetLightGroupsFromFilm( void ) {
 	m_LightGroups->Layout();
 }
 
-void LuxGui::UpdateHistogramImage(){
-	wxImage img(300+5*2, 100, true);
-	luxGetHistogramImage(img.GetData(), 300+5*2, 100, 0);
-	m_HistogramWindow->SetImage(img);
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // LuxLightGroupPanel
@@ -2348,8 +2373,8 @@ void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // ImageWindow
 
-LuxGui::ImageWindow::ImageWindow(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
-	wxWindow(parent, id, pos, size, style, name)
+LuxGui::ImageWindow::ImageWindow(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+	: wxWindow(parent, id, pos, size, style, name)
 {
 	this->Connect(wxEVT_PAINT, wxPaintEventHandler(LuxGui::ImageWindow::OnPaint));
 	this->Connect(wxEVT_ERASE_BACKGROUND, wxEraseEventHandler(LuxGui::ImageWindow::OnEraseBackground));
@@ -2357,6 +2382,8 @@ LuxGui::ImageWindow::ImageWindow(wxWindow *parent, wxWindowID id, const wxPoint&
 }
 
 LuxGui::ImageWindow::~ImageWindow(){
+	this->Disconnect(wxEVT_PAINT, wxPaintEventHandler(LuxGui::ImageWindow::OnPaint));
+	this->Disconnect(wxEVT_ERASE_BACKGROUND, wxEraseEventHandler(LuxGui::ImageWindow::OnEraseBackground));
 	if(m_bitmap!=NULL) delete m_bitmap;
 }
 void LuxGui::ImageWindow::SetImage(const wxImage& img){
@@ -2372,6 +2399,66 @@ void LuxGui::ImageWindow::OnPaint(wxPaintEvent& event){
 
 void LuxGui::ImageWindow::OnEraseBackground(wxEraseEvent& event){
 	//empty handler to reduce redraw flicker
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// LuxHistogramWindow
+
+LuxGui::LuxHistogramWindow::LuxHistogramWindow(wxWindow *parent, wxWindowID id, const wxPoint& pos)
+	: ImageWindow(parent, id, pos, wxSize(200,100))
+{
+	this->Connect(wxEVT_SIZE, wxSizeEventHandler(LuxGui::LuxHistogramWindow::OnSize));
+	wxImage tmp_img(200, 100, true);
+	SetImage(tmp_img); //empty image
+	m_Options=LUX_HISTOGRAM_RGB_ADD; //default mode
+}
+
+LuxGui::LuxHistogramWindow::~LuxHistogramWindow(){
+	this->Disconnect(wxEVT_SIZE, wxSizeEventHandler(LuxGui::LuxHistogramWindow::OnSize));
+}
+
+void LuxGui::LuxHistogramWindow::Update(){
+	if(!IsShownOnScreen()) return;
+	luxError(LUX_NOERROR, LUX_INFO, "LuxHistogramWindow: Updated!!");
+	wxSize size=GetSize();
+	wxImage img(size.GetWidth(), size.GetHeight(), true);
+	if(luxStatistics("sceneIsReady")) luxGetHistogramImage(img.GetData(), size.GetWidth(), size.GetHeight(), m_Options);
+	SetImage(img);
+}
+
+void LuxGui::LuxHistogramWindow::SetOption(int option){
+	switch(option){
+		case LUX_HISTOGRAM_RGB: {
+			m_Options |=  LUX_HISTOGRAM_RGB;
+			m_Options &= ~LUX_HISTOGRAM_RGB_ADD;
+			m_Options &= ~LUX_HISTOGRAM_VALUE;
+		} break;
+		case LUX_HISTOGRAM_RGB_ADD: {
+			m_Options &= ~LUX_HISTOGRAM_RGB;
+			m_Options |=  LUX_HISTOGRAM_RGB_ADD;
+			m_Options &= ~LUX_HISTOGRAM_VALUE;
+		} break;
+		case LUX_HISTOGRAM_VALUE: {
+			m_Options &= ~LUX_HISTOGRAM_RGB;
+			m_Options &= ~LUX_HISTOGRAM_RGB_ADD;
+			m_Options |=  LUX_HISTOGRAM_VALUE;
+		} break;
+		case LUX_HISTOGRAM_LOG: {
+			m_Options |=  LUX_HISTOGRAM_LOG;
+		} break;
+		default: break;
+	}
+}
+
+void LuxGui::LuxHistogramWindow::ClearOption(int option){
+	m_Options &= ~option;
+}
+
+void LuxGui::LuxHistogramWindow::OnSize(wxSizeEvent& event){
+	wxSize size=this->GetContainingSizer()->GetSize();
+	SetSize(size);
+	Update();
 }
 
 
@@ -2614,7 +2701,7 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		m_updateThread = NULL;
 		m_statusBar->SetStatusText(wxT(""), 0);
 		m_renderOutput->Reload();
-		UpdateHistogramImage();
+		m_HistogramWindow->Update();
 
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
