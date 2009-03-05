@@ -901,65 +901,37 @@ void FlexImageFilm::ScaleOutput(vector<Color> &pixel, vector<float> &alpha, floa
 void FlexImageFilm::WriteImage(ImageType type)
 {
 	const int nPix = xPixelCount * yPixelCount;
-	vector<Color> pixels(nPix);
-	vector<float> alpha(nPix);
-
-	// NOTE - lordcrc - separated buffer loop into two separate loops
-	// in order to eliminate one of the framebuffer copies
-
-	// write stand-alone buffers
-	for(u_int j = 0; j < bufferGroups.size(); ++j) {
-
-		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
-			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
-
-			if (!(bufferConfigs[i].output & BUF_STANDALONE))
-				continue;
-
-			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
-				for (int x = 0; x < xPixelCount; ++x,++offset) {
-					buffer.GetData(x, y, &(pixels[offset]), &(alpha[offset]));
-				}
-			}
-			WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
-		}
-	}
+	vector<Color> pixels(nPix), pixels0(nPix);
+	vector<float> alpha(nPix), alpha0(nPix);
 
 	float Y = 0.f;
 	// in order to fix bug #360
 	// ouside loop not to trash the complete picture
 	// if there are several buffer groups
-	fill(pixels.begin(), pixels.end(), XYZColor(0.f));
-
-	Color p;
-	float a;
-
-	// write framebuffer
+	fill(pixels0.begin(), pixels0.end(), XYZColor(0.f));
 	for(u_int j = 0; j < bufferGroups.size(); ++j) {
-		if (!bufferGroups[j].enable)
-			continue;
 
 		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
 			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
-			if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
-				continue;
-
 			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
 				for (int x = 0; x < xPixelCount; ++x,++offset) {
-
-					buffer.GetData(x, y, &p, &a);
-
-					pixels[offset] += p * bufferGroups[j].scale;
-					alpha[offset] += a;
+					buffer.GetData(x, y, &(pixels[offset]), &(alpha[offset]));
+					if (bufferConfigs[i].output & BUF_FRAMEBUFFER && bufferGroups[j].enable) {
+						pixels0[offset] += pixels[offset] * bufferGroups[j].scale;
+						alpha0[offset] += alpha[offset];
+					}
 				}
+			}
+			if (bufferConfigs[i].output & BUF_STANDALONE) {
+				WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 			}
 		}
 	}
 	// outside loop in order to write complete image
 	for (int pix = 0; pix < nPix; ++pix)
-		Y += pixels[pix].c[1];
+		Y += pixels0[pix].c[1];
 	Y /= nPix;
-	WriteImage2(type, pixels, alpha, "");
+	WriteImage2(type, pixels0, alpha0, "");
 	EV = logf(Y * 10.f) / logf(2.f);
 }
 
