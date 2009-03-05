@@ -91,19 +91,21 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 
 			// Stop path sampling since no intersection was found
-			// Possibly add emitted light
-			// NOTE - Added by radiance - adds horizon in render & reflections
-			if (specularBounce) {
-				for (u_int i = 0; i < scene->lights.size(); ++i) {
-					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-					Le *= pathThroughput;
-					if (!Le.Black()) {
-						L[scene->lights[i]->group] += Le;
-						V[scene->lights[i]->group] += Le.filter(tspack) * VContrib;
-						++nrContribs;
+			// Possibly add horizon in render & reflections
+			if (includeEnvironment) {
+				if (specularBounce) {
+					for (u_int i = 0; i < scene->lights.size(); ++i) {
+						SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
+						Le *= pathThroughput;
+						if (!Le.Black()) {
+							L[scene->lights[i]->group] += Le;
+							V[scene->lights[i]->group] += Le.filter(tspack) * VContrib;
+							++nrContribs;
+						}
 					}
 				}
 			}
+
 			// Set alpha channel
 			if (pathLength == 0 && alpha && nrContribs)
 				*alpha = 0.;
@@ -257,8 +259,8 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		rstrategy = RR_EFFICIENCY;
 	}
-
-	return new PathIntegrator(estrategy, rstrategy, maxDepth, RRcontinueProb);
+	bool include_environment = params.FindOneBool("includeenvironment", true);
+	return new PathIntegrator(estrategy, rstrategy, maxDepth, RRcontinueProb, include_environment);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<PathIntegrator> r("path");

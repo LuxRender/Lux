@@ -40,12 +40,13 @@ public:
 	// PathIntegrator Public Methods
 	int Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *newAlpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
-	PathIntegrator(LightStrategy st, RRStrategy rst, int md, float cp) {
+	PathIntegrator(LightStrategy st, RRStrategy rst, int md, float cp, bool ie) {
 		lightStrategy = st;
 		rrStrategy = rst;
 		maxDepth = md;
 		continueProbability = cp;
 		bufferId = -1;
+		includeEnvironment = ie;
 	}
 	void Preprocess(const TsPack *tspack, const Scene *scene);
 	virtual ~PathIntegrator() { }
@@ -58,6 +59,7 @@ private:
 	float continueProbability;
 	// Declare sample parameters for light source sampling
 	int sampleOffset, bufferId;
+	bool includeEnvironment;
 };
 
 }//namespace lux
