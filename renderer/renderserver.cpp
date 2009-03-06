@@ -237,7 +237,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
             CMD_LUXFILM = 2531294310U, CMD_LUXSAMPLER = 3308802546U, CMD_LUXACCELERATOR = 1613429731U, CMD_LUXSURFACEINTEGRATOR = 4011931910U,
             CMD_LUXVOLUMEINTEGRATOR = 2954204437U, CMD_LUXCAMERA = 3378604391U, CMD_LUXWORLDBEGIN = 1247285547U,
             CMD_LUXATTRIBUTEBEGIN = 684297207U, CMD_LUXATTRIBUTEEND = 3427929065U, CMD_LUXTRANSFORMBEGIN = 567425599U,
-            CMD_LUXTRANSFORMEND = 2773125169U, CMD_LUXTEXTURE = 475043887U, CMD_LUXMATERIAL = 4064803661U,
+            CMD_LUXTRANSFORMEND = 2773125169U, CMD_LUXTEXTURE = 475043887U, CMD_LUXMATERIAL = 4064803661U, CMD_LUXLIGHTGROUP = 770727715U,
             CMD_LUXMAKENAMEDMATERIAL = 2355625968U, CMD_LUXNAMEDMATERIAL = 922480690U, CMD_LUXLIGHTSOURCE = 130489799U,
             CMD_LUXAREALIGHTSOURCE = 515057184U, CMD_LUXPORTALSHAPE = 3416559329U, CMD_LUXSHAPE = 1943702863U,
             CMD_LUXREVERSEORIENTATION = 2027239206U, CMD_LUXVOLUME = 4138761078U, CMD_LUXOBJECTBEGIN = 1097337658U,
@@ -440,6 +440,8 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
                     case CMD_LUXMAKENAMEDMATERIAL: processCommand(Context::luxMakeNamedMaterial, stream);
                         break;
                     case CMD_LUXNAMEDMATERIAL: processCommand(Context::luxNamedMaterial, stream);
+                        break;
+                    case CMD_LUXLIGHTGROUP: processCommand(Context::luxLightGroup, stream);
                         break;
                     case CMD_LUXLIGHTSOURCE: processCommand(Context::luxLightSource, stream);
                         break;
