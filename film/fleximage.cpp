@@ -719,7 +719,8 @@ float FlexImageFilm::GetGroupTemperature(u_int index) const
 }
 void FlexImageFilm::ComputeGroupScale(u_int index)
 {
-	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
+	// Radiance - temporarily disabled for purple tint
+/*	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
 	bufferGroups[index].scale =
 		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
 	if (bufferGroups[index].temperature > 0.f) {
@@ -727,6 +728,8 @@ void FlexImageFilm::ComputeGroupScale(u_int index)
 		bufferGroups[index].scale *= factor / (factor.y() * white);
 	}
 	bufferGroups[index].scale *= bufferGroups[index].globalScale;
+*/
+	bufferGroups[index].scale = bufferGroups[index].globalScale;
 }
 
 void FlexImageFilm::AddSampleCount(float count) {
@@ -1078,8 +1081,8 @@ void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, cons
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[1], 0.f, 255.f)), tgaFile);
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[0], 0.f, 255.f)), tgaFile);
 			// NOTE - radiance - removed alpha output in TGA files due to errors
-			fputc(255, tgaFile);
-			//fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
+			//fputc(255, tgaFile);
+			fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
 		}
 	}
 
