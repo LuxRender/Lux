@@ -248,7 +248,8 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
-			vertices[nVerts - 2].flux *= cosins / v.cosi * AbsDot(v.wi, v.ng) / v.pdf;
+			// No need to do '/ v.cosi * v.coso' since cosi==coso
+			vertices[nVerts - 2].flux *= cosins / v.pdf;
 			--nVerts;
 		}
 		// Initialize _ray_ for next segment of path
