@@ -468,6 +468,13 @@ void UpdateParam(luxComponent comp, luxComponentParameters param, const char* va
 	}
 }
 
+double RetrieveParam(bool useDefault, luxComponent comp, luxComponentParameters param, int index = 0) {
+	if(useDefault)
+		return luxGetDefaultParameterValue(comp, param, index);	
+	else
+		return luxGetParameterValue(comp, param, index);
+}
+
 void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
 		case ID_RESUMEITEM:
@@ -1887,7 +1894,7 @@ void LuxGui::SetColorSpacePreset(int choice) {
 
 void LuxGui::ResetToneMapping(){
 	if(luxStatistics("sceneIsReady")) {
-		ResetToneMappingFromFilm();
+		ResetToneMappingFromFilm( true );
 		return;
 	}
 
@@ -2065,50 +2072,50 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	Refresh();
 }
 
-void LuxGui::ResetToneMappingFromFilm(){
-	m_TM_kernel = (int) luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
+void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
+	m_TM_kernel = (int) RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
 
-	m_TM_reinhard_prescale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
-	m_TM_reinhard_postscale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
-	m_TM_reinhard_burn = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN);
+	m_TM_reinhard_prescale = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
+	m_TM_reinhard_postscale = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
+	m_TM_reinhard_burn = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_BURN);
 
-	m_TM_linear_exposure = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE);
-	m_TM_linear_sensitivity = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
-	m_TM_linear_fstop = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
-	m_TM_linear_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
+	m_TM_linear_exposure = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE);
+	m_TM_linear_sensitivity = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
+	m_TM_linear_fstop = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
+	m_TM_linear_gamma = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
 
-	m_TM_contrast_ywa = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
+	m_TM_contrast_ywa = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
 
-	m_TORGB_xwhite = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_WHITE);
-	m_TORGB_ywhite = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_WHITE);
-	m_TORGB_xred = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_RED);
-	m_TORGB_yred = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_RED);
-	m_TORGB_xgreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_GREEN);
-	m_TORGB_ygreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_GREEN);
-	m_TORGB_xblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE);
-	m_TORGB_yblue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
-	m_TORGB_gamma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	m_TORGB_xwhite = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_WHITE);
+	m_TORGB_ywhite = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_WHITE);
+	m_TORGB_xred = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_RED);
+	m_TORGB_yred = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_RED);
+	m_TORGB_xgreen = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_GREEN);
+	m_TORGB_ygreen = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_GREEN);
+	m_TORGB_xblue = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_BLUE);
+	m_TORGB_yblue = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
+	m_TORGB_gamma = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
-	m_bloomradius = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS);
-	m_bloomweight = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT);
+	m_bloomradius = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_BLOOMRADIUS);
+	m_bloomweight = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_BLOOMWEIGHT);
 
-	double t = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED);
+	double t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED);
 	if(t != 0.0) m_GREYC_enabled = true;
 	else m_GREYC_enabled = false;
-	t = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX);
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX);
 	if(t != 0.0) m_GREYC_fast_approx = true;
 	else m_GREYC_fast_approx = false;
 
-	m_GREYC_amplitude = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_AMPLITUDE);
-	m_GREYC_sharpness = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_SHARPNESS);
-	m_GREYC_anisotropy = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ANISOTROPY);
-	m_GREYC_alpha = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ALPHA);
-	m_GREYC_sigma = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_SIGMA);
-	m_GREYC_gauss_prec = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_GAUSSPREC);
-	m_GREYC_dl = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_DL);
-	m_GREYC_da = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_DA);
-	m_GREYC_nb_iter = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER);
-	m_GREYC_interp = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP);
+	m_GREYC_amplitude = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_AMPLITUDE);
+	m_GREYC_sharpness = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_SHARPNESS);
+	m_GREYC_anisotropy = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_ANISOTROPY);
+	m_GREYC_alpha = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_ALPHA);
+	m_GREYC_sigma = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_SIGMA);
+	m_GREYC_gauss_prec = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_GAUSSPREC);
+	m_GREYC_dl = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_DL);
+	m_GREYC_da = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_DA);
+	m_GREYC_nb_iter = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER);
+	m_GREYC_interp = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
@@ -2159,7 +2166,7 @@ void LuxGui::UpdateLightGroupWidgetValues() {
 }
 void LuxGui::ResetLightGroups( void ) {
 	if(luxStatistics("sceneIsReady")) {
-		ResetLightGroupsFromFilm();
+		ResetLightGroupsFromFilm( true );
 		return;
 	}
 
@@ -2174,7 +2181,7 @@ void LuxGui::ResetLightGroups( void ) {
 	// Update
 	m_LightGroups->Layout();
 }
-void LuxGui::ResetLightGroupsFromFilm( void ) {
+void LuxGui::ResetLightGroupsFromFilm( bool useDefaults ) {
 	// Remove the old lightgroups
 	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
 		LuxLightGroupPanel *currPanel = *it;
@@ -2190,7 +2197,7 @@ void LuxGui::ResetLightGroupsFromFilm( void ) {
 			this, m_LightGroups
 		);
 		currPanel->SetIndex(i);
-		currPanel->ResetValuesFromFilm();
+		currPanel->ResetValuesFromFilm( useDefaults );
 		m_LightGroupsSizer->Add(currPanel, 0, wxEXPAND | wxALL, 1);
 		m_LightGroupPanels.push_back(currPanel);
 	}
@@ -2226,6 +2233,8 @@ void LuxGui::LuxLightGroupPanel::SetIndex( int index ) {
 }
 
 void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
+	m_LG_enableCheckbox->SetValue(m_LG_enable);
+	SetWidgetsEnabled(m_LG_enable);
 	wxString st;
 	m_LG_scaleSlider->SetValue(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
 	st = wxString::Format(_("%.02f"), m_LG_scale);
@@ -2233,6 +2242,10 @@ void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
 	m_LG_temperatureSlider->SetValue(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
 	st = wxString::Format(_("%.02f"), m_LG_temperature);
 	m_LG_temperatureText->SetValue(st);
+	wxColour colour(Clamp(int(m_LG_scaleRed * 255.0), 0, 255),
+					Clamp(int(m_LG_scaleGreen * 255.0), 0, 255),
+					Clamp(int(m_LG_scaleBlue * 255.0), 0, 255));
+	m_LG_rgbPicker->SetColour(colour);
 }
 void LuxGui::LuxLightGroupPanel::ResetValues() {
 	m_LG_enable = true;
@@ -2244,16 +2257,16 @@ void LuxGui::LuxLightGroupPanel::ResetValues() {
 	m_LG_scaleX = 1.f;
 	m_LG_scaleY = 1.f;
 }
-void LuxGui::LuxLightGroupPanel::ResetValuesFromFilm() {
+void LuxGui::LuxLightGroupPanel::ResetValuesFromFilm( bool useDefaults ) {
 	char tmpStr[256];
 	luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, &tmpStr[0], 256, m_Index);
 	m_LG_name->SetLabel(wxString::FromAscii(tmpStr));
-	m_LG_enable = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_Index) != 0.f;
-	m_LG_scale = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_Index);
-	m_LG_temperature = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_Index);
-	m_LG_scaleRed = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_Index);
-	m_LG_scaleGreen = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_Index);
-	m_LG_scaleBlue = luxGetDefaultParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_Index);
+	m_LG_enable = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_ENABLE, m_Index) != 0.f;
+	m_LG_scale = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE, m_Index);
+	m_LG_temperature = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_Index);
+	m_LG_scaleRed = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_RED, m_Index);
+	m_LG_scaleGreen = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_Index);
+	m_LG_scaleBlue = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_Index);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
@@ -2312,11 +2325,7 @@ void LuxGui::LuxLightGroupPanel::OnCheckBox(wxCommandEvent& event)
 	switch (event.GetId()) {
 		case ID_LG_ENABLE:
 			m_LG_enable = m_LG_enableCheckbox->GetValue();
-			m_LG_scaleSlider->Enable(m_LG_enable);
-			m_LG_scaleText->Enable(m_LG_enable);
-			m_LG_rgbPicker->Enable(m_LG_enable);
-			m_LG_temperatureSlider->Enable(m_LG_enable);
-			m_LG_temperatureText->Enable(m_LG_enable);
+			SetWidgetsEnabled(m_LG_enable);
 			UpdateParam(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
 			m_Gui->UpdatedTonemapParam();
 			break;
@@ -2365,6 +2374,14 @@ void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
 		default:
 			break;
 	}
+}
+
+void LuxGui::LuxLightGroupPanel::SetWidgetsEnabled(bool enabled) {
+	m_LG_scaleSlider->Enable(enabled);
+	m_LG_scaleText->Enable(enabled);
+	m_LG_rgbPicker->Enable(enabled);
+	m_LG_temperatureSlider->Enable(enabled);
+	m_LG_temperatureText->Enable(enabled);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2673,8 +2690,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 
 					// Enable tonemapping options and reset from values trough API
 					m_outputNotebook->Enable( true );
-					ResetToneMapping();
-					ResetLightGroups();
+					ResetToneMappingFromFilm( false );
+					ResetLightGroupsFromFilm( false );
 					Refresh();
 				}
 			}

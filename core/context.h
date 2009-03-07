@@ -176,6 +176,7 @@ public:
 	static int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) { return activeContext->getRenderingServersStatus(info, maxInfoCount); }
 
 	//statistics
+	static void luxSceneReady() { activeContext->sceneReady(); }
 	static double luxStatistics(const string &statName) { return activeContext->statistics(statName); }
 
 	//film access (networking)
@@ -191,6 +192,7 @@ private:
 	static Context *activeContext;
 	string name;
 	Scene *luxCurrentScene;
+	bool luxCurrentSceneReady;
 
         void init();
         void free();
@@ -283,6 +285,7 @@ private:
 
 	//statistics
 	double statistics(const string &statName);
+	void sceneReady();
 	void addServer(const string &name);
 	void removeServer(const string &name);
 	int getServerCount();

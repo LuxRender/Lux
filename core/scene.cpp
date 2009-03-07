@@ -458,6 +458,7 @@ void Scene::Render() {
 
     // Dade - preprocessing done
     preprocessDone = true;
+	Context::luxSceneReady();
 
     // initial thread signal is paused
     CurThreadSignal = RUN;

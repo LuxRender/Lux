@@ -75,6 +75,7 @@ void Context::init() {
     // Dade - reinitialize
     currentApiState = STATE_OPTIONS_BLOCK;
     luxCurrentScene = NULL;
+	luxCurrentSceneReady = false;
     curTransform = Transform();
     namedCoordinateSystems.clear();
     renderOptions = new RenderOptions;
@@ -90,6 +91,7 @@ void Context::free() {
     if (luxCurrentScene) {
         delete luxCurrentScene;
         luxCurrentScene = NULL;
+		luxCurrentSceneReady = false;
     }
 
     if (renderOptions) {
@@ -823,7 +825,7 @@ void Context::worldEnd() {
         if (renderFarm->getServerCount() > 0)
             renderFarm->startFilmUpdater(luxCurrentScene);
 
-        luxCurrentScene->Render();
+		luxCurrentScene->Render();
 
         // Dade - check if we have to stop the network rendering updater thread
         if (renderFarm->getServerCount() > 0)
@@ -1000,9 +1002,12 @@ u_int Context::GetActiveLightGroup() {
 }
 
 double Context::statistics(const string &statName) {
-	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL);
+	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL && luxCurrentSceneReady);
 	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);
 	else return 0;
+}
+void Context::sceneReady() {
+	luxCurrentSceneReady = true;
 }
 
 void Context::transmitFilm(std::basic_ostream<char> &stream) {

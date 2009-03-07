@@ -90,7 +90,7 @@ public:
 	string GetStringParameterValue(luxComponentParameters param, int index);
 
 	// Dade - method useful for transmitting the samples to a client
-	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true);
+	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
 	float UpdateFilm(Scene *scene, std::basic_istream<char> &stream);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);

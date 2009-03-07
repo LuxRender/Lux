@@ -197,11 +197,11 @@ protected:
 	void UpdatedTonemapParam();
 	void UpdateTonemapWidgetValues( void );
 	void ResetToneMapping( void );
-	void ResetToneMappingFromFilm( void );
+	void ResetToneMappingFromFilm( bool useDefaults=true );
 
 	void UpdateLightGroupWidgetValues( void );
 	void ResetLightGroups( void );
-	void ResetLightGroupsFromFilm( void );
+	void ResetLightGroupsFromFilm( bool useDefaults=true );
 
 	void SetColorSpacePreset(int choice);
 	void SetTonemapKernel(int choice);
@@ -252,14 +252,15 @@ protected:
 		
 		void UpdateWidgetValues();
 		void ResetValues();
-		void ResetValuesFromFilm();
+		void ResetValuesFromFilm( bool useDefaults=true );
 
 	protected:
+		void SetWidgetsEnabled( bool enabled );
+
 		void OnText(wxCommandEvent& event);
 		void OnCheckBox(wxCommandEvent &event);
 		void OnColourChanged(wxColourPickerEvent &event);
 		void OnScroll(wxScrollEvent& event);
-
 	private:
 		LuxGui* const m_Gui;
 		int m_Index;
