@@ -215,7 +215,8 @@ private:
 class BufferGroup {
 public:
 	BufferGroup(const string &n) : numberOfSamples(0.f), name(n),
-		enable(true), globalScale(1.f), rgbScale(1.f), scale(1.f) { }
+		enable(true), globalScale(1.f), temperature(0.f),
+		rgbScale(1.f), scale(1.f) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
 			delete *buffer;
@@ -246,7 +247,7 @@ public:
 	vector<Buffer *> buffers;
 	string name;
 	bool enable;
-	float globalScale;
+	float globalScale, temperature;
 	RGBColor rgbScale;
 	XYZColor scale;
 };
@@ -335,8 +336,8 @@ public:
     // Film Interface
 
     Film(int xres, int yres, int haltspp) :
-		xResolution(xres), yResolution(yres), haltSamplePerPixel(haltspp),
-		enoughSamplePerPixel(false) {
+		xResolution(xres), yResolution(yres), EV(0.f),
+		haltSamplePerPixel(haltspp), enoughSamplePerPixel(false) {
 		samplePerPass = (double)xResolution * (double)yResolution;
 	}
     virtual ~Film() { }
@@ -358,6 +359,8 @@ public:
     virtual float GetGroupScale(u_int index) const = 0;
     virtual void SetGroupRGBScale(u_int index, const RGBColor &value) = 0;
     virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
+    virtual void SetGroupTemperature(u_int index, float value) = 0;
+    virtual float GetGroupTemperature(u_int index) const = 0;
     virtual unsigned char* getFrameBuffer() = 0;
     virtual void updateFrameBuffer() = 0;
     virtual float getldrDisplayInterval() = 0;

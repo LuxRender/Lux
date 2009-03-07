@@ -2242,7 +2242,7 @@ void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
 void LuxGui::LuxLightGroupPanel::ResetValues() {
 	m_LG_enable = true;
 	m_LG_scale = 1.f;
-	m_LG_temperature = 6500.f;
+	m_LG_temperature = 0.f;
 	m_LG_scaleRed = 1.f;
 	m_LG_scaleGreen = 1.f;
 	m_LG_scaleBlue = 1.f;
@@ -2265,6 +2265,7 @@ void LuxGui::LuxLightGroupPanel::ResetValuesFromFilm() {
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, m_LG_scaleRed, m_Index);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_LG_scaleGreen, m_Index);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_LG_scaleBlue, m_Index);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_LG_temperature, m_Index);
 }
 
 void LuxGui::LuxLightGroupPanel::OnText(wxCommandEvent& event) {

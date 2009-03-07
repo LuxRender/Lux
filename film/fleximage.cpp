@@ -31,6 +31,7 @@
 #include "filter.h"
 #include "exrio.h"
 #include "igiio.h"
+#include "spds/blackbodyspd.h"
 #include "osfunc.h"
 #include "dynload.h"
 
@@ -299,6 +300,10 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			SetGroupRGBScale(index, color);
 			break;
 		}
+		case LUX_FILM_LG_TEMPERATURE: {
+			SetGroupTemperature(index, value);
+			break;
+		}
 
 		 default:
 			break;
@@ -444,6 +449,9 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 		case LUX_FILM_LG_SCALE_BLUE:
 			return GetGroupRGBScale(index).c[2];
 			break;
+		case LUX_FILM_LG_TEMPERATURE:
+			return GetGroupTemperature(index);
+			break;
 
 		default:
 			break;
@@ -587,6 +595,9 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 		case LUX_FILM_LG_SCALE_BLUE:
 			return 1.f;
 			break;
+		case LUX_FILM_LG_TEMPERATURE:
+			return 0.f;
+			break;
 
 		default:
 			break;
@@ -693,10 +704,28 @@ RGBColor FlexImageFilm::GetGroupRGBScale(u_int index) const
 		return 0.f;
 	return bufferGroups[index].rgbScale;
 }
+void FlexImageFilm::SetGroupTemperature(u_int index, float value)
+{
+	if (index >= bufferGroups.size())
+		return;
+	bufferGroups[index].temperature = value;
+	ComputeGroupScale(index);
+}
+float FlexImageFilm::GetGroupTemperature(u_int index) const
+{
+	if (index >= bufferGroups.size())
+		return 0.f;
+	return bufferGroups[index].temperature;
+}
 void FlexImageFilm::ComputeGroupScale(u_int index)
 {
-	bufferGroups[index].scale = colorSpace.ToXYZ(bufferGroups[index].rgbScale) /
-		colorSpace.ToXYZ(RGBColor(1.f));
+	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
+	bufferGroups[index].scale =
+		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
+	if (bufferGroups[index].temperature > 0.f) {
+		XYZColor factor(BlackbodySPD(bufferGroups[index].temperature).ToXYZ());
+		bufferGroups[index].scale *= factor / (factor.y() * white);
+	}
 	bufferGroups[index].scale *= bufferGroups[index].globalScale;
 }
 
