@@ -702,21 +702,16 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			}
 			break;
 		// Histogram options
-		case ID_HISTOGRAM_RGB:
+		case ID_HISTOGRAM_CHANNEL:
 			{
-				m_HistogramWindow->SetOption(LUX_HISTOGRAM_RGB);
-				m_HistogramWindow->Update();
-			}
-			break;
-		case ID_HISTOGRAM_RGB_ADD:
-			{
-				m_HistogramWindow->SetOption(LUX_HISTOGRAM_RGB_ADD);
-				m_HistogramWindow->Update();
-			}
-			break;
-		case ID_HISTOGRAM_VALUE:
-			{
-				m_HistogramWindow->SetOption(LUX_HISTOGRAM_VALUE);
+				switch( event.GetInt() ){
+					case 0: m_HistogramWindow->SetOption(LUX_HISTOGRAM_RGB_ADD); break;
+					case 1: m_HistogramWindow->SetOption(LUX_HISTOGRAM_RGB); break;
+					case 2: m_HistogramWindow->SetOption(LUX_HISTOGRAM_RED); break;
+					case 3: m_HistogramWindow->SetOption(LUX_HISTOGRAM_GREEN); break;
+					case 4: m_HistogramWindow->SetOption(LUX_HISTOGRAM_BLUE); break;
+					case 5: m_HistogramWindow->SetOption(LUX_HISTOGRAM_VALUE); break;
+				}
 				m_HistogramWindow->Update();
 			}
 			break;
@@ -2422,7 +2417,6 @@ LuxGui::LuxHistogramWindow::~LuxHistogramWindow(){
 
 void LuxGui::LuxHistogramWindow::Update(){
 	if(!IsShownOnScreen()) return;
-	luxError(LUX_NOERROR, LUX_INFO, "LuxHistogramWindow: Updated!!");
 	wxSize size=GetSize();
 	wxImage img(size.GetWidth(), size.GetHeight(), true);
 	if(luxStatistics("sceneIsReady")) luxGetHistogramImage(img.GetData(), size.GetWidth(), size.GetHeight(), m_Options);
@@ -2431,22 +2425,18 @@ void LuxGui::LuxHistogramWindow::Update(){
 
 void LuxGui::LuxHistogramWindow::SetOption(int option){
 	switch(option){
-		case LUX_HISTOGRAM_RGB: {
-			m_Options |=  LUX_HISTOGRAM_RGB;
-			m_Options &= ~LUX_HISTOGRAM_RGB_ADD;
-			m_Options &= ~LUX_HISTOGRAM_VALUE;
+		case LUX_HISTOGRAM_RGB:
+		case LUX_HISTOGRAM_RGB_ADD:
+		case LUX_HISTOGRAM_RED:
+		case LUX_HISTOGRAM_GREEN:
+		case LUX_HISTOGRAM_BLUE:
+		case LUX_HISTOGRAM_VALUE:
+		{
+			m_Options &= ~(LUX_HISTOGRAM_RGB|LUX_HISTOGRAM_RGB_ADD|LUX_HISTOGRAM_RED|LUX_HISTOGRAM_GREEN|LUX_HISTOGRAM_BLUE|LUX_HISTOGRAM_VALUE);
+			m_Options |= option;
 		} break;
-		case LUX_HISTOGRAM_RGB_ADD: {
-			m_Options &= ~LUX_HISTOGRAM_RGB;
-			m_Options |=  LUX_HISTOGRAM_RGB_ADD;
-			m_Options &= ~LUX_HISTOGRAM_VALUE;
-		} break;
-		case LUX_HISTOGRAM_VALUE: {
-			m_Options &= ~LUX_HISTOGRAM_RGB;
-			m_Options &= ~LUX_HISTOGRAM_RGB_ADD;
-			m_Options |=  LUX_HISTOGRAM_VALUE;
-		} break;
-		case LUX_HISTOGRAM_LOG: {
+		case LUX_HISTOGRAM_LOG:
+		{
 			m_Options |=  LUX_HISTOGRAM_LOG;
 		} break;
 		default: break;

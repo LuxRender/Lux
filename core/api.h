@@ -115,8 +115,11 @@ void luxGetHistogramImage(unsigned char *outPixels, int width, int height, int o
 //histogram drawing options
 #define    LUX_HISTOGRAM_RGB    	1
 #define    LUX_HISTOGRAM_RGB_ADD	2
-#define    LUX_HISTOGRAM_VALUE  	4
-#define    LUX_HISTOGRAM_LOG    	8
+#define    LUX_HISTOGRAM_RED    	4
+#define    LUX_HISTOGRAM_GREEN  	8
+#define    LUX_HISTOGRAM_BLUE   	16
+#define    LUX_HISTOGRAM_VALUE  	32
+#define    LUX_HISTOGRAM_LOG    	64
 
 
 /* Parameter access */

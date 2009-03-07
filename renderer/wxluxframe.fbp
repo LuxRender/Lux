@@ -7293,7 +7293,7 @@
                                                                                                 <property name="permission">none</property>
                                                                                                 <object class="sizeritem" expanded="1">
                                                                                                     <property name="border">5</property>
-                                                                                                    <property name="flag">wxBOTTOM|wxLEFT</property>
+                                                                                                    <property name="flag">wxALL</property>
                                                                                                     <property name="proportion">0</property>
                                                                                                     <object class="wxStaticText" expanded="1">
                                                                                                         <property name="bg"></property>
@@ -7303,7 +7303,7 @@
                                                                                                         <property name="font"></property>
                                                                                                         <property name="hidden">0</property>
                                                                                                         <property name="id">wxID_ANY</property>
-                                                                                                        <property name="label">Input channel:</property>
+                                                                                                        <property name="label">Channel:</property>
                                                                                                         <property name="maximum_size"></property>
                                                                                                         <property name="minimum_size"></property>
                                                                                                         <property name="name">m_staticText43</property>
@@ -7343,32 +7343,32 @@
                                                                                                     </object>
                                                                                                 </object>
                                                                                                 <object class="sizeritem" expanded="1">
-                                                                                                    <property name="border">5</property>
-                                                                                                    <property name="flag">wxBOTTOM|wxLEFT</property>
+                                                                                                    <property name="border">1</property>
+                                                                                                    <property name="flag">wxALL</property>
                                                                                                     <property name="proportion">0</property>
-                                                                                                    <object class="wxRadioButton" expanded="1">
+                                                                                                    <object class="wxChoice" expanded="1">
                                                                                                         <property name="bg"></property>
+                                                                                                        <property name="choices">&quot;R+G+B&quot; &quot;RGB&quot; &quot;Red&quot; &quot;Green&quot; &quot;Blue&quot; &quot;Value&quot;</property>
                                                                                                         <property name="context_help"></property>
                                                                                                         <property name="enabled">1</property>
                                                                                                         <property name="fg"></property>
                                                                                                         <property name="font"></property>
                                                                                                         <property name="hidden">0</property>
-                                                                                                        <property name="id">ID_HISTOGRAM_RGB_ADD</property>
-                                                                                                        <property name="label">R+G+B</property>
+                                                                                                        <property name="id">ID_HISTOGRAM_CHANNEL</property>
                                                                                                         <property name="maximum_size"></property>
                                                                                                         <property name="minimum_size"></property>
-                                                                                                        <property name="name">m_HistogramRgbAddRadioBtn</property>
+                                                                                                        <property name="name">m_HistogramChannelChoice</property>
                                                                                                         <property name="permission">protected</property>
                                                                                                         <property name="pos"></property>
+                                                                                                        <property name="selection">0</property>
                                                                                                         <property name="size"></property>
-                                                                                                        <property name="style">wxRB_GROUP</property>
                                                                                                         <property name="subclass"></property>
-                                                                                                        <property name="tooltip"></property>
-                                                                                                        <property name="value">1</property>
+                                                                                                        <property name="tooltip">Pick a channel displayed on the histogram</property>
                                                                                                         <property name="window_extra_style"></property>
                                                                                                         <property name="window_name"></property>
                                                                                                         <property name="window_style"></property>
                                                                                                         <event name="OnChar"></event>
+                                                                                                        <event name="OnChoice">OnMenu</event>
                                                                                                         <event name="OnEnterWindow"></event>
                                                                                                         <event name="OnEraseBackground"></event>
                                                                                                         <event name="OnKeyDown"></event>
@@ -7385,111 +7385,6 @@
                                                                                                         <event name="OnMouseEvents"></event>
                                                                                                         <event name="OnMouseWheel"></event>
                                                                                                         <event name="OnPaint"></event>
-                                                                                                        <event name="OnRadioButton">OnMenu</event>
-                                                                                                        <event name="OnRightDClick"></event>
-                                                                                                        <event name="OnRightDown"></event>
-                                                                                                        <event name="OnRightUp"></event>
-                                                                                                        <event name="OnSetFocus"></event>
-                                                                                                        <event name="OnSize"></event>
-                                                                                                        <event name="OnUpdateUI"></event>
-                                                                                                    </object>
-                                                                                                </object>
-                                                                                                <object class="sizeritem" expanded="1">
-                                                                                                    <property name="border">5</property>
-                                                                                                    <property name="flag">wxBOTTOM|wxLEFT</property>
-                                                                                                    <property name="proportion">0</property>
-                                                                                                    <object class="wxRadioButton" expanded="1">
-                                                                                                        <property name="bg"></property>
-                                                                                                        <property name="context_help"></property>
-                                                                                                        <property name="enabled">1</property>
-                                                                                                        <property name="fg"></property>
-                                                                                                        <property name="font"></property>
-                                                                                                        <property name="hidden">0</property>
-                                                                                                        <property name="id">ID_HISTOGRAM_RGB</property>
-                                                                                                        <property name="label">RGB</property>
-                                                                                                        <property name="maximum_size"></property>
-                                                                                                        <property name="minimum_size"></property>
-                                                                                                        <property name="name">m_HistogramRgbRadioBtn</property>
-                                                                                                        <property name="permission">protected</property>
-                                                                                                        <property name="pos"></property>
-                                                                                                        <property name="size"></property>
-                                                                                                        <property name="style"></property>
-                                                                                                        <property name="subclass"></property>
-                                                                                                        <property name="tooltip"></property>
-                                                                                                        <property name="value">0</property>
-                                                                                                        <property name="window_extra_style"></property>
-                                                                                                        <property name="window_name"></property>
-                                                                                                        <property name="window_style"></property>
-                                                                                                        <event name="OnChar"></event>
-                                                                                                        <event name="OnEnterWindow"></event>
-                                                                                                        <event name="OnEraseBackground"></event>
-                                                                                                        <event name="OnKeyDown"></event>
-                                                                                                        <event name="OnKeyUp"></event>
-                                                                                                        <event name="OnKillFocus"></event>
-                                                                                                        <event name="OnLeaveWindow"></event>
-                                                                                                        <event name="OnLeftDClick"></event>
-                                                                                                        <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp"></event>
-                                                                                                        <event name="OnMiddleDClick"></event>
-                                                                                                        <event name="OnMiddleDown"></event>
-                                                                                                        <event name="OnMiddleUp"></event>
-                                                                                                        <event name="OnMotion"></event>
-                                                                                                        <event name="OnMouseEvents"></event>
-                                                                                                        <event name="OnMouseWheel"></event>
-                                                                                                        <event name="OnPaint"></event>
-                                                                                                        <event name="OnRadioButton">OnMenu</event>
-                                                                                                        <event name="OnRightDClick"></event>
-                                                                                                        <event name="OnRightDown"></event>
-                                                                                                        <event name="OnRightUp"></event>
-                                                                                                        <event name="OnSetFocus"></event>
-                                                                                                        <event name="OnSize"></event>
-                                                                                                        <event name="OnUpdateUI"></event>
-                                                                                                    </object>
-                                                                                                </object>
-                                                                                                <object class="sizeritem" expanded="1">
-                                                                                                    <property name="border">5</property>
-                                                                                                    <property name="flag">wxBOTTOM|wxLEFT</property>
-                                                                                                    <property name="proportion">0</property>
-                                                                                                    <object class="wxRadioButton" expanded="1">
-                                                                                                        <property name="bg"></property>
-                                                                                                        <property name="context_help"></property>
-                                                                                                        <property name="enabled">1</property>
-                                                                                                        <property name="fg"></property>
-                                                                                                        <property name="font"></property>
-                                                                                                        <property name="hidden">0</property>
-                                                                                                        <property name="id">ID_HISTOGRAM_VALUE</property>
-                                                                                                        <property name="label">Value</property>
-                                                                                                        <property name="maximum_size"></property>
-                                                                                                        <property name="minimum_size"></property>
-                                                                                                        <property name="name">m_HistogramValueRadioBtn</property>
-                                                                                                        <property name="permission">protected</property>
-                                                                                                        <property name="pos"></property>
-                                                                                                        <property name="size"></property>
-                                                                                                        <property name="style"></property>
-                                                                                                        <property name="subclass"></property>
-                                                                                                        <property name="tooltip"></property>
-                                                                                                        <property name="value">0</property>
-                                                                                                        <property name="window_extra_style"></property>
-                                                                                                        <property name="window_name"></property>
-                                                                                                        <property name="window_style"></property>
-                                                                                                        <event name="OnChar"></event>
-                                                                                                        <event name="OnEnterWindow"></event>
-                                                                                                        <event name="OnEraseBackground"></event>
-                                                                                                        <event name="OnKeyDown"></event>
-                                                                                                        <event name="OnKeyUp"></event>
-                                                                                                        <event name="OnKillFocus"></event>
-                                                                                                        <event name="OnLeaveWindow"></event>
-                                                                                                        <event name="OnLeftDClick"></event>
-                                                                                                        <event name="OnLeftDown"></event>
-                                                                                                        <event name="OnLeftUp"></event>
-                                                                                                        <event name="OnMiddleDClick"></event>
-                                                                                                        <event name="OnMiddleDown"></event>
-                                                                                                        <event name="OnMiddleUp"></event>
-                                                                                                        <event name="OnMotion"></event>
-                                                                                                        <event name="OnMouseEvents"></event>
-                                                                                                        <event name="OnMouseWheel"></event>
-                                                                                                        <event name="OnPaint"></event>
-                                                                                                        <event name="OnRadioButton">OnMenu</event>
                                                                                                         <event name="OnRightDClick"></event>
                                                                                                         <event name="OnRightDown"></event>
                                                                                                         <event name="OnRightUp"></event>
@@ -7510,7 +7405,7 @@
                                                                                                 </object>
                                                                                                 <object class="sizeritem" expanded="1">
                                                                                                     <property name="border">5</property>
-                                                                                                    <property name="flag">wxBOTTOM|wxLEFT</property>
+                                                                                                    <property name="flag">wxALL</property>
                                                                                                     <property name="proportion">0</property>
                                                                                                     <object class="wxStaticText" expanded="1">
                                                                                                         <property name="bg"></property>
@@ -7527,7 +7422,7 @@
                                                                                                         <property name="permission">protected</property>
                                                                                                         <property name="pos"></property>
                                                                                                         <property name="size"></property>
-                                                                                                        <property name="style">wxALIGN_LEFT</property>
+                                                                                                        <property name="style">wxALIGN_RIGHT</property>
                                                                                                         <property name="subclass"></property>
                                                                                                         <property name="tooltip"></property>
                                                                                                         <property name="window_extra_style"></property>
@@ -7561,7 +7456,7 @@
                                                                                                 </object>
                                                                                                 <object class="sizeritem" expanded="1">
                                                                                                     <property name="border">5</property>
-                                                                                                    <property name="flag">wxBOTTOM|wxLEFT</property>
+                                                                                                    <property name="flag">wxALL</property>
                                                                                                     <property name="proportion">0</property>
                                                                                                     <object class="wxCheckBox" expanded="1">
                                                                                                         <property name="bg"></property>
@@ -7581,7 +7476,7 @@
                                                                                                         <property name="size"></property>
                                                                                                         <property name="style"></property>
                                                                                                         <property name="subclass"></property>
-                                                                                                        <property name="tooltip"></property>
+                                                                                                        <property name="tooltip">Toggle between logarithm and linear histogram output</property>
                                                                                                         <property name="window_extra_style"></property>
                                                                                                         <property name="window_name"></property>
                                                                                                         <property name="window_style"></property>
@@ -7609,6 +7504,16 @@
                                                                                                         <event name="OnSetFocus"></event>
                                                                                                         <event name="OnSize"></event>
                                                                                                         <event name="OnUpdateUI"></event>
+                                                                                                    </object>
+                                                                                                </object>
+                                                                                                <object class="sizeritem" expanded="1">
+                                                                                                    <property name="border">5</property>
+                                                                                                    <property name="flag">wxEXPAND</property>
+                                                                                                    <property name="proportion">1</property>
+                                                                                                    <object class="spacer" expanded="1">
+                                                                                                        <property name="height">0</property>
+                                                                                                        <property name="permission">protected</property>
+                                                                                                        <property name="width">0</property>
                                                                                                     </object>
                                                                                                 </object>
                                                                                             </object>

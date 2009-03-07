@@ -943,30 +943,33 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer95;
 	bSizer95 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Input channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_staticText43->Wrap( -1 );
-	bSizer95->Add( m_staticText43, 0, wxBOTTOM|wxLEFT, 5 );
+	bSizer95->Add( m_staticText43, 0, wxALL, 5 );
 	
-	m_HistogramRgbAddRadioBtn = new wxRadioButton( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_RGB_ADD, wxT("R+G+B"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
-	m_HistogramRgbAddRadioBtn->SetValue( true ); 
-	bSizer95->Add( m_HistogramRgbAddRadioBtn, 0, wxBOTTOM|wxLEFT, 5 );
+	wxString m_HistogramChannelChoiceChoices[] = { wxT("R+G+B"), wxT("RGB"), wxT("Red"), wxT("Green"), wxT("Blue"), wxT("Value") };
+	int m_HistogramChannelChoiceNChoices = sizeof( m_HistogramChannelChoiceChoices ) / sizeof( wxString );
+	m_HistogramChannelChoice = new wxChoice( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_CHANNEL, wxDefaultPosition, wxDefaultSize, m_HistogramChannelChoiceNChoices, m_HistogramChannelChoiceChoices, 0 );
+	m_HistogramChannelChoice->SetSelection( 0 );
+	m_HistogramChannelChoice->SetToolTip( wxT("Pick a channel displayed on the histogram") );
 	
-	m_HistogramRgbRadioBtn = new wxRadioButton( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_RGB, wxT("RGB"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer95->Add( m_HistogramRgbRadioBtn, 0, wxBOTTOM|wxLEFT, 5 );
-	
-	m_HistogramValueRadioBtn = new wxRadioButton( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_VALUE, wxT("Value"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer95->Add( m_HistogramValueRadioBtn, 0, wxBOTTOM|wxLEFT, 5 );
+	bSizer95->Add( m_HistogramChannelChoice, 0, wxALL, 1 );
 	
 	
 	bSizer95->Add( 0, 0, 1, wxEXPAND, 5 );
 	
-	m_staticText431 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Output:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText431 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Output:"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText431->Wrap( -1 );
-	bSizer95->Add( m_staticText431, 0, wxBOTTOM|wxLEFT, 5 );
+	bSizer95->Add( m_staticText431, 0, wxALL, 5 );
 	
 	m_HistogramLogCheckBox = new wxCheckBox( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_LOG, wxT("Log"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	bSizer95->Add( m_HistogramLogCheckBox, 0, wxBOTTOM|wxLEFT, 5 );
+	m_HistogramLogCheckBox->SetToolTip( wxT("Toggle between logarithm and linear histogram output") );
+	
+	bSizer95->Add( m_HistogramLogCheckBox, 0, wxALL, 5 );
+	
+	
+	bSizer95->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	bSizer125->Add( bSizer95, 0, wxEXPAND, 5 );
 	
@@ -1736,9 +1739,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_Tab_HistogramIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
-	m_HistogramRgbAddRadioBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_HistogramRgbRadioBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_HistogramValueRadioBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramChannelChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_HistogramLogCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_Tab_NoiseReductionIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_greyc_EnabledCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
@@ -2149,9 +2150,7 @@ LuxMainFrame::~LuxMainFrame()
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_Tab_HistogramIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
-	m_HistogramRgbAddRadioBtn->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_HistogramRgbRadioBtn->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_HistogramValueRadioBtn->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_HistogramChannelChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_HistogramLogCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_Tab_NoiseReductionIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_greyc_EnabledCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );

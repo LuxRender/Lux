@@ -29,7 +29,6 @@
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/aui/auibook.h>
-#include <wx/radiobut.h>
 #include <wx/notebook.h>
 #include <wx/statline.h>
 #include <wx/spinctrl.h>
@@ -121,51 +120,49 @@ namespace lux
 	#define ID_TORGB_GAMMA_TEXT 1076
 	#define ID_HISTOGRAMPANEL 1077
 	#define ID_TAB_HISTOGRAM 1078
-	#define ID_HISTOGRAM_RGB_ADD 1079
-	#define ID_HISTOGRAM_RGB 1080
-	#define ID_HISTOGRAM_VALUE 1081
-	#define ID_HISTOGRAM_LOG 1082
-	#define ID_NOISEOPTIONSPANEL 1083
-	#define ID_TAB_NOISEREDUCTION 1084
-	#define ID_GREYC_ENABLED 1085
-	#define ID_GREYC_FASTAPPROX 1086
-	#define ID_GREYC_ITERATIONS 1087
-	#define ID_GREYC_ITERATIONS_TEXT 1088
-	#define ID_GREYC_AMPLITUDE 1089
-	#define ID_GREYC_AMPLITUDE_TEXT 1090
-	#define ID_GREYC_GAUSSPREC 1091
-	#define ID_GREYC_GAUSSPREC_TEXT 1092
-	#define ID_GREYC_ALPHA 1093
-	#define ID_GREYC_ALPHA_TEXT 1094
-	#define ID_GREYC_SIGMA 1095
-	#define ID_GREYC_SIGMA_TEXT 1096
-	#define ID_GREYC_SHARPNESS 1097
-	#define ID_GREYC_SHARPNESS_TEXT 1098
-	#define ID_GREYC_ANISO 1099
-	#define ID_GREYC_ANISO_TEXT 1100
-	#define ID_GREYC_SPATIAL 1101
-	#define ID_GREYC_SPATIAL_TEXT 1102
-	#define ID_GREYC_ANGULAR 1103
-	#define ID_GREYC_ANGULAR_TEXT 1104
-	#define ID_GREYC_INTERPOLATIONCHOICE 1105
-	#define ID_CHIU_RADIUS 1106
-	#define ID_TM_RESET 1107
-	#define ID_AUTO_TONEMAP 1108
-	#define ID_TM_APPLY 1109
-	#define ID_SYSTEMOPTIONS 1110
-	#define ID_ADD_SERVER 1111
-	#define ID_REMOVE_SERVER 1112
-	#define ID_SERVER_UPDATE_INT 1113
-	#define ID_NETWORK_TREE 1114
-	#define ID_LG_NAME 1115
-	#define ID_LG_ENABLE 1116
-	#define ID_LG_BASICPANEL 1117
-	#define ID_LG_SCALE 1118
-	#define ID_LG_SCALE_TEXT 1119
-	#define ID_LG_RGBCOLOR 1120
-	#define ID_LG_TEMPERATURE 1121
-	#define ID_LG_TEMPERATURE_TEXT 1122
-	#define ID_LG_ADVANCEDPANEL 1123
+	#define ID_HISTOGRAM_CHANNEL 1079
+	#define ID_HISTOGRAM_LOG 1080
+	#define ID_NOISEOPTIONSPANEL 1081
+	#define ID_TAB_NOISEREDUCTION 1082
+	#define ID_GREYC_ENABLED 1083
+	#define ID_GREYC_FASTAPPROX 1084
+	#define ID_GREYC_ITERATIONS 1085
+	#define ID_GREYC_ITERATIONS_TEXT 1086
+	#define ID_GREYC_AMPLITUDE 1087
+	#define ID_GREYC_AMPLITUDE_TEXT 1088
+	#define ID_GREYC_GAUSSPREC 1089
+	#define ID_GREYC_GAUSSPREC_TEXT 1090
+	#define ID_GREYC_ALPHA 1091
+	#define ID_GREYC_ALPHA_TEXT 1092
+	#define ID_GREYC_SIGMA 1093
+	#define ID_GREYC_SIGMA_TEXT 1094
+	#define ID_GREYC_SHARPNESS 1095
+	#define ID_GREYC_SHARPNESS_TEXT 1096
+	#define ID_GREYC_ANISO 1097
+	#define ID_GREYC_ANISO_TEXT 1098
+	#define ID_GREYC_SPATIAL 1099
+	#define ID_GREYC_SPATIAL_TEXT 1100
+	#define ID_GREYC_ANGULAR 1101
+	#define ID_GREYC_ANGULAR_TEXT 1102
+	#define ID_GREYC_INTERPOLATIONCHOICE 1103
+	#define ID_CHIU_RADIUS 1104
+	#define ID_TM_RESET 1105
+	#define ID_AUTO_TONEMAP 1106
+	#define ID_TM_APPLY 1107
+	#define ID_SYSTEMOPTIONS 1108
+	#define ID_ADD_SERVER 1109
+	#define ID_REMOVE_SERVER 1110
+	#define ID_SERVER_UPDATE_INT 1111
+	#define ID_NETWORK_TREE 1112
+	#define ID_LG_NAME 1113
+	#define ID_LG_ENABLE 1114
+	#define ID_LG_BASICPANEL 1115
+	#define ID_LG_SCALE 1116
+	#define ID_LG_SCALE_TEXT 1117
+	#define ID_LG_RGBCOLOR 1118
+	#define ID_LG_TEMPERATURE 1119
+	#define ID_LG_TEMPERATURE_TEXT 1120
+	#define ID_LG_ADVANCEDPANEL 1121
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -301,12 +298,11 @@ namespace lux
 			wxStaticBitmap* m_Tab_HistogramIcon;
 			wxPanel* m_Tab_Control_HistogramPanel;
 			wxStaticText* m_staticText43;
-			wxRadioButton* m_HistogramRgbAddRadioBtn;
-			wxRadioButton* m_HistogramRgbRadioBtn;
-			wxRadioButton* m_HistogramValueRadioBtn;
+			wxChoice* m_HistogramChannelChoice;
 			
 			wxStaticText* m_staticText431;
 			wxCheckBox* m_HistogramLogCheckBox;
+			
 			wxPanel* m_NoiseOptionsPanel;
 			wxPanel* m_Tab_LensEffectsPanel1;
 			wxStaticBitmap* m_NoiseReductionBitmap;
