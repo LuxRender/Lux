@@ -31,7 +31,7 @@
 #include "filter.h"
 #include "exrio.h"
 #include "igiio.h"
-#include "spds/blackbodyspd.h"
+#include "blackbodyspd.h"
 #include "osfunc.h"
 #include "dynload.h"
 
