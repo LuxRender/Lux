@@ -57,9 +57,8 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	else
 		md = BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v);
 
-	SWCSpectrum k = 0.;
-	Fresnel *frMf = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(spec), k);
-	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(R), k);
+	Fresnel *frMf = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(spec), FresnelApproxK(spec));
+	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(R), FresnelApproxK(R));
 	bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., frMf, md));
 	bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(1., frSr, flm, flmindex));
 	return bsdf;
