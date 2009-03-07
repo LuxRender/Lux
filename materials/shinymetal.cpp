@@ -23,7 +23,7 @@
 // shinymetal.cpp*
 #include "shinymetal.h"
 #include "bxdf.h"
-#include "fresnelconductor.h"
+#include "fresnelgeneral.h"
 #include "blinn.h"
 #include "anisotropic.h"
 #include "microfacet.h"
@@ -57,8 +57,8 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	else
 		md = BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v);
 
-	Fresnel *frMf = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(spec), FresnelApproxK(spec));
-	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelConductor)(FresnelApproxEta(R), FresnelApproxK(R));
+	Fresnel *frMf = BSDF_ALLOC(tspack, FresnelGeneral)(FresnelApproxEta(spec), FresnelApproxK(spec));
+	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelGeneral)(FresnelApproxEta(R), FresnelApproxK(R));
 	bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., frMf, md));
 	bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(1., frSr, flm, flmindex));
 	return bsdf;
