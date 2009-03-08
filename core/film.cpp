@@ -67,7 +67,7 @@ namespace lux
 
 	// Image Pipeline Function Definitions
 	void ApplyImagingPipeline(vector<Color> &pixels,
-		int xResolution, int yResolution, GREYCStorationParams &GREYCParams, ColorSystem &colorSpace, Histogram &histogram,
+		int xResolution, int yResolution, GREYCStorationParams &GREYCParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
 		bool VignettingEnabled, float VignetScale,
 		const char *toneMapName, const ParamSet *toneMapParams,
@@ -148,8 +148,6 @@ namespace lux
 			// Do gamma correction
 			pixels[i] = pixels[i].Pow(invGamma);
 		}
-		// Calculate histogram
-		histogram.Calculate(pixels, xResolution, yResolution);
 
 		// Add vignetting & chromatic abberation effect
 		// These are paired in 1 loop as they can share quite a few calculations
@@ -176,6 +174,9 @@ namespace lux
 					}
 				}
 		}
+
+		// Calculate histogram
+		if(HistogramEnabled) histogram.Calculate(pixels, xResolution, yResolution);
 
 		// remove / automate
 		int chiu_radius = 0;
@@ -309,7 +310,6 @@ void Film::getHistogramImage(unsigned char *outPixels, int width, int height, in
 
 Histogram::Histogram(){
 	m_buckets = NULL;
-	m_isReady = false;
 	m_displayGamma = 2.2; //gamma of the display the histogram is viewed on
 
 	//calculate visible plot range
@@ -356,7 +356,7 @@ void Histogram::Calculate(vector<Color> &pixels, unsigned int width, unsigned in
 	unsigned int i, j;
 	unsigned int pixelNr=width*height;
 	float value;
-	m_isReady = false;
+	boost::mutex::scoped_lock lock(m_mutex);
 
 	CheckBucketNr();
 
@@ -384,7 +384,6 @@ void Histogram::Calculate(vector<Color> &pixels, unsigned int width, unsigned in
 		}
 	}
 
-	m_isReady = true;
 }
 
 void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsigned int canvasH, int options){
@@ -398,7 +397,7 @@ void Histogram::MakeImage(unsigned char *outPixels, unsigned int canvasW, unsign
 	unsigned int plotH = canvasH-borderW-(guideW+2)-(borderW-1);
 	unsigned int plotW = canvasW-2*borderW;
 	if(canvasW<50 || canvasH<25) return; //too small
-	if(!m_isReady) return; //TODO: add a lock so that drawing and tonemapping threads don't collide
+	boost::mutex::scoped_lock lock(m_mutex);
 	if(canvasW-2*borderW!=(u_int)m_bucketNr) m_newBucketNr=canvasW-2*borderW;
 	
 	//clear drawing area

@@ -162,6 +162,7 @@ private:
 	bool m_VignettingEnabled, d_VignettingEnabled;
 	float m_VignettingScale, d_VignettingScale;
 
+	bool m_HistogramEnabled, d_HistogramEnabled;
 };
 
 }//namespace lux

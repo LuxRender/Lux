@@ -735,6 +735,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		default:
 			break;
 	}
+	m_HistogramWindow->SetEnabled(m_HistogramWindow->IsShownOnScreen());
 }
 
 void LuxGui::OnMouse(wxMouseEvent &event) {
@@ -745,9 +746,11 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 				if( m_Tab_Control_HistogramPanel->IsShown() ){
 					m_Tab_Control_HistogramPanel->Hide();
 					m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+					m_HistogramWindow->SetEnabled(false);
 				}else{
 					m_Tab_Control_HistogramPanel->Show(true);
 					m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+					m_HistogramWindow->SetEnabled(true);
 				}
 				m_HistogramPanel->GetSizer()->Layout();
 				m_Tonemap->GetSizer()->Layout();
@@ -2070,6 +2073,9 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_greyc_EnabledCheckBox->SetValue( m_GREYC_enabled );
 	m_greyc_fastapproxCheckBox->SetValue( m_GREYC_fast_approx );
 
+	// Histogram
+	m_HistogramWindow->SetEnabled(m_Tab_Control_HistogramPanel->IsShown());
+
 	Refresh();
 }
 
@@ -2475,6 +2481,7 @@ LuxGui::LuxHistogramWindow::LuxHistogramWindow(wxWindow *parent, wxWindowID id, 
 	wxImage tmp_img(200, 100, true);
 	SetImage(tmp_img); //empty image
 	m_Options=LUX_HISTOGRAM_RGB_ADD; //default mode
+	m_IsEnabled=false;
 }
 
 LuxGui::LuxHistogramWindow::~LuxHistogramWindow(){
@@ -2482,7 +2489,7 @@ LuxGui::LuxHistogramWindow::~LuxHistogramWindow(){
 }
 
 void LuxGui::LuxHistogramWindow::Update(){
-	if(!IsShownOnScreen()) return;
+	if(!IsShownOnScreen() || !m_IsEnabled) return;
 	wxSize size=GetSize();
 	wxImage img(size.GetWidth(), size.GetHeight(), true);
 	if(luxStatistics("sceneIsReady")) luxGetHistogramImage(img.GetData(), size.GetWidth(), size.GetHeight(), m_Options);
@@ -2507,6 +2514,11 @@ void LuxGui::LuxHistogramWindow::SetOption(int option){
 		} break;
 		default: break;
 	}
+}
+
+void LuxGui::LuxHistogramWindow::SetEnabled(bool enabled){
+	m_IsEnabled=enabled;
+	UpdateParam(LUX_FILM, LUX_FILM_HISTOGRAM_ENABLED, enabled);
 }
 
 void LuxGui::LuxHistogramWindow::ClearOption(int option){

@@ -296,11 +296,12 @@ protected:
 			void Update();
 			void SetOption(int option);
 			void ClearOption(int option);
+			void SetEnabled(bool enabled);
 		protected:
 			void OnSize(wxSizeEvent& event);
 		private:
 			int m_Options;
-			bool m_Enabled;
+			bool m_IsEnabled;
 	};
 
 	LuxHistogramWindow *m_HistogramWindow;

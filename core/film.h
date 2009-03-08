@@ -29,6 +29,7 @@
 #include "memory.h"
 
 #include <boost/serialization/split_member.hpp>
+#include <boost/thread/mutex.hpp>
 
 namespace lux {
 
@@ -328,7 +329,7 @@ class Histogram {
 		int m_zones[11];
 		float m_lowRange, m_highRange, m_bucketSize;
 		float m_displayGamma;
-		bool m_isReady;
+		boost::mutex m_mutex;
 };
 
 // Film Declarations
@@ -397,7 +398,7 @@ protected:
 
 // Image Pipeline Declarations
 extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution, GREYCStorationParams &GREYCParams, 
-        ColorSystem &colorSpace, Histogram &histogram, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
+        ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
 		float bloomRadius = .2f, float bloomWeight = 0.f, bool VignettingEnabled = false, float VignetScale = 0.f, const char *tonemap = NULL,
         const ParamSet *toneMapParams = NULL, float gamma = 2.2,
         float dither = 0.5f);
