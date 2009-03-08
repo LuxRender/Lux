@@ -215,7 +215,7 @@ private:
 class BufferGroup {
 public:
 	BufferGroup(const string &n) : numberOfSamples(0.f), name(n),
-		enable(true), globalScale(1.f), temperature(0.f),
+		enable(true), globalScale(1.f), temperature(6500.f),
 		rgbScale(1.f), scale(1.f) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)

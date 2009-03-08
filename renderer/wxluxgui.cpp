@@ -92,7 +92,8 @@ using namespace lux;
 #define GREYC_NB_ITER_RANGE 16.0f
 
 #define LG_SCALE_RANGE 100.f
-#define LG_TEMPERATURE_RANGE 20000.f
+#define LG_TEMPERATURE_MIN 1000.f
+#define LG_TEMPERATURE_RANGE 10000.f
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2220,7 +2221,10 @@ LuxGui::LuxLightGroupPanel::LuxLightGroupPanel(
 	long style )
 	: LightGroupPanel(parent, id, pos, size, style), m_Gui(gui)
 {
-	m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(n_lightgroup_png));
+	m_lightgroupBitmap->SetBitmap(wxMEMORY_BITMAP(tab_lightgroup_png));
+	m_Tab_LightGroupIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+	m_Tab_LightGroupToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+	m_BarBlackBodyStaticBitmap->SetBitmap(wxMEMORY_BITMAP(bar_blackbody_png));
 	m_Index = -1;
 }
 
@@ -2233,13 +2237,16 @@ void LuxGui::LuxLightGroupPanel::SetIndex( int index ) {
 }
 
 void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
-	m_LG_enableCheckbox->SetValue(m_LG_enable);
+	if(m_LG_enable) m_Tab_LightGroupToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+	else m_Tab_LightGroupToggleIcon->SetBitmap(wxMEMORY_BITMAP(powerofficon_png));
 	SetWidgetsEnabled(m_LG_enable);
 	wxString st;
 	m_LG_scaleSlider->SetValue(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
 	st = wxString::Format(_("%.02f"), m_LG_scale);
 	m_LG_scaleText->SetValue(st);
-	m_LG_temperatureSlider->SetValue(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
+	float val = ((m_LG_temperature - LG_TEMPERATURE_MIN) 
+			/ (LG_TEMPERATURE_RANGE - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES;
+	m_LG_temperatureSlider->SetValue(val);
 	st = wxString::Format(_("%.02f"), m_LG_temperature);
 	m_LG_temperatureText->SetValue(st);
 	wxColour colour(Clamp(int(m_LG_scaleRed * 255.0), 0, 255),
@@ -2276,6 +2283,45 @@ void LuxGui::LuxLightGroupPanel::ResetValuesFromFilm( bool useDefaults ) {
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_LG_temperature, m_Index);
 }
 
+void LuxGui::LuxLightGroupPanel::OnMouse(wxMouseEvent &event) {
+	switch (event.GetId()) {
+		// TABS Hide/Show(collapse)
+		case ID_TAB_LG:
+			{
+				if( m_TabNoteBook->IsShown() ){
+					m_TabNoteBook->Hide();
+					m_Tab_LightGroupIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
+				}else{
+					m_TabNoteBook->Show(true);
+					m_Tab_LightGroupIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
+				}
+				m_LG_MainSizer->Layout();
+				m_Gui->m_LightGroupsSizer->Layout();
+				m_Gui->m_LightGroups->GetSizer()->FitInside(m_Gui->m_LightGroups);
+				m_Gui->m_LightGroups->Layout();
+				Refresh();
+				m_Gui->Refresh();
+			}
+			break;
+		case ID_TAB_LG_TOGGLE:
+			{
+				if( m_LG_enable ){
+					m_LG_enable = false;
+					m_Tab_LightGroupToggleIcon->SetBitmap(wxMEMORY_BITMAP(powerofficon_png));
+				}else{
+					m_LG_enable = true;
+					m_Tab_LightGroupToggleIcon->SetBitmap(wxMEMORY_BITMAP(powericon_png));
+				}
+				luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
+				m_Gui->UpdatedTonemapParam();
+				Refresh();
+			}
+			break;
+		default:
+			break;
+	}
+}
+
 void LuxGui::LuxLightGroupPanel::OnText(wxCommandEvent& event) {
 	if ( event.GetEventType() != wxEVT_COMMAND_TEXT_ENTER ) return;
 
@@ -2306,7 +2352,8 @@ void LuxGui::LuxLightGroupPanel::OnText(wxCommandEvent& event) {
 					m_LG_temperature = 0.f;
 				st = wxString::Format(_("%.02f"), m_LG_temperature);
 				m_LG_temperatureText->SetValue(st);
-				const int val = static_cast<int>(m_LG_temperature / LG_TEMPERATURE_RANGE * FLOAT_SLIDER_RES);
+				float val = ((m_LG_temperature - LG_TEMPERATURE_MIN) 
+						/ (LG_TEMPERATURE_RANGE - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES;
 				m_LG_temperatureSlider->SetValue(val);
 				UpdateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_LG_temperature, m_Index);
 				m_Gui->UpdatedTonemapParam();
@@ -2323,12 +2370,13 @@ void LuxGui::LuxLightGroupPanel::OnCheckBox(wxCommandEvent& event)
 		return;
 
 	switch (event.GetId()) {
+/*
 		case ID_LG_ENABLE:
 			m_LG_enable = m_LG_enableCheckbox->GetValue();
 			SetWidgetsEnabled(m_LG_enable);
 			UpdateParam(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
 			m_Gui->UpdatedTonemapParam();
-			break;
+			break; */
 		default:
 			break;
 	}
@@ -2364,7 +2412,8 @@ void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
 		}
 		case ID_LG_TEMPERATURE:
 		{
-			m_LG_temperature = event.GetPosition() * LG_TEMPERATURE_RANGE / FLOAT_SLIDER_RES;
+			m_LG_temperature = ((((float) event.GetPosition()) / FLOAT_SLIDER_RES) 
+					* (LG_TEMPERATURE_RANGE - LG_TEMPERATURE_MIN)) + LG_TEMPERATURE_MIN;
 			wxString st = wxString::Format(_("%.02f"), m_LG_temperature);
 			m_LG_temperatureText->SetValue(st);
 			UpdateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_LG_temperature, m_Index);

@@ -1081,8 +1081,8 @@ void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, cons
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[1], 0.f, 255.f)), tgaFile);
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[0], 0.f, 255.f)), tgaFile);
 			// NOTE - radiance - removed alpha output in TGA files due to errors
-			//fputc(255, tgaFile);
-			fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
+			fputc(255, tgaFile);
+			//fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
 		}
 	}
 

@@ -258,6 +258,7 @@ protected:
 		void SetWidgetsEnabled( bool enabled );
 
 		void OnText(wxCommandEvent& event);
+		void OnMouse(wxMouseEvent &event);
 		void OnCheckBox(wxCommandEvent &event);
 		void OnColourChanged(wxColourPickerEvent &event);
 		void OnScroll(wxScrollEvent& event);

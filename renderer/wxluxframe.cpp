@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -185,7 +185,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer884;
 	bSizer884 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_Tab_ToneMapToggleIcon = new wxStaticBitmap( m_Tab_ToneMapPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_Tab_ToneMapToggleIcon = new wxStaticBitmap( m_Tab_ToneMapPanel, ID_TAB_TONEMAP_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer884->Add( m_Tab_ToneMapToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
 	m_Tab_ToneMapIcon = new wxStaticBitmap( m_Tab_ToneMapPanel, ID_TAB_TONEMAP, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
@@ -448,7 +448,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer88;
 	bSizer88 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_Tab_LensEffectsToggleIcon = new wxStaticBitmap( m_Tab_LensEffectsPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_Tab_LensEffectsToggleIcon = new wxStaticBitmap( m_Tab_LensEffectsPanel, ID_TAB_LENSEFFECTS_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer88->Add( m_Tab_LensEffectsToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
 	m_Tab_LensEffectsIcon = new wxStaticBitmap( m_Tab_LensEffectsPanel, ID_TAB_LENSEFFECTS, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
@@ -616,7 +616,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer883;
 	bSizer883 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_Tab_ColorSpaceToggleIcon = new wxStaticBitmap( m_Tab_ColorSpacePanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_Tab_ColorSpaceToggleIcon = new wxStaticBitmap( m_Tab_ColorSpacePanel, ID_TAB_COLORSPACE_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer883->Add( m_Tab_ColorSpaceToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
 	m_Tab_ColorSpaceIcon = new wxStaticBitmap( m_Tab_ColorSpacePanel, ID_TAB_COLORSPACE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
@@ -696,7 +696,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_ColorSpaceWhitepointPanel->SetSizer( bSizer212 );
 	m_ColorSpaceWhitepointPanel->Layout();
 	bSizer212->Fit( m_ColorSpaceWhitepointPanel );
-	m_ColorSpaceAuiNotebook->AddPage( m_ColorSpaceWhitepointPanel, wxT("Whitepoint"), false, wxNullBitmap );
+	m_ColorSpaceAuiNotebook->AddPage( m_ColorSpaceWhitepointPanel, wxT("Whitepoint"), true, wxNullBitmap );
 	m_ColorSpaceRGBPanel = new wxPanel( m_ColorSpaceAuiNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer114;
 	bSizer114 = new wxBoxSizer( wxVERTICAL );
@@ -819,7 +819,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_ColorSpaceRGBPanel->SetSizer( bSizer114 );
 	m_ColorSpaceRGBPanel->Layout();
 	bSizer114->Fit( m_ColorSpaceRGBPanel );
-	m_ColorSpaceAuiNotebook->AddPage( m_ColorSpaceRGBPanel, wxT("RGB"), true, wxNullBitmap );
+	m_ColorSpaceAuiNotebook->AddPage( m_ColorSpaceRGBPanel, wxT("RGB"), false, wxNullBitmap );
 	
 	bSizer128->Add( m_ColorSpaceAuiNotebook, 0, wxALL|wxEXPAND, 2 );
 	
@@ -859,7 +859,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer882;
 	bSizer882 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_Tab_GammaToggleIcon = new wxStaticBitmap( m_Tab_GammaPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_Tab_GammaToggleIcon = new wxStaticBitmap( m_Tab_GammaPanel, ID_TAB_GAMMA_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer882->Add( m_Tab_GammaToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
 	m_Tab_GammaIcon = new wxStaticBitmap( m_Tab_GammaPanel, ID_TAB_GAMMA, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
@@ -923,7 +923,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer885;
 	bSizer885 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_Tab_HistogramToggleIcon = new wxStaticBitmap( m_Tab_HistogramPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_Tab_HistogramToggleIcon = new wxStaticBitmap( m_Tab_HistogramPanel, ID_TAB_HISTOGRAM_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer885->Add( m_Tab_HistogramToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
 	m_Tab_HistogramIcon = new wxStaticBitmap( m_Tab_HistogramPanel, ID_TAB_HISTOGRAM, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
@@ -943,33 +943,26 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer95;
 	bSizer95 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Input channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_staticText43->Wrap( -1 );
-	bSizer95->Add( m_staticText43, 0, wxALL, 5 );
+	bSizer95->Add( m_staticText43, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 	
-	wxString m_HistogramChannelChoiceChoices[] = { wxT("R+G+B"), wxT("RGB"), wxT("Red"), wxT("Green"), wxT("Blue"), wxT("Value") };
-	int m_HistogramChannelChoiceNChoices = sizeof( m_HistogramChannelChoiceChoices ) / sizeof( wxString );
-	m_HistogramChannelChoice = new wxChoice( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_CHANNEL, wxDefaultPosition, wxDefaultSize, m_HistogramChannelChoiceNChoices, m_HistogramChannelChoiceChoices, 0 );
-	m_HistogramChannelChoice->SetSelection( 0 );
-	m_HistogramChannelChoice->SetToolTip( wxT("Pick a channel displayed on the histogram") );
-	
-	bSizer95->Add( m_HistogramChannelChoice, 0, wxALL, 1 );
+	wxString m_Histogram_ChoiceChoices[] = { wxT("RGB ADD"), wxT("RGB"), wxT("Red"), wxT("Green"), wxT("Blue"), wxT("Value") };
+	int m_Histogram_ChoiceNChoices = sizeof( m_Histogram_ChoiceChoices ) / sizeof( wxString );
+	m_Histogram_Choice = new wxChoice( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_CHANNEL, wxDefaultPosition, wxDefaultSize, m_Histogram_ChoiceNChoices, m_Histogram_ChoiceChoices, 0 );
+	m_Histogram_Choice->SetSelection( 0 );
+	bSizer95->Add( m_Histogram_Choice, 1, wxALL, 2 );
 	
 	
 	bSizer95->Add( 0, 0, 1, wxEXPAND, 5 );
 	
-	m_staticText431 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Output:"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText431 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Output:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_staticText431->Wrap( -1 );
-	bSizer95->Add( m_staticText431, 0, wxALL, 5 );
+	bSizer95->Add( m_staticText431, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 	
 	m_HistogramLogCheckBox = new wxCheckBox( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_LOG, wxT("Log"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	m_HistogramLogCheckBox->SetToolTip( wxT("Toggle between logarithm and linear histogram output") );
-	
-	bSizer95->Add( m_HistogramLogCheckBox, 0, wxALL, 5 );
-	
-	
-	bSizer95->Add( 0, 0, 1, wxEXPAND, 5 );
+	bSizer95->Add( m_HistogramLogCheckBox, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 	
 	bSizer125->Add( bSizer95, 0, wxEXPAND, 5 );
 	
@@ -1014,7 +1007,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer881;
 	bSizer881 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_Tab_NoiseReductionToggleIcon = new wxStaticBitmap( m_Tab_LensEffectsPanel1, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_Tab_NoiseReductionToggleIcon = new wxStaticBitmap( m_Tab_LensEffectsPanel1, ID_TAB_NOISEREDUCTION_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer881->Add( m_Tab_NoiseReductionToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
 	m_Tab_NoiseReductionIcon = new wxStaticBitmap( m_Tab_LensEffectsPanel1, ID_TAB_NOISEREDUCTION, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
@@ -1359,7 +1352,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_Tonemap->SetSizer( bTonemapSizer );
 	m_Tonemap->Layout();
 	bTonemapSizer->Fit( m_Tonemap );
-	m_outputNotebook->AddPage( m_Tonemap, wxT("Tonemap"), true, wxNullBitmap );
+	m_outputNotebook->AddPage( m_Tonemap, wxT("Imaging"), true, wxNullBitmap );
 	m_SystemOptions = new wxScrolledWindow( m_outputNotebook, ID_SYSTEMOPTIONS, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxVSCROLL );
 	m_SystemOptions->SetScrollRate( 5, 5 );
 	wxBoxSizer* bSizer20;
@@ -1490,6 +1483,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( ID_PANTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_ZOOMTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_REFINETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	m_Tab_ToneMapToggleIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_ToneMapIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TM_kernelChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1627,6 +1621,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_vignettingamountText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_vignettingamountText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_vignettingamountText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_Tab_ColorSpaceToggleIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_ColorSpaceIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TORGB_colorspaceChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -1738,8 +1733,9 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TORGB_gammaText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_Tab_HistogramToggleIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_HistogramIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
-	m_HistogramChannelChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_Histogram_Choice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_HistogramLogCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_Tab_NoiseReductionIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_greyc_EnabledCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
@@ -1901,6 +1897,7 @@ LuxMainFrame::~LuxMainFrame()
 	this->Disconnect( ID_PANTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_ZOOMTOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_REFINETOOL, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	m_Tab_ToneMapToggleIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_ToneMapIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TM_kernelChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_Reinhard_prescaleSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -2038,6 +2035,7 @@ LuxMainFrame::~LuxMainFrame()
 	m_vignettingamountText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_vignettingamountText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_vignettingamountText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_Tab_ColorSpaceToggleIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_ColorSpaceIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TORGB_colorspaceChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -2149,8 +2147,9 @@ LuxMainFrame::~LuxMainFrame()
 	m_TORGB_gammaText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_TORGB_gammaText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_Tab_HistogramToggleIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_HistogramIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
-	m_HistogramChannelChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_Histogram_Choice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_HistogramLogCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_Tab_NoiseReductionIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_greyc_EnabledCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
@@ -2287,39 +2286,60 @@ LuxMainFrame::~LuxMainFrame()
 
 LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style ) : wxPanel( parent, id, pos, size, style )
 {
-	wxBoxSizer* bSizer183;
-	bSizer183 = new wxBoxSizer( wxVERTICAL );
+	m_LG_MainSizer = new wxBoxSizer( wxVERTICAL );
+	
+	m_LG_MainPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	m_LG_SubSizer = new wxBoxSizer( wxVERTICAL );
 	
 	wxBoxSizer* bSizer3321121;
 	bSizer3321121 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_lightgroupBitmap = new wxStaticBitmap( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer3321121->Add( m_lightgroupBitmap, 0, wxALL, 5 );
+	m_Tab_LightGroupPanel = new wxPanel( m_LG_MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSTATIC_BORDER|wxTAB_TRAVERSAL );
+	m_Tab_LightGroupPanel->SetBackgroundColour( wxColour( 128, 128, 128 ) );
 	
-	m_LG_nameLabel = new wxStaticText( this, wxID_ANY, wxT("Group:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_LG_nameLabel->Wrap( -1 );
-	m_LG_nameLabel->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 90, false, wxEmptyString ) );
+	wxBoxSizer* bSizer103111;
+	bSizer103111 = new wxBoxSizer( wxHORIZONTAL );
 	
-	bSizer3321121->Add( m_LG_nameLabel, 0, wxALIGN_CENTER|wxALL, 2 );
+	m_lightgroupBitmap = new wxStaticBitmap( m_Tab_LightGroupPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer103111->Add( m_lightgroupBitmap, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 1 );
 	
-	m_LG_name = new wxStaticText( this, ID_LG_NAME, wxT("default"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_lightgroupStaticText = new wxStaticText( m_Tab_LightGroupPanel, wxID_ANY, wxT("Group:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_lightgroupStaticText->Wrap( -1 );
+	m_lightgroupStaticText->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 90, false, wxEmptyString ) );
+	m_lightgroupStaticText->SetForegroundColour( wxColour( 255, 255, 255 ) );
+	
+	bSizer103111->Add( m_lightgroupStaticText, 0, wxALIGN_CENTER|wxALL, 3 );
+	
+	m_LG_name = new wxStaticText( m_Tab_LightGroupPanel, ID_LG_NAME, wxT("default"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_LG_name->Wrap( -1 );
 	m_LG_name->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+	m_LG_name->SetForegroundColour( wxColour( 255, 255, 255 ) );
 	
-	bSizer3321121->Add( m_LG_name, 0, wxALIGN_CENTER|wxALL, 2 );
+	bSizer103111->Add( m_LG_name, 0, wxALL, 5 );
 	
 	
-	bSizer3321121->Add( 0, 0, 1, wxEXPAND, 5 );
+	bSizer103111->Add( 0, 0, 1, wxEXPAND, 5 );
 	
-	m_LG_enableCheckbox = new wxCheckBox( this, ID_LG_ENABLE, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
-	m_LG_enableCheckbox->SetValue(true);
+	wxBoxSizer* bSizer88;
+	bSizer88 = new wxBoxSizer( wxHORIZONTAL );
 	
-	bSizer3321121->Add( m_LG_enableCheckbox, 0, wxALL, 5 );
+	m_Tab_LightGroupToggleIcon = new wxStaticBitmap( m_Tab_LightGroupPanel, ID_TAB_LG_TOGGLE, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer88->Add( m_Tab_LightGroupToggleIcon, 0, wxALIGN_RIGHT|wxALL|wxRIGHT, 1 );
 	
-	bSizer183->Add( bSizer3321121, 0, wxEXPAND, 5 );
+	m_Tab_LightGroupIcon = new wxStaticBitmap( m_Tab_LightGroupPanel, ID_TAB_LG, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer88->Add( m_Tab_LightGroupIcon, 0, wxALL, 1 );
 	
-	m_notebook4 = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_LEFT );
-	m_LG_basicPanel = new wxPanel( m_notebook4, ID_LG_BASICPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	bSizer103111->Add( bSizer88, 0, wxEXPAND, 5 );
+	
+	m_Tab_LightGroupPanel->SetSizer( bSizer103111 );
+	m_Tab_LightGroupPanel->Layout();
+	bSizer103111->Fit( m_Tab_LightGroupPanel );
+	bSizer3321121->Add( m_Tab_LightGroupPanel, 1, wxEXPAND | wxALL, 2 );
+	
+	m_LG_SubSizer->Add( bSizer3321121, 0, wxEXPAND, 5 );
+	
+	m_TabNoteBook = new wxNotebook( m_LG_MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_LEFT );
+	m_LG_basicPanel = new wxPanel( m_TabNoteBook, ID_LG_BASICPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer189;
 	bSizer189 = new wxBoxSizer( wxVERTICAL );
 	
@@ -2357,8 +2377,23 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_rgbPicker = new wxColourPickerCtrl( m_LG_basicPanel, ID_LG_RGBCOLOR, wxColour( 255, 255, 255 ), wxDefaultPosition, wxDefaultSize, wxCLRP_DEFAULT_STYLE );
 	bSizer101111->Add( m_LG_rgbPicker, 0, wxALL, 5 );
 	
-	m_LG_temperatureSlider = new wxSlider( m_LG_basicPanel, ID_LG_TEMPERATURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
-	bSizer101111->Add( m_LG_temperatureSlider, 1, wxALL|wxEXPAND, 5 );
+	wxBoxSizer* bSizer102;
+	bSizer102 = new wxBoxSizer( wxVERTICAL );
+	
+	bSizer102->SetMinSize( wxSize( 220,-1 ) ); 
+	m_BarBlackBodyStaticBitmap = new wxStaticBitmap( m_LG_basicPanel, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 200,17 ), 0 );
+	m_BarBlackBodyStaticBitmap->SetMinSize( wxSize( 200,17 ) );
+	m_BarBlackBodyStaticBitmap->SetMaxSize( wxSize( 200,17 ) );
+	
+	bSizer102->Add( m_BarBlackBodyStaticBitmap, 0, wxALIGN_CENTER, 0 );
+	
+	m_LG_temperatureSlider = new wxSlider( m_LG_basicPanel, ID_LG_TEMPERATURE, 333, 0, 512, wxPoint( -1,-1 ), wxSize( 220,25 ), wxSL_HORIZONTAL|wxSL_TOP );
+	m_LG_temperatureSlider->SetMinSize( wxSize( 220,25 ) );
+	m_LG_temperatureSlider->SetMaxSize( wxSize( 220,25 ) );
+	
+	bSizer102->Add( m_LG_temperatureSlider, 0, wxALIGN_CENTER, 0 );
+	
+	bSizer101111->Add( bSizer102, 1, wxEXPAND, 5 );
 	
 	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_LG_temperatureText->SetMaxLength( 5 ); 
@@ -2371,18 +2406,24 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_basicPanel->SetSizer( bSizer189 );
 	m_LG_basicPanel->Layout();
 	bSizer189->Fit( m_LG_basicPanel );
-	m_notebook4->AddPage( m_LG_basicPanel, wxT("basic"), true );
-	m_LG_advancedPanel = new wxPanel( m_notebook4, ID_LG_ADVANCEDPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	m_notebook4->AddPage( m_LG_advancedPanel, wxT("advanced"), false );
+	m_TabNoteBook->AddPage( m_LG_basicPanel, wxT("basic"), true );
+	m_LG_advancedPanel = new wxPanel( m_TabNoteBook, ID_LG_ADVANCEDPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_TabNoteBook->AddPage( m_LG_advancedPanel, wxT("advanced"), false );
 	
-	bSizer183->Add( m_notebook4, 1, wxEXPAND | wxALL, 2 );
+	m_LG_SubSizer->Add( m_TabNoteBook, 1, wxEXPAND | wxALL, 2 );
 	
-	this->SetSizer( bSizer183 );
+	m_LG_MainPanel->SetSizer( m_LG_SubSizer );
+	m_LG_MainPanel->Layout();
+	m_LG_SubSizer->Fit( m_LG_MainPanel );
+	m_LG_MainSizer->Add( m_LG_MainPanel, 0, wxALL|wxEXPAND, 0 );
+	
+	this->SetSizer( m_LG_MainSizer );
 	this->Layout();
-	bSizer183->Fit( this );
+	m_LG_MainSizer->Fit( this );
 	
 	// Connect Events
-	m_LG_enableCheckbox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LightGroupPanel::OnCheckBox ), NULL, this );
+	m_Tab_LightGroupToggleIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
+	m_Tab_LightGroupIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
 	m_LG_scaleSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
@@ -2413,7 +2454,8 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 LightGroupPanel::~LightGroupPanel()
 {
 	// Disconnect Events
-	m_LG_enableCheckbox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LightGroupPanel::OnCheckBox ), NULL, this );
+	m_Tab_LightGroupToggleIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
+	m_Tab_LightGroupIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
 	m_LG_scaleSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
