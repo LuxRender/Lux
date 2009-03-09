@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 19 2008)
+// C++ code generated with wxFormBuilder (version Apr 16 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -477,21 +477,21 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_TORGB_bloomweightStaticText11 = new wxStaticText( m_bloomPanel, wxID_ANY, wxT("Radius"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_TORGB_bloomweightStaticText11->Wrap( -1 );
-	bSizer1032->Add( m_TORGB_bloomweightStaticText11, 0, wxALL, 5 );
+	bSizer1032->Add( m_TORGB_bloomweightStaticText11, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_TORGB_bloomradiusSlider = new wxSlider( m_bloomPanel, ID_TORGB_BLOOMRADIUS, 35, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TORGB_bloomradiusSlider->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer1032->Add( m_TORGB_bloomradiusSlider, 1, wxALL|wxEXPAND, 2 );
+	bSizer1032->Add( m_TORGB_bloomradiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_TORGB_bloomradiusText = new wxTextCtrl( m_bloomPanel, ID_TORGB_BLOOMRADIUS_TEXT, wxT("0.07"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_bloomradiusText->SetMaxLength( 5 ); 
 	m_TORGB_bloomradiusText->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer1032->Add( m_TORGB_bloomradiusText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	bSizer1032->Add( m_TORGB_bloomradiusText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 0 );
 	
 	m_computebloomlayer = new wxButton( m_bloomPanel, ID_COMPUTEBLOOMLAYER, wxT("Compute Layer"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1032->Add( m_computebloomlayer, 0, wxALL, 5 );
+	bSizer1032->Add( m_computebloomlayer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	bSizer74->Add( bSizer1032, 1, wxEXPAND, 5 );
 	
@@ -500,18 +500,18 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_TORGB_bloomweightStaticText1 = new wxStaticText( m_bloomPanel, wxID_ANY, wxT("Amount"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_TORGB_bloomweightStaticText1->Wrap( -1 );
-	bSizer10321->Add( m_TORGB_bloomweightStaticText1, 0, wxALL, 5 );
+	bSizer10321->Add( m_TORGB_bloomweightStaticText1, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_TORGB_bloomweightSlider = new wxSlider( m_bloomPanel, ID_TORGB_BLOOMWEIGHT, 128, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TORGB_bloomweightSlider->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer10321->Add( m_TORGB_bloomweightSlider, 1, wxALL|wxEXPAND, 2 );
+	bSizer10321->Add( m_TORGB_bloomweightSlider, 1, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_TORGB_bloomweightText = new wxTextCtrl( m_bloomPanel, ID_TORGB_BLOOMWEIGHT_TEXT, wxT("0.25"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_bloomweightText->SetMaxLength( 5 ); 
 	m_TORGB_bloomweightText->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer10321->Add( m_TORGB_bloomweightText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	bSizer10321->Add( m_TORGB_bloomweightText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 0 );
 	
 	bSizer74->Add( bSizer10321, 1, wxEXPAND, 5 );
 	
@@ -532,7 +532,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_vignettingamountStaticText = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("Amount"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
 	m_vignettingamountStaticText->Wrap( -1 );
-	bSizer1036->Add( m_vignettingamountStaticText, 0, wxALL, 5 );
+	bSizer1036->Add( m_vignettingamountStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	wxBoxSizer* bSizer79;
 	bSizer79 = new wxBoxSizer( wxVERTICAL );
@@ -540,36 +540,38 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer80;
 	bSizer80 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_staticText39 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("-1.0"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
+	m_staticText39 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("-1.0"), wxDefaultPosition, wxSize( 30,-1 ), wxALIGN_LEFT );
 	m_staticText39->Wrap( -1 );
-	m_staticText39->SetMinSize( wxSize( 50,-1 ) );
+	bSizer80->Add( m_staticText39, 0, 0, 5 );
 	
-	bSizer80->Add( m_staticText39, 0, wxALL, 5 );
+	
+	bSizer80->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	m_staticText40 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("0.0"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
 	m_staticText40->Wrap( -1 );
-	bSizer80->Add( m_staticText40, 1, wxALL, 5 );
+	bSizer80->Add( m_staticText40, 0, 0, 5 );
 	
-	m_staticText41 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("+1.0"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_RIGHT );
+	
+	bSizer80->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticText41 = new wxStaticText( m_vignettingPanel, wxID_ANY, wxT("+1.0"), wxDefaultPosition, wxSize( 30,-1 ), wxALIGN_RIGHT );
 	m_staticText41->Wrap( -1 );
-	m_staticText41->SetMinSize( wxSize( 50,-1 ) );
+	bSizer80->Add( m_staticText41, 0, 0, 5 );
 	
-	bSizer80->Add( m_staticText41, 0, wxALL, 5 );
-	
-	bSizer79->Add( bSizer80, 0, wxEXPAND, 5 );
+	bSizer79->Add( bSizer80, 0, wxEXPAND|wxLEFT|wxRIGHT|wxTOP, 5 );
 	
 	m_vignettingamountSlider = new wxSlider( m_vignettingPanel, ID_VIGNETTINGAMOUNT, 358, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
 	m_vignettingamountSlider->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer79->Add( m_vignettingamountSlider, 1, wxALL|wxEXPAND, 2 );
+	bSizer79->Add( m_vignettingamountSlider, 1, wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 2 );
 	
 	bSizer1036->Add( bSizer79, 1, wxEXPAND, 5 );
 	
-	m_vignettingamountText = new wxTextCtrl( m_vignettingPanel, ID_VIGNETTINGAMOUNT_TEXT, wxT("0.4"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_vignettingamountText = new wxTextCtrl( m_vignettingPanel, ID_VIGNETTINGAMOUNT_TEXT, wxT("0.4"), wxDefaultPosition, wxSize( 40,-1 ), wxTE_PROCESS_ENTER );
 	m_vignettingamountText->SetMaxLength( 5 ); 
 	m_vignettingamountText->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer1036->Add( m_vignettingamountText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
+	bSizer1036->Add( m_vignettingamountText, 0, wxALIGN_BOTTOM|wxBOTTOM|wxFIXED_MINSIZE, 5 );
 	
 	bSizer741->Add( bSizer1036, 1, wxEXPAND, 5 );
 	
@@ -655,11 +657,23 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_ColorSpaceWhitepointPanel = new wxPanel( m_ColorSpaceAuiNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer212;
-	bSizer212 = new wxBoxSizer( wxHORIZONTAL );
+	bSizer212 = new wxBoxSizer( wxVERTICAL );
 	
-	m_TORGB_whitexyStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White XY"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TORGB_whitexyStaticText->Wrap( -1 );
-	bSizer212->Add( m_TORGB_whitexyStaticText, 0, wxALL, 5 );
+	wxBoxSizer* bSizer102;
+	bSizer102 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TORGB_whitexStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White X"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_whitexStaticText->Wrap( -1 );
+	bSizer102->Add( m_TORGB_whitexStaticText, 1, wxALL|wxEXPAND, 5 );
+	
+	m_TORGB_whiteyStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White Y"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_whiteyStaticText->Wrap( -1 );
+	bSizer102->Add( m_TORGB_whiteyStaticText, 1, wxALL|wxEXPAND, 5 );
+	
+	bSizer212->Add( bSizer102, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer101;
+	bSizer101 = new wxBoxSizer( wxHORIZONTAL );
 	
 	wxBoxSizer* bSizer1012;
 	bSizer1012 = new wxBoxSizer( wxHORIZONTAL );
@@ -675,7 +689,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1012->Add( m_TORGB_xwhiteText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
-	bSizer212->Add( bSizer1012, 1, wxEXPAND, 5 );
+	bSizer101->Add( bSizer1012, 1, wxEXPAND, 5 );
 	
 	wxBoxSizer* bSizer1022;
 	bSizer1022 = new wxBoxSizer( wxHORIZONTAL );
@@ -691,7 +705,14 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer1022->Add( m_TORGB_ywhiteText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
-	bSizer212->Add( bSizer1022, 1, wxEXPAND, 5 );
+	bSizer101->Add( bSizer1022, 1, wxEXPAND, 5 );
+	
+	bSizer212->Add( bSizer101, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer104;
+	bSizer104 = new wxBoxSizer( wxVERTICAL );
+	
+	bSizer212->Add( bSizer104, 1, wxEXPAND, 5 );
 	
 	m_ColorSpaceWhitepointPanel->SetSizer( bSizer212 );
 	m_ColorSpaceWhitepointPanel->Layout();
@@ -943,15 +964,17 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer95;
 	bSizer95 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Input channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText43 = new wxStaticText( m_Tab_Control_HistogramPanel, wxID_ANY, wxT("Channel:"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_staticText43->Wrap( -1 );
 	bSizer95->Add( m_staticText43, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 	
-	wxString m_Histogram_ChoiceChoices[] = { wxT("RGB ADD"), wxT("RGB"), wxT("Red"), wxT("Green"), wxT("Blue"), wxT("Value") };
+	wxString m_Histogram_ChoiceChoices[] = { wxT("R+G+B"), wxT("RGB"), wxT("Red"), wxT("Green"), wxT("Blue"), wxT("Value") };
 	int m_Histogram_ChoiceNChoices = sizeof( m_Histogram_ChoiceChoices ) / sizeof( wxString );
 	m_Histogram_Choice = new wxChoice( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_CHANNEL, wxDefaultPosition, wxDefaultSize, m_Histogram_ChoiceNChoices, m_Histogram_ChoiceChoices, 0 );
 	m_Histogram_Choice->SetSelection( 0 );
-	bSizer95->Add( m_Histogram_Choice, 1, wxALL, 2 );
+	m_Histogram_Choice->SetToolTip( wxT("Pick a channel displayed on the histogram") );
+	
+	bSizer95->Add( m_Histogram_Choice, 0, wxALL, 2 );
 	
 	
 	bSizer95->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -962,7 +985,9 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_HistogramLogCheckBox = new wxCheckBox( m_Tab_Control_HistogramPanel, ID_HISTOGRAM_LOG, wxT("Log"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	bSizer95->Add( m_HistogramLogCheckBox, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
+	m_HistogramLogCheckBox->SetToolTip( wxT("Toggle between logarithm and linear histogram output") );
+	
+	bSizer95->Add( m_HistogramLogCheckBox, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 	
 	bSizer125->Add( bSizer95, 0, wxEXPAND, 5 );
 	
@@ -1025,7 +1050,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer130 = new wxBoxSizer( wxVERTICAL );
 	
 	m_NoiseReductionAuiNotebook = new wxAuiNotebook( m_Tab_Control_NoiseReductionPanel, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxAUI_NB_WINDOWLIST_BUTTON|wxDOUBLE_BORDER );
-	m_NoiseReductionAuiNotebook->SetMinSize( wxSize( -1,150 ) );
+	m_NoiseReductionAuiNotebook->SetMinSize( wxSize( -1,155 ) );
 	
 	m_GREYCPanel = new wxPanel( m_NoiseReductionAuiNotebook, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer65;
@@ -1266,7 +1291,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer6611->Fit( m_GREYCAdvancedPanel );
 	m_GREYCNotebook->AddPage( m_GREYCAdvancedPanel, wxT("adv"), false );
 	
-	bSizer65->Add( m_GREYCNotebook, 1, wxEXPAND | wxALL, 1 );
+	bSizer65->Add( m_GREYCNotebook, 1, wxALL|wxEXPAND, 1 );
 	
 	m_GREYCPanel->SetSizer( bSizer65 );
 	m_GREYCPanel->Layout();
@@ -1276,11 +1301,14 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_ChiuPanel->Hide();
 	
 	wxBoxSizer* bSizer61;
-	bSizer61 = new wxBoxSizer( wxHORIZONTAL );
+	bSizer61 = new wxBoxSizer( wxVERTICAL );
 	
 	m_enableChiuCheckBox = new wxCheckBox( m_ChiuPanel, wxID_ANY, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
 	
 	bSizer61->Add( m_enableChiuCheckBox, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer106;
+	bSizer106 = new wxBoxSizer( wxHORIZONTAL );
 	
 	wxBoxSizer* bSizer1033;
 	bSizer1033 = new wxBoxSizer( wxHORIZONTAL );
@@ -1288,19 +1316,26 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_ChiuRadiusSlider = new wxSlider( m_ChiuPanel, ID_CHIU_RADIUS, 3, 1, 9, wxDefaultPosition, wxSize( -1,-1 ), wxSL_AUTOTICKS|wxSL_HORIZONTAL );
 	m_ChiuRadiusSlider->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer1033->Add( m_ChiuRadiusSlider, 1, wxALL|wxEXPAND, 2 );
+	bSizer1033->Add( m_ChiuRadiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 2 );
 	
 	m_TORGB_gammaText1 = new wxTextCtrl( m_ChiuPanel, ID_TORGB_GAMMA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_gammaText1->SetMaxLength( 5 ); 
 	m_TORGB_gammaText1->SetToolTip( wxT("Gamma Value") );
 	
-	bSizer1033->Add( m_TORGB_gammaText1, 0, wxALL|wxFIXED_MINSIZE, 0 );
+	bSizer1033->Add( m_TORGB_gammaText1, 0, wxALIGN_CENTER_VERTICAL|wxFIXED_MINSIZE, 0 );
 	
-	bSizer61->Add( bSizer1033, 1, wxEXPAND, 5 );
+	bSizer106->Add( bSizer1033, 1, wxEXPAND, 5 );
 	
 	m_checkBox6 = new wxCheckBox( m_ChiuPanel, wxID_ANY, wxT("Include Center"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	bSizer61->Add( m_checkBox6, 0, wxALL, 5 );
+	bSizer106->Add( m_checkBox6, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	
+	bSizer61->Add( bSizer106, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer107;
+	bSizer107 = new wxBoxSizer( wxVERTICAL );
+	
+	bSizer61->Add( bSizer107, 1, wxEXPAND, 5 );
 	
 	m_ChiuPanel->SetSizer( bSizer61 );
 	m_ChiuPanel->Layout();
@@ -2344,25 +2379,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	bSizer189 = new wxBoxSizer( wxVERTICAL );
 	
 	wxBoxSizer* bSizer15911;
-	bSizer15911 = new wxBoxSizer( wxVERTICAL );
-	
-	m_LG_scaleLabel = new wxStaticText( m_LG_basicPanel, wxID_ANY, wxT("Scale/Intensity"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_LG_scaleLabel->Wrap( -1 );
-	bSizer15911->Add( m_LG_scaleLabel, 0, wxALL, 5 );
-	
-	wxBoxSizer* bSizer10111;
-	bSizer10111 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_LG_scaleSlider = new wxSlider( m_LG_basicPanel, ID_LG_SCALE, 5, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	bSizer10111->Add( m_LG_scaleSlider, 1, wxALL|wxEXPAND, 5 );
-	
-	m_LG_scaleText = new wxTextCtrl( m_LG_basicPanel, ID_LG_SCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
-	m_LG_scaleText->SetMaxLength( 5 ); 
-	bSizer10111->Add( m_LG_scaleText, 0, wxALL|wxFIXED_MINSIZE, 2 );
-	
-	bSizer15911->Add( bSizer10111, 1, wxEXPAND, 5 );
-	
-	bSizer189->Add( bSizer15911, 1, wxEXPAND, 5 );
+	bSizer15911 = new wxBoxSizer( wxHORIZONTAL );
 	
 	wxBoxSizer* bSizer159111;
 	bSizer159111 = new wxBoxSizer( wxVERTICAL );
@@ -2371,11 +2388,43 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_rgbLabel->Wrap( -1 );
 	bSizer159111->Add( m_LG_rgbLabel, 0, wxALL, 5 );
 	
+	m_LG_rgbPicker = new wxColourPickerCtrl( m_LG_basicPanel, ID_LG_RGBCOLOR, wxColour( 255, 255, 255 ), wxDefaultPosition, wxSize( -1,-1 ), wxCLRP_DEFAULT_STYLE );
+	bSizer159111->Add( m_LG_rgbPicker, 0, wxALIGN_CENTER|wxALL, 5 );
+	
+	bSizer15911->Add( bSizer159111, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer107;
+	bSizer107 = new wxBoxSizer( wxVERTICAL );
+	
+	m_LG_scaleLabel = new wxStaticText( m_LG_basicPanel, wxID_ANY, wxT("Scale/Intensity"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_LG_scaleLabel->Wrap( -1 );
+	bSizer107->Add( m_LG_scaleLabel, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer10111;
+	bSizer10111 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_LG_scaleSlider = new wxSlider( m_LG_basicPanel, ID_LG_SCALE, 5, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	bSizer10111->Add( m_LG_scaleSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
+	
+	m_LG_scaleText = new wxTextCtrl( m_LG_basicPanel, ID_LG_SCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_LG_scaleText->SetMaxLength( 5 ); 
+	bSizer10111->Add( m_LG_scaleText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 2 );
+	
+	bSizer107->Add( bSizer10111, 1, wxEXPAND, 5 );
+	
+	bSizer15911->Add( bSizer107, 1, wxEXPAND, 5 );
+	
+	bSizer189->Add( bSizer15911, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer110;
+	bSizer110 = new wxBoxSizer( wxVERTICAL );
+	
+	m_LG_bbLabel = new wxStaticText( m_LG_basicPanel, wxID_ANY, wxT("Black Body temperature"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_LG_bbLabel->Wrap( -1 );
+	bSizer110->Add( m_LG_bbLabel, 0, wxALL, 5 );
+	
 	wxBoxSizer* bSizer101111;
 	bSizer101111 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_LG_rgbPicker = new wxColourPickerCtrl( m_LG_basicPanel, ID_LG_RGBCOLOR, wxColour( 255, 255, 255 ), wxDefaultPosition, wxDefaultSize, wxCLRP_DEFAULT_STYLE );
-	bSizer101111->Add( m_LG_rgbPicker, 0, wxALL, 5 );
 	
 	wxBoxSizer* bSizer102;
 	bSizer102 = new wxBoxSizer( wxVERTICAL );
@@ -2395,13 +2444,13 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	
 	bSizer101111->Add( bSizer102, 1, wxEXPAND, 5 );
 	
-	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 40,-1 ), wxTE_PROCESS_ENTER );
 	m_LG_temperatureText->SetMaxLength( 5 ); 
-	bSizer101111->Add( m_LG_temperatureText, 0, wxALL|wxFIXED_MINSIZE, 2 );
+	bSizer101111->Add( m_LG_temperatureText, 0, wxALIGN_BOTTOM|wxALL|wxFIXED_MINSIZE, 2 );
 	
-	bSizer159111->Add( bSizer101111, 1, wxEXPAND, 5 );
+	bSizer110->Add( bSizer101111, 1, wxEXPAND, 5 );
 	
-	bSizer189->Add( bSizer159111, 1, wxEXPAND, 5 );
+	bSizer189->Add( bSizer110, 0, wxEXPAND, 5 );
 	
 	m_LG_basicPanel->SetSizer( bSizer189 );
 	m_LG_basicPanel->Layout();
@@ -2424,6 +2473,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	// Connect Events
 	m_Tab_LightGroupToggleIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
 	m_Tab_LightGroupIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
+	m_LG_rgbPicker->Connect( wxEVT_COMMAND_COLOURPICKER_CHANGED, wxColourPickerEventHandler( LightGroupPanel::OnColourChanged ), NULL, this );
 	m_LG_scaleSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
@@ -2436,7 +2486,6 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_scaleText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LightGroupPanel::OnFocus ), NULL, this );
 	m_LG_scaleText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LightGroupPanel::OnText ), NULL, this );
 	m_LG_scaleText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LightGroupPanel::OnText ), NULL, this );
-	m_LG_rgbPicker->Connect( wxEVT_COMMAND_COLOURPICKER_CHANGED, wxColourPickerEventHandler( LightGroupPanel::OnColourChanged ), NULL, this );
 	m_LG_temperatureSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_temperatureSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_temperatureSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
@@ -2456,6 +2505,7 @@ LightGroupPanel::~LightGroupPanel()
 	// Disconnect Events
 	m_Tab_LightGroupToggleIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
 	m_Tab_LightGroupIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LightGroupPanel::OnMouse ), NULL, this );
+	m_LG_rgbPicker->Disconnect( wxEVT_COMMAND_COLOURPICKER_CHANGED, wxColourPickerEventHandler( LightGroupPanel::OnColourChanged ), NULL, this );
 	m_LG_scaleSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_scaleSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
@@ -2468,7 +2518,6 @@ LightGroupPanel::~LightGroupPanel()
 	m_LG_scaleText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LightGroupPanel::OnFocus ), NULL, this );
 	m_LG_scaleText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LightGroupPanel::OnText ), NULL, this );
 	m_LG_scaleText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LightGroupPanel::OnText ), NULL, this );
-	m_LG_rgbPicker->Disconnect( wxEVT_COMMAND_COLOURPICKER_CHANGED, wxColourPickerEventHandler( LightGroupPanel::OnColourChanged ), NULL, this );
 	m_LG_temperatureSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_temperatureSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );
 	m_LG_temperatureSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LightGroupPanel::OnScroll ), NULL, this );

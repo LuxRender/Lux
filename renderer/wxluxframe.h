@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 19 2008)
+// C++ code generated with wxFormBuilder (version Apr 16 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -164,9 +164,9 @@ namespace lux
 	#define ID_TAB_LG_TOGGLE 1120
 	#define ID_TAB_LG 1121
 	#define ID_LG_BASICPANEL 1122
-	#define ID_LG_SCALE 1123
-	#define ID_LG_SCALE_TEXT 1124
-	#define ID_LG_RGBCOLOR 1125
+	#define ID_LG_RGBCOLOR 1123
+	#define ID_LG_SCALE 1124
+	#define ID_LG_SCALE_TEXT 1125
 	#define ID_LG_TEMPERATURE 1126
 	#define ID_LG_TEMPERATURE_TEXT 1127
 	#define ID_LG_ADVANCEDPANEL 1128
@@ -251,7 +251,9 @@ namespace lux
 			wxCheckBox* m_vignettingenabledCheckBox;
 			wxStaticText* m_vignettingamountStaticText;
 			wxStaticText* m_staticText39;
+			
 			wxStaticText* m_staticText40;
+			
 			wxStaticText* m_staticText41;
 			wxSlider* m_vignettingamountSlider;
 			wxTextCtrl* m_vignettingamountText;
@@ -267,7 +269,8 @@ namespace lux
 			wxChoice* m_TORGB_colorspaceChoice;
 			wxAuiNotebook* m_ColorSpaceAuiNotebook;
 			wxPanel* m_ColorSpaceWhitepointPanel;
-			wxStaticText* m_TORGB_whitexyStaticText;
+			wxStaticText* m_TORGB_whitexStaticText;
+			wxStaticText* m_TORGB_whiteyStaticText;
 			wxSlider* m_TORGB_xwhiteSlider;
 			wxTextCtrl* m_TORGB_xwhiteText;
 			wxSlider* m_TORGB_ywhiteSlider;
@@ -417,11 +420,12 @@ namespace lux
 			wxStaticBitmap* m_Tab_LightGroupIcon;
 			wxNotebook* m_TabNoteBook;
 			wxPanel* m_LG_basicPanel;
+			wxStaticText* m_LG_rgbLabel;
+			wxColourPickerCtrl* m_LG_rgbPicker;
 			wxStaticText* m_LG_scaleLabel;
 			wxSlider* m_LG_scaleSlider;
 			wxTextCtrl* m_LG_scaleText;
-			wxStaticText* m_LG_rgbLabel;
-			wxColourPickerCtrl* m_LG_rgbPicker;
+			wxStaticText* m_LG_bbLabel;
 			wxStaticBitmap* m_BarBlackBodyStaticBitmap;
 			wxSlider* m_LG_temperatureSlider;
 			wxTextCtrl* m_LG_temperatureText;
@@ -429,10 +433,10 @@ namespace lux
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnMouse( wxMouseEvent& event ){ event.Skip(); }
+			virtual void OnColourChanged( wxColourPickerEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnColourChanged( wxColourPickerEvent& event ){ event.Skip(); }
 			
 		
 		public:
