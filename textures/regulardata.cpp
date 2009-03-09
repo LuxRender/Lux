@@ -22,6 +22,7 @@
 
 // regulardata.cpp*
 #include "regulardata.h"
+#include "error.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -31,8 +32,11 @@ Texture<float> * RegularDataTexture::CreateFloatTexture(const Transform &tex2wor
 		const TextureParams &tp) {
 	float start = tp.FindFloat("start", 380.f);
 	float end = tp.FindFloat("end", 720.f);
-	int dataCount;
+	int dataCount = 0;
 	const float *data = tp.FindFloats("data", &dataCount);
+	if (dataCount < 1) {
+		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in regulardata texture");
+	}
 	return new RegularDataFloatTexture<float>(1.f);
 }
 
@@ -40,8 +44,13 @@ Texture<SWCSpectrum> * RegularDataTexture::CreateSWCSpectrumTexture(const Transf
 		const TextureParams &tp) {
 	float start = tp.FindFloat("start", 380.f);
 	float end = tp.FindFloat("end", 720.f);
-	int dataCount;
+	int dataCount = 0;
 	const float *data = tp.FindFloats("data", &dataCount);
+	if (dataCount < 1) {
+		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in regulardata texture");
+		float default_data[] = {1.f};
+		return new RegularDataSpectrumTexture<SWCSpectrum>(start, end, 1, default_data);
+	}
 	return new RegularDataSpectrumTexture<SWCSpectrum>(start, end, dataCount, data);
 }
 

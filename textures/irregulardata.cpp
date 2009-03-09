@@ -30,30 +30,39 @@ using namespace lux;
 // IrregularDataTexture Method Definitions
 Texture<float> * IrregularDataTexture::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	int wlCount;
+	int wlCount = 0;
 	const float *wl = tp.FindFloats("wavelengths", &wlCount);
-	int dataCount;
+	int dataCount = 0;
 	const float *data = tp.FindFloats("data", &dataCount);
 	if(wlCount != dataCount) {
 		std::stringstream ss;
         ss << "Number of wavelengths '" << wlCount << "' does not match number of data values '"
-			<< dataCount <<"' in irregular texture definition.";
+			<< dataCount <<"' in irregulardata texture definition.";
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	}
+	if (dataCount < 1 || wlCount < 1) {
+		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in irregulardata texture");
 	}
 	return new IrregularDataFloatTexture<float>(1.f);
 }
 
 Texture<SWCSpectrum> * IrregularDataTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	int wlCount;
+	int wlCount = 0;
 	const float *wl = tp.FindFloats("wavelengths", &wlCount);
-	int dataCount;
+	int dataCount = 0;
 	const float *data = tp.FindFloats("data", &dataCount);
 	if(wlCount != dataCount) {
 		std::stringstream ss;
         ss << "Number of wavelengths '" << wlCount << "' does not match number of data values '"
-			<< dataCount <<"' in irregular texture definition.";
+			<< dataCount <<"' in irregulardata texture definition.";
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	}
+	if (dataCount < 1 || wlCount < 1) {
+		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in irregulardata texture");
+		float default_wl[] = {380.f, 720.f};
+		float default_data[] = {1.f, 1.f};
+		return new IrregularDataSpectrumTexture<SWCSpectrum>(2, default_wl, default_data);
 	}
 	return new IrregularDataSpectrumTexture<SWCSpectrum>(dataCount, wl, data);
 }
