@@ -156,20 +156,21 @@ namespace lux
 	#define ID_AUTO_TONEMAP 1112
 	#define ID_TM_APPLY 1113
 	#define ID_SYSTEMOPTIONS 1114
-	#define ID_ADD_SERVER 1115
-	#define ID_REMOVE_SERVER 1116
-	#define ID_SERVER_UPDATE_INT 1117
-	#define ID_NETWORK_TREE 1118
-	#define ID_LG_NAME 1119
-	#define ID_TAB_LG_TOGGLE 1120
-	#define ID_TAB_LG 1121
-	#define ID_LG_BASICPANEL 1122
-	#define ID_LG_RGBCOLOR 1123
-	#define ID_LG_SCALE 1124
-	#define ID_LG_SCALE_TEXT 1125
-	#define ID_LG_TEMPERATURE 1126
-	#define ID_LG_TEMPERATURE_TEXT 1127
-	#define ID_LG_ADVANCEDPANEL 1128
+	#define ID_SERVER_TEXT 1115
+	#define ID_ADD_SERVER 1116
+	#define ID_REMOVE_SERVER 1117
+	#define ID_SERVER_UPDATE_INT 1118
+	#define ID_NETWORK_TREE 1119
+	#define ID_LG_NAME 1120
+	#define ID_TAB_LG_TOGGLE 1121
+	#define ID_TAB_LG 1122
+	#define ID_LG_BASICPANEL 1123
+	#define ID_LG_RGBCOLOR 1124
+	#define ID_LG_SCALE 1125
+	#define ID_LG_SCALE_TEXT 1126
+	#define ID_LG_TEMPERATURE 1127
+	#define ID_LG_TEMPERATURE_TEXT 1128
+	#define ID_LG_ADVANCEDPANEL 1129
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame

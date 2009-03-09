@@ -1457,11 +1457,11 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bNetworkSizer;
 	bNetworkSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_networkToolBar = new wxToolBar( m_networkPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
+	m_networkToolBar = new wxToolBar( m_networkPage, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxTB_NODIVIDER ); 
 	m_serverStaticText = new wxStaticText( m_networkToolBar, wxID_ANY, wxT("Server: "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_serverStaticText->Wrap( -1 );
 	m_networkToolBar->AddControl( m_serverStaticText );
-	m_serverTextCtrl = new wxTextCtrl( m_networkToolBar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 200,-1 ), wxTE_PROCESS_ENTER );
+	m_serverTextCtrl = new wxTextCtrl( m_networkToolBar, ID_SERVER_TEXT, wxEmptyString, wxDefaultPosition, wxSize( 200,-1 ), wxTE_PROCESS_ENTER );
 	m_serverTextCtrl->SetToolTip( wxT("Type the address of a network server") );
 	
 	m_networkToolBar->AddControl( m_serverTextCtrl );
@@ -1477,7 +1477,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_networkToolBar->AddControl( m_serverUpdateSpin );
 	m_networkToolBar->Realize();
 	
-	bNetworkSizer->Add( m_networkToolBar, 0, wxEXPAND, 5 );
+	bNetworkSizer->Add( m_networkToolBar, 0, wxEXPAND|wxLEFT|wxRIGHT|wxTOP, 5 );
 	
 	m_networkTreeCtrl = new wxTreeCtrl( m_networkPage, ID_NETWORK_TREE, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE );
 	bNetworkSizer->Add( m_networkTreeCtrl, 1, wxALL|wxEXPAND, 5 );
@@ -1899,6 +1899,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_TM_resetButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_auto_tonemapCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_applyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_serverTextCtrl->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	this->Connect( ID_ADD_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_serverUpdateSpin->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( LuxMainFrame::OnSpin ), NULL, this );
@@ -2313,6 +2314,7 @@ LuxMainFrame::~LuxMainFrame()
 	m_TM_resetButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_auto_tonemapCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_applyButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_serverTextCtrl->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	this->Disconnect( ID_ADD_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( ID_REMOVE_SERVER, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	m_serverUpdateSpin->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( LuxMainFrame::OnSpin ), NULL, this );

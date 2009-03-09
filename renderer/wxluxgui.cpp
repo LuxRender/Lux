@@ -1373,6 +1373,9 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
 			}
 			break;
+		case ID_SERVER_TEXT:
+			AddServer();
+			break;
 		default:
 			break;
 	}
