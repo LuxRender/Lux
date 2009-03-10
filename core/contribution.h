@@ -71,8 +71,7 @@ public:
 			return false;
 
 		contribs[pos] = *c;
-		if(weight != 1.f)
-			contribs[pos].color *= weight;
+		contribs[pos].variance = weight;
 
 		pos++;
 

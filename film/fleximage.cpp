@@ -760,6 +760,7 @@ void FlexImageFilm::AddSampleCount(float count) {
 void FlexImageFilm::AddSample(Contribution *contrib) {
 	const XYZColor xyz = contrib->color;
 	const float alpha = contrib->alpha;
+	const float weight = contrib->variance;
 
 	// Issue warning if unexpected radiance value returned
 	if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
@@ -827,7 +828,7 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 			float filterWt = filterTable[offset];
 			// Update pixel values with filtered sample contribution
 			buffer->Add(x - xPixelStart,y - yPixelStart,
-				xyz, alpha, filterWt);
+				xyz, alpha, filterWt * weight);
 		}
 	}
 
@@ -948,7 +949,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 {
 	const int nPix = xPixelCount * yPixelCount;
 	vector<Color> pixels(nPix);
-	vector<float> alpha(nPix);
+	vector<float> alpha(nPix), alphaWeight(nPix, 0.f);
 
 	// NOTE - lordcrc - separated buffer loop into two separate loops
 	// in order to eliminate one of the framebuffer copies
@@ -964,11 +965,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 			if (!(bufferConfigs[i].output & BUF_STANDALONE))
 				continue;
 
-			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
-				for (int x = 0; x < xPixelCount; ++x,++offset) {
-					buffer.GetData(x, y, &(pixels[offset]), &(alpha[offset]));
-				}
-			}
+			buffer.GetData(&(pixels[0]), &(alpha[0]));
 			WriteImage2(type, pixels, alpha, bufferConfigs[i].postfix);
 		}
 	}
@@ -978,6 +975,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// ouside loop not to trash the complete picture
 	// if there are several buffer groups
 	fill(pixels.begin(), pixels.end(), XYZColor(0.f));
+	fill(alpha.begin(), alpha.end(), 0.f);
 
 	Color p;
 	float a;
@@ -995,7 +993,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 			for (int offset = 0, y = 0; y < yPixelCount; ++y) {
 				for (int x = 0; x < xPixelCount; ++x,++offset) {
 
-					buffer.GetData(x, y, &p, &a);
+					alphaWeight[offset] += buffer.GetData(x, y, &p, &a);
 
 					pixels[offset] += p * bufferGroups[j].scale;
 					alpha[offset] += a;
@@ -1004,8 +1002,11 @@ void FlexImageFilm::WriteImage(ImageType type)
 		}
 	}
 	// outside loop in order to write complete image
-	for (int pix = 0; pix < nPix; ++pix)
+	for (int pix = 0; pix < nPix; ++pix) {
+		if (alphaWeight[pix] > 0.f)
+			alpha[pix] /= alphaWeight[pix];
 		Y += pixels[pix].c[1];
+	}
 	Y /= nPix;
 	WriteImage2(type, pixels, alpha, "");
 	EV = logf(Y * 10.f) / logf(2.f);
@@ -1094,9 +1095,7 @@ void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, cons
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[2], 0.f, 255.f)), tgaFile);
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[1], 0.f, 255.f)), tgaFile);
 			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[0], 0.f, 255.f)), tgaFile);
-			// NOTE - radiance - removed alpha output in TGA files due to errors
-			fputc(255, tgaFile);
-			//fputc((int) (255.0*alpha[(i*xPixelCount+j)]), tgaFile);
+			fputc(static_cast<unsigned char>(Clamp(256 * alpha[(i * xPixelCount + j)], 0.f, 255.f)), tgaFile);
 		}
 	}
 
