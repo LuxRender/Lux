@@ -845,6 +845,12 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 
 void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix)
 {
+	// Construct ColorSystem from values
+	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
+		m_RGB_X_Green, m_RGB_Y_Green,
+		m_RGB_X_Blue, m_RGB_Y_Blue,
+		m_RGB_X_White, m_RGB_Y_White, 1.f);
+
 	if (type & IMAGE_FILEOUTPUT) {
 		// write out untonemapped EXR
 		if (writeUtmExr) {
@@ -868,12 +874,6 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 	// Dade - check if I have to run ApplyImagingPipeline
 	if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
 		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
-		// Construct ColorSystem from values
-		colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
-			m_RGB_X_Green, m_RGB_Y_Green,
-			m_RGB_X_Blue, m_RGB_Y_Blue,
-			m_RGB_X_White, m_RGB_Y_White, 1.f);
-
 		// Apply the imaging/tonemapping pipeline
 		ParamSet toneParams;
 		std::string tmkernel = "reinhard";
