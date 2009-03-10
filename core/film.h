@@ -109,8 +109,8 @@ public:
 		}
 	}
 
-	virtual void GetData(float *rgb, float *alpha) const = 0;
-	virtual void GetData(int x, int y, Color *color, float *alpha) const = 0;
+	virtual void GetData(Color *color, float *alpha) const = 0;
+	virtual float GetData(int x, int y, Color *color, float *alpha) const = 0;
 	bool isFramebuffer;
 	int xPixelCount, yPixelCount;
 	float scaleFactor;
@@ -124,20 +124,20 @@ public:
 
 	~RawBuffer() { }
 
-	void GetData(float *rgb, float *alpha) const {
+	void GetData(Color *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
-				rgb[3*offset  ] = pixel.L.c[0];
-				rgb[3*offset+1] = pixel.L.c[1];
-				rgb[3*offset+2] = pixel.L.c[2];
+				const Pixel &pixel = (*pixels)(x, y);
+				color[offset] = pixel.L;
 				alpha[offset] = pixel.alpha;
 			}
 		}
 	}
-	void GetData(int x, int y, Color *color, float *alpha) const {
-		*color = (*pixels)(x, y).L;
-		*alpha = (*pixels)(x, y).alpha;
+	float GetData(int x, int y, Color *color, float *alpha) const {
+		const Pixel &pixel = (*pixels)(x, y);
+		*color = pixel.L;
+		*alpha = pixel.alpha;
+		return pixel.weightSum;
 	}
 };
 
@@ -148,36 +148,32 @@ public:
 
 	~PerPixelNormalizedBuffer() { }
 
-	void GetData(float *rgb, float *alpha) const {
+	void GetData(Color *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = (*pixels)(x, y);
 				if (pixel.weightSum == 0.f) {
+					color[offset] = XYZColor(0.f);
 					alpha[offset] = 0.f;
-					rgb[3*offset  ] = 0.f;
-					rgb[3*offset+1] = 0.f;
-					rgb[3*offset+2] = 0.f;
 				} else {
 					float inv = 1.f / pixel.weightSum;
-					// Convert pixel XYZ radiance to RGB
-					pixel.L.ToRGB(rgb + 3 * offset);
-					rgb[3*offset  ] *= inv;
-					rgb[3*offset+1] *= inv;
-					rgb[3*offset+2] *= inv;
+					color[offset] = pixel.L * inv;
 					alpha[offset] = pixel.alpha * inv;
 				}
 			}
 		}
 	}
-	void GetData(int x, int y, Color *color, float *alpha) const {
-		if ((*pixels)(x, y).weightSum == 0.f) {
+	float GetData(int x, int y, Color *color, float *alpha) const {
+		const Pixel &pixel = (*pixels)(x, y);
+		if (pixel.weightSum == 0.f) {
 			*color = XYZColor(0.f);
 			*alpha = 0.f;
 		} else {
-			const float inv = 1.f / (*pixels)(x, y).weightSum;
-			*color = (*pixels)(x, y).L * inv;
-			*alpha = (*pixels)(x, y).alpha * inv;
+			const float inv = 1.f / pixel.weightSum;
+			*color = pixel.L * inv;
+			*alpha = pixel.alpha;
 		}
+		return pixel.weightSum;
 	}
 };
 
@@ -189,24 +185,28 @@ public:
 
 	~PerScreenNormalizedBuffer() { }
 
-	void GetData(float *rgb, float *alpha) const {
+	void GetData(Color *color, float *alpha) const {
 		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
-				// Convert pixel XYZ radiance to RGB
-				pixel.L.ToRGB(rgb + 3 * offset);
-				rgb[3*offset  ] *= inv;
-				rgb[3*offset+1] *= inv;
-				rgb[3*offset+2] *= inv;
-				alpha[offset] = pixel.alpha * inv;
+				const Pixel &pixel = (*pixels)(x, y);
+				color[offset] = pixel.L * inv;
+				if (pixel.weightSum > 0.f)
+					alpha[offset] = pixel.alpha / pixel.weightSum;
+				else
+					alpha[offset] = 0.f;
 			}
 		}
 	}
-	void GetData(int x, int y, Color *color, float *alpha) const {
+	float GetData(int x, int y, Color *color, float *alpha) const {
 		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
-		*color = (*pixels)(x, y).L * inv;
-		*alpha = (*pixels)(x, y).alpha * inv;
+		const Pixel &pixel = (*pixels)(x, y);
+		*color = pixel.L * inv;
+		if (pixel.weightSum > 0.f)
+			*alpha = pixel.alpha;
+		else
+			*alpha = 0.f;
+		return pixel.weightSum;
 	}
 private:
 	const double *numberOfSamples_;
