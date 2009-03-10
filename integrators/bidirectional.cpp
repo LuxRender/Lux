@@ -539,6 +539,8 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 	float totalWeight = 0.f;
 	for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 		const Light *light = scene->lights[lightNumber];
+		if (!light->IsEnvironmental())
+			continue;
 		RayDifferential ray(eyePath[length - 2].p,
 			eyePath[length - 2].wi);
 		ray.time = tspack->time;
@@ -571,8 +573,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 	vector<BidirVertex> &eyePath, int length, int eyeDepth, int lightDepth,
 	const Light *light, float u0, float u1, float portal,
 	float directWeight, const SWCSpectrum &We, int lightBufferId,
-	const Sample *sample, float *alpha,
-	vector<SWCSpectrum> &Ld, vector<float> &weight)
+	const Sample *sample, vector<SWCSpectrum> &Ld, vector<float> &weight)
 {
 	vector<BidirVertex> lightPath(1);
 	BidirVertex &vE(eyePath[length - 1]);
@@ -607,7 +608,8 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 		tspack->camera->GetSamplePosition(vE.p, vE.wi, &xd, &yd);
 		L *= We;
 		XYZColor color(L.ToXYZ(tspack));
-		sample->AddContribution(xd, yd, color, alpha ? *alpha : 1.f, totalWeight, lightBufferId, light->group);
+		const float alpha = light->IsEnvironmental() ? 0.f : 1.f;
+		sample->AddContribution(xd, yd, color, alpha, totalWeight, lightBufferId, light->group);
 	}
 	vE = e;
 	return true;
@@ -695,9 +697,11 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (i > 1) {
 			if (getEnvironmentLight(tspack, scene, eyePath, i,
 				maxEyeDepth, maxLightDepth, directWeight,
-				vecL, vecV, nrContribs))
+				vecL, vecV, nrContribs)) {
+				if (i == 2 && alpha)
+					*alpha = 0.f; // Remove directly visible environment to allow compositing
 				break; //from now on the eye path does not intersect anything
-			else if (getLightHit(tspack, scene, eyePath, i,
+			} else if (getLightHit(tspack, scene, eyePath, i,
 				maxEyeDepth, maxLightDepth, vecL, vecV))
 				++nrContribs;
 		}
@@ -715,7 +719,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					scene->lights[lightDirectNumber],
 					directData[0], directData[1], portal,
 					directWeight, We, lightBufferId,
-					sample, alpha, vecL, vecV)) {
+					sample, vecL, vecV)) {
 					++nrContribs;
 				}
 				break;
@@ -728,7 +732,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						directData[0], directData[1],
 						directData[2], directWeight,
 						We, lightBufferId, sample,
-						alpha, vecL, vecV)) {
+						vecL, vecV)) {
 						++nrContribs;
 					}
 					directData += 3;
@@ -761,7 +765,8 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						float xl, yl;
 						tspack->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
 						XYZColor color(Ll.ToXYZ(tspack));
-						sample->AddContribution(xl, yl, color, alpha ? *alpha : 1.f, weight, lightBufferId, lightGroup);
+						const float a = (j == 1 && light->IsEnvironmental()) ? 0.f : 1.f;
+						sample->AddContribution(xl, yl, color, a, weight, lightBufferId, lightGroup);
 					}
 					++nrContribs;
 				}
