@@ -322,7 +322,7 @@ public:
 //! \param[in] color A color in RGB space
 //! \return The color converted in XYZ space
 //!
-	RGBColor ToXYZ(const RGBColor &color) const {
+	XYZColor ToXYZ(const RGBColor &color) const {
 		float c[3];
 		c[0] = RGBToXYZ[0][0] * color.c[0] + RGBToXYZ[0][1] * color.c[1] + RGBToXYZ[0][2] * color.c[2];
 		c[1] = RGBToXYZ[1][0] * color.c[0] + RGBToXYZ[1][1] * color.c[1] + RGBToXYZ[1][2] * color.c[2];
