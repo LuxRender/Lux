@@ -49,7 +49,7 @@ namespace lux
 
 #define RAN_BUFFER_AMOUNT 2048
 
-static const float invUI = ((float)1.0/(float)16777216.0);
+static const float invUI = (1.f / (FLOATMASK + 1));
 
 namespace lux
 {
