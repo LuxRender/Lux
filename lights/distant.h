@@ -39,6 +39,7 @@ public:
 		const Vector &dir);
 	~DistantLight();
 	bool IsDeltaLight() const { return true; }
+	bool IsEnvironmental() const { return true; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;

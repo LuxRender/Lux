@@ -36,6 +36,7 @@ public:
 		float gain, float width, float fall);
 	~SpotLight();
 	bool IsDeltaLight() const { return true; }
+	bool IsEnvironmental() const { return false; }
 	float Falloff(const Vector &w) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return Lbase->Evaluate(tspack, dummydg) * gain * 2.f * M_PI *

@@ -38,6 +38,7 @@ public:
 		const string &texname, float fov);
 	~ProjectionLight();
 	bool IsDeltaLight() const { return true; }
+	bool IsEnvironmental() const { return false; }
 	RGBColor Projection(const Vector &w) const;
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return Lbase->Evaluate(tspack, dummydg) * gain * 

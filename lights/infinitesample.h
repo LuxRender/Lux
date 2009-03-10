@@ -46,6 +46,7 @@ public:
 			M_PI * worldRadius * worldRadius);
 	}
 	bool IsDeltaLight() const { return false; }
+	bool IsEnvironmental() const { return true; }
 	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const;

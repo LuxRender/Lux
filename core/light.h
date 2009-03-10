@@ -50,6 +50,7 @@ public:
 	}
 	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *) const = 0;
 	virtual bool IsDeltaLight() const = 0;
+	virtual bool IsEnvironmental() const = 0;
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
@@ -145,6 +146,7 @@ public:
 		return Le->Evaluate(tspack, dummydg) * gain * area * M_PI * (func ? 2.f * func->Average_f() : 1.f);
 	}
 	bool IsDeltaLight() const { return false; }
+	bool IsEnvironmental() const { return false; }
 	float Pdf(const Point &, const Vector &) const;
 	float Pdf(const Point &, const Normal &, const Vector &) const;
 	float Pdf(const Point &p, const Normal &n,

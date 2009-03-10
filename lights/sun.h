@@ -35,6 +35,7 @@ public:
 	// SunLight Public Methods
 	SunLight(const Transform &light2world, const float sunscale, const Vector &dir, float turb, float relSize, int ns);
 	bool IsDeltaLight() const { return cosThetaMax == 1.0 ? true : false; }
+	bool IsEnvironmental() const { return true; }
 	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;

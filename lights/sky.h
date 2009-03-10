@@ -46,6 +46,7 @@ public:
 		return skyScale * M_PI * worldRadius * worldRadius;
 	}
 	bool IsDeltaLight() const { return false; }
+	bool IsEnvironmental() const { return true; }
 	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
