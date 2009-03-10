@@ -92,7 +92,7 @@ using namespace lux;
 #define GREYC_NB_ITER_RANGE 16.0f
 
 #define LG_SCALE_RANGE 100.f
-#define LG_TEMPERATURE_MIN 1000.f
+#define LG_TEMPERATURE_MIN 0.f
 #define LG_TEMPERATURE_RANGE 10000.f
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

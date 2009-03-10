@@ -736,8 +736,7 @@ float FlexImageFilm::GetGroupTemperature(u_int index) const
 }
 void FlexImageFilm::ComputeGroupScale(u_int index)
 {
-	// Radiance - temporarily disabled for purple tint
-/*	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
+	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
 	bufferGroups[index].scale =
 		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
 	if (bufferGroups[index].temperature > 0.f) {
@@ -745,8 +744,6 @@ void FlexImageFilm::ComputeGroupScale(u_int index)
 		bufferGroups[index].scale *= factor / (factor.y() * white);
 	}
 	bufferGroups[index].scale *= bufferGroups[index].globalScale;
-*/
-	bufferGroups[index].scale = bufferGroups[index].globalScale;
 }
 
 void FlexImageFilm::AddSampleCount(float count) {
