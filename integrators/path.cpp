@@ -107,7 +107,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 
 			// Set alpha channel
-			if (pathLength == 0 && alpha && nrContribs)
+			if (pathLength == 0 && alpha)
 				*alpha = 0.;
 			break;
 		}
