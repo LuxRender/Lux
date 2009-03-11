@@ -61,13 +61,14 @@ void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *sce
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
-SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
+int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha, int rayDepth) const {
+		vector<SWCSpectrum> &L, float *alpha, int rayDepth) const {
+	int nContribs = 0;
 	Intersection isect;
-	SWCSpectrum L(0.);
-	if (alpha) *alpha = 1.;
-    const float time = ray.time; // save time for motion blur
+	if (alpha)
+		*alpha = 1.f;
+	const float time = ray.time; // save time for motion blur
 
 	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
@@ -84,24 +85,42 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 		const Normal &n = bsdf->dgShading.nn;
 
 		// Compute emitted light if ray hit an area light source
-		L += isect.Le(tspack, wo);
+		if (isect.arealight) {
+			L[isect.arealight->group] += isect.Le(tspack, wo);
+			++nContribs;
+		}
 
 		// Compute direct lighting
 		if (scene->lights.size() > 0) {
 			// Apply direct lighting strategy
+			SWCSpectrum Ll;
 			switch (lightStrategy) {
 				case SAMPLE_ALL_UNIFORM:
-					L += UniformSampleAllLights(tspack, scene, p, n,
-						wo, bsdf, sample,
-						lightSample, lightNum, bsdfSample, bsdfComponent);
+				{
+					const u_int nLights = scene->lights.size();
+					const float lIncrement = 1.f / nLights;
+					float l = *lightNum * lIncrement;
+					for (u_int i = 0; i < nLights; ++i, l += lIncrement) {
+						int g = UniformSampleOneLight(tspack, scene, p, n,
+							wo, bsdf, sample,
+							lightSample, &l, bsdfSample, bsdfComponent, &Ll);
+						if (!Ll.Black()) {
+							Ll *= lIncrement;
+							L[g] += Ll;
+							++nContribs;
+						}
+					}
 					break;
+				}
 				case SAMPLE_ONE_UNIFORM:
 				{
-					SWCSpectrum Ld;
-					UniformSampleOneLight(tspack, scene, p, n,
+					int g = UniformSampleOneLight(tspack, scene, p, n,
 						wo, bsdf, sample,
-						lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
-					L += Ld;
+						lightSample, lightNum, bsdfSample, bsdfComponent, &Ll);
+					if (!Ll.Black()) {
+						L[g] += Ll;
+						++nContribs;
+					}
 					break;
 				}
 				default:
@@ -129,14 +148,18 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 				Vector dwodx = -ray.rx.d - wo, dwody = -ray.ry.d - wo;
 				float dDNdx = Dot(dwodx, n) + Dot(wo, dndx);
 				float dDNdy = Dot(dwody, n) + Dot(wo, dndy);
-				rd.rx.d = wi -
-				          dwodx + 2 * Vector(Dot(wo, n) * dndx +
-						  dDNdx * n);
-				rd.ry.d = wi -
-				          dwody + 2 * Vector(Dot(wo, n) * dndy +
-						  dDNdy * n);
-				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
-				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
+				rd.rx.d = wi - dwodx +
+					2 * Vector(Dot(wo, n) * dndx + dDNdx * n);
+				rd.ry.d = wi - dwody +
+					2 * Vector(Dot(wo, n) * dndy + dDNdy * n);
+				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
+				int nc = LiInternal(tspack, scene, rd, sample, Lr, alpha, rayDepth + 1);
+				if (nc > 0) {
+					SWCSpectrum filter(f * AbsDot(wi, n));
+					for (u_int i = 0; i < L.size(); ++i)
+						L[i] += Lr[i] * filter;
+					nContribs += nc;
+				}
 			}
 
 			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
@@ -164,22 +187,43 @@ SWCSpectrum DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Sce
 				
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
-				//L += scene->Li(rd, sample) * f * AbsDot(wi, n);
-				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1) * f * AbsDot(wi, n);
+				vector<SWCSpectrum> Lt(scene->lightGroups.size(), SWCSpectrum(0.f));
+				int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, rayDepth + ((Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f) ? 0 : 1));
+				if (nc > 0) {
+					SWCSpectrum filter(f * AbsDot(wi, n));
+					for (u_int i = 0; i < L.size(); ++i)
+						L[i] += Lt[i] * filter;
+					nContribs += nc;
+				}
 			}
 		}
 	} else {
 		// Handle ray with no intersection
-		for (u_int i = 0; i < scene->lights.size(); ++i)
-			L += scene->lights[i]->Le(tspack, ray);
-		if (alpha && L.Black()) *alpha = 0.;
+		for (u_int i = 0; i < scene->lights.size(); ++i) {
+			SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
+			if (!Le.Black()) {
+				L[scene->lights[i]->group] += Le;
+				++nContribs;
+			}
+		}
+		if (rayDepth == 0 && alpha)
+			*alpha = 0.f;
 	}
 
-	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
-	SWCSpectrum VLi;
-	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &VLi, alpha);
+	if (nContribs > 0) {
+		SWCSpectrum Lt(1.f);
+		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
+		for (u_int i = 0; i < L.size(); ++i)
+			L[i] *= Lt;
+	}
+	SWCSpectrum VLi(0.f);
+	int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &VLi, alpha);
+	if (!VLi.Black()) {
+		L[g] += VLi;
+		++nContribs;
+	}
 
-	return L + VLi;
+	return nContribs;
 }
 
 int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
@@ -187,11 +231,13 @@ int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		SWCSpectrum *Li, float *alpha) const {
 	SampleGuard guard(sample->sampler, sample);
 
-	sample->AddContribution(sample->imageX, sample->imageY,
-		LiInternal(tspack, scene, ray, sample, alpha, 0).ToXYZ(tspack),
-		alpha ? *alpha : 1.f, bufferId);
+	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
+	int nContribs = LiInternal(tspack, scene, ray,sample, L, alpha, 0);
+	for (u_int i = 0; i < L.size(); ++i)
+		sample->AddContribution(sample->imageX, sample->imageY,
+			L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, bufferId, i);
 
-	return 1;
+	return nContribs;
 }
 
 SurfaceIntegrator* DirectLightingIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
