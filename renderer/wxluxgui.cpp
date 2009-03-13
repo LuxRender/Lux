@@ -91,7 +91,8 @@ using namespace lux;
 #define GREYC_DA_RANGE 90.0f
 #define GREYC_NB_ITER_RANGE 16.0f
 
-#define LG_SCALE_RANGE 100.f
+#define LG_SCALE_LOG_MIN -4.f
+#define LG_SCALE_LOG_MAX 4.f
 #define LG_TEMPERATURE_MIN 0.f
 #define LG_TEMPERATURE_RANGE 10000.f
 
@@ -2250,7 +2251,7 @@ void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
 	else m_Tab_LightGroupToggleIcon->SetBitmap(wxMEMORY_BITMAP(powerofficon_png));
 	SetWidgetsEnabled(m_LG_enable);
 	wxString st;
-	m_LG_scaleSlider->SetValue(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
+	m_LG_scaleSlider->SetValue(ScaleToSliderVal(m_LG_scale));
 	st = wxString::Format(_("%.02f"), m_LG_scale);
 	m_LG_scaleText->SetValue(st);
 	float val = ((m_LG_temperature - LG_TEMPERATURE_MIN) 
@@ -2339,14 +2340,13 @@ void LuxGui::LuxLightGroupPanel::OnText(wxCommandEvent& event) {
 			if (m_LG_scaleText->IsModified()) {
 				wxString st = m_LG_scaleText->GetValue();
 				st.ToDouble(&m_LG_scale);
-				if (m_LG_scale > LG_SCALE_RANGE)
-					m_LG_scale = LG_SCALE_RANGE;
+				if (m_LG_scale > powf(10.f, LG_SCALE_LOG_MAX))
+					m_LG_scale = powf(10.f, LG_SCALE_LOG_MAX);
 				else if (m_LG_scale < 0.f)
 					m_LG_scale = 0.f;
 				st = wxString::Format(_("%.02f"), m_LG_scale);
 				m_LG_scaleText->SetValue(st);
-				const int val = static_cast<int>(m_LG_scale / LG_SCALE_RANGE * FLOAT_SLIDER_RES);
-				m_LG_scaleSlider->SetValue(val);
+				m_LG_scaleSlider->SetValue(ScaleToSliderVal(m_LG_scale));
 				UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
 				m_Gui->UpdatedTonemapParam();
 			}
@@ -2412,7 +2412,7 @@ void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
 	switch(event.GetId()) {
 		case ID_LG_SCALE:
 		{
-			m_LG_scale = event.GetPosition() * LG_SCALE_RANGE / FLOAT_SLIDER_RES;
+			m_LG_scale = SliderValToScale(event.GetPosition());
 			wxString st = wxString::Format(_("%.02f"), m_LG_scale);
 			m_LG_scaleText->SetValue(st);
 			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
@@ -2441,6 +2441,27 @@ void LuxGui::LuxLightGroupPanel::SetWidgetsEnabled(bool enabled) {
 	m_LG_temperatureSlider->Enable(enabled);
 	m_LG_temperatureText->Enable(enabled);
 }
+
+int LuxGui::LuxLightGroupPanel::ScaleToSliderVal(float scale) {
+
+	if (scale <= 0)
+		return 0;
+
+	float logscale = Clamp<float>(log10f(scale), LG_SCALE_LOG_MIN, LG_SCALE_LOG_MAX);
+
+	const int val = static_cast<int>((logscale - LG_SCALE_LOG_MIN) / 
+		(LG_SCALE_LOG_MAX - LG_SCALE_LOG_MIN) * FLOAT_SLIDER_RES);
+	return val;
+}
+
+float LuxGui::LuxLightGroupPanel::SliderValToScale(int sliderval) {
+
+	float logscale = (float)sliderval * (LG_SCALE_LOG_MAX - LG_SCALE_LOG_MIN) / 
+		FLOAT_SLIDER_RES + LG_SCALE_LOG_MIN;
+
+	return powf(10.f, logscale);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // ImageWindow

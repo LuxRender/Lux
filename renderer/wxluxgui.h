@@ -255,6 +255,9 @@ protected:
 		void ResetValuesFromFilm( bool useDefaults=true );
 
 	protected:
+		int ScaleToSliderVal(float scale);
+		float SliderValToScale(int sliderval);
+		
 		void SetWidgetsEnabled( bool enabled );
 
 		void OnText(wxCommandEvent& event);
