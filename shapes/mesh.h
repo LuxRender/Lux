@@ -283,9 +283,6 @@ public:
 	static bool IsConvex(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
 
 private:
-	static float Det2x2(const float a00, const float a01, const float a10, const float a11);
-	static float Det3x3(float A[3][3]);
-	static bool Invert3x3(float A[3][3], float InvA[3][3]);
 	static int MajorAxis(const Vector &v);
 
 	static void ComputeV11BarycentricCoords(const Vector &e01, const Vector &e02, const Vector &e03, float *a11, float *b11);

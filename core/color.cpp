@@ -22,60 +22,13 @@
 
 // color.cpp*
 #include "color.h"
+#include "matrix3x3.h"
 
 using namespace lux;
 
 namespace lux
 {
 
-static float determinent(const float matrix[3][3])
-{
-	float temp;
-	temp  = matrix[0][0] * matrix[1][1] * matrix[2][2];
-	temp -= matrix[0][0] * matrix[1][2] * matrix[2][1];
-	temp -= matrix[1][0] * matrix[0][1] * matrix[2][2];
-	temp += matrix[1][0] * matrix[0][2] * matrix[2][1];
-	temp += matrix[2][0] * matrix[0][1] * matrix[1][2];
-	temp -= matrix[2][0] * matrix[0][2] * matrix[1][1];
-	return temp;
-}
-static void inverse(const float matrix[3][3], float result[3][3])
-{
-	float det = determinent(matrix);
-	if (det == 0.f)
-		return;
-	float a = matrix[0][0], b = matrix[0][1], c = matrix[0][2],
-		d = matrix[1][0], e = matrix[1][1], f = matrix[1][2],
-		g = matrix[2][0], h = matrix[2][1], i = matrix[2][2];
-
-	result[0][0] = (e * i - f * h) / det;
-	result[0][1] = (c * h - b * i) / det;
-	result[0][2] = (b * f - c * e) / det;
-	result[1][0] = (f * g - d * i) / det;
-	result[1][1] = (a * i - c * g) / det;
-	result[1][2] = (c * d - a * f) / det;
-	result[2][0] = (d * h - e * g) / det;
-	result[2][1] = (b * g - a * h) / det;
-	result[2][2] = (a * e - b * d) / det;
-}
-static void multiply(const float matrix[3][3], const float vector[3], float result[3])
-{
-	result[0] = matrix[0][0] * vector[0] + matrix[0][1] * vector[1] + matrix[0][2] * vector[2];
-	result[1] = matrix[1][0] * vector[0] + matrix[1][1] * vector[1] + matrix[1][2] * vector[2];
-	result[2] = matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2];
-}
-static void multiply(const float a[3][3], const float b[3][3], float result[3][3])
-{
-	result[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
-	result[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1];
-	result[0][2] = a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2];
-	result[1][0] = a[1][0] * b[0][0] + a[1][1] * b[1][0] + a[1][2] * b[2][0];
-	result[1][1] = a[1][0] * b[0][1] + a[1][1] * b[1][1] + a[1][2] * b[2][1];
-	result[1][2] = a[1][0] * b[0][2] + a[1][1] * b[1][2] + a[1][2] * b[2][2];
-	result[2][0] = a[2][0] * b[0][0] + a[2][1] * b[1][0] + a[2][2] * b[2][0];
-	result[2][1] = a[2][0] * b[0][1] + a[2][1] * b[1][1] + a[2][2] * b[2][1];
-	result[2][2] = a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2];
-}
 static float dot(const float a[3], const float b[3])
 {
 	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -110,9 +63,9 @@ ColorSystem::ColorSystem(float xR, float yR, float xG, float yG, float xB, float
 	rgb[0][0] = red[0]; rgb[1][0] = red[1]; rgb[2][0] = red[2];
 	rgb[0][1] = green[0]; rgb[1][1] = green[1]; rgb[2][1] = green[2];
 	rgb[0][2] = blue[0]; rgb[1][2] = blue[1]; rgb[2][2] = blue[2];
-	inverse(rgb, rgb);
+	Invert3x3(rgb, rgb);
 	float y[3];
-	multiply(rgb, white, y);
+	Transform3x3(rgb, white, y);
 	float x[3] = {y[0] * red[0], y[1] * green[0], y[2] * blue[0]};
 	float z[3] = {y[0] * red[2], y[1] * green[2], y[2] * blue[2]};
 	rgb[0][0] = x[0] + white[0]; rgb[1][0] = x[1] + white[0]; rgb[2][0] = x[2] + white[0];
@@ -128,10 +81,10 @@ ColorSystem::ColorSystem(float xR, float yR, float xG, float yG, float xB, float
 	matrix[0][2] = (dot(z, x) + white[0] * white[2]) * luminance;
 	matrix[1][2] = (dot(z, y) + white[1] * white[2]) * luminance;
 	matrix[2][2] = (dot(z, z) + white[2] * white[2]) * luminance;
-	inverse(matrix, matrix);
+	Invert3x3(matrix, matrix);
 	//C=R*Tt*(T*Tt)^-1
-	multiply(rgb, matrix, XYZToRGB);
-	inverse(XYZToRGB, RGBToXYZ);
+	Multiply3x3(rgb, matrix, XYZToRGB);
+	Invert3x3(XYZToRGB, RGBToXYZ);
 }
 
 //!

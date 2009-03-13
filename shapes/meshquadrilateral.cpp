@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "mesh.h"
+#include "matrix3x3.h"
 
 using namespace lux;
 
@@ -130,38 +131,6 @@ bool MeshQuadrilateral::IsConvex(const Point &p0, const Point &p1, const Point &
 	}
 
 	return altCount == 0;
-}
-
-float MeshQuadrilateral::Det2x2(const float a00, const float a01, const float a10, const float a11) {
-	return a00*a11 - a01*a10;
-}
-
-float MeshQuadrilateral::Det3x3(float A[3][3]) {
-	return
-		A[0][0] * Det2x2(A[1][1], A[1][2], A[2][1], A[2][2]) -
-		A[0][1] * Det2x2(A[1][0], A[1][2], A[2][0], A[2][2]) +
-		A[0][2] * Det2x2(A[1][0], A[1][1], A[2][0], A[2][1]);
-}
-
-bool MeshQuadrilateral::Invert3x3(float A[3][3], float InvA[3][3]) {
-
-	float determinant = Det3x3(A);
-	if (determinant < 1e-3f)
-		return false;
-
-	float invdet = 1.f / determinant;
-
-	InvA[0][0] = invdet * Det2x2(A[1][1], A[1][2], A[2][1], A[2][2]);
-	InvA[0][1] = invdet * Det2x2(A[0][2], A[0][1], A[2][2], A[2][1]);
-	InvA[0][2] = invdet * Det2x2(A[0][1], A[0][2], A[1][1], A[1][2]);
-	InvA[1][0] = invdet * Det2x2(A[1][2], A[1][0], A[2][2], A[2][0]);
-	InvA[1][1] = invdet * Det2x2(A[0][0], A[0][2], A[2][0], A[2][2]);
-	InvA[1][2] = invdet * Det2x2(A[0][2], A[0][0], A[1][2], A[1][0]);
-	InvA[2][0] = invdet * Det2x2(A[1][0], A[1][1], A[2][0], A[2][1]);
-	InvA[2][1] = invdet * Det2x2(A[0][1], A[0][0], A[2][1], A[2][0]);
-	InvA[2][2] = invdet * Det2x2(A[0][0], A[0][1], A[1][0], A[1][1]);
-
-	return true;
 }
 
 int MeshQuadrilateral::MajorAxis(const Vector &v) {
