@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// irregulardata.cpp*
+// lampspectrum.cpp*
 #include "lux.h"
 #include "texture.h"
 #include "irregular.h"
@@ -29,37 +29,7 @@
 namespace lux
 {
 
-// IrregularDataTexture Declarations
-template <class T>
-class IrregularDataFloatTexture : public Texture<T> {
-public:
-	// IrregularDataFloatTexture Public Methods
-	IrregularDataFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return value;
-	}
-private:
-	T value;
-};
-
-template <class T>
-class IrregularDataSpectrumTexture : public Texture<T> {
-public:
-	// IrregularDataSpectrumTexture Public Methods
-	IrregularDataSpectrumTexture(const int &n, const float *wl, const float *data, float resolution = 5) {
-		SPD = new IrregularSPD(wl, data, n, resolution);
-	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, SPD);
-	}
-	void SetPower(float power, float area) {
-		SPD->Scale(power / (area * M_PI * SPD->y()));
-	}
-private:
-	IrregularSPD* SPD;
-};
-
-class IrregularDataTexture
+class LampSpectrumTexture
 {
 public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);

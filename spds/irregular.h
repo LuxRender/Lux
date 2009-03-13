@@ -48,7 +48,7 @@ namespace lux
     //  n             number of samples
     //  resolution    resampling resolution (in nm)
     IrregularSPD(const float* const wavelengths, const float* const samples,
-			int n, int resolution = 5, SPDResamplingMethod resamplignMethod = Linear);
+			int n, float resolution = 5, SPDResamplingMethod resamplignMethod = Linear);
 
     ~IrregularSPD() {}
 
