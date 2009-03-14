@@ -835,10 +835,10 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	int x1 = Floor2Int(dImageX + filter->xWidth);
 	int y0 = Ceil2Int (dImageY - filter->yWidth);
 	int y1 = Floor2Int(dImageY + filter->yWidth);
-	x0 = max(x0, xPixelStart);
+/*	x0 = max(x0, xPixelStart);
 	x1 = min(x1, xPixelStart + xPixelCount - 1);
 	y0 = max(y0, yPixelStart);
-	y1 = min(y1, yPixelStart + yPixelCount - 1);
+	y1 = min(y1, yPixelStart + yPixelCount - 1);*/
 	if (x1 < x0 || y1 < y0) return;
 	// Loop over filter support and add sample to pixel arrays
 	// Precompute $x$ and $y$ filter table offsets
@@ -856,12 +856,19 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 			filter->invYWidth * FILTER_TABLE_SIZE);
 		ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
 	}
-
+	float filterNorm = 0.f;
 	for (int y = y0; y <= y1; ++y) {
 		for (int x = x0; x <= x1; ++x) {
+			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
+			filterNorm += filterTable[offset];
+		}
+	}
+
+	for (int y = max(y0, yPixelStart); y <= min(y1, yPixelStart + yPixelCount - 1); ++y) {
+		for (int x = max(x0, xPixelStart); x <= min(x1, xPixelStart + xPixelCount - 1); ++x) {
 			// Evaluate filter value at $(x,y)$ pixel
-			int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			float filterWt = filterTable[offset];
+			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
+			const float filterWt = filterTable[offset] / filterNorm;
 			// Update pixel values with filtered sample contribution
 			buffer->Add(x - xPixelStart,y - yPixelStart,
 				xyz, alpha, filterWt * weight);
