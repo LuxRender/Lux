@@ -92,6 +92,18 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 				e = *edges.find(e);
 				e.f[0]->f[e.f0edgeNum] = f;
 				f->f[edgeNum] = e.f[0];
+				// NOTE - lordcrc - check winding of 
+				// other face is opposite of the 
+				// current face, otherwise we have 
+				// inconsistent winding
+				int otherv0 = e.f[0]->vnum(f->v[v0]);
+				int otherv1 = e.f[0]->vnum(f->v[v1]);
+				if (PREV(otherv0) != otherv1) {
+					luxError(LUX_CONSISTENCY, LUX_ERROR, "Inconsistent vertex winding in mesh, aborting subdivision.");
+					// prevent subdivision
+					nLevels = 0;
+					return;
+				};
 				edges.erase(e);
 			}
 		}
@@ -140,6 +152,12 @@ bool LoopSubdiv::CanIntersect() const {
 }
 
 boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
+
+	// check that we should do any subdivision
+	if (nLevels < 1) {
+		return boost::shared_ptr<LoopSubdiv::SubdivResult>((LoopSubdiv::SubdivResult*)NULL);
+	}
+
 	std::stringstream ss;
 	ss << "Applying " << nLevels << " levels of loop subdivision to " << faces.size() << " triangles";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
