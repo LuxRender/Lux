@@ -22,7 +22,7 @@
 
 // quadrilateral.cpp*
 #include "quadrilateral.h"
-#include "matrix3x3.h"
+#include "geometry/matrix3x3.h"
 
 using namespace lux;
 
