@@ -791,7 +791,7 @@ void FlexImageFilm::AddSampleCount(float count) {
 }
 
 void FlexImageFilm::AddSample(Contribution *contrib) {
-	const XYZColor xyz = contrib->color;
+	XYZColor xyz = contrib->color;
 	const float alpha = contrib->alpha;
 	const float weight = contrib->variance;
 
@@ -821,6 +821,9 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 				warmupComplete = true;
 		}
 	}
+
+	if (premultiplyAlpha)
+		xyz *= alpha;
 
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
