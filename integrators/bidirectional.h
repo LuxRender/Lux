@@ -36,7 +36,11 @@ public:
 	};
 //	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
-	BidirIntegrator(int ed, int ld, LightStrategy ls, bool d) : lightStrategy(ls), maxEyeDepth(ed), maxLightDepth(ld), debug(d) {
+	BidirIntegrator(int ed, int ld, float et, float lt, LightStrategy ls,
+		bool d) :
+		maxEyeDepth(ed), maxLightDepth(ld),
+		eyeThreshold(et), lightThreshold(lt),
+		lightStrategy(ls), debug(d) {
 		eyeBufferId = -1;
 		lightBufferId = -1;
 	}
@@ -45,13 +49,15 @@ public:
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+	int maxEyeDepth, maxLightDepth;
+	float eyeThreshold, lightThreshold;
+	int sampleEyeOffset, sampleLightOffset;
+	int eyeBufferId, lightBufferId;
 private:
 	// BidirIntegrator Data
 	LightStrategy lightStrategy;
-	int maxEyeDepth, maxLightDepth;
-	int lightNumOffset, lightComponentOffset, lightPosOffset, lightDirOffset;
-	int sampleEyeOffset, sampleLightOffset, sampleDirectOffset;
-	int eyeBufferId, lightBufferId;
+	int lightNumOffset, lightComponentOffset;
+	int lightPosOffset, lightDirOffset, sampleDirectOffset;
 	bool debug;
 };
 
