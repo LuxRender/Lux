@@ -571,7 +571,7 @@ void Context::makemixmaterial(const ParamSet& shapeparams, const ParamSet& mater
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-			graphicsState->floatTextures, graphicsState->colorTextures);
+				graphicsState->floatTextures, graphicsState->colorTextures);
 			boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -595,7 +595,7 @@ void Context::makemixmaterial(const ParamSet& shapeparams, const ParamSet& mater
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-			graphicsState->floatTextures, graphicsState->colorTextures);
+				graphicsState->floatTextures, graphicsState->colorTextures);
 			boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")

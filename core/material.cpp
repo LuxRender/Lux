@@ -25,23 +25,31 @@
 #include "shape.h"
 #include "texture.h"
 #include "geometry.h"
+#include "paramset.h"
 
 using namespace lux;
 
 // Material Method Definitions
+Material::Material() : bumpmapSampleDistance(.001f) {
+}
+
 Material::~Material() {
+}
+
+void Material::InitGeneralParams(const TextureParams &mp) {
+	bumpmapSampleDistance = mp.FindFloat("bumpmapsampledistance", .001f);
 }
 
 void Material::Bump(boost::shared_ptr<Texture<float> > d,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgs,
-		DifferentialGeometry *dgBump) {
+		DifferentialGeometry *dgBump) const {
 	// Compute offset positions and evaluate displacement texture
 	DifferentialGeometry dgEval = dgs;
 
 	// Shift _dgEval_ _du_ in the $u$ direction and calculate bump map value
 	float du = .5f * (fabsf(dgs.dudx) + fabsf(dgs.dudy));
-	if (du == 0.f) du = .005f;
+	if (du == 0.f) du = bumpmapSampleDistance;
 	dgEval.p += du * dgs.dpdu;
 	dgEval.u += du;
 	dgEval.nn = Normalize(dgs.nn + du * dgs.dndu);
@@ -49,7 +57,7 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	// Shift _dgEval_ _dv_ in the $v$ direction and calculate bump map value
 	float dv = .5f * (fabsf(dgs.dvdx) + fabsf(dgs.dvdy));
-	if (dv == 0.f) dv = .005f;
+	if (dv == 0.f) dv = bumpmapSampleDistance;
 	dgEval.p = dgs.p + dv * dgs.dpdv;
 	dgEval.u = dgs.u;
 	dgEval.v += dv;

@@ -139,12 +139,12 @@ private:
 			uv[2][0] = mesh->uvs[2 * v[2]];
 			uv[2][1] = mesh->uvs[2 * v[2] + 1];
 		} else {
-			uv[0][0] = mesh->p[v[0]].x;
-			uv[0][1] = mesh->p[v[0]].y;
-			uv[1][0] = mesh->p[v[1]].x;
-			uv[1][1] = mesh->p[v[1]].y;
-			uv[2][0] = mesh->p[v[2]].x;
-			uv[2][1] = mesh->p[v[2]].y;
+			uv[0][0] = .5f;
+			uv[0][1] = .5f;
+			uv[1][0] = .5f;
+			uv[1][1] = .5f;
+			uv[2][0] = .5f;
+			uv[2][1] = .5f;
 		}
 	}
 
