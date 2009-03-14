@@ -178,7 +178,7 @@ public:
 	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
-	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) {
+	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const {
 		return brdf->Weight(tspack, wo, reverse);
 	}
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
