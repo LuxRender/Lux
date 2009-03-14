@@ -67,7 +67,7 @@ namespace lux
 
 	// Image Pipeline Function Definitions
 	void ApplyImagingPipeline(vector<Color> &pixels,
-		int xResolution, int yResolution, GREYCStorationParams &GREYCParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
+		int xResolution, int yResolution, const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
 		bool VignettingEnabled, float VignetScale,
 		const char *toneMapName, const ParamSet *toneMapParams,
@@ -178,17 +178,17 @@ namespace lux
 		// Calculate histogram
 		if(HistogramEnabled) histogram.Calculate(pixels, xResolution, yResolution);
 
-		// remove / automate
-		int chiu_radius = 0;
-		bool chiu_includecenter = true;
-
 		// Apply Chiu Noise Reduction Filter
-		if(chiu_radius > 0) {
+		if(chiuParams.enabled) {
 			std::vector<Color> chiuImage(nPix);
 			for(int i=0; i<nPix; i++)
 				chiuImage[i] *= 0.f;
+			
+			// NOTE - lordcrc - if includecenter is false, make sure radius 
+			// is a tad higher than 1 to include other pixels
+			const float radius = max(chiuParams.radius, 1+(chiuParams.includecenter ? 0 : 1e-6));
 
-			const int pixel_rad = (int)chiu_radius;
+			const int pixel_rad = Ceil2Int(radius);
 			const int lookup_size = pixel_rad + pixel_rad + 1;
 
 			//build filter lookup table
@@ -199,14 +199,14 @@ namespace lux
 				{
 					if(x == pixel_rad && y == pixel_rad)
 					{
-						weights[lookup_size*y + x] = chiu_includecenter ? 1.0f : 0.0f;
+						weights[lookup_size*y + x] = chiuParams.includecenter ? 1.0f : 0.0f;
 					}
 					else
 					{
 						const float dx = (float)(x - pixel_rad);
 						const float dy = (float)(y - pixel_rad);
 						const float dist = sqrt(dx*dx + dy*dy);
-						const float weight = pow(max(0.0f, 1.0f - dist / chiu_radius), 4.0f);
+						const float weight = powf(max(0.0f, 1.0f - dist / radius), 4.0f);
 						weights[lookup_size*y + x] = weight;
 					}
 				}

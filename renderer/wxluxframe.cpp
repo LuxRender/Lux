@@ -1296,16 +1296,16 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_GREYCPanel->SetSizer( bSizer65 );
 	m_GREYCPanel->Layout();
 	bSizer65->Fit( m_GREYCPanel );
-	m_NoiseReductionAuiNotebook->AddPage( m_GREYCPanel, wxT("GREYCStoration"), true, wxNullBitmap );
+	m_NoiseReductionAuiNotebook->AddPage( m_GREYCPanel, wxT("GREYCStoration"), false, wxNullBitmap );
 	m_ChiuPanel = new wxPanel( m_NoiseReductionAuiNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	m_ChiuPanel->Hide();
 	
 	wxBoxSizer* bSizer61;
 	bSizer61 = new wxBoxSizer( wxVERTICAL );
 	
-	m_enableChiuCheckBox = new wxCheckBox( m_ChiuPanel, wxID_ANY, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_chiu_enableCheckBox = new wxCheckBox( m_ChiuPanel, ID_CHIU_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	bSizer61->Add( m_enableChiuCheckBox, 0, wxALL, 5 );
+	bSizer61->Add( m_chiu_enableCheckBox, 0, wxALL, 5 );
 	
 	wxBoxSizer* bSizer106;
 	bSizer106 = new wxBoxSizer( wxHORIZONTAL );
@@ -1313,22 +1313,24 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer1033;
 	bSizer1033 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_ChiuRadiusSlider = new wxSlider( m_ChiuPanel, ID_CHIU_RADIUS, 3, 1, 9, wxDefaultPosition, wxSize( -1,-1 ), wxSL_AUTOTICKS|wxSL_HORIZONTAL );
-	m_ChiuRadiusSlider->SetToolTip( wxT("Gamma Value") );
+	m_chiu_radiusSlider = new wxSlider( m_ChiuPanel, ID_CHIU_RADIUS, 192, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_chiu_radiusSlider->SetToolTip( wxT("Filter radius") );
 	
-	bSizer1033->Add( m_ChiuRadiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 2 );
+	bSizer1033->Add( m_chiu_radiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 2 );
 	
-	m_TORGB_gammaText1 = new wxTextCtrl( m_ChiuPanel, ID_TORGB_GAMMA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
-	m_TORGB_gammaText1->SetMaxLength( 5 ); 
-	m_TORGB_gammaText1->SetToolTip( wxT("Gamma Value") );
+	m_chiu_radiusText = new wxTextCtrl( m_ChiuPanel, ID_CHIU_RADIUS_TEXT, wxT("3.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
+	m_chiu_radiusText->SetMaxLength( 5 ); 
+	m_chiu_radiusText->SetToolTip( wxT("Filter radius") );
 	
-	bSizer1033->Add( m_TORGB_gammaText1, 0, wxALIGN_CENTER_VERTICAL|wxFIXED_MINSIZE, 0 );
+	bSizer1033->Add( m_chiu_radiusText, 0, wxALIGN_CENTER_VERTICAL|wxFIXED_MINSIZE, 0 );
 	
 	bSizer106->Add( bSizer1033, 1, wxEXPAND, 5 );
 	
-	m_checkBox6 = new wxCheckBox( m_ChiuPanel, wxID_ANY, wxT("Include Center"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_chiu_includecenterCheckBox = new wxCheckBox( m_ChiuPanel, ID_CHIU_INCLUDECENTER, wxT("Include Center"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	bSizer106->Add( m_checkBox6, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	m_chiu_includecenterCheckBox->SetToolTip( wxT("Include center pixel") );
+	
+	bSizer106->Add( m_chiu_includecenterCheckBox, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	bSizer61->Add( bSizer106, 0, wxEXPAND, 5 );
 	
@@ -1340,7 +1342,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_ChiuPanel->SetSizer( bSizer61 );
 	m_ChiuPanel->Layout();
 	bSizer61->Fit( m_ChiuPanel );
-	m_NoiseReductionAuiNotebook->AddPage( m_ChiuPanel, wxT("Chiu"), false, wxNullBitmap );
+	m_NoiseReductionAuiNotebook->AddPage( m_ChiuPanel, wxT("Chiu"), true, wxNullBitmap );
 	
 	bSizer130->Add( m_NoiseReductionAuiNotebook, 1, wxALL|wxEXPAND, 2 );
 	
@@ -1884,18 +1886,20 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_greyc_angularText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_greyc_angularText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_GREYCinterpolationChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TORGB_gammaText1->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
-	m_TORGB_gammaText1->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
-	m_TORGB_gammaText1->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_chiu_enableCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_chiu_radiusText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_chiu_radiusText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_chiu_includecenterCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_resetButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_auto_tonemapCheckBox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_applyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
@@ -2299,18 +2303,20 @@ LuxMainFrame::~LuxMainFrame()
 	m_greyc_angularText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_greyc_angularText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
 	m_GREYCinterpolationChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_ChiuRadiusSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
-	m_TORGB_gammaText1->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
-	m_TORGB_gammaText1->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
-	m_TORGB_gammaText1->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_chiu_enableCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_LINEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_PAGEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_PAGEDOWN, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_THUMBRELEASE, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusSlider->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
+	m_chiu_radiusText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( LuxMainFrame::OnFocus ), NULL, this );
+	m_chiu_radiusText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_chiu_radiusText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( LuxMainFrame::OnText ), NULL, this );
+	m_chiu_includecenterCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_resetButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_auto_tonemapCheckBox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TM_applyButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
@@ -2408,8 +2414,8 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_scaleSlider = new wxSlider( m_LG_basicPanel, ID_LG_SCALE, 5, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	bSizer10111->Add( m_LG_scaleSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 	
-	m_LG_scaleText = new wxTextCtrl( m_LG_basicPanel, ID_LG_SCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
-	m_LG_scaleText->SetMaxLength( 5 ); 
+	m_LG_scaleText = new wxTextCtrl( m_LG_basicPanel, ID_LG_SCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 56,-1 ), wxTE_PROCESS_ENTER );
+	m_LG_scaleText->SetMaxLength( 6 ); 
 	bSizer10111->Add( m_LG_scaleText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 2 );
 	
 	bSizer107->Add( bSizer10111, 1, wxEXPAND, 5 );
@@ -2446,7 +2452,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	
 	bSizer101111->Add( bSizer102, 1, wxEXPAND, 5 );
 	
-	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 40,-1 ), wxTE_PROCESS_ENTER );
+	m_LG_temperatureText = new wxTextCtrl( m_LG_basicPanel, ID_LG_TEMPERATURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 56,-1 ), wxTE_PROCESS_ENTER );
 	m_LG_temperatureText->SetMaxLength( 5 ); 
 	bSizer101111->Add( m_LG_temperatureText, 0, wxALIGN_BOTTOM|wxALL|wxFIXED_MINSIZE, 2 );
 	

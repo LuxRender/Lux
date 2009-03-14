@@ -91,6 +91,9 @@ using namespace lux;
 #define GREYC_DA_RANGE 90.0f
 #define GREYC_NB_ITER_RANGE 16.0f
 
+#define CHIU_RADIUS_MIN 1
+#define CHIU_RADIUS_MAX 9
+
 #define LG_SCALE_LOG_MIN -4.f
 #define LG_SCALE_LOG_MAX 4.f
 #define LG_TEMPERATURE_MIN 0.f
@@ -708,6 +711,28 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				m_GREYC_interp = event.GetInt();
 				UpdateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP, m_GREYC_interp);
 				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
+			}
+			break;
+		// Chiu Enable/Disable checkbox
+		case ID_CHIU_ENABLED:
+			{
+				if(m_chiu_enableCheckBox->IsChecked())
+					m_Chiu_enabled = true;
+				else
+					m_Chiu_enabled = false;
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_CHIU_ENABLED, m_Chiu_enabled);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		// Chiu Include Center checkbox
+		case ID_CHIU_INCLUDECENTER:
+			{
+				if(m_chiu_includecenterCheckBox->IsChecked())
+					m_Chiu_includecenter = true;
+				else
+					m_Chiu_includecenter = false;
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_CHIU_INCLUDECENTER, m_Chiu_includecenter);
+				if(m_auto_tonemap && m_Chiu_enabled) ApplyTonemapping();
 			}
 			break;
 		// Histogram options
@@ -1374,6 +1399,23 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				if(m_auto_tonemap && m_GREYC_enabled) ApplyTonemapping();
 			}
 			break;
+		case ID_CHIU_RADIUS_TEXT:
+			if ( m_chiu_radiusText->IsModified() )
+			{
+				wxString st = m_chiu_radiusText->GetValue();
+				st.ToDouble( &m_Chiu_radius );
+
+				if ( m_Chiu_radius > CHIU_RADIUS_MAX ) m_Chiu_radius = CHIU_RADIUS_MAX;
+				else if ( m_Chiu_radius < CHIU_RADIUS_MIN ) m_Chiu_radius = CHIU_RADIUS_MIN;
+
+				st = wxString::Format( _("%.02f"), m_Chiu_radius );
+				m_chiu_radiusText->SetValue( st );
+				int val = (int)(( FLOAT_SLIDER_RES / (CHIU_RADIUS_MAX - CHIU_RADIUS_MIN) ) * (m_Chiu_radius - CHIU_RADIUS_MIN) );
+				m_chiu_radiusSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_CHIU_RADIUS, m_Chiu_radius);
+				if(m_auto_tonemap && m_Chiu_enabled) ApplyTonemapping();
+			}
+			break;		
 		case ID_SERVER_TEXT:
 			AddServer();
 			break;
@@ -1678,6 +1720,17 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				
 			}
 			break;
+
+		case ID_CHIU_RADIUS:
+			{
+				m_Chiu_radius = (double)event.GetPosition() / (FLOAT_SLIDER_RES / (CHIU_RADIUS_MAX - CHIU_RADIUS_MIN)) + CHIU_RADIUS_MIN;
+				wxString st = wxString::Format( _("%.02f"), m_Chiu_radius );
+				m_chiu_radiusText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_NOISE_CHIU_RADIUS, m_Chiu_radius);
+				if(m_auto_tonemap && m_Chiu_enabled) ApplyTonemapping();
+				
+			}
+			break;
 		default:
 			break;
 	}
@@ -1777,6 +1830,9 @@ void LuxGui::OnFocus( wxFocusEvent& event ){
 			break;
 		case ID_GREYC_ANGULAR_TEXT:
 			m_greyc_angularText->SetValue( wxString::Format( _("%.02f"), m_GREYC_da ) );
+			break;
+		case ID_CHIU_RADIUS_TEXT:
+			m_chiu_radiusText->SetValue( wxString::Format( _("%0.2f"), m_Chiu_radius ) );
 			break;
 		default:
 			break;
@@ -1945,6 +2001,10 @@ void LuxGui::ResetToneMapping(){
 	m_GREYC_nb_iter = 1;
 	m_GREYC_interp = 0;
 
+	m_Chiu_enabled = false;
+	m_Chiu_includecenter = false;
+	m_Chiu_radius = 3;
+
 	UpdateTonemapWidgetValues();
 	m_outputNotebook->Enable( false );
 	Refresh();
@@ -2077,6 +2137,13 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_greyc_EnabledCheckBox->SetValue( m_GREYC_enabled );
 	m_greyc_fastapproxCheckBox->SetValue( m_GREYC_fast_approx );
 
+	m_chiu_enableCheckBox->SetValue( m_Chiu_enabled );
+	m_chiu_includecenterCheckBox->SetValue( m_Chiu_includecenter );
+
+	m_chiu_radiusSlider->SetValue( (int)((FLOAT_SLIDER_RES / (CHIU_RADIUS_MAX-CHIU_RADIUS_MIN)) * (m_Chiu_radius-CHIU_RADIUS_MIN)) );
+	st = wxString::Format( _("%.02f"), m_Chiu_radius );
+	m_chiu_radiusText->SetValue(st);
+
 	// Histogram
 	m_HistogramWindow->SetEnabled(m_Tab_Control_HistogramPanel->IsShown());
 
@@ -2128,6 +2195,12 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 	m_GREYC_nb_iter = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER);
 	m_GREYC_interp = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP);
 
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_CHIU_ENABLED);
+	m_Chiu_enabled = t != 0.0;
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_CHIU_INCLUDECENTER);
+	m_Chiu_includecenter = t != 0.0;
+	m_Chiu_radius = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_CHIU_RADIUS);
+
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_BURN, m_TM_reinhard_burn);
@@ -2165,6 +2238,10 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_NBITER, m_GREYC_nb_iter);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_INTERP, m_GREYC_interp);
 
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_ENABLED, m_Chiu_enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_INCLUDECENTER, m_Chiu_includecenter);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_RADIUS, m_Chiu_radius);
+	
 	UpdateTonemapWidgetValues();
 	if(m_auto_tonemap) ApplyTonemapping();
 }
@@ -2252,7 +2329,7 @@ void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
 	SetWidgetsEnabled(m_LG_enable);
 	wxString st;
 	m_LG_scaleSlider->SetValue(ScaleToSliderVal(m_LG_scale));
-	st = wxString::Format(_("%.02f"), m_LG_scale);
+	st = wxString::Format(_("%.04f"), m_LG_scale);
 	m_LG_scaleText->SetValue(st);
 	float val = ((m_LG_temperature - LG_TEMPERATURE_MIN) 
 			/ (LG_TEMPERATURE_RANGE - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES;
@@ -2344,7 +2421,7 @@ void LuxGui::LuxLightGroupPanel::OnText(wxCommandEvent& event) {
 					m_LG_scale = powf(10.f, LG_SCALE_LOG_MAX);
 				else if (m_LG_scale < 0.f)
 					m_LG_scale = 0.f;
-				st = wxString::Format(_("%.02f"), m_LG_scale);
+				st = wxString::Format(_("%.04f"), m_LG_scale);
 				m_LG_scaleText->SetValue(st);
 				m_LG_scaleSlider->SetValue(ScaleToSliderVal(m_LG_scale));
 				UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
@@ -2413,7 +2490,7 @@ void LuxGui::LuxLightGroupPanel::OnScroll(wxScrollEvent& event) {
 		case ID_LG_SCALE:
 		{
 			m_LG_scale = SliderValToScale(event.GetPosition());
-			wxString st = wxString::Format(_("%.02f"), m_LG_scale);
+			wxString st = wxString::Format(_("%.04f"), m_LG_scale);
 			m_LG_scaleText->SetValue(st);
 			UpdateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
 			m_Gui->UpdatedTonemapParam();

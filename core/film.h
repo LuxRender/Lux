@@ -315,6 +315,23 @@ public:
 	float amplitude, sharpness, anisotropy, alpha, sigma, gauss_prec, dl, da;
 };
 
+// Chiu Noise Reduction Filter Parameter structure
+class ChiuParams {
+public:
+	ChiuParams() {
+		Reset();
+	}
+	void Reset() {
+		enabled = false;		 // Chiu noise filter is enabled/disabled
+		radius = 3;				 // 
+		includecenter = false;	 // 
+	}
+
+	bool enabled, includecenter;
+	double radius;
+};
+
+
 //Histogram Declarations
 class Histogram {
 	public:
@@ -397,7 +414,8 @@ protected:
 };
 
 // Image Pipeline Declarations
-extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution, GREYCStorationParams &GREYCParams, 
+extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution, 
+        const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
         ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
 		float bloomRadius = .2f, float bloomWeight = 0.f, bool VignettingEnabled = false, float VignetScale = 0.f, const char *tonemap = NULL,
         const ParamSet *toneMapParams = NULL, float gamma = 2.2,

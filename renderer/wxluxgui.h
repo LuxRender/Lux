@@ -238,6 +238,9 @@ protected:
 	double m_GREYC_nb_iter;
 	int m_GREYC_interp;
 
+	bool m_Chiu_enabled, m_Chiu_includecenter;
+	double m_Chiu_radius;
+
 	// Lightgroups
 	class LuxLightGroupPanel : public LightGroupPanel {
 	public:

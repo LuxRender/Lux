@@ -117,6 +117,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_GREYCStorationParams.Reset();
 	d_GREYCStorationParams.Reset();
 
+	m_chiuParams.Reset();
+	d_chiuParams.Reset();
+
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 
@@ -231,6 +234,16 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 				m_HistogramEnabled = true;
 			else
 				m_HistogramEnabled = false;
+			break;
+
+		case LUX_FILM_NOISE_CHIU_ENABLED:
+			m_chiuParams.enabled = value != 0.0;
+			break;
+		case LUX_FILM_NOISE_CHIU_RADIUS:
+			m_chiuParams.radius = value;
+			break;
+		case LUX_FILM_NOISE_CHIU_INCLUDECENTER:
+			m_chiuParams.includecenter = value != 0.0;
 			break;
 
 		case LUX_FILM_NOISE_GREYC_ENABLED:
@@ -398,6 +411,16 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 			return m_HistogramEnabled;
 			break;
 
+		case LUX_FILM_NOISE_CHIU_ENABLED:
+			return m_chiuParams.enabled;
+			break;
+		case LUX_FILM_NOISE_CHIU_RADIUS:
+			return m_chiuParams.radius;
+			break;
+		case LUX_FILM_NOISE_CHIU_INCLUDECENTER:
+			return m_chiuParams.includecenter;
+			break;
+
 		case LUX_FILM_NOISE_GREYC_ENABLED:
 			return m_GREYCStorationParams.enabled;
 			break;
@@ -549,6 +572,16 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
 			return d_HistogramEnabled;
+			break;
+
+		case LUX_FILM_NOISE_CHIU_ENABLED:
+			return d_chiuParams.enabled;
+			break;
+		case LUX_FILM_NOISE_CHIU_RADIUS:
+			return d_chiuParams.radius;
+			break;
+		case LUX_FILM_NOISE_CHIU_INCLUDECENTER:
+			return d_chiuParams.includecenter;
 			break;
 
 		case LUX_FILM_NOISE_GREYC_ENABLED:
@@ -901,7 +934,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		}
 
 		// Apply chosen tonemapper
-		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams,
+		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, m_histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 

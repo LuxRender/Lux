@@ -152,6 +152,7 @@ private:
 	float m_Gamma, d_Gamma;
 
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
+	ChiuParams m_chiuParams, d_chiuParams;
 
 	Color * m_bloomImage; // Persisting bloom layer image 
 	bool m_BloomUpdateLayer;

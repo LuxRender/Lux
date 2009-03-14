@@ -18,7 +18,7 @@
         <property name="relative_path">1</property>
         <property name="use_enum">0</property>
         <property name="use_microsoft_bom">0</property>
-        <object class="Frame" expanded="1">
+        <object class="Frame" expanded="0">
             <property name="bg"></property>
             <property name="center"></property>
             <property name="context_help"></property>
@@ -8064,7 +8064,7 @@
                                                                                                 <object class="auinotebookpage" expanded="1">
                                                                                                     <property name="bitmap"></property>
                                                                                                     <property name="label">GREYCStoration</property>
-                                                                                                    <property name="select">1</property>
+                                                                                                    <property name="select">0</property>
                                                                                                     <object class="wxPanel" expanded="1">
                                                                                                         <property name="bg"></property>
                                                                                                         <property name="context_help"></property>
@@ -10261,7 +10261,7 @@
                                                                                                 <object class="auinotebookpage" expanded="1">
                                                                                                     <property name="bitmap"></property>
                                                                                                     <property name="label">Chiu</property>
-                                                                                                    <property name="select">0</property>
+                                                                                                    <property name="select">1</property>
                                                                                                     <object class="wxPanel" expanded="1">
                                                                                                         <property name="bg"></property>
                                                                                                         <property name="context_help"></property>
@@ -10321,11 +10321,11 @@
                                                                                                                     <property name="fg"></property>
                                                                                                                     <property name="font"></property>
                                                                                                                     <property name="hidden">0</property>
-                                                                                                                    <property name="id">wxID_ANY</property>
+                                                                                                                    <property name="id">ID_CHIU_ENABLED</property>
                                                                                                                     <property name="label">Enabled</property>
                                                                                                                     <property name="maximum_size"></property>
                                                                                                                     <property name="minimum_size"></property>
-                                                                                                                    <property name="name">m_enableChiuCheckBox</property>
+                                                                                                                    <property name="name">m_chiu_enableCheckBox</property>
                                                                                                                     <property name="permission">protected</property>
                                                                                                                     <property name="pos"></property>
                                                                                                                     <property name="size"></property>
@@ -10336,7 +10336,7 @@
                                                                                                                     <property name="window_name"></property>
                                                                                                                     <property name="window_style"></property>
                                                                                                                     <event name="OnChar"></event>
-                                                                                                                    <event name="OnCheckBox"></event>
+                                                                                                                    <event name="OnCheckBox">OnMenu</event>
                                                                                                                     <event name="OnEnterWindow"></event>
                                                                                                                     <event name="OnEraseBackground"></event>
                                                                                                                     <event name="OnKeyDown"></event>
@@ -10391,18 +10391,18 @@
                                                                                                                                     <property name="font"></property>
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_CHIU_RADIUS</property>
-                                                                                                                                    <property name="maxValue">9</property>
+                                                                                                                                    <property name="maxValue">512</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="minValue">1</property>
+                                                                                                                                    <property name="minValue">0</property>
                                                                                                                                     <property name="minimum_size"></property>
-                                                                                                                                    <property name="name">m_ChiuRadiusSlider</property>
+                                                                                                                                    <property name="name">m_chiu_radiusSlider</property>
                                                                                                                                     <property name="permission">protected</property>
                                                                                                                                     <property name="pos"></property>
                                                                                                                                     <property name="size">-1,-1</property>
-                                                                                                                                    <property name="style">wxSL_AUTOTICKS|wxSL_HORIZONTAL</property>
+                                                                                                                                    <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">Gamma Value</property>
-                                                                                                                                    <property name="value">3</property>
+                                                                                                                                    <property name="tooltip">Filter radius</property>
+                                                                                                                                    <property name="value">192</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
                                                                                                                                     <property name="window_style"></property>
@@ -10462,18 +10462,18 @@
                                                                                                                                     <property name="fg"></property>
                                                                                                                                     <property name="font"></property>
                                                                                                                                     <property name="hidden">0</property>
-                                                                                                                                    <property name="id">ID_TORGB_GAMMA_TEXT</property>
+                                                                                                                                    <property name="id">ID_CHIU_RADIUS_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
                                                                                                                                     <property name="maxlength">5</property>
                                                                                                                                     <property name="minimum_size"></property>
-                                                                                                                                    <property name="name">m_TORGB_gammaText1</property>
+                                                                                                                                    <property name="name">m_chiu_radiusText</property>
                                                                                                                                     <property name="permission">protected</property>
                                                                                                                                     <property name="pos"></property>
                                                                                                                                     <property name="size">36,-1</property>
                                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">Gamma Value</property>
-                                                                                                                                    <property name="value">1.0</property>
+                                                                                                                                    <property name="tooltip">Filter radius</property>
+                                                                                                                                    <property name="value">3.0</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
                                                                                                                                     <property name="window_style"></property>
@@ -10520,22 +10520,22 @@
                                                                                                                             <property name="fg"></property>
                                                                                                                             <property name="font"></property>
                                                                                                                             <property name="hidden">0</property>
-                                                                                                                            <property name="id">wxID_ANY</property>
+                                                                                                                            <property name="id">ID_CHIU_INCLUDECENTER</property>
                                                                                                                             <property name="label">Include Center</property>
                                                                                                                             <property name="maximum_size"></property>
                                                                                                                             <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_checkBox6</property>
+                                                                                                                            <property name="name">m_chiu_includecenterCheckBox</property>
                                                                                                                             <property name="permission">protected</property>
                                                                                                                             <property name="pos"></property>
                                                                                                                             <property name="size"></property>
                                                                                                                             <property name="style"></property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip"></property>
+                                                                                                                            <property name="tooltip">Include center pixel</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
                                                                                                                             <property name="window_style"></property>
                                                                                                                             <event name="OnChar"></event>
-                                                                                                                            <event name="OnCheckBox"></event>
+                                                                                                                            <event name="OnCheckBox">OnMenu</event>
                                                                                                                             <event name="OnEnterWindow"></event>
                                                                                                                             <event name="OnEraseBackground"></event>
                                                                                                                             <event name="OnKeyDown"></event>
@@ -12471,12 +12471,12 @@
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">ID_LG_SCALE_TEXT</property>
                                                                                 <property name="maximum_size"></property>
-                                                                                <property name="maxlength">5</property>
-                                                                                <property name="minimum_size"></property>
+                                                                                <property name="maxlength">6</property>
+                                                                                <property name="minimum_size">-1,-1</property>
                                                                                 <property name="name">m_LG_scaleText</property>
                                                                                 <property name="permission">protected</property>
                                                                                 <property name="pos"></property>
-                                                                                <property name="size">36,-1</property>
+                                                                                <property name="size">56,-1</property>
                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                 <property name="subclass"></property>
                                                                                 <property name="tooltip"></property>
@@ -12738,7 +12738,7 @@
                                                                         <property name="name">m_LG_temperatureText</property>
                                                                         <property name="permission">protected</property>
                                                                         <property name="pos"></property>
-                                                                        <property name="size">40,-1</property>
+                                                                        <property name="size">56,-1</property>
                                                                         <property name="style">wxTE_PROCESS_ENTER</property>
                                                                         <property name="subclass"></property>
                                                                         <property name="tooltip"></property>

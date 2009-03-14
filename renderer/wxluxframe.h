@@ -151,26 +151,29 @@ namespace lux
 	#define ID_GREYC_ANGULAR 1107
 	#define ID_GREYC_ANGULAR_TEXT 1108
 	#define ID_GREYC_INTERPOLATIONCHOICE 1109
-	#define ID_CHIU_RADIUS 1110
-	#define ID_TM_RESET 1111
-	#define ID_AUTO_TONEMAP 1112
-	#define ID_TM_APPLY 1113
-	#define ID_SYSTEMOPTIONS 1114
-	#define ID_SERVER_TEXT 1115
-	#define ID_ADD_SERVER 1116
-	#define ID_REMOVE_SERVER 1117
-	#define ID_SERVER_UPDATE_INT 1118
-	#define ID_NETWORK_TREE 1119
-	#define ID_LG_NAME 1120
-	#define ID_TAB_LG_TOGGLE 1121
-	#define ID_TAB_LG 1122
-	#define ID_LG_BASICPANEL 1123
-	#define ID_LG_RGBCOLOR 1124
-	#define ID_LG_SCALE 1125
-	#define ID_LG_SCALE_TEXT 1126
-	#define ID_LG_TEMPERATURE 1127
-	#define ID_LG_TEMPERATURE_TEXT 1128
-	#define ID_LG_ADVANCEDPANEL 1129
+	#define ID_CHIU_ENABLED 1110
+	#define ID_CHIU_RADIUS 1111
+	#define ID_CHIU_RADIUS_TEXT 1112
+	#define ID_CHIU_INCLUDECENTER 1113
+	#define ID_TM_RESET 1114
+	#define ID_AUTO_TONEMAP 1115
+	#define ID_TM_APPLY 1116
+	#define ID_SYSTEMOPTIONS 1117
+	#define ID_SERVER_TEXT 1118
+	#define ID_ADD_SERVER 1119
+	#define ID_REMOVE_SERVER 1120
+	#define ID_SERVER_UPDATE_INT 1121
+	#define ID_NETWORK_TREE 1122
+	#define ID_LG_NAME 1123
+	#define ID_TAB_LG_TOGGLE 1124
+	#define ID_TAB_LG 1125
+	#define ID_LG_BASICPANEL 1126
+	#define ID_LG_RGBCOLOR 1127
+	#define ID_LG_SCALE 1128
+	#define ID_LG_SCALE_TEXT 1129
+	#define ID_LG_TEMPERATURE 1130
+	#define ID_LG_TEMPERATURE_TEXT 1131
+	#define ID_LG_ADVANCEDPANEL 1132
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -359,10 +362,10 @@ namespace lux
 			wxStaticText* m_GREYCinterpolationStaticText;
 			wxChoice* m_GREYCinterpolationChoice;
 			wxPanel* m_ChiuPanel;
-			wxCheckBox* m_enableChiuCheckBox;
-			wxSlider* m_ChiuRadiusSlider;
-			wxTextCtrl* m_TORGB_gammaText1;
-			wxCheckBox* m_checkBox6;
+			wxCheckBox* m_chiu_enableCheckBox;
+			wxSlider* m_chiu_radiusSlider;
+			wxTextCtrl* m_chiu_radiusText;
+			wxCheckBox* m_chiu_includecenterCheckBox;
 			wxButton* m_TM_resetButton;
 			wxCheckBox* m_auto_tonemapCheckBox;
 			wxButton* m_TM_applyButton;
