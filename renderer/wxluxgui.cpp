@@ -80,6 +80,8 @@ using namespace lux;
 #define BLOOMWEIGHT_RANGE 1.0f
 
 #define VIGNETTING_SCALE_RANGE 1.0f
+#define ABERRATION_AMOUNT_RANGE 1.0f
+#define ABERRATION_AMOUNT_FACTOR 0.01f
 
 #define GREYC_AMPLITUDE_RANGE 200.0f
 #define GREYC_SHARPNESS_RANGE 2.0f
@@ -193,6 +195,10 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
 	m_auinotebook->SetSelection( 0 );
 
+	m_Lenseffects_enabled = true;
+	m_Gamma_enabled = true;
+	m_Noisereduction_enabled = true;
+
 	ResetToneMapping();
 	m_auto_tonemap = true;
 	ResetLightGroups();
@@ -225,6 +231,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_TORGB_bloomweightText->SetValidator( vt );
 
 	m_vignettingamountText->SetValidator( vt );
+	m_aberrationamountText->SetValidator( vt );
 
 	m_greyc_iterationsText->SetValidator( vt );
 	m_greyc_amplitudeText->SetValidator( vt );
@@ -682,6 +689,17 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+		// Chromatic Aberration Enable/Disable checkbox
+		case ID_ABERRATION_ENABLED:
+			{
+				if(m_aberrationEnabled->IsChecked())
+					m_Aberration_enabled = true;
+				else
+					m_Aberration_enabled = false;
+				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
 		// GREYC Enable/Disable checkbox
 		case ID_GREYC_ENABLED:
 			{
@@ -825,6 +843,7 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 				}
 				m_LensEffectsAuiNotebook->Enable(m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled && m_Lenseffects_enabled);
+				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled && m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_Lenseffects_enabled ? m_bloomweight : 0.0);
 				if (!m_Lenseffects_enabled)
 					// prevent bloom update
@@ -1292,6 +1311,27 @@ void LuxGui::OnText(wxCommandEvent& event) {
 			}
 			break;
 
+		// Aberration
+		case ID_ABERRATIONAMOUNT_TEXT:
+			if ( m_aberrationamountText->IsModified() )
+			{
+				wxString st = m_aberrationamountText->GetValue();
+				st.ToDouble( &m_Aberration_amount );
+
+				if ( m_Aberration_amount > ABERRATION_AMOUNT_RANGE ) 
+					m_Aberration_amount = ABERRATION_AMOUNT_RANGE;
+				else if ( m_Aberration_amount < 0 ) 
+					m_Aberration_amount = 0;
+
+				st = wxString::Format( _("%.02f"), m_Aberration_amount );
+				m_aberrationamountText->SetValue( st );
+				int val = (int) (( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) * (m_Aberration_amount));
+				m_aberrationamountSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, ABERRATION_AMOUNT_FACTOR * m_Aberration_amount);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
 		// GREYCStoration
 		case ID_GREYC_ITERATIONS_TEXT:
 			if ( m_greyc_iterationsText->IsModified() )
@@ -1667,11 +1707,23 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 			{
 				double pos = (double)event.GetPosition() / FLOAT_SLIDER_RES;
 				pos -= 0.5f;
-				pos *= BLOOMWEIGHT_RANGE * 2.f;
+				pos *= VIGNETTING_SCALE_RANGE * 2.f;
 				m_Vignetting_Scale = pos;
 				wxString st = wxString::Format( _("%.02f"), m_Vignetting_Scale );
 				m_vignettingamountText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
+		// Chromatic Aberration
+		case ID_ABERRATIONAMOUNT:
+			{
+				double pos = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE );
+				m_Aberration_amount = pos;
+				wxString st = wxString::Format( _("%.02f"), m_Aberration_amount );
+				m_aberrationamountText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, ABERRATION_AMOUNT_FACTOR * m_Aberration_amount);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
@@ -1850,6 +1902,14 @@ void LuxGui::OnFocus( wxFocusEvent& event ){
 		case ID_TORGB_BLOOMWEIGHT_TEXT:
 			m_TORGB_bloomweightText->SetValue( wxString::Format( _("%.02f"), m_bloomweight ) );
 			break;
+		// Vignetting options
+		case ID_VIGNETTINGAMOUNT_TEXT:
+			m_vignettingamountText->SetValue( wxString::Format( _("%.02f"), m_Vignetting_Scale ) );
+			break;
+		// Aberration options
+		case ID_ABERRATIONAMOUNT_TEXT:
+			m_aberrationamountText->SetValue( wxString::Format( _("%.02f"), m_Aberration_enabled ) );
+			break;
 		// GREYC options
 		case ID_GREYC_ITERATIONS_TEXT:
 			m_greyc_iterationsText->SetValue( wxString::Format( _("%.02f"), m_GREYC_nb_iter ) );
@@ -2025,6 +2085,12 @@ void LuxGui::ResetToneMapping(){
 	m_bloomradius = 0.07f;
 	m_bloomweight = 0.25f;
 
+	m_Vignetting_Enabled = false;
+	m_Vignetting_Scale = 0.4;
+	
+	m_Aberration_enabled = false;
+	m_Aberration_amount = 0.5;
+
 	m_TORGB_xwhite = 0.314275f;
 	m_TORGB_ywhite = 0.329411f;
 	m_TORGB_xred = 0.63f;
@@ -2198,6 +2264,9 @@ void LuxGui::UpdateTonemapWidgetValues() {
 }
 
 void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
+
+	double t;
+
 	m_TM_kernel = (int) RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
 
 	m_TM_reinhard_prescale = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
@@ -2219,12 +2288,21 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 	m_TORGB_ygreen = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_GREEN);
 	m_TORGB_xblue = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_BLUE);
 	m_TORGB_yblue = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
-	m_TORGB_gamma = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	m_TORGB_gamma =  RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
 	m_bloomradius = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_BLOOMRADIUS);
 	m_bloomweight = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_BLOOMWEIGHT);
 
-	double t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED);
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_VIGNETTING_ENABLED);
+	m_Vignetting_Enabled = t != 0.0;
+	m_Vignetting_Scale = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_VIGNETTING_SCALE);
+
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_ABERRATION_ENABLED);
+	m_Aberration_enabled = t != 0.0;
+	m_Aberration_amount = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_ABERRATION_AMOUNT);
+
+
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED);
 	if(t != 0.0) m_GREYC_enabled = true;
 	else m_GREYC_enabled = false;
 	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX);
@@ -2271,6 +2349,12 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, m_Aberration_amount);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED, m_GREYC_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX, m_GREYC_fast_approx);

@@ -236,6 +236,9 @@ protected:
 	bool m_Vignetting_Enabled;
 	double m_Vignetting_Scale;
 
+	bool m_Aberration_enabled;
+	double m_Aberration_amount;
+
 	bool m_Noisereduction_enabled;
 
 	bool m_GREYC_enabled, m_GREYC_fast_approx;
