@@ -65,11 +65,28 @@ using namespace cimg_library;
 namespace lux
 {
 
+	Color bilinearSampleImage(const vector<Color> &pixels, const int xResolution, const int yResolution, 
+								const float x, const float y) {
+		int x1 = Clamp<int>(Floor2Int<float>(x), 0, xResolution-1);
+		int y1 = Clamp<int>(Floor2Int<float>(y), 0, yResolution-1);
+		int x2 = Clamp<int>(x1+1, 0, xResolution-1);
+		int y2 = Clamp<int>(y1+1, 0, yResolution-1);
+		float tx = Clamp<float>(x - x1, 0, 1);
+		float ty = Clamp<float>(y - y1, 0, 1);
+
+		RGBColor c(0.f);
+		c.AddWeighted((1.f-tx) * (1.f-ty), pixels[y1*xResolution+x1]);
+		c.AddWeighted(tx       * (1.f-ty), pixels[y1*xResolution+x2]);
+		c.AddWeighted((1.f-tx) * ty,       pixels[y2*xResolution+x1]);
+		c.AddWeighted(tx       * ty,       pixels[y2*xResolution+x2]);
+		return c;
+	}
+
 	// Image Pipeline Function Definitions
 	void ApplyImagingPipeline(vector<Color> &pixels,
 		int xResolution, int yResolution, const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
-		bool VignettingEnabled, float VignetScale,
+		bool VignettingEnabled, float VignetScale, bool aberrationEnabled, float aberrationAmount,
 		const char *toneMapName, const ParamSet *toneMapParams,
 		float gamma, float dither)
 	{
@@ -149,9 +166,19 @@ namespace lux
 			pixels[i] = pixels[i].Pow(invGamma);
 		}
 
-		// Add vignetting & chromatic abberation effect
+		// Add vignetting & chromatic aberration effect
 		// These are paired in 1 loop as they can share quite a few calculations
-		if(VignettingEnabled && VignetScale != 0.0f) {
+		if ((VignettingEnabled && VignetScale != 0.0f) || (aberrationEnabled && aberrationAmount > 0.f)) {
+
+			Color *outp = &pixels[0];
+			std::vector<Color> aberrationImage;
+			if (aberrationEnabled) {
+				aberrationImage.resize(nPix);
+				for(int i=0; i < nPix; i++)
+					aberrationImage[i] *= 0.f;
+				outp = &aberrationImage[0];
+			}
+
 			const float invxRes = 1.f / xResolution;
 			const float invyRes = 1.f / yResolution;
 			//for each pixel in the source image
@@ -164,15 +191,35 @@ namespace lux
 					const float yOffset = nPy - 0.5f;
 					float tOffset = sqrtf(xOffset*xOffset + yOffset*yOffset);
 					
+					if (aberrationEnabled && aberrationAmount > 0.f) {
+						const float rb_x = (0.5f + xOffset * (1.f + tOffset*aberrationAmount)) * xResolution;
+						const float rb_y = (0.5f + yOffset * (1.f + tOffset*aberrationAmount)) * yResolution;
+						const float g_x =  (0.5f + xOffset * (1.f - tOffset*aberrationAmount)) * xResolution;
+						const float g_y =  (0.5f + yOffset * (1.f - tOffset*aberrationAmount)) * yResolution;
+
+						const float redblue[] = {1.f, 0.f, 1.f};
+						const float green[] = {0.f, 1.f, 0.f};
+
+						outp[xResolution*y + x] += RGBColor(redblue) * bilinearSampleImage(pixels, xResolution, yResolution, rb_x, rb_y);
+						outp[xResolution*y + x] += RGBColor(green) * bilinearSampleImage(pixels, xResolution, yResolution, g_x, g_y);
+					}
+
 					// Vignetting
 					if(VignettingEnabled && VignetScale != 0.0f) {
 						// normalize to range [0.f - 1.f]
 						const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42);
 						float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
 						for(int i=0;i<3;i++)
-							pixels[xResolution*y + x].c[i] *= vWeight;
+							outp[xResolution*y + x].c[i] *= vWeight;
 					}
 				}
+
+			if (aberrationEnabled) {
+				for(int i = 0; i < nPix; i++)
+					pixels[i] = aberrationImage[i];
+			}
+
+			aberrationImage.clear();
 		}
 
 		// Calculate histogram

@@ -417,8 +417,9 @@ protected:
 extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution, 
         const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
         ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
-		float bloomRadius = .2f, float bloomWeight = 0.f, bool VignettingEnabled = false, float VignetScale = 0.f, const char *tonemap = NULL,
-        const ParamSet *toneMapParams = NULL, float gamma = 2.2,
+		float bloomRadius = .2f, float bloomWeight = 0.f, bool VignettingEnabled = false, float VignetScale = 0.f, 
+		bool aberrationEnabled = false, float aberrationAmount = 0.005f,
+		const char *tonemap = NULL, const ParamSet *toneMapParams = NULL, float gamma = 2.2,
         float dither = 0.5f);
 
 }//namespace lux;
