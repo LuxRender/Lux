@@ -167,13 +167,13 @@ namespace lux
 	#define ID_LG_NAME 1123
 	#define ID_TAB_LG_TOGGLE 1124
 	#define ID_TAB_LG 1125
-	#define ID_LG_BASICPANEL 1126
-	#define ID_LG_RGBCOLOR 1127
-	#define ID_LG_SCALE 1128
-	#define ID_LG_SCALE_TEXT 1129
-	#define ID_LG_TEMPERATURE 1130
-	#define ID_LG_TEMPERATURE_TEXT 1131
-	#define ID_LG_ADVANCEDPANEL 1132
+	#define ID_LG_SCALE 1126
+	#define ID_LG_SCALE_TEXT 1127
+	#define ID_LG_RGB_ENABLED 1128
+	#define ID_LG_RGBCOLOR 1129
+	#define ID_LG_TEMPERATURE_ENABLED 1130
+	#define ID_LG_TEMPERATURE 1131
+	#define ID_LG_TEMPERATURE_TEXT 1132
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -422,29 +422,29 @@ namespace lux
 			
 			wxStaticBitmap* m_Tab_LightGroupToggleIcon;
 			wxStaticBitmap* m_Tab_LightGroupIcon;
-			wxNotebook* m_TabNoteBook;
-			wxPanel* m_LG_basicPanel;
-			wxStaticText* m_LG_rgbLabel;
-			wxColourPickerCtrl* m_LG_rgbPicker;
+			wxPanel* m_Tab_Control_LightGroupPanel;
 			wxStaticText* m_LG_scaleLabel;
 			wxSlider* m_LG_scaleSlider;
 			wxTextCtrl* m_LG_scaleText;
-			wxStaticText* m_LG_bbLabel;
+			wxStaticText* m_LG_colorLabel;
+			wxCheckBox* m_LG_rgbEnabled;
+			wxColourPickerCtrl* m_LG_rgbPicker;
+			wxCheckBox* m_LG_temperatureEnabled;
 			wxStaticBitmap* m_BarBlackBodyStaticBitmap;
 			wxSlider* m_LG_temperatureSlider;
 			wxTextCtrl* m_LG_temperatureText;
-			wxPanel* m_LG_advancedPanel;
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnMouse( wxMouseEvent& event ){ event.Skip(); }
-			virtual void OnColourChanged( wxColourPickerEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnCheckBox( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnColourChanged( wxColourPickerEvent& event ){ event.Skip(); }
 			
 		
 		public:
-			LightGroupPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxNO_BORDER|wxTAB_TRAVERSAL );
+			LightGroupPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 396,235 ), long style = wxNO_BORDER|wxTAB_TRAVERSAL );
 			~LightGroupPanel();
 		
 	};

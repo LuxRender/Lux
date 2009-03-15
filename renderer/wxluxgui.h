@@ -226,11 +226,17 @@ protected:
 	double m_TORGB_xgreen, m_TORGB_ygreen;
 	double m_TORGB_xblue, m_TORGB_yblue;
 
+	bool m_Gamma_enabled;
 	double m_TORGB_gamma;
+
+	bool m_Lenseffects_enabled;
+
 	double m_bloomradius, m_bloomweight;
 
 	bool m_Vignetting_Enabled;
 	double m_Vignetting_Scale;
+
+	bool m_Noisereduction_enabled;
 
 	bool m_GREYC_enabled, m_GREYC_fast_approx;
 	double m_GREYC_amplitude, m_GREYC_sharpness, m_GREYC_anisotropy,
@@ -274,7 +280,9 @@ protected:
 
 		bool m_LG_enable;
 		double m_LG_scale;
+		bool m_LG_temperature_enabled;
 		double m_LG_temperature;
+		bool m_LG_rgb_enabled;
 		double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
 		double m_LG_scaleX, m_LG_scaleY;
 	};
