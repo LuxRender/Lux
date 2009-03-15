@@ -112,6 +112,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_VignettingEnabled = d_VignettingEnabled = false;
 	m_VignettingScale = d_VignettingScale = 0.4f;
 
+	m_AberrationEnabled = d_AberrationEnabled = false;
+	m_AberrationAmount = d_AberrationAmount = 0.005f;
+
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
 	m_GREYCStorationParams.Reset();
@@ -227,6 +230,16 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 		case LUX_FILM_VIGNETTING_SCALE:
 			 m_VignettingScale = value;
+			break;
+
+		case LUX_FILM_ABERRATION_ENABLED:
+			if(value != 0.f)
+				m_AberrationEnabled = true;
+			else
+				m_AberrationEnabled = false;
+			break;
+		case LUX_FILM_ABERRATION_AMOUNT:
+			 m_AberrationAmount = value;
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -407,6 +420,13 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 			return m_VignettingScale;
 			break;
 
+		case LUX_FILM_ABERRATION_ENABLED:
+			return m_AberrationEnabled;
+			break;
+		case LUX_FILM_ABERRATION_AMOUNT:
+			return m_AberrationAmount;
+			break;
+
 		case LUX_FILM_HISTOGRAM_ENABLED:
 			return m_HistogramEnabled;
 			break;
@@ -568,6 +588,13 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			break;
 		case LUX_FILM_VIGNETTING_SCALE:
 			return d_VignettingScale;
+			break;
+
+		case LUX_FILM_ABERRATION_ENABLED:
+			return d_AberrationEnabled;
+			break;
+		case LUX_FILM_ABERRATION_AMOUNT:
+			return d_AberrationAmount;
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -946,7 +973,8 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, m_histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, tmkernel.c_str(), &toneParams, m_Gamma, 0.);
+			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
+			tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.
 		m_BloomUpdateLayer = false;
@@ -1282,6 +1310,13 @@ void FlexImageFilm::TransmitFilm(
 
 		params.push_back(FlmParameter(this, LUX_FILM_VIGNETTING_ENABLED, 0));
 		params.push_back(FlmParameter(this, LUX_FILM_VIGNETTING_SCALE, 0));
+
+		params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_ENABLED, 0));
+		params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_AMOUNT, 0));
+
+		params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_ENABLED, 0));
+		params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_RADIUS, 0));
+		params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_INCLUDECENTER, 0));
 
 		params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_ENABLED, 0));
 		params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_AMPLITUDE, 0));
