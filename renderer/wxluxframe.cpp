@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -232,7 +232,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_TM_Reinhard_prescaleStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Prescale "), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
 	m_TM_Reinhard_prescaleStaticText->Wrap( -1 );
-	bSizer10->Add( m_TM_Reinhard_prescaleStaticText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 2 );
+	bSizer10->Add( m_TM_Reinhard_prescaleStaticText, 0, wxALIGN_CENTER|wxALL, 2 );
 	
 	m_TM_Reinhard_prescaleSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_PRESCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Reinhard_prescaleSlider->SetToolTip( wxT("Reinhard Prescale") );
@@ -252,7 +252,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_TM_Reinhard_postscaleStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Postscale"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
 	m_TM_Reinhard_postscaleStaticText->Wrap( -1 );
-	bSizer12->Add( m_TM_Reinhard_postscaleStaticText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 2 );
+	bSizer12->Add( m_TM_Reinhard_postscaleStaticText, 0, wxALIGN_CENTER|wxALL, 2 );
 	
 	m_TM_Reinhard_postscaleSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_POSTSCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Reinhard_postscaleSlider->SetToolTip( wxT("Reinhard Postscale") );
@@ -272,7 +272,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_TM_Reinhard_burnStaticText = new wxStaticText( m_TonemapReinhardOptionsPanel, wxID_ANY, wxT("Burn"), wxDefaultPosition, wxSize( 50,-1 ), wxALIGN_LEFT );
 	m_TM_Reinhard_burnStaticText->Wrap( -1 );
-	bSizer13->Add( m_TM_Reinhard_burnStaticText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 2 );
+	bSizer13->Add( m_TM_Reinhard_burnStaticText, 0, wxALIGN_CENTER|wxALL, 2 );
 	
 	m_TM_Reinhard_burnSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_BURN, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Reinhard_burnSlider->SetToolTip( wxT("Reinhard Burn") );
@@ -293,17 +293,15 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer126->Add( m_TonemapReinhardOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_TonemapLinearOptionsPanel = new wxPanel( m_Tab_Control_ToneMapPanel, ID_TONEMAPLINEAROPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
-	m_TonemapLinearOptionsPanel->Hide();
-	
 	wxBoxSizer* bSizer331;
 	bSizer331 = new wxBoxSizer( wxVERTICAL );
 	
-	m_TM_Linear_sensitivityStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("Sensitivity"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Linear_sensitivityStaticText->Wrap( -1 );
-	bSizer331->Add( m_TM_Linear_sensitivityStaticText, 0, wxALL, 5 );
-	
 	wxBoxSizer* bSizer1041;
 	bSizer1041 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Linear_sensitivityStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("Sensitivity"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TM_Linear_sensitivityStaticText->Wrap( -1 );
+	bSizer1041->Add( m_TM_Linear_sensitivityStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_sensitivitySlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_sensitivitySlider->SetToolTip( wxT("Reinhard Prescale") );
@@ -318,12 +316,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer331->Add( bSizer1041, 0, wxEXPAND, 5 );
 	
-	m_TM_Linear_exposureStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("Exposure"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Linear_exposureStaticText->Wrap( -1 );
-	bSizer331->Add( m_TM_Linear_exposureStaticText, 0, wxALL|wxFIXED_MINSIZE, 5 );
-	
 	wxBoxSizer* bSizer105;
 	bSizer105 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Linear_exposureStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("Exposure"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TM_Linear_exposureStaticText->Wrap( -1 );
+	bSizer105->Add( m_TM_Linear_exposureStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_exposureSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_exposureSlider->SetToolTip( wxT("Reinhard Prescale") );
@@ -338,12 +336,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer331->Add( bSizer105, 0, wxEXPAND, 5 );
 	
-	m_TM_Linear_fstopStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("FStop"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Linear_fstopStaticText->Wrap( -1 );
-	bSizer331->Add( m_TM_Linear_fstopStaticText, 0, wxALL|wxEXPAND|wxFIXED_MINSIZE, 5 );
-	
 	wxBoxSizer* bSizer121;
 	bSizer121 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Linear_fstopStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("FStop"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TM_Linear_fstopStaticText->Wrap( -1 );
+	bSizer121->Add( m_TM_Linear_fstopStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_fstopSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_fstopSlider->SetToolTip( wxT("Reinhard Postscale") );
@@ -358,12 +356,12 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bSizer331->Add( bSizer121, 0, wxEXPAND, 5 );
 	
-	m_TM_Linear_gammaStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("Gamma"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TM_Linear_gammaStaticText->Wrap( -1 );
-	bSizer331->Add( m_TM_Linear_gammaStaticText, 0, wxALL|wxEXPAND|wxFIXED_MINSIZE, 5 );
-	
 	wxBoxSizer* bSizer131;
 	bSizer131 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TM_Linear_gammaStaticText = new wxStaticText( m_TonemapLinearOptionsPanel, wxID_ANY, wxT("Gamma"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TM_Linear_gammaStaticText->Wrap( -1 );
+	bSizer131->Add( m_TM_Linear_gammaStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_gammaSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TM_Linear_gammaSlider->SetToolTip( wxT("Reinhard Burn") );
@@ -384,8 +382,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer126->Add( m_TonemapLinearOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_TonemapContrastOptionsPanel = new wxPanel( m_Tab_Control_ToneMapPanel, ID_TONEMAPCONTRASTOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
-	m_TonemapContrastOptionsPanel->Hide();
-	
 	wxBoxSizer* bSizer332;
 	bSizer332 = new wxBoxSizer( wxVERTICAL );
 	
@@ -773,21 +769,17 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer102;
 	bSizer102 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_TORGB_whitexStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White X"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TORGB_whitexStaticText->Wrap( -1 );
-	bSizer102->Add( m_TORGB_whitexStaticText, 1, wxALL|wxEXPAND, 5 );
-	
-	m_TORGB_whiteyStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White Y"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_TORGB_whiteyStaticText->Wrap( -1 );
-	bSizer102->Add( m_TORGB_whiteyStaticText, 1, wxALL|wxEXPAND, 5 );
-	
 	bSizer212->Add( bSizer102, 0, wxEXPAND, 5 );
 	
 	wxBoxSizer* bSizer101;
-	bSizer101 = new wxBoxSizer( wxHORIZONTAL );
+	bSizer101 = new wxBoxSizer( wxVERTICAL );
 	
 	wxBoxSizer* bSizer1012;
 	bSizer1012 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TORGB_whitexStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White X"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_whitexStaticText->Wrap( -1 );
+	bSizer1012->Add( m_TORGB_whitexStaticText, 0, wxALL|wxEXPAND, 5 );
 	
 	m_TORGB_xwhiteSlider = new wxSlider( m_ColorSpaceWhitepointPanel, ID_TORGB_XWHITE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TORGB_xwhiteSlider->SetToolTip( wxT("White X") );
@@ -804,6 +796,10 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	wxBoxSizer* bSizer1022;
 	bSizer1022 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TORGB_whiteyStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("White Y"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_TORGB_whiteyStaticText->Wrap( -1 );
+	bSizer1022->Add( m_TORGB_whiteyStaticText, 0, wxALL|wxEXPAND, 5 );
 	
 	m_TORGB_ywhiteSlider = new wxSlider( m_ColorSpaceWhitepointPanel, ID_TORGB_YWHITE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	m_TORGB_ywhiteSlider->SetToolTip( wxT("White Y") );
@@ -1409,7 +1405,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_GREYCPanel->SetSizer( bSizer65 );
 	m_GREYCPanel->Layout();
 	bSizer65->Fit( m_GREYCPanel );
-	m_NoiseReductionAuiNotebook->AddPage( m_GREYCPanel, wxT("GREYCStoration"), false, wxNullBitmap );
+	m_NoiseReductionAuiNotebook->AddPage( m_GREYCPanel, wxT("GREYCStoration"), true, wxNullBitmap );
 	m_ChiuPanel = new wxPanel( m_NoiseReductionAuiNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	m_ChiuPanel->Hide();
 	
@@ -1455,7 +1451,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_ChiuPanel->SetSizer( bSizer61 );
 	m_ChiuPanel->Layout();
 	bSizer61->Fit( m_ChiuPanel );
-	m_NoiseReductionAuiNotebook->AddPage( m_ChiuPanel, wxT("Chiu"), true, wxNullBitmap );
+	m_NoiseReductionAuiNotebook->AddPage( m_ChiuPanel, wxT("Chiu"), false, wxNullBitmap );
 	
 	bSizer130->Add( m_NoiseReductionAuiNotebook, 1, wxALL|wxEXPAND, 2 );
 	
@@ -1503,39 +1499,6 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_Tonemap->Layout();
 	bTonemapSizer->Fit( m_Tonemap );
 	m_outputNotebook->AddPage( m_Tonemap, wxT("Imaging"), true, wxNullBitmap );
-	m_SystemOptions = new wxScrolledWindow( m_outputNotebook, ID_SYSTEMOPTIONS, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxVSCROLL );
-	m_SystemOptions->SetScrollRate( 5, 5 );
-	wxBoxSizer* bSizer20;
-	bSizer20 = new wxBoxSizer( wxVERTICAL );
-	
-	m_checkBox1 = new wxCheckBox( m_SystemOptions, wxID_ANY, wxT("OpenGL 2.0 Acceleration"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_checkBox1->SetValue(true);
-	
-	m_checkBox1->Enable( false );
-	
-	bSizer20->Add( m_checkBox1, 0, wxALL, 5 );
-	
-	m_staticline1 = new wxStaticLine( m_SystemOptions, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	bSizer20->Add( m_staticline1, 0, wxEXPAND | wxALL, 5 );
-	
-	m_staticText9 = new wxStaticText( m_SystemOptions, wxID_ANY, wxT("Precision"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText9->Wrap( -1 );
-	m_staticText9->Enable( false );
-	
-	bSizer20->Add( m_staticText9, 0, wxALL, 5 );
-	
-	wxString m_choice2Choices[] = { wxT("16bits"), wxT("32bits float (Geforce 8+/Radeon HD+)") };
-	int m_choice2NChoices = sizeof( m_choice2Choices ) / sizeof( wxString );
-	m_choice2 = new wxChoice( m_SystemOptions, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choice2NChoices, m_choice2Choices, 0 );
-	m_choice2->SetSelection( 1 );
-	m_choice2->Enable( false );
-	
-	bSizer20->Add( m_choice2, 0, wxALL, 5 );
-	
-	m_SystemOptions->SetSizer( bSizer20 );
-	m_SystemOptions->Layout();
-	bSizer20->Fit( m_SystemOptions );
-	m_outputNotebook->AddPage( m_SystemOptions, wxT("System"), false, wxNullBitmap );
 	
 	bOutputDisplaySizer->Add( m_outputNotebook, 0, wxALL|wxEXPAND, 1 );
 	
@@ -2590,12 +2553,12 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	wxBoxSizer* bSizer107;
 	bSizer107 = new wxBoxSizer( wxVERTICAL );
 	
-	m_LG_scaleLabel = new wxStaticText( m_Tab_Control_LightGroupPanel, wxID_ANY, wxT("Scale/Intensity"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
-	m_LG_scaleLabel->Wrap( -1 );
-	bSizer107->Add( m_LG_scaleLabel, 0, wxALL, 5 );
-	
 	wxBoxSizer* bSizer10111;
 	bSizer10111 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_LG_scaleLabel = new wxStaticText( m_Tab_Control_LightGroupPanel, wxID_ANY, wxT("Gain"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_LG_scaleLabel->Wrap( -1 );
+	bSizer10111->Add( m_LG_scaleLabel, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_LG_scaleSlider = new wxSlider( m_Tab_Control_LightGroupPanel, ID_LG_SCALE, 5, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
 	bSizer10111->Add( m_LG_scaleSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
@@ -2612,10 +2575,6 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	
 	wxBoxSizer* bSizer114;
 	bSizer114 = new wxBoxSizer( wxVERTICAL );
-	
-	m_LG_colorLabel = new wxStaticText( m_Tab_Control_LightGroupPanel, wxID_ANY, wxT("Color adjustment"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_LG_colorLabel->Wrap( -1 );
-	bSizer114->Add( m_LG_colorLabel, 0, wxALL, 5 );
 	
 	wxBoxSizer* bSizer112;
 	bSizer112 = new wxBoxSizer( wxHORIZONTAL );

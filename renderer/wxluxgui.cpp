@@ -436,7 +436,8 @@ void LuxGui::LoadImages() {
 
 	m_outputNotebook->SetPageBitmap(0, wxMEMORY_BITMAP(n_lightgroup_png));
 	m_outputNotebook->SetPageBitmap(1, wxMEMORY_BITMAP(n_tonemap_png));
-	m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
+	// Note - radiance - disabled system tab as not used
+	//m_outputNotebook->SetPageBitmap(2, wxMEMORY_BITMAP(n_system_png));
 
 	m_tonemapBitmap->SetBitmap(wxMEMORY_BITMAP(tab_tonemap_png));
 	m_histogramBitmap->SetBitmap(wxMEMORY_BITMAP(tab_histogram_png));

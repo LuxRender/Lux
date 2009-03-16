@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Mar 19 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -31,7 +31,6 @@
 #include <wx/spinctrl.h>
 #include <wx/aui/auibook.h>
 #include <wx/notebook.h>
-#include <wx/statline.h>
 #include <wx/treectrl.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
@@ -167,22 +166,21 @@ namespace lux
 	#define ID_TM_RESET 1123
 	#define ID_AUTO_TONEMAP 1124
 	#define ID_TM_APPLY 1125
-	#define ID_SYSTEMOPTIONS 1126
-	#define ID_SERVER_TEXT 1127
-	#define ID_ADD_SERVER 1128
-	#define ID_REMOVE_SERVER 1129
-	#define ID_SERVER_UPDATE_INT 1130
-	#define ID_NETWORK_TREE 1131
-	#define ID_LG_NAME 1132
-	#define ID_TAB_LG_TOGGLE 1133
-	#define ID_TAB_LG 1134
-	#define ID_LG_SCALE 1135
-	#define ID_LG_SCALE_TEXT 1136
-	#define ID_LG_RGB_ENABLED 1137
-	#define ID_LG_RGBCOLOR 1138
-	#define ID_LG_TEMPERATURE_ENABLED 1139
-	#define ID_LG_TEMPERATURE 1140
-	#define ID_LG_TEMPERATURE_TEXT 1141
+	#define ID_SERVER_TEXT 1126
+	#define ID_ADD_SERVER 1127
+	#define ID_REMOVE_SERVER 1128
+	#define ID_SERVER_UPDATE_INT 1129
+	#define ID_NETWORK_TREE 1130
+	#define ID_LG_NAME 1131
+	#define ID_TAB_LG_TOGGLE 1132
+	#define ID_TAB_LG 1133
+	#define ID_LG_SCALE 1134
+	#define ID_LG_SCALE_TEXT 1135
+	#define ID_LG_RGB_ENABLED 1136
+	#define ID_LG_RGBCOLOR 1137
+	#define ID_LG_TEMPERATURE_ENABLED 1138
+	#define ID_LG_TEMPERATURE 1139
+	#define ID_LG_TEMPERATURE_TEXT 1140
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -300,9 +298,9 @@ namespace lux
 			wxAuiNotebook* m_ColorSpaceAuiNotebook;
 			wxPanel* m_ColorSpaceWhitepointPanel;
 			wxStaticText* m_TORGB_whitexStaticText;
-			wxStaticText* m_TORGB_whiteyStaticText;
 			wxSlider* m_TORGB_xwhiteSlider;
 			wxTextCtrl* m_TORGB_xwhiteText;
+			wxStaticText* m_TORGB_whiteyStaticText;
 			wxSlider* m_TORGB_ywhiteSlider;
 			wxTextCtrl* m_TORGB_ywhiteText;
 			wxPanel* m_ColorSpaceRGBPanel;
@@ -395,11 +393,6 @@ namespace lux
 			wxButton* m_TM_resetButton;
 			wxCheckBox* m_auto_tonemapCheckBox;
 			wxButton* m_TM_applyButton;
-			wxScrolledWindow* m_SystemOptions;
-			wxCheckBox* m_checkBox1;
-			wxStaticLine* m_staticline1;
-			wxStaticText* m_staticText9;
-			wxChoice* m_choice2;
 			wxNotebook* m_outputNotebook2;
 			wxPanel* m_logPage;
 			wxTextCtrl* m_logTextCtrl;
@@ -453,7 +446,6 @@ namespace lux
 			wxStaticText* m_LG_scaleLabel;
 			wxSlider* m_LG_scaleSlider;
 			wxTextCtrl* m_LG_scaleText;
-			wxStaticText* m_LG_colorLabel;
 			wxCheckBox* m_LG_rgbEnabled;
 			wxColourPickerCtrl* m_LG_rgbPicker;
 			wxCheckBox* m_LG_temperatureEnabled;
