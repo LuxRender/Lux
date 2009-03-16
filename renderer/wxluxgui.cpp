@@ -2717,8 +2717,7 @@ void LuxGui::LuxLightGroupPanel::OnCheckBox(wxCommandEvent& event)
 
 				m_LG_rgbPicker->Enable(m_LG_rgb_enabled);
 
-				if (m_LG_rgb_enabled)
-					m_Gui->UpdatedTonemapParam();
+				m_Gui->UpdatedTonemapParam();
 			}
 			break;
 		case ID_LG_TEMPERATURE_ENABLED:
@@ -2732,8 +2731,7 @@ void LuxGui::LuxLightGroupPanel::OnCheckBox(wxCommandEvent& event)
 				m_LG_temperatureText->Enable(m_LG_temperature_enabled);
 
 				UpdateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, (m_LG_temperature_enabled ? m_LG_temperature : 0.0), m_Index);
-				if (m_LG_temperature_enabled)
-					m_Gui->UpdatedTonemapParam();
+				m_Gui->UpdatedTonemapParam();
 			}
 /*
 		case ID_LG_ENABLE:
