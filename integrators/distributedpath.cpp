@@ -346,7 +346,8 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				++nrContribs;
 			}
 		}
-		if (alpha && L.Black()) *alpha = 0.;
+		if (rayDepth == 0)
+			if (alpha && L.Black()) *alpha = 0.;
 	}
 
 	//return L * scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha) + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
