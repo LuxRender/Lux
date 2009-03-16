@@ -83,7 +83,6 @@ namespace lux
 	}
 
 	// horizontal blur
-	// adds to the output image
 	void horizontalGaussianBlur(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, 
 									float std_dev)
 	{
@@ -121,6 +120,8 @@ namespace lux
 			{
 				const int a = y*xResolution + x;
 
+				out[a] = RGBColor(0.f);
+
 				for(int i = -pixel_rad; i <= pixel_rad; ++i)
 				{
 					int dx = Clamp(x+i, 0, xResolution-1) - x;
@@ -130,31 +131,32 @@ namespace lux
 		}
 	}
 
-	// adds a rotates image around center
-	// angle is in radians
-	void addRotateImage(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, float angle)
+	void rotateImage(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, float angle)
 	{
-		float s = sinf(-angle);
-		float c = cosf(-angle);
+		const int maxRes = max(xResolution, yResolution);
 
-		float cx = xResolution * 0.5f;
-		float cy = yResolution * 0.5f;
+		const float s = sinf(-angle);
+		const float c = cosf(-angle);
 
-		//for each output pixel...
-		for(int y = 0; y < yResolution; ++y) {
-			for(int x = 0; x < xResolution; ++x)
+		const float cx = xResolution * 0.5f;
+		const float cy = yResolution * 0.5f;
+
+		for(int y = 0; y < maxRes; ++y) {
+			float px = 0 - maxRes * 0.5f;
+			float py = y - maxRes * 0.5f;
+
+			float rx = px * c - py * s + cx;
+			float ry = px * s + py * c + cy;
+			for(int x = 0; x < maxRes; ++x)
 			{
-				//get floating point vector from center of image.
-				float px = x - cx;
-				float py = y - cy;
-
-				float rx = px * c - py * s + cx;
-				float ry = px * s + py * c + cy;
-
-				out[y*xResolution + x] += bilinearSampleImage(in, xResolution, yResolution, rx, ry);
+				out[y*maxRes + x] = bilinearSampleImage(in, xResolution, yResolution, rx, ry);
+				// x = x + dx
+				rx += c;
+				ry += s;
 			}
 		}
 	}
+
 
 	// Image Pipeline Function Definitions
 	void ApplyImagingPipeline(vector<Color> &pixels,
@@ -166,6 +168,12 @@ namespace lux
 		float gamma, float dither)
 	{
 		const int nPix = xResolution * yResolution ;
+
+		// Clamp input
+		for (int i = 0; i < nPix; ++i)
+			pixels[i] = pixels[i].Clamp();
+
+
 		// Possibly apply bloom effect to image
 		if (bloomRadius > 0.f && bloomWeight > 0.f) {
 			if(bloomUpdate) {
@@ -228,30 +236,46 @@ namespace lux
 
 		if (glareEnabled) {
 			std::vector<Color> glareImage(nPix);
-			std::vector<Color> blurredImage(nPix);
+	
+			int maxRes = max(xResolution, yResolution);
+			int nPix2 = maxRes*maxRes;
+
+			std::vector<Color> rotatedImage(nPix2);
+			std::vector<Color> blurredImage(nPix2);
 			for(int i = 0; i < nPix; i++) {
 				glareImage[i] *= 0.f;
-				blurredImage[i] *= 0.f;
 			}
 
-			const float radius = max(xResolution, yResolution) * glareRadius;
-
-			horizontalGaussianBlur(pixels, blurredImage, xResolution, yResolution, radius);
+			const float radius = maxRes * glareRadius;
 
 			// add rotated versions of the blurred image
 			for (int i = 0; i < glareBlades; i++) {
-				float angle = (float)i * M_PI / glareBlades;
-				addRotateImage(blurredImage, glareImage, xResolution, yResolution, angle);
+				float angle = (float)i * 2*M_PI / glareBlades;
+				rotateImage(pixels, rotatedImage, xResolution, yResolution, angle);
+				horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
+				rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
+
+				// add to output
+				for(int y=0; y<yResolution; ++y)
+					for(int x=0; x<xResolution; ++x)
+					{
+						int sx = (int)(x + (maxRes - xResolution) * 0.5f);
+						int sy = (int)(y + (maxRes - yResolution) * 0.5f);
+
+						glareImage[y*xResolution+x] += rotatedImage[sy*maxRes + sx];
+					}
 			}
 
 			// scale and blend with output
-			float nfactor = 1.f / glareBlades;
+			const float nfactor = 1.f / glareBlades;
 
 			for(int i = 0; i < nPix; i++) {
 				glareImage[i] *= nfactor;
 				pixels[i] = Lerp(glareAmount, pixels[i], glareImage[i]);
 			}
 
+			rotatedImage.clear();
+			blurredImage.clear();
 			glareImage.clear();
 		}
 
