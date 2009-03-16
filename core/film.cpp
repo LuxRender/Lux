@@ -82,11 +82,86 @@ namespace lux
 		return c;
 	}
 
+	// horizontal blur
+	// adds to the output image
+	void horizontalGaussianBlur(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, 
+									float std_dev)
+	{
+		int rad_needed = Ceil2Int(std_dev * 4);//kernel_radius;
+
+		const int lookup_size = rad_needed + 1;
+		//build filter lookup table
+		std::vector<float> filter_weights(lookup_size);
+		for(int x = 0; x < lookup_size; ++x)
+		{
+			filter_weights[x] = expf(- x*x / (std_dev*std_dev));
+		}
+
+		//normalise filter kernel
+		float sweight = 0.0f;
+		for(int i = -rad_needed; i <= rad_needed; ++i)
+			sweight += filter_weights[abs(i)];
+
+		sweight = 1.f / sweight;
+
+		for(int x = 0; x < lookup_size; ++x) {
+			filter_weights[x] *= sweight;
+			if (filter_weights[x] < 1.0e-12f) {
+				rad_needed--;
+			}
+		}
+
+		const int pixel_rad = rad_needed;
+
+		//------------------------------------------------------------------------
+		//blur in x direction
+		//------------------------------------------------------------------------
+		for(int y = 0; y < yResolution; ++y) {
+			for(int x = 0; x < xResolution; ++x)
+			{
+				const int a = y*xResolution + x;
+
+				for(int i = -pixel_rad; i <= pixel_rad; ++i)
+				{
+					int dx = Clamp(x+i, 0, xResolution-1) - x;
+					out[a].AddWeighted(filter_weights[abs(i)], in[a+dx]);
+				}
+			}
+		}
+	}
+
+	// adds a rotates image around center
+	// angle is in radians
+	void addRotateImage(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, float angle)
+	{
+		float s = sinf(-angle);
+		float c = cosf(-angle);
+
+		float cx = xResolution * 0.5f;
+		float cy = yResolution * 0.5f;
+
+		//for each output pixel...
+		for(int y = 0; y < yResolution; ++y) {
+			for(int x = 0; x < xResolution; ++x)
+			{
+				//get floating point vector from center of image.
+				float px = x - cx;
+				float py = y - cy;
+
+				float rx = px * c - py * s + cx;
+				float ry = px * s + py * c + cy;
+
+				out[y*xResolution + x] += bilinearSampleImage(in, xResolution, yResolution, rx, ry);
+			}
+		}
+	}
+
 	// Image Pipeline Function Definitions
 	void ApplyImagingPipeline(vector<Color> &pixels,
 		int xResolution, int yResolution, const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
 		bool VignettingEnabled, float VignetScale, bool aberrationEnabled, float aberrationAmount,
+		bool glareEnabled, float glareAmount, float glareRadius, int glareBlades,
 		const char *toneMapName, const ParamSet *toneMapParams,
 		float gamma, float dither)
 	{
@@ -150,6 +225,36 @@ namespace lux
 				for (int i = 0; i < nPix; ++i)
 					pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
 		}
+
+		if (glareEnabled) {
+			std::vector<Color> glareImage(nPix);
+			std::vector<Color> blurredImage(nPix);
+			for(int i = 0; i < nPix; i++) {
+				glareImage[i] *= 0.f;
+				blurredImage[i] *= 0.f;
+			}
+
+			const float radius = max(xResolution, yResolution) * glareRadius;
+
+			horizontalGaussianBlur(pixels, blurredImage, xResolution, yResolution, radius);
+
+			// add rotated versions of the blurred image
+			for (int i = 0; i < glareBlades; i++) {
+				float angle = (float)i * M_PI / glareBlades;
+				addRotateImage(blurredImage, glareImage, xResolution, yResolution, angle);
+			}
+
+			// scale and blend with output
+			float nfactor = 1.f / glareBlades;
+
+			for(int i = 0; i < nPix; i++) {
+				glareImage[i] *= nfactor;
+				pixels[i] = Lerp(glareAmount, pixels[i], glareImage[i]);
+			}
+
+			glareImage.clear();
+		}
+
 		// Apply tone reproduction to image
 		if (toneMapName) {
 			ToneMap *toneMap = MakeToneMap(toneMapName,

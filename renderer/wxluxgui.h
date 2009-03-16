@@ -239,6 +239,10 @@ protected:
 	bool m_Aberration_enabled;
 	double m_Aberration_amount;
 
+	bool m_Glare_enabled;
+	double m_Glare_amount, m_Glare_radius;
+	int m_Glare_blades;
+
 	bool m_Noisereduction_enabled;
 
 	bool m_GREYC_enabled, m_GREYC_fast_approx;

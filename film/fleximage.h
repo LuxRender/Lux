@@ -166,6 +166,11 @@ private:
 	bool m_AberrationEnabled, d_AberrationEnabled;
 	float m_AberrationAmount, d_AberrationAmount;
 
+	bool m_GlareEnabled, d_GlareEnabled;
+	float m_GlareAmount, d_GlareAmount;
+	float m_GlareRadius, d_GlareRadius;
+	int m_GlareBlades, d_GlareBlades;
+
 	bool m_HistogramEnabled, d_HistogramEnabled;
 };
 

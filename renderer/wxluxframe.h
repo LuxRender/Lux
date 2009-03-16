@@ -28,10 +28,10 @@
 #include <wx/textctrl.h>
 #include <wx/button.h>
 #include <wx/checkbox.h>
+#include <wx/spinctrl.h>
 #include <wx/aui/auibook.h>
 #include <wx/notebook.h>
 #include <wx/statline.h>
-#include <wx/spinctrl.h>
 #include <wx/treectrl.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
@@ -100,83 +100,89 @@ namespace lux
 	#define ID_ABERRATION_ENABLED 1056
 	#define ID_ABERRATIONAMOUNT 1057
 	#define ID_ABERRATIONAMOUNT_TEXT 1058
-	#define ID_COLORSPACEOPTIONSPANEL 1059
-	#define ID_TAB_COLORSPACE_TOGGLE 1060
-	#define ID_TAB_COLORSPACE 1061
-	#define ID_TORGB_COLORSPACECHOICE 1062
-	#define ID_TORGB_XWHITE 1063
-	#define ID_TORGB_XWHITE_TEXT 1064
-	#define ID_TORGB_YWHITE 1065
-	#define ID_TORGB_YWHITE_TEXT 1066
-	#define ID_TORGB_XRED 1067
-	#define ID_TORGB_XRED_TEXT 1068
-	#define ID_TORGB_YRED 1069
-	#define ID_TORGB_YRED_TEXT 1070
-	#define ID_TORGB_XGREEN 1071
-	#define ID_TORGB_XGREEN_TEXT 1072
-	#define ID_TORGB_YGREEN 1073
-	#define ID_TORGB_YGREEN_TEXT 1074
-	#define ID_TORGB_XBLUE 1075
-	#define ID_TORGB_XBLUE_TEXT 1076
-	#define ID_TORGB_YBLUE 1077
-	#define ID_TORGB_YBLUE_TEXT 1078
-	#define ID_GAMMAOPTIONSPANEL 1079
-	#define ID_TAB_GAMMA_TOGGLE 1080
-	#define ID_TAB_GAMMA 1081
-	#define ID_TORGB_GAMMA 1082
-	#define ID_TORGB_GAMMA_TEXT 1083
-	#define ID_HISTOGRAMPANEL 1084
-	#define ID_TAB_HISTOGRAM_TOGGLE 1085
-	#define ID_TAB_HISTOGRAM 1086
-	#define ID_HISTOGRAM_CHANNEL 1087
-	#define ID_HISTOGRAM_LOG 1088
-	#define ID_NOISEOPTIONSPANEL 1089
-	#define ID_TAB_NOISEREDUCTION_TOGGLE 1090
-	#define ID_TAB_NOISEREDUCTION 1091
-	#define ID_GREYC_ENABLED 1092
-	#define ID_GREYC_FASTAPPROX 1093
-	#define ID_GREYC_ITERATIONS 1094
-	#define ID_GREYC_ITERATIONS_TEXT 1095
-	#define ID_GREYC_AMPLITUDE 1096
-	#define ID_GREYC_AMPLITUDE_TEXT 1097
-	#define ID_GREYC_GAUSSPREC 1098
-	#define ID_GREYC_GAUSSPREC_TEXT 1099
-	#define ID_GREYC_ALPHA 1100
-	#define ID_GREYC_ALPHA_TEXT 1101
-	#define ID_GREYC_SIGMA 1102
-	#define ID_GREYC_SIGMA_TEXT 1103
-	#define ID_GREYC_SHARPNESS 1104
-	#define ID_GREYC_SHARPNESS_TEXT 1105
-	#define ID_GREYC_ANISO 1106
-	#define ID_GREYC_ANISO_TEXT 1107
-	#define ID_GREYC_SPATIAL 1108
-	#define ID_GREYC_SPATIAL_TEXT 1109
-	#define ID_GREYC_ANGULAR 1110
-	#define ID_GREYC_ANGULAR_TEXT 1111
-	#define ID_GREYC_INTERPOLATIONCHOICE 1112
-	#define ID_CHIU_ENABLED 1113
-	#define ID_CHIU_RADIUS 1114
-	#define ID_CHIU_RADIUS_TEXT 1115
-	#define ID_CHIU_INCLUDECENTER 1116
-	#define ID_TM_RESET 1117
-	#define ID_AUTO_TONEMAP 1118
-	#define ID_TM_APPLY 1119
-	#define ID_SYSTEMOPTIONS 1120
-	#define ID_SERVER_TEXT 1121
-	#define ID_ADD_SERVER 1122
-	#define ID_REMOVE_SERVER 1123
-	#define ID_SERVER_UPDATE_INT 1124
-	#define ID_NETWORK_TREE 1125
-	#define ID_LG_NAME 1126
-	#define ID_TAB_LG_TOGGLE 1127
-	#define ID_TAB_LG 1128
-	#define ID_LG_SCALE 1129
-	#define ID_LG_SCALE_TEXT 1130
-	#define ID_LG_RGB_ENABLED 1131
-	#define ID_LG_RGBCOLOR 1132
-	#define ID_LG_TEMPERATURE_ENABLED 1133
-	#define ID_LG_TEMPERATURE 1134
-	#define ID_LG_TEMPERATURE_TEXT 1135
+	#define ID_GLARE_ENABLED 1059
+	#define ID_GLAREAMOUNT 1060
+	#define ID_GLAREAMOUNT_TEXT 1061
+	#define ID_GLAREBLADES 1062
+	#define ID_GLARERADIUS 1063
+	#define ID_GLARERADIUS_TEXT 1064
+	#define ID_COLORSPACEOPTIONSPANEL 1065
+	#define ID_TAB_COLORSPACE_TOGGLE 1066
+	#define ID_TAB_COLORSPACE 1067
+	#define ID_TORGB_COLORSPACECHOICE 1068
+	#define ID_TORGB_XWHITE 1069
+	#define ID_TORGB_XWHITE_TEXT 1070
+	#define ID_TORGB_YWHITE 1071
+	#define ID_TORGB_YWHITE_TEXT 1072
+	#define ID_TORGB_XRED 1073
+	#define ID_TORGB_XRED_TEXT 1074
+	#define ID_TORGB_YRED 1075
+	#define ID_TORGB_YRED_TEXT 1076
+	#define ID_TORGB_XGREEN 1077
+	#define ID_TORGB_XGREEN_TEXT 1078
+	#define ID_TORGB_YGREEN 1079
+	#define ID_TORGB_YGREEN_TEXT 1080
+	#define ID_TORGB_XBLUE 1081
+	#define ID_TORGB_XBLUE_TEXT 1082
+	#define ID_TORGB_YBLUE 1083
+	#define ID_TORGB_YBLUE_TEXT 1084
+	#define ID_GAMMAOPTIONSPANEL 1085
+	#define ID_TAB_GAMMA_TOGGLE 1086
+	#define ID_TAB_GAMMA 1087
+	#define ID_TORGB_GAMMA 1088
+	#define ID_TORGB_GAMMA_TEXT 1089
+	#define ID_HISTOGRAMPANEL 1090
+	#define ID_TAB_HISTOGRAM_TOGGLE 1091
+	#define ID_TAB_HISTOGRAM 1092
+	#define ID_HISTOGRAM_CHANNEL 1093
+	#define ID_HISTOGRAM_LOG 1094
+	#define ID_NOISEOPTIONSPANEL 1095
+	#define ID_TAB_NOISEREDUCTION_TOGGLE 1096
+	#define ID_TAB_NOISEREDUCTION 1097
+	#define ID_GREYC_ENABLED 1098
+	#define ID_GREYC_FASTAPPROX 1099
+	#define ID_GREYC_ITERATIONS 1100
+	#define ID_GREYC_ITERATIONS_TEXT 1101
+	#define ID_GREYC_AMPLITUDE 1102
+	#define ID_GREYC_AMPLITUDE_TEXT 1103
+	#define ID_GREYC_GAUSSPREC 1104
+	#define ID_GREYC_GAUSSPREC_TEXT 1105
+	#define ID_GREYC_ALPHA 1106
+	#define ID_GREYC_ALPHA_TEXT 1107
+	#define ID_GREYC_SIGMA 1108
+	#define ID_GREYC_SIGMA_TEXT 1109
+	#define ID_GREYC_SHARPNESS 1110
+	#define ID_GREYC_SHARPNESS_TEXT 1111
+	#define ID_GREYC_ANISO 1112
+	#define ID_GREYC_ANISO_TEXT 1113
+	#define ID_GREYC_SPATIAL 1114
+	#define ID_GREYC_SPATIAL_TEXT 1115
+	#define ID_GREYC_ANGULAR 1116
+	#define ID_GREYC_ANGULAR_TEXT 1117
+	#define ID_GREYC_INTERPOLATIONCHOICE 1118
+	#define ID_CHIU_ENABLED 1119
+	#define ID_CHIU_RADIUS 1120
+	#define ID_CHIU_RADIUS_TEXT 1121
+	#define ID_CHIU_INCLUDECENTER 1122
+	#define ID_TM_RESET 1123
+	#define ID_AUTO_TONEMAP 1124
+	#define ID_TM_APPLY 1125
+	#define ID_SYSTEMOPTIONS 1126
+	#define ID_SERVER_TEXT 1127
+	#define ID_ADD_SERVER 1128
+	#define ID_REMOVE_SERVER 1129
+	#define ID_SERVER_UPDATE_INT 1130
+	#define ID_NETWORK_TREE 1131
+	#define ID_LG_NAME 1132
+	#define ID_TAB_LG_TOGGLE 1133
+	#define ID_TAB_LG 1134
+	#define ID_LG_SCALE 1135
+	#define ID_LG_SCALE_TEXT 1136
+	#define ID_LG_RGB_ENABLED 1137
+	#define ID_LG_RGBCOLOR 1138
+	#define ID_LG_TEMPERATURE_ENABLED 1139
+	#define ID_LG_TEMPERATURE 1140
+	#define ID_LG_TEMPERATURE_TEXT 1141
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class LuxMainFrame
@@ -264,12 +270,23 @@ namespace lux
 			wxStaticText* m_staticText41;
 			wxSlider* m_vignettingamountSlider;
 			wxTextCtrl* m_vignettingamountText;
-			wxPanel* m_panel37;
+			wxPanel* m_aberrationPanel;
 			wxCheckBox* m_aberrationEnabled;
 			wxStaticText* m_aberrationamountStaticText;
 			wxSlider* m_aberrationamountSlider;
 			wxTextCtrl* m_aberrationamountText;
-			wxPanel* m_panel39;
+			wxPanel* m_glarePanel;
+			wxCheckBox* m_glareEnabled;
+			
+			wxStaticText* m_glareamountStaticText;
+			wxSlider* m_glareamountSlider;
+			wxTextCtrl* m_glareamountText;
+			wxStaticText* m_glarebladesStaticText;
+			wxSpinCtrl* m_glarebladesSpin;
+			
+			wxStaticText* m_glareradiusStaticText;
+			wxSlider* m_glareradiusSlider;
+			wxTextCtrl* m_glareradiusText;
 			wxPanel* m_ColorSpaceOptionsPanel;
 			wxPanel* m_Tab_ColorSpacePanel;
 			wxStaticBitmap* m_colorspaceBitmap;
@@ -403,6 +420,7 @@ namespace lux
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnMenu( wxSpinEvent& event ){ event.Skip(); }
 			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
 			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
 			

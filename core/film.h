@@ -419,6 +419,7 @@ extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yRe
         ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate = false,
 		float bloomRadius = .2f, float bloomWeight = 0.f, bool VignettingEnabled = false, float VignetScale = 0.f, 
 		bool aberrationEnabled = false, float aberrationAmount = 0.005f,
+		bool glareEnabled = false, float glareAmount = 0.03f, float glareRadius = 0.03f, int glareBlades = 3,
 		const char *tonemap = NULL, const ParamSet *toneMapParams = NULL, float gamma = 2.2,
         float dither = 0.5f);
 

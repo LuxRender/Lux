@@ -115,6 +115,11 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_AberrationEnabled = d_AberrationEnabled = false;
 	m_AberrationAmount = d_AberrationAmount = 0.005f;
 
+	m_GlareEnabled = d_GlareEnabled = false;
+	m_GlareAmount = d_GlareAmount = 0.03f;
+	m_GlareRadius = d_GlareRadius = 0.03f;
+	m_GlareBlades = d_GlareBlades = 3;
+
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
 	m_GREYCStorationParams.Reset();
@@ -240,6 +245,22 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 		case LUX_FILM_ABERRATION_AMOUNT:
 			 m_AberrationAmount = value;
+			break;
+
+		case LUX_FILM_GLARE_ENABLED:
+			if(value != 0.f)
+				m_GlareEnabled = true;
+			else
+				m_GlareEnabled = false;
+			break;
+		case LUX_FILM_GLARE_AMOUNT:
+			 m_GlareAmount = value;
+			break;
+		case LUX_FILM_GLARE_RADIUS:
+			 m_GlareRadius = value;
+			break;
+		case LUX_FILM_GLARE_BLADES:
+			 m_GlareBlades = (int)value;
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -427,6 +448,19 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 			return m_AberrationAmount;
 			break;
 
+		case LUX_FILM_GLARE_ENABLED:
+			return m_GlareEnabled;
+			break;
+		case LUX_FILM_GLARE_AMOUNT:
+			return m_GlareAmount;
+			break;
+		case LUX_FILM_GLARE_RADIUS:
+			return m_GlareRadius;
+			break;
+		case LUX_FILM_GLARE_BLADES:
+			return m_GlareBlades;
+			break;
+
 		case LUX_FILM_HISTOGRAM_ENABLED:
 			return m_HistogramEnabled;
 			break;
@@ -595,6 +629,19 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			break;
 		case LUX_FILM_ABERRATION_AMOUNT:
 			return d_AberrationAmount;
+			break;
+
+		case LUX_FILM_GLARE_ENABLED:
+			return d_GlareEnabled;
+			break;
+		case LUX_FILM_GLARE_AMOUNT:
+			return d_GlareAmount;
+			break;
+		case LUX_FILM_GLARE_RADIUS:
+			return d_GlareRadius;
+			break;
+		case LUX_FILM_GLARE_BLADES:
+			return d_GlareBlades;
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -974,6 +1021,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, m_histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
+			m_GlareEnabled, m_GlareAmount, m_GlareRadius, m_GlareBlades,
 			tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.
@@ -1313,6 +1361,11 @@ void FlexImageFilm::TransmitFilm(
 
 		params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_ENABLED, 0));
 		params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_AMOUNT, 0));
+
+		params.push_back(FlmParameter(this, LUX_FILM_GLARE_ENABLED, 0));
+		params.push_back(FlmParameter(this, LUX_FILM_GLARE_AMOUNT, 0));
+		params.push_back(FlmParameter(this, LUX_FILM_GLARE_RADIUS, 0));
+		params.push_back(FlmParameter(this, LUX_FILM_GLARE_BLADES, 0));
 
 		params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_ENABLED, 0));
 		params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_RADIUS, 0));

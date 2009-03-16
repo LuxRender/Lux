@@ -83,6 +83,11 @@ using namespace lux;
 #define ABERRATION_AMOUNT_RANGE 1.0f
 #define ABERRATION_AMOUNT_FACTOR 0.01f
 
+#define GLARE_AMOUNT_RANGE 0.3f
+#define GLARE_RADIUS_RANGE 0.2f
+#define GLARE_BLADES_MIN 3
+#define GLARE_BLADES_MAX 100
+
 #define GREYC_AMPLITUDE_RANGE 200.0f
 #define GREYC_SHARPNESS_RANGE 2.0f
 #define GREYC_ANISOTROPY_RANGE 1.0f
@@ -700,6 +705,31 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
+		// Glare Enable/Disable checkbox
+		case ID_GLARE_ENABLED:
+			{
+				if(m_glareEnabled->IsChecked())
+					m_Glare_enabled = true;
+				else
+					m_Glare_enabled = false;
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_ENABLED, m_Glare_enabled);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_GLAREBLADES:
+			{
+				m_Glare_blades = m_glarebladesSpin->GetValue();
+
+				if ( m_Glare_blades > GLARE_BLADES_MAX ) 
+					m_Glare_blades = GLARE_BLADES_MAX;
+				else if ( m_Glare_blades < GLARE_BLADES_MIN ) 
+					m_Glare_blades = GLARE_BLADES_MIN;
+
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;			
+
 		// GREYC Enable/Disable checkbox
 		case ID_GREYC_ENABLED:
 			{
@@ -844,6 +874,7 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 				m_LensEffectsAuiNotebook->Enable(m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled && m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled && m_Lenseffects_enabled);
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_ENABLED, m_Glare_enabled && m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_Lenseffects_enabled ? m_bloomweight : 0.0);
 				if (!m_Lenseffects_enabled)
 					// prevent bloom update
@@ -1332,6 +1363,46 @@ void LuxGui::OnText(wxCommandEvent& event) {
 			}
 			break;
 
+		// Glare
+		case ID_GLAREAMOUNT_TEXT:
+			if ( m_glareamountText->IsModified() )
+			{
+				wxString st = m_glareamountText->GetValue();
+				st.ToDouble( &m_Glare_amount );
+
+				if ( m_Glare_amount > GLARE_AMOUNT_RANGE ) 
+					m_Glare_amount = GLARE_AMOUNT_RANGE;
+				else if ( m_Glare_amount < 0 ) 
+					m_Glare_amount = 0;
+
+				st = wxString::Format( _("%.02f"), m_Glare_amount );
+				m_glareamountText->SetValue( st );
+				int val = (int) (( FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE ) * (m_Glare_amount));
+				m_glareamountSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_GLARERADIUS_TEXT:
+			if ( m_glareradiusText->IsModified() )
+			{
+				wxString st = m_glareradiusText->GetValue();
+				st.ToDouble( &m_Glare_radius );
+
+				if ( m_Glare_radius > GLARE_RADIUS_RANGE ) 
+					m_Glare_radius = GLARE_RADIUS_RANGE;
+				else if ( m_Glare_radius < 0 ) 
+					m_Glare_radius = 0;
+
+				st = wxString::Format( _("%.02f"), m_Glare_radius );
+				m_glareradiusText->SetValue( st );
+				int val = (int) (( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE ) * (m_Glare_radius));
+				m_glareradiusSlider->SetValue( val );
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
 		// GREYCStoration
 		case ID_GREYC_ITERATIONS_TEXT:
 			if ( m_greyc_iterationsText->IsModified() )
@@ -1728,6 +1799,28 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 			}
 			break;
 
+		// Glare
+		case ID_GLAREAMOUNT:
+			{
+				double pos = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE );
+				m_Glare_amount = pos;
+				wxString st = wxString::Format( _("%.02f"), m_Glare_amount );
+				m_glareamountText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+		case ID_GLARERADIUS:
+			{
+				double pos = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE );
+				m_Glare_radius = pos;
+				wxString st = wxString::Format( _("%.02f"), m_Glare_radius );
+				m_glareradiusText->SetValue( st );
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
+				if(m_auto_tonemap) ApplyTonemapping();
+			}
+			break;
+
 		// GREYCStoration
 		case ID_GREYC_ITERATIONS:
 			{
@@ -1908,7 +2001,14 @@ void LuxGui::OnFocus( wxFocusEvent& event ){
 			break;
 		// Aberration options
 		case ID_ABERRATIONAMOUNT_TEXT:
-			m_aberrationamountText->SetValue( wxString::Format( _("%.02f"), m_Aberration_enabled ) );
+			m_aberrationamountText->SetValue( wxString::Format( _("%.02f"), m_Aberration_amount ) );
+			break;
+		// Glare options
+		case ID_GLAREAMOUNT_TEXT:
+			m_glareamountText->SetValue( wxString::Format( _("%.02f"), m_Glare_amount ) );
+			break;
+		case ID_GLARERADIUS_TEXT:
+			m_glareradiusText->SetValue( wxString::Format( _("%.02f"), m_Glare_radius ) );
 			break;
 		// GREYC options
 		case ID_GREYC_ITERATIONS_TEXT:
@@ -2090,6 +2190,11 @@ void LuxGui::ResetToneMapping(){
 	
 	m_Aberration_enabled = false;
 	m_Aberration_amount = 0.5;
+
+	m_Glare_enabled = false;
+	m_Glare_amount = 0.03f;
+	m_Glare_radius = 0.03f;
+	m_Glare_blades = 3;
 
 	m_TORGB_xwhite = 0.314275f;
 	m_TORGB_ywhite = 0.329411f;
@@ -2302,6 +2407,12 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 	m_Aberration_amount = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_ABERRATION_AMOUNT);
 
 
+	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_ENABLED);
+	m_Glare_enabled = t != 0.0;
+	m_Glare_amount = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_AMOUNT);
+	m_Glare_radius = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_RADIUS);
+	m_Glare_blades = (int)RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_BLADES);
+
 	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED);
 	if(t != 0.0) m_GREYC_enabled = true;
 	else m_GREYC_enabled = false;
@@ -2355,6 +2466,11 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, m_Aberration_amount);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_ENABLED, m_Glare_enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED, m_GREYC_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_GREYC_FASTAPPROX, m_GREYC_fast_approx);
