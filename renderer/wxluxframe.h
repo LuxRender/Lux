@@ -420,8 +420,8 @@ namespace lux
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }
 			virtual void OnFocus( wxFocusEvent& event ){ event.Skip(); }
 			virtual void OnText( wxCommandEvent& event ){ event.Skip(); }
-			virtual void OnMenu( wxSpinEvent& event ){ event.Skip(); }
 			virtual void OnSpin( wxSpinEvent& event ){ event.Skip(); }
+			virtual void OnSpinText( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnTreeSelChanged( wxTreeEvent& event ){ event.Skip(); }
 			
 		

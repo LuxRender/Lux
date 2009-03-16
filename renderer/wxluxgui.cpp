@@ -716,19 +716,6 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		case ID_GLAREBLADES:
-			{
-				m_Glare_blades = m_glarebladesSpin->GetValue();
-
-				if ( m_Glare_blades > GLARE_BLADES_MAX ) 
-					m_Glare_blades = GLARE_BLADES_MAX;
-				else if ( m_Glare_blades < GLARE_BLADES_MIN ) 
-					m_Glare_blades = GLARE_BLADES_MIN;
-
-				UpdateParam(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
-				if(m_auto_tonemap) ApplyTonemapping();
-			}
-			break;			
 
 		// GREYC Enable/Disable checkbox
 		case ID_GREYC_ENABLED:
@@ -1359,7 +1346,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) * (m_Aberration_amount));
 				m_aberrationamountSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, ABERRATION_AMOUNT_FACTOR * m_Aberration_amount);
-				if(m_auto_tonemap) ApplyTonemapping();
+				if(m_auto_tonemap && m_Aberration_enabled) ApplyTonemapping();
 			}
 			break;
 
@@ -1380,7 +1367,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE ) * (m_Glare_amount));
 				m_glareamountSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
-				if(m_auto_tonemap) ApplyTonemapping();
+				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;
 		case ID_GLARERADIUS_TEXT:
@@ -1399,7 +1386,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE ) * (m_Glare_radius));
 				m_glareradiusSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
-				if(m_auto_tonemap) ApplyTonemapping();
+				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;
 
@@ -1795,7 +1782,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				wxString st = wxString::Format( _("%.02f"), m_Aberration_amount );
 				m_aberrationamountText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, ABERRATION_AMOUNT_FACTOR * m_Aberration_amount);
-				if(m_auto_tonemap) ApplyTonemapping();
+				if(m_auto_tonemap && m_Aberration_enabled) ApplyTonemapping();
 			}
 			break;
 
@@ -1807,7 +1794,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				wxString st = wxString::Format( _("%.02f"), m_Glare_amount );
 				m_glareamountText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
-				if(m_auto_tonemap) ApplyTonemapping();
+				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;
 		case ID_GLARERADIUS:
@@ -1817,7 +1804,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				wxString st = wxString::Format( _("%.02f"), m_Glare_radius );
 				m_glareradiusText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
-				if(m_auto_tonemap) ApplyTonemapping();
+				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;
 
@@ -3014,11 +3001,49 @@ void LuxGui::RemoveServer( void )
 
 void LuxGui::OnSpin( wxSpinEvent& event )
 {
-	if ( event.GetId() == ID_SERVER_UPDATE_INT )
-	{
-		luxSetNetworkServerUpdateInterval( event.GetPosition() );
+    switch (event.GetId()) {
+		case ID_SERVER_UPDATE_INT:
+			{
+				luxSetNetworkServerUpdateInterval( event.GetPosition() );
+			}
+		case ID_GLAREBLADES:
+			{
+				m_Glare_blades = m_glarebladesSpin->GetValue();
+
+				if ( m_Glare_blades > GLARE_BLADES_MAX ) 
+					m_Glare_blades = GLARE_BLADES_MAX;
+				else if ( m_Glare_blades < GLARE_BLADES_MIN ) 
+					m_Glare_blades = GLARE_BLADES_MIN;
+
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
+				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
+			}
+			break;			
+		default:
+			break;
 	}
 }
+
+void LuxGui::OnSpinText(wxCommandEvent& event) {
+    switch (event.GetId()) {
+		case ID_GLAREBLADES:
+			{
+				m_Glare_blades = m_glarebladesSpin->GetValue();
+
+				if ( m_Glare_blades > GLARE_BLADES_MAX ) 
+					m_Glare_blades = GLARE_BLADES_MAX;
+				else if ( m_Glare_blades < GLARE_BLADES_MIN ) 
+					m_Glare_blades = GLARE_BLADES_MIN;
+
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
+				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
+			}
+			break;			
+		default:
+			break;
+	}
+}
+
 
 // CF
 //////////////////////////////////////////////////////////////////////////////////////////////////

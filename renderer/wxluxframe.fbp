@@ -5238,8 +5238,8 @@
                                                                                                                                     <event name="OnRightUp"></event>
                                                                                                                                     <event name="OnSetFocus"></event>
                                                                                                                                     <event name="OnSize"></event>
-                                                                                                                                    <event name="OnSpinCtrl">OnMenu</event>
-                                                                                                                                    <event name="OnSpinCtrlText">OnMenu</event>
+                                                                                                                                    <event name="OnSpinCtrl">OnSpin</event>
+                                                                                                                                    <event name="OnSpinCtrlText">OnSpinText</event>
                                                                                                                                     <event name="OnUpdateUI"></event>
                                                                                                                                 </object>
                                                                                                                             </object>

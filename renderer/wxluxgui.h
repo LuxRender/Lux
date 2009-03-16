@@ -136,6 +136,7 @@ protected:
 	void OnIconize(wxIconizeEvent& event);
 	void OnSelection(wxViewerEvent& event);
 	void OnSpin( wxSpinEvent& event );
+	void OnSpinText(wxCommandEvent& event);
 	void OnScroll( wxScrollEvent& event );
 	void OnText(wxCommandEvent &event);
 	void OnFocus(wxFocusEvent &event);
