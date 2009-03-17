@@ -51,8 +51,8 @@ public:
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
-	SWCSpectrum LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
-		const Sample *sample, float *alpha, int rayDepth, bool includeEmit, float &nrContribs) const;
+	void LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
+		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, int rayDepth, bool includeEmit, int &nrContribs) const;
 
 	// DistributedPath Private Data
 	LightStrategy lightStrategy;

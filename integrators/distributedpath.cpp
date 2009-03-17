@@ -64,11 +64,11 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 
 	// determine maximum depth for samples
 	maxDepth = diffusereflectDepth;
-	if(diffuserefractDepth > maxDepth) maxDepth = diffuserefractDepth;
-	if(glossyreflectDepth > maxDepth) maxDepth = glossyreflectDepth;
-	if(glossyrefractDepth > maxDepth) maxDepth = glossyrefractDepth;
-	if(specularreflectDepth > maxDepth) maxDepth = specularreflectDepth;
-	if(specularrefractDepth > maxDepth) maxDepth = specularrefractDepth;
+	maxDepth = max(maxDepth, diffuserefractDepth);
+	maxDepth = max(maxDepth, glossyreflectDepth);
+	maxDepth = max(maxDepth, glossyrefractDepth);
+	maxDepth = max(maxDepth, specularreflectDepth);
+	maxDepth = max(maxDepth, specularrefractDepth);
 
 	// Direct lighting
 	// eye vertex
@@ -123,30 +123,28 @@ void DistributedPath::Preprocess(const TsPack *tspack, const Scene *scene)
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
-SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
+void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		float *alpha, int rayDepth, bool includeEmit, float &nrContribs) const {
+		vector<SWCSpectrum> &L, float *alpha, int rayDepth,
+		bool includeEmit, int &nrContribs) const
+{
 	Intersection isect;
-	SWCSpectrum L(0.);
 	const float time = ray.time; // save time for motion blur
-	if (alpha) *alpha = 1.;
+	if (alpha)
+		*alpha = 1.f;
 
 	if (scene->Intersect(ray, &isect)) {
-		// Dade - collect samples
-	//	float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
-		
 		// Evaluate BSDF at hit point
-//		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * bsdfComponent[0] - 1.f));
-		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * tspack->rng->floatValue() - 1.f)); // TODO - REFACT - remove and add random value from sample
+		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * sample->oneD[0][0] - 1.f));
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 
 		// Compute emitted light if ray hit an area light source
-		if(includeEmit) {
+		if (includeEmit) {
 			const SWCSpectrum Le(isect.Le(tspack, wo));
 			if (Le.filter(tspack) > 0.f) {
-				L += Le;
+				L[isect.arealight->group] += Le;
 				++nrContribs;
 			}
 		}
@@ -154,23 +152,23 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 		// Compute direct lighting for _DistributedPath_ integrator
 		if (scene->lights.size() > 0) {
 			int samples = directSamples;
-			if(rayDepth > 0) {
+			if (rayDepth > 0) {
 				samples = indirectSamples;
 			}
-			float invsamples = 1.f/samples;
+			float invsamples = 1.f / samples;
 			float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
-			for(int i=0; i<samples; i++) {
+			for (int i = 0; i < samples; ++i) {
 				// get samples
-				if(rayDepth > 0) {
-					lightSample = &sample->twoD[indirectlightSampleOffset][2*i * rayDepth];
+				if (rayDepth > 0) {
+					lightSample = &sample->twoD[indirectlightSampleOffset][2 * i * rayDepth];
 					lightNum = &sample->oneD[indirectlightNumOffset][i * rayDepth];
-					bsdfSample = &sample->twoD[indirectbsdfSampleOffset][2*i * rayDepth]; 
-					bsdfComponent = &sample->oneD[indirectbsdfComponentOffset][i * rayDepth]; 
+					bsdfSample = &sample->twoD[indirectbsdfSampleOffset][2 * i * rayDepth];
+					bsdfComponent = &sample->oneD[indirectbsdfComponentOffset][i * rayDepth];
 				} else {
-					lightSample = &sample->twoD[lightSampleOffset][2*i];
+					lightSample = &sample->twoD[lightSampleOffset][2 * i];
 					lightNum = &sample->oneD[lightNumOffset][i];
-					bsdfSample = &sample->twoD[bsdfSampleOffset][2*i]; 
-					bsdfComponent = &sample->oneD[bsdfComponentOffset][i]; 
+					bsdfSample = &sample->twoD[bsdfSampleOffset][2 * i];
+					bsdfComponent = &sample->oneD[bsdfComponentOffset][i];
 				}
 
 				// Apply direct lighting strategy
@@ -180,7 +178,7 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 							const SWCSpectrum Ld(EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
 								sample, lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent));
 							if (Ld.filter(tspack) > 0.f) {
-								L += invsamples * Ld;
+								L[scene->lights[i]->group] += invsamples * Ld;
 								++nrContribs;
 							}
 							// TODO add bsdf selection flags
@@ -189,11 +187,11 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 					case SAMPLE_ONE_UNIFORM:
 					{
 						SWCSpectrum Ld;
-						UniformSampleOneLight(tspack, scene, p, n,
+						int g = UniformSampleOneLight(tspack, scene, p, n,
 							wo, bsdf, sample,
 							lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
 						if (Ld.filter(tspack) > 0.f) {
-							L += invsamples * Ld;
+							L[g] += invsamples * Ld;
 							++nrContribs;
 						}
 						break;
@@ -213,108 +211,128 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 
 		// trace Diffuse reflection & transmission rays
 		if (rayDepth < diffusereflectDepth) {
-			if(rayDepth > 0) samples = 1;
-			else samples = diffusereflectSamples;
-			invsamples = 1.f/samples;
+			if (rayDepth > 0)
+				samples = 1;
+			else
+				samples = diffusereflectSamples;
+			invsamples = 1.f / samples;
 
-			for(int i=0; i<samples; i++) {
+			for (int i = 0; i < samples; ++i) {
 				float u1, u2, u3;
-				if(rayDepth > 0) {
-					u1 = sample->twoD[indirectdiffuse_reflectSampleOffset][2*i * rayDepth];
-					u2 = sample->twoD[indirectdiffuse_reflectSampleOffset][(2*i * rayDepth)+1];
+				if (rayDepth > 0) {
+					u1 = sample->twoD[indirectdiffuse_reflectSampleOffset][2 * i * rayDepth];
+					u2 = sample->twoD[indirectdiffuse_reflectSampleOffset][(2 * i * rayDepth) + 1];
 					u3 = sample->oneD[indirectdiffuse_reflectComponentOffset][i * rayDepth];
 				} else {
-					u1 = sample->twoD[diffuse_reflectSampleOffset][2*i];
-					u2 = sample->twoD[diffuse_reflectSampleOffset][2*i+1];
+					u1 = sample->twoD[diffuse_reflectSampleOffset][2 * i];
+					u2 = sample->twoD[diffuse_reflectSampleOffset][2 * i + 1];
 					u3 = sample->oneD[diffuse_reflectComponentOffset][i];
-				} 
+				}
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags, NULL, true)) {
 					RayDifferential rd(p, wi);
 					rd.time = time;
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
-						* f * AbsDot(wi, n) / pdf;
+					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
+					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
+					f *= invsamples * AbsDot(wi, n) / pdf;
+					for (int j = 0; j < L.size(); ++j)
+						L[j] += f * Ll[j];
 				}
 			}
 		}
 		if (rayDepth < diffuserefractDepth) {
-			if(rayDepth > 0) samples = 1;
-			else samples = diffuserefractSamples;
-			invsamples = 1.f/samples;
+			if (rayDepth > 0)
+				samples = 1;
+			else
+				samples = diffuserefractSamples;
+			invsamples = 1.f / samples;
 
-			for(int i=0; i<samples; i++) {
+			for (int i = 0; i < samples; ++i) {
 				float u1, u2, u3;
-				if(rayDepth > 0) {
-					u1 = sample->twoD[indirectdiffuse_refractSampleOffset][2*i * rayDepth];
-					u2 = sample->twoD[indirectdiffuse_refractSampleOffset][(2*i * rayDepth)+1];
+				if (rayDepth > 0) {
+					u1 = sample->twoD[indirectdiffuse_refractSampleOffset][2 * i * rayDepth];
+					u2 = sample->twoD[indirectdiffuse_refractSampleOffset][(2 * i * rayDepth) + 1];
 					u3 = sample->oneD[indirectdiffuse_refractComponentOffset][i * rayDepth];
 				} else {
-					u1 = sample->twoD[diffuse_refractSampleOffset][2*i];
-					u2 = sample->twoD[diffuse_refractSampleOffset][2*i+1];
+					u1 = sample->twoD[diffuse_refractSampleOffset][2 * i];
+					u2 = sample->twoD[diffuse_refractSampleOffset][2 * i + 1];
 					u3 = sample->oneD[diffuse_refractComponentOffset][i];
-				} 
+				}
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags, NULL, true)) {
 					RayDifferential rd(p, wi);
 					rd.time = time;
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
-						* f * AbsDot(wi, n) / pdf;
+					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
+					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
+					f *= invsamples * AbsDot(wi, n) / pdf;
+					for (int j = 0; j < L.size(); ++j)
+						L[j] += f * Ll[j];
 				}
 			}
 		}
 
 		// trace Glossy reflection & transmission rays
 		if (rayDepth < glossyreflectDepth) {
-			if(rayDepth > 0) samples = 1;
-			else samples = glossyreflectSamples;
-			invsamples = 1.f/samples;
+			if (rayDepth > 0)
+				samples = 1;
+			else
+				samples = glossyreflectSamples;
+			invsamples = 1.f / samples;
 
-			for(int i=0; i<samples; i++) {
+			for (int i = 0; i < samples; ++i) {
 				float u1, u2, u3;
-				if(rayDepth > 0) {
-					u1 = sample->twoD[indirectglossy_reflectSampleOffset][2*i * rayDepth];
-					u2 = sample->twoD[indirectglossy_reflectSampleOffset][(2*i * rayDepth)+1];
+				if (rayDepth > 0) {
+					u1 = sample->twoD[indirectglossy_reflectSampleOffset][2 * i * rayDepth];
+					u2 = sample->twoD[indirectglossy_reflectSampleOffset][(2 * i * rayDepth) + 1];
 					u3 = sample->oneD[indirectglossy_reflectComponentOffset][i * rayDepth];
 				} else {
-					u1 = sample->twoD[glossy_reflectSampleOffset][2*i];
-					u2 = sample->twoD[glossy_reflectSampleOffset][2*i+1];
+					u1 = sample->twoD[glossy_reflectSampleOffset][2 * i];
+					u2 = sample->twoD[glossy_reflectSampleOffset][2 * i + 1];
 					u3 = sample->oneD[glossy_reflectComponentOffset][i];
-				} 
+				}
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags, NULL, true)) {
 					RayDifferential rd(p, wi);
 					rd.time = time;
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
-						* f * AbsDot(wi, n) / pdf;
+					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
+					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
+					f *= invsamples * AbsDot(wi, n) / pdf;
+					for (int j = 0; j < L.size(); ++j)
+						L[j] += f * Ll[j];
 				}
 			}
 		}
 		if (rayDepth < glossyrefractDepth) {
-			if(rayDepth > 0) samples = 1;
-			else samples = glossyrefractSamples;
-			invsamples = 1.f/samples;
+			if (rayDepth > 0)
+				samples = 1;
+			else
+				samples = glossyrefractSamples;
+			invsamples = 1.f / samples;
 
-			for(int i=0; i<samples; i++) {
+			for (int i = 0; i < samples; ++i) {
 				float u1, u2, u3;
-				if(rayDepth > 0) {
-					u1 = sample->twoD[indirectglossy_refractSampleOffset][2*i * rayDepth];
-					u2 = sample->twoD[indirectglossy_refractSampleOffset][(2*i * rayDepth)+1];
+				if (rayDepth > 0) {
+					u1 = sample->twoD[indirectglossy_refractSampleOffset][2 * i * rayDepth];
+					u2 = sample->twoD[indirectglossy_refractSampleOffset][(2 * i * rayDepth) + 1];
 					u3 = sample->oneD[indirectglossy_refractComponentOffset][i * rayDepth];
 				} else {
-					u1 = sample->twoD[glossy_refractSampleOffset][2*i];
-					u2 = sample->twoD[glossy_refractSampleOffset][2*i+1];
+					u1 = sample->twoD[glossy_refractSampleOffset][2 * i];
+					u2 = sample->twoD[glossy_refractSampleOffset][2 * i + 1];
 					u3 = sample->oneD[glossy_refractComponentOffset][i];
-				} 
+				}
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags, NULL, true)) {
 					RayDifferential rd(p, wi);
 					rd.time = time;
-					L += invsamples * LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, false, nrContribs)
-						* f * AbsDot(wi, n) / pdf;
+					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
+					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
+					f *= invsamples * AbsDot(wi, n) / pdf;
+					for (int j = 0; j < L.size(); ++j)
+						L[j] += f * Ll[j];
 				}
 			}
 		} 
@@ -325,7 +343,11 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
 				RayDifferential rd(p, wi);
 				rd.time = time;
-				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true, nrContribs) * f * AbsDot(wi, n);
+				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
+				LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, true, nrContribs);
+				f *= invsamples * AbsDot(wi, n);
+				for (int j = 0; j < L.size(); ++j)
+					L[j] += f * Ll[j];
 			}
 		}
 		if (rayDepth < specularrefractDepth) {
@@ -333,7 +355,11 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
 				RayDifferential rd(p, wi);
 				rd.time = time;
-				L += LiInternal(tspack, scene, rd, sample, alpha, rayDepth + 1, true, nrContribs) * f * AbsDot(wi, n);
+				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
+				LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, true, nrContribs);
+				f *= invsamples * AbsDot(wi, n);
+				for (int j = 0; j < L.size(); ++j)
+					L[j] += f * Ll[j];
 			}
 		} 
 
@@ -342,30 +368,34 @@ SWCSpectrum DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
 			const SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
 			if (Le.filter(tspack) > 0.f) {
-				L += scene->lights[i]->Le(tspack, ray);
+				L[scene->lights[i]->group] += Le;
 				++nrContribs;
 			}
 		}
-		if (rayDepth == 0)
-			if (alpha && L.Black()) *alpha = 0.;
+		if (rayDepth == 0 && alpha)
+			*alpha = 0.f;
 	}
 
-	//return L * scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha) + scene->volumeIntegrator->Li(tspack, scene, ray, sample, alpha);
-	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
-	SWCSpectrum Lv;
-	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
-	return L + Lv;
+	SWCSpectrum Lt(1.f);
+	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
+	for (int i = 0; i < L.size(); ++i)
+		L[i] *= Lt;
+	SWCSpectrum Lv(0.f);
+	int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+	L[g] += Lv;
 }
 
 int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		SWCSpectrum *Li, float *alpha) const {
 	SampleGuard guard(sample->sampler, sample);
-	float nrContribs = 0.f;
+	int nrContribs = 0;
+	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
+	LiInternal(tspack, scene, ray, sample, L, alpha, 0, true, nrContribs);
 
-	sample->AddContribution(sample->imageX, sample->imageY,
-		LiInternal(tspack, scene, ray, sample, alpha, 0, true, nrContribs).ToXYZ(tspack),
-		alpha ? *alpha : 1.f, bufferId);
+	for (int i = 0; i < L.size(); ++i)
+		sample->AddContribution(sample->imageX, sample->imageY,
+		L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, bufferId, i);
 
 	return nrContribs;
 }
