@@ -26,6 +26,8 @@
 #include "mc.h"
 #include "scene.h" // for struct Intersection
 #include "film.h" // for Film
+#include "specularreflection.h"
+#include "fresnelnoop.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -33,15 +35,16 @@ using namespace lux;
 
 // OrthographicCamera Definitions
 OrthoCamera::OrthoCamera(const Transform &world2camStart,
-	    const Transform &world2camEnd,
-		const float Screen[4], float hither, float yon,
-		float sopen, float sclose, int sdist, float lensr,
-		float focald, bool autofocus, Film *f)
+	const Transform &world2camEnd,
+	const float Screen[4], float hither, float yon,
+	float sopen, float sclose, int sdist, float lensr,
+	float focald, bool autofocus, Film *f)
 	: ProjectiveCamera(world2camStart, world2camEnd, Orthographic(hither, yon),
-		 Screen, hither, yon, sopen, sclose, sdist,
-		 lensr, focald, f), autoFocus(autofocus) {
-	 screenDx = Screen[1] - Screen[0];
-	 screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
+		Screen, hither, yon, sopen, sclose, sdist,
+		lensr, focald, f), autoFocus(autofocus) {
+	screenDx = Screen[1] - Screen[0];
+	screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
+	posPdf = (film->xResolution * film->yResolution) / (screenDx * screenDy);
 }
 
 void OrthoCamera::AutoFocus(Scene* scene)
@@ -125,47 +128,25 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	return 1.f;
 }
 
-bool OrthoCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
+bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
-	bool isVisible = false;
-	if (GenerateSample(worldP, sample_gen))
-	{
-		GenerateRay(*sample_gen, ray_gen);
-		if (WorldToCamera(worldP).z>0)
-		{
-			ray_gen->maxt = Distance(ray_gen->o, worldP)*(1-RAY_EPSILON);
-			isVisible = !scene->IntersectP(*ray_gen);
-		}
-	}
-	return isVisible;
+	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
+	Point ps = CameraToWorld(psC);
+	Normal ns(CameraToWorld(Normal(0, 0, 1)));
+	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, SpecularReflection)(SWCSpectrum(1.f),
+		BSDF_ALLOC(tspack, FresnelNoOp)(), 0.f, 0.f));
+	*pdf = posPdf;
+	*We = SWCSpectrum(posPdf);
+	return true;
 }
-
-float OrthoCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
+bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
 {
-	return AbsDot(wo, n);
+	return false;
 }
-
-void OrthoCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
+void OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
 {
-	float Apixel = (screenDx*screenDy/(film->xResolution*film->yResolution));
-	int x,y;
-	float invApixel = 1/Apixel;
-	for (y = 0; y < yPixelCount; ++y) {
-		for (x = 0; x < xPixelCount; ++x) {
-			factors[x+y*xPixelCount] =  invApixel;
-		}
-	}
-}
-
-void OrthoCamera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
-{
-	// orthographic camera is composed of many parallel pinhole cameras with little fov.
-	*pdf = 1.0f;
-}
-
-float OrthoCamera::EvalPositionPdf() const
-{
-	return 1.0f/(screenDx*screenDy);
 }
 
 Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd,

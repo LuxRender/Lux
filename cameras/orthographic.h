@@ -36,35 +36,15 @@ public:
 				float sopen, float sclose, int sdist, 
 				float lensr, float focald, bool autofocus, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
-	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
-	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
-	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
+	bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
+	bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
+	float Pdf(const Point &p, const Normal &n, const Vector &wi) const;
+	void GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const;
 	bool IsDelta() const
 	{
-		return true;
+		return false;
 	}
-	void SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const;
-	float EvalPositionPdf() const;
 	void AutoFocus(Scene* scene);
-
-	//float SampleDirection(const Sample &sample, Ray *ray)
-	//{
-	//	Point Pras(sample.imageX, sample.imageY, 0);
-	//	RasterToCamera(Pras, &(ray->o));
-	//	ray->d = Vector(0,0,1);
-	//	ray->mint = 0.;
-	//	ray->maxt = ClipYon - ClipHither;
-	//	CameraToWorld(*ray, ray);
-	//	return 1.0f;
-	//}
-	//float EvalDirectionPdf(Film *film, const Vector& wo, const Sample &sample, const Point& p)
-	//{
-	//	return 1.0f;
-	//}
-	//SWCSpectrum EvalValue()
-	//{
-	//	return SWCSpectrum(1.0f);
-	//}
 
 	OrthoCamera* Clone() const {
 		return new OrthoCamera(*this);
@@ -76,7 +56,7 @@ private:
 	// Dade - field used for autofocus feature
 	bool autoFocus;
 
-	float screenDx,screenDy;
+	float screenDx,screenDy, posPdf;
 };
 
 }//namespace lux
