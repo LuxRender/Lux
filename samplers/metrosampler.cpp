@@ -31,6 +31,7 @@
 using namespace lux;
 
 #define SAMPLE_FLOATS 7
+#define SAMP(__it,__dim) strataSamples[(2*(currentStrata+__it)+__dim)%strataSqr]
 
 // mutate a value in the range [0-1]
 static float mutate(const float x, const float randomValue)
@@ -72,10 +73,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
  weight(0.f), alpha(0.f), sampleImage(NULL), timeImage(NULL), strataWidth(sw),
  useVariance(useV)
 {
-	// Allocate storage for image stratified samples
 	strataSqr = sw * sw;
-	strataSamples = (float *)AllocAligned(2 * strataSqr * sizeof(float));
-	currentStrata = strataSqr;
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -112,6 +110,11 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
 	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
 
+	// Allocate storage for image stratified samples
+	sampler->strataSqr = max(sampler->strataSqr, sampler->totalSamples);
+	sampler->strataSamples = (float *)AllocAligned(2 * sampler->strataSqr * sizeof(float));
+	sampler->currentStrata = sampler->strataSqr;
+
 	// Fetch first contribution buffer from pool
 	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);
 }
@@ -135,23 +138,24 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if(currentStrata == strataSqr) {
 
 			// Generate shuffled stratified image samples
-			StratifiedSample2D(tspack, strataSamples, strataWidth, strataWidth, true);
-			Shuffle(tspack, strataSamples, strataSqr, 2);
+//			StratifiedSample2D(tspack, strataSamples, strataWidth, strataWidth, true);
+//			Shuffle(tspack, strataSamples, strataSqr, 2);
+			LDShuffleScrambled2D(tspack, strataSqr, 1, strataSamples);
 			currentStrata = 0;
 		}
 
 		// *** large mutation ***
-		sample->imageX = strataSamples[currentStrata*2] * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
-		currentStrata++;
+		sample->imageX = SAMP(0,0)/*strataSamples[currentStrata*2]*/ * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = SAMP(0,1)/*strataSamples[(currentStrata*2)+1]*/ * (yPixelEnd - yPixelStart) + yPixelStart;
 
-		sample->lensU = tspack->rng->floatValue();
-		sample->lensV = tspack->rng->floatValue();
-		sample->time = tspack->rng->floatValue();
-		sample->wavelengths = tspack->rng->floatValue();
-		sample->singleWavelength = tspack->rng->floatValue();
+		sample->lensU = SAMP(1,0);//tspack->rng->floatValue();
+		sample->lensV = SAMP(1,1);//tspack->rng->floatValue();
+		sample->time = SAMP(2,0);//tspack->rng->floatValue();
+		sample->wavelengths = SAMP(3,0);//tspack->rng->floatValue();
+		sample->singleWavelength = SAMP(3,1);//tspack->rng->floatValue();
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = tspack->rng->floatValue();
+			sample->oneD[0][i - SAMPLE_FLOATS] = SAMP(4+i,0);//tspack->rng->floatValue();
+		currentStrata++;
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -197,7 +201,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	if (sample->timexD[num][pos] != stampLimit) {
 		if (sample->timexD[num][pos] == -1) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = tspack->rng->floatValue();
+				data[i] = SAMP(5+normalSamples+pos*size+i,0);//tspack->rng->floatValue();
 			sample->timexD[num][pos] = 0;
 		} else {
 			float *image = sampleImage + offset[num] + pos * size;
