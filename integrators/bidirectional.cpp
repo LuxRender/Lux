@@ -144,8 +144,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			data[3], &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf,
 			true))
 			break;
-		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
+/*		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {*/
 			v.flux = v.f;
 			v.cosi = AbsDot(v.wi, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -159,14 +159,18 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			}
 			v.rr = min(1.f, max(bidir.lightThreshold,
 				v.f.filter(tspack) * v.coso / v.pdf));
-			if (nVerts > 1)
+			if (nVerts > 1) {
+				vertices[nVerts - 2].d2 =
+					DistanceSquared(vertices[nVerts - 2].p,
+					v.p);
 				v.flux *= vertices[nVerts - 2].flux;
-		} else {
+			}
+/*		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
 			vertices[nVerts - 2].flux *= cosins / v.pdfR;
 			--nVerts;
-		}
+		}*/
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
 		ray.time = tspack->time;
@@ -182,8 +186,6 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	for (u_int i = 0; i < nVerts - 1; ++i) {
 		if (vertices[i + 1].bsdf == NULL)
 			break;
-		vertices[i].d2 =
-			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 		vertices[i + 1].dARWeight = vertices[i].pdfR *
 			vertices[i + 1].coso / vertices[i].d2;
 		vertices[i].dAWeight = vertices[i + 1].pdf *
@@ -225,8 +227,8 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2],
 			data[3], &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
-		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
+/*		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {*/
 			v.flux = v.f;
 			v.coso = AbsDot(v.wo, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -245,13 +247,13 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 					v.p);
 				v.flux *= vertices[nVerts - 2].flux;
 			}
-		} else {
+/*		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
 			// No need to do '/ v.cosi * v.coso' since cosi==coso
 			vertices[nVerts - 2].flux *= cosins / v.pdf;
 			--nVerts;
-		}
+		}*/
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
 		ray.time = tspack->time;
@@ -564,6 +566,8 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		// This can be overwritten as it won't be reused
 		eyePath[length - 2].d2 =
 			DistanceSquared(eyePath[length - 2].p, v.p);
+		eyePath[length - 1].dARWeight = eyePath[length - 2].pdfR *
+			v.coso / eyePath[length - 2].d2;
 		v.Le *= evalPath(tspack, scene, bidir, eyePath, length, path, 0,
 			v.ePdfDirect, false, &totalWeight);
 		if (!v.Le.Black()) {
