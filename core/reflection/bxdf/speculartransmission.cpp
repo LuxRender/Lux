@@ -78,16 +78,18 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 				fresnel.Evaluate(tspack, cost, &F);
 				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
 			} else {
-				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
-				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
+//				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
+//				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
+				*f = T / fabsf(-CosTheta(wo));
 			}
 		} else {
 			if (entering) {
 				fresnel.Evaluate(tspack, CosTheta(wo), &F);
 				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
 			} else {
-				fresnel.Evaluate(tspack, -cost, &F);
-				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
+//				fresnel.Evaluate(tspack, -cost, &F);
+//				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
+				*f = T / fabsf(-CosTheta(wo));
 			}
 		}
 	}
@@ -135,7 +137,8 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool 
 				fresnel.Evaluate(tspack, cost, &F);
 				factor = 1.f / fabsf(-CosTheta(wo));
 			} else {
-				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
+//				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
+				F = SWCSpectrum(0.f);
 				factor = 1.f / fabsf(-CosTheta(wo));
 			}
 		} else {
@@ -143,7 +146,8 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool 
 				fresnel.Evaluate(tspack, CosTheta(wo), &F);
 				factor = 1.f / fabsf(-CosTheta(wo));
 			} else {
-				fresnel.Evaluate(tspack, -cost, &F);
+//				fresnel.Evaluate(tspack, -cost, &F);
+				F = SWCSpectrum(0.f);
 				factor = 1.f / fabsf(-CosTheta(wo));
 			}
 		}
