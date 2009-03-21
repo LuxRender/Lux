@@ -183,7 +183,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		if (vertices[i + 1].bsdf == NULL)
 			break;
 		vertices[i].d2 =
-			DistanceSquared(vertices[i].p, vertices[i + 1]);
+			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 		vertices[i + 1].dARWeight = vertices[i].pdfR *
 			vertices[i + 1].coso / vertices[i].d2;
 		vertices[i].dAWeight = vertices[i + 1].pdf *
@@ -257,7 +257,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 	// Initialize additional values in _vertices_
 	for (u_int i = 0; i < nVerts - 1; ++i) {
 		vertices[i].d2 =
-			DistanceSquared(vertices[i].p, vertices[i + 1]);
+			DistanceSquared(vertices[i].p, vertices[i + 1].p);
 		vertices[i + 1].dAWeight = vertices[i].pdf *
 			vertices[i + 1].cosi / vertices[i].d2;
 		vertices[i].dARWeight = vertices[i + 1].pdfR *
