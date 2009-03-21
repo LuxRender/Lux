@@ -159,12 +159,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			}
 			v.rr = min(1.f, max(bidir.lightThreshold,
 				v.f.filter(tspack) * v.coso / v.pdf));
-			if (nVerts > 1) {
-				vertices[nVerts - 2].d2 =
-					DistanceSquared(vertices[nVerts - 2].p,
-					v.p);
+			if (nVerts > 1)
 				v.flux *= vertices[nVerts - 2].flux;
-			}
 /*		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -186,6 +182,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	for (u_int i = 0; i < nVerts - 1; ++i) {
 		if (vertices[i + 1].bsdf == NULL)
 			break;
+		vertices[i].d2 =
+			DistanceSquared(vertices[i].p, vertices[i + 1]);
 		vertices[i + 1].dARWeight = vertices[i].pdfR *
 			vertices[i + 1].coso / vertices[i].d2;
 		vertices[i].dAWeight = vertices[i + 1].pdf *
@@ -241,12 +239,8 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			}
 			v.rrR = min(1.f, max(bidir.eyeThreshold,
 				v.f.filter(tspack) * cosins / v.pdfR));
-			if (nVerts > 1) {
-				vertices[nVerts - 2].d2 =
-					DistanceSquared(vertices[nVerts - 2].p,
-					v.p);
+			if (nVerts > 1)
 				v.flux *= vertices[nVerts - 2].flux;
-			}
 /*		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -262,6 +256,8 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 	}
 	// Initialize additional values in _vertices_
 	for (u_int i = 0; i < nVerts - 1; ++i) {
+		vertices[i].d2 =
+			DistanceSquared(vertices[i].p, vertices[i + 1]);
 		vertices[i + 1].dAWeight = vertices[i].pdf *
 			vertices[i + 1].cosi / vertices[i].d2;
 		vertices[i].dARWeight = vertices[i + 1].pdfR *
