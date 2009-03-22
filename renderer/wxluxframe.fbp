@@ -1393,7 +1393,7 @@
                                                                                                         <property name="selection">0</property>
                                                                                                         <property name="size"></property>
                                                                                                         <property name="subclass"></property>
-                                                                                                        <property name="tooltip">Select type of Tone Mapping</property>
+                                                                                                        <property name="tooltip">Select Tonemapping Kernel</property>
                                                                                                         <property name="window_extra_style"></property>
                                                                                                         <property name="window_name"></property>
                                                                                                         <property name="window_style"></property>
@@ -1558,7 +1558,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                                    <property name="tooltip">Adjust Reinhard Prescale</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -1629,7 +1629,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Reinhard Prescale Value</property>
                                                                                                                     <property name="value">1.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -1747,7 +1747,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Postscale</property>
+                                                                                                                    <property name="tooltip">Adjust Reinhard Postscale</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -1818,7 +1818,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Postscale value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Reinhard Postscale Value</property>
                                                                                                                     <property name="value">1.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -1936,7 +1936,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Burn</property>
+                                                                                                                    <property name="tooltip">Adjust Reinhard Burn</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2007,7 +2007,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Burn value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Reinhard Burn Value</property>
                                                                                                                     <property name="value">6.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2179,7 +2179,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                                    <property name="tooltip">Adjust Sensitivity</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2250,7 +2250,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Sensitivity Value</property>
                                                                                                                     <property name="value">1.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2368,7 +2368,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                                    <property name="tooltip">Adjust Exposure</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2439,7 +2439,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Exposure Value</property>
                                                                                                                     <property name="value">1.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2557,7 +2557,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Postscale</property>
+                                                                                                                    <property name="tooltip">Adjust FStop</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2628,7 +2628,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Postscale value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust FStop Value</property>
                                                                                                                     <property name="value">1.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2746,7 +2746,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Burn</property>
+                                                                                                                    <property name="tooltip">Adjust Gamma</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2817,7 +2817,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Burn value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Gamma Value</property>
                                                                                                                     <property name="value">6.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -2989,7 +2989,7 @@
                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Reinhard Prescale</property>
+                                                                                                                    <property name="tooltip">Adjust Ywa</property>
                                                                                                                     <property name="value">50</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -3060,7 +3060,7 @@
                                                                                                                     <property name="size">36,-1</property>
                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip">Please enter a new Reinhard Prescale value and press enter.</property>
+                                                                                                                    <property name="tooltip">Adjust Ywa Value</property>
                                                                                                                     <property name="value">1.0</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
@@ -3109,7 +3109,7 @@
                                                                     <property name="border">1</property>
                                                                     <property name="flag">wxEXPAND | wxALL</property>
                                                                     <property name="proportion">0</property>
-                                                                    <object class="wxPanel" expanded="0">
+                                                                    <object class="wxPanel" expanded="1">
                                                                         <property name="bg"></property>
                                                                         <property name="context_help"></property>
                                                                         <property name="enabled">1</property>
@@ -3151,7 +3151,7 @@
                                                                         <event name="OnSetFocus"></event>
                                                                         <event name="OnSize"></event>
                                                                         <event name="OnUpdateUI"></event>
-                                                                        <object class="wxBoxSizer" expanded="0">
+                                                                        <object class="wxBoxSizer" expanded="1">
                                                                             <property name="minimum_size"></property>
                                                                             <property name="name">bSizer33221</property>
                                                                             <property name="orient">wxVERTICAL</property>
@@ -3670,7 +3670,7 @@
                                                                                                                             <property name="size">-1,-1</property>
                                                                                                                             <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Image length Bloom Radius</property>
                                                                                                                             <property name="value">35</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -3741,7 +3741,7 @@
                                                                                                                             <property name="size">36,-1</property>
                                                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Image Length Bloom Radius Value</property>
                                                                                                                             <property name="value">0.07</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -3797,7 +3797,7 @@
                                                                                                                             <property name="size"></property>
                                                                                                                             <property name="style"></property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip"></property>
+                                                                                                                            <property name="tooltip">Compute/Update Bloom image layer</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
                                                                                                                             <property name="window_style"></property>
@@ -3911,7 +3911,7 @@
                                                                                                                             <property name="size">-1,-1</property>
                                                                                                                             <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Bloom amount</property>
                                                                                                                             <property name="value">128</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -3982,7 +3982,7 @@
                                                                                                                             <property name="size">36,-1</property>
                                                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Bloom amount Value</property>
                                                                                                                             <property name="value">0.25</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -4094,7 +4094,7 @@
                                                                                                                     <property name="size"></property>
                                                                                                                     <property name="style"></property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip"></property>
+                                                                                                                    <property name="tooltip">Enable Vignetting</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
                                                                                                                     <property name="window_style"></property>
@@ -4399,7 +4399,7 @@
                                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                                     <property name="style">wxSL_HORIZONTAL|wxSL_TOP</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">Gamma Value</property>
+                                                                                                                                    <property name="tooltip">Adjust Vignetting Amount</property>
                                                                                                                                     <property name="value">358</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
@@ -4472,7 +4472,7 @@
                                                                                                                             <property name="size">40,-1</property>
                                                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Vignetting Amount Value</property>
                                                                                                                             <property name="value">0.4</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -4584,7 +4584,7 @@
                                                                                                                     <property name="size"></property>
                                                                                                                     <property name="style"></property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip"></property>
+                                                                                                                    <property name="tooltip">Enable Chromatic Abberation</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
                                                                                                                     <property name="window_style"></property>
@@ -4696,7 +4696,7 @@
                                                                                                                             <property name="size">-1,-1</property>
                                                                                                                             <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Chromatic aberration amount</property>
+                                                                                                                            <property name="tooltip">Adjust Chromatic Abberation Amount</property>
                                                                                                                             <property name="value">256</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -4767,7 +4767,7 @@
                                                                                                                             <property name="size">40,-1</property>
                                                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Chromatic Abberation Amount Value</property>
                                                                                                                             <property name="value">0.5</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -4897,7 +4897,7 @@
                                                                                                                                     <property name="size"></property>
                                                                                                                                     <property name="style"></property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip"></property>
+                                                                                                                                    <property name="tooltip">Enable Glare</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
                                                                                                                                     <property name="window_style"></property>
@@ -5012,7 +5012,7 @@
                                                                                                                             <property name="size">-1,-1</property>
                                                                                                                             <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Glare amount</property>
                                                                                                                             <property name="value">51</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -5083,7 +5083,7 @@
                                                                                                                             <property name="size">36,-1</property>
                                                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Glare amount Value</property>
                                                                                                                             <property name="value">0.03</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -5211,7 +5211,7 @@
                                                                                                                                     <property name="size">48,-1</property>
                                                                                                                                     <property name="style">wxSP_ARROW_KEYS</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip"></property>
+                                                                                                                                    <property name="tooltip">Adjust number of Glare blades used</property>
                                                                                                                                     <property name="value"></property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
@@ -5328,7 +5328,7 @@
                                                                                                                             <property name="size">-1,-1</property>
                                                                                                                             <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Image length Glare Radius</property>
                                                                                                                             <property name="value">77</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -5399,7 +5399,7 @@
                                                                                                                             <property name="size">36,-1</property>
                                                                                                                             <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Gamma Value</property>
+                                                                                                                            <property name="tooltip">Adjust Image length Glare Value</property>
                                                                                                                             <property name="value">0.03</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
@@ -5902,7 +5902,7 @@
                                                                                                         <property name="selection">0</property>
                                                                                                         <property name="size"></property>
                                                                                                         <property name="subclass"></property>
-                                                                                                        <property name="tooltip">Select Color Space</property>
+                                                                                                        <property name="tooltip">Select ColorSpace Preset</property>
                                                                                                         <property name="window_extra_style"></property>
                                                                                                         <property name="window_name"></property>
                                                                                                         <property name="window_style"></property>
@@ -6144,7 +6144,7 @@
                                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">White X</property>
+                                                                                                                                    <property name="tooltip">Adjust Whitepoint X</property>
                                                                                                                                     <property name="value">50</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
@@ -6333,7 +6333,7 @@
                                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">White Y</property>
+                                                                                                                                    <property name="tooltip">Adjust Whitepoint Y</property>
                                                                                                                                     <property name="value">50</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
@@ -7827,7 +7827,7 @@
                                                                                                 <property name="size">-1,-1</property>
                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                 <property name="subclass"></property>
-                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                <property name="tooltip">Adjust Gamma Correction</property>
                                                                                                 <property name="value">50</property>
                                                                                                 <property name="window_extra_style"></property>
                                                                                                 <property name="window_name"></property>
@@ -7898,7 +7898,7 @@
                                                                                                 <property name="size">36,-1</property>
                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                 <property name="subclass"></property>
-                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                <property name="tooltip">Adjust Gamma Correction Value</property>
                                                                                                 <property name="value">1.0</property>
                                                                                                 <property name="window_extra_style"></property>
                                                                                                 <property name="window_name"></property>
@@ -9171,7 +9171,7 @@
                                                                                                                                                 <property name="size"></property>
                                                                                                                                                 <property name="style"></property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip"></property>
+                                                                                                                                                <property name="tooltip">Enable GREYCStoration Noise Reduction Filter</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
                                                                                                                                                 <property name="window_style"></property>
@@ -9223,7 +9223,7 @@
                                                                                                                                                 <property name="size"></property>
                                                                                                                                                 <property name="style">wxALIGN_RIGHT</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip"></property>
+                                                                                                                                                <property name="tooltip">Use Fast Approximation</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
                                                                                                                                                 <property name="window_style"></property>
@@ -9337,7 +9337,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_AUTOTICKS|wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust number of Iterations</property>
                                                                                                                                                 <property name="value">1</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -9408,7 +9408,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust number of Iterations Value</property>
                                                                                                                                                 <property name="value">1.0</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -9526,7 +9526,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Filter Strength/Amplitude</property>
                                                                                                                                                 <property name="value">102</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -9597,7 +9597,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Filter Strength/Amplitude Value</property>
                                                                                                                                                 <property name="value">40.0</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -9715,7 +9715,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust precision of Gaussian Filter Kernel</property>
                                                                                                                                                 <property name="value">85</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -9786,7 +9786,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust precision of Gaussian Filter Kernel Value</property>
                                                                                                                                                 <property name="value">2.0</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -9958,7 +9958,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Gaussian Filter Alpha</property>
                                                                                                                                                 <property name="value">34</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10029,7 +10029,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Gaussian Filter Alpha Value</property>
                                                                                                                                                 <property name="value">0.8</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10147,7 +10147,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Gaussian Filter Sigma</property>
                                                                                                                                                 <property name="value">47</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10218,7 +10218,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Gaussian Filter Sigma Value</property>
                                                                                                                                                 <property name="value">1.1</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10336,7 +10336,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Sharpness</property>
                                                                                                                                                 <property name="value">205</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10407,7 +10407,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Sharpness Value</property>
                                                                                                                                                 <property name="value">0.8</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10525,7 +10525,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Filter Anisotropy</property>
                                                                                                                                                 <property name="value">102</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10596,7 +10596,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Adjust Filter Anisotropy Value</property>
                                                                                                                                                 <property name="value">0.2</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10768,7 +10768,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Amount of Spatial Integration</property>
                                                                                                                                                 <property name="value">410</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10839,7 +10839,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Amount of Spatial Integration Value</property>
                                                                                                                                                 <property name="value">0.8</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -10957,7 +10957,7 @@
                                                                                                                                                 <property name="size">-1,-1</property>
                                                                                                                                                 <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Amount of Angular Integration</property>
                                                                                                                                                 <property name="value">171</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -11028,7 +11028,7 @@
                                                                                                                                                 <property name="size">36,-1</property>
                                                                                                                                                 <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip">Gamma Value</property>
+                                                                                                                                                <property name="tooltip">Amount of Angular Integration Value</property>
                                                                                                                                                 <property name="value">30.0</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
@@ -11145,7 +11145,7 @@
                                                                                                                                                 <property name="selection">0</property>
                                                                                                                                                 <property name="size"></property>
                                                                                                                                                 <property name="subclass"></property>
-                                                                                                                                                <property name="tooltip"></property>
+                                                                                                                                                <property name="tooltip">Choose Interpolation Kernel Type</property>
                                                                                                                                                 <property name="window_extra_style"></property>
                                                                                                                                                 <property name="window_name"></property>
                                                                                                                                                 <property name="window_style"></property>
@@ -11258,7 +11258,7 @@
                                                                                                                     <property name="size"></property>
                                                                                                                     <property name="style"></property>
                                                                                                                     <property name="subclass"></property>
-                                                                                                                    <property name="tooltip"></property>
+                                                                                                                    <property name="tooltip">Enable Chiu Noise Reduction Filter</property>
                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                     <property name="window_name"></property>
                                                                                                                     <property name="window_style"></property>
@@ -11328,7 +11328,7 @@
                                                                                                                                     <property name="size">-1,-1</property>
                                                                                                                                     <property name="style">wxSL_HORIZONTAL</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">Filter radius</property>
+                                                                                                                                    <property name="tooltip">Adjust Filter Radius</property>
                                                                                                                                     <property name="value">192</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
@@ -11399,7 +11399,7 @@
                                                                                                                                     <property name="size">36,-1</property>
                                                                                                                                     <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                                                                     <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">Filter radius</property>
+                                                                                                                                    <property name="tooltip">Adjust Filter Radius Value</property>
                                                                                                                                     <property name="value">3.0</property>
                                                                                                                                     <property name="window_extra_style"></property>
                                                                                                                                     <property name="window_name"></property>
@@ -11457,7 +11457,7 @@
                                                                                                                             <property name="size"></property>
                                                                                                                             <property name="style"></property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Include center pixel</property>
+                                                                                                                            <property name="tooltip">Include Center Pixel in Filter</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
                                                                                                                             <property name="window_style"></property>
@@ -11614,7 +11614,7 @@
                                                                                         <property name="size"></property>
                                                                                         <property name="style"></property>
                                                                                         <property name="subclass"></property>
-                                                                                        <property name="tooltip"></property>
+                                                                                        <property name="tooltip">Enable automatic updates</property>
                                                                                         <property name="window_extra_style"></property>
                                                                                         <property name="window_name"></property>
                                                                                         <property name="window_style"></property>
@@ -12913,7 +12913,7 @@
                                                                         <property name="size">-1,-1</property>
                                                                         <property name="style">wxSL_HORIZONTAL</property>
                                                                         <property name="subclass"></property>
-                                                                        <property name="tooltip"></property>
+                                                                        <property name="tooltip">Adjust LightGroup Gain/Intensity</property>
                                                                         <property name="value">5</property>
                                                                         <property name="window_extra_style"></property>
                                                                         <property name="window_name"></property>
@@ -12984,7 +12984,7 @@
                                                                         <property name="size">56,-1</property>
                                                                         <property name="style">wxTE_PROCESS_ENTER</property>
                                                                         <property name="subclass"></property>
-                                                                        <property name="tooltip"></property>
+                                                                        <property name="tooltip">Adjust LightGroup Gain/Intensity Value</property>
                                                                         <property name="value">1.0</property>
                                                                         <property name="window_extra_style"></property>
                                                                         <property name="window_name"></property>
@@ -13073,7 +13073,7 @@
                                                                         <property name="size"></property>
                                                                         <property name="style"></property>
                                                                         <property name="subclass"></property>
-                                                                        <property name="tooltip"></property>
+                                                                        <property name="tooltip">Enable RGB Colour adjustment</property>
                                                                         <property name="window_extra_style"></property>
                                                                         <property name="window_name"></property>
                                                                         <property name="window_style"></property>
@@ -13110,7 +13110,7 @@
                                                                     <object class="wxColourPickerCtrl" expanded="1">
                                                                         <property name="bg"></property>
                                                                         <property name="colour">255,255,255</property>
-                                                                        <property name="context_help"></property>
+                                                                        <property name="context_help">Adjust RGB Colour</property>
                                                                         <property name="enabled">0</property>
                                                                         <property name="fg"></property>
                                                                         <property name="font"></property>
@@ -13198,7 +13198,7 @@
                                                                         <property name="size"></property>
                                                                         <property name="style"></property>
                                                                         <property name="subclass"></property>
-                                                                        <property name="tooltip"></property>
+                                                                        <property name="tooltip">Enable BlackBody Temperature Adjustment</property>
                                                                         <property name="window_extra_style"></property>
                                                                         <property name="window_name"></property>
                                                                         <property name="window_style"></property>
@@ -13326,7 +13326,7 @@
                                                                                                 <property name="size">220,25</property>
                                                                                                 <property name="style">wxSL_HORIZONTAL|wxSL_TOP</property>
                                                                                                 <property name="subclass"></property>
-                                                                                                <property name="tooltip"></property>
+                                                                                                <property name="tooltip">Adjust BlackBody Temperature</property>
                                                                                                 <property name="value">313</property>
                                                                                                 <property name="window_extra_style"></property>
                                                                                                 <property name="window_name"></property>
@@ -13399,7 +13399,7 @@
                                                                                         <property name="size">56,-1</property>
                                                                                         <property name="style">wxTE_PROCESS_ENTER</property>
                                                                                         <property name="subclass"></property>
-                                                                                        <property name="tooltip"></property>
+                                                                                        <property name="tooltip">Adjust BlackBody Temperature Value</property>
                                                                                         <property name="value">6500.0</property>
                                                                                         <property name="window_extra_style"></property>
                                                                                         <property name="window_name"></property>

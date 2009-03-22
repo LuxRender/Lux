@@ -217,7 +217,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	int m_TM_kernelChoiceNChoices = sizeof( m_TM_kernelChoiceChoices ) / sizeof( wxString );
 	m_TM_kernelChoice = new wxChoice( m_Tab_Control_ToneMapPanel, ID_TM_KERNELCHOICE, wxDefaultPosition, wxDefaultSize, m_TM_kernelChoiceNChoices, m_TM_kernelChoiceChoices, 0 );
 	m_TM_kernelChoice->SetSelection( 0 );
-	m_TM_kernelChoice->SetToolTip( wxT("Select type of Tone Mapping") );
+	m_TM_kernelChoice->SetToolTip( wxT("Select Tonemapping Kernel") );
 	
 	bSizer120->Add( m_TM_kernelChoice, 1, wxALL, 2 );
 	
@@ -235,13 +235,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer10->Add( m_TM_Reinhard_prescaleStaticText, 0, wxALIGN_CENTER|wxALL, 2 );
 	
 	m_TM_Reinhard_prescaleSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_PRESCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Reinhard_prescaleSlider->SetToolTip( wxT("Reinhard Prescale") );
+	m_TM_Reinhard_prescaleSlider->SetToolTip( wxT("Adjust Reinhard Prescale") );
 	
 	bSizer10->Add( m_TM_Reinhard_prescaleSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Reinhard_prescaleText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_PRESCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_prescaleText->SetMaxLength( 5 ); 
-	m_TM_Reinhard_prescaleText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
+	m_TM_Reinhard_prescaleText->SetToolTip( wxT("Adjust Reinhard Prescale Value") );
 	
 	bSizer10->Add( m_TM_Reinhard_prescaleText, 0, wxALIGN_CENTER, 0 );
 	
@@ -255,13 +255,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer12->Add( m_TM_Reinhard_postscaleStaticText, 0, wxALIGN_CENTER|wxALL, 2 );
 	
 	m_TM_Reinhard_postscaleSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_POSTSCALE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Reinhard_postscaleSlider->SetToolTip( wxT("Reinhard Postscale") );
+	m_TM_Reinhard_postscaleSlider->SetToolTip( wxT("Adjust Reinhard Postscale") );
 	
 	bSizer12->Add( m_TM_Reinhard_postscaleSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Reinhard_postscaleText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_POSTSCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_postscaleText->SetMaxLength( 5 ); 
-	m_TM_Reinhard_postscaleText->SetToolTip( wxT("Please enter a new Reinhard Postscale value and press enter.") );
+	m_TM_Reinhard_postscaleText->SetToolTip( wxT("Adjust Reinhard Postscale Value") );
 	
 	bSizer12->Add( m_TM_Reinhard_postscaleText, 0, wxALIGN_CENTER, 0 );
 	
@@ -275,13 +275,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer13->Add( m_TM_Reinhard_burnStaticText, 0, wxALIGN_CENTER|wxALL, 2 );
 	
 	m_TM_Reinhard_burnSlider = new wxSlider( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_BURN, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Reinhard_burnSlider->SetToolTip( wxT("Reinhard Burn") );
+	m_TM_Reinhard_burnSlider->SetToolTip( wxT("Adjust Reinhard Burn") );
 	
 	bSizer13->Add( m_TM_Reinhard_burnSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Reinhard_burnText = new wxTextCtrl( m_TonemapReinhardOptionsPanel, ID_TM_REINHARD_BURN_TEXT, wxT("6.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Reinhard_burnText->SetMaxLength( 5 ); 
-	m_TM_Reinhard_burnText->SetToolTip( wxT("Please enter a new Reinhard Burn value and press enter.") );
+	m_TM_Reinhard_burnText->SetToolTip( wxT("Adjust Reinhard Burn Value") );
 	
 	bSizer13->Add( m_TM_Reinhard_burnText, 0, wxALIGN_CENTER, 0 );
 	
@@ -293,6 +293,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer126->Add( m_TonemapReinhardOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_TonemapLinearOptionsPanel = new wxPanel( m_Tab_Control_ToneMapPanel, ID_TONEMAPLINEAROPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	m_TonemapLinearOptionsPanel->Hide();
+	
 	wxBoxSizer* bSizer331;
 	bSizer331 = new wxBoxSizer( wxVERTICAL );
 	
@@ -304,13 +306,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1041->Add( m_TM_Linear_sensitivityStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_sensitivitySlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Linear_sensitivitySlider->SetToolTip( wxT("Reinhard Prescale") );
+	m_TM_Linear_sensitivitySlider->SetToolTip( wxT("Adjust Sensitivity") );
 	
 	bSizer1041->Add( m_TM_Linear_sensitivitySlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Linear_sensitivityText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_SENSITIVITY_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_sensitivityText->SetMaxLength( 5 ); 
-	m_TM_Linear_sensitivityText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
+	m_TM_Linear_sensitivityText->SetToolTip( wxT("Adjust Sensitivity Value") );
 	
 	bSizer1041->Add( m_TM_Linear_sensitivityText, 0, wxALIGN_CENTER, 0 );
 	
@@ -324,13 +326,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer105->Add( m_TM_Linear_exposureStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_exposureSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Linear_exposureSlider->SetToolTip( wxT("Reinhard Prescale") );
+	m_TM_Linear_exposureSlider->SetToolTip( wxT("Adjust Exposure") );
 	
 	bSizer105->Add( m_TM_Linear_exposureSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Linear_exposureText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_EXPOSURE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_exposureText->SetMaxLength( 5 ); 
-	m_TM_Linear_exposureText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
+	m_TM_Linear_exposureText->SetToolTip( wxT("Adjust Exposure Value") );
 	
 	bSizer105->Add( m_TM_Linear_exposureText, 0, wxALIGN_CENTER, 0 );
 	
@@ -344,13 +346,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer121->Add( m_TM_Linear_fstopStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_fstopSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Linear_fstopSlider->SetToolTip( wxT("Reinhard Postscale") );
+	m_TM_Linear_fstopSlider->SetToolTip( wxT("Adjust FStop") );
 	
 	bSizer121->Add( m_TM_Linear_fstopSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Linear_fstopText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_FSTOP_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_fstopText->SetMaxLength( 5 ); 
-	m_TM_Linear_fstopText->SetToolTip( wxT("Please enter a new Reinhard Postscale value and press enter.") );
+	m_TM_Linear_fstopText->SetToolTip( wxT("Adjust FStop Value") );
 	
 	bSizer121->Add( m_TM_Linear_fstopText, 0, wxALIGN_CENTER, 0 );
 	
@@ -364,13 +366,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer131->Add( m_TM_Linear_gammaStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_TM_Linear_gammaSlider = new wxSlider( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_Linear_gammaSlider->SetToolTip( wxT("Reinhard Burn") );
+	m_TM_Linear_gammaSlider->SetToolTip( wxT("Adjust Gamma") );
 	
 	bSizer131->Add( m_TM_Linear_gammaSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_Linear_gammaText = new wxTextCtrl( m_TonemapLinearOptionsPanel, ID_TM_LINEAR_GAMMA_TEXT, wxT("6.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_Linear_gammaText->SetMaxLength( 5 ); 
-	m_TM_Linear_gammaText->SetToolTip( wxT("Please enter a new Reinhard Burn value and press enter.") );
+	m_TM_Linear_gammaText->SetToolTip( wxT("Adjust Gamma Value") );
 	
 	bSizer131->Add( m_TM_Linear_gammaText, 0, wxALIGN_CENTER, 0 );
 	
@@ -382,6 +384,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer126->Add( m_TonemapLinearOptionsPanel, 0, wxEXPAND | wxALL, 1 );
 	
 	m_TonemapContrastOptionsPanel = new wxPanel( m_Tab_Control_ToneMapPanel, ID_TONEMAPCONTRASTOPTIONSPANEL, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	m_TonemapContrastOptionsPanel->Hide();
+	
 	wxBoxSizer* bSizer332;
 	bSizer332 = new wxBoxSizer( wxVERTICAL );
 	
@@ -393,13 +397,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1042 = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_TM_contrast_ywaSlider = new wxSlider( m_TonemapContrastOptionsPanel, ID_TM_CONTRAST_YWA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TM_contrast_ywaSlider->SetToolTip( wxT("Reinhard Prescale") );
+	m_TM_contrast_ywaSlider->SetToolTip( wxT("Adjust Ywa") );
 	
 	bSizer1042->Add( m_TM_contrast_ywaSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TM_contrast_ywaText = new wxTextCtrl( m_TonemapContrastOptionsPanel, ID_TM_CONTRAST_YWA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TM_contrast_ywaText->SetMaxLength( 5 ); 
-	m_TM_contrast_ywaText->SetToolTip( wxT("Please enter a new Reinhard Prescale value and press enter.") );
+	m_TM_contrast_ywaText->SetToolTip( wxT("Adjust Ywa Value") );
 	
 	bSizer1042->Add( m_TM_contrast_ywaText, 0, wxALIGN_CENTER, 0 );
 	
@@ -478,17 +482,19 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1032->Add( m_TORGB_bloomweightStaticText11, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_TORGB_bloomradiusSlider = new wxSlider( m_bloomPanel, ID_TORGB_BLOOMRADIUS, 35, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TORGB_bloomradiusSlider->SetToolTip( wxT("Gamma Value") );
+	m_TORGB_bloomradiusSlider->SetToolTip( wxT("Adjust Image length Bloom Radius") );
 	
 	bSizer1032->Add( m_TORGB_bloomradiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_TORGB_bloomradiusText = new wxTextCtrl( m_bloomPanel, ID_TORGB_BLOOMRADIUS_TEXT, wxT("0.07"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_bloomradiusText->SetMaxLength( 5 ); 
-	m_TORGB_bloomradiusText->SetToolTip( wxT("Gamma Value") );
+	m_TORGB_bloomradiusText->SetToolTip( wxT("Adjust Image Length Bloom Radius Value") );
 	
 	bSizer1032->Add( m_TORGB_bloomradiusText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 0 );
 	
 	m_computebloomlayer = new wxButton( m_bloomPanel, ID_COMPUTEBLOOMLAYER, wxT("Compute Layer"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_computebloomlayer->SetToolTip( wxT("Compute/Update Bloom image layer") );
+	
 	bSizer1032->Add( m_computebloomlayer, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	bSizer74->Add( bSizer1032, 1, wxEXPAND, 5 );
@@ -501,13 +507,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer10321->Add( m_TORGB_bloomweightStaticText1, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_TORGB_bloomweightSlider = new wxSlider( m_bloomPanel, ID_TORGB_BLOOMWEIGHT, 128, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TORGB_bloomweightSlider->SetToolTip( wxT("Gamma Value") );
+	m_TORGB_bloomweightSlider->SetToolTip( wxT("Adjust Bloom amount") );
 	
 	bSizer10321->Add( m_TORGB_bloomweightSlider, 1, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_TORGB_bloomweightText = new wxTextCtrl( m_bloomPanel, ID_TORGB_BLOOMWEIGHT_TEXT, wxT("0.25"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_bloomweightText->SetMaxLength( 5 ); 
-	m_TORGB_bloomweightText->SetToolTip( wxT("Gamma Value") );
+	m_TORGB_bloomweightText->SetToolTip( wxT("Adjust Bloom amount Value") );
 	
 	bSizer10321->Add( m_TORGB_bloomweightText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -522,6 +528,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer741 = new wxBoxSizer( wxVERTICAL );
 	
 	m_vignettingenabledCheckBox = new wxCheckBox( m_vignettingPanel, ID_VIGNETTING_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	m_vignettingenabledCheckBox->SetToolTip( wxT("Enable Vignetting") );
 	
 	bSizer741->Add( m_vignettingenabledCheckBox, 0, wxALL, 5 );
 	
@@ -559,7 +567,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer79->Add( bSizer80, 0, wxEXPAND|wxLEFT|wxRIGHT|wxTOP, 5 );
 	
 	m_vignettingamountSlider = new wxSlider( m_vignettingPanel, ID_VIGNETTINGAMOUNT, 358, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL|wxSL_TOP );
-	m_vignettingamountSlider->SetToolTip( wxT("Gamma Value") );
+	m_vignettingamountSlider->SetToolTip( wxT("Adjust Vignetting Amount") );
 	
 	bSizer79->Add( m_vignettingamountSlider, 1, wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 2 );
 	
@@ -567,7 +575,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_vignettingamountText = new wxTextCtrl( m_vignettingPanel, ID_VIGNETTINGAMOUNT_TEXT, wxT("0.4"), wxDefaultPosition, wxSize( 40,-1 ), wxTE_PROCESS_ENTER );
 	m_vignettingamountText->SetMaxLength( 5 ); 
-	m_vignettingamountText->SetToolTip( wxT("Gamma Value") );
+	m_vignettingamountText->SetToolTip( wxT("Adjust Vignetting Amount Value") );
 	
 	bSizer1036->Add( m_vignettingamountText, 0, wxALIGN_BOTTOM|wxBOTTOM|wxFIXED_MINSIZE, 5 );
 	
@@ -583,6 +591,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_aberrationEnabled = new wxCheckBox( m_aberrationPanel, ID_ABERRATION_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
 	
+	m_aberrationEnabled->SetToolTip( wxT("Enable Chromatic Abberation") );
+	
 	bSizer7411->Add( m_aberrationEnabled, 0, wxALL, 5 );
 	
 	wxBoxSizer* bSizer1211;
@@ -593,13 +603,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1211->Add( m_aberrationamountStaticText, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_aberrationamountSlider = new wxSlider( m_aberrationPanel, ID_ABERRATIONAMOUNT, 256, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_aberrationamountSlider->SetToolTip( wxT("Chromatic aberration amount") );
+	m_aberrationamountSlider->SetToolTip( wxT("Adjust Chromatic Abberation Amount") );
 	
 	bSizer1211->Add( m_aberrationamountSlider, 1, wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 2 );
 	
 	m_aberrationamountText = new wxTextCtrl( m_aberrationPanel, ID_ABERRATIONAMOUNT_TEXT, wxT("0.5"), wxDefaultPosition, wxSize( 40,-1 ), wxTE_PROCESS_ENTER );
 	m_aberrationamountText->SetMaxLength( 6 ); 
-	m_aberrationamountText->SetToolTip( wxT("Gamma Value") );
+	m_aberrationamountText->SetToolTip( wxT("Adjust Chromatic Abberation Amount Value") );
 	
 	bSizer1211->Add( m_aberrationamountText, 0, wxALIGN_BOTTOM|wxBOTTOM|wxFIXED_MINSIZE, 5 );
 	
@@ -621,6 +631,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_glareEnabled = new wxCheckBox( m_glarePanel, ID_GLARE_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
 	
+	m_glareEnabled->SetToolTip( wxT("Enable Glare") );
+	
 	bSizer124->Add( m_glareEnabled, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
@@ -633,13 +645,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer103211->Add( m_glareamountStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_glareamountSlider = new wxSlider( m_glarePanel, ID_GLAREAMOUNT, 51, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_glareamountSlider->SetToolTip( wxT("Gamma Value") );
+	m_glareamountSlider->SetToolTip( wxT("Adjust Glare amount") );
 	
 	bSizer103211->Add( m_glareamountSlider, 1, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_glareamountText = new wxTextCtrl( m_glarePanel, ID_GLAREAMOUNT_TEXT, wxT("0.03"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_glareamountText->SetMaxLength( 5 ); 
-	m_glareamountText->SetToolTip( wxT("Gamma Value") );
+	m_glareamountText->SetToolTip( wxT("Adjust Glare amount Value") );
 	
 	bSizer103211->Add( m_glareamountText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -656,6 +668,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer123->Add( m_glarebladesStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_glarebladesSpin = new wxSpinCtrl( m_glarePanel, ID_GLAREBLADES, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), wxSP_ARROW_KEYS, 3, 100, 5 );
+	m_glarebladesSpin->SetToolTip( wxT("Adjust number of Glare blades used") );
+	
 	bSizer123->Add( m_glarebladesSpin, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
@@ -668,13 +682,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer10322->Add( m_glareradiusStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_glareradiusSlider = new wxSlider( m_glarePanel, ID_GLARERADIUS, 77, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_glareradiusSlider->SetToolTip( wxT("Gamma Value") );
+	m_glareradiusSlider->SetToolTip( wxT("Adjust Image length Glare Radius") );
 	
 	bSizer10322->Add( m_glareradiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_glareradiusText = new wxTextCtrl( m_glarePanel, ID_GLARERADIUS_TEXT, wxT("0.03"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_glareradiusText->SetMaxLength( 5 ); 
-	m_glareradiusText->SetToolTip( wxT("Gamma Value") );
+	m_glareradiusText->SetToolTip( wxT("Adjust Image length Glare Value") );
 	
 	bSizer10322->Add( m_glareradiusText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -753,7 +767,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	int m_TORGB_colorspaceChoiceNChoices = sizeof( m_TORGB_colorspaceChoiceChoices ) / sizeof( wxString );
 	m_TORGB_colorspaceChoice = new wxChoice( m_Tab_Control_ColorSpacePanel, ID_TORGB_COLORSPACECHOICE, wxDefaultPosition, wxDefaultSize, m_TORGB_colorspaceChoiceNChoices, m_TORGB_colorspaceChoiceChoices, 0 );
 	m_TORGB_colorspaceChoice->SetSelection( 0 );
-	m_TORGB_colorspaceChoice->SetToolTip( wxT("Select Color Space") );
+	m_TORGB_colorspaceChoice->SetToolTip( wxT("Select ColorSpace Preset") );
 	
 	bSizer332111->Add( m_TORGB_colorspaceChoice, 1, wxALL, 2 );
 	
@@ -782,7 +796,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1012->Add( m_TORGB_whitexStaticText, 0, wxALL|wxEXPAND, 5 );
 	
 	m_TORGB_xwhiteSlider = new wxSlider( m_ColorSpaceWhitepointPanel, ID_TORGB_XWHITE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TORGB_xwhiteSlider->SetToolTip( wxT("White X") );
+	m_TORGB_xwhiteSlider->SetToolTip( wxT("Adjust Whitepoint X") );
 	
 	bSizer1012->Add( m_TORGB_xwhiteSlider, 1, wxALL|wxEXPAND, 1 );
 	
@@ -802,7 +816,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1022->Add( m_TORGB_whiteyStaticText, 0, wxALL|wxEXPAND, 5 );
 	
 	m_TORGB_ywhiteSlider = new wxSlider( m_ColorSpaceWhitepointPanel, ID_TORGB_YWHITE, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TORGB_ywhiteSlider->SetToolTip( wxT("White Y") );
+	m_TORGB_ywhiteSlider->SetToolTip( wxT("Adjust Whitepoint Y") );
 	
 	bSizer1022->Add( m_TORGB_ywhiteSlider, 1, wxALL|wxEXPAND, 1 );
 	
@@ -1005,13 +1019,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer103 = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_TORGB_gammaSlider = new wxSlider( m_Tab_Control_GammaPanel, ID_TORGB_GAMMA, 50, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_TORGB_gammaSlider->SetToolTip( wxT("Gamma Value") );
+	m_TORGB_gammaSlider->SetToolTip( wxT("Adjust Gamma Correction") );
 	
 	bSizer103->Add( m_TORGB_gammaSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_TORGB_gammaText = new wxTextCtrl( m_Tab_Control_GammaPanel, ID_TORGB_GAMMA_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_TORGB_gammaText->SetMaxLength( 5 ); 
-	m_TORGB_gammaText->SetToolTip( wxT("Gamma Value") );
+	m_TORGB_gammaText->SetToolTip( wxT("Adjust Gamma Correction Value") );
 	
 	bSizer103->Add( m_TORGB_gammaText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1175,10 +1189,14 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_greyc_EnabledCheckBox = new wxCheckBox( m_GREYCRegPanel, ID_GREYC_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
 	
+	m_greyc_EnabledCheckBox->SetToolTip( wxT("Enable GREYCStoration Noise Reduction Filter") );
+	
 	bSizer10342->Add( m_greyc_EnabledCheckBox, 0, wxALL, 5 );
 	
 	m_greyc_fastapproxCheckBox = new wxCheckBox( m_GREYCRegPanel, ID_GREYC_FASTAPPROX, wxT("Fast approximation"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_greyc_fastapproxCheckBox->SetValue(true);
+	
+	m_greyc_fastapproxCheckBox->SetToolTip( wxT("Use Fast Approximation") );
 	
 	bSizer10342->Add( m_greyc_fastapproxCheckBox, 1, wxALL, 5 );
 	
@@ -1192,13 +1210,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1034->Add( m_GREYCIterationsStaticText, 0, wxALL, 5 );
 	
 	m_greyc_iterationsSlider = new wxSlider( m_GREYCRegPanel, ID_GREYC_ITERATIONS, 1, 1, 16, wxDefaultPosition, wxSize( -1,-1 ), wxSL_AUTOTICKS|wxSL_HORIZONTAL );
-	m_greyc_iterationsSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_iterationsSlider->SetToolTip( wxT("Adjust number of Iterations") );
 	
 	bSizer1034->Add( m_greyc_iterationsSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_iterationsText = new wxTextCtrl( m_GREYCRegPanel, ID_GREYC_ITERATIONS_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_iterationsText->SetMaxLength( 5 ); 
-	m_greyc_iterationsText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_iterationsText->SetToolTip( wxT("Adjust number of Iterations Value") );
 	
 	bSizer1034->Add( m_greyc_iterationsText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1212,13 +1230,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1035->Add( m_GREYCamplitureStaticText, 0, wxALL, 5 );
 	
 	m_greyc_amplitudeSlider = new wxSlider( m_GREYCRegPanel, ID_GREYC_AMPLITUDE, 102, 1, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_amplitudeSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_amplitudeSlider->SetToolTip( wxT("Adjust Filter Strength/Amplitude") );
 	
 	bSizer1035->Add( m_greyc_amplitudeSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_amplitudeText = new wxTextCtrl( m_GREYCRegPanel, ID_GREYC_AMPLITUDE_TEXT, wxT("40.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_amplitudeText->SetMaxLength( 5 ); 
-	m_greyc_amplitudeText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_amplitudeText->SetToolTip( wxT("Adjust Filter Strength/Amplitude Value") );
 	
 	bSizer1035->Add( m_greyc_amplitudeText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1232,13 +1250,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer10352->Add( m_GREYCgaussprecStaticText, 0, wxALL, 5 );
 	
 	m_greyc_gausprecSlider = new wxSlider( m_GREYCRegPanel, ID_GREYC_GAUSSPREC, 85, 1, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_gausprecSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_gausprecSlider->SetToolTip( wxT("Adjust precision of Gaussian Filter Kernel") );
 	
 	bSizer10352->Add( m_greyc_gausprecSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_gaussprecText = new wxTextCtrl( m_GREYCRegPanel, ID_GREYC_GAUSSPREC_TEXT, wxT("2.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_gaussprecText->SetMaxLength( 5 ); 
-	m_greyc_gaussprecText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_gaussprecText->SetToolTip( wxT("Adjust precision of Gaussian Filter Kernel Value") );
 	
 	bSizer10352->Add( m_greyc_gaussprecText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1260,13 +1278,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer10341->Add( m_GREYCAlphaStaticText, 0, wxALL, 5 );
 	
 	m_greyc_alphaSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_ALPHA, 34, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_alphaSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_alphaSlider->SetToolTip( wxT("Adjust Gaussian Filter Alpha") );
 	
 	bSizer10341->Add( m_greyc_alphaSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_alphaText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_ALPHA_TEXT, wxT("0.8"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_alphaText->SetMaxLength( 5 ); 
-	m_greyc_alphaText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_alphaText->SetToolTip( wxT("Adjust Gaussian Filter Alpha Value") );
 	
 	bSizer10341->Add( m_greyc_alphaText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1280,13 +1298,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer10351->Add( m_GREYCSigmaStaticText, 0, wxALL, 5 );
 	
 	m_greyc_sigmaSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_SIGMA, 47, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_sigmaSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_sigmaSlider->SetToolTip( wxT("Adjust Gaussian Filter Sigma") );
 	
 	bSizer10351->Add( m_greyc_sigmaSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_sigmaText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_SIGMA_TEXT, wxT("1.1"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_sigmaText->SetMaxLength( 5 ); 
-	m_greyc_sigmaText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_sigmaText->SetToolTip( wxT("Adjust Gaussian Filter Sigma Value") );
 	
 	bSizer10351->Add( m_greyc_sigmaText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1300,13 +1318,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer103411->Add( m_GREYCsharpnessStaticText, 0, wxALL, 5 );
 	
 	m_greyc_sharpnessSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_SHARPNESS, 205, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_sharpnessSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_sharpnessSlider->SetToolTip( wxT("Adjust Sharpness") );
 	
 	bSizer103411->Add( m_greyc_sharpnessSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_sharpnessText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_SHARPNESS_TEXT, wxT("0.8"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_sharpnessText->SetMaxLength( 5 ); 
-	m_greyc_sharpnessText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_sharpnessText->SetToolTip( wxT("Adjust Sharpness Value") );
 	
 	bSizer103411->Add( m_greyc_sharpnessText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1320,13 +1338,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer103412->Add( m_GREYCAnisoStaticText, 0, wxALL, 5 );
 	
 	m_greyc_anisoSlider = new wxSlider( m_GREYCFilterPanel, ID_GREYC_ANISO, 102, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_anisoSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_anisoSlider->SetToolTip( wxT("Adjust Filter Anisotropy") );
 	
 	bSizer103412->Add( m_greyc_anisoSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_anisoText = new wxTextCtrl( m_GREYCFilterPanel, ID_GREYC_ANISO_TEXT, wxT("0.2"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_anisoText->SetMaxLength( 5 ); 
-	m_greyc_anisoText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_anisoText->SetToolTip( wxT("Adjust Filter Anisotropy Value") );
 	
 	bSizer103412->Add( m_greyc_anisoText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1348,13 +1366,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer103413->Add( m_GREYCspatialStaticText, 0, wxALL, 5 );
 	
 	m_greyc_spatialSlider = new wxSlider( m_GREYCAdvancedPanel, ID_GREYC_SPATIAL, 410, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_spatialSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_spatialSlider->SetToolTip( wxT("Amount of Spatial Integration") );
 	
 	bSizer103413->Add( m_greyc_spatialSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_spatialText = new wxTextCtrl( m_GREYCAdvancedPanel, ID_GREYC_SPATIAL_TEXT, wxT("0.8"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_spatialText->SetMaxLength( 5 ); 
-	m_greyc_spatialText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_spatialText->SetToolTip( wxT("Amount of Spatial Integration Value") );
 	
 	bSizer103413->Add( m_greyc_spatialText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1368,13 +1386,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer103511->Add( m_GREYCangularStaticText, 0, wxALL, 5 );
 	
 	m_greyc_angularSlider = new wxSlider( m_GREYCAdvancedPanel, ID_GREYC_ANGULAR, 171, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_greyc_angularSlider->SetToolTip( wxT("Gamma Value") );
+	m_greyc_angularSlider->SetToolTip( wxT("Amount of Angular Integration") );
 	
 	bSizer103511->Add( m_greyc_angularSlider, 1, wxALL|wxEXPAND, 2 );
 	
 	m_greyc_angularText = new wxTextCtrl( m_GREYCAdvancedPanel, ID_GREYC_ANGULAR_TEXT, wxT("30.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_greyc_angularText->SetMaxLength( 5 ); 
-	m_greyc_angularText->SetToolTip( wxT("Gamma Value") );
+	m_greyc_angularText->SetToolTip( wxT("Amount of Angular Integration Value") );
 	
 	bSizer103511->Add( m_greyc_angularText, 0, wxALIGN_CENTER|wxALL|wxFIXED_MINSIZE, 0 );
 	
@@ -1391,6 +1409,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	int m_GREYCinterpolationChoiceNChoices = sizeof( m_GREYCinterpolationChoiceChoices ) / sizeof( wxString );
 	m_GREYCinterpolationChoice = new wxChoice( m_GREYCAdvancedPanel, ID_GREYC_INTERPOLATIONCHOICE, wxDefaultPosition, wxDefaultSize, m_GREYCinterpolationChoiceNChoices, m_GREYCinterpolationChoiceChoices, 0 );
 	m_GREYCinterpolationChoice->SetSelection( 0 );
+	m_GREYCinterpolationChoice->SetToolTip( wxT("Choose Interpolation Kernel Type") );
+	
 	bSizer1034111->Add( m_GREYCinterpolationChoice, 1, wxALL, 2 );
 	
 	bSizer6611->Add( bSizer1034111, 0, wxEXPAND, 5 );
@@ -1414,6 +1434,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_chiu_enableCheckBox = new wxCheckBox( m_ChiuPanel, ID_CHIU_ENABLED, wxT("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
 	
+	m_chiu_enableCheckBox->SetToolTip( wxT("Enable Chiu Noise Reduction Filter") );
+	
 	bSizer61->Add( m_chiu_enableCheckBox, 0, wxALL, 5 );
 	
 	wxBoxSizer* bSizer106;
@@ -1423,13 +1445,13 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer1033 = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_chiu_radiusSlider = new wxSlider( m_ChiuPanel, ID_CHIU_RADIUS, 192, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
-	m_chiu_radiusSlider->SetToolTip( wxT("Filter radius") );
+	m_chiu_radiusSlider->SetToolTip( wxT("Adjust Filter Radius") );
 	
 	bSizer1033->Add( m_chiu_radiusSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 2 );
 	
 	m_chiu_radiusText = new wxTextCtrl( m_ChiuPanel, ID_CHIU_RADIUS_TEXT, wxT("3.0"), wxDefaultPosition, wxSize( 36,-1 ), wxTE_PROCESS_ENTER );
 	m_chiu_radiusText->SetMaxLength( 5 ); 
-	m_chiu_radiusText->SetToolTip( wxT("Filter radius") );
+	m_chiu_radiusText->SetToolTip( wxT("Adjust Filter Radius Value") );
 	
 	bSizer1033->Add( m_chiu_radiusText, 0, wxALIGN_CENTER_VERTICAL|wxFIXED_MINSIZE, 0 );
 	
@@ -1437,7 +1459,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_chiu_includecenterCheckBox = new wxCheckBox( m_ChiuPanel, ID_CHIU_INCLUDECENTER, wxT("Include Center"), wxDefaultPosition, wxDefaultSize, 0 );
 	
-	m_chiu_includecenterCheckBox->SetToolTip( wxT("Include center pixel") );
+	m_chiu_includecenterCheckBox->SetToolTip( wxT("Include Center Pixel in Filter") );
 	
 	bSizer106->Add( m_chiu_includecenterCheckBox, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
@@ -1483,6 +1505,8 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_auto_tonemapCheckBox = new wxCheckBox( m_Tonemap, ID_AUTO_TONEMAP, wxT("auto"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_auto_tonemapCheckBox->SetValue(true);
+	
+	m_auto_tonemapCheckBox->SetToolTip( wxT("Enable automatic updates") );
 	
 	bSizer55->Add( m_auto_tonemapCheckBox, 0, wxALIGN_CENTER|wxALL, 5 );
 	
@@ -2561,10 +2585,14 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	bSizer10111->Add( m_LG_scaleLabel, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	m_LG_scaleSlider = new wxSlider( m_Tab_Control_LightGroupPanel, ID_LG_SCALE, 5, 0, 512, wxDefaultPosition, wxSize( -1,-1 ), wxSL_HORIZONTAL );
+	m_LG_scaleSlider->SetToolTip( wxT("Adjust LightGroup Gain/Intensity") );
+	
 	bSizer10111->Add( m_LG_scaleSlider, 1, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 	
 	m_LG_scaleText = new wxTextCtrl( m_Tab_Control_LightGroupPanel, ID_LG_SCALE_TEXT, wxT("1.0"), wxDefaultPosition, wxSize( 56,-1 ), wxTE_PROCESS_ENTER );
 	m_LG_scaleText->SetMaxLength( 6 ); 
+	m_LG_scaleText->SetToolTip( wxT("Adjust LightGroup Gain/Intensity Value") );
+	
 	bSizer10111->Add( m_LG_scaleText, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE, 2 );
 	
 	bSizer107->Add( bSizer10111, 1, wxEXPAND, 5 );
@@ -2584,10 +2612,13 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	
 	m_LG_rgbEnabled = new wxCheckBox( m_Tab_Control_LightGroupPanel, ID_LG_RGB_ENABLED, wxT("RGB"), wxDefaultPosition, wxDefaultSize, 0 );
 	
+	m_LG_rgbEnabled->SetToolTip( wxT("Enable RGB Colour adjustment") );
+	
 	bSizer159111->Add( m_LG_rgbEnabled, 0, wxALL, 5 );
 	
 	m_LG_rgbPicker = new wxColourPickerCtrl( m_Tab_Control_LightGroupPanel, ID_LG_RGBCOLOR, wxColour( 255, 255, 255 ), wxDefaultPosition, wxSize( -1,-1 ), wxCLRP_DEFAULT_STYLE );
 	m_LG_rgbPicker->Enable( false );
+	m_LG_rgbPicker->SetHelpText( wxT("Adjust RGB Colour") );
 	
 	bSizer159111->Add( m_LG_rgbPicker, 0, wxALIGN_CENTER|wxALL, 5 );
 	
@@ -2602,6 +2633,8 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	bSizer110 = new wxBoxSizer( wxVERTICAL );
 	
 	m_LG_temperatureEnabled = new wxCheckBox( m_Tab_Control_LightGroupPanel, ID_LG_TEMPERATURE_ENABLED, wxT("Black Body temperature"), wxDefaultPosition, wxDefaultSize, 0 );
+	
+	m_LG_temperatureEnabled->SetToolTip( wxT("Enable BlackBody Temperature Adjustment") );
 	
 	bSizer110->Add( m_LG_temperatureEnabled, 0, wxALL, 5 );
 	
@@ -2623,6 +2656,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	
 	m_LG_temperatureSlider = new wxSlider( m_Tab_Control_LightGroupPanel, ID_LG_TEMPERATURE, 313, 0, 512, wxPoint( -1,-1 ), wxSize( 220,25 ), wxSL_HORIZONTAL|wxSL_TOP );
 	m_LG_temperatureSlider->Enable( false );
+	m_LG_temperatureSlider->SetToolTip( wxT("Adjust BlackBody Temperature") );
 	m_LG_temperatureSlider->SetMinSize( wxSize( 220,25 ) );
 	m_LG_temperatureSlider->SetMaxSize( wxSize( 220,25 ) );
 	
@@ -2633,6 +2667,7 @@ LightGroupPanel::LightGroupPanel( wxWindow* parent, wxWindowID id, const wxPoint
 	m_LG_temperatureText = new wxTextCtrl( m_Tab_Control_LightGroupPanel, ID_LG_TEMPERATURE_TEXT, wxT("6500.0"), wxDefaultPosition, wxSize( 56,-1 ), wxTE_PROCESS_ENTER );
 	m_LG_temperatureText->SetMaxLength( 5 ); 
 	m_LG_temperatureText->Enable( false );
+	m_LG_temperatureText->SetToolTip( wxT("Adjust BlackBody Temperature Value") );
 	
 	bSizer101111->Add( m_LG_temperatureText, 0, wxALIGN_BOTTOM|wxALL|wxFIXED_MINSIZE, 2 );
 	
