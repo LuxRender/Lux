@@ -236,7 +236,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					for (int j = 0; j < L.size(); ++j)
+					for (u_int j = 0; j < L.size(); ++j)
 						L[j] += f * Ll[j];
 				}
 			}
@@ -267,7 +267,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					for (int j = 0; j < L.size(); ++j)
+					for (u_int j = 0; j < L.size(); ++j)
 						L[j] += f * Ll[j];
 				}
 			}
@@ -300,7 +300,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					for (int j = 0; j < L.size(); ++j)
+					for (u_int j = 0; j < L.size(); ++j)
 						L[j] += f * Ll[j];
 				}
 			}
@@ -331,7 +331,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					for (int j = 0; j < L.size(); ++j)
+					for (u_int j = 0; j < L.size(); ++j)
 						L[j] += f * Ll[j];
 				}
 			}
@@ -345,8 +345,8 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, true, nrContribs);
-				f *= invsamples * AbsDot(wi, n);
-				for (int j = 0; j < L.size(); ++j)
+				f *= AbsDot(wi, n);
+				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
 			}
 		}
@@ -357,8 +357,8 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, rayDepth + 1, true, nrContribs);
-				f *= invsamples * AbsDot(wi, n);
-				for (int j = 0; j < L.size(); ++j)
+				f *= AbsDot(wi, n);
+				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
 			}
 		} 
@@ -378,7 +378,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 	SWCSpectrum Lt(1.f);
 	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
-	for (int i = 0; i < L.size(); ++i)
+	for (u_int i = 0; i < L.size(); ++i)
 		L[i] *= Lt;
 	SWCSpectrum Lv(0.f);
 	int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
@@ -393,7 +393,7 @@ int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	LiInternal(tspack, scene, ray, sample, L, alpha, 0, true, nrContribs);
 
-	for (int i = 0; i < L.size(); ++i)
+	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
 		L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, bufferId, i);
 
