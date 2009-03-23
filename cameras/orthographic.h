@@ -44,6 +44,7 @@ public:
 	{
 		return false;
 	}
+	virtual bool IsLensBased() const { return false; }
 	void AutoFocus(Scene* scene);
 
 	OrthoCamera* Clone() const {

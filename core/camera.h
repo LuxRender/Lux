@@ -42,6 +42,7 @@ public:
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const {luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W"); return false;}
 	virtual void GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const {}
 	virtual bool IsDelta() const;
+	virtual bool IsLensBased() const { return true; }
 	virtual void AutoFocus(Scene* scene) { }
 
 	float GetTime(float u1) const;

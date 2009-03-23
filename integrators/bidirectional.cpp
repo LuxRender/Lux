@@ -111,7 +111,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	isect.dg.p = bsdf->dgShading.p;
 	isect.dg.nn = bsdf->dgShading.nn;
 	u_int nVerts = 0;
-	const float dummy[] = {0.f, sample->imageX, sample->imageY, 0.5f};
+	const float dummy[] = {0.f, tspack->camera->IsLensBased() ? sample->imageX : sample->lensU, tspack->camera->IsLensBased() ? sample->imageY : sample->lensV, 0.5f};
 	const float *data = (const float *)&dummy;
 	while (true) {
 		// Find next vertex in path and initialize _vertices_
@@ -653,9 +653,11 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	BSDF *eyeBsdf;
 	float eyePdf;
 	SWCSpectrum We;
+	const float posX = tspack->camera->IsLensBased() ? sample->lensU : sample->imageX;
+	const float posY = tspack->camera->IsLensBased() ? sample->lensV : sample->imageY;
 	//Jeanphi - Replace dummy .5f by a sampled value if needed
 	if (!tspack->camera->Sample_W(tspack, scene,
-		sample->lensU, sample->lensV, .5f, &eyeBsdf, &eyePdf, &We))
+		posX, posY, .5f, &eyeBsdf, &eyePdf, &We))
 		return nrContribs;	//FIXME not necessarily true if special sampling for direct connection to the eye
 	We /= eyePdf;
 	int nEye = generateEyePath(tspack, scene, eyeBsdf, sample,
