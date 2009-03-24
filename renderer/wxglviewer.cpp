@@ -517,7 +517,7 @@ void  LuxGLViewer::DrawRulers(){
 	glEnable(GL_BLEND);
 
 	//draw background
-	glColor4f(0.2f, 0.2f, 0.2f, 0.5f);
+	glColor4f(0.3f, 0.3f, 0.3f, 0.8f);
 	glBegin(GL_QUADS);
 		glVertex2f(      0.0f, m_windowH-m_rulerSize );
 		glVertex2f( m_windowW, m_windowH-m_rulerSize );
@@ -532,7 +532,7 @@ void  LuxGLViewer::DrawRulers(){
 
 	//draw borders
 	glLineWidth(1);
-	glColor4f(0.2f, 0.2f, 0.2f, 0.6f);
+	glColor4f(0.2f, 0.2f, 0.2f, 0.7f);
 	glBegin(GL_LINES);
 		glVertex2f(      0.0f, m_windowH-m_rulerSize + 0.5f );
 		glVertex2f( m_windowW, m_windowH-m_rulerSize + 0.5f );
@@ -556,7 +556,7 @@ void  LuxGLViewer::DrawRulers(){
 	glScissor(m_rulerSize, m_windowH-m_rulerSize, m_windowW-m_rulerSize, m_rulerSize);
 	glEnable(GL_SCISSOR_TEST);
 	glLineWidth(1);
-	glColor3f(0.7f, 0.7f, 0.7f);
+	glColor3f(0.8f, 0.8f, 0.8f);
 	glBegin(GL_QUADS); //using quads because lines don't seem to align properly
 	for(float x=x_start_offset;x<m_windowW;x+=tickDist){
 		if( count%10==0 ){
@@ -575,12 +575,11 @@ void  LuxGLViewer::DrawRulers(){
 	glEnd();
 	//draw mouse marker
 	if(m_trackMousePos){
+		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glBegin(GL_TRIANGLES);
-			glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
-			glVertex2f( m_prevMouseX + 0.5f, m_windowH-m_rulerSize );
-			glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
-			glVertex2f( m_prevMouseX + 0.5f - 5.0f, m_windowH-m_rulerSize/2 );
-			glVertex2f( m_prevMouseX + 0.5f + 5.0f, m_windowH-m_rulerSize/2 );
+			glVertex2f( m_prevMouseX + 0.5f,        m_windowH-m_rulerSize );
+			glVertex2f( m_prevMouseX + 0.5f - 3.0f, m_windowH-m_rulerSize/2 );
+			glVertex2f( m_prevMouseX + 0.5f + 3.0f, m_windowH-m_rulerSize/2 );
 		glEnd();
 	}
 	glColor3f(1.0f, 1.0f, 1.0f);
@@ -619,7 +618,7 @@ void  LuxGLViewer::DrawRulers(){
 	glScissor(0, 0, m_rulerSize, m_windowH-m_rulerSize);
 	glEnable(GL_SCISSOR_TEST);
 	glLineWidth(1);
-	glColor3f(0.7f, 0.7f, 0.7f);
+	glColor3f(0.8f, 0.8f, 0.8f);
 	glBegin(GL_QUADS);
 	for(float y=y_start_offset;y>0;y-=tickDist){
 		if( count%10==0 ){
@@ -638,12 +637,11 @@ void  LuxGLViewer::DrawRulers(){
 	glEnd();
 	//draw mouse marker
 	if(m_trackMousePos){
+		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glBegin(GL_TRIANGLES);
-			glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
-			glVertex2f( m_rulerSize, m_windowH - m_prevMouseY - 0.5f );
-			glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
-			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f + 5.0f );
-			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f - 5.0f );
+			glVertex2f( m_rulerSize,   m_windowH - m_prevMouseY - 0.5f );
+			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f + 3.0f );
+			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f - 3.0f );
 		glEnd();
 	}
 	glColor3f(1.0f, 1.0f, 1.0f);
@@ -709,9 +707,9 @@ void LuxGLViewer::FontGenerator::DrawText(const char* text, int x, int y, bool v
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
 	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-	glPixelTransferf( GL_RED_BIAS,   0.95f );
-	glPixelTransferf( GL_GREEN_BIAS, 0.95f );
-	glPixelTransferf( GL_BLUE_BIAS,  0.95f );
+	glPixelTransferf( GL_RED_BIAS,   1.0f );
+	glPixelTransferf( GL_GREEN_BIAS, 1.0f );
+	glPixelTransferf( GL_BLUE_BIAS,  1.0f );
 
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_ALPHA, GL_UNSIGNED_BYTE, img.ptr());
 
