@@ -30,6 +30,8 @@
 #include "wx/glcanvas.h"
 #endif // LUX_USE_OPENGL
 
+#include "point.h"
+
 namespace lux
 {
 
@@ -54,27 +56,36 @@ protected:
 	virtual wxWindow* GetWindow();
 	virtual wxViewerSelection GetSelection();
 	virtual void SetMode(wxViewerMode mode);
+	virtual void SetRulersEnabled(bool enabled);
 	virtual void SetZoom(const wxViewerSelection *selection);
 	virtual void SetSelection(const wxViewerSelection *selection);
 	virtual void SetHighlight(const wxViewerSelection *selection);
 	virtual void Reload();
 	virtual void Reset();
 
-	void InverseTransformPoint(int x, int y, int &invX, int &invY);
+private:
+	void CreateTextures();
+	Point TransformPoint(const Point &p);
+	Point InverseTransformPoint(const Point &p);
 	void DrawMarchingAnts(const wxViewerSelection &selection, float red, float green, float blue);
+	void DrawRulers();
 
 	wxGLContext        m_glContext;
 
 	int                m_imageW, m_imageH;
+	const int          m_textureW, m_textureH;
 	int                m_tilesX, m_tilesY, m_tilesNr;
-	bool               m_firstDraw;
-	bool               m_imageChanged;
-	const int          m_textureW;
-	const int          m_textureH;
-	int                m_offsetX, m_offsetY, m_scaleXo2, m_scaleYo2, m_scaleXo, m_scaleYo, m_lastX, m_lastY;
+	unsigned int      *m_tileTextureNames;
+	int                m_postScaleOffsetX, m_postScaleOffsetY, m_preScaleOffsetX, m_preScaleOffsetY;
 	float              m_scale;
 	float              m_scaleExp;
-	int                m_lastW, m_lastH;
+	int                m_viewX, m_viewY;
+	int                m_viewW, m_viewH;
+	int                m_windowW, m_windowH;
+	int                m_prevWindowW, m_prevWindowH;
+	int                m_prevMouseX, m_prevMouseY;
+	bool               m_firstDraw;
+	bool               m_imageChanged;
 
 	wxTimer*           m_animTimer;
 	int                m_stipple;
@@ -82,6 +93,21 @@ protected:
 	bool               m_selectionChanged;
 	wxViewerSelection  m_highlightSel;
 	bool               m_refreshMarchingAntsOnly;
+	bool               m_trackMousePos;
+	bool               m_rulersEnabled;
+	int                m_rulerSize;
+
+	class FontGenerator {
+	public:
+		FontGenerator();
+		~FontGenerator();
+		void Init();
+		void DrawText(const char* text, int x=0, int y=0, bool vertical=false);
+		bool isInitialized;
+		unsigned int m_texName, m_texW, m_texH;
+
+	} m_fontgen;
+
 };
 
 #else // LUX_USE_OPENGL

@@ -40,8 +40,8 @@ public:
 	void SetBounds(int x1, int x2, int y1, int y2);
 	inline void GetCorner1(int &x, int &y) const  { x = m_x1;  y = m_y1; }
 	inline void GetCorner2(int &x, int &y) const  { x = m_x2;  y = m_y2; }
-	inline void SetCorner1(int &x, int &y)  { m_x1 = x;  m_y1 = y; }
-	inline void SetCorner2(int &x, int &y)  { m_x2 = x;  m_y2 = y; }
+	inline void SetCorner1(int x, int y)  { m_x1 = x;  m_y1 = y; }
+	inline void SetCorner2(int x, int y)  { m_x2 = x;  m_y2 = y; }
 	inline bool HasSize(void) const  { return (m_x1 != m_x2) && (m_y1 != m_y2); }
 
 protected:
@@ -89,6 +89,7 @@ public:
 	virtual wxViewerSelection GetSelection();
 
 	virtual void SetMode(wxViewerMode mode);
+	virtual void SetRulersEnabled(bool enabled = true);
 	virtual void SetZoom(const wxViewerSelection *selection);
 	virtual void SetSelection(const wxViewerSelection *selection);
 	virtual void SetHighlight(const wxViewerSelection *selection);

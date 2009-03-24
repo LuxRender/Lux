@@ -34,6 +34,10 @@
 #endif
 
 #include <cmath>
+#include <sstream>
+
+#define cimg_debug 0     // Disable modal window in CImg exceptions.
+#include "cimg.h"
 
 #include "lux.h"
 #include "api.h"
@@ -58,20 +62,25 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 #else
       : wxGLCanvas(parent, wxID_ANY, glAttribList), wxViewerBase(), m_glContext(this), m_textureW(textureW), m_textureH(textureH) {
 #endif
-	m_firstDraw = true;
-	m_offsetX = m_offsetY = 0;
+	m_windowW = m_windowH = m_prevWindowW = m_prevWindowH = 0;
+	m_viewX = m_viewY = m_viewW = m_viewH = 0;
 	m_scale = 1.0f;
 	m_scaleExp=0;
-	m_scaleXo = m_scaleYo = 0;
-	m_scaleXo2 = m_scaleYo2 = 0;
-	m_lastX = m_lastY = 0;
+	m_preScaleOffsetX  = m_preScaleOffsetY  = 0;
+	m_postScaleOffsetX = m_postScaleOffsetY = 0;
+	m_prevMouseX = m_prevMouseY = 0;
+	m_tileTextureNames=NULL;
 
 	m_stipple = 0x00FF; // Stipple pattern - dashes
 	m_animTimer = new wxTimer(this, ID_ANIMATIONUPDATE);
 	m_animTimer->Start(125, wxTIMER_CONTINUOUS); // Animation at 8fps
 
+	m_firstDraw = true;
 	m_selectionChanged = false;
 	m_refreshMarchingAntsOnly = false;
+	m_trackMousePos = false;
+	m_rulersEnabled = true;
+	m_rulerSize = 13;
 
 	SetMode(PANZOOM);
 
@@ -79,6 +88,7 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 }
 
 LuxGLViewer::~LuxGLViewer() {
+	if(m_tileTextureNames!=NULL) delete [] m_tileTextureNames;
 	if(m_animTimer->IsRunning())
 		m_animTimer->Stop();
 	delete m_animTimer;
@@ -95,9 +105,10 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 	if (!m_refreshMarchingAntsOnly) {
 		glClearColor(0.5, 0.5, 0.5, 1.0);
 	}
-	glViewport(0, 0, (GLint)GetSize().x, (GLint)GetSize().y);
+	glViewport(0, 0, m_windowW, m_windowH);
+	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, GetSize().x, 0, GetSize().y, -1, 1);
+	glOrtho(0, m_windowW, 0, m_windowH, -1, 1);
 	if (!m_refreshMarchingAntsOnly) {
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
@@ -105,58 +116,51 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 	if(luxStatistics("sceneIsReady")) {
 		if(m_firstDraw) {
 			m_firstDraw = false;
+			m_fontgen.Init();
 			m_imageW = luxStatistics("filmXres");
 			m_imageH = luxStatistics("filmYres");
-
 			// NOTE - Ratow - using ceiling function so that a minimum number of tiles are created in the case of m_imageW % 256 == 0
 			m_tilesX = ceil((float)m_imageW/m_textureW);
 			m_tilesY = ceil((float)m_imageH/m_textureH);
 			m_tilesNr = m_tilesX*m_tilesY;
-			for(int i = 0; i < m_tilesNr; i++){
-				glBindTexture(GL_TEXTURE_2D, i+1);
-				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //GL_LINEAR); //'linear' causes seams to show on my ati card - zcott
-				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); //warning: the texture isn't initialized, don't display before uploading
-			}
+
+			CreateTextures();
+
 			m_imageChanged = true;
 			//move to center of window
-			m_offsetX = m_offsetY = 0;
+			m_preScaleOffsetX = m_preScaleOffsetY = 0;
 			m_scale = 1.0f;
 			m_scaleExp=0;
-			m_scaleXo = m_scaleYo = 0;
-			m_lastX = m_lastY = 0;
-			m_scaleXo2 = -m_imageW/2 + GetSize().x/2;
-			m_scaleYo2 = -m_imageH/2 + GetSize().y/2;
+			m_postScaleOffsetX = -m_imageW/2 + m_viewW/2 + m_viewX;
+			m_postScaleOffsetY = -m_imageH/2 + m_viewH/2 + m_viewY;
 		}
 
-		glPushMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
 		//transform and roll out!
-		glTranslatef(m_offsetX, m_offsetY, 0.f);
-		glTranslatef(m_scaleXo2, m_scaleYo2, 0.f);
+		glTranslatef(m_postScaleOffsetX, m_postScaleOffsetY, 0.f);
 		glScalef(m_scale, m_scale, 1.f);
-		glTranslatef(-m_scaleXo, -m_scaleYo, 0.f);
+		glTranslatef(-m_preScaleOffsetX, -m_preScaleOffsetY, 0.f);
 
 		if (!m_refreshMarchingAntsOnly) {
-			glEnable (GL_TEXTURE_2D);
 			//draw the texture tiles
+			glEnable(GL_TEXTURE_2D);
 			for(int y = 0; y < m_tilesY; y++){
 				for(int x = 0; x < m_tilesX; x++){
 					int offX = x*m_textureW;
 					int offY = y*m_textureH;
 					int tileW = min(m_textureW, m_imageW - offX);
 					int tileH = min(m_textureH, m_imageH - offY);
-					glBindTexture (GL_TEXTURE_2D, y*m_tilesX+x+1);
+					glBindTexture (GL_TEXTURE_2D, m_tileTextureNames[y*m_tilesX+x]);
 					if(m_imageChanged)	{ //upload the textures only when needed (takes long...)
 						// NOTE - Ratow - loading texture tile in one pass
+						glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 						glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
 						glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
+						glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
 						glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_UNSIGNED_BYTE, luxFramebuffer());
 					}
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 					glBegin(GL_QUADS);
 					glTexCoord2f(                 0.0f,                             0.0f);
 					glVertex3f(  x*m_textureW +   0.0f, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
@@ -170,6 +174,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 				}
 			}
 			glDisable(GL_TEXTURE_2D);
+			if(m_rulersEnabled) DrawRulers();
 		}
 
 		if (m_selection.HasSize()) {
@@ -180,8 +185,6 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 			// Draw active (red) work area
 			DrawMarchingAnts(m_highlightSel, 1.0, 0.0, 0.0); 
 		}
-
-		glPopMatrix();
 	}
 
 	glFlush();
@@ -199,34 +202,40 @@ void LuxGLViewer::OnEraseBackground(wxEraseEvent &event) {
 void LuxGLViewer::OnSize(wxSizeEvent &event) {
 	wxGLCanvas::OnSize(event);
 
-	int W, H;
-	W = event.GetSize().x;
-	H = event.GetSize().y;
+	GetClientSize(&m_windowW, &m_windowH);
+	if(m_rulersEnabled){
+		m_viewX = m_rulerSize;
+		m_viewY = 0;
+		m_viewW = m_windowW-m_rulerSize;
+		if(m_viewW<0) m_viewW = 0;
+		m_viewH = m_windowH-m_rulerSize;
+		if(m_viewH<0) m_viewH = 0;
+	}else{
+		m_viewX = 0;
+		m_viewY = 0;
+		m_viewW = m_windowW;
+		m_viewH = m_windowH;
+	}
 
 	if(!m_firstDraw) {
 		//calculate new offset
-		m_offsetX += (W-m_lastW)/2;
-		m_offsetY += (H-m_lastH)/2;
+		m_postScaleOffsetX += (m_windowW - m_prevWindowW)/2;
+		m_postScaleOffsetY += (m_windowH - m_prevWindowH)/2;
 		//make sure new offset is in bounds
-		if((m_imageW-m_scaleXo)*m_scale+m_scaleXo2+m_offsetX-10<0)
-			m_offsetX = (int)(     10-m_scaleXo2-(m_imageW-m_scaleXo)*m_scale );
-		if((0-m_scaleXo)*m_scale+m_scaleXo2+m_offsetX+10>W-1)
-			m_offsetX = (int)( W-1-10-m_scaleXo2-(0-m_scaleXo)*m_scale );
-		if((m_imageH-m_scaleYo)*m_scale+m_scaleYo2+m_offsetY-10<0)
-			m_offsetY = (int)(     10-m_scaleYo2-(m_imageH-m_scaleYo)*m_scale );
-		if((0-m_scaleYo)*m_scale+m_scaleYo2+m_offsetY+10>H-1)
-			m_offsetY = (int)( H-1-10-m_scaleYo2-(0-m_scaleYo)*m_scale );
+		Point p0 = TransformPoint(Point(0, 0));
+		Point p1 = TransformPoint(Point(m_imageW, m_imageH));
+		if(p1.x-30<0)               	m_postScaleOffsetX =              30 -(p1.x - m_postScaleOffsetX);
+		else if(p0.x+30>m_windowW-1)	m_postScaleOffsetX = m_windowW-1 -30 -(p0.x - m_postScaleOffsetX);
+		if(p1.y-30<0)               	m_postScaleOffsetY =              30 -(p1.y - m_postScaleOffsetY);
+		else if(p0.y+30>m_windowH-1)	m_postScaleOffsetY = m_windowH-1 -30 -(p0.y - m_postScaleOffsetY);
 	}
-	m_lastW = W;
-	m_lastH = H;
+	m_prevWindowW = m_windowW;
+	m_prevWindowH = m_windowH;
 
-	Update();
+	Refresh();
 }
 
 void LuxGLViewer::OnMouse(wxMouseEvent &event) {
-	int W, H;
-	GetClientSize(&W, &H);
-
 	if(m_viewerMode == PANZOOM) {
 		// Skip events if we have nothing to draw
 		if(m_firstDraw) {
@@ -237,62 +246,65 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 		} else if(event.GetEventType() == wxEVT_LEFT_UP) {
 			SetCursor(wxCURSOR_CROSS);
 		} else if(event.GetEventType() == wxEVT_MIDDLE_DOWN) {
-			m_scale = min(W/(float)m_imageW, H/(float)m_imageH);
+			m_preScaleOffsetX = 0;
+			m_preScaleOffsetY = 0;
+			m_scale = min(m_viewW/(float)m_imageW, m_viewH/(float)m_imageH);
+			if(m_scale<=0) m_scale = 1;
 			m_scaleExp = floor(log((float)m_scale)/log(2.0f)*2+0.5f)/2;
-			m_scaleXo2 = W/2;
-			m_scaleYo2 = H/2;
-			m_scaleXo = m_imageW/2;
-			m_scaleYo = m_imageH/2;
-			m_offsetX = 0;
-			m_offsetY = 0;
+			m_postScaleOffsetX = (int)((m_viewW - m_imageW*m_scale)/2 + 0.5f) + m_viewX;
+			m_postScaleOffsetY = (int)((m_viewH - m_imageH*m_scale)/2 + 0.5f) + m_viewY;
 			Refresh();
 		} else if(event.GetEventType() == wxEVT_RIGHT_DOWN) {
 			//calculate the scaling point in image space
-			m_scaleXo = (int)(     event.GetX() /m_scale-m_scaleXo2/m_scale-m_offsetX/m_scale+m_scaleXo);
-			m_scaleYo = (int)((H-1-event.GetY())/m_scale-m_scaleYo2/m_scale-m_offsetY/m_scale+m_scaleYo);
+			Point p = InverseTransformPoint(Point(event.GetX(), m_windowH-1 -event.GetY()));
+			m_preScaleOffsetX = p.x;
+			m_preScaleOffsetY = p.y;
 			//make sure the scaling point is in bounds
-			if(m_scaleXo<0) m_scaleXo = 0;
-			if(m_scaleXo>m_imageW-1) m_scaleXo = m_imageW-1;
-			if(m_scaleYo<0) m_scaleYo = 0;
-			if(m_scaleYo>m_imageH-1) m_scaleYo = m_imageH-1;
+			if(m_preScaleOffsetX<0) m_preScaleOffsetX = 0;
+			if(m_preScaleOffsetX>m_imageW-1) m_preScaleOffsetX = m_imageW-1;
+			if(m_preScaleOffsetY<0) m_preScaleOffsetY = 0;
+			if(m_preScaleOffsetY>m_imageH-1) m_preScaleOffsetY = m_imageH-1;
 			//new scale
 			m_scaleExp = 0;
 			m_scale = 1.0f;
 			//get the scaling point in window space
-			m_scaleXo2 =     event.GetX();
-			m_scaleYo2 = H-1-event.GetY();
-			m_offsetX = m_offsetY = 0;
+			m_postScaleOffsetX =               event.GetX();
+			m_postScaleOffsetY = m_windowH-1 - event.GetY();
 			Refresh();
 		} else if(event.GetEventType() == wxEVT_MOTION) {
 			if(event.Dragging() && event.m_leftDown) {
 				//calculate new offset
-				int offsetXNew = m_offsetX + (event.GetX()-m_lastX);
-				int offsetYNew = m_offsetY - (event.GetY()-m_lastY);
+				int newOffsetX = m_postScaleOffsetX + (event.GetX()-m_prevMouseX);
+				int newOffsetY = m_postScaleOffsetY - (event.GetY()-m_prevMouseY);
 				//check if new offset in bounds
-				if((m_imageW-m_scaleXo)*m_scale+m_scaleXo2+offsetXNew-10>=0 && (0-m_scaleXo)*m_scale+m_scaleXo2+offsetXNew+10<=W-1)
-					m_offsetX = offsetXNew;
-				if((m_imageH-m_scaleYo)*m_scale+m_scaleYo2+offsetYNew-10>=0 && (0-m_scaleYo)*m_scale+m_scaleYo2+offsetYNew+10<=H-1)
-					m_offsetY = offsetYNew;
-				Refresh();
+				Point p0 = TransformPoint(Point(0, 0));
+				Point p1 = TransformPoint(Point(m_imageW, m_imageH));
+				if( p1.x -m_postScaleOffsetX +newOffsetX -30 >= 0 &&
+					p0.x -m_postScaleOffsetX +newOffsetX +30 <= m_windowW-1)
+					m_postScaleOffsetX = newOffsetX;
+				if( p1.y -m_postScaleOffsetY +newOffsetY -30 >= 0 &&
+					p0.y -m_postScaleOffsetY +newOffsetY +30 <= m_windowH-1)
+					m_postScaleOffsetY = newOffsetY;
+				if(!m_rulersEnabled) Refresh(); //avoid redrawing twice
 			}
 		} else if(event.GetEventType() == wxEVT_MOUSEWHEEL) {
-			if((event.GetWheelRotation() > 0 && m_scale < 4) || //zoom in up to 4x
-					(event.GetWheelRotation() < 0 && (m_scale > 1 || m_scale*m_imageW > W*0.5f || m_scale*m_imageH > H*0.5f))) { //zoom out up to 50% of window size
+			if( (event.GetWheelRotation() > 0 && m_scale < 8) || //zoom in up to 8x
+			    (event.GetWheelRotation() < 0 && (m_scale > 1 || m_scale*m_imageW > m_windowW*0.5f || m_scale*m_imageH > m_windowH*0.5f))) { //zoom out up to 50% of window size
 				//calculate the scaling point in image space
-				m_scaleXo = (int)(     event.GetX() /m_scale-m_scaleXo2/m_scale-m_offsetX/m_scale+m_scaleXo);
-				m_scaleYo = (int)((H-1-event.GetY())/m_scale-m_scaleYo2/m_scale-m_offsetY/m_scale+m_scaleYo);
+				Point p = InverseTransformPoint(Point(event.GetX(), m_windowH-1 -event.GetY()));
+				m_preScaleOffsetX = p.x;
+				m_preScaleOffsetY = p.y;
 				//make sure the scaling point is in bounds
-				if(m_scaleXo < 0) m_scaleXo = 0;
-				if(m_scaleXo > m_imageW-1) m_scaleXo = m_imageW-1;
-				if(m_scaleYo < 0) m_scaleYo = 0;
-				if(m_scaleYo > m_imageH-1) m_scaleYo = m_imageH-1;
+				if(m_preScaleOffsetX < 0) m_preScaleOffsetX = 0;
+				if(m_preScaleOffsetX > m_imageW-1) m_preScaleOffsetX = m_imageW-1;
+				if(m_preScaleOffsetY < 0) m_preScaleOffsetY = 0;
+				if(m_preScaleOffsetY > m_imageH-1) m_preScaleOffsetY = m_imageH-1;
 				//calculate new scale
 				m_scaleExp += (event.GetWheelRotation()>0?1:-1)*0.5f;
 				m_scale = pow(2.0f, m_scaleExp);
 				//get the scaling point in window space
-				m_scaleXo2 = event.GetX();
-				m_scaleYo2 = H-1-event.GetY();
-				m_offsetX = m_offsetY = 0;
+				m_postScaleOffsetX =               event.GetX();
+				m_postScaleOffsetY = m_windowH-1 - event.GetY();
 				Refresh();
 			}
 		} else {
@@ -300,30 +312,38 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 		}
 	} else if(m_viewerMode == SELECTION) {
 		if(event.GetEventType() == wxEVT_LEFT_DOWN) {
-			int x, y;
-			InverseTransformPoint(event.GetX(), event.GetY(), x, y);
-			m_selection.SetBounds(x, x, y, y);
+			Point p = InverseTransformPoint(Point(event.GetX(), m_windowH-1 -event.GetY()));
+			m_selection.SetBounds(p.x, p.x, p.y, p.y);
 		} else if(event.GetEventType() == wxEVT_LEFT_UP) {
 			boost::shared_ptr<wxViewerSelection> selection(new wxViewerSelection(m_selection));
-			int x, y;
-			InverseTransformPoint(event.GetX(), event.GetY(), x, y);
-			selection->SetCorner2(x, y);
+			Point p = InverseTransformPoint(Point(event.GetX(), m_windowH-1 -event.GetY()));
+			selection->SetCorner2(p.x, p.y);
 			wxViewerEvent viewerEvent(selection, wxEVT_LUX_VIEWER_SELECTION);
 			GetEventHandler()->AddPendingEvent(viewerEvent);
 		} else if(event.GetEventType() == wxEVT_MOTION) {
 			if(event.Dragging() && event.m_leftDown) {
-				int oldX, oldY, newX, newY;
+				int oldX, oldY;
 				m_selection.GetCorner2(oldX, oldY);
-				InverseTransformPoint(event.GetX(), event.GetY(), newX, newY);
-				if ((newX != oldX) || (newY != oldY)) {
-					m_selection.SetCorner2(newX, newY);
+				Point p = InverseTransformPoint(Point(event.GetX(), m_windowH-1 -event.GetY()));
+				if ((p.x != oldX) || (p.y != oldY)) {
+					m_selection.SetCorner2(p.x, p.y);
 					m_selectionChanged = true;
 				}
 			}
 		}
 	}
-	m_lastX = event.GetX();
-	m_lastY = event.GetY();
+	
+	m_prevMouseX = event.GetX();
+	m_prevMouseY = event.GetY();
+	if(event.GetEventType() == wxEVT_ENTER_WINDOW){
+		m_trackMousePos = true;
+	} else if(event.GetEventType() == wxEVT_LEAVE_WINDOW){
+		m_trackMousePos = false;
+		if(m_rulersEnabled) Refresh();
+	} else if(event.GetEventType() == wxEVT_MOTION){
+		m_trackMousePos = true;
+		if(m_rulersEnabled) Refresh();
+	}
 }
 
 wxWindow* LuxGLViewer::GetWindow() {
@@ -339,28 +359,43 @@ void LuxGLViewer::SetMode(wxViewerMode mode) {
 	Refresh();
 }
 
+void LuxGLViewer::SetRulersEnabled(bool enabled){
+	m_rulersEnabled = enabled;
+	if(m_rulersEnabled){
+		m_viewX = m_rulerSize;
+		m_viewY = 0;
+		m_viewW = m_windowW-m_rulerSize;
+		if(m_viewW<0) m_viewW = 0;
+		m_viewH = m_windowH-m_rulerSize;
+		if(m_viewH<0) m_viewH = 0;
+	}else{
+		m_viewX = 0;
+		m_viewY = 0;
+		m_viewW = m_windowW;
+		m_viewH = m_windowH;
+	}
+	Refresh();
+}
+
 void LuxGLViewer::SetZoom(const wxViewerSelection *selection) {
-	int W, H;
-	GetClientSize(&W, &H);
 	int x1, x2, y1, y2;
 	selection->GetBounds(x1,x2,y1,y2);
 	int selMaxX = min(m_imageW, max(x1, x2));
 	int selMaxY = min(m_imageH, max(y1, y2));
 	int selMinX = max(0, min(x1, x2));
 	int selMinY = max(0, min(y1, y2));
-	float exactScale = min((float)W/(selMaxX-selMinX), (float)H/(selMaxY-selMinY));
+	float exactScale = min((float)m_viewW/(selMaxX-selMinX), (float)m_viewH/(selMaxY-selMinY));
 
 	if(isinf(exactScale)) // If selection is too small, increase it to 1 pixel
-		exactScale = min(W, H);
+		exactScale = min(m_viewW, m_viewH);
 
 	// Zoom in and center selection
-	m_scaleXo = (selMaxX + selMinX)/2.0;
-	m_scaleYo = (selMaxY + selMinY)/2.0;
+	m_preScaleOffsetX = (selMaxX + selMinX)/2.0;
+	m_preScaleOffsetY = (selMaxY + selMinY)/2.0;
 	m_scaleExp = log(exactScale)/log(2.0);
 	m_scale = exactScale;
-	m_scaleXo2 = W/2.0;
-	m_scaleYo2 = H/2.0-1;
-	m_offsetX = m_offsetY = 0;
+	m_postScaleOffsetX = m_viewW/2.0   + m_viewX;
+	m_postScaleOffsetY = m_viewH/2.0-1 + m_viewY;
 	Refresh();
 }
 
@@ -388,6 +423,9 @@ void LuxGLViewer::Reload() {
 }
 
 void LuxGLViewer::Reset() {
+	if(m_tilesNr>0) glDeleteTextures(m_tilesNr, m_tileTextureNames);
+	if(m_tileTextureNames!=NULL) delete [] m_tileTextureNames;
+	m_tileTextureNames = NULL;
 	m_firstDraw = true;
 	Refresh();
 }
@@ -403,12 +441,29 @@ void LuxGLViewer::OnTimer(wxTimerEvent &event) {
 	this->Refresh();
 }
 
-void LuxGLViewer::InverseTransformPoint(int x, int y, int &invX, int &invY) {
-	int width, height;
-	this->GetClientSize(&width, &height);
+void LuxGLViewer::CreateTextures(){
+	glEnable(GL_TEXTURE_2D);
+	m_tileTextureNames = new unsigned int[m_tilesNr];
+	glGenTextures(m_tilesNr, m_tileTextureNames);
+	for(int i = 0; i < m_tilesNr; i++){
+		glBindTexture(GL_TEXTURE_2D, m_tileTextureNames[i]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //GL_LINEAR); //'linear' causes seams to show on my ati card - zcott
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); //warning: the texture isn't initialized, don't display before uploading
+	}
+	glDisable(GL_TEXTURE_2D);
+}
 
-	invX = (x - m_offsetX - m_scaleXo2)/m_scale + m_scaleXo;
-	invY = (height - y - m_offsetY - m_scaleYo2)/m_scale + m_scaleYo;
+Point LuxGLViewer::TransformPoint(const Point &p){
+	return Point( (p.x - m_preScaleOffsetX)*m_scale + m_postScaleOffsetX,
+	              (p.y - m_preScaleOffsetY)*m_scale + m_postScaleOffsetY);
+}
+
+Point LuxGLViewer::InverseTransformPoint(const Point &p){
+	return Point( (p.x - m_postScaleOffsetX)/m_scale + m_preScaleOffsetX,
+	              (p.y - m_postScaleOffsetY)/m_scale + m_preScaleOffsetY);
 }
 
 void LuxGLViewer::DrawMarchingAnts(const wxViewerSelection &selection, float red, float green, float blue) {
@@ -440,6 +495,249 @@ void LuxGLViewer::DrawMarchingAnts(const wxViewerSelection &selection, float red
 	glEnd();
 
 	glDisable(GL_LINE_STIPPLE);
+}
+
+void  LuxGLViewer::DrawRulers(){
+	int tickSpacing = 10;
+	float tickDist = tickSpacing*m_scale;
+	//adjust the ticks to current scale
+	while((tickDist<5 || tickDist>15) && tickSpacing>1){
+		if(tickDist<5) tickSpacing *= 2;
+		else tickSpacing /= 2;
+		if(tickSpacing<1) tickSpacing = 1;
+		tickDist = tickSpacing*m_scale;
+	}
+	Point p0 = TransformPoint(Point(0, 0));
+	float x_offset=p0.x;
+	float y_offset=p0.y;
+
+	glPushMatrix();
+	glLoadIdentity();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+
+	//draw background
+	glColor4f(0.2f, 0.2f, 0.2f, 0.5f);
+	glBegin(GL_QUADS);
+		glVertex2f(      0.0f, m_windowH-m_rulerSize );
+		glVertex2f( m_windowW, m_windowH-m_rulerSize );
+		glVertex2f( m_windowW, m_windowH );
+		glVertex2f(      0.0f, m_windowH );
+
+		glVertex2f(        0.0f,      0.0f );
+		glVertex2f( m_rulerSize,      0.0f );
+		glVertex2f( m_rulerSize, m_windowH );
+		glVertex2f(        0.0f, m_windowH );
+	glEnd();
+
+	//draw borders
+	glLineWidth(1);
+	glColor4f(0.2f, 0.2f, 0.2f, 0.6f);
+	glBegin(GL_LINES);
+		glVertex2f(      0.0f, m_windowH-m_rulerSize + 0.5f );
+		glVertex2f( m_windowW, m_windowH-m_rulerSize + 0.5f );
+
+		glVertex2f( m_rulerSize - 0.5f,      0.0f );
+		glVertex2f( m_rulerSize - 0.5f, m_windowH );
+	glEnd();
+
+	//HORIZONTAL RULER
+
+	//draw ticks
+	int tick_length, count;
+	float x_start_offset;
+	if(x_offset>=0){
+		count = 0;
+		x_start_offset = x_offset;
+	}else{
+		count = floor(-x_offset/tickDist);
+		x_start_offset = fmod(x_offset, tickDist);
+	}
+	glScissor(m_rulerSize, m_windowH-m_rulerSize, m_windowW-m_rulerSize, m_rulerSize);
+	glEnable(GL_SCISSOR_TEST);
+	glLineWidth(1);
+	glColor3f(0.7f, 0.7f, 0.7f);
+	glBegin(GL_QUADS); //using quads because lines don't seem to align properly
+	for(float x=x_start_offset;x<m_windowW;x+=tickDist){
+		if( count%10==0 ){
+			tick_length=m_rulerSize-1;
+		}else if( count%5==0 ){
+			tick_length=m_rulerSize/2-1;
+		}else{
+			tick_length=m_rulerSize/4-1;
+		}
+		count++;
+		glVertex2f( x + 0.0f, m_windowH-m_rulerSize );
+		glVertex2f( x + 1.0f, m_windowH-m_rulerSize );
+		glVertex2f( x + 1.0f, m_windowH-m_rulerSize+tick_length );
+		glVertex2f( x + 0.0f, m_windowH-m_rulerSize+tick_length );
+	}
+	glEnd();
+	//draw mouse marker
+	if(m_trackMousePos){
+		glBegin(GL_TRIANGLES);
+			glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
+			glVertex2f( m_prevMouseX + 0.5f, m_windowH-m_rulerSize );
+			glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
+			glVertex2f( m_prevMouseX + 0.5f - 5.0f, m_windowH-m_rulerSize/2 );
+			glVertex2f( m_prevMouseX + 0.5f + 5.0f, m_windowH-m_rulerSize/2 );
+		glEnd();
+	}
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glDisable(GL_BLEND);
+	
+	//draw text
+	if(x_offset>=0){
+		count = 0;
+		x_start_offset = x_offset;
+	}else{
+		count = floor(-x_offset/(tickDist*10))*10;
+		x_start_offset = fmod(x_offset, tickDist*10);
+	}
+	std::ostringstream ss;
+	for(float x=x_start_offset;x<m_windowW;x+=tickDist*10){
+		ss.str("");
+		ss<<count*tickSpacing;
+		m_fontgen.DrawText(ss.str().c_str(), x+3, m_windowH-10);
+		count+=10;
+	}
+	glDisable(GL_SCISSOR_TEST);
+
+	//VERTICAL RULER
+
+	//draw ticks
+	float y_start_offset;
+	if(y_offset+m_imageH*m_scale<=m_windowH){
+		count = 0;
+		y_start_offset = y_offset+m_imageH*m_scale;
+	}else{
+		count = floor((y_offset+m_imageH*m_scale-m_windowH)/tickDist);
+		y_start_offset = fmod(y_offset+m_imageH*m_scale-m_windowH, tickDist) + m_windowH;
+	}
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glEnable(GL_BLEND);
+	glScissor(0, 0, m_rulerSize, m_windowH-m_rulerSize);
+	glEnable(GL_SCISSOR_TEST);
+	glLineWidth(1);
+	glColor3f(0.7f, 0.7f, 0.7f);
+	glBegin(GL_QUADS);
+	for(float y=y_start_offset;y>0;y-=tickDist){
+		if( count%10==0 ){
+			tick_length=m_rulerSize-1;
+		}else if( count%5==0 ){
+			tick_length=m_rulerSize/2-1;
+		}else{
+			tick_length=m_rulerSize/4-1;
+		}
+		count++;
+		glVertex2f( m_rulerSize-tick_length, y - 1.0f );
+		glVertex2f( m_rulerSize,             y - 1.0f );
+		glVertex2f( m_rulerSize,             y - 0.0f );
+		glVertex2f( m_rulerSize-tick_length, y - 0.0f );
+	}
+	glEnd();
+	//draw mouse marker
+	if(m_trackMousePos){
+		glBegin(GL_TRIANGLES);
+			glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
+			glVertex2f( m_rulerSize, m_windowH - m_prevMouseY - 0.5f );
+			glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
+			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f + 5.0f );
+			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f - 5.0f );
+		glEnd();
+	}
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glDisable(GL_BLEND);
+
+	//draw text
+	if(y_offset+m_imageH*m_scale<=m_windowH){
+		count = 0;
+		y_start_offset = y_offset+m_imageH*m_scale;
+	}else{
+		count = floor((y_offset+m_imageH*m_scale-m_windowH)/(tickDist*10))*10;
+		y_start_offset = fmod(y_offset+m_imageH*m_scale-m_windowH, tickDist*10) + m_windowH;
+	}
+
+	for(float y=y_start_offset;y>0;y-=tickDist*10){
+		ss.str("");
+		ss<<count*tickSpacing;
+		m_fontgen.DrawText(ss.str().c_str(), 10, y-2, true);
+		count+=10;
+	}
+	glDisable(GL_SCISSOR_TEST);
+
+	glPopMatrix();
+}
+
+LuxGLViewer::FontGenerator::FontGenerator(){
+	isInitialized = false;
+}
+
+void LuxGLViewer::FontGenerator::Init(){
+	if(isInitialized) return;
+	m_texW=512;
+	m_texH=16;
+	glEnable(GL_TEXTURE_2D);
+	glGenTextures(1, &m_texName);
+	glBindTexture(GL_TEXTURE_2D, m_texName);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_texW, m_texH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glDisable(GL_TEXTURE_2D);
+	isInitialized = true;
+}
+
+LuxGLViewer::FontGenerator::~FontGenerator(){
+}
+
+void LuxGLViewer::FontGenerator::DrawText(const char* text, int x, int y, bool vertical){
+	if(!isInitialized) return;
+
+	cimg_library::CImg<unsigned char> img(1,1,0,1);
+	unsigned char fg[] = {255};
+	unsigned char bg[] = {0};
+	img.draw_text(text,0,0,fg,bg); //default font is 7x11px
+	int w = img.width;
+	int h = img.height;
+	if(w==0 || w>(int)m_texW || h==0 || h>(int)m_texH) return;
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, m_texName);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+	glPixelTransferf( GL_RED_BIAS,   0.95f );
+	glPixelTransferf( GL_GREEN_BIAS, 0.95f );
+	glPixelTransferf( GL_BLUE_BIAS,  0.95f );
+
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_ALPHA, GL_UNSIGNED_BYTE, img.ptr());
+
+	glPixelTransferf( GL_RED_BIAS,   0.0f );
+	glPixelTransferf( GL_GREEN_BIAS, 0.0f );
+	glPixelTransferf( GL_BLUE_BIAS,  0.0f );
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glEnable(GL_BLEND);
+	glBegin(GL_QUADS);
+	if(!vertical){
+		glTexCoord2f( 0.0f,          1.0f*h/m_texH );	glVertex2f( x,     y );
+		glTexCoord2f( 1.0f*w/m_texW, 1.0f*h/m_texH );	glVertex2f( x + w, y );
+		glTexCoord2f( 1.0f*w/m_texW, 0.0f );         	glVertex2f( x + w, y + h );
+		glTexCoord2f( 0.0f,          0.0f );         	glVertex2f( x,     y + h );
+	}else{
+		glTexCoord2f( 0.0f,          1.0f*h/m_texH );	glVertex2f( x,     y - w );
+		glTexCoord2f( 1.0f*w/m_texW, 1.0f*h/m_texH );	glVertex2f( x,     y );
+		glTexCoord2f( 1.0f*w/m_texW, 0.0f );         	glVertex2f( x - h, y );
+		glTexCoord2f( 0.0f,          0.0f) ;         	glVertex2f( x - h, y - w );
+	}
+	glEnd();
+	glDisable(GL_BLEND);
+	glDisable(GL_TEXTURE_2D);
+
 }
 
 #endif // LUX_USE_OPENGL

@@ -251,6 +251,21 @@
                         <event name="OnMenuSelection">OnMenu</event>
                         <event name="OnUpdateUI"></event>
                     </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">1</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Toggle display of rulers in viewer</property>
+                        <property name="id">ID_VIEWER_RULERS</property>
+                        <property name="kind">wxITEM_CHECK</property>
+                        <property name="label">&amp;Rulers</property>
+                        <property name="name">m_viewerRulers</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">CTRL+R</property>
+                        <property name="unchecked_bitmap"></property>
+                        <event name="OnMenuSelection">OnMenu</event>
+                        <event name="OnUpdateUI"></event>
+                    </object>
                     <object class="separator" expanded="1">
                         <property name="permission">none</property>
                     </object>

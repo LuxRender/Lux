@@ -597,6 +597,9 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			}
 			m_renderPage->Layout();
 			break;
+		case ID_VIEWER_RULERS: // CF
+			m_renderOutput->SetRulersEnabled( m_view->IsChecked(ID_VIEWER_RULERS) );
+			break;
 		case ID_RENDER_COPY: // CF
 			if ( m_guiRenderState != WAITING &&
 				 wxTheClipboard->Open() )
