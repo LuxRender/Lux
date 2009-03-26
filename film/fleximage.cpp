@@ -1027,21 +1027,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		// Disable further bloom layer updates if used.
 		m_BloomUpdateLayer = false;
 
-		if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
-			// Copy to framebuffer pixels
-			const u_int nPix = xPixelCount * yPixelCount;
-			for (u_int i = 0; i < nPix; i++) {
-				framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * color[i].c[0], 0.f, 255.f));
-				framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * color[i].c[1], 0.f, 255.f));
-				framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * color[i].c[2], 0.f, 255.f));
-			}
-		}
-
 		if (type & IMAGE_FILEOUTPUT) {
-			// write out tonemapped TGA
-			if (writeTmTga)
-				WriteTGAImage(color, alpha, filename + postfix + ".tga");
-
 			// write out tonemapped EXR
 			if (writeTmExr)
 				WriteEXRImage(color, alpha, filename + postfix + ".exr");
@@ -1051,6 +1037,25 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 				WriteIGIImage(color, alpha, filename + postfix + ".igi"); // TODO add samples
 		}
 
+		// Output to low dynamic range formats
+		if ((type & IMAGE_FILEOUTPUT) || (type & IMAGE_FRAMEBUFFER)) {
+			// Clamp too high values
+			const u_int nPix = xPixelCount * yPixelCount;
+			for (u_int i = 0; i < nPix; ++i)
+				color[i] = colorSpace.Limit(color[i]);
+
+			// write out tonemapped TGA
+			if (writeTmTga)
+				WriteTGAImage(color, alpha, filename + postfix + ".tga");
+			// Copy to framebuffer pixels
+			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
+				for (u_int i = 0; i < nPix; i++) {
+					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * color[i].c[0], 0.f, 255.f));
+					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * color[i].c[1], 0.f, 255.f));
+					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * color[i].c[2], 0.f, 255.f));
+				}
+			}
+		}
 	}
 }
 

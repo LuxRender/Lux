@@ -157,13 +157,16 @@ bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
 		rgb = Lerp(parameter, RGBColor(l), rgb).Clamp();
 		constrain = true;	// Colour modified to fit RGB gamut
 	}
-	// The following is disabled to better preserve color instead of luminance
-	// The is most noticeable with HDR outputs that don't need this clipping at all
+
+	return constrain;
+}
+
+RGBColor ColorSystem::Limit(const RGBColor &rgb) const
+{
 	if (HighGamut(rgb)) {
-		if (lum > luminance) {
-			rgb = RGBColor(1.f);
-			return true;
-		}
+		const float lum = RGBToXYZ[1][0] * rgb.c[0] + RGBToXYZ[1][1] * rgb.c[1] + RGBToXYZ[1][2] * rgb.c[2];
+		if (lum > luminance)
+			return RGBColor(1.f);
 
 		// Find the primary with greater weight and calculate the
 		// parameter of the point on the vector from the white point
@@ -178,12 +181,10 @@ bool ColorSystem::Constrain(float lum, RGBColor &rgb) const
 			parameter = (1.f - l) / (rgb.c[2] - l);
 		}
 
-		// Now finally compute the gamut-constrained RGB weights.
-		rgb = Lerp(parameter, RGBColor(l), rgb);
-		constrain = true;	// Colour modified to fit RGB gamut
+		// Now finally compute the limited RGB weights.
+		return Lerp(parameter, RGBColor(l), rgb);
 	}
-
-	return constrain;
+	return rgb;
 }
 
 }
