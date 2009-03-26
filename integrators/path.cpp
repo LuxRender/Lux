@@ -92,7 +92,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if (includeEnvironment) {
+			if (includeEnvironment || pathLength > 0) {
 				if (specularBounce) {
 					for (u_int i = 0; i < scene->lights.size(); ++i) {
 						SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
