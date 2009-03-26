@@ -176,77 +176,58 @@ double Scene::Statistics(const string &statName) {
 }
 
 // Control Implementations in Scene:
-double Scene::GetNumberOfSamples() {
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-    // collect samples from all threads
-    double samples = 0.;
-    for(unsigned int i=0;i<renderThreads.size();i++)
-        samples +=renderThreads[i]->stat_Samples;
-
-    // Dade - add the samples received from network
-    samples += numberOfSamplesFromNetwork;
-
-    return samples;
+double Scene::GetNumberOfSamples()
+{
+	return stat_Samples + numberOfSamplesFromNetwork;
 }
 
-double Scene::Statistics_SamplesPPx() {
-    // divide by total pixels
-    int xstart, xend, ystart, yend;
-    camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-    return GetNumberOfSamples() / (double) ((xend-xstart)*(yend-ystart));
+double Scene::Statistics_SamplesPPx()
+{
+	// divide by total pixels
+	int xstart, xend, ystart, yend;
+	camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+	return GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
 }
 
-double Scene::Statistics_SamplesPSec() {
+double Scene::Statistics_SamplesPSec()
+{
 	// Dade - s_Timer is inizialized only after the preprocess phase
 	if (!preprocessDone)
 		return 0.0;
 
-    double samples = GetNumberOfSamples();
-    double time = s_Timer.Time();
-    double dif_samples = samples - lastSamples;
-    double elapsed = time - lastTime;
-    lastSamples = samples;
-    lastTime = time;
+	double samples = GetNumberOfSamples();
+	double time = s_Timer.Time();
+	double dif_samples = samples - lastSamples;
+	double elapsed = time - lastTime;
+	lastSamples = samples;
+	lastTime = time;
 
-    // return current samples / sec total
+	// return current samples / sec total
 	if (elapsed == 0.0)
 		return 0.0;
 	else
 		return dif_samples / elapsed;
 }
 
-double Scene::Statistics_SamplesPTotSec() {
+double Scene::Statistics_SamplesPTotSec()
+{
 	// Dade - s_Timer is inizialized only after the preprocess phase
 	if (!preprocessDone)
 		return 0.0;
 
-    double samples = GetNumberOfSamples();
-    double time = s_Timer.Time();
+	double samples = GetNumberOfSamples();
+	double time = s_Timer.Time();
 
-    // return current samples / total elapsed secs
-    return samples / time;
+	// return current samples / total elapsed secs
+	return samples / time;
 }
 
-double Scene::Statistics_Efficiency() {
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-	if(renderThreads.size() == 0)
+double Scene::Statistics_Efficiency()
+{
+	if (stat_Samples == 0.0)
 		return 0.0;
 
-    // collect samples from all threads
-    double samples = 0.;
-    double drops = 0.;
-    for(unsigned int i=0;i<renderThreads.size();i++) {
-        samples +=renderThreads[i]->stat_Samples;
-        drops +=renderThreads[i]->stat_blackSamples;
-    }
-
-	if (samples == 0.0)
-		return 0.0;
-
-    // return efficiency percentage
-    return (100.f * drops) / samples;
+	return (100.f * stat_blackSamples) / stat_Samples;
 }
 
 void Scene::SignalThreads(ThreadSignals signal) {
@@ -268,8 +249,6 @@ void RenderThread::render(RenderThread *myThread) {
         xt.sec += 1;
         boost::thread::sleep(xt);
     }
-
-    myThread->stat_Samples = 0.;
 
     // initialize the thread's rangen
     int seed = myThread->scene->seedBase + myThread->n;
@@ -356,7 +335,7 @@ void RenderThread::render(RenderThread *myThread) {
             float alpha;
             SWCSpectrum dummy;
 	// Jeanphi - Hijack statistics until volume integrator revamp
-	    myThread->stat_blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
+	    myThread->scene->stat_blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
 					myThread->scene, ray, myThread->sample, &dummy, &alpha);
 
 
@@ -368,7 +347,7 @@ void RenderThread::render(RenderThread *myThread) {
         }
 
         // update samples statistics
-        myThread->stat_Samples++;
+        myThread->scene->stat_Samples++;
 
         // increment (locked) global sample pos if necessary (eg maxSampPos != 0)
         if(*useSampPos == -1 && maxSampPos != 0) {
@@ -507,6 +486,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
     volumeRegion = vr;
     s_Timer.Reset();
     lastSamples = 0.;
+    stat_Samples = 0.;
+    stat_blackSamples = 0.;
 	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
     lastTime = 0.;
     if (lts.size() == 0) {

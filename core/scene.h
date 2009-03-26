@@ -41,8 +41,6 @@ public:
             Sampler* _Splr, Camera* _Cam, Scene* _Scn)
     : n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi),
             sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn), thread(NULL) {
-        stat_Samples=0;
-        stat_blackSamples=0;
         sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
     }
 
@@ -55,7 +53,6 @@ public:
 
     int  n;
 	ThreadSignals signal;
-    double stat_Samples, stat_blackSamples;
     SurfaceIntegrator *surfaceIntegrator;
     VolumeIntegrator *volumeIntegrator;
     Sample *sample;
@@ -146,6 +143,7 @@ public:
 
     // Dade - number of samples received from network
     double numberOfSamplesFromNetwork;
+    double stat_Samples, stat_blackSamples;
 
     // Dade - used to suspend render threads until the preprocessing phase is done
     bool preprocessDone;
