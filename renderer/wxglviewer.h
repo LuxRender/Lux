@@ -30,7 +30,7 @@
 #include "wx/glcanvas.h"
 #endif // LUX_USE_OPENGL
 
-#include "point.h"
+#include "geometry/point.h"
 
 namespace lux
 {

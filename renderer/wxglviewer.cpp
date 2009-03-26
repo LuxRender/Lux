@@ -36,6 +36,9 @@
 #include <cmath>
 #include <sstream>
 
+#if defined (__WXMAC__) && !(__WXOSX_COCOA__)
+#define cimg_display_type  3
+#endif
 #define cimg_debug 0     // Disable modal window in CImg exceptions.
 #include "cimg.h"
 
@@ -423,7 +426,7 @@ void LuxGLViewer::Reload() {
 }
 
 void LuxGLViewer::Reset() {
-	if(m_tilesNr>0) glDeleteTextures(m_tilesNr, m_tileTextureNames);
+	if(m_tilesNr>0) glDeleteTextures(m_tilesNr, (GLuint*) m_tileTextureNames);
 	if(m_tileTextureNames!=NULL) delete [] m_tileTextureNames;
 	m_tileTextureNames = NULL;
 	m_firstDraw = true;
@@ -444,7 +447,7 @@ void LuxGLViewer::OnTimer(wxTimerEvent &event) {
 void LuxGLViewer::CreateTextures(){
 	glEnable(GL_TEXTURE_2D);
 	m_tileTextureNames = new unsigned int[m_tilesNr];
-	glGenTextures(m_tilesNr, m_tileTextureNames);
+	glGenTextures(m_tilesNr, (GLuint*) m_tileTextureNames);
 	for(int i = 0; i < m_tilesNr; i++){
 		glBindTexture(GL_TEXTURE_2D, m_tileTextureNames[i]);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -456,12 +459,12 @@ void LuxGLViewer::CreateTextures(){
 	glDisable(GL_TEXTURE_2D);
 }
 
-Point LuxGLViewer::TransformPoint(const Point &p){
+lux::Point LuxGLViewer::TransformPoint(const Point &p){
 	return Point( (p.x - m_preScaleOffsetX)*m_scale + m_postScaleOffsetX,
 	              (p.y - m_preScaleOffsetY)*m_scale + m_postScaleOffsetY);
 }
 
-Point LuxGLViewer::InverseTransformPoint(const Point &p){
+lux::Point LuxGLViewer::InverseTransformPoint(const Point &p){
 	return Point( (p.x - m_postScaleOffsetX)/m_scale + m_preScaleOffsetX,
 	              (p.y - m_postScaleOffsetY)/m_scale + m_preScaleOffsetY);
 }
@@ -676,7 +679,7 @@ void LuxGLViewer::FontGenerator::Init(){
 	m_texW=512;
 	m_texH=16;
 	glEnable(GL_TEXTURE_2D);
-	glGenTextures(1, &m_texName);
+	glGenTextures(1, (GLuint*)&m_texName);
 	glBindTexture(GL_TEXTURE_2D, m_texName);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);

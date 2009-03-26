@@ -51,7 +51,7 @@ bool LuxGuiApp::OnInit() {
 	srand(time(NULL));
 
 	// Set numeric format to standard to avoid errors when parsing files
-	setlocale(LC_NUMERIC, "C");
+	setlocale(LC_ALL, "C");
 
 	luxInit();
 
