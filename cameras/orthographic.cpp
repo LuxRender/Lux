@@ -156,6 +156,13 @@ void OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, 
 	*y = ps.y;
 }
 
+BBox OrthoCamera::Bounds() const
+{
+	BBox bound(Point(0, 0, 0), Point(1, 1, 0));
+	bound.Expand(SHADOW_RAY_EPSILON);
+	return WorldToScreen.GetInverse()(bound);
+}
+
 Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd,
 	const ParamSet &params,	Film *film)
 {

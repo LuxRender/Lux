@@ -283,6 +283,15 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
+
+BBox PerspectiveCamera::Bounds() const
+{
+	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
+		Point(LensRadius, LensRadius, 0.f));
+	bound.Expand(SHADOW_RAY_EPSILON);
+	return CameraToWorld(bound);
+}
+
 void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
 {
 	Point origin(0, 0, 0);

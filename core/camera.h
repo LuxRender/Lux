@@ -54,6 +54,7 @@ public:
 	virtual bool IsDelta() const;
 	virtual bool IsLensBased() const { return true; }
 	virtual void AutoFocus(Scene* scene) { }
+	virtual BBox Bounds() const { return BBox(); }
 
 	float GetTime(float u1) const;
 

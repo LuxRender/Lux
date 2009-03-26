@@ -516,6 +516,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
     // Scene Constructor Implementation
     bound = aggregate->WorldBound();
     if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
+    bound = Union(bound, camera->Bounds());
 
     // Dade - Initialize the base seed with the standard C lib random number generator
     seedBase = rand();

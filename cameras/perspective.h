@@ -46,6 +46,7 @@ public:
 	{
 		return LensRadius==0.0f;
 	}
+	BBox Bounds() const;
 	void AutoFocus(Scene* scene);
 	void SampleLens(float u1, float u2, float *dx, float *dy) const;
 
