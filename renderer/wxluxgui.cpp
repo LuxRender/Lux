@@ -175,6 +175,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_renderPage->GetSizer()->GetItem( 1 )->GetSizer()->GetItem( 1 )->GetSizer()->Add( m_renderOutput->GetWindow(), 1, wxALL | wxEXPAND, 5 );
 	m_renderPage->Layout();
 
+	m_renderOutput->SetLogoData(luxlogo_png, sizeof(luxlogo_png));
+
 	// Trick to generate resize event and show output window
 	// http://lists.wxwidgets.org/pipermail/wx-users/2007-February/097829.html
 	SetSize(GetSize());
@@ -276,6 +278,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_renderToolBar->EnableTool(ID_RENDER_COPY, false);
 			m_viewerToolBar->Disable();
+			m_renderOutput->SetMode(LOGO_VIEW);
 			break;
 		case RENDERING:
 			// Rendering is in progress.
@@ -288,6 +291,7 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_renderToolBar->EnableTool(ID_STOPTOOL, true);
 			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
 			m_viewerToolBar->Enable();
+			m_renderOutput->SetMode(RENDER_VIEW);
 			break;
 		case STOPPING:
 			// Rendering is being stopped.

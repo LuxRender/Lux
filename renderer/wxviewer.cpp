@@ -55,13 +55,14 @@ wxEvent* wxViewerEvent::Clone() const { return new wxViewerEvent(*this); }
 
 
 // wxViewerBase Definitions
-wxViewerBase::wxViewerBase():m_viewerMode(STATIC) {}
+wxViewerBase::wxViewerBase() {}
 wxViewerBase::~wxViewerBase() {}
 
 wxViewerSelection wxViewerBase::GetSelection() { return wxViewerSelection(); }
 
-void wxViewerBase::SetMode(wxViewerMode mode) { m_viewerMode = mode; }
+void wxViewerBase::SetMode(wxViewerMode mode) {}
 void wxViewerBase::SetRulersEnabled(bool enabled) {}
+void wxViewerBase::SetLogoData(const unsigned char *data, unsigned int length) {}
 void wxViewerBase::SetZoom(const wxViewerSelection *selection) {}
 void wxViewerBase::SetSelection(const wxViewerSelection *selection) {}
 void wxViewerBase::SetHighlight(const wxViewerSelection *selection) {}

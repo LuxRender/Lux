@@ -57,6 +57,7 @@ protected:
 	virtual wxViewerSelection GetSelection();
 	virtual void SetMode(wxViewerMode mode);
 	virtual void SetRulersEnabled(bool enabled);
+	virtual void SetLogoData(const unsigned char *data, unsigned int length) { m_logoData = data; m_logoDataSize = length; }
 	virtual void SetZoom(const wxViewerSelection *selection);
 	virtual void SetSelection(const wxViewerSelection *selection);
 	virtual void SetHighlight(const wxViewerSelection *selection);
@@ -65,6 +66,7 @@ protected:
 
 private:
 	void CreateTextures();
+	void DeleteTextures();
 	Point TransformPoint(const Point &p);
 	Point InverseTransformPoint(const Point &p);
 	void DrawMarchingAnts(const wxViewerSelection &selection, float red, float green, float blue);
@@ -84,8 +86,9 @@ private:
 	int                m_windowW, m_windowH;
 	int                m_prevWindowW, m_prevWindowH;
 	int                m_prevMouseX, m_prevMouseY;
-	bool               m_firstDraw;
+	bool               m_texturesReady;
 	bool               m_imageChanged;
+	bool               m_useAlpha;
 
 	wxTimer*           m_animTimer;
 	int                m_stipple;
@@ -96,6 +99,12 @@ private:
 	bool               m_trackMousePos;
 	bool               m_rulersEnabled;
 	int                m_rulerSize;
+	const unsigned char *m_logoData;
+	unsigned int       m_logoDataSize;
+
+	wxViewerMode m_controlMode;
+	wxViewerMode m_displayMode;
+
 
 	class FontGenerator {
 	public:

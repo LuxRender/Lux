@@ -44,6 +44,7 @@
 
 #include "lux.h"
 #include "api.h"
+#include "wx/mstream.h"
 
 using namespace lux;
 
@@ -65,27 +66,33 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 #else
       : wxGLCanvas(parent, wxID_ANY, glAttribList), wxViewerBase(), m_glContext(this), m_textureW(textureW), m_textureH(textureH) {
 #endif
-	m_windowW = m_windowH = m_prevWindowW = m_prevWindowH = 0;
-	m_viewX = m_viewY = m_viewW = m_viewH = 0;
-	m_scale = 1.0f;
-	m_scaleExp=0;
+	m_imageW = m_imageH = 0;
+	m_tilesX = m_tilesY = m_tilesNr = 0;
+	m_tileTextureNames = NULL;
 	m_preScaleOffsetX  = m_preScaleOffsetY  = 0;
 	m_postScaleOffsetX = m_postScaleOffsetY = 0;
+	m_scale = 1.0f;
+	m_scaleExp = 0;
+	m_viewX = m_viewY = m_viewW = m_viewH = 0;
+	m_windowW = m_windowH = m_prevWindowW = m_prevWindowH = 0;
 	m_prevMouseX = m_prevMouseY = 0;
-	m_tileTextureNames=NULL;
+	m_logoData = NULL;
+	m_logoDataSize = 0;
 
 	m_stipple = 0x00FF; // Stipple pattern - dashes
 	m_animTimer = new wxTimer(this, ID_ANIMATIONUPDATE);
 	m_animTimer->Start(125, wxTIMER_CONTINUOUS); // Animation at 8fps
 
-	m_firstDraw = true;
+	m_useAlpha = false;
+	m_texturesReady = false;
 	m_selectionChanged = false;
 	m_refreshMarchingAntsOnly = false;
 	m_trackMousePos = false;
 	m_rulersEnabled = true;
 	m_rulerSize = 13;
 
-	SetMode(PANZOOM);
+	m_controlMode = PANZOOM;
+	m_displayMode = EMPTY_VIEW;
 
 	SetCursor(wxCURSOR_CROSS);
 }
@@ -116,84 +123,91 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 
-	if(luxStatistics("sceneIsReady")) {
-		if(m_firstDraw) {
-			m_firstDraw = false;
-			m_fontgen.Init();
-			m_imageW = luxStatistics("filmXres");
-			m_imageH = luxStatistics("filmYres");
-			// NOTE - Ratow - using ceiling function so that a minimum number of tiles are created in the case of m_imageW % 256 == 0
-			m_tilesX = ceil((float)m_imageW/m_textureW);
-			m_tilesY = ceil((float)m_imageH/m_textureH);
-			m_tilesNr = m_tilesX*m_tilesY;
-
-			CreateTextures();
-
-			m_imageChanged = true;
+	if( !m_texturesReady && ((m_displayMode==RENDER_VIEW && luxStatistics("sceneIsReady")) || m_displayMode==LOGO_VIEW) ) {
+		m_fontgen.Init();
+		CreateTextures();
+		m_texturesReady = true;
+		m_imageChanged = true;
+		if( m_displayMode==RENDER_VIEW ){
 			//move to center of window
 			m_preScaleOffsetX = m_preScaleOffsetY = 0;
 			m_scale = 1.0f;
-			m_scaleExp=0;
+			m_scaleExp = 0.0f;
 			m_postScaleOffsetX = -m_imageW/2 + m_viewW/2 + m_viewX;
 			m_postScaleOffsetY = -m_imageH/2 + m_viewH/2 + m_viewY;
-		}
-
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		//transform and roll out!
-		glTranslatef(m_postScaleOffsetX, m_postScaleOffsetY, 0.f);
-		glScalef(m_scale, m_scale, 1.f);
-		glTranslatef(-m_preScaleOffsetX, -m_preScaleOffsetY, 0.f);
-
-		if (!m_refreshMarchingAntsOnly) {
-			//draw the texture tiles
-			glEnable(GL_TEXTURE_2D);
-			for(int y = 0; y < m_tilesY; y++){
-				for(int x = 0; x < m_tilesX; x++){
-					int offX = x*m_textureW;
-					int offY = y*m_textureH;
-					int tileW = min(m_textureW, m_imageW - offX);
-					int tileH = min(m_textureH, m_imageH - offY);
-					glBindTexture (GL_TEXTURE_2D, m_tileTextureNames[y*m_tilesX+x]);
-					if(m_imageChanged)	{ //upload the textures only when needed (takes long...)
-						// NOTE - Ratow - loading texture tile in one pass
-						glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-						glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
-						glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
-						glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
-						glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_UNSIGNED_BYTE, luxFramebuffer());
-					}
-					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-					glBegin(GL_QUADS);
-					glTexCoord2f(                 0.0f,                             0.0f);
-					glVertex3f(  x*m_textureW +   0.0f, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
-					glTexCoord2f(1.0f*tileW/m_textureW,                             0.0f);
-					glVertex3f(  x*m_textureW +  tileW, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
-					glTexCoord2f(1.0f*tileW/m_textureW,            1.0f*tileH/m_textureH);
-					glVertex3f(  x*m_textureW +  tileW, m_imageH - (y*m_textureH + tileH), 0.0f);
-					glTexCoord2f(                 0.0f,            1.0f*tileH/m_textureH);
-					glVertex3f(  x*m_textureW +   0.0f, m_imageH - (y*m_textureH + tileH), 0.0f);
-					glEnd();
-				}
-			}
-			glDisable(GL_TEXTURE_2D);
-			if(m_rulersEnabled) DrawRulers();
-		}
-
-		if (m_selection.HasSize()) {
-			// Draw current (white) selection area
-			DrawMarchingAnts(m_selection, 1.0, 1.0, 1.0); 
-		}
-		if (m_highlightSel.HasSize()) {
-			// Draw active (red) work area
-			DrawMarchingAnts(m_highlightSel, 1.0, 0.0, 0.0); 
+		}else{ //m_displayMode==LOGO_VIEW
+			//zoom and offset slightly for dramatic effect!
+			m_preScaleOffsetX = m_imageW/2;
+			m_preScaleOffsetY = m_imageH/2;
+			m_scale = 2.0f;
+			m_scaleExp = 1.0f;
+			m_postScaleOffsetX = m_viewW*3/4;
+			m_postScaleOffsetY = m_viewH*1/4;
 		}
 	}
 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	//transform and roll out!
+	glTranslatef(m_postScaleOffsetX, m_postScaleOffsetY, 0.f);
+	glScalef(m_scale, m_scale, 1.f);
+	glTranslatef(-m_preScaleOffsetX, -m_preScaleOffsetY, 0.f);
+
+	if( m_texturesReady && (m_displayMode==RENDER_VIEW || m_displayMode==LOGO_VIEW) && !m_refreshMarchingAntsOnly ) {
+		//draw the texture tiles
+		glEnable(GL_TEXTURE_2D);
+		for(int y = 0; y < m_tilesY; y++){
+			for(int x = 0; x < m_tilesX; x++){
+				int offX = x*m_textureW;
+				int offY = y*m_textureH;
+				int tileW = min(m_textureW, m_imageW - offX);
+				int tileH = min(m_textureH, m_imageH - offY);
+				glBindTexture (GL_TEXTURE_2D, m_tileTextureNames[y*m_tilesX+x]);
+				if( m_imageChanged && m_displayMode==RENDER_VIEW && m_texturesReady && luxStatistics("sceneIsReady") ) { // upload/refresh textures
+					// NOTE - Ratow - loading texture tile in one pass
+					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+					glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
+					glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
+					glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
+					glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGB, GL_UNSIGNED_BYTE, luxFramebuffer());
+				}
+				if( m_useAlpha ){
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					glEnable(GL_BLEND);
+				}else{
+					glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+				}
+				glBegin(GL_QUADS);
+				glTexCoord2f(                 0.0f,                             0.0f);
+				glVertex3f(  x*m_textureW +   0.0f, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
+				glTexCoord2f(1.0f*tileW/m_textureW,                             0.0f);
+				glVertex3f(  x*m_textureW +  tileW, m_imageH -  (y*m_textureH + 0.0f), 0.0f);
+				glTexCoord2f(1.0f*tileW/m_textureW,            1.0f*tileH/m_textureH);
+				glVertex3f(  x*m_textureW +  tileW, m_imageH - (y*m_textureH + tileH), 0.0f);
+				glTexCoord2f(                 0.0f,            1.0f*tileH/m_textureH);
+				glVertex3f(  x*m_textureW +   0.0f, m_imageH - (y*m_textureH + tileH), 0.0f);
+				glEnd();
+				if( m_useAlpha ) glDisable(GL_BLEND);
+			}
+		}
+		glDisable(GL_TEXTURE_2D);
+		m_imageChanged = false;
+		if( m_rulersEnabled && m_displayMode==RENDER_VIEW ) DrawRulers();
+	}
+
+	if (m_selection.HasSize()) {
+		// Draw current (white) selection area
+		DrawMarchingAnts(m_selection, 1.0, 1.0, 1.0); 
+	}
+	if (m_highlightSel.HasSize()) {
+		// Draw active (red) work area
+		DrawMarchingAnts(m_highlightSel, 1.0, 0.0, 0.0); 
+	}
+	m_refreshMarchingAntsOnly = false;
+
 	glFlush();
 	SwapBuffers();
-	m_imageChanged = false;
-	m_refreshMarchingAntsOnly = false;
 }
 
 void LuxGLViewer::OnEraseBackground(wxEraseEvent &event) {
@@ -220,7 +234,7 @@ void LuxGLViewer::OnSize(wxSizeEvent &event) {
 		m_viewH = m_windowH;
 	}
 
-	if(!m_firstDraw) {
+	if(m_texturesReady) {
 		//calculate new offset
 		m_postScaleOffsetX += (m_windowW - m_prevWindowW)/2;
 		m_postScaleOffsetY += (m_windowH - m_prevWindowH)/2;
@@ -239,11 +253,12 @@ void LuxGLViewer::OnSize(wxSizeEvent &event) {
 }
 
 void LuxGLViewer::OnMouse(wxMouseEvent &event) {
-	if(m_viewerMode == PANZOOM) {
-		// Skip events if we have nothing to draw
-		if(m_firstDraw) {
-			event.Skip();
-		} else if(event.GetEventType() == wxEVT_LEFT_DOWN) {
+	if( !(m_displayMode==RENDER_VIEW && m_texturesReady) ) {
+		event.Skip();
+		return;
+	}
+	if(m_controlMode == PANZOOM) {
+		if(event.GetEventType() == wxEVT_LEFT_DOWN) {
 			SetCursor(wxCURSOR_HAND);
 			event.Skip();
 		} else if(event.GetEventType() == wxEVT_LEFT_UP) {
@@ -313,7 +328,7 @@ void LuxGLViewer::OnMouse(wxMouseEvent &event) {
 		} else {
 			event.Skip();
 		}
-	} else if(m_viewerMode == SELECTION) {
+	} else if(m_controlMode == SELECTION) {
 		if(event.GetEventType() == wxEVT_LEFT_DOWN) {
 			Point p = InverseTransformPoint(Point(event.GetX(), m_windowH-1 -event.GetY()));
 			m_selection.SetBounds(p.x, p.x, p.y, p.y);
@@ -358,8 +373,32 @@ wxViewerSelection LuxGLViewer::GetSelection() {
 }
 
 void LuxGLViewer::SetMode(wxViewerMode mode) {
-	wxViewerBase::SetMode(mode);
-	Refresh();
+	if( mode==EMPTY_VIEW ){
+		DeleteTextures();
+		m_texturesReady = false;
+		m_displayMode = EMPTY_VIEW;
+		Refresh();
+	}else if( mode==LOGO_VIEW ){
+		if(m_displayMode!=LOGO_VIEW && m_logoData!=NULL){
+			DeleteTextures();
+			m_texturesReady = false;
+			m_displayMode = LOGO_VIEW;
+			Refresh();
+		}
+	}else if( mode==RENDER_VIEW ){
+		if(m_displayMode!=RENDER_VIEW){
+			DeleteTextures();
+			m_texturesReady = false;
+			m_displayMode = RENDER_VIEW;
+			Refresh();
+		}
+	}else{
+		if( mode!=m_controlMode ){
+			m_controlMode = mode;
+			Refresh();
+		}
+	}
+
 }
 
 void LuxGLViewer::SetRulersEnabled(bool enabled){
@@ -426,10 +465,8 @@ void LuxGLViewer::Reload() {
 }
 
 void LuxGLViewer::Reset() {
-	if(m_tilesNr>0) glDeleteTextures(m_tilesNr, (GLuint*) m_tileTextureNames);
-	if(m_tileTextureNames!=NULL) delete [] m_tileTextureNames;
-	m_tileTextureNames = NULL;
-	m_firstDraw = true;
+	DeleteTextures();
+	m_texturesReady = false;
 	Refresh();
 }
 
@@ -445,18 +482,83 @@ void LuxGLViewer::OnTimer(wxTimerEvent &event) {
 }
 
 void LuxGLViewer::CreateTextures(){
+	if( m_texturesReady ) return;
+	unsigned char* logo_buf = NULL;
+
+	if( m_displayMode==RENDER_VIEW ){
+		m_useAlpha = false;
+		m_imageW = luxStatistics("filmXres");
+		m_imageH = luxStatistics("filmYres");
+	}else{ //m_displayMode==LOGO_VIEW
+		m_useAlpha = true;
+		wxMemoryInputStream stream( m_logoData, m_logoDataSize );
+		wxImage logo_img( stream, wxBITMAP_TYPE_ANY, -1 );
+		m_imageW = logo_img.GetWidth();
+		m_imageH = logo_img.GetHeight();
+		logo_buf = new unsigned char[m_imageW*m_imageH];
+		for(int i=0;i<m_imageW*m_imageH;i++)
+			logo_buf[i] = 255-logo_img.GetData()[i*3+0];
+	}
+	// NOTE - Ratow - using ceiling function so that a minimum number of tiles are created in the case of m_imageW % 256 == 0
+	m_tilesX = ceil((float)m_imageW/m_textureW);
+	m_tilesY = ceil((float)m_imageH/m_textureH);
+	m_tilesNr = m_tilesX*m_tilesY;
+
 	glEnable(GL_TEXTURE_2D);
 	m_tileTextureNames = new unsigned int[m_tilesNr];
 	glGenTextures(m_tilesNr, (GLuint*) m_tileTextureNames);
-	for(int i = 0; i < m_tilesNr; i++){
-		glBindTexture(GL_TEXTURE_2D, m_tileTextureNames[i]);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //GL_LINEAR); //'linear' causes seams to show on my ati card - zcott
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); //warning: the texture isn't initialized, don't display before uploading
+	if( m_displayMode==RENDER_VIEW ){ //create uninitialized image textures
+		for(int i = 0; i < m_tilesNr; i++){
+			glBindTexture(GL_TEXTURE_2D, m_tileTextureNames[i]);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //GL_LINEAR); //'linear' causes seams to show
+			glTexImage2D(GL_TEXTURE_2D, 0,  m_useAlpha?GL_RGBA:GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		}
+	}else{ //m_displayMode==LOGO_VIEW - create and upload logo textures
+		for(int y = 0; y < m_tilesY; y++){
+			for(int x = 0; x < m_tilesX; x++){
+				int offX = x*m_textureW;
+				int offY = y*m_textureH;
+				int tileW = min(m_textureW, m_imageW - offX);
+				int tileH = min(m_textureH, m_imageH - offY);
+				glBindTexture (GL_TEXTURE_2D, m_tileTextureNames[y*m_tilesX+x]);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+				glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
+				glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
+				glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
+
+				glPixelTransferf( GL_RED_BIAS, 221/255.0f );
+				glPixelTransferf( GL_GREEN_BIAS, 127/255.0f );
+				glPixelTransferf( GL_BLUE_BIAS,  0.0f );
+				glPixelTransferf( GL_ALPHA_SCALE,  0.3f );
+
+				glTexImage2D(GL_TEXTURE_2D, 0, m_useAlpha?GL_RGBA:GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_ALPHA, GL_UNSIGNED_BYTE, logo_buf);
+
+				glPixelTransferf( GL_RED_BIAS,   0.0f );
+				glPixelTransferf( GL_GREEN_BIAS, 0.0f );
+				glPixelTransferf( GL_BLUE_BIAS,  0.0f );
+				glPixelTransferf( GL_ALPHA_SCALE,1.0f );
+			}
+		}
 	}
+
 	glDisable(GL_TEXTURE_2D);
+	if(logo_buf!=NULL) delete [] logo_buf;
+
+}
+
+void LuxGLViewer::DeleteTextures() {
+	if(m_tilesNr>0 && m_tileTextureNames!=NULL) glDeleteTextures(m_tilesNr, (GLuint*) m_tileTextureNames);
+	if(m_tileTextureNames!=NULL) delete [] m_tileTextureNames;
+	m_tileTextureNames = NULL;
+	m_tilesNr = m_tilesX = m_tilesY = 0;
 }
 
 lux::Point LuxGLViewer::TransformPoint(const Point &p){
@@ -520,7 +622,7 @@ void  LuxGLViewer::DrawRulers(){
 	glEnable(GL_BLEND);
 
 	//draw background
-	glColor4f(0.3f, 0.3f, 0.3f, 0.8f);
+	glColor4f(0.2f, 0.2f, 0.2f, 0.7f);
 	glBegin(GL_QUADS);
 		glVertex2f(      0.0f, m_windowH-m_rulerSize );
 		glVertex2f( m_windowW, m_windowH-m_rulerSize );

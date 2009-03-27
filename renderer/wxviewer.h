@@ -73,10 +73,14 @@ typedef void (wxEvtHandler::*wxViewerEventFunction)(wxViewerEvent&);
 
 // wxViewerMode Declarations
 enum wxViewerMode
-{
+{	//view control modes:
 	STATIC,
 	PANZOOM,
-	SELECTION
+	SELECTION,
+	//view display modes:
+	EMPTY_VIEW,
+	LOGO_VIEW,
+	RENDER_VIEW
 };
 
 // wxViewerBase Declarations
@@ -90,6 +94,7 @@ public:
 
 	virtual void SetMode(wxViewerMode mode);
 	virtual void SetRulersEnabled(bool enabled = true);
+	virtual void SetLogoData(const unsigned char *data, unsigned int length);
 	virtual void SetZoom(const wxViewerSelection *selection);
 	virtual void SetSelection(const wxViewerSelection *selection);
 	virtual void SetHighlight(const wxViewerSelection *selection);
@@ -103,9 +108,6 @@ public:
 	virtual void SetTmPostScale(float v) {};
 	virtual void SetTmBurn(float v) {};
 	virtual void SetTmGamma(float v) {};
-
-protected:
-	wxViewerMode m_viewerMode;
 };
 
 }//namespace lux
