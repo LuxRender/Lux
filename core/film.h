@@ -370,7 +370,9 @@ public:
 
     virtual void CreateBuffers() {
     }
-    virtual u_int GetGroupsNumber() const = 0;
+	virtual u_int GetNumBufferConfigs() const = 0;
+	virtual const BufferConfig& GetBufferConfig(u_int index) const = 0;
+    virtual u_int GetNumBufferGroups() const = 0;
     virtual string GetGroupName(u_int index) const = 0;
     virtual void SetGroupEnable(u_int index, bool status) = 0;
     virtual bool GetGroupEnable(u_int index) const = 0;

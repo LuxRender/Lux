@@ -72,6 +72,7 @@ public:
             VolumeIntegrator *vi, Sampler *s,
             boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
             const vector<string> &lg, VolumeRegion *vr);
+	Scene(Camera *c);
     ~Scene();
     bool Intersect(const Ray &ray, Intersection *isect) const {
         return aggregate->Intersect(ray, isect);
@@ -94,6 +95,8 @@ public:
     void RemoveThread();
 	int getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
 
+	void SaveFLM( const string& filename );
+	bool IsFilmOnly() const { return filmOnly; }
 
     double GetNumberOfSamples();
     double Statistics_SamplesPSec();
@@ -159,6 +162,7 @@ private:
     //boost::thread_group threadGroup;
     ThreadSignals CurThreadSignal;
 	TsPack *tspack;
+	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film
 };
 
 }//namespace lux

@@ -892,6 +892,30 @@ Scene *Context::RenderOptions::MakeScene() const {
 	return ret;
 }
 
+// Load/save FLM file
+void Context::loadFLM(const string& flmFileName) {
+	// Create the film
+	FlexImageFilm* film = FlexImageFilm::CreateFilmFromFLM(flmFileName);
+	if(!film) {
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to create film");
+		return;
+	}
+	// Update context
+	Transform dummyTransform;
+	ParamSet dummyParams;
+	Camera *cam = MakeCamera("perspective", dummyTransform, dummyTransform, dummyParams, film);
+	if(!cam) {
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to dummy camera");
+		delete film;
+		return;
+	}
+	luxCurrentScene = new Scene( cam );
+	sceneReady();
+}
+void Context::saveFLM(const string& flmFileName) {
+	luxCurrentScene->SaveFLM(flmFileName);
+}
+
 //user interactive thread functions
 void Context::start() {
 	luxCurrentScene->Start();
@@ -958,7 +982,7 @@ void Context::getHistogramImage(unsigned char *outPixels, int width, int height,
 
 // Parameter Access functions
 void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
-	return luxCurrentScene->SetParameterValue(comp, param, value, index);
+	luxCurrentScene->SetParameterValue(comp, param, value, index);
 }
 double Context::GetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
 	return luxCurrentScene->GetParameterValue(comp, param, index);
@@ -1002,7 +1026,8 @@ u_int Context::GetActiveLightGroup() {
 }
 
 double Context::statistics(const string &statName) {
-	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL && luxCurrentSceneReady);
+	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL && luxCurrentSceneReady && !luxCurrentScene->IsFilmOnly());
+	else if (statName=="filmIsReady") return (luxCurrentScene!=NULL && luxCurrentScene->IsFilmOnly());
 	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);
 	else return 0;
 }

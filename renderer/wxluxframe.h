@@ -409,6 +409,8 @@ namespace lux
 			// Virtual event handlers, overide them in your derived class
 			virtual void OnExit( wxCloseEvent& event ){ event.Skip(); }
 			virtual void OnOpen( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnLoadFLM( wxCommandEvent& event ){ event.Skip(); }
+			virtual void OnSaveFLM( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMenu( wxCommandEvent& event ){ event.Skip(); }
 			virtual void OnMouse( wxMouseEvent& event ){ event.Skip(); }
 			virtual void OnScroll( wxScrollEvent& event ){ event.Skip(); }

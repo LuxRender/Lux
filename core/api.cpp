@@ -446,10 +446,17 @@ extern "C" void luxInit() {
 	initialized=true;
 }
 
+// Load/save FLM file
+extern "C" void luxLoadFLM(const char* name) {
+	Context::luxLoadFLM( string( name ) );
+}
+extern "C" void luxSaveFLM(const char* name) {
+	Context::luxSaveFLM( string( name ) );
+}
+
 //interactive control
 
 //CORE engine control
-
 
 //user interactive thread functions
 extern "C" void luxStart() {

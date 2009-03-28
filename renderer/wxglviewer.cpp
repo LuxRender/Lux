@@ -123,7 +123,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 
-	if( !m_texturesReady && ((m_displayMode==RENDER_VIEW && luxStatistics("sceneIsReady")) || m_displayMode==LOGO_VIEW) ) {
+	if( !m_texturesReady && ((m_displayMode==RENDER_VIEW && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") )) || m_displayMode==LOGO_VIEW) ) {
 		m_fontgen.Init();
 		CreateTextures();
 		m_texturesReady = true;
@@ -163,7 +163,7 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 				int tileW = min(m_textureW, m_imageW - offX);
 				int tileH = min(m_textureH, m_imageH - offY);
 				glBindTexture (GL_TEXTURE_2D, m_tileTextureNames[y*m_tilesX+x]);
-				if( m_imageChanged && m_displayMode==RENDER_VIEW && m_texturesReady && luxStatistics("sceneIsReady") ) { // upload/refresh textures
+				if( m_imageChanged && m_displayMode==RENDER_VIEW && m_texturesReady && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) ) { // upload/refresh textures
 					// NOTE - Ratow - loading texture tile in one pass
 					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 					glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);

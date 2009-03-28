@@ -40,7 +40,8 @@ namespace lux
 #define ID_RENDERUPDATE	2000
 #define ID_STATSUPDATE	2001
 #define ID_LOADUPDATE	2002
-#define ID_NETUPDATE	2003
+#define ID_SAVEUPDATE	2003
+#define ID_NETUPDATE	2004
 
 /*** LuxError and wxLuxErrorEvent ***/
 
@@ -75,6 +76,8 @@ DECLARE_EVENT_TYPE(wxEVT_LUX_ERROR, -1)
 DECLARE_EVENT_TYPE(wxEVT_LUX_PARSEERROR, -1)
 DECLARE_EVENT_TYPE(wxEVT_LUX_FINISHED, -1)
 DECLARE_EVENT_TYPE(wxEVT_LUX_TONEMAPPED, -1)
+DECLARE_EVENT_TYPE(wxEVT_LUX_FLMLOADERROR, -1)
+DECLARE_EVENT_TYPE(wxEVT_LUX_SAVEDFLM, -1)
 
 typedef void (wxEvtHandler::*wxLuxErrorEventFunction)(wxLuxErrorEvent&);
 
@@ -106,7 +109,8 @@ enum LuxGuiRenderState
 	STOPPING,
 	STOPPED,
 	PAUSED,
-	FINISHED
+	FINISHED,
+	TONEMAPPING // tonemapping an FLM file (not really a 'render' state)
 };
 enum LuxGuiWindowState
 {
@@ -129,6 +133,8 @@ protected:
 	void OnMenu(wxCommandEvent &event);
 	void OnMouse(wxMouseEvent &event);
 	void OnOpen(wxCommandEvent &event);
+	void OnLoadFLM(wxCommandEvent &event);
+	void OnSaveFLM(wxCommandEvent &event);
 	void OnExit(wxCloseEvent &event);
 	void OnError(wxLuxErrorEvent &event);
 	void OnTimer(wxTimerEvent& event);
@@ -143,18 +149,32 @@ protected:
 	void OnCheckBox(wxCommandEvent &event);
 	void OnColourChanged(wxColourPickerEvent &event);
 
+	/**
+	 * If currently rendering, asks a confirmation from the user to stop it.
+	 *
+	 * @return true if the rendering can be stopped, false otherwise.
+	 */
+	bool CanStopRendering();
+	/**
+	 * If currently rendering, stops it. After calling this method the GUI is in
+	 * the WAITING state.
+	 */
+	void StopRendering();
+
 	void ChangeRenderState(LuxGuiRenderState state);
 	void LoadImages();
 
 	// Parsing and rendering threads
 	void EngineThread(wxString filename);
 	void UpdateThread();
+	void FlmLoadThread(wxString filename);
+	void FlmSaveThread(wxString filename);
 	int m_numThreads;
 
 	void UpdateStatistics();
 	void ApplyTonemapping(bool withbloomcomputation = false);
 
-	boost::thread *m_engineThread, *m_updateThread;
+	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 	bool m_opengl;
 	bool m_copyLog2Console;
 	double m_samplesSec;
@@ -166,6 +186,7 @@ protected:
 	wxViewerBase* m_renderOutput;
 
 	wxTimer* m_loadTimer;
+	wxTimer* m_saveTimer;
 	wxTimer* m_renderTimer;
 	wxTimer* m_statsTimer;
 	wxTimer* m_netTimer;

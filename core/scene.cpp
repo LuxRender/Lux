@@ -35,6 +35,7 @@
 #include "light.h"
 #include "spectrumwavelengths.h"
 #include "transport.h"
+#include "fleximage.h"
 
 #include "randomgen.h"
 
@@ -50,31 +51,59 @@ boost::mutex sampPosMutex;
 // Control Methods -------------------------------
 //extern Scene *luxCurrentScene;
 
+#define CHECK_FILM_ONLY(METHOD_NAME) CHECK_FILM_ONLY_SCENE(METHOD_NAME, this)
+#define CHECK_FILM_ONLY_RET(METHOD_NAME, RET) CHECK_FILM_ONLY_RET_SCENE(METHOD_NAME, RET, this)
+#define CHECK_FILM_ONLY_SCENE(METHOD_NAME, SCENE) \
+	if( SCENE->IsFilmOnly() ) { \
+		std::stringstream ss; \
+		ss << "Scene::" << METHOD_NAME << " called with only a film available"; \
+		luxError( LUX_BUG, LUX_DEBUG, ss.str().c_str() ); \
+		return; \
+	}
+#define CHECK_FILM_ONLY_RET_SCENE(METHOD_NAME, RET, SCENE) \
+	if( SCENE->IsFilmOnly() ) { \
+		std::stringstream ss; \
+		ss << "Scene::" << METHOD_NAME << " called with only a film available"; \
+		luxError( LUX_BUG, LUX_DEBUG, ss.str().c_str() ); \
+		return RET; \
+	}
+
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
+	CHECK_FILM_ONLY("Start");
+
     SignalThreads(RUN);
     s_Timer.Start();
 }
 
 void Scene::Pause() {
+	CHECK_FILM_ONLY("Pause");
+
     SignalThreads(PAUSE);
     s_Timer.Stop();
 }
 
 void Scene::Exit() {
+	CHECK_FILM_ONLY("Exit");
+
     SignalThreads(EXIT);
 }
 
 // Engine Thread Control (adding/removing)
 int Scene::AddThread() {
+	CHECK_FILM_ONLY_RET("AddThread", 0);
+
     return CreateRenderThread();
 }
 
 void Scene::RemoveThread() {
+	CHECK_FILM_ONLY("AddThread");
+
     RemoveRenderThread();
 }
 
 int Scene::getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
+	CHECK_FILM_ONLY_RET("getThreadStatus", 0);
 #if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
@@ -85,6 +114,15 @@ int Scene::getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
 	}
 
 	return renderThreads.size();
+}
+
+void Scene::SaveFLM( const string& filename ) {
+	FlexImageFilm *film = dynamic_cast<FlexImageFilm*>(camera->film);
+	if(!film) {
+		luxError( LUX_LIMIT, LUX_ERROR, "Saving FLM only supported for FlexImageFilm" );
+		return;
+	}
+	film->WriteFilm(filename);
 }
 
 // Framebuffer Access for GUI
@@ -231,6 +269,7 @@ double Scene::Statistics_Efficiency()
 }
 
 void Scene::SignalThreads(ThreadSignals signal) {
+	CHECK_FILM_ONLY("SignalThreads");
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 
     for(unsigned int i=0;i<renderThreads.size();i++) {
@@ -242,6 +281,8 @@ void Scene::SignalThreads(ThreadSignals signal) {
 
 // Scene Methods -----------------------
 void RenderThread::render(RenderThread *myThread) {
+	CHECK_FILM_ONLY_SCENE("render", myThread->scene);
+
     // Dade - wait the end of the preprocessing phase
     while(!myThread->scene->preprocessDone) {
         boost::xtime xt;
@@ -371,6 +412,7 @@ void RenderThread::render(RenderThread *myThread) {
 }
 
 int Scene::CreateRenderThread() {
+	CHECK_FILM_ONLY_RET("CreateRenderThread", 0);
 #if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
@@ -388,6 +430,7 @@ int Scene::CreateRenderThread() {
 }
 
 void Scene::RemoveRenderThread() {
+	CHECK_FILM_ONLY("RemoveRenderThread");
 #if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
@@ -397,6 +440,7 @@ void Scene::RemoveRenderThread() {
 }
 
 void Scene::Render() {
+	CHECK_FILM_ONLY("Render");
     // Dade - I have to do initiliaziation here for the current thread. It can
     // be used by the Preprocess() methods.
 
@@ -461,13 +505,18 @@ void Scene::Render() {
 }
 
 Scene::~Scene() {
-    delete camera;
-    delete sampler;
-    delete surfaceIntegrator;
-    delete volumeIntegrator;
-	delete contribPool;
-    //delete aggregate;
-    delete volumeRegion;
+	if(camera)
+		delete camera;
+	if(sampler)
+		delete sampler;
+	if(surfaceIntegrator)
+		delete surfaceIntegrator;
+	if(volumeIntegrator)
+		delete volumeIntegrator;
+	if(contribPool)
+		delete contribPool;
+    if(volumeRegion)
+		delete volumeRegion;
     for (u_int i = 0; i < lights.size(); ++i)
         delete lights[i];
 }
@@ -476,6 +525,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
         VolumeIntegrator *vi, Sampler *s,
         boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
         const vector<string> &lg, VolumeRegion *vr) {
+	filmOnly = false;
     lights = lts;
     lightGroups = lg;
     aggregate = accel;
@@ -505,6 +555,34 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
     preprocessDone = false;
 	suspendThreadsWhenDone = false;
 	camera->film->RequestBufferGroups(lightGroups);
+
+	contribPool = NULL;
+	tspack = NULL;
+}
+
+Scene::Scene(Camera *cam) {
+	filmOnly = true;
+	for(u_int i = 0; i < cam->film->GetNumBufferGroups(); i++)
+		lightGroups.push_back( cam->film->GetGroupName(i) );
+    camera = cam;
+    sampler = NULL;
+    surfaceIntegrator = NULL;
+    volumeIntegrator = NULL;
+    volumeRegion = NULL;
+    s_Timer.Reset();
+    lastSamples = 0.;
+	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
+    lastTime = 0.;
+
+    // Dade - Initialize the base seed with the standard C lib random number generator
+    seedBase = rand();
+
+    preprocessDone = false;
+	suspendThreadsWhenDone = false;
+	numberOfSamplesFromNetwork = 0; //TODO init with number of samples in film
+
+	contribPool = NULL;
+	tspack = NULL;
 }
 
 const BBox &Scene::WorldBound() const {

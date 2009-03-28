@@ -85,6 +85,10 @@ void luxObjectInstance(const char *name);
 void luxMotionInstance(const char *name, float startTime, float endTime, const char *toTransform);
 void luxWorldEnd();
 
+/* Load/Save FLM file */
+void luxLoadFLM(const char* name);
+void luxSaveFLM(const char* name);
+
 /* User interactive thread functions */
 void luxStart();
 void luxPause();

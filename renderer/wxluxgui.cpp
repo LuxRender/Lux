@@ -113,10 +113,14 @@ DEFINE_EVENT_TYPE(lux::wxEVT_LUX_ERROR)
 wxDEFINE_EVENT(EVT_LUX_PARSEERROR, wxCommandEvent);
 wxDEFINE_EVENT(EVT_LUX_FINISHED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_LUX_TONEMAPPED, wxCommandEvent);
+wxDEFINE_EVENT(EVT_LUX_FLMLOADERROR, wxCommandEvent);
+wxDEFINE_EVENT(EVT_LUX_SAVEDFLM, wxCommandEvent);
 #else
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_PARSEERROR)
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_FINISHED)
 DEFINE_EVENT_TYPE(lux::wxEVT_LUX_TONEMAPPED)
+DEFINE_EVENT_TYPE(lux::wxEVT_LUX_FLMLOADERROR)
+DEFINE_EVENT_TYPE(lux::wxEVT_LUX_SAVEDFLM)
 #endif
 
 BEGIN_EVENT_TABLE(LuxGui, wxFrame)
@@ -127,10 +131,14 @@ BEGIN_EVENT_TABLE(LuxGui, wxFrame)
 	EVT_COMMAND   (wxID_ANY, EVT_LUX_TONEMAPPED, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, EVT_LUX_PARSEERROR, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, EVT_LUX_FINISHED, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, EVT_LUX_FLMLOADERROR, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, EVT_LUX_SAVEDFLM, LuxGui::OnCommand)
 #else
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_TONEMAPPED, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_PARSEERROR, LuxGui::OnCommand)
 	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_FINISHED, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_FLMLOADERROR, LuxGui::OnCommand)
+	EVT_COMMAND   (wxID_ANY, lux::wxEVT_LUX_SAVEDFLM, LuxGui::OnCommand)
 #endif
 
 #if defined (__WXMSW__) ||  defined (__WXGTK__)
@@ -142,6 +150,8 @@ END_EVENT_TABLE()
 #define wxEVT_LUX_TONEMAPPED EVT_LUX_TONEMAPPED
 #define wxEVT_LUX_PARSEERROR EVT_LUX_PARSEERROR
 #define wxEVT_LUX_FINISHED EVT_LUX_FINISHED
+#define wxEVT_LUX_FLMLOADERROR EVT_LUX_FLMLOADERROR
+#define wxEVT_LUX_SAVEDFLM EVT_LUX_SAVEDFLM
 #endif
 
 // Dade - global variable used by LuxGuiErrorHandler()
@@ -186,11 +196,13 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_renderTimer = new wxTimer(this, ID_RENDERUPDATE);
 	m_statsTimer = new wxTimer(this, ID_STATSUPDATE);
 	m_loadTimer = new wxTimer(this, ID_LOADUPDATE);
+	m_saveTimer = new wxTimer(this, ID_SAVEUPDATE);
 	m_netTimer = new wxTimer(this, ID_NETUPDATE);
 
 	m_numThreads = 0;
 	m_engineThread = NULL;
 	m_updateThread = NULL;
+	m_flmloadThread = NULL;
 
 	// Dade - I should use boost bind to avoid global variable
 	copyLog2Console = m_copyLog2Console;
@@ -255,6 +267,7 @@ LuxGui::~LuxGui() {
 	delete m_renderTimer;
 	delete m_statsTimer;
 	delete m_loadTimer;
+	delete m_saveTimer;
 	delete m_netTimer;
 
 	for( std::vector<LuxLightGroupPanel*>::iterator it = m_LightGroupPanels.begin(); it != m_LightGroupPanels.end(); it++) {
@@ -336,6 +349,19 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
 			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
 			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
+			break;
+		case TONEMAPPING:
+			// Tonemapping an FLM file
+			m_render->Enable(ID_RESUMEITEM, false);
+			m_render->Enable(ID_PAUSEITEM, false);
+			m_render->Enable(ID_STOPITEM, false);
+			m_view->Enable(ID_RENDER_COPY, true);
+			m_renderToolBar->EnableTool(ID_RESUMETOOL, false);
+			m_renderToolBar->EnableTool(ID_PAUSETOOL, false);
+			m_renderToolBar->EnableTool(ID_STOPTOOL, false);
+			m_renderToolBar->EnableTool(ID_RENDER_COPY, true);
+			m_viewerToolBar->Enable();
+			m_renderOutput->SetMode(RENDER_VIEW);
 			break;
 	}
 	m_guiRenderState = state;
@@ -473,7 +499,7 @@ void LuxGui::LoadImages() {
 }
 
 void UpdateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0) {
-	if(luxStatistics("sceneIsReady")) {
+	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 	// Update OpenGL viewer
 	// m_renderOutput->SetComponentParameter(comp, param, value);
 	// Update lux's film
@@ -482,7 +508,7 @@ void UpdateParam(luxComponent comp, luxComponentParameters param, double value, 
 }
 
 void UpdateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0) {
-	if(luxStatistics("sceneIsReady")) {
+	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 	// Update OpenGL viewer
 	// m_renderOutput->SetComponentParameter(comp, param, value);
 	// Update lux's film
@@ -501,7 +527,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 	switch (event.GetId()) {
 		case ID_RESUMEITEM:
 		case ID_RESUMETOOL:
-			if(m_guiRenderState != RENDERING) {
+			if(m_guiRenderState != RENDERING && m_guiRenderState != TONEMAPPING) {
 				UpdateNetworkTree();
 
 				// Start display update timer
@@ -519,7 +545,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			break;
 		case ID_PAUSEITEM:
 		case ID_PAUSETOOL:
-			if(m_guiRenderState != PAUSED) {
+			if(m_guiRenderState != PAUSED && m_guiRenderState != TONEMAPPING) {
 				// Stop display update timer
 				m_renderTimer->Stop();
 				m_statsTimer->Stop();
@@ -530,7 +556,7 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			break;
 		case ID_STOPITEM:
 		case ID_STOPTOOL:
-			if ((m_guiRenderState == RENDERING) || (m_guiRenderState == PAUSED)) {
+			if ((m_guiRenderState == RENDERING || m_guiRenderState == PAUSED) && m_guiRenderState != TONEMAPPING) {
 				// Dade - we can set the enough sample per pixel condition
 				m_renderTimer->Stop();
 				// Leave stats timer running so we know when threads stopped
@@ -961,7 +987,7 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LuxGui::ApplyTonemapping(bool withbloomcomputation) {
-	if(m_updateThread == NULL && luxStatistics("sceneIsReady") &&
+	if(m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
     (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
 		if(!withbloomcomputation) {
 			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
@@ -2159,7 +2185,7 @@ void LuxGui::SetColorSpacePreset(int choice) {
 }
 
 void LuxGui::ResetToneMapping(){
-	if(luxStatistics("sceneIsReady")) {
+	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		ResetToneMappingFromFilm( true );
 		return;
 	}
@@ -2495,7 +2521,7 @@ void LuxGui::UpdateLightGroupWidgetValues() {
 	Refresh();
 }
 void LuxGui::ResetLightGroups( void ) {
-	if(luxStatistics("sceneIsReady")) {
+	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		ResetLightGroupsFromFilm( true );
 		return;
 	}
@@ -2882,7 +2908,7 @@ void LuxGui::LuxHistogramWindow::Update(){
 	if(!IsShownOnScreen() || !m_IsEnabled) return;
 	wxSize size=GetSize();
 	wxImage img(size.GetWidth(), size.GetHeight(), true);
-	if(luxStatistics("sceneIsReady")) luxGetHistogramImage(img.GetData(), size.GetWidth(), size.GetHeight(), m_Options);
+	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) luxGetHistogramImage(img.GetData(), size.GetWidth(), size.GetHeight(), m_Options);
 	SetImage(img);
 }
 
@@ -3054,57 +3080,125 @@ void LuxGui::OnSpinText(wxCommandEvent& event) {
 // CF
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LuxGui::OnOpen(wxCommandEvent& event) {
+bool LuxGui::CanStopRendering() {
 	if(m_guiRenderState == RENDERING) {
-		// Give warning that current rendering is not stoped
+		// Give warning that current rendering is not stopped
 		if(wxMessageBox(wxT("Current file is still rendering. Do you want to continue?"), wxT(""), wxYES_NO | wxICON_QUESTION, this) == wxNO)
-			return;
+			return false;
 	}
+	return true;
+}
+
+
+void LuxGui::StopRendering() {
+	m_statusBar->SetStatusText(wxT(""), 0);
+	// Clean up if this is not the first rendering
+	if(m_guiRenderState != WAITING) {
+		if(m_flmloadThread)
+			m_flmloadThread->join();
+		if(m_flmsaveThread)
+			m_flmsaveThread->join();
+		if(m_guiRenderState != FINISHED && m_guiRenderState != TONEMAPPING) {
+			if(m_updateThread)
+				m_updateThread->join();
+			luxExit();
+			if(m_engineThread)
+				m_engineThread->join();
+		}
+		luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
+		luxCleanup();
+		ChangeRenderState(WAITING);
+		m_renderOutput->Reset();
+	}
+}
+
+void LuxGui::OnOpen(wxCommandEvent& event) {
+	if(!CanStopRendering())
+		return;
 
 	wxFileDialog filedlg(this,
 	                     _("Choose a file to open"),
-											 wxEmptyString,
-											 wxEmptyString,
-											 _("LuxRender scene files (*.lxs)|*.lxs|All files (*.*)|*.*"),
-											 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+						 wxEmptyString,
+						 wxEmptyString,
+						 _("LuxRender scene files (*.lxs)|*.lxs|All files (*.*)|*.*"),
+						 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
 	if(filedlg.ShowModal() == wxID_OK) {
-		m_statusBar->SetStatusText(wxT(""), 0);
-		// Clean up if this is not the first rendering
-		if(m_guiRenderState != WAITING) {
-			if(m_guiRenderState != FINISHED) {
-				if(m_updateThread)
-					m_updateThread->join();
-				luxExit();
-				if(m_engineThread)
-					m_engineThread->join();
-			}
-			luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
-			luxCleanup();
-			ChangeRenderState(WAITING);
-			m_renderOutput->Reset();
-		}
-
+		StopRendering();
 		RenderScenefile(filedlg.GetPath());
+	}
+}
+
+void LuxGui::OnLoadFLM(wxCommandEvent &event) {
+	if(!CanStopRendering())
+		return;
+
+	wxFileDialog filedlg(this,
+	                     _("Choose a file to open"),
+						 wxEmptyString,
+						 wxEmptyString,
+						 _("LuxRender FLM files (*.flm)|*.flm|All files (*.*)|*.*"),
+						 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+	if(filedlg.ShowModal() == wxID_OK) {
+		StopRendering();
+
+		wxString filename = filedlg.GetPath();
+		wxFileName fn(filename);
+		SetTitle(wxT("LuxRender - ")+fn.GetName());
+
+		// Start load thread
+		m_flmloadThread = new boost::thread(boost::bind(&LuxGui::FlmLoadThread, this, filename));
+
+		m_progDialog = new wxProgressDialog(wxT("Loading FLM..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
+		m_progDialog->Pulse();
+		m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
+	}
+}
+void LuxGui::OnSaveFLM(wxCommandEvent &event) {
+	if( !luxStatistics("sceneIsReady") && !luxStatistics("filmIsReady") )
+		return;
+	if( m_guiRenderState == WAITING || m_progDialog )
+		return;
+
+	wxFileDialog filedlg(this,
+	                     _("Choose a file to save"),
+						 wxEmptyString,
+						 wxEmptyString,
+						 _("LuxRender FLM files (*.flm)|*.flm|All files (*.*)|*.*"),
+						 wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+	if(filedlg.ShowModal() == wxID_OK) {
+		wxString filename = filedlg.GetPath();
+		// Start load thread
+		m_flmsaveThread = new boost::thread(boost::bind(&LuxGui::FlmSaveThread, this, filename));
+
+		m_progDialog = new wxProgressDialog(wxT("Saving FLM..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
+		m_progDialog->Pulse();
+		m_saveTimer->Start(1000, wxTIMER_CONTINUOUS);
 	}
 }
 
 void LuxGui::OnExit(wxCloseEvent& event) {
 	m_renderTimer->Stop();
-	m_statsTimer->Stop();;
-	m_loadTimer->Stop();;
-	m_netTimer->Stop();;
+	m_statsTimer->Stop();
+	m_loadTimer->Stop();
+	m_saveTimer->Stop();
+	m_netTimer->Stop();
 
 	//if we have a scene file
-  if(m_guiRenderState != WAITING) {
-		if(m_updateThread)
-			m_updateThread->join();
-
-		luxExit();
-
-		if(m_engineThread)
-			m_engineThread->join();
-
+	if(m_guiRenderState != WAITING) {
+		if(m_flmloadThread)
+			m_flmloadThread->join();
+		if(m_flmsaveThread)
+			m_flmsaveThread->join();
+		if(m_guiRenderState != FINISHED && m_guiRenderState != TONEMAPPING) {
+			if(m_updateThread)
+				m_updateThread->join();
+			luxExit();
+			if(m_engineThread)
+				m_engineThread->join();
+		}
 		luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
 		luxCleanup();
 	}
@@ -3136,7 +3230,7 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 void LuxGui::OnTimer(wxTimerEvent& event) {
 	switch (event.GetId()) {
 		case ID_RENDERUPDATE:
-			if(m_updateThread == NULL && luxStatistics("sceneIsReady") &&
+			if(m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
 			    (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 				m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
@@ -3144,7 +3238,7 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			break;
 		case ID_STATSUPDATE:
-			if(luxStatistics("sceneIsReady")) {
+			if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 				UpdateStatistics();
 				if(m_guiRenderState == STOPPING && m_samplesSec == 0.0) {
 					// Render threads stopped, do one last render update
@@ -3184,7 +3278,33 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					Refresh();
 				}
 			}
+			else if( luxStatistics("filmIsReady") ) {
+				m_progDialog->Destroy();
+				m_loadTimer->Stop();
+
+				if(m_flmloadThread) {
+					m_flmloadThread->join();
+					delete m_flmloadThread;
+					m_flmloadThread = NULL;
+				}
+
+				ChangeRenderState(TONEMAPPING);
+
+				// Enable tonemapping options and reset from values trough API
+				m_outputNotebook->Enable( true );
+				ResetToneMappingFromFilm( false );
+				ResetLightGroupsFromFilm( false );
+				// Update framebuffer
+				luxUpdateFramebuffer();
+				m_renderOutput->Reload();
+				// Update stats
+				UpdateStatistics();
+				// Refresh the GUI
+				Refresh();
+			}
 			break;
+		case ID_SAVEUPDATE:
+			m_progDialog->Pulse();
 		case ID_NETUPDATE:
 			UpdateNetworkTree();
 			break;
@@ -3204,6 +3324,14 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		ChangeRenderState(FINISHED);
+	} else if(event.GetEventType() == wxEVT_LUX_FLMLOADERROR) {
+		wxMessageBox(wxT("FLM load error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
+		if(m_flmloadThread) {
+			m_flmloadThread->join();
+			delete m_flmloadThread;
+			m_flmloadThread = NULL;
+		}
+		ChangeRenderState(WAITING);
 	} else if(event.GetEventType() == wxEVT_LUX_FINISHED && m_guiRenderState == RENDERING) {
 		// Ignoring finished events if another file is being opened (state != RENDERING)
 		//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
@@ -3225,6 +3353,13 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		wxTimerEvent statUpdEvent(ID_STATSUPDATE, GetId());
 #endif
 		GetEventHandler()->AddPendingEvent(statUpdEvent);
+	} else if( event.GetEventType() == wxEVT_LUX_SAVEDFLM ) {
+		m_progDialog->Destroy();
+		m_saveTimer->Stop();
+
+		m_flmsaveThread->join();
+		delete m_flmsaveThread;
+		m_flmsaveThread = NULL;
 	}
 }
 
@@ -3248,7 +3383,7 @@ void LuxGui::RenderScenefile(wxString filename) {
 	// Start main render thread
 	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
 
-	m_progDialog = new wxProgressDialog(wxT("Loading..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
+	m_progDialog = new wxProgressDialog(wxT("Loading scene..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 	m_progDialog->Pulse();
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 }
@@ -3293,6 +3428,20 @@ void LuxGui::UpdateThread() {
 
 	wxCommandEvent endEvent(wxEVT_LUX_TONEMAPPED, GetId());
 	GetEventHandler()->AddPendingEvent(endEvent);
+}
+
+void LuxGui::FlmLoadThread(wxString filename) {
+	luxLoadFLM(filename.fn_str());
+	if(!luxStatistics("filmIsReady")) {
+		wxCommandEvent errorEvent(wxEVT_LUX_FLMLOADERROR, GetId());
+		GetEventHandler()->AddPendingEvent(errorEvent);
+	}
+}
+
+void LuxGui::FlmSaveThread(wxString filename) {
+	luxSaveFLM(filename.fn_str());
+	wxCommandEvent savedEvent(wxEVT_LUX_SAVEDFLM, GetId());
+	GetEventHandler()->AddPendingEvent(savedEvent);
 }
 
 void LuxGui::SetRenderThreads(int num) {
@@ -3351,7 +3500,7 @@ void LuxOutputWin::Reload() {
 }
 
 void LuxOutputWin::OnDraw(wxDC &dc) {
-	if (luxStatistics("sceneIsReady")) {
+	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
 		SetVirtualSize(w, h);
 		SetScrollRate(1,1);

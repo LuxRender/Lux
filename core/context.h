@@ -37,6 +37,8 @@ using std::map;
 
 namespace lux {
 
+class FlexImageFilm;
+
 class Context {
 public:
 
@@ -121,6 +123,10 @@ public:
 
 	//TODO - jromang replace by a destructor or remove
 	static void luxCleanup() { activeContext->cleanup(); }
+
+	// Load/save FLM file
+	static void luxLoadFLM(const string& name) { activeContext->loadFLM(name); }
+	static void luxSaveFLM(const string& name) { activeContext->saveFLM(name); }
 
 	//CORE engine control
 	//user interactive thread functions
@@ -240,6 +246,10 @@ private:
 
 	//TODO - jromang replace by a destructor or remove
 	void cleanup();
+
+	// Load/save FLM file
+	void loadFLM(const string& name);
+	void saveFLM(const string& name);
 
 	//CORE engine control
 	//user interactive thread functions

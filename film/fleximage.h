@@ -37,9 +37,10 @@ namespace lux {
 class FlexImageFilm : public Film {
 public:
 	// FlexImageFilm Public Methods
-	FlexImageFilm(int xres, int yres) :
+	// Lotus - not used and not safe (lots of stuff not initialized)
+	/*FlexImageFilm(int xres, int yres) :
 		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
-		framebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }
+		framebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }*/
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
@@ -50,6 +51,7 @@ public:
 		float p_ContrastDisplayAdaptionY, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 		int reject_warmup, bool debugmode);
+
 	~FlexImageFilm() {
 		delete[] framebuffer;
 	}
@@ -57,7 +59,9 @@ public:
 	void RequestBufferGroups(const vector<string> &bg);
 	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	void CreateBuffers();
-	u_int GetGroupsNumber() const { return bufferGroups.size(); }
+	u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
+	const BufferConfig& GetBufferConfig( u_int index ) const { return bufferConfigs[index]; }
+	u_int GetNumBufferGroups() const { return bufferGroups.size(); }
 	string GetGroupName(u_int index) const;
 	void SetGroupEnable(u_int index, bool status);
 	bool GetGroupEnable(u_int index) const;
@@ -68,6 +72,9 @@ public:
 	void SetGroupTemperature(u_int index, float value);
 	float GetGroupTemperature(u_int index) const;
 	void ComputeGroupScale(u_int index);
+
+	int GetXPixelCount() const { return xPixelCount; }
+	int GetYPixelCount() const { return yPixelCount; }
 
 	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	void AddSample(Contribution *contrib);
@@ -89,11 +96,17 @@ public:
 	double GetDefaultParameterValue(luxComponentParameters param, int index);
 	string GetStringParameterValue(luxComponentParameters param, int index);
 
+	void WriteFilm(const string &filename) { WriteResumeFilm(filename); }
 	// Dade - method useful for transmitting the samples to a client
 	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
 	float UpdateFilm(Scene *scene, std::basic_istream<char> &stream);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
+	/**
+	 * Constructs an image film that loads its data from the give FLM file. This film is already initialized with
+	 * the necessary buffers. This is currently only used for loading and tonemapping an existing FLM file.
+	 */
+	static FlexImageFilm *CreateFilmFromFLM(const string &flmFileName);
 
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
