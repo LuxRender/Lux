@@ -24,6 +24,10 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	m_file->AppendSeparator();
 	
+	wxMenuItem* m_resumeflm;
+	m_resumeflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Resume FLM") ) , wxT("Open a scene and resume from a specific FLM file"), wxITEM_NORMAL );
+	m_file->Append( m_resumeflm );
+	
 	wxMenuItem* m_loadflm;
 	m_loadflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Load FLM") ) , wxT("Load an FLM file for tonemapping"), wxITEM_NORMAL );
 	m_file->Append( m_loadflm );
@@ -1613,6 +1617,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( LuxMainFrame::OnExit ) );
 	this->Connect( m_open->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnOpen ) );
+	this->Connect( m_resumeflm->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnResumeFLM ) );
 	this->Connect( m_loadflm->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnLoadFLM ) );
 	this->Connect( m_saveflm->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnSaveFLM ) );
 	this->Connect( m_exit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -2076,6 +2081,7 @@ LuxMainFrame::~LuxMainFrame()
 	// Disconnect Events
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( LuxMainFrame::OnExit ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnOpen ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnResumeFLM ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnLoadFLM ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnSaveFLM ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );

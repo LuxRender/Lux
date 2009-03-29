@@ -84,6 +84,7 @@ void Context::init() {
     pushedGraphicsStates.clear();
     pushedTransforms.clear();
     renderFarm = new RenderFarm();
+	filmOverrideParams = NULL;
 }
 
 void Context::free() {
@@ -108,6 +109,11 @@ void Context::free() {
         delete renderFarm;
         renderFarm = NULL;
     }
+
+	if (filmOverrideParams) {
+		delete filmOverrideParams;
+		filmOverrideParams = NULL;
+	}
 }
 
 // API Function Definitions
@@ -152,12 +158,12 @@ void Context::cleanup() {
 		luxError(LUX_NOTSTARTED,LUX_ERROR,"luxCleanup() called without luxInit().");
 	else if (currentApiState == STATE_WORLD_BLOCK)
 		luxError(LUX_ILLSTATE,LUX_ERROR,"luxCleanup() called while inside world block.");
+	
+	// Dade - free memory
+    free();
 
-        // Dade - free memory
-        free();
-
-        // Dade - reinitialize
-        init();
+    // Dade - reinitialize
+    init();
 }
 
 void Context::identity() {
@@ -247,6 +253,9 @@ void Context::film(const string &type, const ParamSet &params) {
 	renderFarm->send("luxFilm", type, params);
 	renderOptions->FilmParams = params;
 	renderOptions->FilmName = type;
+	if( filmOverrideParams ) {
+		renderOptions->FilmParams.Add( *filmOverrideParams );
+	}
 }
 void Context::sampler(const string &name, const ParamSet &params) {
 	VERIFY_OPTIONS("Sampler")
@@ -893,7 +902,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 }
 
 // Load/save FLM file
-void Context::loadFLM(const string& flmFileName) {
+void Context::loadFLM(const string &flmFileName) {
 	// Create the film
 	FlexImageFilm* film = FlexImageFilm::CreateFilmFromFLM(flmFileName);
 	if(!film) {
@@ -905,15 +914,27 @@ void Context::loadFLM(const string& flmFileName) {
 	ParamSet dummyParams;
 	Camera *cam = MakeCamera("perspective", dummyTransform, dummyTransform, dummyParams, film);
 	if(!cam) {
-		luxError(LUX_BUG,LUX_SEVERE,"Unable to dummy camera");
+		luxError(LUX_BUG,LUX_SEVERE,"Unable to create dummy camera");
 		delete film;
 		return;
 	}
 	luxCurrentScene = new Scene( cam );
 	sceneReady();
 }
-void Context::saveFLM(const string& flmFileName) {
+void Context::saveFLM(const string &flmFileName) {
 	luxCurrentScene->SaveFLM(flmFileName);
+}
+
+void Context::overrideResumeFLM(const string &flmFileName) {
+	if( !filmOverrideParams ) {
+		filmOverrideParams = new ParamSet();
+	}
+	const bool boolTrue = true;
+	const bool boolFalse = false;
+	const string filename = flmFileName.substr(0, flmFileName.length() - 4);
+	filmOverrideParams->AddBool("write_resume_flm", &boolTrue);
+	filmOverrideParams->AddBool("restart_resume_flm", &boolFalse);
+	filmOverrideParams->AddString("filename", &filename);
 }
 
 //user interactive thread functions

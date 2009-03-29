@@ -125,6 +125,7 @@ public:
 	~LuxGui();
 
 	void RenderScenefile(wxString filename);
+	void RenderScenefile(wxString sceneFilename, wxString flmFilename);
 	void SetRenderThreads(int num);
 
 protected:
@@ -133,6 +134,7 @@ protected:
 	void OnMenu(wxCommandEvent &event);
 	void OnMouse(wxMouseEvent &event);
 	void OnOpen(wxCommandEvent &event);
+	void OnResumeFLM(wxCommandEvent &event);
 	void OnLoadFLM(wxCommandEvent &event);
 	void OnSaveFLM(wxCommandEvent &event);
 	void OnExit(wxCloseEvent &event);

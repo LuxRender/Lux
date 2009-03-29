@@ -88,6 +88,8 @@ void luxWorldEnd();
 /* Load/Save FLM file */
 void luxLoadFLM(const char* name);
 void luxSaveFLM(const char* name);
+/* Overrides the resume settings of the Film in the next scene to resume from the given FLM file */
+void luxOverrideResumeFLM(const char *name);
 
 /* User interactive thread functions */
 void luxStart();

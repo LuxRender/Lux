@@ -454,6 +454,10 @@ extern "C" void luxSaveFLM(const char* name) {
 	Context::luxSaveFLM( string( name ) );
 }
 
+extern "C" void luxOverrideResumeFLM(const char *name) {
+	Context::luxOverrideResumeFLM( string(name) );
+}
+
 //interactive control
 
 //CORE engine control

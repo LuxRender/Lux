@@ -203,6 +203,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_engineThread = NULL;
 	m_updateThread = NULL;
 	m_flmloadThread = NULL;
+	m_flmsaveThread = NULL;
 
 	// Dade - I should use boost bind to avoid global variable
 	copyLog2Console = m_copyLog2Console;
@@ -3117,7 +3118,7 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 		return;
 
 	wxFileDialog filedlg(this,
-	                     _("Choose a file to open"),
+	                     _("Choose a scene file to open"),
 						 wxEmptyString,
 						 wxEmptyString,
 						 _("LuxRender scene files (*.lxs)|*.lxs|All files (*.*)|*.*"),
@@ -3129,12 +3130,40 @@ void LuxGui::OnOpen(wxCommandEvent& event) {
 	}
 }
 
+void LuxGui::OnResumeFLM(wxCommandEvent &event) {
+	if(!CanStopRendering())
+		return;
+
+	wxFileDialog filedlg1(this,
+	                     _("Choose a scene file to open"),
+						 wxEmptyString,
+						 wxEmptyString,
+						 _("LuxRender scene files (*.lxs)|*.lxs|All files (*.*)|*.*"),
+						 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+	if(filedlg1.ShowModal() != wxID_OK)
+		return;
+
+	wxFileDialog filedlg2(this,
+	                     _("Choose an FLM file to open"),
+						 wxEmptyString,
+						 wxEmptyString,
+						 _("LuxRender FLM files (*.flm)|*.flm|All files (*.*)|*.*"),
+						 wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+	if(filedlg2.ShowModal() != wxID_OK)
+		return;
+
+	StopRendering();
+	RenderScenefile(filedlg1.GetPath(), filedlg2.GetPath());
+}
+
 void LuxGui::OnLoadFLM(wxCommandEvent &event) {
 	if(!CanStopRendering())
 		return;
 
 	wxFileDialog filedlg(this,
-	                     _("Choose a file to open"),
+	                     _("Choose an FLM file to open"),
 						 wxEmptyString,
 						 wxEmptyString,
 						 _("LuxRender FLM files (*.flm)|*.flm|All files (*.*)|*.*"),
@@ -3158,11 +3187,11 @@ void LuxGui::OnLoadFLM(wxCommandEvent &event) {
 void LuxGui::OnSaveFLM(wxCommandEvent &event) {
 	if( !luxStatistics("sceneIsReady") && !luxStatistics("filmIsReady") )
 		return;
-	if( m_guiRenderState == WAITING || m_progDialog )
+	if( m_guiRenderState == WAITING )
 		return;
 
 	wxFileDialog filedlg(this,
-	                     _("Choose a file to save"),
+	                     _("Choose an FLM file to save to"),
 						 wxEmptyString,
 						 wxEmptyString,
 						 _("LuxRender FLM files (*.flm)|*.flm|All files (*.*)|*.*"),
@@ -3256,6 +3285,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			m_progDialog->Pulse();
 			if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
 				m_progDialog->Destroy();
+				delete m_progDialog;
+				m_progDialog = NULL;
 				m_loadTimer->Stop();
 
 				if(luxStatistics("sceneIsReady")) {
@@ -3280,6 +3311,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			else if( luxStatistics("filmIsReady") ) {
 				m_progDialog->Destroy();
+				delete m_progDialog;
+				m_progDialog = NULL;
 				m_loadTimer->Stop();
 
 				if(m_flmloadThread) {
@@ -3372,6 +3405,18 @@ void lux::LuxGui::OnIconize( wxIconizeEvent& event )
 		m_guiWindowState = HIDDEN;
 }
 #endif
+
+void LuxGui::RenderScenefile(wxString sceneFilename, wxString flmFilename) {
+	// Get the absolute path of the flm file
+	boost::filesystem::path fullPath(boost::filesystem::initial_path());
+	fullPath = boost::filesystem::system_complete(boost::filesystem::path(flmFilename.fn_str(), boost::filesystem::native));
+
+	// Set the FLM filename
+	luxOverrideResumeFLM(fullPath.string().c_str());
+
+	// Render the scene
+	RenderScenefile(sceneFilename);
+}
 
 void LuxGui::RenderScenefile(wxString filename) {
 	wxFileName fn(filename);

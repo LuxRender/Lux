@@ -242,6 +242,28 @@ ParamSet &ParamSet::operator=(const ParamSet &p2) {
 	}
 	return *this;
 }
+
+void ParamSet::Add(ParamSet &params) {
+#define ADD_PARAMSETITEM_VECTOR(VEC,ADD_METHOD) \
+	for( u_int i = 0; i < VEC.size(); i++ ) { \
+		ADD_METHOD(VEC[i]->name, VEC[i]->data, VEC[i]->nItems ); \
+	}
+
+	ADD_PARAMSETITEM_VECTOR(params.ints, AddInt);
+	ADD_PARAMSETITEM_VECTOR(params.bools, AddBool);
+	ADD_PARAMSETITEM_VECTOR(params.floats, AddFloat);
+	ADD_PARAMSETITEM_VECTOR(params.points, AddPoint);
+	ADD_PARAMSETITEM_VECTOR(params.vectors, AddVector);
+	ADD_PARAMSETITEM_VECTOR(params.normals, AddNormal);
+	ADD_PARAMSETITEM_VECTOR(params.spectra, AddRGBColor);
+	ADD_PARAMSETITEM_VECTOR(params.strings, AddString);
+	for( u_int i = 0; i < params.textures.size(); i++ ) {
+		AddTexture(params.textures[i]->name, *(params.textures[i]->data));
+	}
+
+#undef ADD_PARAMSETITEM_VECTOR
+}
+
 void ParamSet::AddFloat(const string &name,
 			            const float *data,
 						int nItems) {
@@ -255,7 +277,7 @@ void ParamSet::AddInt(const string &name, const int *data, int nItems) {
 	ADD_PARAM_TYPE(int, ints);
 }
 void ParamSet::AddBool(const string &name, const bool *data, int nItems) {
-	EraseInt(name);
+	EraseBool(name);
 	ADD_PARAM_TYPE(bool, bools);
 }
 void ParamSet::AddPoint(const string &name, const Point *data, int nItems) {

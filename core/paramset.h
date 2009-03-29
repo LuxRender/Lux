@@ -70,6 +70,7 @@ public:
 	ParamSet(const ParamSet &p2);
 	ParamSet(int n, const char * pluginName,char* tokens[], char* params[]);
 	
+	void Add(ParamSet& params);
 	void AddFloat(const string &, const float *, int nItems = 1);
 	void AddInt(const string &,
 	            const int *,

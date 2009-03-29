@@ -125,8 +125,9 @@ public:
 	static void luxCleanup() { activeContext->cleanup(); }
 
 	// Load/save FLM file
-	static void luxLoadFLM(const string& name) { activeContext->loadFLM(name); }
-	static void luxSaveFLM(const string& name) { activeContext->saveFLM(name); }
+	static void luxLoadFLM(const string &name) { activeContext->loadFLM(name); }
+	static void luxSaveFLM(const string &name) { activeContext->saveFLM(name); }
+	static void luxOverrideResumeFLM(const string &name) { activeContext->overrideResumeFLM(name); }
 
 	//CORE engine control
 	//user interactive thread functions
@@ -199,9 +200,9 @@ private:
 	string name;
 	Scene *luxCurrentScene;
 	bool luxCurrentSceneReady;
-
-        void init();
-        void free();
+	
+	void init();
+	void free();
 
 	// API Function Declarations
 	void identity();
@@ -248,8 +249,9 @@ private:
 	void cleanup();
 
 	// Load/save FLM file
-	void loadFLM(const string& name);
-	void saveFLM(const string& name);
+	void loadFLM(const string &name);
+	void saveFLM(const string &name);
+	void overrideResumeFLM(const string &name);
 
 	//CORE engine control
 	//user interactive thread functions
@@ -390,8 +392,10 @@ private:
 	vector<Transform> pushedTransforms;
 	RenderFarm *renderFarm;
 
-        // Dade - mutex used to wait the end of the rendering
-        mutable boost::mutex renderingMutex;
+	ParamSet *filmOverrideParams;
+	
+	// Dade - mutex used to wait the end of the rendering
+	mutable boost::mutex renderingMutex;
 };
 
 }
