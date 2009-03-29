@@ -1045,7 +1045,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 				color[i] = colorSpace.Limit(color[i]);
 
 			// write out tonemapped TGA
-			if (writeTmTga)
+			if ((type & IMAGE_FILEOUTPUT) && writeTmTga)
 				WriteTGAImage(color, alpha, filename + postfix + ".tga");
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
