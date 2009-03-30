@@ -31,12 +31,17 @@ void ContrastOp::Map(vector<Color> &xyz, int xRes, int yRes,
 		float maxDisplayY) const {
 	// Compute world adaptation luminance, _Ywa_
 	float Ywa = 0.;
-	for (int i = 0; i < xRes * yRes; ++i)
-		if (xyz[i].y() > 0) Ywa += logf(xyz[i].y());
-	Ywa = expf(683.f * Ywa / (xRes * yRes));
+	for (int i = 0; i < xRes * yRes; ++i) {
+		// NOTE - lordcrc - use .c[1] instead of .y() since xyz vector is of type Color
+		// not XYZColor, and hence .y() always returns 0.0
+		if (xyz[i].c[1] > 0) 
+			Ywa += logf(xyz[i].c[1]);
+	}
+
+	Ywa = expf(Ywa / (xRes * yRes));
 	// Compute contrast-preserving scalefactor, _s_
 	float s = powf((1.219f + powf(displayAdaptationY, 0.4f)) /
-		(1.219f + powf(Ywa, 0.4f)), 2.5f) * 683.f / maxDisplayY;
+		(1.219f + powf(Ywa, 0.4f)), 2.5f) / maxDisplayY;
 	for (int i = 0; i < xRes*yRes; ++i)
 		xyz[i] *= s;
 }
