@@ -174,7 +174,7 @@ protected:
 	int m_numThreads;
 
 	void UpdateStatistics();
-	void ApplyTonemapping(bool withbloomcomputation = false);
+	void ApplyTonemapping(bool withlayercomputation = false);
 
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 	bool m_opengl;
@@ -230,6 +230,9 @@ protected:
 	void SetColorSpacePreset(int choice);
 	void SetTonemapKernel(int choice);
 
+	int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);
+	float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound);
+
 	// Tonemapping/ToRGB variables
 	bool m_auto_tonemap;
 	int m_TM_kernel;
@@ -263,7 +266,6 @@ protected:
 	bool m_Aberration_enabled;
 	double m_Aberration_amount;
 
-	bool m_Glare_enabled;
 	double m_Glare_amount, m_Glare_radius;
 	int m_Glare_blades;
 

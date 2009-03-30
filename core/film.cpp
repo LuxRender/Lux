@@ -163,11 +163,11 @@ namespace lux
 		int xResolution, int yResolution, const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
 		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
 		bool VignettingEnabled, float VignetScale, bool aberrationEnabled, float aberrationAmount,
-		bool glareEnabled, float glareAmount, float glareRadius, int glareBlades,
+		bool &haveGlareImage, Color *&glareImage, bool glareUpdate, float glareAmount, float glareRadius, int glareBlades,
 		const char *toneMapName, const ParamSet *toneMapParams,
 		float gamma, float dither)
 	{
-		const int nPix = xResolution * yResolution ;
+		const int nPix = xResolution * yResolution;
 
 		// Clamp input
 		for (int i = 0; i < nPix; ++i)
@@ -234,49 +234,60 @@ namespace lux
 					pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
 		}
 
-		if (glareEnabled) {
-			std::vector<Color> glareImage(nPix);
-	
-			int maxRes = max(xResolution, yResolution);
-			int nPix2 = maxRes*maxRes;
+		if (glareRadius > 0 && glareAmount > 0) {
+			
+			if (glareUpdate) {
+				// Allocate persisting glare image layer if unallocated
+				if(!haveGlareImage) {
+					glareImage = new Color[nPix];
+					haveGlareImage = true;
+				}
 
-			std::vector<Color> rotatedImage(nPix2);
-			std::vector<Color> blurredImage(nPix2);
-			for(int i = 0; i < nPix; i++) {
-				glareImage[i] *= 0.f;
+				int maxRes = max(xResolution, yResolution);
+				int nPix2 = maxRes*maxRes;
+
+				std::vector<Color> rotatedImage(nPix2);
+				std::vector<Color> blurredImage(nPix2);
+				for(int i = 0; i < nPix; i++) {
+					glareImage[i] *= 0.f;
+				}
+
+				const float radius = maxRes * glareRadius;
+
+				// add rotated versions of the blurred image
+				for (int i = 0; i < glareBlades; i++) {
+					float angle = (float)i * 2*M_PI / glareBlades;
+					rotateImage(pixels, rotatedImage, xResolution, yResolution, angle);
+					horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
+					rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
+
+					// add to output
+					for(int y=0; y<yResolution; ++y)
+						for(int x=0; x<xResolution; ++x)
+						{
+							int sx = (int)(x + (maxRes - xResolution) * 0.5f);
+							int sy = (int)(y + (maxRes - yResolution) * 0.5f);
+
+							glareImage[y*xResolution+x] += rotatedImage[sy*maxRes + sx];
+						}
+				}
+
+				// normalize
+				const float nfactor = 1.f / glareBlades;
+
+				for(int i = 0; i < nPix; i++) {
+					glareImage[i] *= nfactor;
+				}
+
+				rotatedImage.clear();
+				blurredImage.clear();
 			}
 
-			const float radius = maxRes * glareRadius;
-
-			// add rotated versions of the blurred image
-			for (int i = 0; i < glareBlades; i++) {
-				float angle = (float)i * 2*M_PI / glareBlades;
-				rotateImage(pixels, rotatedImage, xResolution, yResolution, angle);
-				horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
-				rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
-
-				// add to output
-				for(int y=0; y<yResolution; ++y)
-					for(int x=0; x<xResolution; ++x)
-					{
-						int sx = (int)(x + (maxRes - xResolution) * 0.5f);
-						int sy = (int)(y + (maxRes - yResolution) * 0.5f);
-
-						glareImage[y*xResolution+x] += rotatedImage[sy*maxRes + sx];
-					}
+			if (haveGlareImage && glareImage != NULL) {
+				for(int i = 0; i < nPix; i++) {
+					pixels[i] = Lerp(glareAmount, pixels[i], glareImage[i]);
+				}
 			}
-
-			// scale and blend with output
-			const float nfactor = 1.f / glareBlades;
-
-			for(int i = 0; i < nPix; i++) {
-				glareImage[i] *= nfactor;
-				pixels[i] = Lerp(glareAmount, pixels[i], glareImage[i]);
-			}
-
-			rotatedImage.clear();
-			blurredImage.clear();
-			glareImage.clear();
 		}
 
 		// Apply tone reproduction to image

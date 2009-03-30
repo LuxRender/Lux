@@ -169,6 +169,7 @@ private:
 
 	Color * m_bloomImage; // Persisting bloom layer image 
 	bool m_BloomUpdateLayer;
+	bool m_BloomDeleteLayer;
 	bool m_HaveBloomImage;
 	float m_BloomRadius, d_BloomRadius;
 	float m_BloomWeight, d_BloomWeight;
@@ -179,7 +180,10 @@ private:
 	bool m_AberrationEnabled, d_AberrationEnabled;
 	float m_AberrationAmount, d_AberrationAmount;
 
-	bool m_GlareEnabled, d_GlareEnabled;
+	Color * m_glareImage; // Persisting glarelayer image 
+	bool m_GlareUpdateLayer;
+	bool m_GlareDeleteLayer;
+	bool m_HaveGlareImage;
 	float m_GlareAmount, d_GlareAmount;
 	float m_GlareRadius, d_GlareRadius;
 	int m_GlareBlades, d_GlareBlades;

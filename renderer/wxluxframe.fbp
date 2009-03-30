@@ -70,7 +70,7 @@
             <event name="OnSetFocus"></event>
             <event name="OnSize"></event>
             <event name="OnUpdateUI"></event>
-            <object class="wxMenuBar" expanded="1">
+            <object class="wxMenuBar" expanded="0">
                 <property name="bg"></property>
                 <property name="context_help"></property>
                 <property name="enabled">1</property>
@@ -420,7 +420,7 @@
                     </object>
                 </object>
             </object>
-            <object class="wxBoxSizer" expanded="0">
+            <object class="wxBoxSizer" expanded="1">
                 <property name="minimum_size"></property>
                 <property name="name">bSizer</property>
                 <property name="orient">wxVERTICAL</property>
@@ -895,7 +895,7 @@
                                                         <property name="bitmap">; Load From File</property>
                                                         <property name="label">LightGroups</property>
                                                         <property name="select">0</property>
-                                                        <object class="wxScrolledWindow" expanded="0">
+                                                        <object class="wxScrolledWindow" expanded="1">
                                                             <property name="bg"></property>
                                                             <property name="context_help"></property>
                                                             <property name="enabled">1</property>
@@ -1492,7 +1492,7 @@
                                                                                             <property name="border">1</property>
                                                                                             <property name="flag">wxEXPAND | wxALL</property>
                                                                                             <property name="proportion">0</property>
-                                                                                            <object class="wxPanel" expanded="0">
+                                                                                            <object class="wxPanel" expanded="1">
                                                                                                 <property name="bg"></property>
                                                                                                 <property name="context_help"></property>
                                                                                                 <property name="enabled">1</property>
@@ -1684,7 +1684,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_REINHARD_PRESCALE_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Reinhard_prescaleText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -1873,7 +1873,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_REINHARD_POSTSCALE_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Reinhard_postscaleText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -2062,7 +2062,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_REINHARD_BURN_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Reinhard_burnText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -2113,7 +2113,7 @@
                                                                                             <property name="border">1</property>
                                                                                             <property name="flag">wxEXPAND | wxALL</property>
                                                                                             <property name="proportion">0</property>
-                                                                                            <object class="wxPanel" expanded="0">
+                                                                                            <object class="wxPanel" expanded="1">
                                                                                                 <property name="bg"></property>
                                                                                                 <property name="context_help"></property>
                                                                                                 <property name="enabled">1</property>
@@ -2305,7 +2305,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_LINEAR_SENSITIVITY_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Linear_sensitivityText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -2494,7 +2494,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_LINEAR_EXPOSURE_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Linear_exposureText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -2683,7 +2683,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_LINEAR_FSTOP_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Linear_fstopText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -2872,7 +2872,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_LINEAR_GAMMA_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_Linear_gammaText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -2923,7 +2923,7 @@
                                                                                             <property name="border">1</property>
                                                                                             <property name="flag">wxEXPAND | wxALL</property>
                                                                                             <property name="proportion">0</property>
-                                                                                            <object class="wxPanel" expanded="0">
+                                                                                            <object class="wxPanel" expanded="1">
                                                                                                 <property name="bg"></property>
                                                                                                 <property name="context_help"></property>
                                                                                                 <property name="enabled">1</property>
@@ -3115,7 +3115,7 @@
                                                                                                                     <property name="hidden">0</property>
                                                                                                                     <property name="id">ID_TM_CONTRAST_YWA_TEXT</property>
                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                    <property name="maxlength">0</property>
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">m_TM_contrast_ywaText</property>
                                                                                                                     <property name="permission">protected</property>
@@ -3556,7 +3556,7 @@
                                                                                                 <property name="hidden">0</property>
                                                                                                 <property name="id">wxID_ANY</property>
                                                                                                 <property name="maximum_size"></property>
-                                                                                                <property name="minimum_size">-1,100</property>
+                                                                                                <property name="minimum_size">-1,120</property>
                                                                                                 <property name="name">m_LensEffectsAuiNotebook</property>
                                                                                                 <property name="permission">protected</property>
                                                                                                 <property name="pos"></property>
@@ -3604,7 +3604,7 @@
                                                                                                     <property name="bitmap"></property>
                                                                                                     <property name="label">Gaussian Bloom</property>
                                                                                                     <property name="select">1</property>
-                                                                                                    <object class="wxPanel" expanded="0">
+                                                                                                    <object class="wxPanel" expanded="1">
                                                                                                         <property name="bg"></property>
                                                                                                         <property name="context_help"></property>
                                                                                                         <property name="enabled">1</property>
@@ -3657,6 +3657,195 @@
                                                                                                                 <property name="proportion">1</property>
                                                                                                                 <object class="wxBoxSizer" expanded="1">
                                                                                                                     <property name="minimum_size"></property>
+                                                                                                                    <property name="name">bSizer10321</property>
+                                                                                                                    <property name="orient">wxHORIZONTAL</property>
+                                                                                                                    <property name="permission">none</property>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">5</property>
+                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
+                                                                                                                        <property name="proportion">0</property>
+                                                                                                                        <object class="wxStaticText" expanded="1">
+                                                                                                                            <property name="bg"></property>
+                                                                                                                            <property name="context_help"></property>
+                                                                                                                            <property name="enabled">1</property>
+                                                                                                                            <property name="fg"></property>
+                                                                                                                            <property name="font"></property>
+                                                                                                                            <property name="hidden">0</property>
+                                                                                                                            <property name="id">wxID_ANY</property>
+                                                                                                                            <property name="label">Amount</property>
+                                                                                                                            <property name="maximum_size"></property>
+                                                                                                                            <property name="minimum_size"></property>
+                                                                                                                            <property name="name">m_bloomweightStaticText1</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="pos"></property>
+                                                                                                                            <property name="size"></property>
+                                                                                                                            <property name="style">wxALIGN_LEFT</property>
+                                                                                                                            <property name="subclass"></property>
+                                                                                                                            <property name="tooltip"></property>
+                                                                                                                            <property name="window_extra_style"></property>
+                                                                                                                            <property name="window_name"></property>
+                                                                                                                            <property name="window_style"></property>
+                                                                                                                            <property name="wrap">-1</property>
+                                                                                                                            <event name="OnChar"></event>
+                                                                                                                            <event name="OnEnterWindow"></event>
+                                                                                                                            <event name="OnEraseBackground"></event>
+                                                                                                                            <event name="OnKeyDown"></event>
+                                                                                                                            <event name="OnKeyUp"></event>
+                                                                                                                            <event name="OnKillFocus"></event>
+                                                                                                                            <event name="OnLeaveWindow"></event>
+                                                                                                                            <event name="OnLeftDClick"></event>
+                                                                                                                            <event name="OnLeftDown"></event>
+                                                                                                                            <event name="OnLeftUp"></event>
+                                                                                                                            <event name="OnMiddleDClick"></event>
+                                                                                                                            <event name="OnMiddleDown"></event>
+                                                                                                                            <event name="OnMiddleUp"></event>
+                                                                                                                            <event name="OnMotion"></event>
+                                                                                                                            <event name="OnMouseEvents"></event>
+                                                                                                                            <event name="OnMouseWheel"></event>
+                                                                                                                            <event name="OnPaint"></event>
+                                                                                                                            <event name="OnRightDClick"></event>
+                                                                                                                            <event name="OnRightDown"></event>
+                                                                                                                            <event name="OnRightUp"></event>
+                                                                                                                            <event name="OnSetFocus"></event>
+                                                                                                                            <event name="OnSize"></event>
+                                                                                                                            <event name="OnUpdateUI"></event>
+                                                                                                                        </object>
+                                                                                                                    </object>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">5</property>
+                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP</property>
+                                                                                                                        <property name="proportion">1</property>
+                                                                                                                        <object class="wxSlider" expanded="1">
+                                                                                                                            <property name="bg"></property>
+                                                                                                                            <property name="context_help"></property>
+                                                                                                                            <property name="enabled">0</property>
+                                                                                                                            <property name="fg"></property>
+                                                                                                                            <property name="font"></property>
+                                                                                                                            <property name="hidden">0</property>
+                                                                                                                            <property name="id">ID_BLOOMWEIGHT</property>
+                                                                                                                            <property name="maxValue">512</property>
+                                                                                                                            <property name="maximum_size"></property>
+                                                                                                                            <property name="minValue">0</property>
+                                                                                                                            <property name="minimum_size"></property>
+                                                                                                                            <property name="name">m_bloomweightSlider</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="pos"></property>
+                                                                                                                            <property name="size">-1,-1</property>
+                                                                                                                            <property name="style">wxSL_HORIZONTAL</property>
+                                                                                                                            <property name="subclass"></property>
+                                                                                                                            <property name="tooltip">Adjust Bloom amount</property>
+                                                                                                                            <property name="value">128</property>
+                                                                                                                            <property name="window_extra_style"></property>
+                                                                                                                            <property name="window_name"></property>
+                                                                                                                            <property name="window_style"></property>
+                                                                                                                            <event name="OnChar"></event>
+                                                                                                                            <event name="OnCommandScroll"></event>
+                                                                                                                            <event name="OnCommandScrollBottom"></event>
+                                                                                                                            <event name="OnCommandScrollChanged"></event>
+                                                                                                                            <event name="OnCommandScrollLineDown"></event>
+                                                                                                                            <event name="OnCommandScrollLineUp"></event>
+                                                                                                                            <event name="OnCommandScrollPageDown"></event>
+                                                                                                                            <event name="OnCommandScrollPageUp"></event>
+                                                                                                                            <event name="OnCommandScrollThumbRelease"></event>
+                                                                                                                            <event name="OnCommandScrollThumbTrack"></event>
+                                                                                                                            <event name="OnCommandScrollTop"></event>
+                                                                                                                            <event name="OnEnterWindow"></event>
+                                                                                                                            <event name="OnEraseBackground"></event>
+                                                                                                                            <event name="OnKeyDown"></event>
+                                                                                                                            <event name="OnKeyUp"></event>
+                                                                                                                            <event name="OnKillFocus"></event>
+                                                                                                                            <event name="OnLeaveWindow"></event>
+                                                                                                                            <event name="OnLeftDClick"></event>
+                                                                                                                            <event name="OnLeftDown"></event>
+                                                                                                                            <event name="OnLeftUp"></event>
+                                                                                                                            <event name="OnMiddleDClick"></event>
+                                                                                                                            <event name="OnMiddleDown"></event>
+                                                                                                                            <event name="OnMiddleUp"></event>
+                                                                                                                            <event name="OnMotion"></event>
+                                                                                                                            <event name="OnMouseEvents"></event>
+                                                                                                                            <event name="OnMouseWheel"></event>
+                                                                                                                            <event name="OnPaint"></event>
+                                                                                                                            <event name="OnRightDClick"></event>
+                                                                                                                            <event name="OnRightDown"></event>
+                                                                                                                            <event name="OnRightUp"></event>
+                                                                                                                            <event name="OnScroll">OnScroll</event>
+                                                                                                                            <event name="OnScrollBottom"></event>
+                                                                                                                            <event name="OnScrollChanged"></event>
+                                                                                                                            <event name="OnScrollLineDown"></event>
+                                                                                                                            <event name="OnScrollLineUp"></event>
+                                                                                                                            <event name="OnScrollPageDown"></event>
+                                                                                                                            <event name="OnScrollPageUp"></event>
+                                                                                                                            <event name="OnScrollThumbRelease"></event>
+                                                                                                                            <event name="OnScrollThumbTrack"></event>
+                                                                                                                            <event name="OnScrollTop"></event>
+                                                                                                                            <event name="OnSetFocus"></event>
+                                                                                                                            <event name="OnSize"></event>
+                                                                                                                            <event name="OnUpdateUI"></event>
+                                                                                                                        </object>
+                                                                                                                    </object>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">0</property>
+                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE</property>
+                                                                                                                        <property name="proportion">0</property>
+                                                                                                                        <object class="wxTextCtrl" expanded="1">
+                                                                                                                            <property name="bg"></property>
+                                                                                                                            <property name="context_help"></property>
+                                                                                                                            <property name="enabled">0</property>
+                                                                                                                            <property name="fg"></property>
+                                                                                                                            <property name="font"></property>
+                                                                                                                            <property name="hidden">0</property>
+                                                                                                                            <property name="id">ID_BLOOMWEIGHT_TEXT</property>
+                                                                                                                            <property name="maximum_size"></property>
+                                                                                                                            <property name="maxlength">0</property>
+                                                                                                                            <property name="minimum_size"></property>
+                                                                                                                            <property name="name">m_bloomweightText</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="pos"></property>
+                                                                                                                            <property name="size">36,-1</property>
+                                                                                                                            <property name="style">wxTE_PROCESS_ENTER</property>
+                                                                                                                            <property name="subclass"></property>
+                                                                                                                            <property name="tooltip">Adjust Bloom amount Value</property>
+                                                                                                                            <property name="value">0.25</property>
+                                                                                                                            <property name="window_extra_style"></property>
+                                                                                                                            <property name="window_name"></property>
+                                                                                                                            <property name="window_style"></property>
+                                                                                                                            <event name="OnChar"></event>
+                                                                                                                            <event name="OnEnterWindow"></event>
+                                                                                                                            <event name="OnEraseBackground"></event>
+                                                                                                                            <event name="OnKeyDown"></event>
+                                                                                                                            <event name="OnKeyUp"></event>
+                                                                                                                            <event name="OnKillFocus">OnFocus</event>
+                                                                                                                            <event name="OnLeaveWindow"></event>
+                                                                                                                            <event name="OnLeftDClick"></event>
+                                                                                                                            <event name="OnLeftDown"></event>
+                                                                                                                            <event name="OnLeftUp"></event>
+                                                                                                                            <event name="OnMiddleDClick"></event>
+                                                                                                                            <event name="OnMiddleDown"></event>
+                                                                                                                            <event name="OnMiddleUp"></event>
+                                                                                                                            <event name="OnMotion"></event>
+                                                                                                                            <event name="OnMouseEvents"></event>
+                                                                                                                            <event name="OnMouseWheel"></event>
+                                                                                                                            <event name="OnPaint"></event>
+                                                                                                                            <event name="OnRightDClick"></event>
+                                                                                                                            <event name="OnRightDown"></event>
+                                                                                                                            <event name="OnRightUp"></event>
+                                                                                                                            <event name="OnSetFocus"></event>
+                                                                                                                            <event name="OnSize"></event>
+                                                                                                                            <event name="OnText">OnText</event>
+                                                                                                                            <event name="OnTextEnter">OnText</event>
+                                                                                                                            <event name="OnTextMaxLen"></event>
+                                                                                                                            <event name="OnTextURL"></event>
+                                                                                                                            <event name="OnUpdateUI"></event>
+                                                                                                                        </object>
+                                                                                                                    </object>
+                                                                                                                </object>
+                                                                                                            </object>
+                                                                                                            <object class="sizeritem" expanded="1">
+                                                                                                                <property name="border">5</property>
+                                                                                                                <property name="flag">wxEXPAND</property>
+                                                                                                                <property name="proportion">1</property>
+                                                                                                                <object class="wxBoxSizer" expanded="1">
+                                                                                                                    <property name="minimum_size"></property>
                                                                                                                     <property name="name">bSizer1032</property>
                                                                                                                     <property name="orient">wxHORIZONTAL</property>
                                                                                                                     <property name="permission">none</property>
@@ -3675,7 +3864,7 @@
                                                                                                                             <property name="label">Radius</property>
                                                                                                                             <property name="maximum_size"></property>
                                                                                                                             <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_TORGB_bloomweightStaticText11</property>
+                                                                                                                            <property name="name">m_bloomradiusStaticText1</property>
                                                                                                                             <property name="permission">protected</property>
                                                                                                                             <property name="pos"></property>
                                                                                                                             <property name="size"></property>
@@ -3722,12 +3911,12 @@
                                                                                                                             <property name="fg"></property>
                                                                                                                             <property name="font"></property>
                                                                                                                             <property name="hidden">0</property>
-                                                                                                                            <property name="id">ID_TORGB_BLOOMRADIUS</property>
+                                                                                                                            <property name="id">ID_BLOOMRADIUS</property>
                                                                                                                             <property name="maxValue">512</property>
                                                                                                                             <property name="maximum_size"></property>
                                                                                                                             <property name="minValue">0</property>
                                                                                                                             <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_TORGB_bloomradiusSlider</property>
+                                                                                                                            <property name="name">m_bloomradiusSlider</property>
                                                                                                                             <property name="permission">protected</property>
                                                                                                                             <property name="pos"></property>
                                                                                                                             <property name="size">-1,-1</property>
@@ -3794,11 +3983,11 @@
                                                                                                                             <property name="fg"></property>
                                                                                                                             <property name="font"></property>
                                                                                                                             <property name="hidden">0</property>
-                                                                                                                            <property name="id">ID_TORGB_BLOOMRADIUS_TEXT</property>
+                                                                                                                            <property name="id">ID_BLOOMRADIUS_TEXT</property>
                                                                                                                             <property name="maximum_size"></property>
-                                                                                                                            <property name="maxlength">5</property>
+                                                                                                                            <property name="maxlength">0</property>
                                                                                                                             <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_TORGB_bloomradiusText</property>
+                                                                                                                            <property name="name">m_bloomradiusText</property>
                                                                                                                             <property name="permission">protected</property>
                                                                                                                             <property name="pos"></property>
                                                                                                                             <property name="size">36,-1</property>
@@ -3838,6 +4027,17 @@
                                                                                                                             <event name="OnUpdateUI"></event>
                                                                                                                         </object>
                                                                                                                     </object>
+                                                                                                                </object>
+                                                                                                            </object>
+                                                                                                            <object class="sizeritem" expanded="1">
+                                                                                                                <property name="border">5</property>
+                                                                                                                <property name="flag">wxEXPAND</property>
+                                                                                                                <property name="proportion">1</property>
+                                                                                                                <object class="wxBoxSizer" expanded="1">
+                                                                                                                    <property name="minimum_size"></property>
+                                                                                                                    <property name="name">bSizer117</property>
+                                                                                                                    <property name="orient">wxHORIZONTAL</property>
+                                                                                                                    <property name="permission">none</property>
                                                                                                                     <object class="sizeritem" expanded="1">
                                                                                                                         <property name="border">5</property>
                                                                                                                         <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
@@ -3890,43 +4090,43 @@
                                                                                                                             <event name="OnUpdateUI"></event>
                                                                                                                         </object>
                                                                                                                     </object>
-                                                                                                                </object>
-                                                                                                            </object>
-                                                                                                            <object class="sizeritem" expanded="1">
-                                                                                                                <property name="border">5</property>
-                                                                                                                <property name="flag">wxEXPAND</property>
-                                                                                                                <property name="proportion">1</property>
-                                                                                                                <object class="wxBoxSizer" expanded="1">
-                                                                                                                    <property name="minimum_size"></property>
-                                                                                                                    <property name="name">bSizer10321</property>
-                                                                                                                    <property name="orient">wxHORIZONTAL</property>
-                                                                                                                    <property name="permission">none</property>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">5</property>
+                                                                                                                        <property name="flag">wxEXPAND</property>
+                                                                                                                        <property name="proportion">1</property>
+                                                                                                                        <object class="spacer" expanded="1">
+                                                                                                                            <property name="height">0</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="width">0</property>
+                                                                                                                        </object>
+                                                                                                                    </object>
                                                                                                                     <object class="sizeritem" expanded="1">
                                                                                                                         <property name="border">5</property>
                                                                                                                         <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
                                                                                                                         <property name="proportion">0</property>
-                                                                                                                        <object class="wxStaticText" expanded="1">
+                                                                                                                        <object class="wxButton" expanded="1">
                                                                                                                             <property name="bg"></property>
                                                                                                                             <property name="context_help"></property>
-                                                                                                                            <property name="enabled">1</property>
+                                                                                                                            <property name="default">0</property>
+                                                                                                                            <property name="enabled">0</property>
                                                                                                                             <property name="fg"></property>
                                                                                                                             <property name="font"></property>
                                                                                                                             <property name="hidden">0</property>
-                                                                                                                            <property name="id">wxID_ANY</property>
-                                                                                                                            <property name="label">Amount</property>
+                                                                                                                            <property name="id">ID_DELETEBLOOMLAYER</property>
+                                                                                                                            <property name="label">Delete Layer</property>
                                                                                                                             <property name="maximum_size"></property>
                                                                                                                             <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_TORGB_bloomweightStaticText1</property>
+                                                                                                                            <property name="name">m_deletebloomlayer</property>
                                                                                                                             <property name="permission">protected</property>
                                                                                                                             <property name="pos"></property>
                                                                                                                             <property name="size"></property>
-                                                                                                                            <property name="style">wxALIGN_LEFT</property>
+                                                                                                                            <property name="style"></property>
                                                                                                                             <property name="subclass"></property>
-                                                                                                                            <property name="tooltip"></property>
+                                                                                                                            <property name="tooltip">Delete/Disable Bloom image layer</property>
                                                                                                                             <property name="window_extra_style"></property>
                                                                                                                             <property name="window_name"></property>
                                                                                                                             <property name="window_style"></property>
-                                                                                                                            <property name="wrap">-1</property>
+                                                                                                                            <event name="OnButtonClick">OnMenu</event>
                                                                                                                             <event name="OnChar"></event>
                                                                                                                             <event name="OnEnterWindow"></event>
                                                                                                                             <event name="OnEraseBackground"></event>
@@ -3949,133 +4149,6 @@
                                                                                                                             <event name="OnRightUp"></event>
                                                                                                                             <event name="OnSetFocus"></event>
                                                                                                                             <event name="OnSize"></event>
-                                                                                                                            <event name="OnUpdateUI"></event>
-                                                                                                                        </object>
-                                                                                                                    </object>
-                                                                                                                    <object class="sizeritem" expanded="1">
-                                                                                                                        <property name="border">5</property>
-                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxTOP</property>
-                                                                                                                        <property name="proportion">1</property>
-                                                                                                                        <object class="wxSlider" expanded="1">
-                                                                                                                            <property name="bg"></property>
-                                                                                                                            <property name="context_help"></property>
-                                                                                                                            <property name="enabled">1</property>
-                                                                                                                            <property name="fg"></property>
-                                                                                                                            <property name="font"></property>
-                                                                                                                            <property name="hidden">0</property>
-                                                                                                                            <property name="id">ID_TORGB_BLOOMWEIGHT</property>
-                                                                                                                            <property name="maxValue">512</property>
-                                                                                                                            <property name="maximum_size"></property>
-                                                                                                                            <property name="minValue">0</property>
-                                                                                                                            <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_TORGB_bloomweightSlider</property>
-                                                                                                                            <property name="permission">protected</property>
-                                                                                                                            <property name="pos"></property>
-                                                                                                                            <property name="size">-1,-1</property>
-                                                                                                                            <property name="style">wxSL_HORIZONTAL</property>
-                                                                                                                            <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Adjust Bloom amount</property>
-                                                                                                                            <property name="value">128</property>
-                                                                                                                            <property name="window_extra_style"></property>
-                                                                                                                            <property name="window_name"></property>
-                                                                                                                            <property name="window_style"></property>
-                                                                                                                            <event name="OnChar"></event>
-                                                                                                                            <event name="OnCommandScroll"></event>
-                                                                                                                            <event name="OnCommandScrollBottom"></event>
-                                                                                                                            <event name="OnCommandScrollChanged"></event>
-                                                                                                                            <event name="OnCommandScrollLineDown"></event>
-                                                                                                                            <event name="OnCommandScrollLineUp"></event>
-                                                                                                                            <event name="OnCommandScrollPageDown"></event>
-                                                                                                                            <event name="OnCommandScrollPageUp"></event>
-                                                                                                                            <event name="OnCommandScrollThumbRelease"></event>
-                                                                                                                            <event name="OnCommandScrollThumbTrack"></event>
-                                                                                                                            <event name="OnCommandScrollTop"></event>
-                                                                                                                            <event name="OnEnterWindow"></event>
-                                                                                                                            <event name="OnEraseBackground"></event>
-                                                                                                                            <event name="OnKeyDown"></event>
-                                                                                                                            <event name="OnKeyUp"></event>
-                                                                                                                            <event name="OnKillFocus"></event>
-                                                                                                                            <event name="OnLeaveWindow"></event>
-                                                                                                                            <event name="OnLeftDClick"></event>
-                                                                                                                            <event name="OnLeftDown"></event>
-                                                                                                                            <event name="OnLeftUp"></event>
-                                                                                                                            <event name="OnMiddleDClick"></event>
-                                                                                                                            <event name="OnMiddleDown"></event>
-                                                                                                                            <event name="OnMiddleUp"></event>
-                                                                                                                            <event name="OnMotion"></event>
-                                                                                                                            <event name="OnMouseEvents"></event>
-                                                                                                                            <event name="OnMouseWheel"></event>
-                                                                                                                            <event name="OnPaint"></event>
-                                                                                                                            <event name="OnRightDClick"></event>
-                                                                                                                            <event name="OnRightDown"></event>
-                                                                                                                            <event name="OnRightUp"></event>
-                                                                                                                            <event name="OnScroll">OnScroll</event>
-                                                                                                                            <event name="OnScrollBottom"></event>
-                                                                                                                            <event name="OnScrollChanged"></event>
-                                                                                                                            <event name="OnScrollLineDown"></event>
-                                                                                                                            <event name="OnScrollLineUp"></event>
-                                                                                                                            <event name="OnScrollPageDown"></event>
-                                                                                                                            <event name="OnScrollPageUp"></event>
-                                                                                                                            <event name="OnScrollThumbRelease"></event>
-                                                                                                                            <event name="OnScrollThumbTrack"></event>
-                                                                                                                            <event name="OnScrollTop"></event>
-                                                                                                                            <event name="OnSetFocus"></event>
-                                                                                                                            <event name="OnSize"></event>
-                                                                                                                            <event name="OnUpdateUI"></event>
-                                                                                                                        </object>
-                                                                                                                    </object>
-                                                                                                                    <object class="sizeritem" expanded="1">
-                                                                                                                        <property name="border">0</property>
-                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL|wxFIXED_MINSIZE</property>
-                                                                                                                        <property name="proportion">0</property>
-                                                                                                                        <object class="wxTextCtrl" expanded="1">
-                                                                                                                            <property name="bg"></property>
-                                                                                                                            <property name="context_help"></property>
-                                                                                                                            <property name="enabled">1</property>
-                                                                                                                            <property name="fg"></property>
-                                                                                                                            <property name="font"></property>
-                                                                                                                            <property name="hidden">0</property>
-                                                                                                                            <property name="id">ID_TORGB_BLOOMWEIGHT_TEXT</property>
-                                                                                                                            <property name="maximum_size"></property>
-                                                                                                                            <property name="maxlength">5</property>
-                                                                                                                            <property name="minimum_size"></property>
-                                                                                                                            <property name="name">m_TORGB_bloomweightText</property>
-                                                                                                                            <property name="permission">protected</property>
-                                                                                                                            <property name="pos"></property>
-                                                                                                                            <property name="size">36,-1</property>
-                                                                                                                            <property name="style">wxTE_PROCESS_ENTER</property>
-                                                                                                                            <property name="subclass"></property>
-                                                                                                                            <property name="tooltip">Adjust Bloom amount Value</property>
-                                                                                                                            <property name="value">0.25</property>
-                                                                                                                            <property name="window_extra_style"></property>
-                                                                                                                            <property name="window_name"></property>
-                                                                                                                            <property name="window_style"></property>
-                                                                                                                            <event name="OnChar"></event>
-                                                                                                                            <event name="OnEnterWindow"></event>
-                                                                                                                            <event name="OnEraseBackground"></event>
-                                                                                                                            <event name="OnKeyDown"></event>
-                                                                                                                            <event name="OnKeyUp"></event>
-                                                                                                                            <event name="OnKillFocus">OnFocus</event>
-                                                                                                                            <event name="OnLeaveWindow"></event>
-                                                                                                                            <event name="OnLeftDClick"></event>
-                                                                                                                            <event name="OnLeftDown"></event>
-                                                                                                                            <event name="OnLeftUp"></event>
-                                                                                                                            <event name="OnMiddleDClick"></event>
-                                                                                                                            <event name="OnMiddleDown"></event>
-                                                                                                                            <event name="OnMiddleUp"></event>
-                                                                                                                            <event name="OnMotion"></event>
-                                                                                                                            <event name="OnMouseEvents"></event>
-                                                                                                                            <event name="OnMouseWheel"></event>
-                                                                                                                            <event name="OnPaint"></event>
-                                                                                                                            <event name="OnRightDClick"></event>
-                                                                                                                            <event name="OnRightDown"></event>
-                                                                                                                            <event name="OnRightUp"></event>
-                                                                                                                            <event name="OnSetFocus"></event>
-                                                                                                                            <event name="OnSize"></event>
-                                                                                                                            <event name="OnText">OnText</event>
-                                                                                                                            <event name="OnTextEnter">OnText</event>
-                                                                                                                            <event name="OnTextMaxLen"></event>
-                                                                                                                            <event name="OnTextURL"></event>
                                                                                                                             <event name="OnUpdateUI"></event>
                                                                                                                         </object>
                                                                                                                     </object>
@@ -4088,7 +4161,7 @@
                                                                                                     <property name="bitmap"></property>
                                                                                                     <property name="label">Vignetting</property>
                                                                                                     <property name="select">0</property>
-                                                                                                    <object class="wxPanel" expanded="0">
+                                                                                                    <object class="wxPanel" expanded="1">
                                                                                                         <property name="bg"></property>
                                                                                                         <property name="context_help"></property>
                                                                                                         <property name="enabled">1</property>
@@ -4516,7 +4589,7 @@
                                                                                                                     </object>
                                                                                                                     <object class="sizeritem" expanded="1">
                                                                                                                         <property name="border">5</property>
-                                                                                                                        <property name="flag">wxALIGN_BOTTOM|wxBOTTOM|wxFIXED_MINSIZE</property>
+                                                                                                                        <property name="flag">wxALIGN_CENTER|wxBOTTOM|wxFIXED_MINSIZE</property>
                                                                                                                         <property name="proportion">0</property>
                                                                                                                         <object class="wxTextCtrl" expanded="1">
                                                                                                                             <property name="bg"></property>
@@ -4822,7 +4895,7 @@
                                                                                                                             <property name="hidden">0</property>
                                                                                                                             <property name="id">ID_ABERRATIONAMOUNT_TEXT</property>
                                                                                                                             <property name="maximum_size"></property>
-                                                                                                                            <property name="maxlength">6</property>
+                                                                                                                            <property name="maxlength">0</property>
                                                                                                                             <property name="minimum_size"></property>
                                                                                                                             <property name="name">m_aberrationamountText</property>
                                                                                                                             <property name="permission">protected</property>
@@ -4931,79 +5004,6 @@
                                                                                                                     <property name="permission">none</property>
                                                                                                                     <object class="sizeritem" expanded="1">
                                                                                                                         <property name="border">5</property>
-                                                                                                                        <property name="flag">wxEXPAND</property>
-                                                                                                                        <property name="proportion">1</property>
-                                                                                                                        <object class="wxBoxSizer" expanded="1">
-                                                                                                                            <property name="minimum_size"></property>
-                                                                                                                            <property name="name">bSizer124</property>
-                                                                                                                            <property name="orient">wxHORIZONTAL</property>
-                                                                                                                            <property name="permission">none</property>
-                                                                                                                            <object class="sizeritem" expanded="1">
-                                                                                                                                <property name="border">5</property>
-                                                                                                                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
-                                                                                                                                <property name="proportion">0</property>
-                                                                                                                                <object class="wxCheckBox" expanded="1">
-                                                                                                                                    <property name="bg"></property>
-                                                                                                                                    <property name="checked">0</property>
-                                                                                                                                    <property name="context_help"></property>
-                                                                                                                                    <property name="enabled">1</property>
-                                                                                                                                    <property name="fg"></property>
-                                                                                                                                    <property name="font"></property>
-                                                                                                                                    <property name="hidden">0</property>
-                                                                                                                                    <property name="id">ID_GLARE_ENABLED</property>
-                                                                                                                                    <property name="label">Enabled</property>
-                                                                                                                                    <property name="maximum_size"></property>
-                                                                                                                                    <property name="minimum_size"></property>
-                                                                                                                                    <property name="name">m_glareEnabled</property>
-                                                                                                                                    <property name="permission">protected</property>
-                                                                                                                                    <property name="pos"></property>
-                                                                                                                                    <property name="size"></property>
-                                                                                                                                    <property name="style"></property>
-                                                                                                                                    <property name="subclass"></property>
-                                                                                                                                    <property name="tooltip">Enable Glare</property>
-                                                                                                                                    <property name="window_extra_style"></property>
-                                                                                                                                    <property name="window_name"></property>
-                                                                                                                                    <property name="window_style"></property>
-                                                                                                                                    <event name="OnChar"></event>
-                                                                                                                                    <event name="OnCheckBox">OnMenu</event>
-                                                                                                                                    <event name="OnEnterWindow"></event>
-                                                                                                                                    <event name="OnEraseBackground"></event>
-                                                                                                                                    <event name="OnKeyDown"></event>
-                                                                                                                                    <event name="OnKeyUp"></event>
-                                                                                                                                    <event name="OnKillFocus"></event>
-                                                                                                                                    <event name="OnLeaveWindow"></event>
-                                                                                                                                    <event name="OnLeftDClick"></event>
-                                                                                                                                    <event name="OnLeftDown"></event>
-                                                                                                                                    <event name="OnLeftUp"></event>
-                                                                                                                                    <event name="OnMiddleDClick"></event>
-                                                                                                                                    <event name="OnMiddleDown"></event>
-                                                                                                                                    <event name="OnMiddleUp"></event>
-                                                                                                                                    <event name="OnMotion"></event>
-                                                                                                                                    <event name="OnMouseEvents"></event>
-                                                                                                                                    <event name="OnMouseWheel"></event>
-                                                                                                                                    <event name="OnPaint"></event>
-                                                                                                                                    <event name="OnRightDClick"></event>
-                                                                                                                                    <event name="OnRightDown"></event>
-                                                                                                                                    <event name="OnRightUp"></event>
-                                                                                                                                    <event name="OnSetFocus"></event>
-                                                                                                                                    <event name="OnSize"></event>
-                                                                                                                                    <event name="OnUpdateUI"></event>
-                                                                                                                                </object>
-                                                                                                                            </object>
-                                                                                                                            <object class="sizeritem" expanded="1">
-                                                                                                                                <property name="border">5</property>
-                                                                                                                                <property name="flag">wxEXPAND</property>
-                                                                                                                                <property name="proportion">1</property>
-                                                                                                                                <object class="spacer" expanded="1">
-                                                                                                                                    <property name="height">0</property>
-                                                                                                                                    <property name="permission">protected</property>
-                                                                                                                                    <property name="width">0</property>
-                                                                                                                                </object>
-                                                                                                                            </object>
-                                                                                                                        </object>
-                                                                                                                    </object>
-                                                                                                                    <object class="sizeritem" expanded="1">
-                                                                                                                        <property name="border">5</property>
                                                                                                                         <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
                                                                                                                         <property name="proportion">0</property>
                                                                                                                         <object class="wxStaticText" expanded="1">
@@ -5060,7 +5060,7 @@
                                                                                                                         <object class="wxSlider" expanded="1">
                                                                                                                             <property name="bg"></property>
                                                                                                                             <property name="context_help"></property>
-                                                                                                                            <property name="enabled">1</property>
+                                                                                                                            <property name="enabled">0</property>
                                                                                                                             <property name="fg"></property>
                                                                                                                             <property name="font"></property>
                                                                                                                             <property name="hidden">0</property>
@@ -5132,13 +5132,13 @@
                                                                                                                         <object class="wxTextCtrl" expanded="1">
                                                                                                                             <property name="bg"></property>
                                                                                                                             <property name="context_help"></property>
-                                                                                                                            <property name="enabled">1</property>
+                                                                                                                            <property name="enabled">0</property>
                                                                                                                             <property name="fg"></property>
                                                                                                                             <property name="font"></property>
                                                                                                                             <property name="hidden">0</property>
                                                                                                                             <property name="id">ID_GLAREAMOUNT_TEXT</property>
                                                                                                                             <property name="maximum_size"></property>
-                                                                                                                            <property name="maxlength">5</property>
+                                                                                                                            <property name="maxlength">0</property>
                                                                                                                             <property name="minimum_size"></property>
                                                                                                                             <property name="name">m_glareamountText</property>
                                                                                                                             <property name="permission">protected</property>
@@ -5194,7 +5194,7 @@
                                                                                                                     <object class="sizeritem" expanded="1">
                                                                                                                         <property name="border">5</property>
                                                                                                                         <property name="flag">wxEXPAND</property>
-                                                                                                                        <property name="proportion">1</property>
+                                                                                                                        <property name="proportion">0</property>
                                                                                                                         <object class="wxBoxSizer" expanded="1">
                                                                                                                             <property name="minimum_size"></property>
                                                                                                                             <property name="name">bSizer123</property>
@@ -5304,16 +5304,6 @@
                                                                                                                                     <event name="OnSpinCtrl">OnSpin</event>
                                                                                                                                     <event name="OnSpinCtrlText">OnSpinText</event>
                                                                                                                                     <event name="OnUpdateUI"></event>
-                                                                                                                                </object>
-                                                                                                                            </object>
-                                                                                                                            <object class="sizeritem" expanded="1">
-                                                                                                                                <property name="border">5</property>
-                                                                                                                                <property name="flag">wxEXPAND</property>
-                                                                                                                                <property name="proportion">1</property>
-                                                                                                                                <object class="spacer" expanded="1">
-                                                                                                                                    <property name="height">0</property>
-                                                                                                                                    <property name="permission">protected</property>
-                                                                                                                                    <property name="width">0</property>
                                                                                                                                 </object>
                                                                                                                             </object>
                                                                                                                         </object>
@@ -5454,7 +5444,7 @@
                                                                                                                             <property name="hidden">0</property>
                                                                                                                             <property name="id">ID_GLARERADIUS_TEXT</property>
                                                                                                                             <property name="maximum_size"></property>
-                                                                                                                            <property name="maxlength">5</property>
+                                                                                                                            <property name="maxlength">0</property>
                                                                                                                             <property name="minimum_size"></property>
                                                                                                                             <property name="name">m_glareradiusText</property>
                                                                                                                             <property name="permission">protected</property>
@@ -5493,6 +5483,131 @@
                                                                                                                             <event name="OnTextEnter">OnText</event>
                                                                                                                             <event name="OnTextMaxLen"></event>
                                                                                                                             <event name="OnTextURL"></event>
+                                                                                                                            <event name="OnUpdateUI"></event>
+                                                                                                                        </object>
+                                                                                                                    </object>
+                                                                                                                </object>
+                                                                                                            </object>
+                                                                                                            <object class="sizeritem" expanded="1">
+                                                                                                                <property name="border">5</property>
+                                                                                                                <property name="flag">wxEXPAND</property>
+                                                                                                                <property name="proportion">1</property>
+                                                                                                                <object class="wxBoxSizer" expanded="1">
+                                                                                                                    <property name="minimum_size"></property>
+                                                                                                                    <property name="name">bSizer1201</property>
+                                                                                                                    <property name="orient">wxHORIZONTAL</property>
+                                                                                                                    <property name="permission">none</property>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">5</property>
+                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
+                                                                                                                        <property name="proportion">0</property>
+                                                                                                                        <object class="wxButton" expanded="1">
+                                                                                                                            <property name="bg"></property>
+                                                                                                                            <property name="context_help"></property>
+                                                                                                                            <property name="default">0</property>
+                                                                                                                            <property name="enabled">1</property>
+                                                                                                                            <property name="fg"></property>
+                                                                                                                            <property name="font"></property>
+                                                                                                                            <property name="hidden">0</property>
+                                                                                                                            <property name="id">ID_COMPUTEGLARELAYER</property>
+                                                                                                                            <property name="label">Compute Layer</property>
+                                                                                                                            <property name="maximum_size"></property>
+                                                                                                                            <property name="minimum_size"></property>
+                                                                                                                            <property name="name">m_computeglarelayer</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="pos"></property>
+                                                                                                                            <property name="size"></property>
+                                                                                                                            <property name="style"></property>
+                                                                                                                            <property name="subclass"></property>
+                                                                                                                            <property name="tooltip">Compute/Update Glare image layer</property>
+                                                                                                                            <property name="window_extra_style"></property>
+                                                                                                                            <property name="window_name"></property>
+                                                                                                                            <property name="window_style"></property>
+                                                                                                                            <event name="OnButtonClick">OnMenu</event>
+                                                                                                                            <event name="OnChar"></event>
+                                                                                                                            <event name="OnEnterWindow"></event>
+                                                                                                                            <event name="OnEraseBackground"></event>
+                                                                                                                            <event name="OnKeyDown"></event>
+                                                                                                                            <event name="OnKeyUp"></event>
+                                                                                                                            <event name="OnKillFocus"></event>
+                                                                                                                            <event name="OnLeaveWindow"></event>
+                                                                                                                            <event name="OnLeftDClick"></event>
+                                                                                                                            <event name="OnLeftDown"></event>
+                                                                                                                            <event name="OnLeftUp"></event>
+                                                                                                                            <event name="OnMiddleDClick"></event>
+                                                                                                                            <event name="OnMiddleDown"></event>
+                                                                                                                            <event name="OnMiddleUp"></event>
+                                                                                                                            <event name="OnMotion"></event>
+                                                                                                                            <event name="OnMouseEvents"></event>
+                                                                                                                            <event name="OnMouseWheel"></event>
+                                                                                                                            <event name="OnPaint"></event>
+                                                                                                                            <event name="OnRightDClick"></event>
+                                                                                                                            <event name="OnRightDown"></event>
+                                                                                                                            <event name="OnRightUp"></event>
+                                                                                                                            <event name="OnSetFocus"></event>
+                                                                                                                            <event name="OnSize"></event>
+                                                                                                                            <event name="OnUpdateUI"></event>
+                                                                                                                        </object>
+                                                                                                                    </object>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">5</property>
+                                                                                                                        <property name="flag">wxEXPAND</property>
+                                                                                                                        <property name="proportion">1</property>
+                                                                                                                        <object class="spacer" expanded="1">
+                                                                                                                            <property name="height">0</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="width">0</property>
+                                                                                                                        </object>
+                                                                                                                    </object>
+                                                                                                                    <object class="sizeritem" expanded="1">
+                                                                                                                        <property name="border">5</property>
+                                                                                                                        <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
+                                                                                                                        <property name="proportion">0</property>
+                                                                                                                        <object class="wxButton" expanded="1">
+                                                                                                                            <property name="bg"></property>
+                                                                                                                            <property name="context_help"></property>
+                                                                                                                            <property name="default">0</property>
+                                                                                                                            <property name="enabled">0</property>
+                                                                                                                            <property name="fg"></property>
+                                                                                                                            <property name="font"></property>
+                                                                                                                            <property name="hidden">0</property>
+                                                                                                                            <property name="id">ID_DELETEGLARELAYER</property>
+                                                                                                                            <property name="label">Delete Layer</property>
+                                                                                                                            <property name="maximum_size"></property>
+                                                                                                                            <property name="minimum_size"></property>
+                                                                                                                            <property name="name">m_deleteglarelayer</property>
+                                                                                                                            <property name="permission">protected</property>
+                                                                                                                            <property name="pos"></property>
+                                                                                                                            <property name="size"></property>
+                                                                                                                            <property name="style"></property>
+                                                                                                                            <property name="subclass"></property>
+                                                                                                                            <property name="tooltip">Delete/Disable Glare image layer</property>
+                                                                                                                            <property name="window_extra_style"></property>
+                                                                                                                            <property name="window_name"></property>
+                                                                                                                            <property name="window_style"></property>
+                                                                                                                            <event name="OnButtonClick">OnMenu</event>
+                                                                                                                            <event name="OnChar"></event>
+                                                                                                                            <event name="OnEnterWindow"></event>
+                                                                                                                            <event name="OnEraseBackground"></event>
+                                                                                                                            <event name="OnKeyDown"></event>
+                                                                                                                            <event name="OnKeyUp"></event>
+                                                                                                                            <event name="OnKillFocus"></event>
+                                                                                                                            <event name="OnLeaveWindow"></event>
+                                                                                                                            <event name="OnLeftDClick"></event>
+                                                                                                                            <event name="OnLeftDown"></event>
+                                                                                                                            <event name="OnLeftUp"></event>
+                                                                                                                            <event name="OnMiddleDClick"></event>
+                                                                                                                            <event name="OnMiddleDown"></event>
+                                                                                                                            <event name="OnMiddleUp"></event>
+                                                                                                                            <event name="OnMotion"></event>
+                                                                                                                            <event name="OnMouseEvents"></event>
+                                                                                                                            <event name="OnMouseWheel"></event>
+                                                                                                                            <event name="OnPaint"></event>
+                                                                                                                            <event name="OnRightDClick"></event>
+                                                                                                                            <event name="OnRightDown"></event>
+                                                                                                                            <event name="OnRightUp"></event>
+                                                                                                                            <event name="OnSetFocus"></event>
+                                                                                                                            <event name="OnSize"></event>
                                                                                                                             <event name="OnUpdateUI"></event>
                                                                                                                         </object>
                                                                                                                     </object>
@@ -6270,7 +6385,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_XWHITE_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_xwhiteText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -6459,7 +6574,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_YWHITE_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_ywhiteText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -6625,7 +6740,7 @@
                                                                                                                 <property name="border">5</property>
                                                                                                                 <property name="flag">wxEXPAND</property>
                                                                                                                 <property name="proportion">1</property>
-                                                                                                                <object class="wxBoxSizer" expanded="0">
+                                                                                                                <object class="wxBoxSizer" expanded="1">
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">bSizer213</property>
                                                                                                                     <property name="orient">wxHORIZONTAL</property>
@@ -6724,7 +6839,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_XRED_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_xredText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -6862,7 +6977,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_YRED_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_yredText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -6912,7 +7027,7 @@
                                                                                                                 <property name="border">5</property>
                                                                                                                 <property name="flag">wxEXPAND</property>
                                                                                                                 <property name="proportion">1</property>
-                                                                                                                <object class="wxBoxSizer" expanded="0">
+                                                                                                                <object class="wxBoxSizer" expanded="1">
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">bSizer2131</property>
                                                                                                                     <property name="orient">wxHORIZONTAL</property>
@@ -7011,7 +7126,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_XGREEN_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_xgreenText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -7149,7 +7264,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_YGREEN_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_ygreenText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -7199,7 +7314,7 @@
                                                                                                                 <property name="border">5</property>
                                                                                                                 <property name="flag">wxEXPAND</property>
                                                                                                                 <property name="proportion">1</property>
-                                                                                                                <object class="wxBoxSizer" expanded="0">
+                                                                                                                <object class="wxBoxSizer" expanded="1">
                                                                                                                     <property name="minimum_size"></property>
                                                                                                                     <property name="name">bSizer2132</property>
                                                                                                                     <property name="orient">wxHORIZONTAL</property>
@@ -7298,7 +7413,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_XBLUE_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_xblueText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -7436,7 +7551,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_TORGB_YBLUE_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_TORGB_yblueText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -7497,7 +7612,7 @@
                                                                     <property name="border">1</property>
                                                                     <property name="flag">wxEXPAND | wxALL</property>
                                                                     <property name="proportion">0</property>
-                                                                    <object class="wxPanel" expanded="0">
+                                                                    <object class="wxPanel" expanded="1">
                                                                         <property name="bg"></property>
                                                                         <property name="context_help"></property>
                                                                         <property name="enabled">1</property>
@@ -7953,7 +8068,7 @@
                                                                                                 <property name="hidden">0</property>
                                                                                                 <property name="id">ID_TORGB_GAMMA_TEXT</property>
                                                                                                 <property name="maximum_size"></property>
-                                                                                                <property name="maxlength">5</property>
+                                                                                                <property name="maxlength">0</property>
                                                                                                 <property name="minimum_size"></property>
                                                                                                 <property name="name">m_TORGB_gammaText</property>
                                                                                                 <property name="permission">protected</property>
@@ -8005,7 +8120,7 @@
                                                                     <property name="border">1</property>
                                                                     <property name="flag">wxEXPAND | wxALL</property>
                                                                     <property name="proportion">0</property>
-                                                                    <object class="wxPanel" expanded="0">
+                                                                    <object class="wxPanel" expanded="1">
                                                                         <property name="bg"></property>
                                                                         <property name="context_help"></property>
                                                                         <property name="enabled">1</property>
@@ -8623,7 +8738,7 @@
                                                                     <property name="border">1</property>
                                                                     <property name="flag">wxEXPAND | wxALL</property>
                                                                     <property name="proportion">0</property>
-                                                                    <object class="wxPanel" expanded="0">
+                                                                    <object class="wxPanel" expanded="1">
                                                                         <property name="bg"></property>
                                                                         <property name="context_help"></property>
                                                                         <property name="enabled">1</property>
@@ -9156,7 +9271,7 @@
                                                                                                                         <property name="bitmap"></property>
                                                                                                                         <property name="label">regularization</property>
                                                                                                                         <property name="select">1</property>
-                                                                                                                        <object class="wxPanel" expanded="0">
+                                                                                                                        <object class="wxPanel" expanded="1">
                                                                                                                             <property name="bg"></property>
                                                                                                                             <property name="context_help"></property>
                                                                                                                             <property name="enabled">1</property>
@@ -9463,7 +9578,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_ITERATIONS_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_iterationsText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -9652,7 +9767,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_AMPLITUDE_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_amplitudeText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -9841,7 +9956,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_GAUSSPREC_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_gaussprecText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -9892,7 +10007,7 @@
                                                                                                                         <property name="bitmap"></property>
                                                                                                                         <property name="label">filter</property>
                                                                                                                         <property name="select">0</property>
-                                                                                                                        <object class="wxPanel" expanded="0">
+                                                                                                                        <object class="wxPanel" expanded="1">
                                                                                                                             <property name="bg"></property>
                                                                                                                             <property name="context_help"></property>
                                                                                                                             <property name="enabled">1</property>
@@ -10084,7 +10199,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_ALPHA_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_alphaText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -10273,7 +10388,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_SIGMA_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_sigmaText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -10462,7 +10577,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_SHARPNESS_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_sharpnessText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -10651,7 +10766,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_ANISO_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_anisoText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -10702,7 +10817,7 @@
                                                                                                                         <property name="bitmap"></property>
                                                                                                                         <property name="label">adv</property>
                                                                                                                         <property name="select">0</property>
-                                                                                                                        <object class="wxPanel" expanded="0">
+                                                                                                                        <object class="wxPanel" expanded="1">
                                                                                                                             <property name="bg"></property>
                                                                                                                             <property name="context_help"></property>
                                                                                                                             <property name="enabled">1</property>
@@ -10894,7 +11009,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_SPATIAL_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_spatialText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -11083,7 +11198,7 @@
                                                                                                                                                 <property name="hidden">0</property>
                                                                                                                                                 <property name="id">ID_GREYC_ANGULAR_TEXT</property>
                                                                                                                                                 <property name="maximum_size"></property>
-                                                                                                                                                <property name="maxlength">5</property>
+                                                                                                                                                <property name="maxlength">0</property>
                                                                                                                                                 <property name="minimum_size"></property>
                                                                                                                                                 <property name="name">m_greyc_angularText</property>
                                                                                                                                                 <property name="permission">protected</property>
@@ -11454,7 +11569,7 @@
                                                                                                                                     <property name="hidden">0</property>
                                                                                                                                     <property name="id">ID_CHIU_RADIUS_TEXT</property>
                                                                                                                                     <property name="maximum_size"></property>
-                                                                                                                                    <property name="maxlength">5</property>
+                                                                                                                                    <property name="maxlength">0</property>
                                                                                                                                     <property name="minimum_size"></property>
                                                                                                                                     <property name="name">m_chiu_radiusText</property>
                                                                                                                                     <property name="permission">protected</property>
@@ -12392,7 +12507,7 @@
                 <event name="OnUpdateUI"></event>
             </object>
         </object>
-        <object class="Panel" expanded="0">
+        <object class="Panel" expanded="1">
             <property name="bg"></property>
             <property name="context_help"></property>
             <property name="enabled">1</property>
@@ -12434,7 +12549,7 @@
             <event name="OnSetFocus"></event>
             <event name="OnSize"></event>
             <event name="OnUpdateUI"></event>
-            <object class="wxBoxSizer" expanded="0">
+            <object class="wxBoxSizer" expanded="1">
                 <property name="minimum_size"></property>
                 <property name="name">m_LG_MainSizer</property>
                 <property name="orient">wxVERTICAL</property>
@@ -13039,7 +13154,7 @@
                                                                         <property name="hidden">0</property>
                                                                         <property name="id">ID_LG_SCALE_TEXT</property>
                                                                         <property name="maximum_size"></property>
-                                                                        <property name="maxlength">6</property>
+                                                                        <property name="maxlength">0</property>
                                                                         <property name="minimum_size">-1,-1</property>
                                                                         <property name="name">m_LG_scaleText</property>
                                                                         <property name="permission">protected</property>
@@ -13454,7 +13569,7 @@
                                                                                         <property name="hidden">0</property>
                                                                                         <property name="id">ID_LG_TEMPERATURE_TEXT</property>
                                                                                         <property name="maximum_size"></property>
-                                                                                        <property name="maxlength">5</property>
+                                                                                        <property name="maxlength">0</property>
                                                                                         <property name="minimum_size"></property>
                                                                                         <property name="name">m_LG_temperatureText</property>
                                                                                         <property name="permission">protected</property>

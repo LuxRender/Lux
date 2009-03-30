@@ -115,7 +115,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_AberrationEnabled = d_AberrationEnabled = false;
 	m_AberrationAmount = d_AberrationAmount = 0.005f;
 
-	m_GlareEnabled = d_GlareEnabled = false;
+	m_GlareUpdateLayer = false;
+	m_HaveGlareImage = false;
+	m_glareImage = NULL;
 	m_GlareAmount = d_GlareAmount = 0.03f;
 	m_GlareRadius = d_GlareRadius = 0.03f;
 	m_GlareBlades = d_GlareBlades = 3;
@@ -219,6 +221,12 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			else
 				m_BloomUpdateLayer = false;
 			break;
+		case LUX_FILM_DELETEBLOOMLAYER:
+			if(value != 0.f)
+				m_BloomDeleteLayer = true;
+			else
+				m_BloomDeleteLayer = false;
+			break;
 
 		case LUX_FILM_BLOOMRADIUS:
 			 m_BloomRadius = value;
@@ -247,11 +255,17 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			 m_AberrationAmount = value;
 			break;
 
-		case LUX_FILM_GLARE_ENABLED:
+		case LUX_FILM_UPDATEGLARELAYER:
 			if(value != 0.f)
-				m_GlareEnabled = true;
+				m_GlareUpdateLayer = true;
 			else
-				m_GlareEnabled = false;
+				m_GlareUpdateLayer = false;
+			break;
+		case LUX_FILM_DELETEGLARELAYER:
+			if(value != 0.f)
+				m_GlareDeleteLayer = true;
+			else
+				m_GlareDeleteLayer = false;
 			break;
 		case LUX_FILM_GLARE_AMOUNT:
 			 m_GlareAmount = value;
@@ -448,9 +462,6 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, int index)
 			return m_AberrationAmount;
 			break;
 
-		case LUX_FILM_GLARE_ENABLED:
-			return m_GlareEnabled;
-			break;
 		case LUX_FILM_GLARE_AMOUNT:
 			return m_GlareAmount;
 			break;
@@ -631,9 +642,6 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 			return d_AberrationAmount;
 			break;
 
-		case LUX_FILM_GLARE_ENABLED:
-			return d_GlareEnabled;
-			break;
 		case LUX_FILM_GLARE_AMOUNT:
 			return d_GlareAmount;
 			break;
@@ -1017,15 +1025,31 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			tmkernel = "maxwhite";
 		}
 
+		// Delete bloom/glare layers if requested
+		if (!m_BloomUpdateLayer && m_BloomDeleteLayer && m_HaveBloomImage) {
+			// TODO - make thread safe
+			m_HaveBloomImage = false;
+			delete[] m_bloomImage;
+			m_bloomImage = NULL;
+		}
+
+		if (!m_GlareUpdateLayer && m_GlareDeleteLayer && m_HaveGlareImage) {
+			// TODO - make thread safe
+			m_HaveGlareImage = false;
+			delete[] m_glareImage;
+			m_glareImage = NULL;
+		}
+
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, m_histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
-			m_GlareEnabled, m_GlareAmount, m_GlareRadius, m_GlareBlades,
+			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades,
 			tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.
-		m_BloomUpdateLayer = false;
+		m_BloomUpdateLayer = m_BloomDeleteLayer = false;
+		m_GlareUpdateLayer = m_GlareDeleteLayer = false;
 
 		if (type & IMAGE_FILEOUTPUT) {
 			// write out tonemapped EXR
@@ -1548,6 +1572,7 @@ void FlexImageFilm::TransmitFilm(
 
 
 		header.params.push_back(FlmParameter(this, LUX_FILM_UPDATEBLOOMLAYER, 0));
+		header.params.push_back(FlmParameter(this, LUX_FILM_DELETEBLOOMLAYER, 0));
 		header.params.push_back(FlmParameter(this, LUX_FILM_BLOOMRADIUS, 0));
 		header.params.push_back(FlmParameter(this, LUX_FILM_BLOOMWEIGHT, 0));
 
@@ -1557,7 +1582,8 @@ void FlexImageFilm::TransmitFilm(
 		header.params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_ENABLED, 0));
 		header.params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_AMOUNT, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, LUX_FILM_UPDATEGLARELAYER, 0));
+		header.params.push_back(FlmParameter(this, LUX_FILM_DELETEGLARELAYER, 0));
 		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_AMOUNT, 0));
 		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_RADIUS, 0));
 		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_BLADES, 0));

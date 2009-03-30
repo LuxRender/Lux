@@ -58,12 +58,14 @@ using namespace lux;
 #define TM_REINHARD_POSTSCALE_RANGE 8.0f
 #define TM_REINHARD_BURN_RANGE 12.0f
 
-#define TM_LINEAR_EXPOSURE_RANGE 60.0f
-#define TM_LINEAR_SENSITIVITY_RANGE 10000.0f
+#define TM_LINEAR_EXPOSURE_LOG_MIN -3.f
+#define TM_LINEAR_EXPOSURE_LOG_MAX 2.f
+#define TM_LINEAR_SENSITIVITY_RANGE 1000.0f
 #define TM_LINEAR_FSTOP_RANGE 64.0f
 #define TM_LINEAR_GAMMA_RANGE 5.0f
 
-#define TM_CONTRAST_YWA_RANGE 1.0f
+#define TM_CONTRAST_YWA_LOG_MIN -4.f
+#define TM_CONTRAST_YWA_LOG_MAX 4.f
 
 #define TORGB_XWHITE_RANGE 1.0f
 #define TORGB_YWHITE_RANGE 1.0f
@@ -247,8 +249,8 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 
 	m_TORGB_gammaText->SetValidator( vt );
 
-	m_TORGB_bloomradiusText->SetValidator( vt );
-	m_TORGB_bloomweightText->SetValidator( vt );
+	m_bloomradiusText->SetValidator( vt );
+	m_bloomweightText->SetValidator( vt );
 
 	m_vignettingamountText->SetValidator( vt );
 	m_aberrationamountText->SetValidator( vt );
@@ -715,6 +717,19 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			{
 				// Signal film to update bloom layer at next tonemap
 				UpdateParam(LUX_FILM, LUX_FILM_UPDATEBLOOMLAYER, 1.0f);
+				m_deletebloomlayer->Enable(true);
+				m_bloomweightSlider->Enable(true);
+				m_bloomweightText->Enable(true);
+				ApplyTonemapping(true);
+			}
+			break;
+		case ID_DELETEBLOOMLAYER:
+			{
+				// Signal film to delete bloom layer
+				UpdateParam(LUX_FILM, LUX_FILM_DELETEBLOOMLAYER, 1.0f);
+				m_deletebloomlayer->Enable(false);
+				m_bloomweightSlider->Enable(false);
+				m_bloomweightText->Enable(false);
 				ApplyTonemapping(true);
 			}
 			break;
@@ -740,15 +755,26 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
-		// Glare Enable/Disable checkbox
-		case ID_GLARE_ENABLED:
+		// Compute glare layer button
+		case ID_COMPUTEGLARELAYER:
 			{
-				if(m_glareEnabled->IsChecked())
-					m_Glare_enabled = true;
-				else
-					m_Glare_enabled = false;
-				UpdateParam(LUX_FILM, LUX_FILM_GLARE_ENABLED, m_Glare_enabled);
-				if(m_auto_tonemap) ApplyTonemapping();
+				// Signal film to update glare layer at next tonemap
+				UpdateParam(LUX_FILM, LUX_FILM_UPDATEGLARELAYER, 1.0);
+				m_deleteglarelayer->Enable(true);
+				m_glareamountSlider->Enable(true);
+				m_glareamountText->Enable(true);
+				ApplyTonemapping(true);
+			}
+			break;
+		// Delete glare layer button
+		case ID_DELETEGLARELAYER:
+			{
+				// Signal film to update glare layer at next tonemap
+				UpdateParam(LUX_FILM, LUX_FILM_DELETEGLARELAYER, 1.0f);
+				m_deleteglarelayer->Enable(false);
+				m_glareamountSlider->Enable(false);
+				m_glareamountText->Enable(false);
+				ApplyTonemapping(true);
 			}
 			break;
 
@@ -896,7 +922,7 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 				m_LensEffectsAuiNotebook->Enable(m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled && m_Lenseffects_enabled);
 				UpdateParam(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled && m_Lenseffects_enabled);
-				UpdateParam(LUX_FILM, LUX_FILM_GLARE_ENABLED, m_Glare_enabled && m_Lenseffects_enabled);
+				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Lenseffects_enabled ? m_Glare_amount : 0.0);
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_Lenseffects_enabled ? m_bloomweight : 0.0);
 				if (!m_Lenseffects_enabled)
 					// prevent bloom update
@@ -987,15 +1013,15 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LuxGui::ApplyTonemapping(bool withbloomcomputation) {
+void LuxGui::ApplyTonemapping(bool withlayercomputation) {
 	if(m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
     (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
-		if(!withbloomcomputation) {
+		if(!withlayercomputation) {
 			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 			m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
 		} else {
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer/Computing Bloom Layer...");
-			m_statusBar->SetStatusText(wxT("Computing Bloom Layer & Tonemapping..."), 0);
+			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer/Computing Lens Effect Layer(s)...");
+			m_statusBar->SetStatusText(wxT("Computing Lens Effect Layer(s) & Tonemapping..."), 0);
 		}
 		m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
 	}
@@ -1082,13 +1108,15 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				wxString st = m_TM_Linear_exposureText->GetValue();
 				st.ToDouble( &m_TM_linear_exposure );
 
-				if ( m_TM_linear_exposure > TM_LINEAR_EXPOSURE_RANGE ) m_TM_linear_exposure = TM_LINEAR_EXPOSURE_RANGE;
-				else if ( m_TM_linear_exposure < 0 ) m_TM_linear_exposure = 0;
+				if ( m_TM_linear_exposure > powf(10.f, TM_LINEAR_EXPOSURE_LOG_MAX) ) 
+					m_TM_linear_exposure = powf(10.f, TM_LINEAR_EXPOSURE_LOG_MAX);
+				else if ( m_TM_linear_exposure < powf(10.f, TM_LINEAR_EXPOSURE_LOG_MIN) ) 
+					m_TM_linear_exposure = powf(10.f, TM_LINEAR_EXPOSURE_LOG_MIN);
 
 				st = wxString::Format( _("%.02f"), m_TM_linear_exposure );
 				m_TM_Linear_exposureText->SetValue( st );
-				int val = (int)(( FLOAT_SLIDER_RES / TM_LINEAR_EXPOSURE_RANGE ) * (m_TM_linear_exposure));
-				m_TM_Linear_exposureSlider->SetValue( val );
+				m_TM_Linear_exposureSlider->SetValue( ValueToLogSliderVal(m_TM_linear_exposure, 
+					TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX) );
 				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
@@ -1135,13 +1163,15 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				wxString st = m_TM_contrast_ywaText->GetValue();
 				st.ToDouble( &m_TM_contrast_ywa );
 
-				if ( m_TM_contrast_ywa > TM_CONTRAST_YWA_RANGE ) m_TM_contrast_ywa = TM_CONTRAST_YWA_RANGE;
-				else if ( m_TM_contrast_ywa < 0 ) m_TM_contrast_ywa = 0;
+				if ( m_TM_contrast_ywa > powf(10.f, TM_CONTRAST_YWA_LOG_MAX) ) 
+					m_TM_contrast_ywa = powf(10.f, TM_CONTRAST_YWA_LOG_MAX);
+				else if ( m_TM_contrast_ywa < powf(10.f, TM_CONTRAST_YWA_LOG_MIN) ) 
+					m_TM_contrast_ywa = powf(10.f, TM_CONTRAST_YWA_LOG_MIN);
 
 				st = wxString::Format( _("%.02f"), m_TM_contrast_ywa );
 				m_TM_contrast_ywaText->SetValue( st );
-				int val = (int)(( FLOAT_SLIDER_RES / TM_CONTRAST_YWA_RANGE ) * (m_TM_contrast_ywa));
-				m_TM_contrast_ywaSlider->SetValue( val );
+				m_TM_contrast_ywaSlider->SetValue( ValueToLogSliderVal(m_TM_contrast_ywa, 
+					TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX) );
 				UpdateParam(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
@@ -1306,35 +1336,35 @@ void LuxGui::OnText(wxCommandEvent& event) {
 			break;
 
 		// Bloom
-		case ID_TORGB_BLOOMRADIUS_TEXT:
-			if ( m_TORGB_bloomradiusText->IsModified() )
+		case ID_BLOOMRADIUS_TEXT:
+			if ( m_bloomradiusText->IsModified() )
 			{
-				wxString st = m_TORGB_bloomradiusText->GetValue();
+				wxString st = m_bloomradiusText->GetValue();
 				st.ToDouble( &m_bloomradius );
 
 				if ( m_bloomradius > BLOOMRADIUS_RANGE ) m_bloomradius = BLOOMRADIUS_RANGE;
 				else if ( m_bloomradius < 0 ) m_bloomradius = 0;
 
 				st = wxString::Format( _("%.02f"), m_bloomradius );
-				m_TORGB_bloomradiusText->SetValue( st );
+				m_bloomradiusText->SetValue( st );
 				int val = (int)(( FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE ) * (m_bloomradius));
-				m_TORGB_bloomradiusSlider->SetValue( val );
+				m_bloomradiusSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
 			}
 			break;
-		case ID_TORGB_BLOOMWEIGHT_TEXT:
-			if ( m_TORGB_bloomweightText->IsModified() )
+		case ID_BLOOMWEIGHT_TEXT:
+			if ( m_bloomweightText->IsModified() )
 			{
-				wxString st = m_TORGB_bloomweightText->GetValue();
+				wxString st = m_bloomweightText->GetValue();
 				st.ToDouble( &m_bloomweight );
 
 				if ( m_bloomweight > BLOOMWEIGHT_RANGE ) m_bloomweight = BLOOMWEIGHT_RANGE;
 				else if ( m_bloomweight < 0 ) m_bloomweight = 0;
 
 				st = wxString::Format( _("%.02f"), m_bloomweight );
-				m_TORGB_bloomweightText->SetValue( st );
+				m_bloomweightText->SetValue( st );
 				int val = (int)(( FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE ) * (m_bloomweight));
-				m_TORGB_bloomweightSlider->SetValue( val );
+				m_bloomweightSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
@@ -1402,7 +1432,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE ) * (m_Glare_amount));
 				m_glareamountSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
-				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 		case ID_GLARERADIUS_TEXT:
@@ -1421,7 +1451,6 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE ) * (m_Glare_radius));
 				m_glareradiusSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
-				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;
 
@@ -1656,7 +1685,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 			break;
 		case ID_TM_LINEAR_EXPOSURE:
 			{
-				m_TM_linear_exposure = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_LINEAR_EXPOSURE_RANGE );
+				m_TM_linear_exposure = LogSliderValToValue(event.GetPosition(), TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX);
 				wxString st = wxString::Format( _("%.02f"), m_TM_linear_exposure );
 				m_TM_Linear_exposureText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
@@ -1685,7 +1714,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 		// Contrast tonemapper options
 		case ID_TM_CONTRAST_YWA:
 			{
-				m_TM_contrast_ywa = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / TM_CONTRAST_YWA_RANGE );
+				m_TM_contrast_ywa = LogSliderValToValue(event.GetPosition(), TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX);
 				wxString st = wxString::Format( _("%.02f"), m_TM_contrast_ywa );
 				m_TM_contrast_ywaText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
@@ -1777,19 +1806,19 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 			break;
 
 		// Bloom
-		case ID_TORGB_BLOOMRADIUS:
+		case ID_BLOOMRADIUS:
 			{
 				m_bloomradius = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE );
 				wxString st = wxString::Format( _("%.02f"), m_bloomradius );
-				m_TORGB_bloomradiusText->SetValue( st );
+				m_bloomradiusText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
 			}
 			break;
-		case ID_TORGB_BLOOMWEIGHT:
+		case ID_BLOOMWEIGHT:
 			{
 				m_bloomweight = (double)event.GetPosition() / ( FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE );
 				wxString st = wxString::Format( _("%.02f"), m_bloomweight );
-				m_TORGB_bloomweightText->SetValue( st );
+				m_bloomweightText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
 				if(m_auto_tonemap) ApplyTonemapping();
 			}
@@ -1829,7 +1858,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				wxString st = wxString::Format( _("%.02f"), m_Glare_amount );
 				m_glareamountText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
-				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 		case ID_GLARERADIUS:
@@ -1839,7 +1868,7 @@ void LuxGui::OnScroll( wxScrollEvent& event ){
 				wxString st = wxString::Format( _("%.02f"), m_Glare_radius );
 				m_glareradiusText->SetValue( st );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
-				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 
@@ -2011,11 +2040,11 @@ void LuxGui::OnFocus( wxFocusEvent& event ){
 			m_TORGB_gammaText->SetValue( wxString::Format( _("%.02f"), m_TORGB_gamma ) );
 			break;
 		// Bloom options
-		case ID_TORGB_BLOOMRADIUS_TEXT:
-			m_TORGB_bloomradiusText->SetValue( wxString::Format( _("%.02f"), m_bloomradius ) );
+		case ID_BLOOMRADIUS_TEXT:
+			m_bloomradiusText->SetValue( wxString::Format( _("%.02f"), m_bloomradius ) );
 			break;
-		case ID_TORGB_BLOOMWEIGHT_TEXT:
-			m_TORGB_bloomweightText->SetValue( wxString::Format( _("%.02f"), m_bloomweight ) );
+		case ID_BLOOMWEIGHT_TEXT:
+			m_bloomweightText->SetValue( wxString::Format( _("%.02f"), m_bloomweight ) );
 			break;
 		// Vignetting options
 		case ID_VIGNETTINGAMOUNT_TEXT:
@@ -2197,12 +2226,12 @@ void LuxGui::ResetToneMapping(){
 	m_TM_reinhard_postscale = 1.0;
 	m_TM_reinhard_burn = 6.0;
 
-	m_TM_linear_exposure = 1.f;
+	m_TM_linear_exposure = 1.0f;
 	m_TM_linear_sensitivity = 50.0f;
 	m_TM_linear_fstop = 2.8;
 	m_TM_linear_gamma = 1.0;
 
-	m_TM_contrast_ywa = 1.0;
+	m_TM_contrast_ywa = 0.1;
 
 	m_bloomradius = 0.07f;
 	m_bloomweight = 0.25f;
@@ -2213,7 +2242,6 @@ void LuxGui::ResetToneMapping(){
 	m_Aberration_enabled = false;
 	m_Aberration_amount = 0.5;
 
-	m_Glare_enabled = false;
 	m_Glare_amount = 0.03f;
 	m_Glare_radius = 0.03f;
 	m_Glare_blades = 3;
@@ -2272,7 +2300,8 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_TM_Reinhard_burnText->SetValue(st);
 
 	// Linear widgets
-	m_TM_Linear_exposureSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_LINEAR_EXPOSURE_RANGE) * m_TM_linear_exposure) );
+	m_TM_Linear_exposureSlider->SetValue( ValueToLogSliderVal(m_TM_linear_exposure, 
+		TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX) );
 	st = wxString::Format( _("%.02f"), m_TM_linear_exposure );
 	m_TM_Linear_exposureText->SetValue(st);
 
@@ -2289,7 +2318,8 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_TM_Linear_gammaText->SetValue(st);
 
 	// Contrast widgets
-	m_TM_contrast_ywaSlider->SetValue( (int)((FLOAT_SLIDER_RES / TM_CONTRAST_YWA_RANGE) * m_TM_contrast_ywa) );
+	m_TM_contrast_ywaSlider->SetValue( ValueToLogSliderVal(m_TM_contrast_ywa, 
+		TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX) );
 	st = wxString::Format( _("%.02f"), m_TM_contrast_ywa );
 	m_TM_contrast_ywaText->SetValue(st);
 
@@ -2327,13 +2357,13 @@ void LuxGui::UpdateTonemapWidgetValues() {
 	m_TORGB_gammaText->SetValue(st);
 	
 	// Bloom widgets
-	m_TORGB_bloomradiusSlider->SetValue( (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomradius));
+	m_bloomradiusSlider->SetValue( (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomradius));
 	st = wxString::Format( _("%.02f"), m_bloomradius );
-	m_TORGB_bloomradiusText->SetValue(st);
+	m_bloomradiusText->SetValue(st);
 
-	m_TORGB_bloomweightSlider->SetValue( (int)((FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE) * m_bloomweight));
+	m_bloomweightSlider->SetValue( (int)((FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE) * m_bloomweight));
 	st = wxString::Format( _("%.02f"), m_bloomweight );
-	m_TORGB_bloomweightText->SetValue(st);
+	m_bloomweightText->SetValue(st);
 
 	// GREYC widgets
 	m_greyc_iterationsSlider->SetValue( (int) m_GREYC_nb_iter );
@@ -2358,7 +2388,7 @@ void LuxGui::UpdateTonemapWidgetValues() {
 
 	m_greyc_sharpnessSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_SHARPNESS_RANGE) * m_GREYC_sharpness));
 	st = wxString::Format( _("%.02f"), m_GREYC_sharpness );
-	m_greyc_iterationsText->SetValue(st);
+	m_greyc_sharpnessText->SetValue(st);
 
 	m_greyc_anisoSlider->SetValue( (int)((FLOAT_SLIDER_RES / GREYC_ANISOTROPY_RANGE) * m_GREYC_anisotropy));
 	st = wxString::Format( _("%.02f"), m_GREYC_anisotropy );
@@ -2429,8 +2459,6 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 	m_Aberration_amount = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_ABERRATION_AMOUNT);
 
 
-	t = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_ENABLED);
-	m_Glare_enabled = t != 0.0;
 	m_Glare_amount = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_AMOUNT);
 	m_Glare_radius = RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_RADIUS);
 	m_Glare_blades = (int)RetrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_BLADES);
@@ -2489,7 +2517,6 @@ void LuxGui::ResetToneMappingFromFilm( bool useDefaults ){
 	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, m_Aberration_amount);
 
-	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_ENABLED, m_Glare_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
@@ -2562,6 +2589,26 @@ void LuxGui::ResetLightGroupsFromFilm( bool useDefaults ) {
 	// Update
 	UpdateLightGroupWidgetValues();
 	m_LightGroups->Layout();
+}
+
+int LuxGui::ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound) {
+
+	if (value <= 0)
+		return 0;
+
+	float logvalue = Clamp<float>(log10f(value), logLowerBound, logUpperBound);
+
+	const int val = static_cast<int>((logvalue - logLowerBound) / 
+		(logUpperBound - logLowerBound) * FLOAT_SLIDER_RES);
+	return val;
+}
+
+float LuxGui::LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound) {
+
+	float logvalue = (float)sliderval * (logUpperBound - logLowerBound) / 
+		FLOAT_SLIDER_RES + logLowerBound;
+
+	return powf(10.f, logvalue);
 }
 
 
@@ -3049,7 +3096,6 @@ void LuxGui::OnSpin( wxSpinEvent& event )
 					m_Glare_blades = GLARE_BLADES_MIN;
 
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
-				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;			
 		default:
@@ -3069,7 +3115,6 @@ void LuxGui::OnSpinText(wxCommandEvent& event) {
 					m_Glare_blades = GLARE_BLADES_MIN;
 
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
-				if(m_auto_tonemap && m_Glare_enabled) ApplyTonemapping();
 			}
 			break;			
 		default:
