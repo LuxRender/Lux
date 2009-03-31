@@ -713,6 +713,13 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				SetColorSpacePreset(choice);
 			}
 			break;
+		case ID_TORGB_WHITEPOINTCHOICE:
+			{
+				// Change whitepoint preset
+				int choice = event.GetInt();
+				SetWhitepointPreset(choice);
+			}
+			break;
 		case ID_COMPUTEBLOOMLAYER:
 			{
 				// Signal film to update bloom layer at next tonemap
@@ -2138,6 +2145,7 @@ void LuxGui::SetTonemapKernel(int choice) {
 
 void LuxGui::SetColorSpacePreset(int choice) {
 	m_TORGB_colorspaceChoice->SetSelection(choice);
+	m_TORGB_whitepointChoice->SetSelection(0);
 	switch (choice) {
 		case 0: {
 				// sRGB - HDTV (ITU-R BT.709-5)
@@ -2208,6 +2216,122 @@ void LuxGui::SetColorSpacePreset(int choice) {
 	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
 	UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
+
+	UpdateTonemapWidgetValues();
+	Refresh();
+	if(m_auto_tonemap) ApplyTonemapping();
+}
+
+void LuxGui::SetWhitepointPreset(int choice) {
+	m_TORGB_whitepointChoice->SetSelection(choice);
+
+	// first choice is "none"
+	if (choice < 1)
+		return;
+
+	// default to E
+	float x = 1;
+	float y = 1;
+	float z = 1;
+	switch (choice - 1) {
+		case 0: 
+			{
+				// A
+				x = 1.09850;
+				y = 1.00000;
+				z = 0.35585;
+			}
+			break;
+		case 1: 
+			{
+				// B
+				x = 0.99072;
+				y = 1.00000;
+				z = 0.85223;
+			}
+			break;
+		case 2: 
+			{
+				// C
+				x = 0.98074;
+				y = 1.00000;
+				z = 1.18232;
+			}
+			break;
+		case 3: 
+			{
+				// D50
+				x = 0.96422;
+				y = 1.00000;
+				z = 0.82521;
+			}
+			break;
+		case 4: 
+			{
+				// D55
+				x = 0.95682;
+				y = 1.00000;
+				z = 0.92149;
+			}
+			break;
+		case 5: 
+			{
+				// D65
+				x = 0.95047;
+				y = 1.00000;
+				z = 1.08883;
+			}
+			break;
+		case 6: 
+			{
+				// D75
+				x = 0.94972;
+				y = 1.00000;
+				z = 1.22638;
+			}
+			break;
+		case 7: 
+			{
+				// E
+				x = 1.00000;
+				y = 1.00000;
+				z = 1.00000;
+			}
+			break;
+		case 8: 
+			{
+				// F2
+				x = 0.99186;
+				y = 1.00000;
+				z = 0.67393;
+			}
+			break;
+		case 9: 
+			{
+				// F7
+				x = 0.95041;
+				y = 1.00000;
+				z = 1.08747;
+			}
+			break;
+		case 10: 
+			{
+				// F11
+				x = 1.00962;
+				y = 1.00000;
+				z = 0.64350;
+			}
+			break;
+		default:
+			break;
+	}
+
+	m_TORGB_xwhite = x / (x+y+z);
+	m_TORGB_ywhite = y / (x+y+z);
+
+	// Update values in film trough API
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
+	UpdateParam(LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
 
 	UpdateTonemapWidgetValues();
 	Refresh();

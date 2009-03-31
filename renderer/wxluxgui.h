@@ -228,6 +228,7 @@ protected:
 	void ResetLightGroupsFromFilm( bool useDefaults=true );
 
 	void SetColorSpacePreset(int choice);
+	void SetWhitepointPreset(int choice);
 	void SetTonemapKernel(int choice);
 
 	int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);

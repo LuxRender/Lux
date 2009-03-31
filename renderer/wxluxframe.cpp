@@ -814,6 +814,21 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bSizer101;
 	bSizer101 = new wxBoxSizer( wxVERTICAL );
 	
+	wxBoxSizer* bSizer1212;
+	bSizer1212 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_TORGB_whitepointpresetsStaticText = new wxStaticText( m_ColorSpaceWhitepointPanel, wxID_ANY, wxT("Preset"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_TORGB_whitepointpresetsStaticText->Wrap( -1 );
+	bSizer1212->Add( m_TORGB_whitepointpresetsStaticText, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	
+	wxString m_TORGB_whitepointChoiceChoices[] = { wxT(" "), wxT("A"), wxT("B"), wxT("C"), wxT("D50"), wxT("D55"), wxT("D65"), wxT("D75"), wxT("E"), wxT("F2"), wxT("F7"), wxT("F11") };
+	int m_TORGB_whitepointChoiceNChoices = sizeof( m_TORGB_whitepointChoiceChoices ) / sizeof( wxString );
+	m_TORGB_whitepointChoice = new wxChoice( m_ColorSpaceWhitepointPanel, ID_TORGB_WHITEPOINTCHOICE, wxDefaultPosition, wxDefaultSize, m_TORGB_whitepointChoiceNChoices, m_TORGB_whitepointChoiceChoices, 0 );
+	m_TORGB_whitepointChoice->SetSelection( 0 );
+	bSizer1212->Add( m_TORGB_whitepointChoice, 0, wxALL, 5 );
+	
+	bSizer101->Add( bSizer1212, 1, wxEXPAND, 5 );
+	
 	wxBoxSizer* bSizer1012;
 	bSizer1012 = new wxBoxSizer( wxHORIZONTAL );
 	
@@ -1815,6 +1830,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_Tab_ColorSpaceToggleIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_ColorSpaceIcon->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TORGB_colorspaceChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_TORGB_whitepointChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
@@ -2281,6 +2297,7 @@ LuxMainFrame::~LuxMainFrame()
 	m_Tab_ColorSpaceToggleIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_Tab_ColorSpaceIcon->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( LuxMainFrame::OnMouse ), NULL, this );
 	m_TORGB_colorspaceChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
+	m_TORGB_whitepointChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
 	m_TORGB_xwhiteSlider->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( LuxMainFrame::OnScroll ), NULL, this );
