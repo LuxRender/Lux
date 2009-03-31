@@ -43,7 +43,7 @@ public:
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
 	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-		if (architectural && fabsf(CosTheta(wo) + CosTheta(wi)) < SHADOW_RAY_EPSILON) return 1.f;
+		if (architectural && Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f) return 1.f;
 		else return 0.f;
 	}
 private:
