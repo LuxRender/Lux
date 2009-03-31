@@ -355,7 +355,6 @@ namespace lux {
 		header.channels().insert("B", Channel(Imf::FLOAT));
 		header.channels().insert("A", Channel(Imf::FLOAT));
 
-		const int numPixels = xRes * yRes;
 		// NOTE - lordcrc - No need to perform a local copy of the pixels
 		float *hrgb = &pixels[0].c[0];
 		float *ha = &alpha[0];
@@ -377,8 +376,6 @@ namespace lux {
 			file.setFrameBuffer(fb);
 			file.writePixels(yRes);
 		} catch (const std::exception &e) {
-			//Error("Unable to write image file \"%s\": %s", name.c_str(),
-			//	e.what());
 			std::stringstream ss;
 			ss << "Unable to write image file '" << name << "': " << e.what();
 			luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());

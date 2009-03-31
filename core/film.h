@@ -363,6 +363,7 @@ public:
 	virtual void AddSample(Contribution *contrib) = 0;
     virtual void AddSampleCount(float count) { }
     virtual void WriteImage(ImageType type) = 0;
+	virtual void WriteFilm(const string &filename) = 0;
     virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
 
     virtual void RequestBufferGroups(const vector<string> &bg) = 0;

@@ -162,4 +162,40 @@ void osReadLittleEndianInt(bool isLittleEndian,
     }
 }
 
+void osWriteLittleEndianUInt(bool isLittleEndian,
+		std::basic_ostream<char> &os, unsigned int value) {
+    if(isLittleEndian)
+        os.write((char *)&value, sizeof(unsigned int));
+    else {
+        union IntBytes {
+            unsigned int intValue;
+            unsigned char bytes[sizeof(unsigned int)];
+        };
+
+        IntBytes f;
+        f.intValue = value;
+
+        for (unsigned int i = 0; i < sizeof(unsigned int); ++i)
+            os.write((char *)&f.bytes[sizeof(unsigned int) - i - 1], 1);
+    }
+}
+
+void osReadLittleEndianUInt(bool isLittleEndian,
+		std::basic_istream<char> &is, unsigned int *value) {
+    if(isLittleEndian)
+        is.read((char *)value, sizeof(unsigned int));
+    else {
+        union IntBytes {
+            unsigned int intValue;
+            unsigned char bytes[sizeof(unsigned int)];
+        };
+
+        IntBytes f;
+        for(unsigned int i = 0; i < sizeof(unsigned int); ++i)
+            is.read((char *)&f.bytes[sizeof(unsigned int) - i - 1], 1);
+
+        (*value) = f.intValue;
+    }
+}
+
 }//namespace lux

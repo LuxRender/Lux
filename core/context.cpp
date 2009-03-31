@@ -904,7 +904,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 // Load/save FLM file
 void Context::loadFLM(const string &flmFileName) {
 	// Create the film
-	FlexImageFilm* film = FlexImageFilm::CreateFilmFromFLM(flmFileName);
+	Film* film = FlexImageFilm::CreateFilmFromFLM(flmFileName);
 	if(!film) {
 		luxError(LUX_BUG,LUX_SEVERE,"Unable to create film");
 		return;

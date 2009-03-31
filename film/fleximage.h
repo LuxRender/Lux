@@ -37,10 +37,6 @@ namespace lux {
 class FlexImageFilm : public Film {
 public:
 	// FlexImageFilm Public Methods
-	// Lotus - not used and not safe (lots of stuff not initialized)
-	/*FlexImageFilm(int xres, int yres) :
-		Film(xres, yres, 0), filter(NULL), filterTable(NULL),
-		framebuffer(NULL), colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f, 1.f) { }*/
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
@@ -106,7 +102,7 @@ public:
 	 * Constructs an image film that loads its data from the give FLM file. This film is already initialized with
 	 * the necessary buffers. This is currently only used for loading and tonemapping an existing FLM file.
 	 */
-	static FlexImageFilm *CreateFilmFromFLM(const string &flmFileName);
+	static Film *CreateFilmFromFLM(const string &flmFileName);
 
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);

@@ -44,6 +44,10 @@ extern void osWriteLittleEndianInt(bool isLittleEndian,
 		std::basic_ostream<char> &os, int value);
 extern void osReadLittleEndianInt(bool isLittleEndian,
 		std::basic_istream<char> &is, int *value);
+extern void osWriteLittleEndianUInt(bool isLittleEndian,
+		std::basic_ostream<char> &os, unsigned int value);
+extern void osReadLittleEndianUInt(bool isLittleEndian,
+		std::basic_istream<char> &is, unsigned int *value);
 
 }//namespace lux
 
