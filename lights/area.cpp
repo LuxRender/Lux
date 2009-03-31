@@ -134,7 +134,7 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
-		*Le = L(tspack, dg, Vector(dg.nn)) * M_PI;
+		*Le = this->Le->Evaluate(tspack, dg) * gain;
 		return true;
 	}
 	*Le = 0.f;
@@ -156,7 +156,7 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 		else
 			(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 		visibility->SetSegment(p, dg.p, tspack->time);
-		*Le = L(tspack, dg, -wo) * M_PI;
+		*Le = this->Le->Evaluate(tspack, dg) * gain;
 		return true;
 	}
 	*Le = 0.f;
