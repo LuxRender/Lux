@@ -41,7 +41,12 @@ string current_file;
 
 void yyerror( const char *str ) {
 	std::stringstream ss;
-	ss<<"Parsing error: "<<str;
+	ss<<"Parsing error";
+	if (current_file != "")
+		ss << " in file '" << current_file << "'";
+	if (line_num > 0)
+		ss << " at line " << line_num;
+	ss << ": " << str;
 	luxError( LUX_SYNTAX,LUX_SEVERE,ss.str().c_str());
 	//Severe( "Parsing error: %s", str);
 }
