@@ -68,10 +68,19 @@ bool LuxGuiApp::OnInit() {
 	}
 }
 
+void InfoDialogBox(const std::string &msg, const std::string &caption = "LuxRender") {
+	wxMessageBox(wxString(msg.c_str(), wxConvUTF8), 
+		wxString(caption.c_str(), wxConvUTF8), 
+		wxOK | wxICON_INFORMATION);
+}
+
+
 bool LuxGuiApp::ProcessCommandLine() {
 	try {
+		const int line_length = 150;
+
 		// allowed only on command line
-		po::options_description generic("Generic options");
+		po::options_description generic("Generic options", line_length);
 		generic.add_options()
 			("version,v", "Print version string")
 			("help,h", "Produce help message")
@@ -83,7 +92,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 		// Declare a group of options that will be
 		// allowed both on command line and in
 		// config file
-		po::options_description config("Configuration");
+		po::options_description config("Configuration", line_length);
 		config.add_options()
 			("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
 			("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
@@ -93,7 +102,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 
 		// Hidden options, will be allowed both on command line and
 		// in config file, but will not be shown to the user.
-		po::options_description hidden("Hidden options");
+		po::options_description hidden("Hidden options", line_length);
 		hidden.add_options()
 			("input-file", po::value < vector < string > >(), "input file")
 		;
@@ -108,13 +117,13 @@ bool LuxGuiApp::ProcessCommandLine() {
 			;
 		#endif // LUX_USE_OPENGL
 
-		po::options_description cmdline_options;
+		po::options_description cmdline_options(line_length);
 		cmdline_options.add(generic).add(config).add(hidden);
 
-		po::options_description config_file_options;
+		po::options_description config_file_options(line_length);
 		config_file_options.add(config).add(hidden);
 
-		po::options_description visible("Allowed options");
+		po::options_description visible("Allowed options", line_length);
 		visible.add(generic).add(config);
 
 		po::positional_options_description p;
@@ -135,8 +144,13 @@ bool LuxGuiApp::ProcessCommandLine() {
 		notify(vm);
 
 		if(vm.count("help")) {
-			std::cout << "Usage: luxrender [options] file..." << std::endl;
-			std::cout << visible << std::endl;
+			//std::cout << "Usage: luxrender [options] file..." << std::endl;
+			//std::cout << visible << std::endl;
+			std::stringstream ss;
+			ss << "Usage: luxrender [options] file..." << std::endl;
+			visible.print(ss);
+			ss << std::endl;
+			InfoDialogBox(ss.str());			
 			return false;
 		}
 
@@ -144,7 +158,10 @@ bool LuxGuiApp::ProcessCommandLine() {
         	luxLogFilter = vm["verbosity"].as<int>();
 
 		if(vm.count("version")) {
-			std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
+			//std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
+			std::stringstream ss;
+			ss << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
+			InfoDialogBox(ss.str());			
 			return false;
 		}
 
