@@ -382,6 +382,7 @@ private:
 		bool reverseOrientation;
 	};
 
+	bool terminated;
 	int currentApiState;
 	Transform curTransform;
 	map<string, Transform> namedCoordinateSystems;

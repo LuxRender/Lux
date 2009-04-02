@@ -105,6 +105,7 @@ protected:
 enum LuxGuiRenderState
 {
 	WAITING,
+	PARSING,
 	RENDERING,
 	STOPPING,
 	STOPPED,

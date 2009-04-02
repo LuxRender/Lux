@@ -3390,6 +3390,10 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 			m_flmloadThread->join();
 		if(m_flmsaveThread)
 			m_flmsaveThread->join();
+		if(m_guiRenderState == PARSING && m_progDialog) {
+			// destroy progress dialog if quitting during parsing
+			m_progDialog->Destroy();
+		}
 		if(m_guiRenderState != FINISHED && m_guiRenderState != TONEMAPPING) {
 			if(m_updateThread)
 				m_updateThread->join();
@@ -3524,6 +3528,11 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		m_HistogramWindow->Update();
 
 	} else if(event.GetEventType() == wxEVT_LUX_PARSEERROR) {
+		m_progDialog->Destroy();
+		delete m_progDialog;
+		m_progDialog = NULL;
+		m_loadTimer->Stop();
+
 		wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		ChangeRenderState(FINISHED);
 	} else if(event.GetEventType() == wxEVT_LUX_FLMLOADERROR) {
@@ -3594,12 +3603,16 @@ void LuxGui::RenderScenefile(wxString filename) {
 	// CF
 	m_CurrentFile = filename;
 
-	// Start main render thread
-	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
+	ChangeRenderState(PARSING);
 
+	// NOTE - lordcrc - create progress dialog before starting engine thread
+	//                  so we don't try to destroy it before it's properly created
 	m_progDialog = new wxProgressDialog(wxT("Loading scene..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 	m_progDialog->Pulse();
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
+
+	// Start main render thread
+	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
 }
 
 void LuxGui::OnSelection(wxViewerEvent& event) {
@@ -3622,6 +3635,9 @@ void LuxGui::EngineThread(wxString filename) {
 	chdir(fullPath.branch_path().string().c_str());
 
 	ParseFile(fullPath.leaf().c_str());
+
+	if (luxStatistics("terminated"))
+		return;
 
 	if(!luxStatistics("sceneIsReady")) {
 		wxCommandEvent errorEvent(wxEVT_LUX_PARSEERROR, GetId());

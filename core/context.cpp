@@ -72,43 +72,44 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 
 
 void Context::init() {
-    // Dade - reinitialize
-    currentApiState = STATE_OPTIONS_BLOCK;
-    luxCurrentScene = NULL;
+	// Dade - reinitialize
+	terminated = false;
+	currentApiState = STATE_OPTIONS_BLOCK;
+	luxCurrentScene = NULL;
 	luxCurrentSceneReady = false;
-    curTransform = Transform();
-    namedCoordinateSystems.clear();
-    renderOptions = new RenderOptions;
-    graphicsState = new GraphicsState;
-    namedmaterials.clear();
-    pushedGraphicsStates.clear();
-    pushedTransforms.clear();
-    renderFarm = new RenderFarm();
+	curTransform = Transform();
+	namedCoordinateSystems.clear();
+	renderOptions = new RenderOptions;
+	graphicsState = new GraphicsState;
+	namedmaterials.clear();
+	pushedGraphicsStates.clear();
+	pushedTransforms.clear();
+	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
 }
 
 void Context::free() {
-    // Dade - free memory
-    if (luxCurrentScene) {
-        delete luxCurrentScene;
-        luxCurrentScene = NULL;
+	// Dade - free memory
+	if (luxCurrentScene) {
+		delete luxCurrentScene;
+		luxCurrentScene = NULL;
 		luxCurrentSceneReady = false;
-    }
+	}
 
-    if (renderOptions) {
-        delete renderOptions;
-        renderOptions = NULL;
-    }
+	if (renderOptions) {
+		delete renderOptions;
+		renderOptions = NULL;
+	}
 
-    if (graphicsState) {
-        delete graphicsState;
-        graphicsState = NULL;
-    }
+	if (graphicsState) {
+		delete graphicsState;
+		graphicsState = NULL;
+	}
 
-    if (renderFarm) {
-        delete renderFarm;
-        renderFarm = NULL;
-    }
+	if (renderFarm) {
+		delete renderFarm;
+		renderFarm = NULL;
+	}
 
 	if (filmOverrideParams) {
 		delete filmOverrideParams;
@@ -749,105 +750,107 @@ void Context::objectInstance(const string &name) {
 }
 
 void Context::motionInstance(const string &name, float startTime, float endTime, const string &toTransform) {
-        VERIFY_WORLD("MotionInstance")
-        ;
-        renderFarm->send("luxMotionInstance", name, startTime, endTime, toTransform);
-        // Object instance error checking
-        if (renderOptions->currentInstance) {
-                luxError(LUX_NESTING,LUX_ERROR,"MotionInstance can't be called inside instance definition");
-                return;
-        }
-        if (renderOptions->instances.find(name) == renderOptions->instances.end()) {
-                //Error("Unable to find instance named \"%s\"", name.c_str());
-                std::stringstream ss;
-                ss<<"Unable to find instance named '"<<name<<"'";
-                luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
-                return;
-        }
-        vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[name];
-        if (in.size() == 0)
-                return;
-        if( in.size() == 1 && !in[0]->CanIntersect() ) {
-                boost::shared_ptr<Primitive> prim = in[0];
-                in.clear();
-                prim->Refine(in, PrimitiveRefinementHints(false), prim);
-        }
-        if (in.size() > 1 || !in[0]->CanIntersect()) {
-                // Refine instance _Primitive_s and create aggregate
-                boost::shared_ptr<Primitive> accel(MakeAccelerator(
-                                renderOptions->AcceleratorName, in,
-                                renderOptions->AcceleratorParams));
-                if (!accel)
-                        accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
-                if (!accel)
-                        luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
-                in.erase(in.begin(), in.end());
-                in.push_back(accel);
-        }
+	VERIFY_WORLD("MotionInstance")
+	;
+	renderFarm->send("luxMotionInstance", name, startTime, endTime, toTransform);
+	// Object instance error checking
+	if (renderOptions->currentInstance) {
+		luxError(LUX_NESTING,LUX_ERROR,"MotionInstance can't be called inside instance definition");
+		return;
+	}
+	if (renderOptions->instances.find(name) == renderOptions->instances.end()) {
+		//Error("Unable to find instance named \"%s\"", name.c_str());
+		std::stringstream ss;
+		ss<<"Unable to find instance named '"<<name<<"'";
+		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+		return;
+	}
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[name];
+	if (in.size() == 0)
+		return;
+	if( in.size() == 1 && !in[0]->CanIntersect() ) {
+		boost::shared_ptr<Primitive> prim = in[0];
+		in.clear();
+		prim->Refine(in, PrimitiveRefinementHints(false), prim);
+	}
+	if (in.size() > 1 || !in[0]->CanIntersect()) {
+		// Refine instance _Primitive_s and create aggregate
+		boost::shared_ptr<Primitive> accel(MakeAccelerator(
+						renderOptions->AcceleratorName, in,
+						renderOptions->AcceleratorParams));
+		if (!accel)
+			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
+		if (!accel)
+			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
+		in.erase(in.begin(), in.end());
+		in.push_back(accel);
+	}
 
 	// Fetch named ToTransform coordinatesystem
 	Transform EndTransform;
-        if (namedCoordinateSystems.find(toTransform) != namedCoordinateSystems.end())
-                EndTransform = namedCoordinateSystems[toTransform];
+	if (namedCoordinateSystems.find(toTransform) != namedCoordinateSystems.end())
+		EndTransform = namedCoordinateSystems[toTransform];
 	else {
 		luxError(LUX_BUG,LUX_SEVERE,"Unable to find named CoordinateSystem for MotionInstance."); // NOTE - radiance - TODO print name
 	}
 
 
-        // Initialize material for instance
-        ParamSet params;
-        boost::shared_ptr<Material> material = makematerial(params, false);
+	// Initialize material for instance
+	ParamSet params;
+	boost::shared_ptr<Material> material = makematerial(params, false);
 
-        boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform, EndTransform, startTime, endTime));
-        renderOptions->primitives.push_back(o);
+	boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform, EndTransform, startTime, endTime));
+	renderOptions->primitives.push_back(o);
 }
 
 
 
 void Context::worldEnd() {
-    VERIFY_WORLD("WorldEnd")
-            ;
-    renderFarm->send("luxWorldEnd");
-    renderFarm->flush();
+	VERIFY_WORLD("WorldEnd")
+			;
+	renderFarm->send("luxWorldEnd");
+	renderFarm->flush();
 
-    // Dade - get the lock, other thread can use this lock to wait the end of
-    // the rendering
-    boost::mutex::scoped_lock lock(renderingMutex);
+	// Dade - get the lock, other thread can use this lock to wait the end of
+	// the rendering
+	boost::mutex::scoped_lock lock(renderingMutex);
 
-    // Ensure the search path was set
-    /*if (!renderOptions->gotSearchPath)
-     Severe("LUX_SEARCHPATH environment variable "
-     "wasn't set and a plug-in\n"
-     "search path wasn't given in the "
-     "input (with the SearchPath "
-     "directive).\n");*/
-    // Ensure there are no pushed graphics states
-    while (pushedGraphicsStates.size()) {
-        luxError(LUX_NESTING, LUX_WARNING, "Missing end to luxAttributeBegin()");
-        pushedGraphicsStates.pop_back();
-        pushedTransforms.pop_back();
-    }
-    // Create scene and render
-    luxCurrentScene = renderOptions->MakeScene();
-    if (luxCurrentScene) {
-        // Dade - check if we have to start the network rendering updater thread
-        if (renderFarm->getServerCount() > 0)
-            renderFarm->startFilmUpdater(luxCurrentScene);
+	// Ensure the search path was set
+	/*if (!renderOptions->gotSearchPath)
+	 Severe("LUX_SEARCHPATH environment variable "
+	 "wasn't set and a plug-in\n"
+	 "search path wasn't given in the "
+	 "input (with the SearchPath "
+	 "directive).\n");*/
+	// Ensure there are no pushed graphics states
+	while (pushedGraphicsStates.size()) {
+		luxError(LUX_NESTING, LUX_WARNING, "Missing end to luxAttributeBegin()");
+		pushedGraphicsStates.pop_back();
+		pushedTransforms.pop_back();
+	}
+	if (!terminated) {
+		// Create scene and render
+		luxCurrentScene = renderOptions->MakeScene();
+		if (luxCurrentScene) {
+			// Dade - check if we have to start the network rendering updater thread
+			if (renderFarm->getServerCount() > 0)
+				renderFarm->startFilmUpdater(luxCurrentScene);
 
-		luxCurrentScene->Render();
+			luxCurrentScene->Render();
 
-        // Dade - check if we have to stop the network rendering updater thread
-        if (renderFarm->getServerCount() > 0)
-            renderFarm->stopFilmUpdater();
-    }
+			// Dade - check if we have to stop the network rendering updater thread
+			if (renderFarm->getServerCount() > 0)
+				renderFarm->stopFilmUpdater();
+		}
+	}
 
-    //delete scene;
-    // Clean up after rendering
-    currentApiState = STATE_OPTIONS_BLOCK;
-    StatsPrint(stdout);
-    curTransform = Transform();
-    namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
-            namedCoordinateSystems.end());
+	//delete scene;
+	// Clean up after rendering
+	currentApiState = STATE_OPTIONS_BLOCK;
+	StatsPrint(stdout);
+	curTransform = Transform();
+	namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
+		namedCoordinateSystems.end());
 }
 
 Scene *Context::RenderOptions::MakeScene() const {
@@ -967,8 +970,13 @@ void Context::exit() {
 		// Dade - disconnect from all servers
 		activeContext->renderFarm->disconnectAll();
 	}
+	
+	terminated = true;
 
-    luxCurrentScene->Exit();
+	if (!luxCurrentScene)
+		return;
+
+	luxCurrentScene->Exit();
 }
 
 //controlling number of threads
@@ -1049,6 +1057,7 @@ u_int Context::GetActiveLightGroup() {
 double Context::statistics(const string &statName) {
 	if (statName=="sceneIsReady") return (luxCurrentScene!=NULL && luxCurrentSceneReady && !luxCurrentScene->IsFilmOnly());
 	else if (statName=="filmIsReady") return (luxCurrentScene!=NULL && luxCurrentScene->IsFilmOnly());
+	else if (statName=="terminated") return terminated;
 	else if (luxCurrentScene!=NULL) return luxCurrentScene->Statistics(statName);
 	else return 0;
 }
