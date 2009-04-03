@@ -33,10 +33,11 @@
 using namespace lux;
 
 struct BidirVertex {
-	BidirVertex() : pdf(0.f), pdfR(0.f), dAWeight(0.f), dARWeight(0.f),
-		rr(1.f), rrR(1.f), flux(0.f), bsdf(NULL), flags(BxDFType(0)),
-		f(0.f), Le(0.f), ePdf(0.f), ePdfDirect(0.f), eBsdf(NULL) {}
-	float cosi, coso, pdf, pdfR, dAWeight, dARWeight, rr, rrR;
+	BidirVertex() : pdf(0.f), pdfR(0.f), tPdf(1.f), tPdfR(1.f),
+		dAWeight(0.f), dARWeight(0.f), rr(1.f), rrR(1.f),
+		flux(0.f), bsdf(NULL), flags(BxDFType(0)), f(0.f),
+		Le(0.f), ePdf(0.f), ePdfDirect(0.f), eBsdf(NULL) {}
+	float cosi, coso, pdf, pdfR, tPdf, tPdfR, dAWeight, dARWeight, rr, rrR;
 	SWCSpectrum flux;
 	BSDF *bsdf;
 	BxDFType flags;
@@ -144,8 +145,8 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			data[3], &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf,
 			true))
 			break;
-/*		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {*/
+		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
 			v.flux = v.f;
 			v.cosi = AbsDot(v.wi, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -161,12 +162,14 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 				v.f.filter(tspack) * v.coso / v.pdf));
 			if (nVerts > 1)
 				v.flux *= vertices[nVerts - 2].flux;
-/*		} else {
+		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
 			vertices[nVerts - 2].flux *= cosins / v.pdfR;
+			vertices[nVerts - 2].tPdfR *= v.pdfR;
+			vertices[nVerts - 1].tPdf *= v.pdf;
 			--nVerts;
-		}*/
+		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
 		ray.time = tspack->time;
@@ -184,9 +187,9 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			break;
 		vertices[i].d2 =
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
-		vertices[i + 1].dARWeight = vertices[i].pdfR *
+		vertices[i + 1].dARWeight = vertices[i].pdfR * vertices[i].tPdfR *
 			vertices[i + 1].coso / vertices[i].d2;
-		vertices[i].dAWeight = vertices[i + 1].pdf *
+		vertices[i].dAWeight = vertices[i + 1].pdf * vertices[i + 1].tPdf *
 			vertices[i].cosi / vertices[i].d2;
 	}
 	return nVerts;
@@ -225,8 +228,8 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2],
 			data[3], &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
-/*		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {*/
+		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
 			v.flux = v.f;
 			v.coso = AbsDot(v.wo, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -241,13 +244,15 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 				v.f.filter(tspack) * cosins / v.pdfR));
 			if (nVerts > 1)
 				v.flux *= vertices[nVerts - 2].flux;
-/*		} else {
+		} else {
 			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
 			// No need to do '/ v.cosi * v.coso' since cosi==coso
 			vertices[nVerts - 2].flux *= cosins / v.pdf;
+			vertices[nVerts - 2].tPdf *= v.pdf;
+			vertices[nVerts - 1].tPdfR *= v.pdfR;
 			--nVerts;
-		}*/
+		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
 		ray.time = tspack->time;
@@ -258,9 +263,9 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 	for (u_int i = 0; i < nVerts - 1; ++i) {
 		vertices[i].d2 =
 			DistanceSquared(vertices[i].p, vertices[i + 1].p);
-		vertices[i + 1].dAWeight = vertices[i].pdf *
+		vertices[i + 1].dAWeight = vertices[i].pdf * vertices[i].tPdf *
 			vertices[i + 1].cosi / vertices[i].d2;
-		vertices[i].dARWeight = vertices[i + 1].pdfR *
+		vertices[i].dARWeight = vertices[i + 1].pdfR * vertices[i + 1].tPdfR *
 			vertices[i].coso / vertices[i].d2;
 	}
 	return nVerts;
@@ -274,11 +279,11 @@ static float G(float cosins, float coso, float d2)
 
 // Visibility test
 static bool visible(const TsPack *tspack, const Scene *scene, const Point &P0,
-	const Point &P1, SWCSpectrum *f)
+	const Point &P1, float *pdf, float *pdfR, SWCSpectrum *f)
 {
 	VisibilityTester vt;
 	vt.SetSegment(P0, P1, tspack->time);
-	return vt.TestOcclusion(tspack, scene, f);
+	return vt.TestOcclusion(tspack, scene, f, pdf, pdfR);
 }
 
 // Weighting of path with regard to alternate methods of obtaining it
@@ -405,21 +410,24 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		// Check Connectability
 		eyeV.flags = BxDFType(~BSDF_SPECULAR);
 		eyeV.wi = Normalize(lightV.p - eyeV.p);
-		eyeV.pdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, eyeV.wi);
+		eyeV.pdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, eyeV.wi, eyeV.flags);
 		if (!(eyeV.pdfR > 0.f))
 			return 0.f;
 		lightV.flags = BxDFType(~BSDF_SPECULAR);
 		lightV.wo = -eyeV.wi;
-		lightV.pdf = lightV.bsdf->Pdf(tspack, lightV.wi, lightV.wo);
+		lightV.pdf = lightV.bsdf->Pdf(tspack, lightV.wi, lightV.wo, lightV.flags);
 		if (!(lightV.pdf > 0.f))
 			return 0.f;
-		eyeV.f = eyeV.bsdf->f(tspack, eyeV.wi, eyeV.wo);
+		eyeV.f = eyeV.bsdf->f(tspack, eyeV.wi, eyeV.wo, eyeV.flags);
 		if (eyeV.f.Black())
 			return 0.f;
-		lightV.f = lightV.bsdf->f(tspack, lightV.wi, lightV.wo);
+		lightV.f = lightV.bsdf->f(tspack, lightV.wi, lightV.wo, lightV.flags);
 		if (lightV.f.Black())
 			return 0.f;
-		if (!visible(tspack, scene, lightV.p, eyeV.p, &L))
+		lightV.tPdf = 1.f;
+		eyeV.tPdfR = 1.f;
+		if (!visible(tspack, scene, lightV.p, eyeV.p, &lightV.tPdf,
+			&eyeV.tPdfR, &L))
 			return 0.f;
 		// Prepare eye vertex for connection
 		eyeV.cosi = AbsDot(eyeV.wi, eyeV.ng);
@@ -448,12 +456,12 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 			ecosins / eyeV.cosi * eyeV.coso / eyeV.pdf));
 		eyeV.rrR = min(1.f, max(eyeThreshold, eyeV.f.filter(tspack) *
 			ecosins / eyeV.pdfR));
-		eyeV.dAWeight = lightV.pdf * eyeV.cosi / eyeV.d2;
+		eyeV.dAWeight = lightV.pdf * lightV.tPdf * eyeV.cosi / eyeV.d2;
 		if (nEye > 1) {
 			eWeight = eye[nEye - 2].dAWeight;
-			eye[nEye - 2].dAWeight = eyeV.pdf *
+			eye[nEye - 2].dAWeight = eyeV.pdf * eyeV.tPdf *
 				eye[nEye - 2].cosi / eye[nEye - 2].d2;
-			eyeV.dARWeight = eye[nEye - 2].pdfR *
+			eyeV.dARWeight = eye[nEye - 2].pdfR * eye[nEye - 2].tPdfR *
 				eyeV.coso / eye[nEye - 2].d2;
 		}
 		// Evaluate factors for light path weighting
@@ -462,12 +470,12 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 			lcosins / lightV.cosi * lightV.coso / lightV.pdf));
 		lightV.rrR = min(1.f, max(eyeThreshold, lightV.f.filter(tspack) *
 			lcosins / lightV.pdfR));
-		lightV.dARWeight = eyeV.pdfR * lightV.coso / lightV.d2;
+		lightV.dARWeight = eyeV.pdfR * eyeV.tPdfR * lightV.coso / lightV.d2;
 		if (nLight > 1) {
 			lWeight = light[nLight - 2].dARWeight;
-			light[nLight - 2].dARWeight = lightV.pdfR *
+			light[nLight - 2].dARWeight = lightV.pdfR * lightV.tPdfR *
 				light[nLight - 2].coso / light[nLight - 2].d2;
-			lightV.dAWeight = light[nLight - 2].pdf *
+			lightV.dAWeight = light[nLight - 2].pdf * light[nLight - 2].tPdf *
 				lightV.cosi / light[nLight - 2].d2;
 		}
 	} else if (nEye > 1) { // Evaluate eye path without light path
@@ -479,9 +487,9 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ng), v.wo, v.flags);
 		eWeight = eye[nEye - 2].dAWeight;
 		if (nEye > 2)
-			eye[nEye - 2].dAWeight = v.pdf *
+			eye[nEye - 2].dAWeight = v.pdf * v.tPdf *
 				eye[nEye - 2].cosi / eye[nEye - 2].d2;
-		v.dARWeight = eye[nEye - 2].pdfR * v.coso / eye[nEye - 2].d2;
+		v.dARWeight = eye[nEye - 2].pdfR * eye[nEye - 2].tPdfR * v.coso / eye[nEye - 2].d2;
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
 		L = light[nLight - 2].flux;//FIXME: not implemented yet
@@ -490,9 +498,9 @@ static SWCSpectrum evalPath(const TsPack *tspack, const Scene *scene,
 		v.flags = BxDFType(~BSDF_SPECULAR);
 		v.pdfR = v.eBsdf->Pdf(tspack, v.wo, Vector(v.ns), v.flags);
 		lWeight = light[nLight - 2].dARWeight;
-		light[nLight - 2].dARWeight = v.pdfR *
+		light[nLight - 2].dARWeight = v.pdfR * v.tPdfR *
 			light[nLight - 2].coso / light[nLight - 2].d2;
-		v.dAWeight = light[nLight - 2].pdf * v.cosi /
+		v.dAWeight = light[nLight - 2].pdf * light[nLight - 2].tPdf * v.cosi /
 			light[nLight - 2].d2;
 	} else
 		return 0.f;
@@ -562,7 +570,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		// This can be overwritten as it won't be reused
 		eyePath[length - 2].d2 =
 			DistanceSquared(eyePath[length - 2].p, v.p);
-		eyePath[length - 1].dARWeight = eyePath[length - 2].pdfR *
+		eyePath[length - 1].dARWeight = eyePath[length - 2].pdfR * eyePath[length - 2].tPdfR *
 			v.coso / eyePath[length - 2].d2;
 		v.Le *= evalPath(tspack, scene, bidir, eyePath, length, path, 0,
 			v.ePdfDirect, false, &totalWeight);

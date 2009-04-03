@@ -38,7 +38,8 @@ bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	return !scene->IntersectP(r);
 }
 
-bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f) const {
+bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f, float *pdf, float *pdfR) const
+{
 	*f = 1.f;
 	RayDifferential ray(r);
 	ray.time = tspack->time;
@@ -57,6 +58,10 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 		if (f->Black())
 			return false;
 		*f *= AbsDot(bsdf->dgShading.nn, d);
+		if (pdf)
+			*pdf *= bsdf->Pdf(tspack, -d, d);
+		if (pdfR)
+			*pdfR *= bsdf->Pdf(tspack, d, -d);
 
 		ray.mint = ray.maxt + epsilon;
 		ray.maxt = r.maxt;

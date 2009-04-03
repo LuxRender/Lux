@@ -123,7 +123,7 @@ struct VisibilityTester {
 	}
 
 	bool Unoccluded(const Scene * scene) const;
-	bool TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum * f) const;
+	bool TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum * f, float *pdf = NULL, float *pdfR = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	void Transmittance(const TsPack *tspack, const Scene * scene, const Sample *sample, SWCSpectrum *const L) const;
 	Ray r;

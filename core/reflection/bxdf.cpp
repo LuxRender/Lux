@@ -254,14 +254,14 @@ bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	*wiW = LocalToWorld(wi);
 	*pdf *= weights[which];
 	if (pdfBack)
-		*pdfBack *= weights[which];
+		*pdfBack *= bxdfs[which]->Weight(tspack, wi, !reverse);
 	// Compute overall PDF with all matching _BxDF_s
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
 		for (int i = 0; i < nBxDFs; ++i) {
 			if (i != which && weights[i] > 0.f) {
 				*pdf += bxdfs[i]->Pdf(tspack, wo, wi) * weights[i];
 				if (pdfBack)
-					*pdfBack += bxdfs[i]->Pdf(tspack, wi, wo) * weights[i];
+					*pdfBack += bxdfs[i]->Pdf(tspack, wi, wo) * bxdfs[i]->Weight(tspack, wi, !reverse);
 			}
 		}
 	}
