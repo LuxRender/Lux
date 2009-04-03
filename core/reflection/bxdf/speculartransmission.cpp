@@ -74,24 +74,19 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 		}
 	} else {
 		if (reverse) {
-			if (entering) {
+			if (entering)
 				fresnel.Evaluate(tspack, cost, &F);
-				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
-			} else {
+			else
 //				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
-//				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
-				*f = T / fabsf(-CosTheta(wo));
-			}
+				F = SWCSpectrum(0.f);
 		} else {
-			if (entering) {
+			if (entering)
 				fresnel.Evaluate(tspack, CosTheta(wo), &F);
-				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
-			} else {
+			else
 //				fresnel.Evaluate(tspack, -cost, &F);
-//				*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
-				*f = T / fabsf(-CosTheta(wo));
-			}
+				F = SWCSpectrum(0.f);
 		}
+		*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
 	}
 	return true;
 }
@@ -133,31 +128,26 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo, bool 
 		}
 	} else {
 		if (reverse) {
-			if (entering) {
+			if (entering)
 				fresnel.Evaluate(tspack, cost, &F);
-				factor = 1.f / fabsf(-CosTheta(wo));
-			} else {
+			else
 //				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
 				F = SWCSpectrum(0.f);
-				factor = 1.f / fabsf(-CosTheta(wo));
-			}
 		} else {
-			if (entering) {
+			if (entering)
 				fresnel.Evaluate(tspack, CosTheta(wo), &F);
-				factor = 1.f / fabsf(-CosTheta(wo));
-			} else {
+			else
 //				fresnel.Evaluate(tspack, -cost, &F);
 				F = SWCSpectrum(0.f);
-				factor = 1.f / fabsf(-CosTheta(wo));
-			}
 		}
+		factor = 1.f / fabsf(-CosTheta(wo));
 	}
 	tspack->swl->single = single;
 	return (1.f - F.filter(tspack)) * factor;
 }
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 							 const Vector &wi, SWCSpectrum *const f) const {
-	if (!(architectural && Dot(wi, wo) < SHADOW_RAY_EPSILON - 1.f))
+	if (!(architectural && Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f))
 		return;
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
@@ -178,11 +168,11 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 	if (sint2 > 1.)
 		return;	
 	float cost = sqrtf(max(0.f, 1.f - sint2));
-	if (entering) cost = -cost;
 	SWCSpectrum F;
 	if (entering)
-		fresnel.Evaluate(tspack, CosTheta(wi), &F);
+		fresnel.Evaluate(tspack, CosTheta(wo), &F);
 	else
-		fresnel.Evaluate(tspack, -cost, &F);
-	f->AddWeighted(1.f / fabsf(-CosTheta(wo)), (SWCSpectrum(1.f) - F) * T);
+//		fresnel.Evaluate(tspack, -cost, &F);
+		F = SWCSpectrum(0.f);
+	f->AddWeighted(1.f / fabsf(CosTheta(wi)), (SWCSpectrum(1.f) - F) * T);
 }
