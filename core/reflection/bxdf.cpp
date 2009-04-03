@@ -306,6 +306,9 @@ float BSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 		}
 	return totalWeight > 0.f ? pdf / totalWeight : 0.f;
 }
+
+static CompositingParams defaultCompositingParams;
+
 BSDF::BSDF(const DifferentialGeometry &dg,
            const Normal &ngeom, float e)
 	: dgShading(dg), eta(e) {
@@ -314,6 +317,8 @@ BSDF::BSDF(const DifferentialGeometry &dg,
 	sn = Normalize(dgShading.dpdu);
 	tn = Cross(nn, sn);
 	nBxDFs = 0;
+	// Set pointer to default compositing settings in case not set by material
+	compParams = &defaultCompositingParams; 
 }
 SWCSpectrum BSDF::f(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags) const {

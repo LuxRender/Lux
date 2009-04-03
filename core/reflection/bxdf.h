@@ -25,6 +25,7 @@
 // bxdf.h*
 #include "lux.h"
 #include "geometry.h"
+#include "material.h"
 #include "spectrum.h"
 #include "memory.h"
 
@@ -105,9 +106,15 @@ public:
 	             BxDFType flags = BSDF_ALL) const;
 	static void *Alloc(const TsPack *tspack, u_int sz) { return tspack->arena->Alloc(sz); }		// TODO remove original memory arena
 	static void FreeAll(const TsPack *tspack) { tspack->arena->FreeAll(); }
+
+	void SetCompositingParams(CompositingParams *cp) { compParams = cp; };
+
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
+
+	// Compositing Parameters pointer
+	CompositingParams *compParams;
 
 	friend class RenderThread;
         friend class Scene;
@@ -122,7 +129,6 @@ private:
 	int nBxDFs;
 	#define MAX_BxDFS 8
 	BxDF * bxdfs[MAX_BxDFS];
-	
 };
 #define BSDF_ALLOC(TSPACK,T)  new (BSDF::Alloc((TSPACK), sizeof(T))) T
 // BxDF Declarations

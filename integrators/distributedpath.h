@@ -40,19 +40,21 @@ public:
 
 	// DistributedPath Public Methods
 	DistributedPath(LightStrategy st, bool da, int ds, bool dd, bool dg, bool ida, int ids, bool idd, bool idg,
-								 int drd, int drs, int dtd, int dts, int grd, int grs, int gtd, int gts, int srd, int std);
+								 int drd, int drs, int dtd, int dts, int grd, int grs, int gtd, int gts, int srd, int std,
+								 bool drer, float drert, bool drfr, float drfrt,
+								 bool grer, float grert, bool grfr, float grfrt);
 	~DistributedPath() { }
 
 	int Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		SWCSpectrum *L, float *alpha) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const TsPack *tspack, const Scene *scene);
-
+    void Reject(const TsPack *tspack, vector< vector<SWCSpectrum> > &LL, vector<SWCSpectrum> &L, float rejectrange) const;
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
 	void LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
-		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, int rayDepth, bool includeEmit, int &nrContribs) const;
+		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, float *zdepth, int rayDepth, bool includeEmit, int &nrContribs) const;
 
 	// DistributedPath Private Data
 	LightStrategy lightStrategy;
@@ -70,6 +72,9 @@ private:
 	int diffuse_refractSampleOffset, diffuse_refractComponentOffset, indirectdiffuse_refractSampleOffset, indirectdiffuse_refractComponentOffset;
 	int glossy_reflectSampleOffset, glossy_reflectComponentOffset, indirectglossy_reflectSampleOffset, indirectglossy_reflectComponentOffset;
 	int glossy_refractSampleOffset, glossy_refractComponentOffset, indirectglossy_refractSampleOffset, indirectglossy_refractComponentOffset;
+
+	bool diffusereflectReject, diffuserefractReject, glossyreflectReject, glossyrefractReject;
+	float diffusereflectReject_thr, diffuserefractReject_thr, glossyreflectReject_thr, glossyrefractReject_thr;
 };
 
 }//namespace lux

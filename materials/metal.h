@@ -35,7 +35,7 @@ public:
 	// Metal Public Methods
 	Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k,
 		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-		boost::shared_ptr<Texture<float> > bump);
+		boost::shared_ptr<Texture<float> > bump, CompositingParams cp);
 
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 		const DifferentialGeometry &dgShading, float u) const;

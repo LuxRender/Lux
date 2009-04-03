@@ -375,6 +375,7 @@ ENDIF(APPLE)
 SET(lux_lib_src
 		${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxlex.cpp
 		core/api.cpp core/camera.cpp core/color.cpp core/spectrum.cpp core/context.cpp core/dynload.cpp core/exrio.cpp core/film.cpp
+		core/pngio.cpp core/tgaio.cpp
 		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
         core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/renderfarm.cpp core/sampling.cpp
         core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/photonmap.cpp

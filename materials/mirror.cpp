@@ -48,6 +48,10 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	if (!R.Black())
 		bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
 			BSDF_ALLOC(tspack, FresnelNoOp)(), flm, flmindex));
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* Mirror::CreateMaterial(const Transform &xform,
@@ -56,7 +60,12 @@ Material* Mirror::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Mirror(Kr, film, filmindex, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new Mirror(Kr, film, filmindex, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<Mirror> r("mirror");

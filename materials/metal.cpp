@@ -41,12 +41,13 @@ using namespace lux;
 
 Metal::Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k, 
 			 boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-			 boost::shared_ptr<Texture<float> > bump) {
+			 boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
 	N = n;
 	K = k;
 	nu = u;
 	nv = v;
 	bumpMap = bump;
+	compParams = new CompositingParams(cp);
 }
 
 BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
@@ -72,6 +73,9 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 
 	Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelConductor)(n, k);
 	bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., fresnel, md));
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
 
 	return bsdf;
 }
@@ -366,7 +370,12 @@ Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp)
 	boost::shared_ptr<Texture<float> > vroughness = tp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = tp.GetFloatTexture("bumpmap");
 
-	return new Metal(n, k, uroughness, vroughness, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(tp, &cP);
+
+	return new Metal(n, k, uroughness, vroughness, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<Metal> r("metal");

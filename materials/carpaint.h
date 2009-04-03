@@ -36,7 +36,7 @@ public:
            boost::shared_ptr<Texture<SWCSpectrum> > ks1, boost::shared_ptr<Texture<SWCSpectrum> > ks2, boost::shared_ptr<Texture<SWCSpectrum> > ks3,
            boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,
            boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
-           boost::shared_ptr<Texture<float> > bump);
+           boost::shared_ptr<Texture<float> > bump, CompositingParams cp);
 
   BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 

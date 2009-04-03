@@ -61,6 +61,10 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	Fresnel *frSr = BSDF_ALLOC(tspack, FresnelGeneral)(FresnelApproxEta(R), FresnelApproxK(R));
 	bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(1., frMf, md));
 	bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(1., frSr, flm, flmindex));
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* ShinyMetal::CreateMaterial(const Transform &xform,
@@ -72,7 +76,12 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<ShinyMetal> r("shinymetal");

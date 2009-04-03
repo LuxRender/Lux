@@ -30,7 +30,8 @@
 #include "scene.h"		// for Scene
 #include "filter.h"
 #include "exrio.h"
-#include "igiio.h"
+#include "tgaio.h"
+#include "pngio.h"
 #include "blackbodyspd.h"
 #include "osfunc.h"
 #include "dynload.h"
@@ -59,8 +60,11 @@ using namespace lux;
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 	const string &filename1, bool premult, int wI, int dI,
-	bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-	bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
+	bool cw_EXR, int cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
+	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, int cw_EXR_ZBuf_normalizationtype,
+	bool cw_PNG, int cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, int cw_PNG_ZBuf_normalizationtype,
+	bool cw_TGA, int cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, int cw_TGA_ZBuf_normalizationtype, 
+	bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, float p_Gamma,
@@ -68,8 +72,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	int reject_warmup, bool debugmode) :
 	Film(xres, yres, haltspp), filter(filt), writeInterval(wI), displayInterval(dI),
 	filename(filename1), premultiplyAlpha(premult), buffersInited(false),
-	writeTmExr(w_tonemapped_EXR), writeUtmExr(w_untonemapped_EXR), writeTmIgi(w_tonemapped_IGI),
-	writeUtmIgi(w_untonemapped_IGI), writeTmTga(w_tonemapped_TGA), writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
+	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
 	framebuffer(NULL), debug_mode(debugmode),
 	colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f)
 {
@@ -79,6 +82,33 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	xPixelCount = max(1, Ceil2Int(xResolution * cropWindow[1]) - xPixelStart);
 	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
 	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
+
+    // Set Image Output parameters
+	write_EXR = cw_EXR;
+	write_EXR_halftype = cw_EXR_halftype;
+	write_EXR_applyimaging = cw_EXR_applyimaging;
+	write_EXR_gamutclamp = cw_EXR_gamutclamp;
+	write_EXR_ZBuf = cw_EXR_ZBuf;
+	write_PNG = cw_PNG;
+	write_PNG_16bit = cw_PNG_16bit;
+	write_PNG_gamutclamp = cw_PNG_gamutclamp;
+	write_PNG_ZBuf = cw_PNG_ZBuf;
+	write_TGA = cw_TGA;
+	write_TGA_gamutclamp = cw_TGA_gamutclamp;
+	write_TGA_ZBuf = cw_TGA_ZBuf;
+	write_EXR_channels = cw_EXR_channels;
+	write_EXR_compressiontype = cw_EXR_compressiontype;
+	write_EXR_ZBuf_normalizationtype = cw_EXR_ZBuf_normalizationtype;
+	write_PNG_ZBuf_normalizationtype = cw_PNG_ZBuf_normalizationtype;
+	write_PNG_channels = cw_PNG_channels;
+	write_TGA_channels = cw_TGA_channels;
+	write_TGA_ZBuf_normalizationtype = cw_TGA_ZBuf_normalizationtype;
+
+	// Determing if we need a Zbuf buffer
+	if(write_EXR_ZBuf || write_PNG_ZBuf || write_TGA_ZBuf)
+		use_Zbuf = true;
+	else
+		use_Zbuf = false;
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
@@ -776,6 +806,10 @@ void FlexImageFilm::CreateBuffers()
 	for (u_int i = 0; i < bufferGroups.size(); ++i)
 		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
 
+	// Allocate ZBuf buffer if needed
+	if(use_Zbuf)
+		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
+
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm && !restartResumeFlm) {
         // Dade - check if the film file exists
@@ -954,6 +988,9 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 			// Update pixel values with filtered sample contribution
 			buffer->Add(x - xPixelStart,y - yPixelStart,
 				xyz, alpha, filterWt * weight);
+			// Update ZBuffer values with filtered zdepth contribution
+			if(use_Zbuf && contrib->zdepth != 0.f)
+				ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib->zdepth, 1.0f);
 		}
 	}
 
@@ -977,20 +1014,30 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		m_RGB_X_Blue, m_RGB_Y_Blue,
 		m_RGB_X_White, m_RGB_Y_White, 1.f);
 
+	// Construct normalized alpha buffer if used
+	vector<float> zBuf;
+	if(use_Zbuf && (write_EXR_ZBuf || write_PNG_ZBuf || write_TGA_ZBuf)) {
+		const u_int nPix = xPixelCount * yPixelCount;
+		for (int i=0; i<nPix; i++)
+			zBuf.push_back(0.f);
+		for (int offset = 0, y = 0; y < yPixelCount; ++y) {
+			for (int x = 0; x < xPixelCount; ++x,++offset) {
+				zBuf[offset] = ZBuffer->GetData(x, y);
+			}
+		}
+	}
+
 	if (type & IMAGE_FILEOUTPUT) {
 		// write out untonemapped EXR
-		if (writeUtmExr) {
+		if (write_EXR && !write_EXR_applyimaging) {
 			// convert to rgb
 			const u_int nPix = xPixelCount * yPixelCount;
 			vector<Color> rgbColor(nPix);
 			for ( u_int i = 0; i < nPix; i++ )
 				rgbColor[i] = colorSpace.ToRGBConstrained( XYZColor(color[i].c) );
 
-			WriteEXRImage(rgbColor, alpha, filename + postfix + "_untonemapped.exr");
+			WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
 		}
-		// write out untonemapped IGI
-		if (writeUtmIgi)
-			WriteIGIImage(color, alpha, filename + postfix + "_untonemapped.igi"); // TODO add samples
 
 		// Dade - save the current status of the film if required
 		if (writeResumeFlm)
@@ -999,7 +1046,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 
 	// Dade - check if I have to run ApplyImagingPipeline
 	if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
-		((type & IMAGE_FILEOUTPUT) && (writeTmExr || writeTmIgi || writeTmTga))) {
+		((type & IMAGE_FILEOUTPUT) && ((write_EXR && write_EXR_applyimaging) || write_TGA || write_PNG))) {
 		// Apply the imaging/tonemapping pipeline
 		ParamSet toneParams;
 		std::string tmkernel = "reinhard";
@@ -1053,12 +1100,8 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 
 		if (type & IMAGE_FILEOUTPUT) {
 			// write out tonemapped EXR
-			if (writeTmExr)
-				WriteEXRImage(color, alpha, filename + postfix + ".exr");
-
-			// write out tonemapped IGI
-			if (writeTmIgi) //TODO color should be XYZ values
-				WriteIGIImage(color, alpha, filename + postfix + ".igi"); // TODO add samples
+			if ((write_EXR && write_EXR_applyimaging))
+				WriteEXRImage(color, alpha, filename + postfix + ".exr", zBuf);
 		}
 
 		// Output to low dynamic range formats
@@ -1069,8 +1112,11 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 				color[i] = colorSpace.Limit(color[i]);
 
 			// write out tonemapped TGA
-			if ((type & IMAGE_FILEOUTPUT) && writeTmTga)
+			if ((type & IMAGE_FILEOUTPUT) && write_TGA)
 				WriteTGAImage(color, alpha, filename + postfix + ".tga");
+			// write out tonemapped PNG
+			if ((type & IMAGE_FILEOUTPUT) && write_PNG)
+				WritePNGImage(color, alpha, filename + postfix + ".png");
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
@@ -1208,66 +1254,61 @@ void FlexImageFilm::WriteResumeFilm(const string &filename)
 
 void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
 {
+	// Write Truevision Targa TGA image
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped TGA image to file ")+filename).c_str());
+	WriteTargaImage(write_TGA_channels, write_TGA_ZBuf, filename, rgb, alpha,
+		xPixelCount, yPixelCount,
+		xResolution, yResolution,
+		xPixelStart, yPixelStart);
+}
 
-	// Open file
-	FILE* tgaFile = fopen(filename.c_str(),"wb");
-	if (!tgaFile) {
-		std::stringstream ss;
-		ss<< "Cannot open file '"<<filename<<"' for output";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
-		return;
-	}
+void FlexImageFilm::WritePNGImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
+{
+	// Write Portable Network Graphics PNG image
+	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped PNG image to file ")+filename).c_str());
+	WritePngImage(write_PNG_channels, write_PNG_16bit, write_PNG_ZBuf, filename, rgb, alpha,
+		xPixelCount, yPixelCount,
+		xResolution, yResolution,
+		xPixelStart, yPixelStart, colorSpace, m_Gamma);
+}
 
-	// write the header
-	// make sure its platform independent of little endian and big endian
-	char header[18];
-	memset(header, 0, sizeof(char) * 18);
+void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
+{
+	
+	if(write_EXR_ZBuf) {
+		if(write_EXR_ZBuf_normalizationtype == 1) {
+			// Camera normalization
+		} else if(write_EXR_ZBuf_normalizationtype == 2) {
+			// Min/Max normalization
+			const u_int nPix = xPixelCount * yPixelCount;
+			float min = 0.f;
+			float max = INFINITY;
+			for(u_int i=0; i<nPix; i++) {
+				if(zbuf[i] > 0.f) {
+					if(zbuf[i] > min) min = zbuf[i];
+					if(zbuf[i] < max) max = zbuf[i];
+				}
+			}
 
-	header[2] = 2;							// set the data type of the targa (2 = uncompressed)
-	short xResShort = xResolution;			// set the resolution and make sure the bytes are in the right order
-	header[13] = (char) (xResShort >> 8);
-	header[12] = xResShort & 0xFF;
-	short yResShort = yResolution;
-	header[15] = (char) (yResShort >> 8);
-	header[14] = yResShort & 0xFF;
-	header[16] = 32;						// set the bitdepth
+			vector<float> zBuf(nPix);
+			for (int i=0; i<nPix; i++)
+				zBuf[i] = (zbuf[i]-min) / (max-min);
 
-	// put the header data into the file
-	for (int i = 0; i < 18; ++i)
-		fputc(header[i], tgaFile);
-
-	// write the bytes of data out
-	for (int i = yPixelCount - 1;  i >= 0 ; --i) {
-		for (int j = 0; j < xPixelCount; ++j) {
-			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[2], 0.f, 255.f)), tgaFile);
-			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[1], 0.f, 255.f)), tgaFile);
-			fputc(static_cast<unsigned char>(Clamp(256 * rgb[i * xPixelCount + j].c[0], 0.f, 255.f)), tgaFile);
-			fputc(static_cast<unsigned char>(Clamp(256 * alpha[(i * xPixelCount + j)], 0.f, 255.f)), tgaFile);
+			luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
+			WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
+				xPixelCount, yPixelCount,
+				xResolution, yResolution,
+				xPixelStart, yPixelStart, zBuf);
+			return;
 		}
 	}
 
-	fclose(tgaFile);
-}
-
-void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
-{
 	// Write OpenEXR RGBA image
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
-	WriteRGBAImageFloat(filename, rgb, alpha,
+	WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
-		xPixelStart, yPixelStart);
-}
-
-void FlexImageFilm::WriteIGIImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
-{
-	// Write IGI image
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing IGI image to file ")+filename).c_str());
-	WriteIgiImage(filename, rgb, alpha,
-		xPixelCount, yPixelCount,
-		xResolution, yResolution,
-		xPixelStart, yPixelStart);
+		xPixelStart, yPixelStart, zbuf);
 }
 
 /**
@@ -1758,7 +1799,7 @@ void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name
 Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 {
 	// General
-	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", true);
+	bool premultiplyAlpha = params.FindOneBool("premultiplyalpha", false);
 
 	int xres = params.FindOneInt("xresolution", 800);
 	int yres = params.FindOneInt("yresolution", 600);
@@ -1773,13 +1814,129 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[3] = Clamp(max(cr[2], cr[3]), 0.f, 1.f);
 	}
 
-	// output fileformats
-	bool w_tonemapped_EXR = params.FindOneBool("write_tonemapped_exr", true);
-	bool w_untonemapped_EXR = params.FindOneBool("write_untonemapped_exr", false);
-	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
-	bool w_untonemapped_IGI = params.FindOneBool("write_untonemapped_igi", false);
-	bool w_tonemapped_TGA = params.FindOneBool("write_tonemapped_tga", false);
+//	bool w_tonemapped_EXR = params.FindOneBool("write_tonemapped_exr", true);
+//	bool w_untonemapped_EXR = params.FindOneBool("write_untonemapped_exr", false);
+//	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
+//	bool w_untonemapped_IGI = params.FindOneBool("write_untonemapped_igi", false);
+//	bool w_tonemapped_TGA = params.FindOneBool("write_tonemapped_tga", false);
 
+	// Output Image File Formats
+
+	// OpenEXR
+	bool w_EXR = params.FindOneBool("write_exr", false);
+
+	int w_EXR_channels = 2;
+	string w_EXR_channelsStr = params.FindOneString("write_exr_channels", "RGB");
+	if (w_EXR_channelsStr == "Y") w_EXR_channels = 0;
+	else if (w_EXR_channelsStr == "YA") w_EXR_channels = 1;
+	else if (w_EXR_channelsStr == "RGB") w_EXR_channels = 2;
+	else if (w_EXR_channelsStr == "RGBA") w_EXR_channels = 3;
+	else {
+		std::stringstream ss;
+		ss << "OpenEXR Output Channels  '" << w_EXR_channelsStr << "' unknown. Using \"RGB\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_EXR_channels = 2;
+	}
+
+	bool w_EXR_halftype = params.FindOneBool("write_exr_halftype", true);
+
+	int w_EXR_compressiontype = 1;
+	string w_EXR_compressiontypeStr = params.FindOneString("write_exr_compressiontype", "PIZ (lossless)");
+	if (w_EXR_compressiontypeStr == "RLE (lossless)") w_EXR_compressiontype = 0;
+	else if (w_EXR_compressiontypeStr == "PIZ (lossless)") w_EXR_compressiontype = 1;
+	else if (w_EXR_compressiontypeStr == "ZIP (lossless)") w_EXR_compressiontype = 2;
+	else if (w_EXR_compressiontypeStr == "Pxr24 (lossy)") w_EXR_compressiontype = 3;
+	else if (w_EXR_compressiontypeStr == "None") w_EXR_compressiontype = 4;
+	else {
+		std::stringstream ss;
+		ss << "OpenEXR Compression Type '" << w_EXR_compressiontypeStr << "' unknown. Using \"PIZ (lossless)\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_EXR_compressiontype = 1;
+	}
+
+	bool w_EXR_applyimaging = params.FindOneBool("write_exr_applyimaging", true);
+	bool w_EXR_gamutclamp = params.FindOneBool("write_exr_gamutclamp", true);
+
+	bool w_EXR_ZBuf = params.FindOneBool("write_exr_ZBuf", false);
+
+	int w_EXR_ZBuf_normalizationtype = 0;
+	string w_EXR_ZBuf_normalizationtypeStr = params.FindOneString("write_exr_zbuf_normalizationtype", "None");
+	if (w_EXR_ZBuf_normalizationtypeStr == "None") w_EXR_ZBuf_normalizationtype = 0;
+	else if (w_EXR_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_EXR_ZBuf_normalizationtype = 1;
+	else if (w_EXR_ZBuf_normalizationtypeStr == "Min/Max") w_EXR_ZBuf_normalizationtype = 2;
+	else {
+		std::stringstream ss;
+		ss << "OpenEXR ZBuf Normalization Type '" << w_EXR_ZBuf_normalizationtypeStr << "' unknown. Using \"None\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_EXR_ZBuf_normalizationtype = 0;
+	}
+
+	// Portable Network Graphics (PNG)
+	bool w_PNG = params.FindOneBool("write_png", true);
+
+	int w_PNG_channels = 2;
+	string w_PNG_channelsStr = params.FindOneString("write_png_channels", "RGB");
+	if (w_PNG_channelsStr == "Y") w_PNG_channels = 0;
+	if (w_PNG_channelsStr == "YA") w_PNG_channels = 1;
+	else if (w_PNG_channelsStr == "RGB") w_PNG_channels = 2;
+	else if (w_PNG_channelsStr == "RGBA") w_PNG_channels = 3;
+	else {
+		std::stringstream ss;
+		ss << "PNG Output Channels  '" << w_PNG_channelsStr << "' unknown. Using \"RGB\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_PNG_channels = 2;
+	}
+
+	bool w_PNG_16bit = params.FindOneBool("write_png_16bit", false);
+	bool w_PNG_gamutclamp = params.FindOneBool("write_png_gamutclamp", true);
+
+	bool w_PNG_ZBuf = params.FindOneBool("write_png_ZBuf", false);
+
+	int w_PNG_ZBuf_normalizationtype = 2;
+	string w_PNG_ZBuf_normalizationtypeStr = params.FindOneString("write_png_zbuf_normalizationtype", "Min/Max");
+	if (w_PNG_ZBuf_normalizationtypeStr == "None") w_PNG_ZBuf_normalizationtype = 0;
+	else if (w_PNG_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_PNG_ZBuf_normalizationtype = 1;
+	else if (w_PNG_ZBuf_normalizationtypeStr == "Min/Max") w_PNG_ZBuf_normalizationtype = 2;
+	else {
+		std::stringstream ss;
+		ss << "PNG ZBuf Normalization Type '" << w_PNG_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_PNG_ZBuf_normalizationtype = 2;
+	}
+
+	// TGA
+	bool w_TGA = params.FindOneBool("write_tga", false);
+
+	int w_TGA_channels = 1;
+	string w_TGA_channelsStr = params.FindOneString("write_tga_channels", "RGB");
+	if (w_TGA_channelsStr == "Y") w_TGA_channels = 0;
+	else if (w_TGA_channelsStr == "RGB") w_TGA_channels = 1;
+	else if (w_TGA_channelsStr == "RGBA") w_TGA_channels = 2;
+	else {
+		std::stringstream ss;
+		ss << "TGA Output Channels  '" << w_TGA_channelsStr << "' unknown. Using \"RGB\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_TGA_channels = 1;
+	}
+
+	bool w_TGA_gamutclamp = params.FindOneBool("write_tga_gamutclamp", true);
+
+	bool w_TGA_ZBuf = params.FindOneBool("write_tga_ZBuf", false);
+
+	int w_TGA_ZBuf_normalizationtype = 2;
+	string w_TGA_ZBuf_normalizationtypeStr = params.FindOneString("write_tga_zbuf_normalizationtype", "Min/Max");
+	if (w_TGA_ZBuf_normalizationtypeStr == "None") w_TGA_ZBuf_normalizationtype = 0;
+	else if (w_TGA_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_TGA_ZBuf_normalizationtype = 1;
+	else if (w_TGA_ZBuf_normalizationtypeStr == "Min/Max") w_TGA_ZBuf_normalizationtype = 2;
+	else {
+		std::stringstream ss;
+		ss << "TGA ZBuf Normalization Type '" << w_TGA_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		w_TGA_ZBuf_normalizationtype = 2;
+	}
+
+
+	// Output FILM / FLM 
     bool w_resume_FLM = params.FindOneBool("write_resume_flm", false);
 	bool restart_resume_FLM = params.FindOneBool("restart_resume_flm", false);
 
@@ -1838,11 +1995,12 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
-		w_tonemapped_EXR, w_untonemapped_EXR, w_tonemapped_IGI, w_untonemapped_IGI, w_tonemapped_TGA, w_resume_FLM, restart_resume_FLM, haltspp,
-
+		w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
+		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
+		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 
+		w_resume_FLM, restart_resume_FLM, haltspp,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_Gamma,
-
 		red, green, blue, white, reject_warmup, debug_mode);
 }
 

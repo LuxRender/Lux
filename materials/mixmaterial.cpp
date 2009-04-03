@@ -41,6 +41,7 @@ Material* MixMaterial::CreateMaterial(const Transform &xform,
 	string namedmaterial1 = mp.FindString("namedmaterial1"); // discarded as these are passed trough Context::Shape()
     string namedmaterial2 = mp.FindString("namedmaterial2"); // discarded as these are passed trough Context::Shape()
 	boost::shared_ptr<Texture<float> > amount = mp.GetFloatTexture("amount", 0.5f);
+
 	return new MixMaterial(amount);
 }
 

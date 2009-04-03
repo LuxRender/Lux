@@ -34,7 +34,7 @@ public:
 	Glossy(boost::shared_ptr<Texture<SWCSpectrum> > kd, boost::shared_ptr<Texture<SWCSpectrum> > ks,
 			boost::shared_ptr<Texture<SWCSpectrum> > ka, boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > d,
 			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-			boost::shared_ptr<Texture<float> > bump) {
+			boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
 		Kd = kd;
 		Ks = ks;
 		Ka = ka;
@@ -43,6 +43,7 @@ public:
 		nu = u;
 		nv = v;
 		bumpMap = bump;
+		compParams = new CompositingParams(cp);
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	

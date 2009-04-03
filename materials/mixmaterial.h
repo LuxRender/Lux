@@ -33,6 +33,7 @@ public:
 	// MixMaterial Public Methods
 	MixMaterial(boost::shared_ptr<Texture<float> > a) {
 		amount = a;
+		compParams = NULL;
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	

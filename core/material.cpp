@@ -31,9 +31,11 @@ using namespace lux;
 
 // Material Method Definitions
 Material::Material() : bumpmapSampleDistance(.001f) {
+	compParams = NULL;
 }
 
 Material::~Material() {
+	if(compParams) delete compParams; 
 }
 
 void Material::InitGeneralParams(const TextureParams &mp) {

@@ -63,6 +63,10 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 		// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 		bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Microfacet)(T, fresnel, md), 1.f, ior, cb));
 	}
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* RoughGlass::CreateMaterial(const Transform &xform,
@@ -74,7 +78,12 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.f);				// Cauchy B coefficient
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<RoughGlass> r("roughglass");

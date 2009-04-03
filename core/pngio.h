@@ -20,42 +20,21 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// roughglass.cpp*
+#ifndef LUX_PNGIO_H
+#define LUX_PNGIO_H
+// pngio.h*
+
 #include "lux.h"
-#include "material.h"
+#include "color.h"
 
 namespace lux
 {
 
-// RoughGlassGlass Class Declarations
-class RoughGlass : public Material {
-public:
-	// RoughGlass Public Methods
-	RoughGlass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t, 
-			boost::shared_ptr<Texture<float> > urough, boost::shared_ptr<Texture<float> > vrough,
-			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, boost::shared_ptr<Texture<float> > bump,
-			CompositingParams cp) {
-		Kr = r;
-		Kt = t;
-		uroughness = urough;
-		vroughness = vrough;
-		index = i;
-		cauchyb = cbf;
-		bumpMap = bump;
-		compParams = new CompositingParams(cp);
-	}
-	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
-	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
-private:
-	// RoughGlass Private Data
-	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;
-	boost::shared_ptr<Texture<float> > index;
-	boost::shared_ptr<Texture<float> > cauchyb;
-	boost::shared_ptr<Texture<float> > uroughness;
-	boost::shared_ptr<Texture<float> > vroughness;
-	boost::shared_ptr<Texture<float> > bumpMap;
-};
+  void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<Color> &pixels,
+            vector<float> &alpha, int xPixelCount, int yPixelCount,
+        int xResolution, int yResolution,
+        int xPixelStart, int yPixelStart, ColorSystem &cSystem, float screenGamma);
+}
 
-}//namespace lux
+#endif // LUX_PNGIO_H
 

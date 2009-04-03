@@ -63,6 +63,9 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	else
 		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v)));
 
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* Glossy::CreateMaterial(const Transform &xform,
@@ -75,7 +78,12 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
 	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy");

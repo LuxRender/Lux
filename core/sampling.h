@@ -62,13 +62,13 @@ public:
 		dxD.push_back(d);
 		return nxD.size()-1;
 	}
-	void AddContribution(float x, float y, const XYZColor &c, float a,
+	void AddContribution(float x, float y, const XYZColor &c, float a, float zd = 0,
 		int b = 0, int g = 0) const {
-		contributions.push_back(Contribution(x, y, c, a, 0.f, b, g));
+		contributions.push_back(Contribution(x, y, c, a, zd, 0.f, b, g));
 	}
-	void AddContribution(float x, float y, const XYZColor &c, float a,
+	void AddContribution(float x, float y, const XYZColor &c, float a, float zd,
 		float v, int b = 0, int g = 0) const {
-		contributions.push_back(Contribution(x, y, c, a, v, b, g));
+		contributions.push_back(Contribution(x, y, c, a, zd, v, b, g));
 	}
 	~Sample() {
 		if (oneD != NULL) {

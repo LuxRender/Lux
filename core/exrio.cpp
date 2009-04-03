@@ -296,80 +296,139 @@ namespace lux {
         return NULL;
     }
 
-    void WriteRGBAImage(const string &name, float *pixels,
-            float *alpha, int xRes, int yRes,
-            int totalXRes, int totalYRes,
-            int xOffset, int yOffset) {
-        Header header(totalXRes, totalYRes);
-        Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
-        header.dataWindow() = dataWindow;
-        header.channels().insert("R", Channel(HALF));
-        header.channels().insert("G", Channel(HALF));
-        header.channels().insert("B", Channel(HALF));
-        header.channels().insert("A", Channel(HALF));
-
-        half *hrgb = new half[3 * xRes * yRes];
-        for (int i = 0; i < 3 * xRes * yRes; ++i)
-            hrgb[i] = pixels[i];
-        half *ha = new half[xRes * yRes];
-        for (int i = 0; i < xRes * yRes; ++i)
-            ha[i] = alpha[i];
-
-        hrgb -= 3 * (xOffset + yOffset * xRes);
-        ha -= (xOffset + yOffset * xRes);
-
-        FrameBuffer fb;
-        fb.insert("R", Slice(HALF, (char *) hrgb, 3 * sizeof (half),
-                3 * xRes * sizeof (half)));
-        fb.insert("G", Slice(HALF, (char *) hrgb + sizeof (half), 3 * sizeof (half),
-                3 * xRes * sizeof (half)));
-        fb.insert("B", Slice(HALF, (char *) hrgb + 2 * sizeof (half), 3 * sizeof (half),
-                3 * xRes * sizeof (half)));
-        fb.insert("A", Slice(HALF, (char *) ha, sizeof (half), xRes * sizeof (half)));
-
-        try {
-            OutputFile file(name.c_str(), header);
-            file.setFrameBuffer(fb);
-            file.writePixels(yRes);
-        } catch (const std::exception &e) {
-            //Error("Unable to write image file \"%s\": %s", name.c_str(),
-            //	e.what());
-            std::stringstream ss;
-            ss << "Unable to write image file '" << name << "': " << e.what();
-            luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
-        }
-
-        delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
-        delete[] (ha + (xOffset + yOffset * xRes));
-    }
-
-    void WriteRGBAImageFloat(const string &name, vector<Color> &pixels,
+   void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf, int compressiontype, const string &name, vector<Color> &pixels,
             vector<float> &alpha, int xRes, int yRes,
             int totalXRes, int totalYRes,
-            int xOffset, int yOffset) {
+            int xOffset, int yOffset, vector<float> &zbuf) {
 		Header header(totalXRes, totalYRes);
+
+		// Set Compression
+		switch(compressiontype)
+		{
+			case 0:
+				header.compression() = RLE_COMPRESSION;
+				break;
+			case 1:
+				header.compression() = PIZ_COMPRESSION;
+				break;
+			case 2:
+				header.compression() = ZIP_COMPRESSION;
+				break;
+			case 3:
+				header.compression() = PXR24_COMPRESSION;
+				break;
+			case 4:
+				header.compression() = NO_COMPRESSION;
+				break;
+			default:
+				header.compression() = RLE_COMPRESSION;
+				break; 
+		}
+
 		Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
 		header.dataWindow() = dataWindow;
-		header.channels().insert("R", Channel(Imf::FLOAT));
-		header.channels().insert("G", Channel(Imf::FLOAT));
-		header.channels().insert("B", Channel(Imf::FLOAT));
-		header.channels().insert("A", Channel(Imf::FLOAT));
 
-		// NOTE - lordcrc - No need to perform a local copy of the pixels
-		float *hrgb = &pixels[0].c[0];
-		float *ha = &alpha[0];
+		// Set base channel type
+		Imf::PixelType savetype = Imf::FLOAT;
+		if(halftype)
+			savetype = Imf::HALF;
 
-		hrgb -= 3 * (xOffset + yOffset * xRes);
-		ha -= (xOffset + yOffset * xRes);
+		// Define channels
+		if(channeltype == 0) {
+			header.channels().insert("Y", Channel(savetype));
+		} else if(channeltype == 1) {
+			header.channels().insert("Y", Channel(savetype));
+			header.channels().insert("A", Channel(savetype));
+		} else if(channeltype == 2) {
+			header.channels().insert("R", Channel(savetype));
+			header.channels().insert("G", Channel(savetype));
+			header.channels().insert("B", Channel(savetype));
+		} else {
+			header.channels().insert("R", Channel(savetype));
+			header.channels().insert("G", Channel(savetype));
+			header.channels().insert("B", Channel(savetype));
+			header.channels().insert("A", Channel(savetype));
+		}
 
+		// Add 32bit float Zbuf channel if required
+		if(savezbuf)
+			header.channels().insert("Z", Channel(Imf::FLOAT));
+
+		const int numPixels = xRes * yRes;
 		FrameBuffer fb;
-		fb.insert("R", Slice(Imf::FLOAT, (char *) hrgb, sizeof (Color),
-				xRes * sizeof (Color)));
-		fb.insert("G", Slice(Imf::FLOAT, (char *) hrgb + sizeof (float), sizeof (Color),
-				xRes * sizeof (Color)));
-		fb.insert("B", Slice(Imf::FLOAT, (char *) hrgb + 2 * sizeof (float), sizeof (Color),
-				xRes * sizeof (Color)));
-		fb.insert("A", Slice(Imf::FLOAT, (char *) ha, sizeof (float), xRes * sizeof (float)));
+
+		float *fy;
+		half *hy;
+		half *hrgb;
+		half *ha;
+		bool u_fy = false;
+		bool u_hy = false;
+		bool u_hrgb = false;
+		bool u_ha = false;
+
+		if(!halftype) {
+			// Write framebuffer data for 32bit FLOAT type
+			if(channeltype <= 1) {
+				// Save Y
+				fy = new float[xRes * yRes];
+				u_fy = true;
+				for (int i = 0; i < xRes * yRes; ++i)
+					fy[i] = (0.3f * pixels[i].c[0]) + (0.59f * pixels[i].c[1]) + (0.11f * pixels[i].c[2]);
+				fy -= (xOffset + yOffset * xRes);
+				fb.insert("Y", Slice(Imf::FLOAT, (char *) fy, sizeof (float), xRes * sizeof (float)));
+			} else if(channeltype >= 2) {
+				// Save RGB
+				float *frgb = &pixels[0].c[0];
+				frgb -= 3 * (xOffset + yOffset * xRes);
+				fb.insert("R", Slice(Imf::FLOAT, (char *) frgb, sizeof (Color), xRes * sizeof (Color)));
+				fb.insert("G", Slice(Imf::FLOAT, (char *) frgb + sizeof (float), sizeof (Color), xRes * sizeof (Color)));
+				fb.insert("B", Slice(Imf::FLOAT, (char *) frgb + 2 * sizeof (float), sizeof (Color), xRes * sizeof (Color)));
+			}
+			if(channeltype == 1 || channeltype == 3) {
+				// Add alpha
+				float *fa = &alpha[0];
+				fa -= (xOffset + yOffset * xRes);
+				fb.insert("A", Slice(Imf::FLOAT, (char *) fa, sizeof (float), xRes * sizeof (float)));
+			}
+		} else {
+			// Write framebuffer data for 16bit HALF type
+			if(channeltype <= 1) {
+				// Save Y
+				hy = new half[xRes * yRes];
+				u_hy = true;
+				for (int i = 0; i < xRes * yRes; ++i)
+					hy[i] = (0.3f * pixels[i].c[0]) + (0.59f * pixels[i].c[1]) + (0.11f * pixels[i].c[2]);
+				hy -= (xOffset + yOffset * xRes);
+				fb.insert("Y", Slice(HALF, (char *) hy, sizeof (half), xRes * sizeof (half)));
+			} else if(channeltype >= 2) {
+				// Save RGB
+				hrgb = new half[3 * xRes * yRes];
+				u_hrgb = true;
+				for (int i = 0; i < xRes * yRes; ++i)
+					for( int j = 0; j < 3; j++)
+						hrgb[3*i+j] = pixels[i].c[j];
+				hrgb -= 3 * (xOffset + yOffset * xRes);
+				fb.insert("R", Slice(HALF, (char *) hrgb, (3 * sizeof (half)), xRes * (3 * sizeof (half))));
+				fb.insert("G", Slice(HALF, (char *) hrgb + sizeof (half), (3 * sizeof (half)), xRes * (3 * sizeof (half))));
+				fb.insert("B", Slice(HALF, (char *) hrgb + 2 * sizeof (half), (3 * sizeof (half)), xRes * (3 * sizeof (half))));
+			}
+			if(channeltype == 1 || channeltype == 3) {
+				// Add alpha
+				ha = new half[xRes * yRes];
+				u_ha = true;
+				for (int i = 0; i < xRes * yRes; ++i)
+					ha[i] = alpha[i];		
+				ha -= (xOffset + yOffset * xRes);
+				fb.insert("A", Slice(HALF, (char *) ha, sizeof (half), xRes * sizeof (half)));
+			}
+		}
+
+		if(savezbuf) {
+			float *fz = &zbuf[0];
+			fz -= (xOffset + yOffset * xRes);
+			// Add Zbuf framebuffer data (always 32bit FLOAT type)
+			fb.insert("Z", Slice(Imf::FLOAT, (char *) fz, sizeof (float), xRes * sizeof (float)));
+		}
 
 		try {
 			OutputFile file(name.c_str(), header);
@@ -380,5 +439,12 @@ namespace lux {
 			ss << "Unable to write image file '" << name << "': " << e.what();
 			luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
 		}
+
+		// Cleanup used buffers
+		if(u_fy) delete[] (fy + (xOffset + yOffset * xRes));
+		if(u_hy) delete[] (hy + (xOffset + yOffset * xRes));
+		if(u_hrgb) delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
+		if(u_ha) delete[] (ha + (xOffset + yOffset * xRes));
+
     }
 }

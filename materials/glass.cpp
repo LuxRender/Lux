@@ -61,6 +61,10 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	}
 	if (!T.Black())
 		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, 1., ior, cb, architectural));
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* Glass::CreateMaterial(const Transform &xform,
@@ -73,7 +77,12 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
 	bool archi = mp.FindBool("architectural", false);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<Glass> r("glass");

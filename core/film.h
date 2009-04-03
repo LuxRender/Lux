@@ -64,6 +64,7 @@ public:
 	string postfix;
 };
 
+// XYZColor Pixel
 struct Pixel {
 	// Dade - serialization here is required by network rendering
 	friend class boost::serialization::access;
@@ -78,6 +79,21 @@ struct Pixel {
 	XYZColor L;
 	float alpha, weightSum;
 };
+
+// Floating Point Value Pixel 
+struct FloatPixel {
+	// Dade - serialization here is required by network rendering
+	friend class boost::serialization::access;
+
+	template<class Archive> void serialize(Archive & ar, const unsigned int version) {
+		ar & V;
+		ar & weightSum;
+	}
+
+	FloatPixel(): V(0.f), weightSum(0.f) { }
+	float V, weightSum;
+};
+
 
 class Buffer {
 public:
@@ -141,7 +157,7 @@ public:
 	}
 };
 
-// Per pixel normalized buffer
+// Per pixel normalized XYZColor buffer
 class PerPixelNormalizedBuffer : public Buffer {
 public:
 	PerPixelNormalizedBuffer(int x, int y) : Buffer(x, y) { }
@@ -177,7 +193,51 @@ public:
 	}
 };
 
-// Per screen normalized  buffer
+// Per pixel normalized floating point buffer
+class PerPixelNormalizedFloatBuffer {
+public:
+	PerPixelNormalizedFloatBuffer(int x, int y) {
+		floatpixels = new BlockedArray<FloatPixel>(x, y);
+	}
+
+	~PerPixelNormalizedFloatBuffer() {
+		delete floatpixels;
+	}
+
+	void Add(int x, int y, float value, float wt) {
+		FloatPixel &fpixel = (*floatpixels)(x, y);
+		fpixel.V += value;
+		fpixel.weightSum += wt;
+	}
+
+/*	void GetData(Color *color, float *alpha) const {
+		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+				const Pixel &pixel = (*pixels)(x, y);
+				if (pixel.weightSum == 0.f) {
+					color[offset] = XYZColor(0.f);
+					alpha[offset] = 0.f;
+				} else {
+					float inv = 1.f / pixel.weightSum;
+					color[offset] = pixel.L * inv;
+					alpha[offset] = pixel.alpha * inv;
+				}
+			}
+		}
+	}
+	*/
+	float GetData(int x, int y) const {
+		const FloatPixel &pixel = (*floatpixels)(x, y);
+		if (pixel.weightSum == 0.f) {
+			return 0.f;
+		}
+		return pixel.V / pixel.weightSum;
+	} 
+private:
+	BlockedArray<FloatPixel> *floatpixels;
+};
+
+// Per screen normalized XYZColor buffer
 class PerScreenNormalizedBuffer : public Buffer {
 public:
 	PerScreenNormalizedBuffer(int x, int y, const double *samples) :
@@ -251,39 +311,6 @@ public:
 	float globalScale, temperature;
 	RGBColor rgbScale;
 	XYZColor scale;
-};
-
-//class FlexImageFilm;
-
-class ArrSample {
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {
-        ar & sX;
-        ar & sY;
-        ar & xyz;
-        ar & alpha;
-        ar & buf_id;
-        ar & bufferGroup;
-    }
-
-public:
-    void Sample() {
-        sX = 0;
-        sY = 0;
-        xyz = XYZColor(0.);
-        alpha = 0;
-        buf_id = 0;
-        bufferGroup = 0;
-    }
-
-    float sX;
-    float sY;
-    XYZColor xyz;
-    float alpha;
-    int buf_id;
-    int bufferGroup;
 };
 
 // GREYCStoration Noise Reduction Filter Parameter structure

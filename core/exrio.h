@@ -29,14 +29,12 @@
 namespace lux
 {
 
-void WriteRGBAImage(const string &name,
-	float *pixels, float *alpha, int XRes, int YRes,
-	int totalXRes, int totalYRes, int xOffset, int yOffset);
-void WriteRGBAImageFloat(const string &name,
-	vector<Color> &pixels, vector<float> &alpha, int XRes, int YRes,
-	int totalXRes, int totalYRes, int xOffset, int yOffset);
+void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf, int compressiontype, const string &name, vector<Color> &pixels,
+        vector<float> &alpha, int xRes, int yRes,
+        int totalXRes, int totalYRes,
+        int xOffset, int yOffset, vector<float> &zbuf);
 
-}
+}//namespace lux
 
 #endif // LUX_EXRIO_H
 

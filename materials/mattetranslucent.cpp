@@ -60,6 +60,10 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 			base = BSDF_ALLOC(tspack, OrenNayar)(T, sig);
 		bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(base));
 	}
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* MatteTranslucent::CreateMaterial(const Transform &xform,
@@ -68,7 +72,12 @@ Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt = mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new MatteTranslucent(Kr, Kt, sigma, bumpMap);
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new MatteTranslucent(Kr, Kt, sigma, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<MatteTranslucent> r("mattetranslucent");

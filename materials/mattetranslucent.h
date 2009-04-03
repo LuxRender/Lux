@@ -33,11 +33,12 @@ public:
 	// MatteTranslucent Public Methods
 	MatteTranslucent(boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<SWCSpectrum> > kt,
 			boost::shared_ptr<Texture<float> > sig,
-			boost::shared_ptr<Texture<float> > bump) {
+			boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
 		Kr = kr;
 		Kt = kt;
 		sigma = sig;
 		bumpMap = bump;
+		compParams = new CompositingParams(cp);
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	              const DifferentialGeometry &dgShading, float u) const;

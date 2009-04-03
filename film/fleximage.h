@@ -40,8 +40,11 @@ public:
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
-		bool w_tonemapped_EXR, bool w_untonemapped_EXR, bool w_tonemapped_IGI,
-		bool w_untonemapped_IGI, bool w_tonemapped_TGA, bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
+		bool cw_EXR, int cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
+		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, int cw_EXR_ZBuf_normalizationtype,
+		bool cw_PNG, int cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, int cw_PNG_ZBuf_normalizationtype,
+		bool cw_TGA, int cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, int cw_TGA_ZBuf_normalizationtype, 
+		bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
 		int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 		float p_ContrastDisplayAdaptionY, float p_Gamma,
@@ -50,6 +53,8 @@ public:
 
 	~FlexImageFilm() {
 		delete[] framebuffer;
+		if(use_Zbuf && ZBuffer)
+			delete ZBuffer;
 	}
 
 	void RequestBufferGroups(const vector<string> &bg);
@@ -109,8 +114,8 @@ private:
 
 	void WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix);
 	void WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
-	void WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
-	void WriteIGIImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
+	void WritePNGImage(vector<Color> &rgb, vector<float> &alpha, const string &filename);
+	void WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
 	void WriteResumeFilm(const string &filename);
 	void ScaleOutput(vector<Color> &color, vector<float> &alpha, float *scale);
 
@@ -125,7 +130,19 @@ private:
 	//ParamSet toneParams;
 	//float gamma;
 	double reject_warmup_samples;
-	bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga, writeResumeFlm, restartResumeFlm;
+
+	//bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga;
+	bool write_EXR, write_EXR_halftype, write_EXR_applyimaging, write_EXR_gamutclamp, write_EXR_ZBuf;
+	bool write_PNG, write_PNG_16bit, write_PNG_gamutclamp, write_PNG_ZBuf;
+	bool write_TGA,write_TGA_gamutclamp, write_TGA_ZBuf;
+	int write_EXR_channels, write_EXR_compressiontype, write_EXR_ZBuf_normalizationtype;
+	int write_PNG_ZBuf_normalizationtype, write_PNG_channels;
+	int write_TGA_channels, write_TGA_ZBuf_normalizationtype;
+	
+	bool use_Zbuf;
+	PerPixelNormalizedFloatBuffer *ZBuffer;
+
+	bool writeResumeFlm, restartResumeFlm;
 
 	unsigned char *framebuffer;
 

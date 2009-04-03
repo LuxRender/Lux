@@ -35,11 +35,20 @@ BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, co
 	DifferentialGeometry dgs = dgShading;
 	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn, 1.);
 	bsdf->Add(BSDF_ALLOC(tspack, NullTransmission)());
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* Null::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	return new Null();
+
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+
+	return new Null(cP);
 }
 
 static DynamicLoader::RegisterMaterial<Null> r("null");

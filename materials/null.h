@@ -31,7 +31,8 @@ namespace lux
 class Null : public Material {
 public:
 	// Null Public Methods
-	Null() {
+	Null(CompositingParams cp) {
+		compParams = new CompositingParams(cp);
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	

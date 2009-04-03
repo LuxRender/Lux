@@ -48,6 +48,10 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		bsdf->Add(BSDF_ALLOC(tspack, Lambertian)(r));
 	else
 		bsdf->Add(BSDF_ALLOC(tspack, OrenNayar)(r, sig));
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(compParams);
+
 	return bsdf;
 }
 Material* Matte::CreateMaterial(const Transform &xform,
@@ -55,7 +59,10 @@ Material* Matte::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	return new Matte(Kd, sigma, bumpMap);
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+	return new Matte(Kd, sigma, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<Matte> r("matte");

@@ -45,14 +45,14 @@ namespace lux
 
 class Contribution {
 public:
-	Contribution(float x=0.f, float y=0.f, const XYZColor &c=0.f, float a=0.f,
+	Contribution(float x=0.f, float y=0.f, const XYZColor &c=0.f, float a=0.f, float zd=0.f,
 		float v=0.f, int b=0, int g=0) :
-		imageX(x), imageY(y), color(c), alpha(a), variance(v),
+		imageX(x), imageY(y), color(c), alpha(a), zdepth(zd), variance(v),
 		buffer(b), bufferGroup(g) { }
 
 	float imageX, imageY;
 	XYZColor color;
-	float alpha, variance;
+	float alpha, zdepth, variance;
 	int buffer, bufferGroup;
 };
 

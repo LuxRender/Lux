@@ -34,7 +34,8 @@ public:
 	ShinyMetal(boost::shared_ptr<Texture<SWCSpectrum> > ks,
 		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
 		boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex, 
-			boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<float> > bump) {
+			boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<float> > bump,
+			CompositingParams cp) {
 		Ks = ks;
 		Kr = kr;
 		nu = u;
@@ -42,6 +43,7 @@ public:
 		film = flm;
 		filmindex = flmindex;
 		bumpMap = bump;
+		compParams = new CompositingParams(cp);
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	

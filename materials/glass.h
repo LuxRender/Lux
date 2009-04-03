@@ -34,7 +34,7 @@ public:
 	Glass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t,
 			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf,
 			boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex,
-			bool archi, boost::shared_ptr<Texture<float> > bump) {
+			bool archi, boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
 		Kr = r;
 		Kt = t;
 		index = i;
@@ -43,6 +43,7 @@ public:
 		filmindex = flmindex;
 		architectural = archi;
 		bumpMap = bump;
+		compParams = new CompositingParams(cp);
 	}
 	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	

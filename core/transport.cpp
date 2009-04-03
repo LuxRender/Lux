@@ -160,7 +160,6 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 				// Add light's contribution to reflected radiance
 				visibility.Transmittance(tspack, scene, sample, &Li);
 				Li *= fO;
-
 				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
 			}
 		}
