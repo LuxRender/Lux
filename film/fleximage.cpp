@@ -1814,12 +1814,6 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[3] = Clamp(max(cr[2], cr[3]), 0.f, 1.f);
 	}
 
-//	bool w_tonemapped_EXR = params.FindOneBool("write_tonemapped_exr", true);
-//	bool w_untonemapped_EXR = params.FindOneBool("write_untonemapped_exr", false);
-//	bool w_tonemapped_IGI = params.FindOneBool("write_tonemapped_igi", false);
-//	bool w_untonemapped_IGI = params.FindOneBool("write_untonemapped_igi", false);
-//	bool w_tonemapped_TGA = params.FindOneBool("write_tonemapped_tga", false);
-
 	// Output Image File Formats
 
 	// OpenEXR
