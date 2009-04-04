@@ -320,7 +320,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if(rayDepth == 0 && diffusereflectReject) {
+					if((rayDepth == 0 && diffusereflectReject) || includeEmit) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -363,7 +363,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if(rayDepth == 0 && diffuserefractReject) {
+					if((rayDepth == 0 && diffuserefractReject) || includeEmit) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -408,7 +408,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if(rayDepth == 0 && glossyreflectReject) {
+					if((rayDepth == 0 && glossyreflectReject) || includeEmit) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -451,7 +451,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if(rayDepth == 0 && glossyrefractReject) {
+					if((rayDepth == 0 && glossyrefractReject) || includeEmit) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
