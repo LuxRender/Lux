@@ -228,7 +228,7 @@ namespace lux
 #  define INFINITY HUGE_VAL
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
-#define LUX_VERSION 0.6RC2
+#define LUX_VERSION 0.6
 #define LUX_VERSION_STRING "0.6 (RC2)"
 #define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
