@@ -320,7 +320,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if((rayDepth == 0 && diffusereflectReject) || includeEmit) {
+					if(diffusereflectReject && (rayDepth == 0 || includeEmit)) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -363,7 +363,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if((rayDepth == 0 && diffuserefractReject) || includeEmit) {
+					if(diffuserefractReject && (rayDepth == 0 || includeEmit)) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -408,7 +408,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if((rayDepth == 0 && glossyreflectReject) || includeEmit) {
+					if(glossyreflectReject && (rayDepth == 0 || includeEmit)) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -451,7 +451,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
-					if((rayDepth == 0 && glossyrefractReject) || includeEmit) {
+					if(glossyrefractReject && (rayDepth == 0 || includeEmit)) {
 						for(u_int j=0; j<Ll.size(); j++) {
 							Ll[j] *= f;
 						}
@@ -573,13 +573,13 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 
 	// Rejection System
 	bool diffusereflectreject = params.FindOneBool("diffusereflectreject", false);
-	float diffusereflectreject_thr = params.FindOneFloat("diffusereflectreject_threshold", 0.5f);
+	float diffusereflectreject_thr = params.FindOneFloat("diffusereflectreject_threshold", 10.0f);
 	bool diffuserefractreject = params.FindOneBool("diffuserefractreject", false);;
-	float diffuserefractreject_thr = params.FindOneFloat("diffuserefractreject_threshold", 0.5f);
+	float diffuserefractreject_thr = params.FindOneFloat("diffuserefractreject_threshold", 10.0f);
 	bool glossyreflectreject = params.FindOneBool("glossyreflectreject", false);;
-	float glossyreflectreject_thr = params.FindOneFloat("glossyreflectreject_threshold", 0.5f);
+	float glossyreflectreject_thr = params.FindOneFloat("glossyreflectreject_threshold", 10.0f);
 	bool glossyrefractreject = params.FindOneBool("glossyrefractreject", false);;
-	float glossyrefractreject_thr = params.FindOneFloat("glossyrefractreject_threshold", 0.5f);
+	float glossyrefractreject_thr = params.FindOneFloat("glossyrefractreject_threshold", 10.0f);
 
 	return new DistributedPath(estrategy, directall, directsamples,
 		directdiffuse, directglossy, indirectall, indirectsamples, indirectdiffuse, indirectglossy,
