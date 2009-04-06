@@ -1020,7 +1020,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		m_RGB_X_Blue, m_RGB_Y_Blue,
 		m_RGB_X_White, m_RGB_Y_White, 1.f);
 
-	// Construct normalized alpha buffer if used
+	// Construct normalized Z buffer if used
 	vector<float> zBuf;
 	if(use_Zbuf && (write_EXR_ZBuf || write_PNG_ZBuf || write_TGA_ZBuf)) {
 		const u_int nPix = xPixelCount * yPixelCount;

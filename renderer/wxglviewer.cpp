@@ -683,8 +683,8 @@ void  LuxGLViewer::DrawRulers(){
 		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glBegin(GL_TRIANGLES);
 			glVertex2f( m_prevMouseX + 0.5f,        m_windowH-m_rulerSize );
-			glVertex2f( m_prevMouseX + 0.5f - 3.0f, m_windowH-m_rulerSize/2 );
-			glVertex2f( m_prevMouseX + 0.5f + 3.0f, m_windowH-m_rulerSize/2 );
+			glVertex2f( m_prevMouseX + 0.5f - 6.5f, m_windowH-m_rulerSize/2 );
+			glVertex2f( m_prevMouseX + 0.5f + 6.5f, m_windowH-m_rulerSize/2 );
 		glEnd();
 	}
 	glColor3f(1.0f, 1.0f, 1.0f);
@@ -745,8 +745,8 @@ void  LuxGLViewer::DrawRulers(){
 		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glBegin(GL_TRIANGLES);
 			glVertex2f( m_rulerSize,   m_windowH - m_prevMouseY - 0.5f );
-			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f + 3.0f );
-			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f - 3.0f );
+			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f + 6.5f );
+			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f - 6.5f );
 		glEnd();
 	}
 	glColor3f(1.0f, 1.0f, 1.0f);
