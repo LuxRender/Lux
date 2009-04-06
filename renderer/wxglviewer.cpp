@@ -90,6 +90,7 @@ LuxGLViewer::LuxGLViewer(wxWindow *parent, int textureW, int textureH)
 	m_trackMousePos = false;
 	m_rulersEnabled = true;
 	m_rulerSize = 13;
+	m_rulersNormalized = false;
 
 	m_controlMode = PANZOOM;
 	m_displayMode = EMPTY_VIEW;
@@ -401,8 +402,9 @@ void LuxGLViewer::SetMode(wxViewerMode mode) {
 
 }
 
-void LuxGLViewer::SetRulersEnabled(bool enabled){
+void LuxGLViewer::SetRulersEnabled(bool enabled, bool normalized){
 	m_rulersEnabled = enabled;
+	m_rulersNormalized = normalized;
 	if(m_rulersEnabled){
 		m_viewX = m_rulerSize;
 		m_viewY = 0;
@@ -603,15 +605,30 @@ void LuxGLViewer::DrawMarchingAnts(const wxViewerSelection &selection, float red
 }
 
 void  LuxGLViewer::DrawRulers(){
-	int tickSpacing = 10;
-	float tickDist = tickSpacing*m_scale;
+	float tickSpacing;
+	float tickDist;
 	//adjust the ticks to current scale
-	while((tickDist<5 || tickDist>15) && tickSpacing>1){
-		if(tickDist<5) tickSpacing *= 2;
-		else tickSpacing /= 2;
-		if(tickSpacing<1) tickSpacing = 1;
+	if(m_rulersNormalized){
+		float unitLength=max(m_imageW,m_imageH);
+		tickSpacing = 1.f/10;
+		tickDist = tickSpacing*unitLength*m_scale;
+		while(tickDist>30){
+			tickSpacing /= 2;
+			if(tickSpacing*unitLength*m_scale>30)
+				tickSpacing /= 5;
+			tickDist = tickSpacing*unitLength*m_scale;
+		}
+	}else{
+		tickSpacing = 10;
 		tickDist = tickSpacing*m_scale;
+		while((tickDist<5 || tickDist>15) && tickSpacing>1){
+			if(tickDist<5) tickSpacing *= 2;
+			else tickSpacing = (int)tickSpacing/2;
+			if(tickSpacing<1) tickSpacing = 1;
+			tickDist = tickSpacing*m_scale;
+		}
 	}
+
 	Point p0 = TransformPoint(Point(0, 0));
 	float x_offset=p0.x;
 	float y_offset=p0.y;
@@ -683,8 +700,14 @@ void  LuxGLViewer::DrawRulers(){
 		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glBegin(GL_TRIANGLES);
 			glVertex2f( m_prevMouseX + 0.5f,        m_windowH-m_rulerSize );
-			glVertex2f( m_prevMouseX + 0.5f - 6.5f, m_windowH-m_rulerSize/2 );
-			glVertex2f( m_prevMouseX + 0.5f + 6.5f, m_windowH-m_rulerSize/2 );
+			glVertex2f( m_prevMouseX + 0.5f - 5.0f, m_windowH-m_rulerSize + 5.0f );
+			glVertex2f( m_prevMouseX + 0.5f + 5.0f, m_windowH-m_rulerSize + 5.0f );
+		glEnd();
+		glBegin(GL_QUADS);
+			glVertex2f( m_prevMouseX - 4.0f, m_windowH-m_rulerSize + 5.0f );
+			glVertex2f( m_prevMouseX + 5.0f, m_windowH-m_rulerSize + 5.0f );
+			glVertex2f( m_prevMouseX + 5.0f, m_windowH-m_rulerSize + 6.0f );
+			glVertex2f( m_prevMouseX - 4.0f, m_windowH-m_rulerSize + 6.0f );
 		glEnd();
 	}
 	glColor3f(1.0f, 1.0f, 1.0f);
@@ -744,9 +767,15 @@ void  LuxGLViewer::DrawRulers(){
 	if(m_trackMousePos){
 		glColor4f(1.0f, 1.0f, 1.0f, 0.7f);
 		glBegin(GL_TRIANGLES);
-			glVertex2f( m_rulerSize,   m_windowH - m_prevMouseY - 0.5f );
-			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f + 6.5f );
-			glVertex2f( m_rulerSize/2, m_windowH - m_prevMouseY - 0.5f - 6.5f );
+			glVertex2f( m_rulerSize,        m_windowH - m_prevMouseY - 0.5f );
+			glVertex2f( m_rulerSize - 5.0f, m_windowH - m_prevMouseY - 0.5f + 5.0f );
+			glVertex2f( m_rulerSize - 5.0f, m_windowH - m_prevMouseY - 0.5f - 5.0f );
+		glEnd();
+		glBegin(GL_QUADS);
+			glVertex2f( m_rulerSize - 6.0f, m_windowH - m_prevMouseY - 5.0f );
+			glVertex2f( m_rulerSize - 5.0f, m_windowH - m_prevMouseY - 5.0f );
+			glVertex2f( m_rulerSize - 5.0f, m_windowH - m_prevMouseY + 4.0f );
+			glVertex2f( m_rulerSize - 6.0f, m_windowH - m_prevMouseY + 4.0f );
 		glEnd();
 	}
 	glColor3f(1.0f, 1.0f, 1.0f);

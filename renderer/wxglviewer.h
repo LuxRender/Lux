@@ -56,7 +56,7 @@ protected:
 	virtual wxWindow* GetWindow();
 	virtual wxViewerSelection GetSelection();
 	virtual void SetMode(wxViewerMode mode);
-	virtual void SetRulersEnabled(bool enabled);
+	virtual void SetRulersEnabled(bool enabled, bool normalized);
 	virtual void SetLogoData(const unsigned char *data, unsigned int length) { m_logoData = data; m_logoDataSize = length; }
 	virtual void SetZoom(const wxViewerSelection *selection);
 	virtual void SetSelection(const wxViewerSelection *selection);
@@ -99,6 +99,7 @@ private:
 	bool               m_trackMousePos;
 	bool               m_rulersEnabled;
 	int                m_rulerSize;
+	bool               m_rulersNormalized;
 	const unsigned char *m_logoData;
 	unsigned int       m_logoDataSize;
 

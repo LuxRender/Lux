@@ -61,7 +61,7 @@ wxViewerBase::~wxViewerBase() {}
 wxViewerSelection wxViewerBase::GetSelection() { return wxViewerSelection(); }
 
 void wxViewerBase::SetMode(wxViewerMode mode) {}
-void wxViewerBase::SetRulersEnabled(bool enabled) {}
+void wxViewerBase::SetRulersEnabled(bool enabled, bool normalized) {}
 void wxViewerBase::SetLogoData(const unsigned char *data, unsigned int length) {}
 void wxViewerBase::SetZoom(const wxViewerSelection *selection) {}
 void wxViewerBase::SetSelection(const wxViewerSelection *selection) {}

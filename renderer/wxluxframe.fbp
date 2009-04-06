@@ -299,20 +299,55 @@
                         <event name="OnMenuSelection">OnMenu</event>
                         <event name="OnUpdateUI"></event>
                     </object>
-                    <object class="wxMenuItem" expanded="1">
-                        <property name="bitmap"></property>
-                        <property name="checked">1</property>
-                        <property name="enabled">1</property>
-                        <property name="help">Toggle display of rulers in viewer</property>
-                        <property name="id">ID_VIEWER_RULERS</property>
-                        <property name="kind">wxITEM_CHECK</property>
-                        <property name="label">&amp;Rulers</property>
+                    <object class="submenu" expanded="1">
+                        <property name="label">Rulers</property>
                         <property name="name">m_viewerRulers</property>
-                        <property name="permission">none</property>
-                        <property name="shortcut">CTRL+R</property>
-                        <property name="unchecked_bitmap"></property>
-                        <event name="OnMenuSelection">OnMenu</event>
-                        <event name="OnUpdateUI"></event>
+                        <property name="permission">protected</property>
+                        <object class="wxMenuItem" expanded="1">
+                            <property name="bitmap"></property>
+                            <property name="checked">0</property>
+                            <property name="enabled">1</property>
+                            <property name="help">Disable rulers in viewer</property>
+                            <property name="id">ID_VIEWER_RULERS_DISABLED</property>
+                            <property name="kind">wxITEM_RADIO</property>
+                            <property name="label">Disabled</property>
+                            <property name="name">m_viewerRulersDisabled</property>
+                            <property name="permission">none</property>
+                            <property name="shortcut"></property>
+                            <property name="unchecked_bitmap"></property>
+                            <event name="OnMenuSelection">OnMenu</event>
+                            <event name="OnUpdateUI"></event>
+                        </object>
+                        <object class="wxMenuItem" expanded="1">
+                            <property name="bitmap"></property>
+                            <property name="checked">1</property>
+                            <property name="enabled">1</property>
+                            <property name="help">Enable rulers with pixel scale</property>
+                            <property name="id">ID_VIEWER_RULERS_PIXELS</property>
+                            <property name="kind">wxITEM_RADIO</property>
+                            <property name="label">Pixels</property>
+                            <property name="name">m_viewerRulersPixels</property>
+                            <property name="permission">none</property>
+                            <property name="shortcut"></property>
+                            <property name="unchecked_bitmap"></property>
+                            <event name="OnMenuSelection">OnMenu</event>
+                            <event name="OnUpdateUI"></event>
+                        </object>
+                        <object class="wxMenuItem" expanded="1">
+                            <property name="bitmap"></property>
+                            <property name="checked">0</property>
+                            <property name="enabled">1</property>
+                            <property name="help">Enable rulers with normalized image size scale</property>
+                            <property name="id">ID_VIEWER_RULERS_NORMALIZED</property>
+                            <property name="kind">wxITEM_RADIO</property>
+                            <property name="label">Normalized</property>
+                            <property name="name">m_viewerRulersNormalized</property>
+                            <property name="permission">none</property>
+                            <property name="shortcut"></property>
+                            <property name="unchecked_bitmap"></property>
+                            <event name="OnMenuSelection">OnMenu</event>
+                            <event name="OnUpdateUI"></event>
+                        </object>
                     </object>
                     <object class="separator" expanded="1">
                         <property name="permission">none</property>

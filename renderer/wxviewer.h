@@ -93,7 +93,7 @@ public:
 	virtual wxViewerSelection GetSelection();
 
 	virtual void SetMode(wxViewerMode mode);
-	virtual void SetRulersEnabled(bool enabled = true);
+	virtual void SetRulersEnabled(bool enabled = true, bool normalized = false);
 	virtual void SetLogoData(const unsigned char *data, unsigned int length);
 	virtual void SetZoom(const wxViewerSelection *selection);
 	virtual void SetSelection(const wxViewerSelection *selection);

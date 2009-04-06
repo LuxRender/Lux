@@ -75,10 +75,21 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_view->Append( m_sidePane );
 	m_sidePane->Check( true );
 	
-	wxMenuItem* m_viewerRulers;
-	m_viewerRulers = new wxMenuItem( m_view, ID_VIEWER_RULERS, wxString( wxT("&Rulers") ) + wxT('\t') + wxT("CTRL+R"), wxT("Toggle display of rulers in viewer"), wxITEM_CHECK );
-	m_view->Append( m_viewerRulers );
-	m_viewerRulers->Check( true );
+	m_viewerRulers = new wxMenu();
+	wxMenuItem* m_viewerRulersDisabled;
+	m_viewerRulersDisabled = new wxMenuItem( m_viewerRulers, ID_VIEWER_RULERS_DISABLED, wxString( wxT("Disabled") ) , wxT("Disable rulers in viewer"), wxITEM_RADIO );
+	m_viewerRulers->Append( m_viewerRulersDisabled );
+	
+	wxMenuItem* m_viewerRulersPixels;
+	m_viewerRulersPixels = new wxMenuItem( m_viewerRulers, ID_VIEWER_RULERS_PIXELS, wxString( wxT("Pixels") ) , wxT("Enable rulers with pixel scale"), wxITEM_RADIO );
+	m_viewerRulers->Append( m_viewerRulersPixels );
+	m_viewerRulersPixels->Check( true );
+	
+	wxMenuItem* m_viewerRulersNormalized;
+	m_viewerRulersNormalized = new wxMenuItem( m_viewerRulers, ID_VIEWER_RULERS_NORMALIZED, wxString( wxT("Normalized") ) , wxT("Enable rulers with normalized image size scale"), wxITEM_RADIO );
+	m_viewerRulers->Append( m_viewerRulersNormalized );
+	
+	m_view->Append( -1, wxT("Rulers"), m_viewerRulers );
 	
 	m_view->AppendSeparator();
 	
@@ -1630,7 +1641,9 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( m_toolBar->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_statusBarMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_sidePane->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
-	this->Connect( m_viewerRulers->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_viewerRulersDisabled->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_viewerRulersPixels->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Connect( m_viewerRulersNormalized->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_panMode->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_zoomMode->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Connect( m_copy->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
@@ -2090,6 +2103,8 @@ LuxMainFrame::~LuxMainFrame()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnResumeFLM ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnLoadFLM ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnSaveFLM ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LuxMainFrame::OnMenu ) );

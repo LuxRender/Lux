@@ -630,8 +630,10 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 			}
 			m_renderPage->Layout();
 			break;
-		case ID_VIEWER_RULERS: // CF
-			m_renderOutput->SetRulersEnabled( m_view->IsChecked(ID_VIEWER_RULERS) );
+		case ID_VIEWER_RULERS_DISABLED:
+		case ID_VIEWER_RULERS_PIXELS:
+		case ID_VIEWER_RULERS_NORMALIZED:
+			m_renderOutput->SetRulersEnabled( !m_view->IsChecked(ID_VIEWER_RULERS_DISABLED), m_view->IsChecked(ID_VIEWER_RULERS_NORMALIZED) );
 			break;
 		case ID_RENDER_COPY: // CF
 			if ( m_guiRenderState != WAITING &&
