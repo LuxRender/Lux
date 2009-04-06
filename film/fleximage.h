@@ -36,14 +36,17 @@ namespace lux {
 // FlexImageFilm Declarations
 class FlexImageFilm : public Film {
 public:
+	enum OutputChannels { Y, YA, RGB, RGBA };
+	enum ZBufNormalization { None, CameraStartEnd, MinMax };
+
 	// FlexImageFilm Public Methods
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI,
-		bool cw_EXR, int cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
-		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, int cw_EXR_ZBuf_normalizationtype,
-		bool cw_PNG, int cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, int cw_PNG_ZBuf_normalizationtype,
-		bool cw_TGA, int cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, int cw_TGA_ZBuf_normalizationtype, 
+		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
+		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
+		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
+		bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
 		bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
 		int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
@@ -135,9 +138,13 @@ private:
 	bool write_EXR, write_EXR_halftype, write_EXR_applyimaging, write_EXR_gamutclamp, write_EXR_ZBuf;
 	bool write_PNG, write_PNG_16bit, write_PNG_gamutclamp, write_PNG_ZBuf;
 	bool write_TGA,write_TGA_gamutclamp, write_TGA_ZBuf;
-	int write_EXR_channels, write_EXR_compressiontype, write_EXR_ZBuf_normalizationtype;
-	int write_PNG_ZBuf_normalizationtype, write_PNG_channels;
-	int write_TGA_channels, write_TGA_ZBuf_normalizationtype;
+	int write_EXR_compressiontype;
+	ZBufNormalization write_EXR_ZBuf_normalizationtype;
+	OutputChannels write_EXR_channels;
+	ZBufNormalization write_PNG_ZBuf_normalizationtype;
+	OutputChannels write_PNG_channels;
+	ZBufNormalization write_TGA_ZBuf_normalizationtype;
+	OutputChannels write_TGA_channels;
 	
 	bool use_Zbuf;
 	PerPixelNormalizedFloatBuffer *ZBuffer;

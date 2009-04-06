@@ -60,10 +60,10 @@ using namespace lux;
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
 	const string &filename1, bool premult, int wI, int dI,
-	bool cw_EXR, int cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
-	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, int cw_EXR_ZBuf_normalizationtype,
-	bool cw_PNG, int cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, int cw_PNG_ZBuf_normalizationtype,
-	bool cw_TGA, int cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, int cw_TGA_ZBuf_normalizationtype, 
+	bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
+	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
+	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
+	bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
 	bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
@@ -922,6 +922,12 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 		return;
 	}
 
+	if (alpha < 0 || isnan(alpha) || isinf(alpha))
+		return;
+
+	if (weight < 0 || isnan(weight) || isinf(weight))
+		return;
+
 	// Reject samples higher than max y() after warmup period
 	if (warmupComplete) {
 		if (xyz.y() > maxY)
@@ -1276,9 +1282,9 @@ void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, cons
 {
 	
 	if(write_EXR_ZBuf) {
-		if(write_EXR_ZBuf_normalizationtype == 1) {
+		if(write_EXR_ZBuf_normalizationtype == CameraStartEnd) {
 			// Camera normalization
-		} else if(write_EXR_ZBuf_normalizationtype == 2) {
+		} else if(write_EXR_ZBuf_normalizationtype == MinMax) {
 			// Min/Max normalization
 			const u_int nPix = xPixelCount * yPixelCount;
 			float min = 0.f;
@@ -1291,7 +1297,7 @@ void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, cons
 			}
 
 			vector<float> zBuf(nPix);
-			for (int i=0; i<nPix; i++)
+			for (u_int i=0; i<nPix; i++)
 				zBuf[i] = (zbuf[i]-min) / (max-min);
 
 			luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
@@ -1819,17 +1825,17 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	// OpenEXR
 	bool w_EXR = params.FindOneBool("write_exr", false);
 
-	int w_EXR_channels = 2;
+	OutputChannels w_EXR_channels = RGB;
 	string w_EXR_channelsStr = params.FindOneString("write_exr_channels", "RGB");
-	if (w_EXR_channelsStr == "Y") w_EXR_channels = 0;
-	else if (w_EXR_channelsStr == "YA") w_EXR_channels = 1;
-	else if (w_EXR_channelsStr == "RGB") w_EXR_channels = 2;
-	else if (w_EXR_channelsStr == "RGBA") w_EXR_channels = 3;
+	if (w_EXR_channelsStr == "Y") w_EXR_channels = Y;
+	else if (w_EXR_channelsStr == "YA") w_EXR_channels = YA;
+	else if (w_EXR_channelsStr == "RGB") w_EXR_channels = RGB;
+	else if (w_EXR_channelsStr == "RGBA") w_EXR_channels = RGBA;
 	else {
 		std::stringstream ss;
 		ss << "OpenEXR Output Channels  '" << w_EXR_channelsStr << "' unknown. Using \"RGB\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		w_EXR_channels = 2;
+		w_EXR_channels = RGB;
 	}
 
 	bool w_EXR_halftype = params.FindOneBool("write_exr_halftype", true);
@@ -1853,32 +1859,32 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	bool w_EXR_ZBuf = params.FindOneBool("write_exr_ZBuf", false);
 
-	int w_EXR_ZBuf_normalizationtype = 0;
+	ZBufNormalization w_EXR_ZBuf_normalizationtype = None;
 	string w_EXR_ZBuf_normalizationtypeStr = params.FindOneString("write_exr_zbuf_normalizationtype", "None");
-	if (w_EXR_ZBuf_normalizationtypeStr == "None") w_EXR_ZBuf_normalizationtype = 0;
-	else if (w_EXR_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_EXR_ZBuf_normalizationtype = 1;
-	else if (w_EXR_ZBuf_normalizationtypeStr == "Min/Max") w_EXR_ZBuf_normalizationtype = 2;
+	if (w_EXR_ZBuf_normalizationtypeStr == "None") w_EXR_ZBuf_normalizationtype = None;
+	else if (w_EXR_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_EXR_ZBuf_normalizationtype = CameraStartEnd;
+	else if (w_EXR_ZBuf_normalizationtypeStr == "Min/Max") w_EXR_ZBuf_normalizationtype = MinMax;
 	else {
 		std::stringstream ss;
 		ss << "OpenEXR ZBuf Normalization Type '" << w_EXR_ZBuf_normalizationtypeStr << "' unknown. Using \"None\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		w_EXR_ZBuf_normalizationtype = 0;
+		w_EXR_ZBuf_normalizationtype = None;
 	}
 
 	// Portable Network Graphics (PNG)
 	bool w_PNG = params.FindOneBool("write_png", true);
 
-	int w_PNG_channels = 2;
+	OutputChannels w_PNG_channels = RGB;
 	string w_PNG_channelsStr = params.FindOneString("write_png_channels", "RGB");
-	if (w_PNG_channelsStr == "Y") w_PNG_channels = 0;
-	if (w_PNG_channelsStr == "YA") w_PNG_channels = 1;
-	else if (w_PNG_channelsStr == "RGB") w_PNG_channels = 2;
-	else if (w_PNG_channelsStr == "RGBA") w_PNG_channels = 3;
+	if (w_PNG_channelsStr == "Y") w_PNG_channels = Y;
+	else if (w_PNG_channelsStr == "YA") w_PNG_channels = YA;
+	else if (w_PNG_channelsStr == "RGB") w_PNG_channels = RGB;
+	else if (w_PNG_channelsStr == "RGBA") w_PNG_channels = RGBA;
 	else {
 		std::stringstream ss;
 		ss << "PNG Output Channels  '" << w_PNG_channelsStr << "' unknown. Using \"RGB\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		w_PNG_channels = 2;
+		w_PNG_channels = RGB;
 	}
 
 	bool w_PNG_16bit = params.FindOneBool("write_png_16bit", false);
@@ -1886,47 +1892,47 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	bool w_PNG_ZBuf = params.FindOneBool("write_png_ZBuf", false);
 
-	int w_PNG_ZBuf_normalizationtype = 2;
+	ZBufNormalization w_PNG_ZBuf_normalizationtype = MinMax;
 	string w_PNG_ZBuf_normalizationtypeStr = params.FindOneString("write_png_zbuf_normalizationtype", "Min/Max");
-	if (w_PNG_ZBuf_normalizationtypeStr == "None") w_PNG_ZBuf_normalizationtype = 0;
-	else if (w_PNG_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_PNG_ZBuf_normalizationtype = 1;
-	else if (w_PNG_ZBuf_normalizationtypeStr == "Min/Max") w_PNG_ZBuf_normalizationtype = 2;
+	if (w_PNG_ZBuf_normalizationtypeStr == "None") w_PNG_ZBuf_normalizationtype = None;
+	else if (w_PNG_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_PNG_ZBuf_normalizationtype = CameraStartEnd;
+	else if (w_PNG_ZBuf_normalizationtypeStr == "Min/Max") w_PNG_ZBuf_normalizationtype = MinMax;
 	else {
 		std::stringstream ss;
 		ss << "PNG ZBuf Normalization Type '" << w_PNG_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		w_PNG_ZBuf_normalizationtype = 2;
+		w_PNG_ZBuf_normalizationtype = MinMax;
 	}
 
 	// TGA
 	bool w_TGA = params.FindOneBool("write_tga", false);
 
-	int w_TGA_channels = 1;
+	OutputChannels w_TGA_channels = RGB;
 	string w_TGA_channelsStr = params.FindOneString("write_tga_channels", "RGB");
-	if (w_TGA_channelsStr == "Y") w_TGA_channels = 0;
-	else if (w_TGA_channelsStr == "RGB") w_TGA_channels = 1;
-	else if (w_TGA_channelsStr == "RGBA") w_TGA_channels = 2;
+	if (w_TGA_channelsStr == "Y") w_TGA_channels = Y;
+	else if (w_TGA_channelsStr == "RGB") w_TGA_channels = RGB;
+	else if (w_TGA_channelsStr == "RGBA") w_TGA_channels = RGBA;
 	else {
 		std::stringstream ss;
 		ss << "TGA Output Channels  '" << w_TGA_channelsStr << "' unknown. Using \"RGB\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		w_TGA_channels = 1;
+		w_TGA_channels = RGB;
 	}
 
 	bool w_TGA_gamutclamp = params.FindOneBool("write_tga_gamutclamp", true);
 
 	bool w_TGA_ZBuf = params.FindOneBool("write_tga_ZBuf", false);
 
-	int w_TGA_ZBuf_normalizationtype = 2;
+	ZBufNormalization w_TGA_ZBuf_normalizationtype = MinMax;
 	string w_TGA_ZBuf_normalizationtypeStr = params.FindOneString("write_tga_zbuf_normalizationtype", "Min/Max");
-	if (w_TGA_ZBuf_normalizationtypeStr == "None") w_TGA_ZBuf_normalizationtype = 0;
-	else if (w_TGA_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_TGA_ZBuf_normalizationtype = 1;
-	else if (w_TGA_ZBuf_normalizationtypeStr == "Min/Max") w_TGA_ZBuf_normalizationtype = 2;
+	if (w_TGA_ZBuf_normalizationtypeStr == "None") w_TGA_ZBuf_normalizationtype = None;
+	else if (w_TGA_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_TGA_ZBuf_normalizationtype = CameraStartEnd;
+	else if (w_TGA_ZBuf_normalizationtypeStr == "Min/Max") w_TGA_ZBuf_normalizationtype = MinMax;
 	else {
 		std::stringstream ss;
 		ss << "TGA ZBuf Normalization Type '" << w_TGA_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		w_TGA_ZBuf_normalizationtype = 2;
+		w_TGA_ZBuf_normalizationtype = MinMax;
 	}
 
 
