@@ -1024,8 +1024,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 	vector<float> zBuf;
 	if(use_Zbuf && (write_EXR_ZBuf || write_PNG_ZBuf || write_TGA_ZBuf)) {
 		const u_int nPix = xPixelCount * yPixelCount;
-		for (int i=0; i<nPix; i++)
-			zBuf.push_back(0.f);
+		zBuf.resize(nPix, 0.f);
 		for (int offset = 0, y = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x,++offset) {
 				zBuf[offset] = ZBuffer->GetData(x, y);

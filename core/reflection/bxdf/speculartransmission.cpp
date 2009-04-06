@@ -167,7 +167,7 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 	// Handle total internal reflection for transmission
 	if (sint2 > 1.)
 		return;	
-	float cost = sqrtf(max(0.f, 1.f - sint2));
+//	float cost = sqrtf(max(0.f, 1.f - sint2));
 	SWCSpectrum F;
 	if (entering)
 		fresnel.Evaluate(tspack, CosTheta(wo), &F);

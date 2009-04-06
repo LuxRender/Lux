@@ -163,7 +163,7 @@ void DistributedPath::Reject(const TsPack *tspack, vector< vector<SWCSpectrum> >
 			}
 		}
 
-		float weight = samples / (samples-rejects);
+//		float weight = samples / (samples-rejects);
 
 		// Normalize
 		for(u_int i=0; i<L.size(); i++)

@@ -354,7 +354,6 @@ namespace lux {
 		if(savezbuf)
 			header.channels().insert("Z", Channel(Imf::FLOAT));
 
-		const int numPixels = xRes * yRes;
 		FrameBuffer fb;
 
 		float *fy;
