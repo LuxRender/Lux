@@ -125,7 +125,7 @@
                         <property name="help">Open a scene</property>
                         <property name="id">wxID_OPEN</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">&amp;Open</property>
+                        <property name="label">&amp;Open...</property>
                         <property name="name">m_open</property>
                         <property name="permission">none</property>
                         <property name="shortcut">CTRL+O</property>
@@ -143,7 +143,7 @@
                         <property name="help">Open a scene and resume from a specific FLM file</property>
                         <property name="id">wxID_ANY</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">Resume FLM</property>
+                        <property name="label">Resume FLM...</property>
                         <property name="name">m_resumeflm</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
@@ -158,7 +158,7 @@
                         <property name="help">Load an FLM file for tonemapping</property>
                         <property name="id">wxID_ANY</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">Load FLM</property>
+                        <property name="label">Load FLM...</property>
                         <property name="name">m_loadflm</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
@@ -173,7 +173,7 @@
                         <property name="help">Save the current render to an FLM file</property>
                         <property name="id">wxID_ANY</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">Save FLM</property>
+                        <property name="label">Save FLM...</property>
                         <property name="name">m_saveflm</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>

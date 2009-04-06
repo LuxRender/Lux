@@ -19,21 +19,21 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_menubar = new wxMenuBar( 0 );
 	m_file = new wxMenu();
 	wxMenuItem* m_open;
-	m_open = new wxMenuItem( m_file, wxID_OPEN, wxString( wxT("&Open") ) + wxT('\t') + wxT("CTRL+O"), wxT("Open a scene"), wxITEM_NORMAL );
+	m_open = new wxMenuItem( m_file, wxID_OPEN, wxString( wxT("&Open...") ) + wxT('\t') + wxT("CTRL+O"), wxT("Open a scene"), wxITEM_NORMAL );
 	m_file->Append( m_open );
 	
 	m_file->AppendSeparator();
 	
 	wxMenuItem* m_resumeflm;
-	m_resumeflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Resume FLM") ) , wxT("Open a scene and resume from a specific FLM file"), wxITEM_NORMAL );
+	m_resumeflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Resume FLM...") ) , wxT("Open a scene and resume from a specific FLM file"), wxITEM_NORMAL );
 	m_file->Append( m_resumeflm );
 	
 	wxMenuItem* m_loadflm;
-	m_loadflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Load FLM") ) , wxT("Load an FLM file for tonemapping"), wxITEM_NORMAL );
+	m_loadflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Load FLM...") ) , wxT("Load an FLM file for tonemapping"), wxITEM_NORMAL );
 	m_file->Append( m_loadflm );
 	
 	wxMenuItem* m_saveflm;
-	m_saveflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Save FLM") ) , wxT("Save the current render to an FLM file"), wxITEM_NORMAL );
+	m_saveflm = new wxMenuItem( m_file, wxID_ANY, wxString( wxT("Save FLM...") ) , wxT("Save the current render to an FLM file"), wxITEM_NORMAL );
 	m_file->Append( m_saveflm );
 	
 	m_file->AppendSeparator();

@@ -129,22 +129,13 @@ void LuxGLViewer::OnPaint(wxPaintEvent& event) {
 		CreateTextures();
 		m_texturesReady = true;
 		m_imageChanged = true;
-		if( m_displayMode==RENDER_VIEW ){
-			//move to center of window
-			m_preScaleOffsetX = m_preScaleOffsetY = 0;
-			m_scale = 1.0f;
-			m_scaleExp = 0.0f;
-			m_postScaleOffsetX = -m_imageW/2 + m_viewW/2 + m_viewX;
-			m_postScaleOffsetY = -m_imageH/2 + m_viewH/2 + m_viewY;
-		}else{ //m_displayMode==LOGO_VIEW
-			//zoom and offset slightly for dramatic effect!
-			m_preScaleOffsetX = m_imageW/2;
-			m_preScaleOffsetY = m_imageH/2;
-			m_scale = 2.0f;
-			m_scaleExp = 1.0f;
-			m_postScaleOffsetX = m_viewW*3/4;
-			m_postScaleOffsetY = m_viewH*1/4;
-		}
+
+		//move to center of window
+		m_preScaleOffsetX = m_preScaleOffsetY = 0;
+		m_scale = 1.0f;
+		m_scaleExp = 0.0f;
+		m_postScaleOffsetX = -m_imageW/2 + m_viewW/2 + m_viewX;
+		m_postScaleOffsetY = -m_imageH/2 + m_viewH/2 + m_viewY;
 	}
 
 	glMatrixMode(GL_MODELVIEW);
@@ -535,10 +526,9 @@ void LuxGLViewer::CreateTextures(){
 				glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
 
-				glPixelTransferf( GL_RED_BIAS, 221/255.0f );
-				glPixelTransferf( GL_GREEN_BIAS, 127/255.0f );
-				glPixelTransferf( GL_BLUE_BIAS,  0.0f );
-				glPixelTransferf( GL_ALPHA_SCALE,  0.3f );
+				glPixelTransferf( GL_RED_BIAS,   135/255.0f );
+				glPixelTransferf( GL_GREEN_BIAS, 135/255.0f );
+				glPixelTransferf( GL_BLUE_BIAS,  135/255.0f );
 
 				glTexImage2D(GL_TEXTURE_2D, 0, m_useAlpha?GL_RGBA:GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_ALPHA, GL_UNSIGNED_BYTE, logo_buf);
@@ -546,7 +536,6 @@ void LuxGLViewer::CreateTextures(){
 				glPixelTransferf( GL_RED_BIAS,   0.0f );
 				glPixelTransferf( GL_GREEN_BIAS, 0.0f );
 				glPixelTransferf( GL_BLUE_BIAS,  0.0f );
-				glPixelTransferf( GL_ALPHA_SCALE,1.0f );
 			}
 		}
 	}
