@@ -24,6 +24,7 @@
 #include "pngio.h"
 #include "error.h"
 #include "error.h"
+#include "osfunc.h"
 #include <png.h>
 
 namespace lux {
@@ -51,6 +52,9 @@ void lux_png_error(png_structp png_, png_const_charp msg)
     //
 
     FILE *fp = fopen(name.c_str(), "wb");
+	if (!fp)
+		return;
+
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, (png_error_ptr) lux_png_error, NULL);
     png_infop info = png_create_info_struct(png);
     png_init_io(png, fp);
@@ -114,36 +118,186 @@ void lux_png_error(png_structp png_, png_const_charp msg)
     png_set_cHRM(png, info, cSystem.xWhite, cSystem.yWhite, cSystem.xRed, 
 		cSystem.yRed, cSystem.xGreen, cSystem.yGreen, cSystem.xBlue, cSystem.yBlue);
 
-	// TODO - radiance - add 16bit output support
+	int colorType;
+	switch (channeltype) {
+		case 0: 
+			colorType = PNG_COLOR_TYPE_GRAY;
+			break;
+		case 1: 
+			colorType = PNG_COLOR_TYPE_GRAY_ALPHA;
+			break;
+		case 2: 
+			colorType = PNG_COLOR_TYPE_RGB;
+			break;
+		case 3: 
+			colorType = PNG_COLOR_TYPE_RGB_ALPHA;
+			break;
+		default:
+			colorType = PNG_COLOR_TYPE_RGB;
+	}
+
 
     png_set_IHDR(
         png, info,
-        xPixelCount, yPixelCount, 8,
-        PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+		xPixelCount, yPixelCount, ubit ? 16 : 8,
+        colorType, PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-    unsigned char** rows = (png_bytep*) malloc(yPixelCount * sizeof(png_bytep));
-    rows[0] = (png_bytep) malloc(xPixelCount * yPixelCount * 4);
-    for (int i = 1; i < yPixelCount; i++)
-        rows[i] = rows[0] + i * xPixelCount * 4;
+	png_write_info(png, info);
 
-    for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
-    {
-        for (int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
-        {
-            char r = (char) Clamp(255.f * pixels[(x + y * xResolution)].c[0], 0.f, 255.f);
-            char g = (char) Clamp(255.f * pixels[(x + y * xResolution)].c[1], 0.f, 255.f);
-            char b = (char) Clamp(255.f * pixels[(x + y * xResolution)].c[2], 0.f, 255.f);
-            char a = (char) Clamp(255.f * alpha[x + y * xResolution], 0.f, 255.f);
-            rows[y - yPixelStart][x * 4 + 0] = r;
-            rows[y - yPixelStart][x * 4 + 1] = g;
-            rows[y - yPixelStart][x * 4 + 2] = b;
-            rows[y - yPixelStart][x * 4 + 3] = a;
-        }
-    }
+	// swap order of samples if on little endian machines
+	// png expects network byte order
+	if (ubit && osIsLittleEndian())
+       png_set_swap(png);
 
-    png_set_rows(png, info, rows);
-    png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
+	// write png file row by row
+	if (ubit) {
+		// 16 bit per channel
+		std::vector<png_uint_16> row(xPixelCount*4);
+
+		for (int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
+		{
+			int i = 0;
+
+			switch (colorType) {
+				case PNG_COLOR_TYPE_GRAY:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
+								(0.3f * c.c[0] + 0.59f * c.c[1] + 0.11f * c.c[2]), 0.f, 65535.f));
+
+							row[i++] = gray;
+						}
+					}
+					break;
+				case PNG_COLOR_TYPE_GRAY_ALPHA:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
+								(0.3f * c.c[0] + 0.59f * c.c[1] + 0.11f * c.c[2]), 0.f, 65535.f));
+							png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xResolution], 0.f, 65535.f));
+
+							row[i++] = gray;
+							row[i++] = a;
+						}
+					}
+					break;
+				case PNG_COLOR_TYPE_RGB:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
+							png_uint_16 g = static_cast<png_uint_16>(Clamp(65535.f * c.c[1], 0.f, 65535.f));
+							png_uint_16 b = static_cast<png_uint_16>(Clamp(65535.f * c.c[2], 0.f, 65535.f));
+
+							row[i++] = r;
+							row[i++] = g;
+							row[i++] = b;
+						}
+					}
+					break;
+				case PNG_COLOR_TYPE_RGB_ALPHA:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
+							png_uint_16 g = static_cast<png_uint_16>(Clamp(65535.f * c.c[1], 0.f, 65535.f));
+							png_uint_16 b = static_cast<png_uint_16>(Clamp(65535.f * c.c[2], 0.f, 65535.f));
+							png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xResolution], 0.f, 65535.f));
+
+							row[i++] = r;
+							row[i++] = g;
+							row[i++] = b;
+							row[i++] = a;
+						}
+					}
+					break;
+			}
+			
+			png_write_row(png, reinterpret_cast<png_bytep>(&row[0]));
+		}
+	} else {
+		// 8 bit per channel
+		std::vector<png_byte> row(xPixelCount*4);
+
+		for (int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
+		{
+			int i = 0;
+
+			switch (colorType) {
+				case PNG_COLOR_TYPE_GRAY:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
+								(0.3f * c.c[0] + 0.59f * c.c[1] + 0.11f * c.c[2]), 0.f, 255.f));
+
+							row[i++] = gray;
+						}
+					}
+					break;
+				case PNG_COLOR_TYPE_GRAY_ALPHA:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
+								(0.3f * c.c[0] + 0.59f * c.c[1] + 0.11f * c.c[2]), 0.f, 255.f));
+							png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xResolution], 0.f, 255.f));
+
+							row[i++] = gray;
+							row[i++] = a;
+						}
+					}
+					break;
+				case PNG_COLOR_TYPE_RGB:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
+							png_byte g = static_cast<png_byte>(Clamp(255.f * c.c[1], 0.f, 255.f));
+							png_byte b = static_cast<png_byte>(Clamp(255.f * c.c[2], 0.f, 255.f));
+
+							row[i++] = r;
+							row[i++] = g;
+							row[i++] = b;
+						}
+					}
+					break;
+				case PNG_COLOR_TYPE_RGB_ALPHA:
+					{
+						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						{
+							const Color &c = pixels[(x + y * xResolution)];
+							png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
+							png_byte g = static_cast<png_byte>(Clamp(255.f * c.c[1], 0.f, 255.f));
+							png_byte b = static_cast<png_byte>(Clamp(255.f * c.c[2], 0.f, 255.f));
+							png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xResolution], 0.f, 255.f));
+
+							row[i++] = r;
+							row[i++] = g;
+							row[i++] = b;
+							row[i++] = a;
+						}
+					}
+					break;			
+			}
+			
+			png_write_row(png, &row[0]);
+		}
+	}
+
+	// cleanup
+	png_write_end(png, info);
+	png_destroy_write_struct(&png, &info);
 
     fclose(fp);
 
