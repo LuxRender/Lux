@@ -581,6 +581,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 			++nrContribs;
 		}
 	}
+	v.bsdf = NULL;
 	return true;
 }
 
@@ -625,7 +626,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 		L *= We;
 		XYZColor color(L.ToXYZ(tspack));
 		const float alpha = light->IsEnvironmental() ? 0.f : 1.f;
-		sample->AddContribution(xd, yd, color, alpha, totalWeight, bidir.lightBufferId, light->group);
+		sample->AddContribution(xd, yd, color, alpha, sqrtf(lightPath[0].d2), totalWeight, bidir.lightBufferId, light->group);
 	}
 	vE = e;
 	return true;
@@ -775,11 +776,12 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 							Ll.filter(tspack);
 					} else {
 						Ll *= We;
+						const float d = Distance(lightPath[j - 1].p, eyePath[i - 1].p);
 						float xl, yl;
-						tspack->camera->GetSamplePosition(eyePath[0].p, Normalize(lightPath[j - 1].p - eyePath[i - 1].p), &xl, &yl);
+						tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[i - 1].p) / d, &xl, &yl);
 						XYZColor color(Ll.ToXYZ(tspack));
 						const float a = (j == 1 && light->IsEnvironmental()) ? 0.f : 1.f;
-						sample->AddContribution(xl, yl, color, a, weight, lightBufferId, lightGroup);
+						sample->AddContribution(xl, yl, color, a, d, weight, lightBufferId, lightGroup);
 					}
 					++nrContribs;
 				}
@@ -789,12 +791,13 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 		}
 	}
+	const float d = (nEye > 1 && eyePath[1].bsdf) ? eyePath[0].d2 : INFINITY;
 	for (int i = 0; i < nGroups; ++i) {
 		if (!vecL[i].Black())
 			vecV[i] /= vecL[i].filter(tspack);
 		vecL[i] *= We;
 		XYZColor color(vecL[i].ToXYZ(tspack));
-		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f,
+		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, d,
 			vecV[i], eyeBufferId, i);
 	}
 	return nrContribs;

@@ -73,6 +73,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float VContrib = .1f;
 	bool specularBounce = true, specular = true, through = false;
 	if (alpha) *alpha = 1.;
+	float distance = INFINITY;
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
@@ -111,8 +112,10 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				*alpha = 0.;
 			break;
 		}
-		if (pathLength == 0 && !through)
+		if (pathLength == 0 && !through) {
 			r.maxt = ray.maxt;
+			distance = ray.maxt * ray.d.Length();
+		}
 
 		SWCSpectrum Lv;
 		int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
@@ -227,7 +230,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!L[i].Black())
 			V[i] /= L[i].filter(tspack);
 		sample->AddContribution(sample->imageX, sample->imageY,
-			L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, V[i], bufferId, i);
+			L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, distance, V[i], bufferId, i);
 	}
 
 	return nrContribs;
