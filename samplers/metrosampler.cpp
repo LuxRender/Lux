@@ -38,12 +38,12 @@ static float mutate(const float x, const float randomValue)
 	static const float s1 = 1.f / 512.f, s2 = 1.f / 16.f;
 	const float dx = s1 / (s1 / s2 + fabsf(2.f * randomValue - 1.f)) -
 		s1 / (s1 / s2 + 1.f);
-	if (randomValue < 0.5) {
+	if (randomValue < 0.5f) {
 		float x1 = x + dx;
-		return (x1 > 1) ? x1 - 1 : x1;
+		return (x1 < 1.f) ? x1 : x1 - 1.f;
 	} else {
 		float x1 = x - dx;
-		return (x1 < 0) ? x1 + 1 : x1;
+		return (x1 < 0.f) ? x1 + 1.f : x1;
 	}
 }
 
@@ -53,9 +53,9 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 	static const float s1 = 32.f;
 	const float dx = range / (1.f + s1 * fabsf(2.f * randomValue - 1.f)) -
 		range / (1.f + s1);
-	if (randomValue < 0.5) {
+	if (randomValue < 0.5f) {
 		float x1 = x + dx;
-		return (x1 > maxi) ? x1 - maxi + mini : x1;
+		return (x1 < maxi) ? x1 : x1 - maxi + mini;
 	} else {
 		float x1 = x - dx;
 		return (x1 < mini) ? x1 - mini + maxi : x1;
