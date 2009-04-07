@@ -100,7 +100,7 @@ public:
 			#define SQRT_SAMPLES 4
 			#define N_SAMPLES (SQRT_SAMPLES * SQRT_SAMPLES)
 			float samples[2*N_SAMPLES];
-//			StratifiedSample2D(samples, SQRT_SAMPLES, SQRT_SAMPLES);						// COCACOLA - fix
+			StratifiedSample2D(tspack, samples, SQRT_SAMPLES, SQRT_SAMPLES);						// COCACOLA - fix
 			T value = 0.;
 			float filterSum = 0.;
 			for (int i = 0; i < N_SAMPLES; ++i) {
