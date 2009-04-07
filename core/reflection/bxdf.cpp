@@ -123,6 +123,10 @@ bool BxDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
 	if (wo.z < 0.) wi->z *= -1.f;
+	// wi may be in the tangent plane, which will 
+	// fail the SameHemisphere test in Pdf()
+	if (!SameHemisphere(wo, *wi)) 
+		return false;
 	*pdf = Pdf(tspack, wo, *wi);
 	if (pdfBack)
 		*pdfBack = Pdf(tspack, *wi, wo);
