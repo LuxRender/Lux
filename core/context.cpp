@@ -525,32 +525,12 @@ void Context::portalShape(const string &name, const ParamSet &params) {
 	//	curTransform, graphicsState->areaLightParams, shape);
 
 	if (graphicsState->currentLight != "") {
-		if (graphicsState->currentLight == "sunsky"
-				|| graphicsState->currentLight == "infinite") {
-			if (graphicsState->currentLightPtr0)
-				graphicsState->currentLightPtr0->AddPortalShape(shape);
+		if (graphicsState->currentLightPtr0)
+			graphicsState->currentLightPtr0->AddPortalShape(shape);
 
-			if (graphicsState->currentLightPtr1)
-				graphicsState->currentLightPtr1->AddPortalShape(shape);
-		} else {
-			//Warning("LightType '%s' does not support PortalShape(s).\n",  graphicsState->currentLight.c_str());
-			std::stringstream ss;
-			ss<<"LightType '"<<graphicsState->currentLight
-					<<" does not support PortalShape(s).";
-			luxError(LUX_UNIMPLEMENT,LUX_WARNING,ss.str().c_str());
-			return;
-		}
+		if (graphicsState->currentLightPtr1)
+			graphicsState->currentLightPtr1->AddPortalShape(shape);
 	}
-
-	// Lotus - this code does not seem to do anything usefull
-
-	// Initialize material for shape (dummy)
-	//TextureParams mp(params, graphicsState->materialParams,
-	//		graphicsState->floatTextures, graphicsState->spectrumTextures);
-	//boost::shared_ptr<Texture<float> > bump;
-	//boost::shared_ptr<Material> mtl = MakeMaterial("matte", curTransform, mp);
-	// Create primitive (for refining) (dummy)
-	//Primitive* prim(new GeometricPrimitive(shape, mtl, area));
 }
 
 boost::shared_ptr<Material> Context::makematerial(const ParamSet& shapeparams, bool force) {
