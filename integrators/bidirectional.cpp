@@ -765,6 +765,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				lightPath[0].ng) * directWeight;
 			// Connect to light subpath
 			for (int j = 1; j <= nLight; ++j) {
+				if ((i == nEye || eyePath[i - 1].flags & (BSDF_DIFFUSE | BSDF_GLOSSY)) && (j == nLight || lightPath[j - 1].flags & (BSDF_DIFFUSE | BSDF_GLOSSY))) {
 				SWCSpectrum Ll(Le);
 				float weight;
 				if (getLight(tspack, scene, *this,
@@ -784,6 +785,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						sample->AddContribution(xl, yl, color, a, d, weight, lightBufferId, lightGroup);
 					}
 					++nrContribs;
+				}
 				}
 				// Use general direct lighting pdf for next events
 				if (j == 1)
