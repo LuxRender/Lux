@@ -179,6 +179,16 @@ double Scene::Statistics(const string &statName) {
 // Control Implementations in Scene:
 double Scene::GetNumberOfSamples()
 {
+	if (s_Timer.Time() - lastTime > .5f) {
+		boost::mutex::scoped_lock lock(renderThreadsMutex);
+		for (u_int i = 0; i < renderThreads.size(); ++i) {
+			boost::mutex::scoped_lock lock(renderThreads[i]->statLock);
+			stat_Samples += renderThreads[i]->samples;
+			stat_blackSamples += renderThreads[i]->blackSamples;
+			renderThreads[i]->samples = 0.;
+			renderThreads[i]->blackSamples = 0.;
+		}
+	}
 	return stat_Samples + numberOfSamplesFromNetwork;
 }
 
@@ -339,8 +349,11 @@ void RenderThread::render(RenderThread *myThread) {
             float alpha;
             SWCSpectrum dummy;
 	// Jeanphi - Hijack statistics until volume integrator revamp
-	    myThread->scene->stat_blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
+		do {
+			boost::mutex::scoped_lock lock(myThread->statLock);
+	    myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
 					myThread->scene, ray, myThread->sample, &dummy, &alpha);
+		} while(0);
 
 
             // TODO - radiance - Add rayWeight to sample and take into account.
@@ -351,7 +364,10 @@ void RenderThread::render(RenderThread *myThread) {
         }
 
         // update samples statistics
-        myThread->scene->stat_Samples++;
+	do {
+		boost::mutex::scoped_lock lock(myThread->statLock);
+        ++(myThread->samples);
+	} while(0);
 
         // increment (locked) global sample pos if necessary (eg maxSampPos != 0)
         if(*useSampPos == -1 && maxSampPos != 0) {

@@ -40,7 +40,8 @@ public:
     RenderThread( int _n, ThreadSignals _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi,
             Sampler* _Splr, Camera* _Cam, Scene* _Scn)
     : n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi),
-            sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn), thread(NULL) {
+            sample(NULL), sampler(_Splr), camera(_Cam), scene(_Scn),
+	    thread(NULL), samples(0.), blackSamples(0.) {
         sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
     }
 
@@ -61,6 +62,8 @@ public:
     Scene *scene;
 	TsPack *tspack;
     boost::thread *thread; // keep pointer to delete the thread object
+	double samples, blackSamples;
+	boost::mutex statLock;
 };
 
 // Scene Declarations
