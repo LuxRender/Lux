@@ -111,10 +111,10 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 		sampler->totalTimes += sample->nxD[i];
 		sampler->totalSamples += sample->dxD[i] * sample->nxD[i];
 	}
-	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
-	sampler->baseImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
-	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
-	sampler->baseTimeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
+	sampler->sampleImage = AllocAligned<float>(sampler->totalSamples);
+	sampler->baseImage = AllocAligned<float>(sampler->totalSamples);
+	sampler->timeImage = AllocAligned<int>(sampler->totalTimes);
+	sampler->baseTimeImage = AllocAligned<int>(sampler->totalTimes);
 	sampler->baseSampler->SetTsPack(sampler->tspack);
 	sampler->baseSampler->SetFilm(sampler->film);
 	sampler->mutation = -1;

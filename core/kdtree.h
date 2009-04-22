@@ -87,7 +87,7 @@ KdTree<NodeData,
        LookupProc>::KdTree(const vector<NodeData> &d) {
 	nNodes = d.size();
 	nextFreeNode = 1;
-	nodes = (KdNode *)AllocAligned(nNodes * sizeof(KdNode));
+	nodes = AllocAligned<KdNode>(nNodes);
 	nodeData = new NodeData[nNodes];
 	vector<const NodeData *> buildNodes;
 	for (u_int i = 0; i < nNodes; ++i)

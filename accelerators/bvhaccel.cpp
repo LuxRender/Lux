@@ -58,8 +58,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int treetype,
 
 	// Initialize primitives for _BVHAccel_
 	nPrims = vPrims.size();
-	prims = (boost::shared_ptr<Primitive>*)AllocAligned(nPrims *
-			sizeof(boost::shared_ptr<Primitive>));
+	prims = AllocAligned<boost::shared_ptr<Primitive> >(nPrims);
 	for (u_int i = 0; i < nPrims; ++i)
 		new (&prims[i]) boost::shared_ptr<Primitive>(vPrims[i]);
 
@@ -85,7 +84,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int treetype,
 	ss << "Pre-processing Bounding Volume Hierarchy, total nodes: " << nNodes;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	bvhTree = (BVHAccelArrayNode*)AllocAligned(nNodes * sizeof(BVHAccelArrayNode));
+	bvhTree = AllocAligned<BVHAccelArrayNode>(nNodes);
 	BuildArray(rootNode, 0);
 
 	ss.str("");

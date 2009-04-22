@@ -230,21 +230,6 @@ void StatsCleanup() {
 	trackers.erase(trackers.begin(), trackers.end());
 }
 
-// Memory Allocation Functions
- void *AllocAligned(size_t size) {
-#ifndef L1_CACHE_LINE_SIZE
-#define L1_CACHE_LINE_SIZE 64
-#endif
-	return memalign(L1_CACHE_LINE_SIZE, size);
-}
- void FreeAligned(void *ptr) {
-#if defined(WIN32) && !defined(__CYGWIN__) // NOBOOK
-	_aligned_free(ptr);
-#else // NOBOOK
-	free(ptr);
-#endif // NOBOOK
-}
-
 }
 
 // ProgressReporter Method Definitions

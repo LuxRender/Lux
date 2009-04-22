@@ -46,8 +46,7 @@ TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
 
     // Initialize primitives for _TaBRecKdTreeAccel_
     nPrims = vPrims.size();
-    prims = (boost::shared_ptr<Primitive>*)AllocAligned(nPrims *
-    		sizeof(boost::shared_ptr<Primitive>));
+    prims = AllocAligned<boost::shared_ptr<Primitive> >(nPrims);
     for (u_int i = 0; i < nPrims; ++i)
     	new (&prims[i]) boost::shared_ptr<Primitive>(vPrims[i]);
 
@@ -124,8 +123,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     // Get next free node from _nodes_ array
     if (nextFreeNode == nAllocedNodes) {
         int nAlloc = max(2 * nAllocedNodes, 512);
-        TaBRecKdAccelNode *n = (TaBRecKdAccelNode *)AllocAligned(nAlloc *
-                sizeof(TaBRecKdAccelNode));
+        TaBRecKdAccelNode *n = AllocAligned<TaBRecKdAccelNode>(nAlloc);
         if (nAllocedNodes > 0) {
             memcpy(n, nodes,
                     nAllocedNodes * sizeof(TaBRecKdAccelNode));

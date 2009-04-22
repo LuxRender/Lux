@@ -566,7 +566,7 @@ MIPMapImpl<T,U>::MIPMapImpl(
 
 		// Initialize EWA filter weights if needed
 		if (!weightLut) {
-			weightLut = (float *)AllocAligned(WEIGHT_LUT_SIZE * sizeof(float));
+			weightLut = AllocAligned<float>(WEIGHT_LUT_SIZE);
 			for (int i = 0; i < WEIGHT_LUT_SIZE; ++i) {
 				float alpha = 2.;
 				float r2 = static_cast<float>(i) / static_cast<float>(WEIGHT_LUT_SIZE - 1);

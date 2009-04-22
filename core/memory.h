@@ -29,8 +29,22 @@
 
 namespace lux
 {
-  void *AllocAligned(size_t size);
-  void FreeAligned(void *);
+// Memory Allocation Functions
+template<class T> T *AllocAligned(size_t size)
+{
+#ifndef L1_CACHE_LINE_SIZE
+#define L1_CACHE_LINE_SIZE 64
+#endif
+	return static_cast<T *>(memalign(L1_CACHE_LINE_SIZE, size * sizeof(T)));
+}
+template<class T> void FreeAligned(T *ptr)
+{
+#if defined(WIN32) && !defined(__CYGWIN__) // NOBOOK
+	_aligned_free(ptr);
+#else // NOBOOK
+	free(ptr);
+#endif // NOBOOK
+}
 }
 
 /*
@@ -76,7 +90,7 @@ public:
 	MemoryArena(u_int bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
-		currentBlock = (char *)lux::AllocAligned(blockSize);
+		currentBlock = lux::AllocAligned<char>(blockSize);
 	}
 	~MemoryArena() {
 		lux::FreeAligned(currentBlock);
@@ -99,7 +113,7 @@ public:
 				currentBlock = availableBlocks.back();
 				availableBlocks.pop_back();
 			} else
-				currentBlock = (char *)lux::AllocAligned(max(sz, blockSize));
+				currentBlock = lux::AllocAligned<char>(max(sz, blockSize));
 			curBlockPos = 0;
 		}
 		void *ret = currentBlock + curBlockPos;
@@ -130,7 +144,7 @@ public:
 		vRes = b.vRes;
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-		data = (T *)lux::AllocAligned(nAlloc * sizeof(T));
+		data = lux::AllocAligned<T>(nAlloc);
 		for (int i = 0; i < nAlloc; ++i)
 			new (&data[i]) T(b.data[i]);
 		if (d) {
@@ -145,7 +159,7 @@ public:
 		vRes = nv;
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-		data = (T *)lux::AllocAligned(nAlloc * sizeof(T));
+		data = lux::AllocAligned<T>(nAlloc);
 		for (int i = 0; i < nAlloc; ++i)
 			new (&data[i]) T();
 		if (d) {
@@ -212,7 +226,7 @@ private:
 		ar & uBlocks;
 
 		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-		data = (T *)lux::AllocAligned(nAlloc * sizeof(T));
+		data = lux::AllocAligned<T>(nAlloc);
 		for (int i = 0; i < nAlloc; ++i)
 			ar & data[i];
 	}

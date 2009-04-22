@@ -74,7 +74,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 {
 	// Allocate storage for image stratified samples
 	strataSqr = sw * sw;
-	strataSamples = (float *)AllocAligned(2 * strataSqr * sizeof(float));
+	strataSamples = AllocAligned<float>(2 * strataSqr);
 	currentStrata = strataSqr;
 }
 
@@ -109,8 +109,8 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 		sampler->totalTimes += sample->nxD[i];
 		sampler->totalSamples += sample->dxD[i] * sample->nxD[i];
 	}
-	sampler->sampleImage = (float *)AllocAligned(sampler->totalSamples * sizeof(float));
-	sampler->timeImage = (int *)AllocAligned(sampler->totalTimes * sizeof(int));
+	sampler->sampleImage = AllocAligned<float>(sampler->totalSamples);
+	sampler->timeImage = AllocAligned<int>(sampler->totalTimes);
 
 	// Fetch first contribution buffer from pool
 	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);

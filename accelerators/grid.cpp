@@ -52,8 +52,7 @@ GridAccel::GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		prims = p;
 	// Initialize mailboxes for grid
 	nMailboxes = prims.size();
-	mailboxes = (GMailboxPrim *)AllocAligned(nMailboxes *
-		sizeof(GMailboxPrim));
+	mailboxes = AllocAligned<GMailboxPrim>(nMailboxes);
 	for (u_int i = 0; i < nMailboxes; ++i)
 		new (&mailboxes[i]) GMailboxPrim(prims[i]);
 	// Compute bounds and choose grid resolution
@@ -78,7 +77,7 @@ GridAccel::GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		    (Width[axis] == 0.f) ? 0.f : 1.f / Width[axis];
 	}
 	int nVoxels = NVoxels[0] * NVoxels[1] * NVoxels[2];
-	voxels = (Voxel **)AllocAligned(nVoxels * sizeof(Voxel *));
+	voxels = AllocAligned<Voxel *>(nVoxels);
 	memset(voxels, 0, nVoxels * sizeof(Voxel *));
 	// Add primitives to grid voxels
 	for (u_int i = 0; i < prims.size(); ++i) {

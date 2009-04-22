@@ -578,9 +578,6 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	if ((!triIndices) && (!quadIndices)) return NULL;
 
-	// Lotus - read subdivision data
-	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
-
 	// Dade - the optional displacement map
 	string displacementMapName = params.FindOneString("displacementmap", "");
 	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
@@ -590,6 +587,9 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
+		// Lotus - read subdivision data
+		map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
+
 		displacementMap = (*floatTextures)[displacementMapName];
 
 		if (displacementMap.get() == NULL) {

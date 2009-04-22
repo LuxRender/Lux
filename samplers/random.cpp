@@ -67,8 +67,7 @@ RandomSampler::RandomSampler(int xstart, int xend,
 	TotalPixels = pixelSampler->GetTotalPixels();
 
 	// Get storage for a pixel's worth of stratified samples
-	imageSamples = (float *)AllocAligned(7 * pixelSamples *
-		sizeof(float));
+	imageSamples = AllocAligned<float>(7 * pixelSamples);
 	lensSamples = imageSamples + 2 * pixelSamples;
 	timeSamples = lensSamples +  2 * pixelSamples;
 	wavelengthsSamples = timeSamples + pixelSamples;

@@ -45,8 +45,7 @@ UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
     // Initialize mailboxes for _UnsafeKdTreeAccel_
     curMailboxId = 0;
     nMailboxes = prims.size();
-    mailboxPrims = (MailboxPrim *)AllocAligned(nMailboxes *
-            sizeof(MailboxPrim));
+    mailboxPrims = AllocAligned<MailboxPrim>(nMailboxes);
     for (u_int i = 0; i < nMailboxes; ++i)
         new (&mailboxPrims[i]) MailboxPrim(prims[i]);
     // Build kd-tree for accelerator
@@ -100,8 +99,7 @@ void UnsafeKdTreeAccel::buildTree(int nodeNum,
     // Get next free node from _nodes_ array
     if (nextFreeNode == nAllocedNodes) {
         int nAlloc = max(2 * nAllocedNodes, 512);
-        UnsafeKdAccelNode *n = (UnsafeKdAccelNode *)AllocAligned(nAlloc *
-                sizeof(UnsafeKdAccelNode));
+        UnsafeKdAccelNode *n = AllocAligned<UnsafeKdAccelNode>(nAlloc);
         if (nAllocedNodes > 0) {
             memcpy(n, nodes,
                     nAllocedNodes * sizeof(UnsafeKdAccelNode));

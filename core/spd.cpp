@@ -31,8 +31,7 @@ using namespace lux;
 
 void SPD::AllocateSamples(int n) {
 	 // Allocate memory for samples
-	samples = (float *)
-		AllocAligned(n * sizeof(float));
+	samples = AllocAligned<float>(n);
 }
 
 void SPD::FreeSamples() {

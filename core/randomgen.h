@@ -36,12 +36,7 @@
 #define LUX_RANDOM_H
 
 #include "lux.h"
-
-namespace lux
-{
-  void *AllocAligned(size_t size);
-  void FreeAligned(void *);
-}
+#include "memory.h"
 
 #define LCG(n) ((69069UL * n) & 0xffffffffUL)
 #define MASK 0xffffffffUL
@@ -58,8 +53,7 @@ class RandomGenerator
 {
 public:
 	RandomGenerator() {
-		buf = (unsigned long int *)lux::AllocAligned(
-			RAN_BUFFER_AMOUNT * sizeof(unsigned long int));
+		buf = lux::AllocAligned<unsigned long int>(RAN_BUFFER_AMOUNT);
 		bufid = RAN_BUFFER_AMOUNT;
 	}
 

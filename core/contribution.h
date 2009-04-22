@@ -59,7 +59,7 @@ public:
 class ContributionBuffer {
 public:
 	ContributionBuffer() : pos(0), sampleCount(0.f) {
-		contribs = (Contribution *)AllocAligned(CONTRIB_BUF_SIZE * sizeof(Contribution));
+		contribs = AllocAligned<Contribution>(CONTRIB_BUF_SIZE);
 	}
 
 	~ContributionBuffer() {
