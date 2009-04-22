@@ -35,7 +35,7 @@ namespace lux
 class MetropolisSampler : public Sampler {
 public:
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-			int maxRej, float largeProb, float microProb, float rng, int sw, bool useV);
+		int maxRej, float largeProb, float microProb, float rng, bool useV);
 	~MetropolisSampler();
 
 	virtual MetropolisSampler* clone() const;
@@ -48,18 +48,19 @@ public:
 	void GetBufferType(BufferType *t) { *t = BUF_TYPE_PER_SCREEN; }
 	bool IsMutating() { return true; }
 
-	bool large;
-	float LY, V;
-	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects, stamp, numMicro, posMicro;
-	float pLarge, pMicro, range, weight, alpha;
+	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
+	float pLarge, pMicro, range;
+	bool useVariance;
 	float *sampleImage;
 	int *timeImage, *offset;
+	float *rngSamples, *rngRotation;
+	u_int rngBase, rngOffset;
+	bool large;
+	int stamp, numMicro, posMicro;
+	float weight, LY, V, alpha;
+	vector <Contribution> oldContributions;
 	static int initCount, initSamples;
 	static float meanIntensity;
-	vector <Contribution> oldContributions;
-	float *strataSamples;
-	int strataWidth, strataSqr, currentStrata;
-	bool useVariance;
 };
 
 }//namespace lux

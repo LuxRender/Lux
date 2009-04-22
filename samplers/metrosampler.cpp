@@ -62,25 +62,39 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 	}
 }
 
+static const u_int rngN = 8191;
+static const u_int rngA = 884;
+static float rngDummy;
+#define rngGet(__pos) (modff(rngSamples[(rngBase + (__pos)) % rngN] + rngRotation[(__pos)], &rngDummy))
+#define rngGet2(__pos,__off) (modff(rngSamples[(rngBase + (__pos) + (__off)) % rngN] + rngRotation[(__pos)], &rngDummy))
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		int maxRej, float largeProb, float microProb, float rng, int sw,
+		int maxRej, float largeProb, float microProb, float rng,
 		bool useV) :
- Sampler(xStart, xEnd, yStart, yEnd, 1), large(true), LY(0.f), V(0.f),
- totalSamples(0), totalTimes(0), maxRejects(maxRej), consecRejects(0), stamp(0),
- numMicro(-1), posMicro(-1), pLarge(largeProb), pMicro(microProb), range(rng),
- weight(0.f), alpha(0.f), sampleImage(NULL), timeImage(NULL), strataWidth(sw),
- useVariance(useV)
+ Sampler(xStart, xEnd, yStart, yEnd, 1), normalSamples(0), totalSamples(0),
+ totalTimes(0), maxRejects(maxRej), consecRejects(0), pLarge(largeProb),
+ pMicro(microProb), range(rng), useVariance(useV), sampleImage(NULL),
+ timeImage(NULL), offset(NULL), rngRotation(NULL), rngBase(0),
+ rngOffset(0), large(true), stamp(0), numMicro(-1), posMicro(-1), weight(0.f),
+ LY(0.f), V(0.f), alpha(0.f)
 {
-	// Allocate storage for image stratified samples
-	strataSqr = sw * sw;
-	strataSamples = AllocAligned<float>(2 * strataSqr);
-	currentStrata = strataSqr;
+	// Allocate and compute all values of the rng
+	rngSamples = AllocAligned<float>(rngN);
+	rngSamples[0] = 0.f;
+	rngSamples[1] = 1.f / rngN;
+	u_int rngI = 1;
+	for (u_int i = 2; i < rngN; ++i) {
+		rngI = (rngI * rngA) % rngN;
+		rngSamples[i] = static_cast<float>(rngI) / rngN;
+	}
 }
 
 MetropolisSampler::~MetropolisSampler() {
 	FreeAligned(sampleImage);
-	FreeAligned(strataSamples);
+	FreeAligned(timeImage);
+	FreeAligned(rngSamples);
+	FreeAligned(rngRotation);
+	delete[] offset;
 }
 
 // Copy
@@ -96,11 +110,14 @@ MetropolisSampler* MetropolisSampler::clone() const
 static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 {
 	u_int i;
+	// Compute number of non lazy samples
 	sampler->normalSamples = SAMPLE_FLOATS;
 	for (i = 0; i < sample->n1D.size(); ++i)
 		sampler->normalSamples += sample->n1D[i];
 	for (i = 0; i < sample->n2D.size(); ++i)
 		sampler->normalSamples += 2 * sample->n2D[i];
+
+	// Compute number of lazy samples and initialize management data
 	sampler->totalSamples = sampler->normalSamples;
 	sampler->offset = new int[sample->nxD.size()];
 	sampler->totalTimes = 0;
@@ -109,11 +126,25 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 		sampler->totalTimes += sample->nxD[i];
 		sampler->totalSamples += sample->dxD[i] * sample->nxD[i];
 	}
+
+	// Allocate sample image to hold the current reference
 	sampler->sampleImage = AllocAligned<float>(sampler->totalSamples);
 	sampler->timeImage = AllocAligned<int>(sampler->totalTimes);
 
 	// Fetch first contribution buffer from pool
 	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);
+
+	// Compute best offset between sample vectors in the rng
+	// TODO use the smallest gcf of totalSamples and rngN that is greater
+	// than totalSamples or equal
+	sampler->rngOffset = sampler->totalSamples;
+	if (sampler->rngOffset >= rngN)
+		sampler->rngOffset = sampler->rngOffset % (rngN - 1) + 1;
+	// Current base index, minus offset to compensate for the advance done
+	// in GetNextSample
+	sampler->rngBase = rngN - sampler->rngOffset;
+	// Allocate memory for the Cranley-Paterson rotation vector
+	sampler->rngRotation = AllocAligned<float>(sampler->totalSamples);
 }
 
 // interface for new ray/samples from scene
@@ -127,86 +158,106 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		large = true;
 	}
 
-	// Dade - we are at a valid checkpoint where we can stop the
-	// rendering. Check if we have enough samples per pixel in the film.
-	if (film->enoughSamplePerPixel)
-		return false;
+	// Advance to the next vector in the QMC sequence and stay inside the
+	// array bounds
+	rngBase += rngOffset;
+	if (rngBase > rngN - 1)
+		rngBase -= rngN;
+	// If all possible combinations have been used,
+	// change the Cranley-Paterson rotation vector
+	// This is also responsible for first time initialization of the vector
+	if (rngBase == 0) {
+		// This is a safe point to stop without too visible patterns
+		// if the render has to stop
+		if (film->enoughSamplePerPixel)
+			return false;
+		for (int i = 0; i < totalSamples; ++i)
+			rngRotation[i] = tspack->rng->floatValue();
+	}
 	if (large) {
-		if(currentStrata == strataSqr) {
-
-			// Generate shuffled stratified image samples
-			StratifiedSample2D(tspack, strataSamples, strataWidth, strataWidth, true);
-			Shuffle(tspack, strataSamples, strataSqr, 2);
-			currentStrata = 0;
-		}
-
 		// *** large mutation ***
-		sample->imageX = strataSamples[currentStrata*2] * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = strataSamples[(currentStrata*2)+1] * (yPixelEnd - yPixelStart) + yPixelStart;
-		currentStrata++;
-
-		sample->lensU = tspack->rng->floatValue();
-		sample->lensV = tspack->rng->floatValue();
-		sample->time = tspack->rng->floatValue();
-		sample->wavelengths = tspack->rng->floatValue();
-		sample->singleWavelength = tspack->rng->floatValue();
+		// Initialize all non lazy samples
+		sample->imageX = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
+		sample->imageY = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
+		sample->lensU = rngGet(2);
+		sample->lensV = rngGet(3);
+		sample->time = rngGet(4);
+		sample->wavelengths = rngGet(5);
+		sample->singleWavelength = rngGet(6);
 		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = tspack->rng->floatValue();
+			sample->oneD[0][i - SAMPLE_FLOATS] = rngGet(i);
+		// Reset number of mutations for lazy samples
 		for (int i = 0; i < totalTimes; ++i)
 			sample->timexD[0][i] = -1;
+		// Reset number of mutations for whole sample
 		sample->stamp = 0;
+		numMicro = -1;
 	} else {
 		// *** small mutation ***
-		// mutate current sample
+		// Select between full mutation or mutation of one node
 		if (1.f - mutationSelector < pMicro)
 			numMicro = min<int>(sample->nxD.size(), Float2Int((1.f - mutationSelector) / pMicro * (sample->nxD.size() + 1)));
 		else
 			numMicro = -1;
 		if (numMicro > 0) {
+			// Only one node will be mutated,
+			// select it if it's not the non lazy samples
 			u_int maxPos = 0;
 			for (; maxPos < sample->nxD[numMicro - 1]; ++maxPos)
 				if (sample->timexD[numMicro - 1][maxPos] < sample->stamp)
 					break;
 			posMicro = min<int>(sample->nxD[numMicro - 1] - 1, Float2Int(tspack->rng->floatValue() * maxPos));
 		} else {
+			// Mutation of non lazy samples
+			// (also for whole sample mutation)
 			posMicro = -1;
-			sample->imageX = mutateScaled(sampleImage[0], tspack->rng->floatValue(), xPixelStart, xPixelEnd, range);
-			sample->imageY = mutateScaled(sampleImage[1], tspack->rng->floatValue(), yPixelStart, yPixelEnd, range);
-			sample->lensU = mutate(sampleImage[2], tspack->rng->floatValue());
-			sample->lensV = mutate(sampleImage[3], tspack->rng->floatValue());
-			sample->time = mutate(sampleImage[4], tspack->rng->floatValue());
-			sample->wavelengths = mutate(sampleImage[5], tspack->rng->floatValue());
-			sample->singleWavelength = mutateScaled(sampleImage[6], tspack->rng->floatValue(), 0.f, 1.f, 1.f);
+			sample->imageX = mutateScaled(sampleImage[0],
+				rngGet(0), xPixelStart, xPixelEnd, range);
+			sample->imageY = mutateScaled(sampleImage[1],
+				rngGet(1), yPixelStart, yPixelEnd, range);
+			sample->lensU = mutate(sampleImage[2], rngGet(2));
+			sample->lensV = mutate(sampleImage[3], rngGet(3));
+			sample->time = mutate(sampleImage[4], rngGet(4));
+			sample->wavelengths = mutate(sampleImage[5], rngGet(5));
+			sample->singleWavelength = mutateScaled(sampleImage[6],
+				rngGet(6), 0.f, 1.f, 1.f);
 			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(sampleImage[i], tspack->rng->floatValue());
+				sample->oneD[0][i - SAMPLE_FLOATS] =
+					mutate(sampleImage[i], rngGet(i));
 		}
+		// Increase reference mutation count
 		++(sample->stamp);
 	}
-
     return true;
 }
 
 float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
+	// Get size and position of current lazy values node
 	const u_int size = sample->dxD[num];
 	float *data = sample->xD[num] + pos * size;
-//	const int scrambleOffset = data - sample->oneD[0];
+	// Get the reference number of mutations
 	int stampLimit = sample->stamp;
+	// If the current node doesn't need mutation, use previous value
 	if (numMicro >= 0 && num != numMicro - 1 && pos != posMicro)
 		--stampLimit;
+	// If we are at the target, don't do anything
 	if (sample->timexD[num][pos] != stampLimit) {
+		// If the node has not yet been initialized, do it now
+		// otherwise get the last known value from the sample image
 		if (sample->timexD[num][pos] == -1) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = tspack->rng->floatValue();
+				data[i] = rngGet(normalSamples + pos * size + i);
 			sample->timexD[num][pos] = 0;
 		} else {
 			float *image = sampleImage + offset[num] + pos * size;
 			for (u_int i = 0; i < size; ++i)
 				data[i] = image[i];
 		}
+		// Mutate as needed
 		for (; sample->timexD[num][pos] < stampLimit; ++(sample->timexD[num][pos])) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = mutate(data[i], tspack->rng->floatValue());
+				data[i] = mutate(data[i], rngGet2(normalSamples + pos * size + i, rngOffset * (stampLimit - sample->timexD[num][pos] + 1)));
 		}
 	}
 	return data;
@@ -314,11 +365,10 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float microMutationProb = params.FindOneFloat("micromutationprob", 0.f);	// probability of generating a micro sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.);	// maximum distance in pixel for a small mutation
-	int stratawidth = params.FindOneInt("stratawidth", 256);	// stratification of large mutation image samples (stratawidth*stratawidth)
 	bool useVariance = params.FindOneBool("usevariance", false);
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects,
-			largeMutationProb, microMutationProb, range, stratawidth, useVariance);
+		largeMutationProb, microMutationProb, range, useVariance);
 }
 
 int MetropolisSampler::initCount, MetropolisSampler::initSamples;
