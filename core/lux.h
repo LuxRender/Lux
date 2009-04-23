@@ -114,8 +114,6 @@ extern "C" {
 #  define for if (0) ; else for
 #endif
 
-#include "randomgen.h"
-
 // Global Type Declarations
 typedef double StatsCounterType;
 typedef unsigned char u_char;
@@ -134,6 +132,8 @@ class ProgressReporter;
 class StatsCounter;
 class StatsRatio;
 class StatsPercentage;
+
+#include "randomgen.h"
 
 namespace lux
 {

@@ -87,7 +87,7 @@ private:
 class  MemoryArena {
 public:
 	// MemoryArena Public Methods
-	MemoryArena(u_int bs = 32768) {
+	MemoryArena(unsigned int bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
 		currentBlock = lux::AllocAligned<char>(blockSize);
