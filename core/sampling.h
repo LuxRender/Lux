@@ -24,8 +24,9 @@
 #define LUX_SAMPLING_H
 // sampling.h*
 #include "lux.h"
-#include "contribution.h"
 #include "memory.h"
+#include "randomgen.h"
+#include "contribution.h"
 
 namespace lux
 {

@@ -25,7 +25,7 @@
 
 // memory.h*
 
-#include "lux.h"
+#include <boost/serialization/split_member.hpp>
 
 namespace lux
 {

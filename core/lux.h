@@ -36,6 +36,9 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/split_member.hpp>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+
 #if defined (__INTEL_COMPILER) && !defined(WIN32)
 // Dade - to fix a problem with expf undefined with Intel CC
 inline float expf(float a) { return exp(a); }
@@ -251,9 +254,6 @@ namespace lux
 	ImageData *ReadImage(const string &name);
 }
 
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-
 // Radiance - Thread specific pack of pointers to eliminate use of boost tss smart pointers.
 // Initialized per thread in scene.cpp/RenderThread::RenderThread and passed where needed.
 namespace lux {
@@ -277,31 +277,25 @@ template<class T> inline T Clamp(T val, T low, T high) {
 }
 inline int Mod(int a, int b) {
 	// note - radiance - added 0 check to prevent divide by zero error(s)
-	if(a==0) a=1;
-	if(b==0) b=1;
+	if (b == 0)
+		b = 1;
 
-    int n = int(a/b);
-    a -= n*b;
-    if (a < 0)
-        a += b;
-    return a;
+	a %= b;
+	if (a < 0)
+		a += b;
+	return a;
 }
 inline float Radians(float deg) {
-	return ((float)M_PI/180.f) * deg;
+	return (M_PI / 180.f) * deg;
 }
 inline float Degrees(float rad) {
-	return (180.f/(float)M_PI) * rad;
+	return (180.f / M_PI) * rad;
 }
 inline float Log2(float x) {
 	return logf(x) / logf(2.f);
 }
 inline int Log2Int(float v) {
-#if 0
- 	return ((*reinterpret_cast<int *>(&v)) >> 23) - 127;
-#else
-#define _doublemagicroundeps	      (.5-1.4e-11)
-	return int(Log2(v) + _doublemagicroundeps);
-#endif
+	return static_cast<int>(roundf(Log2(v)));
 }
 inline bool IsPowerOf2(int v) {
 	return (v & (v - 1)) == 0;
@@ -315,56 +309,43 @@ inline u_int RoundUpPow2(u_int v) {
 	v |= v >> 16;
 	return v+1;
 }
-#if (defined(__linux__) && defined(__i386__)) || defined(WIN32)
-//#define FAST_INT 1
-#endif
-#define _doublemagicroundeps	      (.5-1.4e-11)
-	//almost .5f = .5f - 1e^(number of exp bit)
 inline int Round2Int(double val) {
-#ifdef FAST_INT
-#define _doublemagic			double (6755399441055744.0)
-	//2^52 * 1.5,  uses limited precision to floor
-	val		= val + _doublemagic;
-	return (reinterpret_cast<long*>(&val))[0];
-#else
-	return int (val+_doublemagicroundeps);
-#endif
+	return static_cast<int>(round(val));
+}
+inline int Round2Int(float val) {
+	return static_cast<int>(roundf(val));
 }
 template<class T> inline int Float2Int(T val) {
-#ifdef FAST_INT
-	return (val<0) ?  Round2Int(val+_doublemagicroundeps) :
-		   Round2Int(val-_doublemagicroundeps);
-#else
-	return (int)val;
-#endif
+	return static_cast<int>(val);
 }
-template<class T> inline int Floor2Int(T val) {
-#ifdef FAST_INT
-	return Round2Int(val - _doublemagicroundeps);
-#else
-	return (int)floor(val);
-#endif
+inline int Floor2Int(double val) {
+	return static_cast<int>(floor(val));
 }
-template<class T> inline int Ceil2Int(T val) {
-#ifdef FAST_INT
-	return Round2Int(val + _doublemagicroundeps);
-#else
-	return (int)ceil(val);
-#endif
+inline int Floor2Int(float val) {
+	return static_cast<int>(floorf(val));
 }
-inline bool Quadratic(float A, float B, float C, float *t0,
-		float *t1) {
+inline int Ceil2Int(double val) {
+	return static_cast<int>(ceil(val));
+}
+inline int Ceil2Int(float val) {
+	return static_cast<int>(ceilf(val));
+}
+inline bool Quadratic(float A, float B, float C, float *t0, float *t1) {
 	// Find quadratic discriminant
 	float discrim = B * B - 4.f * A * C;
-	if (discrim < 0.) return false;
+	if (discrim < 0.f)
+		return false;
 	float rootDiscrim = sqrtf(discrim);
 	// Compute quadratic _t_ values
 	float q;
-	if (B < 0) q = -.5f * (B - rootDiscrim);
-	else       q = -.5f * (B + rootDiscrim);
+	if (B < 0)
+		q = -.5f * (B - rootDiscrim);
+	else
+		q = -.5f * (B + rootDiscrim);
 	*t0 = q / A;
 	*t1 = C / q;
-	if (*t0 > *t1) swap(*t0, *t1);
+	if (*t0 > *t1)
+		swap(*t0, *t1);
 	return true;
 }
 inline float SmoothStep(float min, float max, float value) {

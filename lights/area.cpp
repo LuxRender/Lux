@@ -22,6 +22,7 @@
 
 // area.cpp*
 #include "light.h"
+#include "randomgen.h" //FIXME
 #include "mc.h"
 #include "shape.h"
 #include "context.h"

@@ -22,6 +22,7 @@
 
 // film.cpp*
 #include "film.h"
+#include "randomgen.h"
 #include "dynload.h"
 #include "paramset.h"
 #include "tonemap.h"
@@ -67,8 +68,8 @@ namespace lux
 
 	Color bilinearSampleImage(const vector<Color> &pixels, const int xResolution, const int yResolution, 
 								const float x, const float y) {
-		int x1 = Clamp<int>(Floor2Int<float>(x), 0, xResolution-1);
-		int y1 = Clamp<int>(Floor2Int<float>(y), 0, yResolution-1);
+		int x1 = Clamp<int>(Floor2Int(x), 0, xResolution-1);
+		int y1 = Clamp<int>(Floor2Int(y), 0, yResolution-1);
 		int x2 = Clamp<int>(x1+1, 0, xResolution-1);
 		int y2 = Clamp<int>(y1+1, 0, yResolution-1);
 		float tx = Clamp<float>(x - x1, 0, 1);
