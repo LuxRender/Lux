@@ -291,45 +291,45 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	const vector<BidirVertex> &light, int nLight, int lightDepth,
 	float pdfLightDirect, bool isLightDirect)
 {
-	// Current path weight is 1;
-	float weight = 1.f, p = 1.f, pDirect = 0.f;
+	// Weight of the current path without direct sampling
+	// Used as a reference to extend eye or light subpaths
+	// Current path weight is 1
+	const float pBase = (nLight == 1 && isLightDirect) ?
+		light[0].dAWeight / pdfLightDirect : 1.f;
+	float weight = 1.f, p = pBase;
+	// If direct lighting and the light isn't unidirectional
+	// the path can also be obtained through connection to
+	// the light vertex with normal sampling
 	if (nLight == 1) {
-		pDirect = pdfLightDirect;
-		if (light[0].dAWeight != 0.f)
-			pDirect /= fabsf(light[0].dAWeight);
-		else
-			p = 0.f;
-		// Unconditional add since the last eye vertex can't be specular
-		// otherwise the connection wouldn't have been possible
-		// and weightPath wouldn't have been called
-		weight += pDirect * pDirect;
-		// If the light is unidirectional the path can only be obtained
-		// by sampling the light directly
-		if ((light[0].flags & BSDF_SPECULAR) != 0 ||
-			light[0].dAWeight == 0.f)
-			weight -= 1.f;
+		if (isLightDirect) {
+			if (light[0].flags & ~BSDF_SPECULAR)
+				weight += pBase * pBase;
+		} else {
+			const float pDirect = pdfLightDirect / light[0].dAWeight;
+			weight += pDirect * pDirect;
+		}
+	}
+	// Check for direct path when the eye path hit a light
+	// The eye path has at least 2 vertices
+	if (nLight == 0) {
+		float pDirect = p * pdfLightDirect / eye[nEye - 1].dARWeight;
+		if (nEye > 4)
+			pDirect /= eye[nEye - 2].rrR;
+		// The light vertex cannot be specular otherwise
+		// the eye path wouldn't have received any light
+		if ((eye[nEye - 2].flags & BSDF_SPECULAR) == 0)
+			weight += pDirect * pDirect;
 	}
 	// Find other paths by extending light path toward eye path
 	for (int i = nEye - 1; i >= max(0, nEye - (lightDepth - nLight)); --i) {
 		// Exit if the path is impossible
-		if (!(eye[i].dARWeight > 0.f))
+		if (!(eye[i].dARWeight > 0.f && eye[i].dAWeight > 0.f))
 			break;
+		// Compute new path relative probability
+		p *= eye[i].dAWeight / eye[i].dARWeight;
+		// Adjust for round robin termination
 		if (i > 3)
 			p /= eye[i - 1].rrR;
-		// Check for direct path
-		// only possible if the eye path hit a light
-		// So the eye path has at least 2 vertices
-		if (nLight == 0 && i == nEye - 1) {
-			pDirect = p * pdfLightDirect / eye[i].dARWeight;
-			// The light vertex cannot be specular otherwise
-			// the eye path wouldn't have received any light
-			if ((eye[i - 1].flags & BSDF_SPECULAR) == 0)
-				weight += pDirect * pDirect;
-		}
-		// Exit if the path is impossible
-		if (!(eye[i].dAWeight > 0.f))
-			break;
-		p *= eye[i].dAWeight / eye[i].dARWeight;
 		if (nLight + nEye - i > 3) {
 			if (i == nEye - 1)
 				p *= light[nLight - 1].rr;
@@ -343,20 +343,15 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 			weight += p * p;
 	}
 	// Reinitialize p to search paths in the other direction
-	p = 1.f;
+	p = pBase;
 	// Find other paths by extending eye path toward light path
 	for (int i = nLight - 1; i >= max(0, nLight - (eyeDepth - nEye)); --i) {
 		// Exit if the path is impossible
-		if (!(light[i].dARWeight > 0.f))
-			break;
-		// Exit if the path is impossible
-		if (!(light[i].dAWeight > 0.f)) {
-			if (i == 0 && pdfLightDirect > 0.f)
-				p *= light[i].dARWeight / pdfLightDirect;
-			else
+		if (!(light[i].dARWeight > 0.f && light[i].dAWeight > 0.f))
 				break;
-		} else
-			p *= light[i].dARWeight / light[i].dAWeight;
+		// Compute new path relative probability
+		p *= light[i].dARWeight / light[i].dAWeight;
+		// Adjust for round robin termination
 		if (i > 3)
 			p /= light[i - 1].rr;
 		if (nEye + nLight - i > 3) {
@@ -365,10 +360,15 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 			else
 				p *= light[i + 1].rrR;
 		}
+		// The path can only be obtained if none of the vertices
+		// is specular
+		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
+			(i == 0 || (light[i - 1].flags & BSDF_SPECULAR) == 0))
+			weight += p * p;
 		// Check for direct path
-		// light path has at least 2 remaining vertices here
+		// Light path has at least 2 vertices here
 		if (i == 1) {
-			pDirect = p * pdfLightDirect / light[0].dAWeight;
+			float pDirect = p * pdfLightDirect / light[0].dAWeight;
 			// The path can only be obtained if the second vertex
 			// is not specular.
 			// Even if the light source vertex is specular,
@@ -376,16 +376,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 			if ((light[1].flags & BSDF_SPECULAR) == 0)
 				weight += pDirect * pDirect;
 		}
-		// The path can only be obtained if none of the vertices
-		// is specular
-		if ((light[i].flags & BSDF_SPECULAR) == 0 &&
-			(i == 0 || (light[i - 1].flags & BSDF_SPECULAR) == 0))
-			weight += p * p;
 	}
-	// The weight is computed for normal lighting,
-	// if we have direct lighting, compensate for it
-	if (isLightDirect && pDirect > 0.f)
-		weight /= pDirect * pDirect;
 	return weight;
 }
 
