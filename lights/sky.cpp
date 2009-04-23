@@ -39,7 +39,7 @@ public:
 	SkyBxDF(const SkyLight &sky, const Transform &WL, const Vector &x, const Vector &y, const Vector &z) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL), X(x), Y(y), Z(z) {}
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
-		Vector w(wi.x * X.x + wi.y * Y.x + wi.z * Z.x, wi.x * X.y + wi.y * Y.y + wi.z * Z.y, wi.x * X.z + wi.y * Y.z + wi.z * Z.z);
+		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		w = -Normalize(WorldToLight(w));
 		const float phi = SphericalPhi(w);
 		const float theta = SphericalTheta(w);
@@ -51,6 +51,74 @@ private:
 	const SkyLight &skyLight;
 	const Transform &WorldToLight;
 	Vector X, Y, Z;
+};
+
+class SkyPortalBxDF : public BxDF
+{
+public:
+	SkyPortalBxDF(const SkyLight &sky, const Transform &WL, const Vector &x, const Vector &y, const Vector &z, const Point &p, const vector<boost::shared_ptr<Primitive> > &portalList, u_int portal, float u) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), skyLight(sky), WorldToLight(WL), X(x), Y(y), Z(z), ps(p), PortalShapes(portalList), shapeIndex(portal), u3(u) {}
+	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	{
+		if (shapeIndex == ~0U || reverse)
+			return false;
+		DifferentialGeometry dg;
+		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		Vector wiW = Normalize(dg.p - ps);
+		Vector w = -Normalize(WorldToLight(wiW));
+		const float phi = SphericalPhi(w);
+		const float theta = SphericalTheta(w);
+		skyLight.GetSkySpectralRadiance(tspack, theta, phi, f);
+		wi->x = Dot(wiW, X);
+		wi->y = Dot(wiW, Y);
+		wi->z = Dot(wiW, Z);
+		*wi = Normalize(*wi);
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) * DistanceSquared(ps, dg.p) / AbsDot(wiW, dg.nn);
+if (Dot(wiW, dg.nn) < 0.f)printf("Abnormal sky\nps(%f,%f,%f) X(%f,%f,%f) Y(%f,%f,%f) Z(%f,%f,%f) i=%d/%d\np(%f,%f,%f) n(%f,%f,%f) w(%f,%f,%f) cos(%f) pdf(%f)\n", ps.x, ps.y, ps.z, X.x, X.y, X.z, Y.x, Y.y, Y.z, Z.x, Z.y, Z.z, shapeIndex, PortalShapes.size(), dg.p.x, dg.p.y, dg.p.z, dg.nn.x, dg.nn.y, dg.nn.z, wiW.x, wiW.y, wiW.z, Dot(wiW, dg.nn), *pdf);
+		for (u_int i = 0; i < PortalShapes.size(); ++i) {
+			if (i != shapeIndex) {
+				Intersection isect;
+				RayDifferential ray(ps, wiW);
+				ray.mint = -INFINITY;
+				if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
+					*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(wiW, isect.dg.nn);
+			}
+		}
+		*pdf /= PortalShapes.size();
+		if (pdfBack)
+			*pdfBack = 0.f;
+		return true;
+	}
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	{
+		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
+		w = -Normalize(WorldToLight(w));
+		const float phi = SphericalPhi(w);
+		const float theta = SphericalTheta(w);
+		SWCSpectrum L;
+		skyLight.GetSkySpectralRadiance(tspack, theta, phi, &L);
+		*f += L;
+	}
+	float Pdf(const Vector &wi, const Vector &wo) const
+	{
+		Vector w(wo.x * X + wo.y * Y + wo.z * Z);
+		float pdf = 0.f;
+		for (u_int i = 0; i < PortalShapes.size(); ++i) {
+			Intersection isect;
+			RayDifferential ray(ps, w);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(w, isect.dg.nn);
+		}
+		return pdf / PortalShapes.size();
+	}
+private:
+	const SkyLight &skyLight;
+	const Transform &WorldToLight;
+	Vector X, Y, Z;
+	Point ps;
+	const vector<boost::shared_ptr<Primitive> > &PortalShapes;
+	u_int shapeIndex;
+	float u3;
 };
 
 static float PerezBase(const float lam[6], float theta, float gamma)
@@ -145,19 +213,29 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
-	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	if (!havePortalShape)
+	if (!havePortalShape) {
+		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
-	else {
+	} else {
+		float u3 = tspack->rng->floatValue();//FIXME
+		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, ~0U, u3));
+		*pdf = 0.f;
 		*pdfDirect = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
+			PortalShapes[i]->Sample(.5f, .5f, u3, &dg);
+			Vector w(dg.p - ps);
+			if (Dot(w, dg.nn) > 0.f) {
+				float distance = w.LengthSquared();
+				*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
+			}
 			Intersection isect;
 			RayDifferential ray(r);
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
 		}
+		*pdf *= INV_TWOPI / nrPortalShapes;
 		*pdfDirect /= nrPortalShapes;
 	}
 	Vector wh = Normalize(WorldToLight(r.d));
@@ -324,14 +402,53 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	Point ps = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
-	Normal ns = Normal(Normalize(worldCenter - ps));
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
-	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	if (!havePortalShape) {
+		Point ps = worldCenter + worldRadius * UniformSampleSphere(u1, u2);
+		Normal ns = Normal(Normalize(worldCenter - ps));
+		Vector dpdu, dpdv;
+		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	} else {
+		// Sample a random Portal
+		int shapeIndex = 0;
+		if(nrPortalShapes > 1) {
+			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
+			u3 *= nrPortalShapes;
+			u3 -= shapeIndex;
+		}
+		DifferentialGeometry dgs;
+		PortalShapes[shapeIndex]->Sample(.5f, .5f, u3, &dgs);
+		Vector wi(UniformSampleHemisphere(u1, u2));
+		wi = Normalize(wi.x * Normalize(dgs.dpdu) + wi.y * Normalize(dgs.dpdv) - wi.z * Vector(dgs.nn));
+		Vector toCenter(worldCenter - dgs.p);
+		float centerDistance = Dot(toCenter, toCenter);
+		float approach = Dot(toCenter, wi);
+		float distance = approach + sqrtf(worldRadius * worldRadius - centerDistance + approach * approach);
+		Point ps(dgs.p + distance * wi);
+		Normal ns(Normalize(worldCenter - ps));
+		Vector dpdu, dpdv;
+		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+//printf("Sample position ps(%f,%f,%f) X(%f,%f,%f) Y(%f,%f,%f) Z(%f,%f,%f) i=%d/%d\n", ps.x, ps.y, ps.z, dpdu.x, dpdu.y, dpdu.z, dpdv.x, dpdv.y, dpdv.z, ns.x, ns.y, ns.z, shapeIndex, nrPortalShapes);
+//printf("	p(%f,%f,%f) n(%f,%f,%f)\n", dgs.p.x, dgs.p.y, dgs.p.z, dgs.nn.x, dgs.nn.y, dgs.nn.z);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
+		*pdf = AbsDot(ns, wi) / (distance * distance);
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			if (i != shapeIndex) {
+				PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
+				wi = ps - dgs.p;
+				if (Dot(wi, dg.nn) < 0.f) {
+					distance = wi.LengthSquared();
+					*pdf += AbsDot(ns, wi) / (sqrtf(distance) * distance);
+				}
+			}
+		}
+		*pdf *= INV_TWOPI / nrPortalShapes;
+	}
 	*Le = SWCSpectrum(skyScale);
 	return true;
 }
@@ -340,6 +457,10 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
+	int shapeIndex = 0;
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if(!havePortalShape) {
 		// Sample cosine-weighted direction on unit sphere
 		float x, y, z;
@@ -358,7 +479,6 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 			 v1.z * wi.x + v2.z * wi.y + n.z * wi.z);
 	} else {
 		// Sample a random Portal
-		int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
 			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
@@ -376,9 +496,6 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 			return false;
 		}
 	}
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - p);
 	float centerDistance = Dot(toCenter, toCenter);
 	float approach = Dot(toCenter, wi);
@@ -389,8 +506,23 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
-	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	if (!havePortalShape) {
+		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	} else {
+		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
+		*pdf = 0.f;
+		DifferentialGeometry dgs;
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
+			Vector w(ps - dgs.p);
+			if (Dot(wi, dg.nn) < 0.f) {
+				float distance = w.LengthSquared();
+				*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
+			}
+		}
+		*pdf *= INV_TWOPI / nrPortalShapes;
+	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(skyScale);
