@@ -82,24 +82,20 @@ SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 }
 
 void Light::AddPortalShape(boost::shared_ptr<Primitive> s) {
-	boost::shared_ptr<Primitive> PortalShape;
-
-	if (s->CanIntersect() && s->CanSample())
-		PortalShape = s;
-	else {
+	if (s->CanIntersect() && s->CanSample()) {
+		PortalArea += s->Area();
+		PortalShapes.push_back(s);
+		++nrPortalShapes;
+	} else {
 		// Create _ShapeSet_ for _Shape_
 		vector<boost::shared_ptr<Primitive> > done;
 		PrimitiveRefinementHints refineHints(true);
 		s->Refine(done, refineHints, s);
-		if (done.size() == 1) PortalShape = done[0];
-		else {
-			boost::shared_ptr<Primitive> o (new PrimitiveSet(done));
-			PortalShape = o;
+		for (u_int i = 0; i < done.size(); ++i) {
+			PortalArea += done[i]->Area();
+			PortalShapes.push_back(done[i]);
+			++nrPortalShapes;
 		}
 	}
 	havePortalShape = true;
-	// store
-	PortalArea += PortalShape->Area();
-	PortalShapes.push_back(PortalShape);
-	++nrPortalShapes;
 }
