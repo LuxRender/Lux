@@ -73,7 +73,6 @@ public:
 		wi->z = Dot(wiW, Z);
 		*wi = Normalize(*wi);
 		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) * DistanceSquared(ps, dg.p) / AbsDot(wiW, dg.nn);
-if (Dot(wiW, dg.nn) < 0.f)printf("Abnormal sky\nps(%f,%f,%f) X(%f,%f,%f) Y(%f,%f,%f) Z(%f,%f,%f) i=%d/%d\np(%f,%f,%f) n(%f,%f,%f) w(%f,%f,%f) cos(%f) pdf(%f)\n", ps.x, ps.y, ps.z, X.x, X.y, X.z, Y.x, Y.y, Y.z, Z.x, Z.y, Z.z, shapeIndex, PortalShapes.size(), dg.p.x, dg.p.y, dg.p.z, dg.nn.x, dg.nn.y, dg.nn.z, wiW.x, wiW.y, wiW.z, Dot(wiW, dg.nn), *pdf);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			if (i != shapeIndex) {
 				Intersection isect;
@@ -431,8 +430,6 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		Normal ns(Normalize(worldCenter - ps));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-//printf("Sample position ps(%f,%f,%f) X(%f,%f,%f) Y(%f,%f,%f) Z(%f,%f,%f) i=%d/%d\n", ps.x, ps.y, ps.z, dpdu.x, dpdu.y, dpdu.z, dpdv.x, dpdv.y, dpdv.z, ns.x, ns.y, ns.z, shapeIndex, nrPortalShapes);
-//printf("	p(%f,%f,%f) n(%f,%f,%f)\n", dgs.p.x, dgs.p.y, dgs.p.z, dgs.nn.x, dgs.nn.y, dgs.nn.z);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
