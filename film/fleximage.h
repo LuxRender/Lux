@@ -66,6 +66,7 @@ public:
 	u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
 	const BufferConfig& GetBufferConfig( u_int index ) const { return bufferConfigs[index]; }
 	u_int GetNumBufferGroups() const { return bufferGroups.size(); }
+	void SetGroupName(u_int index, const string& name);
 	string GetGroupName(u_int index) const;
 	void SetGroupEnable(u_int index, bool status);
 	bool GetGroupEnable(u_int index) const;
@@ -98,6 +99,7 @@ public:
 	void SetParameterValue(luxComponentParameters param, double value, int index);
 	double GetParameterValue(luxComponentParameters param, int index);
 	double GetDefaultParameterValue(luxComponentParameters param, int index);
+	void SetStringParameterValue(luxComponentParameters param, const string& value, int index);
 	string GetStringParameterValue(luxComponentParameters param, int index);
 
 	void WriteFilm(const string &filename) { WriteResumeFilm(filename); }

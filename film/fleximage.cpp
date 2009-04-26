@@ -767,6 +767,14 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, int
 	 return 0.;
 }
 
+void FlexImageFilm::SetStringParameterValue(luxComponentParameters param, const string& value, int index) {
+	switch(param) {
+		case LUX_FILM_LG_NAME:
+			return SetGroupName(index, value);
+		default:
+			break;
+	}
+}
 string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, int index) {
 	switch(param) {
 		case LUX_FILM_LG_NAME:
@@ -826,6 +834,12 @@ void FlexImageFilm::CreateBuffers()
     }
 }
 
+void FlexImageFilm::SetGroupName(u_int index, const string& name) 
+{
+	if( index >= bufferGroups.size())
+		return;
+	bufferGroups[index].name = name;
+}
 string FlexImageFilm::GetGroupName(u_int index) const
 {
 	if (index >= bufferGroups.size())
@@ -1327,15 +1341,17 @@ void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, cons
  *   version_number                - int   - the version number
  *   x_resolution                  - int   - the x resolution of the buffers
  *   y_resolution                  - int   - the y resolution of the buffers
- *   #buffer_groups                - int   - the number of lightgroups
- *   #buffer_configs               - int   - the number of buffers per light group
+ *   #buffer_groups                - u_int - the number of lightgroups
+ *   #buffer_configs               - u_int - the number of buffers per light group
  *   for i in 1:#buffer_configs
  *     buffer_type                 - int   - the type of the i'th buffer
- *   #parameters                   - int   - the number of stored parameters
+ *   #parameters                   - u_int - the number of stored parameters
  *   for i in 1:#parameters
+ *     param_type                  - int   - the type of the i'th parameter
+ *     param_size                  - int   - the size of the value of the i'th parameter in bytes
  *     param_id                    - int   - the id of the i'th parameter
  *     param_index                 - int   - the index of the i'th parameter
- *     param_value                 - float - the value of the i'th parameter
+ *     param_value                 - *     - the value of the i'th parameter
  *
  *   DATA
  *   for i in 1:#buffer_groups
@@ -1357,30 +1373,140 @@ void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, cons
  */
 static const int FLM_MAGIC_NUMBER = 0xCEBCD816;
 static const int FLM_VERSION = 0; // should be incremented on each change to the format to allow detecting unsupported FLM data!
+enum FlmParameterType {
+	FLM_PARAMETER_TYPE_FLOAT = 0,
+	FLM_PARAMETER_TYPE_STRING = 1
+};
 
-struct FlmParameter {
+class FlmParameter {
+public:
 	FlmParameter() {}
-	FlmParameter(int aId, int aIndex, float aValue) : id(aId), index(aIndex), value(aValue) {}
-	FlmParameter(FlexImageFilm *aFilm, luxComponentParameters aParam, int aIndex) {
+	FlmParameter(FlexImageFilm *aFilm, FlmParameterType aType, luxComponentParameters aParam, int aIndex) {
+		type = aType;
 		id = (int)aParam;
 		index = aIndex;
-		value = (float)aFilm->GetParameterValue(aParam, aIndex);
-	}
-
-	bool IsValid(FlexImageFilm *aFilm) {
-		return true; //TODO verify the parameter
+		switch(type) {
+			case FLM_PARAMETER_TYPE_FLOAT:
+				size = 4;
+				floatValue = (float)aFilm->GetParameterValue(aParam, aIndex);
+				break;
+			case FLM_PARAMETER_TYPE_STRING:
+				stringValue = aFilm->GetStringParameterValue(aParam, aIndex);
+				size = (int)stringValue.size();
+				break;
+			default:
+				{
+					std::stringstream ss;
+					ss << "Invalid parameter type (expected value in [0,1], got=" << type << ")";
+					luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
+				}
+				break;
+		}
 	}
 
 	void Set(FlexImageFilm *aFilm) {
-		aFilm->SetParameterValue(luxComponentParameters(id), (double) value, index);
+		switch(type) {
+			case FLM_PARAMETER_TYPE_FLOAT:
+				aFilm->SetParameterValue(luxComponentParameters(id), (double) floatValue, index);
+				break;
+			case FLM_PARAMETER_TYPE_STRING:
+				aFilm->SetStringParameterValue(luxComponentParameters(id), stringValue, index);
+				break;
+			default:
+				// ignore invalid type (already reported in constructor)
+				break;
+		}
 	}
 
+	bool Read(std::basic_istream<char> &is, bool isLittleEndian, FlexImageFilm *film ) {
+		int tmpType;
+		osReadLittleEndianInt(isLittleEndian, is, &tmpType);
+		type = FlmParameterType(tmpType);
+		if (!is.good()) {
+			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+			return false;
+		}
+		if( type < 0 || type > 1 ) {
+			std::stringstream ss;
+			ss << "Invalid parameter type (expected value in [0,1], received=" << tmpType << ")";
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
+			return false;
+		}
+		osReadLittleEndianInt(isLittleEndian, is, &size);
+		if (!is.good()) {
+			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+			return false;
+		}
+		if( size < 0 || size > 1024 ) { // currently parameter values are limited to 1KB (seems reasonable)
+			std::stringstream ss;
+			ss << "Invalid parameter size (expected value in [0,1024], received=" << size << ")";
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
+			return false;
+		}
+		osReadLittleEndianInt(isLittleEndian, is, &id);
+		if (!is.good()) {
+			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+			return false;
+		}
+		osReadLittleEndianInt(isLittleEndian, is, &index);
+		if (!is.good()) {
+			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
+			return false;
+		}
+		if( index < 0 ) {
+			std::stringstream ss;
+			ss << "Invalid parameter index (expected positive value, received=" << index << ")";
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
+			return false;
+		}
+		switch(type) {
+			case FLM_PARAMETER_TYPE_FLOAT:
+				osReadLittleEndianFloat(isLittleEndian, is, &floatValue);
+				break;
+			case FLM_PARAMETER_TYPE_STRING:
+				{
+					char* chars = new char[size+1];
+					is.read(chars, size);
+					chars[size] = '\0';
+					stringValue = string(chars);
+					delete[] chars;
+				}
+				break;
+			default:
+				return false;
+		}
+		return true;
+	}
+	void Write(std::basic_ostream<char> &os, bool isLittleEndian) const {
+		osWriteLittleEndianInt(isLittleEndian, os, type);
+		osWriteLittleEndianInt(isLittleEndian, os, size);
+		osWriteLittleEndianInt(isLittleEndian, os, id);
+		osWriteLittleEndianInt(isLittleEndian, os, index);
+		switch(type) {
+			case FLM_PARAMETER_TYPE_FLOAT:
+				osWriteLittleEndianFloat(isLittleEndian, os, floatValue);
+				break;
+			case FLM_PARAMETER_TYPE_STRING:
+				os.write(stringValue.c_str(), size);
+				break;
+			default:
+				// ignore invalid type (already reported in constructor)
+				break;
+		}
+	}
+
+private:
+	FlmParameterType type;
+	int size;
 	int id;
 	int index;
-	float value;
+		
+	float floatValue;
+	string stringValue;
 };
 
-struct FlmHeader {
+class FlmHeader {
+public:
 	FlmHeader() {}
 	bool Read(filtering_stream<input> &in, bool isLittleEndian, FlexImageFilm *film );
 	void Write(std::basic_ostream<char> &os, bool isLittleEndian) const;
@@ -1496,17 +1622,15 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 	params.reserve(numParams);
 	for(u_int i = 0; i < numParams; ++i) {
 		FlmParameter param;
-		osReadLittleEndianInt(isLittleEndian, in, &param.id);
-		osReadLittleEndianInt(isLittleEndian, in, &param.index);
-		osReadLittleEndianFloat(isLittleEndian, in, &param.value);
+		bool ok = param.Read(in, isLittleEndian, film);
 		if (!in.good()) {
 			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 			return false;
 		}
-		if(film != NULL && !param.IsValid(film)) {
-			std::stringstream ss;
-			ss << "Invalid parameter (id=" << param.id << ", index=" << param.index << ", value=" << param.value << ")";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		if(!ok) {
+			//std::stringstream ss;
+			//ss << "Invalid parameter (id=" << param.id << ", index=" << param.index << ", value=" << param.value << ")";
+			//luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 			return false;
 		}
 		params.push_back(param);
@@ -1530,9 +1654,7 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	// Write parameters
 	osWriteLittleEndianUInt(isLittleEndian, os, numParams);
 	for(u_int i = 0; i < numParams; ++i) {
-		osWriteLittleEndianInt(isLittleEndian, os, params[i].id);
-		osWriteLittleEndianInt(isLittleEndian, os, params[i].index);
-		osWriteLittleEndianFloat(isLittleEndian, os, params[i].value);
+		params[i].Write(os, isLittleEndian);
 	}
 }
 
@@ -1560,74 +1682,76 @@ void FlexImageFilm::TransmitFilm(
 		header.bufferTypes.push_back(bufferConfigs[i].type);
 	// Write parameters
 	if (transmitParams) {
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_TONEMAPKERNEL, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_TONEMAPKERNEL, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_REINHARD_PRESCALE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_REINHARD_POSTSCALE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_REINHARD_BURN, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_PRESCALE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_POSTSCALE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_BURN, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_LINEAR_SENSITIVITY, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_LINEAR_EXPOSURE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_LINEAR_FSTOP, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_LINEAR_GAMMA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_SENSITIVITY, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_EXPOSURE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_FSTOP, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_GAMMA, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_TM_CONTRAST_YWA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_CONTRAST_YWA, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_X_WHITE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_Y_WHITE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_X_RED, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_Y_RED, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_X_GREEN, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_Y_GREEN, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_X_BLUE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_Y_BLUE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_TORGB_GAMMA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_WHITE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_WHITE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_RED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_RED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_GREEN, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_GREEN, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_BLUE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_BLUE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_GAMMA, 0));
 
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_UPDATEBLOOMLAYER, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_DELETEBLOOMLAYER, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_BLOOMRADIUS, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_BLOOMWEIGHT, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEBLOOMLAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEBLOOMLAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMRADIUS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMWEIGHT, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_VIGNETTING_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_VIGNETTING_SCALE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_SCALE, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_ABERRATION_AMOUNT, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_AMOUNT, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_UPDATEGLARELAYER, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_DELETEGLARELAYER, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_AMOUNT, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_RADIUS, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_GLARE_BLADES, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEGLARELAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEGLARELAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_AMOUNT, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_RADIUS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_BLADES, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_RADIUS, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_CHIU_INCLUDECENTER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_RADIUS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_INCLUDECENTER, 0));
 
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_AMPLITUDE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_NBITER, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_SHARPNESS, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_ANISOTROPY, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_ALPHA, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_SIGMA, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_FASTAPPROX, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_GAUSSPREC, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_DL, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_DA, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_INTERP, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_TILE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_BTILE, 0));
-		header.params.push_back(FlmParameter(this, LUX_FILM_NOISE_GREYC_THREADS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_AMPLITUDE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_NBITER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SHARPNESS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ANISOTROPY, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ALPHA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SIGMA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_FASTAPPROX, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_GAUSSPREC, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DL, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_INTERP, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_TILE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_BTILE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_THREADS, 0));
 
 		for(u_int i = 0; i < GetNumBufferGroups(); ++i) {
-			header.params.push_back(FlmParameter(this, LUX_FILM_LG_SCALE, int(i)));
-			header.params.push_back(FlmParameter(this, LUX_FILM_LG_ENABLE, int(i)));
-			header.params.push_back(FlmParameter(this, LUX_FILM_LG_SCALE_RED, int(i)));
-			header.params.push_back(FlmParameter(this, LUX_FILM_LG_SCALE_GREEN, int(i)));
-			header.params.push_back(FlmParameter(this, LUX_FILM_LG_SCALE_BLUE, int(i)));
-			header.params.push_back(FlmParameter(this, LUX_FILM_LG_TEMPERATURE, int(i)));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE, int(i)));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_ENABLE, int(i)));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_RED, int(i)));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_GREEN, int(i)));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_BLUE, int(i)));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_TEMPERATURE, int(i)));
+
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_LG_NAME, int(i)));
 		}
 
 		header.numParams = header.params.size();

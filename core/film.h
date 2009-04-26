@@ -423,6 +423,7 @@ public:
 	virtual void SetParameterValue(luxComponentParameters param, double value, int index) = 0;
 	virtual double GetParameterValue(luxComponentParameters param, int index) = 0;
 	virtual double GetDefaultParameterValue(luxComponentParameters param, int index) = 0;
+	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, int index) = 0;
 
     // Film Public Data
