@@ -140,13 +140,13 @@ Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
 	return Transform(camToWorld->Inverse(), camToWorld);
 }
 bool Transform::HasScale() const {
-#if 0
+//#if 0
 	float det = fabsf(m->m[0][0] * (m->m[1][1] * m->m[2][2] - m->m[1][2] * m->m[2][1])) -
 		(m->m[0][1] * (m->m[1][0] * m->m[2][2] - m->m[1][2] * m->m[2][0])) +
 		(m->m[0][2] * (m->m[1][0] * m->m[2][1] - m->m[1][1] * m->m[2][0]));
 	return (det < .999f || det > 1.001f);
-#endif
-	return false;
+/*#endif
+	return false;*/
 }
 BBox Transform::operator()(const BBox &b) const {
 	const Transform &M = *this;
@@ -199,42 +199,39 @@ bool Transform::SwapsHandedness() const {
 
 void TransformAccordingNormal(const Normal &nn, const Vector &woL, Vector *woW)
 {
-	Vector sn,tn;
-	float zz=sqrt(1-nn.z*nn.z);
-	sn.z = 0;
-	if (fabs(zz)<1e-6)
+	Vector sn, tn;
+	float zz=sqrtf(1.f - nn.z * nn.z);
+	sn.z = 0.f;
+	if (fabs(zz) < 1e-6f)
 	{
-		sn.x = 1;
-		sn.y = 0;
-	}
-	else
-	{
-		sn.x = nn.y/zz;
-		sn.y = -nn.x/zz;
+		sn.x = 1.f;
+		sn.y = 0.f;
+	} else {
+		sn.x = nn.y / zz;
+		sn.y = -nn.x / zz;
 	}
 	tn = Cross(nn, sn);
-	woW->x = sn.x * woL.x + tn.x * woL.y + nn.x * woL.z;
-	woW->y = sn.y * woL.x + tn.y * woL.y + nn.y * woL.z;
-	woW->z = sn.z * woL.x + tn.z * woL.y + nn.z * woL.z;
-};
+	*woW = woL.x  * sn + woL.y * tn + woL.z * Vector(nn);
+}
 
-Transform  Orthographic(float znear, float zfar) {
-	return Scale(1.f, 1.f, 1.f / (zfar-znear)) *
+Transform  Orthographic(float znear, float zfar)
+{
+	return Scale(1.f, 1.f, 1.f / (zfar - znear)) *
 		Translate(Vector(0.f, 0.f, -znear));
 }
 
-Transform Perspective(float fov, float n, float f) {
+Transform Perspective(float fov, float n, float f) 
+{
 	// Perform projective divide
-	float inv_denom = 1.f/(f-n);
-	boost::shared_ptr<Matrix4x4> persp (
+	float inv_denom = 1.f/(1.f - n / f);
+	boost::shared_ptr<Matrix4x4> persp(
 	    new Matrix4x4(1, 0,       0,          0,
 	                  0, 1,       0,          0,
-	                  0, 0, f*inv_denom, -f*n*inv_denom,
+	                  0, 0, inv_denom, -n*inv_denom,
 	                  0, 0,       1,          0));
 	// Scale to canonical viewing volume
 	float invTanAng = 1.f / tanf(Radians(fov) / 2.f);
-	return Scale(invTanAng, invTanAng, 1) *
-	       Transform(persp);
+	return Scale(invTanAng, invTanAng, 1) * Transform(persp);
 }
 
 }//namespace lux
