@@ -180,7 +180,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 				visibility.Transmittance(tspack, scene, sample, &Li);
 				Li *= fO;
 
-				bsdfPdf = bsdf->Pdf(tspack, wo, wi, noSpecular);
+				bsdfPdf = bsdf->Pdf(tspack, wi, wo, noSpecular);
 				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
 				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
 			}
