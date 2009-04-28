@@ -275,6 +275,12 @@ template<class T> inline T Lerp(float t, T v1, T v2) {
 template<class T> inline T Clamp(T val, T low, T high) {
 	return val > low ? (val < high ? val : high) : low;
 }
+inline int Round2Int(double val) {
+	return static_cast<int>(val > 0. ? val + .5 : val - .5);
+}
+inline int Round2Int(float val) {
+	return static_cast<int>(val > 0.f ? val + .5f : val - .5f);
+}
 inline int Mod(int a, int b) {
 	// note - radiance - added 0 check to prevent divide by zero error(s)
 	if (b == 0)
@@ -295,7 +301,7 @@ inline float Log2(float x) {
 	return logf(x) / logf(2.f);
 }
 inline int Log2Int(float v) {
-	return static_cast<int>(roundf(Log2(v)));
+	return Round2Int(Log2(v));
 }
 inline bool IsPowerOf2(int v) {
 	return (v & (v - 1)) == 0;
@@ -308,12 +314,6 @@ inline u_int RoundUpPow2(u_int v) {
 	v |= v >> 8;
 	v |= v >> 16;
 	return v+1;
-}
-inline int Round2Int(double val) {
-	return static_cast<int>(round(val));
-}
-inline int Round2Int(float val) {
-	return static_cast<int>(roundf(val));
 }
 template<class T> inline int Float2Int(T val) {
 	return static_cast<int>(val);
