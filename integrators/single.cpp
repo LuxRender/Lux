@@ -97,7 +97,7 @@ int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 			SWCSpectrum L = light->Sample_L(tspack, p, u1, u2, u3, &wo, &pdf, &vis);
 
 			// Dade - use the new TestOcclusion() method
-			SWCSpectrum occlusion;
+			SWCSpectrum occlusion(1.f);
 			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(tspack, scene, &occlusion)) {	
 				SWCSpectrum Ld = L * occlusion;
 				vis.Transmittance(tspack, scene, sample, &Ld);

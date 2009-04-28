@@ -155,7 +155,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 		if (lightPdf > 0. && !Li.Black()) {
 			SWCSpectrum f = bsdf->f(tspack, wi, wo);
-			SWCSpectrum fO;
+			SWCSpectrum fO(1.f);
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
 				visibility.Transmittance(tspack, scene, sample, &Li);
@@ -174,7 +174,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 		if (lightPdf > 0. && !Li.Black()) {
 			SWCSpectrum f = bsdf->f(tspack, wi, wo, noSpecular);
-			SWCSpectrum fO;
+			SWCSpectrum fO(1.f);
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
 				visibility.Transmittance(tspack, scene, sample, &Li);
