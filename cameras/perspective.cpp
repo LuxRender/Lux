@@ -314,98 +314,47 @@ void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, floa
 
 void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) const
 {
-	if( shape < 3 ) {
+	if (shape < 3) {
 		ConcentricSampleDisk(u1, u2, dx, dy);
 		return;
 	}
 
-	int subDiv = 360 / (shape*2);
+	static const int subDiv = 360 / (shape * 2);
+	static const float index = subDiv / radIndex;
+	static const float honeyRadius = cosf(index);
 
-	float r = 0;
-	float theta = 0;
-	int temp = rand()%(shape*2);
+	int temp = rand() % (shape * 2); //FIXME don't use rand()
 
-	if( temp%2 == 0 && shape == 3)
-	{
-		theta = 2.0f * M_PI * (float(temp)/(shape*2) + (sqrt(u2))*(1.f/(shape*2.f)) );
-	}else{
-		theta = 2.0f * M_PI * (float(temp)/(shape*2) + (u2)*(1.f/(shape*2.f)) );
-	}
+	float theta;
+	if (shape == 3 && temp % 2 == 0)
+		theta = 2.f * M_PI * (temp + sqrtf(u2)) / (shape * 2);
+	else
+		theta = 2.f * M_PI * (temp + u2) / (shape * 2);
 
-	int sector = theta/(subDiv/radIndex);
-	float rho = theta - sector*(subDiv/radIndex);
-	float honeyRadius = 1.f * cosf(subDiv/radIndex);
+	const int sector = theta / index;
+	const float rho = (sector % 2 == 0) ? theta - sector * index :
+		(sector - 1) * index - theta;
 
-	if( sector%2 == 0)//handles left half of sector
-	{
-		switch(distribution)
-		{
+	float r = honeyRadius / cosf(rho);
+	switch (distribution) {
 		case 0:
-			{
-				r = sqrt(u1) * honeyRadius/cosf( rho );
-				break;
-			}
+			r *= sqrtf(u1);
+			break;
 		case 1:
-			{
-				r = sqrt(ExponentialSampleDisk(u1, power)) * honeyRadius/cosf( rho );
-				break;
-			}
+			r *= sqrtf(ExponentialSampleDisk(u1, power));
+			break;
 		case 2:
-			{
-				r = sqrt(InverseExponentialSampleDisk(u1, power)) * honeyRadius/cosf( rho );
-				break;
-			}
+			r *= sqrtf(InverseExponentialSampleDisk(u1, power));
+			break;
 		case 3:
-			{
-				r = sqrt(GaussianSampleDisk(u1)) * honeyRadius/cosf( rho );
-				break;
-			}
+			r *= sqrtf(GaussianSampleDisk(u1));
+			break;
 		case 4:
-			{
-				r = sqrt(InverseGaussianSampleDisk(u1)) * honeyRadius/cosf( rho );
-				break;
-			}
+			r *= sqrtf(InverseGaussianSampleDisk(u1));
+			break;
 		case 5:
-			{
-				r = sqrt(TriangularSampleDisk(u1)) * honeyRadius/cosf( rho );
-				break;
-			}
-		}
-	}else
-	{//handles right half of sector
-		switch(distribution)
-		{
-		case 0:
-			{
-				r = sqrt(u1) * honeyRadius/cosf( (subDiv/radIndex)-rho );
-				break;
-			}
-		case 1:
-			{
-				r = sqrt(ExponentialSampleDisk(u1, power)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
-				break;
-			}
-		case 2:
-			{
-				r = sqrt(InverseExponentialSampleDisk(u1, power)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
-				break;
-			}
-		case 3:
-			{
-				r = sqrt(GaussianSampleDisk(u1)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
-				break;
-			}
-		case 4:
-			{
-				r = sqrt(InverseGaussianSampleDisk(u1)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
-				break;
-			}
-		case 5:
-			{
-				r = sqrt(TriangularSampleDisk(u1)) * honeyRadius/cosf( (subDiv/radIndex)-rho );
-				break;
-			}
-		}
+			r *= sqrtf(TriangularSampleDisk(u1));
+			break;
 	}
 	*dx = r * cosf(theta);
 	*dy = r * sinf(theta);

@@ -248,47 +248,24 @@ if(( 0 < p)&&(p < 1)){
 
 float GaussianSampleDisk(float u1)
 {
-	
-	float r = normsinv( u1 );
-	
-	return r;
+	return Clamp<float>(normsinv(u1), 0.f, 1.f);
 }
 float InverseGaussianSampleDisk(float u1)
 {
-	
-	float r = 1.f - normsinv( u1 );
-	
-	return r;
+	return Clamp<float>(1.f - normsinv(u1), 0.f, 1.f);
 }
 float ExponentialSampleDisk(float u1, int power)
 {
-	
-	float r = -log(u1)/float(power);
-	
-	return r;
+	return Clamp(-logf(u1) / power, 0.f, 1.f);
 }
 float InverseExponentialSampleDisk(float u1, int power)
 {
-	
-	float r = 1 - (-log(u1)/float(power));
-	
-	return r;
+	return Clamp(1.f + logf(u1) / power, 0.f, 1.f);
 }
 float TriangularSampleDisk(float u1)
 {
-
-	float a = 0;
-	float b = 1;
-	float m = 0.5;
-	float r = 0;
-
-	if( u1 <= (m-a)/(b-a))
-	{
-		r = a + sqrt( u1*(m-a)*(b-a) );
-	}else{
-			r = b - sqrt( (1-u1)*(b-m)*(b-a) );
-	}	
-	return r;
+	return Clamp(u1 <= .5f ? sqrtf(u1 * .5f) :
+		1.f - sqrtf((1.f - u1) * .5f), 0.f, 1.f);
 }
 
 }//namespace lux
