@@ -295,7 +295,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	// Used as a reference to extend eye or light subpaths
 	// Current path weight is 1
 	const float pBase = (nLight == 1 && isLightDirect) ?
-		light[0].dAWeight / pdfLightDirect : 1.f;
+		fabsf(light[0].dAWeight) / pdfLightDirect : 1.f;
 	float weight = 1.f, p = pBase;
 	// If direct lighting and the light isn't unidirectional
 	// the path can also be obtained through connection to
@@ -305,7 +305,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 			if (light[0].flags & ~BSDF_SPECULAR)
 				weight += pBase * pBase;
 		} else {
-			const float pDirect = pdfLightDirect / light[0].dAWeight;
+			const float pDirect = pdfLightDirect / fabsf(light[0].dAWeight);
 			weight += pDirect * pDirect;
 		}
 	}
@@ -368,7 +368,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Check for direct path
 		// Light path has at least 2 vertices here
 		if (i == 1) {
-			float pDirect = p * pdfLightDirect / light[0].dAWeight;
+			float pDirect = p * pdfLightDirect / fabsf(light[0].dAWeight);
 			// The path can only be obtained if the second vertex
 			// is not specular.
 			// Even if the light source vertex is specular,
