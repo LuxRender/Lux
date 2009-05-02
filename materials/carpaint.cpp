@@ -37,11 +37,15 @@
 using namespace lux;
 
 CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > kd,
+                   boost::shared_ptr<Texture<SWCSpectrum> > ka,
+                   boost::shared_ptr<Texture<float> > d,
 				   boost::shared_ptr<Texture<SWCSpectrum> > ks1, boost::shared_ptr<Texture<SWCSpectrum> > ks2, boost::shared_ptr<Texture<SWCSpectrum> > ks3,
 				   boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,
 				   boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
 				   boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
 					   Kd = kd;
+                       Ka = ka;
+                       depth = d;
 					   Ks1 = ks1;
 					   Ks2 = ks2;
 					   Ks3 = ks3;
@@ -70,6 +74,10 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
 
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum kd = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+    SWCSpectrum ka = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+
+    float ld = depth->Evaluate(tspack, dgs);
+
 	SWCSpectrum ks1 = Ks1->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum ks2 = Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum ks3 = Ks3->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -119,7 +127,7 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
 	}
 
 	// Clear coat and lambertian base
-	bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(kd, lobe_ks[2], SWCSpectrum(0.), 0., lobe_dist[2]));
+	bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(kd, lobe_ks[2], ka, ld, lobe_dist[2]));
 
 	//bsdf->Add(BSDF_ALLOC(tspack, CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
 
@@ -197,6 +205,8 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 	string paintname = mp.FindString("name");
 
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
+    boost::shared_ptr<Texture<SWCSpectrum> > Ka;
+    boost::shared_ptr<Texture<float> > d;
 
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks1;
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks2;
@@ -210,10 +220,12 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 	boost::shared_ptr<Texture<float> > M2;
 	boost::shared_ptr<Texture<float> > M3;
 
+    Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(0.0f));
+    d = mp.GetFloatTexture("d", 0.0f);
+
 	if (paintname.length() < 1) {
 		// we got no name, so try to read material properties directly
 		Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(def_kd));
-
 		Ks1 = mp.GetSWCSpectrumTexture("Ks1", RGBColor(def_ks1));
 		Ks2 = mp.GetSWCSpectrumTexture("Ks2", RGBColor(def_ks2));
 		Ks3 = mp.GetSWCSpectrumTexture("Ks3", RGBColor(def_ks3));
@@ -232,12 +244,11 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 
-
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new CarPaint(Kd, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap, cP);
+	return new CarPaint(Kd, Ka, d, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<CarPaint> r("carpaint");
