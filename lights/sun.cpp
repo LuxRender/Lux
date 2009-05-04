@@ -41,7 +41,7 @@ public:
 	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
 		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return;
-		*f += SWCSpectrum(1.);
+		*f += SWCSpectrum(1.f);
 	}
 	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
@@ -55,7 +55,7 @@ public:
 	float Pdf(const Vector &wi, const Vector &wo) const
 	{
 		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
-			return 0.;
+			return 0.f;
 		else
 			return UniformConePdf(cosThetaMax);
 	}
@@ -74,15 +74,15 @@ SunLight::SunLight(const Transform &light2world,
 
 	// Values from NASA Solar System Exploration page
 	// http://solarsystem.nasa.gov/planets/profile.cfm?Object=Sun&Display=Facts&System=Metric
-	const float sunRadius = 695500;
-	const float sunMeanDistance = 149600000;
-	if(relSize*sunRadius <= sunMeanDistance) {
+	const float sunRadius = 695500.f;
+	const float sunMeanDistance = 149600000.f;
+	if (relSize * sunRadius <= sunMeanDistance) {
 		sin2ThetaMax = relSize * sunRadius / sunMeanDistance;
 		sin2ThetaMax *= sin2ThetaMax;
 		cosThetaMax = sqrtf(1.f - sin2ThetaMax);
 	} else {
 		std::stringstream ss;
-		ss <<"Reducing relative sun size to "<< sunMeanDistance/sunRadius;
+		ss << "Reducing relative sun size to " << sunMeanDistance / sunRadius;
 		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
 		cosThetaMax = 0.f;
 		sin2ThetaMax = 1.f;
@@ -141,30 +141,32 @@ SunLight::SunLight(const Transform &light2world,
 
 SWCSpectrum SunLight::Le(const TsPack *tspack, const RayDifferential &r) const {
 	Vector w = r.d;
-	if(cosThetaMax < 1.0f && Dot(w,sundir) > cosThetaMax)
+	if(cosThetaMax < 1.f && Dot(w,sundir) > cosThetaMax)
 		return SWCSpectrum(tspack, LSPD);
 	else
-		return 0.;
+		return SWCSpectrum(0.f);
 }
 
 SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
-	if (cosThetaMax == 1.f || Dot(r.d, sundir) < 0.f || (r.d - Dot(r.d, sundir) * sundir).LengthSquared() > sin2ThetaMax) {
+	const float xD = Dot(r.d, x);
+	const float yD = Dot(r.d, y);
+	if (cosThetaMax == 1.f || Dot(r.d, sundir) < 0.f || (xD * xD + yD * yD) > sin2ThetaMax) {
 		*bsdf = NULL;
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
-		return 0.f;
+		return SWCSpectrum(0.f);
 	}
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - r.o);
 	float approach = Dot(toCenter, sundir);
-	float distance = approach + worldRadius;
+	float distance = (approach + worldRadius) / Dot(r.d, sundir);
 	Point ps(r.o + distance * r.d);
 	Normal ns(-sundir);
-	DifferentialGeometry dg(r.o, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 	if (!havePortalShape)
@@ -228,7 +230,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, f
 }
 float SunLight::Pdf(const Point &, const Vector &) const {
 	if(cosThetaMax == 1)
-		return 0.;
+		return 0.f;
 	else
 		return UniformConePdf(cosThetaMax);
 }
@@ -236,7 +238,7 @@ float SunLight::Pdf(const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	if(cosThetaMax == 1)
-		return 0.;
+		return 0.f;
 	else
 		return UniformConePdf(cosThetaMax) * AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);
 }
@@ -284,8 +286,8 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		// Dade - intersect the ray with the plane of the sun disk
 		// t = -(Pn· R0 + D) / (Pn · Rd)
 		float PnRd = Dot(sundir, ray->d);
-		if (PnRd == 0.0f)
-			return SWCSpectrum(0.0f);
+		if (PnRd == 0.f)
+			return SWCSpectrum(0.f);
 
 		float distanceSunDisk = centerSunDisk.Length();
 		float t = - (Dot(sundir, Vector(ray->o)) + distanceSunDisk) / PnRd;
@@ -295,8 +297,8 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 		*pdf = pdfSun * pdfPortal;
 
-		if (Dot(ray->d, dg.nn) < 0.)
-			return SWCSpectrum(0.0f);
+		if (Dot(ray->d, dg.nn) <= 0.f)
+			return SWCSpectrum(0.f);
 		else
 			return SWCSpectrum(tspack, LSPD);
 	}
@@ -309,13 +311,12 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 
-	Point samplePoint;
-	Normal sampleNormal;
+	Point ps;
+	Normal ns(-sundir);
 	if (!havePortalShape) {
 		float d1, d2;
 		ConcentricSampleDisk(u1, u2, &d1, &d2);
-		samplePoint = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
-		sampleNormal = Normal(-sundir);
+		ps = worldCenter + worldRadius * (sundir + d1 * x + d2 * y);
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	} else  {
 		// Choose a random portal
@@ -329,25 +330,24 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 
 		DifferentialGeometry dg;
 		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
-		samplePoint = dg.p;
-		sampleNormal = Normal(-sundir);
-		const float cosPortal = Dot(sampleNormal, dg.nn);
-		if (cosPortal <= 0.) {
-			*Le = 0.f;
+		ps = dg.p;
+		const float cosPortal = Dot(ns, dg.nn);
+		if (cosPortal <= 0.f) {
+			*Le = SWCSpectrum(0.f);
 			return false;
 		}
 
-		*pdf = PortalShapes[shapeIndex]->Pdf(samplePoint) / (cosPortal * nrPortalShapes);
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / (cosPortal * nrPortalShapes);
 		if (!(*pdf > 0.f)) {
-			*Le = 0.f;
+			*Le = SWCSpectrum(0.f);
 			return false;
 		}
 
-		samplePoint += (worldRadius - Dot(samplePoint - worldCenter, sundir)) * sundir;
+		ps += (worldRadius + Dot(worldCenter - ps, sundir)) * sundir;
 	}
 
-	DifferentialGeometry dg(samplePoint, sampleNormal, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, sampleNormal);
+	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 
 	*Le = SWCSpectrum(tspack, LSPD);
@@ -359,7 +359,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
-	if(cosThetaMax == 1) {
+	if(cosThetaMax == 1.f) {
 		wi = sundir;
 		*pdfDirect = 1.f;
 
@@ -386,7 +386,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - p);
 	float approach = Dot(toCenter, sundir);
-	float distance = approach + worldRadius;
+	float distance = (approach + worldRadius) / Dot(wi, sundir);
 	Point ps(p + distance * wi);
 	Normal ns(-sundir);
 
@@ -409,7 +409,8 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		}
 		*pdf /= nrPortalShapes;
 	}
-	*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
+	if (cosThetaMax < 1.f)
+		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps, tspack->time);
 
 	*Le = SWCSpectrum(tspack, LSPD);
