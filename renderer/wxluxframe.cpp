@@ -811,7 +811,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer128->Add( bSizer332111, 0, wxEXPAND, 5 );
 	
 	m_ColorSpaceAuiNotebook = new wxAuiNotebook( m_Tab_Control_ColorSpacePanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxAUI_NB_WINDOWLIST_BUTTON|wxDOUBLE_BORDER );
-	m_ColorSpaceAuiNotebook->SetMinSize( wxSize( -1,122 ) );
+	m_ColorSpaceAuiNotebook->SetMinSize( wxSize( -1,142 ) );
 	
 	m_ColorSpaceWhitepointPanel = new wxPanel( m_ColorSpaceAuiNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer212;
