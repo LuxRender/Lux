@@ -89,11 +89,13 @@ namespace lux {
     template <class T >
     class StandardImageReader : public ImageReader {
     public:
+        StandardImageReader() { };
 
-        StandardImageReader() {
-        };
         ImageData* read(const string &name);
     };
+	
+	template <class T>
+	ImageData* createImageData( const string& name, const CImg<T>& image );
 
     // EXR Function Definitions
 
@@ -148,6 +150,67 @@ namespace lux {
         }
     }
 
+	template <typename T> ImageData * createImageData( const string& name, const CImg<T>& image ) {
+		size_t size = sizeof (T);
+
+        ImageData::PixelDataType type;
+        if (size == 1)
+            type = ImageData::UNSIGNED_CHAR_TYPE;
+        if (size == 2)
+            type = ImageData::UNSIGNED_SHORT_TYPE;
+        if (size == 4)
+            type = ImageData::FLOAT_TYPE;
+
+        int width = image.dimx();
+        int height = image.dimy();
+        int noChannels = image.dimv();
+        int pixels = width * height;
+
+		stringstream ss;
+		ss.str("");
+		ss << width << "x" << height << " (" << noChannels << " channels)";
+        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		
+        TextureColorBase* ret;
+		// Dade - we support 1, 3 and 4 channel images
+		if (noChannels == 1)
+			ret = new TextureColor<T, 1> [width * height];
+		else if (noChannels == 3)
+            ret = new TextureColor<T, 3> [width * height];
+        else if (noChannels == 4)
+            ret = new TextureColor<T, 4> [width * height];
+		else {
+			ss.str("");
+			ss << "Unsupported channel count in StandardImageReader::read(" <<
+					name << ": " << noChannels;
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+			return NULL;
+		}
+
+        ImageData* data = new ImageData(width, height, type, noChannels, ret);
+        T *c = new T[noChannels];
+        c[0] = 0;
+        // XXX should do real RGB -> RGBColor conversion here
+        for (int i = 0; i < width; ++i)
+            for (int j = 0; j < height; ++j) {
+                for (int k = 0; k < noChannels; ++k) {
+                    // assuming that cimg depth is 1, single image layer
+                    unsigned long off = i + (j * width) + (k * pixels);
+
+					if (noChannels == 1)
+						((TextureColor<T, 1> *)ret)[i + (j * width)].c[k] = image[off];
+					else if (noChannels == 3)
+                        ((TextureColor<T, 3> *)ret)[i + (j * width)].c[k] = image[off];
+                    else
+                        ((TextureColor<T, 4> *)ret)[i + (j * width)].c[k] = image[off];
+                }
+            }
+        delete [] c;
+
+        return data;
+    }
+
     template <typename T> ImageData * StandardImageReader<T>::read(const string &name) {
         try {
 			stringstream ss;
@@ -157,69 +220,23 @@ namespace lux {
 			CImg<T> image(name.c_str());
             size_t size = sizeof (T);
 
-            ImageData::PixelDataType type;
-            if (size == 1)
-                type = ImageData::UNSIGNED_CHAR_TYPE;
-            if (size == 2)
-                type = ImageData::UNSIGNED_SHORT_TYPE;
-            if (size == 4)
-                type = ImageData::FLOAT_TYPE;
-
-            int width = image.dimx();
-            int height = image.dimy();
-            int noChannels = image.dimv();
-            int pixels = width * height;
-
-			ss.str("");
-			ss << width << "x" << height << " (" << noChannels << " channels)";
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-			
-            TextureColorBase* ret;
-			// Dade - we support 1, 3 and 4 channel images
-			if (noChannels == 1)
-				ret = new TextureColor<T, 1> [width * height];
-			else if (noChannels == 3)
-                ret = new TextureColor<T, 3> [width * height];
-            else if (noChannels == 4)
-                ret = new TextureColor<T, 4> [width * height];
-			else {
-				ss.str("");
-				ss << "Unsupported channel count in StandardImageReader::read(" <<
-						name << ": " << noChannels;
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
-				return NULL;
+			if( size != 1 ) {
+				// Check if conversion to a smaller type is possible without data loss
+				T maxVal = image.max();
+				if( maxVal <= cimg::type<unsigned char>::max() ) {
+					CImg<unsigned char> tmpImage = image;
+					return createImageData( name, tmpImage );
+				}
 			}
-
-            ImageData* data = new ImageData(width, height, type, noChannels, ret);
-            T *c = new T[noChannels];
-            c[0] = 0;
-            // XXX should do real RGB -> RGBColor conversion here
-            for (int i = 0; i < width; ++i)
-                for (int j = 0; j < height; ++j) {
-                    for (int k = 0; k < noChannels; ++k) {
-                        // assuming that cimg depth is 1, single image layer
-                        unsigned long off = i + (j * width) + (k * pixels);
-
-						if (noChannels == 1)
-							((TextureColor<T, 1> *)ret)[i + (j * width)].c[k] = image[off];
-						else if (noChannels == 3)
-                            ((TextureColor<T, 3> *)ret)[i + (j * width)].c[k] = image[off];
-                        else
-                            ((TextureColor<T, 4> *)ret)[i + (j * width)].c[k] = image[off];
-                    }
-                }
-            delete [] c;
-
-            return data;
-        } catch (CImgIOException &e) {
+			return createImageData( name, image );
+		} catch (CImgIOException &e) {
             std::stringstream ss;
             ss << "Unable to read Cimg image file '" << name << "': " << e.message;
             luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
             return NULL;
         }
         return NULL;
-    }
+	}
 
     ImageData *ReadImage(const string &name) {
         boost::filesystem::path imagePath(name);
@@ -269,24 +286,18 @@ namespace lux {
             return stdImageReader.read(name);
         }
         // linked formats
-        if ((extension == "png") ||
-                (extension == "jpg") ||
-                (extension == "jpeg")) {
+        if ((extension == "jpg") ||
+            (extension == "jpeg")) {
             //StandardImageReader stdImageReader;
             StandardImageReader<unsigned char> stdImageReader;
             return stdImageReader.read(name);
         }
-
-        //todo: handle 16 bit tiffs here
-        //(but how do we know when a tiff is 16 bit??)
-        if ((extension == "tif") || (extension == "tiff")) {
+		// handle potential 16 bit image types separately
+		if((extension == "png") || 
+		   (extension == "tif") || (extension == "tiff") ||
+		   (extension == "tga") ) {
             //StandardImageReader stdImageReader;
-            StandardImageReader<unsigned char> stdImageReader;
-            return stdImageReader.read(name);
-        }
-        if (extension == "tga") {
-            //StandardImageReader stdImageReader;
-            StandardImageReader<unsigned char> stdImageReader;
+            StandardImageReader<unsigned short> stdImageReader;
             return stdImageReader.read(name);
         }
 
