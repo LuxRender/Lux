@@ -85,13 +85,13 @@ public:
 	*/
 	inline QBVHNode() : axisMain(0), axisSubLeft(0), axisSubRight(0),
 		parentNodeIndex(-1) {
-		for (int i = 0; i < 3; ++i) {
+		for (long i = 0; i < 3; ++i) {
 			bboxes[0][i] = _mm_set1_ps(INFINITY);
 			bboxes[1][i] = _mm_set1_ps(-INFINITY);
 		}
 		
 		// All children are empty leaves by default
-		for (int i = 0; i < 4; ++i)
+		for (long i = 0; i < 4; ++i)
 			children[i] = emptyLeafNode;
 	}
 
@@ -100,7 +100,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline bool ChildIsLeaf(int i) const {
+	inline bool ChildIsLeaf(long i) const {
 		return (children[i] < 0);
 	}
 
@@ -116,7 +116,7 @@ public:
 	   Indicates whether the ith child is an empty leaf.
 	   @param i
 	*/
-	inline bool LeafIsEmpty(int i) const {
+	inline bool LeafIsEmpty(long i) const {
 		return (children[i] == emptyLeafNode);
 	}
 
@@ -134,7 +134,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline int NbQuadsInLeaf(int i) const {
+	inline long NbQuadsInLeaf(long i) const {
 		return (((children[i] >> 27) & 15)) + 1;
 	}
 
@@ -142,7 +142,7 @@ public:
 	   Return the number of group of 4 primitives, directly from the index.
 	   @param index
 	*/
-	inline static int NbQuadPrimitives(long index) {
+	inline static long NbQuadPrimitives(long index) {
 		return ((index >> 27) & 15) + 1;
 	}
 	
@@ -152,7 +152,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline int NbPrimitivesInLeaf(int i) const {
+	inline long NbPrimitivesInLeaf(long i) const {
 		return NbQuadsInLeaf(i) * 4;
 	}
 
@@ -162,7 +162,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline int FirstQuadIndexForLeaf(int i) const {
+	inline long FirstQuadIndexForLeaf(long i) const {
 		return children[i] & ~(31 << 27);
 	}
 	
@@ -170,7 +170,7 @@ public:
 	   Same thing, directly from the index.
 	   @param index
 	*/
-	inline static int FirstQuadIndex(long index) {
+	inline static long FirstQuadIndex(long index) {
 		return index & ~(31 << 27);
 	}
 
@@ -180,7 +180,7 @@ public:
  	   @param nbQuads
 	   @param firstQuadIndex
 	*/
-	inline void InitializeLeaf(int i, int nbQuads, int firstQuadIndex) {
+	inline void InitializeLeaf(long i, long nbQuads, long firstQuadIndex) {
 		// Take care to make a valid initialisation of the leaf.
 		if (nbQuads == 0) {
 			children[i] = emptyLeafNode;
@@ -199,8 +199,8 @@ public:
 	   @param i
 	   @param bbox
 	*/
-	inline void SetBBox(int i, const BBox &bbox) {
-		for (int axis = 0; axis < 3; ++axis) {
+	inline void SetBBox(long i, const BBox &bbox) {
+		for (long axis = 0; axis < 3; ++axis) {
 			((float *)&(bboxes[0][axis]))[i] = bbox.pMin[axis];
 			((float *)&(bboxes[1][axis]))[i] = bbox.pMax[axis];
 		}
@@ -220,7 +220,7 @@ public:
 	   @return an int used to index the array of paths in the bboxes
 	   (the visit array)
 	*/
-	int BBoxIntersect(__m128 sseOrig[3], __m128 sseInvDir[3],
+	long BBoxIntersect(__m128 sseOrig[3], __m128 sseInvDir[3],
 		const __m128 &sseTMin, const __m128 &sseTMax,
 		const int sign[3]) const;
 
@@ -296,9 +296,9 @@ private:
 	   (its child number)
 	   @param depth the current depth.
 	*/
-	void BuildTree(int start, int end, int *primsIndexes, BBox *primsBboxes,
+	void BuildTree(long start, long end, u_long *primsIndexes, BBox *primsBboxes,
 		Point *primsCentroids, const BBox &nodeBbox,
-		const BBox &centroidsBbox, int parentIndex, int childIndex,
+		const BBox &centroidsBbox, long parentIndex, long childIndex,
 		int depth);
 	
 	/**
@@ -309,7 +309,7 @@ private:
 	   @param end
 	   @param nodeBbox
 	*/
-	void CreateTempLeaf(int parentIndex, int childIndex, int start, int end,
+	void CreateTempLeaf(long parentIndex, long childIndex, long start, long end,
 		const BBox &nodeBbox);
 
 	/**
@@ -318,9 +318,9 @@ private:
 	   @param childIndex
 	   @param nodeBbox
 	*/
-	inline int CreateIntermediateNode(int parentIndex, int childIndex,
+	inline long CreateIntermediateNode(long parentIndex, long childIndex,
 		const BBox &nodeBbox) {
-		int index = nNodes++; // increment after assignment
+		long index = nNodes++; // increment after assignment
 		nodes[index].parentNodeIndex = parentIndex;
 		if (parentIndex != -1) {
 			nodes[parentIndex].children[childIndex] = index;
@@ -336,7 +336,7 @@ private:
 	   @param primsIndexes
 	   @param vPrims
 	*/
-	void PreSwizzle(int nodeIndex, int *primsIndexes,
+	void PreSwizzle(long nodeIndex, u_long *primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims);
 
 	/**
@@ -348,13 +348,13 @@ private:
 	   @param primsIndexes
 	   @param vPrims
 	*/
-	void CreateSwizzledLeaf(int parentIndex, int childIndex, 
-		int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
+	void CreateSwizzledLeaf(long parentIndex, long childIndex, 
+		u_long *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
 
 	/**
 	   the actual number of quads
 	*/
-	int nQuads;
+	long nQuads;
 
 	/**
 	   The primitive associated with each triangle. indexed by the number of quad
@@ -368,7 +368,7 @@ private:
 	/**
 	   The number of primitives
 	*/
-	int nPrims;
+	u_long nPrims;
 
 	/**
 	   The nodes of the QBVH.
@@ -378,7 +378,7 @@ private:
 	/**
 	   The number of nodes really used.
 	*/
-	int nNodes;
+	long nNodes;
 
 	/**
 	   The world bounding box of the QBVH.
