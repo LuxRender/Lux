@@ -123,6 +123,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 
 		// Compute the bounding box for the triangle
 		primsBboxes[i] = vPrims[i]->WorldBound();
+		primsBboxes[i].Expand(RAY_EPSILON);
 		primsCentroids[i] = (primsBboxes[i].pMin +
 			primsBboxes[i].pMax) * .5f;
 
@@ -659,7 +660,7 @@ void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 
 Aggregate* QBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
 {
-	int maxPrimsPerLeaf = ps.FindOneInt("maxprimsperleaf", 16);
+	int maxPrimsPerLeaf = ps.FindOneInt("maxprimsperleaf", 4);
 	float fullSweepThreshold = ps.FindOneFloat("fullsweepthreshold", 4 * maxPrimsPerLeaf);
 	int skipFactor = ps.FindOneInt("skipfactor", 1);
 	return new QBVHAccel(prims, maxPrimsPerLeaf, fullSweepThreshold, skipFactor);
