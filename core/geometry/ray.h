@@ -41,6 +41,11 @@ public:
 		float start = RAY_EPSILON, float end = INFINITY, float t = 0.f)
 		: o(origin), d(direction), mint(start), maxt(end), time(t) { }
 	Point operator()(float t) const { return o + d * t; }
+	void GetDirectionSigns(int signs[3]) const {
+		signs[0] = d.x < 0.f;
+		signs[1] = d.y < 0.f;
+		signs[2] = d.z < 0.f;
+	}
 	// Ray Public Data
 	Point o;
 	Vector d;
