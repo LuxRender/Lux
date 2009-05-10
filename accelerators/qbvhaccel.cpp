@@ -22,59 +22,62 @@
 #include "qbvhaccel.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "error.h"
 
 using namespace lux;
 
 /***************************************************/
-const u_char QBVHAccel::pathTable[] = {
-    // visit = 0000
-    4, 4, 4, 4,    4, 4, 4, 4,    4, 4, 4, 4,    4, 4, 4, 4,
-    4, 4, 4, 4,    4, 4, 4, 4,    4, 4, 4, 4,    4, 4, 4, 4,
-    // visit = 0001
-    0, 4, 4, 4,    0, 4, 4, 4,    0, 4, 4, 4,    0, 4, 4, 4,
-    0, 4, 4, 4,    0, 4, 4, 4,    0, 4, 4, 4,    0, 4, 4, 4,            
-    // visit = 0010
-    1, 4, 4, 4,    1, 4, 4, 4,    1, 4, 4, 4,    1, 4, 4, 4,
-    1, 4, 4, 4,    1, 4, 4, 4,    1, 4, 4, 4,    1, 4, 4, 4,
-    // visit = 0011
-    0, 1, 4, 4,    0, 1, 4, 4,    1, 0, 4, 4,    1, 0, 4, 4,
-    0, 1, 4, 4,    0, 1, 4, 4,    1, 0, 4, 4,    1, 0, 4, 4,
-    // visit = 0100
-    2, 4, 4, 4,    2, 4, 4, 4,    2, 4, 4, 4,    2, 4, 4, 4,
-    2, 4, 4, 4,    2, 4, 4, 4,    2, 4, 4, 4,    2, 4, 4, 4,
-    // visit = 0101
-    0, 2, 4, 4,    0, 2, 4, 4,    0, 2, 4, 4,    0, 2, 4, 4,
-    2, 0, 4, 4,    2, 0, 4, 4,    2, 0, 4, 4,    2, 0, 4, 4,
-    // visit = 0110
-    1, 2, 4, 4,    1, 2, 4, 4,    1, 2, 4, 4,    1, 2, 4, 4,
-    2, 1, 4, 4,    2, 1, 4, 4,    2, 1, 4, 4,    2, 1, 4, 4,
-    // visit = 0111
-    0, 1, 2, 4,    0, 1, 2, 4,    1, 0, 2, 4,    1, 0, 2, 4,
-    2, 0, 1, 4,    2, 0, 1, 4,    2, 1, 0, 4,    2, 1, 0, 4,
-    // visit = 1000
-    3, 4, 4, 4,    3, 4, 4, 4,    3, 4, 4, 4,    3, 4, 4, 4,
-    3, 4, 4, 4,    3, 4, 4, 4,    3, 4, 4, 4,    3, 4, 4, 4,
-    // visit = 1001
-    0, 3, 4, 4,    0, 3, 4, 4,    0, 3, 4, 4,    0, 3, 4, 4,
-    3, 0, 4, 4,    3, 0, 4, 4,    3, 0, 4, 4,    3, 0, 4, 4,
-    // visit = 1010
-    1, 3, 4, 4,    1, 3, 4, 4,    1, 3, 4, 4,    1, 3, 4, 4,
-    3, 1, 4, 4,    3, 1, 4, 4,    3, 1, 4, 4,    3, 1, 4, 4,
-    // visit = 1011
-    0, 1, 3, 4,    0, 1, 3, 4,    1, 0, 3, 4,    1, 0, 3, 4,
-    3, 0, 1, 4,    3, 0, 1, 4,    3, 1, 0, 4,    3, 1, 0, 4,
-    // visit = 1100
-    2, 3, 4, 4,    3, 2, 4, 4,    2, 3, 4, 4,    3, 2, 4, 4,
-    2, 3, 4, 4,    2, 3, 4, 4,    3, 2, 4, 4,    3, 2, 4, 4,
-    // visit = 1101
-    0, 2, 3, 4,    0, 3, 2, 4,    0, 2, 3, 4,    0, 3, 2, 4,
-    2, 3, 0, 4,    3, 2, 0, 4,    2, 3, 0, 4,    3, 2, 0, 4,
-    // visit = 1110
-    1, 2, 3, 4,    1, 3, 2, 4,    1, 2, 3, 4,    1, 3, 2, 4,
-    2, 3, 1, 4,    3, 2, 1, 4,    2, 3, 1, 4,    3, 2, 1, 4,
-    // visit = 1111
-    0, 1, 2, 3,    0, 1, 3, 2,    1, 0, 2, 3,    1, 0, 3, 2,
-    2, 3, 0, 1,    3, 2, 0, 1,    2, 3, 1, 0,    3, 2, 1, 0,
+const int QBVHAccel::pathTable[] = {
+	// Note that the packed indices are stored in reverse
+	// order, that is first index is in the first 4 bits.
+	// visit = 0000
+	0x4444, 	0x4444, 	0x4444, 	0x4444,
+	0x4444, 	0x4444, 	0x4444, 	0x4444,
+	// visit = 0001
+	0x4440, 	0x4440, 	0x4440, 	0x4440,
+	0x4440, 	0x4440, 	0x4440, 	0x4440,
+	// visit = 0010
+	0x4441, 	0x4441, 	0x4441, 	0x4441,
+	0x4441, 	0x4441, 	0x4441, 	0x4441,
+	// visit = 0011
+	0x4410, 	0x4410, 	0x4401, 	0x4401,
+	0x4410, 	0x4410, 	0x4401, 	0x4401,
+	// visit = 0100
+	0x4442, 	0x4442, 	0x4442, 	0x4442,
+	0x4442, 	0x4442, 	0x4442, 	0x4442,
+	// visit = 0101
+	0x4420, 	0x4420, 	0x4420, 	0x4420,
+	0x4402, 	0x4402, 	0x4402, 	0x4402,
+	// visit = 0110
+	0x4421, 	0x4421, 	0x4421, 	0x4421,
+	0x4412, 	0x4412, 	0x4412, 	0x4412,
+	// visit = 0111
+	0x4210, 	0x4210, 	0x4201, 	0x4201,
+	0x4102, 	0x4102, 	0x4012, 	0x4012,
+	// visit = 1000
+	0x4443, 	0x4443, 	0x4443, 	0x4443,
+	0x4443, 	0x4443, 	0x4443, 	0x4443,
+	// visit = 1001
+	0x4430, 	0x4430, 	0x4430, 	0x4430,
+	0x4403, 	0x4403, 	0x4403, 	0x4403,
+	// visit = 1010
+	0x4431, 	0x4431, 	0x4431, 	0x4431,
+	0x4413, 	0x4413, 	0x4413, 	0x4413,
+	// visit = 1011
+	0x4310, 	0x4310, 	0x4301, 	0x4301,
+	0x4103, 	0x4103, 	0x4013, 	0x4013,
+	// visit = 1100
+	0x4432, 	0x4423, 	0x4432, 	0x4423,
+	0x4432, 	0x4432, 	0x4423, 	0x4423,
+	// visit = 1101
+	0x4320, 	0x4230, 	0x4320, 	0x4230,
+	0x4032, 	0x4023, 	0x4032, 	0x4023,
+	// visit = 1110
+	0x4321, 	0x4231, 	0x4321, 	0x4231,
+	0x4132, 	0x4123, 	0x4132, 	0x4123,
+	// visit = 1111
+	0x3210, 	0x2310, 	0x3201, 	0x2301,
+	0x1032, 	0x1023, 	0x0132, 	0x0123
 };
 
 
@@ -138,6 +141,9 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	primsIndexes[nPrims + 2] = 0;
 
 	// Recursively build the tree
+	std::stringstream ss;
+	ss << "Building QBVH, primitives: " << nPrims;
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 	nQuads = 0;
 	BuildTree(0, nPrims, primsIndexes, primsBboxes, primsCentroids,
 		worldBound, centroidsBbox, -1, 0, 0);
@@ -515,14 +521,16 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 				(signs[node.axisSubLeft] << 1) |
 				(signs[node.axisSubRight]);
 			
-			const u_char *bboxOrder = pathTable + visit * 32 + nodeIdx * 4;
+			int bboxOrder = pathTable[visit * 8 + nodeIdx];
 
 			// Push on the stack, if the bbox is hit by the ray
 			for (int i = 0; i < 4; i++) {
-				if (bboxOrder[i] < 4) {
+				const int childIndex = bboxOrder & 0xf;
+				if (order < 4) {
 					++todoNode;
-					nodeStack[todoNode] = node.children[bboxOrder[i]];
+					nodeStack[todoNode] = node.children[childIndex];
 				}
+				bboxOrder = bboxOrder >> 4;
 			}
 		} else {
 			//----------------------
@@ -592,14 +600,16 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 				(signs[node.axisSubLeft] << 1) |
 				(signs[node.axisSubRight]);
 			
-			const u_char *bboxOrder = pathTable + visit * 32 + nodeIdx * 4;
+			int bboxOrder = pathTable[visit * 8 + nodeIdx];
 
 			// Push on the stack, if the bbox is hit by the ray
 			for (int i = 0; i < 4; i++) {
-				if (bboxOrder[i] < 4) {
+				const int childIndex = bboxOrder & 0xf;
+				if (order < 4) {
 					++todoNode;
-					nodeStack[todoNode] = node.children[bboxOrder[i]];
+					nodeStack[todoNode] = node.children[childIndex];
 				}
+				bboxOrder = bboxOrder >> 4;
 			}
 		} else {
 			//----------------------

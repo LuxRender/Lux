@@ -418,9 +418,9 @@ private:
 	// const u_int finalIdx = visit * 32 + idx * 4;
 	// It contains bounding box indices sorted by distance from the ray
 	// origin.
-	// uchar, for space reasons. 4 means no intersection
-	// 16 visit * 8 idx * 4 bbox = 512 uchar = 512bytes
-	static const u_char pathTable[512];
+	// 4 bits per index, stored in 32bit int. 4 means no intersection.
+	// 16 visit * 8 idx * 4 bbox = 128 * ints = 512bytes
+	static const int pathTable[128];
 };
 
 } // namespace lux
