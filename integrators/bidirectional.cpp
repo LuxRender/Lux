@@ -474,7 +474,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		v.dAWeight = v.ePdf;
 		v.flags = BxDFType(~BSDF_SPECULAR);
 		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ng), v.wo, v.flags);
-		if (!v.pdf > 0.f)
+		if (!(v.pdf > 0.f))
 			return false;
 		*L *= eye[nEye - 2].flux;
 		eWeight = eye[nEye - 2].dAWeight;
@@ -488,7 +488,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		v.dARWeight = v.ePdf;
 		v.flags = BxDFType(~BSDF_SPECULAR);
 		v.pdfR = v.eBsdf->Pdf(tspack, v.wo, Vector(v.ns), v.flags);
-		if (!v.pdfR > 0.f)
+		if (!(v.pdfR > 0.f))
 			return false;
 		*L *= light[nLight - 2].flux;//FIXME: not implemented yet
 		lWeight = light[nLight - 2].dARWeight;
