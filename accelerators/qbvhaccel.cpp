@@ -481,11 +481,6 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 	// Prepare the ray for intersection
 	__m128 sseTMin = _mm_set1_ps(ray.mint);
 	__m128 sseTMax = _mm_set1_ps(ray.maxt);
-	__m128 sseDir[3];
-	sseDir[0] = _mm_set1_ps(ray.d.x);
-	sseDir[1] = _mm_set1_ps(ray.d.y);
-	sseDir[2] = _mm_set1_ps(ray.d.z);
-
 	__m128 sseInvDir[3];
 	sseInvDir[0] = _mm_set1_ps(1.f / ray.d.x);
 	sseInvDir[1] = _mm_set1_ps(1.f / ray.d.y);
@@ -504,7 +499,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 	bool hit = false;
 	// The nodes stack, 256 nodes should be enough
 	int todoNode = 0; // the index in the stack
-	long nodeStack[256];
+	long nodeStack[64];
 	nodeStack[0] = 0; // first node to handle: root node
 	
 	while (todoNode >= 0) {
@@ -564,11 +559,6 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 	// Prepare the ray for intersection
 	__m128 sseTMin = _mm_set1_ps(ray.mint);
 	__m128 sseTMax = _mm_set1_ps(ray.maxt);
-	__m128 sseDir[3];
-	sseDir[0] = _mm_set1_ps(ray.d.x);
-	sseDir[1] = _mm_set1_ps(ray.d.y);
-	sseDir[2] = _mm_set1_ps(ray.d.z);
-
 	__m128 sseInvDir[3];
 	sseInvDir[0] = _mm_set1_ps(1.f / ray.d.x);
 	sseInvDir[1] = _mm_set1_ps(1.f / ray.d.y);
@@ -583,7 +573,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 	// Main loop
 	// The nodes stack, 256 nodes should be enough
 	int todoNode = 0; // the index in the stack
-	long nodeStack[256];
+	long nodeStack[64];
 	nodeStack[0] = 0; // first node to handle: root node
 
 	int signs[3];

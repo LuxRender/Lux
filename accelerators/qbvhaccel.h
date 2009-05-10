@@ -54,7 +54,7 @@ public:
 	// QBVH with less than 4 vertices at the beginning :
 	// the number of quads - 1 would give 0, and it would start at 0
 	// in the quads array
-	static const long emptyLeafNode = 0xffffffffL;
+	static const long emptyLeafNode = -1L;
 	
 	/**
 	   The 4 bounding boxes, in SoA form, for direct SIMD use
@@ -185,8 +185,8 @@ public:
 		if (nbQuads == 0L) {
 			children[i] = emptyLeafNode;
 		} else {
-			// Put the negative sign
-			children[i] = 1L << 31L;
+			// Put the negative sign in a plateform independent way
+			children[i] = 1L << (sizeof(long) * 8 - 1);//-1L & ~(-1L >> 1L);
 			
 			children[i] |=  (nbQuads - 1L) << 27L;
 
