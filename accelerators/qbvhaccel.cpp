@@ -95,7 +95,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	nPrims = vPrims.size();
 
 	// Temporary data for building
-	u_long *primsIndexes = new u_long[nPrims + 3]; // For the case where
+	u_int *primsIndexes = new u_int[nPrims + 3]; // For the case where
 	// the last quad would begin at the last primitive
 	// (or the second or third last primitive)
 
@@ -105,7 +105,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	// it is not always the case => continue to use the normal bounds.
 	nNodes = 0;
 	nodes = AllocAligned<QBVHNode>(2 * nPrims - 1);
-	for (u_long i = 0; i < 2 * nPrims - 1; ++i)
+	for (u_int i = 0; i < 2 * nPrims - 1; ++i)
 		nodes[i] = QBVHNode();
 
 	// The arrays that will contain
@@ -117,7 +117,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	BBox centroidsBbox;
 	
 	// Fill each base array
-	for (u_long i = 0; i < vPrims.size(); ++i) {
+	for (u_int i = 0; i < vPrims.size(); ++i) {
 		// This array will be reorganized during construction. 
 		primsIndexes[i] = i;
 
@@ -140,7 +140,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	// Recursively build the tree
 	nQuads = 0;
 	BuildTree(0, nPrims, primsIndexes, primsBboxes, primsCentroids,
-		worldBound, centroidsBbox, -1L, 0L, 0);
+		worldBound, centroidsBbox, -1, 0, 0);
 
 	prims = AllocAligned<boost::shared_ptr<Primitive> >(4 * nQuads);
 	nQuads = 0;
@@ -153,9 +153,9 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 }
 
 /***************************************************/
-void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
+void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	BBox *primsBboxes, Point *primsCentroids, const BBox &nodeBbox,
-	const BBox &centroidsBbox, long parentIndex, long childIndex, int depth)
+	const BBox &centroidsBbox, int32_t parentIndex, int32_t childIndex, int depth)
 {
 	// Create a leaf ?
 	//********
@@ -164,9 +164,9 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 		return;
 	}
 
-	long currentNode = parentIndex;
-	long leftChildIndex = childIndex;
-	long rightChildIndex = childIndex + 1L;
+	int32_t currentNode = parentIndex;
+	int32_t leftChildIndex = childIndex;
+	int32_t rightChildIndex = childIndex + 1;
 	
 	// Number of primitives in each bin
 	int bins[NB_BINS];
@@ -182,12 +182,12 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 	for (int i = 0; i < NB_BINS; ++i)
 		bins[i] = 0;
 
-	int step = (end - start < fullSweepThreshold) ? 1 : skipFactor;
+	u_int step = (end - start < fullSweepThreshold) ? 1 : skipFactor;
 
 	// Choose the split axis, taking the axis of maximum extent for the
 	// centroids (else weird cases can occur, where the maximum extent axis
 	// for the nodeBbox is an axis of 0 extent for the centroids one.).
-	long axis = centroidsBbox.MaximumExtent();
+	int axis = centroidsBbox.MaximumExtent();
 
 	// Precompute values that are constant with respect to the current
 	// primitive considered.
@@ -201,8 +201,8 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 		return;
 	}
 
-	for (long i = start; i < end; i += step) {
-		long primIndex = primsIndexes[i];
+	for (u_int i = start; i < end; i += step) {
+		u_int primIndex = primsIndexes[i];
 		
 		// Binning is relative to the centroids bbox and to the
 		// primitives' centroid.
@@ -272,8 +272,8 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 	// Register the split axis.
 	if (depth % 2 == 0) {
 		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
-		leftChildIndex = 0L;
-		rightChildIndex = 2L;
+		leftChildIndex = 0;
+		rightChildIndex = 2;
 
 		nodes[currentNode].axisMain = axis;
 	} else {
@@ -302,9 +302,9 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 	BBox leftChildBbox, rightChildBbox;
 	BBox leftChildCentroidsBbox, rightChildCentroidsBbox;
 
-	long storeIndex = start;
-	for (long i = start; i < end; ++i) {
-		long primIndex = primsIndexes[i];
+	u_int storeIndex = start;
+	for (u_int i = start; i < end; ++i) {
+		u_int primIndex = primsIndexes[i];
 		
 		if (primsCentroids[primIndex][axis] <= splitPos) {
 			// Swap
@@ -334,32 +334,32 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 }
 
 /***************************************************/
-void QBVHAccel::CreateTempLeaf(long parentIndex, long childIndex,
-	long start, long end, const BBox &nodeBbox)
+void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
+	u_int start, u_int end, const BBox &nodeBbox)
 {
 	// The leaf is directly encoded in the intermediate node.
-	if (parentIndex == -1L) {
+	if (parentIndex < 0) {
 		// The entire tree is a leaf
-		nNodes = 1L;
-		parentIndex = 0L;
+		nNodes = 1;
+		parentIndex = 0;
 	}
 
 	// Encode the leaf in the original way,
 	// it will be transformed to a preswizzled format in a post-process.
 	
-	long nbPrimsTotal = end - start;
+	u_int nbPrimsTotal = end - start;
 	
 	QBVHNode &node = nodes[parentIndex];
 
 	node.SetBBox(childIndex, nodeBbox);
 
-	if (nbPrimsTotal == 0L) {
-		node.InitializeLeaf(childIndex, 0L, 0L);
+	if (nbPrimsTotal == 0) {
+		node.InitializeLeaf(childIndex, 0, 0);
 		return;
 	}
 
 	// Next multiple of 4, divided by 4
-	long quads = ((nbPrimsTotal + 3L) & ~3L) >> 2L;
+	u_int quads = (nbPrimsTotal + 3) >> 2;
 	
 	// Use the same encoding as the final one, but with a different meaning.
 	node.InitializeLeaf(childIndex, quads, start);
@@ -367,10 +367,10 @@ void QBVHAccel::CreateTempLeaf(long parentIndex, long childIndex,
 	nQuads += quads;
 }
 
-void QBVHAccel::PreSwizzle(long nodeIndex, u_long *primsIndexes,
+void QBVHAccel::PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
 	const vector<boost::shared_ptr<Primitive> > &vPrims)
 {
-	for (long i = 0; i < 4; ++i) {
+	for (int i = 0; i < 4; ++i) {
 		if (nodes[nodeIndex].ChildIsLeaf(i))
 			CreateSwizzledLeaf(nodeIndex, i, primsIndexes, vPrims);
 		else
@@ -378,19 +378,19 @@ void QBVHAccel::PreSwizzle(long nodeIndex, u_long *primsIndexes,
 	}
 }
 
-void QBVHAccel::CreateSwizzledLeaf(long parentIndex, long childIndex,
-	u_long *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims)
+void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
+	u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims)
 {
 	QBVHNode &node = nodes[parentIndex];
 	if (node.LeafIsEmpty(childIndex))
 		return;
-	const long startQuad = nQuads;
-	const long nbQuads = node.NbQuadsInLeaf(childIndex);
+	const u_int startQuad = nQuads;
+	const u_int nbQuads = node.NbQuadsInLeaf(childIndex);
 
-	long primOffset = node.FirstQuadIndexForLeaf(childIndex);
-	long primNum = 4L * nQuads;
+	u_int primOffset = node.FirstQuadIndexForLeaf(childIndex);
+	u_int primNum = 4 * nQuads;
 
-	for (long q = 0; q < nbQuads; ++q) {
+	for (u_int q = 0; q < nbQuads; ++q) {
 		for (int i = 0; i < 4; ++i) {
 			new (&prims[primNum]) boost::shared_ptr<Primitive>(vPrims[primsIndexes[primOffset]]);
 			++primOffset;
@@ -401,7 +401,7 @@ void QBVHAccel::CreateSwizzledLeaf(long parentIndex, long childIndex,
 	node.InitializeLeaf(childIndex, nbQuads, startQuad);
 }
 
-long QBVHNode::BBoxIntersect(__m128 sseOrig[3], __m128 sseInvDir[3],
+int32_t QBVHNode::BBoxIntersect(__m128 sseOrig[3], __m128 sseInvDir[3],
 	const __m128 &sseTMin, const __m128 &sseTMax,
 	const int sign[3]) const
 {
@@ -499,7 +499,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 	bool hit = false;
 	// The nodes stack, 256 nodes should be enough
 	int todoNode = 0; // the index in the stack
-	long nodeStack[64];
+	int32_t nodeStack[64];
 	nodeStack[0] = 0; // first node to handle: root node
 	
 	while (todoNode >= 0) {
@@ -508,11 +508,11 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			QBVHNode &node = nodes[nodeStack[todoNode]];
 			--todoNode;
 			
-			const long visit = node.BBoxIntersect(sseOrig, sseInvDir,
+			const int32_t visit = node.BBoxIntersect(sseOrig, sseInvDir,
 				sseTMin, sseTMax, signs);
 
-			const long nodeIdx = (signs[node.axisMain] << 2L) |
-				(signs[node.axisSubLeft] << 1L) |
+			const int32_t nodeIdx = (signs[node.axisMain] << 2) |
+				(signs[node.axisSubLeft] << 1) |
 				(signs[node.axisSubRight]);
 			
 			const u_char *bboxOrder = pathTable + visit * 32 + nodeIdx * 4;
@@ -528,18 +528,18 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			//----------------------
 			// It is a leaf,
 			// all the informations are encoded in the index
-			const long leafData = nodeStack[todoNode];
+			const int32_t leafData = nodeStack[todoNode];
 			--todoNode;
 			
 			if (QBVHNode::IsEmpty(leafData))
 				continue;
 
 			// Perform intersection
-			const long nbQuadPrimitives = QBVHNode::NbQuadPrimitives(leafData);
+			const u_int nbQuadPrimitives = QBVHNode::NbQuadPrimitives(leafData);
 			
-			const long offset = QBVHNode::FirstQuadIndex(leafData);
+			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
-			for (long primNumber = 4L * offset; primNumber < 4L * (offset + nbQuadPrimitives); ++primNumber) {
+			for (u_int primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
 				if (prims[primNumber]->Intersect(ray, isect))
 					hit = true;
 			}
@@ -573,7 +573,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 	// Main loop
 	// The nodes stack, 256 nodes should be enough
 	int todoNode = 0; // the index in the stack
-	long nodeStack[64];
+	int32_t nodeStack[64];
 	nodeStack[0] = 0; // first node to handle: root node
 
 	int signs[3];
@@ -585,11 +585,11 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			QBVHNode &node = nodes[nodeStack[todoNode]];
 			--todoNode;
 
-			const long visit = node.BBoxIntersect(sseOrig, sseInvDir,
+			const int32_t visit = node.BBoxIntersect(sseOrig, sseInvDir,
 				sseTMin, sseTMax, signs);
 
-			const long nodeIdx = (signs[node.axisMain] << 2L) |
-				(signs[node.axisSubLeft] << 1L) |
+			const int32_t nodeIdx = (signs[node.axisMain] << 2) |
+				(signs[node.axisSubLeft] << 1) |
 				(signs[node.axisSubRight]);
 			
 			const u_char *bboxOrder = pathTable + visit * 32 + nodeIdx * 4;
@@ -605,18 +605,18 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			//----------------------
 			// It is a leaf,
 			// all the informations are encoded in the index
-			const long leafData = nodeStack[todoNode];
+			const int32_t leafData = nodeStack[todoNode];
 			--todoNode;
 			
 			if (QBVHNode::IsEmpty(leafData))
 				continue;
 
 			// Perform intersection
-			const long nbQuadPrimitives = QBVHNode::NbQuadPrimitives(leafData);
+			const u_int nbQuadPrimitives = QBVHNode::NbQuadPrimitives(leafData);
 			
-			const long offset = QBVHNode::FirstQuadIndex(leafData);
+			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
-			for (long primNumber = 4L * offset; primNumber < 4L * (offset + nbQuadPrimitives); ++primNumber) {
+			for (u_int primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
 				if (prims[primNumber]->IntersectP(ray))
 					return true;
 			}
@@ -629,7 +629,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 /***************************************************/
 QBVHAccel::~QBVHAccel()
 {
-	for (u_long i = 0; i < nPrims; ++i)
+	for (u_int i = 0; i < nPrims; ++i)
 		prims[i].~shared_ptr();
 	FreeAligned(prims);
 	FreeAligned(nodes);
@@ -644,7 +644,7 @@ BBox QBVHAccel::WorldBound() const
 void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 {
 	primitives.reserve(nPrims);
-	for(u_long i = 0; i < nPrims; ++i)
+	for(u_int i = 0; i < nPrims; ++i)
 		primitives.push_back(prims[i]);
 }
 
