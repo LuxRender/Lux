@@ -391,17 +391,17 @@ private:
 	   The number of primitives in the node that makes switch
 	   to full sweep for binning
 	*/
-	int fullSweepThreshold;
+	u_int fullSweepThreshold;
 
 	/**
 	   The skip factor for binning
 	*/
-	int skipFactor;
+	u_int skipFactor;
 
 	/**
 	   The maximum number of primitives per leaf
 	*/
-	int maxPrimsPerLeaf;
+	u_int maxPrimsPerLeaf;
 
 	
 	// Adapted from Robin Bourianes (robin.bourianes@free.fr)

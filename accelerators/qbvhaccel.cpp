@@ -526,7 +526,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			// Push on the stack, if the bbox is hit by the ray
 			for (int i = 0; i < 4; i++) {
 				const int childIndex = bboxOrder & 0xf;
-				if (order < 4) {
+				if (childIndex < 4) {
 					++todoNode;
 					nodeStack[todoNode] = node.children[childIndex];
 				}
@@ -605,7 +605,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			// Push on the stack, if the bbox is hit by the ray
 			for (int i = 0; i < 4; i++) {
 				const int childIndex = bboxOrder & 0xf;
-				if (order < 4) {
+				if (childIndex < 4) {
 					++todoNode;
 					nodeStack[todoNode] = node.children[childIndex];
 				}
