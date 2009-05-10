@@ -140,7 +140,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	// Recursively build the tree
 	nQuads = 0;
 	BuildTree(0, nPrims, primsIndexes, primsBboxes, primsCentroids,
-		worldBound, centroidsBbox, -1, 0, 0);
+		worldBound, centroidsBbox, -1L, 0L, 0);
 
 	prims = AllocAligned<boost::shared_ptr<Primitive> >(4 * nQuads);
 	nQuads = 0;
@@ -166,7 +166,7 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 
 	long currentNode = parentIndex;
 	long leftChildIndex = childIndex;
-	long rightChildIndex = childIndex + 1;
+	long rightChildIndex = childIndex + 1L;
 	
 	// Number of primitives in each bin
 	int bins[NB_BINS];
@@ -272,8 +272,8 @@ void QBVHAccel::BuildTree(long start, long end, u_long *primsIndexes,
 	// Register the split axis.
 	if (depth % 2 == 0) {
 		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
-		leftChildIndex = 0;
-		rightChildIndex = 2;
+		leftChildIndex = 0L;
+		rightChildIndex = 2L;
 
 		nodes[currentNode].axisMain = axis;
 	} else {
@@ -338,10 +338,10 @@ void QBVHAccel::CreateTempLeaf(long parentIndex, long childIndex,
 	long start, long end, const BBox &nodeBbox)
 {
 	// The leaf is directly encoded in the intermediate node.
-	if (parentIndex == -1) {
+	if (parentIndex == -1L) {
 		// The entire tree is a leaf
-		nNodes = 1;
-		parentIndex = 0;
+		nNodes = 1L;
+		parentIndex = 0L;
 	}
 
 	// Encode the leaf in the original way,
@@ -353,13 +353,13 @@ void QBVHAccel::CreateTempLeaf(long parentIndex, long childIndex,
 
 	node.SetBBox(childIndex, nodeBbox);
 
-	if (nbPrimsTotal == 0) {
-		node.InitializeLeaf(childIndex, 0, 0);
+	if (nbPrimsTotal == 0L) {
+		node.InitializeLeaf(childIndex, 0L, 0L);
 		return;
 	}
 
 	// Next multiple of 4, divided by 4
-	long quads = ((nbPrimsTotal + 3) & ~3) >> 2;
+	long quads = ((nbPrimsTotal + 3L) & ~3L) >> 2L;
 	
 	// Use the same encoding as the final one, but with a different meaning.
 	node.InitializeLeaf(childIndex, quads, start);
@@ -388,7 +388,7 @@ void QBVHAccel::CreateSwizzledLeaf(long parentIndex, long childIndex,
 	const long nbQuads = node.NbQuadsInLeaf(childIndex);
 
 	long primOffset = node.FirstQuadIndexForLeaf(childIndex);
-	long primNum = 4 * nQuads;
+	long primNum = 4L * nQuads;
 
 	for (long q = 0; q < nbQuads; ++q) {
 		for (int i = 0; i < 4; ++i) {
@@ -516,8 +516,8 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			const long visit = node.BBoxIntersect(sseOrig, sseInvDir,
 				sseTMin, sseTMax, signs);
 
-			const long nodeIdx = (signs[node.axisMain] << 2) |
-				(signs[node.axisSubLeft] << 1) |
+			const long nodeIdx = (signs[node.axisMain] << 2L) |
+				(signs[node.axisSubLeft] << 1L) |
 				(signs[node.axisSubRight]);
 			
 			const u_char *bboxOrder = pathTable + visit * 32 + nodeIdx * 4;
@@ -544,7 +544,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			
 			const long offset = QBVHNode::FirstQuadIndex(leafData);
 
-			for (long primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
+			for (long primNumber = 4L * offset; primNumber < 4L * (offset + nbQuadPrimitives); ++primNumber) {
 				if (prims[primNumber]->Intersect(ray, isect))
 					hit = true;
 			}
@@ -598,8 +598,8 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			const long visit = node.BBoxIntersect(sseOrig, sseInvDir,
 				sseTMin, sseTMax, signs);
 
-			const long nodeIdx = (signs[node.axisMain] << 2) |
-				(signs[node.axisSubLeft] << 1) |
+			const long nodeIdx = (signs[node.axisMain] << 2L) |
+				(signs[node.axisSubLeft] << 1L) |
 				(signs[node.axisSubRight]);
 			
 			const u_char *bboxOrder = pathTable + visit * 32 + nodeIdx * 4;
@@ -626,7 +626,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			
 			const long offset = QBVHNode::FirstQuadIndex(leafData);
 
-			for (long primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
+			for (long primNumber = 4L * offset; primNumber < 4L * (offset + nbQuadPrimitives); ++primNumber) {
 				if (prims[primNumber]->IntersectP(ray))
 					return true;
 			}

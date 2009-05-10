@@ -54,7 +54,7 @@ public:
 	// QBVH with less than 4 vertices at the beginning :
 	// the number of quads - 1 would give 0, and it would start at 0
 	// in the quads array
-	static const long emptyLeafNode = 0xffffffff;
+	static const long emptyLeafNode = 0xffffffffL;
 	
 	/**
 	   The 4 bounding boxes, in SoA form, for direct SIMD use
@@ -101,7 +101,7 @@ public:
 	   @return
 	*/
 	inline bool ChildIsLeaf(long i) const {
-		return (children[i] < 0);
+		return (children[i] < 0L);
 	}
 
 	/**
@@ -109,7 +109,7 @@ public:
 	   @param index
 	*/
 	inline static bool IsLeaf(long index) {
-		return (index < 0);
+		return (index < 0L);
 	}
 
 	/**
@@ -135,7 +135,7 @@ public:
 	   @return
 	*/
 	inline long NbQuadsInLeaf(long i) const {
-		return (((children[i] >> 27) & 15)) + 1;
+		return (((children[i] >> 27L) & 15L)) + 1L;
 	}
 
 	/**
@@ -143,7 +143,7 @@ public:
 	   @param index
 	*/
 	inline static long NbQuadPrimitives(long index) {
-		return ((index >> 27) & 15) + 1;
+		return ((index >> 27L) & 15L) + 1L;
 	}
 	
 	/**
@@ -153,7 +153,7 @@ public:
 	   @return
 	*/
 	inline long NbPrimitivesInLeaf(long i) const {
-		return NbQuadsInLeaf(i) * 4;
+		return NbQuadsInLeaf(i) * 4L;
 	}
 
 	/**
@@ -163,7 +163,7 @@ public:
 	   @return
 	*/
 	inline long FirstQuadIndexForLeaf(long i) const {
-		return children[i] & ~(31 << 27);
+		return children[i] & ~(31L << 27L);
 	}
 	
 	/**
@@ -171,7 +171,7 @@ public:
 	   @param index
 	*/
 	inline static long FirstQuadIndex(long index) {
-		return index & ~(31 << 27);
+		return index & ~(31L << 27L);
 	}
 
 	/**
@@ -182,15 +182,15 @@ public:
 	*/
 	inline void InitializeLeaf(long i, long nbQuads, long firstQuadIndex) {
 		// Take care to make a valid initialisation of the leaf.
-		if (nbQuads == 0) {
+		if (nbQuads == 0L) {
 			children[i] = emptyLeafNode;
 		} else {
 			// Put the negative sign
-			children[i] = 1 << 31;
+			children[i] = 1L << 31L;
 			
-			children[i] |=  (nbQuads - 1) << 27;
+			children[i] |=  (nbQuads - 1L) << 27L;
 
-			children[i] |= firstQuadIndex & ~(31 << 27);
+			children[i] |= firstQuadIndex & ~(31L << 27L);
 		}
 	}
 
@@ -322,7 +322,7 @@ private:
 		const BBox &nodeBbox) {
 		long index = nNodes++; // increment after assignment
 		nodes[index].parentNodeIndex = parentIndex;
-		if (parentIndex != -1) {
+		if (parentIndex != -1L) {
 			nodes[parentIndex].children[childIndex] = index;
 			nodes[parentIndex].SetBBox(childIndex, nodeBbox);
 		}
