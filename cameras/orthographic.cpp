@@ -145,15 +145,14 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point
 {
 	return false;
 }
-void OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
 {
-	if (Dot(wi, CameraToWorld(Normal(0, 0, 1))) < 1.f - SHADOW_RAY_EPSILON) {
-		*x = *y = -100.f; //FIXME
-		return;
-	}
+	if (Dot(wi, CameraToWorld(Normal(0, 0, 1))) < 1.f - SHADOW_RAY_EPSILON)
+		return false;
 	Point ps(WorldToRaster(p));
 	*x = ps.x;
 	*y = ps.y;
+	return true;
 }
 
 BBox OrthoCamera::Bounds() const

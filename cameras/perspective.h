@@ -41,7 +41,7 @@ public:
 	bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
 	bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
 	float Pdf(const Point &p, const Normal &n, const Vector &wi) const;
-	void GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const;
+	bool GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const;
 	bool IsDelta() const
 	{
 		return LensRadius==0.0f;

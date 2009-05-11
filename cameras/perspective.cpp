@@ -292,12 +292,14 @@ BBox PerspectiveCamera::Bounds() const
 	return CameraToWorld(bound);
 }
 
-void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
 {
-	Point origin(0, 0, 0);
-	CameraToWorld(origin, &origin);
 	Vector direction(0, 0, 1);
 	CameraToWorld(direction, &direction);
+	if (Dot(wi, direction) <= 0.f)
+		return false;
+	Point origin(0, 0, 0);
+	CameraToWorld(origin, &origin);
 	if (LensRadius > 0.f) {
 		Point pFC(p + wi * (FocalDistance / Dot(wi, direction)));
 		Vector wi0(pFC - origin);
@@ -310,6 +312,7 @@ void PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, floa
 		*x = pO.x;
 		*y = pO.y;
 	}
+	return true;
 }
 
 void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) const

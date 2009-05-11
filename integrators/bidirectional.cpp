@@ -613,7 +613,10 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 		weight[light->group] += L.filter(tspack) * totalWeight;
 	} else {
 		float xd, yd;
-		tspack->camera->GetSamplePosition(vE.p, vE.wi, &xd, &yd);
+		if (!tspack->camera->GetSamplePosition(vE.p, vE.wi, &xd, &yd)) {
+			vE = e;
+			return false;
+		}
 		L *= We;
 		XYZColor color(L.ToXYZ(tspack));
 		const float alpha = light->IsEnvironmental() ? 0.f : 1.f;
@@ -701,7 +704,8 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float &variance(vecV[lightGroup]);
 	// Get back normal image position
 	float x, y;
-	tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y);
+	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y))
+		return 0;
 	// Connect paths
 	for (int i = 1; i <= nEye; ++i) {
 		// Check eye path light intersection
@@ -767,13 +771,14 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						variance += weight *
 							Ll.filter(tspack);
 					} else {
-						Ll *= We;
 						const float d = Distance(lightPath[j - 1].p, eyePath[i - 1].p);
 						float xl, yl;
-						tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[i - 1].p) / d, &xl, &yl);
-						XYZColor color(Ll.ToXYZ(tspack));
-						const float a = (j == 1 && light->IsEnvironmental()) ? 0.f : 1.f;
-						sample->AddContribution(xl, yl, color, a, d, weight, lightBufferId, lightGroup);
+						if (tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[i - 1].p) / d, &xl, &yl)) {
+							Ll *= We;
+							XYZColor color(Ll.ToXYZ(tspack));
+							const float a = (j == 1 && light->IsEnvironmental()) ? 0.f : 1.f;
+							sample->AddContribution(xl, yl, color, a, d, weight, lightBufferId, lightGroup);
+						}
 					}
 					++nrContribs;
 				}
