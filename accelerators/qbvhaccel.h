@@ -420,7 +420,7 @@ private:
 	// origin.
 	// 4 bits per index, stored in 32bit int. 4 means no intersection.
 	// 16 visit * 8 idx * 4 bbox = 128 * ints = 512bytes
-	static const int32_t pathTable[128];
+	static const boost::int16_t pathTable[128];
 };
 
 } // namespace lux
