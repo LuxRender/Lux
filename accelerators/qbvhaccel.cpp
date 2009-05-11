@@ -27,7 +27,7 @@
 using namespace lux;
 
 /***************************************************/
-const int QBVHAccel::pathTable[] = {
+const int16_t QBVHAccel::pathTable[] = {
 	// Note that the packed indices are stored in reverse
 	// order, that is first index is in the first 4 bits.
 	// visit = 0000
@@ -521,15 +521,14 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 				(signs[node.axisSubLeft] << 1) |
 				(signs[node.axisSubRight]);
 			
-			int bboxOrder = pathTable[visit * 8 + nodeIdx];
+			int16_t bboxOrder = pathTable[visit * 8 + nodeIdx];
 
 			// Push on the stack, if the bbox is hit by the ray
 			for (int i = 0; i < 4; i++) {
-				const int childIndex = bboxOrder & 0xf;
-				if (childIndex < 4) {
-					++todoNode;
-					nodeStack[todoNode] = node.children[childIndex];
-				}
+				if (bboxOrder & 0x4)
+					break;
+				++todoNode;
+				nodeStack[todoNode] = node.children[bboxOrder & 0x3];
 				bboxOrder = bboxOrder >> 4;
 			}
 		} else {
@@ -600,15 +599,14 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 				(signs[node.axisSubLeft] << 1) |
 				(signs[node.axisSubRight]);
 			
-			int bboxOrder = pathTable[visit * 8 + nodeIdx];
+			int16_t bboxOrder = pathTable[visit * 8 + nodeIdx];
 
 			// Push on the stack, if the bbox is hit by the ray
 			for (int i = 0; i < 4; i++) {
-				const int childIndex = bboxOrder & 0xf;
-				if (childIndex < 4) {
-					++todoNode;
-					nodeStack[todoNode] = node.children[childIndex];
-				}
+				if (bboxOrder & 0x4)
+					break;
+				++todoNode;
+				nodeStack[todoNode] = node.children[bboxOrder & 0x3];
 				bboxOrder = bboxOrder >> 4;
 			}
 		} else {
