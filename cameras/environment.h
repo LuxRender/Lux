@@ -33,53 +33,21 @@ public:
 	EnvironmentCamera(const Transform &world2camStart, const Transform &world2camEnd, float hither,
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	float GenerateRay(const Sample &sample, Ray *) const;
-	bool IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const;
-	float GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const;
-	void GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const;
+	bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
+	bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
+	float Pdf(const Point &p, const Normal &n, const Vector &wi) const;
+	bool GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const;
 	bool IsDelta() const
 	{
 		return true;
 	}
-	void SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const;
-	float EvalPositionPdf() const;
-	//float SampleDirection(const Sample &sample, Ray *ray)
-	//{
-	//	// FixMe: Duplicated code
-	//	ray->o = rayOrigin;
-	//	// Generate environment camera ray direction
-	//	float theta = M_PI * sample.imageY / film->yResolution;
-	//	float phi = 2 * M_PI * sample.imageX / film->xResolution;
-	//	Vector dir(sinf(theta) * cosf(phi), cosf(theta),
-	//		sinf(theta) * sinf(phi));
-	//	CameraToWorld(dir, &ray->d);
-	//	// Set ray time value
-	//	ray->time = Lerp(sample.time, ShutterOpen, ShutterClose);
-	//	ray->mint = ClipHither;
-	//	ray->maxt = ClipYon;
-
-	//	// R*R/(Apixel*nx*ny)
-	//	// sub-pdf in Apixel is not correct
-	//	return 1.0f/(2.0f*M_PI*M_PI*sinf(M_PI*((int)sample.imageY+0.5f)/film->yResolution));
-
-	//}
-	//float EvalDirectionPdf(Film *film, const Vector& wo, const Sample &sample, const Point& p)
-	//{
-	//	return 1.0f/(2.0f*M_PI*M_PI*sinf(M_PI*((int)sample.imageY+0.5f)/film->yResolution));
-	//}
-	//SWCSpectrum EvalValue()
-	//{
-	//	return SWCSpectrum(1.0f);
-	//}
+	BBox Bounds() const;
 
 	EnvironmentCamera* Clone() const {
 		return new EnvironmentCamera(*this);
 	}
 
 	static Camera *CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params, Film *film);
-private:
-	bool GenerateSample(const Point &p, Sample *sample) const;
-	// EnvironmentCamera Private Data
-	//Point rayOrigin;
 };
 
 }//namespace lux

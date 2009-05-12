@@ -23,12 +23,24 @@
 // environment.cpp*
 #include "environment.h"
 #include "sampling.h"
+#include "mc.h"
 #include "scene.h" // for struct Intersection
 #include "film.h" // for Film
+#include "reflection/bxdf.h"
+#include "light.h"
 #include "paramset.h"
 #include "dynload.h"
 
 using namespace lux;
+
+class EnvironmentBxDF : public BxDF {
+public:
+	EnvironmentBxDF() :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {}
+	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+		*F += SWCSpectrum(SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f);
+	}
+};
 
 // EnvironmentCamera Method Definitions
 EnvironmentCamera::
@@ -52,71 +64,62 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 	ray->maxt = ClipYon;
 	return 1.f;
 }
-bool EnvironmentCamera::GenerateSample(const Point &p, Sample *sample) const
+	
+bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
-	Vector dir_world(p - CameraToWorld(Point(0,0,0)));
-	Vector dir_camera;
-	WorldToCamera(dir_world, &dir_camera);
-	dir_camera = Normalize(dir_camera);
-	float theta, phi;
-	theta = acosf(dir_camera.y);
-	phi = acosf(dir_camera.x/sinf(theta));
-	if (isnan(phi))
-		phi=atanf(dir_camera.z/dir_camera.x);
-	if (dir_camera.z<0)
-		phi = M_PI * 2 - phi;
-
-	sample->imageX = min (phi * INV_TWOPI, 1.0f) * film->xResolution ;
-	sample->imageY = min (theta * INV_PI, 1.0f) * film->yResolution ;
-	//return (sample->imageX>=film->xPixelStart &&
-	//	sample->imageX<film->xPixelStart+film->xPixelCount &&
-	//	sample->imageY>=film->yPixelStart &&
-	//	sample->imageY<film->yPixelStart+film->yPixelCount);
-
-	//static float mm=0;
-	//if (phi*INV_TWOPI>1)
-	//	printf("\n%f,%f\n",mm=max(phi*INV_TWOPI,mm),theta*INV_PI);
-
+	Point psC(0.f);
+	Point ps = CameraToWorld(psC);
+	Normal ns(UniformSampleSphere(u1, u2));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, EnvironmentBxDF)());
+	*pdf = UniformSpherePdf();
+	*We = SWCSpectrum(*pdf);
 	return true;
 }
-bool EnvironmentCamera::IsVisibleFromEyes(const Scene *scene, const Point &lenP, const Point &worldP, Sample* sample_gen, Ray *ray_gen) const
+bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
 {
-	bool isVisible;
-	if (GenerateSample(worldP, sample_gen))
-	{
-		GenerateRay(*sample_gen, ray_gen);
-		ray_gen->maxt = Distance(ray_gen->o, worldP)*(1-RAY_EPSILON);
-		isVisible = !scene->IntersectP(*ray_gen);
-	}
+	Point psC(0.f);
+	Point ps = CameraToWorld(psC);
+	const Vector w(p - ps);
+	Normal ns(Normalize(w));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	(*bsdf)->Add(BSDF_ALLOC(tspack, EnvironmentBxDF)());
+	*pdf = UniformSpherePdf();
+	*pdfDirect = 1.f;
+	visibility->SetSegment(p, ps, tspack->time);
+	*We = SWCSpectrum(*pdf);
+	return true;
+}
+
+BBox EnvironmentCamera::Bounds() const
+{
+	BBox bound(Point(0.f, 0.f, 0.f));
+	bound.Expand(SHADOW_RAY_EPSILON);
+	return CameraToWorld(bound);
+}
+
+bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+{
+	const Vector w = WorldToCamera(wi);
+	const float cosTheta = w.y;
+	const float theta = acos(min(1.f, cosTheta));
+	*y = theta * film->yResolution * INV_PI;
+	const float sinTheta = sqrtf(Clamp(1.f - cosTheta * cosTheta, 1e-5f, 1.f));
+	const float cosPhi = w.x / sinTheta;
+	const float phi = acos(min(1.f, cosPhi));
+	if (w.z >= 0.f)
+		*x = phi * film->xResolution * INV_TWOPI;
 	else
-		isVisible = false;
-	return isVisible;
+		*x = (2.f * M_PI - phi) * film->xResolution * INV_TWOPI;
+	return true;
 }
-float EnvironmentCamera::GetConnectingFactor(const Point &lenP, const Point &worldP, const Vector &wo, const Normal &n) const
-{
-	return AbsDot(wo, n) / DistanceSquared(lenP, worldP);
-}
-void EnvironmentCamera::GetFlux2RadianceFactors(Film *film, float *factors, int xPixelCount, int yPixelCount) const
-{
-	float Apixel,R = 100.0f;
-	int x,y;
-	for (y = 0; y < yPixelCount; ++y) {
-		for (x = 0; x < xPixelCount; ++x) {
-			Apixel = 2*M_PI/film->xResolution*R*sinf(M_PI*(y+0.5f)/film->yResolution) * M_PI/film->yResolution*R;
-			factors[x+y*xPixelCount] =  R*R / Apixel;
-		}
-	}
-}
-void EnvironmentCamera::SamplePosition(float u1, float u2, float u3, Point *p, float *pdf) const
-{
-	*p = CameraToWorld(Point(0,0,0));
-	*pdf = 1.0f;
-}
-float EnvironmentCamera::EvalPositionPdf() const
-{
-	return 1.0f;
-}
-	
+
 Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, 
 	const ParamSet &params,	Film *film)
 {
