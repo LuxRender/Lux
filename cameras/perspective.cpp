@@ -158,7 +158,8 @@ PerspectiveCamera::
 	xPixelWidth = /*xWidth / */f->xResolution;
 	yPixelHeight = /*yHeight / */f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
-
+	RasterToCameraBidir = Perspective(fov1, RAY_EPSILON, INFINITY).GetInverse() * RasterToScreen;
+	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
 void PerspectiveCamera::AutoFocus(Scene* scene)
@@ -250,15 +251,16 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
 	Point psC(0.f);
-	SampleLens(u1, u2, &psC.x, &psC.y);
-	psC.x *= LensRadius;
-	psC.y *= LensRadius;
+	if (LensRadius > 0.f) {
+		SampleLens(u1, u2, &psC.x, &psC.y);
+		psC.x *= LensRadius;
+		psC.y *= LensRadius;
+	}
 	Point ps = CameraToWorld(psC);
-	Normal ns(CameraToWorld(Normal(0, 0, 1)));
-	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, normal);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
-		xWidth * yHeight / (R * R), fov, psC, RasterToCamera,
+		xWidth * yHeight / (R * R), fov, psC, RasterToCameraBidir,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
@@ -267,15 +269,16 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
 {
 	Point psC(0.f);
-	SampleLens(u1, u2, &psC.x, &psC.y);
-	psC.x *= LensRadius;
-	psC.y *= LensRadius;
+	if (LensRadius > 0.f) {
+		SampleLens(u1, u2, &psC.x, &psC.y);
+		psC.x *= LensRadius;
+		psC.y *= LensRadius;
+	}
 	Point ps = CameraToWorld(psC);
-	Normal ns(CameraToWorld(Normal(0, 0, 1)));
-	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, normal);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
-		xWidth * yHeight / (R * R), fov, psC, RasterToCamera,
+		xWidth * yHeight / (R * R), fov, psC, RasterToCameraBidir,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
@@ -292,27 +295,32 @@ BBox PerspectiveCamera::Bounds() const
 	return CameraToWorld(bound);
 }
 
-bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
-	Vector direction(0, 0, 1);
-	CameraToWorld(direction, &direction);
-	if (Dot(wi, direction) <= 0.f)
+	Vector direction(normal);
+	const float cosi = Dot(wi, direction);
+	if (cosi <= 0.f || (distance != -1.f && (distance / cosi < ClipHither || distance / cosi > ClipYon)))
 		return false;
-	Point origin(0, 0, 0);
-	CameraToWorld(origin, &origin);
 	if (LensRadius > 0.f) {
 		Point pFC(p + wi * (FocalDistance / Dot(wi, direction)));
-		Vector wi0(pFC - origin);
-		Point pO(origin + wi0 / Dot(wi0, direction));
-		WorldToRaster(pO, &pO);
+		Vector wi0(pFC - pos);
+		Point pO(pos + wi0 / Dot(wi0, direction));
+		WorldToRasterBidir(pO, &pO);
 		*x = pO.x;
 		*y = pO.y;
 	} else {
-		Point pO = WorldToRaster(origin + wi / Dot(wi, direction));
+		Point pO = WorldToRasterBidir(pos + wi / Dot(wi, direction));
 		*x = pO.x;
 		*y = pO.y;
 	}
 	return true;
+}
+
+void PerspectiveCamera::ClampRay(Ray &ray) const
+{
+	const float cosi = Dot(ray.d, normal);
+	ray.mint = ClipHither / cosi;
+	ray.maxt = ClipYon / cosi;
 }
 
 void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) const

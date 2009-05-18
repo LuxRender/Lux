@@ -50,7 +50,8 @@ public:
 		warnOnce = true;
 		return false;
 	}
-	virtual bool GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const { return false; }
+	virtual bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const { return false; }
+	virtual void ClampRay(Ray &ray) const { }
 	virtual bool IsDelta() const;
 	virtual bool IsLensBased() const { return true; }
 	virtual void AutoFocus(Scene* scene) { }

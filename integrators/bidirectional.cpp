@@ -145,6 +145,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			data[3], &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf,
 			true))
 			break;
+		bool through = false;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
 			v.flux = v.f;
@@ -169,10 +170,13 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			vertices[nVerts - 2].tPdfR *= v.pdfR;
 			vertices[nVerts - 1].tPdf *= v.pdf;
 			--nVerts;
+			through = true;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
 		ray.time = tspack->time;
+		if (nVerts == 1 && !through)
+			tspack->camera->ClampRay(ray);
 		if (!scene->Intersect(ray, &isect)) {
 			vertices[nVerts].wo = -ray.d;
 			vertices[nVerts].bsdf = NULL;
@@ -228,6 +232,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2],
 			data[3], &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
+		bool through = false;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
 			v.flux = v.f;
@@ -252,10 +257,13 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			vertices[nVerts - 2].tPdf *= v.pdf;
 			vertices[nVerts - 1].tPdfR *= v.pdfR;
 			--nVerts;
+			through = true;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
 		ray.time = tspack->time;
+		if (nVerts == 1 && !through)
+			tspack->camera->ClampRay(ray);
 		if (!scene->Intersect(ray, &isect))
 			break;
 	}
@@ -612,15 +620,16 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 		Ld[light->group] += L;
 		weight[light->group] += L.filter(tspack) * totalWeight;
 	} else {
+		const float distance = sqrtf(lightPath[0].d2);
 		float xd, yd;
-		if (!tspack->camera->GetSamplePosition(vE.p, vE.wi, &xd, &yd)) {
+		if (!tspack->camera->GetSamplePosition(vE.p, vE.wi, distance, &xd, &yd)) {
 			vE = e;
 			return false;
 		}
 		L *= We;
 		XYZColor color(L.ToXYZ(tspack));
 		const float alpha = light->IsEnvironmental() ? 0.f : 1.f;
-		sample->AddContribution(xd, yd, color, alpha, sqrtf(lightPath[0].d2), totalWeight, bidir.lightBufferId, light->group);
+		sample->AddContribution(xd, yd, color, alpha, distance, totalWeight, bidir.lightBufferId, light->group);
 	}
 	vE = e;
 	return true;
@@ -704,7 +713,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float &variance(vecV[lightGroup]);
 	// Get back normal image position
 	float x, y;
-	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, &x, &y))
+	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, -1.f, &x, &y))
 		return 0;
 	// Connect paths
 	for (int i = 1; i <= nEye; ++i) {
@@ -773,7 +782,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					} else {
 						const float d = Distance(lightPath[j - 1].p, eyePath[i - 1].p);
 						float xl, yl;
-						if (tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[i - 1].p) / d, &xl, &yl)) {
+						if (tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[i - 1].p) / d, d, &xl, &yl)) {
 							Ll *= We;
 							XYZColor color(Ll.ToXYZ(tspack));
 							const float a = (j == 1 && light->IsEnvironmental()) ? 0.f : 1.f;
