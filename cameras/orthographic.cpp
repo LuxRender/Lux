@@ -45,6 +45,9 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 	screenDx = Screen[1] - Screen[0];
 	screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
 	posPdf = (film->xResolution * film->yResolution) / (screenDx * screenDy);
+	normal = CameraToWorld(Normal(0, 0, 1));
+	RasterToCameraBidir = Orthographic(0.f, 1e30f).GetInverse() * RasterToScreen;
+	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
 void OrthoCamera::AutoFocus(Scene* scene)
@@ -130,11 +133,10 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 
 bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
-	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
+	Point psC(RasterToCameraBidir(Point(u1, u2, 0.f)));
 	Point ps = CameraToWorld(psC);
-	Normal ns(CameraToWorld(Normal(0, 0, 1)));
-	DifferentialGeometry dg(ps, ns, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, normal);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, SpecularReflection)(SWCSpectrum(1.f),
 		BSDF_ALLOC(tspack, FresnelNoOp)(), 0.f, 0.f));
 	*pdf = posPdf;
@@ -145,14 +147,20 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point
 {
 	return false;
 }
-bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
-	if (Dot(wi, CameraToWorld(Normal(0, 0, 1))) < 1.f - SHADOW_RAY_EPSILON)
+	if (Dot(wi, normal) < 1.f - SHADOW_RAY_EPSILON || distance < ClipHither || distance > ClipYon)
 		return false;
-	Point ps(WorldToRaster(p));
+	Point ps(WorldToRasterBidir(p));
 	*x = ps.x;
 	*y = ps.y;
 	return true;
+}
+
+void OrthoCamera::ClampRay(Ray &ray) const
+{
+	ray.mint = ClipHither;
+	ray.maxt = ClipYon;
 }
 
 BBox OrthoCamera::Bounds() const
