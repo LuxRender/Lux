@@ -48,6 +48,7 @@ EnvironmentCamera::
 		float hither, float yon, float sopen, float sclose, int sdist,
 		Film *film)
 	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose, sdist, film) {
+		pos = CameraToWorld(Point(0, 0, 0));
 }
 float EnvironmentCamera::GenerateRay(const Sample &sample,
 		Ray *ray) const {
@@ -67,12 +68,10 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 	
 bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
-	Point psC(0.f);
-	Point ps = CameraToWorld(psC);
 	Normal ns(UniformSampleSphere(u1, u2));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, EnvironmentBxDF)());
 	*pdf = UniformSpherePdf();
@@ -81,31 +80,31 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 }
 bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
 {
-	Point psC(0.f);
-	Point ps = CameraToWorld(psC);
-	const Vector w(p - ps);
+	const Vector w(p - pos);
 	Normal ns(Normalize(w));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	(*bsdf)->Add(BSDF_ALLOC(tspack, EnvironmentBxDF)());
 	*pdf = UniformSpherePdf();
 	*pdfDirect = 1.f;
-	visibility->SetSegment(p, ps, tspack->time);
+	visibility->SetSegment(p, pos, tspack->time);
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
 
 BBox EnvironmentCamera::Bounds() const
 {
-	BBox bound(Point(0.f, 0.f, 0.f));
+	BBox bound(pos);
 	bound.Expand(SHADOW_RAY_EPSILON);
-	return CameraToWorld(bound);
+	return bound;
 }
 
-bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi, float *x, float *y) const
+bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
+	if (distance < ClipHither || distance > ClipYon)
+		return false;
 	const Vector w = WorldToCamera(wi);
 	const float cosTheta = w.y;
 	const float theta = acos(min(1.f, cosTheta));
@@ -118,6 +117,12 @@ bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi, floa
 	else
 		*x = (2.f * M_PI - phi) * film->xResolution * INV_TWOPI;
 	return true;
+}
+
+void EnvironmentCamera::ClampRay(Ray &ray) const
+{
+	ray.mint = ClipHither;
+	ray.maxt = ClipYon;
 }
 
 Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, 
