@@ -331,7 +331,7 @@ public:
 	}
 //protected:
 	bool Constrain(float lum, RGBColor &rgb) const;
-	RGBColor Limit(const RGBColor &rgb) const;
+	RGBColor Limit(const RGBColor &rgb, int method) const;
 	float xRed, yRed; //!<Red coordinates
 	float xGreen, yGreen; //!<Green coordinates
 	float xBlue, yBlue; //!<Blue coordinates

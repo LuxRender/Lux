@@ -59,7 +59,7 @@ using namespace lux;
 
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
-	const string &filename1, bool premult, int wI, int dI,
+	const string &filename1, bool premult, int wI, int dI, int cM,
 	bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -83,7 +83,8 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
 	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
 
-    // Set Image Output parameters
+	// Set Image Output parameters
+	clampMethod = cM;
 	write_EXR = cw_EXR;
 	write_EXR_halftype = cw_EXR_halftype;
 	write_EXR_applyimaging = cw_EXR_applyimaging;
@@ -1128,7 +1129,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			// Clamp too high values
 			const u_int nPix = xPixelCount * yPixelCount;
 			for (u_int i = 0; i < nPix; ++i)
-				color[i] = colorSpace.Limit(color[i]);
+				color[i] = colorSpace.Limit(color[i], clampMethod);
 
 			// write out tonemapped TGA
 			if ((type & IMAGE_FILEOUTPUT) && write_TGA)
@@ -1944,6 +1945,19 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	}
 
 	// Output Image File Formats
+	string clampMethodString = params.FindOneString("ldr_clamp_method", "lum");
+	int clampMethod = 0;
+	if (clampMethodString == "lum")
+		clampMethod = 0;
+	else if (clampMethodString == "hue")
+		clampMethod = 1;
+	else if (clampMethodString == "cut")
+		clampMethod = 2;
+	else {
+		std::stringstream ss;
+		ss << "LDR clamping method  '" << clampMethodString << "' unknown. Using \"lum\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+	}
 
 	// OpenEXR
 	bool w_EXR = params.FindOneBool("write_exr", false);
@@ -2118,7 +2132,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	return new FlexImageFilm(xres, yres, filter, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
-		w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
+		clampMethod, w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 
 		w_resume_FLM, restart_resume_FLM, haltspp,

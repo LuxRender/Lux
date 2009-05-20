@@ -42,7 +42,7 @@ public:
 	// FlexImageFilm Public Methods
 
 	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
-		const string &filename1, bool premult, int wI, int dI,
+		const string &filename1, bool premult, int wI, int dI, int cM,
 		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -128,6 +128,7 @@ private:
 	Filter *filter;
 	int writeInterval;
 	int displayInterval;
+	int clampMethod;
 	string filename;
 	bool premultiplyAlpha, buffersInited;
 	float cropWindow[4], *filterTable;
