@@ -516,18 +516,20 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 }
 
 int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample) const
+		const Sample *sample) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
 	float zdepth = 0.f;
+        RayDifferential ray;
+        float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
 	LiInternal(tspack, scene, ray, sample, L, &alpha, &zdepth, 0, true, nrContribs);
 
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
-		L[i].ToXYZ(tspack), alpha, zdepth, bufferId, i);
+		L[i].ToXYZ(tspack) * rayWeight, alpha, zdepth, bufferId, i);
 
 	return nrContribs;
 }

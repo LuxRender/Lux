@@ -60,11 +60,13 @@ void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 }
 
 int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &r, const Sample *sample) const
+	const Sample *sample) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	float nrContribs = 0.f;
 	// Declare common path integration variables
+        RayDifferential r;
+        float rayWeight = tspack->camera->GenerateRay(*sample, &r);
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
@@ -229,7 +231,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!L[i].Black())
 			V[i] /= L[i].filter(tspack);
 		sample->AddContribution(sample->imageX, sample->imageY,
-			L[i].ToXYZ(tspack), alpha, distance, V[i], bufferId, i);
+			L[i].ToXYZ(tspack) * rayWeight, alpha, distance, V[i], bufferId, i);
 	}
 
 	return nrContribs;

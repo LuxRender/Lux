@@ -58,7 +58,7 @@ public:
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
 	~ExPhotonIntegrator();
 
-	int Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, 
+	int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const TsPack *tspack, const Scene *scene);

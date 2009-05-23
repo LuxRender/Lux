@@ -38,7 +38,7 @@ public:
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// PathIntegrator Public Methods
-	int Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample) const;
+	int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	PathIntegrator(LightStrategy st, RRStrategy rst, int md, float cp, bool ie) {
 		lightStrategy = st;

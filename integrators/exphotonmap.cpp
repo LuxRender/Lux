@@ -177,10 +177,12 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 }
 
 int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
-								   const RayDifferential &ray, const Sample *sample) const 
+	const Sample *sample) const 
 {
     SampleGuard guard(sample->sampler, sample);
 
+        RayDifferential ray;
+        float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	SWCSpectrum L(0.f);
 	float alpha = 1.f;
 	switch(renderingMode) {
@@ -195,7 +197,7 @@ int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	}
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		L.ToXYZ(tspack), alpha, bufferId);
+		L.ToXYZ(tspack) * rayWeight, alpha, bufferId);
 
     return 1;
 }

@@ -650,7 +650,7 @@ static bool getLight(const TsPack *tspack, const Scene *scene,
 }
 
 int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
-	const RayDifferential &ray, const Sample *sample) const
+	const Sample *sample) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
