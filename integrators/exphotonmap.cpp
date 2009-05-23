@@ -177,24 +177,25 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 }
 
 int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
-								   const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const 
+								   const RayDifferential &ray, const Sample *sample) const 
 {
     SampleGuard guard(sample->sampler, sample);
 
-	*L = 0.0f;
+	SWCSpectrum L(0.f);
+	float alpha = 1.f;
 	switch(renderingMode) {
 		case RM_DIRECTLIGHTING:
-			*L = LiDirectLightingMode(tspack, scene, ray, sample, alpha, 0, true);
+			L = LiDirectLightingMode(tspack, scene, ray, sample, &alpha, 0, true);
 			break;
 		case RM_PATH:
-			*L = LiPathMode(tspack, scene, ray, sample, alpha);
+			L = LiPathMode(tspack, scene, ray, sample, &alpha);
 			break;
 		default:
 			BOOST_ASSERT(false);
 	}
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		L->ToXYZ(tspack), alpha ? (*alpha) : 1.0f, bufferId);
+		L.ToXYZ(tspack), alpha, bufferId);
 
     return 1;
 }
@@ -225,7 +226,6 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(
 
 		float *lightNum = &sampleData[2];
 
-        if (alpha) *alpha = 1.0f;
         Vector wo = -ray.d;
 
 		// Compute emitted light if ray hit an area light source
@@ -372,8 +372,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(
 				L += scene->lights[i]->Le(tspack, ray);
 		}
 
-        if (alpha && !L.Black()) *alpha = 1.0f;
-		else if(alpha) *alpha = 0.0f;
+		*alpha = 0.f;
     }
 
 	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &L);
@@ -396,7 +395,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 	SWCSpectrum pathThroughput(1.0f);
 	XYZColor color;
 	bool specularBounce = true, specular = true;
-	if (alpha) *alpha = 1.;
 
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
@@ -419,8 +417,8 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(
 			}
 
 			// Set alpha channel
-			if (pathLength == 0 && alpha && !(color.y() > 0.f))
-				*alpha = 0.0f;
+			if (pathLength == 0)
+				*alpha = 0.f;
 			break;
 		}
 		if (pathLength == 0)

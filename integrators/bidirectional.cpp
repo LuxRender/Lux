@@ -650,14 +650,12 @@ static bool getLight(const TsPack *tspack, const Scene *scene,
 }
 
 int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
-	const RayDifferential &ray, const Sample *sample, SWCSpectrum *Li,
-	float *alpha) const
+	const RayDifferential &ray, const Sample *sample) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
 	vector<BidirVertex> eyePath(maxEyeDepth), lightPath(maxLightDepth);
-	if (alpha)
-		*alpha = 1.f;
+	float alpha = 1.f;
 	const int numberOfLights = static_cast<int>(scene->lights.size());
 	const float directWeight = (lightStrategy == SAMPLE_ONE_UNIFORM) ?
 		1.f / numberOfLights : 1.f;
@@ -722,8 +720,8 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			if (getEnvironmentLight(tspack, scene, *this,
 				eyePath, i, directWeight, vecL, vecV,
 				nrContribs)) {
-				if (i == 2 && alpha)
-					*alpha = 0.f; // Remove directly visible environment to allow compositing
+				if (i == 2)
+					alpha = 0.f; // Remove directly visible environment to allow compositing
 				break; //from now on the eye path does not intersect anything
 			} else if (getLightHit(tspack, scene, *this, eyePath, i,
 				vecL, vecV))
@@ -804,7 +802,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			vecV[i] /= vecL[i].filter(tspack);
 		vecL[i] *= We;
 		XYZColor color(vecL[i].ToXYZ(tspack));
-		sample->AddContribution(x, y, color, alpha ? *alpha : 1.f, d,
+		sample->AddContribution(x, y, color, alpha, d,
 			vecV[i], eyeBufferId, i);
 	}
 	return nrContribs;

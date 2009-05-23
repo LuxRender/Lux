@@ -182,8 +182,6 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 {
 	Intersection isect;
 	const float time = ray.time; // save time for motion blur
-	if (alpha)
-		*alpha = 1.f;
 
 	if (scene->Intersect(ray, &isect)) {
 		// Evaluate BSDF at hit point
@@ -223,7 +221,8 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 			// View Material
 			if(bsdf->compParams->oA)
 				*alpha = bsdf->compParams->A;
-			else if(alpha) *alpha = 0.f;
+			else
+				*alpha = 0.f;
 			return;
 		}
 		if(!bsdf->compParams->tiVm && rayDepth > 0) {
@@ -503,7 +502,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				++nrContribs;
 			}
 		}
-		if (rayDepth == 0 && alpha)
+		if (rayDepth == 0)
 			*alpha = 0.f;
 	}
 
@@ -517,17 +516,18 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 }
 
 int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample,
-		SWCSpectrum *Li, float *alpha) const {
+		const RayDifferential &ray, const Sample *sample) const
+{
 	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
 	float zdepth = 0.f;
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
-	LiInternal(tspack, scene, ray, sample, L, alpha, &zdepth, 0, true, nrContribs);
+	float alpha = 1.f;
+	LiInternal(tspack, scene, ray, sample, L, &alpha, &zdepth, 0, true, nrContribs);
 
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
-		L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, zdepth, bufferId, i);
+		L[i].ToXYZ(tspack), alpha, zdepth, bufferId, i);
 
 	return nrContribs;
 }

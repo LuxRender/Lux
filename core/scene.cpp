@@ -315,18 +315,15 @@ void RenderThread::render(RenderThread *myThread) {
 		// sample camera transformation
 		float camtime = myThread->tspack->camera->GetTime(myThread->sample->time);
 		myThread->tspack->camera->SampleMotion(camtime);
-		//myThread->tspack->camera->SampleMotion(0.5);
 
 		// Dade - check if the integrator support SWC / NOTE - Radiance - This should probably be removed. Integrators should all support SWC.
-		if (myThread->surfaceIntegrator->IsSWCSupported()) {
-			// Sample new SWC thread wavelengths
-			myThread->tspack->swl->Sample(myThread->sample->wavelengths,
-					myThread->sample->singleWavelength);
-		} else {
+		if (!myThread->surfaceIntegrator->IsSWCSupported()) {
 			myThread->sample->wavelengths = 0.5f;
 			myThread->sample->singleWavelength = 0.5f;
-			myThread->tspack->swl->Sample(0.5f, 0.5f);
 		}
+		// Sample new SWC thread wavelengths
+		myThread->tspack->swl->Sample(myThread->sample->wavelengths,
+			myThread->sample->singleWavelength);
 
         while(myThread->signal == PAUSE) {
             boost::xtime xt;
@@ -346,13 +343,11 @@ void RenderThread::render(RenderThread *myThread) {
 			myThread->tspack->time = ray.time;
 
             // Evaluate radiance along camera ray
-            float alpha;
-            SWCSpectrum dummy;
 	// Jeanphi - Hijack statistics until volume integrator revamp
 		do {
 			boost::mutex::scoped_lock lock(myThread->statLock);
 	    myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
-					myThread->scene, ray, myThread->sample, &dummy, &alpha);
+					myThread->scene, ray, myThread->sample);
 		} while(0);
 
 

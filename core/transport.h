@@ -34,11 +34,6 @@ class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator();
-	virtual int Li(const TsPack *tspack, const Scene *scene,
-					    const RayDifferential &ray,
-					    const Sample *sample,
-					    SWCSpectrum *L,
-					    float *alpha) const = 0;
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene) {
 	}
 	virtual void RequestSamples(Sample *sample,
@@ -48,6 +43,8 @@ public:
 
 class SurfaceIntegrator : public Integrator {
 public:
+	virtual int Li(const TsPack *tspack, const Scene *scene,
+		const RayDifferential &ray, const Sample *sample) const = 0;
 	// Dade - Exphotonmap is the only integrator not supporting SWC at the moment
 	virtual bool IsSWCSupported() {
 		return true;
@@ -56,6 +53,9 @@ public:
 
 class VolumeIntegrator : public Integrator {
 public:
+	virtual int Li(const TsPack *tspack, const Scene *scene,
+		const RayDifferential &ray, const Sample *sample,
+		SWCSpectrum *L, float *alpha) const = 0;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	virtual void Transmittance(const TsPack *tspack, const Scene *scene,
 		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const = 0;

@@ -66,8 +66,6 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 		vector<SWCSpectrum> &L, float *alpha, int rayDepth) const {
 	int nContribs = 0;
 	Intersection isect;
-	if (alpha)
-		*alpha = 1.f;
 	const float time = ray.time; // save time for motion blur
 
 	if (scene->Intersect(ray, &isect)) {
@@ -206,7 +204,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 				++nContribs;
 			}
 		}
-		if (rayDepth == 0 && alpha)
+		if (rayDepth == 0)
 			*alpha = 0.f;
 	}
 
@@ -227,15 +225,16 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 }
 
 int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample,
-		SWCSpectrum *Li, float *alpha) const {
+	const RayDifferential &ray, const Sample *sample) const
+{
 	SampleGuard guard(sample->sampler, sample);
 
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
-	int nContribs = LiInternal(tspack, scene, ray,sample, L, alpha, 0);
+	float alpha = 1.f;
+	int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, 0);
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
-			L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, 0.f, bufferId, i);
+			L[i].ToXYZ(tspack), alpha, 0.f, bufferId, i);
 
 	return nContribs;
 }

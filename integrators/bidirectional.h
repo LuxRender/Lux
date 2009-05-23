@@ -45,7 +45,7 @@ public:
 		lightBufferId = -1;
 	}
 	// BidirIntegrator Public Methods
-	int Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
+	int Li(const TsPack *tspack, const Scene *scene, const RayDifferential &ray, const Sample *sample) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);

@@ -60,8 +60,7 @@ void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 }
 
 int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &r, const Sample *sample,
-		SWCSpectrum *Li, float *alpha) const
+		const RayDifferential &r, const Sample *sample) const
 {
 	SampleGuard guard(sample->sampler, sample);
 	float nrContribs = 0.f;
@@ -72,7 +71,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	vector<float> V(scene->lightGroups.size(), 0.f);
 	float VContrib = .1f;
 	bool specularBounce = true, specular = true, through = false;
-	if (alpha) *alpha = 1.;
+	float alpha = 1.f;
 	float distance = INFINITY;
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
@@ -81,14 +80,14 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
 				SWCSpectrum Lv;
-				int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+				int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
 				if (!Lv.Black()) {
 					L[g] = Lv;
 					V[g] += Lv.filter(tspack) * VContrib;
 					++nrContribs;
 				}
 				pathThroughput = 1.f;
-				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
+				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, &alpha, &pathThroughput);
 			}
 
 			// Stop path sampling since no intersection was found
@@ -108,8 +107,8 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 
 			// Set alpha channel
-			if (pathLength == 0 && alpha)
-				*alpha = 0.;
+			if (pathLength == 0)
+				alpha = 0.f;
 			break;
 		}
 		if (pathLength == 0 && !through) {
@@ -118,14 +117,14 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		}
 
 		SWCSpectrum Lv;
-		int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+		int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
 		if (!Lv.Black()) {
 			Lv *= pathThroughput;
 			L[g] += Lv;
 			V[g] += Lv.filter(tspack) * VContrib;
 			++nrContribs;
 		}
-		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
+		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, &alpha, &pathThroughput);
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
@@ -230,7 +229,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!L[i].Black())
 			V[i] /= L[i].filter(tspack);
 		sample->AddContribution(sample->imageX, sample->imageY,
-			L[i].ToXYZ(tspack), alpha ? *alpha : 1.f, distance, V[i], bufferId, i);
+			L[i].ToXYZ(tspack), alpha, distance, V[i], bufferId, i);
 	}
 
 	return nrContribs;
