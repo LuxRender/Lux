@@ -945,14 +945,14 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 
 	// Reject samples higher than max y() after warmup period
 	if (warmupComplete) {
-		if (xyz.y() > maxY)
+		if (xyz.y() * weight > maxY)
 			return;
 	} else {
 		if (debug_mode) {
 			maxY = INFINITY;
 			warmupComplete = true;
 		} else {
-		 	maxY = max(maxY, xyz.y());
+		 	maxY = max(maxY, xyz.y() * weight);
 			++warmupSamples;
 		 	if (warmupSamples >= reject_warmup_samples)
 				warmupComplete = true;
@@ -1000,15 +1000,16 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 			filterNorm += filterTable[offset];
 		}
 	}
+	filterNorm = weight / filterNorm;
 
 	for (int y = max(y0, yPixelStart); y <= min(y1, yPixelStart + yPixelCount - 1); ++y) {
 		for (int x = max(x0, xPixelStart); x <= min(x1, xPixelStart + xPixelCount - 1); ++x) {
 			// Evaluate filter value at $(x,y)$ pixel
 			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			const float filterWt = filterTable[offset] / filterNorm;
+			const float filterWt = filterTable[offset] * filterNorm;
 			// Update pixel values with filtered sample contribution
 			buffer->Add(x - xPixelStart,y - yPixelStart,
-				xyz, alpha, filterWt * weight);
+				xyz, alpha, filterWt);
 			// Update ZBuffer values with filtered zdepth contribution
 			if(use_Zbuf && contrib->zdepth != 0.f)
 				ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib->zdepth, 1.0f);
