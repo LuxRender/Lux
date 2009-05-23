@@ -709,10 +709,6 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	SWCSpectrum &L(vecL[lightGroup]);
 	vector<float> vecV(nGroups, 0.f);
 	float &variance(vecV[lightGroup]);
-	// Get back normal image position
-	float x, y;
-	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, -1.f, &x, &y))
-		return 0;
 	// Connect paths
 	for (int i = 1; i <= nEye; ++i) {
 		// Check eye path light intersection
@@ -802,8 +798,8 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			vecV[i] /= vecL[i].filter(tspack);
 		vecL[i] *= We;
 		XYZColor color(vecL[i].ToXYZ(tspack));
-		sample->AddContribution(x, y, color, alpha, d,
-			vecV[i], eyeBufferId, i);
+		sample->AddContribution(sample->imageX, sample->imageY,
+			color, alpha, d, vecV[i], eyeBufferId, i);
 	}
 	return nrContribs;
 }
