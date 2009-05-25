@@ -63,7 +63,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
 	SampleGuard guard(sample->sampler, sample);
-	float nrContribs = 0.f;
+	int nrContribs = 0;
 	// Declare common path integration variables
         RayDifferential r;
         float rayWeight = tspack->camera->GenerateRay(*sample, &r);
