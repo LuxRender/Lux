@@ -4507,8 +4507,8 @@ namespace cimg_library {
         CloseHandle(pi.hProcess);
       } else
 #endif
-      std::system(command);
-      command = module_name = 0;
+      int ret = std::system(command);
+      command = module_name = (const char *)ret;
     }
 
     // Convert filename into windows-style (without spaces)
@@ -25279,18 +25279,23 @@ namespace cimg_library {
     CImg<T>& load_ascii(std::FILE *const file, const char *const filename=0) {
       std::FILE *const nfile = file?file:cimg::fopen(filename,"rb");
       char line[256] = { 0 };
-      std::fscanf(nfile,"%*[^0-9]");
-      std::fscanf(nfile,"%255[^\n]",line);
       unsigned int off, dx = 0, dy = 1, dz = 1, dv = 1;
-      int err = 1;
-      std::sscanf(line,"%u%*c%u%*c%u%*c%u",&dx,&dy,&dz,&dv);
-      std::fscanf(nfile,"%*[^0-9.+-]");
-      if (!dx || !dy || !dz || !dv) {
+      int err;
+      err = std::fscanf(nfile,"%*[^0-9]");
+      if (err != EOF)
+        err = std::fscanf(nfile,"%255[^\n]",line);
+      if (err == 1) {
+        std::sscanf(line,"%u%*c%u%*c%u%*c%u",&dx,&dy,&dz,&dv);
+        err = std::fscanf(nfile,"%*[^0-9.+-]");
+      } else
+        err = EOF;
+      if (err == EOF || !dx || !dy || !dz || !dv) {
         if (!file) cimg::fclose(nfile);
         throw CImgIOException("CImg<%s>::load_ascii() : File '%s' is not a valid .ASC file.\n"
                               "Specified image dimensions are (%u,%u,%u,%u).",
                               pixel_type(),filename?filename:"(FILE*)",dx,dy,dz,dv);
       }
+      err = 1;
       assign(dx,dy,dz,dv);
       const unsigned long siz = size();
       double val;
@@ -25394,13 +25399,14 @@ namespace cimg_library {
       case 2: { // Grey Ascii
         assign(W,H,1,1);
         T* rdata = data;
-        cimg_foroff(*this,off) { std::fscanf(nfile,"%d",&rval); *(rdata++) = (T)rval; }
+        cimg_foroff(*this,off) { if (std::fscanf(nfile,"%d",&rval) == EOF) rval = 0; *(rdata++) = (T)rval; }
       } break;
       case 3: { // Color Ascii
         assign(W,H,1,3);
         T *rdata = ptr(0,0,0,0), *gdata = ptr(0,0,0,1), *bdata = ptr(0,0,0,2);
         cimg_forXY(*this,x,y) {
-          std::fscanf(nfile,"%d %d %d",&rval,&gval,&bval);
+          if (std::fscanf(nfile,"%d %d %d",&rval,&gval,&bval) == EOF)
+	    rval = gval = bval = 0;
           *(rdata++) = (T)rval;
           *(gdata++) = (T)gval;
           *(bdata++) = (T)bval; }
@@ -26449,8 +26455,7 @@ namespace cimg_library {
     static void _load_inr(std::FILE *file, int out[8], float *const voxsize=0) {
       char item[1024], tmp1[64], tmp2[64];
       out[0] = out[1] = out[2] = out[3] = out[5] = 1; out[4] = out[6] = out[7] = -1;
-      std::fscanf(file,"%63s",item);
-      if(cimg::strncasecmp(item,"#INRIMAGE-4#{",13)!=0)
+      if (std::fscanf(file,"%63s",item) == EOF || cimg::strncasecmp(item,"#INRIMAGE-4#{",13)!=0)
         throw CImgIOException("CImg<%s>::load_inr() : File does not appear to be a valid INR file.\n"
                               "(INRIMAGE-4 identifier not found)",pixel_type());
       while (std::fscanf(file," %63[^\n]%*c",item)!=EOF && cimg::strncmp(item,"##}",3)) {
@@ -30698,7 +30703,7 @@ namespace cimg_library {
       assign();
 
 #ifndef cimg_use_ffmpeg
-      if ((nfirst_frame || nlast_frame!=~0U || nstep_frame>1) && (pixel_format || !pixel_format) || resume)
+      if (((nfirst_frame || nlast_frame!=~0U || nstep_frame>1) && (pixel_format || !pixel_format)) || resume)
         throw CImgArgumentException("CImg<%s>::load_tiff() : File '%s', reading sub-frames from a video file requires the use of ffmpeg.\n"
                                     "('cimg_use_ffmpeg' must be defined).",pixel_type(),filename);
       return load_ffmpeg_external(filename);

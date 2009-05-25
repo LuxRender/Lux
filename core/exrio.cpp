@@ -367,77 +367,70 @@ namespace lux {
 
 		FrameBuffer fb;
 
-		float *fy;
-		half *hy;
-		half *hrgb;
-		half *ha;
-		bool u_fy = false;
-		bool u_hy = false;
-		bool u_hrgb = false;
-		bool u_ha = false;
+		// Those buffers will hold image data in case a type
+		// conversion is needed.
+		// THEY MUST NOT BE DELETED BEFORE DATA IS WRITTEN TO FILE
+		float *fy = NULL;
+		half *hy = NULL;
+		half *hrgb = NULL;
+		half *ha = NULL;
+		const int bufSize = xRes * yRes;
+		const int bufOffset = xOffset + yOffset * xRes;
 
 		if(!halftype) {
 			// Write framebuffer data for 32bit FLOAT type
 			if(channeltype <= 1) {
 				// Save Y
-				fy = new float[xRes * yRes];
-				u_fy = true;
-				for (int i = 0; i < xRes * yRes; ++i)
+				fy = new float[bufSize];
+				// FIXME use the correct color space
+				for (int i = 0; i < bufSize; ++i)
 					fy[i] = (0.3f * pixels[i].c[0]) + (0.59f * pixels[i].c[1]) + (0.11f * pixels[i].c[2]);
 				fy -= (xOffset + yOffset * xRes);
-				fb.insert("Y", Slice(Imf::FLOAT, (char *) fy, sizeof (float), xRes * sizeof (float)));
+				fb.insert("Y", Slice(Imf::FLOAT, (char *)(fy - bufOffset), sizeof(float), xRes * sizeof(float)));
 			} else if(channeltype >= 2) {
 				// Save RGB
 				float *frgb = &pixels[0].c[0];
-				frgb -= 3 * (xOffset + yOffset * xRes);
-				fb.insert("R", Slice(Imf::FLOAT, (char *) frgb, sizeof (Color), xRes * sizeof (Color)));
-				fb.insert("G", Slice(Imf::FLOAT, (char *) frgb + sizeof (float), sizeof (Color), xRes * sizeof (Color)));
-				fb.insert("B", Slice(Imf::FLOAT, (char *) frgb + 2 * sizeof (float), sizeof (Color), xRes * sizeof (Color)));
+				fb.insert("R", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset), sizeof(Color), xRes * sizeof(Color)));
+				fb.insert("G", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset) + sizeof(float), sizeof(Color), xRes * sizeof(Color)));
+				fb.insert("B", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset) + 2 * sizeof(float), sizeof(Color), xRes * sizeof(Color)));
 			}
 			if(channeltype == 1 || channeltype == 3) {
 				// Add alpha
 				float *fa = &alpha[0];
-				fa -= (xOffset + yOffset * xRes);
-				fb.insert("A", Slice(Imf::FLOAT, (char *) fa, sizeof (float), xRes * sizeof (float)));
+				fb.insert("A", Slice(Imf::FLOAT, (char *)(fa - bufOffset), sizeof(float), xRes * sizeof(float)));
 			}
 		} else {
 			// Write framebuffer data for 16bit HALF type
 			if(channeltype <= 1) {
 				// Save Y
-				hy = new half[xRes * yRes];
-				u_hy = true;
-				for (int i = 0; i < xRes * yRes; ++i)
+				hy = new half[bufSize];
+				//FIXME use correct color space
+				for (int i = 0; i < bufSize; ++i)
 					hy[i] = (0.3f * pixels[i].c[0]) + (0.59f * pixels[i].c[1]) + (0.11f * pixels[i].c[2]);
-				hy -= (xOffset + yOffset * xRes);
-				fb.insert("Y", Slice(HALF, (char *) hy, sizeof (half), xRes * sizeof (half)));
+				fb.insert("Y", Slice(HALF, (char *)(hy - bufOffset), sizeof(half), xRes * sizeof(half)));
 			} else if(channeltype >= 2) {
 				// Save RGB
-				hrgb = new half[3 * xRes * yRes];
-				u_hrgb = true;
-				for (int i = 0; i < xRes * yRes; ++i)
+				hrgb = new half[3 * bufSize];
+				for (int i = 0; i < bufSize; ++i)
 					for( int j = 0; j < 3; j++)
-						hrgb[3*i+j] = pixels[i].c[j];
-				hrgb -= 3 * (xOffset + yOffset * xRes);
-				fb.insert("R", Slice(HALF, (char *) hrgb, (3 * sizeof (half)), xRes * (3 * sizeof (half))));
-				fb.insert("G", Slice(HALF, (char *) hrgb + sizeof (half), (3 * sizeof (half)), xRes * (3 * sizeof (half))));
-				fb.insert("B", Slice(HALF, (char *) hrgb + 2 * sizeof (half), (3 * sizeof (half)), xRes * (3 * sizeof (half))));
+						hrgb[3 * i + j] = pixels[i].c[j];
+				fb.insert("R", Slice(HALF, (char *)(hrgb - 3 * bufOffset), 3 * sizeof(half), xRes * (3 * sizeof(half))));
+				fb.insert("G", Slice(HALF, (char *)(hrgb - 3 * bufOffset) + sizeof(half), 3 * sizeof(half), xRes * (3 * sizeof(half))));
+				fb.insert("B", Slice(HALF, (char *)(hrgb - 3 * bufOffset) + 2 * sizeof(half), 3 * sizeof (half), xRes * (3 * sizeof (half))));
 			}
 			if(channeltype == 1 || channeltype == 3) {
 				// Add alpha
-				ha = new half[xRes * yRes];
-				u_ha = true;
-				for (int i = 0; i < xRes * yRes; ++i)
+				ha = new half[bufSize];
+				for (int i = 0; i < bufSize; ++i)
 					ha[i] = alpha[i];		
-				ha -= (xOffset + yOffset * xRes);
-				fb.insert("A", Slice(HALF, (char *) ha, sizeof (half), xRes * sizeof (half)));
+				fb.insert("A", Slice(HALF, (char *)(ha - bufOffset), sizeof(half), xRes * sizeof(half)));
 			}
 		}
 
 		if(savezbuf) {
 			float *fz = &zbuf[0];
-			fz -= (xOffset + yOffset * xRes);
 			// Add Zbuf framebuffer data (always 32bit FLOAT type)
-			fb.insert("Z", Slice(Imf::FLOAT, (char *) fz, sizeof (float), xRes * sizeof (float)));
+			fb.insert("Z", Slice(Imf::FLOAT, (char *)(fz - bufOffset), sizeof(float), xRes * sizeof(float)));
 		}
 
 		try {
@@ -451,10 +444,12 @@ namespace lux {
 		}
 
 		// Cleanup used buffers
-		if(u_fy) delete[] (fy + (xOffset + yOffset * xRes));
-		if(u_hy) delete[] (hy + (xOffset + yOffset * xRes));
-		if(u_hrgb) delete[] (hrgb + 3 * (xOffset + yOffset * xRes));
-		if(u_ha) delete[] (ha + (xOffset + yOffset * xRes));
+		// If the pointer is NULL, delete[] has no effect
+		// So it is safe to avoid the NULL check of those pointers
+		delete[] fy;
+		delete[] hy;
+		delete[] hrgb;
+		delete[] ha;
 
     }
 }
