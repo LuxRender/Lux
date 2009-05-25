@@ -2172,8 +2172,8 @@ Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
 	filmParams.AddInt("yresolution", &header.yResolution);
 	filmParams.AddBool("write_resume_flm", &boolTrue);
 	filmParams.AddBool("restart_resume_flm", &boolFalse);
-	filmParams.FindOneBool("write_tonemapped_exr", &boolFalse);
-	filmParams.FindOneBool("write_untonemapped_exr", &boolFalse);
+	filmParams.AddBool("write_tonemapped_exr", &boolFalse);
+	filmParams.AddBool("write_untonemapped_exr", &boolFalse);
 	filmParams.AddBool("write_tonemapped_igi", &boolFalse);
 	filmParams.AddBool("write_untonemapped_igi", &boolFalse);
 	filmParams.AddBool("write_tonemapped_tga", &boolFalse);
