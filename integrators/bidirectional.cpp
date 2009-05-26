@@ -793,12 +793,15 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		}
 	}
 	const float d = (nEye > 1 && eyePath[1].bsdf) ? eyePath[0].d2 : INFINITY;
+	float xl, yl;
+	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, sqrtf(eyePath[0].d2), &xl, &yl))
+		return nrContribs;
 	for (int i = 0; i < nGroups; ++i) {
 		if (!vecL[i].Black())
 			vecV[i] /= vecL[i].filter(tspack);
 		vecL[i] *= We;
 		XYZColor color(vecL[i].ToXYZ(tspack));
-		sample->AddContribution(sample->imageX, sample->imageY,
+		sample->AddContribution(xl, yl,
 			color, alpha, d, vecV[i], eyeBufferId, i);
 	}
 	return nrContribs;

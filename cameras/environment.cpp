@@ -68,7 +68,11 @@ float EnvironmentCamera::GenerateRay(const Sample &sample,
 	
 bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
-	Normal ns(UniformSampleSphere(u1, u2));
+	const float theta = M_PI * u2 / film->yResolution;
+	const float phi = 2 * M_PI * u1 / film->xResolution;
+	Normal ns(sinf(theta) * cosf(phi), cosf(theta),
+		sinf(theta) * sinf(phi));
+	CameraToWorld(ns, &ns);
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);

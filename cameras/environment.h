@@ -38,10 +38,8 @@ public:
 	float Pdf(const Point &p, const Normal &n, const Vector &wi) const;
 	bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const;
 	void ClampRay(Ray &ray) const;
-	bool IsDelta() const
-	{
-		return true;
-	}
+	bool IsDelta() const { return true; }
+	bool IsLensBased() const { return false; }
 	BBox Bounds() const;
 
 	EnvironmentCamera* Clone() const {
