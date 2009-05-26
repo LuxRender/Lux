@@ -32,7 +32,7 @@ using boost::int32_t;
 namespace lux
 {
 
-// This code is based on Flexray by Anthony Pajot (anthony.pajot@etu.enseeiht.fr)
+// This code is based on Flexray by Anthony Pajot (anthony.pajot@alumni.enseeiht.fr)
 
 /**
    QBVH accelerator, using the EGSR08 paper as base.
