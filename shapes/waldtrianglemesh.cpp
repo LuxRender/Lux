@@ -137,13 +137,7 @@ WaldTriangle::WaldTriangle(WaldTriangleMesh *m, int n) {
 	// Define the type of intersection to use according the normal
     // of the triangle
 
-    if ((normal.y == 0.0f) && (normal.z == 0.0f))
-        intersectionType = ORTHOGONAL_X;
-    else if((normal.x == 0.0f) &&  (normal.z == 0.0f))
-        intersectionType = ORTHOGONAL_Y;
-    else if((normal.x == 0.0f) && (normal.y == 0.0f))
-        intersectionType = ORTHOGONAL_Z;
-    else if ((fabs(normal.x) > fabs(normal.y)) && (fabs(normal.x) > fabs(normal.z)))
+    if ((fabs(normal.x) > fabs(normal.y)) && (fabs(normal.x) > fabs(normal.z)))
         intersectionType = DOMINANT_X;
     else if (fabs(normal.y) > fabs(normal.z))
         intersectionType = DOMINANT_Y;
@@ -191,39 +185,6 @@ WaldTriangle::WaldTriangle(WaldTriangleMesh *m, int n) {
             cy = v1.y - ay;
             break;
         }
-        case ORTHOGONAL_X:
-            nu = 0.0f;
-            nv = 0.0f;
-            nd = v0.x;
-            ax = v0.y;
-            ay = v0.z;
-            bx = v2.y - ax;
-            by = v2.z - ay;
-            cx = v1.y - ax;
-            cy = v1.z - ay;
-            break;
-        case ORTHOGONAL_Y:
-            nu = 0.0f;
-            nv = 0.0f;
-            nd = v0.y;
-            ax = v0.z;
-            ay = v0.x;
-            bx = v2.z - ax;
-            by = v2.x - ay;
-            cx = v1.z - ax;
-            cy = v1.x - ay;
-            break;
-        case ORTHOGONAL_Z:
-            nu = 0.0f;
-            nv = 0.0f;
-            nd = v0.z;
-            ax = v0.x;
-            ay = v0.y;
-            bx = v2.x - ax;
-            by = v2.y - ay;
-            cx = v1.x - ax;
-            cy = v1.y - ay;
-            break;
         default:
             BOOST_ASSERT(false);
             // Dade - how can I report internal errors ?
@@ -283,180 +244,55 @@ BBox WaldTriangle::WorldBound() const {
 }
 
 bool WaldTriangle::Intersect(const Ray &ray, Intersection* isect) const {
-    // Dade - debugging code
-    //std::stringstream ss;
-    //ss<<"ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
-    //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-
-    float uu, vv, t;
-    switch (intersectionType) {
-        case DOMINANT_X: {
-            const float det = ray.d.x + nu * ray.d.y + nv * ray.d.z;
-            if(det==0.0f)
-                return false;
-
-            const float invDet = 1.0f / det;
-            t = (nd - ray.o.x - nu * ray.o.y - nv * ray.o.z) * invDet;
-
-            // Dade - debugging code
-            //std::stringstream ss;
-            //ss<<"t = "<<t<<" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
-            //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.y + t * ray.d.y;
-            const float hv = ray.o.z + t * ray.d.z;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case DOMINANT_Y: {
-            const float det = ray.d.y + nu * ray.d.z + nv * ray.d.x;
-            if(det==0.0f)
-                return false;
-
-            const float invDet = 1.0f / det;
-            t = (nd - ray.o.y - nu * ray.o.z - nv * ray.o.x) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.z + t * ray.d.z;
-            const float hv = ray.o.x + t * ray.d.x;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case DOMINANT_Z: {
-            const float det = ray.d.z + nu * ray.d.x + nv * ray.d.y;
-            if(det==0.0f)
-                return false;
-
-            const float invDet = 1.0f / det;
-            t = (nd - ray.o.z - nu * ray.o.x - nv * ray.o.y) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.x + t * ray.d.x;
-            const float hv = ray.o.y + t * ray.d.y;
-
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case ORTHOGONAL_X: {
-            if(ray.d.x == 0.0f)
-                return false;
-
-            const float invDet = 1.0f / ray.d.x;
-            t = (nd - ray.o.x) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.y + t * ray.d.y;
-            const float hv = ray.o.z + t * ray.d.z;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case ORTHOGONAL_Y: {
-            if(ray.d.y == 0.0f)
-                return false;
-
-            const float invDet = 1.0f / ray.d.y;
-            t = (nd - ray.o.y) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.z + t * ray.d.z;
-            const float hv = ray.o.x + t * ray.d.x;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case ORTHOGONAL_Z: {
-            if(ray.d.z == 0.0f)
-                return false;
-
-            const float invDet = 1.0f / ray.d.z;
-            t = (nd - ray.o.z) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.x + t * ray.d.x;
-            const float hv = ray.o.y + t * ray.d.y;
-
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-		case DEGENERATE:
+	float o0, o1, o2, d0, d1, d2;
+	switch (intersectionType) {
+		case DOMINANT_X: {
+			o0 = ray.o.x;
+			o1 = ray.o.y;
+			o2 = ray.o.z;
+			d0 = ray.d.x;
+			d1 = ray.d.y;
+			d2 = ray.d.z;
+			break;
+		}
+		case DOMINANT_Y: {
+			o0 = ray.o.y;
+			o1 = ray.o.z;
+			o2 = ray.o.x;
+			d0 = ray.d.y;
+			d1 = ray.d.z;
+			d2 = ray.d.x;
+			break;
+		}
+		case DOMINANT_Z: {
+			o0 = ray.o.z;
+			o1 = ray.o.x;
+			o2 = ray.o.y;
+			d0 = ray.d.z;
+			d1 = ray.d.x;
+			d2 = ray.d.y;
+			break;
+		}
+		default:
 			return false;
-        default:
-            BOOST_ASSERT(false);
-            // Dade - how can I report internal errors ?
-            return false;
-    }
+	}
+	const float det = d0 + nu * d1 + nv * d2;
+	if (det == 0.f)
+		return false;
+
+	const float t = (nd - o0 - nu * o1 - nv * o2) / det;
+	if (t <= ray.mint || t >= ray.maxt)
+		return false;
+
+	const float hu = o1 + t * d1;
+	const float hv = o2 + t * d2;
+	const float uu = hu * bnu + hv * bnv + bnd;
+	if (uu < 0.f)
+		return false;
+
+	const float vv = hu * cnu + hv * cnv + cnd;
+	if (vv < 0.0f || uu + vv > 1.f)
+                return false;
 
     // radiance - disabled for threading // triangleHits.Add(1, 0); //NOBOOK
     float uvs[3][2];
@@ -496,172 +332,56 @@ bool WaldTriangle::Intersect(const Ray &ray, Intersection* isect) const {
 }
 
 bool WaldTriangle::IntersectP(const Ray &ray) const {
-    float uu, vv, t;
-    switch (intersectionType) {
-        case DOMINANT_X: {
-            const float det = ray.d.x + nu * ray.d.y + nv * ray.d.z;
-            if(det==0.0f)
-                return false;
-
-            const float invDet = 1.0f / det;
-            t = (nd - ray.o.x - nu * ray.o.y - nv * ray.o.z) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.y + t * ray.d.y;
-            const float hv = ray.o.z + t * ray.d.z;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case DOMINANT_Y: {
-            const float det = ray.d.y + nu * ray.d.z + nv * ray.d.x;
-            if(det==0.0f)
-                return false;
-
-            const float invDet = 1.0f / det;
-            t = (nd - ray.o.y - nu * ray.o.z - nv * ray.o.x) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.z + t * ray.d.z;
-            const float hv = ray.o.x + t * ray.d.x;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case DOMINANT_Z: {
-            const float det = ray.d.z + nu * ray.d.x + nv * ray.d.y;
-            if(det==0.0f)
-                return false;
-
-            const float invDet = 1.0f / det;
-            t = (nd - ray.o.z - nu * ray.o.x - nv * ray.o.y) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.x + t * ray.d.x;
-            const float hv = ray.o.y + t * ray.d.y;
-
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case ORTHOGONAL_X: {
-            if(ray.d.x == 0.0f)
-                return false;
-
-            const float invDet = 1.0f / ray.d.x;
-            t = (nd - ray.o.x) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.y + t * ray.d.y;
-            const float hv = ray.o.z + t * ray.d.z;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case ORTHOGONAL_Y: {
-            if(ray.d.y == 0.0f)
-                return false;
-
-            const float invDet = 1.0f / ray.d.y;
-            t = (nd - ray.o.y) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.z + t * ray.d.z;
-            const float hv = ray.o.x + t * ray.d.x;
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-        case ORTHOGONAL_Z: {
-            if(ray.d.z == 0.0f)
-                return false;
-
-            const float invDet = 1.0f / ray.d.z;
-            t = (nd - ray.o.z) * invDet;
-
-            if (t < ray.mint || t > ray.maxt)
-                return false;
-
-            const float hu = ray.o.x + t * ray.d.x;
-            const float hv = ray.o.y + t * ray.d.y;
-
-            uu = hu * bnu + hv * bnv + bnd;
-
-            if (uu < 0.0f)
-                return false;
-
-            vv = hu * cnu + hv * cnv + cnd;
-
-            if (vv < 0.0f)
-                return false;
-            if (uu + vv > 1.0f)
-                return false;
-            break;
-        }
-		case DEGENERATE:
+	float o0, o1, o2, d0, d1, d2;
+	switch (intersectionType) {
+		case DOMINANT_X: {
+			o0 = ray.o.x;
+			o1 = ray.o.y;
+			o2 = ray.o.z;
+			d0 = ray.d.x;
+			d1 = ray.d.y;
+			d2 = ray.d.z;
+			break;
+		}
+		case DOMINANT_Y: {
+			o0 = ray.o.y;
+			o1 = ray.o.z;
+			o2 = ray.o.x;
+			d0 = ray.d.y;
+			d1 = ray.d.z;
+			d2 = ray.d.x;
+			break;
+		}
+		case DOMINANT_Z: {
+			o0 = ray.o.z;
+			o1 = ray.o.x;
+			o2 = ray.o.y;
+			d0 = ray.d.z;
+			d1 = ray.d.x;
+			d2 = ray.d.y;
+			break;
+		}
+		default:
 			return false;
-        default:
-            BOOST_ASSERT(false);
-            // Dade - how can I report internal errors ?
-            return false;
-    }
+	}
+	const float det = d0 + nu * d1 + nv * d2;
+	if (det == 0.f)
+		return false;
 
-    return true;
+	const float t = (nd - o0 - nu * o1 - nv * o2) / det;
+	if (t <= ray.mint || t >= ray.maxt)
+		return false;
+
+	const float hu = o1 + t * d1;
+	const float hv = o2 + t * d2;
+	const float uu = hu * bnu + hv * bnv + bnd;
+	if (uu < 0.f)
+		return false;
+
+	const float vv = hu * cnu + hv * cnv + cnd;
+	if (vv < 0.0f || uu + vv > 1.f)
+                return false;
+	return true;
 }
 
 float WaldTriangle::Area() const {
