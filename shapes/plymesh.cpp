@@ -24,7 +24,7 @@
 #include "paramset.h"
 #include "dynload.h"
 
-#include "waldtrianglemesh.h"
+#include "mesh.h"
 #include "./plymesh/rply.h"
 
 namespace lux
@@ -200,10 +200,10 @@ BBox PlyMesh::WorldBound() const {
 	return worldBounds;
 }
 
-class WaldTriangleSharedPtr : public WaldTriangle {
+class WaldTriangleSharedPtr : public MeshWaldTriangle {
 public:
-	WaldTriangleSharedPtr(WaldTriangleMesh* m, int n, boost::shared_ptr<Primitive> aPtr)
-	: WaldTriangle(m,n), ptr(aPtr)
+	WaldTriangleSharedPtr(Mesh* m, int n, boost::shared_ptr<Primitive> aPtr)
+	: MeshWaldTriangle(m,n), ptr(aPtr)
 	{
 	}
 private:
@@ -215,11 +215,11 @@ void PlyMesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		boost::shared_ptr<Primitive> thisPtr)
 {
 	boost::shared_ptr<Primitive> o (
-			new WaldTriangleSharedPtr((WaldTriangleMesh *)this, 0, thisPtr));
+			new WaldTriangleSharedPtr((Mesh *)this, 0, thisPtr));
 	refined.push_back(o);
 	for (int i = 0; i < ntris; ++i) {
 		boost::shared_ptr<Primitive> o (
-				new WaldTriangle((WaldTriangleMesh *)this, i));
+				new MeshWaldTriangle((Mesh *)this, i));
 		refined.push_back(o);
 	}
 }
