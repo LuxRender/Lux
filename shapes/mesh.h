@@ -108,70 +108,6 @@ protected:
 // Triangle shapes
 //------------------------------------------------------------------------------
 
-class MeshWaldTriangle : public Primitive {
-public:
-	// WaldTriangle Public Methods
-	MeshWaldTriangle(const Mesh *m, int n);
-
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
-
-	bool CanIntersect() const { return true; }
-	bool Intersect(const Ray &ray, Intersection *isect) const;
-	bool IntersectP(const Ray &ray) const;
-
-	void GetShadingGeometry(const Transform &obj2world,
-			const DifferentialGeometry &dg,
-			DifferentialGeometry *dgShading) const;
-
-	bool CanSample() const { return true; }
-	float Area() const;
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
-
-	bool isDegenerate() const;
-private:
-	void GetUVs(float uv[3][2]) const {
-		if (mesh->uvs) {
-			uv[0][0] = mesh->uvs[2 * v[0]];
-			uv[0][1] = mesh->uvs[2 * v[0] + 1];
-			uv[1][0] = mesh->uvs[2 * v[1]];
-			uv[1][1] = mesh->uvs[2 * v[1] + 1];
-			uv[2][0] = mesh->uvs[2 * v[2]];
-			uv[2][1] = mesh->uvs[2 * v[2] + 1];
-		} else {
-			uv[0][0] = .5f;
-			uv[0][1] = .5f;
-			uv[1][0] = .5f;
-			uv[1][1] = .5f;
-			uv[2][0] = .5f;
-			uv[2][1] = .5f;
-		}
-	}
-
-	// WaldTriangle Data
-	const Mesh* mesh;
-	const int *v;
-
-	// Dade - Wald's precomputed values
-	enum IntersectionType {
-		DOMINANT_X,
-		DOMINANT_Y,
-		DOMINANT_Z,
-		ORTHOGONAL_X,
-		ORTHOGONAL_Y,
-		ORTHOGONAL_Z,
-		DEGENERATE
-	};
-	IntersectionType intersectionType;
-	float nu, nv, nd;
-	float bnu, bnv, bnd;
-	float cnu, cnv, cnd;
-
-	// Dade - precomputed values for filling the DifferentialGeometry
-	Vector dpdu, dpdv;
-	Normal normalizedNormal;
-};
-
 class MeshBaryTriangle : public Primitive {
 public:
     // BaryTriangle Public Methods
@@ -184,8 +120,8 @@ public:
     BBox WorldBound() const;
 
     bool CanIntersect() const { return true; }
-    bool Intersect(const Ray &ray, Intersection *isect) const;
-    bool IntersectP(const Ray &ray) const;
+    virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+    virtual bool IntersectP(const Ray &ray) const;
 
     void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,
@@ -195,11 +131,11 @@ public:
     float Area() const;
     void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 
-	bool isDegenerate() const {
+	virtual bool isDegenerate() const {
 		return false; //TODO check degenerate
 	}
 
-private:
+protected:
 	void GetUVs(float uv[3][2]) const {
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2*v[0]];
@@ -209,18 +145,48 @@ private:
 			uv[2][0] = mesh->uvs[2*v[2]];
 			uv[2][1] = mesh->uvs[2*v[2]+1];
 		} else {
-			uv[0][0] = mesh->p[v[0]].x;
-			uv[0][1] = mesh->p[v[0]].y;
-			uv[1][0] = mesh->p[v[1]].x;
-			uv[1][1] = mesh->p[v[1]].y;
-			uv[2][0] = mesh->p[v[2]].x;
-			uv[2][1] = mesh->p[v[2]].y;
+			uv[0][0] = .5f;//mesh->p[v[0]].x;
+			uv[0][1] = .5f;//mesh->p[v[0]].y;
+			uv[1][0] = .5f;//mesh->p[v[1]].x;
+			uv[1][1] = .5f;//mesh->p[v[1]].y;
+			uv[2][0] = .5f;//mesh->p[v[2]].x;
+			uv[2][1] = .5f;//mesh->p[v[2]].y;
 		}
 	}
 
 	// BaryTriangle Data
 	const Mesh *mesh;
 	const int *v;
+};
+
+class MeshWaldTriangle : public MeshBaryTriangle {
+public:
+	// WaldTriangle Public Methods
+	MeshWaldTriangle(const Mesh *m, int n);
+
+	bool Intersect(const Ray &ray, Intersection *isect) const;
+	bool IntersectP(const Ray &ray) const;
+
+	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
+	bool isDegenerate() const;
+private:
+	// WaldTriangle Data
+
+	// Dade - Wald's precomputed values
+	enum IntersectionType {
+		DOMINANT_X,
+		DOMINANT_Y,
+		DOMINANT_Z,
+		DEGENERATE
+	};
+	IntersectionType intersectionType;
+	float nu, nv, nd;
+	float bnu, bnv, bnd;
+	float cnu, cnv, cnd;
+
+	// Dade - precomputed values for filling the DifferentialGeometry
+	Vector dpdu, dpdv;
+	Normal normalizedNormal;
 };
 
 //------------------------------------------------------------------------------

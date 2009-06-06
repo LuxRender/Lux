@@ -189,15 +189,13 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 		return;
 	}
 
-	// Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and _ts_
-	Normal ns = dg.nn;
-	float lenDpDu = dg.dpdu.Length();
-	float lenDpDv = dg.dpdv.Length();
-	Vector ts = Normalize(Cross(dg.dpdu, ns));
-	Vector ss = Cross(ts, ns);
+	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
+	const Normal ns(dg.nn);
+	Vector ts(Normalize(Cross(dg.dpdu, ns)));
+	Vector ss(Cross(ts, ns));
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
-	ss *= lenDpDu;
-	ts *= lenDpDv;
+	ss *= dg.dpdu.Length();
+	ts *= dg.dpdv.Length();
 
 	Vector dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
@@ -205,18 +203,18 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	GetUVs(uvs);
 
 	// Compute deltas for triangle partial derivatives of normal
-	float du1 = uvs[0][0] - uvs[2][0];
-	float du2 = uvs[1][0] - uvs[2][0];
-	float dv1 = uvs[0][1] - uvs[2][1];
-	float dv2 = uvs[1][1] - uvs[2][1];
-	Vector dn1 = Vector(mesh->n[v[0]] - mesh->n[v[2]]);
-	Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
-	float determinant = du1 * dv2 - dv1 * du2;
+	const float du1 = uvs[0][0] - uvs[2][0];
+	const float du2 = uvs[1][0] - uvs[2][0];
+	const float dv1 = uvs[0][1] - uvs[2][1];
+	const float dv2 = uvs[1][1] - uvs[2][1];
+	const Vector dn1 = Vector(mesh->n[v[0]] - mesh->n[v[2]]);
+	const Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
+	const float determinant = du1 * dv2 - dv1 * du2;
 
 	if (determinant < 1e-3f)
 		dndu = dndv = Vector(0, 0, 0);
 	else {
-		float invdet = 1.f / determinant;
+		const float invdet = 1.f / determinant;
 		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
 		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
 
