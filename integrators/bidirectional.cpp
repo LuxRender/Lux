@@ -232,7 +232,6 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo, data[1], data[2],
 			data[3], &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
-		bool through = false;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
 			v.flux = v.f;
@@ -257,13 +256,10 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			vertices[nVerts - 2].tPdf *= v.pdf;
 			vertices[nVerts - 1].tPdfR *= v.pdfR;
 			--nVerts;
-			through = true;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);
 		ray.time = tspack->time;
-		if (nVerts == 1 && !through)
-			tspack->camera->ClampRay(ray);
 		if (!scene->Intersect(ray, &isect))
 			break;
 	}
@@ -774,9 +770,9 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						variance += weight *
 							Ll.filter(tspack);
 					} else {
-						const float d = Distance(lightPath[j - 1].p, eyePath[i - 1].p);
+						const float d = Distance(lightPath[j - 1].p, eyePath[0].p);
 						float xl, yl;
-						if (tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[i - 1].p) / d, d, &xl, &yl)) {
+						if (tspack->camera->GetSamplePosition(eyePath[0].p, (lightPath[j - 1].p - eyePath[0].p) / d, d, &xl, &yl)) {
 							Ll *= We;
 							XYZColor color(Ll.ToXYZ(tspack));
 							const float a = (j == 1 && light->IsEnvironmental()) ? 0.f : 1.f;
