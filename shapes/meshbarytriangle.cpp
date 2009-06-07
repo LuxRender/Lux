@@ -99,13 +99,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const {
     const float tu = b0*uvs[0][0] + b1*uvs[1][0] + b2*uvs[2][0];
     const float tv = b0*uvs[0][1] + b1*uvs[1][1] + b2*uvs[2][1];
 
-	// Dade - using the intepolated normal here in order to fix bug #340
-	Normal nn;
-	if (mesh->n)
-		nn = Normalize(mesh->ObjectToWorld(b0 * mesh->n[v[0]] +
-			b1 * mesh->n[v[1]] + b2 * mesh->n[v[2]]));
-	else
-		nn = Normal(Normalize(Cross(e1, e2)));
+	const Normal nn = Normal(Normalize(Cross(e1, e2)));
 
     isect->dg = DifferentialGeometry(ray(t),
 			nn,
@@ -115,6 +109,9 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const {
     isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
 
     isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
+	isect->dg.triangleBaryCoords[0] = b0;
+	isect->dg.triangleBaryCoords[1] = b1;
+	isect->dg.triangleBaryCoords[2] = b2;
 	ray.maxt = t;
 
     return true;
@@ -190,7 +187,9 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns(dg.nn);
+	const Normal ns = Normalize(mesh->ObjectToWorld(dg.triangleBaryCoords[0] * mesh->n[v[0]] +
+		dg.triangleBaryCoords[1] * mesh->n[v[1]] + dg.triangleBaryCoords[2] * mesh->n[v[2]]));
+
 	Vector ts(Normalize(Cross(dg.dpdu, ns)));
 	Vector ss(Cross(ts, ns));
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping

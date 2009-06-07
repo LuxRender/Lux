@@ -199,19 +199,14 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	const float tu = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
 	const float tv = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
 
-	// Dade - using the intepolated normal here in order to fix bug #340
-	Normal nn;
-	if (mesh->n)
-		nn = Normalize(mesh->ObjectToWorld(b0 * mesh->n[v[0]] +
-			uu * mesh->n[v[1]] + vv * mesh->n[v[2]]));
-	else
-		nn = normalizedNormal;
-
-	isect->dg = DifferentialGeometry(ray(t), nn, dpdu, dpdv,
+	isect->dg = DifferentialGeometry(ray(t), normalizedNormal, dpdu, dpdv,
 		Vector(0, 0, 0), Vector(0, 0, 0), tu, tv, this);
 	isect->dg.AdjustNormal(mesh->reverseOrientation,
 		mesh->transformSwapsHandedness);
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
+	isect->dg.triangleBaryCoords[0] = b0;
+	isect->dg.triangleBaryCoords[1] = uu;
+	isect->dg.triangleBaryCoords[2] = vv;
 	ray.maxt = t;
 
 	return true;
