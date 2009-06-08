@@ -4491,6 +4491,7 @@ namespace cimg_library {
     }
 
     inline void system(const char *command, const char *module_name=0) {
+      int ret;
 #if cimg_OS==2
       PROCESS_INFORMATION pi;
       STARTUPINFO si;
@@ -4505,9 +4506,10 @@ namespace cimg_library {
         WaitForSingleObject(pi.hProcess, INFINITE);
         CloseHandle(pi.hThread);
         CloseHandle(pi.hProcess);
+		ret = 0;
       } else
 #endif
-      int ret = std::system(command);
+      ret = std::system(command);
       command = module_name = (const char *)ret;
     }
 
