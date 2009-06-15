@@ -244,7 +244,7 @@ void RenderFarm::flush() {
 
 void RenderFarm::updateFilm(Scene *scene) {
     // Dade - network rendering supports only FlexImageFilm
-    FlexImageFilm *film = (FlexImageFilm *)(scene->camera->film);
+    Film *film = scene->camera->film;
 
     std::stringstream ss;
 	for (size_t i = 0; i < serverInfoList.size(); i++) {

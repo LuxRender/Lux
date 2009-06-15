@@ -45,7 +45,7 @@ void wxViewerSelection::SetBounds(int x1, int x2, int y1, int y2) {
 
 
 // wxViewerEvent Definitions
-DEFINE_EVENT_TYPE(lux::wxEVT_LUX_VIEWER_SELECTION)
+DEFINE_LOCAL_EVENT_TYPE(lux::wxEVT_LUX_VIEWER_SELECTION)
 
 wxViewerEvent::wxViewerEvent(const boost::shared_ptr<wxViewerSelection> selection, wxEventType eventType, int id): wxEvent(id, eventType), m_selection(selection) { m_propagationLevel = wxEVENT_PROPAGATE_MAX; }
 

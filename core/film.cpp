@@ -456,9 +456,7 @@ namespace lux
 			}
 
 			for (unsigned int iter=0; iter<GREYCParams.nb_iter; iter++) {
-				static const CImg<unsigned char> empty_mask;
-
-				img.blur_anisotropic(empty_mask, GREYCParams.amplitude,
+				img.blur_anisotropic(GREYCParams.amplitude,
 					GREYCParams.sharpness,
 					GREYCParams.anisotropy,
 					GREYCParams.alpha,

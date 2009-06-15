@@ -62,7 +62,7 @@ protected:
     boost::shared_ptr<wxViewerSelection> m_selection;
 };
 
-DECLARE_EVENT_TYPE(wxEVT_LUX_VIEWER_SELECTION, -1)
+DECLARE_LOCAL_EVENT_TYPE(wxEVT_LUX_VIEWER_SELECTION, -1)
 
 typedef void (wxEvtHandler::*wxViewerEventFunction)(wxViewerEvent&);
 

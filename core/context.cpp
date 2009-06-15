@@ -1046,10 +1046,7 @@ void Context::sceneReady() {
 }
 
 void Context::transmitFilm(std::basic_ostream<char> &stream) {
-	//jromang TODO : fix this hack !
-	FlexImageFilm *fif = (FlexImageFilm *)luxCurrentScene->camera->film;
-
-    fif->TransmitFilm(stream);
+	luxCurrentScene->camera->film->TransmitFilm(stream);
 }
 
 void Context::updateFilmFromNetwork() {
