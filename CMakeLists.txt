@@ -372,66 +372,250 @@ ENDIF(APPLE)
 #####################      SOURCE FILE FOR lux_lib     ######################
 #############################################################################
 #############################################################################
-SET(lux_lib_src
-		${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxlex.cpp
-		core/api.cpp core/camera.cpp core/color.cpp core/spectrum.cpp core/context.cpp core/dynload.cpp core/exrio.cpp core/film.cpp
-		core/pngio.cpp core/tgaio.cpp
-		core/geometry.cpp core/igiio.cpp core/light.cpp core/material.cpp core/mc.cpp
-        core/paramset.cpp core/parser.cpp core/primitive.cpp core/reflection.cpp core/renderfarm.cpp core/sampling.cpp
-        core/scene.cpp core/shape.cpp core/texture.cpp core/timer.cpp core/photonmap.cpp
-        core/transport.cpp core/util.cpp core/volume.cpp core/imagereader.cpp core/motionsystem.cpp
-        core/geometry/transform.cpp core/geometry/matrix4x4.cpp core/geometry/quaternion.cpp core/geometry/raydifferential.cpp
-        core/reflection/microfacetdistribution.cpp core/reflection/fresnel.cpp core/reflection/bxdf.cpp
-        core/reflection/bxdf/lafortune.cpp core/reflection/bxdf/cooktorrance.cpp core/reflection/bxdf/specularreflection.cpp
-        core/reflection/bxdf/fresnelblend.cpp core/reflection/bxdf/lambertian.cpp core/reflection/bxdf/microfacet.cpp
-        core/reflection/bxdf/orennayar.cpp core/reflection/bxdf/speculartransmission.cpp core/reflection/bxdf/nulltransmission.cpp
-        core/reflection/fresnel/fresnelnoop.cpp core/reflection/fresnel/fresneldielectric.cpp
-        core/reflection/fresnel/fresnelconductor.cpp core/reflection/fresnel/fresnelslick.cpp 
-	core/reflection/fresnel/fresnelgeneral.cpp 
-        core/reflection/microfacetdistribution/beckmann.cpp core/reflection/microfacetdistribution/blinn.cpp
-        core/reflection/microfacetdistribution/wardisotropic.cpp core/reflection/microfacetdistribution/anisotropic.cpp
-		core/osfunc.cpp
-        shapes/cone.cpp shapes/cylinder.cpp shapes/disk.cpp shapes/heightfield.cpp shapes/torus.cpp 
-        shapes/hyperboloid.cpp shapes/loopsubdiv.cpp shapes/nurbs.cpp shapes/quad.cpp shapes/quadrilateral.cpp
-        shapes/paraboloid.cpp shapes/plymesh.cpp shapes/sphere.cpp
-        shapes/plymesh/rply.c shapes/lenscomponent.cpp shapes/mesh.cpp shapes/meshwaldtriangle.cpp shapes/meshbarytriangle.cpp
-        shapes/meshquadrilateral.cpp samplers/lowdiscrepancy.cpp samplers/metrosampler.cpp samplers/erpt.cpp
-        samplers/random.cpp
-        accelerators/grid.cpp accelerators/unsafekdtree.cpp accelerators/tabreckdtree.cpp accelerators/bruteforce.cpp
-        accelerators/bvhaccel.cpp accelerators/qbvhaccel.cpp
-        cameras/environment.cpp cameras/orthographic.cpp cameras/perspective.cpp cameras/realistic.cpp film/fleximage.cpp
-        filters/box.cpp filters/gaussian.cpp filters/mitchell.cpp filters/sinc.cpp filters/triangle.cpp
-        integrators/emission.cpp
-        integrators/path.cpp integrators/single.cpp
-	integrators/distributedpath.cpp 
+
+SET(lux_core_reflection_src
+	core/reflection/bxdf.cpp
+	core/reflection/fresnel.cpp
+	core/reflection/microfacetdistribution.cpp
+	core/reflection/bxdf/cooktorrance.cpp
+	core/reflection/bxdf/fresnelblend.cpp
+	core/reflection/bxdf/lafortune.cpp
+	core/reflection/bxdf/lambertian.cpp
+	core/reflection/bxdf/microfacet.cpp
+	core/reflection/bxdf/nulltransmission.cpp
+	core/reflection/bxdf/orennayar.cpp
+	core/reflection/bxdf/specularreflection.cpp
+	core/reflection/bxdf/speculartransmission.cpp
+	core/reflection/fresnel/fresnelnoop.cpp
+	core/reflection/fresnel/fresneldielectric.cpp
+	core/reflection/fresnel/fresnelconductor.cpp
+	core/reflection/fresnel/fresnelslick.cpp
+	core/reflection/fresnel/fresnelgeneral.cpp
+	core/reflection/microfacetdistribution/anisotropic.cpp
+	core/reflection/microfacetdistribution/beckmann.cpp
+	core/reflection/microfacetdistribution/blinn.cpp
+	core/reflection/microfacetdistribution/wardisotropic.cpp
+	)
+SET(lux_core_src
+	${CMAKE_BINARY_DIR}/luxparse.cpp
+	${CMAKE_BINARY_DIR}/luxlex.cpp
+	core/api.cpp
+	core/camera.cpp
+	core/color.cpp
+	core/context.cpp
+	core/dynload.cpp
+	core/exrio.cpp
+	core/film.cpp
+	core/geometry.cpp
+	core/geometry/matrix4x4.cpp
+	core/geometry/quaternion.cpp
+	core/geometry/raydifferential.cpp
+	core/geometry/transform.cpp
+	core/igiio.cpp
+	core/imagereader.cpp
+	core/light.cpp
+	core/material.cpp
+	core/mc.cpp
+	core/motionsystem.cpp
+	core/osfunc.cpp
+	core/paramset.cpp
+	core/parser.cpp
+	core/photonmap.cpp
+	core/pngio.cpp
+	core/primitive.cpp
+	${lux_core_reflection_src}
+	core/renderfarm.cpp
+	core/sampling.cpp
+	core/scene.cpp
+	core/shape.cpp
+	core/spd.cpp
+	core/spectrum.cpp
+        core/spectrumwavelengths.cpp
+	core/texture.cpp
+	core/tgaio.cpp
+	core/timer.cpp
+	core/transport.cpp
+	core/util.cpp
+	core/volume.cpp
+	renderer/renderserver.cpp
+	)
+SET(lux_accelerators_src
+	accelerators/bruteforce.cpp
+        accelerators/bvhaccel.cpp
+	accelerators/grid.cpp
+	accelerators/qbvhaccel.cpp
+	accelerators/tabreckdtree.cpp
+	accelerators/unsafekdtree.cpp
+	)
+SET(lux_cameras_src
+	cameras/environment.cpp
+	cameras/perspective.cpp
+	cameras/orthographic.cpp
+	cameras/realistic.cpp
+	)
+SET(lux_films_src
+	film/fleximage.cpp
+	)
+SET(lux_filters_src
+	filters/box.cpp
+	filters/gaussian.cpp
+	filters/mitchell.cpp
+	filters/sinc.cpp
+	filters/triangle.cpp
+	)
+SET(lux_integrators_src
 	integrators/bidirectional.cpp
 	integrators/directlighting.cpp
+	integrators/distributedpath.cpp
+	integrators/emission.cpp
 	integrators/exphotonmap.cpp
-        lights/area.cpp lights/distant.cpp lights/infinite.cpp
-        lights/point.cpp lights/projection.cpp lights/spot.cpp lights/infinitesample.cpp
-        lights/sun.cpp lights/sky.cpp 
-		lights/sphericalfunction/sphericalfunction.cpp lights/sphericalfunction/sphericalfunction_ies.cpp
-		lights/sphericalfunction/photometricdata_ies.cpp
-        materials/glass.cpp materials/glossy.cpp materials/matte.cpp materials/mattetranslucent.cpp materials/mirror.cpp
-        materials/shinymetal.cpp
-        materials/carpaint.cpp materials/metal.cpp materials/roughglass.cpp
-        materials/mixmaterial.cpp materials/null.cpp
-        textures/bilerp.cpp textures/checkerboard.cpp textures/constant.cpp textures/dots.cpp
-        textures/fbm.cpp textures/imagemap.cpp textures/marble.cpp textures/mix.cpp
-        textures/scale.cpp textures/uv.cpp textures/windy.cpp textures/wrinkled.cpp textures/brick.cpp
-        textures/blender_wood.cpp textures/blender_musgrave.cpp textures/blender_marble.cpp textures/blender_noiselib.cpp textures/blender_texlib.cpp
-		textures/blender_clouds.cpp textures/blender_blend.cpp textures/blender_distortednoise.cpp textures/blender_magic.cpp textures/blender_noise.cpp
-		textures/blender_stucci.cpp textures/harlequin.cpp textures/blender_voronoi.cpp
-	textures/blackbody.cpp textures/equalenergy.cpp textures/frequencytexture.cpp textures/gaussiantexture.cpp textures/lampspectrum.cpp textures/irregulardata.cpp textures/regulardata.cpp
-        tonemaps/contrast.cpp tonemaps/highcontrast.cpp tonemaps/maxwhite.cpp tonemaps/nonlinear.cpp tonemaps/reinhard.cpp tonemaps/lineartonemap.cpp 
-        volumes/exponential.cpp volumes/homogeneous.cpp volumes/volumegrid.cpp volumes/cloud.cpp
-        pixelsamplers/linear.cpp pixelsamplers/vegas.cpp pixelsamplers/lowdiscrepancypx.cpp
-		pixelsamplers/tilepx.cpp pixelsamplers/hilbertpx.cpp
-        spds/blackbodyspd.cpp spds/irregular.cpp spds/regular.cpp spds/rgbillum.cpp spds/rgbrefl.cpp spds/equalspd.cpp spds/frequencyspd.cpp spds/gaussianspd.cpp
-        core/spectrumwavelengths.cpp core/spd.cpp
-        renderer/renderserver.cpp
+	integrators/path.cpp
+	integrators/single.cpp
+	)
+SET(lux_lights_src
+	lights/area.cpp
+	lights/distant.cpp
+	lights/infinite.cpp
+	lights/infinitesample.cpp
+	lights/point.cpp
+	lights/projection.cpp
+	lights/sphericalfunction/photometricdata_ies.cpp
+	lights/sphericalfunction/sphericalfunction.cpp
+	lights/sphericalfunction/sphericalfunction_ies.cpp
+	lights/spot.cpp
+	lights/sky.cpp
+	lights/sun.cpp
+	)
+SET(lux_materials_src
+	materials/carpaint.cpp
+	materials/glass.cpp
+	materials/glossy.cpp
+	materials/matte.cpp
+	materials/mattetranslucent.cpp
+	materials/metal.cpp
+	materials/mirror.cpp
+	materials/mixmaterial.cpp
+	materials/null.cpp
+	materials/roughglass.cpp
+	materials/shinymetal.cpp
+	)
+SET(lux_pixelsamplers_src
+	pixelsamplers/hilbertpx.cpp
+	pixelsamplers/linear.cpp
+	pixelsamplers/lowdiscrepancypx.cpp
+	pixelsamplers/tilepx.cpp
+	pixelsamplers/vegas.cpp
+	)
+SET(lux_samplers_src
+	samplers/erpt.cpp
+	samplers/lowdiscrepancy.cpp
+	samplers/metrosampler.cpp
+	samplers/random.cpp
+	)
+SET(lux_shapes_src
+	shapes/cone.cpp
+	shapes/cylinder.cpp
+	shapes/disk.cpp
+	shapes/heightfield.cpp
+	shapes/hyperboloid.cpp
+	shapes/lenscomponent.cpp
+	shapes/loopsubdiv.cpp
+	shapes/mesh.cpp
+	shapes/meshbarytriangle.cpp
+	shapes/meshquadrilateral.cpp
+	shapes/meshwaldtriangle.cpp
+	shapes/nurbs.cpp
+	shapes/paraboloid.cpp
+	shapes/plymesh.cpp
+	shapes/plymesh/rply.c
+	shapes/quad.cpp
+	shapes/quadrilateral.cpp
+	shapes/sphere.cpp
+	shapes/torus.cpp
+	)
+SET(lux_spds_src
+	spds/blackbodyspd.cpp
+	spds/equalspd.cpp
+	spds/frequencyspd.cpp
+	spds/gaussianspd.cpp
+	spds/irregular.cpp
+	spds/regular.cpp
+	spds/rgbillum.cpp
+	spds/rgbrefl.cpp
+	)
+SET(lux_blender_textures_src
+	textures/blender_blend.cpp
+	textures/blender_clouds.cpp
+	textures/blender_distortednoise.cpp
+	textures/blender_magic.cpp
+	textures/blender_marble.cpp
+	textures/blender_musgrave.cpp
+	textures/blender_noise.cpp
+	textures/blender_noiselib.cpp
+	textures/blender_stucci.cpp
+	textures/blender_texlib.cpp
+	textures/blender_voronoi.cpp
+	textures/blender_wood.cpp
+	)
+SET(lux_uniform_textures_src
+	textures/blackbody.cpp
+	textures/constant.cpp
+	textures/equalenergy.cpp
+	textures/frequencytexture.cpp
+	textures/gaussiantexture.cpp
+	textures/irregulardata.cpp
+	textures/lampspectrum.cpp
+	textures/regulardata.cpp
+	)
+SET(lux_textures_src
+	${lux_uniform_textures_src}
+	${lux_blender_textures_src}
+	textures/bilerp.cpp
+	textures/brick.cpp
+	textures/checkerboard.cpp
+	textures/dots.cpp
+        textures/fbm.cpp
+	textures/harlequin.cpp
+	textures/imagemap.cpp
+	textures/marble.cpp
+	textures/mix.cpp
+	textures/scale.cpp
+	textures/uv.cpp
+	textures/windy.cpp
+	textures/wrinkled.cpp
+	)
+SET(lux_tonemaps_src
+	tonemaps/contrast.cpp
+	tonemaps/highcontrast.cpp
+	tonemaps/lineartonemap.cpp
+	tonemaps/maxwhite.cpp
+	tonemaps/nonlinear.cpp
+	tonemaps/reinhard.cpp
+	)
+SET(lux_volumes_src
+	volumes/cloud.cpp
+	volumes/exponential.cpp
+	volumes/homogeneous.cpp
+	volumes/volumegrid.cpp
 	)
 
+SET(lux_lib_src
+	${lux_core_src}
+	${lux_accelerators_src}
+	${lux_cameras_src}
+	${lux_films_src}
+	${lux_filters_src}
+	${lux_integrators_src}
+	${lux_lights_src}
+	${lux_materials_src}
+	${lux_pixelsamplers_src}
+	${lux_samplers_src}
+	${lux_shapes_src}
+	${lux_spds_src}
+	${lux_textures_src}
+	${lux_tonemaps_src}
+	${lux_volumes_src}
+	)
 INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
                     ${JPEG_INCLUDE_DIR}
 					${TIFF_INCLUDE_DIR}
