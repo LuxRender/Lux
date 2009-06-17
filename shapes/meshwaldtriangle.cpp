@@ -29,6 +29,22 @@ using namespace lux;
 MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, int n)
 	: MeshBaryTriangle(m, n)
 {
+	// Reorder vertices so that edges lengths will be as close as possible
+	const float l0 = DistanceSquared(mesh->p[v[0]], mesh->p[v[1]]);
+	const float l1 = DistanceSquared(mesh->p[v[1]], mesh->p[v[2]]);
+	const float l2 = DistanceSquared(mesh->p[v[2]], mesh->p[v[0]]);
+	const float d0 = fabsf(l0 - l2);
+	const float d1 = fabsf(l1 - l0);
+	const float d2 = fabsf(l2 - l1);
+	int *v_ = const_cast<int *>(v);
+	if (d2 < d1 && d2 < d0) {
+		swap(v_[0], v_[2]);
+		swap(v_[1], v_[2]);
+	} else if (d1 < d0) {
+		swap(v_[0], v_[1]);
+		swap(v_[2], v_[1]);
+	}
+
 	// Wald's precomputed values
 
 	// Look for the dominant axis
@@ -175,17 +191,22 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	if (det == 0.f)
 		return false;
 
-	const float t = (nd - o0 - nu * o1 - nv * o2) / det;
-	if (t <= ray.mint || t >= ray.maxt)
-		return false;
+	const float t = nd - o0 - nu * o1 - nv * o2;
+	if (det > 0.f) {
+		if (t <= det * ray.mint || t >= det * ray.maxt - t * RAY_EPSILON)
+			return false;
+	} else {
+		if (t >= det * ray.mint || t <= det * ray.maxt - t * RAY_EPSILON)
+			return false;
+	}
 
-	const float hu = o1 + t * d1;
-	const float hv = o2 + t * d2;
-	const float uu = hu * bnu + hv * bnv + bnd;
+	const float hu = det * o1 + t * d1;
+	const float hv = det * o2 + t * d2;
+	const float uu = (hu * bnu + hv * bnv) / det + bnd;
 	if (uu < 0.f)
 		return false;
 
-	const float vv = hu * cnu + hv * cnv + cnd;
+	const float vv = (hu * cnu + hv * cnv) / det + cnd;
 	if (vv < 0.f)
                 return false;
 
@@ -193,13 +214,15 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	if (b0 < 0.f)
 		return false;
 
+	const float tt = t / det;
+
 	float uvs[3][2];
 	GetUVs(uvs);
 	// Interpolate $(u,v)$ triangle parametric coordinates
 	const float tu = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
 	const float tv = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
 
-	isect->dg = DifferentialGeometry(ray(t), normalizedNormal, dpdu, dpdv,
+	isect->dg = DifferentialGeometry(ray(tt), normalizedNormal, dpdu, dpdv,
 		Vector(0, 0, 0), Vector(0, 0, 0), tu, tv, this);
 	isect->dg.AdjustNormal(mesh->reverseOrientation,
 		mesh->transformSwapsHandedness);
@@ -207,7 +230,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	isect->dg.triangleBaryCoords[0] = b0;
 	isect->dg.triangleBaryCoords[1] = uu;
 	isect->dg.triangleBaryCoords[2] = vv;
-	ray.maxt = t;
+	ray.maxt = tt;
 
 	return true;
 }
@@ -250,17 +273,22 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const
 	if (det == 0.f)
 		return false;
 
-	const float t = (nd - o0 - nu * o1 - nv * o2) / det;
-	if (t <= ray.mint || t >= ray.maxt)
-		return false;
+	const float t = /*(*/nd - o0 - nu * o1 - nv * o2/*) / det*/;
+	if (det > 0.f) {
+		if (t <= det * ray.mint || t >= det * ray.maxt)
+			return false;
+	} else {
+		if (t >= det * ray.mint || t <= det * ray.maxt)
+			return false;
+	}
 
-	const float hu = o1 + t * d1;
-	const float hv = o2 + t * d2;
-	const float uu = hu * bnu + hv * bnv + bnd;
+	const float hu = det * o1 + t * d1;
+	const float hv = det * o2 + t * d2;
+	const float uu = (hu * bnu + hv * bnv) / det + bnd;
 	if (uu < 0.f)
 		return false;
 
-	const float vv = hu * cnu + hv * cnv + cnd;
+	const float vv = (hu * cnu + hv * cnv) / det + cnd;
 	if (vv < 0.f || uu + vv > 1.f)
                 return false;
 
