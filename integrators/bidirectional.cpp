@@ -34,18 +34,17 @@ using namespace lux;
 
 struct BidirVertex {
 	BidirVertex() : pdf(0.f), pdfR(0.f), tPdf(1.f), tPdfR(1.f),
-		dAWeight(0.f), dARWeight(0.f), rr(1.f), rrR(1.f),
-		flux(0.f), bsdf(NULL), flags(BxDFType(0)), f(0.f),
-		Le(0.f), ePdf(0.f), ePdfDirect(0.f), eBsdf(NULL) {}
-	float cosi, coso, pdf, pdfR, tPdf, tPdfR, dAWeight, dARWeight, rr, rrR;
+		dAWeight(0.f), dARWeight(0.f), rr(1.f), rrR(1.f), prob(1.f),
+		flux(0.f), f(0.f), Le(0.f), bsdf(NULL), flags(BxDFType(0)),
+		ePdf(0.f), ePdfDirect(0.f), eBsdf(NULL) {}
+	float cosi, coso, pdf, pdfR, tPdf, tPdfR, dAWeight, dARWeight, rr, rrR, prob, d2;
 	SWCSpectrum flux;
+	SWCSpectrum f, Le;
 	BSDF *bsdf;
 	BxDFType flags;
 	Vector wi, wo;
 	Normal ng, ns;
 	Point p;
-	float d2;
-	SWCSpectrum f, Le;
 	float  ePdf, ePdfDirect;
 	BSDF *eBsdf;
 	int eGroup;
@@ -148,25 +147,27 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		bool through = false;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f) {
-			v.flux = v.f;
 			v.cosi = AbsDot(v.wi, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
+			v.flux = v.f * cosins;
+			v.prob = v.pdfR;
 			v.f *= cosins / v.cosi;
-			v.flux *= cosins / v.pdfR;
-			v.rrR = min(1.f, max(bidir.eyeThreshold, v.flux.filter(tspack)));
+			v.rrR = min(1.f, max(bidir.eyeThreshold, v.flux.filter(tspack) / v.prob));
 			if (nVerts > 3) {
 				if (v.rrR < data[0])
 					break;
-				v.flux /= v.rrR;
+				v.prob *= v.rrR;
 			}
 			v.rr = min(1.f, max(bidir.lightThreshold,
 				v.f.filter(tspack) * v.coso / v.pdf));
-			if (nVerts > 1)
+			if (nVerts > 1) {
 				v.flux *= vertices[nVerts - 2].flux;
+				v.prob *= vertices[nVerts - 2].prob;
+			}
 		} else {
-			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
-			vertices[nVerts - 2].flux *= cosins / v.pdfR;
+			vertices[nVerts - 2].flux *= v.f * cosins;
+			vertices[nVerts - 2].prob *= v.pdfR;
 			vertices[nVerts - 2].tPdfR *= v.pdfR;
 			vertices[nVerts - 1].tPdf *= v.pdf;
 			--nVerts;
@@ -237,22 +238,25 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			v.flux = v.f;
 			v.coso = AbsDot(v.wo, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
-			v.flux *= cosins / v.cosi * v.coso / v.pdf;
-			v.rr = min(1.f, max(bidir.lightThreshold, v.flux.filter(tspack)));
+			v.flux *= v.coso * cosins;
+			v.prob = v.pdf * v.cosi;
+			v.rr = min(1.f, max(bidir.lightThreshold, v.flux.filter(tspack) / v.prob));
 			if (nVerts > 3) {
 				if (v.rr < data[0])
 					break;
-				v.flux /= v.rr;
+				v.prob *= v.rr;
 			}
 			v.rrR = min(1.f, max(bidir.eyeThreshold,
 				v.f.filter(tspack) * cosins / v.pdfR));
-			if (nVerts > 1)
+			if (nVerts > 1) {
 				v.flux *= vertices[nVerts - 2].flux;
+				v.prob *= vertices[nVerts - 2].prob;
+			}
 		} else {
-			vertices[nVerts - 2].flux *= v.f;
 			const float cosins = AbsDot(v.wi, v.ns);
+			vertices[nVerts - 2].flux *= v.f * cosins;
 			// No need to do '/ v.cosi * v.coso' since cosi==coso
-			vertices[nVerts - 2].flux *= cosins / v.pdf;
+			vertices[nVerts - 2].prob *= v.pdf;
 			vertices[nVerts - 2].tPdf *= v.pdf;
 			vertices[nVerts - 1].tPdfR *= v.pdfR;
 			--nVerts;
@@ -396,6 +400,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	const float lightThreshold = bidir.lightThreshold;
 	*weight = 0.f;
 	float eWeight = 0.0f, lWeight = 0.0f;
+	float prob;
 	// Be carefull, eye and light last vertex can be modified here
 	// If each path has at least 1 vertex, connect them
 	if (nLight > 0 && nEye > 0) {
@@ -430,18 +435,27 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 			return false;
 		const float ecosins = AbsDot(eyeV.wi, eyeV.ns);
 		eyeV.flux = eyeV.f; // No pdf as it is a direct connection
-		if (nEye > 1)
+		if (nEye > 1) {
 			eyeV.flux *= eye[nEye - 2].flux;
+			eyeV.prob = eye[nEye - 2].prob;
+		}
 		// Prepare light vertex for connection
 		lightV.coso = AbsDot(lightV.wo, lightV.ng);
 		lightV.d2 = eyeV.d2;
 		const float lcosins = AbsDot(lightV.wi, lightV.ns);
-		lightV.flux = lightV.f; // No pdf as it is a direct connection
-		lightV.flux *= lcosins / lightV.cosi;
-		if (nLight > 1)
+		lightV.flux = lightV.f * lcosins; // No pdf as it is a direct connection
+		lightV.prob = lightV.cosi;
+		if (nLight > 1) {
 			lightV.flux *= light[nLight - 2].flux;
+			lightV.prob *= light[nLight - 2].prob;
+		}
 		// Connect eye and light vertices
-		*L *= eyeV.flux * G(ecosins, lightV.coso, eyeV.d2) * lightV.flux;
+		prob = eyeV.prob * lightV.prob;
+		if (!(prob > 0.f))
+			return false;
+		*L *= eyeV.flux;
+		*L *= lightV.flux;
+		*L *= G(ecosins, lightV.coso, eyeV.d2);
 		if (L->Black())
 			return false;
 		// Evaluate factors for eye path weighting
@@ -480,7 +494,12 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		v.pdf = v.eBsdf->Pdf(tspack, Vector(v.ng), v.wo, v.flags);
 		if (!(v.pdf > 0.f))
 			return false;
+		prob = eye[nEye - 2].prob;
+		if (!(prob > 0.f))
+			return false;
 		*L *= eye[nEye - 2].flux;
+		if (L->Black())
+			return false;
 		eWeight = eye[nEye - 2].dAWeight;
 		if (nEye > 2)
 			eye[nEye - 2].dAWeight = v.pdf * v.tPdf *
@@ -494,7 +513,12 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		v.pdfR = v.eBsdf->Pdf(tspack, v.wo, Vector(v.ns), v.flags);
 		if (!(v.pdfR > 0.f))
 			return false;
+		prob = light[nLight - 2].prob;
+		if (!(prob > 0.f))
+			return false;
 		*L *= light[nLight - 2].flux;//FIXME: not implemented yet
+		if (L->Black())
+			return false;
 		lWeight = light[nLight - 2].dARWeight;
 		light[nLight - 2].dARWeight = v.pdfR * v.tPdfR *
 			light[nLight - 2].coso / light[nLight - 2].d2;
@@ -502,10 +526,10 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 			light[nLight - 2].d2;
 	} else
 		return false;
-	float w = 1.f / weightPath(eye, nEye, eyeDepth, light, nLight,
+	const float w = weightPath(eye, nEye, eyeDepth, light, nLight,
 		lightDepth, pdfLightDirect, isLightDirect);
-	*weight = w;
-	*L *= w;
+	*weight = 1.f / w;
+	*L /= w * prob;
 	if (nEye > 1)
 		eye[nEye - 2].dAWeight = eWeight;
 	if (nLight > 1)
