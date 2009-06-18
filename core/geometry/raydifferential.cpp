@@ -22,7 +22,6 @@
  ***************************************************************************/
 
 #include "lux.h"
-#include "geometry.h"
 #include "raydifferential.h"
 
 using namespace lux;

@@ -23,7 +23,6 @@
 // nurbs.cpp*
 #include "lux.h"
 #include "shape.h"
-#include "geometry.h"
 #include "dynload.h"
 #include "texture.h"
 

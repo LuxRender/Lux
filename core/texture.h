@@ -24,8 +24,8 @@
 #define LUX_TEXTURE_H
 // texture.h*
 #include "lux.h"
+#include "geometry/transform.h"
 #include "spectrum.h"
-#include "geometry.h"
 
 namespace lux
 {

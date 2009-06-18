@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "microfacetdistribution.h"
 #include "bxdf.h"
-#include "geometry.h"
 
 namespace lux
 {

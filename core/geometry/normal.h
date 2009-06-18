@@ -105,6 +105,22 @@ inline ostream &operator<<(ostream &os, const Normal &v) {
 	return os;
 }
 
+inline Normal Normalize(const Normal &n) {
+	return n / n.Length();
+}
+
+inline float Dot(const Normal &n1, const Normal &n2) {
+	return n1.x * n2.x + n1.y * n2.y + n1.z * n2.z;
+}
+
+inline float AbsDot(const Normal &n1, const Normal &n2) {
+	return fabsf(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z);
+}
+
 }//namespace lux
+
+#ifdef LUX_VECTOR_H
+#include "vector_normal.h"
+#endif
 
 #endif //LUX_NORMAL_H

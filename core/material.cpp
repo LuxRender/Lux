@@ -24,7 +24,6 @@
 #include "material.h"
 #include "shape.h"
 #include "texture.h"
-#include "geometry.h"
 #include "paramset.h"
 
 using namespace lux;

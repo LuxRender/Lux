@@ -24,7 +24,6 @@
 #define LUX_KDTREE_H
 // kdtree.h*
 #include "lux.h"
-#include "geometry.h"
 #include "memory.h"
 // KdTree Declarations
 

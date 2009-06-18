@@ -24,7 +24,6 @@
 #define LUX_PARAMSET_H
 // paramset.h*
 #include "lux.h"
-#include "geometry.h"
 #include "texture.h"
 #include "color.h"
 

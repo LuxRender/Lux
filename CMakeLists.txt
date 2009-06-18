@@ -406,7 +406,7 @@ SET(lux_core_src
 	core/dynload.cpp
 	core/exrio.cpp
 	core/film.cpp
-	core/geometry.cpp
+	core/geometry/bbox.cpp
 	core/geometry/matrix4x4.cpp
 	core/geometry/quaternion.cpp
 	core/geometry/raydifferential.cpp

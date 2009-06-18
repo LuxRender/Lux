@@ -21,7 +21,6 @@
  ***************************************************************************/
 
 #include "sphericalfunction_ies.h"
-#include "geometry.h"
 #include "error.h"
 #include "mcdistribution.h"
 

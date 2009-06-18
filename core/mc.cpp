@@ -23,7 +23,6 @@
 // mc.cpp*
 #include "lux.h"
 #include "randomgen.h"
-#include "geometry.h"
 #include "shape.h"
 #include "mc.h"
 #include "volume.h"

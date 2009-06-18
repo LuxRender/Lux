@@ -24,8 +24,8 @@
 #define LUX_PRIMITIVE_H
 // primitive.h*
 #include "lux.h"
-#include "geometry.h"
 #include "motionsystem.h"
+#include "geometry/raydifferential.h"
 #include "spectrum.h"
 
 namespace lux

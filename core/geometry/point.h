@@ -113,6 +113,14 @@ inline Point operator*(float f, const Point &p) {
 	return p*f;
 }
 
+inline float Distance(const Point &p1, const Point &p2) {
+	return (p1 - p2).Length();
+}
+
+inline float DistanceSquared(const Point &p1, const Point &p2) {
+	return (p1 - p2).LengthSquared();
+}
+
 }//namespace lux
 
 

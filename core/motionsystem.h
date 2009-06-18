@@ -25,7 +25,10 @@
 
 // motionsystem.h*
 #include "lux.h"
-#include "geometry.h"
+#include "geometry/quaternion.h"
+#include "geometry/bbox.h"
+#include "geometry/matrix4x4.h"
+#include "geometry/transform.h"
 // MotionSystem Declarations
 
 namespace lux

@@ -24,8 +24,9 @@
 #define LUX_VOLUME_H
 // volume.h*
 #include "lux.h"
+#include "geometry/transform.h"
+#include "geometry/bbox.h"
 #include "color.h"
-#include "geometry.h"
 
 namespace lux
 {

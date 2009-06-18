@@ -25,7 +25,6 @@
 // shape.h*
 #include "lux.h"
 #include "primitive.h"
-#include "geometry.h"
 #include "error.h"
 
 namespace lux

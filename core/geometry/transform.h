@@ -24,7 +24,10 @@
 #define LUX_TRANSFORM_H
 // transform.h*
 #include "lux.h"
-#include "geometry.h"
+#include "matrix4x4.h"
+#include "point.h"
+#include "normal.h"
+#include "ray.h"
 
 namespace lux
 {

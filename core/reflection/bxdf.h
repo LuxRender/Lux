@@ -24,7 +24,7 @@
 #define LUX_BXDF_H
 // bxdf.h*
 #include "lux.h"
-#include "geometry.h"
+#include "geometry/raydifferential.h"
 #include "material.h"
 #include "spectrum.h"
 #include "memory.h"

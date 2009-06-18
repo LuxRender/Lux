@@ -25,7 +25,6 @@
 
 #include "lux.h"
 #include "scene.h"
-#include "geometry.h"
 #include "spectrum.h"
 #include "kdtree.h"
 #include "bxdf.h"

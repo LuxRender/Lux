@@ -24,7 +24,6 @@
 #define LUX_LIGHT_H
 // light.h*
 #include "lux.h"
-#include "geometry.h"
 #include "spectrum.h"
 #include "texture.h"
 #include "primitive.h"

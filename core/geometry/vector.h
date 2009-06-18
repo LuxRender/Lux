@@ -23,6 +23,7 @@
 #ifndef LUX_VECTOR_H
 #define LUX_VECTOR_H
 
+#include "lux.h"
 #include <cmath>
 #include <iostream>
 using std::ostream;
@@ -118,6 +119,58 @@ inline Vector operator*(float f, const Vector &v) {
 	return v*f;
 }
 
+inline float Dot(const Vector &v1, const Vector &v2) {
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+inline float AbsDot(const Vector &v1, const Vector &v2) {
+	return fabsf(Dot(v1, v2));
+}
+
+inline Vector Cross(const Vector &v1, const Vector &v2) {
+	return Vector((v1.y * v2.z) - (v1.z * v2.y),
+                  (v1.z * v2.x) - (v1.x * v2.z),
+                  (v1.x * v2.y) - (v1.y * v2.x));
+}
+
+inline Vector Normalize(const Vector &v) {
+	return v / v.Length();
+}
+
+inline void CoordinateSystem(const Vector &v1, Vector *v2, Vector *v3) {
+	if (fabsf(v1.x) > fabsf(v1.y)) {
+		float invLen = 1.f / sqrtf(v1.x*v1.x + v1.z*v1.z);
+		*v2 = Vector(-v1.z * invLen, 0.f, v1.x * invLen);
+	} else {
+		float invLen = 1.f / sqrtf(v1.y*v1.y + v1.z*v1.z);
+		*v2 = Vector(0.f, v1.z * invLen, -v1.y * invLen);
+	}
+	*v3 = Cross(v1, *v2);
+}
+
+inline Vector SphericalDirection(float sintheta, float costheta, float phi) {
+	return Vector(sintheta * cosf(phi), sintheta * sinf(phi), costheta);
+}
+
+inline Vector SphericalDirection(float sintheta, float costheta, float phi,
+	const Vector &x, const Vector &y, const Vector &z) {
+	return sintheta * cosf(phi) * x + sintheta * sinf(phi) * y +
+		costheta * z;
+}
+
+inline float SphericalTheta(const Vector &v) {
+	return acosf(Clamp(v.z, -1.f, 1.f));
+}
+
+inline float SphericalPhi(const Vector &v) {
+	float p = atan2f(v.y, v.x);
+	return (p < 0.f) ? p + 2.f*M_PI : p;
+}
+
 }//namespace lux
+
+#ifdef LUX_NORMAL_H
+#include "vector_normal.h"
+#endif
 
 #endif //LUX_VECTOR_H

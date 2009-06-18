@@ -25,7 +25,6 @@
 
 #include "lux.h"
 #include "color.h"
-#include "geometry.h"
 #include "mipmap.h"
 
 namespace lux {

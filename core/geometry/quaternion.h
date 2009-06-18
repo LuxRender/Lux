@@ -24,7 +24,7 @@
 #define LUX_QUATERNION_H
 // quaternion.h*
 #include "lux.h"
-#include "geometry.h"
+#include "vector.h"
 
 namespace lux
 {
