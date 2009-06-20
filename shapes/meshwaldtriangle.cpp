@@ -273,12 +273,12 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const
 	if (det == 0.f)
 		return false;
 
-	const float t = /*(*/nd - o0 - nu * o1 - nv * o2/*) / det*/;
+	const float t = nd - o0 - nu * o1 - nv * o2;
 	if (det > 0.f) {
-		if (t <= det * ray.mint || t >= det * ray.maxt)
+		if (t <= det * ray.mint || t >= det * ray.maxt - t * RAY_EPSILON)
 			return false;
 	} else {
-		if (t >= det * ray.mint || t <= det * ray.maxt)
+		if (t >= det * ray.mint || t <= det * ray.maxt - t * RAY_EPSILON)
 			return false;
 	}
 
