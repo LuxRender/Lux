@@ -22,7 +22,7 @@
 
 // quaternion.cpp*
 #include "quaternion.h"
-#include "shape.h"
+#include "geometry/matrix4x4.h"
 
 namespace lux
 {
