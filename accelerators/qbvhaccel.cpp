@@ -547,8 +547,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
 			for (u_int primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
-				if (prims[primNumber]->Intersect(ray, isect))
-					hit = true;
+				hit |= prims[primNumber]->Intersect(ray, isect);
 			}
 
 			//update the t max value.
