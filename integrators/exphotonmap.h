@@ -49,7 +49,7 @@ public:
 			RenderingMode rm,
 			LightStrategy st,
 			int ndir, int ncaus, int nindir, int nrad,
-			int nLookup, int mdepth,
+			int nLookup, int mdepth, int mpdepth,
 			float maxdist, bool finalGather, int gatherSamples, float ga,
 			PhotonMapRRStrategy rrstrategy, float rrcontprob,
 			float distThreshold,
@@ -76,7 +76,7 @@ private:
 	LightStrategy lightStrategy;
 	u_int nDirectPhotons, nCausticPhotons, nIndirectPhotons, nRadiancePhotons;
 	u_int nLookup;
-	int maxDepth;
+	int maxDepth, maxPhotonDepth;
 	float maxDistSquared;
 
 	bool finalGather;

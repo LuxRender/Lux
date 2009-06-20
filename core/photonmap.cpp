@@ -36,59 +36,97 @@ using namespace lux;
 namespace lux
 {
 
-void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const {
+SWCSpectrum BasicColorPhoton::GetSWCSpectrum(const TsPack* tspack, u_int nb) const
+{
+	SWCSpectrum result(0.f);
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
+		if (i > 0) {
+			const float delta0 = 1.f - (fabsf(tspack->swl->w[i] - w[i - 1]) * WAVELENGTH_SAMPLES) /
+				((WAVELENGTH_END - WAVELENGTH_START) * nb);
+			if (delta0 > 0.f)
+				result.c[i] += delta0 * alpha.c[i - 1];
+		}
+		const float delta1 = 1.f - (fabsf(tspack->swl->w[i] - w[i]) * WAVELENGTH_SAMPLES) /
+			((WAVELENGTH_END - WAVELENGTH_START) * nb);
+		if (delta1 > 0.f)
+			result.c[i] += delta1 * alpha.c[i];
+		if (i < WAVELENGTH_SAMPLES - 1) {
+			const float delta2 = 1.f - (fabsf(tspack->swl->w[i] - w[i + 1]) * WAVELENGTH_SAMPLES) /
+				((WAVELENGTH_END - WAVELENGTH_START) * nb);
+			if (delta2 > 0.f)
+				result.c[i] += delta2 * alpha.c[i + 1];
+		}
+	}
+	return result;
+}
+
+void BasicColorPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
+{
 	// Point p
-	for (int i = 0; i < 3; i++)
+	for (u_int i = 0; i < 3; ++i)
 		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
 
-	// RGBColor alpha
-	for (int i = 0; i < 3; i++)
+	// SWCSpectrum alpha
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
 
+	// wavelengths
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+		osWriteLittleEndianFloat(isLittleEndian, stream, w[i]);
+}
+
+void BasicColorPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
+{
+	// Point p
+	for (u_int i = 0; i < 3; ++i)
+		osReadLittleEndianFloat(isLittleEndian, stream, &p[i]);
+
+	// SWCSpectrum alpha
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+		osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[i]);
+
+	// wavelengths
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+		osReadLittleEndianFloat(isLittleEndian, stream, &w[i]);
+}
+
+void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
+{
+	// BasicColorPhoton
+	BasicColorPhoton::save(isLittleEndian, stream);
+
 	// Vector wi
-	for (int i = 0; i < 3; i++)
+	for (u_int i = 0; i < 3; ++i)
 		osWriteLittleEndianFloat(isLittleEndian, stream, wi[i]);
 }
 
-void LightPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream) {
-	// Point p
-	for (int i = 0; i < 3; i++)
-		osReadLittleEndianFloat(isLittleEndian, stream, &p[i]);
-
-	// RGBColor alpha
-	for (int i = 0; i < 3; i++)
-		osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[i]);
+void LightPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
+{
+	// BasicColorPhoton
+	BasicColorPhoton::load(isLittleEndian, stream);
 
 	// Vector wi
-	for (int i = 0; i < 3; i++)
+	for (u_int i = 0; i < 3; ++i)
 		osReadLittleEndianFloat(isLittleEndian, stream, &wi[i]);
 }
 
-void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const {
-	// Point p
-	for (int i = 0; i < 3; i++)
-		osWriteLittleEndianFloat(isLittleEndian, stream, p[i]);
-
-	// RGBColor alpha
-	for (int i = 0; i < 3; i++)
-		osWriteLittleEndianFloat(isLittleEndian, stream, alpha.c[i]);
+void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
+{
+	// BasicColorPhoton
+	BasicColorPhoton::save(isLittleEndian, stream);
 
 	// Normal n
-	for (int i = 0; i < 3; i++)
+	for (u_int i = 0; i < 3; ++i)
 		osWriteLittleEndianFloat(isLittleEndian, stream, n[i]);
 }
 
-void RadiancePhoton::load(bool isLittleEndian, std::basic_istream<char> &stream) {
-	// Point p
-	for (int i = 0; i < 3; i++)
-		osReadLittleEndianFloat(isLittleEndian, stream, &p[i]);
-
-	// RGBColor alpha
-	for (int i = 0; i < 3; i++)
-		osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[i]);
+void RadiancePhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
+{
+	// BasicColorPhoton
+	BasicColorPhoton::load(isLittleEndian, stream);
 
 	// Normal n
-	for (int i = 0; i < 3; i++)
+	for (u_int i = 0; i < 3; ++i)
 		osReadLittleEndianFloat(isLittleEndian, stream, &n[i]);
 }
 
@@ -112,7 +150,7 @@ SWCSpectrum RadiancePhotonMap::LPhoton(const TsPack *tspack,
 		float md2Refl = maxDistSquared;
 		lookup(p, procRefl, md2Refl);
 		if (procRefl.photon)
-			L += procRefl.photon->GetSWCSpectrum(tspack);
+			L += procRefl.photon->GetSWCSpectrum(tspack, 1);
 	}
 
 	if ((bxdfType & BSDF_TRANSMISSION ) != 0) {
@@ -121,7 +159,7 @@ SWCSpectrum RadiancePhotonMap::LPhoton(const TsPack *tspack,
 		float md2Transm = maxDistSquared;
 		lookup(p, procTransm, md2Transm);
 		if (procTransm.photon)
-			L += procTransm.photon->GetSWCSpectrum(tspack);
+			L += procTransm.photon->GetSWCSpectrum(tspack, 1);
 	}
 
 	return L;
@@ -145,7 +183,7 @@ SWCSpectrum LightPhotonMap::EPhoton(const TsPack *tspack, const Point &p,
 	ClosePhoton<LightPhoton> *photons = proc.photons;
 	for (u_int i = 0; i < proc.foundPhotons; ++i) {
 		if (Dot(n, photons[i].photon->wi) > 0.f)
-			E += photons[i].photon->GetSWCSpectrum(tspack);
+			E += photons[i].photon->GetSWCSpectrum(tspack, proc.foundPhotons);
 	}
 
 	return E / (nPaths * md2 * M_PI);
@@ -183,7 +221,7 @@ SWCSpectrum LightPhotonMap::LPhoton(const TsPack* tspack, const BSDF *bsdf,
 			(Dot(Nf, p->wi) > 0.f ?
 			BSDF_ALL_REFLECTION : BSDF_ALL_TRANSMISSION));
 		float k = Ekernel(p, isect.dg.p, distSquared);
-		const SWCSpectrum alpha = p->GetSWCSpectrum(tspack);
+		const SWCSpectrum alpha = p->GetSWCSpectrum(tspack, nFound);
 
 		L += (k / nPaths) * bsdf->f(tspack, p->wi, wo, flag) * alpha;
 	}
@@ -221,7 +259,7 @@ SWCSpectrum LightPhotonMap::LPhotonDiffuseApprox(const TsPack* tspack,
 
 	for (u_int i = 0; i < nFound; ++i) {
 		const LightPhoton *p = photons[i].photon;
-		const SWCSpectrum alpha = p->GetSWCSpectrum(tspack);
+		const SWCSpectrum alpha = p->GetSWCSpectrum(tspack, nFound);
 
 		float k = Ekernel(p, isect.dg.p, distSquared);
 		if (Dot(Nf, photons[i].photon->wi) > 0.f)
@@ -269,7 +307,7 @@ SWCSpectrum LightPhotonMap::LDiffusePhoton(const TsPack* tspack,
 
 	for (u_int i = 0; i < nFound; ++i) {
 		const LightPhoton *p = photons[i].photon;
-		const SWCSpectrum alpha = p->GetSWCSpectrum( tspack );
+		const SWCSpectrum alpha = p->GetSWCSpectrum(tspack, nFound);
 
 		float k = Ekernel(p, isect.dg.p, distSquared);
 		if (Dot(Nf, photons[i].photon->wi) > 0.f)
@@ -294,7 +332,8 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	const BxDFType radianceBxdfType, u_int nDirectPhotons,
 	u_int nRadiancePhotons, RadiancePhotonMap *radianceMap,
 	u_int nIndirectPhotons, LightPhotonMap *indirectMap,
-	u_int nCausticPhotons, LightPhotonMap *causticMap)
+	u_int nCausticPhotons, LightPhotonMap *causticMap,
+	u_int maxDepth)
 {
 	if (scene->lights.size() == 0)
 		return;
@@ -562,7 +601,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				BSDF *photonBSDF = photonIsect.GetBSDF(tspack, photonRay, tspack->rng->floatValue());
 				if (photonBSDF->NumComponents(photonBxdfType) > 0) {
 					// Deposit photon at surface
-					LightPhoton photon(photonIsect.dg.p, alpha.ToXYZ(tspack).ToRGB() / 100000.f, wo);//JPG - FIXME : the 100000 factor is necessary to try to normalize the various conversion stages spectrum->xyz->rgb->spectrum, however it's far from being 100% accurate
+					LightPhoton photon(tspack, photonIsect.dg.p, alpha, wo);
 
 					if (nIntersections == 1) {
 						if (computeRadianceMap && (!directDone)) {
@@ -612,7 +651,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 							Normal n = photonIsect.dg.nn;
 							if (Dot(n, photonRay.d) > 0.f)
 								n = -n;
-							radiancePhotons.push_back(RadiancePhoton(photonIsect.dg.p, n));
+							radiancePhotons.push_back(RadiancePhoton(tspack, photonIsect.dg.p, n));
 
 							rpReflectances.push_back(rho_r);
 							rpTransmittances.push_back(rho_t);
@@ -641,9 +680,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 
 				// Compute new photon weight and possibly terminate with RR
 				SWCSpectrum fr;
-				if (!photonBSDF->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, BSDF_ALL, &flags, NULL, true))
+				if (!photonBSDF->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = alpha * fr * AbsDot(wi, photonBSDF->dgShading.nn) / pdf;
+				SWCSpectrum anew = alpha * fr * AbsDot(wi, photonIsect.dg.nn) * AbsDot(wo, photonBSDF->dgShading.nn) / (AbsDot(wo, photonIsect.dg.nn) * pdf);
 				float continueProb = min(1.f, anew.filter(tspack) / alpha.filter(tspack));
 				if (tspack->rng->floatValue() > continueProb || nIntersections > 10)
 					break;
@@ -688,7 +727,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			const SWCSpectrum &rho_t = rpTransmittances[i];
 			const Point& p = rp.p;
 			const Normal& n = rp.n;
-			SWCSpectrum alpha = 0.f;
+			SWCSpectrum alpha(0.f);
+			for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j)
+				tspack->swl->w[j] = rp.w[j];
 
 			if (!rho_r.Black()) {
 				SWCSpectrum E = directMap.EPhoton(tspack, p, n);
@@ -706,7 +747,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				alpha += E * INV_PI * rho_t;
 			}
 
-			rp.alpha = alpha.ToXYZ(tspack).ToRGB();
+			rp.alpha = alpha;
 		}
 
 		radianceMap->init(radiancePhotons);
@@ -844,7 +885,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			float u3 = sampleFGData[2];
 			float pdf;
 			SWCSpectrum fr;
-			if (!bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType)) 
+			if (!bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType, NULL, NULL, true)) 
 				continue;
 
 			// Dade - russian roulette
@@ -877,7 +918,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
-					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack);
+					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack, 1);
 
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for BSDF-sampled gather ray
@@ -914,7 +955,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			Vector wi = UniformSampleCone(u2, u3, cosGatherAngle, vx, vy,
 				photonDirs[photonNum]);
 			// Trace photon-sampled final gather ray and accumulate radiance
-			SWCSpectrum fr = bsdf->f(tspack, wo, wi, bxdfType);
+			SWCSpectrum fr = bsdf->f(tspack, wi, wo, bxdfType);
 			if (fr.Black())
 				continue;
 
@@ -956,11 +997,11 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
-					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack);
+					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack, 1);
 
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for photon-sampled gather ray
-					float bsdfPdf = bsdf->Pdf(tspack, wo, wi, bxdfType);
+					float bsdfPdf = bsdf->Pdf(tspack, wi, wo, bxdfType);
 					float wt = PowerHeuristic(gatherSamples, photonPdf, gatherSamples, bsdfPdf);
 					Li += fr * Lindir * (AbsDot(wi, n) * wt / photonPdf);
 				}
@@ -999,7 +1040,7 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 			float u3 = sampleFGData[2];
 			float pdf;
 			SWCSpectrum fr;
-			if (!bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType)) 
+			if (!bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType, NULL, NULL, true)) 
 				continue;
 
 			// Dade - russian roulette
@@ -1032,7 +1073,7 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
-					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack);
+					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack, 1);
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 
 					Li += fr * Lindir * (AbsDot(wi, n) / pdf);

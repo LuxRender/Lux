@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "scene.h"
 #include "spectrum.h"
+#include "spectrumwavelengths.h"
 #include "kdtree.h"
 #include "bxdf.h"
 #include "primitive.h"
@@ -58,23 +59,34 @@ public:
 
 class BasicColorPhoton : public BasicPhoton {
 public:
-	BasicColorPhoton(const Point &pp, const RGBColor &wt)
+	BasicColorPhoton(const TsPack *tspack, const Point &pp,
+		const SWCSpectrum &wt)
 		: BasicPhoton(pp), alpha(wt) {
+		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			w[i] = tspack->swl->w[i];
+		if (tspack->swl->single) {
+			const float a = alpha.c[tspack->swl->single_w] * WAVELENGTH_SAMPLES;
+			alpha = SWCSpectrum(0.f);
+			alpha.c[tspack->swl->single_w] = a;
+		}
 	}
 
 	BasicColorPhoton() : BasicPhoton() { }
 
-	SWCSpectrum GetSWCSpectrum(const TsPack* tspack) const {
-		return SWCSpectrum( tspack, alpha );
-	}
+	SWCSpectrum GetSWCSpectrum(const TsPack* tspack, u_int nb) const;
 
-	RGBColor alpha;
+	void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
+	void load(bool isLittleEndian, std::basic_istream<char> &stream);
+
+	SWCSpectrum alpha;
+	float w[WAVELENGTH_SAMPLES];
 };
 
 class LightPhoton : public BasicColorPhoton {
 public:
-	LightPhoton(const Point &pp, const RGBColor &wt, const Vector &w)
-		: BasicColorPhoton(pp, wt), wi(w) { }
+	LightPhoton(const TsPack *tspack, const Point &pp,
+		const SWCSpectrum &wt, const Vector &w)
+		: BasicColorPhoton(tspack, pp, wt), wi(w) { }
 
 	LightPhoton() : BasicColorPhoton() { }
 
@@ -86,10 +98,11 @@ public:
 
 class RadiancePhoton : public BasicColorPhoton {
 public:
-	RadiancePhoton(const Point &pp, const RGBColor &wt, const Normal &nn)
-		: BasicColorPhoton(pp, wt), n(nn) { }
-	RadiancePhoton(const Point &pp, const Normal & nn)
-		: BasicColorPhoton(pp, 0.0f), n(nn) { }
+	RadiancePhoton(const TsPack *tspack, const Point &pp,
+		const SWCSpectrum &wt, const Normal &nn)
+		: BasicColorPhoton(tspack, pp, wt), n(nn) { }
+	RadiancePhoton(const TsPack *tspack, const Point &pp, const Normal & nn)
+		: BasicColorPhoton(tspack, pp, SWCSpectrum(0.0f)), n(nn) { }
 
 	RadiancePhoton() : BasicColorPhoton() { }
 
@@ -448,7 +461,8 @@ extern void PhotonMapPreprocess(
 	u_int nDirectPhotons,
 	u_int nRadiancePhotons, RadiancePhotonMap *radianceMap,
 	u_int nIndirectPhotons, LightPhotonMap *indirectMap,
-	u_int nCausticPhotons, LightPhotonMap *causticMap);
+	u_int nCausticPhotons, LightPhotonMap *causticMap,
+	u_int maxDepth);
 
 /**
  * Estimates the outgoing radiance from a surface point in a single direction 
