@@ -41,7 +41,7 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                   &worldRadius);
-		return SWCSpectrum(tspack, LSPD) * M_PI * worldRadius * worldRadius;
+		return SWCSpectrum(tspack, LSPD) * (havePortalShape ? PortalArea : M_PI * worldRadius * worldRadius) * 2.f * M_PI * (1.f - cosThetaMax);
 	}
 	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,

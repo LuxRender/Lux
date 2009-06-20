@@ -42,8 +42,10 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                    &worldRadius);
-		//return Lbase * GetSkySpectralRadiance(.0, .0) * M_PI * worldRadius * worldRadius;
-		return skyScale * M_PI * worldRadius * worldRadius;
+		SWCSpectrum zenith;
+		GetSkySpectralRadiance(tspack, 0.f, 0.f, &zenith);
+		return zenith * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
+		//return skyScale * M_PI * worldRadius * worldRadius;
 	}
 	bool IsDeltaLight() const { return false; }
 	bool IsEnvironmental() const { return true; }
