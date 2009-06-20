@@ -45,10 +45,6 @@ class SurfaceIntegrator : public Integrator {
 public:
 	virtual int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const = 0;
-	// Dade - Exphotonmap is the only integrator not supporting SWC at the moment
-	virtual bool IsSWCSupported() {
-		return true;
-	}
 };
 
 class VolumeIntegrator : public Integrator {

@@ -317,11 +317,6 @@ void RenderThread::render(RenderThread *myThread) {
 		// sample camera transformation
 		myThread->tspack->camera->SampleMotion(myThread->tspack->time);
 
-		// Dade - check if the integrator support SWC / NOTE - Radiance - This should probably be removed. Integrators should all support SWC.
-		if (!myThread->surfaceIntegrator->IsSWCSupported()) {
-			myThread->sample->wavelengths = 0.5f;
-			myThread->sample->singleWavelength = 0.5f;
-		}
 		// Sample new SWC thread wavelengths
 		myThread->tspack->swl->Sample(myThread->sample->wavelengths,
 			myThread->sample->singleWavelength);
