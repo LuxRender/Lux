@@ -478,21 +478,8 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		for (u_int i = 0; i < nLights; ++i)
 			lightPower[i] += scene->lights[i]->Power(tspack, scene).y(tspack);
 	}
-
-	// Dade - I'm setting a minimum value in order to not have numerical
-	// problems when lights have a huge power range (i.e. sun and sky)
-	float maxLightPower = 0.f;
-	for (u_int i = 0; i < nLights; ++i) {
-		lightPower[i] *= 1.f / spectrumSamples;
-		if (lightPower[i] > maxLightPower)
-			maxLightPower = lightPower[i];
-	}
-	// Dade - the most powerful light can be only 10 times more "important" than
-	// other light sources
-/*	float lightPowerClipValue = maxLightPower * 0.1f;
 	for (u_int i = 0; i < nLights; ++i)
-		if (lightPower[i] < lightPowerClipValue)
-			lightPower[i] = lightPowerClipValue;*/
+		lightPower[i] /= spectrumSamples;
 
 	float totalPower;
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
@@ -589,7 +576,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			// Follow photon path through scene and record intersections
 			bool specularPath = false;
 			Intersection photonIsect;
-			int nIntersections = 0;
+			u_int nIntersections = 0;
 			while (scene->Intersect(photonRay, &photonIsect)) {
 				++nIntersections;
 
@@ -640,7 +627,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 					if (computeRadianceMap && 
 						(!radianceDone) && 
 						(photonBSDF->NumComponents(radianceBxdfType) > 0) && 
-						(tspack->rng->floatValue() < 0.25f)) {
+						(tspack->rng->floatValue() < 0.125f)) {
 						SWCSpectrum rho_t =
 							photonBSDF->rho(tspack, BxDFType(radianceBxdfType & BSDF_ALL_TRANSMISSION));
 						SWCSpectrum rho_r = 
@@ -684,11 +671,11 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 					break;
 				SWCSpectrum anew = alpha * fr * AbsDot(wi, photonIsect.dg.nn) * AbsDot(wo, photonBSDF->dgShading.nn) / (AbsDot(wo, photonIsect.dg.nn) * pdf);
 				float continueProb = min(1.f, anew.filter(tspack) / alpha.filter(tspack));
-				if (tspack->rng->floatValue() > continueProb || nIntersections > 10)
+				if (tspack->rng->floatValue() > continueProb || nIntersections > maxDepth)
 					break;
 				alpha = anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&
-					((flags & BSDF_SPECULAR) != 0);
+					((flags & BSDF_SPECULAR) != 0 || pdf > 100.f);
 				photonRay = RayDifferential(photonIsect.dg.p, wi);
 			}
 		}

@@ -160,8 +160,8 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 	}
 
 	PhotonMapPreprocess(tspack, scene, mapsFileName,
-		BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION),
 		BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION),
+		BxDFType(BSDF_ALL),
 		nDirectPhotons, nRadiancePhotons, radianceMap, nIndirectPhotons,
 		indirectMap, nCausticPhotons, causticMap, maxPhotonDepth);
 }
@@ -599,7 +599,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	// half to sample along photon incoming direction
     int gatherSamples = params.FindOneInt("finalgathersamples", 32) / 2;
 
-	string smode =  params.FindOneString("renderingmode", "path");
+	string smode =  params.FindOneString("renderingmode", "directlighting");
 
 	RenderingMode renderingMode;
 	if (smode == "directlighting") renderingMode = RM_DIRECTLIGHTING;
