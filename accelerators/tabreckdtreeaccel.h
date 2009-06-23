@@ -119,16 +119,8 @@ struct TaBRecInverseMailboxes {
 
     TaBRecInverseMailboxes() {
         indexFirstFree = 0;
-
-        Primitive** mb = mailboxes;
-        *mb++ = NULL; // mailboxes[0]
-        *mb++ = NULL; // mailboxes[1]
-        *mb++ = NULL; // mailboxes[2]
-        *mb++ = NULL; // mailboxes[3]
-        *mb++ = NULL; // mailboxes[4]
-        *mb++ = NULL; // mailboxes[5]
-        *mb++ = NULL; // mailboxes[6]
-        *mb = NULL; // mailboxes[7]
+	for (u_int i = 0; i < 8; ++i)
+		mailboxes[i] = NULL;
     }
 
     void addChecked(Primitive *p) {
@@ -137,24 +129,9 @@ struct TaBRecInverseMailboxes {
     }
 
     bool alreadyChecked(const Primitive *p) const {
-        Primitive* const* mb = mailboxes;
-
-        if (*mb++ == p) // mailboxes[0]
-            return true;
-        if (*mb++ == p) // mailboxes[1]
-            return true;
-        if (*mb++ == p) // mailboxes[2]
-            return true;
-        if (*mb++ == p) // mailboxes[3]
-            return true;
-        if (*mb++ == p) // mailboxes[4]
-            return true;
-        if (*mb++ == p) // mailboxes[5]
-            return true;
-        if (*mb++ == p) // mailboxes[6]
-            return true;
-        if (*mb == p)   // mailboxes[7]
-            return true;
+	    for (u_int i = 0; i < 8; ++i)
+		    if (mailboxes[i] == p)
+			    return true;
 
         return false;
     }

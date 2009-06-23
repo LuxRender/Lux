@@ -63,19 +63,8 @@ TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         BBox b = prims[i]->WorldBound();
 
         // Dade - expand the bbox by EPSILON in order to avoid numerical problems
-        Vector bbEdge = b.pMax - b.pMin;
-        if (bbEdge.x < 2.0f * RAY_EPSILON) {
-            b.pMin.x -= RAY_EPSILON;
-            b.pMax.x += RAY_EPSILON;
-        }
-        if (bbEdge.y < 2.0f * RAY_EPSILON) {
-            b.pMin.y -= RAY_EPSILON;
-            b.pMax.y += RAY_EPSILON;
-        }
-        if (bbEdge.z < 2.0f * RAY_EPSILON) {
-            b.pMin.z -= RAY_EPSILON;
-            b.pMax.z += RAY_EPSILON;
-        }
+#define KDTREE_EPSILON 1e-3f
+	b.Expand(KDTREE_EPSILON);
 
         bounds = Union(bounds, b);
         primBounds.push_back(b);
@@ -142,7 +131,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     // Choose split axis position for interior node
     int bestAxis = -1, bestOffset = -1;
     float bestCost = INFINITY;
-    float oldCost = isectCost * float(nPrims);
+    float oldCost = isectCost * nPrims;
     Vector d = nodeBounds.pMax - nodeBounds.pMin;
     float totalSA = (2.f * (d.x*d.y + d.x*d.z + d.y*d.z));
     float invTotalSA = 1.f / totalSA;
@@ -251,14 +240,14 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
 
     // Distinguish between internal and external origin
     if (tmin >= 0.0f)
-        stack[enPt].pb = ray.o + ray.d * tmin;
+        stack[enPt].pb = ray(tmin);
     else
         stack[enPt].pb = ray.o;
 
     // Setup initial exit point in the stack
     int exPt = 1; // Pointer to the stack
     stack[exPt].t = tmax;
-    stack[exPt].pb = ray.o + ray.d * tmax;
+    stack[exPt].pb = ray(tmax);
     stack[exPt].node = NULL; // Set termination flag
 
     const TaBRecKdAccelNode *currNode = &nodes[0];
@@ -272,7 +261,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
             if (stack[enPt].pb[axis] <= splitVal) {
                 if (stack[exPt].pb[axis] <= splitVal) {
                     // Case N1, N2, N3, P5, Z2, and Z3
-                    currNode = currNode + 1;
+                    ++currNode;
                     continue;
                 }
                 if (stack[enPt].pb[axis] == splitVal) {
@@ -283,7 +272,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
                 // Case N4
 
                 farChild = &nodes[currNode->aboveChild];
-                currNode = currNode + 1;
+                ++currNode;
             } else {
                 if (splitVal < stack[exPt].pb[axis]) {
                     // Case P1, P2, P3, and N5
@@ -313,18 +302,8 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
             stack[exPt].prev = tmp;
             stack[exPt].t = t;
             stack[exPt].node = farChild;
+	    stack[exPt].pb = ray(t);
             stack[exPt].pb[axis] = splitVal;
-
-            if(axis == 0) {
-                stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
-                stack[exPt].pb[2] = ray.o[2] + t * ray.d[2];
-            } else if(axis == 1) {
-                stack[exPt].pb[2] = ray.o[2] + t * ray.d[2];
-                stack[exPt].pb[0] = ray.o[0] + t * ray.d[0];
-            } else {
-                stack[exPt].pb[0] = ray.o[0] + t * ray.d[0];
-                stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
-            }
         }
 
         // Dade - it looks like using mint/maxt here is faster than use the
@@ -345,18 +324,11 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
         //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (nPrimitives == 1) {
-            Primitive *pp = currNode->onePrimitive;
-
-            if (pp->Intersect(ray, isect))
-                hit = true;
+            hit |= currNode->onePrimitive->Intersect(ray, isect);
         } else {
             Primitive **prims = currNode->primitives;
-            for (u_int i = 0; i < nPrimitives; ++i) {
-                Primitive *pp = prims[i];
-
-                if (pp->Intersect(ray, isect))
-                    hit = true;
-            }
+            for (u_int i = 0; i < nPrimitives; ++i)
+                hit |= prims[i]->Intersect(ray, isect);
         }
 
         if (hit) {
@@ -397,14 +369,14 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
 
     // Distinguish between internal and external origin
     if (tmin >= 0.0f)
-        stack[enPt].pb = ray.o + ray.d * tmin;
+        stack[enPt].pb = ray(tmin);
     else
         stack[enPt].pb = ray.o;
 
     // Setup initial exit point in the stack
     int exPt = 1; // Pointer to the stack
     stack[exPt].t = tmax;
-    stack[exPt].pb = ray.o + ray.d * tmax;
+    stack[exPt].pb = ray(tmax);
     stack[exPt].node = NULL; // Set termination flag
 
     const TaBRecKdAccelNode *currNode = &nodes[0];
@@ -418,7 +390,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
             if (stack[enPt].pb[axis] <= splitVal) {
                 if (stack[exPt].pb[axis] <= splitVal) {
                     // Case N1, N2, N3, P5, Z2, and Z3
-                    currNode = currNode + 1;
+                    ++currNode;
                     continue;
                 }
                 if (stack[enPt].pb[axis] == splitVal) {
@@ -429,7 +401,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
                 // Case N4
 
                 farChild = &nodes[currNode->aboveChild];
-                currNode = currNode + 1;
+                ++currNode;
             } else {
                 if (splitVal < stack[exPt].pb[axis]) {
                     // Case P1, P2, P3, and N5
@@ -459,18 +431,8 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
             stack[exPt].prev = tmp;
             stack[exPt].t = t;
             stack[exPt].node = farChild;
-
+	    stack[exPt].pb = ray(t);
             stack[exPt].pb[axis] = splitVal;
-            if(axis == 0) {
-                stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
-                stack[exPt].pb[2] = ray.o[2] + t * ray.d[2];
-            } else if(axis == 1) {
-                stack[exPt].pb[2] = ray.o[2] + t * ray.d[2];
-                stack[exPt].pb[0] = ray.o[0] + t * ray.d[0];
-            } else {
-                stack[exPt].pb[0] = ray.o[0] + t * ray.d[0];
-                stack[exPt].pb[1] = ray.o[1] + t * ray.d[1];
-            }
         }
 
         // Check for intersections inside leaf node
