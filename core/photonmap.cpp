@@ -918,6 +918,9 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 					}
 					photonPdf /= nIndirSamplePhotons;
 					float wt = PowerHeuristic(gatherSamples, pdf, gatherSamples, photonPdf);
+					// Limit weight when intersection point is close
+					if (bounceRay.maxt < sqrtf(md2))
+						wt *= (1.f + bounceRay.maxt / sqrtf(md2)) / 2.f;
 					Li += fr * Lindir * (AbsDot(wi, n) * wt / pdf);
 				}
 			}
@@ -990,6 +993,9 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 					// Compute MIS weight for photon-sampled gather ray
 					float bsdfPdf = bsdf->Pdf(tspack, wi, wo, bxdfType);
 					float wt = PowerHeuristic(gatherSamples, photonPdf, gatherSamples, bsdfPdf);
+					// Limit weight when intersection point is close
+					if (bounceRay.maxt < sqrtf(md2))
+						wt *= (1.f + bounceRay.maxt / sqrtf(md2)) / 2.f;
 					Li += fr * Lindir * (AbsDot(wi, n) * wt / photonPdf);
 				}
 			}
