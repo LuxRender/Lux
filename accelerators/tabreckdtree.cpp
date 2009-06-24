@@ -308,8 +308,8 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
 
         // Dade - it looks like using mint/maxt here is faster than use the
         // inverse mailboxes
-        ray.mint = max(stack[enPt].t, originalMint);
-        ray.maxt = min(stack[exPt].t, originalMaxt);
+        ray.mint = max(stack[enPt].t - KDTREE_EPSILON, originalMint);
+        ray.maxt = min(stack[exPt].t + KDTREE_EPSILON, originalMaxt);
 
         // Check for intersections inside leaf node
         u_int nPrimitives = currNode->nPrimitives();
