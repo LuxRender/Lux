@@ -229,6 +229,7 @@ public:
 	
 };
 
+class QuadPrimitive;
 
 /***************************************************/
 class QBVHAccel : public Aggregate {
@@ -323,6 +324,15 @@ private:
 	inline int32_t CreateIntermediateNode(int32_t parentIndex, int32_t childIndex,
 		const BBox &nodeBbox) {
 		int32_t index = nNodes++; // increment after assignment
+		if (nNodes >= maxNodes) {
+			QBVHNode *newNodes = AllocAligned<QBVHNode>(2 * maxNodes);
+			memcpy(newNodes, nodes, sizeof(QBVHNode) * maxNodes);
+			for (u_int i = 0; i < maxNodes; ++i)
+				newNodes[maxNodes + i] = QBVHNode();
+			FreeAligned(nodes);
+			nodes = newNodes;
+			maxNodes *= 2;
+		}
 		nodes[index].parentNodeIndex = parentIndex;
 		if (parentIndex >= 0) {
 			nodes[parentIndex].children[childIndex] = index;
@@ -365,7 +375,7 @@ private:
 	   test will be redone for the nearest triangle found, to
 	   fill the Intersection structure.
 	*/
-	boost::shared_ptr<Primitive> *prims;
+	boost::shared_ptr<QuadPrimitive> *prims;
 	
 	/**
 	   The number of primitives
@@ -380,7 +390,7 @@ private:
 	/**
 	   The number of nodes really used.
 	*/
-	int32_t nNodes;
+	u_int nNodes, maxNodes;
 
 	/**
 	   The world bounding box of the QBVH.

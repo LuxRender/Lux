@@ -135,7 +135,6 @@ public:
 		return false; //TODO check degenerate
 	}
 
-protected:
 	void GetUVs(float uv[3][2]) const {
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2*v[0]];
@@ -153,6 +152,7 @@ protected:
 			uv[2][1] = .5f;//mesh->p[v[2]].y;
 		}
 	}
+	const Point &GetP(u_int i) const { return mesh->p[v[i]]; }
 
 	// BaryTriangle Data
 	const Mesh *mesh;
