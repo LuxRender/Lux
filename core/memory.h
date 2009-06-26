@@ -30,14 +30,14 @@
 namespace lux
 {
 // Memory Allocation Functions
-template<class T> T *AllocAligned(size_t size)
-{
 #ifndef L1_CACHE_LINE_SIZE
 #define L1_CACHE_LINE_SIZE 64
 #endif
-	return static_cast<T *>(memalign(L1_CACHE_LINE_SIZE, size * sizeof(T)));
+template<class T> inline T *AllocAligned(size_t size, std::size_t N = L1_CACHE_LINE_SIZE)
+{
+	return static_cast<T *>(memalign(N, size * sizeof(T)));
 }
-template<class T> void FreeAligned(T *ptr)
+template<class T> inline void FreeAligned(T *ptr)
 {
 #if defined(WIN32) && !defined(__CYGWIN__) // NOBOOK
 	_aligned_free(ptr);
@@ -45,6 +45,81 @@ template<class T> void FreeAligned(T *ptr)
 	free(ptr);
 #endif // NOBOOK
 }
+
+template <typename T, std::size_t N = 16> class AlignedAllocator
+{
+public:
+	typedef T value_type;
+	typedef std::size_t size_type;
+	typedef std::ptrdiff_t difference_type;
+
+	typedef T *pointer;
+	typedef const T *const_pointer;
+
+	typedef T &reference;
+	typedef const T &const_reference;
+
+public:
+	inline AlignedAllocator() throw() { }
+
+	template <typename T2> inline AlignedAllocator(const AlignedAllocator<T2, N> &) throw () { }
+
+	inline ~AlignedAllocator() throw() { }
+
+	inline pointer adress(reference r) { return &r; }
+
+	inline const_pointer adress(const_reference r) const { return &r; }
+
+	inline pointer allocate(size_type n)
+	{
+		return AllocAligned<value_type>(n, N);
+	}
+
+	inline void deallocate(pointer p, size_type)
+	{
+		FreeAligned(p);
+	}
+
+	inline void construct(pointer p, const value_type &wert)
+	{
+		new (p) value_type(wert);
+	}
+
+	inline void destroy(pointer p)
+	{
+		p->~value_type();
+	}
+
+	inline size_type max_size() const throw()
+	{
+		return size_type(-1) / sizeof(value_type);
+	}
+
+	template <typename T2> struct rebind
+	{
+		typedef AlignedAllocator<T2, N> other;
+	};
+};
+
+class Aligned16 {
+public:
+
+	/*
+	Aligned16(){
+		if(((int)this & 15) != 0){
+			printf("bad alloc\n");
+			assert(0);
+		}
+	}
+	*/
+
+	void *operator new(size_t s) { return AllocAligned<char>(s, 16); }
+
+	void *operator new (size_t s, void *q) { return q; }
+
+	void operator delete(void *p) { FreeAligned(p); }
+} __attribute__ ((aligned(16)));
+
 }
 
 /*
