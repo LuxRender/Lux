@@ -469,6 +469,7 @@ SET(lux_integrators_src
 	integrators/distributedpath.cpp
 	integrators/emission.cpp
 	integrators/exphotonmap.cpp
+	integrators/igi.cpp
 	integrators/path.cpp
 	integrators/single.cpp
 	)
