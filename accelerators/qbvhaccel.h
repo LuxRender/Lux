@@ -229,7 +229,6 @@ public:
 	
 };
 
-class QuadPrimitive;
 
 /***************************************************/
 class QBVHAccel : public Aggregate {
@@ -375,7 +374,7 @@ private:
 	   test will be redone for the nearest triangle found, to
 	   fill the Intersection structure.
 	*/
-	boost::shared_ptr<QuadPrimitive> *prims;
+	boost::shared_ptr<Primitive> *prims;
 	
 	/**
 	   The number of primitives

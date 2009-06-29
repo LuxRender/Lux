@@ -20,211 +20,12 @@
  ***************************************************************************/
 
 #include "qbvhaccel.h"
-#include "mesh.h"
 #include "paramset.h"
 #include "dynload.h"
 #include "error.h"
 
 namespace lux
 {
-
-class QuadRay {
-public:
-	QuadRay(const Ray &ray)
-	{
-		ox = _mm_set1_ps(ray.o.x);
-		oy = _mm_set1_ps(ray.o.y);
-		oz = _mm_set1_ps(ray.o.z);
-		dx = _mm_set1_ps(ray.d.x);
-		dy = _mm_set1_ps(ray.d.y);
-		dz = _mm_set1_ps(ray.d.z);
-		mint = _mm_set1_ps(ray.mint);
-		maxt = _mm_set1_ps(ray.maxt);
-	}
-
-	__m128 ox, oy, oz;
-	__m128 dx, dy, dz;
-	mutable __m128 mint, maxt;
-} __attribute__ ((aligned(16)));
-
-class QuadPrimitive : public Aggregate {
-public:
-	QuadPrimitive(const boost::shared_ptr<Primitive> &p1,
-		const boost::shared_ptr<Primitive> &p2,
-		const boost::shared_ptr<Primitive> &p3,
-		const boost::shared_ptr<Primitive> &p4)
-	{
-		primitives[0] = p1;
-		primitives[1] = p2;
-		primitives[2] = p3;
-		primitives[3] = p4;
-	}
-	virtual ~QuadPrimitive() { }
-	BBox WorldBound() const
-	{
-		return Union(Union(primitives[0]->WorldBound(),
-			primitives[1]->WorldBound()),
-			Union(primitives[2]->WorldBound(),
-			primitives[3]->WorldBound()));
-	}
-	bool Intersect(const Ray &ray, Intersection *isect) const
-	{
-		bool hit = false;
-		for (u_int i = 0; i < 4; ++i)
-			hit |= primitives[i]->Intersect(ray, isect);
-		return hit;
-	}
-	bool IntersectP(const Ray &ray) const
-	{
-		for (u_int i = 0; i < 4; ++i)
-			if (primitives[i]->IntersectP(ray))
-				return true;
-		return false;
-	}
-        void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims)
-	{
-		prims.reserve(prims.size() + 4);
-		for (u_int i = 0; i < 4; ++i)
-			prims.push_back(primitives[i]);
-	}
-	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect) const
-	{
-		return Intersect(ray, isect);
-	}
-protected:
-	boost::shared_ptr<Primitive> primitives[4];
-};
-
-class QuadTriangle : public QuadPrimitive, public Aligned16
-{
-public:
-	QuadTriangle(const boost::shared_ptr<Primitive> &p1,
-		const boost::shared_ptr<Primitive> &p2,
-		const boost::shared_ptr<Primitive> &p3,
-		const boost::shared_ptr<Primitive> &p4) :
-		QuadPrimitive(p1, p2, p3, p4)
-	{
-		for (u_int i = 0; i < 4; ++i) {
-			const MeshBaryTriangle *t = static_cast<const MeshBaryTriangle *>(primitives[i].get());
-			reinterpret_cast<float *>(&origx)[i] = t->GetP(0).x;
-			reinterpret_cast<float *>(&origy)[i] = t->GetP(0).y;
-			reinterpret_cast<float *>(&origz)[i] = t->GetP(0).z;
-			reinterpret_cast<float *>(&edge1x)[i] = t->GetP(1).x - t->GetP(0).x;
-			reinterpret_cast<float *>(&edge1y)[i] = t->GetP(1).y - t->GetP(0).y;
-			reinterpret_cast<float *>(&edge1z)[i] = t->GetP(1).z - t->GetP(0).z;
-			reinterpret_cast<float *>(&edge2x)[i] = t->GetP(2).x - t->GetP(0).x;
-			reinterpret_cast<float *>(&edge2y)[i] = t->GetP(2).y - t->GetP(0).y;
-			reinterpret_cast<float *>(&edge2z)[i] = t->GetP(2).z - t->GetP(0).z;
-		}
-	}
-	virtual ~QuadTriangle() { }
-	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect) const
-	{
-		static const __m128 zero = _mm_set1_ps(0.f);
-		const __m128 s1x = _mm_sub_ps(_mm_mul_ps(ray4.dy, edge2z),
-			_mm_mul_ps(ray4.dz, edge2y));
-		const __m128 s1y = _mm_sub_ps(_mm_mul_ps(ray4.dz, edge2x),
-			_mm_mul_ps(ray4.dx, edge2z));
-		const __m128 s1z = _mm_sub_ps(_mm_mul_ps(ray4.dx, edge2y),
-			_mm_mul_ps(ray4.dy, edge2x));
-		const __m128 divisor = _mm_add_ps(_mm_mul_ps(s1x, edge1x),
-			_mm_add_ps(_mm_mul_ps(s1y, edge1y),
-			_mm_mul_ps(s1z, edge1z)));
-		__m128 test = _mm_cmpneq_ps(divisor, zero);
-		const __m128 dx = _mm_sub_ps(ray4.ox, origx);
-		const __m128 dy = _mm_sub_ps(ray4.oy, origy);
-		const __m128 dz = _mm_sub_ps(ray4.oz, origz);
-		const __m128 b1 = _mm_div_ps(_mm_add_ps(_mm_mul_ps(dx, s1x),
-			_mm_add_ps(_mm_mul_ps(dy, s1y),
-			_mm_mul_ps(dz, s1z))), divisor);
-		test = _mm_and_ps(test, _mm_cmpge_ps(b1, zero));
-		const __m128 s2x = _mm_sub_ps(_mm_mul_ps(dy, edge1z),
-			_mm_mul_ps(dz, edge1y));
-		const __m128 s2y = _mm_sub_ps(_mm_mul_ps(dz, edge1x),
-			_mm_mul_ps(dx, edge1z));
-		const __m128 s2z = _mm_sub_ps(_mm_mul_ps(dx, edge1y),
-			_mm_mul_ps(dy, edge1x));
-		const __m128 b2 = _mm_div_ps(_mm_add_ps(_mm_mul_ps(ray4.dx, s2x),
-			_mm_add_ps(_mm_mul_ps(ray4.dy, s2y),
-			_mm_mul_ps(ray4.dz, s2z))), divisor);
-		const __m128 b0 = _mm_sub_ps(_mm_set1_ps(1.f), _mm_add_ps(b1, b2));
-		test = _mm_and_ps(test, _mm_and_ps(_mm_cmpge_ps(b2, zero), _mm_cmpge_ps(b0, zero)));
-		const __m128 t = _mm_div_ps(_mm_add_ps(_mm_mul_ps(edge2x, s2x),
-			_mm_add_ps(_mm_mul_ps(edge2y, s2y),
-			_mm_mul_ps(edge2z, s2z))), divisor);
-		test = _mm_and_ps(test, _mm_and_ps(_mm_cmpgt_ps(t, ray4.mint), _mm_cmplt_ps(t, _mm_sub_ps(ray4.maxt, _mm_mul_ps(t, _mm_set1_ps(RAY_EPSILON))))));
-		int hit = -1;
-		for (u_int i = 0; i < 4; ++i) {
-			if (reinterpret_cast<const int32_t *>(&test)[i] && reinterpret_cast<const float *>(&t)[i] < ray.maxt) {
-				hit = i;
-				ray.maxt = reinterpret_cast<const float *>(&t)[i];
-			}
-		}
-		if (hit < 0)
-			return false;
-
-		const MeshBaryTriangle *triangle(static_cast<const MeshBaryTriangle *>(primitives[hit].get()));
-
-		Vector e1(reinterpret_cast<const float*>(&edge1x)[hit],
-			reinterpret_cast<const float*>(&edge1y)[hit],
-			reinterpret_cast<const float*>(&edge1z)[hit]);
-		Vector e2(reinterpret_cast<const float*>(&edge2x)[hit],
-			reinterpret_cast<const float*>(&edge2y)[hit],
-			reinterpret_cast<const float*>(&edge2z)[hit]);
-		const Normal nn = Normal(Normalize(Cross(e1, e2)));
-
-		// Fill in _DifferentialGeometry_ from triangle hit
-		// Compute triangle partial derivatives
-		Vector dpdu, dpdv;
-		float uvs[3][2];
-		triangle->GetUVs(uvs);
-
-		// Compute deltas for triangle partial derivatives
-		const float du1 = uvs[0][0] - uvs[2][0];
-		const float du2 = uvs[1][0] - uvs[2][0];
-		const float dv1 = uvs[0][1] - uvs[2][1];
-		const float dv2 = uvs[1][1] - uvs[2][1];
-		const Vector dp1(triangle->GetP(0) - triangle->GetP(2)),
-		      dp2(triangle->GetP(1) - triangle->GetP(2));
-
-		const float determinant = du1 * dv2 - dv1 * du2;
-		if (determinant < 1e-3f) {
-        		// Handle zero determinant for triangle partial derivative matrix
-			CoordinateSystem(Vector(nn), &dpdu, &dpdv);
-    		} else {
-		        const float invdet = 1.f / determinant;
-		        dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
-		        dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
-		}
-
-		// Interpolate $(u,v)$ triangle parametric coordinates
-		const float b0_ = reinterpret_cast<const float *>(&b0)[hit];
-		const float b1_ = reinterpret_cast<const float *>(&b1)[hit];
-		const float b2_ = reinterpret_cast<const float *>(&b2)[hit];
-		const float tu = b0_ * uvs[0][0] + b1_ * uvs[1][0] + b2_ * uvs[2][0];
-		const float tv = b0_ * uvs[0][1] + b1_ * uvs[1][1] + b2_ * uvs[2][1];
-
-		isect->dg = DifferentialGeometry(ray(ray.maxt),
-			nn,
-			dpdu, dpdv,
-			Vector(0, 0, 0), Vector(0, 0, 0),
-			tu, tv, triangle);
-		isect->dg.AdjustNormal(triangle->mesh->reverseOrientation,
-			triangle->mesh->transformSwapsHandedness);
-
-		isect->Set(triangle->mesh->WorldToObject, triangle,
-			triangle->mesh->GetMaterial().get());
-		isect->dg.triangleBaryCoords[0] = b0_;
-		isect->dg.triangleBaryCoords[1] = b1_;
-		isect->dg.triangleBaryCoords[2] = b2_;
-
-		return true;
-	}
-private:
-	__m128 origx, origy, origz;
-	__m128 edge1x, edge1y, edge1z;
-	__m128 edge2x, edge2y, edge2z;
-};
 
 /***************************************************/
 const boost::int16_t QBVHAccel::pathTable[] = {
@@ -351,7 +152,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 	BuildTree(0, nPrims, primsIndexes, primsBboxes, primsCentroids,
 		worldBound, centroidsBbox, -1, 0, 0);
 
-	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(/*4 **/ nQuads);
+	prims = AllocAligned<boost::shared_ptr<Primitive> >(4 * nQuads);
 	nQuads = 0;
 	PreSwizzle(0, primsIndexes, vPrims);
 	ss.str("");
@@ -600,26 +401,14 @@ void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
 	const u_int nbQuads = node.NbQuadsInLeaf(childIndex);
 
 	u_int primOffset = node.FirstQuadIndexForLeaf(childIndex);
-	u_int primNum = /*4 **/ nQuads;
+	u_int primNum = 4 * nQuads;
 
 	for (u_int q = 0; q < nbQuads; ++q) {
-		bool allTri = true;
-		for (u_int i = 0; i < 4; ++i)
-			allTri &= dynamic_cast<MeshBaryTriangle *>(vPrims[primsIndexes[primOffset + i]].get()) != NULL;
-		if (allTri) {
-			boost::shared_ptr<QuadPrimitive> p(new QuadTriangle(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));
-			new (&prims[primNum]) boost::shared_ptr<QuadPrimitive>(p);
-		} else {
-			boost::shared_ptr<QuadPrimitive> p(new QuadPrimitive(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));
-			new (&prims[primNum]) boost::shared_ptr<QuadPrimitive>(p);
-		}
-		++primNum;
-		primOffset += 4;
-/*		for (int i = 0; i < 4; ++i) {
+		for (int i = 0; i < 4; ++i) {
 			new (&prims[primNum]) boost::shared_ptr<Primitive>(vPrims[primsIndexes[primOffset]]);
 			++primOffset;
 			++primNum;
-		}*/
+		}
 	}
 	nQuads += nbQuads;
 	node.InitializeLeaf(childIndex, nbQuads, startQuad);
@@ -703,11 +492,17 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 {
 	//------------------------------
 	// Prepare the ray for intersection
-	QuadRay ray4(ray);
+	__m128 sseTMin = _mm_set1_ps(ray.mint);
+	__m128 sseTMax = _mm_set1_ps(ray.maxt);
 	__m128 sseInvDir[3];
 	sseInvDir[0] = _mm_set1_ps(1.f / ray.d.x);
 	sseInvDir[1] = _mm_set1_ps(1.f / ray.d.y);
 	sseInvDir[2] = _mm_set1_ps(1.f / ray.d.z);
+
+	__m128 sseOrig[3];
+	sseOrig[0] = _mm_set1_ps(ray.o.x);
+	sseOrig[1] = _mm_set1_ps(ray.o.y);
+	sseOrig[2] = _mm_set1_ps(ray.o.z);
 
 	int signs[3];
 	ray.GetDirectionSigns(signs);
@@ -726,8 +521,8 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			QBVHNode &node = nodes[nodeStack[todoNode]];
 			--todoNode;
 			
-			const int32_t visit = node.BBoxIntersect(&ray4.ox, sseInvDir,
-				ray4.mint, ray4.maxt, signs);
+			const int32_t visit = node.BBoxIntersect(sseOrig, sseInvDir,
+				sseTMin, sseTMax, signs);
 
 			const int32_t nodeIdx = (signs[node.axisMain] << 2) |
 				(signs[node.axisSubLeft] << 1) |
@@ -758,16 +553,12 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
-			for (u_int primNumber = /*4 **/ offset; primNumber < /*4 **/ (offset + nbQuadPrimitives); ++primNumber) {
-/*				const QuadPrimitive const *quad = dynamic_cast<QuadPrimitive>(prims[primNumber]);
-				if (quad)
-					hit |= quad->QuadIntersect(sseOrig, sseDir, sseInvDir, sseTMin, sseTMax, ray, isect);
-				else*/
-					hit |= prims[primNumber]->Intersect(ray4, ray, isect);
+			for (u_int primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
+				hit |= prims[primNumber]->Intersect(ray, isect);
 			}
 
 			//update the t max value.
-			ray4.maxt = _mm_min_ps(ray4.maxt, _mm_set1_ps(ray.maxt));
+			sseTMax = _mm_min_ps(sseTMax, _mm_set1_ps(ray.maxt));
 		}//end of the else
 	}
 
@@ -839,7 +630,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
-			for (u_int primNumber = /*4 **/ offset; primNumber < /*4 **/ (offset + nbQuadPrimitives); ++primNumber) {
+			for (u_int primNumber = 4 * offset; primNumber < 4 * (offset + nbQuadPrimitives); ++primNumber) {
 				if (prims[primNumber]->IntersectP(ray))
 					return true;
 			}
@@ -852,7 +643,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 /***************************************************/
 QBVHAccel::~QBVHAccel()
 {
-	for (u_int i = 0; i < nQuads; ++i)
+	for (u_int i = 0; i < nPrims; ++i)
 		prims[i].~shared_ptr();
 	FreeAligned(prims);
 	FreeAligned(nodes);
@@ -866,11 +657,9 @@ BBox QBVHAccel::WorldBound() const
 
 void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 {
-	primitives.reserve(primitives.size() + nPrims);
+	primitives.reserve(nPrims);
 	for(u_int i = 0; i < nPrims; ++i)
 		primitives.push_back(prims[i]);
-	for (u_int i = 0; i < nPrims; ++i)
-		prims[i]->GetPrimitives(primitives);
 }
 
 Aggregate* QBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
