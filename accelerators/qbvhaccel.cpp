@@ -252,8 +252,8 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 		// Prims bbox
 		currentBboxLeft = Union(currentBboxLeft, binsBbox[i]);
 		bboxesLeft[i] = currentBboxLeft;
-		// Volume
-		vLeft[i] = currentBboxLeft.Volume();
+		// Surface area
+		vLeft[i] = currentBboxLeft.SurfaceArea();
 		
 
 		//-----
@@ -265,8 +265,8 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 		// Prims bbox
 		currentBboxRight = Union(currentBboxRight, binsBbox[rightIndex]);
 		bboxesRight[rightIndex] = currentBboxRight;
-		// Volume
-		vRight[rightIndex] = currentBboxRight.Volume();
+		// Surface area
+		vRight[rightIndex] = currentBboxRight.SurfaceArea();
 	}
 
 	int minBin = -1;

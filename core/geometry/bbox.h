@@ -71,6 +71,10 @@ public:
 		Vector d = pMax - pMin;
 		return d.x * d.y * d.z;
 	}
+	float SurfaceArea() const {
+		Vector d = pMax - pMin;
+		return 2.f * (d.x * d.y + d.y * d.z + d.z * d.x);
+	}
 	int MaximumExtent() const {
 		Vector diag = pMax - pMin;
 		if (diag.x > diag.y && diag.x > diag.z)
