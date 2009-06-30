@@ -50,15 +50,12 @@ SWCSpectrum VirtualLight::GetSWCSpectrum(const TsPack* tspack) const
 }
 
 // IGIIntegrator Implementation
-IGIIntegrator::IGIIntegrator(int nl, int ns, float md, float rrt, float is)
+IGIIntegrator::IGIIntegrator(int nl, int ns, int d, float md)
 {
 	nLightPaths = RoundUpPow2(nl);
-	nLightSets = ns;
+	nLightSets = RoundUpPow2(ns);
 	minDist2 = md * md;
-	rrThreshold = rrt;
-	indirectScale = is;
-	maxSpecularDepth = 5;
-	specularDepth = 0;
+	maxSpecularDepth = d;
 	virtualLights.resize(nLightSets);
 }
 void IGIIntegrator::RequestSamples(Sample *sample, const Scene *scene)
@@ -69,9 +66,7 @@ void IGIIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	bsdfSampleOffset = new int[nLights];
 	bsdfComponentOffset = new int[nLights];
 	for (u_int i = 0; i < nLights; ++i) {
-//		const Light *light = scene->lights[i];
 		int lightSamples = 1;
-//			scene->sampler->RoundSize(light->nSamples);
 		lightSampleOffset[i] = sample->Add2D(lightSamples);
 		bsdfSampleOffset[i] = sample->Add2D(lightSamples);
 		bsdfComponentOffset[i] = sample->Add1D(lightSamples);
@@ -116,23 +111,19 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 				totalPower, nLights, lightNum[sampOffset],
 				&lightPdf) * nLights);
 			lNum = Clamp<int>(lNum, 0, nLights - 1);
-//			printf("samp %f -> num %d\n", lightNum[sampOffset], lNum);
 			Light *light = scene->lights[lNum];
 			// Sample ray leaving light source
 			RayDifferential ray;
 			float pdf;
-			SWCSpectrum alpha =
-				light->Sample_L(tspack, scene,
+			SWCSpectrum alpha(light->Sample_L(tspack, scene,
 				lightSamp0[2 * sampOffset],
 				lightSamp0[2 * sampOffset + 1],
 				lightSamp1[2 * sampOffset],
 				lightSamp1[2 * sampOffset + 1],
-				&ray, &pdf);
+				&ray, &pdf));
 			if (pdf == 0.f || alpha.Black())
 				continue;
 			alpha /= pdf * lightPdf;
-//			alpha *= lightPower[lNum] / (alpha.y(tspack) * lightPdf);
-//			printf("initial alpha %f, light # %d\n", alpha.y(tspack), lNum);
 			Intersection isect;
 			int nIntersections = 0;
 			while (scene->Intersect(ray, &isect) &&
@@ -143,10 +134,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 				BSDF *bsdf = isect.GetBSDF(tspack, ray,
 					tspack->rng->floatValue());
 				// Create virtual light at ray intersection point
-				// radiance - disabled for threading // static StatsCounter vls("IGI Integrator", "Virtual Lights Created"); //NOBOOK
-				// radiance - disabled for threading // ++vls; //NOBOOK
 				SWCSpectrum Le = alpha * bsdf->rho(tspack, wo) / M_PI;
-//				printf("\tmade light with le y %f\n", Le.y(tspack));
 				virtualLights[s].push_back(
 					VirtualLight(tspack, isect.dg.p,
 					isect.dg.nn, Le));
@@ -161,16 +149,13 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 					tspack->rng->floatValue(),
 					&fr, &pdf, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = alpha * fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
-				float r = anew.y(tspack) / alpha.y(tspack);
-//				printf("\tr = %f\n", r);
-				if (tspack->rng->floatValue() < r)
+				SWCSpectrum anew = fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
+				float r = min(1.f, anew.filter(tspack));
+				if (tspack->rng->floatValue() > r)
 					break;
-				alpha = anew / r;
-//				printf("\tnew alpha %f\n", alpha.y(tspack));
+				alpha *= anew / r;
 				ray = RayDifferential(isect.dg.p, wi);
 			}
-			//BSDF::FreeAll();																TODO FIX THIS !!!!!!!!!!
 		}
 	}
 	delete[] lightCDF;
@@ -234,19 +219,9 @@ int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				continue;
 			float G = AbsDot(wi, n) * AbsDot(wi, vl.n) / d2;
 			SWCSpectrum Llight = f * vl.GetSWCSpectrum(tspack) *
-				(indirectScale * G /
-				virtualLights[lSet].size());
+				(G / virtualLights[lSet].size());
 			scene->Transmittance(tspack, Ray(p, vl.p - p),
 				sample, &Llight);
-			// Possibly skip shadow ray with Russian roulette
-/*			if (Llight.y(tspack) < rrThreshold) {
-				float continueProbability = .1f;
-				if (tspack->rng->floatValue() >
-					continueProbability)
-					continue;
-				Llight /= continueProbability;
-			}*/
-			// radiance - disabled for threading // static StatsCounter vlsr("IGI Integrator", "Shadow Rays to Virtual Lights"); //NOBOOK ++vlsr; //NOBOOK
 			if (!scene->IntersectP(Ray(p, vl.p - p, RAY_EPSILON,
 				1.f - RAY_EPSILON)))
 				L += pathThroughput * Llight;
@@ -272,12 +247,11 @@ int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 }
 SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
-	int nLightPaths = params.FindOneInt("nlights", 64);
 	int nLightSets = params.FindOneInt("nsets", 4);
+	int nLightPaths = params.FindOneInt("nlights", 64);
+	int maxDepth = params.FindOneInt("maxdepth", 5);
 	float minDist = params.FindOneFloat("mindist", .1f);
-	float rrThresh = params.FindOneFloat("rrthreshold", .05f);
-	float is = params.FindOneFloat("indirectscale", 1.f);
-	return new IGIIntegrator(nLightPaths, nLightSets, minDist, rrThresh, is);
+	return new IGIIntegrator(nLightPaths, nLightSets, maxDepth, minDist);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<IGIIntegrator> r("igi");

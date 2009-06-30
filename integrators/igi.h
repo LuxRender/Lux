@@ -49,7 +49,7 @@ struct VirtualLight {
 class IGIIntegrator : public SurfaceIntegrator {
 public:
 	// IGIIntegrator Public Methods
-	IGIIntegrator(int nl, int ns, float md, float rrt, float is);
+	IGIIntegrator(int nl, int ns, int d, float md);
 	int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	void RequestSamples(Sample *sample, const Scene *scene);
 	void Preprocess(const TsPack *tspack, const Scene *scene);
@@ -58,9 +58,8 @@ private:
 	// IGI Private Data
 	u_int nLightPaths, nLightSets;
 	vector<vector<VirtualLight> > virtualLights;
-	mutable int specularDepth;
 	int maxSpecularDepth;
-	float minDist2, rrThreshold, indirectScale;
+	float minDist2;
 	int vlSetOffset, bufferId;
 
 	int *lightSampleOffset, lightNumOffset;
