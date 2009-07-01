@@ -32,12 +32,13 @@ public:
 	// Cylinder Public Methods
 	Cylinder(const Transform &o2w, bool ro, float rad,
 	         float zmin, float zmax, float phiMax);
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
+	virtual ~Cylinder() { }
+	virtual BBox ObjectBound() const;
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-	Point Sample(float u1, float u2, float u3, 
+	virtual bool IntersectP(const Ray &ray) const;
+	virtual float Area() const;
+	virtual Point Sample(float u1, float u2, float u3, 
 			Normal *Ns) const {
 		float z = Lerp(u1, zmin, zmax);
 		float t = u2 * phiMax;

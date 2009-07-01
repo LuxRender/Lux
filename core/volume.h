@@ -66,24 +66,25 @@ public:
 	// DensityRegion Public Methods
 	DensityRegion(const RGBColor &sig_a, const RGBColor &sig_s,
 		float g, const RGBColor &Le, const Transform &VolumeToWorld);
+	virtual ~DensityRegion() { }
 	virtual float Density(const Point &Pobj) const = 0;
-	RGBColor sigma_a(const Point &p, const Vector &) const {
+	virtual RGBColor sigma_a(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * sig_a;
 	}
-	RGBColor sigma_s(const Point &p, const Vector &) const {
+	virtual RGBColor sigma_s(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * sig_s;
 	}
-	RGBColor sigma_t(const Point &p, const Vector &) const {
+	virtual RGBColor sigma_t(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * (sig_a + sig_s);
 	}
-	RGBColor Lve(const Point &p, const Vector &) const {
+	virtual RGBColor Lve(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * le;
 	}
-	float p(const Point &p, const Vector &w,
+	virtual float p(const Point &p, const Vector &w,
 			const Vector &wp) const {
 		return PhaseHG(w, wp, g);
 	}
-	RGBColor Tau(const Ray &r, float stepSize, float offset) const;
+	virtual RGBColor Tau(const Ray &r, float stepSize, float offset) const;
 protected:
 	// DensityRegion Protected Data
 	Transform WorldToVolume;
@@ -95,15 +96,15 @@ class  AggregateVolume : public VolumeRegion {
 public:
 	// AggregateVolume Public Methods
 	AggregateVolume(const vector<VolumeRegion *> &r);
-	~AggregateVolume();
-	BBox WorldBound() const;
-	bool IntersectP(const Ray &ray, float *t0, float *t1) const;
-	RGBColor sigma_a(const Point &, const Vector &) const;
-	RGBColor sigma_s(const Point &, const Vector &) const;
-	RGBColor Lve(const Point &, const Vector &) const;
-	float p(const Point &, const Vector &, const Vector &) const;
-	RGBColor sigma_t(const Point &, const Vector &) const;
-	RGBColor Tau(const Ray &ray, float, float) const;
+	virtual ~AggregateVolume();
+	virtual BBox WorldBound() const;
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const;
+	virtual RGBColor sigma_a(const Point &, const Vector &) const;
+	virtual RGBColor sigma_s(const Point &, const Vector &) const;
+	virtual RGBColor Lve(const Point &, const Vector &) const;
+	virtual float p(const Point &, const Vector &, const Vector &) const;
+	virtual RGBColor sigma_t(const Point &, const Vector &) const;
+	virtual RGBColor Tau(const Ray &ray, float, float) const;
 private:
 	// AggregateVolume Private Data
 	vector<VolumeRegion *> regions;

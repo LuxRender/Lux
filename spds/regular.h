@@ -45,7 +45,7 @@ class RegularSPD : public SPD {
       init(lambdaMin, lambdaMax, samples, n);
     }
 
-    ~RegularSPD() {}
+    virtual ~RegularSPD() {}
 
   protected:
     void init(float lMin, float lMax, const float* const s, int n);

@@ -32,11 +32,11 @@ class PlyMesh : public Shape {
 public:
 	// PlyMesh Public Methods
 	PlyMesh(const Transform &o2w, bool ro, string filename, bool smooth);
-	~PlyMesh();
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
-	bool CanIntersect() const { return false; }
-	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+	virtual ~PlyMesh();
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
+	virtual bool CanIntersect() const { return false; }
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			const PrimitiveRefinementHints& refineHints,
 			boost::shared_ptr<Primitive> thisPtr);
 	friend class Triangle;

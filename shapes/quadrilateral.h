@@ -44,12 +44,12 @@ public:
 		uvs = NULL;
 	}
 
-	~QuadMesh() {
+	virtual ~QuadMesh() {
 		delete[] idx;
 		delete[] p;
 	}
 
-	BBox ObjectBound() const;
+	virtual BBox ObjectBound() const;
 
 	int nquads, nverts;
 	int *idx;
@@ -65,12 +65,12 @@ class Quadrilateral : public Shape {
 public:
 	// Quadrilateral Public Methods
 	Quadrilateral(const Transform &o2w, bool ro, QuadMesh *m, int *indices);
-	~Quadrilateral();
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
+	virtual ~Quadrilateral();
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
+	virtual bool IntersectP(const Ray &ray) const;
 	void GetUVs(float uv[4][2]) const {		
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2*idx[0]];
@@ -100,8 +100,8 @@ public:
 			uv[3][1] = 1.f;
 		}
 	}
-	float Area() const;
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+	virtual float Area() const;
+	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		Point p;
 
 		const Point &p0 = mesh->p[idx[0]];

@@ -42,7 +42,7 @@ namespace lux
       init(s);
     }
 
-    ~RGBReflSPD() {}
+    virtual ~RGBReflSPD() {}
 
   protected:
 	  void AddWeighted(float w, float *c) {

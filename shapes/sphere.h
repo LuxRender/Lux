@@ -33,19 +33,20 @@ public:
 	// Sphere Public Methods
 	Sphere(const Transform &o2w, bool ro, float rad,
 	       float zmin, float zmax, float phiMax);
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
+	virtual ~Sphere() { }
+	virtual BBox ObjectBound() const;
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-	Point Sample(float u1, float u2, float u3, Normal *ns) const {
+	virtual bool IntersectP(const Ray &ray) const;
+	virtual float Area() const;
+	virtual Point Sample(float u1, float u2, float u3, Normal *ns) const {
 		Point p = Point(0,0,0) + radius *
 			UniformSampleSphere(u1, u2);
 		*ns = Normalize(ObjectToWorld(Normal(p.x, p.y, p.z)));
 		if (reverseOrientation) *ns *= -1.f;
 		return ObjectToWorld(p);
 	}
-	Point Sample(const Point &p,
+	virtual Point Sample(const Point &p,
 			float u1, float u2, float u3, Normal *ns) const {
 		// Compute coordinate system for sphere sampling
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
@@ -72,7 +73,7 @@ public:
 		if (reverseOrientation) *ns *= -1.f;
 		return ps;
 	}
-	float Pdf(const Point &p, const Vector &wi) const {
+	virtual float Pdf(const Point &p, const Vector &wi) const {
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
 		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
@@ -82,7 +83,7 @@ public:
 			DistanceSquared(p, Pcenter)));
 		return UniformConePdf(cosThetaMax);
 	}
-	float Pdf(const Point &p, const Point &po) const {
+	virtual float Pdf(const Point &p, const Point &po) const {
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
 		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)

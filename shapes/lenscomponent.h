@@ -29,13 +29,14 @@ class LensComponent : public Shape {
 public:
     LensComponent(const Transform &o2w, bool ro, float rad,
         float zmin, float zmax, float phiMax, float aperture);
+    virtual ~LensComponent() { }
     // LensComponent public data
-    BBox ObjectBound() const;
-    bool Intersect(const Ray &ray, float *tHit,
+    virtual BBox ObjectBound() const;
+    virtual bool Intersect(const Ray &ray, float *tHit,
         DifferentialGeometry *dg) const;
-    bool IntersectP(const Ray &ray) const;
-    float Area() const;
-    Point Sample(float u1, float u2, float u3, Normal *n) const;
+    virtual bool IntersectP(const Ray &ray) const;
+    virtual float Area() const;
+    virtual Point Sample(float u1, float u2, float u3, Normal *n) const;
 
 	static Shape* CreateShape(const Transform &o2w,
                    bool reverseOrientation,

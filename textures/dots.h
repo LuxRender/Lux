@@ -33,7 +33,7 @@ namespace lux
 template <class T> class DotsTexture : public Texture<T> {
 public:
 	// DotsTexture Public Methods
-	~DotsTexture() {
+	virtual ~DotsTexture() {
 		delete mapping;
 	}
 	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<T> > c1,
@@ -42,7 +42,7 @@ public:
 		outsideDot = c1;
 		insideDot = c2;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Compute cell indices for dots
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
@@ -61,12 +61,12 @@ public:
 		}
 		return outsideDot->Evaluate(tspack, dg);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		outsideDot->SetPower(power, area);
 		insideDot->SetPower(power, area);
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		// Update sub-textures
 		outsideDot->SetIlluminant();
 		insideDot->SetIlluminant();

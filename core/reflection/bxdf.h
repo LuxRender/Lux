@@ -170,24 +170,25 @@ public:
 		: BxDF(BxDFType(b->type ^
 			(BSDF_REFLECTION | BSDF_TRANSMISSION))),
 		etai(ei), etat(et), cb(c), brdf(b) {}
+	virtual ~BRDFToBTDF() { }
 	static Vector otherHemisphere(const Vector &w) {
 		return Vector(w.x, w.y, -w.z);
 	}
-	SWCSpectrum rho(const TsPack *tspack, const Vector &w, int nSamples,
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &w, int nSamples,
 			float *samples) const {
 		return brdf->rho(tspack, otherHemisphere(w), nSamples, samples);
 	}
-	SWCSpectrum rho(const TsPack *tspack, int nSamples, float *samples) const {
+	virtual SWCSpectrum rho(const TsPack *tspack, int nSamples, float *samples) const {
 		return brdf->rho(tspack, nSamples, samples);
 	}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
-	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
-	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const {
+	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const {
 		return brdf->Weight(tspack, wo, reverse);
 	}
-	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
 	float etai, etat, cb;
 	BxDF *brdf;

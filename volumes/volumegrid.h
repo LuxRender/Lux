@@ -33,13 +33,13 @@ public:
 	VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
 	 		const RGBColor &emit, const BBox &e, const Transform &v2w,
 			int nx, int ny, int nz, const float *d);
-	~VolumeGrid() { delete[] density; }
-	BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
-	bool IntersectP(const Ray &r, float *t0, float *t1) const {
+	virtual ~VolumeGrid() { delete[] density; }
+	virtual BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
+	virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
 		Ray ray = WorldToVolume(r);
 		return extent.IntersectP(ray, t0, t1);
 	}
-	float Density(const Point &Pobj) const;
+	virtual float Density(const Point &Pobj) const;
 	float D(int x, int y, int z) const {
 		x = Clamp(x, 0, nx-1);
 		y = Clamp(y, 0, ny-1);

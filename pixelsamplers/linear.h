@@ -34,9 +34,10 @@ public:
 	// LinearPixelSampler Public Methods
 	LinearPixelSampler(int xstart, int xend,
 	          int ystart, int yend);
+	virtual ~LinearPixelSampler() { }
 
-	u_int GetTotalPixels();
-	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
+	virtual u_int GetTotalPixels();
+	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
 
 private:
 	// LinearPixelSampler Private Data

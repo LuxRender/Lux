@@ -31,7 +31,9 @@ namespace lux
 
 class  FresnelNoOp : public Fresnel {
 public:
-	void Evaluate(const TsPack *tspack, float, SWCSpectrum *const f) const { *f = SWCSpectrum(1.); }
+	FresnelNoOp() { }
+	virtual ~FresnelNoOp() { }
+	virtual void Evaluate(const TsPack *tspack, float, SWCSpectrum *const f) const { *f = SWCSpectrum(1.f); }
 };
 
 }//namespace lux

@@ -37,12 +37,13 @@ public:
 	Shape(const Transform &o2w, bool ro);
 	Shape(const Transform &o2w, bool ro,
 			boost::shared_ptr<Material> material);
+	virtual ~Shape() { }
 
 	void SetMaterial(boost::shared_ptr<Material> mat) { this->material = mat; }
 	boost::shared_ptr<Material> GetMaterial() const { return material; }
 
-	BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
-	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			const PrimitiveRefinementHints& refineHints,
 			boost::shared_ptr<Primitive> thisPtr)
 	{
@@ -61,8 +62,8 @@ public:
 		}
 	}
 
-	bool CanIntersect() const { return true; }
-	bool Intersect(const Ray &r, Intersection *isect) const {
+	virtual bool CanIntersect() const { return true; }
+	virtual bool Intersect(const Ray &r, Intersection *isect) const {
 		float thit;
 		if (!Intersect(r, &thit, &isect->dg))
 			return false;
@@ -72,21 +73,21 @@ public:
 		return true;
 	}
 
-	void GetShadingGeometry(const Transform &obj2world,
+	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg,
 			DifferentialGeometry *dgShading) const
 	{
 		*dgShading = dg;
 	}
 
-	bool CanSample() const { return true; }
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual bool CanSample() const { return true; }
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		dg->p = Sample(u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 	}
-	void Sample(const Point &p, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual void Sample(const Point &p, float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		dg->p = Sample(p, u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		//TODO fill in uv coordinates
@@ -126,22 +127,23 @@ public:
 	// PrimitiveSet Public Methods
 	PrimitiveSet(boost::shared_ptr<Aggregate> a);
 	PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p);
+	virtual ~PrimitiveSet() { }
 
-	BBox WorldBound() const { return worldbound; }
-	bool CanIntersect() const {
+	virtual BBox WorldBound() const { return worldbound; }
+	virtual bool CanIntersect() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanIntersect()) return false;
 		return true;
 	}
-	bool Intersect(const Ray &r, Intersection *in) const;
-	bool IntersectP(const Ray &r) const;
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const;
 
-	bool CanSample() const {
+	virtual bool CanSample() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanSample()) return false;
 		return true;
 	}
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		u_int sn;
 		if( primitives.size() <= 16) {
 			for (sn = 0; sn < primitives.size()-1; ++sn)
@@ -154,7 +156,7 @@ public:
 		}
 		primitives[sn]->Sample(u1, u2, u3, dg);
 	}
-	float Area() const { return area; }
+	virtual float Area() const { return area; }
 private:
 	void initAreas();
 

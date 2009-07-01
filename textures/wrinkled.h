@@ -34,7 +34,7 @@ namespace lux
 template <class T> class WrinkledTexture : public Texture<T> {
 public:
 	// WrinkledTexture Public Methods
-	~WrinkledTexture() {
+	virtual ~WrinkledTexture() {
 		delete mapping;
 	}
 	WrinkledTexture(int oct, float roughness, TextureMapping3D *map) {
@@ -42,7 +42,7 @@ public:
 		octaves = oct;
 		mapping = map;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		return Turbulence(P, dpdx, dpdy, omega, octaves);

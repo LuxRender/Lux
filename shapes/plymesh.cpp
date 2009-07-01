@@ -206,6 +206,7 @@ public:
 	: MeshWaldTriangle(m,n), ptr(aPtr)
 	{
 	}
+	virtual ~WaldTriangleSharedPtr() { }
 private:
 	boost::shared_ptr<Primitive> ptr;
 };

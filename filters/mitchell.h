@@ -36,7 +36,11 @@ public:
 	// MitchellFilter Public Methods
 	MitchellFilter(float b, float c, float xw, float yw)
 		: Filter(xw, yw) { B = b; C = c; }
-	float Evaluate(float x, float y) const;
+	virtual ~MitchellFilter() { }
+	virtual float Evaluate(float x, float y) const;
+	
+	static Filter *CreateFilter(const ParamSet &ps);
+private:
 	float Mitchell1D(float x) const {
 		x = fabsf(2.f * x);
 		if (x > 1.f)
@@ -47,9 +51,6 @@ public:
 				(-3.f + 2.f*B + C)) * x*x +
 				(1.f - B/3.f);
 	}
-	
-	static Filter *CreateFilter(const ParamSet &ps);
-private:
 	float B, C;
 };
 

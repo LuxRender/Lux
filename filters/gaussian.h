@@ -40,7 +40,8 @@ public:
 		expX = expf(-alpha * xWidth * xWidth);
 		expY = expf(-alpha * yWidth * yWidth);
 	}
-	float Evaluate(float x, float y) const;
+	virtual ~GaussianFilter() { }
+	virtual float Evaluate(float x, float y) const;
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 private:

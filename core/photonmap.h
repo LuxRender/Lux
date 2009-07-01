@@ -72,11 +72,12 @@ public:
 	}
 
 	BasicColorPhoton() : BasicPhoton() { }
+	virtual ~BasicColorPhoton() { }
 
 	SWCSpectrum GetSWCSpectrum(const TsPack* tspack, u_int nb) const;
 
-	void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
-	void load(bool isLittleEndian, std::basic_istream<char> &stream);
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
+	virtual void load(bool isLittleEndian, std::basic_istream<char> &stream);
 
 	SWCSpectrum alpha;
 	float w[WAVELENGTH_SAMPLES];
@@ -89,9 +90,10 @@ public:
 		: BasicColorPhoton(tspack, pp, wt), wi(w) { }
 
 	LightPhoton() : BasicColorPhoton() { }
+	virtual ~LightPhoton() { }
 
-	void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
-	void load(bool isLittleEndian, std::basic_istream<char> &stream);
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
+	virtual void load(bool isLittleEndian, std::basic_istream<char> &stream);
 
 	Vector wi;
 };
@@ -105,9 +107,10 @@ public:
 		: BasicColorPhoton(tspack, pp, SWCSpectrum(0.0f)), n(nn) { }
 
 	RadiancePhoton() : BasicColorPhoton() { }
+	virtual ~RadiancePhoton() { }
 
-	void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
-	void load(bool isLittleEndian, std::basic_istream<char> &stream);
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
+	virtual void load(bool isLittleEndian, std::basic_istream<char> &stream);
 
 	Normal n;
 };
@@ -142,8 +145,9 @@ public:
 	}
 
 	PdfPhoton() : BasicPhoton(), dirs(0) { }
+	virtual ~PdfPhoton() { }
 
-	void save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) {
 	}
 
 	float Sample(const TsPack *tspack, Vector *wi, float u1, float u2, float u3) const {
@@ -267,7 +271,7 @@ template <class PhotonType, class PhotonProcess> class PhotonMap {
 public:
 	PhotonMap() : photonCount(0), photonmap(NULL) { }
 
-	~PhotonMap() {
+	virtual ~PhotonMap() {
 		if (photonmap)
 			delete photonmap;
 	}
@@ -301,6 +305,7 @@ public:
 	RadiancePhotonMap(u_int nl, float md) :
 		PhotonMap<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(),
 		nLookup(nl), maxDistSquared(md) { }
+	virtual ~RadiancePhotonMap() { }
 
 	void init(const vector<RadiancePhoton> &photons) {
 		photonCount = photons.size();
@@ -336,6 +341,7 @@ public:
 	LightPhotonMap(u_int nl, float md) :
 		PhotonMap<LightPhoton, NearSetPhotonProcess<LightPhoton> >(),
 		nLookup(nl), maxDistSquared(md), nPaths(0) { }
+	virtual ~LightPhotonMap() { }
 
 	void init(int npaths, const vector<LightPhoton> &photons) {
 		photonCount = photons.size();

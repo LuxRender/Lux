@@ -90,8 +90,9 @@ namespace lux {
     class StandardImageReader : public ImageReader {
     public:
         StandardImageReader() { };
+	virtual ~StandardImageReader() { }
 
-        ImageData* read(const string &name);
+        virtual ImageData* read(const string &name);
     };
 	
 	template <class T>

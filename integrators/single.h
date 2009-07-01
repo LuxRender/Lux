@@ -33,11 +33,12 @@ class SingleScattering : public VolumeIntegrator {
 public:
 	// SingleScattering Public Methods
 	SingleScattering(float ss) : stepSize(ss) { }
+	virtual ~SingleScattering() { }
 
-	void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
+	virtual void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
+	virtual void RequestSamples(Sample *sample, const Scene *scene);
+	virtual int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
 
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 

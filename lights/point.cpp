@@ -34,7 +34,8 @@ class GonioBxDF : public BxDF {
 public:
 	GonioBxDF(const Normal &ns, const Vector &du, const Vector &dv, const SampleableSphericalFunction *func) :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), x(du), y(dv), z(Vector(ns)), sf(func) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+	virtual ~GonioBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		// Transform to light coordinate system
 		const Vector wL(wi.x * x.x + wi.y * y.x + wi.z * z.x,
 				wi.x * x.y + wi.y * y.y + wi.z * z.y,

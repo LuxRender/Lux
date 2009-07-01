@@ -47,13 +47,17 @@ namespace lux
 					float gg, const RGBColor &emit, const BBox &e, const float &r, const Transform &v2w, 
 					const float &noiseScale, const float &t, const float &sharp, const float &v, const float &baseflatness, 
 					const int &octaves, const float &o, const float &offSet, const int &numspheres, const float &spheresize );
+			virtual ~Cloud() {
+				delete sphereCentre;
+				delete[] spheres;
+			}
 			
-			bool IntersectP(const Ray &r, float *t0, float *t1) const {
+			virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
 				Ray ray = WorldToVolume(r);
 				return extent.IntersectP(ray, t0, t1);
 			}
-			BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
-			float Density(const Point &p) const;
+			virtual BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
+			virtual float Density(const Point &p) const;
 			static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 			
 		private:

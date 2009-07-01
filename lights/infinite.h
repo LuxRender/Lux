@@ -37,8 +37,8 @@ public:
 	// InfiniteAreaLight Public Methods
 	InfiniteAreaLight(const Transform &light2world, const RGBColor &l, int ns, const string &texmap,
 		EnvironmentMapping *m, float gain, float gamma);
-	~InfiniteAreaLight();
-	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
+	virtual ~InfiniteAreaLight();
+	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
@@ -49,24 +49,24 @@ public:
 
 		return SWCSpectrum(tspack, SPDbase) * SWCSpectrum(tspack, L) * (M_PI * worldRadius * worldRadius);
 	}
-	bool IsDeltaLight() const { return false; }
-	bool IsEnvironmental() const { return true; }
-	SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
-	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	virtual bool IsDeltaLight() const { return false; }
+	virtual bool IsEnvironmental() const { return true; }
+	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
 		float u1, float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Normal &, const Vector &) const;
-	float Pdf(const Point &, const Vector &) const;
-	float Pdf(const Point &p, const Normal &n,
+	virtual float Pdf(const Point &, const Normal &, const Vector &) const;
+	virtual float Pdf(const Point &, const Vector &) const;
+	virtual float Pdf(const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
-	bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
-	bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp);

@@ -33,7 +33,6 @@ namespace lux
 class  OrenNayar : public BxDF {
 public:
 	// OrenNayar Public Methods
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	OrenNayar(const SWCSpectrum &reflectance, float sig)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		  R(reflectance) {
@@ -42,6 +41,8 @@ public:
 		A = 1.f - (sigma2 / (2.f * (sigma2 + 0.33f)));
 		B = 0.45f * sigma2 / (sigma2 + 0.09f);
 	}
+	virtual ~OrenNayar() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 private:
 	// OrenNayar Private Data
 	SWCSpectrum R;

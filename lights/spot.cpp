@@ -44,10 +44,11 @@ class SpotBxDF : public BxDF
 {
 public:
 	SpotBxDF(float width, float fall) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosTotalWidth(width), cosFalloffStart(fall) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+	virtual ~SpotBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
 		*f += LocalFalloff(wi, cosTotalWidth, cosFalloffStart);
 	}
-	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		*wi = UniformSampleCone(u1, u2, cosTotalWidth);
 		*pdf = UniformConePdf(cosTotalWidth);
@@ -56,7 +57,7 @@ public:
 		*f = LocalFalloff(*wi, cosTotalWidth, cosFalloffStart);
 		return true;
 	}
-	float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const Vector &wi, const Vector &wo) const
 	{
 		if (CosTheta(wo) < cosTotalWidth)
 			return 0.f;

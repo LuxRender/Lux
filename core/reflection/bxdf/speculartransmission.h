@@ -38,11 +38,12 @@ public:
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		  T(t), etai(ei), etat(et), cb(cbf), architectural(archi),
 		  fresnel(ei, et) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual ~SpecularTransmission() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
-	float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
+	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return (architectural && Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f) ? 1.f : 0.f;
 	}
 private:

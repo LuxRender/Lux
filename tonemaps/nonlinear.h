@@ -32,7 +32,8 @@ class NonLinearOp : public ToneMap {
 public:
 	// NonLinearOp Public Methods
 	NonLinearOp(float my) { maxY = my; }
-	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
+	virtual ~NonLinearOp() { }
+	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
 		const int numPixels = xRes * yRes;
 		float invY2;
 		if (maxY <= 0.f) {

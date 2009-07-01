@@ -33,8 +33,9 @@ namespace lux
 class  Blinn : public MicrofacetDistribution {
 public:
 	Blinn(float e) { if (e > 100000.f || isnan(e)) e = 100000.f; exponent = e; }
+	virtual ~Blinn() { }
 	// Blinn Public Methods
-	float D(const Vector &wh) const {
+	virtual float D(const Vector &wh) const {
 		float costhetah = fabsf(CosTheta(wh));
 		return (exponent+2) *
 		       INV_TWOPI *

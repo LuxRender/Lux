@@ -37,16 +37,17 @@ public:
 		if (ex > 100000.f || isnan(ex)) ex = 100000.f;
 		if (ey > 100000.f || isnan(ey)) ey = 100000.f;
 	}
-	float D(const Vector &wh) const {
+	virtual ~Anisotropic() { }
+	virtual float D(const Vector &wh) const {
 		float costhetah = fabsf(CosTheta(wh));
 		float e = (ex * wh.x * wh.x + ey * wh.y * wh.y) /
 			(1.f - costhetah * costhetah);
 		return sqrtf((ex+2)*(ey+2)) * INV_TWOPI * powf(costhetah, e);
 	}
-	void Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
-	float Pdf(const Vector &wo, const Vector &wi) const;
-	void sampleFirstQuadrant(float u1, float u2, float *phi, float *costheta) const;
+	virtual void Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
+	virtual float Pdf(const Vector &wo, const Vector &wi) const;
 private:
+	void sampleFirstQuadrant(float u1, float u2, float *phi, float *costheta) const;
 	float ex, ey;
 };
 

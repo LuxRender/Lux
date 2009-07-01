@@ -42,7 +42,7 @@ namespace lux
       init(s);
     }
 
-    ~RGBIllumSPD() {}
+    virtual ~RGBIllumSPD() {}
 
   protected:
 	  void AddWeighted(float w, float *c) {

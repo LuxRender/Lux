@@ -47,7 +47,7 @@ namespace lux
 		init(mean, width, refl);
     }
 
-    ~GaussianSPD() {
+    virtual ~GaussianSPD() {
 		FreeSamples();
 	}
 

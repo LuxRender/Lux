@@ -32,7 +32,8 @@ namespace lux
 class MaxWhiteOp : public ToneMap {
 public:
 	// MaxWhiteOp Public Methods
-	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
+	virtual ~MaxWhiteOp() { }
+	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
 		const int numPixels = xRes * yRes;
 		// Compute maximum luminance of all pixels
 		float maxY = 0.f;

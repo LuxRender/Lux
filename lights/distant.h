@@ -37,22 +37,22 @@ public:
 	DistantLight(const Transform &light2world, 
 		const boost::shared_ptr< Texture<SWCSpectrum> > L, float gain, 
 		const Vector &dir);
-	~DistantLight();
-	bool IsDeltaLight() const { return true; }
-	bool IsEnvironmental() const { return true; }
-	SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
+	virtual ~DistantLight();
+	virtual bool IsDeltaLight() const { return true; }
+	virtual bool IsEnvironmental() const { return true; }
+	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter,
 		                                   &worldRadius);
 		return Lbase->Evaluate(tspack, dummydg) * gain * M_PI * worldRadius * worldRadius;
 	}
-	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
-	float Pdf(const Point &p, const Normal &n,
+	virtual float Pdf(const Point &, const Vector &) const;
+	virtual float Pdf(const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
 	
 	static Light *CreateLight(const Transform &light2world,

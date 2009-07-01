@@ -34,7 +34,7 @@ class BrickTexture3D : public Texture<T> {
 public:
     // BrickTexture3D Public Methods
 
-    ~BrickTexture3D() {
+    virtual ~BrickTexture3D() {
         delete mapping;
     }
 
@@ -56,7 +56,7 @@ public:
 
 #define BRICK_EPSILON 1e-3f
 
-    T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+    virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
         Vector dpdx, dpdy;
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
@@ -107,12 +107,12 @@ public:
 		// Inside brick
 		return tex1->Evaluate(tspack, dg);
     }
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);
 		tex2->SetPower(power, area);
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();

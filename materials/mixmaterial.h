@@ -35,7 +35,8 @@ public:
 		amount = a;
 		compParams = NULL;
 	}
-	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
+	virtual ~MixMaterial() { }
+	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

@@ -39,7 +39,8 @@ class GonioAreaBxDF : public BxDF {
 public:
 	GonioAreaBxDF(const SampleableSphericalFunction *func) :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sf(func) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+	virtual ~GonioAreaBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		*F += SWCSpectrum(tspack, sf->f(wi));
 	}
 private:

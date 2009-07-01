@@ -42,15 +42,15 @@ public:
 			boost::shared_ptr<Texture<float> > displacementMap,
 			float displacementMapScale, float displacementMapOffset,
 			bool displacementMapNormalSmooth, bool displacementMapSharpBoundary);
-	~Mesh();
+	virtual ~Mesh();
 
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
-	bool CanIntersect() const { return false; }
-	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
+	virtual bool CanIntersect() const { return false; }
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			const PrimitiveRefinementHints &refineHints,
 			boost::shared_ptr<Primitive> thisPtr);
-	bool CanSample() const { return false; }
+	virtual bool CanSample() const { return false; }
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;
@@ -115,27 +115,27 @@ public:
 		: mesh(m), v(&(mesh->triVertexIndex[3 * n]))
 	{
     }
+    virtual ~MeshBaryTriangle() { }
 
-    BBox ObjectBound() const;
-    BBox WorldBound() const;
+    virtual BBox ObjectBound() const;
+    virtual BBox WorldBound() const;
 
-    bool CanIntersect() const { return true; }
+    virtual bool CanIntersect() const { return true; }
     virtual bool Intersect(const Ray &ray, Intersection *isect) const;
     virtual bool IntersectP(const Ray &ray) const;
 
-    void GetShadingGeometry(const Transform &obj2world,
+    virtual void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,
             DifferentialGeometry *dgShading) const;
 
-    bool CanSample() const { return true; }
-    float Area() const;
-    void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
+    virtual bool CanSample() const { return true; }
+    virtual float Area() const;
+    virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 
 	virtual bool isDegenerate() const {
 		return false; //TODO check degenerate
 	}
 
-protected:
 	void GetUVs(float uv[3][2]) const {
 		if (mesh->uvs) {
 			uv[0][0] = mesh->uvs[2*v[0]];
@@ -153,6 +153,7 @@ protected:
 			uv[2][1] = .5f;//mesh->p[v[2]].y;
 		}
 	}
+	const Point &GetP(u_int i) const { return mesh->p[v[i]]; }
 
 	// BaryTriangle Data
 	const Mesh *mesh;
@@ -163,12 +164,13 @@ class MeshWaldTriangle : public MeshBaryTriangle {
 public:
 	// WaldTriangle Public Methods
 	MeshWaldTriangle(const Mesh *m, int n);
+	virtual ~MeshWaldTriangle() { }
 
-	bool Intersect(const Ray &ray, Intersection *isect) const;
-	bool IntersectP(const Ray &ray) const;
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const Ray &ray) const;
 
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
-	bool isDegenerate() const;
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
+	virtual bool isDegenerate() const;
 private:
 	// WaldTriangle Data
 
@@ -199,21 +201,22 @@ class MeshQuadrilateral : public Primitive {
 public:
 	// Quadrilateral Public Methods
 	MeshQuadrilateral(const Mesh *m, int n);
+	virtual ~MeshQuadrilateral() { }
 
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
 
-	bool CanIntersect() const { return true; }
-	bool Intersect(const Ray &ray, Intersection *isect) const;
-	bool IntersectP(const Ray &ray) const;
+	virtual bool CanIntersect() const { return true; }
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const Ray &ray) const;
 
-	void GetShadingGeometry(const Transform &obj2world,
+	virtual void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,
             DifferentialGeometry *dgShading) const;
 
-	bool CanSample() const { return true; }
-	float Area() const;
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual bool CanSample() const { return true; }
+	virtual float Area() const;
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		const Point &p0 = mesh->p[idx[0]];
 		const Point &p1 = mesh->p[idx[1]];
 		const Point &p2 = mesh->p[idx[2]];

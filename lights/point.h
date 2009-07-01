@@ -38,22 +38,22 @@ public:
 	PointLight(const Transform &light2world, 
 		const boost::shared_ptr< Texture<SWCSpectrum> > L, float gain,
 		SampleableSphericalFunction *ssf);
-	~PointLight();
-	bool IsDeltaLight() const { return true; }
-	bool IsEnvironmental() const { return false; }
-	SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
+	virtual ~PointLight();
+	virtual bool IsDeltaLight() const { return true; }
+	virtual bool IsEnvironmental() const { return false; }
+	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
-	float Pdf(const Point &, const Vector &) const;
-	float Pdf(const Point &p, const Normal &n,
+	virtual float Pdf(const Point &, const Vector &) const;
+	virtual float Pdf(const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
-	bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
-	bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 		VisibilityTester *visibility, SWCSpectrum *Le) const;
-	SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	
 	static Light *CreateLight(const Transform &light2world,

@@ -50,7 +50,7 @@ namespace lux
     IrregularSPD(const float* const wavelengths, const float* const samples,
 			int n, float resolution = 5, SPDResamplingMethod resamplignMethod = Linear);
 
-    ~IrregularSPD() {}
+    virtual ~IrregularSPD() {}
 
   protected:
 	  void init(float lMin, float lMax, const float* const s, int n);

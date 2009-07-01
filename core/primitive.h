@@ -192,35 +192,36 @@ class AreaLightPrimitive : public Primitive {
 public:
 	// AreaLightPrimitive Public Methods
 	AreaLightPrimitive(boost::shared_ptr<Primitive> prim, AreaLight* arealight);
+	virtual ~AreaLightPrimitive() { }
 
-	BBox WorldBound() const { return prim->WorldBound(); };
-	void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+	virtual BBox WorldBound() const { return prim->WorldBound(); };
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			const PrimitiveRefinementHints& refineHints,
 			boost::shared_ptr<Primitive> thisPtr);
 
-	bool CanIntersect() const { return prim->CanIntersect(); }
-	bool Intersect(const Ray &r, Intersection *in) const;
-	bool IntersectP(const Ray &r) const { return prim->IntersectP(r); }
+	virtual bool CanIntersect() const { return prim->CanIntersect(); }
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const { return prim->IntersectP(r); }
 
-	void GetShadingGeometry(const Transform &obj2world,
+	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const {
 			prim->GetShadingGeometry(obj2world, dg, dgShading);
 	}
 
-	bool CanSample() const { return prim->CanSample(); }
-	float Area() const { return prim->Area(); }
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+	virtual bool CanSample() const { return prim->CanSample(); }
+	virtual float Area() const { return prim->Area(); }
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
 		prim->Sample(u1, u2, u3, dg);
 	}
-	float Pdf(const Point &p) const { return prim->Pdf(p); }
-	void Sample(const Point &P,
+	virtual float Pdf(const Point &p) const { return prim->Pdf(p); }
+	virtual void Sample(const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		prim->Sample(P, u1, u2, u3, dg);
 	}
-	float Pdf(const Point &p, const Vector &wi) const {
+	virtual float Pdf(const Point &p, const Vector &wi) const {
 		return prim->Pdf(p, wi);
 	}
-	float Pdf(const Point &p, const Point &po) const {
+	virtual float Pdf(const Point &p, const Point &po) const {
 		return prim->Pdf(p, po);
 	}
 private:
@@ -254,29 +255,30 @@ public:
 		WorldToInstance = i2w.GetInverse();
 		material = mat;
 	}
+	virtual ~InstancePrimitive() { }
 
-	BBox WorldBound() const  {
+	virtual BBox WorldBound() const  {
 		return InstanceToWorld(instance->WorldBound());
 	}
 
-	bool CanIntersect() const { return instance->CanIntersect(); }
-	bool Intersect(const Ray &r, Intersection *in) const;
-	bool IntersectP(const Ray &r) const;
+	virtual bool CanIntersect() const { return instance->CanIntersect(); }
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const;
 
-	bool CanSample() const { return instance->CanSample(); }
-	float Area() const { return instance->Area(); }
-	void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+	virtual bool CanSample() const { return instance->CanSample(); }
+	virtual float Area() const { return instance->Area(); }
+	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
 		instance->Sample(u1, u2, u3, dg);
 	}
-	float Pdf(const Point &p) const { return instance->Pdf(p); }
-	void Sample(const Point &P,
+	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
+	virtual void Sample(const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		instance->Sample(P, u1, u2, u3, dg);
 	}
-	float Pdf(const Point &p, const Vector &wi) const {
+	virtual float Pdf(const Point &p, const Vector &wi) const {
 		return instance->Pdf(p, wi);
 	}
-	float Pdf(const Point &p, const Point &po) const {
+	virtual float Pdf(const Point &p, const Point &po) const {
 		return instance->Pdf(p, po);
 	}
 private:
@@ -289,8 +291,9 @@ private:
 class Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
-	bool CanIntersect() const { return true; }
-	bool CanSample() const { return false; }
+	virtual ~Aggregate() { }
+	virtual bool CanIntersect() const { return true; }
+	virtual bool CanSample() const { return false; }
 
 	/**
 	 * Gives all primitives in this aggregate.
@@ -326,27 +329,27 @@ public:
 		instance = i;
 		motionSystem = new MotionSystem(s, e, i2ws, i2we);
 	}
-	~MotionPrimitive() { delete motionSystem; }
+	virtual ~MotionPrimitive() { delete motionSystem; }
 
-    BBox WorldBound() const;
+    virtual BBox WorldBound() const;
 
-    bool CanIntersect() const { return instance->CanIntersect(); }
-    bool Intersect(const Ray &r, Intersection *in) const;
-    bool IntersectP(const Ray &r) const;
+    virtual bool CanIntersect() const { return instance->CanIntersect(); }
+    virtual bool Intersect(const Ray &r, Intersection *in) const;
+    virtual bool IntersectP(const Ray &r) const;
 
-    bool CanSample() const { return instance->CanSample(); }
-    float Area() const { return instance->Area(); }
-    void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+    virtual bool CanSample() const { return instance->CanSample(); }
+    virtual float Area() const { return instance->Area(); }
+    virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
             return instance->Sample(u1, u2, u3, dg);
     }
-    float Pdf(const Point &p) const { return instance->Pdf(p); }
-    void Sample(const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+    virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
+    virtual void Sample(const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		instance->Sample(P, u1, u2, u3, dg);
 	}
-    float Pdf(const Point &p, const Vector &wi) const {
+    virtual float Pdf(const Point &p, const Vector &wi) const {
         return instance->Pdf(p, wi);
      }
-    float Pdf(const Point &p, const Point &po) const {
+    virtual float Pdf(const Point &p, const Point &po) const {
         return instance->Pdf(p, po);
      }
 private:

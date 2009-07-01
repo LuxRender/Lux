@@ -135,7 +135,7 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e,
 		SampleableSphericalFunction *ssf,
 		int ns, const boost::shared_ptr<Primitive> &prim);
-	~AreaLight();
+	virtual ~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack, const DifferentialGeometry &dg, const Vector& w) const {
 		if( Dot(dg.nn, w) > 0 ) {
 			SWCSpectrum L = Le->Evaluate(tspack, dg) * gain;
@@ -156,18 +156,18 @@ public:
 	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
 		return Le->Evaluate(tspack, dummydg) * gain * area * M_PI * (func ? 2.f * func->Average_f() : 1.f);
 	}
-	bool IsDeltaLight() const { return false; }
-	bool IsEnvironmental() const { return false; }
-	float Pdf(const Point &, const Vector &) const;
-	float Pdf(const Point &, const Normal &, const Vector &) const;
-	float Pdf(const Point &p, const Normal &n,
+	virtual bool IsDeltaLight() const { return false; }
+	virtual bool IsEnvironmental() const { return false; }
+	virtual float Pdf(const Point &, const Vector &) const;
+	virtual float Pdf(const Point &, const Normal &, const Vector &) const;
+	virtual float Pdf(const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, const Normal &N,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
+	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;

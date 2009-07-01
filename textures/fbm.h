@@ -34,7 +34,7 @@ namespace lux
 template <class T> class FBmTexture : public Texture<T> {
 public:
 	// FBmTexture Public Methods
-	~FBmTexture() {
+	virtual ~FBmTexture() {
 		delete mapping;
 	}
 	FBmTexture(int oct, float roughness, TextureMapping3D *map) {
@@ -42,7 +42,7 @@ public:
 		octaves = oct;
 		mapping = map;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		return FBm(P, dpdx, dpdy, omega, octaves);

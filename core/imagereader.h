@@ -228,7 +228,7 @@ public:
 
 	ExrImageReader() {
 	};
-	ImageData* read(const string &name);
+	virtual ImageData* read(const string &name);
 };
 
 }

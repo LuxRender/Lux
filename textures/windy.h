@@ -34,13 +34,13 @@ namespace lux
 template <class T> class WindyTexture : public Texture<T> {
 public:
 	// WindyTexture Public Methods
-	~WindyTexture() {
+	virtual ~WindyTexture() {
 		delete mapping;
 	}
 	WindyTexture(TextureMapping3D *map) {
 		mapping = map;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		float windStrength =

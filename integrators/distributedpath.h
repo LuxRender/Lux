@@ -43,17 +43,17 @@ public:
 								 int drd, int drs, int dtd, int dts, int grd, int grs, int gtd, int gts, int srd, int std,
 								 bool drer, float drert, bool drfr, float drfrt,
 								 bool grer, float grert, bool grfr, float grfrt);
-	~DistributedPath() { }
+	virtual ~DistributedPath() { }
 
-	int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	void Preprocess(const TsPack *tspack, const Scene *scene);
-    void Reject(const TsPack *tspack, vector< vector<SWCSpectrum> > &LL, vector<SWCSpectrum> &L, float rejectrange) const;
+	virtual int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene *scene);
+	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
 	void LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
 		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, float *zdepth, int rayDepth, bool includeEmit, int &nrContribs) const;
+	void Reject(const TsPack *tspack, vector< vector<SWCSpectrum> > &LL, vector<SWCSpectrum> &L, float rejectrange) const;
 
 	// DistributedPath Private Data
 	LightStrategy lightStrategy;

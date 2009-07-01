@@ -42,10 +42,10 @@ public:
 		v10 = t10;
 		v11 = t11;
 	}
-	~BilerpFloatTexture() {
+	virtual ~BilerpFloatTexture() {
 		delete mapping;
 	}
-	float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return (1-s)*(1-t) * v00 +
@@ -74,10 +74,10 @@ public:
 		v10 = t10;
 		v11 = t11;
 	}
-	~BilerpSpectrumTexture() {
+	virtual ~BilerpSpectrumTexture() {
 		delete mapping;
 	}
-	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return SWCSpectrum(tspack, (1-s)*(1-t) * v00 +

@@ -32,11 +32,12 @@ public:
 	// Paraboloid Public Methods
 	Paraboloid(const Transform &o2w, bool ro, float rad,
 	           float z0, float z1, float tm );
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
+	virtual ~Paraboloid() { }
+	virtual BBox ObjectBound() const;
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	                  DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
+	virtual bool IntersectP(const Ray &ray) const;
+	virtual float Area() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 protected:

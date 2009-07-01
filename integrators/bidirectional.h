@@ -44,10 +44,11 @@ public:
 		eyeBufferId = -1;
 		lightBufferId = -1;
 	}
+	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods
-	int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene *scene);
+	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 	int maxEyeDepth, maxLightDepth;
 	float eyeThreshold, lightThreshold;

@@ -34,9 +34,10 @@ public:
 	HilbertPixelSampler(
             int xStart, int xEnd,
             int yStart, int yEnd);
+	virtual ~HilbertPixelSampler() { }
 
-	u_int GetTotalPixels();
-	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
+	virtual u_int GetTotalPixels();
+	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
 
 private:
 	void HilberCurve(

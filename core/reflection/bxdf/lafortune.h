@@ -35,10 +35,11 @@ public:
 	// Lafortune Public Methods
 	Lafortune(const SWCSpectrum &x, const SWCSpectrum &y, const SWCSpectrum &z,
 		const SWCSpectrum &e, BxDFType t);
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
-	bool Sample_f(const TsPack *tspack, const Vector &wi, Vector *sampled_f,
+	virtual ~Lafortune() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wi, Vector *sampled_f,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 private:
 	// Lafortune Private Data
 	const SWCSpectrum x, y, z, exponent;

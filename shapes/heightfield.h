@@ -33,10 +33,10 @@ class Heightfield : public Shape {
 public:
 	// Heightfield Public Methods
 	Heightfield(const Transform &o2w, bool ro, int nu, int nv, const float *zs);
-	~Heightfield();
-	bool CanIntersect() const;
-	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
-	BBox ObjectBound() const;
+	virtual ~Heightfield();
+	virtual bool CanIntersect() const;
+	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
+	virtual BBox ObjectBound() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 private:

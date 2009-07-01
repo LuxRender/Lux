@@ -251,7 +251,7 @@ public:
 	   to get the world bbox.
 	   @return
 	*/
-	BBox WorldBound() const;   
+	virtual BBox WorldBound() const;   
 
 	/**
 	   Intersect a ray in world space against the
@@ -260,20 +260,20 @@ public:
 	   @param isect pointer to the intersection object to fill.
 	   @return true if there is an intersection.
 	*/
-	bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 
 	/**
 	   Predicate version, only tests if there is intersection.
 	   @param ray in world space
 	   @return true if there is intersection.
 	*/
-	bool IntersectP(const Ray &ray) const;
+	virtual bool IntersectP(const Ray &ray) const;
 
 	/**
 	   Fills an array with the primitives
 	   @param prims vector to be filled
 	*/
-	void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
 
 	/**
 	   Read configuration parameters and create a new QBVH accelerator

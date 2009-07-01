@@ -35,7 +35,8 @@ class LanczosSincFilter : public Filter {
 public:
 	LanczosSincFilter(float xw, float yw, float t) : Filter(xw, yw), tau(t)
 	{}
-	float Evaluate(float x, float y) const;
+	virtual ~LanczosSincFilter() { }
+	virtual float Evaluate(float x, float y) const;
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 private:

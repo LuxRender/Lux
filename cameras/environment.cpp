@@ -37,7 +37,8 @@ class EnvironmentBxDF : public BxDF {
 public:
 	EnvironmentBxDF() :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+	virtual ~EnvironmentBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		*F += SWCSpectrum(SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f);
 	}
 };

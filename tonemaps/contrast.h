@@ -31,7 +31,8 @@ namespace lux
 class ContrastOp : public ToneMap {
 public:
 	ContrastOp(float day) { displayAdaptationY = day; }
-	void Map(vector<Color> &xyz, int xRes, int yRes,
+	virtual ~ContrastOp() { }
+	virtual void Map(vector<Color> &xyz, int xRes, int yRes,
 		 float maxDisplayY) const;
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:

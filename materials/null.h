@@ -34,7 +34,8 @@ public:
 	Null(CompositingParams cp) {
 		compParams = new CompositingParams(cp);
 	}
-	BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
+	virtual ~Null() { }
+	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

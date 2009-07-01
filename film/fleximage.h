@@ -54,58 +54,58 @@ public:
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 		int reject_warmup, bool debugmode);
 
-	~FlexImageFilm() {
+	virtual ~FlexImageFilm() {
 		delete[] framebuffer;
 		if(use_Zbuf && ZBuffer)
 			delete ZBuffer;
 	}
 
-	void RequestBufferGroups(const vector<string> &bg);
-	int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
-	void CreateBuffers();
-	u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
-	const BufferConfig& GetBufferConfig( u_int index ) const { return bufferConfigs[index]; }
-	u_int GetNumBufferGroups() const { return bufferGroups.size(); }
-	void SetGroupName(u_int index, const string& name);
-	string GetGroupName(u_int index) const;
-	void SetGroupEnable(u_int index, bool status);
-	bool GetGroupEnable(u_int index) const;
-	void SetGroupScale(u_int index, float value);
-	float GetGroupScale(u_int index) const;
-	void SetGroupRGBScale(u_int index, const RGBColor &value);
-	RGBColor GetGroupRGBScale(u_int index) const;
-	void SetGroupTemperature(u_int index, float value);
-	float GetGroupTemperature(u_int index) const;
-	void ComputeGroupScale(u_int index);
+	virtual void RequestBufferGroups(const vector<string> &bg);
+	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
+	virtual void CreateBuffers();
+	virtual u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
+	virtual const BufferConfig& GetBufferConfig( u_int index ) const { return bufferConfigs[index]; }
+	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
+	virtual void SetGroupName(u_int index, const string& name);
+	virtual string GetGroupName(u_int index) const;
+	virtual void SetGroupEnable(u_int index, bool status);
+	virtual bool GetGroupEnable(u_int index) const;
+	virtual void SetGroupScale(u_int index, float value);
+	virtual float GetGroupScale(u_int index) const;
+	virtual void SetGroupRGBScale(u_int index, const RGBColor &value);
+	virtual RGBColor GetGroupRGBScale(u_int index) const;
+	virtual void SetGroupTemperature(u_int index, float value);
+	virtual float GetGroupTemperature(u_int index) const;
+	virtual void ComputeGroupScale(u_int index);
 
-	int GetXPixelCount() const { return xPixelCount; }
-	int GetYPixelCount() const { return yPixelCount; }
+	virtual int GetXPixelCount() const { return xPixelCount; }
+	virtual int GetYPixelCount() const { return yPixelCount; }
 
-	void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
-	void AddSample(Contribution *contrib);
-	void AddSampleCount(float count);
+	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
+	virtual void AddSample(Contribution *contrib);
+	virtual void AddSampleCount(float count);
 
-	void WriteImage(ImageType type);
+	virtual void WriteImage(ImageType type);
 
 	// GUI display methods
-	void updateFrameBuffer();
-	unsigned char* getFrameBuffer();
-	void createFrameBuffer();
-	float getldrDisplayInterval() {
+	virtual void updateFrameBuffer();
+	virtual unsigned char* getFrameBuffer();
+	virtual void createFrameBuffer();
+	virtual float getldrDisplayInterval() {
 		return displayInterval;
 	}
 
 	// Parameter Access functions
-	void SetParameterValue(luxComponentParameters param, double value, int index);
-	double GetParameterValue(luxComponentParameters param, int index);
-	double GetDefaultParameterValue(luxComponentParameters param, int index);
-	void SetStringParameterValue(luxComponentParameters param, const string& value, int index);
-	string GetStringParameterValue(luxComponentParameters param, int index);
+	virtual void SetParameterValue(luxComponentParameters param, double value, int index);
+	virtual double GetParameterValue(luxComponentParameters param, int index);
+	virtual double GetDefaultParameterValue(luxComponentParameters param, int index);
+	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, int index);
+	virtual string GetStringParameterValue(luxComponentParameters param, int index);
 
-	void WriteFilm(const string &filename) { WriteResumeFilm(filename); }
+	virtual void WriteFilm(const string &filename) { WriteResumeFilm(filename); }
 	// Dade - method useful for transmitting the samples to a client
-	void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
-	float UpdateFilm(Scene *scene, std::basic_istream<char> &stream);
+	virtual void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
+	virtual float UpdateFilm(Scene *scene, std::basic_istream<char> &stream);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 	/**

@@ -34,7 +34,7 @@ namespace lux
 class MarbleTexture : public Texture<SWCSpectrum> {
 public:
 	// MarbleTexture Public Methods
-	~MarbleTexture() {
+	virtual ~MarbleTexture() {
 		delete mapping;
 	}
 	MarbleTexture(int oct, float roughness, float sc, float var,
@@ -45,7 +45,7 @@ public:
 		scale = sc;
 		variation = var;
 	}
-	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		P *= scale;

@@ -46,7 +46,8 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens),
 		FocalDistance(FD), fov(f), xWidth(xW), yHeight(yH), Area(A),
 		p(pL), RasterToCamera(R2C) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	virtual ~PerspectiveBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector wo0(wo);
 		wo0.y = -wo0.y;//FIXME
@@ -62,7 +63,7 @@ public:
 		const float cos2 = cos * cos;
 		*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
 	}
-	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
 		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		Point pS(RasterToCamera(Point(u1, u2, 0.f)));
@@ -81,7 +82,7 @@ public:
 		*f = SWCSpectrum(1.f / (Area * cos2 * cos2));
 		return true;
 	}
-	float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const Vector &wi, const Vector &wo) const
 	{
 		Vector wo0(wo);
 		wo0.y = -wo0.y;//FIXME

@@ -36,7 +36,8 @@ class ConstantFloatTexture : public Texture<T> {
 public:
 	// ConstantTexture Public Methods
 	ConstantFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~ConstantFloatTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return value;
 	}
 private:
@@ -51,13 +52,14 @@ public:
 		color = s;
 		RGBSPD = new RGBReflSPD(color);
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~ConstantRGBColorTexture() { delete RGBSPD; }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, RGBSPD);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		RGBSPD->Scale(power / (area * M_PI * RGBSPD->y()));
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		delete RGBSPD;
 		RGBSPD = new RGBIllumSPD(color);
 	}

@@ -34,11 +34,11 @@ public:
 	// VegasPixelSampler Public Methods
 	VegasPixelSampler(int xstart, int xend,
 	          int ystart, int yend);
-	~VegasPixelSampler() {
+	virtual ~VegasPixelSampler() {
 	}
 
-	u_int GetTotalPixels();
-	bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
+	virtual u_int GetTotalPixels();
+	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
 
 private:
 	// VegasPixelSampler Private Data

@@ -33,16 +33,16 @@ class RandomSampler : public Sampler
 public:
 	RandomSampler(int xstart, int xend, int ystart, int yend,
 		int ps, string pixelsampler);
-	~RandomSampler();
+	virtual ~RandomSampler();
 
-	u_int GetTotalSamplePos();
-	bool GetNextSample(Sample *sample, u_int *use_pos);
-	float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	int RoundSize(int sz) const
+	virtual u_int GetTotalSamplePos();
+	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
+	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual int RoundSize(int sz) const
 	{
 		return sz;
 	}
-	void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
+	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

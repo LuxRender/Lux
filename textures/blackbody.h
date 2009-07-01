@@ -35,7 +35,8 @@ class BlackBodyFloatTexture : public Texture<T> {
 public:
 	// BlackBodyTexture Public Methods
 	BlackBodyFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~BlackBodyFloatTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return value;
 	}
 private:
@@ -49,10 +50,11 @@ public:
 	BlackBodySpectrumTexture(const float &t) {
 		BBSPD = new BlackbodySPD(t);
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~BlackBodySpectrumTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, BBSPD);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		BBSPD->Scale(power / (area * M_PI * BBSPD->y()));
 	}
 

@@ -32,12 +32,13 @@ namespace lux
 class  FresnelDielectric : public Fresnel {
 public:
 	// FresnelDielectric Public Methods
-	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
 	FresnelDielectric(float ei, float et, float cB = 0.f) {
 		eta_i = ei;
 		eta_t = et;
 		cb = cB;
 	}
+	virtual ~FresnelDielectric() { }
+	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
 private:
 	// FresnelDielectric Private Data
 	float eta_i, eta_t, cb;
@@ -45,12 +46,13 @@ private:
 
 class FresnelDielectricComplement : public FresnelDielectric {
 public:
-	void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
+	FresnelDielectricComplement(float ei, float et, float cB = 0.f) :
+		FresnelDielectric(ei, et, cB) {}
+	virtual ~FresnelDielectricComplement() { }
+	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
 		FresnelDielectric::Evaluate(tspack, cosi, f);
 		*f = SWCSpectrum(1.f) - *f;		
 	}
-	FresnelDielectricComplement(float ei, float et, float cB = 0.f) :
-		FresnelDielectric(ei, et, cB) {}
 };
 
 }//namespace lux

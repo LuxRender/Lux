@@ -31,7 +31,7 @@ class BlenderMagicTexture3D : public Texture<T> {
 public:
     // BlenderMagicTexture3D Public Methods
 
-    ~BlenderMagicTexture3D() {
+    virtual ~BlenderMagicTexture3D() {
         delete mapping;
     }
 
@@ -57,7 +57,7 @@ public:
 		tex2 = c2;
     }
 
-    T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+    virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
         Vector dpdx, dpdy;
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
@@ -67,12 +67,12 @@ public:
 		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
 		return (1.f - texres.tin) * t1 + texres.tin * t2;
     }
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);
 		tex2->SetPower(power, area);
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();

@@ -32,12 +32,13 @@ public:
 	// Disk Public Methods
 	Disk(const Transform &o2w, bool ro, float height,
 	     float radius, float innerRadius, float phiMax);
-	BBox ObjectBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
+	virtual ~Disk() { }
+	virtual BBox ObjectBound() const;
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+	virtual bool IntersectP(const Ray &ray) const;
+	virtual float Area() const;
+	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		Point p;
 		ConcentricSampleDisk(u1, u2, &p.x, &p.y);
 		p.x *= radius;

@@ -127,11 +127,11 @@ public:
 			const boost::shared_ptr<Texture<float> > dismap,
 			float dmscale, float dmoffset,
 			bool dmnormalsmooth, bool dmsharpboundary);
-	~LoopSubdiv();
-	bool CanIntersect() const;
-	void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
+	virtual ~LoopSubdiv();
+	virtual bool CanIntersect() const;
+	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
 
 	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
 			const ParamSet &params);

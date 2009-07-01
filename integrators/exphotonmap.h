@@ -56,12 +56,12 @@ public:
 			string *mapsFileName,
 			bool dbgEnableDirect, bool dbgEnableDirectMap, bool dbgEnableCaustic,
 			bool dbgEnableIndirect, bool dbgEnableSpecular);
-	~ExPhotonIntegrator();
+	virtual ~ExPhotonIntegrator();
 
-	int Li(const TsPack *tspack, const Scene *scene,
+	virtual int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual void RequestSamples(Sample *sample, const Scene *scene);
+	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:

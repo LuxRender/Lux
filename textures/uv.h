@@ -37,10 +37,10 @@ public:
 	UVTexture(TextureMapping2D *m) {
 		mapping = m;
 	}
-	~UVTexture() {
+	virtual ~UVTexture() {
 		delete mapping;
 	}
-	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		float cs[COLOR_SAMPLES];

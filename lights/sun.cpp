@@ -38,12 +38,13 @@ class SunBxDF : public BxDF
 {
 public:
 	SunBxDF(float sin2Max, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sin2ThetaMax(sin2Max), cosThetaMax(sqrtf(1.f - sin2Max)), worldRadius(radius) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+	virtual ~SunBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
 		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return;
 		*f += SWCSpectrum(1.f);
 	}
-	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = UniformConePdf(cosThetaMax);
@@ -52,7 +53,7 @@ public:
 		*f = SWCSpectrum(1.f);
 		return true;
 	}
-	float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const Vector &wi, const Vector &wo) const
 	{
 		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return 0.f;

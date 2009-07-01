@@ -44,7 +44,8 @@ public:
 	// UVMapping2D Public Methods
 	UVMapping2D(float su = 1, float sv = 1,
 		float du = 0, float dv = 0);
-	void Map(const DifferentialGeometry &dg, float *s, float *t,
+	virtual ~UVMapping2D() { }
+	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
 		float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
 private:
@@ -56,7 +57,8 @@ public:
 	SphericalMapping2D(const Transform &toSph)
 		: WorldToTexture(toSph) {
 	}
-	void Map(const DifferentialGeometry &dg, float *s, float *t,
+	virtual ~SphericalMapping2D() { }
+	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
 		float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
 private:
@@ -70,7 +72,8 @@ public:
 	CylindricalMapping2D(const Transform &toCyl)
 		: WorldToTexture(toCyl) {
 	}
-	void Map(const DifferentialGeometry &dg, float *s, float *t,
+	virtual ~CylindricalMapping2D() { }
+	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
 		float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
 private:
@@ -82,7 +85,8 @@ public:
 	// PlanarMapping2D Public Methods
 	PlanarMapping2D(const Vector &v1, const Vector &v2,
 		float du = 0, float dv = 0);
-	void Map(const DifferentialGeometry &dg, float *s, float *t,
+	virtual ~PlanarMapping2D() { }
+	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
 		float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
 private:
@@ -100,7 +104,8 @@ class  IdentityMapping3D : public TextureMapping3D {
 public:
 	IdentityMapping3D(const Transform &x)
 		: WorldToTexture(x) { }
-	Point Map(const DifferentialGeometry &dg, Vector *dpdx,
+	virtual ~IdentityMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg, Vector *dpdx,
 		Vector *dpdy) const;
 		void Apply3DTextureMappingOptions(const TextureParams &tp);
 //private:
@@ -116,18 +121,21 @@ class  LatLongMapping : public EnvironmentMapping {
 public:
 	// LatLongMapping Public Methods
 	LatLongMapping() {}
+	virtual ~LatLongMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const;
 };
 class  AngularMapping : public EnvironmentMapping {
 public:
 	// AngularMapping Public Methods
 	AngularMapping() {}
+	virtual ~AngularMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const;
 };
 class  VerticalCrossMapping : public EnvironmentMapping {
 public:
 	// VerticalCross Public Methods
 	VerticalCrossMapping() {}
+	virtual ~VerticalCrossMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const;
 };
 

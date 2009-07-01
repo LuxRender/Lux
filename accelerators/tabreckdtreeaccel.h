@@ -144,22 +144,22 @@ public:
     TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
             int icost, int scost,
             float ebonus, int maxp, int maxDepth);
-    BBox WorldBound() const { return bounds; }
-    bool CanIntersect() const { return true; }
-    ~TaBRecKdTreeAccel();
+    virtual BBox WorldBound() const { return bounds; }
+    virtual bool CanIntersect() const { return true; }
+    virtual ~TaBRecKdTreeAccel();
+    virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+    virtual bool IntersectP(const Ray &ray) const;
+
+    virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+
+    static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
+
+private:
     void buildTree(int nodeNum, const BBox &bounds,
             const vector<BBox> &primBounds,
             int *primNums, int nprims, int depth,
             TaBRecBoundEdge *edges[3],
             int *prims0, int *prims1, int badRefines = 0);
-    bool Intersect(const Ray &ray, Intersection *isect) const;
-    bool IntersectP(const Ray &ray) const;
-
-    void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
-
-    static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
-
-private:
     // TaBRecKdTreeAccel Private Data
     BBox bounds;
     int isectCost, traversalCost, maxPrims;

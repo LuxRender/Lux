@@ -39,15 +39,16 @@ public:
 		tex1 = t1;
 		tex2 = t2;
 	}
-	T2 Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual ~ScaleTexture() { }
+	virtual T2 Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		return tex1->Evaluate(tspack, dg) * tex2->Evaluate(tspack, dg);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);
 		tex2->SetPower(power, area);
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();

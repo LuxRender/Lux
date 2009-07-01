@@ -40,30 +40,31 @@ public:
 		le = emit;
 		extent = e;
 	}
-	BBox WorldBound() const {
+	virtual ~HomogeneousVolume() { }
+	virtual BBox WorldBound() const {
 		return WorldToVolume.GetInverse()(extent);
 	}
-	bool IntersectP(const Ray &r, float *t0, float *t1) const {
+	virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
 		Ray ray = WorldToVolume(r);
 		return extent.IntersectP(ray, t0, t1);
 	}
-	RGBColor sigma_a(const Point &p, const Vector &) const {
+	virtual RGBColor sigma_a(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? sig_a : 0.;
 	}
-	RGBColor sigma_s(const Point &p, const Vector &) const {
+	virtual RGBColor sigma_s(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? sig_s : 0.;
 	}
-	RGBColor sigma_t(const Point &p, const Vector &) const {
+	virtual RGBColor sigma_t(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? (sig_a + sig_s) : RGBColor(0.f);
 	}
-	RGBColor Lve(const Point &p, const Vector &) const {
+	virtual RGBColor Lve(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? le : 0.;
 	}
-	float p(const Point &p, const Vector &wi, const Vector &wo) const {
+	virtual float p(const Point &p, const Vector &wi, const Vector &wo) const {
 		if (!extent.Inside(WorldToVolume(p))) return 0.;
 		return PhaseHG(wi, wo, g);
 	}
-	RGBColor Tau(const Ray &ray, float, float) const {
+	virtual RGBColor Tau(const Ray &ray, float, float) const {
 		float t0, t1;
 		if (!IntersectP(ray, &t0, &t1)) return 0.;
 

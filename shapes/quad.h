@@ -33,14 +33,14 @@ public:
 	// Quad Public Methods
 	Quad(const Transform &o2w, bool ro, int nq, int nv, 
 		const int *vi, const Point *P);
-	~Quad();
-	BBox ObjectBound() const;
-	BBox WorldBound() const;
-	bool Intersect(const Ray &ray, float *tHit,
+	virtual ~Quad();
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	bool IntersectP(const Ray &ray) const;
-	float Area() const;
-	Point Sample(float u1, float u2, float u3, Normal *Ns) const {
+	virtual bool IntersectP(const Ray &ray) const;
+	virtual float Area() const;
+	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
 		return quad->Sample(u1, u2, u3, Ns);
 	}
 	

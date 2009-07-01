@@ -35,7 +35,8 @@ namespace lux
 class BoxFilter : public Filter {
 public:
 	BoxFilter(float xw, float yw) : Filter(xw, yw) { }
-	float Evaluate(float x, float y) const;
+	virtual ~BoxFilter() { }
+	virtual float Evaluate(float x, float y) const;
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 };

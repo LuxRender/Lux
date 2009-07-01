@@ -35,7 +35,8 @@ class FrequencyFloatTexture : public Texture<T> {
 public:
 	// FrequencyTexture Public Methods
 	FrequencyFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~FrequencyFloatTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return value;
 	}
 private:
@@ -49,10 +50,11 @@ public:
 	FrequencySpectrumTexture(const float &w, const float &p, const float &r) {
 		FSPD = new FrequencySPD(w, p, r);
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~FrequencySpectrumTexture() { delete FSPD; }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, FSPD);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		FSPD->Scale(power / (area * M_PI * FSPD->y()));
 	}
 private:

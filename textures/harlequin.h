@@ -49,9 +49,9 @@ public:
 			ColorLookupTable[i] = RGBColor(c);
 		}
 	}
-	~HarlequinTexture() { }
+	virtual ~HarlequinTexture() { }
 
-	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Dade - I assume object are 8 bytes aligned
 		u_long lookupIndex = (((u_long)dg.handle) &
 				((HARLEQUIN_TEXTURE_PALETTE_SIZE-1) << 3)) >> 3;

@@ -38,12 +38,13 @@ public:
 		  extent(e), a(aa), b(bb) {
 		upDir = Normalize(up);
 	}
-	BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
-	bool IntersectP(const Ray &r, float *t0, float *t1) const {
+	virtual ~ExponentialDensity() { }
+	virtual BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
+	virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
 		Ray ray = WorldToVolume(r);
 		return extent.IntersectP(ray, t0, t1);
 	}
-	float Density(const Point &Pobj) const {
+	virtual float Density(const Point &Pobj) const {
 		if (!extent.Inside(Pobj)) return 0;
 		float height = Dot(Pobj - extent.pMin, upDir);
 		return a * expf(-b * height);

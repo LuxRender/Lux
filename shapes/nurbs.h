@@ -37,7 +37,7 @@ public:
 		const float *uknot, float umin, float umax,
 		int nv, int vorder, const float *vknot, float vmin, float vmax,
 		const float *P, bool isHomogeneous);
-	~NURBS();
+	virtual ~NURBS();
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return false; }

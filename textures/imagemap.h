@@ -52,9 +52,9 @@ public:
 				mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
 	};
 
-	~ImageFloatTexture() { delete mapping; };
+	virtual ~ImageFloatTexture() { delete mapping; };
 
-	float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
@@ -113,9 +113,9 @@ public:
 				mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
 	};
 
-	~ImageSpectrumTexture() { delete mapping; };
+	virtual ~ImageSpectrumTexture() { delete mapping; };
 
-	SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return SWCSpectrum(tspack, mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy));

@@ -34,8 +34,9 @@ using namespace lux;
 class InfiniteBxDF : public BxDF
 {
 public:
-InfiniteBxDF(const InfiniteAreaLight &l, const Transform &WL, const Vector &x, const Vector &y, const Vector &z) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), light(l), WorldToLight(WL), X(x), Y(y), Z(z) {}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	InfiniteBxDF(const InfiniteAreaLight &l, const Transform &WL, const Vector &x, const Vector &y, const Vector &z) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), light(l), WorldToLight(WL), X(x), Y(y), Z(z) {}
+	virtual ~InfiniteBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		*f += light.Le(tspack, RayDifferential(Point(0.f), -w));
@@ -50,7 +51,8 @@ class InfinitePortalBxDF : public BxDF
 {
 public:
 	InfinitePortalBxDF(const InfiniteAreaLight &l, const Transform &WL, const Vector &x, const Vector &y, const Vector &z, const Point &p, const vector<boost::shared_ptr<Primitive> > &portalList, u_int portal, float u) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), light(l), WorldToLight(WL), X(x), Y(y), Z(z), ps(p), PortalShapes(portalList), shapeIndex(portal), u3(u) {}
-	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	virtual ~InfinitePortalBxDF() { }
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		if (shapeIndex == ~0U || reverse)
 			return false;
@@ -77,12 +79,12 @@ public:
 			*pdfBack = 0.f;
 		return true;
 	}
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		*f += light.Le(tspack, RayDifferential(Point(0.f), -w));
 	}
-	float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const Vector &wi, const Vector &wo) const
 	{
 		Vector w(wo.x * X + wo.y * Y + wo.z * Z);
 		float pdf = 0.f;

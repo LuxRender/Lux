@@ -35,7 +35,8 @@ class GaussianFloatTexture : public Texture<T> {
 public:
 	// GaussianTexture Public Methods
 	GaussianFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~GaussianFloatTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return value;
 	}
 private:
@@ -49,10 +50,11 @@ public:
 	GaussianSpectrumTexture(const float &m, const float &w, const float &r) {
 		GSPD = new GaussianSPD(m, w, r);
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~GaussianSpectrumTexture() { delete GSPD; }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, GSPD);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		GSPD->Scale(power / (area * M_PI * GSPD->y()));
 	}
 private:

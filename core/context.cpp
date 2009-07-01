@@ -717,7 +717,7 @@ void Context::objectInstance(const string &name) {
 			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
 		if (!accel)
 			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
-		in.erase(in.begin(), in.end());
+		in.clear();
 		in.push_back(accel);
 	}
 
@@ -762,7 +762,7 @@ void Context::motionInstance(const string &name, float startTime, float endTime,
 			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
 		if (!accel)
 			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
-		in.erase(in.begin(), in.end());
+		in.clear();
 		in.push_back(accel);
 	}
 
@@ -871,11 +871,11 @@ Scene *Context::RenderOptions::MakeScene() const {
 			surfaceIntegrator, volumeIntegrator,
 			sampler, accelerator, lights, lightGroups, volumeRegion);
 	// Erase primitives, lights, volume regions and instances from _RenderOptions_
-	primitives.erase(primitives.begin(), primitives.end());
-	lights.erase(lights.begin(), lights.end());
-	volumeRegions.erase(volumeRegions.begin(), volumeRegions.end());
+	primitives.clear();
+	lights.clear();
+	volumeRegions.clear();
 	currentInstance = NULL;
-	instances.erase(instances.begin(), instances.end());
+	instances.clear();
 
 	// Set a fixed seed for animations or debugging
     if (debugMode || !randomMode)

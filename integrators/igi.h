@@ -50,9 +50,14 @@ class IGIIntegrator : public SurfaceIntegrator {
 public:
 	// IGIIntegrator Public Methods
 	IGIIntegrator(int nl, int ns, int d, float md);
-	int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
-	void RequestSamples(Sample *sample, const Scene *scene);
-	void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual ~IGIIntegrator () {
+		delete[] lightSampleOffset;
+		delete[] bsdfSampleOffset;
+		delete[] bsdfComponentOffset;
+	}
+	virtual int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene *scene);
+	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// IGI Private Data

@@ -47,7 +47,7 @@ namespace lux
 		init(freq, phase, refl);
     }
 
-    ~FrequencySPD() {
+    virtual ~FrequencySPD() {
 		FreeSamples();
 	}
 

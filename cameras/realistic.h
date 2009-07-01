@@ -44,10 +44,10 @@ public:
 		  float hither, float yon, float sopen,
 		  float sclose, int sdist, float filmdistance, float aperture_diameter, string specfile,
 		  float filmdiag, Film *film);
-  ~RealisticCamera(void);
-  float GenerateRay(const Sample &sample, Ray *) const;
+  virtual ~RealisticCamera(void);
+  virtual float GenerateRay(const Sample &sample, Ray *) const;
 
-  RealisticCamera* Clone() const {
+  virtual RealisticCamera* Clone() const {
 	  return new RealisticCamera(*this);
   }
 

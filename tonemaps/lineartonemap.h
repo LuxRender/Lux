@@ -34,7 +34,8 @@ public:
 	// LinearOp Public Methods
 	LinearOp(float sensitivity, float exposure, float fstop, float gamma) :
 		factor(exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma)) { }
-	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
+	virtual ~LinearOp() { }
+	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
 		const int numPixels = xRes * yRes;
 		for (int i = 0; i < numPixels; ++i)
 			xyz[i] *= factor;

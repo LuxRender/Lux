@@ -45,7 +45,7 @@ namespace lux
 		init(t);
     }
 
-    ~BlackbodySPD() {
+    virtual ~BlackbodySPD() {
 		FreeSamples();
 	}
 

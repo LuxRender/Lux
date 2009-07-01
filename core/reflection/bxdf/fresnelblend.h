@@ -39,15 +39,16 @@ public:
 	             const SWCSpectrum &Alpha,
 	             float d,
 				 MicrofacetDistribution *dist);
-	void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual ~FresnelBlend() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnel(float costheta) const {
 		return
 			Rs + powf(1 - costheta, 5.f) * (SWCSpectrum(1.) - Rs);
 	}
-	bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
-	float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 	
 private:
 	// FresnelBlend Private Data

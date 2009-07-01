@@ -32,7 +32,6 @@ namespace lux
 class  FresnelGeneral : public Fresnel {
 public:
 	// FresnelGeneral Public Methods
-	void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
 	FresnelGeneral(const SWCSpectrum &e, const SWCSpectrum &kk)
 		: eta(e), k(kk) {
 	}
@@ -41,6 +40,8 @@ public:
 		eta = (ei * et + ki * kt) / norm;
 		k = (ei * kt - et * ki) / norm;
 	}
+	virtual ~FresnelGeneral() { }
+	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
 private:
 	// FresnelGeneral Private Data
 	SWCSpectrum eta, k;

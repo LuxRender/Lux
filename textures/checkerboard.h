@@ -63,10 +63,10 @@ public:
 			aaMethod = SUPERSAMPLE;
 		}
 	}
-	~Checkerboard2D() {
+	virtual ~Checkerboard2D() {
 		delete mapping;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		if (aaMethod == CLOSEDFORM) {
@@ -133,12 +133,12 @@ public:
 			return tex1->Evaluate(tspack, dg);
 		return tex2->Evaluate(tspack, dg);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);
 		tex2->SetPower(power, area);
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
@@ -158,7 +158,8 @@ public:
 		tex1 = c1;
 		tex2 = c2;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual ~Checkerboard3D() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Supersample _Checkerboard3D_
 		#define N_SAMPLES 4
 		float samples[2*N_SAMPLES*N_SAMPLES];
@@ -189,12 +190,12 @@ public:
 		}
 		return value / filterSum;
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);
 		tex2->SetPower(power, area);
 	}
-	void SetIlluminant() {
+	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();

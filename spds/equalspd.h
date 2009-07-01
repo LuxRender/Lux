@@ -47,7 +47,7 @@ namespace lux
 		init(p);
     }
 
-    ~EqualSPD() {
+    virtual ~EqualSPD() {
 		FreeSamples();
 	}
 

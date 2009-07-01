@@ -35,7 +35,8 @@ class RegularDataFloatTexture : public Texture<T> {
 public:
 	// RegularDataFloatTexture Public Methods
 	RegularDataFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~RegularDataFloatTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return value;
 	}
 private:
@@ -49,10 +50,11 @@ public:
 	RegularDataSpectrumTexture(const float &s, const float &e, const int &n, const float *data) {
 		SPD = new RegularSPD(data, s, e, n);
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~RegularDataSpectrumTexture() { delete SPD; }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, SPD);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		SPD->Scale(power / (area * M_PI * SPD->y()));
 	}
 private:

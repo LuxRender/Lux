@@ -35,23 +35,18 @@ public:
 		        float hither, float yon,
 				float sopen, float sclose, int sdist, 
 				float lensr, float focald, bool autofocus, Film *film);
-	float GenerateRay(const Sample &sample, Ray *) const;
-	bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
-	bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
-	float Pdf(const Point &p, const Normal &n, const Vector &wi) const;
-	bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const;
-	void ClampRay(Ray &ray) const;
-	bool IsDelta() const
-	{
-		return false;
-	}
+	virtual ~OrthoCamera() { }
+	virtual float GenerateRay(const Sample &sample, Ray *) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
+	virtual bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const;
+	virtual void ClampRay(Ray &ray) const;
+	virtual bool IsDelta() const { return false; }
 	virtual bool IsLensBased() const { return false; }
-	BBox Bounds() const;
-	void AutoFocus(Scene* scene);
+	virtual BBox Bounds() const;
+	virtual void AutoFocus(Scene* scene);
 
-	OrthoCamera* Clone() const {
-		return new OrthoCamera(*this);
-	}
+	virtual OrthoCamera* Clone() const { return new OrthoCamera(*this); }
 
 	static Camera *CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params, Film *film);
 

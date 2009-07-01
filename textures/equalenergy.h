@@ -35,7 +35,8 @@ class EqualEnergyFloatTexture : public Texture<T> {
 public:
 	// EqualEnergyTexture Public Methods
 	EqualEnergyFloatTexture(const T &v) { value = v; }
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~EqualEnergyFloatTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return value;
 	}
 private:
@@ -50,10 +51,11 @@ public:
 		e = t;
 		weight = 1.f;
 	}
-	T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual ~EqualEnergySpectrumTexture() { }
+	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(e * weight);
 	}
-	void SetPower(float power, float area) {
+	virtual void SetPower(float power, float area) {
 		weight = power / (area * M_PI * 1.f);
 	}
 private:

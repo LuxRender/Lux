@@ -30,7 +30,8 @@ namespace lux
 class ReinhardOp : public ToneMap {
 public:
 	ReinhardOp(float prS, float poS, float b);
-	void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const;
+	virtual ~ReinhardOp() { }
+	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const;
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 	
 private:

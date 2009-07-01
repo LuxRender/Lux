@@ -34,7 +34,8 @@ namespace lux
 class TriangleFilter : public Filter {
 public:
 	TriangleFilter(float xw, float yw) : Filter(xw, yw) { }
-	float Evaluate(float x, float y) const;
+	virtual ~TriangleFilter() { }
+	virtual float Evaluate(float x, float y) const;
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 };

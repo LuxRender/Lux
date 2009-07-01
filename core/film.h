@@ -138,9 +138,9 @@ class RawBuffer : public Buffer {
 public:
 	RawBuffer(int x, int y) : Buffer(x, y) { }
 
-	~RawBuffer() { }
+	virtual ~RawBuffer() { }
 
-	void GetData(Color *color, float *alpha) const {
+	virtual void GetData(Color *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
@@ -149,7 +149,7 @@ public:
 			}
 		}
 	}
-	float GetData(int x, int y, Color *color, float *alpha) const {
+	virtual float GetData(int x, int y, Color *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		*color = pixel.L;
 		*alpha = pixel.alpha;
@@ -162,9 +162,9 @@ class PerPixelNormalizedBuffer : public Buffer {
 public:
 	PerPixelNormalizedBuffer(int x, int y) : Buffer(x, y) { }
 
-	~PerPixelNormalizedBuffer() { }
+	virtual ~PerPixelNormalizedBuffer() { }
 
-	void GetData(Color *color, float *alpha) const {
+	virtual void GetData(Color *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
@@ -179,7 +179,7 @@ public:
 			}
 		}
 	}
-	float GetData(int x, int y, Color *color, float *alpha) const {
+	virtual float GetData(int x, int y, Color *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum == 0.f) {
 			*color = XYZColor(0.f);
@@ -243,9 +243,9 @@ public:
 	PerScreenNormalizedBuffer(int x, int y, const double *samples) :
 		Buffer(x, y), numberOfSamples_(samples) { }
 
-	~PerScreenNormalizedBuffer() { }
+	virtual ~PerScreenNormalizedBuffer() { }
 
-	void GetData(Color *color, float *alpha) const {
+	virtual void GetData(Color *color, float *alpha) const {
 		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
@@ -258,7 +258,7 @@ public:
 			}
 		}
 	}
-	float GetData(int x, int y, Color *color, float *alpha) const {
+	virtual float GetData(int x, int y, Color *color, float *alpha) const {
 		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
 		const Pixel &pixel = (*pixels)(x, y);
 		*color = pixel.L * inv;
