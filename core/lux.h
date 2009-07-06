@@ -232,7 +232,7 @@ namespace lux
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
 #define LUX_VERSION 0.6
-#define LUX_VERSION_STRING "0.6 (RC3)"
+#define LUX_VERSION_STRING "0.6 (RC4)"
 #define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"

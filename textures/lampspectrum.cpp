@@ -24,6 +24,7 @@
 #include "lampspectrum.h"
 #include "irregulardata.h"
 #include "equalenergy.h"
+#include "blackbody.h"
 #include "error.h"
 #include "dynload.h"
 
@@ -74,8 +75,10 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		data = lampspectrum_Butane_AP;
 	}
 	else if(name == "Candle") {
-		wl = lampspectrum_Candle_WL;
-		data = lampspectrum_Candle_AP;
+		//wl = lampspectrum_Candle_WL;
+		//data = lampspectrum_Candle_AP;
+		// Override with blackbody for incandescent sources due to poor calibration
+		return new BlackBodySpectrumTexture<SWCSpectrum>(1020.f);
 	}
 	else if(name == "CarbonArc") {
 		wl = lampspectrum_CarbonArc_WL;
@@ -198,12 +201,16 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		data = lampspectrum_HPX_AP;
 	}
 	else if(name == "Incandescent1") {
-		wl = lampspectrum_Incandescent1_WL;
-		data = lampspectrum_Incandescent1_AP;
+		//wl = lampspectrum_Incandescent1_WL;
+		//data = lampspectrum_Incandescent1_AP;
+		// Override with blackbody for incandescent sources due to poor calibration
+		return new BlackBodySpectrumTexture<SWCSpectrum>(2750.f);
 	}
 	else if(name == "Incandescent2") {
-		wl = lampspectrum_Incandescent2_WL;
-		data = lampspectrum_Incandescent2_AP;
+		//wl = lampspectrum_Incandescent2_WL;
+		//data = lampspectrum_Incandescent2_AP;
+		// Override with blackbody for incandescent sources due to poor calibration
+		return new BlackBodySpectrumTexture<SWCSpectrum>(2900.f);
 	}
 	else if(name == "LCDS") {
 		wl = lampspectrum_LCDS_WL;

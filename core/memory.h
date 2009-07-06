@@ -101,7 +101,14 @@ public:
 	};
 };
 
+#define P_CLASS_ATTR __attribute__
+#define P_CLASS_ATTR __attribute__
+
+#if defined(WIN32) && !defined(__CYGWIN__) // NOBOOK
+class __declspec(align(16)) Aligned16 {
+#else // NOBOOK
 class Aligned16 {
+#endif // NOBOOK
 public:
 
 	/*
@@ -118,7 +125,12 @@ public:
 	void *operator new (size_t s, void *q) { return q; }
 
 	void operator delete(void *p) { FreeAligned(p); }
+#if defined(WIN32) && !defined(__CYGWIN__) // NOBOOK
+} ;
+#else // NOBOOK
 } __attribute__ ((aligned(16)));
+#endif // NOBOOK
+
 
 }
 
