@@ -116,15 +116,11 @@ bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi, floa
 	*y = theta * film->yResolution * INV_PI;
 	const float sinTheta = sqrtf(Clamp(1.f - cosTheta * cosTheta, 1e-5f, 1.f));
 	const float cosPhi = w.x / sinTheta;
-	//const float phi = acos(min(1.f, cosPhi));
 	const float phi = acos(Clamp(cosPhi, -1.f, 1.f));
 	if (w.z >= 0.f)
 		*x = phi * film->xResolution * INV_TWOPI;
 	else
 		*x = (2.f * M_PI - phi) * film->xResolution * INV_TWOPI;
-
-	if (isnan(*x) || isinf(*x))
-		*x = 0;
 
 	return true;
 }
