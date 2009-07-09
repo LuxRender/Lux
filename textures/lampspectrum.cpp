@@ -206,12 +206,6 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		// Override with blackbody for incandescent sources due to poor calibration
 		return new BlackBodySpectrumTexture<SWCSpectrum>(2750.f);
 	}
-	else if(name == "Incandescent2") {
-		//wl = lampspectrum_Incandescent2_WL;
-		//data = lampspectrum_Incandescent2_AP;
-		// Override with blackbody for incandescent sources due to poor calibration
-		return new BlackBodySpectrumTexture<SWCSpectrum>(2900.f);
-	}
 	else if(name == "LCDS") {
 		wl = lampspectrum_LCDS_WL;
 		data = lampspectrum_LCDS_AP;
@@ -320,8 +314,12 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		wl = lampspectrum_Zn_WL;
 		data = lampspectrum_Zn_AP;
 	}
-	else {
-		return new EqualEnergyFloatTexture<SWCSpectrum>(0.f);
+	else { // if(name == "Incandescent2") {
+		// NOTE - lordcrc - use Incandecent2 as default to match luxblend default
+		//wl = lampspectrum_Incandescent2_WL;
+		//data = lampspectrum_Incandescent2_AP;
+		// Override with blackbody for incandescent sources due to poor calibration
+		return new BlackBodySpectrumTexture<SWCSpectrum>(2900.f);
 	}
 	return new IrregularDataSpectrumTexture<SWCSpectrum>(wlcount, wl, data, 0.1);
 }
