@@ -3002,7 +3002,7 @@ void LuxGui::LuxLightGroupPanel::SetWidgetsEnabled(bool enabled) {
 	m_LG_scaleSlider->Enable(enabled);
 	m_LG_scaleText->Enable(enabled);
 	m_LG_rgbEnabled->Enable(enabled);
-	m_LG_rgbPicker->Enable(enabled && m_LG_temperature_enabled);
+	m_LG_rgbPicker->Enable(enabled && m_LG_rgb_enabled);
 	m_LG_temperatureEnabled->Enable(enabled);
 	m_LG_temperatureSlider->Enable(enabled && m_LG_temperature_enabled);
 	m_LG_temperatureText->Enable(enabled && m_LG_temperature_enabled);
