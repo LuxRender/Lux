@@ -193,14 +193,28 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					// Add light contribution from BSDF sampling
 					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
 					Intersection lightIsect;
-					SWCSpectrum Li(0.f);
+					SWCSpectrum Li(1.f);
 					RayDifferential ray(p, wi);
 					ray.time = tspack->time;
-					if (scene->Intersect(ray, &lightIsect)) {
-						if (lightIsect.arealight == light)
-							Li = lightIsect.Le(tspack, -wi);
-					} else
-						Li = light->Le(tspack, ray);
+					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
+					while (true) {
+						if (!scene->Intersect(ray, &lightIsect)) {
+							Li *= light->Le(tspack, ray);
+							break;
+						} else if (lightIsect.arealight == light) {
+							Li *= lightIsect.Le(tspack, -wi);
+							break;
+						}
+						BSDF *ibsdf = lightIsect.GetBSDF(tspack, ray, tspack->rng->floatValue());
+
+						Li *= ibsdf->f(tspack, wi, -wi, flags);
+						if (Li.Black())
+							break;
+						Li *= AbsDot(ibsdf->dgShading.nn, wi);
+
+						ray.mint = ray.maxt + RAY_EPSILON;
+						ray.maxt = INFINITY;
+					}
 					if (!Li.Black()) {
 						scene->Transmittance(tspack, ray, sample, &Li);
 						Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
