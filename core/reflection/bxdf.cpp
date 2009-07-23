@@ -346,7 +346,8 @@ SWCSpectrum BSDF::rho(const TsPack *tspack, BxDFType flags) const {
 			ret += bxdfs[i]->rho(tspack);
 	return ret;
 }
-SWCSpectrum BSDF::rho(const TsPack *tspack, const Vector &wo, BxDFType flags) const {
+SWCSpectrum BSDF::rho(const TsPack *tspack, const Vector &woW, BxDFType flags) const {
+	Vector wo(WorldToLocal(woW));
 	SWCSpectrum ret(0.);
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
