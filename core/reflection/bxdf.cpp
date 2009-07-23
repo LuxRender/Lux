@@ -294,12 +294,6 @@ bool BSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 float BSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 		BxDFType flags) const {
 	Vector wo = WorldToLocal(woW), wi = WorldToLocal(wiW);
-	if (Dot(wiW, ng) * Dot(woW, ng) > 0)
-		// ignore BTDFs
-		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
-	else
-		// ignore BRDFs
-		flags = BxDFType(flags & ~BSDF_REFLECTION);
 	float pdf = 0.f;
 	float totalWeight = 0.f;
 	for (int i = 0; i < nBxDFs; ++i)
