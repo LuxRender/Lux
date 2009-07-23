@@ -86,14 +86,14 @@ float Primitive::Pdf(const Point &p, const Point &po) const {
 }
 
 // Intersection Method Definitions
-BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray, float u)
+BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray)
 		const {
 	// radiance - disabled for threading // static StatsCounter pointsShaded("Shading", "Number of points shaded"); // NOBOOK
 	// radiance - disabled for threading // ++pointsShaded; // NOBOOK
 	dg.ComputeDifferentials(ray);
 	DifferentialGeometry dgShading;
 	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg, &dgShading);
-	return material->GetBSDF(tspack, dg, dgShading, u);
+	return material->GetBSDF(tspack, dg, dgShading);
 }
 SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const {
 	return arealight ? arealight->L(tspack, dg, w) : SWCSpectrum(0.);

@@ -191,6 +191,7 @@ namespace lux
   class MicrofacetDistribution;
   class BSDF;
   class Material;
+  class CompositingParams;
   class TextureMapping2D;
   class UVMapping2D;
   class SphericalMapping2D;

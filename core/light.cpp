@@ -51,7 +51,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 	while (true) {
 		if (!scene->Intersect(ray, &isect))
 			return true;
-		BSDF *bsdf = isect.GetBSDF(tspack, ray, tspack->rng->floatValue());							// TODO - REFACT - remove and add random value from sample
+		BSDF *bsdf = isect.GetBSDF(tspack, ray);							// TODO - REFACT - remove and add random value from sample
 
 		*f *= bsdf->f(tspack, -d, d, flags);
 		if (f->Black())

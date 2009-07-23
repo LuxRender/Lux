@@ -25,7 +25,6 @@
 // bxdf.h*
 #include "lux.h"
 #include "geometry/raydifferential.h"
-#include "material.h"
 #include "spectrum.h"
 #include "memory.h"
 
@@ -70,24 +69,13 @@ enum BxDFType {
 class  BSDF {
 public:
 	// BSDF Public Methods
-	/**
-	 * Samples the BSDF.
-	 * Returns the result of the BSDF for the sampled direction in f.
-	 */
-	bool Sample_f(const TsPack *tspack, const Vector &o, Vector *wi, float u1, float u2,
-		float u3, SWCSpectrum *const f, float *pdf, BxDFType flags = BSDF_ALL,
-		BxDFType *sampledType = NULL, float *pdfBack = NULL,
-		bool reverse = false) const;
-	float Pdf(const TsPack *tspack, const Vector &wo,
-	          const Vector &wi,
-			  BxDFType flags = BSDF_ALL) const;
-	BSDF(const DifferentialGeometry &dgs,
-	     const Normal &ngeom,
-		 float eta = 1.f);
-	inline void Add(BxDF *bxdf);
-	int NumComponents() const { return nBxDFs; }
-	int NumComponents(BxDFType flags) const;
-	float WeightComponents(const TsPack *tspack, const Vector &wo, BxDFType flags) const;
+	BSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		float eta = 1.f);
+	virtual int NumComponents() const = 0;
+	virtual int NumComponents(BxDFType flags) const = 0;
+	virtual inline void SetCompositingParams(CompositingParams *cp) {
+		compParams = cp;
+	}
 	bool HasShadingGeometry() const {
 		return (nn.x != ng.x || nn.y != ng.y || nn.z != ng.z);
 	}
@@ -99,15 +87,27 @@ public:
 		              sn.y * v.x + tn.y * v.y + nn.y * v.z,
 		              sn.z * v.x + tn.z * v.y + nn.z * v.z);
 	}
-	SWCSpectrum f(const TsPack *tspack, const Vector &woW, const Vector &wiW,
-		BxDFType flags = BSDF_ALL) const;
-	SWCSpectrum rho(const TsPack *tspack, BxDFType flags = BSDF_ALL) const;
-	SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
-	             BxDFType flags = BSDF_ALL) const;
-	static void *Alloc(const TsPack *tspack, u_int sz) { return tspack->arena->Alloc(sz); }		// TODO remove original memory arena
-	static void FreeAll(const TsPack *tspack) { tspack->arena->FreeAll(); }
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	virtual bool Sample_f(const TsPack *tspack, const Vector &o, Vector *wi,
+		float u1, float u2, float u3, SWCSpectrum *const f, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const = 0;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+		const Vector &wi, BxDFType flags = BSDF_ALL) const = 0;
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const = 0;
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const = 0;
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
+		BxDFType flags = BSDF_ALL) const = 0;
 
-	void SetCompositingParams(CompositingParams *cp) { compParams = cp; };
+	static void *Alloc(const TsPack *tspack, u_int sz) {
+		return tspack->arena->Alloc(sz);
+	}
+	static void FreeAll(const TsPack *tspack) { tspack->arena->FreeAll(); }
 
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
@@ -115,22 +115,122 @@ public:
 
 	// Compositing Parameters pointer
 	CompositingParams *compParams;
-
-	friend class RenderThread;
-        friend class Scene;
 	
-private:
+protected:
 	// BSDF Private Methods
-	~BSDF() { }
-	friend class NoSuchClass;
+	virtual ~BSDF() { }
 	// BSDF Private Data
 	Normal nn, ng;
 	Vector sn, tn;
-	int nBxDFs;
-	#define MAX_BxDFS 8
-	BxDF * bxdfs[MAX_BxDFS];
 };
 #define BSDF_ALLOC(TSPACK,T)  new (BSDF::Alloc((TSPACK), sizeof(T))) T
+
+// Single BxDF BSDF declaration
+class  SingleBSDF : public BSDF  {
+public:
+	// StackedBSDF Public Methods
+	SingleBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		BxDF *b, float eta = 1.f) : BSDF(dgs, ngeom, eta), bxdf(b) { }
+	virtual inline int NumComponents() const { return 1; }
+	virtual inline int NumComponents(BxDFType flags) const;
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	virtual bool Sample_f(const TsPack *tspack, const Vector &o, Vector *wi,
+		float u1, float u2, float u3, SWCSpectrum *const f, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+		const Vector &wi, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
+		BxDFType flags = BSDF_ALL) const;
+
+protected:
+	// SingleBSDF Private Methods
+	virtual ~SingleBSDF() { }
+	// SingleBSDF Private Data
+	BxDF *bxdf;
+};
+
+// Multiple BxDF BSDF declaration
+class  MultiBSDF : public BSDF  {
+public:
+	// MultiBSDF Public Methods
+	MultiBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		float eta = 1.f);
+	inline void Add(BxDF *bxdf);
+	virtual inline int NumComponents() const { return nBxDFs; }
+	virtual inline int NumComponents(BxDFType flags) const;
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	virtual bool Sample_f(const TsPack *tspack, const Vector &o, Vector *wi,
+		float u1, float u2, float u3, SWCSpectrum *const f, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+		const Vector &wi, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
+		BxDFType flags = BSDF_ALL) const;
+
+protected:
+	// MultiBSDF Private Methods
+	virtual ~MultiBSDF() { }
+	// MultiBSDF Private Data
+	int nBxDFs;
+	#define MAX_BxDFS 8
+	BxDF *bxdfs[MAX_BxDFS];
+};
+
+// Mix BSDF Declarations
+class MixBSDF : public BSDF {
+public:
+	// MixBSDF Public Methods
+	MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom);
+	inline void Add(float weight, BSDF *bsdf);
+	virtual inline int NumComponents() const;
+	virtual inline int NumComponents(BxDFType flags) const;
+	virtual inline void SetCompositingParams(CompositingParams *cp) {
+		compParams = cp;
+		for (int i = 0; i < nBSDFs; ++i)
+			bsdfs[i]->SetCompositingParams(cp);
+	}
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	virtual bool Sample_f(const TsPack *tspack, const Vector &o, Vector *wi,
+		float u1, float u2, float u3, SWCSpectrum *const f, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+		const Vector &wi, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
+		BxDFType flags = BSDF_ALL) const;
+private:
+	// MixBSDF Private Methods
+	virtual ~MixBSDF() { }
+	// MixBSDF Private Data
+	int nBSDFs;
+	BSDF *bsdfs[MAX_BxDFS];
+	float weights[MAX_BxDFS];
+	float totalWeight;
+};
+
 // BxDF Declarations
 class  BxDF {
 public:
@@ -158,7 +258,7 @@ public:
 		                 float *samples = NULL) const;
 	virtual SWCSpectrum rho(const TsPack *tspack, int nSamples = 16,
 	                     float *samples = NULL) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
+	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
 	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
 	// BxDF Public Data
 	const BxDFType type;
@@ -185,8 +285,8 @@ public:
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const {
-		return brdf->Weight(tspack, wo, reverse);
+	virtual float Weight(const TsPack *tspack, const Vector &wo) const {
+		return brdf->Weight(tspack, wo);
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
@@ -195,14 +295,41 @@ private:
 };
 
 // BSDF Inline Method Definitions
-inline void BSDF::Add(BxDF *b) {
+inline int SingleBSDF::NumComponents(BxDFType flags) const
+{
+	return bxdf->MatchesFlags(flags) ? 1 : 0;
+}
+inline void MultiBSDF::Add(BxDF *b)
+{
 	BOOST_ASSERT(nBxDFs < MAX_BxDFS);
 	bxdfs[nBxDFs++] = b;
 }
-inline int BSDF::NumComponents(BxDFType flags) const {
+inline int MultiBSDF::NumComponents(BxDFType flags) const
+{
 	int num = 0;
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags)) ++num;
+	return num;
+}
+inline void MixBSDF::Add(float weight, BSDF *bsdf)
+{
+	BOOST_ASSERT(nBSDFs < MAX_BxDFS);
+	weights[nBSDFs] = weight;
+	bsdfs[nBSDFs++] = bsdf;
+	totalWeight += weight;
+}
+inline int MixBSDF::NumComponents() const
+{
+	int num = 0;
+	for (int i = 0; i < nBSDFs; ++i)
+		num += bsdfs[i]->NumComponents();
+	return num;
+}
+inline int MixBSDF::NumComponents(BxDFType flags) const
+{
+	int num = 0;
+	for (int i = 0; i < nBSDFs; ++i)
+		num += bsdfs[i]->NumComponents(flags);
 	return num;
 }
 

@@ -585,7 +585,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				//scene->Transmittance(tspack, photonRay, NULL, alpha);
 				Vector wo = -photonRay.d;
 
-				BSDF *photonBSDF = photonIsect.GetBSDF(tspack, photonRay, tspack->rng->floatValue());
+				BSDF *photonBSDF = photonIsect.GetBSDF(tspack, photonRay);
 				if (photonBSDF->NumComponents(photonBxdfType) > 0) {
 					// Deposit photon at surface
 					LightPhoton photon(tspack, photonIsect.dg.p, alpha, wo);

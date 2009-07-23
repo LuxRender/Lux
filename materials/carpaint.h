@@ -41,7 +41,7 @@ public:
            boost::shared_ptr<Texture<float> > bump, CompositingParams cp);
   virtual ~CarPaint() { }
 
-  virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
+  virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
 
   static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

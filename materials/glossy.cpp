@@ -34,15 +34,14 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float) const {
+BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
-    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
 	float i = index->Evaluate(tspack, dgs);
@@ -58,10 +57,12 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	float v = nv->Evaluate(tspack, dgs);
 	float ld = depth->Evaluate(tspack, dgs);
 
+	BxDF *bxdf;
 	if(u == v)
-		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Blinn)(1.f/u)));
+		bxdf = BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Blinn)(1.f/u));
 	else
-		bsdf->Add(BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v)));
+		bxdf = BSDF_ALLOC(tspack, FresnelBlend)(d, s, a, ld, BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v));
+	SingleBSDF *bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dgs, dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

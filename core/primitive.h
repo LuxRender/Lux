@@ -163,7 +163,7 @@ class Intersection {
 public:
 	// Intersection Public Methods
 	Intersection() : primitive(NULL), material(NULL), arealight(NULL) { }
-	BSDF *GetBSDF(const TsPack *tspack, const RayDifferential &ray, float u) const;
+	BSDF *GetBSDF(const TsPack *tspack, const RayDifferential &ray) const;
 	SWCSpectrum Le(const TsPack *tspack, const Vector &wo) const;
 	SWCSpectrum Le(const TsPack *tspack, const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 

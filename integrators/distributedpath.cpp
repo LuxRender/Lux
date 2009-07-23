@@ -23,6 +23,7 @@
 // distributedpath.cpp*
 #include "distributedpath.h"
 #include "bxdf.h"
+#include "material.h"
 #include "camera.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -185,7 +186,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 	if (scene->Intersect(ray, &isect)) {
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * sample->oneD[0][0] - 1.f));
+		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

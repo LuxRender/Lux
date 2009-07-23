@@ -41,7 +41,7 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Mirror() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const;
+	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
 	
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 private:

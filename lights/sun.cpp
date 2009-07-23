@@ -168,8 +168,8 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	Point ps(r.o + distance * r.d);
 	Normal ns(-sundir);
 	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
+	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+		BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {
@@ -348,8 +348,8 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	}
 
 	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
+	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+		BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;
@@ -392,8 +392,8 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	Normal ns(-sundir);
 
 	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
+	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+		BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {

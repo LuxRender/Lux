@@ -30,11 +30,11 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs = dgShading;
-	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn, 1.);
-	bsdf->Add(BSDF_ALLOC(tspack, NullTransmission)());
+	SingleBSDF *bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dgs, dgGeom.nn,
+		BSDF_ALLOC(tspack, NullTransmission)());
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

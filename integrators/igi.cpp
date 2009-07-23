@@ -28,6 +28,7 @@
 #include "mc.h"
 #include "reflection/bxdf.h"
 #include "dynload.h"
+#include "paramset.h"
 
 using namespace lux;
 
@@ -131,8 +132,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 				++nIntersections;
 //				alpha *= scene->Transmittance(ray);
 				Vector wo = -ray.d;
-				BSDF *bsdf = isect.GetBSDF(tspack, ray,
-					tspack->rng->floatValue());
+				BSDF *bsdf = isect.GetBSDF(tspack, ray);
 				// Create virtual light at ray intersection point
 				SWCSpectrum Le = alpha * bsdf->rho(tspack, wo) / M_PI;
 				virtualLights[s].push_back(
@@ -187,7 +187,7 @@ int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Compute emitted light if ray hit an area light source
 		L += pathThroughput * isect.Le(tspack, wo);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(tspack, r, tspack->rng->floatValue());
+		BSDF *bsdf = isect.GetBSDF(tspack, r);
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		for (u_int i = 0; i < scene->lights.size(); ++i) {

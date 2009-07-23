@@ -213,14 +213,15 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	if (!havePortalShape) {
-		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+			BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
 	} else {
 		float u3 = tspack->rng->floatValue();//FIXME
-		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, ~0U, u3));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+			BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, ~0U, u3));
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
 		for (int i = 0; i < nrPortalShapes; ++i) {
@@ -409,8 +410,8 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+			BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -433,8 +434,8 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
-		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+			BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			if (i != shapeIndex) {
@@ -504,12 +505,13 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, ns);
 	if (!havePortalShape) {
-		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+			BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
-		(*bsdf)->Add(BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
+			BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
 		for (int i = 0; i < nrPortalShapes; ++i) {

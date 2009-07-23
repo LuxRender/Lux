@@ -25,7 +25,6 @@
 // material.h*
 #include "lux.h"
 #include "color.h"
-#include "paramset.h"
 
 namespace lux
 {
@@ -60,23 +59,13 @@ public:
 	void InitGeneralParams(const TextureParams &mp);
 
 	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading, float u) const = 0;
+		const DifferentialGeometry &dgShading) const = 0;
 	void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump) const;
 	void SetChild1(boost::shared_ptr<Material> x) { child1 = x; }
 	void SetChild2(boost::shared_ptr<Material> x) { child2 = x; }
 
-	static void FindCompositingParams(const TextureParams &mp, CompositingParams *cp) {
-		cp->tVm = mp.FindBool("compo_visible_material", true);
-		cp->tVl = mp.FindBool("compo_visible_emission", true);
-		cp->tiVm = mp.FindBool("compo_visible_indirect_material", true);
-		cp->tiVl = mp.FindBool("compo_visible_indirect_emission", true);
-		cp->oA = mp.FindBool("compo_override_alpha", false);
-		cp->A = mp.FindFloat("compo_override_alpha_value", 0.f);
-		cp->K = mp.FindBool("compo_use_key", false);
-		float cc[3] = { 0.f, 0.f, 1.f };
-		cp->Kc = mp.FindRGBColor("compo_key_color", RGBColor(cc));
-	}
+	static void FindCompositingParams(const TextureParams &mp, CompositingParams *cp);
 
 	boost::shared_ptr<Material> child1, child2;
 	float bumpmapSampleDistance;

@@ -42,7 +42,7 @@ public:
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo, bool reverse) const;
+	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
 	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return (architectural && Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f) ? 1.f : 0.f;
 	}

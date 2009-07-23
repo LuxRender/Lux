@@ -143,7 +143,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			break;
 		// Evaluate BSDF at hit point
 		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
-		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * data[5] - 1.f));
+		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

@@ -129,11 +129,12 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 {
 	DifferentialGeometry dg;
 	prim->Sample(u1, u2, u3, &dg);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
 	if(func)
-		(*bsdf)->Add(BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
+			BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
 	else
-		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
+			BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
 		*Le = this->Le->Evaluate(tspack, dg) * gain;
@@ -152,11 +153,12 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(p, dg.p);
 	if (*pdfDirect > 0.f) {
-		*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
 		if(func)
-			(*bsdf)->Add(BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
+			*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
+				BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
 		else
-			(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
+			*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
+				BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
 		visibility->SetSegment(p, dg.p, tspack->time);
 		*Le = this->Le->Evaluate(tspack, dg) * gain;
 		return true;
@@ -166,11 +168,12 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 }
 SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, dg.nn);
 	if(func)
-		(*bsdf)->Add(BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
+			BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
 	else
-		(*bsdf)->Add(BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
+		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
+			BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, dg.p);
 	return L(tspack, dg, -ray.d);

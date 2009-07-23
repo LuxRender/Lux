@@ -31,7 +31,7 @@
 using namespace lux;
 
 // Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, float u) const {
+BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -42,12 +42,11 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	float flm = film->Evaluate(tspack, dgs);
 	float flmindex = filmindex->Evaluate(tspack, dgs);
 
-	BSDF *bsdf = BSDF_ALLOC(tspack, BSDF)(dgs, dgGeom.nn);
-    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	if (!R.Black())
-		bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
-			BSDF_ALLOC(tspack, FresnelNoOp)(), flm, flmindex));
+	BxDF *bxdf = BSDF_ALLOC(tspack, SpecularReflection)(R,
+		BSDF_ALLOC(tspack, FresnelNoOp)(), flm, flmindex);
+	SingleBSDF *bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dgs, dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

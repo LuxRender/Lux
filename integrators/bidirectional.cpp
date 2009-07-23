@@ -119,8 +119,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		if (nVerts == 0) {
 			v.bsdf = bsdf;
 		} else {
-			v.bsdf = isect.GetBSDF(tspack, ray,
-				fabsf(2.f * data[3] - 1.f));
+			v.bsdf = isect.GetBSDF(tspack, ray);
 			RayDifferential r(vertices[nVerts - 1].p, vertices[nVerts - 1].wi);
 			r.time = tspack->time;
 			v.Le = isect.Le(tspack, r, vertices[nVerts - 1].ng,
@@ -218,8 +217,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 		if (nVerts == 0) {
 			v.bsdf = bsdf;
 		} else {
-			v.bsdf = isect.GetBSDF(tspack, ray,
-				fabsf(2.f * data[3] - 1.f));
+			v.bsdf = isect.GetBSDF(tspack, ray);
 		}
 		v.wi = -ray.d;
 		v.p = isect.dg.p;
@@ -310,7 +308,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	// the light vertex with normal sampling
 	if (nLight == 1) {
 		if (isLightDirect) {
-			if (light[0].flags & ~BSDF_SPECULAR)
+			if ((light[0].flags & BSDF_SPECULAR) == 0)
 				weight += pBase * pBase;
 		} else {
 			const float pDirect = pdfLightDirect / fabsf(light[0].dAWeight);

@@ -205,7 +205,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 							Li *= lightIsect.Le(tspack, -wi);
 							break;
 						}
-						BSDF *ibsdf = lightIsect.GetBSDF(tspack, ray, tspack->rng->floatValue());
+						BSDF *ibsdf = lightIsect.GetBSDF(tspack, ray);
 
 						Li *= ibsdf->f(tspack, wi, -wi, flags);
 						if (Li.Black())

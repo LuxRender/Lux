@@ -77,7 +77,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 		float *bsdfComponent = &sampleData[5];
 
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(tspack, ray, fabsf(2.f * bsdfComponent[0] - 1.f));
+		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;

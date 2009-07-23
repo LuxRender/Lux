@@ -39,7 +39,7 @@ public:
 	virtual ~Metal() { }
 
 	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
-		const DifferentialGeometry &dgShading, float u) const;
+		const DifferentialGeometry &dgShading) const;
 
 	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
 

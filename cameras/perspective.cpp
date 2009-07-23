@@ -259,8 +259,8 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, normal);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
+		BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		xWidth * yHeight / (R * R), fov, psC, RasterToCameraBidir,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
@@ -277,8 +277,8 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, normal);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
+		BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		xWidth * yHeight / (R * R), fov, psC, RasterToCameraBidir,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;

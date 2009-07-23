@@ -136,8 +136,8 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, f
 	Point psC(RasterToCameraBidir(Point(u1, u2, 0.f)));
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, BSDF)(dg, normal);
-	(*bsdf)->Add(BSDF_ALLOC(tspack, SpecularReflection)(SWCSpectrum(1.f),
+	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
+		BSDF_ALLOC(tspack, SpecularReflection)(SWCSpectrum(1.f),
 		BSDF_ALLOC(tspack, FresnelNoOp)(), 0.f, 0.f));
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
