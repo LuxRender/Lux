@@ -243,12 +243,6 @@ bool SingleBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 float SingleBSDF::Pdf(const TsPack *tspack, const Vector &woW,
 	const Vector &wiW, BxDFType flags) const
 {
-/*	if (Dot(wiW, ng) * Dot(woW, ng) > 0)
-		// ignore BTDFs
-		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
-	else
-		// ignore BRDFs
-		flags = BxDFType(flags & ~BSDF_REFLECTION);*/
 	if (!bxdf->MatchesFlags(flags))
 		return 0.f;
 	return bxdf->Pdf(tspack, WorldToLocal(woW), WorldToLocal(wiW));
