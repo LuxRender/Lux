@@ -499,9 +499,10 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		if (L->Black())
 			return false;
 		eWeight = eye[nEye - 2].dAWeight;
-		if (nEye > 2)
-			eye[nEye - 2].dAWeight = v.pdf * v.tPdf *
-				eye[nEye - 2].cosi / eye[nEye - 2].d2;
+		// Don't take v.tPdf into account because the light ray
+		// hasn't traveled yet
+		eye[nEye - 2].dAWeight = v.pdf *
+			eye[nEye - 2].cosi / eye[nEye - 2].d2;
 		v.dARWeight = eye[nEye - 2].pdfR * eye[nEye - 2].tPdfR * v.coso / eye[nEye - 2].d2;
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
@@ -518,7 +519,9 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		if (L->Black())
 			return false;
 		lWeight = light[nLight - 2].dARWeight;
-		light[nLight - 2].dARWeight = v.pdfR * v.tPdfR *
+		// Don't take v.tPdfR into account because the eye ray
+		// hasn't traveled yet
+		light[nLight - 2].dARWeight = v.pdfR *
 			light[nLight - 2].coso / light[nLight - 2].d2;
 		v.dAWeight = light[nLight - 2].pdf * light[nLight - 2].tPdf * v.cosi /
 			light[nLight - 2].d2;
