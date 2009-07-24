@@ -261,7 +261,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
 		BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
-		xWidth * yHeight / (R * R), fov, psC, RasterToCameraBidir,
+		fov, xWidth * yHeight / (R * R), psC, RasterToCameraBidir,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
@@ -279,7 +279,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
 		BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
-		xWidth * yHeight / (R * R), fov, psC, RasterToCameraBidir,
+		fov, xWidth * yHeight / (R * R), psC, RasterToCameraBidir,
 		xPixelWidth, yPixelHeight));
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
