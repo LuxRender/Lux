@@ -213,7 +213,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 		}
 
-		through = flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && Dot(wo,wi) < SHADOW_RAY_EPSILON - 1.f;
+		through = flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && Dot(wo,wi) < SHADOW_RAY_EPSILON - 1.f && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f;
 		if (!through)
 			specularBounce = (flags & BSDF_SPECULAR) != 0;
 		else
