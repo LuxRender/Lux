@@ -505,7 +505,6 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		// hasn't traveled yet
 		eye[nEye - 2].dAWeight = v.pdf *
 			eye[nEye - 2].cosi / eye[nEye - 2].d2;
-		v.dARWeight = eye[nEye - 2].pdfR * eye[nEye - 2].tPdfR * v.coso / eye[nEye - 2].d2;
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
 		// Evaluate factors for path weighting
@@ -525,8 +524,6 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		// hasn't traveled yet
 		light[nLight - 2].dARWeight = v.pdfR *
 			light[nLight - 2].coso / light[nLight - 2].d2;
-		v.dAWeight = light[nLight - 2].pdf * light[nLight - 2].tPdf * v.cosi /
-			light[nLight - 2].d2;
 	} else
 		return false;
 	const float w = weightPath(eye, nEye, eyeDepth, light, nLight,
@@ -594,7 +591,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 		// This can be overwritten as it won't be reused
 		eyePath[length - 2].d2 =
 			DistanceSquared(eyePath[length - 2].p, v.p);
-		eyePath[length - 1].dARWeight = eyePath[length - 2].pdfR * eyePath[length - 2].tPdfR *
+		v.dARWeight = eyePath[length - 2].pdfR * eyePath[length - 2].tPdfR *
 			v.coso / eyePath[length - 2].d2;
 		if (evalPath(tspack, scene, bidir, eyePath, length, path, 0,
 			v.ePdfDirect, false, &totalWeight, &(v.Le))) {
@@ -630,6 +627,8 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 	vL.wi = Vector(vL.ns);
 	vL.cosi = AbsDot(vL.wi, vL.ng);
 	vL.dAWeight /= scene->lights.size();
+	if (light->IsDeltaLight())
+		vL.dAWeight = -vL.dAWeight;
 	vL.ePdfDirect *= directWeight;
 	BidirVertex e(vE);
 	float totalWeight;
@@ -712,6 +711,8 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	if (light->Sample_L(tspack, scene, data[0], data[1], component,
 		&lightBsdf, &lightPdf, &Le)) {
 		lightPdf /= numberOfLights;
+		// Divide by Pdf because this value isn't used when the eye
+		// ray hits a light source, only for light paths
 		Le /= lightPdf;
 		nLight = generateLightPath(tspack, scene, lightBsdf, sample,
 			*this, lightPath);
