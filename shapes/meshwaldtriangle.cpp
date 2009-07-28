@@ -222,7 +222,9 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	const float tu = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
 	const float tv = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
 
-	isect->dg = DifferentialGeometry(ray(tt), normalizedNormal, dpdu, dpdv,
+	const Point pp(b0 * mesh->p[v[0]] + uu * mesh->p[v[1]] + vv * mesh->p[v[2]]);
+
+	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
 		Vector(0, 0, 0), Vector(0, 0, 0), tu, tv, this);
 	isect->dg.AdjustNormal(mesh->reverseOrientation,
 		mesh->transformSwapsHandedness);

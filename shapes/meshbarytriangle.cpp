@@ -69,7 +69,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const {
         return false;
     // Compute _t_ to intersection point
     const float t = Dot(e2, s2) * invDivisor;
-    if (t < ray.mint || t > ray.maxt)
+    if (t < ray.mint || t > ray.maxt - t * RAY_EPSILON)
         return false;
 
 	// Fill in _DifferentialGeometry_ from triangle hit
@@ -100,8 +100,9 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const {
     const float tv = b0*uvs[0][1] + b1*uvs[1][1] + b2*uvs[2][1];
 
 	const Normal nn = Normal(Normalize(Cross(e1, e2)));
+	const Point pp(p1 + b1 * e1 + b2 * e2);
 
-    isect->dg = DifferentialGeometry(ray(t),
+    isect->dg = DifferentialGeometry(pp,
 			nn,
 			dpdu, dpdv,
             Vector(0, 0, 0), Vector(0, 0, 0),
