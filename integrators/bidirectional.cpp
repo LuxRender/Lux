@@ -146,7 +146,7 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 		bool through = false;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f ||
-			v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) <= 0.f) {
+			!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			v.cosi = AbsDot(v.wi, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
 			v.flux = v.f * cosins;
@@ -234,7 +234,7 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			break;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f ||
-			v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) <= 0.f) {
+			!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			v.flux = v.f;
 			v.coso = AbsDot(v.wo, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
@@ -310,7 +310,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	// the light vertex with normal sampling
 	if (nLight == 1) {
 		if (isLightDirect) {
-			if ((light[0].flags & BSDF_SPECULAR) == 0)
+			if ((light[0].flags & BSDF_SPECULAR) == 0 && lightDepth > 0)
 				weight += pBase * pBase;
 		} else {
 			const float pDirect = pdfLightDirect / fabsf(light[0].dAWeight);
@@ -319,14 +319,13 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 	}
 	// Check for direct path when the eye path hit a light
 	// The eye path has at least 2 vertices
-	if (nLight == 0) {
-		float pDirect = p * pdfLightDirect / eye[nEye - 1].dARWeight;
+	// The light vertex cannot be specular otherwise
+	// the eye path wouldn't have received any light
+	if (nLight == 0 && (eye[nEye - 2].flags & BSDF_SPECULAR) == 0) {
+		float pDirect = pdfLightDirect / eye[nEye - 1].dARWeight;
 		if (nEye > 4)
 			pDirect /= eye[nEye - 2].rrR;
-		// The light vertex cannot be specular otherwise
-		// the eye path wouldn't have received any light
-		if ((eye[nEye - 2].flags & BSDF_SPECULAR) == 0)
-			weight += pDirect * pDirect;
+		weight += pDirect * pDirect;
 	}
 	// Find other paths by extending light path toward eye path
 	for (int i = nEye - 1; i >= max(0, nEye - (lightDepth - nLight)); --i) {
