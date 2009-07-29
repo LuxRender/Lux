@@ -166,8 +166,9 @@ void OrthoCamera::ClampRay(Ray &ray) const
 BBox OrthoCamera::Bounds() const
 {
 	BBox bound(Point(0, 0, 0), Point(1, 1, 0));
+	bound = WorldToScreen.GetInverse()(bound);
 	bound.Expand(SHADOW_RAY_EPSILON);
-	return WorldToScreen.GetInverse()(bound);
+	return bound;
 }
 
 Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd,
