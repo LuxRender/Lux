@@ -260,10 +260,10 @@ public:
 	virtual float GetData(int x, int y, Color *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum > 0.f) {
-			*color = pixel.L * xPixelCount * yPixelCount / *numberOfSamples;
+			*color = pixel.L * (xPixelCount * yPixelCount / *numberOfSamples_);
 			*alpha = pixel.alpha;
 		} else {
-			*color = 0.f;
+			*color = XYZColor(0.f);
 			*alpha = 0.f;
 		}
 		return pixel.weightSum;
