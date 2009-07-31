@@ -82,6 +82,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	xPixelCount = max(1, Ceil2Int(xResolution * cropWindow[1]) - xPixelStart);
 	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
 	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
+	samplePerPass = xPixelCount * yPixelCount;
 
 	// Set Image Output parameters
 	clampMethod = cM;
@@ -165,7 +166,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 
 	// calculate reject warmup samples
-	reject_warmup_samples = ((double)xResolution * (double)yResolution) * reject_warmup;
+	reject_warmup_samples = ((double)xPixelCount * (double)yPixelCount) * reject_warmup;
 
 	// Precompute filter weight table
 	#define FILTER_TABLE_SIZE 16
