@@ -61,6 +61,7 @@ private:
 	float fov;
 	float posPdf;
 	float screen[4];
+	float xStart, xEnd, yStart, yEnd;
 	float R,xWidth,yHeight,xPixelWidth,yPixelHeight,Apixel;
 	int distribution, shape, power;
 
