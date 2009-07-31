@@ -134,10 +134,10 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 			BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
 	else
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
-			BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
+			BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
-		*Le = this->Le->Evaluate(tspack, dg) * gain;
+		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
 		return true;
 	}
 	*Le = 0.f;
@@ -158,9 +158,9 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 				BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
 		else
 			*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
-				BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
+				BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 		visibility->SetSegment(p, dg.p, tspack->time);
-		*Le = this->Le->Evaluate(tspack, dg) * gain;
+		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
 		return true;
 	}
 	*Le = 0.f;
@@ -173,7 +173,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 			BSDF_ALLOC(tspack, GonioAreaBxDF)(func));
 	else
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
-			BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(M_PI)));
+			BSDF_ALLOC(tspack, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, dg.p);
 	return L(tspack, dg, -ray.d);
