@@ -156,17 +156,15 @@ PerspectiveCamera::
 		xWidth = templength;
 		yHeight = templength / frameaspectratio;
 	}
-	xWidth *= (Screen[1] - Screen[0]) / 2.f;
-	yHeight *= (Screen[3] - Screen[2]) / 2.f;
 	int xS, xE, yS, yE;
 	f->GetSampleExtent(&xS, &xE, &yS, &yE);
 	xStart = xS;
 	xEnd = xE;
 	yStart = yS;
 	yEnd = yE;
-	xPixelWidth = xWidth * (xEnd - xStart) / f->xResolution;
-	yPixelHeight = yHeight * (yEnd - yStart) / f->yResolution;
-	Apixel = xPixelWidth * yPixelHeight; //FIXME: this is actually the complete area
+	xPixelWidth = xWidth * (Screen[1] - Screen[0]) / 2.f / (xEnd - xStart);
+	yPixelHeight = yHeight * (Screen[3] - Screen[2]) / 2.f / (yEnd - yStart);
+	Apixel = xPixelWidth * yPixelHeight;
 	RasterToCameraBidir = Perspective(fov1, RAY_EPSILON, INFINITY).GetInverse() * RasterToScreen;
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
