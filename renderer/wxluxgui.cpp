@@ -879,6 +879,7 @@ void LuxGui::OnMouse(wxMouseEvent &event) {
 					m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowleft_png));
 					m_HistogramWindow->SetEnabled(false);
 				}else{
+					ApplyTonemapping();
 					m_Tab_Control_HistogramPanel->Show(true);
 					m_Tab_HistogramIcon->SetBitmap(wxMEMORY_BITMAP(arrowdownactive_png));
 					m_HistogramWindow->SetEnabled(true);
