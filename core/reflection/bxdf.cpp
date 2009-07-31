@@ -232,6 +232,13 @@ bool SingleBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 			if (sampledType)
 				*sampledType = bxdf->type;
 			*wiW = LocalToWorld(wi);
+			if (Dot(*wiW, ng) * Dot(woW, ng) > 0.f) {
+				// ignore BTDFs
+				if (bxdf->type & BSDF_TRANSMISSION)
+					return false;
+			} else if (bxdf->type & BSDF_REFLECTION)
+				// ignore BRDFs
+				return false;
 			return true;
 		}
 	}
@@ -251,7 +258,7 @@ float SingleBSDF::Pdf(const TsPack *tspack, const Vector &woW,
 SWCSpectrum SingleBSDF::f(const TsPack *tspack, const Vector &woW,
 	const Vector &wiW, BxDFType flags) const
 {
-	if (Dot(wiW, ng) * Dot(woW, ng) > 0)
+	if (Dot(wiW, ng) * Dot(woW, ng) > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
 	else
@@ -328,34 +335,45 @@ bool MultiBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	if (sampledType) *sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
 	*pdf *= weights[which];
+	float totalWeightR = bxdfs[which]->Weight(tspack, wi);
 	if (pdfBack)
-		*pdfBack *= bxdfs[which]->Weight(tspack, wi);
+		*pdfBack *= totalWeightR;
 	// Compute overall PDF with all matching _BxDF_s
 	// Compute value of BSDF for sampled direction
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
+		BxDFType flags2;
 		if (Dot(*wiW, ng) * Dot(woW, ng) > 0)
 			// ignore BTDFs
-			flags = BxDFType(flags & ~BSDF_TRANSMISSION);
+			flags2 = BxDFType(flags & ~BSDF_TRANSMISSION);
 		else
 			// ignore BRDFs
-			flags = BxDFType(flags & ~BSDF_REFLECTION);
+			flags2 = BxDFType(flags & ~BSDF_REFLECTION);
+		if (!bxdf->MatchesFlags(flags2))
+			*f = SWCSpectrum(0.f);
 		for (int i = 0; i < nBxDFs; ++i) {
-			if (i != which && bxdfs[i]->MatchesFlags(flags)) {
+			if (i== which)
+				continue;
+			if (bxdfs[i]->MatchesFlags(flags2)) {
 				if (reverse)
 					bxdfs[i]->f(tspack, wi, wo, f);
 				else
 					bxdfs[i]->f(tspack, wo, wi, f);
+			}
+			if (bxdfs[i]->MatchesFlags(flags)) {
 				*pdf += bxdfs[i]->Pdf(tspack, wo, wi) *
 					weights[i];
-				if (pdfBack)
+				if (pdfBack) {
+					const float weightR = bxdfs[i]->Weight(tspack, wi);
 					*pdfBack += bxdfs[i]->Pdf(tspack, wi, wo) *
-						bxdfs[i]->Weight(tspack, wi);
+						weightR;
+					totalWeightR += weightR;
+				}
 			}
 		}
 	}
 	*pdf /= totalWeight;
 	if (pdfBack)
-		*pdfBack /= totalWeight;
+		*pdfBack /= totalWeightR;
 	return true;
 }
 float MultiBSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
