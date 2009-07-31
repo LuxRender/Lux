@@ -185,8 +185,7 @@ public:
 			*color = XYZColor(0.f);
 			*alpha = 0.f;
 		} else {
-			const float inv = 1.f / pixel.weightSum;
-			*color = pixel.L * inv;
+			*color = pixel.L / pixel.weightSum;
 			*alpha = pixel.alpha;
 		}
 		return pixel.weightSum;
@@ -259,13 +258,14 @@ public:
 		}
 	}
 	virtual float GetData(int x, int y, Color *color, float *alpha) const {
-		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
 		const Pixel &pixel = (*pixels)(x, y);
-		*color = pixel.L * inv;
-		if (pixel.weightSum > 0.f)
+		if (pixel.weightSum > 0.f) {
+			*color = pixel.L * xPixelCount * yPixelCount / *numberOfSamples;
 			*alpha = pixel.alpha;
-		else
+		} else {
+			*color = 0.f;
 			*alpha = 0.f;
+		}
 		return pixel.weightSum;
 	}
 private:
