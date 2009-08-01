@@ -434,9 +434,10 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 			return false;
 		const float ecosins = AbsDot(eyeV.wi, eyeV.ns);
 		eyeV.flux = eyeV.f; // No pdf as it is a direct connection
+		eyeV.prob = 1.f;
 		if (nEye > 1) {
 			eyeV.flux *= eye[nEye - 2].flux;
-			eyeV.prob = eye[nEye - 2].prob;
+			eyeV.prob *= eye[nEye - 2].prob;
 		}
 		// Prepare light vertex for connection
 		lightV.coso = AbsDot(lightV.wo, lightV.ng);

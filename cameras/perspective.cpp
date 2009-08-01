@@ -62,7 +62,7 @@ public:
 		Point p0(RasterToCamera.GetInverse()(Point(wo0.x, wo0.y, wo0.z)));
 		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
 			return;
-		*f += SWCSpectrum(1.f / (Area * cos2 * cos2/* * (xEnd - xStart) * (yEnd - yStart)*/));
+		*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
 		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
@@ -98,7 +98,7 @@ public:
 		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
 			return 0.f;
 		else 
-			return 1.f / (Area * cos2 * cos * (xEnd - xStart) * (yEnd - yStart));
+			return 1.f / (Area * cos2 * cos);
 	}
 private:
 	bool hasLens;
@@ -162,8 +162,8 @@ PerspectiveCamera::
 	xEnd = xE;
 	yStart = yS;
 	yEnd = yE;
-	xPixelWidth = xWidth * (Screen[1] - Screen[0]) / 2.f / (xEnd - xStart);
-	yPixelHeight = yHeight * (Screen[3] - Screen[2]) / 2.f / (yEnd - yStart);
+	xPixelWidth = xWidth * (Screen[1] - Screen[0]) / 2.f;
+	yPixelHeight = yHeight * (Screen[3] - Screen[2]) / 2.f;
 	Apixel = xPixelWidth * yPixelHeight;
 	RasterToCameraBidir = Perspective(fov1, RAY_EPSILON, INFINITY).GetInverse() * RasterToScreen;
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
