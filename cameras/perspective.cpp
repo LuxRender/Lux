@@ -62,7 +62,7 @@ public:
 		Point p0(RasterToCamera.GetInverse()(Point(wo0.x, wo0.y, wo0.z)));
 		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
 			return;
-		*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
+		*f += SWCSpectrum(1.f / (Area * cos2 * cos2/* * (xEnd - xStart) * (yEnd - yStart)*/));
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
 		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
@@ -98,7 +98,7 @@ public:
 		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
 			return 0.f;
 		else 
-			return 1.f / (Area * cos2 * cos);
+			return 1.f / (Area * cos2 * cos * (xEnd - xStart) * (yEnd - yStart));
 	}
 private:
 	bool hasLens;
