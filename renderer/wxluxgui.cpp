@@ -221,6 +221,7 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 	m_Gamma_enabled = true;
 	m_Noisereduction_enabled = true;
 
+	m_auto_tonemap = false; // used in ResetToneMapping
 	ResetToneMapping();
 	m_auto_tonemap = true;
 	ResetLightGroups();
@@ -3167,6 +3168,7 @@ void LuxGui::UpdateNetworkTree( void )
  	}
 
 	m_networkTreeCtrl->ExpandAll();
+	delete[] pInfoList;
 }
 
 void LuxGui::OnTreeSelChanged( wxTreeEvent& event )
@@ -3349,11 +3351,11 @@ void LuxGui::OnLoadFLM(wxCommandEvent &event) {
 		SetTitle(wxT("LuxRender - ")+fn.GetName());
 
 		// Start load thread
-		m_flmloadThread = new boost::thread(boost::bind(&LuxGui::FlmLoadThread, this, filename));
-
 		m_progDialog = new wxProgressDialog(wxT("Loading FLM..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 		m_progDialog->Pulse();
 		m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
+
+		m_flmloadThread = new boost::thread(boost::bind(&LuxGui::FlmLoadThread, this, filename));
 	}
 }
 void LuxGui::OnSaveFLM(wxCommandEvent &event) {
@@ -3371,12 +3373,12 @@ void LuxGui::OnSaveFLM(wxCommandEvent &event) {
 
 	if(filedlg.ShowModal() == wxID_OK) {
 		wxString filename = filedlg.GetPath();
-		// Start load thread
-		m_flmsaveThread = new boost::thread(boost::bind(&LuxGui::FlmSaveThread, this, filename));
-
+		// Start save thread
 		m_progDialog = new wxProgressDialog(wxT("Saving FLM..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 		m_progDialog->Pulse();
 		m_saveTimer->Start(1000, wxTIMER_CONTINUOUS);
+
+		m_flmsaveThread = new boost::thread(boost::bind(&LuxGui::FlmSaveThread, this, filename));
 	}
 }
 
@@ -3396,6 +3398,8 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 		if(m_guiRenderState == PARSING && m_progDialog) {
 			// destroy progress dialog if quitting during parsing
 			m_progDialog->Destroy();
+			delete m_progDialog;
+			m_progDialog = NULL;
 		}
 		if(m_guiRenderState != FINISHED && m_guiRenderState != TONEMAPPING) {
 			if(m_updateThread)
@@ -3569,6 +3573,8 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		GetEventHandler()->AddPendingEvent(statUpdEvent);
 	} else if( event.GetEventType() == wxEVT_LUX_SAVEDFLM ) {
 		m_progDialog->Destroy();
+		delete m_progDialog;
+		m_progDialog = NULL;
 		m_saveTimer->Stop();
 
 		m_flmsaveThread->join();

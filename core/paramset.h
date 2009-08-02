@@ -189,10 +189,7 @@ template <class T> struct ParamSetItem {
 	ParamSetItem() { data=0; }
 	ParamSetItem(const string &name, const T *val, int nItems = 1);
 	~ParamSetItem() {
-
-		if(data!=0)
 	delete[] data;
-
 	}
 	
 	template<class Archive>

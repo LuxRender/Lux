@@ -36,7 +36,8 @@ void SPD::AllocateSamples(int n) {
 
 void SPD::FreeSamples() {
 	 // Free Allocate memory for samples
-	FreeAligned(samples);
+	if (samples)
+		FreeAligned(samples);
 }
 
 void SPD::Normalize() {

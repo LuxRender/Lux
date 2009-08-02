@@ -34,7 +34,7 @@ public:
 		lambdaMin = lambdaMax = delta = invDelta = 0.;
 		samples = NULL;
 	}
-    virtual ~SPD() {}
+    virtual ~SPD() { FreeSamples(); }
 
     // samples the SPD by performing a linear interpolation on the data
     inline float sample(const float lambda) const {

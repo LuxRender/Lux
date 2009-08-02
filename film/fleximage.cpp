@@ -137,6 +137,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_Gamma = d_Gamma = p_Gamma;
 
 	m_BloomUpdateLayer = false;
+	m_BloomDeleteLayer = false;
 	m_HaveBloomImage = false;
 	m_BloomRadius = d_BloomRadius = 0.07f;
 	m_BloomWeight = d_BloomWeight = 0.25f;
@@ -148,6 +149,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_AberrationAmount = d_AberrationAmount = 0.005f;
 
 	m_GlareUpdateLayer = false;
+	m_GlareDeleteLayer = false;
 	m_HaveGlareImage = false;
 	m_glareImage = NULL;
 	m_GlareAmount = d_GlareAmount = 0.03f;
