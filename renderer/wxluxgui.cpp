@@ -3130,6 +3130,11 @@ void LuxGui::LuxHistogramWindow::OnSize(wxSizeEvent& event){
 void LuxGui::UpdateNetworkTree( void )
 {
 	m_serverUpdateSpin->SetValue( luxGetNetworkServerUpdateInterval() );
+	wxTreeItemId idSelected = m_networkTreeCtrl->GetSelection();
+	luxTreeData *pSelectedData = (luxTreeData *)m_networkTreeCtrl->GetItemData(idSelected);
+	wxString sidSelected;
+	if (pSelectedData)
+		sidSelected = pSelectedData->m_SlaveID;
 
 	m_networkTreeCtrl->DeleteAllItems();
 
@@ -3164,7 +3169,9 @@ void LuxGui::UpdateNetworkTree( void )
 									( pInfoList[n1].numberOfSamplesReceived / sampDiv ) );
 
 		idTempNode = m_networkTreeCtrl->AppendItem( idRootNode, sTemp, -1, -1, pTempData );
-						m_networkTreeCtrl->AppendItem( idTempNode, m_CurrentFile );
+		m_networkTreeCtrl->AppendItem( idTempNode, m_CurrentFile );
+		if (pTempData->m_SlaveID == sidSelected)
+			m_networkTreeCtrl->SelectItem(idTempNode);
  	}
 
 	m_networkTreeCtrl->ExpandAll();
@@ -3180,6 +3187,7 @@ void LuxGui::OnTreeSelChanged( wxTreeEvent& event )
 	if ( pNodeData != NULL )
 	{
 		m_serverTextCtrl->SetValue( wxString::Format(_("%s:%s"), pNodeData->m_SlaveName.c_str(), pNodeData->m_SlavePort.c_str()));
+		m_networkTreeCtrl->SelectItem(idTreeNode);
 	}
 }
 
