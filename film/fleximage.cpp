@@ -82,7 +82,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	xPixelCount = max(1, Ceil2Int(xResolution * cropWindow[1]) - xPixelStart);
 	yPixelStart = Ceil2Int(yResolution * cropWindow[2]);
 	yPixelCount = max(1, Ceil2Int(yResolution * cropWindow[3]) - yPixelStart);
-	samplePerPass = xPixelCount * yPixelCount;
+	int xRealWidth = Floor2Int(xPixelStart + .5f + xPixelCount + filter->xWidth) - Floor2Int(xPixelStart + .5f - filter->xWidth);
+	int yRealHeight = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth) - Floor2Int(yPixelStart + .5f - filter->yWidth);
+	samplePerPass = xRealWidth * yRealHeight;
 
 	// Set Image Output parameters
 	clampMethod = cM;
