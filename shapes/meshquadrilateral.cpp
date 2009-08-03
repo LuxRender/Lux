@@ -537,8 +537,6 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 			ss, ts,
 			dndu, dndv,
 			dg.u, dg.v, this);
-	dgShading->reverseOrientation = mesh->reverseOrientation;
-	dgShading->transformSwapsHandedness = mesh->transformSwapsHandedness;
 
 	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
 	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;

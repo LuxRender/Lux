@@ -70,10 +70,8 @@ public:
 			float uu, float vv,
 			const void *pr);
 	void AdjustNormal(bool ro, bool swapsHandedness) {
-		reverseOrientation = ro;
-		transformSwapsHandedness = swapsHandedness;
 		// Adjust normal based on orientation and handedness
-		if (reverseOrientation ^ transformSwapsHandedness) {
+		if (ro ^ swapsHandedness) {
 			nn.x = -nn.x;
 			nn.y = -nn.y;
 			nn.z = -nn.z;
@@ -88,8 +86,6 @@ public:
 	mutable Vector dpdx, dpdy;
 	float u, v;
 	const void* handle;
-	bool reverseOrientation;
-	bool transformSwapsHandedness;
 	mutable float dudx, dvdx, dudy, dvdy;
 
 	// Dade - shape specific data, useful to "transport" informatin between

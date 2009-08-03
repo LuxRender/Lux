@@ -27,15 +27,13 @@
 
 using namespace lux;
 
-Mesh::Mesh(const Transform &o2w, bool ro,
-			MeshAccelType acceltype,
-			int nv, const Point *P, const Normal *N, const float *UV,
-			MeshTriangleType tritype, int trisCount, const int *tris,
-			MeshQuadType quadtype, int nquadsCount, const int *quads,
-			MeshSubdivType subdivtype, int nsubdivlevels,
-			boost::shared_ptr<Texture<float> > dmMap,
-			float dmScale, float dmOffset,
-			bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
+Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
+	int nv, const Point *P, const Normal *N, const float *UV,
+	MeshTriangleType tritype, int trisCount, const int *tris,
+	MeshQuadType quadtype, int nquadsCount, const int *quads,
+	MeshSubdivType subdivtype, int nsubdivlevels,
+	boost::shared_ptr<Texture<float> > dmMap, float dmScale, float dmOffset,
+	bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
 {
 	accelType = acceltype;
 
@@ -51,30 +49,35 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 	// TODO: use AllocAligned
 
 	// Dade - copy vertex data
-    nverts = nv;
+	nverts = nv;
 	p = new Point[nverts];
-	if( !mustSubdivide ) {
+	if (!mustSubdivide) {
 		// Dade - transform mesh vertices to world space
 		for (int i  = 0; i < nverts; ++i)
 			p[i] = ObjectToWorld(P[i]);
-	}
-	else {
-		// Lotus - dont transform the mesh vertices to world space yet if subdivision is required
-		for (int i  = 0; i < nverts; ++i)
-			p[i] = P[i];
+	} else {
+		// Dont transform the mesh vertices to world space yet if subdivision is required
+		memcpy(p, P, nverts * sizeof(Point));
 	}
 
 	// Dade - copy UV and N vertex data, if present
-    if (UV) {
-        uvs = new float[2 * nverts];
-        memcpy(uvs, UV, 2 * nverts*sizeof(float));
-    } else
+	if (UV) {
+		uvs = new float[2 * nverts];
+		memcpy(uvs, UV, 2 * nverts*sizeof(float));
+	} else
 		uvs = NULL;
 
-    if (N) {
-        n = new Normal[nverts];
-        memcpy(n, N, nverts * sizeof(Normal));
-    } else
+	if (N) {
+		n = new Normal[nverts];
+		if (!mustSubdivide) {
+			// Dade - transform mesh normals to world space
+			for (int i  = 0; i < nverts; ++i)
+				n[i] = Normalize(ObjectToWorld(N[i]));
+		} else {
+			// Dont transform the mesh normals to world space yet if subdivision is required
+			memcpy(n, N, nverts * sizeof(Normal));
+		}
+	} else
 		n = NULL;
 
 	// Dade - copy quad data
@@ -94,7 +97,7 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 			const Point &p3 = p[quads[idx + 3]];
 
 			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar
-			if ( !mustSubdivide && MeshQuadrilateral::IsPlanar(p0, p1, p2, p3)) {
+			if (!mustSubdivide && MeshQuadrilateral::IsPlanar(p0, p1, p2, p3)) {
 				quadsOk.push_back(quads[idx]);
 				quadsOk.push_back(quads[idx + 1]);
 				quadsOk.push_back(quads[idx + 2]);
@@ -113,17 +116,12 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 			quadVertexIndex = NULL;
 		else {
 			quadVertexIndex = new int[4 * nquads];
-			for (int i = 0; i < nquads; i++) {
-				const int idx = 4 * i;
-				quadVertexIndex[idx] = quadsOk[idx];
-				quadVertexIndex[idx + 1] = quadsOk[idx + 1];
-				quadVertexIndex[idx + 2] = quadsOk[idx + 2];
-				quadVertexIndex[idx + 3] = quadsOk[idx + 3];
-			}
+			for (int i = 0; i < 4 * nquads; ++i)
+				quadVertexIndex[i] = quadsOk[i];
 		}
 	}
 
-	if ( !quadsToSplit.empty() ) {
+	if (!quadsToSplit.empty()) {
 		std::stringstream ss;
 		ss << "Mesh: splitting " << (quadsToSplit.size() / 4) << " quads";
 		if( nSubdivLevels > 0 )
@@ -182,108 +180,101 @@ Mesh::Mesh(const Transform &o2w, bool ro,
 	}
 }
 
-Mesh::~Mesh() {
-    delete[] triVertexIndex;
+Mesh::~Mesh()
+{
+	delete[] triVertexIndex;
 	delete[] quadVertexIndex;
-    delete[] p;
-	if( n )
-		delete[] n;
-	if( uvs )
-		delete[] uvs;
+	delete[] p;
+	delete[] n;
+	delete[] uvs;
 }
 
-BBox Mesh::ObjectBound() const {
-    BBox bobj;
-    for (int i = 0; i < nverts; i++)
-        bobj = Union(bobj, WorldToObject(p[i]));
-    return bobj;
+BBox Mesh::ObjectBound() const
+{
+	BBox bobj;
+	for (int i = 0; i < nverts; ++i)
+		bobj = Union(bobj, WorldToObject(p[i]));
+	return bobj;
 }
 
-BBox Mesh::WorldBound() const {
-    BBox worldBounds;
-    for (int i = 0; i < nverts; i++)
-        worldBounds = Union(worldBounds, p[i]);
-    return worldBounds;
+BBox Mesh::WorldBound() const
+{
+	BBox worldBounds;
+	for (int i = 0; i < nverts; ++i)
+		worldBounds = Union(worldBounds, p[i]);
+	return worldBounds;
 }
 
 template<class T>
-class MeshElemSharedPtr : public T {
+class MeshElemSharedPtr : public T
+{
 public:
 	MeshElemSharedPtr(const Mesh* m, int n,
-			boost::shared_ptr<Primitive> aPtr)
-	: T(m,n), ptr(aPtr)
-	{
-	}
+		boost::shared_ptr<Primitive> aPtr)
+	: T(m,n), ptr(aPtr) { }
 private:
 	const boost::shared_ptr<Primitive> ptr;
 };
 
 void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
-		const PrimitiveRefinementHints &refineHints,
-		boost::shared_ptr<Primitive> thisPtr)
+	const PrimitiveRefinementHints &refineHints,
+	boost::shared_ptr<Primitive> thisPtr)
 {
-	if( ntris + nquads == 0 )
+	if (ntris + nquads == 0)
 		return;
 
 	// Possibly subdivide the triangles
-	if( mustSubdivide ) {
+	if (mustSubdivide) {
 		MeshSubdivType concreteSubdivType = subdivType;
-		switch( concreteSubdivType ) {
-			case SUBDIV_LOOP:
-				{
-					// Apply subdivision
-					boost::shared_ptr<LoopSubdiv::SubdivResult> res;
-					{
-						LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
-							ntris, nverts, triVertexIndex, p, uvs,
-							nSubdivLevels, displacementMap,
-							displacementMapScale, displacementMapOffset,
-							displacementMapNormalSmooth, displacementMapSharpBoundary);
-						res = loopsubdiv.Refine();
-					}
-					// Check if subdivision was successfull
-					if( !res )
-						break;
-
-					// Remove the old mesh data
-					delete[] p;
-					if( n )
-						delete[] n;
-					if( uvs )
-						delete[] uvs;
-					delete[] triVertexIndex;
-
-					// Copy the new mesh data
-					nverts = res->nverts;
-					ntris = res->ntris;
-					triVertexIndex = new int[3 * ntris];
-					memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
-					p = new Point[nverts];
-					for( int i = 0; i< nverts; i++) {
-						p[i] = ObjectToWorld(res->P[i]);
-					}
-					if (res->uv) {
-						uvs = new float[2 * nverts];
-						memcpy(uvs, res->uv, 2 * nverts * sizeof(float));
-					} else
-						uvs = NULL;
-
-					if (res->N) {
-						n = new Normal[nverts];
-						memcpy(n, res->N, nverts * sizeof(Normal));
-					} else
-						n = NULL;
-
+		switch (concreteSubdivType) {
+			case SUBDIV_LOOP: {
+				// Apply subdivision
+				boost::shared_ptr<LoopSubdiv::SubdivResult> res;
+				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
+					ntris, nverts, triVertexIndex, p, uvs,
+					nSubdivLevels, displacementMap,
+					displacementMapScale, displacementMapOffset,
+					displacementMapNormalSmooth, displacementMapSharpBoundary);
+				res = loopsubdiv.Refine();
+				// Check if subdivision was successfull
+				if (!res)
 					break;
-				}
-			default:
-				{
-					std::stringstream ss;
-					ss.str("");
-					ss << "Unknow subdivision type in a mesh: " << concreteSubdivType;
-					luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
-				}
+
+				// Remove the old mesh data
+				delete[] p;
+				delete[] n;
+				delete[] uvs;
+				delete[] triVertexIndex;
+
+				// Copy the new mesh data
+				nverts = res->nverts;
+				ntris = res->ntris;
+				triVertexIndex = new int[3 * ntris];
+				memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
+				p = new Point[nverts];
+				for( int i = 0; i< nverts; ++i)
+					p[i] = ObjectToWorld(res->P[i]);
+				if (res->uv) {
+					uvs = new float[2 * nverts];
+					memcpy(uvs, res->uv, 2 * nverts * sizeof(float));
+				} else
+					uvs = NULL;
+
+				if (res->N) {
+					n = new Normal[nverts];
+					for( int i = 0; i< nverts; ++i)
+						n[i] = Normalize(ObjectToWorld(res->N[i]));
+				} else
+					n = NULL;
+
 				break;
+			}
+			default: {
+				std::stringstream ss;
+				ss << "Unknow subdivision type in a mesh: " << concreteSubdivType;
+				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+				break;
+			}
 		}
 
 		mustSubdivide = false; // only subdivide on the first refine!!!
@@ -293,15 +284,15 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	refinedPrims.reserve(ntris + nquads);
 	// Dade - refine triangles
 	MeshTriangleType concreteTriType = triType;
-	if(triType == TRI_AUTO) {
+	if (triType == TRI_AUTO) {
 		// If there is 1 unique vertex (with normals and uv coordinates) for each triangle:
 		//  bary = 52 bytes/triangle
 		//  wald = 128 bytes/triangle
 		// Note: this ignores some accel data
 		//  the following are accounted for: vertices, vertex indices, Mesh*Triangle data
-		//									 and one shared_ptr in the accel
+		//  and one shared_ptr in the accel
 		//TODO Lotus - find good values
-		if(ntris <= 200000)
+		if (ntris <= 200000)
 			concreteTriType = TRI_WALD;
 		else
 			concreteTriType = TRI_BARY;
@@ -310,49 +301,43 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		case TRI_WALD:
 			for (int i = 0; i < ntris; ++i) {
 				MeshWaldTriangle* currTri = new MeshWaldTriangle(this, i);
-				if(!currTri->isDegenerate()) {
-					if(refinedPrims.size() > 0) {
+				if (!currTri->isDegenerate()) {
+					if (refinedPrims.size() > 0) {
 						boost::shared_ptr<Primitive> o(currTri);
 						refinedPrims.push_back(o);
-					}
-					else {
+					} else {
 						delete currTri;
 						boost::shared_ptr<Primitive> o(
-								new MeshElemSharedPtr<MeshWaldTriangle>(this, i, thisPtr));
+							new MeshElemSharedPtr<MeshWaldTriangle>(this, i, thisPtr));
 						refinedPrims.push_back(o);
 					}
-				}
-				else
+				} else
 					delete currTri;
 			}
 			break;
 		case TRI_BARY:
 			for (int i = 0; i < ntris; ++i) {
 				MeshBaryTriangle* currTri = new MeshBaryTriangle(this, i);
-				if(!currTri->isDegenerate()) {
-					if(refinedPrims.size() > 0) {
+				if (!currTri->isDegenerate()) {
+					if (refinedPrims.size() > 0) {
 						boost::shared_ptr<Primitive> o(currTri);
 						refinedPrims.push_back(o);
-					}
-					else {
+					} else {
 						delete currTri;
 						boost::shared_ptr<Primitive> o(
-								new MeshElemSharedPtr<MeshBaryTriangle>(this, i, thisPtr));
+							new MeshElemSharedPtr<MeshBaryTriangle>(this, i, thisPtr));
 						refinedPrims.push_back(o);
 					}
-				}
-				else
+				} else
 					delete currTri;
 			}
 			break;
-		default:
-			{
-				std::stringstream ss;
-				ss.str("");
-				ss << "Unknow triangle type in a mesh: " << concreteTriType;
-				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
-			}
+		default: {
+			std::stringstream ss;
+			ss << "Unknow triangle type in a mesh: " << concreteTriType;
+			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
 			break;
+		}
 	}
 	int numConcreteTris = refinedPrims.size();
 
@@ -361,41 +346,37 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		case QUAD_QUADRILATERAL:
 			for (int i = 0; i < nquads; ++i) {
 				MeshQuadrilateral* currQuad = new MeshQuadrilateral(this, i);
-				if(!currQuad->isDegenerate()) {
-					if(refinedPrims.size() > 0) {
+				if (!currQuad->isDegenerate()) {
+					if (refinedPrims.size() > 0) {
 						boost::shared_ptr<Primitive> o(currQuad);
 						refinedPrims.push_back(o);
-					}
-					else {
+					} else {
 						delete currQuad;
 						boost::shared_ptr<Primitive> o(
-								new MeshElemSharedPtr<MeshQuadrilateral>(this, i, thisPtr));
+							new MeshElemSharedPtr<MeshQuadrilateral>(this, i, thisPtr));
 						refinedPrims.push_back(o);
 					}
-				}
-				else
+				} else
 					delete currQuad;
 			}
 			break;
-		default:
-			{
-				std::stringstream ss;
-				ss.str("");
-				ss << "Unknow quad type in a mesh: " << quadType;
-				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
-			}
+		default: {
+			std::stringstream ss;
+			ss << "Unknow quad type in a mesh: " << quadType;
+			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
 			break;
+		}
 	}
 	int numConcreteQuads = refinedPrims.size() - numConcreteTris;
 
 	// Select best acceleration structure
 	MeshAccelType concreteAccelType = accelType;
-	if(accelType == ACCEL_AUTO) {
-		if(refinedPrims.size() <= 250000)
+	if (accelType == ACCEL_AUTO) {
+		if (refinedPrims.size() <= 250000)
 			concreteAccelType = ACCEL_NONE;
-		else if(refinedPrims.size() <= 500000)
+		else if (refinedPrims.size() <= 500000)
 			concreteAccelType = ACCEL_KDTREE;
-		else if(refinedPrims.size() <= 8000000)
+		else if (refinedPrims.size() <= 8000000)
 			concreteAccelType = ACCEL_BVH;
 		else
 			concreteAccelType = ACCEL_GRID;
@@ -403,9 +384,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 	// Report selections used
 	std::stringstream ss;
-	ss << "Mesh: ";
-	ss << "accel = ";
-	switch( concreteAccelType ) {
+	ss << "Mesh: accel = ";
+	switch (concreteAccelType) {
 		case ACCEL_NONE:
 			ss << "none (global)";
 			break;
@@ -425,7 +405,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			ss << "?";
 	}
 	ss << ", triangles = " << numConcreteTris << " ";
-	switch( concreteTriType ) {
+	switch (concreteTriType) {
 		case TRI_BARY:
 			ss << "bary";
 			break;
@@ -436,7 +416,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			ss << "?";
 	}
 	ss << ", quads= " << numConcreteQuads << " ";
-	switch( quadType ) {
+	switch (quadType) {
 		case QUAD_QUADRILATERAL:
 			ss << "quadrilateral";
 			break;
@@ -446,40 +426,37 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 	// Build acceleration structure
-	if(concreteAccelType == ACCEL_NONE) {
+	if (concreteAccelType == ACCEL_NONE) {
 		// Copy primitives
-		refined.reserve( refined.size() + refinedPrims.size() );
-		for(u_int i=0; i < refinedPrims.size(); i++)
+		refined.reserve(refined.size() + refinedPrims.size());
+		for(u_int i = 0; i < refinedPrims.size(); ++i)
 			refined.push_back(refinedPrims[i]);
-	}
-	else  {
+	} else  {
 		ParamSet paramset;
 		boost::shared_ptr<Aggregate> accel;
-		if(concreteAccelType == ACCEL_KDTREE) {
-			accel = MakeAccelerator("kdtree", refinedPrims, paramset);
+		switch (concreteAccelType) {
+			case ACCEL_KDTREE:
+				accel = MakeAccelerator("kdtree", refinedPrims, paramset);
+				break;
+			case ACCEL_BVH:
+				accel = MakeAccelerator("bvh", refinedPrims, paramset);
+				break;
+			case ACCEL_GRID:
+				accel = MakeAccelerator("grid", refinedPrims, paramset);
+				break;
+			case ACCEL_BRUTEFORCE:
+				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
+				break;
+			default:
+				std::stringstream ss;
+				ss << "Unknow accel type in a mesh: " << concreteAccelType;
+				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
 		}
-		else if(concreteAccelType == ACCEL_BVH) {
-			accel = MakeAccelerator("bvh", refinedPrims, paramset);
-		}
-		else if(concreteAccelType == ACCEL_GRID) {
-			accel = MakeAccelerator("grid", refinedPrims, paramset);
-		}
-		else if(concreteAccelType == ACCEL_BRUTEFORCE) {
-			accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
-		}
-		else {
-			std::stringstream ss;
-			ss.str("");
-			ss << "Unknow accel type in a mesh: " << concreteAccelType;
-			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
-		}
-		if(refineHints.forSampling) {
+		if (refineHints.forSampling)
 			// Lotus - create primitive set to allow sampling
 			refined.push_back(boost::shared_ptr<Primitive>(new PrimitiveSet(accel)));
-		}
-		else {
+		else
 			refined.push_back(accel);
-		}
 	}
 }
 

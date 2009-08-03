@@ -110,10 +110,11 @@ protected:
 
 class MeshBaryTriangle : public Primitive {
 public:
-    // BaryTriangle Public Methods
-    MeshBaryTriangle(const Mesh *m, int n)
-		: mesh(m), v(&(mesh->triVertexIndex[3 * n]))
-	{
+	// BaryTriangle Public Methods
+	MeshBaryTriangle(const Mesh *m, int n)
+		: mesh(m), v(&(mesh->triVertexIndex[3 * n])) {
+		if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
+			swap(const_cast<int *>(v)[1], const_cast<int *>(v)[2]);
     }
     virtual ~MeshBaryTriangle() { }
 

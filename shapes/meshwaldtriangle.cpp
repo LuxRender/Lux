@@ -143,7 +143,7 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, int n)
 	const float dv2 = uvs[1][1] - uvs[2][1];
 	const Vector dp1 = v0 - v2, dp2 = v1 - v2;
 	const float determinant = du1 * dv2 - dv1 * du2;
-	if (determinant < 1e-3f) {
+	if (determinant == 0.f) {
 		// Handle zero determinant for triangle partial derivative matrix
 		CoordinateSystem(Vector(normalizedNormal), &dpdu, &dpdv);
 	} else {
@@ -226,8 +226,6 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 
 	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
 		Vector(0, 0, 0), Vector(0, 0, 0), tu, tv, this);
-	isect->dg.AdjustNormal(mesh->reverseOrientation,
-		mesh->transformSwapsHandedness);
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
 	isect->dg.triangleBaryCoords[0] = b0;
 	isect->dg.triangleBaryCoords[1] = uu;
@@ -307,17 +305,14 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	float b3 = 1.f - b1 - b2;
 	dg->p = b1 * p1 + b2 * p2 + b3 * p3;
 
-	if(mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
-		dg->nn = -normalizedNormal;
-	else
-		dg->nn = normalizedNormal;
+	dg->nn = normalizedNormal;
 	dg->dpdu = dpdu;
 	dg->dpdv = dpdv;
 
-    float uv[3][2];
-    GetUVs(uv);
-    dg->u = b1 * uv[0][0] + b2 * uv[1][0] + b3 * uv[2][0];
-    dg->v = b1 * uv[0][1] + b2 * uv[1][1] + b3 * uv[2][1];
+	float uv[3][2];
+	GetUVs(uv);
+	dg->u = b1 * uv[0][0] + b2 * uv[1][0] + b3 * uv[2][0];
+	dg->v = b1 * uv[0][1] + b2 * uv[1][1] + b3 * uv[2][1];
 }
 
 bool MeshWaldTriangle::isDegenerate() const {
