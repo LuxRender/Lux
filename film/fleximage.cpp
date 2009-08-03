@@ -252,16 +252,10 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			m_Gamma = value;
 			break;
 		case LUX_FILM_UPDATEBLOOMLAYER:
-			if(value != 0.f)
-				m_BloomUpdateLayer = true;
-			else
-				m_BloomUpdateLayer = false;
+			m_BloomUpdateLayer = (value != 0.f);
 			break;
 		case LUX_FILM_DELETEBLOOMLAYER:
-			if(value != 0.f)
-				m_BloomDeleteLayer = true;
-			else
-				m_BloomDeleteLayer = false;
+			m_BloomDeleteLayer = (value != 0.f);
 			break;
 
 		case LUX_FILM_BLOOMRADIUS:
@@ -272,36 +266,24 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 
 		case LUX_FILM_VIGNETTING_ENABLED:
-			if(value != 0.f)
-				m_VignettingEnabled = true;
-			else
-				m_VignettingEnabled = false;
+			m_VignettingEnabled = (value != 0.f);
 			break;
 		case LUX_FILM_VIGNETTING_SCALE:
 			 m_VignettingScale = value;
 			break;
 
 		case LUX_FILM_ABERRATION_ENABLED:
-			if(value != 0.f)
-				m_AberrationEnabled = true;
-			else
-				m_AberrationEnabled = false;
+			m_AberrationEnabled = (value != 0.f);
 			break;
 		case LUX_FILM_ABERRATION_AMOUNT:
 			 m_AberrationAmount = value;
 			break;
 
 		case LUX_FILM_UPDATEGLARELAYER:
-			if(value != 0.f)
-				m_GlareUpdateLayer = true;
-			else
-				m_GlareUpdateLayer = false;
+			m_GlareUpdateLayer = (value != 0.f);
 			break;
 		case LUX_FILM_DELETEGLARELAYER:
-			if(value != 0.f)
-				m_GlareDeleteLayer = true;
-			else
-				m_GlareDeleteLayer = false;
+			m_GlareDeleteLayer = (value != 0.f);
 			break;
 		case LUX_FILM_GLARE_AMOUNT:
 			 m_GlareAmount = value;
@@ -314,27 +296,21 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
-			if(value != 0.f)
-				m_HistogramEnabled = true;
-			else
-				m_HistogramEnabled = false;
+			m_HistogramEnabled = (value != 0.f);
 			break;
 
 		case LUX_FILM_NOISE_CHIU_ENABLED:
-			m_chiuParams.enabled = value != 0.0;
+			m_chiuParams.enabled = (value != 0.f);
 			break;
 		case LUX_FILM_NOISE_CHIU_RADIUS:
 			m_chiuParams.radius = value;
 			break;
 		case LUX_FILM_NOISE_CHIU_INCLUDECENTER:
-			m_chiuParams.includecenter = value != 0.0;
+			m_chiuParams.includecenter = (value != 0.f);
 			break;
 
 		case LUX_FILM_NOISE_GREYC_ENABLED:
-			if(value != 0.f)
-				m_GREYCStorationParams.enabled = true;
-			else
-				m_GREYCStorationParams.enabled = false;
+			m_GREYCStorationParams.enabled = (value != 0.f);
 			break;
 		case LUX_FILM_NOISE_GREYC_AMPLITUDE:
 			m_GREYCStorationParams.amplitude = value;
@@ -355,10 +331,7 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			m_GREYCStorationParams.sigma = value;
 			break;
 		case LUX_FILM_NOISE_GREYC_FASTAPPROX:
-			if(value != 0.f)
-				m_GREYCStorationParams.fast_approx = true;
-			else
-				m_GREYCStorationParams.fast_approx = false;
+			m_GREYCStorationParams.fast_approx = (value != 0.f);
 			break;
 		case LUX_FILM_NOISE_GREYC_GAUSSPREC:
 			m_GREYCStorationParams.gauss_prec = value;
@@ -1121,8 +1094,8 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			tmkernel.c_str(), &toneParams, m_Gamma, 0.);
 
 		// Disable further bloom layer updates if used.
-		m_BloomUpdateLayer = m_BloomDeleteLayer = false;
-		m_GlareUpdateLayer = m_GlareDeleteLayer = false;
+		m_BloomUpdateLayer = false;
+		m_GlareUpdateLayer = false;
 
 		if (type & IMAGE_FILEOUTPUT) {
 			// write out tonemapped EXR
