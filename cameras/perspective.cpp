@@ -246,7 +246,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 		psC.y *= LensRadius;
 	}
 	Point ps = CameraToWorld(psC);
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
 		BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		fov, Apixel, psC, RasterToCameraBidir,
@@ -264,7 +264,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		psC.y *= LensRadius;
 	}
 	Point ps = CameraToWorld(psC);
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, normal,
 		BSDF_ALLOC(tspack, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		fov, Apixel, psC, RasterToCameraBidir,

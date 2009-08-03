@@ -29,9 +29,9 @@ using namespace lux;
 // DifferentialGeometry Method Definitions
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
-		const Vector &DNDU, const Vector &DNDV,
+		const Normal &DNDU, const Normal &DNDV,
 		float uu, float vv, const void *pr)
-	: p(P), dpdu(DPDU), dpdv(DPDV), dndu((Normal)DNDU), dndv((Normal)DNDV) {
+	: p(P), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV) {
 	// Initialize _DifferentialGeometry_ from parameters
 	nn = Normal(Normalize(Cross(dpdu, dpdv)));
 	u = uu;
@@ -44,9 +44,9 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
-		const Vector &DNDU, const Vector &DNDV,
+		const Normal &DNDU, const Normal &DNDV,
 		float uu, float vv, const void *pr)
-	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu((Normal)DNDU), dndv((Normal)DNDV) {
+	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;

@@ -418,7 +418,7 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 		isect->dg = DifferentialGeometry(ray(t),
 				nn,
 				dpdu, dpdv,
-				Vector(0, 0, 0), Vector(0, 0, 0),
+				Normal(0, 0, 0), Normal(0, 0, 0),
 				u, v, this);
 		isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
 		isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
@@ -488,7 +488,7 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 
 	// compute partial differentials
 	// see bugtracker ID 324 for derivation
-	Vector dndu, dndv;
+	Normal dndu, dndv;
 	float uv[4][2];
 	float A[3][3], InvA[3][3];
 
@@ -507,22 +507,22 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 	// invert matrix
 	if (!Invert3x3(A, InvA)) {
         // Handle zero determinant for quadrilateral partial derivative matrix
-		dndu = dndv = Vector(0, 0, 0);
+		dndu = dndv = Normal(0, 0, 0);
 	} else {
 		const Normal &n00 = mesh->n[idx[0]];
 		const Normal &n10 = mesh->n[idx[1]];
 		const Normal &n11 = mesh->n[idx[2]];
 		const Normal &n01 = mesh->n[idx[3]];
 
-		const Vector dn01 = Vector(n10 - n00);
-		const Vector dn02 = Vector(n11 - n00);
-		const Vector dn03 = Vector(n01 - n00);
+		const Normal dn01 = n10 - n00;
+		const Normal dn02 = n11 - n00;
+		const Normal dn03 = n01 - n00;
 
-		dndu = Vector(
+		dndu = Normal(
 			InvA[0][0] * dn01.x + InvA[0][1] * dn02.x + InvA[0][2] * dn03.x,
 			InvA[0][0] * dn01.y + InvA[0][1] * dn02.y + InvA[0][2] * dn03.y,
 			InvA[0][0] * dn01.z + InvA[0][1] * dn02.z + InvA[0][2] * dn03.z);
-		dndv = Vector(
+		dndv = Normal(
 			InvA[1][0] * dn01.x + InvA[1][1] * dn02.x + InvA[1][2] * dn03.x,
 			InvA[1][0] * dn01.y + InvA[1][1] * dn02.y + InvA[1][2] * dn03.y,
 			InvA[1][0] * dn01.z + InvA[1][1] * dn02.z + InvA[1][2] * dn03.z);

@@ -149,12 +149,35 @@ bool InstancePrimitive::Intersect(const Ray &r,
 	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
 	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
+	isect->dg.handle = isect->primitive;
+	isect->primitive = this;
 	if(material)
 		isect->material = material.get();
 	return true;
 }
 bool InstancePrimitive::IntersectP(const Ray &r) const {
 	return instance->IntersectP(WorldToInstance(r));
+}
+void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
+	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
+{
+	Transform o2w(WorldToInstance * obj2world);
+	// Transform instance's differential geometry to world space
+	DifferentialGeometry dgl(WorldToInstance(dg.p),
+		Normalize(WorldToInstance(dg.nn)),
+		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
+		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
+		dg.u, dg.v, dg.handle);
+	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords, 3 * sizeof(float));
+	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w, dgl, dgShading);
+	dgShading->p = InstanceToWorld(dgShading->p);
+	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
+	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
+	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
+	dgShading->dndu = InstanceToWorld(dgShading->dndu);
+	dgShading->dndv = InstanceToWorld(dgShading->dndv);
+	dgShading->dpdx = InstanceToWorld(dgShading->dpdx);
+	dgShading->dpdy = InstanceToWorld(dgShading->dpdy);
 }
 
 // MotionPrimitive Method Definitions
@@ -176,6 +199,9 @@ bool MotionPrimitive::Intersect(const Ray &r,
 	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
 	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
+	isect->dg.handle = isect->primitive;
+	isect->primitive = this;
+	isect->dg.time = r.time;
 	return true;
 }
 
@@ -184,6 +210,29 @@ bool MotionPrimitive::IntersectP(const Ray &r) const {
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
 	return instance->IntersectP(WorldToInstance(r));
+}
+void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
+	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
+{
+	Transform InstanceToWorld = motionSystem->Sample(dg.time);
+	Transform WorldToInstance = InstanceToWorld.GetInverse();
+	Transform o2w(WorldToInstance * obj2world);
+	// Transform instance's differential geometry to world space
+	DifferentialGeometry dgl(WorldToInstance(dg.p),
+		Normalize(WorldToInstance(dg.nn)),
+		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
+		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
+		dg.u, dg.v, dg.handle);
+	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords, 3 * sizeof(float));
+	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w, dgl, dgShading);
+	dgShading->p = InstanceToWorld(dgShading->p);
+	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
+	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
+	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
+	dgShading->dndu = InstanceToWorld(dgShading->dndu);
+	dgShading->dndv = InstanceToWorld(dgShading->dndv);
+	dgShading->dpdx = InstanceToWorld(dgShading->dpdx);
+	dgShading->dpdy = InstanceToWorld(dgShading->dpdy);
 }
 
 BBox MotionPrimitive::WorldBound() const  {

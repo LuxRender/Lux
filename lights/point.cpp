@@ -115,7 +115,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 	Vector dpdu, dpdv;
 	CoordinateSystem(w, &dpdu, &dpdv);
 	const Normal ns(w);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
@@ -138,7 +138,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 		*pdf = UniformSpherePdf();
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));

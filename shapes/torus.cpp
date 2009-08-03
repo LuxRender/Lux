@@ -413,10 +413,10 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 	float g = Dot(N, d2Pdvv);
 	// Compute \dndu and \dndv from fundamental form coefficients
 	float invEGF2 = 1.f / (E*G - F*F);
-	Vector dndu = (f*F - e*G) * invEGF2 * dpdu +
-		(e*F - f*E) * invEGF2 * dpdv;
-	Vector dndv = (g*F - f*G) * invEGF2 * dpdu +
-		(f*F - g*E) * invEGF2 * dpdv;
+	Normal dndu((f*F - e*G) * invEGF2 * dpdu +
+		(e*F - f*E) * invEGF2 * dpdv);
+	Normal dndv((g*F - f*G) * invEGF2 * dpdu +
+		(f*F - g*E) * invEGF2 * dpdv);
 	// Initialize _DifferentialGeometry_ from parametric information
 	*dg = DifferentialGeometry(ObjectToWorld(phit),
 	                           ObjectToWorld(dpdu),

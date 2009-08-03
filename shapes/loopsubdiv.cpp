@@ -459,7 +459,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 				pp,
 				nn,
 				dpdu, dpdv,
-				Vector(0, 0, 0), Vector(0, 0, 0),
+				Normal(0, 0, 0), Normal(0, 0, 0),
 				u, v, this);
 
 		Vector displacement(nn);

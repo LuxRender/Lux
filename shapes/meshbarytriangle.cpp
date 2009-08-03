@@ -107,7 +107,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const
 	const Point pp(p1 + b1 * e1 + b2 * e2);
 
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
-		Vector(0, 0, 0), Vector(0, 0, 0), tu, tv, this);
+		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
 	isect->dg.triangleBaryCoords[0] = b0;
@@ -199,7 +199,7 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	ss *= dg.dpdu.Length();
 	ts *= dg.dpdv.Length();
 
-	Vector dndu, dndv;
+	Normal dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
 	float uvs[3][2];
 	GetUVs(uvs);
@@ -209,12 +209,12 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	const float du2 = uvs[1][0] - uvs[2][0];
 	const float dv1 = uvs[0][1] - uvs[2][1];
 	const float dv2 = uvs[1][1] - uvs[2][1];
-	const Vector dn1 = Vector(mesh->n[v[0]] - mesh->n[v[2]]);
-	const Vector dn2 = Vector(mesh->n[v[1]] - mesh->n[v[2]]);
+	const Normal dn1 = mesh->n[v[0]] - mesh->n[v[2]];
+	const Normal dn2 = mesh->n[v[1]] - mesh->n[v[2]];
 	const float determinant = du1 * dv2 - dv1 * du2;
 
 	if (determinant == 0.f)
-		dndu = dndv = Vector(0, 0, 0);
+		dndu = dndv = Normal(0, 0, 0);
 	else {
 		const float invdet = 1.f / determinant;
 		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;

@@ -167,7 +167,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	float distance = (approach + worldRadius) / Dot(r.d, sundir);
 	Point ps(r.o + distance * r.d);
 	Normal ns(-sundir);
-	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 		BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 	if (!havePortalShape)
@@ -271,6 +271,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes)); // TODO - REFACT - add passed value from sample
 
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
 		ray->o = dg.p;
 		float pdfPortal = PortalShapes[shapeidx]->Pdf(ray->o) / nrPortalShapes;
@@ -330,6 +331,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		}
 
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
 		ps = dg.p;
 		const float cosPortal = Dot(ns, dg.nn);
@@ -347,7 +349,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		ps += (worldRadius + Dot(worldCenter - ps, sundir)) * sundir;
 	}
 
-	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 		BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 
@@ -391,7 +393,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	Point ps(p + distance * wi);
 	Normal ns(-sundir);
 
-	DifferentialGeometry dg(ps, ns, -x, y, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 		BSDF_ALLOC(tspack, SunBxDF)(sin2ThetaMax, worldRadius));
 	if (!havePortalShape)

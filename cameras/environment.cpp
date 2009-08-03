@@ -76,7 +76,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	CameraToWorld(ns, &ns);
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 		BSDF_ALLOC(tspack, EnvironmentBxDF)());
 	*pdf = UniformSpherePdf();
@@ -89,7 +89,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	Normal ns(Normalize(w));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 		BSDF_ALLOC(tspack, EnvironmentBxDF)());
 	*pdf = UniformSpherePdf();

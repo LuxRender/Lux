@@ -264,16 +264,30 @@ public:
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in) const;
 	virtual bool IntersectP(const Ray &r) const;
+	virtual void GetShadingGeometry(const Transform &obj2world,
+			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 	virtual bool CanSample() const { return instance->CanSample(); }
 	virtual float Area() const { return instance->Area(); }
 	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
 		instance->Sample(u1, u2, u3, dg);
+		dg->p = InstanceToWorld(dg->p);
+		dg->nn = Normalize(InstanceToWorld(dg->nn));
+		dg->dpdu = InstanceToWorld(dg->dpdu);
+		dg->dpdv = InstanceToWorld(dg->dpdv);
+		dg->dndu = InstanceToWorld(dg->dndu);
+		dg->dndv = InstanceToWorld(dg->dndv);
 	}
 	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
 	virtual void Sample(const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		instance->Sample(P, u1, u2, u3, dg);
+		instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
+		dg->p = InstanceToWorld(dg->p);
+		dg->nn = Normalize(InstanceToWorld(dg->nn));
+		dg->dpdu = InstanceToWorld(dg->dpdu);
+		dg->dpdv = InstanceToWorld(dg->dpdv);
+		dg->dndu = InstanceToWorld(dg->dndu);
+		dg->dndv = InstanceToWorld(dg->dndv);
 	}
 	virtual float Pdf(const Point &p, const Vector &wi) const {
 		return instance->Pdf(p, wi);
@@ -336,15 +350,31 @@ public:
     virtual bool CanIntersect() const { return instance->CanIntersect(); }
     virtual bool Intersect(const Ray &r, Intersection *in) const;
     virtual bool IntersectP(const Ray &r) const;
+	virtual void GetShadingGeometry(const Transform &obj2world,
+			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
     virtual bool CanSample() const { return instance->CanSample(); }
     virtual float Area() const { return instance->Area(); }
     virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
-            return instance->Sample(u1, u2, u3, dg);
+		Transform InstanceToWorld = motionSystem->Sample(dg->time);
+		instance->Sample(u1, u2, u3, dg);
+		dg->p = InstanceToWorld(dg->p);
+		dg->nn = Normalize(InstanceToWorld(dg->nn));
+		dg->dpdu = InstanceToWorld(dg->dpdu);
+		dg->dpdv = InstanceToWorld(dg->dpdv);
+		dg->dndu = InstanceToWorld(dg->dndu);
+		dg->dndv = InstanceToWorld(dg->dndv);
     }
     virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
     virtual void Sample(const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		instance->Sample(P, u1, u2, u3, dg);
+		Transform InstanceToWorld = motionSystem->Sample(dg->time);
+		instance->Sample(InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
+		dg->p = InstanceToWorld(dg->p);
+		dg->nn = Normalize(InstanceToWorld(dg->nn));
+		dg->dpdu = InstanceToWorld(dg->dpdu);
+		dg->dpdv = InstanceToWorld(dg->dpdv);
+		dg->dndu = InstanceToWorld(dg->dndu);
+		dg->dndv = InstanceToWorld(dg->dndv);
 	}
     virtual float Pdf(const Point &p, const Vector &wi) const {
         return instance->Pdf(p, wi);

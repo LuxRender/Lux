@@ -57,6 +57,7 @@ public:
 		if (shapeIndex == ~0U || reverse)
 			return false;
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
 		Vector wiW = Normalize(dg.p - ps);
 		*f = light.Le(tspack, RayDifferential(Point(0.f), -wiW));
@@ -170,7 +171,8 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene, cons
 	Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
+	dg.time = tspack->time;
 	if (!havePortalShape) {
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
@@ -227,6 +229,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1, u3 * nrPortalShapes);
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
@@ -289,6 +292,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		if(nrPortalShapes > 1) 
 			shapeidx = min<float>(nrPortalShapes - 1, u3 * nrPortalShapes);
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		Point ps;
 		bool found = false;
 		for (int i = 0; i < nrPortalShapes; ++i) {
@@ -347,6 +351,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
 		ray->o = dg.p;
 		ray->d = UniformSampleSphere(u3, u4);
@@ -367,7 +372,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 		Normal ns = Normal(Normalize(worldCenter - ps));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
@@ -380,6 +385,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dgs;
+		dgs.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(.5f, .5f, u3, &dgs);
 		Vector wi(UniformSampleHemisphere(u1, u2));
 		wi = Normalize(wi.x * Normalize(dgs.dpdu) + wi.y * Normalize(dgs.dpdv) - wi.z * Vector(dgs.nn));
@@ -391,7 +397,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 		Normal ns(Normalize(worldCenter - ps));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, NULL);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, InfinitePortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = AbsDot(ns, wi) / (distance * distance);
@@ -441,6 +447,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
@@ -460,7 +467,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 	Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 	if (!havePortalShape) {
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
@@ -470,6 +477,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 			BSDF_ALLOC(tspack, InfinitePortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
+		dgs.time = tspack->time;
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
 			Vector w(ps - dgs.p);

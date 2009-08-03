@@ -128,8 +128,8 @@ DifferentialGeometry *dg) const {
     *dg = DifferentialGeometry(ObjectToWorld(phit),
         ObjectToWorld(dpdu),
         ObjectToWorld(dpdv),
-        ObjectToWorld(Vector()),
-        ObjectToWorld(Vector()),
+        ObjectToWorld(Normal()),
+        ObjectToWorld(Normal()),
         u, v, this);
     // Update _tHit_ for quadric intersection
     *tHit = thit;

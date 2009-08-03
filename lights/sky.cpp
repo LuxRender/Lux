@@ -64,6 +64,7 @@ public:
 		if (shapeIndex == ~0U || reverse)
 			return false;
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
 		Vector wiW = Normalize(dg.p - ps);
 		Vector w = -Normalize(WorldToLight(wiW));
@@ -212,7 +213,8 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
+	dg.time = tspack->time;
 	if (!havePortalShape) {
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
@@ -278,6 +280,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		*wi = Normalize(ps - p);
@@ -344,6 +347,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		*wi = Normalize(ps - p);
@@ -389,6 +393,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
 		ray->o = dg.p;
 		ray->d = UniformSampleSphere(u3, u4); //Jeanphi - FIXME this is wrong as it doesn't take the portal normal into account
@@ -409,7 +414,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		Normal ns = Normal(Normalize(worldCenter - ps));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
@@ -422,6 +427,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dgs;
+		dgs.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(.5f, .5f, u3, &dgs);
 		Vector wi(UniformSampleHemisphere(u1, u2));
 		wi = Normalize(wi.x * Normalize(dgs.dpdu) + wi.y * Normalize(dgs.dpdv) - wi.z * Vector(dgs.nn));
@@ -433,7 +439,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		Normal ns(Normalize(worldCenter - ps));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = AbsDot(ns, wi) / (distance * distance);
@@ -485,6 +491,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
+		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
@@ -504,7 +511,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Vector(0, 0, 0), Vector (0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 	if (!havePortalShape) {
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
 			BSDF_ALLOC(tspack, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)));
@@ -514,6 +521,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 			BSDF_ALLOC(tspack, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
+		dgs.time = tspack->time;
 		for (int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
 			Vector w(ps - dgs.p);

@@ -86,6 +86,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
 	DifferentialGeometry dg;
+	dg.time = tspack->time;
 	prim->Sample(p, u1, u2, u3, &dg);
 	*wi = Normalize(dg.p - p);
 	*pdf = prim->Pdf(p, *wi);
@@ -105,6 +106,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	DifferentialGeometry dg;
+	dg.time = tspack->time;
 	prim->Sample(P, u1, u2, u3, &dg);
 	*wo = Normalize(dg.p - P);
 	*pdf = prim->Pdf(P, *wo);
@@ -115,6 +117,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
 	DifferentialGeometry dg;
+	dg.time = tspack->time;
 	prim->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
 	ray->o = dg.p;
 	ray->d = UniformSampleSphere(u3, u4);
@@ -128,6 +131,7 @@ float AreaLight::Pdf(const Point &P, const Vector &w) const {
 bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	DifferentialGeometry dg;
+	dg.time = tspack->time;
 	prim->Sample(u1, u2, u3, &dg);
 	if(func)
 		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, dg.nn,
@@ -148,6 +152,7 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	DifferentialGeometry dg;
+	dg.time = tspack->time;
 	prim->Sample(p, u1, u2, u3, &dg);
 	Vector wo(Normalize(dg.p - p));
 	*pdf = prim->Pdf(dg.p);

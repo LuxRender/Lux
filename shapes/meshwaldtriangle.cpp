@@ -225,7 +225,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	const Point pp(b0 * mesh->p[v[0]] + uu * mesh->p[v[1]] + vv * mesh->p[v[2]]);
 
 	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
-		Vector(0, 0, 0), Vector(0, 0, 0), tu, tv, this);
+		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
 	isect->dg.triangleBaryCoords[0] = b0;
 	isect->dg.triangleBaryCoords[1] = uu;

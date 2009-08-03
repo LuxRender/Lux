@@ -219,7 +219,7 @@ bool Quadrilateral::Intersect(const Ray &ray, float *tHit,
 	}
 
     *dg = DifferentialGeometry(ray(t), dpdu, dpdv,
-            Vector(0, 0, 0), Vector(0, 0, 0),
+            Normal(0, 0, 0), Normal(0, 0, 0),
             u, v, this);
 
 	*tHit = t;

@@ -60,13 +60,13 @@ public:
 	DifferentialGeometry(
 			const Point &P,
 			const Vector &DPDU,	const Vector &DPDV,
-			const Vector &DNDU, const Vector &DNDV,
+			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
 			const void *pr);
 	DifferentialGeometry(
 			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
-			const Vector &DNDU, const Vector &DNDV,
+			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
 			const void *pr);
 	void AdjustNormal(bool ro, bool swapsHandedness) {
@@ -87,6 +87,7 @@ public:
 	float u, v;
 	const void* handle;
 	mutable float dudx, dvdx, dudy, dvdy;
+	float time;
 
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()
