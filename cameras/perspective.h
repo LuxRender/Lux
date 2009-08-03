@@ -60,9 +60,8 @@ private:
 	Transform RasterToCameraBidir, WorldToRasterBidir;
 	float fov;
 	float posPdf;
-	float screen[4];
 	float xStart, xEnd, yStart, yEnd;
-	float R,xWidth,yHeight,xPixelWidth,yPixelHeight,Apixel;
+	float R, xPixelWidth, yPixelHeight, Apixel;
 	int distribution, shape, power;
 
 	// Dade - field used for autofocus feature

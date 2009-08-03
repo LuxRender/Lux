@@ -134,36 +134,18 @@ PerspectiveCamera::
 	else
 		posPdf = 1.f;
 
-	//screen[0]=Screen[0];
-	//screen[1]=Screen[1];
-	//screen[2]=Screen[2];
-	//screen[3]=Screen[3];
-	//R = 1/tan(fov*0.5f);
-	//xPixelWidth = (screen[1]-screen[0]) / f->xResolution;
-	//yPixelHeight = (screen[3]-screen[2]) / f->yResolution;
-	//Apixel = xPixelWidth * yPixelHeight;
-
 	R = 1.f;
 	float templength = R * tan(fov / 2.f) * 2.f;	
-	float frameaspectratio = float(f->xResolution) / float(f->yResolution);
-	if (frameaspectratio > 1.f)
-	{
-		xWidth = templength * frameaspectratio;
-		yHeight = templength;
-	}
-	else
-	{
-		xWidth = templength;
-		yHeight = templength / frameaspectratio;
-	}
 	int xS, xE, yS, yE;
 	f->GetSampleExtent(&xS, &xE, &yS, &yE);
 	xStart = xS;
 	xEnd = xE;
 	yStart = yS;
 	yEnd = yE;
-	xPixelWidth = xWidth * (Screen[1] - Screen[0]) / 2.f;
-	yPixelHeight = yHeight * (Screen[3] - Screen[2]) / 2.f;
+	xPixelWidth = templength * (Screen[1] - Screen[0]) / 2.f *
+		(xEnd - xStart) / f->xResolution;
+	yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
+		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
 	RasterToCameraBidir = Perspective(fov1, RAY_EPSILON, INFINITY).GetInverse() * RasterToScreen;
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
