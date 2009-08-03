@@ -48,7 +48,6 @@ namespace lux
     }
 
     virtual ~FrequencySPD() {
-		FreeSamples();
 	}
 
 	void init(float freq, float phase, float refl);

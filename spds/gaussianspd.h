@@ -48,7 +48,6 @@ namespace lux
     }
 
     virtual ~GaussianSPD() {
-		FreeSamples();
 	}
 
 	void init(float mean, float width, float refl);

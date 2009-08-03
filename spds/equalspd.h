@@ -48,7 +48,6 @@ namespace lux
     }
 
     virtual ~EqualSPD() {
-		FreeSamples();
 	}
 
 	void init(float p);

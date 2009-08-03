@@ -46,7 +46,6 @@ namespace lux
     }
 
     virtual ~BlackbodySPD() {
-		FreeSamples();
 	}
 
 	void init(float t);
