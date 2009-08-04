@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
+#include "filter.h"
 #include <boost/thread/xtime.hpp>
 
 namespace lux {
