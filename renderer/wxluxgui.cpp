@@ -1466,6 +1466,7 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE ) * (m_Glare_radius));
 				m_glareradiusSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
+				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 
