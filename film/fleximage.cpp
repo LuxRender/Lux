@@ -1077,6 +1077,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			m_HaveBloomImage = false;
 			delete[] m_bloomImage;
 			m_bloomImage = NULL;
+			m_BloomDeleteLayer = false;
 		}
 
 		if (!m_GlareUpdateLayer && m_GlareDeleteLayer && m_HaveGlareImage) {
@@ -1084,6 +1085,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			m_HaveGlareImage = false;
 			delete[] m_glareImage;
 			m_glareImage = NULL;
+			m_GlareDeleteLayer = false;
 		}
 
 		// Apply chosen tonemapper
