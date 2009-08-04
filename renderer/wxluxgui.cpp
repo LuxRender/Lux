@@ -268,6 +268,10 @@ LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
 }
 
 LuxGui::~LuxGui() {
+	delete m_engineThread;
+	delete m_updateThread;
+	delete m_flmloadThread;
+	delete m_flmsaveThread;
 	delete m_renderTimer;
 	delete m_statsTimer;
 	delete m_loadTimer;
@@ -3279,14 +3283,22 @@ void LuxGui::StopRendering() {
 	if(m_guiRenderState != WAITING) {
 		if(m_flmloadThread)
 			m_flmloadThread->join();
+		delete m_flmloadThread;
+		m_flmloadThread = NULL;
 		if(m_flmsaveThread)
 			m_flmsaveThread->join();
+		delete m_flmsaveThread;
+		m_flmsaveThread = NULL;
 		if(m_guiRenderState != FINISHED && m_guiRenderState != TONEMAPPING) {
 			if(m_updateThread)
 				m_updateThread->join();
+			delete m_updateThread;
+			m_updateThread = NULL;
 			luxExit();
 			if(m_engineThread)
 				m_engineThread->join();
+			delete m_engineThread;
+			m_engineThread = NULL;
 		}
 		luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
 		luxCleanup();
@@ -3363,6 +3375,8 @@ void LuxGui::OnLoadFLM(wxCommandEvent &event) {
 		m_progDialog->Pulse();
 		m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 
+		if (m_flmloadThread)
+			delete m_flmloadThread;
 		m_flmloadThread = new boost::thread(boost::bind(&LuxGui::FlmLoadThread, this, filename));
 	}
 }
@@ -3386,6 +3400,8 @@ void LuxGui::OnSaveFLM(wxCommandEvent &event) {
 		m_progDialog->Pulse();
 		m_saveTimer->Start(1000, wxTIMER_CONTINUOUS);
 
+		if (m_flmsaveThread)
+			delete m_flmsaveThread;
 		m_flmsaveThread = new boost::thread(boost::bind(&LuxGui::FlmSaveThread, this, filename));
 	}
 }
@@ -3401,8 +3417,12 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 	if(m_guiRenderState != WAITING) {
 		if(m_flmloadThread)
 			m_flmloadThread->join();
+		delete m_flmloadThread;
+		m_flmloadThread = NULL;
 		if(m_flmsaveThread)
 			m_flmsaveThread->join();
+		delete m_flmsaveThread;
+		m_flmsaveThread = NULL;
 		if(m_guiRenderState == PARSING && m_progDialog) {
 			// destroy progress dialog if quitting during parsing
 			m_progDialog->Destroy();
@@ -3412,9 +3432,13 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 		if(m_guiRenderState != FINISHED && m_guiRenderState != TONEMAPPING) {
 			if(m_updateThread)
 				m_updateThread->join();
+			delete m_updateThread;
+			m_updateThread = NULL;
 			luxExit();
 			if(m_engineThread)
 				m_engineThread->join();
+			delete m_engineThread;
+			m_engineThread = NULL;
 		}
 		luxError(LUX_NOERROR, LUX_INFO, "Freeing resources.");
 		luxCleanup();
@@ -3461,6 +3485,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					// Render threads stopped, do one last render update
 					luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 					m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
+					if (m_updateThread)
+						delete m_updateThread;
 					m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
 					m_statsTimer->Stop();
 					luxPause();
@@ -3629,6 +3655,8 @@ void LuxGui::RenderScenefile(wxString filename) {
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 
 	// Start main render thread
+	if (m_engineThread)
+		delete m_engineThread;
 	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
 }
 

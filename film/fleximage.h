@@ -58,6 +58,8 @@ public:
 		delete[] framebuffer;
 		if(use_Zbuf && ZBuffer)
 			delete ZBuffer;
+		delete[] filterTable;
+		delete filter;
 	}
 
 	virtual void RequestBufferGroups(const vector<string> &bg);

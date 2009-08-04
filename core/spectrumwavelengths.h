@@ -37,6 +37,7 @@ public:
 
 	// SpectrumWavelengths Public Methods
 	SpectrumWavelengths();
+	~SpectrumWavelengths();
 
 	inline void Sample(float u1, float u2) {
 		single = false;

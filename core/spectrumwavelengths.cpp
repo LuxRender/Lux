@@ -64,4 +64,14 @@ SpectrumWavelengths::SpectrumWavelengths() {
 	spd_b->Scale(refrgb2spect_scale);
 }
 
+SpectrumWavelengths::~SpectrumWavelengths()
+{
+	delete spd_w;
+	delete spd_c;
+	delete spd_m;
+	delete spd_y;
+	delete spd_r;
+	delete spd_g;
+	delete spd_b;
+}
 

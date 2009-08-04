@@ -369,6 +369,12 @@ void RenderThread::render(RenderThread *myThread) {
 	myThread->sampler->Cleanup();
 
     delete useSampPos;
+
+	delete myThread->tspack->swl;
+	delete myThread->tspack->rng;
+	delete myThread->tspack->arena;
+//	delete myThread->tspack->camera; //FIXME deleting the camera clone would delete the film!
+	delete myThread->tspack;
     return;
 }
 
@@ -383,7 +389,7 @@ int Scene::CreateRenderThread()
 
 	RenderThread *rt = new  RenderThread(renderThreads.size(),
 		CurThreadSignal, surfaceIntegrator, volumeIntegrator,
-		sampler->clone(), camera, this);
+		sampler, camera, this);
 
 	renderThreads.push_back(rt);
 	rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
@@ -399,6 +405,8 @@ void Scene::RemoveRenderThread()
 	if (renderThreads.size() == 0)
 		return;
 	renderThreads.back()->signal = EXIT;
+	renderThreads.back()->thread->join();
+	delete renderThreads.back();
 	renderThreads.pop_back();
 }
 
@@ -457,8 +465,10 @@ void Scene::Render() {
 
 	// Dade - this code fragment is not thread safe
     //wait all threads to finish their job
-    for(unsigned int i = 0; i < renderThreads.size(); i++)
+    for(unsigned int i = 0; i < renderThreads.size(); i++) {
         renderThreads[i]->thread->join();
+	delete renderThreads[i];
+    }
 
 	// Flush the contribution pool
 	contribPool->Flush();
@@ -466,6 +476,10 @@ void Scene::Render() {
 
     // Store final image
     camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
+	delete tspack->swl;
+	delete tspack->rng;
+	delete tspack->arena;
+	delete tspack;
 }
 
 Scene::~Scene() {

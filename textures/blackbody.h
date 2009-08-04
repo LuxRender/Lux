@@ -50,7 +50,7 @@ public:
 	BlackBodySpectrumTexture(const float &t) {
 		BBSPD = new BlackbodySPD(t);
 	}
-	virtual ~BlackBodySpectrumTexture() { }
+	virtual ~BlackBodySpectrumTexture() { delete BBSPD; }
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, BBSPD);
 	}
