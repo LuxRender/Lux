@@ -20,25 +20,25 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "include/asio.hpp"
 #include "renderserver.h"
 #include "api.h"
 #include "context.h"
 #include "paramset.h"
 #include "error.h"
 
-#include "boost/version.hpp"
+#include <boost/version.hpp>
 #if (BOOST_VERSION < 103401)
-#include "boost/filesystem/operations.hpp"
+#include <boost/filesystem/operations.hpp>
 #else
-#include "boost/filesystem.hpp"
+#include <boost/filesystem.hpp>
 #endif
+#include <boost/asio.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
 using namespace boost::filesystem;
 using namespace std;
-using asio::ip::tcp;
+using boost::asio::ip::tcp;
 
 //------------------------------------------------------------------------------
 // RenderServer
@@ -253,7 +253,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
 
 	vector<string> tmpFileList;
     try {
-        asio::io_service io_service;
+	    boost::asio::io_service io_service;
         tcp::endpoint endpoint(tcp::v4(), listenPort);
         tcp::acceptor acceptor(io_service, endpoint);
 

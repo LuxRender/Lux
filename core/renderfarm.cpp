@@ -28,16 +28,15 @@
 #include "renderfarm.h"
 #include "camera.h"
 
-#include "../renderer/include/asio.hpp"
-
 #include <fstream>
+#include <boost/asio.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/bind.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
 using namespace lux;
-using asio::ip::tcp;
+using boost::asio::ip::tcp;
 
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
     // Dade - thread to update the film with data from servers
