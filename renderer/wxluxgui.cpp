@@ -1466,7 +1466,6 @@ void LuxGui::OnText(wxCommandEvent& event) {
 				int val = (int) (( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE ) * (m_Glare_radius));
 				m_glareradiusSlider->SetValue( val );
 				UpdateParam(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
-				if(m_auto_tonemap) ApplyTonemapping();
 			}
 			break;
 
@@ -2948,6 +2947,7 @@ void LuxGui::LuxLightGroupPanel::OnCheckBox(wxCommandEvent& event)
 				UpdateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, (m_LG_temperature_enabled ? m_LG_temperature : 0.0), m_Index);
 				m_Gui->UpdatedTonemapParam();
 			}
+			break;
 /*
 		case ID_LG_ENABLE:
 			m_LG_enable = m_LG_enableCheckbox->GetValue();
@@ -3192,7 +3192,6 @@ void LuxGui::OnTreeSelChanged( wxTreeEvent& event )
 	if ( pNodeData != NULL )
 	{
 		m_serverTextCtrl->SetValue( wxString::Format(_("%s:%s"), pNodeData->m_SlaveName.c_str(), pNodeData->m_SlavePort.c_str()));
-		m_networkTreeCtrl->SelectItem(idTreeNode);
 	}
 }
 
@@ -3376,8 +3375,7 @@ void LuxGui::OnLoadFLM(wxCommandEvent &event) {
 		m_progDialog->Pulse();
 		m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 
-		if (m_flmloadThread)
-			delete m_flmloadThread;
+		delete m_flmloadThread;
 		m_flmloadThread = new boost::thread(boost::bind(&LuxGui::FlmLoadThread, this, filename));
 	}
 }
@@ -3401,8 +3399,7 @@ void LuxGui::OnSaveFLM(wxCommandEvent &event) {
 		m_progDialog->Pulse();
 		m_saveTimer->Start(1000, wxTIMER_CONTINUOUS);
 
-		if (m_flmsaveThread)
-			delete m_flmsaveThread;
+		delete m_flmsaveThread;
 		m_flmsaveThread = new boost::thread(boost::bind(&LuxGui::FlmSaveThread, this, filename));
 	}
 }
@@ -3486,8 +3483,7 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					// Render threads stopped, do one last render update
 					luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
 					m_statusBar->SetStatusText(wxT("Tonemapping..."), 0);
-					if (m_updateThread)
-						delete m_updateThread;
+					delete m_updateThread;
 					m_updateThread = new boost::thread(boost::bind(&LuxGui::UpdateThread, this));
 					m_statsTimer->Stop();
 					luxPause();
@@ -3656,8 +3652,7 @@ void LuxGui::RenderScenefile(wxString filename) {
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
 
 	// Start main render thread
-	if (m_engineThread)
-		delete m_engineThread;
+	delete m_engineThread;
 	m_engineThread = new boost::thread(boost::bind(&LuxGui::EngineThread, this, filename));
 }
 
