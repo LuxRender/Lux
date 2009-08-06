@@ -34,7 +34,7 @@ public:
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > kd,
 			boost::shared_ptr<Texture<float> > sig,
 			boost::shared_ptr<Texture<float> > bump,
-			CompositingParams cp) {
+			const CompositingParams &cp) {
 		Kd = kd;
 		sigma = sig;
 		bumpMap = bump;

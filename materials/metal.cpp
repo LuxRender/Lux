@@ -41,7 +41,7 @@ using namespace lux;
 
 Metal::Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k, 
 			 boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-			 boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
+			 boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
 	N = n;
 	K = k;
 	nu = u;

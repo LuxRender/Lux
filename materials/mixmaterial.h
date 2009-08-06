@@ -31,9 +31,9 @@ namespace lux
 class MixMaterial : public Material {
 public:
 	// MixMaterial Public Methods
-	MixMaterial(boost::shared_ptr<Texture<float> > a) {
+	MixMaterial(boost::shared_ptr<Texture<float> > a, const CompositingParams &cp) {
 		amount = a;
-		compParams = NULL;
+		compParams = new CompositingParams(cp);
 	}
 	virtual ~MixMaterial() { }
 	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;

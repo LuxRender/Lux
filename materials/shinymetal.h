@@ -35,7 +35,7 @@ public:
 		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
 		boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex, 
 			boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<float> > bump,
-			CompositingParams cp) {
+			const CompositingParams &cp) {
 		Ks = ks;
 		Kr = kr;
 		nu = u;

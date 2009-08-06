@@ -34,7 +34,7 @@ public:
 	RoughGlass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t, 
 			boost::shared_ptr<Texture<float> > urough, boost::shared_ptr<Texture<float> > vrough,
 			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, boost::shared_ptr<Texture<float> > bump,
-			CompositingParams cp) {
+			const CompositingParams &cp) {
 		Kr = r;
 		Kt = t;
 		uroughness = urough;

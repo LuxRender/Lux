@@ -34,6 +34,7 @@ BSDF *MixMaterial::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgG
 	float amt = amount->Evaluate(tspack, dgShading);
 	bsdf->Add(amt, child1->GetBSDF(tspack, dgGeom, dgShading));
 	bsdf->Add(1.f - amt, child2->GetBSDF(tspack, dgGeom, dgShading));
+	bsdf->SetCompositingParams(compParams);
 	return bsdf;
 }
 Material* MixMaterial::CreateMaterial(const Transform &xform,
@@ -42,7 +43,10 @@ Material* MixMaterial::CreateMaterial(const Transform &xform,
     string namedmaterial2 = mp.FindString("namedmaterial2"); // discarded as these are passed trough Context::Shape()
 	boost::shared_ptr<Texture<float> > amount = mp.GetFloatTexture("amount", 0.5f);
 
-	return new MixMaterial(amount);
+	// Get Compositing Params
+	CompositingParams cP;
+	FindCompositingParams(mp, &cP);
+	return new MixMaterial(amount, cP);
 }
 
 static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

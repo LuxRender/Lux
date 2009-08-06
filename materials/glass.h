@@ -34,7 +34,7 @@ public:
 	Glass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t,
 			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf,
 			boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex,
-			bool archi, boost::shared_ptr<Texture<float> > bump, CompositingParams cp) {
+			bool archi, boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
 		Kr = r;
 		Kt = t;
 		index = i;

@@ -31,7 +31,7 @@ namespace lux
 class Null : public Material {
 public:
 	// Null Public Methods
-	Null(CompositingParams cp) {
+	Null(const CompositingParams &cp) {
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Null() { }
