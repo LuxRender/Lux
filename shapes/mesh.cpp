@@ -300,34 +300,28 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	switch (concreteTriType) {
 		case TRI_WALD:
 			for (int i = 0; i < ntris; ++i) {
-				MeshWaldTriangle* currTri = new MeshWaldTriangle(this, i);
+				MeshWaldTriangle *currTri;
+				if (refinedPrims.size() > 0)
+					currTri = new MeshWaldTriangle(this, i);
+				else
+					currTri = new MeshElemSharedPtr<MeshWaldTriangle>(this, i, thisPtr);
 				if (!currTri->isDegenerate()) {
-					if (refinedPrims.size() > 0) {
-						boost::shared_ptr<Primitive> o(currTri);
-						refinedPrims.push_back(o);
-					} else {
-						delete currTri;
-						boost::shared_ptr<Primitive> o(
-							new MeshElemSharedPtr<MeshWaldTriangle>(this, i, thisPtr));
-						refinedPrims.push_back(o);
-					}
+					boost::shared_ptr<Primitive> o(currTri);
+					refinedPrims.push_back(o);
 				} else
 					delete currTri;
 			}
 			break;
 		case TRI_BARY:
 			for (int i = 0; i < ntris; ++i) {
-				MeshBaryTriangle* currTri = new MeshBaryTriangle(this, i);
+				MeshBaryTriangle *currTri;
+				if (refinedPrims.size() > 0)
+					currTri = new MeshBaryTriangle(this, i);
+				else
+					currTri = new MeshElemSharedPtr<MeshBaryTriangle>(this, i, thisPtr);
 				if (!currTri->isDegenerate()) {
-					if (refinedPrims.size() > 0) {
-						boost::shared_ptr<Primitive> o(currTri);
-						refinedPrims.push_back(o);
-					} else {
-						delete currTri;
-						boost::shared_ptr<Primitive> o(
-							new MeshElemSharedPtr<MeshBaryTriangle>(this, i, thisPtr));
-						refinedPrims.push_back(o);
-					}
+					boost::shared_ptr<Primitive> o(currTri);
+					refinedPrims.push_back(o);
 				} else
 					delete currTri;
 			}
@@ -377,7 +371,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		else if (refinedPrims.size() <= 500000)
 			concreteAccelType = ACCEL_KDTREE;
 		else if (refinedPrims.size() <= 8000000)
-			concreteAccelType = ACCEL_BVH;
+			concreteAccelType = ACCEL_QBVH;
 		else
 			concreteAccelType = ACCEL_GRID;
 	}
@@ -389,8 +383,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		case ACCEL_NONE:
 			ss << "none (global)";
 			break;
-		case ACCEL_BVH:
-			ss << "bvh";
+		case ACCEL_QBVH:
+			ss << "qbvh";
 			break;
 		case ACCEL_GRID:
 			ss << "grid";
@@ -438,8 +432,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			case ACCEL_KDTREE:
 				accel = MakeAccelerator("kdtree", refinedPrims, paramset);
 				break;
-			case ACCEL_BVH:
-				accel = MakeAccelerator("bvh", refinedPrims, paramset);
+			case ACCEL_QBVH:
+				accel = MakeAccelerator("qbvh", refinedPrims, paramset);
 				break;
 			case ACCEL_GRID:
 				accel = MakeAccelerator("grid", refinedPrims, paramset);
@@ -468,7 +462,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	// Lotus - read general data
 	Mesh::MeshAccelType accelType;
 	if (accelTypeStr == "kdtree") accelType = Mesh::ACCEL_KDTREE;
-	else if (accelTypeStr == "bvh") accelType = Mesh::ACCEL_BVH;
+	else if (accelTypeStr == "qbvh") accelType = Mesh::ACCEL_QBVH;
 	else if (accelTypeStr == "bruteforce") accelType = Mesh::ACCEL_BRUTEFORCE;
 	else if (accelTypeStr == "grid") accelType = Mesh::ACCEL_GRID;
 	else if (accelTypeStr == "none") accelType = Mesh::ACCEL_NONE;
