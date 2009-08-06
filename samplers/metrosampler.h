@@ -57,10 +57,9 @@ public:
 	u_int rngBase, rngOffset;
 	bool large;
 	int stamp, numMicro, posMicro;
-	float weight, LY, V, alpha;
+	float weight, LY, alpha;
 	vector <Contribution> oldContributions;
-	static int initCount, initSamples;
-	static float meanIntensity;
+	double totalLY, sampleCount;
 };
 
 }//namespace lux

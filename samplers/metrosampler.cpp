@@ -76,7 +76,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
  pMicro(microProb), range(rng), useVariance(useV), sampleImage(NULL),
  timeImage(NULL), offset(NULL), rngRotation(NULL), rngBase(0),
  rngOffset(0), large(true), stamp(0), numMicro(-1), posMicro(-1), weight(0.f),
- LY(0.f), V(0.f), alpha(0.f)
+ LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -152,7 +152,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
 	const float mutationSelector = tspack->rng->floatValue();
-	large = (mutationSelector < pLarge) || initCount < initSamples;
+	large = (mutationSelector < pLarge);
 	if (sampleImage == NULL) {
 		initMetropolis(this, sample);
 		large = true;
@@ -266,47 +266,37 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 void MetropolisSampler::AddSample(const Sample &sample)
 {
 	vector<Contribution> &newContributions(sample.contributions);
-	float newLY = 0.f, newV = 0.f;
+	float newLY = 0.f;
 	for(u_int i = 0; i < newContributions.size(); ++i) {
-		if (newContributions[i].color.y() > 0.f) {
-			newLY += newContributions[i].color.y();
-			newV += newContributions[i].color.y() * newContributions[i].variance;
+		float ly = newContributions[i].color.y();
+		if (ly > 0.f) {
+			if (useVariance && newContributions[i].variance > 0.f)
+				newLY += ly * newContributions[i].variance;
+			else
+				newLY += ly;
 		}
 	}
 	// calculate meanIntensity
-	if (initCount < initSamples) {
-		if (useVariance && newV > 0.f)
-			meanIntensity += newV / initSamples;
-		else if (newLY > 0.f)
-			meanIntensity += newLY / initSamples;
-		++(initCount);
-		if (initCount < initSamples)
-			return;
-		if (!(meanIntensity > 0.f))
-			meanIntensity = 1.f;
+	if (large) {
+		totalLY += newLY;
+		++sampleCount;
 	}
+	float meanIntensity = totalLY / sampleCount;
 
 	contribBuffer->AddSampleCount(1.f);
 
 	// calculate accept probability from old and new image sample
-	float accProb, accProb2, factor;
-	if (LY > 0.f) {
+	float accProb;
+	if (LY > 0.f)
 		accProb = min(1.f, newLY / LY);
-		if (useVariance && V > 0.f && newV > 0.f && newLY > 0.f)
-			factor = Clamp(newV / (V * accProb), min(LY / newLY, newLY / LY), 1.f / accProb);
-		else
-			factor = 1.f;
-	} else {
+	else
 		accProb = 1.f;
-		factor = 1.f;
-	}
-	accProb2 = accProb * factor;
 	float newWeight = accProb + (large ? 1.f : 0.f);
 	weight += 1.f - accProb;
 	// try or force accepting of the new sample
-	if (accProb2 == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb2) {
+	if (accProb == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		const float norm = 1.f / ((useVariance ? V : LY) / meanIntensity + pLarge);
+		const float norm = meanIntensity / (LY + pLarge * meanIntensity);
 		for(u_int i = 0; i < oldContributions.size(); ++i) {
 			oldContributions[i].color *= norm;
 			// Radiance - added new use of contributionpool/buffers
@@ -318,7 +308,6 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		// Save new contributions for reference
 		weight = newWeight;
 		LY = newLY;
-		V = newV;
 		oldContributions = newContributions;
 		sampleImage[0] = sample.imageX;
 		sampleImage[1] = sample.imageY;
@@ -336,7 +325,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		const float norm = 1.f / ((useVariance ? newV : newLY) / meanIntensity + pLarge);
+		const float norm = meanIntensity / (newLY + pLarge * meanIntensity);
 		for(u_int i = 0; i < newContributions.size(); ++i) {
 			newContributions[i].color *= norm;
 			// Radiance - added new use of contributionpool/buffers
@@ -358,9 +347,6 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 {
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	initSamples = params.FindOneInt("initsamples", 100000);
-	initCount = 0;
-	meanIntensity = 0.;
 	int maxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float microMutationProb = params.FindOneFloat("micromutationprob", 0.f);	// probability of generating a micro sample mutation
@@ -370,8 +356,5 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, maxConsecRejects,
 		largeMutationProb, microMutationProb, range, useVariance);
 }
-
-int MetropolisSampler::initCount, MetropolisSampler::initSamples;
-float MetropolisSampler::meanIntensity;
 
 static DynamicLoader::RegisterSampler<MetropolisSampler> r("metropolis");
