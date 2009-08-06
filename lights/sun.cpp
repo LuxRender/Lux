@@ -238,10 +238,11 @@ float SunLight::Pdf(const Point &, const Vector &) const {
 float SunLight::Pdf(const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
-	if(cosThetaMax == 1)
+	const float cosTheta = AbsDot(Normalize(p - po), ns);
+	if(cosTheta < cosThetaMax)
 		return 0.f;
 	else
-		return UniformConePdf(cosThetaMax) * AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);
+		return UniformConePdf(cosThetaMax) * cosTheta / DistanceSquared(p, po);
 }
 
 SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
@@ -308,7 +309,6 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
-	SWCSpectrum result = SWCSpectrum(tspack, LSPD);
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
@@ -340,7 +340,20 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 			return false;
 		}
 
-		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / (cosPortal * nrPortalShapes);
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / cosPortal;
+		for (int i = 0; i < nrPortalShapes; ++i) {
+			if (i == shapeIndex)
+				continue;
+			Intersection isect;
+			RayDifferential ray(ps, sundir);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
+				float cosP = Dot(ns, isect.dg.nn);
+				if (cosP > 0.f)
+					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosP;
+			}
+		}
+		*pdf /= nrPortalShapes;
 		if (!(*pdf > 0.f)) {
 			*Le = SWCSpectrum(0.f);
 			return false;
