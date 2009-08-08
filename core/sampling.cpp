@@ -88,6 +88,8 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 	// Allocate storage for sample values
 	float *mem = AllocAligned<float>(totSamples);
 	int *tmem = AllocAligned<int>(totTime);
+	// make sure to assign onexD[0] even if n1D.size() == 0
+	oneD[0] = mem;
 	for (u_int i = 0; i < n1D.size(); ++i) {
 		oneD[i] = mem;
 		mem += n1D[i];
@@ -96,6 +98,8 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 		twoD[i] = mem;
 		mem += 2 * n2D[i];
 	}
+	// make sure to assign timexD[0] even if nxD.size() == 0
+	timexD[0] = tmem;
 	for (u_int i = 0; i < nxD.size(); ++i) {
 		xD[i] = mem;
 		mem += dxD[i] * nxD[i];
