@@ -269,6 +269,9 @@ ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -D
 # Compiler flags for specific setup
 #############################################################################
 
+# doug - When linking liblux as a python extension, need to compile with -fPIC
+#ADD_DEFINITIONS(-fPIC)
+
 # Jens - default Mac compiler options with OpenGL
 #ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
