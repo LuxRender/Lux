@@ -534,34 +534,46 @@ void LuxGLViewer::CreateTextures(){
 			glTexImage2D(GL_TEXTURE_2D, 0,  m_useAlpha?GL_RGBA:GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		}
 	}else{ //m_displayMode==LOGO_VIEW - create and upload logo textures
+
+		unsigned char *tileImg = new unsigned char[4*m_textureW*m_textureH];
+
+		for (int i = 0; i < m_textureH; i++) {
+			for (int j = 0; j < m_textureW; j++) {
+				const int bias = (int)(135/255.0f);
+				for (int k = 0; k < 3; k++)
+					tileImg[(i*m_textureW+j)*4+k] = 255;//bias;
+			}
+		}
+
 		for(int y = 0; y < m_tilesY; y++){
 			for(int x = 0; x < m_tilesX; x++){
 				int offX = x*m_textureW;
 				int offY = y*m_textureH;
 				int tileW = min(m_textureW, m_imageW - offX);
 				int tileH = min(m_textureH, m_imageH - offY);
+
 				glBindTexture (GL_TEXTURE_2D, m_tileTextureNames[y*m_tilesX+x]);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				glPixelStorei(GL_UNPACK_SKIP_PIXELS, offX);
-				glPixelStorei(GL_UNPACK_SKIP_ROWS, offY);
-				glPixelStorei(GL_UNPACK_ROW_LENGTH, m_imageW);
 
-				glPixelTransferf( GL_RED_BIAS,   135/255.0f );
-				glPixelTransferf( GL_GREEN_BIAS, 135/255.0f );
-				glPixelTransferf( GL_BLUE_BIAS,  135/255.0f );
+				for (int i = 0; i < tileH; i++) {
+					for (int j = 0; j < tileW; j++) {
+						// NOTE - lordcrc - I have no idea why dividing by 16 makes it work 
+						// like the previous code, but oh well...
+						tileImg[(i*tileW+j)*4+3] = logo_buf[(offY+i)*m_imageW+(offX+j)]/16;
+					}
+				}
 
 				glTexImage2D(GL_TEXTURE_2D, 0, m_useAlpha?GL_RGBA:GL_RGB, m_textureW, m_textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_ALPHA, GL_UNSIGNED_BYTE, logo_buf);
-
-				glPixelTransferf( GL_RED_BIAS,   0.0f );
-				glPixelTransferf( GL_GREEN_BIAS, 0.0f );
-				glPixelTransferf( GL_BLUE_BIAS,  0.0f );
+				// NOTE - lordcrc - uploading partial texture crashes software OpenGL implementation
+				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tileW, tileH, GL_RGBA, GL_UNSIGNED_BYTE, tileImg);				
 			}
 		}
+
+		delete[] tileImg;
 	}
 
 	glDisable(GL_TEXTURE_2D);
