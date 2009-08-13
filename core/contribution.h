@@ -24,10 +24,10 @@
 #define LUX_CONTRIBUTION_H
 // contribution.h*
 #include "lux.h"
-#include "film.h"
 #include "color.h"
 
 #include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 namespace lux
 {
@@ -73,7 +73,7 @@ public:
 		contribs[pos] = *c;
 		contribs[pos].variance = weight;
 
-		pos++;
+		++pos;
 
 		return true;
 	}
@@ -82,16 +82,10 @@ public:
 		sampleCount += c;
 	}
 
-	void Splat(Film *film) {
-		for (short int i=0; i<pos; i++)
-			film->AddSample(&contribs[i]);
-		film->AddSampleCount(sampleCount);
-	}
-
-	void Reset() { pos = 0; sampleCount = 0.f; }
+	void Splat(Film *film);
 
 private:
-	unsigned short int pos;
+	u_int pos;
 	float sampleCount;
 	Contribution *contribs;
 };
@@ -99,107 +93,28 @@ private:
 class ContributionPool {
 public:
 
-	ContributionPool() : total(0), splatting(false) { }
+	ContributionPool() : total(0) { }
 
 	void SetFilm(Film *f) { film = f; }
 
-	ContributionBuffer* Get() { // Do not use Get() directly, use Next() below instead, it's thread-safe.
-		u_int freepos = CFree.size();
-		if(freepos == 0) {
-			ContributionBuffer *cnew = new ContributionBuffer();
-			total++;
+	void End(ContributionBuffer *c);
 
-			if(CONTRIB_DEBUG) {
-				std::stringstream ss;
-				ss << "Allocating Contribution Buffer - Nr of buffers in pool: "
-					<< total << " - Total mem used: " << total * CONTRIB_BUF_SIZE * sizeof(Contribution) << ".";
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-			}
+	ContributionBuffer* Next(ContributionBuffer *c);
 
-			return cnew;
-		}
-		ContributionBuffer *cold = CFree[freepos-1];
-		CFree.pop_back();
-		cold->Reset();
-		return cold;
-	}
-
-	void End(ContributionBuffer *c) {
-		boost::recursive_mutex::scoped_lock PoolAction(PoolMutex);
-		if(c) CFull.push_back(c);
-	}
-
-	ContributionBuffer* Next(ContributionBuffer *c) {
-		bool doSplat = false;
-
-		boost::recursive_mutex::scoped_lock PoolAction(PoolMutex);
-
-		if(c) CFull.push_back(c);
-		ContributionBuffer *cnew = Get();
-
-		if(CFull.size() > CONTRIB_BUF_KEEPALIVE && splatting == false) {
-			splatting = doSplat = true;
-
-			for(u_int i=0; i<CFull.size(); i++)
-				CSplat.push_back(CFull[i]);
-
-			CFull.clear();
-		}
-
-		PoolAction.unlock();
-
-		if(doSplat) {
-			for(u_int i=0; i<CSplat.size(); i++) {
-				CSplat[i]->Splat(film);
-				CSplat[i]->Reset();
-			}
-
-			PoolAction.lock();
-
-			for(u_int i=0; i<CSplat.size(); i++)
-				CFree.push_back(CSplat[i]);
-
-			CSplat.clear();
-			splatting = false;
-
-			PoolAction.unlock();
-		}
-
-		return cnew;
-	}
-
-	// Flush() and Delete() are not renderthread safe,
+	// Flush() and Delete() are not thread safe,
 	// they can only be called by Scene after rendering is finished.
-	void Flush() {
-		for(u_int i=0; i<CFull.size(); i++)
-			CSplat.push_back(CFull[i]);
-
-		CFull.clear();
-
-		for(u_int i=0; i<CSplat.size(); i++) {
-			CSplat[i]->Splat(film);
-			CSplat[i]->Reset();
-		}
-	}
-
-	void Delete() {
-		for(u_int i=0; i<CFree.size(); i++)
-			delete CFree[i];
-		for(u_int i=0; i<CFull.size(); i++)
-			delete CFull[i];
-		for(u_int i=0; i<CSplat.size(); i++)
-			delete CSplat[i];
-	}
+	void Flush();
+	void Delete();
 
 private:
 	unsigned int total;
-	bool splatting;
 	vector<ContributionBuffer*> CFree; // Emptied/available buffers
 	vector<ContributionBuffer*> CFull; // Full buffers
 	vector<ContributionBuffer*> CSplat; // Buffers being splat
 
 	Film *film;
-	boost::recursive_mutex PoolMutex;
+	boost::recursive_mutex poolMutex;
+	boost::shared_mutex splatting;
 };
 
 }//namespace lux

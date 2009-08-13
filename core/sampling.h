@@ -27,6 +27,7 @@
 #include "memory.h"
 #include "randomgen.h"
 #include "contribution.h"
+#include "film.h"
 
 namespace lux
 {
