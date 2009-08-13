@@ -281,7 +281,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		totalLY += newLY;
 		++sampleCount;
 	}
-	float meanIntensity = totalLY / sampleCount;
+	const float meanIntensity = totalLY > 0.f ? totalLY / sampleCount : 1.f;
 
 	contribBuffer->AddSampleCount(1.f);
 
@@ -296,13 +296,12 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	// try or force accepting of the new sample
 	if (accProb == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		const float norm = meanIntensity / (LY + pLarge * meanIntensity);
+		const float norm = weight * meanIntensity / (LY + pLarge * meanIntensity);
 		for(u_int i = 0; i < oldContributions.size(); ++i) {
-			oldContributions[i].color *= norm;
 			// Radiance - added new use of contributionpool/buffers
-			if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
+			if(&oldContributions && !contribBuffer->Add(&oldContributions[i], norm)) {
 				contribBuffer = film->scene->contribPool->Next(contribBuffer);
-				contribBuffer->Add(&oldContributions[i], weight);
+				contribBuffer->Add(&oldContributions[i], norm);
 			}
 		}
 		// Save new contributions for reference
@@ -325,13 +324,12 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		const float norm = meanIntensity / (newLY + pLarge * meanIntensity);
+		const float norm = newWeight * meanIntensity / (newLY + pLarge * meanIntensity);
 		for(u_int i = 0; i < newContributions.size(); ++i) {
-			newContributions[i].color *= norm;
 			// Radiance - added new use of contributionpool/buffers
-			if(!contribBuffer->Add(&newContributions[i], newWeight)) {
+			if(!contribBuffer->Add(&newContributions[i], norm)) {
 				contribBuffer = film->scene->contribPool->Next(contribBuffer);
-				contribBuffer->Add(&newContributions[i], newWeight);
+				contribBuffer->Add(&newContributions[i], norm);
 			}
 		}
 		// Restart from previous reference
