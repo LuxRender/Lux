@@ -242,8 +242,6 @@ namespace lux
 #endif
 
 // Global Function Declarations
-extern "C" void luxInit();
-extern "C" void luxCleanup();
 bool ParseFile(const char *filename);
 namespace lux
 {
