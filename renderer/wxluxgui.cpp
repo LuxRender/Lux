@@ -3675,7 +3675,11 @@ void LuxGui::EngineThread(wxString filename) {
 
 	chdir(fullPath.branch_path().string().c_str());
 
-	ParseFile(fullPath.leaf().c_str());
+	// if stdin is input, don't use full path
+	if (filename == "-")
+		ParseFile(filename.c_str());
+	else
+		ParseFile(fullPath.leaf().c_str());
 
 	if (luxStatistics("terminated"))
 		return;
