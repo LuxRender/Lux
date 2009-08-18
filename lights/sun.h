@@ -25,6 +25,7 @@
 #include "light.h"
 #include "shape.h"
 #include "scene.h"
+#include "spd.h"
 
 namespace lux
 {
