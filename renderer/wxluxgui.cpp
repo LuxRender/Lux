@@ -3558,7 +3558,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 void LuxGui::OnCommand(wxCommandEvent &event) {
 	if(event.GetEventType() == wxEVT_LUX_TONEMAPPED) {
 		// Make sure the update thread has ended so we can start another one later.
-		m_updateThread->join();
+		if (m_updateThread)
+			m_updateThread->join();
 		delete m_updateThread;
 		m_updateThread = NULL;
 		m_statusBar->SetStatusText(wxT(""), 0);
@@ -3608,7 +3609,8 @@ void LuxGui::OnCommand(wxCommandEvent &event) {
 		m_progDialog = NULL;
 		m_saveTimer->Stop();
 
-		m_flmsaveThread->join();
+		if (m_flmsaveThread)
+			m_flmsaveThread->join();
 		delete m_flmsaveThread;
 		m_flmsaveThread = NULL;
 	}
