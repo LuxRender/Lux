@@ -158,7 +158,7 @@ public:
 		tex1 = c1;
 		tex2 = c2;
 	}
-	virtual ~Checkerboard3D() { }
+	virtual ~Checkerboard3D() { delete mapping; }
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Supersample _Checkerboard3D_
 		#define N_SAMPLES 4

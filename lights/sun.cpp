@@ -94,11 +94,11 @@ SunLight::SunLight(const Transform &light2world,
 	thetaS = SphericalTheta(wh);
 
     // NOTE - lordcrc - sun_k_oWavelengths contains 64 elements, while sun_k_oAmplitudes contains 65?!?
-	SPD *k_oCurve  = new IrregularSPD(sun_k_oWavelengths,sun_k_oAmplitudes,  64);
-	SPD *k_gCurve  = new IrregularSPD(sun_k_gWavelengths, sun_k_gAmplitudes, 4);
-	SPD *k_waCurve = new IrregularSPD(sun_k_waWavelengths,sun_k_waAmplitudes,  13);
+	IrregularSPD k_oCurve(sun_k_oWavelengths, sun_k_oAmplitudes, 64);
+	IrregularSPD k_gCurve(sun_k_gWavelengths, sun_k_gAmplitudes, 4);
+	IrregularSPD k_waCurve(sun_k_waWavelengths, sun_k_waAmplitudes, 13);
 
-	SPD *solCurve = new RegularSPD(sun_solAmplitudes, 380, 750, 38);  // every 5 nm
+	RegularSPD solCurve(sun_solAmplitudes, 380, 750, 38);  // every 5 nm
 
 	float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
 	float tauR, tauA, tauO, tauG, tauWA;
@@ -107,8 +107,8 @@ SunLight::SunLight(const Transform &light2world,
 
 	int i;
 	float lambda;
-    // NOTE - lordcrc - SPD stores data internally, no need for Ldata to stick around
-    float Ldata[91];
+	// NOTE - lordcrc - SPD stores data internally, no need for Ldata to stick around
+	float Ldata[91];
 	for(i = 0, lambda = 350.f; i < 91; ++i, lambda += 5.f) {
 			// Rayleigh Scattering
 		tauR = expf( -m * 0.008735f * powf(lambda / 1000.f, -4.08f));
@@ -120,24 +120,19 @@ SunLight::SunLight(const Transform &light2world,
 			// Attenuation due to ozone absorption
 			// lOzone - amount of ozone in cm(NTP)
 		const float lOzone = .35f;
-		tauO = expf(-m * k_oCurve->sample(lambda) * lOzone);
+		tauO = expf(-m * k_oCurve.sample(lambda) * lOzone);
 			// Attenuation due to mixed gases absorption
-		tauG = expf(-1.41f * k_gCurve->sample(lambda) * m / powf(1.f + 118.93f * k_gCurve->sample(lambda) * m, 0.45f));
+		tauG = expf(-1.41f * k_gCurve.sample(lambda) * m / powf(1.f + 118.93f * k_gCurve.sample(lambda) * m, 0.45f));
 			// Attenuation due to water vapor absorbtion
 			// w - precipitable water vapor in centimeters (standard = 2)
 		const float w = 2.0f;
-		tauWA = expf(-0.2385f * k_waCurve->sample(lambda) * w * m /
-		powf(1.f + 20.07f * k_waCurve->sample(lambda) * w * m, 0.45f));
+		tauWA = expf(-0.2385f * k_waCurve.sample(lambda) * w * m /
+		powf(1.f + 20.07f * k_waCurve.sample(lambda) * w * m, 0.45f));
 
-		Ldata[i] = (solCurve->sample(lambda) * tauR * tauA * tauO * tauG * tauWA);
+		Ldata[i] = (solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
 	LSPD->Scale(sunscale);
-
-    delete k_oCurve;
-    delete k_gCurve;
-    delete k_waCurve;
-    delete solCurve;
 }
 
 SWCSpectrum SunLight::Le(const TsPack *tspack, const RayDifferential &r) const {
