@@ -3678,8 +3678,8 @@ void LuxGui::EngineThread(wxString filename) {
 	chdir(fullPath.branch_path().string().c_str());
 
 	// if stdin is input, don't use full path
-	if (filename == "-")
-		ParseFile(filename.c_str());
+	if (filename == wxString::FromAscii("-"))
+		ParseFile(filename.fn_str());
 	else
 		ParseFile(fullPath.leaf().c_str());
 
