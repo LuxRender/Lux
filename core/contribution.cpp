@@ -73,7 +73,8 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 	boost::recursive_mutex::scoped_lock poolAction(poolMutex);
 	while (CFree.size() == 0) {
 		// If no splatting is occuring, there really isn't any buffer
-		if (splatting.try_lock_shared()) {
+		if (splatting.try_lock_shared() ||
+			CFull.size() + CSplat.size() <= 2 * CONTRIB_BUF_KEEPALIVE) {
 			ContributionBuffer *cnew = new ContributionBuffer();
 			++total;
 
