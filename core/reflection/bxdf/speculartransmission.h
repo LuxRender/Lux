@@ -37,7 +37,7 @@ public:
 	SpecularTransmission(const SWCSpectrum &t, float ei, float et, float cbf, bool archi = false)
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		  T(t), etai(ei), etat(et), cb(cbf), architectural(archi),
-		  fresnel(ei, et) {}
+		  fresnel(ei, et, cbf) {}
 	virtual ~SpecularTransmission() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
