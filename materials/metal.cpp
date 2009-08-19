@@ -81,16 +81,28 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 }
 
 // converts photon energy (in eV) to wavelength (in nm)
-float eVtolambda(float eV) {
+static float eVtolambda(float eV) {
 	// lambda = hc / E, where 
 	//  h is planck's constant in eV*s
 	//  c is speed of light in m/s
-	return (4.135667e-15 * 299792458 * 1e9) / eV;
+	return (4.135667e-15f * 299792458.f * 1e9f) / eV;
 }
 
 // converts wavelength (in micrometer) to wavelength (in nm)
-float umtolambda(float um) {
-	return um * 1000;
+static float umtolambda(float um) {
+	return um * 1000.f;
+}
+
+//converts wavelength (in cm-1) to wavelength (in nm)
+static float invcmtolambda(float invcm)
+{
+	return 1e7f / invcm;
+}
+
+//converts wavelength (in nm) to wavelength (in nm)
+static float nmtolambda(float nm)
+{
+	return nm;
 }
 
 bool ReadSOPRAData(std::ifstream &fs, vector<float> &wl, vector<float> &n, vector<float> &k) {
@@ -124,6 +136,16 @@ bool ReadSOPRAData(std::ifstream &fs, vector<float> &wl, vector<float> &n, vecto
 		lambda_first = boost::lexical_cast<float>(m[2]);
 		lambda_last = boost::lexical_cast<float>(m[3]);
 		tolambda = &umtolambda;
+	} else if (m[1] == "3") {
+		// lambda in cm-1
+		lambda_last = boost::lexical_cast<float>(m[2]);
+		lambda_first = boost::lexical_cast<float>(m[3]);
+		tolambda = &invcmtolambda;
+	} else if (m[1] == "4") {
+		// lambda in nm
+		lambda_first = boost::lexical_cast<float>(m[2]);
+		lambda_last = boost::lexical_cast<float>(m[3]);
+		tolambda = &nmtolambda;
 	} else
 		return false;
 
