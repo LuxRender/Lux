@@ -48,7 +48,7 @@ public:
 
 	SWCSpectrum(const TsPack *tspack, const SPD *s);
 
-	SWCSpectrum(float cs[WAVELENGTH_SAMPLES]) {
+	SWCSpectrum(const float cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = cs[i];
 	}
