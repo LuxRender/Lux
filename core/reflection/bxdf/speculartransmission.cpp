@@ -31,23 +31,18 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
-	float ei = etai, et = etat;
 
-	if(cb != 0.f) {
-		// Handle dispersion using cauchy formula
-		const float w = tspack->swl->SampleSingle();
-		et += (cb * 1000000.f) / (w * w);
-	}
+	// Handle dispersion using cauchy formula
+	if (dispersive)
+		tspack->swl->SampleSingle();
 
-	if (!entering && !architectural)
-		swap(ei, et);
 	// Compute transmitted ray direction
 	const float sini2 = SinTheta2(wo);
-	const float eta = ei / et;
+	const float eta = (entering || architectural) ? 1.f / fresnel->Index(tspack) : fresnel->Index(tspack);
 	const float eta2 = eta * eta;
 	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
-	if (sint2 > 1.) {
+	if (sint2 > 1.f) {
 		*f = 0.f;
 		*pdf = 0.f;
 		if (pdfBack)
@@ -66,24 +61,22 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	SWCSpectrum F;
 	if (!architectural) {
 		if (reverse) {
-			fresnel.Evaluate(tspack, cost, &F);
+			fresnel->Evaluate(tspack, cost, &F);
 			*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
 		} else {
-			fresnel.Evaluate(tspack, CosTheta(wo), &F);
+			fresnel->Evaluate(tspack, CosTheta(wo), &F);
 			*f = (SWCSpectrum(1.f) - F) * T / fabsf(cost);
 		}
 	} else {
 		if (reverse) {
 			if (entering)
-				fresnel.Evaluate(tspack, cost, &F);
+				fresnel->Evaluate(tspack, cost, &F);
 			else
-//				fresnel.Evaluate(tspack, -CosTheta(wo), &F);
 				F = SWCSpectrum(0.f);
 		} else {
 			if (entering)
-				fresnel.Evaluate(tspack, CosTheta(wo), &F);
+				fresnel->Evaluate(tspack, CosTheta(wo), &F);
 			else
-//				fresnel.Evaluate(tspack, -cost, &F);
 				F = SWCSpectrum(0.f);
 		}
 		*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
@@ -95,7 +88,7 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo) const
 	if (architectural && wo.z <= 0.f)
 		return 1.f;
 	SWCSpectrum F;
-	fresnel.Evaluate(tspack, CosTheta(wo), &F);
+	fresnel->Evaluate(tspack, CosTheta(wo), &F);
 	return (1.f - F.filter(tspack)) / fabsf(CosTheta(wo));
 }
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
@@ -104,28 +97,23 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 		return;
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
-	float ei = etai, et = etat;
 
-	if(cb != 0.f) {
-		// Handle dispersion using cauchy formula
-		const float w = tspack->swl->SampleSingle();
-		et += (cb * 1000000.f) / (w * w);
-	}
+	// Handle dispersion using cauchy formula
+	if (dispersive)
+		tspack->swl->SampleSingle();
 
 	// Compute transmitted ray direction
 	const float sini2 = SinTheta2(wo);
-	const float eta = ei / et;
+	const float eta = 1.f / fresnel->Index(tspack);
 	const float eta2 = eta * eta;
 	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
-	if (sint2 > 1.)
+	if (sint2 > 1.f)
 		return;	
-//	float cost = sqrtf(max(0.f, 1.f - sint2));
 	SWCSpectrum F;
 	if (entering)
-		fresnel.Evaluate(tspack, CosTheta(wo), &F);
+		fresnel->Evaluate(tspack, CosTheta(wo), &F);
 	else
-//		fresnel.Evaluate(tspack, -cost, &F);
 		F = SWCSpectrum(0.f);
 	f->AddWeighted(1.f / fabsf(CosTheta(wi)), (SWCSpectrum(1.f) - F) * T);
 }

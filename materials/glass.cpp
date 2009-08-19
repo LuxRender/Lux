@@ -50,8 +50,8 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior, cb);
 	if (!R.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior, cb);
 		if (architectural)
 			bsdf->Add(BSDF_ALLOC(tspack, ArchitecturalReflection)(R,
 				fresnel, flm, flmindex));
@@ -60,7 +60,7 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 				fresnel, flm, flmindex));
 	}
 	if (!T.Black())
-		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, 1., ior, cb, architectural));
+		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
