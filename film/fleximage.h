@@ -108,7 +108,7 @@ public:
 	virtual void WriteFilm(const string &filename) { WriteResumeFilm(filename); }
 	// Dade - method useful for transmitting the samples to a client
 	virtual void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
-	virtual float UpdateFilm(Scene *scene, std::basic_istream<char> &stream);
+	virtual float UpdateFilm(std::basic_istream<char> &stream);
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 	/**

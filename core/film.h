@@ -316,9 +316,7 @@ public:
 // GREYCStoration Noise Reduction Filter Parameter structure
 class GREYCStorationParams {
 public:
-	GREYCStorationParams() {
-		Reset();
-	}
+	GREYCStorationParams() { Reset(); }
 	void Reset() {
 		enabled = false;		 // GREYCStoration is enabled/disabled
 		amplitude = 40.0f;		 // Regularization strength for one iteration (>=0)
@@ -345,9 +343,7 @@ public:
 // Chiu Noise Reduction Filter Parameter structure
 class ChiuParams {
 public:
-	ChiuParams() {
-		Reset();
-	}
+	ChiuParams() { Reset(); }
 	void Reset() {
 		enabled = false;		 // Chiu noise filter is enabled/disabled
 		radius = 3;				 // 
@@ -361,66 +357,64 @@ public:
 
 //Histogram Declarations
 class Histogram {
-	public:
-		Histogram();
-		~Histogram();
-		void Calculate(vector<Color> &pixels, unsigned int width, unsigned int height);
-		void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
-	private:
-		void CheckBucketNr();
-		int m_bucketNr, m_newBucketNr;
-		float* m_buckets;
-		int m_zones[11];
-		float m_lowRange, m_highRange, m_bucketSize;
-		float m_displayGamma;
-		boost::mutex m_mutex;
+public:
+	Histogram();
+	~Histogram();
+	void Calculate(vector<Color> &pixels, unsigned int width, unsigned int height);
+	void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
+private:
+	void CheckBucketNr();
+	int m_bucketNr, m_newBucketNr;
+	float *m_buckets;
+	int m_zones[11];
+	float m_lowRange, m_highRange, m_bucketSize;
+	float m_displayGamma;
+	boost::mutex m_mutex;
 };
 
 // Film Declarations
 class Film {
 public:
-    // Film Interface
+	// Film Interface
 
-    Film(int xres, int yres, int haltspp) :
+	Film(int xres, int yres, int haltspp) :
 		xResolution(xres), yResolution(yres), EV(0.f),
-		haltSamplePerPixel(haltspp), enoughSamplePerPixel(false) {
+		haltSamplePerPixel(haltspp), enoughSamplePerPixel(false),
+		scene(NULL), histogram(NULL) {
 		samplePerPass = (double)xResolution * (double)yResolution;
 	}
-    virtual ~Film() { }
+	virtual ~Film() { delete histogram; }
 	virtual void AddSample(Contribution *contrib) = 0;
-    virtual void AddSampleCount(float count) { }
-    virtual void WriteImage(ImageType type) = 0;
+	virtual void AddSampleCount(float count) { }
+	virtual void WriteImage(ImageType type) = 0;
 	virtual void WriteFilm(const string &filename) = 0;
 	// Dade - method useful for transmitting the samples to a client
 	virtual void TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false) = 0;
-	virtual float UpdateFilm(Scene *scene, std::basic_istream<char> &stream) = 0;
-    virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
+	virtual float UpdateFilm(std::basic_istream<char> &stream) = 0;
+	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
 
-    virtual void RequestBufferGroups(const vector<string> &bg) = 0;
-    virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) = 0;
+	virtual void RequestBufferGroups(const vector<string> &bg) = 0;
+	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) = 0;
 
-    virtual void CreateBuffers() {
-    }
+	virtual void CreateBuffers() { }
 	virtual u_int GetNumBufferConfigs() const = 0;
 	virtual const BufferConfig& GetBufferConfig(u_int index) const = 0;
-    virtual u_int GetNumBufferGroups() const = 0;
-    virtual string GetGroupName(u_int index) const = 0;
-    virtual void SetGroupEnable(u_int index, bool status) = 0;
-    virtual bool GetGroupEnable(u_int index) const = 0;
-    virtual void SetGroupScale(u_int index, float value) = 0;
-    virtual float GetGroupScale(u_int index) const = 0;
-    virtual void SetGroupRGBScale(u_int index, const RGBColor &value) = 0;
-    virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
-    virtual void SetGroupTemperature(u_int index, float value) = 0;
-    virtual float GetGroupTemperature(u_int index) const = 0;
-    virtual unsigned char* getFrameBuffer() = 0;
-    virtual void updateFrameBuffer() = 0;
-    virtual float getldrDisplayInterval() = 0;
+	virtual u_int GetNumBufferGroups() const = 0;
+	virtual string GetGroupName(u_int index) const = 0;
+	virtual void SetGroupEnable(u_int index, bool status) = 0;
+	virtual bool GetGroupEnable(u_int index) const = 0;
+	virtual void SetGroupScale(u_int index, float value) = 0;
+	virtual float GetGroupScale(u_int index) const = 0;
+	virtual void SetGroupRGBScale(u_int index, const RGBColor &value) = 0;
+	virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
+	virtual void SetGroupTemperature(u_int index, float value) = 0;
+	virtual float GetGroupTemperature(u_int index) const = 0;
+	virtual unsigned char* getFrameBuffer() = 0;
+	virtual void updateFrameBuffer() = 0;
+	virtual float getldrDisplayInterval() = 0;
 	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
 
-    void SetScene(Scene *scene1) {
-        scene = scene1;
-    }
+	void SetScene(Scene *scene1) { scene = scene1; }
 
 	// Parameter Access functions
 	virtual void SetParameterValue(luxComponentParameters param, double value, int index) = 0;
@@ -429,9 +423,9 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, int index) = 0;
 
-    // Film Public Data
-    int xResolution, yResolution;
-    float EV;
+	// Film Public Data
+	int xResolution, yResolution;
+	float EV;
 
 	// Dade - Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop
@@ -440,7 +434,7 @@ public:
 
 	Scene *scene;
 
-	Histogram m_histogram;
+	Histogram *histogram;
 
 protected:
 	// Dade - (xResolution * yResolution)
@@ -448,14 +442,18 @@ protected:
 };
 
 // Image Pipeline Declarations
-extern void ApplyImagingPipeline(vector<Color> &pixels, int xResolution, int yResolution, 
-        const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
-        ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled, bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate,
-		float bloomRadius, float bloomWeight, bool VignettingEnabled, float VignetScale,
-		bool aberrationEnabled, float aberrationAmount,
-		bool &haveGlareImage, Color *&glareImage, bool glareUpdate, float glareAmount, float glareRadius, int glareBlades,
-		const char *tonemap, const ParamSet *toneMapParams, float gamma,
-        float dither);
+void ApplyImagingPipeline(vector<Color> &pixels,
+	int xResolution, int yResolution, 
+	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
+	ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
+	bool &haveBloomImage, Color *bloomImage, bool bloomUpdate,
+	float bloomRadius, float bloomWeight,
+	bool VignettingEnabled, float VignetScale,
+	bool aberrationEnabled, float aberrationAmount,
+	bool &haveGlareImage, Color *glareImage, bool glareUpdate,
+	float glareAmount, float glareRadius, int glareBlades,
+	const char *tonemap, const ParamSet *toneMapParams, float gamma,
+	float dither);
 
 }//namespace lux;
 

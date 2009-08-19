@@ -66,430 +66,428 @@ using namespace cimg_library;
 namespace lux
 {
 
-	Color bilinearSampleImage(const vector<Color> &pixels, const int xResolution, const int yResolution, 
-								const float x, const float y) {
-		int x1 = Clamp<int>(Floor2Int(x), 0, xResolution-1);
-		int y1 = Clamp<int>(Floor2Int(y), 0, yResolution-1);
-		int x2 = Clamp<int>(x1+1, 0, xResolution-1);
-		int y2 = Clamp<int>(y1+1, 0, yResolution-1);
-		float tx = Clamp<float>(x - x1, 0, 1);
-		float ty = Clamp<float>(y - y1, 0, 1);
+Color bilinearSampleImage(const vector<Color> &pixels,
+	const int xResolution, const int yResolution, 
+	const float x, const float y)
+{
+	int x1 = Clamp<int>(Floor2Int(x), 0, xResolution-1);
+	int y1 = Clamp<int>(Floor2Int(y), 0, yResolution-1);
+	int x2 = Clamp<int>(x1+1, 0, xResolution-1);
+	int y2 = Clamp<int>(y1+1, 0, yResolution-1);
+	float tx = Clamp<float>(x - x1, 0, 1);
+	float ty = Clamp<float>(y - y1, 0, 1);
 
-		RGBColor c(0.f);
-		c.AddWeighted((1.f-tx) * (1.f-ty), pixels[y1*xResolution+x1]);
-		c.AddWeighted(tx       * (1.f-ty), pixels[y1*xResolution+x2]);
-		c.AddWeighted((1.f-tx) * ty,       pixels[y2*xResolution+x1]);
-		c.AddWeighted(tx       * ty,       pixels[y2*xResolution+x2]);
-		return c;
+	RGBColor c(0.f);
+	c.AddWeighted((1.f-tx) * (1.f-ty), pixels[y1*xResolution+x1]);
+	c.AddWeighted(tx       * (1.f-ty), pixels[y1*xResolution+x2]);
+	c.AddWeighted((1.f-tx) * ty,       pixels[y2*xResolution+x1]);
+	c.AddWeighted(tx       * ty,       pixels[y2*xResolution+x2]);
+	return c;
+}
+
+// horizontal blur
+void horizontalGaussianBlur(const vector<Color> &in, vector<Color> &out,
+	const int xResolution, const int yResolution, float std_dev)
+{
+	int rad_needed = Ceil2Int(std_dev * 4);//kernel_radius;
+
+	const int lookup_size = rad_needed + 1;
+	//build filter lookup table
+	std::vector<float> filter_weights(lookup_size);
+	for(int x = 0; x < lookup_size; ++x)
+		filter_weights[x] = expf(- x*x / (std_dev*std_dev));
+
+	//normalise filter kernel
+	float sweight = 0.0f;
+	for(int i = -rad_needed; i <= rad_needed; ++i)
+		sweight += filter_weights[abs(i)];
+
+	sweight = 1.f / sweight;
+
+	for(int x = 0; x < lookup_size; ++x) {
+		filter_weights[x] *= sweight;
+		if (filter_weights[x] < 1.0e-12f)
+			rad_needed--;
 	}
 
-	// horizontal blur
-	void horizontalGaussianBlur(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, 
-									float std_dev)
-	{
-		int rad_needed = Ceil2Int(std_dev * 4);//kernel_radius;
+	const int pixel_rad = rad_needed;
 
-		const int lookup_size = rad_needed + 1;
-		//build filter lookup table
-		std::vector<float> filter_weights(lookup_size);
-		for(int x = 0; x < lookup_size; ++x)
-		{
-			filter_weights[x] = expf(- x*x / (std_dev*std_dev));
+	//------------------------------------------------------------------
+	//blur in x direction
+	//------------------------------------------------------------------
+	for(int y = 0; y < yResolution; ++y) {
+		for(int x = 0; x < xResolution; ++x) {
+			const int a = y*xResolution + x;
+
+			out[a] = RGBColor(0.f);
+
+			for(int i = -pixel_rad; i <= pixel_rad; ++i) {
+				int dx = Clamp(x+i, 0, xResolution-1) - x;
+				out[a].AddWeighted(filter_weights[abs(i)], in[a+dx]);
+			}
 		}
+	}
+}
+
+void rotateImage(const vector<Color> &in, vector<Color> &out,
+	const int xResolution, const int yResolution, float angle)
+{
+	const int maxRes = max(xResolution, yResolution);
+
+	const float s = sinf(-angle);
+	const float c = cosf(-angle);
+
+	const float cx = xResolution * 0.5f;
+	const float cy = yResolution * 0.5f;
+
+	for(int y = 0; y < maxRes; ++y) {
+		float px = 0 - maxRes * 0.5f;
+		float py = y - maxRes * 0.5f;
+
+		float rx = px * c - py * s + cx;
+		float ry = px * s + py * c + cy;
+		for(int x = 0; x < maxRes; ++x) {
+			out[y*maxRes + x] = bilinearSampleImage(in, xResolution, yResolution, rx, ry);
+			// x = x + dx
+			rx += c;
+			ry += s;
+		}
+	}
+}
+
+
+// Image Pipeline Function Definitions
+void ApplyImagingPipeline(vector<Color> &pixels,
+	int xResolution, int yResolution,
+	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
+	ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
+	bool &haveBloomImage, Color *bloomImage, bool bloomUpdate,
+	float bloomRadius, float bloomWeight,
+	bool VignettingEnabled, float VignetScale,
+	bool aberrationEnabled, float aberrationAmount,
+	bool &haveGlareImage, Color *glareImage, bool glareUpdate,
+	float glareAmount, float glareRadius, int glareBlades,
+	const char *toneMapName, const ParamSet *toneMapParams,
+	float gamma, float dither)
+{
+	const int nPix = xResolution * yResolution;
+
+	// Clamp input
+	for (int i = 0; i < nPix; ++i)
+		pixels[i] = pixels[i].Clamp();
+
+
+	// Possibly apply bloom effect to image
+	if (bloomRadius > 0.f && bloomWeight > 0.f) {
+		if(bloomUpdate) {
+			// Compute image-space extent of bloom effect
+			const int bloomSupport = Float2Int(bloomRadius *
+				max(xResolution, yResolution));
+			const int bloomWidth = bloomSupport / 2;
+			// Initialize bloom filter table
+			vector<float> bloomFilter(bloomWidth * bloomWidth);
+			for (int i = 0; i < bloomWidth * bloomWidth; ++i) {
+				float dist = sqrtf(i) / bloomWidth;
+				bloomFilter[i] = powf(max(0.f, 1.f - dist), 4.f);
+			}
+
+			// Allocate persisting bloom image layer if unallocated
+			if(!haveBloomImage) {
+				bloomImage = new Color[nPix];
+				haveBloomImage = true;
+			}
+
+			// Apply bloom filter to image pixels
+			//			vector<Color> bloomImage(nPix);
+			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK
+			for (int y = 0; y < yResolution; ++y) {
+				for (int x = 0; x < xResolution; ++x) {
+					// Compute bloom for pixel _(x,y)_
+					// Compute extent of pixels contributing bloom
+					int x0 = max(0, x - bloomWidth);
+					int x1 = min(x + bloomWidth, xResolution - 1);
+					int y0 = max(0, y - bloomWidth);
+					int y1 = min(y + bloomWidth, yResolution - 1);
+					int offset = y * xResolution + x;
+					float sumWt = 0.;
+					for (int by = y0; by <= y1; ++by) {
+						for (int bx = x0; bx <= x1; ++bx) {
+							// Accumulate bloom from pixel $(bx,by)$
+							int dx = x - bx, dy = y - by;
+							if (dx == 0 && dy == 0)
+								continue;
+							int dist2 = dx*dx + dy*dy;
+							if (dist2 < bloomWidth * bloomWidth) {
+								int bloomOffset = bx + by * xResolution;
+								float wt = bloomFilter[dist2];
+								sumWt += wt;
+								bloomImage[offset].AddWeighted(wt, pixels[bloomOffset]);
+							}
+						}
+					}
+					bloomImage[offset] /= sumWt;
+				}
+				prog.Update(); //NOBOOK
+			}
+			prog.Done(); //NOBOOK
+		}
+
+		// Mix bloom effect into each pixel
+		if(haveBloomImage && bloomImage != NULL)
+			for (int i = 0; i < nPix; ++i)
+				pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
+	}
+
+	if (glareRadius > 0 && glareAmount > 0) {
+			
+		if (glareUpdate) {
+			// Allocate persisting glare image layer if unallocated
+			if(!haveGlareImage) {
+				glareImage = new Color[nPix];
+				haveGlareImage = true;
+			}
+
+			int maxRes = max(xResolution, yResolution);
+			int nPix2 = maxRes*maxRes;
+
+			std::vector<Color> rotatedImage(nPix2);
+			std::vector<Color> blurredImage(nPix2);
+			for(int i = 0; i < nPix; i++)
+				glareImage[i] *= 0.f;
+
+			const float radius = maxRes * glareRadius;
+
+			// add rotated versions of the blurred image
+			for (int i = 0; i < glareBlades; i++) {
+				float angle = (float)i * 2*M_PI / glareBlades;
+				rotateImage(pixels, rotatedImage, xResolution, yResolution, angle);
+				horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
+				rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
+
+				// add to output
+				for(int y=0; y<yResolution; ++y) {
+					for(int x=0; x<xResolution; ++x) {
+						int sx = (int)(x + (maxRes - xResolution) * 0.5f);
+						int sy = (int)(y + (maxRes - yResolution) * 0.5f);
+
+						glareImage[y*xResolution+x] += rotatedImage[sy*maxRes + sx];
+					}
+				}
+			}
+
+			// normalize
+			const float nfactor = 1.f / glareBlades;
+
+			for(int i = 0; i < nPix; i++)
+				glareImage[i] *= nfactor;
+
+			rotatedImage.clear();
+			blurredImage.clear();
+		}
+
+		if (haveGlareImage && glareImage != NULL) {
+			for(int i = 0; i < nPix; i++)
+				pixels[i] = Lerp(glareAmount, pixels[i], glareImage[i]);
+		}
+	}
+
+	// Apply tone reproduction to image
+	if (toneMapName) {
+		ToneMap *toneMap = MakeToneMap(toneMapName,
+			toneMapParams ? *toneMapParams : ParamSet());
+		if (toneMap)
+			toneMap->Map(pixels, xResolution, yResolution, 100.f);
+		delete toneMap;
+	}
+	// Convert to RGB
+	const float invGamma = 1.f / gamma;
+	for (int i = 0; i < nPix; ++i) {
+		pixels[i] = colorSpace.ToRGBConstrained(XYZColor(pixels[i].c));
+		// Do gamma correction
+		pixels[i] = pixels[i].Pow(invGamma);
+	}
+
+	// Add vignetting & chromatic aberration effect
+	// These are paired in 1 loop as they can share quite a few calculations
+	if ((VignettingEnabled && VignetScale != 0.0f) ||
+		(aberrationEnabled && aberrationAmount > 0.f)) {
+
+		Color *outp = &pixels[0];
+		std::vector<Color> aberrationImage;
+		if (aberrationEnabled) {
+			aberrationImage.resize(nPix, RGBColor(0.f));
+			outp = &aberrationImage[0];
+		}
+
+		const float invxRes = 1.f / xResolution;
+		const float invyRes = 1.f / yResolution;
+		//for each pixel in the source image
+		for(int y=0; y<yResolution; ++y) {
+			for(int x=0; x<xResolution; ++x) {
+				const float nPx = (float)x * invxRes;
+				const float nPy = (float)y * invyRes;
+				const float xOffset = nPx - 0.5f;
+				const float yOffset = nPy - 0.5f;
+				float tOffset = sqrtf(xOffset*xOffset + yOffset*yOffset);
+					
+				if (aberrationEnabled && aberrationAmount > 0.f) {
+					const float rb_x = (0.5f + xOffset * (1.f + tOffset*aberrationAmount)) * xResolution;
+					const float rb_y = (0.5f + yOffset * (1.f + tOffset*aberrationAmount)) * yResolution;
+					const float g_x =  (0.5f + xOffset * (1.f - tOffset*aberrationAmount)) * xResolution;
+					const float g_y =  (0.5f + yOffset * (1.f - tOffset*aberrationAmount)) * yResolution;
+
+					const float redblue[] = {1.f, 0.f, 1.f};
+					const float green[] = {0.f, 1.f, 0.f};
+
+					outp[xResolution*y + x] += RGBColor(redblue) * bilinearSampleImage(pixels, xResolution, yResolution, rb_x, rb_y);
+					outp[xResolution*y + x] += RGBColor(green) * bilinearSampleImage(pixels, xResolution, yResolution, g_x, g_y);
+				}
+
+				// Vignetting
+				if(VignettingEnabled && VignetScale != 0.0f) {
+					// normalize to range [0.f - 1.f]
+					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42);
+					float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
+					for(int i=0;i<3;i++)
+						outp[xResolution*y + x].c[i] *= vWeight;
+				}
+			}
+		}
+
+		if (aberrationEnabled) {
+			for(int i = 0; i < nPix; i++)
+				pixels[i] = aberrationImage[i];
+		}
+
+		aberrationImage.clear();
+	}
+
+	// Calculate histogram
+	if (HistogramEnabled) {
+		if (!histogram)
+			histogram = new Histogram();
+		histogram->Calculate(pixels, xResolution, yResolution);
+	}
+
+	// Apply Chiu Noise Reduction Filter
+	if(chiuParams.enabled) {
+		std::vector<Color> chiuImage(nPix, RGBColor(0.f));
+
+		// NOTE - lordcrc - if includecenter is false, make sure radius 
+		// is a tad higher than 1 to include other pixels
+		const float radius = max(chiuParams.radius, 1+(chiuParams.includecenter ? 0 : 1e-6));
+
+		const int pixel_rad = Ceil2Int(radius);
+		const int lookup_size = pixel_rad + pixel_rad + 1;
+
+		//build filter lookup table
+		std::vector<float> weights(lookup_size * lookup_size);
+
+		for(int y=0; y<lookup_size; ++y) {
+			for(int x=0; x<lookup_size; ++x) {
+				if(x == pixel_rad && y == pixel_rad)
+					weights[lookup_size*y + x] = chiuParams.includecenter ? 1.0f : 0.0f;
+				else {
+					const float dx = (float)(x - pixel_rad);
+					const float dy = (float)(y - pixel_rad);
+					const float dist = sqrt(dx*dx + dy*dy);
+					const float weight = powf(max(0.0f, 1.0f - dist / radius), 4.0f);
+					weights[lookup_size*y + x] = weight;
+				}
+			}
+		}
+
+		float sumweight = 0.0f;
+		for(int y=0; y<lookup_size; ++y)
+			for(int x=0; x<lookup_size; ++x)
+				sumweight += weights[lookup_size*y + x];
 
 		//normalise filter kernel
-		float sweight = 0.0f;
-		for(int i = -rad_needed; i <= rad_needed; ++i)
-			sweight += filter_weights[abs(i)];
+		for(int y=0; y<lookup_size; ++y)
+			for(int x=0; x<lookup_size; ++x)
+				weights[lookup_size*y + x] /= sumweight;
 
-		sweight = 1.f / sweight;
+		//for each pixel in the source image
+		for(int y=0; y<yResolution; ++y) {
+			//get min and max of current filter rect along y axis
+			const int miny = max(0, y - pixel_rad);
+			const int maxy = min(yResolution, y + pixel_rad + 1);
 
-		for(int x = 0; x < lookup_size; ++x) {
-			filter_weights[x] *= sweight;
-			if (filter_weights[x] < 1.0e-12f) {
-				rad_needed--;
-			}
-		}
+			for(int x=0; x<xResolution; ++x) {
+				//get min and max of current filter rect along x axis
+				const int minx = max(0, x - pixel_rad);
+				const int maxx = min(xResolution, x + pixel_rad + 1);
 
-		const int pixel_rad = rad_needed;
-
-		//------------------------------------------------------------------------
-		//blur in x direction
-		//------------------------------------------------------------------------
-		for(int y = 0; y < yResolution; ++y) {
-			for(int x = 0; x < xResolution; ++x)
-			{
-				const int a = y*xResolution + x;
-
-				out[a] = RGBColor(0.f);
-
-				for(int i = -pixel_rad; i <= pixel_rad; ++i)
-				{
-					int dx = Clamp(x+i, 0, xResolution-1) - x;
-					out[a].AddWeighted(filter_weights[abs(i)], in[a+dx]);
+				// For each pixel in the out image, in the filter radius
+				for(int ty=miny; ty<maxy; ++ty) {
+					for(int tx=minx; tx<maxx; ++tx) {
+						const int dx=x-tx+pixel_rad;
+						const int dy=y-ty+pixel_rad;
+						const float factor = weights[lookup_size*dy + dx];
+						chiuImage[xResolution*ty + tx].AddWeighted(factor, pixels[xResolution*y + x]);
+					}
 				}
 			}
 		}
+		// Copyback
+		for(int i=0; i<nPix; i++)
+			pixels[i] = chiuImage[i];
+
+		// remove used intermediate memory
+		chiuImage.clear();
+		weights.clear();
 	}
 
-	void rotateImage(const vector<Color> &in, vector<Color> &out, const int xResolution, const int yResolution, float angle)
-	{
-		const int maxRes = max(xResolution, yResolution);
+	// Apply GREYCStoration noise reduction filter
+	if(GREYCParams.enabled) {
+		// Define Cimg image buffer and copy data
+		CImg<float> img(xResolution, yResolution, 1, 3);
+		for(int y=0; y<yResolution; y++) {
+			for(int x=0; x<xResolution; x++) {
+				int index = xResolution * y + x;
+				// Note - Cimg float data must be in range [0,255] for GREYCStoration to work %100
+				for(int j=0; j<3; j++)
+					img(x, y, 0, j) = pixels[index].c[j] * 255;
+			}
+		}
 
-		const float s = sinf(-angle);
-		const float c = cosf(-angle);
+		for (unsigned int iter=0; iter<GREYCParams.nb_iter; iter++) {
+			img.blur_anisotropic(GREYCParams.amplitude,
+				GREYCParams.sharpness,
+				GREYCParams.anisotropy,
+				GREYCParams.alpha,
+				GREYCParams.sigma,
+				GREYCParams.dl,
+				GREYCParams.da,
+				GREYCParams.gauss_prec,
+				GREYCParams.interp,
+				GREYCParams.fast_approx,
+				1.0f); // gfact
+		}
 
-		const float cx = xResolution * 0.5f;
-		const float cy = yResolution * 0.5f;
-
-		for(int y = 0; y < maxRes; ++y) {
-			float px = 0 - maxRes * 0.5f;
-			float py = y - maxRes * 0.5f;
-
-			float rx = px * c - py * s + cx;
-			float ry = px * s + py * c + cy;
-			for(int x = 0; x < maxRes; ++x)
-			{
-				out[y*maxRes + x] = bilinearSampleImage(in, xResolution, yResolution, rx, ry);
-				// x = x + dx
-				rx += c;
-				ry += s;
+		// Copy data from cimg buffer back to pixels vector
+		const float inv_byte = 1.f/255;
+		for(int y=0; y<yResolution; y++) {
+			for(int x=0; x<xResolution; x++) {
+				int index = xResolution * y + x;
+				for(int j=0; j<3; j++)
+					pixels[index].c[j] = img(x, y, 0, j) * inv_byte;
 			}
 		}
 	}
 
-
-	// Image Pipeline Function Definitions
-	void ApplyImagingPipeline(vector<Color> &pixels,
-		int xResolution, int yResolution, const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams, ColorSystem &colorSpace, Histogram &histogram, bool HistogramEnabled,
-		bool &haveBloomImage, Color *&bloomImage, bool bloomUpdate, float bloomRadius, float bloomWeight,
-		bool VignettingEnabled, float VignetScale, bool aberrationEnabled, float aberrationAmount,
-		bool &haveGlareImage, Color *&glareImage, bool glareUpdate, float glareAmount, float glareRadius, int glareBlades,
-		const char *toneMapName, const ParamSet *toneMapParams,
-		float gamma, float dither)
-	{
-		const int nPix = xResolution * yResolution;
-
-		// Clamp input
+	// Dither image
+	if (dither > 0.f)
 		for (int i = 0; i < nPix; ++i)
-			pixels[i] = pixels[i].Clamp();
-
-
-		// Possibly apply bloom effect to image
-		if (bloomRadius > 0.f && bloomWeight > 0.f) {
-			if(bloomUpdate) {
-				// Compute image-space extent of bloom effect
-				const int bloomSupport = Float2Int(bloomRadius *
-					max(xResolution, yResolution));
-				const int bloomWidth = bloomSupport / 2;
-				// Initialize bloom filter table
-				vector<float> bloomFilter(bloomWidth * bloomWidth);
-				for (int i = 0; i < bloomWidth * bloomWidth; ++i) {
-					float dist = sqrtf(float(i)) / float(bloomWidth);
-					bloomFilter[i] = powf(max(0.f, 1.f - dist), 4.f);
-				}
-
-				// Allocate persisting bloom image layer if unallocated
-				if(!haveBloomImage) {
-					bloomImage = new Color[nPix];
-					haveBloomImage = true;
-				}
-
-				// Apply bloom filter to image pixels
-				//			vector<Color> bloomImage(nPix);
-				ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK
-				for (int y = 0; y < yResolution; ++y) {
-					for (int x = 0; x < xResolution; ++x) {
-						// Compute bloom for pixel _(x,y)_
-						// Compute extent of pixels contributing bloom
-						int x0 = max(0, x - bloomWidth);
-						int x1 = min(x + bloomWidth, xResolution - 1);
-						int y0 = max(0, y - bloomWidth);
-						int y1 = min(y + bloomWidth, yResolution - 1);
-						int offset = y * xResolution + x;
-						float sumWt = 0.;
-						for (int by = y0; by <= y1; ++by) {
-							for (int bx = x0; bx <= x1; ++bx) {
-								// Accumulate bloom from pixel $(bx,by)$
-								int dx = x - bx, dy = y - by;
-								if (dx == 0 && dy == 0) continue;
-								int dist2 = dx*dx + dy*dy;
-								if (dist2 < bloomWidth * bloomWidth) {
-									int bloomOffset = bx + by * xResolution;
-									float wt = bloomFilter[dist2];
-									sumWt += wt;
-									bloomImage[offset].AddWeighted(wt, pixels[bloomOffset]);
-								}
-							}
-						}
-						bloomImage[offset] /= sumWt;
-					}
-					prog.Update(); //NOBOOK
-				}
-				prog.Done(); //NOBOOK
-			}
-
-			// Mix bloom effect into each pixel
-			if(haveBloomImage && bloomImage != NULL)
-				for (int i = 0; i < nPix; ++i)
-					pixels[i] = Lerp(bloomWeight, pixels[i], bloomImage[i]);
-		}
-
-		if (glareRadius > 0 && glareAmount > 0) {
-			
-			if (glareUpdate) {
-				// Allocate persisting glare image layer if unallocated
-				if(!haveGlareImage) {
-					glareImage = new Color[nPix];
-					haveGlareImage = true;
-				}
-
-				int maxRes = max(xResolution, yResolution);
-				int nPix2 = maxRes*maxRes;
-
-				std::vector<Color> rotatedImage(nPix2);
-				std::vector<Color> blurredImage(nPix2);
-				for(int i = 0; i < nPix; i++) {
-					glareImage[i] *= 0.f;
-				}
-
-				const float radius = maxRes * glareRadius;
-
-				// add rotated versions of the blurred image
-				for (int i = 0; i < glareBlades; i++) {
-					float angle = (float)i * 2*M_PI / glareBlades;
-					rotateImage(pixels, rotatedImage, xResolution, yResolution, angle);
-					horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
-					rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
-
-					// add to output
-					for(int y=0; y<yResolution; ++y)
-						for(int x=0; x<xResolution; ++x)
-						{
-							int sx = (int)(x + (maxRes - xResolution) * 0.5f);
-							int sy = (int)(y + (maxRes - yResolution) * 0.5f);
-
-							glareImage[y*xResolution+x] += rotatedImage[sy*maxRes + sx];
-						}
-				}
-
-				// normalize
-				const float nfactor = 1.f / glareBlades;
-
-				for(int i = 0; i < nPix; i++) {
-					glareImage[i] *= nfactor;
-				}
-
-				rotatedImage.clear();
-				blurredImage.clear();
-			}
-
-			if (haveGlareImage && glareImage != NULL) {
-				for(int i = 0; i < nPix; i++) {
-					pixels[i] = Lerp(glareAmount, pixels[i], glareImage[i]);
-				}
-			}
-		}
-
-		// Apply tone reproduction to image
-		if (toneMapName) {
-			ToneMap *toneMap = MakeToneMap(toneMapName,
-				toneMapParams ? *toneMapParams : ParamSet());
-			if (toneMap)
-				toneMap->Map(pixels, xResolution, yResolution, 100.f);
-			delete toneMap;
-		}
-		// Convert to RGB
-		const float invGamma = 1.f / gamma;
-		for (int i = 0; i < nPix; ++i) {
-			pixels[i] = colorSpace.ToRGBConstrained(XYZColor(pixels[i].c));
-			// Do gamma correction
-			pixels[i] = pixels[i].Pow(invGamma);
-		}
-
-		// Add vignetting & chromatic aberration effect
-		// These are paired in 1 loop as they can share quite a few calculations
-		if ((VignettingEnabled && VignetScale != 0.0f) || (aberrationEnabled && aberrationAmount > 0.f)) {
-
-			Color *outp = &pixels[0];
-			std::vector<Color> aberrationImage;
-			if (aberrationEnabled) {
-				aberrationImage.resize(nPix);
-				for(int i=0; i < nPix; i++)
-					aberrationImage[i] *= 0.f;
-				outp = &aberrationImage[0];
-			}
-
-			const float invxRes = 1.f / xResolution;
-			const float invyRes = 1.f / yResolution;
-			//for each pixel in the source image
-			for(int y=0; y<yResolution; ++y)
-				for(int x=0; x<xResolution; ++x)
-				{
-					const float nPx = (float)x * invxRes;
-					const float nPy = (float)y * invyRes;
-					const float xOffset = nPx - 0.5f;
-					const float yOffset = nPy - 0.5f;
-					float tOffset = sqrtf(xOffset*xOffset + yOffset*yOffset);
-					
-					if (aberrationEnabled && aberrationAmount > 0.f) {
-						const float rb_x = (0.5f + xOffset * (1.f + tOffset*aberrationAmount)) * xResolution;
-						const float rb_y = (0.5f + yOffset * (1.f + tOffset*aberrationAmount)) * yResolution;
-						const float g_x =  (0.5f + xOffset * (1.f - tOffset*aberrationAmount)) * xResolution;
-						const float g_y =  (0.5f + yOffset * (1.f - tOffset*aberrationAmount)) * yResolution;
-
-						const float redblue[] = {1.f, 0.f, 1.f};
-						const float green[] = {0.f, 1.f, 0.f};
-
-						outp[xResolution*y + x] += RGBColor(redblue) * bilinearSampleImage(pixels, xResolution, yResolution, rb_x, rb_y);
-						outp[xResolution*y + x] += RGBColor(green) * bilinearSampleImage(pixels, xResolution, yResolution, g_x, g_y);
-					}
-
-					// Vignetting
-					if(VignettingEnabled && VignetScale != 0.0f) {
-						// normalize to range [0.f - 1.f]
-						const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42);
-						float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
-						for(int i=0;i<3;i++)
-							outp[xResolution*y + x].c[i] *= vWeight;
-					}
-				}
-
-			if (aberrationEnabled) {
-				for(int i = 0; i < nPix; i++)
-					pixels[i] = aberrationImage[i];
-			}
-
-			aberrationImage.clear();
-		}
-
-		// Calculate histogram
-		if(HistogramEnabled) histogram.Calculate(pixels, xResolution, yResolution);
-
-		// Apply Chiu Noise Reduction Filter
-		if(chiuParams.enabled) {
-			std::vector<Color> chiuImage(nPix);
-			for(int i=0; i<nPix; i++)
-				chiuImage[i] *= 0.f;
-			
-			// NOTE - lordcrc - if includecenter is false, make sure radius 
-			// is a tad higher than 1 to include other pixels
-			const float radius = max(chiuParams.radius, 1+(chiuParams.includecenter ? 0 : 1e-6));
-
-			const int pixel_rad = Ceil2Int(radius);
-			const int lookup_size = pixel_rad + pixel_rad + 1;
-
-			//build filter lookup table
-			std::vector<float> weights(lookup_size * lookup_size);
-
-			for(int y=0; y<lookup_size; ++y)
-				for(int x=0; x<lookup_size; ++x)
-				{
-					if(x == pixel_rad && y == pixel_rad)
-					{
-						weights[lookup_size*y + x] = chiuParams.includecenter ? 1.0f : 0.0f;
-					}
-					else
-					{
-						const float dx = (float)(x - pixel_rad);
-						const float dy = (float)(y - pixel_rad);
-						const float dist = sqrt(dx*dx + dy*dy);
-						const float weight = powf(max(0.0f, 1.0f - dist / radius), 4.0f);
-						weights[lookup_size*y + x] = weight;
-					}
-				}
-
-				float sumweight = 0.0f;
-				for(int y=0; y<lookup_size; ++y)
-					for(int x=0; x<lookup_size; ++x)
-						sumweight += weights[lookup_size*y + x];
-
-				//normalise filter kernel
-				for(int y=0; y<lookup_size; ++y)
-					for(int x=0; x<lookup_size; ++x)
-						weights[lookup_size*y + x] /= sumweight;
-
-				//for each pixel in the source image
-				for(int y=0; y<yResolution; ++y)
-				{
-					//get min and max of current filter rect along y axis
-					const int miny = max(0, y - pixel_rad);
-					const int maxy = min(yResolution, y + pixel_rad + 1);
-
-					for(int x=0; x<xResolution; ++x)
-					{
-						//get min and max of current filter rect along x axis
-						const int minx = max(0, x - pixel_rad);
-						const int maxx = min(xResolution, x + pixel_rad + 1);
-
-						// For each pixel in the out image, in the filter radius
-						for(int ty=miny; ty<maxy; ++ty)
-							for(int tx=minx; tx<maxx; ++tx)
-							{
-								const int dx=x-tx+pixel_rad;
-								const int dy=y-ty+pixel_rad;
-								const float factor = weights[lookup_size*dy + dx];
-								chiuImage[xResolution*ty + tx].AddWeighted(factor, pixels[xResolution*y + x]);
-							}
-					}
-				}
-				// Copyback
-				for(int i=0; i<nPix; i++)
-					pixels[i] = chiuImage[i];
-
-				// remove used intermediate memory
-				chiuImage.clear();
-				weights.clear();
-		}
-
-		// Apply GREYCStoration noise reduction filter
-		if(GREYCParams.enabled) {
-			// Define Cimg image buffer and copy data
-			CImg<float> img(xResolution, yResolution, 1, 3);
-			for(int y=0; y<yResolution; y++) {
-				for(int x=0; x<xResolution; x++) {
-					int index = xResolution * y + x;
-					// Note - Cimg float data must be in range [0,255] for GREYCStoration to work %100
-					for(int j=0; j<3; j++)
-						img(x, y, 0, j) = pixels[index].c[j] * 255;
-				}
-			}
-
-			for (unsigned int iter=0; iter<GREYCParams.nb_iter; iter++) {
-				img.blur_anisotropic(GREYCParams.amplitude,
-					GREYCParams.sharpness,
-					GREYCParams.anisotropy,
-					GREYCParams.alpha,
-					GREYCParams.sigma,
-					GREYCParams.dl,
-					GREYCParams.da,
-					GREYCParams.gauss_prec,
-					GREYCParams.interp,
-					GREYCParams.fast_approx,
-					1.0f); // gfact
-			}
-
-			// Copy data from cimg buffer back to pixels vector
-			const float inv_byte = 1.f/255;
-			for(int y=0; y<yResolution; y++) {
-				for(int x=0; x<xResolution; x++) {
-					int index = xResolution * y + x;
-					for(int j=0; j<3; j++)
-						pixels[index].c[j] = img(x, y, 0, j) * inv_byte;
-				}
-			}
-		}
-
-		// Dither image
-		if (dither > 0.f)
-			for (int i = 0; i < nPix; ++i)
-				pixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
-	}
+			pixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
+}
 
 // Film Function Definitions
 
 void Film::getHistogramImage(unsigned char *outPixels, int width, int height, int options){
-	m_histogram.MakeImage(outPixels, width, height, options);
+	if (!histogram)
+		histogram = new Histogram();
+	histogram->MakeImage(outPixels, width, height, options);
 }
 
 // Histogram Function Definitions

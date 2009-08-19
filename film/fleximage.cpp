@@ -170,7 +170,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 
 	// calculate reject warmup samples
-	reject_warmup_samples = ((double)xPixelCount * (double)yPixelCount) * reject_warmup;
+	reject_warmup_samples = ((double)xRealWidth * (double)yRealHeight) * reject_warmup;
 
 	// Precompute filter weight table
 	#define FILTER_TABLE_SIZE 16
@@ -184,9 +184,9 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 		}
 	}
 
-	maxY = 0.f;
+	maxY = debug_mode ? INFINITY : 0.f;
 	warmupSamples = 0;
-	warmupComplete = false;
+	warmupComplete = debug_mode;
 }
 
 // Parameter Access functions
@@ -806,7 +806,7 @@ void FlexImageFilm::CreateBuffers()
         if(ifs.good()) {
             // Dade - read the data
             luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
-            UpdateFilm(NULL, ifs);
+            UpdateFilm(ifs);
         }
 
         ifs.close();
@@ -922,19 +922,13 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 		return;
 
 	// Reject samples higher than max y() after warmup period
-	if (warmupComplete) {
-		if (xyz.y() * weight > maxY)
-			return;
-	} else {
-		if (debug_mode) {
-			maxY = INFINITY;
+	if (warmupComplete && xyz.y() > maxY)
+		return;
+	else {
+	 	maxY = max(maxY, xyz.y());
+		++warmupSamples;
+	 	if (warmupSamples >= reject_warmup_samples)
 			warmupComplete = true;
-		} else {
-		 	maxY = max(maxY, xyz.y() * weight);
-			++warmupSamples;
-		 	if (warmupSamples >= reject_warmup_samples)
-				warmupComplete = true;
-		}
 	}
 
 	if (premultiplyAlpha)
@@ -1090,7 +1084,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
-			colorSpace, m_histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
+			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades,
 			tmkernel.c_str(), &toneParams, m_Gamma, 0.);
@@ -1795,7 +1789,7 @@ void FlexImageFilm::TransmitFilm(
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 }
 
-float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) {
+float FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 	const bool isLittleEndian = osIsLittleEndian();
 
 	filtering_stream<input> in;
@@ -1812,13 +1806,12 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 		return 0.f;
 
 	// Read buffer groups
-	bool err = false; // flag for data errors
 	vector<float> bufferGroupNumSamples(bufferGroups.size());
 	vector<BlockedArray<Pixel>*> tmpPixelArrays(bufferGroups.size() * bufferConfigs.size());
 	for (u_int i = 0; i < bufferGroups.size(); i++) {
 		float numberOfSamples;
 		osReadLittleEndianFloat(isLittleEndian, in, &numberOfSamples);
-		if (!in.good() || err)
+		if (!in.good())
 			break;
 		bufferGroupNumSamples[i] = numberOfSamples;
 
@@ -1839,16 +1832,16 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 					osReadLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
 				}
 			}
-			if (!in.good() || err)
+			if (!in.good())
 				break;
 		}
-		if (!in.good() || err)
+		if (!in.good())
 			break;
 	}
 
 	// Dade - check for errors
 	float totNumberOfSamples = 0.f;
-	if (in.good() && !err) {
+	if (in.good()) {
 		// Update parameters
 		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
 			it->Set(this);
@@ -1875,6 +1868,10 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 			}
 
 			currentGroup.numberOfSamples += bufferGroupNumSamples[i];
+			// Check if we have enough samples per pixel
+			if ((haltSamplePerPixel > 0) &&
+				(currentGroup.numberOfSamples >= haltSamplePerPixel * samplePerPass))
+				enoughSamplePerPixel = true;
 			totNumberOfSamples += bufferGroupNumSamples[i];
 		}
 
@@ -1884,11 +1881,8 @@ float FlexImageFilm::UpdateFilm(Scene *scene, std::basic_istream<char> &stream) 
 		ss.str("");
 		ss << "Received film with " << totNumberOfSamples << " samples";
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	} else if (err) {
-		luxError(LUX_SYSTEM, LUX_ERROR, "Data error while receiving film buffers");
-	} else if (!in.good()) {
+	} else
 		luxError(LUX_SYSTEM, LUX_ERROR, "IO error while receiving film buffers");
-	}
 
 	// Clean up
 	for (u_int i = 0; i < tmpPixelArrays.size(); ++i)

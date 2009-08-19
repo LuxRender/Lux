@@ -258,7 +258,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 			stream << serverInfoList[i].sid << std::endl;
 
             if (stream.good()) {
-                serverInfoList[i].numberOfSamplesReceived += film->UpdateFilm(scene, stream);
+                serverInfoList[i].numberOfSamplesReceived += film->UpdateFilm(stream);
 
                 ss.str("");
                 ss << "Samples received from '" <<
