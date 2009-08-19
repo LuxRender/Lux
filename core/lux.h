@@ -92,19 +92,6 @@ using std::sort;
 #  define isinf(f) (!_finite((f)))
 #elif defined(__APPLE__)
 #  define memalign(a,b) valloc(b)
-//#  define powf pow
-//#  define sinf sin
-//#  define cosf cos
-//#  define tanf tan
-//#  define asinf asin
-//#  define acosf acos
-//#  define atanf atan
-//#  define atan2f atan2
-//#  define logf log
-//#  define log10f log10
-// Dade - commented out because of Jim's suggestion in bug #177
-//#  define expf exp
-//#  define sqrtf sqrt
 #  if (__GNUC__ == 3) || (__GNUC__ == 4)
 extern "C" {
   int isinf(double);
