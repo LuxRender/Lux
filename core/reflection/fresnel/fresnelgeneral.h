@@ -42,6 +42,7 @@ public:
 	}
 	virtual ~FresnelGeneral() { }
 	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
+	virtual float Index(const TsPack *tspack) const { return eta.filter(tspack); }
 private:
 	// FresnelGeneral Private Data
 	SWCSpectrum eta, k;

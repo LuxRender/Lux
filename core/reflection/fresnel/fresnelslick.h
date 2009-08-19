@@ -34,6 +34,7 @@ public:
   FresnelSlick (float r);
   virtual ~FresnelSlick() { }
   virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
+	virtual float Index(const TsPack *tspack) const { return (1.f - sqrtf(normal_incidence)) / (1.f + sqrtf(normal_incidence)); }
 private:
   float normal_incidence;
 };

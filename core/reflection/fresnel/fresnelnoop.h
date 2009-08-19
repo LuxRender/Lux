@@ -34,6 +34,7 @@ public:
 	FresnelNoOp() { }
 	virtual ~FresnelNoOp() { }
 	virtual void Evaluate(const TsPack *tspack, float, SWCSpectrum *const f) const { *f = SWCSpectrum(1.f); }
+	virtual float Index(const TsPack *tspack) const { return INFINITY; }
 };
 
 }//namespace lux

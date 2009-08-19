@@ -34,6 +34,7 @@ public:
 	// Fresnel Interface
 	virtual ~Fresnel();
 	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const = 0;
+	virtual float Index(const TsPack *tspack) const = 0;
 };
 
 void FrDiel(float cosi, float cost,

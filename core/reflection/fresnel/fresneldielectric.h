@@ -33,15 +33,15 @@ class  FresnelDielectric : public Fresnel {
 public:
 	// FresnelDielectric Public Methods
 	FresnelDielectric(float ei, float et, float cB = 0.f) {
-		eta_i = ei;
-		eta_t = et;
-		cb = cB;
+		eta_t = et / ei;
+		cb = cB * 1e6f / ei;
 	}
 	virtual ~FresnelDielectric() { }
 	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
+	virtual float Index(const TsPack *tspack) const;
 private:
 	// FresnelDielectric Private Data
-	float eta_i, eta_t, cb;
+	float eta_t, cb;
 };
 
 class FresnelDielectricComplement : public FresnelDielectric {
