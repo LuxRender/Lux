@@ -469,6 +469,7 @@ void Scene::Render() {
         renderThreads[i]->thread->join();
 	delete renderThreads[i];
     }
+    renderThreads.clear();
 
 	// Flush the contribution pool
 	contribPool->Flush();
