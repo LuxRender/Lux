@@ -29,6 +29,8 @@
 #include "sampling.h"
 #include "timer.h"
 
+#include "fastmutex.h"
+
 #include <boost/thread/thread.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
@@ -64,7 +66,7 @@ public:
 	TsPack *tspack;
     boost::thread *thread; // keep pointer to delete the thread object
 	double samples, blackSamples;
-	boost::mutex statLock;
+	fast_mutex statLock;
 };
 
 // Scene Declarations

@@ -25,20 +25,20 @@
 // contribution.h*
 #include "lux.h"
 #include "color.h"
+#include "fastmutex.h"
 
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/mutex.hpp>
 
 namespace lux
 {
 
 // Size of a contribution buffer
 // 4096 seems best.
-#define CONTRIB_BUF_SIZE 8192
+#define CONTRIB_BUF_SIZE 4096
 
 // Minimum number of buffers to keep alive/reuse
 // In practice twice this amount stays allocated
-#define CONTRIB_BUF_KEEPALIVE 16
+#define CONTRIB_BUF_KEEPALIVE 8
 
 // Switch on to get feedback in the log about allocation
 #define CONTRIB_DEBUG false
@@ -113,8 +113,8 @@ private:
 	vector<ContributionBuffer*> CSplat; // Buffers being splat
 
 	Film *film;
-	boost::recursive_mutex poolMutex;
-	boost::recursive_mutex splatting;
+	fast_mutex poolMutex;
+	boost::mutex splattingMutex;
 };
 
 }//namespace lux

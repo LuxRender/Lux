@@ -25,9 +25,6 @@
 #include "contribution.h"
 #include "film.h"
 
-#include <boost/thread/thread.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 namespace lux
 {
 
@@ -53,7 +50,7 @@ ContributionPool::ContributionPool() {
 
 void ContributionPool::End(ContributionBuffer *c)
 {
-	boost::recursive_mutex::scoped_lock poolAction(poolMutex);
+	fast_mutex::scoped_lock poolAction(poolMutex);
 
 	if (c)
 		CFull.push_back(c);
@@ -64,19 +61,19 @@ void ContributionPool::End(ContributionBuffer *c)
 
 ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 {
-	boost::recursive_mutex::scoped_lock poolAction(poolMutex);
+	fast_mutex::scoped_lock poolAction(poolMutex);
 
 	if (c)
 		CFull.push_back(c);
 
-	// If there are no free buffers, splat
+	// If there are no free buffers, perform splat
 	if (CFree.size() == 0) {
-		// Since we're still holding the pool mutex, 
+		// Since we're still holding the pool lock, 
 		// no other thread will perform the above test
 		// until CFree is filled with free buffers again.
 		// This prevents a thread from trying to splat
 		// prematurely.
-		splatting.lock();
+		boost::mutex::scoped_lock splattingAction(splattingMutex);
 
 		// CSplat contains available buffers
 		// from last splatting.
@@ -89,7 +86,7 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 		// CFree contains available buffers.
 
 		// Store one free buffer for later, this way
-		// we don't have to lock the pool mutex again.
+		// we don't have to lock the pool lock again.
 		ContributionBuffer *cold = CFree.back();
 		CFree.pop_back();
 
@@ -99,15 +96,13 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 		for(u_int i = 0; i < CSplat.size(); ++i)
 			CSplat[i]->Splat(film);
 
-		// release splat lock
-		splatting.unlock();
-
 		// return previously obtained buffer
 		return cold;
 	}
 
 	ContributionBuffer *cold = CFree.back();
 	CFree.pop_back();
+
 	return cold;
 }
 

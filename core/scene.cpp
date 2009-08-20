@@ -38,6 +38,8 @@
 
 #include "randomgen.h"
 
+#include "fastmutex.h"
+
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
@@ -45,7 +47,7 @@ using namespace lux;
 
 // global sample pos/mutex
 static u_int sampPos;
-static boost::mutex sampPosMutex;
+static fast_mutex sampPosMutex;
 
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
@@ -182,7 +184,7 @@ double Scene::GetNumberOfSamples()
 	if (s_Timer.Time() - lastTime > .5f) {
 		boost::mutex::scoped_lock lock(renderThreadsMutex);
 		for (u_int i = 0; i < renderThreads.size(); ++i) {
-			boost::mutex::scoped_lock lock(renderThreads[i]->statLock);
+			fast_mutex::scoped_lock lock(renderThreads[i]->statLock);
 			stat_Samples += renderThreads[i]->samples;
 			stat_blackSamples += renderThreads[i]->blackSamples;
 			renderThreads[i]->samples = 0.;
@@ -333,7 +335,7 @@ void RenderThread::render(RenderThread *myThread) {
             // Evaluate radiance along camera ray
 	// Jeanphi - Hijack statistics until volume integrator revamp
 		do {
-			boost::mutex::scoped_lock lock(myThread->statLock);
+			fast_mutex::scoped_lock lock(myThread->statLock);
 	    myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
 					myThread->scene, myThread->sample);
 		} while(0);
@@ -347,13 +349,13 @@ void RenderThread::render(RenderThread *myThread) {
 
         // update samples statistics
 	do {
-		boost::mutex::scoped_lock lock(myThread->statLock);
+		fast_mutex::scoped_lock lock(myThread->statLock);
         ++(myThread->samples);
 	} while(0);
 
         // increment (locked) global sample pos if necessary (eg maxSampPos != 0)
         if(*useSampPos == ~0U && maxSampPos != 0) {
-            boost::mutex::scoped_lock lock(sampPosMutex);
+            fast_mutex::scoped_lock lock(sampPosMutex);
             sampPos++;
             if( sampPos == maxSampPos )
                 sampPos = 0;
