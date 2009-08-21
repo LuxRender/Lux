@@ -1,8 +1,7 @@
-
 /***************************************************************************
- *   Copyright (C) 1998-2008 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
  *                                                                         *
- *   This file is part of Lux Renderer.                                    *
+ *   This file is part of LuxRender.                                       *
  *                                                                         *
  *   Lux Renderer is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
