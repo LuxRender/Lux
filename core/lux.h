@@ -51,7 +51,7 @@ inline float expf(float a) { return exp(a); }
 #  endif
 #endif
 #if defined(__FreeBSD__)
-#  define memalign(A,B)  valloc(B)
+#  define memalign(A,B)  malloc(B)
 #endif
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
