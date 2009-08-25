@@ -98,13 +98,7 @@ extern "C" int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxIn
 
 extern "C" void luxCleanup()
 {
-	if (initialized == true)
-	{
-		Context::luxCleanup();
-		initialized = false;
-	}
-	else
-		luxError(LUX_NOTSTARTED,LUX_ERROR,"luxCleanup() called without luxInit().");
+	Context::luxCleanup();
 }
 
 extern "C" void luxIdentity()

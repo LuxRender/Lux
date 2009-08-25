@@ -51,7 +51,7 @@ inline float expf(float a) { return exp(a); }
 #  endif
 #endif
 #if defined(__FreeBSD__)
-#  define memalign(A,B)  malloc(B)
+#  define memalign(A,B)  valloc(B)
 #endif
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
@@ -229,6 +229,8 @@ namespace lux
 #endif
 
 // Global Function Declarations
+extern "C" void luxInit();
+extern "C" void luxCleanup();
 bool ParseFile(const char *filename);
 namespace lux
 {
