@@ -31,6 +31,9 @@ typedef char *LuxToken;
 typedef char *LuxPointer;
 #define LUX_NULL NULL
 
+void luxInit();
+void luxCleanup();
+
 /* Basic control flow, scoping, stacks */
 void luxIdentity();
 void luxTranslate(float dx, float dy, float dz);

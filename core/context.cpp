@@ -90,31 +90,21 @@ void Context::init() {
 
 void Context::free() {
 	// Dade - free memory
-	if (luxCurrentScene) {
-		delete luxCurrentScene;
-		luxCurrentScene = NULL;
-		luxCurrentSceneReady = false;
-	}
+	delete luxCurrentScene;
+	luxCurrentScene = NULL;
+	luxCurrentSceneReady = false;
 
-	if (renderOptions) {
-		delete renderOptions;
-		renderOptions = NULL;
-	}
+	delete renderOptions;
+	renderOptions = NULL;
 
-	if (graphicsState) {
-		delete graphicsState;
-		graphicsState = NULL;
-	}
+	delete graphicsState;
+	graphicsState = NULL;
 
-	if (renderFarm) {
-		delete renderFarm;
-		renderFarm = NULL;
-	}
+	delete renderFarm;
+	renderFarm = NULL;
 
-	if (filmOverrideParams) {
-		delete filmOverrideParams;
-		filmOverrideParams = NULL;
-	}
+	delete filmOverrideParams;
+	filmOverrideParams = NULL;
 }
 
 // API Function Definitions
