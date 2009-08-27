@@ -53,11 +53,11 @@ public:
 		*wi = UniformSampleCone(u1, u2, cosTotalWidth);
 		*pdf = UniformConePdf(cosTotalWidth);
 		if (pdfBack)
-			*pdfBack = Pdf(*wi, wo);
+			*pdfBack = Pdf(tspack, *wi, wo);
 		*f = LocalFalloff(*wi, cosTotalWidth, cosFalloffStart);
 		return true;
 	}
-	virtual float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
 	{
 		if (CosTheta(wo) < cosTotalWidth)
 			return 0.f;

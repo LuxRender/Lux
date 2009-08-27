@@ -49,11 +49,11 @@ public:
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = UniformConePdf(cosThetaMax);
 		if (pdfBack)
-			*pdfBack = Pdf(*wi, wo);
+			*pdfBack = Pdf(tspack, *wi, wo);
 		*f = SWCSpectrum(1.f);
 		return true;
 	}
-	virtual float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
 	{
 		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return 0.f;

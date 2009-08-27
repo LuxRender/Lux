@@ -100,7 +100,7 @@ public:
 		skyLight.GetSkySpectralRadiance(tspack, theta, phi, &L);
 		*f += L;
 	}
-	virtual float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
 	{
 		Vector w(wo.x * X + wo.y * Y + wo.z * Z);
 		float pdf = 0.f;
