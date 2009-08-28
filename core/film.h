@@ -385,7 +385,7 @@ public:
 	}
 	virtual ~Film() { delete histogram; }
 	virtual void AddSample(Contribution *contrib) = 0;
-	virtual void AddSampleCount(float count) { }
+	virtual void AddSampleCount(float count) = 0;
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void WriteFilm(const string &filename) = 0;
 	// Dade - method useful for transmitting the samples to a client

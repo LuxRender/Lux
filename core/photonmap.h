@@ -86,8 +86,8 @@ public:
 class LightPhoton : public BasicColorPhoton {
 public:
 	LightPhoton(const TsPack *tspack, const Point &pp,
-		const SWCSpectrum &wt, const Vector &w)
-		: BasicColorPhoton(tspack, pp, wt), wi(w) { }
+		const SWCSpectrum &wt, const Vector &wi_)
+		: BasicColorPhoton(tspack, pp, wt), wi(wi_) { }
 
 	LightPhoton() : BasicColorPhoton() { }
 	virtual ~LightPhoton() { }

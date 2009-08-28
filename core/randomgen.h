@@ -35,16 +35,14 @@
 #ifndef LUX_RANDOM_H
 #define LUX_RANDOM_H
 
-#include "lux.h"
 #include "memory.h"
 
-#define LCG(n) ((69069UL * n) & 0xffffffffUL)
 #define MASK 0xffffffffUL
 #define FLOATMASK 0x00ffffffUL
 
 #define RAN_BUFFER_AMOUNT 2048
 
-static const float invUI = (1.f / (FLOATMASK + 1));
+static const float invUI = (1.f / (FLOATMASK + 1UL));
 
 namespace lux
 {
@@ -53,73 +51,75 @@ class RandomGenerator
 {
 public:
 	RandomGenerator() {
-		buf = lux::AllocAligned<unsigned long int>(RAN_BUFFER_AMOUNT);
+		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
 		bufid = RAN_BUFFER_AMOUNT;
 	}
 
 	~RandomGenerator() { lux::FreeAligned(buf); }
 
-	void taus113_set(unsigned long int s) {
-	  if (!s) s = 1UL; // default seed is 1
-
-	  z1 = LCG (s); if (z1 < 2UL) z1 += 2UL;
-	  z2 = LCG (z1); if (z2 < 8UL) z2 += 8UL;
-	  z3 = LCG (z2); if (z3 < 16UL) z3 += 16UL;
-	  z4 = LCG (z3); if (z4 < 128UL) z4 += 128UL;
-
-	  // Calling RNG ten times to satify recurrence condition
-	  for(int i=0; i<10; i++) nobuf_generateUInt();
-	}
-
-	inline void init(int tn) {
+	inline void init(unsigned long tn) {
 		taus113_set(tn);
 	}
 
-	inline unsigned long nobuf_generateUInt() {
-	  const unsigned long b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
-	  z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
-
-	  const unsigned long b2 = ((((z2 << 2UL) & MASK) ^ z2) >> 27UL);
-	  z2 = ((((z2 & 4294967288UL) << 2UL) & MASK) ^ b2);
-
-	  const unsigned long b3 = ((((z3 << 13UL) & MASK) ^ z3) >> 21UL);
-	  z3 = ((((z3 & 4294967280UL) << 7UL) & MASK) ^ b3);
-
-	  const unsigned long b4 = ((((z4 << 3UL) & MASK) ^ z4) >> 12UL);
-	  z4 = ((((z4 & 4294967168UL) << 13UL) & MASK) ^ b4);
-
-	  return (z1 ^ z2 ^ z3 ^ z4);
-	}
-
 	inline unsigned long uintValue() {
-	  // Repopulate buffer if necessary
-	  if(bufid == RAN_BUFFER_AMOUNT) {
-		  for(int i=0; i<RAN_BUFFER_AMOUNT; i++)
-			  buf[i] = nobuf_generateUInt();
-		  bufid = 0;
-	  }
+		// Repopulate buffer if necessary
+		if (bufid == RAN_BUFFER_AMOUNT) {
+			for(int i = 0; i < RAN_BUFFER_AMOUNT; ++i)
+				buf[i] = nobuf_generateUInt();
+			bufid = 0;
+		}
 
-	  unsigned long int ii = buf[bufid];
-	  bufid++;
-	  return ii; 
+		return buf[bufid++];
 	}
 
 	inline float floatValue() {
-	  // Repopulate buffer if necessary
-	  if(bufid == RAN_BUFFER_AMOUNT) {
-		  for(int i=0; i<RAN_BUFFER_AMOUNT; i++)
-			  buf[i] = nobuf_generateUInt();
-		  bufid = 0;
-	  }
-
-	  unsigned long int ii = buf[bufid];
-	  bufid++;
-	  return (ii & FLOATMASK) * invUI; 
+		return (uintValue() & FLOATMASK) * invUI; 
 	}
 
 private:
-	unsigned long int z1, z2, z3, z4;
-	unsigned long int *buf;
+	inline unsigned long LCG(const unsigned long n) {
+		return 69069UL * n; // The result is clamped to 32 bits (long)
+	}
+	void taus113_set(unsigned long s) {
+		if (!s)
+			s = 1UL; // default seed is 1
+
+		z1 = LCG(s);
+		if (z1 < 2UL)
+			z1 += 2UL;
+		z2 = LCG (z1);
+		if (z2 < 8UL)
+			z2 += 8UL;
+		z3 = LCG (z2);
+		if (z3 < 16UL)
+			z3 += 16UL;
+		z4 = LCG (z3);
+		if (z4 < 128UL)
+			z4 += 128UL;
+
+		// Calling RNG ten times to satify recurrence condition
+		for(int i = 0; i < 10; ++i)
+			nobuf_generateUInt();
+	}
+
+	inline unsigned long nobuf_generateUInt() {
+		const unsigned long b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
+		z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
+
+		const unsigned long b2 = ((((z2 << 2UL) & MASK) ^ z2) >> 27UL);
+		z2 = ((((z2 & 4294967288UL) << 2UL) & MASK) ^ b2);
+
+		const unsigned long b3 = ((((z3 << 13UL) & MASK) ^ z3) >> 21UL);
+		z3 = ((((z3 & 4294967280UL) << 7UL) & MASK) ^ b3);
+
+		const unsigned long b4 = ((((z4 << 3UL) & MASK) ^ z4) >> 12UL);
+		z4 = ((((z4 & 4294967168UL) << 13UL) & MASK) ^ b4);
+
+		return (z1 ^ z2 ^ z3 ^ z4);
+	}
+
+	unsigned long z1, z2, z3, z4;
+	unsigned long *buf;
 	int bufid;
 };
 
@@ -127,19 +127,19 @@ namespace random {
 
 static RandomGenerator* PGen;
 // request RN's during engine initialization (pre threads)
-inline float floatValueP() { 
-	if(!PGen) {
-		PGen = new RandomGenerator();
-		PGen->taus113_set(1);
-	}
-	return (PGen->nobuf_generateUInt() & FLOATMASK) * invUI;
-}
 inline unsigned long uintValueP() { 
-	if(!PGen) {
+	if (!PGen) {
 		PGen = new RandomGenerator();
-		PGen->taus113_set(1);
+		PGen->init(1);
 	}
-	return PGen->nobuf_generateUInt();
+	return PGen->uintValue();
+}
+inline float floatValueP() { 
+	if (!PGen) {
+		PGen = new RandomGenerator();
+		PGen->init(1);
+	}
+	return PGen->floatValue();
 }
 
 } // random

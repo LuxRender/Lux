@@ -193,7 +193,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					// Add light contribution from BSDF sampling
 					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
 					Intersection lightIsect;
-					SWCSpectrum Li(1.f);
+					Li = SWCSpectrum(1.f);
 					RayDifferential ray(p, wi);
 					ray.time = tspack->time;
 					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));

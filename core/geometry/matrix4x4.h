@@ -32,8 +32,10 @@ public:
 	Matrix4x4() {
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
-				if (i == j) m[i][j] = 1.;
-				else m[i][j] = 0.;
+				if (i == j)
+					m[i][j] = 1.f;
+				else
+					m[i][j] = 0.f;
 	}
 	Matrix4x4(float mat[4][4]);
 	Matrix4x4(float t00, float t01, float t02, float t03,

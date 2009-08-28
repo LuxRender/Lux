@@ -106,7 +106,7 @@ TaBRecKdTreeAccel::~TaBRecKdTreeAccel() {
 void TaBRecKdTreeAccel::buildTree(int nodeNum,
         const BBox &nodeBounds,
         const vector<BBox> &allPrimBounds, int *primNums,
-        int nPrims, int depth, TaBRecBoundEdge *edges[3],
+        int nP, int depth, TaBRecBoundEdge *edges[3],
         int *prims0, int *prims1, int badRefines) {
     BOOST_ASSERT(nodeNum == nextFreeNode); // NOBOOK
     // Get next free node from _nodes_ array
@@ -123,15 +123,15 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     }
     ++nextFreeNode;
     // Initialize leaf node if termination criteria met
-    if (nPrims <= maxPrims || depth == 0) {
-        nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
+    if (nP <= maxPrims || depth == 0) {
+        nodes[nodeNum].initLeaf(primNums, nP, prims, arena);
         return;
     }
     // Initialize interior node and continue recursion
     // Choose split axis position for interior node
     int bestAxis = -1, bestOffset = -1;
     float bestCost = INFINITY;
-    float oldCost = isectCost * nPrims;
+    float oldCost = isectCost * nP;
     Vector d = nodeBounds.pMax - nodeBounds.pMin;
     float totalSA = (2.f * (d.x*d.y + d.x*d.z + d.y*d.z));
     float invTotalSA = 1.f / totalSA;
@@ -142,7 +142,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     int retries = 0;
     retrySplit:
         // Initialize edges for _axis_
-        for (int i = 0; i < nPrims; ++i) {
+        for (int i = 0; i < nP; ++i) {
             int pn = primNums[i];
             const BBox &bbox = allPrimBounds[pn];
             edges[axis][2*i] =
@@ -150,10 +150,10 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
             edges[axis][2*i+1] =
                     TaBRecBoundEdge(bbox.pMax[axis], pn, false);
         }
-    sort(&edges[axis][0], &edges[axis][2*nPrims]);
+    sort(&edges[axis][0], &edges[axis][2*nP]);
     // Compute cost of all splits for _axis_ to find best
-    int nBelow = 0, nAbove = nPrims;
-    for (int i = 0; i < 2*nPrims; ++i) {
+    int nBelow = 0, nAbove = nP;
+    for (int i = 0; i < 2*nP; ++i) {
         if (edges[axis][i].type == TaBRecBoundEdge::END) --nAbove;
         float edget = edges[axis][i].t;
         if (edget > nodeBounds.pMin[axis] &&
@@ -182,7 +182,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
         }
         if (edges[axis][i].type == TaBRecBoundEdge::START) ++nBelow;
     }
-    BOOST_ASSERT(nBelow == nPrims && nAbove == 0); // NOBOOK
+    BOOST_ASSERT(nBelow == nP && nAbove == 0); // NOBOOK
     // Create leaf if no good splits were found
     if (bestAxis == -1 && retries < 2) {
         ++retries;
@@ -190,9 +190,9 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
         goto retrySplit;
     }
     if (bestCost > oldCost) ++badRefines;
-    if ((bestCost > 4.f * oldCost && nPrims < 16) ||
+    if ((bestCost > 4.f * oldCost && nP < 16) ||
             bestAxis == -1 || badRefines == 3) {
-        nodes[nodeNum].initLeaf(primNums, nPrims, prims, arena);
+        nodes[nodeNum].initLeaf(primNums, nP, prims, arena);
         return;
     }
     // Classify primitives with respect to split
@@ -200,7 +200,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     for (int i = 0; i < bestOffset; ++i)
         if (edges[bestAxis][i].type == TaBRecBoundEdge::START)
             prims0[n0++] = edges[bestAxis][i].primNum;
-    for (int i = bestOffset+1; i < 2*nPrims; ++i)
+    for (int i = bestOffset+1; i < 2*nP; ++i)
         if (edges[bestAxis][i].type == TaBRecBoundEdge::END)
             prims1[n1++] = edges[bestAxis][i].primNum;
     // Recursively initialize children nodes
@@ -210,11 +210,11 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
     bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tsplit;
     buildTree(nodeNum+1, bounds0,
             allPrimBounds, prims0, n0, depth-1, edges,
-            prims0, prims1 + nPrims, badRefines);
+            prims0, prims1 + nP, badRefines);
     nodes[nodeNum].aboveChild = nextFreeNode;
     buildTree(nodes[nodeNum].aboveChild, bounds1, allPrimBounds,
             prims1, n1, depth-1, edges,
-            prims0, prims1 + nPrims, badRefines);
+            prims0, prims1 + nP, badRefines);
 }
 
 // Dade - this code is based on Appendix C of Ph.D. Thesis by Vlastimil Havran
@@ -326,9 +326,9 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
         if (nPrimitives == 1) {
             hit |= currNode->onePrimitive->Intersect(ray, isect);
         } else {
-            Primitive **prims = currNode->primitives;
+            Primitive **prs = currNode->primitives;
             for (u_int i = 0; i < nPrimitives; ++i)
-                hit |= prims[i]->Intersect(ray, isect);
+                hit |= prs[i]->Intersect(ray, isect);
         }
 
         if (hit) {
@@ -457,9 +457,9 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
                 mailboxes.addChecked(pp);
             }
         } else {
-            Primitive **prims = currNode->primitives;
+            Primitive **prs = currNode->primitives;
             for (u_int i = 0; i < nPrimitives; ++i) {
-                Primitive *pp = prims[i];
+                Primitive *pp = prs[i];
 
                 // Dade - check with the mailboxes if we need to do
                 // the intersection test

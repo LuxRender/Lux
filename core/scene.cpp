@@ -182,9 +182,9 @@ double Scene::Statistics(const string &statName) {
 double Scene::GetNumberOfSamples()
 {
 	if (s_Timer.Time() - lastTime > .5f) {
-		boost::mutex::scoped_lock lock(renderThreadsMutex);
+		boost::mutex::scoped_lock lockThreads(renderThreadsMutex);
 		for (u_int i = 0; i < renderThreads.size(); ++i) {
-			fast_mutex::scoped_lock lock(renderThreads[i]->statLock);
+			fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
 			stat_Samples += renderThreads[i]->samples;
 			stat_blackSamples += renderThreads[i]->blackSamples;
 			renderThreads[i]->samples = 0.;
@@ -335,7 +335,7 @@ void RenderThread::render(RenderThread *myThread) {
             // Evaluate radiance along camera ray
 	// Jeanphi - Hijack statistics until volume integrator revamp
 		do {
-			fast_mutex::scoped_lock lock(myThread->statLock);
+			fast_mutex::scoped_lock lockStats(myThread->statLock);
 	    myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
 					myThread->scene, myThread->sample);
 		} while(0);
@@ -349,7 +349,7 @@ void RenderThread::render(RenderThread *myThread) {
 
         // update samples statistics
 	do {
-		fast_mutex::scoped_lock lock(myThread->statLock);
+		fast_mutex::scoped_lock lockThreads(myThread->statLock);
         ++(myThread->samples);
 	} while(0);
 
@@ -572,10 +572,10 @@ SWCSpectrum Scene::Li(const RayDifferential &ray,
 //	SWCSpectrum T = volumeIntegrator->Transmittance(this, ray, sample, alpha);
 //	SWCSpectrum Lv = volumeIntegrator->Li(this, ray, sample, alpha);
 //	return T * Lo + Lv;
-	return 0.;
+	return 0.f;
 }
 
-void Scene::Transmittance(const TsPack *tspack, const Ray &ray, 
-								 const Sample *sample, SWCSpectrum *const L) const {
-    volumeIntegrator->Transmittance(tspack, this, ray, sample, NULL, L);
+void Scene::Transmittance(const TsPack *tsp, const Ray &ray, 
+	const Sample *sample, SWCSpectrum *const L) const {
+    volumeIntegrator->Transmittance(tsp, this, ray, sample, NULL, L);
 }

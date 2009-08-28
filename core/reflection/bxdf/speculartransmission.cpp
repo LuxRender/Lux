@@ -28,7 +28,7 @@
 using namespace lux;
 
 bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
-	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const {
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const {
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 
@@ -43,7 +43,7 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
 	if (sint2 > 1.f) {
-		*f = 0.f;
+		*f_ = 0.f;
 		*pdf = 0.f;
 		if (pdfBack)
 			*pdfBack = 0.f;
@@ -62,10 +62,10 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	if (!architectural) {
 		if (reverse) {
 			fresnel->Evaluate(tspack, cost, &F);
-			*f = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
+			*f_ = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
 		} else {
 			fresnel->Evaluate(tspack, CosTheta(wo), &F);
-			*f = (SWCSpectrum(1.f) - F) * T / fabsf(cost);
+			*f_ = (SWCSpectrum(1.f) - F) * T / fabsf(cost);
 		}
 	} else {
 		if (reverse) {
@@ -79,7 +79,7 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 			else
 				F = SWCSpectrum(0.f);
 		}
-		*f = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
+		*f_ = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
 	}
 	return true;
 }
@@ -92,7 +92,8 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo) const
 	return (1.f - F.filter(tspack)) / fabsf(CosTheta(wo));
 }
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
-							 const Vector &wi, SWCSpectrum *const f) const {
+	const Vector &wi, SWCSpectrum *const f_) const
+{
 	if (!(architectural && Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f))
 		return;
 	// Figure out which $\eta$ is incident and which is transmitted
@@ -115,5 +116,5 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 		fresnel->Evaluate(tspack, CosTheta(wo), &F);
 	else
 		F = SWCSpectrum(0.f);
-	f->AddWeighted(1.f / fabsf(CosTheta(wi)), (SWCSpectrum(1.f) - F) * T);
+	f_->AddWeighted(1.f / fabsf(CosTheta(wi)), (SWCSpectrum(1.f) - F) * T);
 }

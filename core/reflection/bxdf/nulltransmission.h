@@ -36,9 +36,9 @@ public:
 	NullTransmission()
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
 	virtual ~NullTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f_) const {
 		if (Dot(wo,wi) < SHADOW_RAY_EPSILON - 1.f)
-			*f += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
+			*f_ += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,

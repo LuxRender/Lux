@@ -44,8 +44,8 @@ using boost::asio::ip::tcp;
 // RenderServer
 //------------------------------------------------------------------------------
 
-RenderServer::RenderServer(int threadCount, int tcpPort) : threadCount(threadCount),
-        tcpPort(tcpPort), state(UNSTARTED), serverThread(NULL) {
+RenderServer::RenderServer(int tCount, int port) : threadCount(tCount),
+        tcpPort(port), state(UNSTARTED), serverThread(NULL) {
 }
 
 RenderServer::~RenderServer() {

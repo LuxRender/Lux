@@ -27,13 +27,14 @@
 using namespace lux;
 
 bool NullTransmission::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-								float u1, float u2, SWCSpectrum *const f, float *pdf, 
-								float *pdfBack,	bool reverse) const {
+	float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+	float *pdfBack,	bool reverse) const
+{
 	*wi = -wo;
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	*f = 1.f / fabsf(CosTheta(*wi));
+	*f_ = 1.f / fabsf(CosTheta(*wi));
 	return true;
 }
 

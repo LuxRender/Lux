@@ -24,6 +24,7 @@
 #define LUX_CONTRIBUTION_H
 // contribution.h*
 #include "lux.h"
+#include "memory.h"
 #include "color.h"
 #include "fastmutex.h"
 

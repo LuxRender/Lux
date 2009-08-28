@@ -78,7 +78,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
     text.text_length = 4;
     png_set_text(png, info, &text, 1);
 
-    png_color_16 black = {0};
+    png_color_16 black = {0, 0, 0, 0, 0};
     png_set_background(png, &black, PNG_BACKGROUND_GAMMA_SCREEN, 0, 255.0);
 
     // gAMA:

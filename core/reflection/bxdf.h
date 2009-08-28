@@ -130,7 +130,7 @@ class  SingleBSDF : public BSDF  {
 public:
 	// StackedBSDF Public Methods
 	SingleBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		BxDF *b, float eta = 1.f) : BSDF(dgs, ngeom, eta), bxdf(b) { }
+		BxDF *b, float e = 1.f) : BSDF(dgs, ngeom, e), bxdf(b) { }
 	virtual inline int NumComponents() const { return 1; }
 	virtual inline int NumComponents(BxDFType flags) const;
 	/**

@@ -105,7 +105,7 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, int index);
 	virtual string GetStringParameterValue(luxComponentParameters param, int index);
 
-	virtual void WriteFilm(const string &filename) { WriteResumeFilm(filename); }
+	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	// Dade - method useful for transmitting the samples to a client
 	virtual void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
 	virtual float UpdateFilm(std::basic_istream<char> &stream);

@@ -34,7 +34,7 @@ CookTorrance::CookTorrance(const SWCSpectrum &ks, MicrofacetDistribution *dist,
 {
 }
 
-void CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
+void CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f_) const {
 	const float cosThetaO = fabsf(CosTheta(wo));
 	const float cosThetaI = fabsf(CosTheta(wi));
 	const Vector wh(Normalize(wi + wo));
@@ -43,7 +43,7 @@ void CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi, S
 
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaH, &F);
-	f->AddWeighted(distribution->D(wh) * cG  / (M_PI * cosThetaI * cosThetaO), KS * F);
+	f_->AddWeighted(distribution->D(wh) * cG  / (M_PI * cosThetaI * cosThetaO), KS * F);
 }
 
 float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) const
@@ -55,7 +55,7 @@ float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) cons
 	return min(1.f, min((2.f * NdotWh * NdotWo / WodotWh), (2.f * NdotWh * NdotWi / WodotWh)));
 }
 
-bool CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack, bool reverse) const
+bool CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const
 {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
 	if (*pdf == 0.f) {
@@ -66,11 +66,11 @@ bool CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, 
 	if (pdfBack)
 		*pdfBack = Pdf(tspack, *wi, wo);
 
-	*f = SWCSpectrum(0.f);
+	*f_ = SWCSpectrum(0.f);
 	if (reverse)
-		this->f(tspack, *wi, wo, f);
+		f(tspack, *wi, wo, f_);
 	else
-		this->f(tspack, wo, *wi, f);
+		f(tspack, wo, *wi, f_);
 	return true;
 }
 

@@ -78,8 +78,8 @@ public:
 		return isExrImage_;
 	}
 
-	void setIsExrImage(bool isExrImage) {
-		isExrImage_ = isExrImage;
+	void setIsExrImage(bool exrImage) {
+		isExrImage_ = exrImage;
 	}
 
 	template <class T> MIPMap<T> *createMIPMap(

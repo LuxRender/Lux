@@ -31,8 +31,6 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "fleximage.h"
-
 namespace lux
 {
 
@@ -40,8 +38,8 @@ class RenderFarm;
 
 class FilmUpdaterThread : public boost::noncopyable {
 public:
-    FilmUpdaterThread(RenderFarm *renderFarm, Scene *scene) :
-        renderFarm(renderFarm), scene(scene), thread(NULL), signal(SIG_NONE) { }
+    FilmUpdaterThread(RenderFarm *rFarm, Scene *scn) :
+        renderFarm(rFarm), scene(scn), thread(NULL), signal(SIG_NONE) { }
 
     ~FilmUpdaterThread() {
         delete thread;

@@ -199,11 +199,8 @@ public:
 			if (availableBlocks.size() && sz <= blockSize) {
 				currentBlock = availableBlocks.back();
 				availableBlocks.pop_back();
-			} else {
-				if (sz > blockSize)
-					printf("Huge arena alloc: %d (%d)", sz, blockSize);
+			} else
 				currentBlock = lux::AllocAligned<char>(max(sz, blockSize));
-			}
 			curBlockPos = 0;
 		}
 		void *ret = currentBlock + curBlockPos;

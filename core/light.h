@@ -73,13 +73,13 @@ public:
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const {
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *L) const {
 		if (!warnOnce)
 			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L");
 		warnOnce = true;
 		return false;
 	}
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const {
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *L) const {
 		if (!warnOnce)
 			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L");
 		warnOnce = true;
@@ -138,15 +138,15 @@ public:
 	virtual ~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack, const DifferentialGeometry &dg, const Vector& w) const {
 		if( Dot(dg.nn, w) > 0 ) {
-			SWCSpectrum L = Le->Evaluate(tspack, dg) * gain;
+			SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
 			if(func) {
 				// Transform to the local coordinate system around the point
 				const Vector wLocal(
 					Dot(dg.dpdu, w), Dot(dg.dpdv, w), Dot(dg.nn, w)
 				);
-				L *= SWCSpectrum(tspack, func->f(wLocal));
+				Ll *= SWCSpectrum(tspack, func->f(wLocal));
 			}
-			return L;
+			return Ll;
 		}
 		else {
 			return 0.f;

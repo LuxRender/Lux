@@ -34,10 +34,10 @@ namespace lux
 class  SpecularTransmission : public BxDF {
 public:
 	// SpecularTransmission Public Methods
-	SpecularTransmission(const SWCSpectrum &t, Fresnel *f, bool disp, bool archi = false)
+	SpecularTransmission(const SWCSpectrum &t, Fresnel *fr, bool disp, bool archi = false)
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		  T(t), dispersive(disp), architectural(archi),
-		  fresnel(f) {}
+		  fresnel(fr) {}
 	virtual ~SpecularTransmission() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,

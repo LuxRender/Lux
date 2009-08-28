@@ -41,8 +41,8 @@ class RegularSPD : public SPD {
     //  lambdaMin  wavelength (nm) of first sample
     //  lambdaMax  wavelength (nm) of last sample
     //  n          number of samples
-    RegularSPD(const float* const samples, float lambdaMin, float lambdaMax, int n) : SPD() {
-      init(lambdaMin, lambdaMax, samples, n);
+    RegularSPD(const float* const s, float lMin, float lMax, int n) : SPD() {
+      init(lMin, lMax, s, n);
     }
 
     virtual ~RegularSPD() {}

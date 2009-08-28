@@ -42,7 +42,7 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 
 	// NOTE - radiance - THIS NEEDS TO BE UPDATED! :)
 
-	std::string p(pluginName);
+	std::string pn(pluginName);
 	
 	for(int i=0;i<n;i++)
 	{
@@ -89,9 +89,9 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="v10") AddFloat(s,(float*)(params[i]));
 		if(s=="v11") AddFloat(s,(float*)(params[i]));
 		if(s=="maxanisotropy") AddFloat(s,(float*)(params[i]));
-		if(s=="roughness" && p=="fbm") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="wrinkled") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="marble") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="fbm") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="wrinkled") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="marble") AddTexture(s,std::string(params[i]));
 		if(s=="variation") AddFloat(s,(float*)(params[i]));
 		if(s=="g") AddFloat(s,(float*)(params[i]));
 		if(s=="a") AddFloat(s,(float*)(params[i]));
@@ -154,8 +154,8 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		//point parameters
 		if(s=="p1") AddPoint(s,(Point*)(params[i]));
 		if(s=="p2") AddPoint(s,(Point*)(params[i]));
-		if(s=="P" && p=="nurbs") AddPoint(s,(Point*)(params[i]),FindOneInt("nu", i)*FindOneInt("nv", i));
-		if(s=="P" && p=="trianglemesh") AddPoint(s,(Point*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if(s=="P" && pn=="nurbs") AddPoint(s,(Point*)(params[i]),FindOneInt("nu", i)*FindOneInt("nv", i));
+		if(s=="P" && pn=="trianglemesh") AddPoint(s,(Point*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
 		if(s=="p0") AddPoint(s,(Point*)(params[i]));
 		//if(s=="from") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
 		//if(s=="to") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
@@ -177,11 +177,11 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="Kd") AddTexture(s,std::string(params[i]));
 		if(s=="sigma") AddTexture(s,std::string(params[i]));
 		if(s=="Ks") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="plastic") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="translucent") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="shinymetal") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="glossy") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && p=="uber") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="plastic") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="translucent") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="shinymetal") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="glossy") AddTexture(s,std::string(params[i]));
+		if(s=="roughness" && pn=="uber") AddTexture(s,std::string(params[i]));
 		if(s=="reflect") AddTexture(s,std::string(params[i]));
 		if(s=="transmit") AddTexture(s,std::string(params[i]));
 		if(s=="Kr") AddTexture(s,std::string(params[i]));
