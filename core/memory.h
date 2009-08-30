@@ -30,6 +30,11 @@
 namespace lux
 {
 // Memory Allocation Functions
+#if !defined(LUX_ALIGNMENT)
+#ifdef LUX_USE_SSE
+#define LUX_ALIGNMENT 16
+#endif
+#endif
 #ifndef L1_CACHE_LINE_SIZE
 #define L1_CACHE_LINE_SIZE 64
 #endif
@@ -174,29 +179,29 @@ private:
 class  MemoryArena {
 public:
 	// MemoryArena Public Methods
-	MemoryArena(unsigned int bs = 32768) {
+	MemoryArena(size_t bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
 		currentBlock = lux::AllocAligned<char>(blockSize);
 	}
 	~MemoryArena() {
 		lux::FreeAligned(currentBlock);
-		for (u_int i = 0; i < usedBlocks.size(); ++i)
+		for (size_t i = 0; i < usedBlocks.size(); ++i)
 			lux::FreeAligned(usedBlocks[i]);
-		for (u_int i = 0; i < availableBlocks.size(); ++i)
+		for (size_t i = 0; i < availableBlocks.size(); ++i)
 			lux::FreeAligned(availableBlocks[i]);
 	}
-	void *Alloc(u_int sz) {
+	void *Alloc(size_t sz) {
 		// Round up _sz_ to minimum machine alignment
-		#ifndef LUX_USE_SSE
-		sz = ((sz + 7) & (~7));
+		#if defined(LUX_ALIGNMENT)
+		sz = ((sz + (LUX_ALIGNMENT-1)) & (~(LUX_ALIGNMENT-1)));
 		#else
-		sz = ((sz + 15) & (~15));
+		sz = ((sz + 7) & (~7));
 		#endif
 		if (curBlockPos + sz > blockSize) {
 			// Get new block of memory for _MemoryArena_
 			usedBlocks.push_back(currentBlock);
-			if (availableBlocks.size() && sz <= blockSize) {
+			if (availableBlocks.size() > 0 && sz <= blockSize) {
 				currentBlock = availableBlocks.back();
 				availableBlocks.pop_back();
 			} else {
@@ -212,14 +217,14 @@ public:
 	}
 	void FreeAll() {
 		curBlockPos = 0;
-		while (usedBlocks.size()) {
+		while (usedBlocks.size() > 0) {
 			availableBlocks.push_back(usedBlocks.back());
 			usedBlocks.pop_back();
 		}
 	}
 private:
 	// MemoryArena Private Data
-	u_int curBlockPos, blockSize;
+	size_t curBlockPos, blockSize;
 	char *currentBlock;
 	vector<char *> usedBlocks, availableBlocks;
 };
