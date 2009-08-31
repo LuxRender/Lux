@@ -119,8 +119,8 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 		float ft = (FocalDistance - ClipHither) / ray->d.z;
 		Point Pfocus = (*ray)(ft);
 		// Update ray for effect of lens
-		ray->o.x += lensU;
-		ray->o.y += lensV;
+		ray->o.x += lensU * (FocalDistance - ClipHither) / FocalDistance;
+		ray->o.y += lensV * (FocalDistance - ClipHither) / FocalDistance;
 		ray->d = Pfocus - ray->o;
 	}
 
