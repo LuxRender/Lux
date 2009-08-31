@@ -152,14 +152,14 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			v.flux = v.f * cosins;
 			v.prob = v.pdfR;
 			v.f *= cosins / v.cosi;
-			v.rrR = min(1.f, max(bidir.eyeThreshold, v.flux.filter(tspack) / v.prob));
+			v.rrR = min(1.f, max(bidir.eyeThreshold, v.flux.Filter(tspack) / v.prob));
 			if (nVerts > 3) {
 				if (v.rrR < data[0])
 					break;
 				v.prob *= v.rrR;
 			}
 			v.rr = min(1.f, max(bidir.lightThreshold,
-				v.f.filter(tspack) * v.coso / v.pdf));
+				v.f.Filter(tspack) * v.coso / v.pdf));
 			if (nVerts > 1) {
 				v.flux *= vertices[nVerts - 2].flux;
 				v.prob *= vertices[nVerts - 2].prob;
@@ -240,14 +240,14 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			const float cosins = AbsDot(v.wi, v.ns);
 			v.flux *= v.coso * cosins;
 			v.prob = v.pdf * v.cosi;
-			v.rr = min(1.f, max(bidir.lightThreshold, v.flux.filter(tspack) / v.prob));
+			v.rr = min(1.f, max(bidir.lightThreshold, v.flux.Filter(tspack) / v.prob));
 			if (nVerts > 3) {
 				if (v.rr < data[0])
 					break;
 				v.prob *= v.rr;
 			}
 			v.rrR = min(1.f, max(bidir.eyeThreshold,
-				v.f.filter(tspack) * cosins / v.pdfR));
+				v.f.Filter(tspack) * cosins / v.pdfR));
 			if (nVerts > 1) {
 				v.flux *= vertices[nVerts - 2].flux;
 				v.prob *= vertices[nVerts - 2].prob;
@@ -460,9 +460,9 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 			return false;
 		// Evaluate factors for eye path weighting
 		eyeV.pdf = eyeV.bsdf->Pdf(tspack, eyeV.wi, eyeV.wo, eyeV.flags);
-		eyeV.rr = min(1.f, max(lightThreshold, eyeV.f.filter(tspack) *
+		eyeV.rr = min(1.f, max(lightThreshold, eyeV.f.Filter(tspack) *
 			ecosins / eyeV.cosi * eyeV.coso / eyeV.pdf));
-		eyeV.rrR = min(1.f, max(eyeThreshold, eyeV.f.filter(tspack) *
+		eyeV.rrR = min(1.f, max(eyeThreshold, eyeV.f.Filter(tspack) *
 			ecosins / eyeV.pdfR));
 		eyeV.dAWeight = lightV.pdf * lightV.tPdf * eyeV.cosi / eyeV.d2;
 		if (nEye > 1) {
@@ -474,9 +474,9 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		}
 		// Evaluate factors for light path weighting
 		lightV.pdfR = lightV.bsdf->Pdf(tspack, lightV.wo, lightV.wi, lightV.flags);
-		lightV.rr = min(1.f, max(lightThreshold, lightV.f.filter(tspack) *
+		lightV.rr = min(1.f, max(lightThreshold, lightV.f.Filter(tspack) *
 			lcosins / lightV.cosi * lightV.coso / lightV.pdf));
-		lightV.rrR = min(1.f, max(eyeThreshold, lightV.f.filter(tspack) *
+		lightV.rrR = min(1.f, max(eyeThreshold, lightV.f.Filter(tspack) *
 			lcosins / lightV.pdfR));
 		lightV.dARWeight = eyeV.pdfR * eyeV.tPdfR * lightV.coso / lightV.d2;
 		if (nLight > 1) {
@@ -554,7 +554,7 @@ static bool getLightHit(const TsPack *tspack, const Scene *scene,
 		return false;
 	}
 	Le[v.eGroup] += v.Le;
-	weight[v.eGroup] += v.Le.filter(tspack) * totalWeight;
+	weight[v.eGroup] += v.Le.Filter(tspack) * totalWeight;
 	v = e;
 	return true;
 }
@@ -597,7 +597,7 @@ static bool getEnvironmentLight(const TsPack *tspack, const Scene *scene,
 			v.ePdfDirect, false, &totalWeight, &(v.Le))) {
 			Le[light->group] += v.Le;
 			weight[light->group] += totalWeight *
-				Le[light->group].filter(tspack);
+				Le[light->group].Filter(tspack);
 			++nrContribs;
 		}
 	}
@@ -640,7 +640,7 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 	L /= vL.ePdfDirect;
 	if (length > 1) {
 		Ld[light->group] += L;
-		weight[light->group] += L.filter(tspack) * totalWeight;
+		weight[light->group] += L.Filter(tspack) * totalWeight;
 	} else {
 		const float distance = sqrtf(lightPath[0].d2);
 		float xd, yd;
@@ -796,7 +796,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					if (i > 1) {
 						L += Ll;
 						variance += weight *
-							Ll.filter(tspack);
+							Ll.Filter(tspack);
 					} else {
 						const float d = Distance(lightPath[j - 1].p, eyePath[0].p);
 						float xl, yl;
@@ -822,7 +822,7 @@ int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		return nrContribs;
 	for (int i = 0; i < nGroups; ++i) {
 		if (!vecL[i].Black())
-			vecV[i] /= vecL[i].filter(tspack);
+			vecV[i] /= vecL[i].Filter(tspack);
 		vecL[i] *= We;
 		XYZColor color(vecL[i].ToXYZ(tspack));
 		sample->AddContribution(xl, yl,

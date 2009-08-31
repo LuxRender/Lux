@@ -141,7 +141,7 @@ void DistributedPath::Reject(const TsPack *tspack, vector< vector<SWCSpectrum> >
 	float samples = LL.size();
 	for(int i=0; i<samples; i++)
 		for(u_int j=0; j<LL[i].size(); j++)
-			totallum += LL[i][j].y(tspack) * samples;
+			totallum += LL[i][j].Y(tspack) * samples;
 	float avglum = totallum / samples;
 
 	float validlength;
@@ -154,7 +154,7 @@ void DistributedPath::Reject(const TsPack *tspack, vector< vector<SWCSpectrum> >
 		for(int i=0; i<samples; i++) {
 			float y = 0.f;
 			for(u_int j=0; j<LL[i].size(); j++) {
-				y += LL[i][j].y(tspack) * samples;
+				y += LL[i][j].Y(tspack) * samples;
 			}
 			if(y > avglum + validlength) {
 				rejects++;
@@ -207,7 +207,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		if((bsdf->compParams->tVl && rayDepth == 0) || (bsdf->compParams->tiVl && rayDepth > 0))
 			if (includeEmit) {
 				const SWCSpectrum Le(isect.Le(tspack, wo));
-				if (Le.filter(tspack) > 0.f) {
+				if (Le.Filter(tspack) > 0.f) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
 				}
@@ -259,7 +259,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 						for (u_int i = 0; i < scene->lights.size(); ++i) {
 							const SWCSpectrum Ld(EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
 								sample, lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent));
-							if (Ld.filter(tspack) > 0.f) {
+							if (Ld.Filter(tspack) > 0.f) {
 								L[scene->lights[i]->group] += invsamples * Ld;
 								++nrContribs;
 							}
@@ -272,7 +272,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 						int g = UniformSampleOneLight(tspack, scene, p, n,
 							wo, bsdf, sample,
 							lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
-						if (Ld.filter(tspack) > 0.f) {
+						if (Ld.Filter(tspack) > 0.f) {
 							L[g] += invsamples * Ld;
 							++nrContribs;
 						}
@@ -498,7 +498,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		// Handle ray with no intersection
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
 			const SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-			if (Le.filter(tspack) > 0.f) {
+			if (Le.Filter(tspack) > 0.f) {
 				L[scene->lights[i]->group] += Le;
 				++nrContribs;
 			}

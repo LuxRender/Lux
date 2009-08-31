@@ -89,7 +89,7 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo) const
 		return 1.f;
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, CosTheta(wo), &F);
-	return (1.f - F.filter(tspack)) / fabsf(CosTheta(wo));
+	return (1.f - F.Filter(tspack)) / fabsf(CosTheta(wo));
 }
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const

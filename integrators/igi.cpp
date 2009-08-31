@@ -98,7 +98,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	float *lightPower = new float[nLights];
 	float *lightCDF = new float[nLights + 1];
 	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene->lights[i]->Power(tspack, scene).y(tspack);
+		lightPower[i] = scene->lights[i]->Power(tspack, scene).Y(tspack);
 	float totalPower;
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 	for (u_int s = 0; s < nLightSets; ++s) {
@@ -150,7 +150,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 					&fr, &pdf, BSDF_ALL, &flags))
 					break;
 				SWCSpectrum anew = fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
-				float r = min(1.f, anew.filter(tspack));
+				float r = min(1.f, anew.Filter(tspack));
 				if (tspack->rng->floatValue() > r)
 					break;
 				alpha *= anew / r;

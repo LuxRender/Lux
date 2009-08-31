@@ -144,7 +144,7 @@ public:
 	SWCSpectrum Pow(const SWCSpectrum &e) const {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			ret.c[i] = c[i] > 0 ? powf(c[i], e.c[i]) : 0.f;
+			ret.c[i] = c[i] > 0.f ? powf(c[i], e.c[i]) : 0.f;
 		return ret;
 	}
 	SWCSpectrum operator-() const {
@@ -176,8 +176,8 @@ public:
 			fprintf(f, "%f ", c[i]);
 	}
 	XYZColor ToXYZ(const TsPack *tspack) const;
-	Scalar y(const TsPack *tspack) const;
-	Scalar filter(const TsPack *tspack) const;
+	Scalar Y(const TsPack *tspack) const;
+	Scalar Filter(const TsPack *tspack) const;
 
 //	bool operator<(const SWCSpectrum &s2) const {
 //		return y() < s2.y();												// Note - radiance - REFACT - need to rewrite without use of Spectrumwavelengths

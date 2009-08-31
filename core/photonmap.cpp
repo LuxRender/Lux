@@ -476,7 +476,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		thr_wl->Sample(RadicalInverse(j, 2), RadicalInverse(j, 3));
 
 		for (u_int i = 0; i < nLights; ++i)
-			lightPower[i] += scene->lights[i]->Power(tspack, scene).y(tspack);
+			lightPower[i] += scene->lights[i]->Power(tspack, scene).Y(tspack);
 	}
 	for (u_int i = 0; i < nLights; ++i)
 		lightPower[i] /= spectrumSamples;
@@ -651,7 +651,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 
 				// Sample new photon ray direction
 				Vector wi;
-				float pdf;
+				float pdfo;
 				BxDFType flags;
 				// Get random numbers for sampling outgoing photon direction
 				float u1, u2, u3;
@@ -667,15 +667,15 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 
 				// Compute new photon weight and possibly terminate with RR
 				SWCSpectrum fr;
-				if (!photonBSDF->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, BSDF_ALL, &flags))
+				if (!photonBSDF->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = alpha * fr * AbsDot(wi, photonIsect.dg.nn) * AbsDot(wo, photonBSDF->dgShading.nn) / (AbsDot(wo, photonIsect.dg.nn) * pdf);
-				float continueProb = min(1.f, anew.filter(tspack) / alpha.filter(tspack));
+				SWCSpectrum anew = alpha * fr * AbsDot(wi, photonIsect.dg.nn) * AbsDot(wo, photonBSDF->dgShading.nn) / (AbsDot(wo, photonIsect.dg.nn) * pdfo);
+				float continueProb = min(1.f, anew.Filter(tspack) / alpha.Filter(tspack));
 				if (tspack->rng->floatValue() > continueProb || nIntersections > maxDepth)
 					break;
 				alpha = anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&
-					((flags & BSDF_SPECULAR) != 0 || pdf > 100.f);
+					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
 				photonRay = RayDifferential(photonIsect.dg.p, wi);
 			}
 		}
@@ -800,14 +800,14 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
 
 			if(!ofs.good()) {
-				std::stringstream ss;
+				ss.str("");
 				ss << "Error while writing photon maps to file";
 				luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
 			}
 
 			ofs.close();
 		} else {
-			std::stringstream ss;
+			ss.str("");
 			ss << "Cannot open file '" << (*mapFileName) << "' for writing photon maps";
 			luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
 		}
@@ -878,7 +878,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			// Dade - russian roulette
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float dp = AbsDot(wi, n) / pdf;
-				const float q = min(1.f, fr.filter(tspack) * dp);
+				const float q = min(1.f, fr.Filter(tspack) * dp);
 				if (q < sampleFGData[3])
 					continue;
 
@@ -900,12 +900,12 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
 					nGather = -nGather;
-				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
+				NearPhotonProcess<RadiancePhoton> procir(gatherIsect.dg.p, nGather);
 				float md2 = radianceMap->maxDistSquared;
 
-				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
-				if (proc.photon) {
-					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack, 1);
+				radianceMap->lookup(gatherIsect.dg.p, procir, md2);
+				if (procir.photon) {
+					SWCSpectrum Lindir = procir.photon->GetSWCSpectrum(tspack, 1);
 
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for BSDF-sampled gather ray
@@ -961,7 +961,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			// Dade - russian roulette
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float dp = 1.f / photonPdf;
-				const float q = min(1.f, fr.filter(tspack) * dp);
+				const float q = min(1.f, fr.Filter(tspack) * dp);
 				if (q < sampleFGData[3])
 					continue;
 
@@ -982,12 +982,12 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
 					nGather = -nGather;
-				NearPhotonProcess<RadiancePhoton> proc(gatherIsect.dg.p, nGather);
+				NearPhotonProcess<RadiancePhoton> procir(gatherIsect.dg.p, nGather);
 				float md2 = radianceMap->maxDistSquared;
 
-				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
-				if (proc.photon) {
-					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(tspack, 1);
+				radianceMap->lookup(gatherIsect.dg.p, procir, md2);
+				if (procir.photon) {
+					SWCSpectrum Lindir = procir.photon->GetSWCSpectrum(tspack, 1);
 
 					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for photon-sampled gather ray
@@ -1039,7 +1039,7 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 			// Dade - russian roulette
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float dp = AbsDot(wi, n) / pdf;
-				const float q = min(1.f, fr.filter(tspack) * dp);
+				const float q = min(1.f, fr.Filter(tspack) * dp);
 				if (q < sampleFGData[3])
 					continue;
 

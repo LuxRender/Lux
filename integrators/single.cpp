@@ -22,6 +22,7 @@
 
 // single.cpp*
 #include "single.h"
+#include "randomgen.h"
 #include "light.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -78,7 +79,7 @@ int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 			.5f * stepSize, tspack->rng->floatValue())); // TODO - REFACT - remove and add random value from sample
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.filter(tspack) < 1e-3) {
+		if (Tr.Filter(tspack) < 1e-3f) {
 			const float continueProb = .5f;
 			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;

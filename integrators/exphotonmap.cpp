@@ -546,7 +546,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		// Possibly terminate the path
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.filter(tspack) * dp);
+				const float q = min<float>(1.f, f.Filter(tspack) * dp);
 				if (q < rrSample[0])
 					break;
 				// increase path contribution

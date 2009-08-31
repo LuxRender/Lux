@@ -49,7 +49,7 @@ XYZColor SWCSpectrum::ToXYZ(const TsPack *tspack) const {
 	return XYZColor(xyz);
 }
 
-Scalar SWCSpectrum::y(const TsPack *tspack) const {
+Scalar SWCSpectrum::Y(const TsPack *tspack) const {
 	SpectrumWavelengths *sw = tspack->swl;
 	Scalar y = 0.f;
 
@@ -64,7 +64,7 @@ Scalar SWCSpectrum::y(const TsPack *tspack) const {
 
 	return y;
 }
-Scalar SWCSpectrum::filter(const TsPack *tspack) const
+Scalar SWCSpectrum::Filter(const TsPack *tspack) const
 {
 	SpectrumWavelengths *sw = tspack->swl;
 	Scalar result = 0.f;

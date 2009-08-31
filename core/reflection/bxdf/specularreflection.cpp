@@ -56,7 +56,7 @@ float SpecularReflection::Weight(const TsPack *tspack, const Vector &wo) const
 {
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, CosTheta(wo), &F);
-	return F.filter(tspack) / fabsf(CosTheta(wo));
+	return F.Filter(tspack) / fabsf(CosTheta(wo));
 }
 
 bool ArchitecturalReflection::Sample_f(const TsPack *tspack, const Vector &wo,

@@ -74,5 +74,5 @@ float FresnelDielectric::Index(const TsPack *tspack) const
 		eta_t + cb / (w[1] * w[1]),
 		eta_t + cb / (w[2] * w[2]),
 		eta_t + cb / (w[3] * w[3])};
-	return SWCSpectrum(i).filter(tspack);
+	return SWCSpectrum(i).Filter(tspack);
 }

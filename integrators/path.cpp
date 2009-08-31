@@ -85,7 +85,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
 				if (!Lv.Black()) {
 					L[g] = Lv;
-					V[g] += Lv.filter(tspack) * VContrib;
+					V[g] += Lv.Filter(tspack) * VContrib;
 					++nrContribs;
 				}
 				pathThroughput = 1.f;
@@ -101,7 +101,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						Le *= pathThroughput;
 						if (!Le.Black()) {
 							L[scene->lights[i]->group] += Le;
-							V[scene->lights[i]->group] += Le.filter(tspack) * VContrib;
+							V[scene->lights[i]->group] += Le.Filter(tspack) * VContrib;
 							++nrContribs;
 						}
 					}
@@ -123,7 +123,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!Lv.Black()) {
 			Lv *= pathThroughput;
 			L[g] += Lv;
-			V[g] += Lv.filter(tspack) * VContrib;
+			V[g] += Lv.Filter(tspack) * VContrib;
 			++nrContribs;
 		}
 		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, &alpha, &pathThroughput);
@@ -135,7 +135,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			if (!Le.Black()) {
 				Le *= pathThroughput;
 				L[isect.arealight->group] += Le;
-				V[isect.arealight->group] += Le.filter(tspack) * VContrib;
+				V[isect.arealight->group] += Le.Filter(tspack) * VContrib;
 				++nrContribs;
 			}
 		}
@@ -165,7 +165,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						Ll *= pathThroughput;
 						Ll *= lIncrement;
 						L[g] += Ll;
-						V[g] += Ll.filter(tspack) * VContrib;
+						V[g] += Ll.Filter(tspack) * VContrib;
 						++nrContribs;
 					}
 				}
@@ -178,7 +178,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				if (!Ll.Black()) {
 					Ll *= pathThroughput;
 					L[g] += Ll;
-					V[g] += Ll.filter(tspack) * VContrib;
+					V[g] += Ll.Filter(tspack) * VContrib;
 					++nrContribs;
 				}
 				break;
@@ -200,7 +200,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Possibly terminate the path
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.filter(tspack) * dp);
+				const float q = min<float>(1.f, f.Filter(tspack) * dp);
 				if (q < data[9])
 					break;
 				// increase path contribution
@@ -229,7 +229,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	}
 	for (u_int i = 0; i < scene->lightGroups.size(); ++i) {
 		if (!L[i].Black())
-			V[i] /= L[i].filter(tspack);
+			V[i] /= L[i].Filter(tspack);
 		sample->AddContribution(sample->imageX, sample->imageY,
 			L[i].ToXYZ(tspack) * rayWeight, alpha, distance, V[i], bufferId, i);
 	}
