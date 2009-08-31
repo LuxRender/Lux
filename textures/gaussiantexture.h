@@ -55,7 +55,7 @@ public:
 		return SWCSpectrum(tspack, GSPD);
 	}
 	virtual void SetPower(float power, float area) {
-		GSPD->Scale(power / (area * M_PI * GSPD->y()));
+		GSPD->Scale(power / (area * M_PI * GSPD->Y()));
 	}
 private:
 	GaussianSPD* GSPD;

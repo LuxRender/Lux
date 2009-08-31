@@ -55,7 +55,7 @@ public:
 		return SWCSpectrum(tspack, FSPD);
 	}
 	virtual void SetPower(float power, float area) {
-		FSPD->Scale(power / (area * M_PI * FSPD->y()));
+		FSPD->Scale(power / (area * M_PI * FSPD->Y()));
 	}
 private:
 	FrequencySPD* FSPD;

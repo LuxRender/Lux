@@ -92,13 +92,15 @@ void SPD::Whitepoint(float temp) {
 	bbvals.clear();
 }
 
-float SPD::y() {
+float SPD::Y() const
+{
 	float y = 0.f;
 	for (int i = 0; i < nCIE; ++i)
 		y += sample(i + CIEstart) * CIE_Y[i];
 	return y * 683.f;
 }
-XYZColor SPD::ToXYZ() {
+XYZColor SPD::ToXYZ() const
+{
 	XYZColor c(0.f);
 	for (int i = 0; i < nCIE; ++i) {
 		float s = sample(i + CIEstart);

@@ -57,7 +57,7 @@ public:
 		return SWCSpectrum(tspack, RGBSPD);
 	}
 	virtual void SetPower(float power, float area) {
-		RGBSPD->Scale(power / (area * M_PI * RGBSPD->y()));
+		RGBSPD->Scale(power / (area * M_PI * RGBSPD->Y()));
 	}
 	virtual void SetIlluminant() {
 		delete RGBSPD;

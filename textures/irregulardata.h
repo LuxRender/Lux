@@ -55,7 +55,7 @@ public:
 		return SWCSpectrum(tspack, SPD);
 	}
 	virtual void SetPower(float power, float area) {
-		SPD->Scale(power / (area * M_PI * SPD->y()));
+		SPD->Scale(power / (area * M_PI * SPD->Y()));
 	}
 private:
 	IrregularSPD* SPD;

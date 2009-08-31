@@ -63,8 +63,8 @@ public:
       }
     }
 
-	float y();
-	XYZColor ToXYZ();
+	float Y() const ;
+	XYZColor ToXYZ() const;
 	void AllocateSamples(int n);
 	void FreeSamples();
 	void Normalize();
