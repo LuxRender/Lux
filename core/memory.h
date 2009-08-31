@@ -26,6 +26,8 @@
 // memory.h*
 
 #include <boost/serialization/split_member.hpp>
+#include <boost/cstdint.hpp>
+using boost::int8_t;
 
 namespace lux
 {
@@ -35,9 +37,11 @@ namespace lux
 #define LUX_ALIGNMENT 16
 #endif
 #endif
+
 #ifndef L1_CACHE_LINE_SIZE
 #define L1_CACHE_LINE_SIZE 64
 #endif
+
 template<class T> inline T *AllocAligned(size_t size, std::size_t N = L1_CACHE_LINE_SIZE)
 {
 	return static_cast<T *>(memalign(N, size * sizeof(T)));
@@ -182,7 +186,7 @@ public:
 	MemoryArena(size_t bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
-		currentBlock = lux::AllocAligned<char>(blockSize);
+		currentBlock = lux::AllocAligned<int8_t>(blockSize);
 	}
 	~MemoryArena() {
 		lux::FreeAligned(currentBlock);
@@ -193,11 +197,11 @@ public:
 	}
 	void *Alloc(size_t sz) {
 		// Round up _sz_ to minimum machine alignment
-		#if defined(LUX_ALIGNMENT)
+#if defined(LUX_ALIGNMENT)
 		sz = ((sz + (LUX_ALIGNMENT-1)) & (~(LUX_ALIGNMENT-1)));
-		#else
+#else
 		sz = ((sz + 7) & (~7));
-		#endif
+#endif
 		if (curBlockPos + sz > blockSize) {
 			// Get new block of memory for _MemoryArena_
 			usedBlocks.push_back(currentBlock);
@@ -205,9 +209,7 @@ public:
 				currentBlock = availableBlocks.back();
 				availableBlocks.pop_back();
 			} else {
-				if (sz > blockSize)
-					printf("Huge arena alloc: %d (%d)", sz, blockSize);
-				currentBlock = lux::AllocAligned<char>(max(sz, blockSize));
+				currentBlock = lux::AllocAligned<int8_t>(max(sz, blockSize));
 			}
 			curBlockPos = 0;
 		}
@@ -225,9 +227,10 @@ public:
 private:
 	// MemoryArena Private Data
 	size_t curBlockPos, blockSize;
-	char *currentBlock;
-	vector<char *> usedBlocks, availableBlocks;
+	int8_t *currentBlock;
+	vector<int8_t *> usedBlocks, availableBlocks;
 };
+
 template<class T, int logBlockSize> class BlockedArray {
 public:
 	friend class boost::serialization::access;
