@@ -44,13 +44,17 @@ void Anisotropic::Sample_f(const Vector &wo, Vector *wi,
 		sampleFirstQuadrant(u1, u2, &phi, &costheta);
 		phi = 2.f * M_PI - phi;
 	}
-	float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
+	const float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
 	Vector H = SphericalDirection(sintheta, costheta, phi);
 	if (Dot(wo, H) < 0.f) H = -H;
 	// Compute incident direction by reflecting about $\wh$
 	*wi = -wo + 2.f * Dot(wo, H) * H;
 	// Compute PDF for \wi from Anisotropic distribution
-	float anisotropic_pdf = D(H) / (4.f * Dot(wo, H));
+	const float e = (ex * H.x * H.x + ey * H.y * H.y) /
+		(sintheta * sintheta);
+	const float d = sqrtf((ex + 1.f) * (ey + 1.f)) * INV_TWOPI *
+		powf(costheta, e);
+	const float anisotropic_pdf = d / (4.f * Dot(wo, H));
 	*pdf = anisotropic_pdf;
 }
 void Anisotropic::sampleFirstQuadrant(float u1, float u2,
@@ -58,17 +62,21 @@ void Anisotropic::sampleFirstQuadrant(float u1, float u2,
 	if (ex == ey)
 		*phi = M_PI * u1 * 0.5f;
 	else
-		*phi = atanf(sqrtf((ex+1)/(ey+1)) *
+		*phi = atanf(sqrtf((ex + 1.f)/(ey + 1.f)) *
 			tanf(M_PI * u1 * 0.5f));
-	float cosphi = cosf(*phi), sinphi = sinf(*phi);
-	*costheta = powf(u2, 1.f/(ex * cosphi * cosphi +
-		ey * sinphi * sinphi + 1));
+	const float cosphi = cosf(*phi), sinphi = sinf(*phi);
+	*costheta = powf(u2, 1.f / (ex * cosphi * cosphi +
+		ey * sinphi * sinphi + 1.f));
 }
 float Anisotropic::Pdf(const Vector &wo,
 		const Vector &wi) const {
 	Vector H = Normalize(wo + wi);
 	// Compute PDF for \wi from Anisotropic distribution
-	float anisotropic_pdf = D(H) / (4.f * Dot(wo, H));
+	const float e = (ex * H.x * H.x + ey * H.y * H.y) /
+		(1.f - CosTheta(H) * CosTheta(H));
+	const float d = sqrtf((ex + 1.f) * (ey + 1.f)) * INV_TWOPI *
+		powf(fabsf(CosTheta(H)), e);
+	const float anisotropic_pdf = d / (4.f * Dot(wo, H));
 	return anisotropic_pdf;
 }
 
