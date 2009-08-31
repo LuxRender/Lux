@@ -125,8 +125,8 @@ public:
 		}
 	}
 
-	virtual void GetData(Color *color, float *alpha) const = 0;
-	virtual float GetData(int x, int y, Color *color, float *alpha) const = 0;
+	virtual void GetData(XYZColor *color, float *alpha) const = 0;
+	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const = 0;
 	bool isFramebuffer;
 	int xPixelCount, yPixelCount;
 	float scaleFactor;
@@ -140,7 +140,7 @@ public:
 
 	virtual ~RawBuffer() { }
 
-	virtual void GetData(Color *color, float *alpha) const {
+	virtual void GetData(XYZColor *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
@@ -149,7 +149,7 @@ public:
 			}
 		}
 	}
-	virtual float GetData(int x, int y, Color *color, float *alpha) const {
+	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		*color = pixel.L;
 		*alpha = pixel.alpha;
@@ -164,7 +164,7 @@ public:
 
 	virtual ~PerPixelNormalizedBuffer() { }
 
-	virtual void GetData(Color *color, float *alpha) const {
+	virtual void GetData(XYZColor *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
@@ -179,7 +179,7 @@ public:
 			}
 		}
 	}
-	virtual float GetData(int x, int y, Color *color, float *alpha) const {
+	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum == 0.f) {
 			*color = XYZColor(0.f);
@@ -244,7 +244,7 @@ public:
 
 	virtual ~PerScreenNormalizedBuffer() { }
 
-	virtual void GetData(Color *color, float *alpha) const {
+	virtual void GetData(XYZColor *color, float *alpha) const {
 		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
@@ -257,7 +257,7 @@ public:
 			}
 		}
 	}
-	virtual float GetData(int x, int y, Color *color, float *alpha) const {
+	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum > 0.f) {
 			*color = pixel.L * (xPixelCount * yPixelCount / *numberOfSamples_);
@@ -360,7 +360,7 @@ class Histogram {
 public:
 	Histogram();
 	~Histogram();
-	void Calculate(vector<Color> &pixels, unsigned int width, unsigned int height);
+	void Calculate(vector<RGBColor> &pixels, unsigned int width, unsigned int height);
 	void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 private:
 	void CheckBucketNr();
@@ -442,15 +442,15 @@ protected:
 };
 
 // Image Pipeline Declarations
-void ApplyImagingPipeline(vector<Color> &pixels,
+void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	int xResolution, int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
-	bool &haveBloomImage, Color *bloomImage, bool bloomUpdate,
+	bool &haveBloomImage, XYZColor *bloomImage, bool bloomUpdate,
 	float bloomRadius, float bloomWeight,
 	bool VignettingEnabled, float VignetScale,
 	bool aberrationEnabled, float aberrationAmount,
-	bool &haveGlareImage, Color *glareImage, bool glareUpdate,
+	bool &haveGlareImage, XYZColor *glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, int glareBlades,
 	const char *tonemap, const ParamSet *toneMapParams, float gamma,
 	float dither);

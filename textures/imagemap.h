@@ -88,7 +88,7 @@ private:
 		*to = from;
 	}
 	static void convert(const RGBColor &from, float *to) {
-		*to = from.y();
+		*to = from.Y();
 	}
 		
 	// ImageFloatTexture Private Data
@@ -149,7 +149,7 @@ private:
 		*to = from;
 	}
 	static void convert(const RGBColor &from, float *to) {
-		*to = from.y();
+		*to = from.Y();
 	}
 		
 	// ImageSpectrumTexture Private Data

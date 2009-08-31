@@ -92,14 +92,14 @@ RGBColor AggregateVolume::Lve(const Point &p, const Vector &w) const {
 		L += regions[i]->Lve(p, w);
 	return L;
 }
-float AggregateVolume::p(const Point &p, const Vector &w, const Vector &wp) const {
+float AggregateVolume::P(const Point &p, const Vector &w, const Vector &wp) const {
 	float ph = 0, sumWt = 0;
 	for (u_int i = 0; i < regions.size(); ++i) {
-		float sigt = regions[i]->sigma_t(p, w).y();
+		float sigt = regions[i]->sigma_t(p, w).Y();
 		if (sigt != 0.f) {
-			float wt = regions[i]->sigma_s(p, w).y() / sigt;
+			float wt = regions[i]->sigma_s(p, w).Y() / sigt;
 			sumWt += wt;
-			ph += wt * regions[i]->p(p, w, wp);
+			ph += wt * regions[i]->P(p, w, wp);
 		}
 	}
 	return ph / sumWt;

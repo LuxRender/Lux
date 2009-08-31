@@ -31,7 +31,7 @@ namespace lux
 class HighContrastOp : public ToneMap {
 public:
 	virtual ~HighContrastOp() { }
-	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const;
+	virtual void Map(vector<XYZColor> &xyz, int xRes, int yRes, float maxDisplayY) const;
 			 
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:
@@ -39,10 +39,10 @@ private:
 	static float C(float y) {
 		if (y < 0.0034f)
 			return y / 0.0014f;
-		else if (y < 1)
+		else if (y < 1.f)
 			return 2.4483f + log10f(y / 0.0034f) / 0.4027f;
 		else if (y < 7.2444f)
-			return 16.563f + (y - 1) / 0.4027f;
+			return 16.563f + (y - 1.f) / 0.4027f;
 		else
 			return 32.0693f + log10f(y / 7.2444f) / 0.0556f;
 	}

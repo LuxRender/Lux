@@ -101,7 +101,7 @@ int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 			if ((!L.Black()) && (pdf > 0.0f) && vis.TestOcclusion(tspack, scene, &occlusion)) {	
 				SWCSpectrum Ld = L * occlusion;
 				vis.Transmittance(tspack, scene, sample, &Ld);
-				*Lv += Tr * ss * vr->p(p, w, -wo) *
+				*Lv += Tr * ss * vr->P(p, w, -wo) *
 					  Ld * float(nLights) / pdf;
 			}
 		}

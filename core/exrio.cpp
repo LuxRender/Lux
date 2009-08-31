@@ -308,7 +308,7 @@ namespace lux {
         return NULL;
     }
 
-   void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf, int compressiontype, const string &name, vector<Color> &pixels,
+   void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf, int compressiontype, const string &name, vector<RGBColor> &pixels,
             vector<float> &alpha, int xRes, int yRes,
             int totalXRes, int totalYRes,
             int xOffset, int yOffset, vector<float> &zbuf) {
@@ -391,9 +391,9 @@ namespace lux {
 			} else if(channeltype >= 2) {
 				// Save RGB
 				float *frgb = &pixels[0].c[0];
-				fb.insert("R", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset), sizeof(Color), xRes * sizeof(Color)));
-				fb.insert("G", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset) + sizeof(float), sizeof(Color), xRes * sizeof(Color)));
-				fb.insert("B", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset) + 2 * sizeof(float), sizeof(Color), xRes * sizeof(Color)));
+				fb.insert("R", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset), sizeof(RGBColor), xRes * sizeof(RGBColor)));
+				fb.insert("G", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset) + sizeof(float), sizeof(RGBColor), xRes * sizeof(RGBColor)));
+				fb.insert("B", Slice(Imf::FLOAT, (char *)(frgb - 3 * bufOffset) + 2 * sizeof(float), sizeof(RGBColor), xRes * sizeof(RGBColor)));
 			}
 			if(channeltype == 1 || channeltype == 3) {
 				// Add alpha

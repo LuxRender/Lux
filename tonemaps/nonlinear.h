@@ -33,14 +33,14 @@ public:
 	// NonLinearOp Public Methods
 	NonLinearOp(float my) { maxY = my; }
 	virtual ~NonLinearOp() { }
-	virtual void Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const {
+	virtual void Map(vector<XYZColor> &xyz, int xRes, int yRes, float maxDisplayY) const {
 		const int numPixels = xRes * yRes;
 		float invY2;
 		if (maxY <= 0.f) {
 			// Compute world adaptation luminance, _Ywa_
 			float Ywa = 0.;
 			for (int i = 0; i < numPixels; ++i)
-				if (xyz[i].c[1] > 0) Ywa += logf(xyz[i].c[1]);
+				if (xyz[i].Y() > 0) Ywa += logf(xyz[i].Y());
 			Ywa = expf(Ywa / (xRes * yRes));
 			invY2 = 1.f / (Ywa * Ywa);
 		}

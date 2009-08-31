@@ -54,7 +54,7 @@ public:
 		const Vector &) const = 0;
 	virtual
 		RGBColor Lve(const Point &, const Vector &) const = 0;
-	virtual float p(const Point &, const Vector &,
+	virtual float P(const Point &, const Vector &,
 		const Vector &) const = 0;
 	virtual RGBColor sigma_t(const Point &, const Vector &) const;
 	virtual RGBColor Tau(const Ray &ray,
@@ -80,7 +80,7 @@ public:
 	virtual RGBColor Lve(const Point &p, const Vector &) const {
 		return Density(WorldToVolume(p)) * le;
 	}
-	virtual float p(const Point &p, const Vector &w,
+	virtual float P(const Point &p, const Vector &w,
 			const Vector &wp) const {
 		return PhaseHG(w, wp, g);
 	}
@@ -102,7 +102,7 @@ public:
 	virtual RGBColor sigma_a(const Point &, const Vector &) const;
 	virtual RGBColor sigma_s(const Point &, const Vector &) const;
 	virtual RGBColor Lve(const Point &, const Vector &) const;
-	virtual float p(const Point &, const Vector &, const Vector &) const;
+	virtual float P(const Point &, const Vector &, const Vector &) const;
 	virtual RGBColor sigma_t(const Point &, const Vector &) const;
 	virtual RGBColor Tau(const Ray &ray, float, float) const;
 private:

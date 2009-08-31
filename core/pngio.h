@@ -30,7 +30,7 @@
 namespace lux
 {
 
-  void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<Color> &pixels,
+  void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<RGBColor> &pixels,
             vector<float> &alpha, int xPixelCount, int yPixelCount,
         int xResolution, int yResolution,
         int xPixelStart, int yPixelStart, ColorSystem &cSystem, float screenGamma);

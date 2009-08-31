@@ -43,7 +43,7 @@ namespace lux {
 		return NULL;
  }
 
- void WriteIgiImage(const string &name, vector<Color> &pixels,
+ void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
 		vector<float> &alpha, int xRes, int yRes,
 		int totalXRes, int totalYRes,
 		int xOffset, int yOffset) {

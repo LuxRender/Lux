@@ -174,12 +174,12 @@ public:
 			fprintf(f, "%f ", c[i]);
 	}
 
-	float y() const {
+	float Y() const {
 		return 0.;
 	}
 
 	bool operator<(const Color &s2) const {
-		return y() < s2.y();
+		return Y() < s2.Y();
 	}
 	friend class lux::ParamSet;
 	
@@ -205,35 +205,11 @@ public:
 	RGBColor(const float cs[3]) {
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
-	RGBColor(const XYZColor& xyz);
 	RGBColor(const Color &color) { // so that operators work
 		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
 	}
 
-	// XYZ Color output methods
-	void ToXYZ(float &x, float &y, float &z) const {
-		x = 0.412453f * c[0] + 0.357580f * c[1] + 0.180423f * c[2];
-		y = 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
-		z = 0.019334f * c[0] + 0.119193f * c[1] + 0.950227f * c[2];
-	}
-	void ToXYZ(float xyz[3]) const {
-		ToXYZ(xyz[0], xyz[1], xyz[2]);
-	}
-	void ToXYZ(XYZColor xyz) const;
-	XYZColor ToXYZ() const;
-
-	// XYZ Color input methods
-	void FromXYZ(float x, float y, float z) {
-		c[0] =  3.240479f * x + -1.537150f * y + -0.498535f * z;
-		c[1] = -0.969256f * x +  1.875991f * y +  0.041556f * z;
-		c[2] =  0.055648f * x + -0.204043f * y +  1.057311f * z;
-	}
-	void FromXYZ(float xyz[3]) {
-		FromXYZ(xyz[0], xyz[1], xyz[2]);
-	}
-	void FromXYZ(XYZColor xyz); 
-
-	float y() const {
+	float Y() const {
 		return 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
 	}
 };
@@ -251,35 +227,11 @@ public:
 	XYZColor(float cs[3]) {
 			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
-	XYZColor(const RGBColor& rgb);
 	XYZColor(const Color &color) { // so that operators work
 		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
 	}
 
-	// RGB Color output methods
-	void ToRGB(float &r, float &g, float &b) const {
-		r =  3.240479f * c[0] + -1.537150f * c[1] + -0.498535f * c[2];
-		g = -0.969256f * c[0] +  1.875991f * c[1] +  0.041556f * c[2];
-		b =  0.055648f * c[0] + -0.204043f * c[1] +  1.057311f * c[2];
-	}
-	void ToRGB(float rgb[3]) const {
-		ToRGB(rgb[0], rgb[1], rgb[2]);
-	}
-	void ToRGB(RGBColor rgb) const;
-	RGBColor ToRGB() const;
-
-	// RGB Color input methods
-	void FromRGB(float r, float g, float b) {
-		c[0] = 0.412453f * r + 0.357580f * g + 0.180423f * b;
-		c[1] = 0.212671f * r + 0.715160f * g + 0.072169f * b;
-		c[2] = 0.019334f * r + 0.119193f * g + 0.950227f * b;
-	}
-	void FromRGB(float rgb[3]) {
-		FromRGB(rgb[0], rgb[1], rgb[2]);
-	}
-	void FromRGB(RGBColor rgb);
-
-	float y() const {
+	float Y() const {
 		return c[1];
 	}
 };
@@ -309,7 +261,7 @@ public:
 //! \sa Constrain
 //!
 	RGBColor ToRGBConstrained(const XYZColor &color) const {
-		const float lum = color.y();
+		const float lum = color.Y();
 		float c[3];
 		c[0] = XYZToRGB[0][0] * color.c[0] + XYZToRGB[0][1] * color.c[1] + XYZToRGB[0][2] * color.c[2];
 		c[1] = XYZToRGB[1][0] * color.c[0] + XYZToRGB[1][1] * color.c[1] + XYZToRGB[1][2] * color.c[2];
@@ -351,24 +303,6 @@ inline ostream &operator<<(ostream &os, const RGBColor &s) {
 	return os;
 }
 
-inline RGBColor::RGBColor(const XYZColor& xyz) {
-	FromXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
-}
-
-inline void RGBColor::ToXYZ(XYZColor xyz) const {
-	ToXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
-}
-inline XYZColor RGBColor::ToXYZ() const {
-	XYZColor xyz;
-	ToXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
-	return xyz;
-} 
-
-inline void RGBColor::FromXYZ(XYZColor xyz) {
-	FromXYZ(xyz.c[0], xyz.c[1], xyz.c[2]);
-} 
-
-
 // XYZColor Method Definitions
 inline ostream &operator<<(ostream &os, const XYZColor &s) {
 	for (int i = 0; i < 3; ++i) {
@@ -379,26 +313,6 @@ inline ostream &operator<<(ostream &os, const XYZColor &s) {
 	return os;
 }
 
-inline XYZColor::XYZColor(const RGBColor& rgb) {
-	FromRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
-}
-
-inline void XYZColor::ToRGB(RGBColor rgb) const {
-	ToRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
-}
-inline RGBColor XYZColor::ToRGB() const {
-	RGBColor rgb;
-	ToRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
-	return rgb;
-}
-
-inline void XYZColor::FromRGB(RGBColor rgb) {
-	FromRGB(rgb.c[0], rgb.c[1], rgb.c[2]);
-}
-
 }//namespace lux
-
-
-
 
 #endif // LUX_COLOR_H

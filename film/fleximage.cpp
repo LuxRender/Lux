@@ -883,7 +883,7 @@ void FlexImageFilm::ComputeGroupScale(u_int index)
 		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
 	if (bufferGroups[index].temperature > 0.f) {
 		XYZColor factor(BlackbodySPD(bufferGroups[index].temperature).ToXYZ());
-		bufferGroups[index].scale *= factor / (factor.y() * white);
+		bufferGroups[index].scale *= factor / (factor.Y() * white);
 	}
 	bufferGroups[index].scale *= bufferGroups[index].globalScale;
 }
@@ -905,11 +905,11 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	const float weight = contrib->variance;
 
 	// Issue warning if unexpected radiance value returned
-	if (xyz.IsNaN() || xyz.y() < -1e-5f || isinf(xyz.y())) {
+	if (xyz.IsNaN() || xyz.Y() < -1e-5f || isinf(xyz.Y())) {
 		if(debug_mode) {
 			std::stringstream ss;
 			ss << "Out of bound intensity in FlexImageFilm::AddSample: "
-			   << xyz.y() << ", sample discarded";
+			   << xyz.Y() << ", sample discarded";
 			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
 		}
 		return;
@@ -921,11 +921,11 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	if (weight < 0 || isnan(weight) || isinf(weight))
 		return;
 
-	// Reject samples higher than max y() after warmup period
-	if (warmupComplete && xyz.y() > maxY)
+	// Reject samples higher than max Y() after warmup period
+	if (warmupComplete && xyz.Y() > maxY)
 		return;
 	else {
-	 	maxY = max(maxY, xyz.y());
+	 	maxY = max(maxY, xyz.Y());
 		++warmupSamples;
 	 	if (warmupSamples >= reject_warmup_samples)
 			warmupComplete = true;
@@ -1000,7 +1000,7 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	}
 }
 
-void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<float> &alpha, string postfix)
+void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vector<float> &alpha, string postfix)
 {
 	// Construct ColorSystem from values
 	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
@@ -1025,9 +1025,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		if (write_EXR && !write_EXR_applyimaging) {
 			// convert to rgb
 			const u_int nPix = xPixelCount * yPixelCount;
-			vector<Color> rgbColor(nPix);
+			vector<RGBColor> rgbColor(nPix);
 			for ( u_int i = 0; i < nPix; i++ )
-				rgbColor[i] = colorSpace.ToRGBConstrained( XYZColor(color[i].c) );
+				rgbColor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);
 
 			WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
 		}
@@ -1083,11 +1083,14 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		}
 
 		// Apply chosen tonemapper
-		ApplyImagingPipeline(color, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
+		ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades,
-			tmkernel.c_str(), &toneParams, m_Gamma, 0.);
+			tmkernel.c_str(), &toneParams, m_Gamma, 0.f);
+
+		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
+		vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);
 
 		// Disable further bloom layer updates if used.
 		m_BloomUpdateLayer = false;
@@ -1096,7 +1099,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 		if (type & IMAGE_FILEOUTPUT) {
 			// write out tonemapped EXR
 			if ((write_EXR && write_EXR_applyimaging))
-				WriteEXRImage(color, alpha, filename + postfix + ".exr", zBuf);
+				WriteEXRImage(rgbcolor, alpha, filename + postfix + ".exr", zBuf);
 		}
 
 		// Output to low dynamic range formats
@@ -1104,40 +1107,30 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<Color> &color, vector<flo
 			// Clamp too high values
 			const u_int nPix = xPixelCount * yPixelCount;
 			for (u_int i = 0; i < nPix; ++i)
-				color[i] = colorSpace.Limit(color[i], clampMethod);
+				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod);
 
 			// write out tonemapped TGA
 			if ((type & IMAGE_FILEOUTPUT) && write_TGA)
-				WriteTGAImage(color, alpha, filename + postfix + ".tga");
+				WriteTGAImage(rgbcolor, alpha, filename + postfix + ".tga");
 			// write out tonemapped PNG
 			if ((type & IMAGE_FILEOUTPUT) && write_PNG)
-				WritePNGImage(color, alpha, filename + postfix + ".png");
+				WritePNGImage(rgbcolor, alpha, filename + postfix + ".png");
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
-					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * color[i].c[0], 0.f, 255.f));
-					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * color[i].c[1], 0.f, 255.f));
-					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * color[i].c[2], 0.f, 255.f));
+					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
+					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
+					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
 				}
 			}
 		}
 	}
 }
 
-void FlexImageFilm::ScaleOutput(vector<Color> &pixel, vector<float> &alpha, float *scale)
-{
-	int offset = 0;
-	for (int y = 0; y < yPixelCount; ++y) {
-		for (int x = 0; x < xPixelCount; ++x,++offset) {
-			pixel[offset] *= scale[offset];
-			alpha[offset] *= scale[offset];
-		}
-	}
-}
 void FlexImageFilm::WriteImage(ImageType type)
 {
 	const int nPix = xPixelCount * yPixelCount;
-	vector<Color> pixels(nPix);
+	vector<XYZColor> pixels(nPix);
 	vector<float> alpha(nPix), alphaWeight(nPix, 0.f);
 
 	// NOTE - lordcrc - separated buffer loop into two separate loops
@@ -1166,7 +1159,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	fill(pixels.begin(), pixels.end(), XYZColor(0.f));
 	fill(alpha.begin(), alpha.end(), 0.f);
 
-	Color p;
+	XYZColor p;
 	float a;
 
 	// write framebuffer
@@ -1247,7 +1240,7 @@ void FlexImageFilm::WriteResumeFilm(const string &filename)
     filestr.close();
 }
 
-void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
+void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
 	// Write Truevision Targa TGA image
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped TGA image to file ")+filename).c_str());
@@ -1257,7 +1250,7 @@ void FlexImageFilm::WriteTGAImage(vector<Color> &rgb, vector<float> &alpha, cons
 		xPixelStart, yPixelStart);
 }
 
-void FlexImageFilm::WritePNGImage(vector<Color> &rgb, vector<float> &alpha, const string &filename)
+void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
 	// Write Portable Network Graphics PNG image
 	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped PNG image to file ")+filename).c_str());
@@ -1267,7 +1260,7 @@ void FlexImageFilm::WritePNGImage(vector<Color> &rgb, vector<float> &alpha, cons
 		xPixelStart, yPixelStart, colorSpace, m_Gamma);
 }
 
-void FlexImageFilm::WriteEXRImage(vector<Color> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
+void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
 {
 	
 	if(write_EXR_ZBuf) {

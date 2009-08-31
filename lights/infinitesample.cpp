@@ -63,7 +63,7 @@ InfiniteAreaLightIS
 		float xp = (float)x / (float)nu;
 		for (int y = 0; y < nv; ++y) {
 			float yp = (float)y / (float)nv;
-			img[y+x*nv] = radianceMap->Lookup(xp, yp, filter).y();
+			img[y+x*nv] = radianceMap->Lookup(xp, yp, filter).Y();
 		}
 	}
 	// Initialize sampling PDFs for infinite area light

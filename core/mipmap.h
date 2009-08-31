@@ -196,7 +196,7 @@ protected:
 	{
 		RGBColor specValue;
 		convert(specValue, internalValue);
-		outputValue = specValue.y();
+		outputValue = specValue.Y();
 	}
 	inline virtual void convert(float& outputValue, const float internalValue) const
 	{

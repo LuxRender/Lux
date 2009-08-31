@@ -239,7 +239,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.0f;
 	for(u_int i = 0; i < newContributions.size(); ++i)
-		newLY += newContributions[i].color.y();
+		newLY += newContributions[i].color.Y();
 	// calculate meanIntensity
 	if (initCount < initSamples) {
 		if (newLY > 0.f)

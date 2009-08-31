@@ -56,7 +56,7 @@ namespace lux {
 			float xp = (float)(x + .5f) / (float)xRes;
 			for (int y = 0; y < yRes; ++y) {
 				float yp = (float)(y + .5f) / (float)yRes;
-				img[y+x*yRes] = func->f(xp * 2.f * M_PI, yp * M_PI).y();
+				img[y+x*yRes] = func->f(xp * 2.f * M_PI, yp * M_PI).Y();
 			}
 		}
 		// Initialize sampling PDFs

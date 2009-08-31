@@ -28,14 +28,14 @@
 using namespace lux;
 
 // HighContrastOp Method Definitions
-void HighContrastOp::Map(vector<Color> &xyz, int xRes, int yRes,
+void HighContrastOp::Map(vector<XYZColor> &xyz, int xRes, int yRes,
 		float maxDisplayY) const {
 	const int numPixels = xRes * yRes;
 	float *lum = new float[numPixels];
 	// Find minimum and maximum image luminances
 	float minY = INFINITY, maxY = 0.f;
 	for (int i = 0; i < numPixels; ++i) {
-		lum[i] = xyz[i].c[1] * 683.f;
+		lum[i] = xyz[i].Y() * 683.f;
 		minY = min(minY, lum[i]);
 		maxY = max(maxY, lum[i]);
 	}

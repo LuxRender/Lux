@@ -61,7 +61,7 @@ public:
 };
 
 void WriteIgiImage(const string &name,
-	vector<Color> &pixels, vector<float> &alpha, int XRes, int YRes,
+	vector<RGBColor> &pixels, vector<float> &alpha, int XRes, int YRes,
 	int totalXRes, int totalYRes, int xOffset, int yOffset);
 
 }

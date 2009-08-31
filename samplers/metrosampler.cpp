@@ -268,7 +268,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f;
 	for(u_int i = 0; i < newContributions.size(); ++i) {
-		float ly = newContributions[i].color.y();
+		float ly = newContributions[i].color.Y();
 		if (ly > 0.f) {
 			if (useVariance && newContributions[i].variance > 0.f)
 				newLY += ly * newContributions[i].variance;

@@ -41,7 +41,7 @@ ReinhardOp::ReinhardOp(float prS, float poS, float b)
 	burn = b;
 }
 
-void ReinhardOp::Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) const
+void ReinhardOp::Map(vector<XYZColor> &xyz, int xRes, int yRes, float maxDisplayY) const
 {
 	const float alpha = .1f;
 	const int numPixels = xRes * yRes;
@@ -49,7 +49,7 @@ void ReinhardOp::Map(vector<Color> &xyz, int xRes, int yRes, float maxDisplayY) 
 	float Ywa = 0.f;
 	// Compute world adaptation luminance, _Ywa_
 	for (int i = 0; i < numPixels; ++i)
-		if (xyz[i].c[1] > 0.f) Ywa += xyz[i].c[1];
+		if (xyz[i].Y() > 0.f) Ywa += xyz[i].Y();
 	Ywa /= numPixels;
 	if (Ywa == 0.f)
 		Ywa = 1.f;

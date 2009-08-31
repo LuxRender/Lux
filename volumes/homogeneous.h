@@ -60,7 +60,7 @@ public:
 	virtual RGBColor Lve(const Point &p, const Vector &) const {
 		return extent.Inside(WorldToVolume(p)) ? le : 0.;
 	}
-	virtual float p(const Point &p, const Vector &wi, const Vector &wo) const {
+	virtual float P(const Point &p, const Vector &wi, const Vector &wo) const {
 		if (!extent.Inside(WorldToVolume(p))) return 0.;
 		return PhaseHG(wi, wo, g);
 	}
