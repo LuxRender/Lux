@@ -62,7 +62,7 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	if (!architectural) {
 		if (reverse) {
 			fresnel->Evaluate(tspack, cost, &F);
-			*f_ = (SWCSpectrum(1.f) - F) * T * (eta2 / fabsf(cost));
+			*f_ = (SWCSpectrum(1.f) - F) * T / (eta2 * fabsf(cost));
 		} else {
 			fresnel->Evaluate(tspack, CosTheta(wo), &F);
 			*f_ = (SWCSpectrum(1.f) - F) * T / fabsf(cost);
