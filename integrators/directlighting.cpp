@@ -186,7 +186,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
 				vector<SWCSpectrum> Lt(scene->lightGroups.size(), SWCSpectrum(0.f));
-				int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, rayDepth + ((Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f) ? 0 : 1));
+				int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f * AbsDot(wi, n));
 					for (u_int i = 0; i < L.size(); ++i)

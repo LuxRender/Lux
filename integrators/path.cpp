@@ -30,6 +30,8 @@
 
 using namespace lux;
 
+static const u_int passThroughLimit = 10000;
+
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
@@ -72,9 +74,10 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	vector<float> V(scene->lightGroups.size(), 0.f);
 	float VContrib = .1f;
-	bool specularBounce = true, specular = true, through = false;
+	bool specularBounce = true, specular = true;
 	float alpha = 1.f;
 	float distance = INFINITY;
+	u_int through = 0;
 	for (int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
@@ -113,7 +116,7 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				alpha = 0.f;
 			break;
 		}
-		if (pathLength == 0 && !through) {
+		if (pathLength == 0 && through == 0) {
 			r.maxt = ray.maxt;
 			distance = ray.maxt * ray.d.Length();
 		}
@@ -213,11 +216,12 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 		}
 
-		through = flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && Dot(wo,wi) < SHADOW_RAY_EPSILON - 1.f && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f;
-		if (!through)
-			specularBounce = (flags & BSDF_SPECULAR) != 0;
-		else
+		if (flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
+			if (through++ > passThroughLimit)
+				break;
 			--pathLength;
+		} else
+			specularBounce = (flags & BSDF_SPECULAR) != 0;
 		specular = specular && specularBounce;
 		pathThroughput *= f;
 		pathThroughput *= dp;

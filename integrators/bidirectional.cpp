@@ -32,6 +32,8 @@
 
 using namespace lux;
 
+static const u_int passThroughLimit = 10000;
+
 struct BidirVertex {
 	BidirVertex() : pdf(0.f), pdfR(0.f), tPdf(1.f), tPdfR(1.f),
 		dAWeight(0.f), dARWeight(0.f), rr(1.f), rrR(1.f), prob(1.f),
@@ -113,6 +115,9 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 	u_int nVerts = 0;
 	const float dummy[] = {0.f, tspack->camera->IsLensBased() ? sample->imageX : sample->lensU, tspack->camera->IsLensBased() ? sample->imageY : sample->lensV, 0.5f};
 	const float *data = (const float *)&dummy;
+	u_int through = 0;
+	SWCSpectrum throughFlux(1.f);
+	float throughProb(1.f);
 	while (true) {
 		// Find next vertex in path and initialize _vertices_
 		BidirVertex &v = vertices[nVerts];
@@ -143,14 +148,19 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			data[3], &v.f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf,
 			true))
 			break;
-		bool through = false;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f ||
 			!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			v.cosi = AbsDot(v.wi, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
 			v.flux = v.f * cosins;
 			v.prob = v.pdfR;
+			if (through > 0) {
+				v.flux *= throughFlux;
+				v.prob *= throughProb;
+				throughFlux = SWCSpectrum(1.f);
+				throughProb = 1.f;
+				through = 0;
+			}
 			v.f *= cosins / v.cosi;
 			v.rrR = min(1.f, max(bidir.eyeThreshold, v.flux.Filter(tspack) / v.prob));
 			if (nVerts > 3) {
@@ -166,17 +176,18 @@ static int generateEyePath(const TsPack *tspack, const Scene *scene, BSDF *bsdf,
 			}
 		} else {
 			const float cosins = AbsDot(v.wi, v.ns);
-			vertices[nVerts - 2].flux *= v.f * cosins;
-			vertices[nVerts - 2].prob *= v.pdfR;
+			throughFlux *= v.f * cosins;
+			throughProb *= v.pdfR;
 			vertices[nVerts - 2].tPdfR *= v.pdfR;
 			vertices[nVerts - 1].tPdf *= v.pdf;
 			--nVerts;
-			through = true;
+			if (through++ > passThroughLimit)
+				break;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wi);
 		ray.time = tspack->time;
-		if (nVerts == 1 && !through)
+		if (nVerts == 1 && through == 0)
 			tspack->camera->ClampRay(ray);
 		if (!scene->Intersect(ray, &isect)) {
 			vertices[nVerts].wo = -ray.d;
@@ -212,6 +223,9 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 	isect.dg.p = bsdf->dgShading.p;
 	isect.dg.nn = bsdf->dgShading.nn;
 	u_int nVerts = 0;
+	u_int through = 0;
+	SWCSpectrum throughFlux(1.f);
+	float throughProb(1.f);
 	while (true) {
 		BidirVertex &v = vertices[nVerts];
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), bidir.sampleLightOffset, nVerts);
@@ -233,13 +247,19 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			data[3], &v.f, &v.pdf, BSDF_ALL, &v.flags, &v.pdfR))
 			break;
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			Dot(v.wi, v.wo) > SHADOW_RAY_EPSILON - 1.f ||
 			!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			v.flux = v.f;
 			v.coso = AbsDot(v.wo, v.ng);
 			const float cosins = AbsDot(v.wi, v.ns);
 			v.flux *= v.coso * cosins;
 			v.prob = v.pdf * v.cosi;
+			if (through > 0) {
+				v.flux *= throughFlux;
+				v.prob *= throughProb;
+				throughFlux = SWCSpectrum(1.f);
+				throughProb = 1.f;
+				through = 0;
+			}
 			v.rr = min(1.f, max(bidir.lightThreshold, v.flux.Filter(tspack) / v.prob));
 			if (nVerts > 3) {
 				if (v.rr < data[0])
@@ -254,12 +274,14 @@ static int generateLightPath(const TsPack *tspack, const Scene *scene,
 			}
 		} else {
 			const float cosins = AbsDot(v.wi, v.ns);
-			vertices[nVerts - 2].flux *= v.f * cosins;
+			throughFlux *= v.f * cosins;
 			// No need to do '/ v.cosi * v.coso' since cosi==coso
-			vertices[nVerts - 2].prob *= v.pdf;
+			throughProb *= v.pdf;
 			vertices[nVerts - 2].tPdf *= v.pdf;
 			vertices[nVerts - 1].tPdfR *= v.pdfR;
 			--nVerts;
+			if (through++ > passThroughLimit)
+				break;
 		}
 		// Initialize _ray_ for next segment of path
 		ray = RayDifferential(v.p, v.wo);

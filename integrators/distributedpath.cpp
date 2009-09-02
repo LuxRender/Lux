@@ -486,7 +486,6 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				RayDifferential rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-				//LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, Dot(wo, wi) > SHADOW_RAY_EPSILON - 1.f ? rayDepth + 1 : rayDepth, true, nrContribs);
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
 				f *= AbsDot(wi, n);
 				for (u_int j = 0; j < L.size(); ++j)
