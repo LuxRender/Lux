@@ -98,16 +98,6 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-
-#SET(Boost_INCLUDE_DIR /home/tomb/projects/lux/icc/include/boost-1_34_1)
-#SET(Boost_INCLUDE_DIRS /home/tomb/projects/lux/icc/include/boost-1_34_1)
-#SET(Boost_LIBRARY_DIRS /home/tomb/projects/lux/icc/lib)
-#SET(Boost_LIBRARIES boost_thread-il-mt-1_34_1 boost_program_options-il-mt-1_34_1 boost_filesystem-il-mt-1_34_1 boost_serialization-il-mt-1_34_1 boost_iostreams-il-mt-1_34_1 boost_regex-il-mt-1_34_1 boost_system-il-mt-1_34_1)
-
-SET(Boost_INCLUDE_DIR /home/tomb/projects/lux/icc/include/boost-1_39)
-SET(Boost_INCLUDE_DIRS /home/tomb/projects/lux/icc/include/boost-1_39)
-SET(Boost_LIBRARY_DIRS /home/tomb/projects/lux/icc/lib)
-SET(Boost_LIBRARIES boost_thread-gcc43-mt boost_program_options-gcc43-mt boost_filesystem-gcc43-mt boost_serialization-gcc43-mt boost_iostreams-gcc43-mt boost_regex-gcc43-mt bz2)
 FIND_PACKAGE(Boost REQUIRED)
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
@@ -115,7 +105,8 @@ IF(Boost_FOUND)
 	IF(CYGWIN)
 		SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
 	ELSEIF(APPLE)
-		SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1 boost_regex-mt-1_34_1)
+		SET(Boost_LIBRARIES boost_system-xgcc40-mt-1_39 boost_thread-xgcc40-mt-1_39 boost_program_options-xgcc40-mt-1_39 boost_filesystem-xgcc40-mt-1_39 boost_serialization-xgcc40-mt-1_39 boost_iostreams-xgcc40-mt-1_39 boost_regex-xgcc40-mt-1_39)
+#		SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1 boost_regex-mt-1_34_1)
 	ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem boost_serialization boost_iostreams boost_regex)
 	ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -125,10 +116,6 @@ ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
 ENDIF(Boost_FOUND)
 
-SET(Boost_INCLUDE_DIR /home/tomb/projects/lux/icc/include/boost-1_39)
-SET(Boost_INCLUDE_DIRS /home/tomb/projects/lux/icc/include/boost-1_39)
-SET(Boost_LIBRARY_DIRS /home/tomb/projects/lux/icc/lib)
-SET(Boost_LIBRARIES boost_thread-gcc43-mt boost_program_options-gcc43-mt boost_filesystem-gcc43-mt boost_system-gcc43-mt boost_serialization-gcc43-mt boost_iostreams-gcc43-mt boost_regex-gcc43-mt boost_system-gcc43-mt bz2)
 
 #############################################################################
 #############################################################################
@@ -138,7 +125,6 @@ SET(Boost_LIBRARIES boost_thread-gcc43-mt boost_program_options-gcc43-mt boost_f
 FIND_PATH(OPENEXR_INCLUDE_DIRS
 	ImfXdr.h
 	PATHS
-	/home/tomb/projects/lux/icc/include/OpenEXR
 	/usr/local/include/OpenEXR
 	/usr/include/OpenEXR
 	/sw/include/OpenEXR
@@ -146,16 +132,12 @@ FIND_PATH(OPENEXR_INCLUDE_DIRS
 	/opt/csw/include/OpenEXR
 	/opt/include/OpenEXR
 ) 
-
-
 IF(APPLE)
    SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
 
 ELSE(APPLE)
    SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
 ENDIF(APPLE)
-
-SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
 
 #############################################################################
 #############################################################################
@@ -180,8 +162,6 @@ ELSE(PNG_FOUND)
 ENDIF(PNG_FOUND)
 #FIND_PACKAGE(PNG REQUIRED)
 
-SET(PNG_LIBRARIES libpng12.a)
-SET(PNG_LIBRARY /home/tomb/projects/lux/icc/lib)
 
 #############################################################################
 #############################################################################
@@ -196,9 +176,6 @@ SET(PNG_LIBRARY /home/tomb/projects/lux/icc/lib)
 #  TIFF_FOUND, If false, do not try to use TIFF.
 # also defined, but not for general use are
 #  TIFF_LIBRARY, where to find the TIFF library.
-
-SET(TIFF_INCLUDE_DIR /home/tomb/projects/lux/icc/include)
-
 INCLUDE(FindTIFF)
 #FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
@@ -207,8 +184,6 @@ ELSE(TIFF_FOUND)
 	MESSAGE( STATUS "Warning : could not find TIFF - building without tiff support")
 ENDIF(TIFF_FOUND)
 
-SET(TIFF_LIBRARIES libtiff.a)
-SET(TIFF_LIBRARY /home/tomb/projects/lux/icc/lib)
 
 #############################################################################
 #############################################################################
@@ -223,9 +198,6 @@ SET(TIFF_LIBRARY /home/tomb/projects/lux/icc/lib)
 #  JPEG_FOUND, If false, do not try to use JPEG.
 # also defined, but not for general use are
 #  JPEG_LIBRARY, where to find the JPEG library.
-
-SET(JPEG_INCLUDE_DIR /home/tomb/projects/lux/icc/include)
-
 INCLUDE(FindJPEG)
 #FIND_PACKAGE(JPEG REQUIRED)
 IF(JPEG_FOUND)
@@ -234,14 +206,6 @@ ELSE(JPEG_FOUND)
 	MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
 ENDIF(JPEG_FOUND)
 
-SET(JPEG_LIBRARIES libjpeg.a)
-SET(JPEG_LIBRARY /home/tomb/projects/lux/icc/lib)
-
-SET(BZ2_LIBRARIES libbz2.a)
-SET(BZ2_LIBRARY /home/tomb/projects/lux/icc/lib)
-
-SET(ZLIB_LIBRARIES libz.a)
-SET(ZLIB_LIBRARY /home/tomb/projects/lux/icc/lib)
 
 #############################################################################
 #############################################################################
@@ -251,26 +215,16 @@ SET(ZLIB_LIBRARY /home/tomb/projects/lux/icc/lib)
 # Here you can define what libraries of wxWidgets you need for your
 # application. You can figure out what libraries you need here;
 # http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-
-SET(wxWidgets_INCLUDE_DIR /home/tomb/projects/lux/icc/include)
-SET(wxWidgets_INCLUDE_DIRS /home/tomb/projects/lux/icc/include)
-SET(wxWidgets_LIBRARY /home/tomb/projects/lux/icc/lib)
-
 SET(wxWidgets_USE_LIBS base core gl aui adv )
 FIND_PACKAGE(wxWidgets)
 IF(wxWidgets_FOUND)
     # Include wxWidgets macros
-    SET(wxWidgets_INCLUDE_DIRS /home/tomb/projects/lux/icc/include/wx-2.8)
-    SET(wxWidgets_INCLUDE_DIRS_EXTRA /home/tomb/projects/lux/icc/lib/wx/include/gtk2-ansi-release-static-2.8)
-    SET(wxWidgets_LIBRARIES -lwx_gtk2-2.8 -lwx_gtk2_gl-2.8 -Wl,--no-whole-archive -pthread -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lpangoft2-1.0 -lgdk_pixbuf-2.0 -lgio-2.0 -lpango-1.0 -lfreetype -lfontconfig -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lrt -lglib-2.0 -lXinerama -lSM -ldl -lm)
-    MESSAGE( STATUS "wxWidgets libs: " ${wxWidgets_LIBRARIES})
-INCLUDE(${wxWidgets_USE_FILE})
+    INCLUDE(${wxWidgets_USE_FILE})
 		MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
 ELSE(wxWidgets_FOUND)
 		MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
 ENDIF(wxWidgets_FOUND)
 
-SET(wxWidgets_LIBRARY /home/tomb/projects/lux/icc/lib)
 
 #############################################################################
 #############################################################################
@@ -309,22 +263,15 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 # Dade - default compiler options
-#ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -ip -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
+ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
-#ADD_DEFINITIONS(-O3 -ipo -xW -axT -mtune=core2 -static -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H'-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatilevoid*>(ptr)), addend)"' -DBOOST_NO_INTRINSIC_INT64_T"-D'__builtin_vsnprintf(__out, __size, __fmt,__args)'='__builtin_vsnprintf(__out, __size, __fmt, (char *) __args)'")
-
-#ADD_DEFINITIONS(-O0 -g -static -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
-
-ADD_DEFINITIONS(-O3 -ipo -xW -axT -mtune=core2 -static -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
-
-#ADD_DEFINITIONS(-O3 -ipo -xK -axK -static -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
-
-#ADD_DEFINITIONS(-O3 -Wall  -msse -msse2 -funroll-loops -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
 
 #############################################################################
 # Compiler flags for specific setup
 #############################################################################
+
+# doug - When linking liblux as a python extension, need to compile with -fPIC
+#ADD_DEFINITIONS(-fPIC)
 
 # Jens - default Mac compiler options with OpenGL
 #ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
@@ -431,251 +378,250 @@ ENDIF(APPLE)
 #############################################################################
 
 SET(lux_core_reflection_src
-    core/reflection/bxdf.cpp
-    core/reflection/fresnel.cpp
-    core/reflection/microfacetdistribution.cpp
-    core/reflection/bxdf/cooktorrance.cpp
-    core/reflection/bxdf/fresnelblend.cpp
-    core/reflection/bxdf/lafortune.cpp
-    core/reflection/bxdf/lambertian.cpp
-    core/reflection/bxdf/microfacet.cpp
-    core/reflection/bxdf/nulltransmission.cpp
-    core/reflection/bxdf/orennayar.cpp
-    core/reflection/bxdf/specularreflection.cpp
-    core/reflection/bxdf/speculartransmission.cpp
-    core/reflection/fresnel/fresnelnoop.cpp
-    core/reflection/fresnel/fresneldielectric.cpp
-    core/reflection/fresnel/fresnelconductor.cpp
-    core/reflection/fresnel/fresnelslick.cpp
-    core/reflection/fresnel/fresnelgeneral.cpp
-    core/reflection/microfacetdistribution/anisotropic.cpp
-    core/reflection/microfacetdistribution/beckmann.cpp
-    core/reflection/microfacetdistribution/blinn.cpp
-    core/reflection/microfacetdistribution/wardisotropic.cpp
-    )
+	core/reflection/bxdf.cpp
+	core/reflection/fresnel.cpp
+	core/reflection/microfacetdistribution.cpp
+	core/reflection/bxdf/cooktorrance.cpp
+	core/reflection/bxdf/fresnelblend.cpp
+	core/reflection/bxdf/lafortune.cpp
+	core/reflection/bxdf/lambertian.cpp
+	core/reflection/bxdf/microfacet.cpp
+	core/reflection/bxdf/nulltransmission.cpp
+	core/reflection/bxdf/orennayar.cpp
+	core/reflection/bxdf/specularreflection.cpp
+	core/reflection/bxdf/speculartransmission.cpp
+	core/reflection/fresnel/fresnelnoop.cpp
+	core/reflection/fresnel/fresneldielectric.cpp
+	core/reflection/fresnel/fresnelconductor.cpp
+	core/reflection/fresnel/fresnelslick.cpp
+	core/reflection/fresnel/fresnelgeneral.cpp
+	core/reflection/microfacetdistribution/anisotropic.cpp
+	core/reflection/microfacetdistribution/beckmann.cpp
+	core/reflection/microfacetdistribution/blinn.cpp
+	core/reflection/microfacetdistribution/wardisotropic.cpp
+	)
 SET(lux_core_src
-    ${CMAKE_BINARY_DIR}/luxparse.cpp
-    ${CMAKE_BINARY_DIR}/luxlex.cpp
-    core/api.cpp
-    core/camera.cpp
-    core/color.cpp
-    core/context.cpp
-    core/contribution.cpp
-    core/dynload.cpp
-    core/exrio.cpp
-    core/film.cpp
-    core/geometry/bbox.cpp
-    core/geometry/matrix4x4.cpp
-    core/geometry/quaternion.cpp
-    core/geometry/raydifferential.cpp
-    core/geometry/transform.cpp
-    core/igiio.cpp
-    core/imagereader.cpp
-    core/light.cpp
-    core/material.cpp
-    core/mc.cpp
-    core/motionsystem.cpp
-    core/osfunc.cpp
-    core/paramset.cpp
-    core/parser.cpp
-    core/photonmap.cpp
-    core/pngio.cpp
-    core/primitive.cpp
-    ${lux_core_reflection_src}
-    core/renderfarm.cpp
-    core/sampling.cpp
-    core/scene.cpp
-    core/shape.cpp
-    core/spd.cpp
-    core/spectrum.cpp
-    core/spectrumwavelengths.cpp
-    core/texture.cpp
-    core/tgaio.cpp
-    core/timer.cpp
-    core/transport.cpp
-    core/util.cpp
-    core/volume.cpp
-    renderer/renderserver.cpp
-    )
+	${CMAKE_BINARY_DIR}/luxparse.cpp
+	${CMAKE_BINARY_DIR}/luxlex.cpp
+	core/api.cpp
+	core/camera.cpp
+	core/color.cpp
+	core/context.cpp
+	core/contribution.cpp
+	core/dynload.cpp
+	core/exrio.cpp
+	core/film.cpp
+	core/geometry/bbox.cpp
+	core/geometry/matrix4x4.cpp
+	core/geometry/quaternion.cpp
+	core/geometry/raydifferential.cpp
+	core/geometry/transform.cpp
+	core/igiio.cpp
+	core/imagereader.cpp
+	core/light.cpp
+	core/material.cpp
+	core/mc.cpp
+	core/motionsystem.cpp
+	core/osfunc.cpp
+	core/paramset.cpp
+	core/parser.cpp
+	core/photonmap.cpp
+	core/pngio.cpp
+	core/primitive.cpp
+	${lux_core_reflection_src}
+	core/renderfarm.cpp
+	core/sampling.cpp
+	core/scene.cpp
+	core/shape.cpp
+	core/spd.cpp
+	core/spectrum.cpp
+        core/spectrumwavelengths.cpp
+	core/texture.cpp
+	core/tgaio.cpp
+	core/timer.cpp
+	core/transport.cpp
+	core/util.cpp
+	core/volume.cpp
+	renderer/renderserver.cpp
+	)
 SET(lux_accelerators_src
-    accelerators/bruteforce.cpp
-    accelerators/bvhaccel.cpp
-    accelerators/grid.cpp
-    accelerators/qbvhaccel.cpp
-    accelerators/tabreckdtree.cpp
-    accelerators/unsafekdtree.cpp
-    )
+	accelerators/bruteforce.cpp
+        accelerators/bvhaccel.cpp
+	accelerators/grid.cpp
+	accelerators/qbvhaccel.cpp
+	accelerators/tabreckdtree.cpp
+	accelerators/unsafekdtree.cpp
+	)
 SET(lux_cameras_src
-    cameras/environment.cpp
-    cameras/perspective.cpp
-    cameras/orthographic.cpp
-    cameras/realistic.cpp
-    )
+	cameras/environment.cpp
+	cameras/perspective.cpp
+	cameras/orthographic.cpp
+	cameras/realistic.cpp
+	)
 SET(lux_films_src
-    film/fleximage.cpp
-    )
+	film/fleximage.cpp
+	)
 SET(lux_filters_src
-    filters/box.cpp
-    filters/gaussian.cpp
-    filters/mitchell.cpp
-    filters/sinc.cpp
-    filters/triangle.cpp
-    )
+	filters/box.cpp
+	filters/gaussian.cpp
+	filters/mitchell.cpp
+	filters/sinc.cpp
+	filters/triangle.cpp
+	)
 SET(lux_integrators_src
-    integrators/bidirectional.cpp
-    integrators/directlighting.cpp
-    integrators/distributedpath.cpp
-    integrators/emission.cpp
-    integrators/exphotonmap.cpp
-    integrators/igi.cpp
-    integrators/path.cpp
-    integrators/single.cpp
-    )
+	integrators/bidirectional.cpp
+	integrators/directlighting.cpp
+	integrators/distributedpath.cpp
+	integrators/emission.cpp
+	integrators/exphotonmap.cpp
+	integrators/igi.cpp
+	integrators/path.cpp
+	integrators/single.cpp
+	)
 SET(lux_lights_src
-    lights/area.cpp
-    lights/distant.cpp
-    lights/infinite.cpp
-    lights/infinitesample.cpp
-    lights/point.cpp
-    lights/projection.cpp
-    lights/sphericalfunction/photometricdata_ies.cpp
-    lights/sphericalfunction/sphericalfunction.cpp
-    lights/sphericalfunction/sphericalfunction_ies.cpp
-    lights/spot.cpp
-    lights/sky.cpp
-    lights/sun.cpp
-    )
+	lights/area.cpp
+	lights/distant.cpp
+	lights/infinite.cpp
+	lights/infinitesample.cpp
+	lights/point.cpp
+	lights/projection.cpp
+	lights/sphericalfunction/photometricdata_ies.cpp
+	lights/sphericalfunction/sphericalfunction.cpp
+	lights/sphericalfunction/sphericalfunction_ies.cpp
+	lights/spot.cpp
+	lights/sky.cpp
+	lights/sun.cpp
+	)
 SET(lux_materials_src
-    materials/carpaint.cpp
-    materials/glass.cpp
-    materials/glossy.cpp
-    materials/matte.cpp
-    materials/mattetranslucent.cpp
-    materials/metal.cpp
-    materials/mirror.cpp
-    materials/mixmaterial.cpp
-    materials/null.cpp
-    materials/roughglass.cpp
-    materials/shinymetal.cpp
-    )
+	materials/carpaint.cpp
+	materials/glass.cpp
+	materials/glossy.cpp
+	materials/matte.cpp
+	materials/mattetranslucent.cpp
+	materials/metal.cpp
+	materials/mirror.cpp
+	materials/mixmaterial.cpp
+	materials/null.cpp
+	materials/roughglass.cpp
+	materials/shinymetal.cpp
+	)
 SET(lux_pixelsamplers_src
-    pixelsamplers/hilbertpx.cpp
-    pixelsamplers/linear.cpp
-    pixelsamplers/lowdiscrepancypx.cpp
-    pixelsamplers/tilepx.cpp
-    pixelsamplers/vegas.cpp
-    )
+	pixelsamplers/hilbertpx.cpp
+	pixelsamplers/linear.cpp
+	pixelsamplers/lowdiscrepancypx.cpp
+	pixelsamplers/tilepx.cpp
+	pixelsamplers/vegas.cpp
+	)
 SET(lux_samplers_src
-    samplers/erpt.cpp
-    samplers/lowdiscrepancy.cpp
-    samplers/metrosampler.cpp
-    samplers/random.cpp
-    )
+	samplers/erpt.cpp
+	samplers/lowdiscrepancy.cpp
+	samplers/metrosampler.cpp
+	samplers/random.cpp
+	)
 SET(lux_shapes_src
-    shapes/cone.cpp
-    shapes/cylinder.cpp
-    shapes/disk.cpp
-    shapes/heightfield.cpp
-    shapes/hyperboloid.cpp
-    shapes/lenscomponent.cpp
-    shapes/loopsubdiv.cpp
-    shapes/mesh.cpp
-    shapes/meshbarytriangle.cpp
-    shapes/meshquadrilateral.cpp
-    shapes/meshwaldtriangle.cpp
-    shapes/nurbs.cpp
-    shapes/paraboloid.cpp
-    shapes/plymesh.cpp
-    shapes/plymesh/rply.c
-    shapes/quad.cpp
-    shapes/quadrilateral.cpp
-    shapes/sphere.cpp
-    shapes/torus.cpp
-    )
+	shapes/cone.cpp
+	shapes/cylinder.cpp
+	shapes/disk.cpp
+	shapes/heightfield.cpp
+	shapes/hyperboloid.cpp
+	shapes/lenscomponent.cpp
+	shapes/loopsubdiv.cpp
+	shapes/mesh.cpp
+	shapes/meshbarytriangle.cpp
+	shapes/meshquadrilateral.cpp
+	shapes/meshwaldtriangle.cpp
+	shapes/nurbs.cpp
+	shapes/paraboloid.cpp
+	shapes/plymesh.cpp
+	shapes/plymesh/rply.c
+	shapes/quad.cpp
+	shapes/quadrilateral.cpp
+	shapes/sphere.cpp
+	shapes/torus.cpp
+	)
 SET(lux_spds_src
-    spds/blackbodyspd.cpp
-    spds/equalspd.cpp
-    spds/frequencyspd.cpp
-    spds/gaussianspd.cpp
-    spds/irregular.cpp
-    spds/regular.cpp
-    spds/rgbillum.cpp
-    spds/rgbrefl.cpp
-    )
+	spds/blackbodyspd.cpp
+	spds/equalspd.cpp
+	spds/frequencyspd.cpp
+	spds/gaussianspd.cpp
+	spds/irregular.cpp
+	spds/regular.cpp
+	spds/rgbillum.cpp
+	spds/rgbrefl.cpp
+	)
 SET(lux_blender_textures_src
-    textures/blender_blend.cpp
-    textures/blender_clouds.cpp
-    textures/blender_distortednoise.cpp
-    textures/blender_magic.cpp
-    textures/blender_marble.cpp
-    textures/blender_musgrave.cpp
-    textures/blender_noise.cpp
-    textures/blender_noiselib.cpp
-    textures/blender_stucci.cpp
-    textures/blender_texlib.cpp
-    textures/blender_voronoi.cpp
-    textures/blender_wood.cpp
-    )
+	textures/blender_blend.cpp
+	textures/blender_clouds.cpp
+	textures/blender_distortednoise.cpp
+	textures/blender_magic.cpp
+	textures/blender_marble.cpp
+	textures/blender_musgrave.cpp
+	textures/blender_noise.cpp
+	textures/blender_noiselib.cpp
+	textures/blender_stucci.cpp
+	textures/blender_texlib.cpp
+	textures/blender_voronoi.cpp
+	textures/blender_wood.cpp
+	)
 SET(lux_uniform_textures_src
-    textures/blackbody.cpp
-    textures/constant.cpp
-    textures/equalenergy.cpp
-    textures/frequencytexture.cpp
-    textures/gaussiantexture.cpp
-    textures/irregulardata.cpp
-    textures/lampspectrum.cpp
-    textures/regulardata.cpp
-    )
+	textures/blackbody.cpp
+	textures/constant.cpp
+	textures/equalenergy.cpp
+	textures/frequencytexture.cpp
+	textures/gaussiantexture.cpp
+	textures/irregulardata.cpp
+	textures/lampspectrum.cpp
+	textures/regulardata.cpp
+	)
 SET(lux_textures_src
-    ${lux_uniform_textures_src}
-    ${lux_blender_textures_src}
-    textures/bilerp.cpp
-    textures/brick.cpp
-    textures/checkerboard.cpp
-    textures/dots.cpp
+	${lux_uniform_textures_src}
+	${lux_blender_textures_src}
+	textures/bilerp.cpp
+	textures/brick.cpp
+	textures/checkerboard.cpp
+	textures/dots.cpp
         textures/fbm.cpp
-    textures/harlequin.cpp
-    textures/imagemap.cpp
-    textures/marble.cpp
-    textures/mix.cpp
-    textures/scale.cpp
-    textures/uv.cpp
-    textures/windy.cpp
-    textures/wrinkled.cpp
-    )
+	textures/harlequin.cpp
+	textures/imagemap.cpp
+	textures/marble.cpp
+	textures/mix.cpp
+	textures/scale.cpp
+	textures/uv.cpp
+	textures/windy.cpp
+	textures/wrinkled.cpp
+	)
 SET(lux_tonemaps_src
-    tonemaps/contrast.cpp
-    tonemaps/highcontrast.cpp
-    tonemaps/lineartonemap.cpp
-    tonemaps/maxwhite.cpp
-    tonemaps/nonlinear.cpp
-    tonemaps/reinhard.cpp
-    )
+	tonemaps/contrast.cpp
+	tonemaps/highcontrast.cpp
+	tonemaps/lineartonemap.cpp
+	tonemaps/maxwhite.cpp
+	tonemaps/nonlinear.cpp
+	tonemaps/reinhard.cpp
+	)
 SET(lux_volumes_src
-    volumes/cloud.cpp
-    volumes/exponential.cpp
-    volumes/homogeneous.cpp
-    volumes/volumegrid.cpp
-    )
+	volumes/cloud.cpp
+	volumes/exponential.cpp
+	volumes/homogeneous.cpp
+	volumes/volumegrid.cpp
+	)
 
 SET(lux_lib_src
-    ${lux_core_src}
-    ${lux_accelerators_src}
-    ${lux_cameras_src}
-    ${lux_films_src}
-    ${lux_filters_src}
-    ${lux_integrators_src}
-    ${lux_lights_src}
-    ${lux_materials_src}
-    ${lux_pixelsamplers_src}
-    ${lux_samplers_src}
-    ${lux_shapes_src}
-    ${lux_spds_src}
-    ${lux_textures_src}
-    ${lux_tonemaps_src}
-    ${lux_volumes_src}
-    )
-
+	${lux_core_src}
+	${lux_accelerators_src}
+	${lux_cameras_src}
+	${lux_films_src}
+	${lux_filters_src}
+	${lux_integrators_src}
+	${lux_lights_src}
+	${lux_materials_src}
+	${lux_pixelsamplers_src}
+	${lux_samplers_src}
+	${lux_shapes_src}
+	${lux_spds_src}
+	${lux_textures_src}
+	${lux_tonemaps_src}
+	${lux_volumes_src}
+	)
 INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
                     ${JPEG_INCLUDE_DIR}
 					${TIFF_INCLUDE_DIR}
@@ -715,7 +661,7 @@ ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -738,7 +684,7 @@ ENDIF(APPLE)
 #############################################################################
 IF(wxWidgets_FOUND)
 	ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
-	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS_EXTRA} )
+	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
 
 	IF(APPLE)
 		INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
@@ -757,7 +703,7 @@ IF(wxWidgets_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ENDIF(wxWidgets_FOUND)
 
