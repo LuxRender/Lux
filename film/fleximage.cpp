@@ -154,7 +154,7 @@ FlexImageFilm::FlexImageFilm(int xres, int yres, Filter *filt, const float crop[
 	m_GlareDeleteLayer = false;
 	m_HaveGlareImage = false;
 	m_glareImage = NULL;
-    m_bloomImage = NULL;
+	m_bloomImage = NULL;
 	m_GlareAmount = d_GlareAmount = 0.03f;
 	m_GlareRadius = d_GlareRadius = 0.03f;
 	m_GlareBlades = d_GlareBlades = 3;
