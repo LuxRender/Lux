@@ -67,6 +67,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 		ray.mint = ray.maxt + epsilon;
 		ray.maxt = r.maxt;
 	}
+	return false;
 }
 
 void VisibilityTester::Transmittance(const TsPack *tspack, const Scene *scene, 
