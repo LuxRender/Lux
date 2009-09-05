@@ -28,12 +28,20 @@
 namespace lux
 {
 
-void ContributionBuffer::Splat(Film *film)
+void ContributionBuffer::Buffer::Splat(Film *film)
 {
 	for (u_int i = 0; i < pos; ++i)
 		film->AddSample(&contribs[i]);
-	film->AddSampleCount(sampleCount);
 	pos = 0;
+}
+
+void ContributionBuffer::Splat(Film *film)
+{
+	for (u_int i = 0; i < buffers.size(); ++i) {
+		for (u_int j = 0; j < buffers[i].size(); ++j)
+			buffers[i][j]->Splat(film);
+	}
+	film->AddSampleCount(sampleCount);
 	sampleCount = 0.f;
 }
 

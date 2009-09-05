@@ -58,25 +58,50 @@ public:
 };
 
 class ContributionBuffer {
+	class Buffer {
+	public:
+		Buffer() : pos(0) {
+			contribs = AllocAligned<Contribution>(CONTRIB_BUF_SIZE);
+		}
+
+		~Buffer() {
+			FreeAligned(contribs);
+		}
+
+		bool Add(Contribution* c, float weight=1.f) {
+			if(pos == CONTRIB_BUF_SIZE)
+				return false;
+
+			contribs[pos] = *c;
+			contribs[pos].variance = weight;
+
+			++pos;
+
+			return true;
+		}
+
+		void Splat(Film *film);
+
+	private:
+		u_int pos;
+		Contribution *contribs;
+	};
 public:
-	ContributionBuffer() : pos(0), sampleCount(0.f) {
-		contribs = AllocAligned<Contribution>(CONTRIB_BUF_SIZE);
-	}
+	ContributionBuffer() : sampleCount(0.f), buffers(0) { }
 
 	~ContributionBuffer() {
-		FreeAligned(contribs);
+		for (u_int i = 0; i < buffers.size(); ++i) {
+			for (u_int j = 0; j < buffers[i].size(); ++j)
+				delete buffers[i][j];
+		}
 	}
 
 	bool Add(Contribution* c, float weight=1.f) {
-		if(pos == CONTRIB_BUF_SIZE)
-			return false;
-
-		contribs[pos] = *c;
-		contribs[pos].variance = weight;
-
-		++pos;
-
-		return true;
+		while (c->bufferGroup >= buffers.size())
+			buffers.push_back(vector<Buffer *>(0));
+		while (c->buffer >= buffers[c->bufferGroup].size())
+			buffers[c->bufferGroup].push_back(new Buffer());
+		return buffers[c->bufferGroup][c->buffer]->Add(c, weight);
 	}
 
 	void AddSampleCount(float c) {
@@ -86,9 +111,8 @@ public:
 	void Splat(Film *film);
 
 private:
-	u_int pos;
 	float sampleCount;
-	Contribution *contribs;
+	vector<vector<Buffer *> > buffers;
 };
 
 class ContributionPool {
