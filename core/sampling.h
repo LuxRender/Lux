@@ -113,28 +113,14 @@ public:
 		return samplesPerPixel * (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart);
 	}
 	virtual int RoundSize(int size) const = 0;
-	virtual void SampleBegin(const Sample *sample)
-	{
-		isSampleEnd = false;
-		sample->contributions.clear();
-	}
-	virtual void SampleEnd()
-	{
-		isSampleEnd = true;
-	}
-	void SetFilm(Film* f)
-	{
-		film = f;
-	}
-	virtual void GetBufferType(BufferType *t) {}
+	void SetFilm(Film* f) { film = f; }
+	virtual void GetBufferType(BufferType *t) { }
 	virtual void AddSample(const Sample &sample);
 	virtual Sampler* clone() const = 0;   // Lux Virtual (Copy) Constructor
 
 	virtual bool IsMutating() { return false; }
 
-	void SetContributionPool(ContributionPool *p) {
-		contribPool = p;
-	}
+	void SetContributionPool(ContributionPool *p) { contribPool = p; }
 
 	void Cleanup() {
 		contribPool->End(contribBuffer);
@@ -148,24 +134,8 @@ public:
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	int samplesPerPixel;
 	Film *film;
-	bool isSampleEnd;
 	ContributionPool *contribPool;
 	ContributionBuffer *contribBuffer;
-};
-class SampleGuard
-{
-public:
-	SampleGuard(Sampler *s, const Sample *sample)
-	{
-		sampler = s;
-		sampler->SampleBegin(sample);
-	}
-	~SampleGuard()
-	{
-		sampler->SampleEnd();
-	}
-private:
-	Sampler *sampler;
 };
 
 // PxLoc X and Y pixel coordinate struct

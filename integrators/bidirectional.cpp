@@ -696,7 +696,6 @@ static bool getLight(const TsPack *tspack, const Scene *scene,
 int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
-	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
 	vector<BidirVertex> eyePath(maxEyeDepth), lightPath(maxLightDepth);
 	float alpha = 1.f;

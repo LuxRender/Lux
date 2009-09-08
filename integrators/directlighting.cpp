@@ -227,8 +227,6 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
-	SampleGuard guard(sample->sampler, sample);
-
         RayDifferential ray;
         float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
