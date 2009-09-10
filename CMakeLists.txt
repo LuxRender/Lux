@@ -407,6 +407,7 @@ SET(lux_core_src
 	core/camera.cpp
 	core/color.cpp
 	core/context.cpp
+	core/contribution.cpp
 	core/dynload.cpp
 	core/exrio.cpp
 	core/film.cpp
