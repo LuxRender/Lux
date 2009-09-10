@@ -64,7 +64,6 @@ void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
-	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
 	// Declare common path integration variables
         RayDifferential r;

@@ -245,12 +245,15 @@ void ERPTSampler::AddSample(const Sample &sample)
 		if (newLY > 0.f)
 			meanIntensity += newLY;
 		++(initCount);
-		if (initCount < initSamples)
+		if (initCount < initSamples) {
+			newContributions.clear();
 			return;
+		}
 		meanIntensity /= initSamples;
 		if (!(meanIntensity > 0.f))
 			meanIntensity = 1.f;
 		mutation = -1;
+		newContributions.clear();
 		return;
 	}
 	if (mutation <= 0) {
@@ -272,8 +275,10 @@ void ERPTSampler::AddSample(const Sample &sample)
 			meanIntensity = Lerp(1.f / initSamples, meanIntensity, newLY);
 			// calculate the number of chains on a new seed
 			contribBuffer->AddSampleCount(1.f);
-			if (!(newLY > 0.f))
+			if (!(newLY > 0.f)) {
+				newContributions.clear();
 				return;
+			}
 			quantum = meanIntensity;
 			gain = newLY / quantum;
 			numChains = max(1, Floor2Int(gain + .5f));
@@ -297,6 +302,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 			for (int i = 0 ; i < totalTimes; ++i)
 				baseTimeImage[i] = sample.timexD[0][i];
 			mutation = 0;
+			newContributions.clear();
 			return;
 		}
 		LY = baseLY;
@@ -366,6 +372,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 			mutation = -1;
 		}
 	}
+	newContributions.clear();
 }
 
 Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)

@@ -3270,7 +3270,7 @@ void LuxGui::OnSpinText(wxCommandEvent& event) {
 bool LuxGui::CanStopRendering() {
 	if(m_guiRenderState == RENDERING) {
 		// Give warning that current rendering is not stopped
-		if(wxMessageBox(wxT("Current file is still rendering. Do you want to continue?"), wxT(""), wxYES_NO | wxICON_QUESTION, this) == wxNO)
+		if(wxMessageBox(wxT("Do you want to stop the current render and start a new one?"), wxT("Current file is still rendering"), wxYES_NO | wxICON_QUESTION, this) == wxNO)
 			return false;
 	}
 	return true;

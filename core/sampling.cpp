@@ -38,7 +38,6 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	yPixelStart = ystart;
 	yPixelEnd = yend;
 	samplesPerPixel = spp;
-	isSampleEnd = true;
 }
 float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 {
@@ -54,6 +53,7 @@ void Sampler::AddSample(const Sample &sample)
 				contribBuffer->Add(&sample.contributions[i], 1.f);
 			}
 	}
+	sample.contributions.clear();
 }
 
 // Sample Method Definitions

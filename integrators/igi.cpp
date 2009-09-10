@@ -167,7 +167,6 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
-	SampleGuard guard(sample->sampler, sample);
         RayDifferential r;
         float rayWeight = tspack->camera->GenerateRay(*sample, &r);
 	RayDifferential ray(r);

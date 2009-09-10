@@ -518,7 +518,6 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const
 {
-	SampleGuard guard(sample->sampler, sample);
 	int nrContribs = 0;
 	float zdepth = 0.f;
         RayDifferential ray;

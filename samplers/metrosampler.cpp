@@ -339,6 +339,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 
 		consecRejects++;
 	}
+	newContributions.clear();
 }
 
 Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *film)
