@@ -95,10 +95,6 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
 	MicrofacetDistribution *md2 = BSDF_ALLOC(tspack, Blinn)((2.0 * M_PI / (m2 * m2)) - 1.0);
 	MicrofacetDistribution *md3 = BSDF_ALLOC(tspack, Blinn)((2.0 * M_PI / (m3 * m3)) - 1.0);
 
-	/*MicrofacetDistribution *md1 = BSDF_ALLOC(tspack, WardIsotropic)(m1);
-	MicrofacetDistribution *md2 = BSDF_ALLOC(tspack, WardIsotropic)(m2);
-	MicrofacetDistribution *md3 = BSDF_ALLOC(tspack, WardIsotropic)(m3);*/
-
 	// The Slick approximation is much faster and visually almost the same
 	Fresnel *fr1 = BSDF_ALLOC(tspack, FresnelSlick)(r1);
 	Fresnel *fr2 = BSDF_ALLOC(tspack, FresnelSlick)(r2);
