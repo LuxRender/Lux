@@ -406,7 +406,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread) {
 
 							// Dade - replace the file name with a temporary name
 							char buf[64];
-							sprintf(buf,"%05d_%08d%s", serverThread->renderServer->tcpPort,
+							snprintf(buf,64,"%05d_%08d%s", serverThread->renderServer->tcpPort,
 									tmpFileList.size(), fileExt.c_str());
 							string file = string(buf);
 
