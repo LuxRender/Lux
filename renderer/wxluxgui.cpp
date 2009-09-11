@@ -2770,6 +2770,10 @@ int LuxGui::LuxLightGroupPanel::GetIndex() const {
 
 void LuxGui::LuxLightGroupPanel::SetIndex( int index ) {
 	m_Index = index;
+	if(index > 2){
+		m_Tab_Control_LightGroupPanel->Hide();
+		m_Tab_LightGroupIcon->SetBitmapLabel(wxMEMORY_BITMAP(arrowleft_png));
+	}
 }
 
 void LuxGui::LuxLightGroupPanel::UpdateWidgetValues() {
