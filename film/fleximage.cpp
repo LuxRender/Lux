@@ -2112,11 +2112,10 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 
 Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
-	static Filter *dummyFilter = NULL;
-	if (dummyFilter == NULL) {
-		ParamSet dummyParams;
-		dummyFilter = MakeFilter("box", dummyParams);
-	}
+
+	// NOTE - lordcrc - FlexImageFilm takes ownership of filter
+	ParamSet dummyParams;	
+	Filter *dummyFilter = MakeFilter("box", dummyParams);
 
 	// Read the FLM header
 	std::ifstream stream(flmFileName.c_str(), std::ios_base::in | std::ios_base::binary);
