@@ -288,6 +288,27 @@ void RenderFarm::send(const std::string &command, const std::string &name,
 		netBuffer << command << std::endl << name << std::endl;
         boost::archive::text_oarchive oa(netBuffer);
         oa << params;
+
+        //send the files
+        std::string file;
+	file = "";
+        file = params.FindOneString(std::string("mapname"), file);
+        if (file.size()) {
+            std::string s;
+            std::ifstream in(file.c_str(), std::ios::out | std::ios::binary);
+            while (getline(in, s))
+                netBuffer << s << "\n";
+            netBuffer << "LUX_END_FILE\n";
+        }
+	file = "";
+        file = params.FindOneString(std::string("iesname"), file);
+        if (file.size()) {
+            std::string s;
+            std::ifstream in(file.c_str(), std::ios::out | std::ios::binary);
+            while (getline(in, s))
+                netBuffer << s << "\n";
+            netBuffer << "LUX_END_FILE\n";
+        }
     } catch (std::exception& e) {
         luxError(LUX_SYSTEM, LUX_ERROR, e.what());
     }

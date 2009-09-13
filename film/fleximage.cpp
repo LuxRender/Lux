@@ -2139,11 +2139,12 @@ Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
 	filmParams.AddInt("yresolution", &header.yResolution);
 	filmParams.AddBool("write_resume_flm", &boolTrue);
 	filmParams.AddBool("restart_resume_flm", &boolFalse);
-	filmParams.AddBool("write_tonemapped_exr", &boolFalse);
-	filmParams.AddBool("write_untonemapped_exr", &boolFalse);
-	filmParams.AddBool("write_tonemapped_igi", &boolFalse);
-	filmParams.AddBool("write_untonemapped_igi", &boolFalse);
-	filmParams.AddBool("write_tonemapped_tga", &boolFalse);
+	filmParams.AddBool("write_exr", &boolFalse);
+	filmParams.AddBool("write_exr_ZBuf", &boolFalse);
+	filmParams.AddBool("write_png", &boolFalse);
+	filmParams.AddBool("write_png_ZBuf", &boolFalse);
+	filmParams.AddBool("write_tga", &boolFalse);
+	filmParams.AddBool("write_tga_ZBuf", &boolFalse);
 	Film *film = FlexImageFilm::CreateFilm(filmParams, dummyFilter);
 	
 	// Create the buffers (also loads the FLM file)
