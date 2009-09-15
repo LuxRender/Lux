@@ -268,7 +268,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f;
 	for(u_int i = 0; i < newContributions.size(); ++i) {
-		float ly = newContributions[i].color.Y();
+		const float ly = newContributions[i].color.Y();
 		if (ly > 0.f) {
 			if (useVariance && newContributions[i].variance > 0.f)
 				newLY += ly * newContributions[i].variance;
@@ -287,21 +287,23 @@ void MetropolisSampler::AddSample(const Sample &sample)
 
 	// calculate accept probability from old and new image sample
 	float accProb;
-	if (LY > 0.f)
+	if (LY > 0.f && consecRejects < maxRejects)
 		accProb = min(1.f, newLY / LY);
 	else
 		accProb = 1.f;
-	float newWeight = accProb + (large ? 1.f : 0.f);
+	const float newWeight = accProb + (large ? 1.f : 0.f);
 	weight += 1.f - accProb;
 	// try or force accepting of the new sample
-	if (accProb == 1.f || consecRejects >= maxRejects || tspack->rng->floatValue() < accProb) {
+	if (accProb == 1.f || tspack->rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		const float norm = weight * meanIntensity / (LY + pLarge * meanIntensity);
-		for(u_int i = 0; i < oldContributions.size(); ++i) {
-			// Radiance - added new use of contributionpool/buffers
-			if(&oldContributions && !contribBuffer->Add(&oldContributions[i], norm)) {
-				contribBuffer = film->scene->contribPool->Next(contribBuffer);
-				contribBuffer->Add(&oldContributions[i], norm);
+		const float norm = weight / (LY / meanIntensity + pLarge);
+		if (norm > 0.f) {
+			for(u_int i = 0; i < oldContributions.size(); ++i) {
+				// Radiance - added new use of contributionpool/buffers
+				if(&oldContributions && !contribBuffer->Add(&oldContributions[i], norm)) {
+					contribBuffer = film->scene->contribPool->Next(contribBuffer);
+					contribBuffer->Add(&oldContributions[i], norm);
+				}
 			}
 		}
 		// Save new contributions for reference
@@ -324,12 +326,14 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		const float norm = newWeight * meanIntensity / (newLY + pLarge * meanIntensity);
-		for(u_int i = 0; i < newContributions.size(); ++i) {
-			// Radiance - added new use of contributionpool/buffers
-			if(!contribBuffer->Add(&newContributions[i], norm)) {
-				contribBuffer = film->scene->contribPool->Next(contribBuffer);
-				contribBuffer->Add(&newContributions[i], norm);
+		const float norm = newWeight / (newLY / meanIntensity + pLarge);
+		if (norm > 0.f) {
+			for(u_int i = 0; i < newContributions.size(); ++i) {
+				// Radiance - added new use of contributionpool/buffers
+				if(!contribBuffer->Add(&newContributions[i], norm)) {
+					contribBuffer = film->scene->contribPool->Next(contribBuffer);
+					contribBuffer->Add(&newContributions[i], norm);
+				}
 			}
 		}
 		// Restart from previous reference
