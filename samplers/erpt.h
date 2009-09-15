@@ -50,15 +50,15 @@ public:
 
 	virtual bool IsMutating() { return true; }
 
-	float LY, baseLY, gain, quantum;
-	int normalSamples, totalSamples, totalTimes, totalMutations, chain, numChains, mutation, consecRejects, stamp, numMicro, posMicro;
-	float pMicro, range, weight, alpha;
-	float *baseImage, *sampleImage, *currentImage;
-	int *timeImage, *baseTimeImage, *currentTimeImage, *offset;
-	static int initCount, initSamples;
-	static float meanIntensity;
-	vector<Contribution> oldContributions, baseContributions;
+	int normalSamples, totalSamples, totalTimes, totalMutations;
+	float pMicro, range;
 	Sampler *baseSampler;
+	float *baseImage, *sampleImage, *currentImage;
+	int *baseTimeImage, *timeImage, *currentTimeImage, *offset;
+	int numChains, chain, mutation, stamp, numMicro, posMicro;
+	float baseLY, quantum, weight, LY, alpha;
+	vector<Contribution> oldContributions, baseContributions;
+	double totalLY, sampleCount;
 };
 
 }//namespace lux

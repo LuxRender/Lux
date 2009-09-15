@@ -67,13 +67,13 @@ ERPTSampler::ERPTSampler(int totMutations, float microProb, float rng,
 	Sampler *sampler) :
  Sampler(sampler->xPixelStart, sampler->xPixelEnd,
 	sampler->yPixelStart, sampler->yPixelEnd, sampler->samplesPerPixel),
- LY(0.), baseLY(0.f), gain(0.f), quantum(0.f),
- totalSamples(0), totalTimes(0), totalMutations(totMutations), chain(0),
- numChains(0), mutation(-1), stamp(0), numMicro(-1), posMicro(-1),
- pMicro(microProb), range(rng), weight(0.), alpha(0.),
+ normalSamples(0), totalSamples(0), totalTimes(0), totalMutations(totMutations),
+ pMicro(microProb), range(rng), baseSampler(sampler),
  baseImage(NULL), sampleImage(NULL), currentImage(NULL),
- timeImage(NULL), baseTimeImage(NULL), currentTimeImage(NULL),
- baseSampler(sampler)
+ baseTimeImage(NULL), timeImage(NULL), currentTimeImage(NULL), offset(NULL),
+ numChains(0), chain(0), mutation(-1), stamp(0), numMicro(-1), posMicro(-1),
+ baseLY(0.f), quantum(0.f), weight(0.f), LY(0.f), alpha(0.f),
+ totalLY(0.), sampleCount(0.)
 {
 }
 
@@ -131,21 +131,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		initERPT(this, sample);
 	}
 
-	if (initCount < initSamples) {
-		sample->imageX = tspack->rng->floatValue() * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = tspack->rng->floatValue() * (yPixelEnd - yPixelStart) + yPixelStart;
-		sample->lensU = tspack->rng->floatValue();
-		sample->lensV = tspack->rng->floatValue();
-		sample->time = tspack->rng->floatValue();
-		sample->wavelengths = tspack->rng->floatValue();
-		sample->singleWavelength = tspack->rng->floatValue();
-		for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = tspack->rng->floatValue();
-		for (int i = 0; i < totalTimes; ++i)
-			sample->timexD[0][i] = -1;
-		sample->stamp = 0;
-		numMicro = -1;
-	} else if (mutation == -1) {
+	if (mutation == -1) {
 		// Dade - we are at a valid checkpoint where we can stop the
 		// rendering. Check if we have enough samples per pixel in the film.
 		if (film->enoughSamplePerPixel)
@@ -211,14 +197,8 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 		--stampLimit;
 	if (sample->timexD[num][pos] != stampLimit) {
 		if (sample->timexD[num][pos] == -1) {
-			if (initCount < initSamples) {
-				for (u_int i = 0; i < size; ++i)
-					data[i] = tspack->rng->floatValue();
-				return data;
-			} else {
-				baseSampler->GetLazyValues(sample, num, pos);
-				sample->timexD[num][pos] = 0;
-			}
+			baseSampler->GetLazyValues(sample, num, pos);
+			sample->timexD[num][pos] = 0;
 		} else {
 			int start = offset[num] + pos * size;
 			float *image = currentImage + start;
@@ -240,26 +220,10 @@ void ERPTSampler::AddSample(const Sample &sample)
 	float newLY = 0.0f;
 	for(u_int i = 0; i < newContributions.size(); ++i)
 		newLY += newContributions[i].color.Y();
-	// calculate meanIntensity
-	if (initCount < initSamples) {
-		if (newLY > 0.f)
-			meanIntensity += newLY;
-		++(initCount);
-		if (initCount < initSamples) {
-			newContributions.clear();
-			return;
-		}
-		meanIntensity /= initSamples;
-		if (!(meanIntensity > 0.f))
-			meanIntensity = 1.f;
-		mutation = -1;
-		newContributions.clear();
-		return;
-	}
 	if (mutation <= 0) {
 		if (weight > 0.f) {
 			// Add accumulated contribution of previous reference sample
-			weight *= gain * quantum / LY;
+			weight *= quantum / LY;
 			if (!isinf(weight) && LY > 0.f) {
 				for(u_int i = 0; i < oldContributions.size(); ++i) {
 					// Radiance - added new use of contributionpool/buffers
@@ -272,22 +236,22 @@ void ERPTSampler::AddSample(const Sample &sample)
 			weight = 0.f;
 		}
 		if (mutation == -1) {
-			meanIntensity = Lerp(1.f / initSamples, meanIntensity, newLY);
-			// calculate the number of chains on a new seed
 			contribBuffer->AddSampleCount(1.f);
+			++sampleCount;
 			if (!(newLY > 0.f)) {
 				newContributions.clear();
 				return;
 			}
-			quantum = meanIntensity;
-			gain = newLY / quantum;
-			numChains = max(1, Floor2Int(gain + .5f));
+			totalLY += newLY;
+			const float meanIntensity = totalLY > 0.f ? totalLY / sampleCount : 1.f;
+			// calculate the number of chains on a new seed
+			quantum = newLY / meanIntensity;
+			numChains = max(1, Floor2Int(quantum + .5f));
 			if (numChains > 100) {
 				printf("%d chains -> %d\n", numChains, totalMutations);
 				numChains = totalMutations;
 			}
-			gain /= numChains;
-			quantum /= totalSamples;
+			quantum /= (numChains * totalSamples);
 			baseLY = newLY;
 			baseContributions = newContributions;
 			baseImage[0] = sample.imageX;
@@ -309,23 +273,25 @@ void ERPTSampler::AddSample(const Sample &sample)
 		oldContributions = baseContributions;
 	}
 	// calculate accept probability from old and new image sample
-	float accProb = min(1.0f, newLY / LY);
+	float accProb;
+	if (LY > 0.f)
+		accProb = min(1.f, newLY / LY);
+	else
+		accProb = 1.f;
 	float newWeight = accProb;
 	weight += 1.f - accProb;
 
-	const bool accept = accProb == 1.f || tspack->rng->floatValue() < accProb;
-
 	// try accepting of the new sample
-	if (accept) {
+	if (accProb == 1.f || tspack->rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		weight *= gain * quantum / LY;
+		weight *= quantum / LY;
 		if (!isinf(weight) && LY > 0.f) {
 			for(u_int i = 0; i < oldContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
 				if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
 					contribBuffer = film->scene->contribPool->Next(contribBuffer);
 					contribBuffer->Add(&oldContributions[i], weight);
-			}
+				}
 			}
 		}
 		weight = newWeight;
@@ -349,7 +315,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 		currentTimeImage = timeImage;
 	} else {
 		// Add contribution of new sample before rejecting it
-		newWeight *= gain * quantum / newLY;
+		newWeight *= quantum / newLY;
 		if (!isinf(newWeight) && newLY > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
@@ -379,9 +345,6 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	initSamples = params.FindOneInt("initsamples", 100000);
-	initCount = 0;
-	meanIntensity = 0.;
 	int totMutations = params.FindOneInt("chainlength", 100);	// number of mutations from a given seed
 	float microMutationProb = params.FindOneFloat("micromutationprob", .5f);	//probability of generating a micro sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 50.);	// maximum distance in pixel for a small mutation
@@ -393,8 +356,5 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	}
 	return new ERPTSampler(totMutations, microMutationProb, range, sampler);
 }
-
-int ERPTSampler::initCount, ERPTSampler::initSamples;
-float ERPTSampler::meanIntensity = 0.f;
 
 static DynamicLoader::RegisterSampler<ERPTSampler> r("erpt");
