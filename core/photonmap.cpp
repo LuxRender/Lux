@@ -79,15 +79,15 @@ void BasicColorPhoton::load(bool isLittleEndian, std::basic_istream<char> &strea
 {
 	// Point p
 	for (u_int i = 0; i < 3; ++i)
-		osReadLittleEndianFloat(isLittleEndian, stream, &p[i]);
+		p[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 
 	// SWCSpectrum alpha
 	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-		osReadLittleEndianFloat(isLittleEndian, stream, &alpha.c[i]);
+		alpha.c[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 
 	// wavelengths
 	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-		osReadLittleEndianFloat(isLittleEndian, stream, &w[i]);
+		w[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 }
 
 void LightPhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
@@ -107,7 +107,7 @@ void LightPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
 
 	// Vector wi
 	for (u_int i = 0; i < 3; ++i)
-		osReadLittleEndianFloat(isLittleEndian, stream, &wi[i]);
+		w[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 }
 
 void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
@@ -127,7 +127,7 @@ void RadiancePhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
 
 	// Normal n
 	for (u_int i = 0; i < 3; ++i)
-		osReadLittleEndianFloat(isLittleEndian, stream, &n[i]);
+		n[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 }
 
 SWCSpectrum RadiancePhotonMap::LPhoton(const TsPack *tspack,
@@ -361,12 +361,12 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			u_int storedNRadiancePhotons;
 			u_int storedNIndirectPhotons;
 			u_int storedNCausticPhotons;
-			osReadLittleEndianInt(isLittleEndian, ifs, &storedPhotonBxdfType);
-			osReadLittleEndianInt(isLittleEndian, ifs, &storedRadianceBxdfType);
-			osReadLittleEndianUInt(isLittleEndian, ifs, &storedNDirectPhotons);
-			osReadLittleEndianUInt(isLittleEndian, ifs, &storedNRadiancePhotons);
-			osReadLittleEndianUInt(isLittleEndian, ifs, &storedNIndirectPhotons);
-			osReadLittleEndianUInt(isLittleEndian, ifs, &storedNCausticPhotons);
+			storedPhotonBxdfType = osReadLittleEndianInt(isLittleEndian, ifs);
+			storedRadianceBxdfType = osReadLittleEndianInt(isLittleEndian, ifs);
+			storedNDirectPhotons = osReadLittleEndianUInt(isLittleEndian, ifs);
+			storedNRadiancePhotons = osReadLittleEndianUInt(isLittleEndian, ifs);
+			storedNIndirectPhotons = osReadLittleEndianUInt(isLittleEndian, ifs);
+			storedNCausticPhotons = osReadLittleEndianUInt(isLittleEndian, ifs);
 			if (storedPhotonBxdfType != photonBxdfType ||
 				storedRadianceBxdfType != radianceBxdfType ||
 				storedNDirectPhotons != nDirectPhotons ||
@@ -379,7 +379,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			if (ok) {
 				//TODO should compare a scene hash or something
 				u_int storedNLights;
-				osReadLittleEndianUInt(isLittleEndian, ifs, &storedNLights);
+				storedNLights = osReadLittleEndianUInt(isLittleEndian, ifs);
 				if (storedNLights != scene->lights.size() ) {
 					luxError(LUX_NOERROR, LUX_INFO, "Scene changed, rebuilding photon maps...");
 					ok = false;
@@ -1088,10 +1088,10 @@ void LightPhotonMap::load(std::basic_istream<char> &stream, LightPhotonMap *map)
 
 	// Dade - read the size of the map
 	int count;
-	osReadLittleEndianInt(isLittleEndian, stream, &count);
+	count = osReadLittleEndianInt(isLittleEndian, stream);
 
 	int npaths;
-	osReadLittleEndianInt(isLittleEndian, stream, &npaths);
+	npaths = osReadLittleEndianInt(isLittleEndian, stream);
 
 	vector<LightPhoton> photons(count);
 	for (int i = 0; i < count; ++i)
@@ -1125,7 +1125,7 @@ void RadiancePhotonMap::load(std::basic_istream<char> &stream, RadiancePhotonMap
 
 	// Dade - read the size of the map
 	int count;
-	osReadLittleEndianInt(isLittleEndian, stream, &count);
+	count = osReadLittleEndianInt(isLittleEndian, stream);
 
 	vector<RadiancePhoton> photons(count);
 	for (int i = 0; i < count; ++i)

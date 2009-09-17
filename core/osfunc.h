@@ -23,6 +23,9 @@
 #ifndef LUX_OSFUNC_H
 #define LUX_OSFUNC_H
 
+#include <boost/cstdint.hpp>
+using boost::int32_t;
+using boost::uint32_t;
 #include <istream>
 #include <ostream>
 
@@ -38,16 +41,20 @@ extern int osHardwareConcurrency();
 extern bool osIsLittleEndian();
 extern void osWriteLittleEndianFloat(bool isLittleEndian,
 		std::basic_ostream<char> &os, float value);
-extern void osReadLittleEndianFloat(bool isLittleEndian,
-		std::basic_istream<char> &is, float *value);
+extern float osReadLittleEndianFloat(bool isLittleEndian,
+		std::basic_istream<char> &is);
+extern void osWriteLittleEndianDouble(bool isLittleEndian,
+		std::basic_ostream<char> &os, double value);
+extern double osReadLittleEndianDouble(bool isLittleEndian,
+		std::basic_istream<char> &is);
 extern void osWriteLittleEndianInt(bool isLittleEndian,
-		std::basic_ostream<char> &os, int value);
-extern void osReadLittleEndianInt(bool isLittleEndian,
-		std::basic_istream<char> &is, int *value);
+		std::basic_ostream<char> &os, int32_t value);
+extern int32_t osReadLittleEndianInt(bool isLittleEndian,
+		std::basic_istream<char> &is);
 extern void osWriteLittleEndianUInt(bool isLittleEndian,
-		std::basic_ostream<char> &os, unsigned int value);
-extern void osReadLittleEndianUInt(bool isLittleEndian,
-		std::basic_istream<char> &is, unsigned int *value);
+		std::basic_ostream<char> &os, uint32_t value);
+extern uint32_t osReadLittleEndianUInt(bool isLittleEndian,
+		std::basic_istream<char> &is);
 
 }//namespace lux
 
