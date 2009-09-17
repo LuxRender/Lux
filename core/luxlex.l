@@ -112,7 +112,7 @@ Include { BEGIN(INCL); }
 <INCL>. { luxError( LUX_SYNTAX,LUX_SEVERE,"Illegal character following Include directive" ); }
 <INCL_FILE>\" { BEGIN INITIAL; }
 <INCL_FILE>. { luxError( LUX_SYNTAX,LUX_SEVERE,"Illegal character in Include file name" ); }
-<INCL_FILE>[\-a-zA-Z_\.0-9/ \t'\\\:]+ {
+<INCL_FILE>[^\n\"]+ {
 	BEGIN(INITIAL);
 	include_push(yytext);
 }
