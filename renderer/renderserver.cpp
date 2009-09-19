@@ -496,10 +496,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 				case CMD_LUXTEXTURE: {
 					string name, type, texname;
 					ParamSet params;
-					stream >> name;
-					stream >> type;
-					stream >> texname;
-					boost::archive::text_iarchive ia(stream);
+                                        // Dade - fixed in bug 562: "Luxconsole -s (Linux 64) fails to network render when material names contain spaces"
+					getline(stream, name);
+					getline(stream, type);
+					getline(stream, texname);
+
+                                        boost::archive::text_iarchive ia(stream);
 					ia >> params;
 
 					processFile("filename", params, tmpFileList, stream);
