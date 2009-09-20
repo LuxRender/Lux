@@ -1390,7 +1390,7 @@ public:
 
 	bool Read(std::basic_istream<char> &is, bool isLittleEndian, FlexImageFilm *film ) {
 		int tmpType;
-		osReadLittleEndianInt(isLittleEndian, is, &tmpType);
+		tmpType = osReadLittleEndianInt(isLittleEndian, is);
 		type = FlmParameterType(tmpType);
 		if (!is.good()) {
 			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
@@ -1402,7 +1402,7 @@ public:
 			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
 			return false;
 		}
-		osReadLittleEndianInt(isLittleEndian, is, &size);
+		size = osReadLittleEndianInt(isLittleEndian, is);
 		if (!is.good()) {
 			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 			return false;
@@ -1413,12 +1413,12 @@ public:
 			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
 			return false;
 		}
-		osReadLittleEndianInt(isLittleEndian, is, &id);
+		id = osReadLittleEndianInt(isLittleEndian, is);
 		if (!is.good()) {
 			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 			return false;
 		}
-		osReadLittleEndianInt(isLittleEndian, is, &index);
+		index = osReadLittleEndianInt(isLittleEndian, is);
 		if (!is.good()) {
 			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 			return false;
@@ -1431,7 +1431,7 @@ public:
 		}
 		switch(type) {
 			case FLM_PARAMETER_TYPE_FLOAT:
-				osReadLittleEndianFloat(isLittleEndian, is, &floatValue);
+				floatValue = osReadLittleEndianFloat(isLittleEndian, is);
 				break;
 			case FLM_PARAMETER_TYPE_STRING:
 				{
@@ -1494,7 +1494,7 @@ public:
 
 bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImageFilm *film ) {
 	// Read and verify magic number and version
-	osReadLittleEndianInt(isLittleEndian, in, &magicNumber);
+	magicNumber = osReadLittleEndianInt(isLittleEndian, in);
 	if (!in.good()) {
 		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 		return false;
@@ -1506,7 +1506,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 		return false;
 	}
-	osReadLittleEndianInt(isLittleEndian, in, &versionNumber);
+	versionNumber = osReadLittleEndianInt(isLittleEndian, in);
 	if (!in.good()) {
 		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 		return false;
@@ -1519,8 +1519,8 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 		return false;
 	}
 	// Read and verify the buffer resolution
-	osReadLittleEndianInt(isLittleEndian, in, &xResolution);
-	osReadLittleEndianInt(isLittleEndian, in, &yResolution);
+	xResolution = osReadLittleEndianInt(isLittleEndian, in);
+	yResolution = osReadLittleEndianInt(isLittleEndian, in);
 	if (xResolution <= 0 || yResolution <= 0 ) {
 		std::stringstream ss;
 		ss << "Invalid resolution (expected positive resolution, received=" << xResolution << "x" << yResolution << ")";
@@ -1537,7 +1537,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 		return false;
 	}
 	// Read and verify #buffer groups and buffer configs
-	osReadLittleEndianUInt(isLittleEndian, in, &numBufferGroups);
+	numBufferGroups = osReadLittleEndianUInt(isLittleEndian, in);
 	if (!in.good()) {
 		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 		return false;
@@ -1549,7 +1549,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 		return false;
 	}
-	osReadLittleEndianUInt(isLittleEndian, in, &numBufferConfigs);
+	numBufferConfigs = osReadLittleEndianUInt(isLittleEndian, in);
 	if (!in.good()) {
 		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 		return false;
@@ -1563,7 +1563,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 	}
 	for (u_int i = 0; i < numBufferConfigs; ++i) {
 		int type;
-		osReadLittleEndianInt(isLittleEndian, in, &type);
+		type = osReadLittleEndianInt(isLittleEndian, in);
 		if (!in.good()) {
 			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 			return false;
@@ -1584,7 +1584,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImage
 		bufferTypes.push_back(type);
 	}
 	// Read parameters
-	osReadLittleEndianUInt(isLittleEndian, in, &numParams);
+	numParams = osReadLittleEndianUInt(isLittleEndian, in);
 	if (!in.good()) {
 		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
 		return false;
@@ -1733,7 +1733,7 @@ void FlexImageFilm::TransmitFilm(
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 		BufferGroup& bufferGroup = bufferGroups[i];
 		// Write number of samples
-		osWriteLittleEndianFloat(isLittleEndian, os, bufferGroup.numberOfSamples);
+		osWriteLittleEndianDouble(isLittleEndian, os, bufferGroup.numberOfSamples);
 
 		// Write each buffer
 		for (u_int j = 0; j < bufferConfigs.size(); ++j) {
@@ -1803,8 +1803,8 @@ float FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 	vector<float> bufferGroupNumSamples(bufferGroups.size());
 	vector<BlockedArray<Pixel>*> tmpPixelArrays(bufferGroups.size() * bufferConfigs.size());
 	for (u_int i = 0; i < bufferGroups.size(); i++) {
-		float numberOfSamples;
-		osReadLittleEndianFloat(isLittleEndian, in, &numberOfSamples);
+		double numberOfSamples;
+		numberOfSamples = osReadLittleEndianDouble(isLittleEndian, in);
 		if (!in.good())
 			break;
 		bufferGroupNumSamples[i] = numberOfSamples;
@@ -1819,11 +1819,11 @@ float FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 			for (int y = 0; y < tmpPixelArr->vSize(); ++y) {
 				for (int x = 0; x < tmpPixelArr->uSize(); ++x) {
 					Pixel &pixel = (*tmpPixelArr)(x, y);
-					osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[0]);
-					osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[1]);
-					osReadLittleEndianFloat(isLittleEndian, in, &pixel.L.c[2]);
-					osReadLittleEndianFloat(isLittleEndian, in, &pixel.alpha);
-					osReadLittleEndianFloat(isLittleEndian, in, &pixel.weightSum);
+					pixel.L.c[0] = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.L.c[1] = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.L.c[2] = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.alpha = osReadLittleEndianFloat(isLittleEndian, in);
+					pixel.weightSum = osReadLittleEndianFloat(isLittleEndian, in);
 				}
 			}
 			if (!in.good())
@@ -2139,11 +2139,12 @@ Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
 	filmParams.AddInt("yresolution", &header.yResolution);
 	filmParams.AddBool("write_resume_flm", &boolTrue);
 	filmParams.AddBool("restart_resume_flm", &boolFalse);
-	filmParams.AddBool("write_tonemapped_exr", &boolFalse);
-	filmParams.AddBool("write_untonemapped_exr", &boolFalse);
-	filmParams.AddBool("write_tonemapped_igi", &boolFalse);
-	filmParams.AddBool("write_untonemapped_igi", &boolFalse);
-	filmParams.AddBool("write_tonemapped_tga", &boolFalse);
+	filmParams.AddBool("write_exr", &boolFalse);
+	filmParams.AddBool("write_exr_ZBuf", &boolFalse);
+	filmParams.AddBool("write_png", &boolFalse);
+	filmParams.AddBool("write_png_ZBuf", &boolFalse);
+	filmParams.AddBool("write_tga", &boolFalse);
+	filmParams.AddBool("write_tga_ZBuf", &boolFalse);
 	Film *film = FlexImageFilm::CreateFilm(filmParams, dummyFilter);
 	
 	// Create the buffers (also loads the FLM file)
