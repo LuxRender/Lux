@@ -198,12 +198,14 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 		string s;
 		ofstream out;
 		while (getline(stream, s) && (s != "LUX_END_FILE")) {
-			if (!first) {
+			if (!first)
+				out << "\n";
+			else {
 				// Dade - fix for bug 514: avoid to create the file if it is empty
 				out.open(file.c_str(), ios::out | ios::binary);
-				out << "\n";
+				first = false;
 			}
-			first = false;
+
 			out << s;
 		}
 
