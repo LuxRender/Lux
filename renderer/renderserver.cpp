@@ -196,18 +196,22 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 
 		bool first = true;
 		string s;
-		ofstream out(file.c_str(), ios::out | ios::binary);
+		ofstream out;
 		while (getline(stream, s) && (s != "LUX_END_FILE")) {
-			if (!first)
+			if (!first) {
+				// Dade - fix for bug 514: avoid to create the file if it is empty
+				out.open(file.c_str(), ios::out | ios::binary);
 				out << "\n";
+			}
 			first = false;
 			out << s;
 		}
-		out.flush();
 
-		tmpFileList.push_back(file);
+		if (!first) {
+			out.flush();
+			tmpFileList.push_back(file);
+		}
 	}
-
 }
 
 static void processCommand(void (&f)(const string &, const ParamSet &), vector<string> &tmpFileList, basic_istream<char> &stream)

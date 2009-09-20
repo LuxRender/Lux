@@ -376,7 +376,6 @@ void RenderFarm::send(const std::string &command, const string &name,
                 netBuffer << s << "\n";
             netBuffer << "LUX_END_FILE\n";
         }
-
     } catch (std::exception& e) {
         luxError(LUX_SYSTEM, LUX_ERROR, e.what());
     }
