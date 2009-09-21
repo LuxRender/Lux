@@ -191,6 +191,7 @@ double Scene::GetNumberOfSamples()
 			renderThreads[i]->blackSamples = 0.;
 		}
 	}
+
 	return stat_Samples + numberOfSamplesFromNetwork;
 }
 
@@ -244,7 +245,9 @@ double Scene::Statistics_Efficiency()
 }
 
 void Scene::SignalThreads(ThreadSignals signal) {
+#if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
+#endif
 
     for(unsigned int i=0;i<renderThreads.size();i++) {
 		if(renderThreads[i])
@@ -404,6 +407,7 @@ void Scene::RemoveRenderThread()
 #if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
+
 	if (renderThreads.size() == 0)
 		return;
 	renderThreads.back()->signal = EXIT;
@@ -460,18 +464,29 @@ void Scene::Render() {
     // initial thread signal is paused
     CurThreadSignal = RUN;
 
-    // Dade - this code needs a fix, it must be removed in order to not create
-    // 1 more thread than required
-    //add a thread
+    // add a thread
     CreateRenderThread();
 
-	// Dade - this code fragment is not thread safe
-    //wait all threads to finish their job
-    for(unsigned int i = 0; i < renderThreads.size(); i++) {
-        renderThreads[i]->thread->join();
-	delete renderThreads[i];
-    }
-    renderThreads.clear();
+	// Dade - BUG 564 fix: threads where removed from the array while the
+	// GetNumberOfSamples() was called
+
+	// Dade - the first thread can not be removed and it will terminate when
+	// the rendering is finished
+	renderThreads[0]->thread->join();
+
+	// Dade - rendering done, now I can remove all rendering threads
+	{
+#if !defined(WIN32)
+		boost::mutex::scoped_lock lock(renderThreadsMutex);
+#endif
+
+		// wait all threads to finish their job
+		for(unsigned int i = 0; i < renderThreads.size(); i++) {
+			renderThreads[i]->thread->join();
+			delete renderThreads[i];
+		}
+		renderThreads.clear();
+	}
 
 	// Flush the contribution pool
 	contribPool->Flush();
