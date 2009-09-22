@@ -3698,7 +3698,7 @@ void LuxGui::EngineThread(wxString filename) {
 	} else {
 		luxWait();
 
-	  luxError(LUX_NOERROR, LUX_INFO, "Rendering done.");
+		luxError(LUX_NOERROR, LUX_INFO, "Rendering done.");
 		wxCommandEvent endEvent(wxEVT_LUX_FINISHED, GetId());
 		GetEventHandler()->AddPendingEvent(endEvent);
 	}
