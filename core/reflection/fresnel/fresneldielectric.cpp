@@ -57,7 +57,7 @@ void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *
 		const float sint = (entering ? 1.f / et : et) *
 			sqrtf(max(0.f, 1.f - cosi * cosi));
 		// Handle total internal reflection
-		if (sint > 1.f)
+		if (sint >= 1.f)
 			*f = SWCSpectrum(1.f);
 		else
 			FrDiel(fabsf(cosi), sqrtf(max(0.f, 1.f - sint * sint)),

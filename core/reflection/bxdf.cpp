@@ -232,12 +232,16 @@ bool SingleBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 			if (sampledType)
 				*sampledType = bxdf->type;
 			*wiW = LocalToWorld(wi);
-			if (Dot(*wiW, ng) * Dot(woW, ng) > 0.f) {
+			const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
+			if (sideTest > 0.f) {
 				// ignore BTDFs
 				if (bxdf->type & BSDF_TRANSMISSION)
 					return false;
-			} else if (bxdf->type & BSDF_REFLECTION)
+			} else if (sideTest < 0.f) {
 				// ignore BRDFs
+				if (bxdf->type & BSDF_REFLECTION)
+					return false;
+			} else
 				return false;
 			return true;
 		}
@@ -258,12 +262,15 @@ float SingleBSDF::Pdf(const TsPack *tspack, const Vector &woW,
 SWCSpectrum SingleBSDF::f(const TsPack *tspack, const Vector &woW,
 	const Vector &wiW, BxDFType flags) const
 {
-	if (Dot(wiW, ng) * Dot(woW, ng) > 0.f)
+	const float sideTest = Dot(wiW, ng) * Dot(woW, ng);
+	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
-	else
+	else if (sideTest < 0.f)
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
+	else
+		flags = 0;
 	if (!bxdf->MatchesFlags(flags))
 		return SWCSpectrum(0.f);
 	SWCSpectrum f_(0.f);
@@ -340,14 +347,17 @@ bool MultiBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 		*pdfBack *= totalWeightR;
 	// Compute overall PDF with all matching _BxDF_s
 	// Compute value of BSDF for sampled direction
+	const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
+	BxDFType flags2;
+	if (sideTest > 0.f)
+		// ignore BTDFs
+		flags2 = BxDFType(flags & ~BSDF_TRANSMISSION);
+	else if (sideTest < 0.f)
+		// ignore BRDFs
+		flags2 = BxDFType(flags & ~BSDF_REFLECTION);
+	else
+		return false;
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
-		BxDFType flags2;
-		if (Dot(*wiW, ng) * Dot(woW, ng) > 0.f)
-			// ignore BTDFs
-			flags2 = BxDFType(flags & ~BSDF_TRANSMISSION);
-		else
-			// ignore BRDFs
-			flags2 = BxDFType(flags & ~BSDF_REFLECTION);
 		if (!bxdf->MatchesFlags(flags2))
 			*f_ = SWCSpectrum(0.f);
 		for (int i = 0; i < nBxDFs; ++i) {
@@ -394,13 +404,16 @@ float MultiBSDF::Pdf(const TsPack *tspack, const Vector &woW, const Vector &wiW,
 SWCSpectrum MultiBSDF::f(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags) const
 {
-	Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
-	if (Dot(wiW, ng) * Dot(woW, ng) > 0.f)
+	const float sideTest = Dot(wiW, ng) * Dot(woW, ng);
+	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
-	else
+	else if (sideTest < 0.f)
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
+	else
+		flags = 0;
+	Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
 	SWCSpectrum f_(0.f);
 	for (int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))

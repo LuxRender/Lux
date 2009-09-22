@@ -42,7 +42,7 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	const float eta2 = eta * eta;
 	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
-	if (sint2 > 1.f) {
+	if (sint2 >= 1.f) {
 		*f_ = 0.f;
 		*pdf = 0.f;
 		if (pdfBack)
@@ -109,7 +109,7 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 	const float eta2 = eta * eta;
 	const float sint2 = eta2 * sini2;
 	// Handle total internal reflection for transmission
-	if (sint2 > 1.f)
+	if (sint2 >= 1.f)
 		return;	
 	SWCSpectrum F;
 	if (entering)
