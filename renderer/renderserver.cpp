@@ -349,9 +349,6 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	vector<string> tmpFileList;
-	char buf[6];
-	snprintf(buf, 6, "%05d", listenPort);
-	tmpFileList.push_back(string(buf));
 	try {
 		boost::asio::io_service io_service;
 		tcp::endpoint endpoint(tcp::v4(), listenPort);
@@ -409,6 +406,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 						stream << serverThread->renderServer->currentSID << endl;
 
 						tmpFileList.clear();
+						char buf[6];
+						snprintf(buf, 6, "%05d", listenPort);
+						tmpFileList.push_back(string(buf));
 					} else
 						stream << "BUSY" << endl;
 					break;
