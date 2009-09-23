@@ -55,7 +55,10 @@ public:
 		return SWCSpectrum(tspack, BBSPD);
 	}
 	virtual void SetPower(float power, float area) {
-		BBSPD->Scale(power / (area * M_PI * BBSPD->Y()));
+		float Y = BBSPD->Y();
+		if (!(Y > 0))
+			return;
+		BBSPD->Scale(power / (area * M_PI * Y));
 	}
 
 private:
