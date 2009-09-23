@@ -61,6 +61,9 @@ int threads;
 bool parseError;
 
 void engineThread() {
+	// NOTE - lordcrc - initialize rand()
+	srand(time(NULL));
+
     ParseFile(sceneFileName.c_str());
     if (luxStatistics("sceneIsReady") == 0.)
         parseError = true;

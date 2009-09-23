@@ -3681,6 +3681,9 @@ void LuxGui::EngineThread(wxString filename) {
 
 	chdir(fullPath.branch_path().string().c_str());
 
+	// NOTE - lordcrc - initialize rand()
+	srand(time(NULL));
+
 	// if stdin is input, don't use full path
 	if (filename == wxString::FromAscii("-"))
 		ParseFile(filename.fn_str());
