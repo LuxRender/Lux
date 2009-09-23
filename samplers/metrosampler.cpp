@@ -270,10 +270,14 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	for(u_int i = 0; i < newContributions.size(); ++i) {
 		const float ly = newContributions[i].color.Y();
 		if (ly > 0.f) {
-			if (useVariance && newContributions[i].variance > 0.f)
-				newLY += ly * newContributions[i].variance;
-			else
-				newLY += ly;
+			if (isinf(ly))
+				newContributions[i].color = XYZColor(0.f);
+			else {
+				if (useVariance && newContributions[i].variance > 0.f)
+					newLY += ly * newContributions[i].variance;
+				else
+					newLY += ly;
+			}
 		}
 	}
 	// calculate meanIntensity
