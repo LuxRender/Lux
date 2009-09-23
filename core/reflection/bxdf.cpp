@@ -270,7 +270,7 @@ SWCSpectrum SingleBSDF::f(const TsPack *tspack, const Vector &woW,
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
 	else
-		flags = 0;
+		flags = static_cast<BxDFType>(0);
 	if (!bxdf->MatchesFlags(flags))
 		return SWCSpectrum(0.f);
 	SWCSpectrum f_(0.f);
@@ -412,7 +412,7 @@ SWCSpectrum MultiBSDF::f(const TsPack *tspack, const Vector &woW,
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
 	else
-		flags = 0;
+		flags = static_cast<BxDFType>(0);
 	Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
 	SWCSpectrum f_(0.f);
 	for (int i = 0; i < nBxDFs; ++i)
