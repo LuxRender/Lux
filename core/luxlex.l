@@ -72,25 +72,31 @@ extern void yyerror( const char *str );
 void include_push(char *filename) {
 	if (includeStack.size() > 32)
 		luxError(LUX_NESTING,LUX_SEVERE,"Only 32 levels of nested Include allowed in scene files.");
-	IncludeInfo ii;
-	extern string current_file;
-	ii.filename = current_file;
-	ii.bufState = YY_CURRENT_BUFFER;
-	ii.lineNum = line_num;
-	includeStack.push_back(ii);
+    else {
+        // Dade - Fix for BUG 570: including not existing files doesn't lead
+        // anymore to a crash
 
-	current_file = filename;
-	line_num = 1;
+        FILE *newFile = fopen(filename, "r");
+        if (!newFile) {
+            //Severe("Unable to open included scene file \"%s\"", filename);
+            std::stringstream ss;
+            ss<<"Unable to open included scene file "<<filename;
+            luxError(LUX_NOFILE,LUX_SEVERE,ss.str().c_str());
+        } else {
+            IncludeInfo ii;
+            extern string current_file;
+            ii.filename = current_file;
+            ii.bufState = YY_CURRENT_BUFFER;
+            ii.lineNum = line_num;
+            includeStack.push_back(ii);
 
-	yyin = fopen(filename, "r");
-	if (!yyin)
-	{
-		//Severe("Unable to open included scene file \"%s\"", filename);
-		std::stringstream ss;
-		ss<<"Unable to open included scene file "<<filename;
-		luxError(LUX_NOFILE,LUX_SEVERE,ss.str().c_str());
-	}
-	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+            current_file = filename;
+            line_num = 1;
+
+        	yyin = newFile;
+        	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+        }
+    }
 }
 
 void include_pop(void)
