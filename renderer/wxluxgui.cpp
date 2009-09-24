@@ -3451,7 +3451,7 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 
 void LuxGui::OnError(wxLuxErrorEvent &event) {
 	std::stringstream ss("");
-	ss << boost::posix_time::second_clock::local_time() << ' ';
+	ss << '[' << boost::posix_time::second_clock::local_time() << ' ';
 	switch(event.GetError()->GetSeverity()) {
 		case LUX_DEBUG:
 			ss << "Debug: "; break;
@@ -3464,7 +3464,29 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 		case LUX_SEVERE:
 			ss << "Severe error: ";	break;
 	}
-	ss << "(" << event.GetError()->GetCode() << ") ";
+	ss << event.GetError()->GetCode() << "] ";
+
+	// Dade - RenderWill's patch (feature request 568) for colored message
+	switch(event.GetError()->GetSeverity()) {
+		case LUX_DEBUG:
+			m_logTextCtrl->SetDefaultStyle(*wxBLUE);
+			break;
+		case LUX_WARNING:
+			m_logTextCtrl->SetDefaultStyle(*wxCYAN);
+			break;
+		case LUX_SEVERE:
+		case LUX_ERROR:
+			m_logTextCtrl->SetDefaultStyle(*wxRED);
+			break;
+		case LUX_INFO:
+		default:
+			m_logTextCtrl->SetDefaultStyle(*wxGREEN);
+			break;
+    }
+	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
+
+	m_logTextCtrl->SetDefaultStyle(*wxBLACK);
+	ss.str("");
 	ss << event.GetError()->GetMessage() << std::endl;
 	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
 	m_logTextCtrl->ShowPosition(m_logTextCtrl->GetLastPosition());
