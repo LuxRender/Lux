@@ -3450,6 +3450,12 @@ void LuxGui::OnExit(wxCloseEvent& event) {
 }
 
 void LuxGui::OnError(wxLuxErrorEvent &event) {
+	static const wxColour debugColour = wxColour(0, 0, 0);
+	static const wxColour infoColour = wxColour(0, 255, 0);
+	static const wxColour warningColour = wxColour(255, 128, 0);
+	static const wxColour errorColour = wxColour(255, 0, 0);
+	static const wxColour severeColour = wxColour(255, 0, 0);
+
 	std::stringstream ss("");
 	ss << '[' << boost::posix_time::second_clock::local_time() << ' ';
 	switch(event.GetError()->GetSeverity()) {
@@ -3469,18 +3475,20 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 	// Dade - RenderWill's patch (feature request 568) for colored message
 	switch(event.GetError()->GetSeverity()) {
 		case LUX_DEBUG:
-			m_logTextCtrl->SetDefaultStyle(*wxBLUE);
-			break;
-		case LUX_WARNING:
-			m_logTextCtrl->SetDefaultStyle(*wxCYAN);
-			break;
-		case LUX_SEVERE:
-		case LUX_ERROR:
-			m_logTextCtrl->SetDefaultStyle(*wxRED);
+			m_logTextCtrl->SetDefaultStyle(debugColour);
 			break;
 		case LUX_INFO:
 		default:
-			m_logTextCtrl->SetDefaultStyle(*wxGREEN);
+			m_logTextCtrl->SetDefaultStyle(infoColour);
+			break;
+		case LUX_WARNING:
+			m_logTextCtrl->SetDefaultStyle(warningColour);
+			break;
+		case LUX_ERROR:
+			m_logTextCtrl->SetDefaultStyle(errorColour);
+			break;
+		case LUX_SEVERE:
+			m_logTextCtrl->SetDefaultStyle(severeColour);
 			break;
     }
 	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
