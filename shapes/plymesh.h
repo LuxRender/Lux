@@ -28,30 +28,10 @@ namespace lux
 {
 
 // PlyMesh Declarations
-class PlyMesh : public Shape {
+class PlyMesh {
 public:
 	// PlyMesh Public Methods
-	PlyMesh(const Transform &o2w, bool ro, string filename, bool smooth);
-	virtual ~PlyMesh();
-	virtual BBox ObjectBound() const;
-	virtual BBox WorldBound() const;
-	virtual bool CanIntersect() const { return false; }
-	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
-			const PrimitiveRefinementHints& refineHints,
-			boost::shared_ptr<Primitive> thisPtr);
-	friend class Triangle;
-	template <class T> friend class VertexTexture;
-
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
-public:
-	// PlyMesh Data
-	int ntris, nverts;
-	int *vertexIndex;
-	Point *p;
-	Normal *n;
-	Vector *s;
-	float *uvs;
-	vector<boost::shared_ptr<Shape> > triPtrs;
 };
 
 }//namespace lux

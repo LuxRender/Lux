@@ -33,203 +33,159 @@ namespace lux
 // rply vertex callback
 static int VertexCB(p_ply_argument argument)
 {
-	long current_cmpnt = 0;
-	void* pointer_usrdata = NULL;
-	ply_get_argument_user_data(argument, &pointer_usrdata, &current_cmpnt);
+	long userIndex = 0;
+	void *userData = NULL;
+	ply_get_argument_user_data(argument, &userData, &userIndex);
 
-	PlyMesh* mesh = static_cast<PlyMesh*>(pointer_usrdata);
+	Point* p = *static_cast<Point **>(userData);
 
-	long vertindex;
-	ply_get_argument_element(argument, NULL, &vertindex);
+	long vertIndex;
+	ply_get_argument_element(argument, NULL, &vertIndex);
 
-	if(current_cmpnt == 0)
-		mesh->p[vertindex].x = (float) ply_get_argument_value(argument);
-	else if(current_cmpnt == 1)
-		mesh->p[vertindex].y = (float) ply_get_argument_value(argument);
-	else if(current_cmpnt == 2)
-		mesh->p[vertindex].z = (float) ply_get_argument_value(argument);
+	if (userIndex == 0)
+		p[vertIndex].x =
+			static_cast<float>(ply_get_argument_value(argument));
+	else if (userIndex == 1)
+		p[vertIndex].y =
+			static_cast<float>(ply_get_argument_value(argument));
+	else if (userIndex == 2)
+		p[vertIndex].z =
+			static_cast<float>(ply_get_argument_value(argument));
+/*	else
+		return 0;*/
 
-    return 1;
+	return 1;
 }
 
 // rply face callback
 static int FaceCB(p_ply_argument argument)
 {
-	void* pointer_usrdata = NULL;
-	ply_get_argument_user_data(argument, &pointer_usrdata, NULL);
+	void *userData = NULL;
+	ply_get_argument_user_data(argument, &userData, NULL);
 
-	PlyMesh* mesh = static_cast<PlyMesh*>(pointer_usrdata);
+	int *verts = *static_cast<int **>(userData);
 
-	long tri_index;
-	ply_get_argument_element(argument, NULL, &tri_index);
+	long triIndex;
+	ply_get_argument_element(argument, NULL, &triIndex);
 
-	long length, value_index;
-    ply_get_argument_property(argument, NULL, &length, &value_index);
+	long length, valueIndex;
+	ply_get_argument_property(argument, NULL, &length, &valueIndex);
 
-	if(value_index >= 0 && value_index < 3)
-	{
-		mesh->vertexIndex[(tri_index * 3) + value_index] =
-			(int)ply_get_argument_value(argument);
-	}
+	if (valueIndex >= 0 && valueIndex < 3) {
+		verts[triIndex * 3 + valueIndex] =
+			static_cast<int>(ply_get_argument_value(argument));
+	}/* else
+		return 0;*/
 
-    return 1;
-}
-
-// PlyMesh Method Definitions
-PlyMesh::PlyMesh(const Transform &o2w, bool ro, string filename, bool smooth)
-	: Shape(o2w, ro) {
-
-	printf("Loading PLY mesh file: '%s'...\n", filename.c_str());
-
-    p_ply plyfile = ply_open(filename.c_str(), NULL);
-
-	if(!plyfile) {
-		std::stringstream ss;
-		ss<<"Unable to read PLY mesh file '"<<filename<<"'";
-		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
-		return;
-	}
-
-	if(!ply_read_header(plyfile)) {
-		std::stringstream ss;
-		ss<<"Unable to read PLY header '"<<filename<<"'";
-		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
-		return;
-	}
-
-	long plyNverts = ply_set_read_cb(plyfile, "vertex", "x", VertexCB, this, 0);
-	nverts = (int) plyNverts;
-	p = new Point[nverts];
-	ply_set_read_cb(plyfile, "vertex", "y", VertexCB, this, 1);
-    ply_set_read_cb(plyfile, "vertex", "z", VertexCB, this, 2);
-
-	long plyNtris = ply_set_read_cb(plyfile, "face", "vertex_indices", FaceCB, this, 0);
-	ntris = (int) plyNtris;
-	vertexIndex = new int[3 * ntris];
-
-	uvs = NULL;
-	n = NULL;
-	s = NULL;
-
-	if(!ply_read(plyfile)) {
-		std::stringstream ss;
-		ss<<"Unable to parse PLY file '"<<filename<<"'";
-		luxError(LUX_BUG,LUX_ERROR,ss.str().c_str());
-		nverts = ntris = 0;
-		return;
-	}
-
-    ply_close(plyfile);
-
-	// Transform mesh vertices to world space
-	for (int i  = 0; i < nverts; ++i)
-		p[i] = ObjectToWorld(p[i]);
-
-	if(!smooth) return;
-
-
-	// NOTE - radiance - normal generation unfinished, does not work correctly yet !
-
-
-	// generate face normals if 'smooth' = true
-	n = new Normal[nverts];
-	int *nf = new int[nverts];
-	for(int i=0; i < nverts; i++) {
-		n[i] = Normal(0., 0., 0.);
-		nf[i] = 0;
-	}
-
-	for(int tri=0; tri < ntris; tri++) {
-		/* Compute edge vectors */
-		float x10 = p[vertexIndex[(3*tri)+1]].x - p[vertexIndex[(3*tri)]].x;
-		float y10 = p[vertexIndex[(3*tri)+1]].y - p[vertexIndex[(3*tri)]].y;
-		float z10 = p[vertexIndex[(3*tri)+1]].z - p[vertexIndex[(3*tri)]].z;
-		float x12 = p[vertexIndex[(3*tri)+1]].x - p[vertexIndex[(3*tri)+2]].x;
-		float y12 = p[vertexIndex[(3*tri)+1]].y - p[vertexIndex[(3*tri)+2]].y;
-		float z12 = p[vertexIndex[(3*tri)+1]].z - p[vertexIndex[(3*tri)+2]].z;
-
-		/* Compute the cross product */
-		float cpx = (z10 * y12) - (y10 * z12);
-		float cpy = (x10 * z12) - (z10 * x12);
-		float cpz = (y10 * x12) - (x10 * y12);
-
-		/* Normalize the result to get the unit-length facet normal */
-		float r = sqrtf(cpx * cpx + cpy * cpy + cpz * cpz);
-		float nx = cpx / r;
-		float ny = cpy / r;
-		float nz = cpz / r;
-		Normal fn = Normal(nx, ny, nz);
-
-		// add to face normal of triangle's vertex normals
-		n[vertexIndex[3*tri]] += fn;
-		n[vertexIndex[(3*tri)+1]] += fn;
-		n[vertexIndex[(3*tri)+2]] += fn;
-
-		// increment contributions
-		nf[vertexIndex[3*tri]]++;
-		nf[vertexIndex[(3*tri)+1]]++;
-		nf[vertexIndex[(3*tri)+2]]++;
-	}
-
-	// divide by contributions
-	for(int i=0; i < nverts; i++) {
-		n[i] /= nf[i];
-	}
-
-	delete[] nf;
-
-	printf("Done.\n");
-}
-PlyMesh::~PlyMesh() {
-	delete[] vertexIndex;
-	delete[] p;
-	delete[] s;
-	delete[] n;
-	delete[] uvs;
-}
-BBox PlyMesh::ObjectBound() const {
-	BBox bobj;
-	for (int i = 0; i < nverts; i++)
-		bobj = Union(bobj, WorldToObject(p[i]));
-	return bobj;
-}
-BBox PlyMesh::WorldBound() const {
-	BBox worldBounds;
-	for (int i = 0; i < nverts; i++)
-		worldBounds = Union(worldBounds, p[i]);
-	return worldBounds;
-}
-
-class WaldTriangleSharedPtr : public MeshWaldTriangle {
-public:
-	WaldTriangleSharedPtr(Mesh* m, int n, boost::shared_ptr<Primitive> aPtr)
-	: MeshWaldTriangle(m,n), ptr(aPtr)
-	{
-	}
-	virtual ~WaldTriangleSharedPtr() { }
-private:
-	boost::shared_ptr<Primitive> ptr;
-};
-
-void PlyMesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
-		const PrimitiveRefinementHints& refineHints,
-		boost::shared_ptr<Primitive> thisPtr)
-{
-	boost::shared_ptr<Primitive> o (
-			new WaldTriangleSharedPtr((Mesh *)this, 0, thisPtr));
-	refined.push_back(o);
-	for (int i = 0; i < ntris; ++i) {
-		boost::shared_ptr<Primitive> o (
-				new MeshWaldTriangle((Mesh *)this, i));
-		refined.push_back(o);
-	}
+	return 1;
 }
 
 Shape* PlyMesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	string filename = params.FindOneString("filename", "none");
 	bool smooth = params.FindOneBool("smooth", false);
-	return new PlyMesh(o2w, reverseOrientation, filename, smooth);
+
+	std::stringstream ss;
+	ss << "Loading PLY mesh file: '" << filename << "'...";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+	p_ply plyfile = ply_open(filename.c_str(), NULL);
+	if (!plyfile) {
+		ss.str("");
+		ss << "Unable to read PLY mesh file '" << filename << "'";
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		return NULL;
+	}
+
+	if (!ply_read_header(plyfile)) {
+		ss.str("");
+		ss << "Unable to read PLY header from '" << filename << "'";
+		luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+		return NULL;
+	}
+
+	Point *p;
+	long plyNbVerts = ply_set_read_cb(plyfile, "vertex", "x",
+		VertexCB, &p, 0);
+	ply_set_read_cb(plyfile, "vertex", "y", VertexCB, &p, 1);
+	ply_set_read_cb(plyfile, "vertex", "z", VertexCB, &p, 2);
+	if (plyNbVerts <= 0) {
+		ss.str("");
+		ss << "No vertices found in '" << filename << "'";
+		luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+		return NULL;
+	}
+
+	int *vertexIndex;
+	long plyNbTris = ply_set_read_cb(plyfile, "face", "vertex_indices",
+		FaceCB, &vertexIndex, 0);
+	if (plyNbTris <= 0) {
+		ss.str("");
+		ss << "No triangles found in '" << filename << "'";
+		luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+		return NULL;
+	}
+
+	p = new Point[plyNbVerts];
+	vertexIndex = new int[3 * plyNbTris];
+	Normal *n = NULL;
+
+	if (!ply_read(plyfile)) {
+		ss.str("");
+		ss << "Unable to parse PLY file '" << filename << "'";
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		delete[] p;
+		delete[] vertexIndex;
+		return NULL;
+	}
+
+	ply_close(plyfile);
+
+	if (smooth) {
+		// generate face normals
+		n = new Normal[plyNbVerts];
+		int *nf = new int[plyNbVerts];
+		for (int i = 0; i < plyNbVerts; ++i) {
+			n[i] = Normal(0.f, 0.f, 0.f);
+			nf[i] = 0.f;
+		}
+
+		for (int tri = 0; tri < plyNbTris; ++tri) {
+			/* Compute edge vectors */
+			const Vector e10(p[vertexIndex[3 * tri + 1]] -
+				p[vertexIndex[3 * tri]]);
+			const Vector e12(p[vertexIndex[3 * tri + 1]] -
+				p[vertexIndex[3 * tri + 2]]);
+
+			Normal fn(Normalize(Cross(e12, e10)));
+
+			// add to face normal of triangle's vertex normals
+			n[vertexIndex[3 * tri]] += fn;
+			n[vertexIndex[3 * tri + 1]] += fn;
+			n[vertexIndex[3 * tri + 2]] += fn;
+
+			// increment contributions
+			nf[vertexIndex[3 * tri]]++;
+			nf[vertexIndex[3 * tri + 1]]++;
+			nf[vertexIndex[3 * tri + 2]]++;
+		}
+
+		// divide by contributions
+		for (int i = 0; i < plyNbVerts; ++i)
+			n[i] /= nf[i];
+
+		delete[] nf;
+	}
+
+	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
+		plyNbVerts, p, n, NULL, Mesh::TRI_AUTO, plyNbTris, vertexIndex,
+		Mesh::QUAD_QUADRILATERAL, 0, NULL, Mesh::SUBDIV_LOOP, 0,
+		boost::shared_ptr<Texture<float> >(), 1.f, 0.f,
+		false, false);
+	delete[] p;
+	delete[] n;
+	delete[] vertexIndex;
+	return mesh;
 }
 
 static DynamicLoader::RegisterShape<PlyMesh> r("plymesh");
