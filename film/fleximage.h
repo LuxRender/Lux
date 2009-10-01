@@ -69,6 +69,7 @@ public:
 	virtual u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
 	virtual const BufferConfig& GetBufferConfig( u_int index ) const { return bufferConfigs[index]; }
 	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
+        virtual const BufferGroup& GetBufferGroup( u_int index ) const { return bufferGroups[index]; }
 	virtual void SetGroupName(u_int index, const string& name);
 	virtual string GetGroupName(u_int index) const;
 	virtual void SetGroupEnable(u_int index, bool status);

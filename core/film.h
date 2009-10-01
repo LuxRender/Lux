@@ -301,7 +301,7 @@ public:
 		}
 	}
 
-	Buffer *getBuffer(int index) {
+	Buffer *getBuffer(int index) const {
 		return buffers[index];
 	}
 	double numberOfSamples;
