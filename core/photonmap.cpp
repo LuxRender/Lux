@@ -547,7 +547,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			}
 		}
 		// Sample the wavelengths
-		thr_wl->Sample(RadicalInverse(j, 2), RadicalInverse(j, 3));
+		thr_wl->Sample(RadicalInverse(nshot, 2), RadicalInverse(nshot, 3));
 
 		// Trace a photon path and store contribution
 		// Choose 4D sample values for photon
