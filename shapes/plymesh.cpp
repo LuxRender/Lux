@@ -57,6 +57,33 @@ static int VertexCB(p_ply_argument argument)
 	return 1;
 }
 
+// rply normal callback
+static int NormalCB(p_ply_argument argument)
+{
+	long userIndex = 0;
+	void *userData = NULL;
+	ply_get_argument_user_data(argument, &userData, &userIndex);
+
+	Normal* n = *static_cast<Normal **>(userData);
+
+	long vertIndex;
+	ply_get_argument_element(argument, NULL, &vertIndex);
+
+	if (userIndex == 0)
+		n[vertIndex].x =
+			static_cast<float>(ply_get_argument_value(argument));
+	else if (userIndex == 1)
+		n[vertIndex].y =
+			static_cast<float>(ply_get_argument_value(argument));
+	else if (userIndex == 2)
+		n[vertIndex].z =
+			static_cast<float>(ply_get_argument_value(argument));
+/*	else
+		return 0;*/
+
+	return 1;
+}
+
 // rply face callback
 static int FaceCB(p_ply_argument argument)
 {
@@ -126,9 +153,18 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		return NULL;
 	}
 
+	Normal *n;
+	long plyNbNormals = ply_set_read_cb(plyfile, "vertex", "nx",
+		NormalCB, &n, 0);
+	ply_set_read_cb(plyfile, "vertex", "ny", NormalCB, &n, 1);
+	ply_set_read_cb(plyfile, "vertex", "nz", NormalCB, &n, 2);
+
 	p = new Point[plyNbVerts];
 	vertexIndex = new int[3 * plyNbTris];
-	Normal *n = NULL;
+	if (plyNbNormals <= 0)
+		n = NULL;
+	else
+		n = new Normal[plyNbNormals];
 
 	if (!ply_read(plyfile)) {
 		ss.str("");
@@ -136,12 +172,19 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 		delete[] p;
 		delete[] vertexIndex;
+		delete[] n;
 		return NULL;
 	}
 
 	ply_close(plyfile);
 
-	if (smooth) {
+	if (smooth || plyNbVerts != plyNbNormals) {
+		if (n) {
+			ss.str("");
+			ss << "Overriding plymesh normals";
+			luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+			delete[] n;
+		}
 		// generate face normals
 		n = new Normal[plyNbVerts];
 		int *nf = new int[plyNbVerts];
