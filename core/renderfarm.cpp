@@ -295,7 +295,7 @@ void RenderFarm::send(const std::string &command, const std::string &name,
 		file = params.FindOneString(std::string("mapname"), file);
 		if (file.size()) {
 			std::string s;
-			std::ifstream in(file.c_str(), std::ios::out | std::ios::binary);
+			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
 			while (getline(in, s))
 				netBuffer << s << "\n";
 			netBuffer << "LUX_END_FILE\n";
@@ -304,7 +304,7 @@ void RenderFarm::send(const std::string &command, const std::string &name,
 		file = params.FindOneString(std::string("iesname"), file);
 		if (file.size()) {
 			std::string s;
-			std::ifstream in(file.c_str(), std::ios::out | std::ios::binary);
+			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
 			while (getline(in, s))
 				netBuffer << s << "\n";
 			netBuffer << "LUX_END_FILE\n";
