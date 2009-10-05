@@ -266,7 +266,7 @@ void RenderThread::render(RenderThread *myThread) {
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		++xt.sec;
-	boost::thread::sleep(xt);
+		boost::thread::sleep(xt);
 	}
 
 	// initialize the thread's rangen
@@ -461,10 +461,10 @@ void Scene::Render() {
     preprocessDone = true;
 	Context::luxSceneReady();
 
-    // initial thread signal is paused
+	// initial thread signal is paused
     CurThreadSignal = RUN;
 
-    // add a thread
+	// add a thread
     CreateRenderThread();
 
 	// Dade - BUG 564 fix: threads where removed from the array while the

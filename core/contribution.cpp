@@ -93,10 +93,16 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 		// CFull is empty and
 		// CFree contains available buffers.
 
-		// Store one free buffer for later, this way
-		// we don't have to lock the pool lock again.
-		ContributionBuffer *cold = CFree.back();
-		CFree.pop_back();
+		// Dade - Bug 582 fix: allocate a new buffer if CFree is empty.
+		ContributionBuffer *cold;
+		if (CFree.size() < 1)
+			cold = new ContributionBuffer();
+		else {
+			// Store one free buffer for later, this way
+			// we don't have to lock the pool lock again.
+			cold = CFree.back();
+			CFree.pop_back();
+		}
 
 		// release the pool lock
 		poolAction.unlock();
