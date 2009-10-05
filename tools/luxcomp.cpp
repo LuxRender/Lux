@@ -210,6 +210,7 @@ int main(int ac, char *av[]) {
 				("help,h", "Produce help message")
 				("verbosity,V", po::value< int >(), "Log output verbosity")
 				("type,t", po::value< int >(), "Select the type of comparison")
+				("error,e", po::value< double >(), "Error treshold for a failure")
 				;
 
 		// Hidden options, will be allowed both on command line and
@@ -332,16 +333,28 @@ int main(int ac, char *av[]) {
 
 					}
 					std::cout << result << std::endl;
+
+					if (vm.count("error")) {
+						double treshold = vm["error"].as<double>();
+						if (result >= treshold) {
+							ss.str("");
+							ss << "luxcomp: error above the treshold";
+							luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+							return 10;
+						}
+					}
 				}
 			} else {
 				ss.str("");
 				ss << "luxcomp: wrong input files count";
 				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+				return 1;
 			}
 		} else {
 			ss.str("");
 			ss << "luxcomp: missing input files";
 			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			return 1;
 		}
 	} catch (std::exception & e) {
 		std::stringstream ss;
