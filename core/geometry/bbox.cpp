@@ -53,6 +53,11 @@ void BBox::BoundingSphere(Point *c, float *rad) const {
 	*c = .5f * pMin + .5f * pMax;
 	*rad = Inside(*c) ? Distance(*c, pMax) : 0.f;
 }
+// NOTE - lordcrc - BBox::IntersectP relies on IEEE 754 behaviour of infinity and /fp:fast breaks this
+#if defined(WIN32) && !defined(__CYGWIN__)
+#pragma float_control(push)
+#pragma float_control(precise, on)
+#endif
 bool BBox::IntersectP(const Ray &ray, float *hitt0,
 		float *hitt1) const {
 	float t0 = ray.mint, t1 = ray.maxt;
@@ -71,5 +76,8 @@ bool BBox::IntersectP(const Ray &ray, float *hitt0,
 	if (hitt1) *hitt1 = t1;
 	return true;
 }
+#if defined(WIN32) && !defined(__CYGWIN__)
+#pragma float_control(pop)
+#endif
 
 }
