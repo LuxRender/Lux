@@ -229,7 +229,7 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddFloat(s, (float*)(params[i]));
 		if (s == "postscale")
 			AddFloat(s, (float*)(params[i]));
-		if (s == "power" && sn == "area")
+		if (s == "power" && pn == "area")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "prescale")
 			AddFloat(s, (float*)(params[i]));
