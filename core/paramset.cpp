@@ -347,37 +347,138 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddFloat(s, (float*)(params[i]));
 	
 		//int parameters
-		if(s=="pixelsamples") AddInt(s,(int*)(params[i]));
-		if(s=="xsamples") AddInt(s,(int*)(params[i]));
-		if(s=="ysamples") AddInt(s,(int*)(params[i]));
-		if(s=="xresolution") AddInt(s,(int*)(params[i]));
-		if(s=="yresolution") AddInt(s,(int*)(params[i]));
-		if(s=="writefrequency") AddInt(s,(int*)(params[i]));
-		if(s=="premultiplyalpha") AddInt(s,(int*)(params[i]));
-		if(s=="nu") AddInt(s,(int*)(params[i]));
-		if(s=="nv") AddInt(s,(int*)(params[i]));
-		if(s=="uorder") AddInt(s,(int*)(params[i]));
-		if(s=="vorder") AddInt(s,(int*)(params[i]));
-		if(s=="nlevels") AddInt(s,(int*)(params[i]));
-		if(s=="indices") AddInt(s,(int*)(params[i]),FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="intersectcost") AddInt(s,(int*)(params[i]));
-		if(s=="traversalcost") AddInt(s,(int*)(params[i]));
-		if(s=="maxprims") AddInt(s,(int*)(params[i]));
-		if(s=="maxdepth") AddInt(s,(int*)(params[i]));
-		if(s=="dimension") AddInt(s,(int*)(params[i]));
-		if(s=="octaves") AddInt(s,(int*)(params[i]));
-		if(s=="nx") AddInt(s,(int*)(params[i]));
-		if(s=="ny") AddInt(s,(int*)(params[i]));
-		if(s=="nz") AddInt(s,(int*)(params[i]));
-		if(s=="nsamples") AddInt(s,(int*)(params[i]));
-		if(s=="causticphotons") AddInt(s,(int*)(params[i]));
-		if(s=="indirectphotons") AddInt(s,(int*)(params[i]));
-		if(s=="directphotons") AddInt(s,(int*)(params[i]));
-		if(s=="nused") AddInt(s,(int*)(params[i]));
-		if(s=="finalgathersamples") AddInt(s,(int*)(params[i]));
-		if(s=="maxspeculardepth") AddInt(s,(int*)(params[i]));
-		if(s=="maxindirectdepth") AddInt(s,(int*)(params[i]));
-		
+		if (s == "blades")
+			AddInt(s, (int*)(params[i]));
+		if (s == "causticphotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "chainlength")
+			AddInt(s, (int*)(params[i]));
+		if (s == "coltype")
+			AddInt(s, (int*)(params[i]));
+		if (s == "costsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffusereflectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffusereflectsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffuserefractdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffuserefractsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "dimension")
+			AddInt(s, (int*)(params[i]));
+		if (s == "directphotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "directsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "discardmipmaps")
+			AddInt(s, (int*)(params[i]));
+		if (s == "displayinterval")
+			AddInt(s, (int*)(params[i]));
+		if (s == "eyedepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "finalgathersamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyreflectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyreflectsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyrefractdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyrefractsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "haltspp")
+			AddInt(s, (int*)(params[i]));
+		if( s == "indices")
+			AddInt(s, (int*)(params[i]),
+				FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if (s == "indirectphotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "indirectsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "intersectcost")
+			AddInt(s, (int*)(params[i]));
+		if (s == "lightdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxconsecrejects")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxindirectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxphotondepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxprims")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxprimsperleaf")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxspeculardepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nlevels")
+			AddInt(s, (int*)(params[i]));
+		if (s == "noisedepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nphotonused")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nsets")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nsubdivlevels")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nu")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nused")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nv")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nx")
+			AddInt(s, (int*)(params[i]));
+		if (s == "ny")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nz")
+			AddInt(s, (int*)(params[i]));
+		if (s == "octaves")
+			AddInt(s, (int*)(params[i]));
+		if (s == "pixelsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "power" && pn == "perspective")
+			AddInt(s, (int*)(params[i]));
+/*		if (s == "quadindices")
+			AddInt(s, (int*)(params[i]));*/ //FIXME - there's no way of knowinf the number of elements
+		if (s == "radiancephotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "reject_warmup")
+			AddInt(s, (int*)(params[i]));
+		if (s == "skipfactor")
+			AddInt(s, (int*)(params[i]));
+		if (s == "specularreflectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "specularrefractdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "spheres")
+			AddInt(s, (int*)(params[i]));
+		if (s == "traversalcost")
+			AddInt(s, (int*)(params[i]));
+		if (s == "treetype")
+			AddInt(s, (int*)(params[i]));
+/*		if( s == "triindices")
+			AddInt(s, (int*)(params[i]));*/ //FIXME - there's no way of knowing the number of elements
+		if (s == "uorder")
+			AddInt(s, (int*)(params[i]));
+		if (s == "vorder")
+			AddInt(s, (int*)(params[i]));
+		if (s == "writeinterval")
+			AddInt(s, (int*)(params[i]));
+		if (s == "xresolution")
+			AddInt(s, (int*)(params[i]));
+		if (s == "xsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "yresolution")
+			AddInt(s, (int*)(params[i]));
+		if (s == "ysamples")
+			AddInt(s, (int*)(params[i]));
+	
 		
 		//bool parameters
 		if(s=="jitter") AddBool(s,(bool*)(params[i]));
@@ -385,6 +486,8 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="trilinear") AddBool(s,(bool*)(params[i]));
 		if(s=="finalgather") AddBool(s,(bool*)(params[i]));
 		if(s=="directwithphotons") AddBool(s,(bool*)(params[i]));
+		if (s == "premultiplyalpha")
+			AddBool(s, (bool*)(params[i]));
 		
 		//string parameters
 		if(s=="filename") { string *str=new string(params[i]); std::cout<<*str<<std::endl; AddString(s,str); delete str; }
