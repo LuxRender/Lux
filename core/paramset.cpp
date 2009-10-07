@@ -165,8 +165,6 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddFloat(s, (float*)(params[i]));
 		if (s == "hither")
 			AddFloat(s, (float*)(params[i]));
-		if (s == "indirectscale")
-			AddFloat(s, (float*)(params[i]));
 		if (s == "innerradius")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "lacu")
@@ -190,10 +188,6 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if (s == "maxY")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "maxanisotropy")
-			AddFloat(s, (float*)(params[i]));
-		if (s == "maxdist")
-			AddFloat(s, (float*)(params[i]));
-		if (s == "maxerror")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "maxphotondist")
 			AddFloat(s, (float*)(params[i]));
@@ -308,6 +302,8 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddFloat(s, (float*)(params[i]));
 		if (s == "v11")
 			AddFloat(s, (float*)(params[i]));
+		if (s == "value")
+			AddFloat(s, (float*)(params[i]));
 		if (s == "variability")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "variation")
@@ -329,8 +325,8 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddFloat(s, (float*)(params[i]));
 		if (s == "wavelength")
 			AddFloat(s, (float*)(params[i]));
-		if (s == "wavelengths")
-			AddFloat(s, (float*)(params[i]));
+/*		if (s == "wavelengths")
+			AddFloat(s, (float*)(params[i]));*/ //FIXME - there's currently no way of getting the array length for irregular spectrum data
 		if (s == "width")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "xwidth")
@@ -341,11 +337,11 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddFloat(s, (float*)(params[i]));
 		if (s == "ywidth")
 			AddFloat(s, (float*)(params[i]));
-		if (s == "zmin")
-			AddFloat(s, (float*)(params[i]));
 		if (s == "zmax")
 			AddFloat(s, (float*)(params[i]));
-	
+		if (s == "zmin")
+			AddFloat(s, (float*)(params[i]));
+
 		//int parameters
 		if (s == "blades")
 			AddInt(s, (int*)(params[i]));
@@ -404,17 +400,15 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddInt(s, (int*)(params[i]));
 		if (s == "maxdepth")
 			AddInt(s, (int*)(params[i]));
-		if (s == "maxindirectdepth")
-			AddInt(s, (int*)(params[i]));
 		if (s == "maxphotondepth")
 			AddInt(s, (int*)(params[i]));
 		if (s == "maxprims")
 			AddInt(s, (int*)(params[i]));
 		if (s == "maxprimsperleaf")
 			AddInt(s, (int*)(params[i]));
-		if (s == "maxspeculardepth")
-			AddInt(s, (int*)(params[i]));
 		if (s == "nlevels")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nlights")
 			AddInt(s, (int*)(params[i]));
 		if (s == "noisedepth")
 			AddInt(s, (int*)(params[i]));
@@ -427,8 +421,6 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if (s == "nsubdivlevels")
 			AddInt(s, (int*)(params[i]));
 		if (s == "nu")
-			AddInt(s, (int*)(params[i]));
-		if (s == "nused")
 			AddInt(s, (int*)(params[i]));
 		if (s == "nv")
 			AddInt(s, (int*)(params[i]));
@@ -478,8 +470,7 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddInt(s, (int*)(params[i]));
 		if (s == "ysamples")
 			AddInt(s, (int*)(params[i]));
-	
-		
+
 		//bool parameters
 		if(s=="jitter") AddBool(s,(bool*)(params[i]));
 		if(s=="refineimmediately") AddBool(s,(bool*)(params[i]));
@@ -498,29 +489,45 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="strategy") AddString(s,(string*)(params[i]));
 		
 		//point parameters
-		if(s=="p1") AddPoint(s,(Point*)(params[i]));
-		if(s=="p2") AddPoint(s,(Point*)(params[i]));
-		if(s=="P") {
-			if (pn=="nurbs")
-				AddPoint(s,(Point*)(params[i]),FindOneInt("nu", i)*FindOneInt("nv", i));
+		if (s == "P") {
+			if (pn == "nurbs")
+				AddPoint(s, (Point*)(params[i]),
+					FindOneInt("nu", i) * FindOneInt("nv", i));
 			else
-				AddPoint(s,(Point*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+				AddPoint(s, (Point*)(params[i]),
+					FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
 		}
-		if(s=="p0") AddPoint(s,(Point*)(params[i]));
-		//if(s=="from") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
-		//if(s=="to") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
-		if(s=="from") { Point *p=new Point((float*)params[i]); AddPoint(s,p); delete p; }
-		if(s=="to") { Point *p=new Point((float*)params[i]); AddPoint(s,p); delete p; }
-				
-		
-		//normal paraneters
-		if(s=="N") AddNormal(s,(Normal*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if (s == "from")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "p0")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "p1")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "p2")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "to")
+			AddPoint(s,(Point*)(params[i]));
+
+		//normal parameters
+		if (s == "N")
+			AddNormal(s, (Normal*)(params[i]),
+				FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
 		
 		//vector parameters
-		if(s=="S") AddVector(s,(Vector*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="v1") AddVector(s,(Vector*)(params[i]));
-		if(s=="v2") AddVector(s,(Vector*)(params[i]));
-		if(s=="updir") AddVector(s,(Vector*)(params[i]));
+		if (s == "rotate")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "scale")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "sundir")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "translate")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "updir")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "v1")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "v2")
+			AddVector(s, (Vector*)(params[i]));
 		
 		//texture parameters
 		if(s=="bumpmap") AddTexture(s,std::string(params[i]));
@@ -544,13 +551,26 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if(s=="outside") AddTexture(s,std::string(params[i]));
 		
 		//color (RGBColor) parameters
-		if(s=="sigma_a") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="sigma_s") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="Le") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="L") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="I") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="tex1") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="tex2") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "L")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "Le")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "compo_key_color")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "sigma_a")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "sigma_s")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v00")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v01")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v10")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v11")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "value")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
 		
 		//unknown parameter
 		/*
