@@ -359,7 +359,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Adjust for round robin termination
 		if (i > 3)
 			p /= eye[i - 1].rrR;
-		if (nLight + nEye - i > 3) {
+		if (nLight + nEye - i > 4) {
 			if (i == nEye - 1)
 				p *= light[nLight - 1].rr;
 			else
@@ -383,7 +383,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Adjust for round robin termination
 		if (i > 3)
 			p /= light[i - 1].rr;
-		if (nEye + nLight - i > 3) {
+		if (nEye + nLight - i > 4) {
 			if (i == nLight - 1)
 				p *= eye[nEye - 1].rrR;
 			else
