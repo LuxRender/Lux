@@ -3458,17 +3458,26 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 
 	std::stringstream ss("");
 	ss << '[' << boost::posix_time::second_clock::local_time() << ' ';
+	bool warning = false;
+	bool error = false;
 	switch(event.GetError()->GetSeverity()) {
 		case LUX_DEBUG:
-			ss << "Debug: "; break;
+			ss << "Debug: ";
+			break;
 		case LUX_INFO:
-			ss << "Info: ";	break;
+			ss << "Info: ";
+			break;
 		case LUX_WARNING:
-			ss << "Warning: ";	break;
+			warning = true;
+			ss << "Warning: ";
+			break;
 		case LUX_ERROR:
-			ss << "Error: ";	break;
+			error = true;
+			ss << "Error: ";
+			break;
 		case LUX_SEVERE:
-			ss << "Severe error: ";	break;
+			ss << "Severe error: ";
+			break;
 	}
 	ss << event.GetError()->GetCode() << "] ";
 
@@ -3498,6 +3507,25 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 	ss << event.GetError()->GetMessage() << std::endl;
 	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
 	m_logTextCtrl->ShowPosition(m_logTextCtrl->GetLastPosition());
+
+	// Dade - Feature request #584: show a dialog in case of warning/error while
+	// doing the parsing
+	if ((m_guiRenderState == PARSING) && (!copyLog2Console)) {
+		// Dade - m_progDialog != null means we are doing the parsing
+		if (warning && m_showParseWarningDialog) {
+			m_showParseWarningDialog = false;
+			m_auinotebook->SetSelection(1);
+			wxMessageBox(wxT("There was a warning while doing the scene parsing. Please, check the Log tab for more information."),
+					wxT("Warning"), wxOK | wxICON_EXCLAMATION , this);
+		}
+
+		if (error && m_showParseErrorDialog) {
+			m_showParseErrorDialog = false;
+			m_auinotebook->SetSelection(1);
+			wxMessageBox(wxT("There was an error while doing the scene parsing. Please, check the Log tab for more information."),
+					wxT("Error"), wxOK | wxICON_ERROR, this);
+		}
+	}
 }
 
 void LuxGui::OnTimer(wxTimerEvent& event) {
@@ -3686,6 +3714,10 @@ void LuxGui::RenderScenefile(wxString filename) {
 	m_progDialog = new wxProgressDialog(wxT("Loading scene..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 	m_progDialog->Pulse();
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
+
+	// Dade - reset flags for warning/error dialogs
+	m_showParseWarningDialog = true;
+	m_showParseErrorDialog = true;
 
 	// Start main render thread
 	delete m_engineThread;
