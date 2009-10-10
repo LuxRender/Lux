@@ -3529,6 +3529,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			break;
 		case ID_LOADUPDATE:
+			if (!m_progDialog)
+				break;
 			m_progDialog->Pulse();
 			if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
 				m_progDialog->Destroy();
@@ -3555,8 +3557,7 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					ResetLightGroupsFromFilm( false );
 					Refresh();
 				}
-			}
-			else if( luxStatistics("filmIsReady") ) {
+			} else if( luxStatistics("filmIsReady") ) {
 				m_progDialog->Destroy();
 				delete m_progDialog;
 				m_progDialog = NULL;
@@ -3584,7 +3585,10 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			break;
 		case ID_SAVEUPDATE:
+			if (!m_progDialog)
+				break;
 			m_progDialog->Pulse();
+			break;
 		case ID_NETUPDATE:
 			UpdateNetworkTree();
 			break;
