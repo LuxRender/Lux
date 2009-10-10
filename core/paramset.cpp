@@ -645,11 +645,11 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 		if (s == "write_png_channels")
 			AddString(s, new string(params[i]));
 		if (s == "write_pxr_zbuf_normalization")
-			AddStrinngs, new string(params[i]));
+			AddString(s, new string(params[i]));
 		if (s == "write_tga_channels")
 			AddString(s, new string(params[i]));
 		if (s == "write_tga_zbuf_normalization")
-			AddStrinngs, new string(params[i]));
+			AddString(s, new string(params[i]));
 
 		//point parameters
 		if (s == "P") {
