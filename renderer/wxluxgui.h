@@ -180,10 +180,8 @@ protected:
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 	bool m_opengl;
 	bool m_copyLog2Console;
-        // Dade - if we have to show a dialog for a warning while parsing
-        bool m_showParseWarningDialog;
-        // Dade - if we have to show a dialog for an error while parsing
-        bool m_showParseErrorDialog;
+        // Memorize warn user condition
+        bool m_showWarningDialog;
 	double m_samplesSec;
 	LuxGuiRenderState m_guiRenderState;
 	LuxGuiWindowState m_guiWindowState;
