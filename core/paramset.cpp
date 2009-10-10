@@ -472,22 +472,185 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddInt(s, (int*)(params[i]));
 
 		//bool parameters
-		if(s=="jitter") AddBool(s,(bool*)(params[i]));
-		if(s=="refineimmediately") AddBool(s,(bool*)(params[i]));
-		if(s=="trilinear") AddBool(s,(bool*)(params[i]));
-		if(s=="finalgather") AddBool(s,(bool*)(params[i]));
-		if(s=="directwithphotons") AddBool(s,(bool*)(params[i]));
+		if (s == "architectural")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "autofocus")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_override_alpha")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_use_key")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_emission")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_indirect_emission")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_indirect_material")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_material")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enabledirect")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableindircaustic")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableindirdiffuse")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableindirspecular")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableradiancemap")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "debug")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "diffusereflectreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "diffuserefractreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "directdiffuse")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "directglossy")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "directsampleall")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dmnormalsmooth")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dmsharpboundary")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "finalgather")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "flipxy")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "flipz")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "glossyreflectreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "glossyrefractreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "includeenvironment")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "indirectdiffuse")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "indirectglossy")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "indirectsampleall")
+			AddBool(s, (bool*)(params[i]));
 		if (s == "premultiplyalpha")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "refineimmediately")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "restart_resume_flm")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "smooth")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "usevariance")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_ZBuf")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_applyimaging")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_gamutclamp")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_halftype")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png_16bit")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png_ZBuf")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png_gamutclamp")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_resume_flm")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_tga")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_tga_ZBuf")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_tga_gamutclamp")
 			AddBool(s, (bool*)(params[i]));
 		
 		//string parameters
-		if(s=="filename") { string *str=new string(params[i]); std::cout<<*str<<std::endl; AddString(s,str); delete str; }
-		if(s=="mapping") AddString(s,(string*)(params[i]));
-		if(s=="wrap") AddString(s,(string*)(params[i]));
-		if(s=="aamode") AddString(s,(string*)(params[i]));
-		if(s=="mapname") AddString(s,(string*)(params[i]));
-		if(s=="strategy") AddString(s,(string*)(params[i]));
-		
+		if (s == "aamode")
+			AddString(s, new string(params[i]));
+		if (s == "acceltype")
+			AddString(s, new string(params[i]));
+		if (s == "basesampler")
+			AddString(s, new string(params[i]));
+		if (s == "displacementmap")
+			AddString(s, new string(params[i]));
+		if (s == "distmetric")
+			AddString(s, new string(params[i]));
+		if (s == "distribution")
+			AddString(s, new string(params[i]));
+		if (s == "endtransform")
+			AddString(s, new string(params[i]));
+		if (s == "filename")
+			AddString(s, new string(params[i]));
+		if (s == "filtertype")
+			AddString(s, new string(params[i]));
+		if (s == "iesname")
+			AddString(s, new string(params[i]));
+		if (s == "ldr_clamp_method")
+			AddString(s, new string(params[i]));
+		if (s == "mapname")
+			AddString(s, new string(params[i]));
+		if (s == "mapping")
+			AddString(s, new string(params[i]));
+		if (s == "name")
+			AddString(s, new string(params[i]));
+		if (s == "namedmaterial1")
+			AddString(s, new string(params[i]));
+		if (s == "namedmaterial2")
+			AddString(s, new string(params[i]));
+		if (s == "noisebasis")
+			AddString(s, new string(params[i]));
+		if (s == "noisebasis2")
+			AddString(s, new string(params[i]));
+		if (s == "noisetype")
+			AddString(s, new string(params[i]));
+		if (s == "photonmapsfile")
+			AddString(s, new string(params[i]));
+		if (s == "pixelsampler")
+			AddString(s, new string(params[i]));
+		if (s == "quadtype")
+			AddString(s, new string(params[i]));
+		if (s == "renderingmode")
+			AddString(s, new string(params[i]));
+		if (s == "rrstrategy")
+			AddString(s, new string(params[i]));
+		if (s == "scheme")
+			AddString(s, new string(params[i]));
+		if (s == "shutterdistribution")
+			AddString(s, new string(params[i]));
+		if (s == "specfile")
+			AddString(s, new string(params[i]));
+		if (s == "strategy")
+			AddString(s, new string(params[i]));
+		if (s == "subdivscheme")
+			AddString(s, new string(params[i]));
+		if (s == "tonemapkernel")
+			AddString(s, new string(params[i]));
+		if (s == "tritype")
+			AddString(s, new string(params[i]));
+		if (s == "type")
+			AddString(s, new string(params[i]));
+		if (s == "wrap")
+			AddString(s, new string(params[i]));
+		if (s == "write_exr_channels")
+			AddString(s, new string(params[i]));
+		if (s == "write_exr_compressiontype")
+			AddString(s, new string(params[i]));
+		if (s == "write_exr_zbuf_normalization")
+			AddString(s, new string(params[i]));
+		if (s == "write_png_channels")
+			AddString(s, new string(params[i]));
+		if (s == "write_pxr_zbuf_normalization")
+			AddStrinngs, new string(params[i]));
+		if (s == "write_tga_channels")
+			AddString(s, new string(params[i]));
+		if (s == "write_tga_zbuf_normalization")
+			AddStrinngs, new string(params[i]));
+
 		//point parameters
 		if (s == "P") {
 			if (pn == "nurbs")
@@ -530,25 +693,68 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 			AddVector(s, (Vector*)(params[i]));
 		
 		//texture parameters
-		if(s=="bumpmap") AddTexture(s,std::string(params[i]));
-		if(s=="Kd") AddTexture(s,std::string(params[i]));
-		if(s=="sigma") AddTexture(s,std::string(params[i]));
-		if(s=="Ks") AddTexture(s,std::string(params[i]));
-		if(s=="roughness") AddTexture(s,std::string(params[i]));
-		if(s=="reflect") AddTexture(s,std::string(params[i]));
-		if(s=="transmit") AddTexture(s,std::string(params[i]));
-		if(s=="Kr") AddTexture(s,std::string(params[i]));
-		if(s=="Kt") AddTexture(s,std::string(params[i]));
-		if(s=="index") AddTexture(s,std::string(params[i]));
-		if(s=="uroughness") AddTexture(s,std::string(params[i]));
-		if(s=="vroughness") AddTexture(s,std::string(params[i]));
-		if(s=="opacity") AddTexture(s,std::string(params[i]));
-		if(s=="value") AddTexture(s,std::string(params[i]));
-		if(s=="tex1") AddTexture(s,std::string(params[i]));
-		if(s=="tex2") AddTexture(s,std::string(params[i]));
-		if(s=="amount") AddTexture(s,std::string(params[i]));
-		if(s=="inside") AddTexture(s,std::string(params[i]));
-		if(s=="outside") AddTexture(s,std::string(params[i]));
+		if (s == "Ka")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Kd")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Kr")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks3")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Kt")
+			AddTexture(s, std::string(params[i]));
+		if (s == "L")
+			AddTexture(s, std::string(params[i]));
+		if (s == "M1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "M2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "M3")
+			AddTexture(s, std::string(params[i]));
+		if (s == "R1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "R2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "R3")
+			AddTexture(s, std::string(params[i]));
+		if (s == "amount")
+			AddTexture(s, std::string(params[i]));
+		if (s == "bricktex")
+			AddTexture(s, std::string(params[i]));
+		if (s == "bumpmap")
+			AddTexture(s, std::string(params[i]));
+		if (s == "cauchyb")
+			AddTexture(s, std::string(params[i]));
+		if (s == "d")
+			AddTexture(s, std::string(params[i]));
+		if (s == "film")
+			AddTexture(s, std::string(params[i]));
+		if (s == "filmindex")
+			AddTexture(s, std::string(params[i]));
+		if (s == "index")
+			AddTexture(s, std::string(params[i]));
+		if (s == "inside")
+			AddTexture(s, std::string(params[i]));
+		if (s == "mortartex")
+			AddTexture(s, std::string(params[i]));
+		if (s == "outside")
+			AddTexture(s, std::string(params[i]));
+		if (s == "sigma")
+			AddTexture(s, std::string(params[i]));
+		if (s == "tex1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "tex2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "uroughness")
+			AddTexture(s, std::string(params[i]));
+		if (s == "vroughness")
+			AddTexture(s, std::string(params[i]));
 		
 		//color (RGBColor) parameters
 		if (s == "L")
