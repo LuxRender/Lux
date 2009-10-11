@@ -52,8 +52,12 @@ void lux_png_error(png_structp png_, png_const_charp msg)
     //
 
     FILE *fp = fopen(name.c_str(), "wb");
-	if (!fp)
+	if (!fp) {
+		std::stringstream ss;
+		ss << "Cannot open PNG file '" << name << "' for output";
+		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
 		return;
+	}
 
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, (png_error_ptr) lux_png_error, NULL);
     png_infop info = png_create_info_struct(png);
