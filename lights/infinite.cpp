@@ -85,7 +85,7 @@ public:
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		*f += light.Le(tspack, RayDifferential(Point(0.f), -w));
 	}
-	virtual float Pdf(const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
 	{
 		Vector w(wo.x * X + wo.y * Y + wo.z * Z);
 		float pdf = 0.f;
