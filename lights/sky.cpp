@@ -25,7 +25,7 @@
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
-#include "blackbodyspd.h"
+#include "regular.h"
 #include "reflection/bxdf.h"
 #include "dynload.h"
 
@@ -128,6 +128,13 @@ static float PerezBase(const float lam[6], float theta, float gamma)
 	return (1.f + lam[1] * exp(lam[2] / cos(theta))) *
 		(1.f + lam[3] * exp(lam[4] * gamma)  + lam[5] * cos(gamma) * cos(gamma));
 }
+
+static const RegularSPD S0(S0Amplitudes, 300.f, 830.f, 54);
+static const RegularSPD S1(S1Amplitudes, 300.f, 830.f, 54);
+static const RegularSPD S2(S2Amplitudes, 300.f, 830.f, 54);
+static const float S0Y = S0.Y();
+static const float S1Y = S1.Y();
+static const float S2Y = S2.Y();
 
 // SkyLight Method Definitions
 SkyLight::~SkyLight() {
@@ -596,9 +603,7 @@ void SkyLight::GetSkySpectralRadiance(const TsPack *tspack, const float theta, c
 	const float Y = zenith_Y * PerezBase(perez_Y, theta_fin, gamma);
 
 	ChromaticityToSpectrum(tspack, x, y, dst_spect);
-	// Normalize dst_spect:
-	// 1e7 is the mean intensity returned by ChromaticityToSpectrum
-	*dst_spect *= Y * 1e-7;
+	*dst_spect *= Y;
 }
 
 // note - lyc - removed redundant computations and optimised
@@ -608,21 +613,12 @@ void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const
 	const float M1 = (-1.3515f - 1.7703f * x + 5.9114f * y) * den;
 	const float M2 = (0.03f - 31.4424f * x + 30.0717f * y) * den;
 
-	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j)
-	{
-		const float w = (tspack->swl->w[j] - 300.f) * 0.1f;
-		const int i  = Floor2Int(w);
-		const int i1 = min(i + 1, 53);
-
-		const float b = w - i;
-		const float a = 1.f - b;
-
-		const float t0 = S0Amplitudes[i] * a + S0Amplitudes[i1] * b;
-		const float t1 = S1Amplitudes[i] * a + S1Amplitudes[i1] * b;
-		const float t2 = S2Amplitudes[i] * a + S2Amplitudes[i1] * b;
-
-		dst_spect->c[j] = t0 + M1 * t1 + M2 * t2;
+	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
+		const float w = tspack->swl->w[j];
+		dst_spect->c[j] = S0.sample(w) + M1 * s1.sample(w) +
+			M2 * S2.sample(w);
 	}
+	*dst_spect /= S0Y + M1 * S1Y + M2 * S2Y;
 }
 
 static DynamicLoader::RegisterLight<SkyLight> r("sky");
