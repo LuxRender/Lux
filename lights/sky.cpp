@@ -615,7 +615,7 @@ void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const
 
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
 		const float w = tspack->swl->w[j];
-		dst_spect->c[j] = S0.sample(w) + M1 * s1.sample(w) +
+		dst_spect->c[j] = S0.sample(w) + M1 * S1.sample(w) +
 			M2 * S2.sample(w);
 	}
 	*dst_spect /= S0Y + M1 * S1Y + M2 * S2Y;
