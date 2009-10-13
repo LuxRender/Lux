@@ -45,7 +45,7 @@ public:
 
 		// Sample new stratified wavelengths and precompute RGB/XYZ data
 		const float offset = float(WAVELENGTH_END - WAVELENGTH_START) * inv_WAVELENGTH_SAMPLES;
-		const float scale = (683.f * nCIE) / WAVELENGTH_SAMPLES;
+		const float scale = 683.f * offset;
 		float waveln = WAVELENGTH_START + u1 * offset;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
 			// Interpolate RGB Conversion SPDs
