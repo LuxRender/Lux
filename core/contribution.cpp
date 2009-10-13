@@ -75,7 +75,7 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 		CFull.push_back(c);
 
 	// If there are no free buffers, perform splat
-	if (CFree.size() == 0) {
+	if (CFree.empty()) {
 		// Since we're still holding the pool lock, 
 		// no other thread will perform the above test
 		// until CFree is filled with free buffers again.
@@ -95,7 +95,7 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 
 		// Dade - Bug 582 fix: allocate a new buffer if CFree is empty.
 		ContributionBuffer *cold;
-		if (CFree.size() < 1)
+		if (CFree.empty())
 			cold = new ContributionBuffer();
 		else {
 			// Store one free buffer for later, this way
