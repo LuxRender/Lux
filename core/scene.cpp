@@ -323,8 +323,7 @@ void RenderThread::render(RenderThread *myThread) {
 		myThread->tspack->camera->SampleMotion(myThread->tspack->time);
 
 		// Sample new SWC thread wavelengths
-		myThread->tspack->swl->Sample(myThread->sample->wavelengths,
-			myThread->sample->singleWavelength);
+		myThread->tspack->swl->Sample(myThread->sample->wavelengths);
 
         while(myThread->signal == PAUSE) {
             boost::xtime xt;

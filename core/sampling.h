@@ -91,13 +91,13 @@ public:
 	float imageX, imageY;
 	float lensU, lensV;
 	float time;
-	float wavelengths, singleWavelength;
+	float wavelengths;
 	// Integrator _Sample_ Data
-	mutable int stamp;
 	vector<u_int> n1D, n2D, nxD, dxD;
 	vector<vector<u_int> > sxD;
 	float **oneD, **twoD, **xD;
 	int **timexD;
+	mutable int stamp;
 	mutable vector<Contribution> contributions;
 };
 

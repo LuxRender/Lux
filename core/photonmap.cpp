@@ -473,7 +473,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	for (u_int i = 0; i < nLights; ++i)
 		lightPower[i] = 0.f;
 	for (u_int j = 0; j < spectrumSamples; ++j) {
-		thr_wl->Sample(RadicalInverse(j, 2), RadicalInverse(j, 3));
+		thr_wl->Sample(RadicalInverse(j, 2));
 
 		for (u_int i = 0; i < nLights; ++i)
 			lightPower[i] += scene->lights[i]->Power(tspack, scene).Y(tspack);
@@ -547,19 +547,19 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			}
 		}
 		// Sample the wavelengths
-		thr_wl->Sample(RadicalInverse(nshot, 2), RadicalInverse(nshot, 3));
+		thr_wl->Sample(RadicalInverse(nshot, 2));
 
 		// Trace a photon path and store contribution
 		// Choose 4D sample values for photon
 		float u[4];
-		u[0] = RadicalInverse(nshot, 5);
-		u[1] = RadicalInverse(nshot, 7);
-		u[2] = RadicalInverse(nshot, 11);
-		u[3] = RadicalInverse(nshot, 13);
+		u[0] = RadicalInverse(nshot, 3);
+		u[1] = RadicalInverse(nshot, 5);
+		u[2] = RadicalInverse(nshot, 7);
+		u[3] = RadicalInverse(nshot, 11);
 
 		// Choose light to shoot photon from
 		float lightPdf;
-		float uln = RadicalInverse(nshot, 17);
+		float uln = RadicalInverse(nshot, 13);
 		u_int lightNum = Floor2Int(SampleStep1d(lightPower, lightCDF,
 				totalPower, nLights, uln, &lightPdf) * nLights);
 		lightNum = min(lightNum, nLights - 1);
@@ -658,9 +658,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				// Get random numbers for sampling outgoing photon direction
 				float u1, u2, u3;
 				if (nIntersections == 1) {
-					u1 = RadicalInverse(nshot, 19);
-					u2 = RadicalInverse(nshot, 23);
-					u3 = RadicalInverse(nshot, 29);
+					u1 = RadicalInverse(nshot, 17);
+					u2 = RadicalInverse(nshot, 19);
+					u3 = RadicalInverse(nshot, 23);
 				} else {
 					u1 = tspack->rng->floatValue();
 					u2 = tspack->rng->floatValue();
@@ -681,6 +681,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				photonRay = RayDifferential(photonIsect.dg.p, wi);
 			}
 		}
+
 		tspack->arena->FreeAll();
 	}
 

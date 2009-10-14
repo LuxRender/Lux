@@ -33,7 +33,7 @@
 
 using namespace lux;
 
-#define SAMPLE_FLOATS 7
+#define SAMPLE_FLOATS 6
 
 // mutate a value in the range [0-1]
 static float mutate(const float x, const float randomValue)
@@ -178,7 +178,6 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->lensV = mutate(currentImage[3], tspack->rng->floatValue());
 			sample->time = mutate(currentImage[4], tspack->rng->floatValue());
 			sample->wavelengths = mutate(currentImage[5], tspack->rng->floatValue());
-			sample->singleWavelength = /*tspack->rng->floatValue();*/mutateScaled(currentImage[6], tspack->rng->floatValue(), 0.f, 1.f, 1.f);
 			for (int i = SAMPLE_FLOATS; i < normalSamples; ++i)
 				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(currentImage[i], tspack->rng->floatValue());
 		}
@@ -260,7 +259,6 @@ void ERPTSampler::AddSample(const Sample &sample)
 			baseImage[3] = sample.lensV;
 			baseImage[4] = sample.time;
 			baseImage[5] = sample.wavelengths;
-			baseImage[6] = sample.singleWavelength;
 			for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
 				baseImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
 			for (int i = 0 ; i < totalTimes; ++i)
@@ -305,7 +303,6 @@ void ERPTSampler::AddSample(const Sample &sample)
 		sampleImage[3] = sample.lensV;
 		sampleImage[4] = sample.time;
 		sampleImage[5] = sample.wavelengths;
-		sampleImage[6] = sample.singleWavelength;
 		for (int i = SAMPLE_FLOATS; i < totalSamples; ++i)
 			sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
 		for (int i = 0 ; i < totalTimes; ++i)

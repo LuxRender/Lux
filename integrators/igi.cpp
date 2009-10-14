@@ -93,7 +93,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp0);
 	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp1);
 	// Precompute information for light sampling densities
-	tspack->swl->Sample(.5f, .5f);
+	tspack->swl->Sample(.5f);
 	u_int nLights = scene->lights.size();
 	float *lightPower = new float[nLights];
 	float *lightCDF = new float[nLights + 1];
@@ -103,7 +103,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 	for (u_int s = 0; s < nLightSets; ++s) {
 		for (u_int i = 0; i < nLightPaths; ++i) {
-			tspack->swl->Sample(tspack->rng->floatValue(), tspack->rng->floatValue());
+			tspack->swl->Sample(tspack->rng->floatValue());
 			// Follow path _i_ from light to create virtual lights
 			int sampOffset = s * nLightPaths + i;
 			// Choose light source to trace path from

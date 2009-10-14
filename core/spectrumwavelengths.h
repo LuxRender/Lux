@@ -39,9 +39,11 @@ public:
 	SpectrumWavelengths();
 	~SpectrumWavelengths();
 
-	inline void Sample(float u1, float u2) {
+	inline void Sample(float u1) {
 		single = false;
-		single_w = Floor2Int(u2 * WAVELENGTH_SAMPLES);
+		u1 *= WAVELENGTH_SAMPLES;
+		single_w = Floor2Int(u1);
+		u1 -= single_w;
 
 		// Sample new stratified wavelengths and precompute RGB/XYZ data
 		const float offset = float(WAVELENGTH_END - WAVELENGTH_START) * inv_WAVELENGTH_SAMPLES;

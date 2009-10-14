@@ -67,11 +67,10 @@ RandomSampler::RandomSampler(int xstart, int xend,
 	TotalPixels = pixelSampler->GetTotalPixels();
 
 	// Get storage for a pixel's worth of stratified samples
-	imageSamples = AllocAligned<float>(7 * pixelSamples);
+	imageSamples = AllocAligned<float>(6 * pixelSamples);
 	lensSamples = imageSamples + 2 * pixelSamples;
 	timeSamples = lensSamples +  2 * pixelSamples;
 	wavelengthsSamples = timeSamples + pixelSamples;
-	singleWavelengthSamples = wavelengthsSamples + pixelSamples;
 
 	samplePos = pixelSamples;
 }
@@ -128,7 +127,6 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	sample->lensV = lensSamples[2*samplePos+1];
 	sample->time = timeSamples[samplePos];
 	sample->wavelengths = wavelengthsSamples[samplePos];
-	sample->singleWavelength = singleWavelengthSamples[samplePos];
 	// Generate stratified samples for integrators
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		for (u_int j = 0; j < sample->n1D[i]; ++j)

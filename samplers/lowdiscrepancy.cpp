@@ -72,11 +72,10 @@ LDSampler::LDSampler(int xstart, int xend,
 		pixelSamples = ps;
 	samplePos = pixelSamples;
 	oneDSamples = twoDSamples = xDSamples = NULL;
-	imageSamples = new float[7*pixelSamples];
+	imageSamples = new float[6*pixelSamples];
 	lensSamples = imageSamples + 2*pixelSamples;
 	timeSamples = imageSamples + 4*pixelSamples;
 	wavelengthsSamples = imageSamples + 5*pixelSamples;
-	singleWavelengthSamples = imageSamples + 6*pixelSamples;
 	n1D = n2D = nxD = 0;
 }
 
@@ -142,7 +141,6 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		LDShuffleScrambled2D(tspack, 1, pixelSamples, lensSamples);
 		LDShuffleScrambled1D(tspack, 1, pixelSamples, timeSamples);
 		LDShuffleScrambled1D(tspack, 1, pixelSamples, wavelengthsSamples);
-		LDShuffleScrambled1D(tspack, 1, pixelSamples, singleWavelengthSamples);
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
 			LDShuffleScrambled1D(tspack, sample->n1D[i], pixelSamples,
 				oneDSamples[i]);
@@ -183,7 +181,6 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 	sample->lensV = lensSamples[2*samplePos+1];
 	sample->time = timeSamples[samplePos];
 	sample->wavelengths = wavelengthsSamples[samplePos];
-	sample->singleWavelength = singleWavelengthSamples[samplePos];
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		int startSamp = sample->n1D[i] * samplePos;
 		for (u_int j = 0; j < sample->n1D[i]; ++j)
