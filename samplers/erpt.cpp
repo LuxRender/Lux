@@ -193,7 +193,7 @@ float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	const u_int size = sample->dxD[num];
 	float *data = sample->xD[num] + pos * size;
 	int stampLimit = sample->stamp;
-	if (numMicro >= 0 && num != numMicro - 1 && pos != posMicro)
+	if (numMicro >= 0 && num != u_int(numMicro - 1) && pos != u_int(posMicro))
 		--stampLimit;
 	if (sample->timexD[num][pos] != stampLimit) {
 		if (sample->timexD[num][pos] == -1) {

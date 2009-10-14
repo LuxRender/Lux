@@ -186,7 +186,8 @@ static float sun_solAmplitudes[38] = {
 };
 
 // The suns irradiance as sampled outside the atmosphere from 380 - 770 nm at 5nm intervals
-static float sun_sun_irradiance[79] = {
+// Dade - not used (commented out to avoid a gcc warning)
+/*static float sun_sun_irradiance[79] = {
     1.1200E09,
     1.0980E09,
     1.0980E09,
@@ -266,7 +267,7 @@ static float sun_sun_irradiance[79] = {
     1.2110E09,
     1.1980E09,
     1.1850E09
-};
+};*/
 
 }//namespace lux
 

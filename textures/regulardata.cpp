@@ -30,10 +30,11 @@ using namespace lux;
 // RegularDataTexture Method Definitions
 Texture<float> * RegularDataTexture::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	float start = tp.FindFloat("start", 380.f);
-	float end = tp.FindFloat("end", 720.f);
+	// Dade - unused parameters
+	/*float start =*/ tp.FindFloat("start", 380.f);
+	/*float end =*/ tp.FindFloat("end", 720.f);
 	int dataCount = 0;
-	const float *data = tp.FindFloats("data", &dataCount);
+	/*const float *data =*/ tp.FindFloats("data", &dataCount);
 	if (dataCount < 1) {
 		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in regulardata texture");
 	}

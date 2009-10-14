@@ -26,7 +26,7 @@
 namespace lux
 {
 
-static float Determinant3x3(const float matrix[3][3])
+static inline float Determinant3x3(const float matrix[3][3])
 {
 	float temp;
 	temp  = matrix[0][0] * matrix[1][1] * matrix[2][2];
@@ -38,7 +38,7 @@ static float Determinant3x3(const float matrix[3][3])
 	return temp;
 }
 
-static bool Invert3x3(const float matrix[3][3], float result[3][3])
+static inline bool Invert3x3(const float matrix[3][3], float result[3][3])
 {
 	float det = Determinant3x3(matrix);
 	if (fabsf(det) < 1e-12f)
@@ -62,14 +62,14 @@ static bool Invert3x3(const float matrix[3][3], float result[3][3])
 	return true;
 }
 
-static void Transform3x3(const float matrix[3][3], const float vector[3], float result[3])
+static inline void Transform3x3(const float matrix[3][3], const float vector[3], float result[3])
 {
 	result[0] = matrix[0][0] * vector[0] + matrix[0][1] * vector[1] + matrix[0][2] * vector[2];
 	result[1] = matrix[1][0] * vector[0] + matrix[1][1] * vector[1] + matrix[1][2] * vector[2];
 	result[2] = matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2];
 }
 
-static void Multiply3x3(const float a[3][3], const float b[3][3], float result[3][3])
+static inline void Multiply3x3(const float a[3][3], const float b[3][3], float result[3][3])
 {
 	result[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
 	result[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1];

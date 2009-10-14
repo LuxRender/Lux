@@ -34,12 +34,16 @@ struct KdNode {
 	void init(float p, u_int a) {
 		splitPos = p;
 		splitAxis = a;
-		rightChild = ~0;
+                // Dade - in order to avoid a gcc warning
+		rightChild = 0;
+                rightChild = ~rightChild;
 		hasLeftChild = 0;
 	}
 	void initLeaf() {
 		splitAxis = 3;
-		rightChild = ~0;
+		// Dade - in order to avoid a gcc warning
+		rightChild = 0;
+                rightChild = ~rightChild;
 		hasLeftChild = 0;
 	}
 	// KdNode Data

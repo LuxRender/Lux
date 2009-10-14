@@ -539,7 +539,7 @@ void LuxGLViewer::CreateTextures(){
 
 		for (int i = 0; i < m_textureH; i++) {
 			for (int j = 0; j < m_textureW; j++) {
-				const int bias = (int)(135/255.0f);
+				//const int bias = (int)(135/255.0f);
 				for (int k = 0; k < 3; k++)
 					tileImg[(i*m_textureW+j)*4+k] = 255;//bias;
 			}
