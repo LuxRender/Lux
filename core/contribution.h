@@ -97,9 +97,9 @@ public:
 	}
 
 	bool Add(Contribution* c, float weight=1.f) {
-		while (c->bufferGroup >= buffers.size())
+		while (c->bufferGroup >= int(buffers.size()))
 			buffers.push_back(vector<Buffer *>(0));
-		while (c->buffer >= buffers[c->bufferGroup].size())
+		while (c->buffer >= int(buffers[c->bufferGroup].size()))
 			buffers[c->bufferGroup].push_back(new Buffer());
 		return buffers[c->bufferGroup][c->buffer]->Add(c, weight);
 	}

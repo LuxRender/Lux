@@ -31,9 +31,11 @@ using namespace lux;
 Texture<float> * IrregularDataTexture::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	int wlCount = 0;
-	const float *wl = tp.FindFloats("wavelengths", &wlCount);
+	// Dade - unused parameter
+	/*const float *wl =*/ tp.FindFloats("wavelengths", &wlCount);
 	int dataCount = 0;
-	const float *data = tp.FindFloats("data", &dataCount);
+	// Dade - unused parameter
+	/*const float *data =*/ tp.FindFloats("data", &dataCount);
 	if(wlCount != dataCount) {
 		std::stringstream ss;
         ss << "Number of wavelengths '" << wlCount << "' does not match number of data values '"

@@ -239,7 +239,7 @@ float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
 	// Get the reference number of mutations
 	int stampLimit = sample->stamp;
 	// If the current node doesn't need mutation, use previous value
-	if (numMicro >= 0 && num != numMicro - 1 && pos != posMicro)
+	if (numMicro >= 0 && num != u_int(numMicro - 1) && pos != u_int(posMicro))
 		--stampLimit;
 	// If we are at the target, don't do anything
 	if (sample->timexD[num][pos] != stampLimit) {

@@ -371,6 +371,10 @@ void LuxGui::ChangeRenderState(LuxGuiRenderState state) {
 			m_viewerToolBar->Enable();
 			m_renderOutput->SetMode(RENDER_VIEW);
 			break;
+		case PARSING:
+		default:
+			// Dade - to avoid a gcc warning
+			break;
 	}
 	m_guiRenderState = state;
 }
@@ -3718,7 +3722,13 @@ void LuxGui::EngineThread(wxString filename) {
 	boost::filesystem::path fullPath(boost::filesystem::initial_path());
 	fullPath = boost::filesystem::system_complete(boost::filesystem::path(filename.fn_str(), boost::filesystem::native));
 
-	chdir(fullPath.branch_path().string().c_str());
+	if (chdir(fullPath.branch_path().string().c_str()) == -1) {
+		// Dade - something has gone wrong
+		std::stringstream ss("");
+		ss << "Unable to change directory to: '" <<
+				fullPath.branch_path().string().c_str() << "'";
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+	}
 
 	// NOTE - lordcrc - initialize rand()
 	srand(time(NULL));

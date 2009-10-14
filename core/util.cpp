@@ -252,7 +252,7 @@ ProgressReporter::ProgressReporter(int totalWork, const string &title, int bar_l
 	*s++ = ']';
 	*s++ = ' ';
 	*s++ = '\0';
-	fprintf(outFile, buf);
+	fwrite(buf, sizeof(char), bufLen, outFile);
 	fflush(outFile);
 }
 ProgressReporter::~ProgressReporter() { delete[] buf; delete timer; }
