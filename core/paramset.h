@@ -24,10 +24,8 @@
 #define LUX_PARAMSET_H
 // paramset.h*
 #include "lux.h"
-#include "texture.h"
-#include "color.h"
 
-
+#include <boost/serialization/split_member.hpp>
 
 #include <map>
 using std::map;
@@ -35,30 +33,58 @@ using std::map;
 #include <stdio.h>     // NOBOOK
 #define snprintf _snprintf // NOBOOK
 #endif // NOBOOK
-// ParamSet Macros
-#define ADD_PARAM_TYPE(T, vec) \
-	(vec).push_back(new ParamSetItem<T>(name, (T *)data, nItems))
-#define LOOKUP_PTR(vec) \
-	for (u_int i = 0; i < (vec).size(); ++i) \
-		if ((vec)[i]->name == name) { \
-			*nItems = (vec)[i]->nItems; \
-			(vec)[i]->lookedUp = true; \
-			return (vec)[i]->data; \
-		} \
-	return NULL
-#define LOOKUP_ONE(vec) \
-	for (u_int i = 0; i < (vec).size(); ++i) { \
-		if ((vec)[i]->name == name && \
-			(vec)[i]->nItems == 1) { \
-			(vec)[i]->lookedUp = true; \
-			return *((vec)[i]->data); \
-}		} \
-	return d
 
 namespace lux
 {
 
 // ParamSet Declarations
+template <class T> struct ParamSetItem {
+	// ParamSetItem Public Methods
+	
+	ParamSetItem<T> *Clone() const {
+		return new ParamSetItem<T>(name, data, nItems);
+	}
+	ParamSetItem() { data=0; }
+	// The const_cast forces a copy of the string data
+	ParamSetItem(const string &n, const T *v, int ni = 1) :
+		name(const_cast<string &>(n)), nItems(ni), lookedUp(false) {
+		data = new T[nItems];
+		for (int i = 0; i < nItems; ++i)
+			data[i] = v[i];
+	}
+	~ParamSetItem();
+	
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+		ar & name;
+		ar & nItems;
+
+		for(int i=0;i<nItems;i++)
+			ar & data[i];
+
+		ar & lookedUp;
+	}
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+		ar & name;
+		ar & nItems;
+		if(data!=0)
+			delete[] data;
+		data=new T[nItems];
+		for(int i=0;i<nItems;i++)
+			ar & data[i];
+
+		ar & lookedUp;
+	}
+	BOOST_SERIALIZATION_SPLIT_MEMBER()
+	
+	// ParamSetItem Data
+	string name;
+	int nItems;
+	T *data;
+	mutable bool lookedUp;
+};
 class  ParamSet {
 	friend class boost::serialization::access;
 	
@@ -71,29 +97,14 @@ public:
 	
 	void Add(ParamSet& params);
 	void AddFloat(const string &, const float *, int nItems = 1);
-	void AddInt(const string &,
-	            const int *,
-	            int nItems = 1);
-	void AddBool(const string &,
-	             const bool *,
-	             int nItems = 1);
-	void AddPoint(const string &,
-	              const Point *,
-	              int nItems = 1);
-	void AddVector(const string &,
-	               const Vector *,
-	               int nItems = 1);
-	void AddNormal(const string &,
-	               const Normal *,
-	               int nItems = 1);
-	void AddRGBColor(const string &,
-	                 const RGBColor *,
-	                 int nItems = 1);
-	void AddString(const string &,
-	              const string *,
-	              int nItems = 1);
-	void AddTexture(const string &,
-	                const string &);
+	void AddInt(const string &, const int *, int nItems = 1);
+	void AddBool(const string &, const bool *, int nItems = 1);
+	void AddPoint(const string &, const Point *, int nItems = 1);
+	void AddVector(const string &, const Vector *, int nItems = 1);
+	void AddNormal(const string &, const Normal *, int nItems = 1);
+	void AddRGBColor(const string &, const RGBColor *, int nItems = 1);
+	void AddString(const string &, const string *, int nItems = 1);
+	void AddTexture(const string &, const string &);
 	bool EraseInt(const string &);
 	bool EraseBool(const string &);
 	bool EraseFloat(const string &);
@@ -106,13 +117,12 @@ public:
 	float FindOneFloat(const string &, float d) const;
 	int FindOneInt(const string &, int d) const;
 	bool FindOneBool(const string &, bool d) const;
-	Point FindOnePoint(const string &, const Point &d) const;
-	Vector FindOneVector(const string &, const Vector &d) const;
-	Normal FindOneNormal(const string &, const Normal &d) const;
-	RGBColor FindOneRGBColor(const string &,
-	                         const RGBColor &d) const;
-	string FindOneString(const string &, const string &d) const;
-	string FindTexture(const string &) const;
+	const Point &FindOnePoint(const string &, const Point &d) const;
+	const Vector &FindOneVector(const string &, const Vector &d) const;
+	const Normal &FindOneNormal(const string &, const Normal &d) const;
+	const RGBColor &FindOneRGBColor(const string &, const RGBColor &d) const;
+	const string &FindOneString(const string &, const string &d) const;
+	const string &FindTexture(const string &) const;
 	const float *FindFloat(const string &, int *nItems) const;
 	const int *FindInt(const string &, int *nItems) const;
 	const bool *FindBool(const string &, int *nItems) const;
@@ -129,8 +139,7 @@ public:
 	}
 	void Clear();
 	string ToString() const;
-	
-	
+
 private:
 	// ParamSet Data
 	vector<ParamSetItem<int> *> ints;
@@ -157,138 +166,22 @@ private:
 			ar & textures;
 		}
 	
-/*	enum StringValue
-	{
-	evNotDefined,
-	evStringValue1,
-	evStringValue2,
-	evStringValue3,
-	evEnd,
-	evNumVals // list terminator
-	};
-
-	//typedef std::map<std::string, StringValue> StringMap;
-	//typedef StringMap::value_type StringMapValue;
-
-	static const std::map<std::string, StringValue>::value_type stringMapEntries[] =
-	{
-		std::map<std::string, StringValue>::value_type( "First Value", evStringValue1 ),
-		std::map<std::string, StringValue>::value_type( "Second Value", evStringValue2 ),
-		std::map<std::string, StringValue>::value_type( "Third Value", evStringValue3 ),
-		std::map<std::string, StringValue>::value_type( "end", evEnd ),
-	};
-
-	static const std::map<std::string, StringValue> s_mapStringValues( &stringMapEntries[evStringValue1], &stringMapEntries[evNumVals] ); */
 };
-template <class T> struct ParamSetItem {
-	// ParamSetItem Public Methods
-	
-	ParamSetItem<T> *Clone() const {
-		return new ParamSetItem<T>(name, data, nItems);
-	}
-	ParamSetItem() { data=0; }
-	ParamSetItem(const string &name, const T *val, int nItems = 1);
-	~ParamSetItem() {
-	delete[] data;
-	}
-	
-	template<class Archive>
-				void save(Archive & ar, const unsigned int version) const
-				{
-					ar & name;
-					ar & nItems;
-								
-					for(int i=0;i<nItems;i++)
-							ar & data[i];
-								
-					ar & lookedUp;
-				}
-		
-		template<class Archive>
-					void load(Archive & ar, const unsigned int version)
-					{
-			
-						ar & name;
-						ar & nItems;
-						if(data!=0) delete[] data;
-						data=new T[nItems];
-						for(int i=0;i<nItems;i++)
-								ar & data[i];
-									
-						ar & lookedUp;
-					}
-		BOOST_SERIALIZATION_SPLIT_MEMBER()
-	
-	// ParamSetItem Data
-	string name;
-	int nItems;
-	T *data;
-	bool lookedUp;
-
-
-};
-// ParamSetItem Methods
-/*
-template<>
-template<class Archive>
-		void ParamSetItem<int>::serialize(Archive & ar, const unsigned int version)
-		{
-			ar & name;
-			ar & nItems;
-			//ar & data;
-			ar & lookedUp;
-		}*/
-
-template <class T>
-inline ParamSetItem<T>::ParamSetItem(const string &n,
-							  const T *v,
-							  int ni) {
-	name = n;
-	nItems = ni;
-	data = new T[nItems];
-	for (int i = 0; i < nItems; ++i)
-		data[i] = v[i];
-	lookedUp = false;
-}
-
-/*
-#ifdef LUX_USE_SSE
-template<>
-inline ParamSetItem<Point>::ParamSetItem(const string &n,
-							  const Point *v,
-							  int ni) {
-	name = n;
-	nItems = ni;
-	data = new Point[nItems];
-	for (int i = 0; i < nItems; ++i)
-	{
-		data[i].x = v->x;
-		data[i].y = v->y;
-		data[i].z = v->z;
-		//std::cout<<v->x <<','<<v->y<<','<<v->z<<std::endl;
-	}
-	lookedUp = false;
-}
-#endif
-*/
 
 // TextureParams Declarations
 class  TextureParams {
 public:
 	// TextureParams Public Methods
 	TextureParams(const ParamSet &geomp, const ParamSet &matp,
-			map<string, boost::shared_ptr<Texture<float> > > &ft,
-			map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &st)
-		: geomParams(geomp),
-		  materialParams(matp),
-		  floatTextures(ft),
-		  SWCSpectrumTextures(st) {
-	}
+		map<string, boost::shared_ptr<Texture<float> > > &ft,
+		map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &st) :
+		geomParams(geomp), materialParams(matp), floatTextures(ft),
+		SWCSpectrumTextures(st) { }
 	boost::shared_ptr<Texture<SWCSpectrum> > GetSWCSpectrumTexture(const string &name,
-	                                                         const RGBColor &def) const;
+		const RGBColor &def) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
-	                                                   float def) const;
+		float def) const;
 	float FindFloat(const string &n, float d) const {
 		return geomParams.FindOneFloat(n,
 			materialParams.FindOneFloat(n, d));
@@ -298,7 +191,7 @@ public:
 		return geomParams.FindFloat(n, nItems);
 	}
 
-	string FindString(const string &n) const {
+	const string &FindString(const string &n) const {
 		return geomParams.FindOneString(n, materialParams.FindOneString(n, ""));
 	}
 	int FindInt(const string &n, int d) const {
@@ -307,16 +200,16 @@ public:
 	bool FindBool(const string &n, bool d) const {
 		return geomParams.FindOneBool(n, materialParams.FindOneBool(n, d));
 	}
-	Point FindPoint(const string &n, const Point &d) const {
+	const Point &FindPoint(const string &n, const Point &d) const {
 		return geomParams.FindOnePoint(n, materialParams.FindOnePoint(n, d));
 	}
-	Vector FindVector(const string &n, const Vector &d) const {
+	const Vector &FindVector(const string &n, const Vector &d) const {
 		return geomParams.FindOneVector(n, materialParams.FindOneVector(n, d));
 	}
-	Normal FindNormal(const string &n, const Normal &d) const {
+	const Normal &FindNormal(const string &n, const Normal &d) const {
 		return geomParams.FindOneNormal(n, materialParams.FindOneNormal(n, d));
 	}
-	RGBColor FindRGBColor(const string &n, const RGBColor &d) const {
+	const RGBColor &FindRGBColor(const string &n, const RGBColor &d) const {
 		return geomParams.FindOneRGBColor(n, materialParams.FindOneRGBColor(n, d));
 	}
 	void ReportUnused() const {

@@ -27,9 +27,104 @@
 #include <sstream>
 #include <string>
 
-using namespace lux;
+namespace lux {
+
+// ParamSet Macros
+template <class T> inline void DelParams(vector<ParamSetItem<T> *> &vec)
+{
+	for (u_int i = 0; i < vec.size(); ++i)
+		delete vec[i];
+	vec.clear();
+}
+template <class T> inline bool EraseParamType(vector<ParamSetItem<T> *> &vec,
+	const string &name)
+{
+	for (u_int i = 0; i < vec.size(); ++i)
+		if (vec[i]->name == name) {
+			delete vec[i];
+			vec.erase(vec.begin() + i);
+			return true;
+		}
+	return false;
+}
+template <class T> inline void AddParamType(vector<ParamSetItem<T> *> &vec,
+	const string &name, const T *data, int nItems)
+{
+	EraseParamType(vec, name);
+	vec.push_back(new ParamSetItem<T>(name, data, nItems));
+}
+template <class T> inline const T *LookupPtr(const vector<ParamSetItem<T> *> &vec,
+	const string &name, int *nItems)
+{
+	for (u_int i = 0; i < vec.size(); ++i)
+		if (vec[i]->name == name) {
+			*nItems = vec[i]->nItems;
+			vec[i]->lookedUp = true;
+			return vec[i]->data;
+		}
+	return NULL;
+}
+template <class T> inline const T &LookupOne(const vector<ParamSetItem<T> *> &vec,
+	const string &name, const T &d)
+{
+	for (u_int i = 0; i < vec.size(); ++i)
+		if (vec[i]->name == name && vec[i]->nItems == 1) {
+			vec[i]->lookedUp = true;
+			return *(vec[i]->data);
+		}
+	return d;
+}
+template <class T> inline void CheckUnused(const vector<ParamSetItem<T> *> &vec)
+{
+	for (u_int i = 0; i < vec.size(); ++i)
+		if (!vec[i]->lookedUp) {
+			std::stringstream ss;
+			ss << "Parameter '" << vec[i]->name << "' not used";
+			luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+		}
+}
 
 // ParamSet Methods
+template <> ParamSetItem<int>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<bool>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<float>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<Point>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<Vector>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<Normal>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<RGBColor>::~ParamSetItem()
+{
+	delete[] data;
+}
+
+template <> ParamSetItem<string>::~ParamSetItem()
+{
+	delete[] data;
+}
+
 ParamSet::ParamSet(const ParamSet &p2) {
 	*this = p2;
 }
@@ -792,431 +887,277 @@ ParamSet::ParamSet(int n, const char * pluginName, const char * const tokens[], 
 ParamSet &ParamSet::operator=(const ParamSet &p2) {
 	if (&p2 != this) {
 		Clear();
-		u_int i;
-		for (i = 0; i < p2.ints.size(); ++i)
+		for (u_int i = 0; i < p2.ints.size(); ++i)
 			ints.push_back(p2.ints[i]->Clone());
-		for (i = 0; i < p2.bools.size(); ++i)
+		for (u_int i = 0; i < p2.bools.size(); ++i)
 			bools.push_back(p2.bools[i]->Clone());
-		for (i = 0; i < p2.floats.size(); ++i)
+		for (u_int i = 0; i < p2.floats.size(); ++i)
 			floats.push_back(p2.floats[i]->Clone());
-		for (i = 0; i < p2.points.size(); ++i)
+		for (u_int i = 0; i < p2.points.size(); ++i)
 			points.push_back(p2.points[i]->Clone());
-		for (i = 0; i < p2.vectors.size(); ++i)
+		for (u_int i = 0; i < p2.vectors.size(); ++i)
 			vectors.push_back(p2.vectors[i]->Clone());
-		for (i = 0; i < p2.normals.size(); ++i)
+		for (u_int i = 0; i < p2.normals.size(); ++i)
 			normals.push_back(p2.normals[i]->Clone());
-		for (i = 0; i < p2.spectra.size(); ++i)
+		for (u_int i = 0; i < p2.spectra.size(); ++i)
 			spectra.push_back(p2.spectra[i]->Clone());
-		for (i = 0; i < p2.strings.size(); ++i)
+		for (u_int i = 0; i < p2.strings.size(); ++i)
 			strings.push_back(p2.strings[i]->Clone());
-		for (i = 0; i < p2.textures.size(); ++i)
+		for (u_int i = 0; i < p2.textures.size(); ++i)
 			textures.push_back(p2.textures[i]->Clone());
 	}
 	return *this;
 }
 
 void ParamSet::Add(ParamSet &params) {
-#define ADD_PARAMSETITEM_VECTOR(VEC,ADD_METHOD) \
-	for( u_int i = 0; i < VEC.size(); i++ ) { \
-		ADD_METHOD(VEC[i]->name, VEC[i]->data, VEC[i]->nItems ); \
-	}
-
-	ADD_PARAMSETITEM_VECTOR(params.ints, AddInt);
-	ADD_PARAMSETITEM_VECTOR(params.bools, AddBool);
-	ADD_PARAMSETITEM_VECTOR(params.floats, AddFloat);
-	ADD_PARAMSETITEM_VECTOR(params.points, AddPoint);
-	ADD_PARAMSETITEM_VECTOR(params.vectors, AddVector);
-	ADD_PARAMSETITEM_VECTOR(params.normals, AddNormal);
-	ADD_PARAMSETITEM_VECTOR(params.spectra, AddRGBColor);
-	ADD_PARAMSETITEM_VECTOR(params.strings, AddString);
-	for( u_int i = 0; i < params.textures.size(); i++ ) {
+	for (u_int i = 0; i < params.ints.size(); ++i)
+		AddInt(params.ints[i]->name, params.ints[i]->data, params.ints[i]->nItems);
+	for (u_int i = 0; i < params.bools.size(); ++i)
+		AddBool(params.bools[i]->name, params.bools[i]->data, params.bools[i]->nItems);
+	for (u_int i = 0; i < params.floats.size(); ++i)
+		AddFloat(params.floats[i]->name, params.floats[i]->data, params.floats[i]->nItems);
+	for (u_int i = 0; i < params.points.size(); ++i)
+		AddPoint(params.points[i]->name, params.points[i]->data, params.points[i]->nItems);
+	for (u_int i = 0; i < params.vectors.size(); ++i)
+		AddVector(params.vectors[i]->name, params.vectors[i]->data, params.vectors[i]->nItems);
+	for (u_int i = 0; i < params.normals.size(); ++i)
+		AddNormal(params.normals[i]->name, params.normals[i]->data, params.normals[i]->nItems);
+	for (u_int i = 0; i < params.spectra.size(); ++i)
+		AddRGBColor(params.spectra[i]->name, params.spectra[i]->data, params.spectra[i]->nItems);
+	for (u_int i = 0; i < params.strings.size(); ++i)
+		AddString(params.strings[i]->name, params.strings[i]->data, params.strings[i]->nItems);
+	for (u_int i = 0; i < params.textures.size(); ++i)
 		AddTexture(params.textures[i]->name, *(params.textures[i]->data));
-	}
-
-#undef ADD_PARAMSETITEM_VECTOR
 }
 
-void ParamSet::AddFloat(const string &name,
-			            const float *data,
-						int nItems) {
-	EraseFloat(name);
-	floats.push_back(new ParamSetItem<float>(name,
-											 data,
-											 nItems));
+void ParamSet::AddFloat(const string &name, const float *data, int nItems)
+{
+	AddParamType(floats, name, data, nItems);
 }
-void ParamSet::AddInt(const string &name, const int *data, int nItems) {
-	EraseInt(name);
-	ADD_PARAM_TYPE(int, ints);
+void ParamSet::AddInt(const string &name, const int *data, int nItems)
+{
+	AddParamType(ints, name, data, nItems);
 }
-void ParamSet::AddBool(const string &name, const bool *data, int nItems) {
-	EraseBool(name);
-	ADD_PARAM_TYPE(bool, bools);
+void ParamSet::AddBool(const string &name, const bool *data, int nItems)
+{
+	AddParamType(bools, name, data, nItems);
 }
-void ParamSet::AddPoint(const string &name, const Point *data, int nItems) {
-	ErasePoint(name);
-	ADD_PARAM_TYPE(Point, points);
+void ParamSet::AddPoint(const string &name, const Point *data, int nItems)
+{
+	AddParamType(points, name, data, nItems);
 }
-void ParamSet::AddVector(const string &name, const Vector *data, int nItems) {
-	EraseVector(name);
-	ADD_PARAM_TYPE(Vector, vectors);
+void ParamSet::AddVector(const string &name, const Vector *data, int nItems)
+{
+	AddParamType(vectors, name, data, nItems);
 }
-void ParamSet::AddNormal(const string &name, const Normal *data, int nItems) {
-	EraseNormal(name);
-	ADD_PARAM_TYPE(Normal, normals);
+void ParamSet::AddNormal(const string &name, const Normal *data, int nItems)
+{
+	AddParamType(normals, name, data, nItems);
 }
-void ParamSet::AddRGBColor(const string &name, const RGBColor *data, int nItems) {
-	EraseRGBColor(name);
-	ADD_PARAM_TYPE(RGBColor, spectra);
+void ParamSet::AddRGBColor(const string &name, const RGBColor *data, int nItems)
+{
+	AddParamType(spectra, name, data, nItems);
 }
-void ParamSet::AddString(const string &name, const string *data, int nItems) {
-	EraseString(name);
-	ADD_PARAM_TYPE(string, strings);
+void ParamSet::AddString(const string &name, const string *data, int nItems)
+{
+	AddParamType(strings, name, data, nItems);
 }
-void ParamSet::AddTexture(const string &name, const string &value) {
-	EraseTexture(name);
-	textures.push_back(new ParamSetItem<string>(name, (string *)&value, 1));
+void ParamSet::AddTexture(const string &name, const string &value)
+{
+	AddParamType(textures, name, &value, 1);
 }
 bool ParamSet::EraseInt(const string &n) {
-	for (u_int i = 0; i < ints.size(); ++i)
-		if (ints[i]->name == n) {
-			delete ints[i];
-			ints.erase(ints.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(ints, n);
 }
 bool ParamSet::EraseBool(const string &n) {
-	for (u_int i = 0; i < bools.size(); ++i)
-		if (bools[i]->name == n) {
-			delete bools[i];
-			bools.erase(bools.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(bools, n);
 }
 bool ParamSet::EraseFloat(const string &n) {
-	for (u_int i = 0; i < floats.size(); ++i)
-		if (floats[i]->name == n) {
-			delete floats[i];
-			floats.erase(floats.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(floats, n);
 }
 bool ParamSet::ErasePoint(const string &n) {
-	for (u_int i = 0; i < points.size(); ++i)
-		if (points[i]->name == n) {
-			delete points[i];
-			points.erase(points.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(points, n);
 }
 bool ParamSet::EraseVector(const string &n) {
-	for (u_int i = 0; i < vectors.size(); ++i)
-		if (vectors[i]->name == n) {
-			delete vectors[i];
-			vectors.erase(vectors.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(vectors, n);
 }
 bool ParamSet::EraseNormal(const string &n) {
-	for (u_int i = 0; i < normals.size(); ++i)
-		if (normals[i]->name == n) {
-			delete normals[i];
-			normals.erase(normals.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(normals, n);
 }
 bool ParamSet::EraseRGBColor(const string &n) {
-	for (u_int i = 0; i < spectra.size(); ++i)
-		if (spectra[i]->name == n) {
-			delete spectra[i];
-			spectra.erase(spectra.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(spectra, n);
 }
 bool ParamSet::EraseString(const string &n) {
-	for (u_int i = 0; i < strings.size(); ++i)
-		if (strings[i]->name == n) {
-			delete strings[i];
-			strings.erase(strings.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(strings, n);
 }
 bool ParamSet::EraseTexture(const string &n) {
-	for (u_int i = 0; i < textures.size(); ++i)
-		if (textures[i]->name == n) {
-			delete textures[i];
-			textures.erase(textures.begin() + i);
-			return true;
-		}
-	return false;
+	return EraseParamType(textures, n);
 }
-float ParamSet::FindOneFloat(const string &name,
-                             float d) const {
-	for (u_int i = 0; i < floats.size(); ++i)
-		if (floats[i]->name == name &&
-			floats[i]->nItems == 1) {
-			floats[i]->lookedUp = true;
-			return *(floats[i]->data);
-		}
-	return d;
+float ParamSet::FindOneFloat(const string &name, float d) const
+{
+	return LookupOne(floats, name, d);
 }
-const float *ParamSet::FindFloat(const string &name,
-		int *nItems) const {
-	for (u_int i = 0; i < floats.size(); ++i)
-		if (floats[i]->name == name) {
-			*nItems = floats[i]->nItems;
-			floats[i]->lookedUp = true;
-			return floats[i]->data;
-		}
-	return NULL;
+const float *ParamSet::FindFloat(const string &name, int *nItems) const
+{
+	return LookupPtr(floats, name, nItems);
 }
-const int *ParamSet::FindInt(const string &name, int *nItems) const {
-	LOOKUP_PTR(ints);
+const int *ParamSet::FindInt(const string &name, int *nItems) const
+{
+	return LookupPtr(ints, name, nItems);
 }
-const bool *ParamSet::FindBool(const string &name, int *nItems) const {
-	LOOKUP_PTR(bools);
+const bool *ParamSet::FindBool(const string &name, int *nItems) const
+{
+	return LookupPtr(bools, name, nItems);
 }
-int ParamSet::FindOneInt(const string &name, int d) const {
-	LOOKUP_ONE(ints);
+int ParamSet::FindOneInt(const string &name, int d) const
+{
+	return LookupOne(ints, name, d);
 }
-bool ParamSet::FindOneBool(const string &name, bool d) const {
-	LOOKUP_ONE(bools);
+bool ParamSet::FindOneBool(const string &name, bool d) const
+{
+	return LookupOne(bools, name, d);
 }
-const Point *ParamSet::FindPoint(const string &name, int *nItems) const {
-	LOOKUP_PTR(points);
+const Point *ParamSet::FindPoint(const string &name, int *nItems) const
+{
+	return LookupPtr(points, name, nItems);
 }
-Point ParamSet::FindOnePoint(const string &name, const Point &d) const {
-	LOOKUP_ONE(points);
+const Point &ParamSet::FindOnePoint(const string &name, const Point &d) const
+{
+	return LookupOne(points, name, d);
 }
-const Vector *ParamSet::FindVector(const string &name, int *nItems) const {
-	LOOKUP_PTR(vectors);
+const Vector *ParamSet::FindVector(const string &name, int *nItems) const
+{
+	return LookupPtr(vectors, name, nItems);
 }
-Vector ParamSet::FindOneVector(const string &name, const Vector &d) const {
-	LOOKUP_ONE(vectors);
+const Vector &ParamSet::FindOneVector(const string &name, const Vector &d) const
+{
+	return LookupOne(vectors, name, d);
 }
-const Normal *ParamSet::FindNormal(const string &name, int *nItems) const {
-	LOOKUP_PTR(normals);
+const Normal *ParamSet::FindNormal(const string &name, int *nItems) const
+{
+	return LookupPtr(normals, name, nItems);
 }
-Normal ParamSet::FindOneNormal(const string &name, const Normal &d) const {
-	LOOKUP_ONE(normals);
+const Normal &ParamSet::FindOneNormal(const string &name, const Normal &d) const
+{
+	return LookupOne(normals, name, d);
 }
-const RGBColor *ParamSet::FindRGBColor(const string &name, int *nItems) const {
-	LOOKUP_PTR(spectra);
+const RGBColor *ParamSet::FindRGBColor(const string &name, int *nItems) const
+{
+	return LookupPtr(spectra, name, nItems);
 }
-RGBColor ParamSet::FindOneRGBColor(const string &name, const RGBColor &d) const {
-	LOOKUP_ONE(spectra);
+const RGBColor &ParamSet::FindOneRGBColor(const string &name, const RGBColor &d) const
+{
+	return LookupOne(spectra, name, d);
 }
-const string *ParamSet::FindString(const string &name, int *nItems) const {
-	LOOKUP_PTR(strings);
+const string *ParamSet::FindString(const string &name, int *nItems) const
+{
+	return LookupPtr(strings, name, nItems);
 }
-string ParamSet::FindOneString(const string &name, const string &d) const {
-	LOOKUP_ONE(strings);
+const string &ParamSet::FindOneString(const string &name, const string &d) const
+{
+	return LookupOne(strings, name, d);
 }
-string ParamSet::FindTexture(const string &name) const {
-	string d = "";
-	LOOKUP_ONE(textures);
+const string &ParamSet::FindTexture(const string &name) const
+{
+	static const string empty("");
+	return LookupOne(textures, name, empty);
 }
 void ParamSet::ReportUnused() const {
-#define CHECK_UNUSED(v) \
-	for (i = 0; i < (v).size(); ++i) \
-		if (!(v)[i]->lookedUp) \
-		{ \
-			std::stringstream ss; \
-			ss<<"Parameter '"<<(v)[i]->name<<"' not used"; \
-			luxError(LUX_NOERROR,LUX_WARNING,ss.str().c_str()); \
-		}
-	u_int i;
-	CHECK_UNUSED(ints);       CHECK_UNUSED(bools);
-	CHECK_UNUSED(floats);   CHECK_UNUSED(points);
-	CHECK_UNUSED(vectors); CHECK_UNUSED(normals);
-	CHECK_UNUSED(spectra); CHECK_UNUSED(strings);
-	CHECK_UNUSED(textures);
+	CheckUnused(ints);
+	CheckUnused(bools);
+	CheckUnused(floats);
+	CheckUnused(points);
+	CheckUnused(vectors);
+	CheckUnused(normals);
+	CheckUnused(spectra);
+	CheckUnused(strings);
+	CheckUnused(textures);
 }
 void ParamSet::Clear() {
-#define DEL_PARAMS(name) \
-	for (u_int i = 0; i < (name).size(); ++i) \
-		delete (name)[i]; \
-	(name).erase((name).begin(), (name).end())
-	DEL_PARAMS(ints);    DEL_PARAMS(bools);
-	DEL_PARAMS(floats);  DEL_PARAMS(points);
-	DEL_PARAMS(vectors); DEL_PARAMS(normals);
-	DEL_PARAMS(spectra); DEL_PARAMS(strings);
-	DEL_PARAMS(textures);
-#undef DEL_PARAMS
+	DelParams(ints);
+	DelParams(bools);
+	DelParams(floats);
+	DelParams(points);
+	DelParams(vectors);
+	DelParams(normals);
+	DelParams(spectra);
+	DelParams(strings);
+	DelParams(textures);
 }
 string ParamSet::ToString() const {
-	string ret;
-	u_int i;
-	int j;
-	string typeString;
-	const int bufLen = 48*1024*1024;
-	static char *buf = new char[bufLen];
-	char *bufEnd = buf + bufLen;
-	for (i = 0; i < ints.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<int> *item = ints[i];
-		typeString = "integer ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "%d ", item->data[j]);
-		ret += buf;
-		ret += string("] ");
+	std::stringstream ret("");
+	for (u_int i = 0; i < ints.size(); ++i) {
+		const ParamSetItem<int> *item = ints[i];
+		ret << "\"integer " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j] << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < bools.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<bool> *item = bools[i];
-		typeString = "bool ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "\"%s\" ", item->data[j] ? "true" : "false");
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < bools.size(); ++i) {
+		const ParamSetItem<bool> *item = bools[i];
+		ret << "\"bool " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << (item->data[j] ? "true" : "false") << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < floats.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<float> *item = floats[i];
-		typeString = "float ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "%.8g ", item->data[j]);
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < floats.size(); ++i) {
+		const ParamSetItem<float> *item = floats[i];
+		ret << "\"float " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j] << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < points.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<Point> *item = points[i];
-		typeString = "point ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ", item->data[j].x,
-				item->data[j].y, item->data[j].z);
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < points.size(); ++i) {
+		const ParamSetItem<Point> *item = points[i];
+		ret << "\"point " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j].x << " " <<
+				item->data[j].y << " " <<
+				item->data[j].z << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < vectors.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<Vector> *item = vectors[i];
-		typeString = "vector ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ", item->data[j].x,
-				item->data[j].y, item->data[j].z);
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < vectors.size(); ++i) {
+		const ParamSetItem<Vector> *item = vectors[i];
+		ret << "\"vector " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j].x << " " <<
+				item->data[j].y << " " <<
+				item->data[j].z << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < normals.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<Normal> *item = normals[i];
-		typeString = "normal ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ", item->data[j].x,
-				item->data[j].y, item->data[j].z);
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < normals.size(); ++i) {
+		const ParamSetItem<Normal> *item = normals[i];
+		ret << "\"normal " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j].x << " " <<
+				item->data[j].y << " " <<
+				item->data[j].z << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < strings.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<string> *item = strings[i];
-		typeString = "string ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "\"%s\" ", item->data[j].c_str());
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < strings.size(); ++i) {
+		const ParamSetItem<string> *item = strings[i];
+		ret << "\"string " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j] << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < textures.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<string> *item = textures[i];
-		typeString = "texture ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "\"%s\" ", item->data[j].c_str());
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < textures.size(); ++i) {
+		const ParamSetItem<string> *item = textures[i];
+		ret << "\"texture " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j] << " ";
+		ret << "] ";
 	}
-	for (i = 0; i < spectra.size(); ++i) {
-		char *bufp = buf;
-		*bufp = '\0';
-		ParamSetItem<RGBColor> *item = spectra[i];
-		typeString = "color ";
-		// Print _ParamSetItem_ declaration, determine how many to print
-		int nPrint = item->nItems;
-		ret += string("\"");
-		ret += typeString;
-		ret += item->name;
-		ret += string("\"");
-		ret += string(" [");
-		for (j = 0; j < nPrint; ++j)
-			bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ", item->data[j].c[0],
-				item->data[j].c[1], item->data[j].c[2]);
-		ret += buf;
-		ret += string("] ");
+	for (u_int i = 0; i < spectra.size(); ++i) {
+		const ParamSetItem<RGBColor> *item = spectra[i];
+		ret << "\"color " << item->name << "\" [";
+		for (int j = 0; j < item->nItems; ++j)
+			ret << item->data[j].c[0] << " " <<
+				item->data[j].c[1] << " " <<
+				item->data[j].c[2] << " ";
+		ret << "] ";
 	}
-	return ret;
+	return ret.str();
 }
 // TextureParams Method Definitions
 boost::shared_ptr<Texture<SWCSpectrum> >
@@ -1235,7 +1176,7 @@ boost::shared_ptr<Texture<SWCSpectrum> >
 	}
 	RGBColor val = geomParams.FindOneRGBColor(n,
 		materialParams.FindOneRGBColor(n, def));
-	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture<SWCSpectrum>(val));
+	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture(val));
 }
 boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
 	string name = geomParams.FindTexture(n);
@@ -1256,6 +1197,7 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 	boost::shared_ptr<Texture<float> > texture = GetFloatTexture(n);
 	if (texture)  return texture;
 	float val = FindFloat(n, def);
-	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture<float>(val));
+	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
 }
 
+}
