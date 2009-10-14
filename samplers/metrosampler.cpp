@@ -154,6 +154,9 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	const float mutationSelector = tspack->rng->floatValue();
 	large = (mutationSelector < pLarge);
 	if (sampleImage == NULL) {
+		// If this is the original sampler, shuffle the QR sequence
+		if (!timeImage)
+			Shuffle(tspack, rngSamples, rngN, 1);
 		initMetropolis(this, sample);
 		large = true;
 	}
