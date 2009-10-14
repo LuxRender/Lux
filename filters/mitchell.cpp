@@ -28,8 +28,14 @@ using namespace lux;
 
 // Mitchell Filter Method Definitions
 float MitchellFilter::Evaluate(float x, float y) const {
-	return Mitchell1D(x * invXWidth) *
-		Mitchell1D(y * invYWidth);
+	const float distance = sqrtf(x * x * invXWidth * invXWidth +
+		y * y * invYWidth * invYWidth);
+	if (!super)
+		return Mitchell1D(distance);
+	const float dist = distance / .6f;
+	return a1 * Mitchell1D(dist - 2.f / 3.f) +
+		a0 * Mitchell1D(dist) +
+		a1 * Mitchell1D(dist + 2.f / 3.f);
 }
 Filter* MitchellFilter::CreateFilter(const ParamSet &ps) {
 	// Find common filter parameters
@@ -37,7 +43,8 @@ Filter* MitchellFilter::CreateFilter(const ParamSet &ps) {
 	float yw = ps.FindOneFloat("ywidth", 2.);
 	float B = ps.FindOneFloat("B", 1.f/3.f);
 	float C = ps.FindOneFloat("C", 1.f/3.f);
-	return new MitchellFilter(B, C, xw, yw);
+	bool sup = ps.FindOneBool("supersample", "false");
+	return new MitchellFilter(sup, B, C, xw, yw);
 }
 
 static DynamicLoader::RegisterFilter<MitchellFilter> r("mitchell");

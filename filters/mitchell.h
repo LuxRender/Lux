@@ -34,14 +34,18 @@ namespace lux
 class MitchellFilter : public Filter {
 public:
 	// MitchellFilter Public Methods
-	MitchellFilter(float b, float c, float xw, float yw)
-		: Filter(xw, yw) { B = b; C = c; }
+	MitchellFilter(bool sup, float b, float c, float xw, float yw)
+		: Filter(sup ? xw * 5.f / 3.f : xw, sup ? yw * 5.f / 3.f : yw),
+		super(sup), B(b), C(c),
+		a0((76.f - 16.f * B + 8.f * C) / 81.f), a1((1.f - a0)/ 2.f) { }
 	virtual ~MitchellFilter() { }
 	virtual float Evaluate(float x, float y) const;
 	
 	static Filter *CreateFilter(const ParamSet &ps);
 private:
 	float Mitchell1D(float x) const {
+		if (x >= 1.f)
+			return 0.f;
 		x = fabsf(2.f * x);
 		if (x > 1.f)
 			return (((-B/6.f - C) * x + (B + 5.f*C)) * x +
@@ -51,7 +55,8 @@ private:
 				(-3.f + 2.f*B + C)) * x*x +
 				(1.f - B/3.f);
 	}
-	float B, C;
+	const bool super;
+	const float B, C, a0, a1;
 };
 
 }//namespace lux
