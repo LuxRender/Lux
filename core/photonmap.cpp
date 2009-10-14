@@ -681,8 +681,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				photonRay = RayDifferential(photonIsect.dg.p, wi);
 			}
 		}
-
-		BSDF::FreeAll(tspack);
+		tspack->arena->FreeAll();
 	}
 
 	boost::xtime photonShootingEndTime;

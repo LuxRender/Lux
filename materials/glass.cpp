@@ -22,6 +22,7 @@
 
 // glass.cpp*
 #include "glass.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "specularreflection.h"
 #include "speculartransmission.h"
@@ -47,21 +48,21 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	float flm = film->Evaluate(tspack, dgs);
 	float flmindex = filmindex->Evaluate(tspack, dgs);
 
-	MultiBSDF *bsdf = BSDF_ALLOC(tspack, MultiBSDF)(dgs, dgGeom.nn, ior);
+	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, ior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior, cb);
+	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)(1.f, ior, cb);
 	if (!R.Black()) {
 		if (architectural)
-			bsdf->Add(BSDF_ALLOC(tspack, ArchitecturalReflection)(R,
+			bsdf->Add(ARENA_ALLOC(tspack->arena, ArchitecturalReflection)(R,
 				fresnel, flm, flmindex));
 		else
-			bsdf->Add(BSDF_ALLOC(tspack, SpecularReflection)(R,
+			bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularReflection)(R,
 				fresnel, flm, flmindex));
 	}
 	if (!T.Black())
-		bsdf->Add(BSDF_ALLOC(tspack, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
+		bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

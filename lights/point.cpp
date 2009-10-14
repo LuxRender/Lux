@@ -117,11 +117,11 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 	const Normal ns(w);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
-		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
-			BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
+		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	else
-		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
-			BSDF_ALLOC(tspack, Lambertian)(1.f));
+		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+			ARENA_ALLOC(tspack->arena, Lambertian)(1.f));
 	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;
 }
@@ -140,11 +140,11 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
-		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
-			BSDF_ALLOC(tspack, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
+		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
 	else
-		*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
-			BSDF_ALLOC(tspack, Lambertian)(1.f));
+		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+			ARENA_ALLOC(tspack->arena, Lambertian)(1.f));
 	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;

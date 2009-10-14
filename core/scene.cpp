@@ -348,7 +348,7 @@ void RenderThread::render(RenderThread *myThread) {
             myThread->sampler->AddSample(*(myThread->sample));
 
             // Free BSDF memory from computing image sample value
-            BSDF::FreeAll(myThread->tspack);
+            myThread->tspack->arena->FreeAll();
 
         // update samples statistics
 	do {

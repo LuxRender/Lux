@@ -22,6 +22,7 @@
 
 // mattetranslucent.cpp*
 #include "mattetranslucent.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "lambertian.h"
 #include "orennayar.h"
@@ -41,7 +42,7 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 	else
 		dgs = dgShading;
 
-	MultiBSDF *bsdf = BSDF_ALLOC(tspack, MultiBSDF)(dgs, dgGeom.nn);
+	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -49,17 +50,17 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 
 	if (!R.Black()) {
 		if (sig == 0.)
-			bsdf->Add(BSDF_ALLOC(tspack, Lambertian)(R));
+			bsdf->Add(ARENA_ALLOC(tspack->arena, Lambertian)(R));
 		else
-			bsdf->Add(BSDF_ALLOC(tspack, OrenNayar)(R, sig));
+			bsdf->Add(ARENA_ALLOC(tspack->arena, OrenNayar)(R, sig));
 	}
 	if (!T.Black()) {
 		BxDF *base;
 		if (sig == 0.)
-			base = BSDF_ALLOC(tspack, Lambertian)(T);
+			base = ARENA_ALLOC(tspack->arena, Lambertian)(T);
 		else
-			base = BSDF_ALLOC(tspack, OrenNayar)(T, sig);
-		bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(base));
+			base = ARENA_ALLOC(tspack->arena, OrenNayar)(T, sig);
+		bsdf->Add(ARENA_ALLOC(tspack->arena, BRDFToBTDF)(base));
 	}
 
 	// Add ptr to CompositingParams structure

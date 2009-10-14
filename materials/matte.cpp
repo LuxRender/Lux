@@ -22,6 +22,7 @@
 
 // matte.cpp*
 #include "matte.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "lambertian.h"
 #include "orennayar.h"
@@ -46,10 +47,10 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
 	BxDF *bxdf;
 	if (sig == 0.)
-		bxdf = BSDF_ALLOC(tspack, Lambertian)(r);
+		bxdf = ARENA_ALLOC(tspack->arena, Lambertian)(r);
 	else
-		bxdf = BSDF_ALLOC(tspack, OrenNayar)(r, sig);
-	SingleBSDF *bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

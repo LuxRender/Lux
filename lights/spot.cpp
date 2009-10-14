@@ -117,8 +117,8 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
-		BSDF_ALLOC(tspack, SpotBxDF)(cosTotalWidth, cosFalloffStart));
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(tspack->arena, SpotBxDF)(cosTotalWidth, cosFalloffStart));
 	*pdf = 1.f;
 	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;
@@ -134,8 +134,8 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dg, ns,
-		BSDF_ALLOC(tspack, SpotBxDF)(cosTotalWidth, cosFalloffStart));
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(tspack->arena, SpotBxDF)(cosTotalWidth, cosFalloffStart));
 	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;

@@ -22,6 +22,7 @@
 
 // mixmaterial.cpp*
 #include "mixmaterial.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "texture.h"
 #include "paramset.h"
@@ -31,7 +32,7 @@ using namespace lux;
 
 // MixMaterial Method Definitions
 BSDF *MixMaterial::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	MixBSDF *bsdf = BSDF_ALLOC(tspack, MixBSDF)(dgShading, dgGeom.nn);
+	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading, dgGeom.nn);
 	float amt = amount->Evaluate(tspack, dgShading);
 	bsdf->Add(amt, child1->GetBSDF(tspack, dgGeom, dgShading));
 	bsdf->Add(1.f - amt, child2->GetBSDF(tspack, dgGeom, dgShading));

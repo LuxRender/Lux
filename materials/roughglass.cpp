@@ -22,6 +22,7 @@
 
 // roughglass.cpp*
 #include "roughglass.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "fresneldielectric.h"
 #include "microfacet.h"
@@ -44,7 +45,7 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(tspack, dgs);
 	float cb = cauchyb->Evaluate(tspack, dgs);
-	MultiBSDF *bsdf = BSDF_ALLOC(tspack, MultiBSDF)(dgs, dgGeom.nn, ior);
+	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, ior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -53,16 +54,16 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	MicrofacetDistribution *md;
 	// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
 	if(urough == vrough)
-		md = BSDF_ALLOC(tspack, Blinn)(1.f / urough);
+		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / urough);
 	else
-		md = BSDF_ALLOC(tspack, Anisotropic)(1.f / urough, 1.f / vrough);
+		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / urough, 1.f / vrough);
 	if (!R.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectric)(1.f, ior, cb);
-		bsdf->Add(BSDF_ALLOC(tspack, Microfacet)(R, fresnel, md));
+		Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)(1.f, ior, cb);
+		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(R, fresnel, md));
 	}
 	if (!T.Black()) {
-		Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelDielectricComplement)(1.f, ior, cb);
-		bsdf->Add(BSDF_ALLOC(tspack, BRDFToBTDF)(BSDF_ALLOC(tspack, Microfacet)(T, fresnel, md), 1.f, ior, cb));
+		Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectricComplement)(1.f, ior, cb);
+		bsdf->Add(ARENA_ALLOC(tspack->arena, BRDFToBTDF)(ARENA_ALLOC(tspack->arena, Microfacet)(T, fresnel, md), 1.f, ior, cb));
 	}
 
 	// Add ptr to CompositingParams structure

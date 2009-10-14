@@ -22,6 +22,7 @@
 
 // mirror.cpp*
 #include "mirror.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "specularreflection.h"
 #include "fresnelnoop.h"
@@ -45,9 +46,9 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	BxDF *bxdf = BSDF_ALLOC(tspack, SpecularReflection)(R,
-		BSDF_ALLOC(tspack, FresnelNoOp)(), flm, flmindex);
-	SingleBSDF *bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+	BxDF *bxdf = ARENA_ALLOC(tspack->arena, SpecularReflection)(R,
+		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), flm, flmindex);
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

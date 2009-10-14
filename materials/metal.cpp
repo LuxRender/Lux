@@ -22,6 +22,7 @@
 
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "metal.h"
+#include "memory.h"
 #include "bxdf.h"
 #include "fresnelconductor.h"
 #include "microfacet.h"
@@ -67,13 +68,13 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 
 	MicrofacetDistribution *md;
 	if(u == v)
-		md = BSDF_ALLOC(tspack, Blinn)(1.f / u);
+		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
 	else
-		md = BSDF_ALLOC(tspack, Anisotropic)(1.f/u, 1.f/v);
+		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f/u, 1.f/v);
 
-	Fresnel *fresnel = BSDF_ALLOC(tspack, FresnelConductor)(n, k);
-	BxDF *bxdf = BSDF_ALLOC(tspack, Microfacet)(1.f, fresnel, md);
-	SingleBSDF *bsdf = BSDF_ALLOC(tspack, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
+	BxDF *bxdf = ARENA_ALLOC(tspack->arena, Microfacet)(1.f, fresnel, md);
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
