@@ -148,7 +148,7 @@ extern "C" void luxPixelFilter(const char *name, ...) //
 	luxPixelFilterV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxPixelFilterV (const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxPixelFilterV (const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	//TODO - jromang : construct the paramset
 	//Context::luxpixelFilter(name,params);
@@ -166,7 +166,7 @@ extern "C" void luxFilm(const char *name, ...)
 	luxFilmV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxFilmV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxFilmV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxFilm(name,ParamSet(n,name,tokens,params));
 }
@@ -184,7 +184,7 @@ extern "C" void luxSampler(const char *name, ...)
 	luxSamplerV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxSamplerV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxSamplerV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxSampler(name,ParamSet(n,name,tokens,params));
 }
@@ -200,7 +200,7 @@ extern "C" void luxAccelerator(const char *name, ...)
 	luxAcceleratorV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxAcceleratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxAcceleratorV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxAccelerator(name,ParamSet(n,name,tokens,params));
 }
@@ -215,7 +215,7 @@ extern "C" void luxSurfaceIntegrator(const char *name, ...)
 	luxSurfaceIntegratorV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxSurfaceIntegratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxSurfaceIntegratorV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxSurfaceIntegrator(name,ParamSet(n,name,tokens,params));
 }
@@ -232,7 +232,7 @@ extern "C" void luxVolumeIntegrator(const char *name, ...)
 	luxVolumeIntegratorV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxVolumeIntegratorV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxVolumeIntegratorV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxVolumeIntegrator(name,ParamSet(n,name,tokens,params));
 }
@@ -249,7 +249,7 @@ extern "C" void luxCamera(const char *name, ...)
 	luxCameraV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxCameraV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxCameraV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxCamera(name,ParamSet(n,name,tokens,params));
 }
@@ -286,7 +286,7 @@ extern "C" void luxTexture(const char *name, const char *type, const char *texna
 	luxTextureV( name, type, texname, PASS_PARAMETERS );
 }
 
-extern "C" void luxTextureV(const char *name, const char *type, const char *texname, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxTextureV(const char *name, const char *type, const char *texname, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxTexture(name,type,texname,ParamSet(n,name,tokens,params));
 }
@@ -301,7 +301,7 @@ extern "C" void luxMaterial(const char *name, ...)
 	luxMaterialV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxMaterialV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxMaterialV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxMaterial(name,ParamSet(n,name,tokens,params));
 }
@@ -312,7 +312,7 @@ extern "C" void luxMakeNamedMaterial(const char *name, ...)
 	luxMakeNamedMaterialV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxMakeNamedMaterialV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxMakeNamedMaterialV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxMakeNamedMaterial(name,ParamSet(n,name,tokens,params));
 }
@@ -323,7 +323,7 @@ extern "C" void luxNamedMaterial(const char *name, ...)
 	luxNamedMaterialV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxNamedMaterialV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxNamedMaterialV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxNamedMaterial(name,ParamSet(n,name,tokens,params));
 }
@@ -338,7 +338,7 @@ extern "C" void luxLightSource(const char *name, ...)
 	luxLightSourceV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxLightSourceV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxLightSourceV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxLightSource(name,ParamSet(n,name,tokens,params));
 }
@@ -353,7 +353,7 @@ extern "C" void luxAreaLightSource(const char *name, ...)
 	luxAreaLightSourceV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxAreaLightSourceV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxAreaLightSourceV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxAreaLightSource(name,ParamSet(n,name,tokens,params));
 }
@@ -368,7 +368,7 @@ extern "C" void luxPortalShape(const char *name, ...)
 	luxPortalShapeV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxPortalShapeV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxPortalShapeV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxPortalShape(name,ParamSet(n,name,tokens,params));
 }
@@ -383,7 +383,7 @@ extern "C" void luxShape(const char *name, ...)
 	luxShapeV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxShapeV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxShapeV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxShape(name,ParamSet(n,name,tokens,params));
 }
@@ -401,7 +401,7 @@ extern "C" void luxVolume(const char *name, ...)
 	luxVolumeV( name, PASS_PARAMETERS );
 }
 
-extern "C" void luxVolumeV(const char *name, int n, LuxToken tokens[], LuxPointer params[])
+extern "C" void luxVolumeV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[])
 {
 	Context::luxVolume(name,ParamSet(n,name,tokens,params));
 }

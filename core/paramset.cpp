@@ -36,7 +36,7 @@ ParamSet::ParamSet(const ParamSet &p2) {
 /* Here we create a paramset with the argument list provided by the C API.
  * We have to 'guess' the parameter type according the the parameter's name
  */
-ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[])
+ParamSet::ParamSet(int n, const char * pluginName, const char * const tokens[], const char * const params[])
 {
 	//TODO - jromang : implement this using a std::map or string hashing
 
