@@ -23,6 +23,7 @@
 // qbvhaccel.h*
 
 #include "lux.h"
+#include "memory.h"
 #include "primitive.h"
 
 #include <xmmintrin.h>
@@ -31,6 +32,9 @@ using boost::int32_t;
 
 namespace lux
 {
+
+class QuadRay;
+class QuadPrimitive;
 
 // This code is based on Flexray by Anthony Pajot (anthony.pajot@alumni.enseeiht.fr)
 
@@ -222,13 +226,9 @@ public:
 	   @return an int used to index the array of paths in the bboxes
 	   (the visit array)
 	*/
-	int32_t BBoxIntersect(__m128 sseOrig[3], __m128 sseInvDir[3],
-		const __m128 &sseTMin, const __m128 &sseTMax,
+	int32_t inline BBoxIntersect(const QuadRay &ray4, const __m128 invDir[3],
 		const int sign[3]) const;
-
-	
 };
-
 
 /***************************************************/
 class QBVHAccel : public Aggregate {
@@ -374,7 +374,7 @@ private:
 	   test will be redone for the nearest triangle found, to
 	   fill the Intersection structure.
 	*/
-	boost::shared_ptr<Primitive> *prims;
+	boost::shared_ptr<QuadPrimitive> *prims;
 	
 	/**
 	   The number of primitives
