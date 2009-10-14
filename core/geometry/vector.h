@@ -167,6 +167,29 @@ inline float SphericalPhi(const Vector &v) {
 	return (p < 0.f) ? p + 2.f*M_PI : p;
 }
 
+inline float CosTheta(const Vector &w) { return w.z; }
+
+inline float SinTheta(const Vector &w) {
+	return sqrtf(max(0.f, 1.f - w.z*w.z));
+}
+
+inline float SinTheta2(const Vector &w) {
+	return 1.f - CosTheta(w)*CosTheta(w);
+}
+
+inline float CosPhi(const Vector &w) {
+	return w.x / SinTheta(w);
+}
+
+inline float SinPhi(const Vector &w) {
+	return w.y / SinTheta(w);
+}
+
+inline bool SameHemisphere(const Vector &w,
+                          const Vector &wp) {
+	return w.z * wp.z > 0.f;
+}
+
 }//namespace lux
 
 #ifdef LUX_NORMAL_H

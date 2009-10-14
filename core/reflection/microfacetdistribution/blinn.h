@@ -24,8 +24,8 @@
 #define LUX_BLINN_H
 // blinn.h*
 #include "lux.h"
-#include "bxdf.h"
 #include "microfacetdistribution.h"
+#include "geometry/vector.h"
 
 namespace lux
 {

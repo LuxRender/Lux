@@ -22,7 +22,7 @@
 
 // beckmann.cpp*
 #include "beckmann.h"
-#include "bxdf.h"
+#include "geometry/vector.h"
 
 using namespace lux;
 

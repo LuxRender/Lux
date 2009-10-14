@@ -22,7 +22,7 @@
 
 // wardisotropic.cpp*
 #include "wardisotropic.h"
-#include "bxdf.h"
+#include "geometry/vector.h"
 
 using namespace lux;
 
