@@ -28,6 +28,7 @@
 #include "anisotropic.h"
 #include "microfacet.h"
 #include "specularreflection.h"
+#include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
 

@@ -28,6 +28,7 @@
 #include "fresnelblend.h"
 #include "blinn.h"
 #include "anisotropic.h"
+#include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
 

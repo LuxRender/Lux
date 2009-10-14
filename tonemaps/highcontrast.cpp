@@ -22,6 +22,7 @@
 
 // highcontrast.cpp*
 #include "highcontrast.h"
+#include "color.h"
 #include "stats.h"
 #include "dynload.h"
 

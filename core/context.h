@@ -24,6 +24,7 @@
 #define LUX_CONTEXT_H
 
 #include "lux.h"
+#include "geometry/transform.h"
 #include "paramset.h"
 
 #include <boost/thread/mutex.hpp>

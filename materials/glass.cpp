@@ -26,6 +26,7 @@
 #include "specularreflection.h"
 #include "speculartransmission.h"
 #include "fresneldielectric.h"
+#include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
 

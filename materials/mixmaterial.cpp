@@ -23,6 +23,7 @@
 // mixmaterial.cpp*
 #include "mixmaterial.h"
 #include "bxdf.h"
+#include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
 

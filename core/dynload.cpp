@@ -28,6 +28,7 @@
 #include "error.h"
 #include "shape.h"
 #include "material.h"
+#include "texture.h"
 
 namespace lux {
 

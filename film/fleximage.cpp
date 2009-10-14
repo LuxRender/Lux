@@ -25,6 +25,10 @@
  *
  */
 
+// Those includes must come first (before lux.h)
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/string.hpp>
+
 #include "fleximage.h"
 #include "error.h"
 #include "scene.h"		// for Scene
@@ -45,8 +49,6 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/split_member.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/string.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>

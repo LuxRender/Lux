@@ -29,6 +29,7 @@
  */
 
 #include "reinhard.h"
+#include "color.h"
 #include "dynload.h"
 
 using namespace lux;

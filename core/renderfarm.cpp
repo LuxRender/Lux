@@ -20,6 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+// This include must come before lux.h
+#include <boost/serialization/vector.hpp>
+
 #include "lux.h"
 #include "scene.h"
 #include "api.h"
@@ -30,6 +33,7 @@
 
 #include <fstream>
 #include <boost/asio.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/bind.hpp>
 

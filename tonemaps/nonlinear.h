@@ -22,6 +22,7 @@
 
 // nonlinear.cpp*
 #include "tonemap.h"
+#include "color.h"
 #include "paramset.h"
 
 namespace lux

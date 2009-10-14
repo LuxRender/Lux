@@ -25,13 +25,13 @@
 // color.h*
 #include "lux.h"
 
+#include <boost/serialization/access.hpp>
+
 #ifdef WIN32
 #undef max
 #undef min
-#include <limits>
-#else
-#include <limits.h>
 #endif // WIN32
+#include <limits>
 
 namespace lux
 {

@@ -30,12 +30,6 @@
 #include <ieeefp.h>
 #endif
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/split_member.hpp>
-
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -123,8 +117,6 @@ class StatsCounter;
 class StatsRatio;
 class StatsPercentage;
 
-#include "randomgen.h"
-
 namespace lux
 {
   class Matrix4x4;
@@ -146,11 +138,9 @@ namespace lux
   class MotionPrimitive;
   class Aggregate;
   class Intersection;
-  class RGBColor;
   class ImageData;
   class SWCSpectrum;
   class SpectrumWavelengths;
-  class Color;
   class RGBColor;
   class XYZColor;
   class SPD;

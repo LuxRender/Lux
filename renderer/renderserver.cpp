@@ -20,11 +20,15 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+// This include must come first (before lux.h)
+#include <boost/serialization/vector.hpp>
+
 #include "renderserver.h"
 #include "api.h"
 #include "context.h"
 #include "paramset.h"
 #include "error.h"
+#include "color.h"
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION < 103401)
@@ -502,12 +506,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 				case CMD_LUXTEXTURE: {
 					string name, type, texname;
 					ParamSet params;
-                                        // Dade - fixed in bug 562: "Luxconsole -s (Linux 64) fails to network render when material names contain spaces"
+					// Dade - fixed in bug 562: "Luxconsole -s (Linux 64) fails to network render when material names contain spaces"
 					getline(stream, name);
 					getline(stream, type);
 					getline(stream, texname);
 
-                                        boost::archive::text_iarchive ia(stream);
+					boost::archive::text_iarchive ia(stream);
 					ia >> params;
 
 					processFile("filename", params, tmpFileList, stream);

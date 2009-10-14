@@ -22,6 +22,7 @@
 
 // contrast.cpp*
 #include "contrast.h"
+#include "color.h"
 #include "dynload.h"
 
 using namespace lux;

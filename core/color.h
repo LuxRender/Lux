@@ -25,6 +25,7 @@
 // color.h*
 #include "lux.h"
 
+#include <boost/serialization/access.hpp>
 
 namespace lux
 {
