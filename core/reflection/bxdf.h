@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
-#include "memory.h"
 
 namespace lux
 {
@@ -86,11 +85,6 @@ public:
 	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &wo,
 		BxDFType flags = BSDF_ALL) const = 0;
 
-	static void *Alloc(const TsPack *tspack, u_int sz) {
-		return tspack->arena->Alloc(sz);
-	}
-	static void FreeAll(const TsPack *tspack) { tspack->arena->FreeAll(); }
-
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
@@ -105,7 +99,6 @@ protected:
 	Normal nn, ng;
 	Vector sn, tn;
 };
-#define BSDF_ALLOC(TSPACK,T)  new (BSDF::Alloc((TSPACK), sizeof(T))) T
 
 // Single BxDF BSDF declaration
 class  SingleBSDF : public BSDF  {
