@@ -149,7 +149,7 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point
 }
 bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
-	if (Dot(wi, normal) < 1.f - SHADOW_RAY_EPSILON || distance < ClipHither || distance > ClipYon)
+	if (Dot(wi, normal) < 1.f - SHADOW_RAY_EPSILON || (!isinf(distance) && (distance < ClipHither || distance > ClipYon)))
 		return false;
 	Point ps(WorldToRasterBidir(p));
 	*x = ps.x;
