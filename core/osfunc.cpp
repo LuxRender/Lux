@@ -88,158 +88,85 @@ bool osIsLittleEndian() {
     return (shortTest.bytes[0] == 1);
 }
 
+template<class T> void osWriteLittleEndian(bool isLittleEndian,
+	std::basic_ostream<char> &os, T value)
+{
+	if (isLittleEndian)
+		os.write(reinterpret_cast<char *>(&value), sizeof(T));
+	else {
+		union ValueBytes {
+			T value;
+			char bytes[sizeof(T)];
+		} f;
+		f.value = value;
+
+		for (unsigned int i = sizeof(T) - 1; i >= 0; --i)
+			os.write(f.bytes + i, 1);
+	}
+}
+
+template<class T> T osReadLittleEndian(bool isLittleEndian,
+	std::basic_istream<char> &is)
+{
+	union ValueBytes {
+		T value;
+		char bytes[sizeof(T)];
+	} f;
+	if (isLittleEndian) {
+		is.read(reinterpret_cast<char *>(&f.value), sizeof(T));
+	} else {
+		for (unsigned int i = sizeof(T) - 1; i >= 0; --i)
+			is.read(f.bytes + i, 1);
+	}
+	return f.value;
+}
+
 void osWriteLittleEndianFloat(bool isLittleEndian,
-		std::basic_ostream<char> &os, float value) {
-    if(isLittleEndian)
-        os.write((char *)&value, sizeof(float));
-    else {
-        union FloatBytes {
-            float floatValue;
-            unsigned char bytes[sizeof(float)];
-        };
-
-        FloatBytes f;
-        f.floatValue = value;
-
-        for(unsigned int i = 0; i < sizeof(float); i++)
-            os.write((char *)&f.bytes[sizeof(float) - i - 1], 1);
-    }
+	std::basic_ostream<char> &os, float value)
+{
+	osWriteLittleEndian<float>(isLittleEndian, os, value);
 }
 
 float osReadLittleEndianFloat(bool isLittleEndian,
-		std::basic_istream<char> &is) {
-    if(isLittleEndian) {
-        float value;
-        is.read((char *)&value, sizeof(float));
-	return value;
-    } else {
-        union FloatBytes {
-            float floatValue;
-            unsigned char bytes[4];
-        };
-
-        FloatBytes f;
-        
-        for(unsigned int i = 0; i < sizeof(float); i++)
-            is.read((char *)&f.bytes[sizeof(float) - i - 1], 1);
-
-        return f.floatValue;
-    }
+	std::basic_istream<char> &is)
+{
+	return osReadLittleEndian<float>(isLittleEndian, is);
 }
 
 void osWriteLittleEndianDouble(bool isLittleEndian,
-		std::basic_ostream<char> &os, double value)
+	std::basic_ostream<char> &os, double value)
 {
-	if(isLittleEndian)
-		os.write((char *)&value, sizeof(double));
-	else {
-		union DoubleBytes {
-			double doubleValue;
-			unsigned char bytes[sizeof(double)];
-		} f;
-
-		f.doubleValue = value;
-
-		for(unsigned int i = 0; i < sizeof(double); ++i)
-			os.write((char *)&f.bytes[sizeof(double) - i - 1], 1);
-	}
+	osWriteLittleEndian<double>(isLittleEndian, os, value);
 }
 
 double osReadLittleEndianDouble(bool isLittleEndian,
-		std::basic_istream<char> &is)
+	std::basic_istream<char> &is)
 {
-	if(isLittleEndian) {
-		double value;
-		is.read((char *)&value, sizeof(double));
-		return value;
-	} else {
-		union DoubleBytes {
-			double doubleValue;
-			unsigned char bytes[sizeof(double)];
-		} f;
-
-		for (unsigned int i = 0; i < sizeof(double); ++i)
-			is.read((char *)&f.bytes[sizeof(double) - i - 1], 1);
-
-		return f.doubleValue;
-	}
+	return osReadLittleEndian<double>(isLittleEndian, is);
 }
 
 void osWriteLittleEndianInt(bool isLittleEndian,
-		std::basic_ostream<char> &os, int32_t value) {
-    if(isLittleEndian)
-        os.write((char *)&value, sizeof(int32_t));
-    else {
-        union IntBytes {
-            int32_t intValue;
-            unsigned char bytes[sizeof(int32_t)];
-        };
-
-        IntBytes f;
-        f.intValue = value;
-
-        for(unsigned int i = 0; i < sizeof(int32_t); i++)
-            os.write((char *)&f.bytes[sizeof(int32_t) - i - 1], 1);
-    }
+	std::basic_ostream<char> &os, int32_t value)
+{
+	osWriteLittleEndian<int32_t>(isLittleEndian, os, value);
 }
 
 int32_t osReadLittleEndianInt(bool isLittleEndian,
-		std::basic_istream<char> &is) {
-    if(isLittleEndian) {
-        int32_t value;
-        is.read((char *)&value, sizeof(int32_t));
-	return value;
-    } else {
-        union IntBytes {
-            int32_t intValue;
-            unsigned char bytes[sizeof(int32_t)];
-        };
-
-        IntBytes f;
-        
-        for(unsigned int i = 0; i < sizeof(int32_t); i++)
-            is.read((char *)&f.bytes[sizeof(int32_t) - i - 1], 1);
-
-        return f.intValue;
-    }
+	std::basic_istream<char> &is)
+{
+	return osReadLittleEndian<int32_t>(isLittleEndian, is);
 }
 
 void osWriteLittleEndianUInt(bool isLittleEndian,
-		std::basic_ostream<char> &os, uint32_t value) {
-    if(isLittleEndian)
-        os.write((char *)&value, sizeof(uint32_t));
-    else {
-        union IntBytes {
-            uint32_t intValue;
-            unsigned char bytes[sizeof(uint32_t)];
-        };
-
-        IntBytes f;
-        f.intValue = value;
-
-        for (unsigned int i = 0; i < sizeof(uint32_t); ++i)
-            os.write((char *)&f.bytes[sizeof(uint32_t) - i - 1], 1);
-    }
+	std::basic_ostream<char> &os, uint32_t value)
+{
+	osWriteLittleEndian<uint32_t>(isLittleEndian, os, value);
 }
 
 uint32_t osReadLittleEndianUInt(bool isLittleEndian,
-		std::basic_istream<char> &is) {
-    if(isLittleEndian) {
-        uint32_t value;
-        is.read((char *)&value, sizeof(uint32_t));
-	return value;
-    } else {
-        union IntBytes {
-            uint32_t intValue;
-            unsigned char bytes[sizeof(uint32_t)];
-        };
-
-        IntBytes f;
-        for(unsigned int i = 0; i < sizeof(uint32_t); ++i)
-            is.read((char *)&f.bytes[sizeof(uint32_t) - i - 1], 1);
-
-        return f.intValue;
-    }
+	std::basic_istream<char> &is)
+{
+	return osReadLittleEndian<uint32_t>(isLittleEndian, is);
 }
 
 }//namespace lux
