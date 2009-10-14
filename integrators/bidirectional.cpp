@@ -359,7 +359,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Adjust for round robin termination
 		if (i > 3)
 			p /= eye[i - 1].rrR;
-		if (nLight + nEye - i > 3) {
+		if (nLight + nEye - i > 4) {
 			if (i == nEye - 1)
 				p *= light[nLight - 1].rr;
 			else
@@ -383,7 +383,7 @@ static float weightPath(const vector<BidirVertex> &eye, int nEye, int eyeDepth,
 		// Adjust for round robin termination
 		if (i > 3)
 			p /= light[i - 1].rr;
-		if (nEye + nLight - i > 3) {
+		if (nEye + nLight - i > 4) {
 			if (i == nLight - 1)
 				p *= eye[nEye - 1].rrR;
 			else
@@ -523,9 +523,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		if (L->Black())
 			return false;
 		eWeight = eye[nEye - 2].dAWeight;
-		// Don't take v.tPdf into account because the light ray
-		// hasn't traveled yet
-		eye[nEye - 2].dAWeight = v.pdf *
+		eye[nEye - 2].dAWeight = v.pdf * v.tPdf *
 			eye[nEye - 2].cosi / eye[nEye - 2].d2;
 	} else if (nLight > 1) { // Evaluate light path without eye path
 		BidirVertex &v(light[nLight - 1]);
@@ -542,9 +540,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		if (L->Black())
 			return false;
 		lWeight = light[nLight - 2].dARWeight;
-		// Don't take v.tPdfR into account because the eye ray
-		// hasn't traveled yet
-		light[nLight - 2].dARWeight = v.pdfR *
+		light[nLight - 2].dARWeight = v.pdfR * v.tPdfR *
 			light[nLight - 2].coso / light[nLight - 2].d2;
 	} else
 		return false;

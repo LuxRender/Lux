@@ -92,10 +92,10 @@ int cubic(double A[4], double X[3])
 		if ( DIS < 0.0 ) {
 			//three real solutions!
 			//Confine the argument of ACOS to the interval [-1;1]!
-			PHI = acosf(min(1.0,max(-1.0,Q/sqrt(P))));
+			PHI = acos(min(1.0,max(-1.0,Q/sqrt(P))));
 			P = 2.0*sqrt(P1);
 			for (int i = 0; i < 3; i++)
-				X[i] = P*cosf((PHI+2*((double)i)*PI)*THIRD)-W;
+				X[i] = P*cos((PHI+2*((double)i)*PI)*THIRD)-W;
 			L = 3;
 		}
 		else {
@@ -178,8 +178,8 @@ int cubic(double A[4], double X[3])
 	d = dd[1];
 	f = dd[0];
 
-	double aa = a*a;
-	double bb = b*b;
+	const double aa = a*a;
+	const double bb = b*b;
 
 	p = (-3.0*b*b + 8.0 *a*c)/(8.0*aa);
 	q = (bb*b - 4.0*a*b*c + 8.0*d*aa) / (8.0*aa*a);
@@ -244,13 +244,13 @@ int cubic(double A[4], double X[3])
  
 	// Compute quartic torus coefficients
 
-	double r2 = minorRadius * minorRadius;
-	double R2 = majorRadius * majorRadius;
+	const double r2 = minorRadius * minorRadius;
+	const double R2 = majorRadius * majorRadius;
 
-	double dd = Dot(ray.d, ray.d);
-	double pd = Dot(Vector(ray.o), ray.d);
-	double pp = Dot(Vector(ray.o), Vector(ray.o));
-	double prR = pp - r2 - R2;
+	const double dd = Dot(ray.d, ray.d);
+	const double pd = Dot(Vector(ray.o), ray.d);
+	const double pp = Dot(Vector(ray.o), Vector(ray.o));
+	const double prR = pp - r2 - R2;
 
 	double coef[5];
 
@@ -264,43 +264,44 @@ int cubic(double A[4], double X[3])
 	int Nsol;
 
 	// Solve quartic equation for _t_ values
+	// solutions returned in ascending order
 	Nsol = quartic(coef, t);
 	if (Nsol < 1)
 		return false;
 
 	// Compute intersection distance along ray
-	double thit = t[0];
-	int ti = 0;
 	double tmax = t[Nsol-1];
-
-	if (thit > ray.maxt || tmax < ray.mint)
+	if (tmax < ray.mint)
 		return false;
 
 	// find first usable solution
-	if (thit < ray.mint) {
-		for (int i = 1; i < Nsol && thit < ray.mint; i++) {
-			thit = t[i];
-			ti = i;
-		}
-		if (thit > ray.maxt) 
+	double thit = t[0];
+	int ti = 0;
+	while (thit < ray.mint) {
+		ti++;
+		if (ti >= Nsol)
 			return false;
+		thit = t[ti];
 	}
+	if (thit > ray.maxt) 
+		return false;
 
 	// Compute torus hit position, $\phi$ and $\tetha$
 	Point phit;
 	float phi, theta;
 	while (true) {
 		phit = ray(thit);
-		// TODO - if spindle or horn torus, phit.x may be zero?
 		phi = atan2f(phit.y, phit.x);
-		if (phi < 0.) phi += 2.f*M_PI;
+		if (phi < 0.f) phi += 2.f*M_PI;
 		
 		// clamp in case of precision issues
-		float costheta = Clamp(phit.z / minorRadius, -1.f, 1.f);
-		theta = acosf(costheta);
+		float sintheta = Clamp(phit.z / minorRadius, -1.f, 1.f);
+		theta = asinf(sintheta);
+
 		// adjust theta if hit lies on the inner half of the torus
-		if (phit.x*phit.x + phit.y*phit.y < majorRadius*majorRadius)
-			theta = 2*M_PI - theta;
+		if (phit.x*phit.x + phit.y*phit.y < R2)
+			theta = M_PI - theta;
+		if (theta < 0.f) theta += 2.f*M_PI;
 
 		// Test torus intersection against clipping parameters
 		if (!(theta < thetaMin || theta > thetaMax || phi > phiMax))
@@ -315,8 +316,13 @@ int cubic(double A[4], double X[3])
 			return false;
 	}
 
-	*pHit = phit;
-	*tHit = thit;
+	// reconstruct point using parametric form
+	// to minimize self-intersections
+	const float costheta = cosf(theta);
+	pHit->x = cosf(phi)*(majorRadius + minorRadius*costheta);
+	pHit->y = sinf(phi)*(majorRadius + minorRadius*costheta);
+	pHit->z = minorRadius*sinf(theta);
+	*tHit = (*pHit - ray.o).Length() / ray.d.Length();
 	*phiHit = phi;
 	*thetaHit = theta;
 
@@ -359,18 +365,18 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 
 	// Find parametric representation of torus hit
 	// torus is parameterized as follows:
-	// x = R*cos(phi) + r*cos(phi)*sin(theta)
-	// y = R*sin(phi) + r*sin(phi)*sin(theta)
-	// z = r*cos(theta)
+	// x = cos(phi)*(R + r*cos(theta))
+	// y = sin(phi)*(R + r*cos(theta))
+	// z = r*sin(theta)
 
-	float u = phi / phiMax;
-	float v = (theta - thetaMin) / (thetaMax - thetaMin);
+	const float u = phi / phiMax;
+	const float v = (theta - thetaMin) / (thetaMax - thetaMin);
 
 	// Compute torus \dpdu and \dpdv
-	float cosphi, sinphi, sintheta;
+	float cosphi, sinphi;
 	Vector dpdu, dpdv;
 
-	sintheta = sinf(theta);
+	const float costheta = cosf(theta);
 
 	float zradius = sqrtf(phit.x*phit.x + phit.y*phit.y);
 	if (zradius == 0)
@@ -380,8 +386,8 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 		cosphi = 0;
 		sinphi = 1;
 		dpdv = (thetaMax-thetaMin) *
-			Vector(phit.z * cosphi, phit.z * sinphi,
-				-minorRadius * sintheta);
+			Vector(-phit.z * cosphi, -phit.z * sinphi,
+				minorRadius * costheta);
 		Vector norm = Vector(phit);
 		dpdu = Cross(dpdv, norm);
 	}
@@ -392,17 +398,17 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 		sinphi = phit.y * invzradius;
 		dpdu = Vector(-phiMax * phit.y, phiMax * phit.x, 0);
 		dpdv = (thetaMax-thetaMin) *
-			Vector(phit.z * cosphi, phit.z * sinphi,
-				-minorRadius * sintheta);
+			Vector(-phit.z * cosphi, -phit.z * sinphi,
+				minorRadius * costheta);
 	}
 	// Compute torus \dndu and \dndv
 	Vector d2Pduu = -phiMax * phiMax * Vector(phit.x, phit.y, 0);
 	Vector d2Pduv = (thetaMax - thetaMin) *
 	                 phit.z * phiMax *
-	                 Vector(-sinphi, cosphi, 0.);
+	                 Vector(sinphi, -cosphi, 0.);
 	Vector d2Pdvv = -(thetaMax - thetaMin) *
-	                 (thetaMax - thetaMin) *
-	                 Vector(minorRadius*cosphi*sintheta, minorRadius*sinphi*sintheta, phit.z);
+	                (thetaMax - thetaMin) *
+	                Vector(minorRadius*cosphi*costheta, minorRadius*sinphi*costheta, phit.z);
 	// Compute coefficients for fundamental forms
 	float E = Dot(dpdu, dpdu);
 	float F = Dot(dpdu, dpdv);

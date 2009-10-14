@@ -48,163 +48,735 @@ ParamSet::ParamSet(int n, const char * pluginName, char* tokens[], char* params[
 	{
 		std::string s(tokens[i]);
 		//float parameters
-		if(s=="xwidth") { std::cout<<*(float*)params[i]<<std::endl; AddFloat(s,(float*)(params[i])); }
-		if(s=="ywidth") AddFloat(s,(float*)(params[i]));
-		if(s=="aplha") AddFloat(s,(float*)(params[i]));
-		if(s=="B") AddFloat(s,(float*)(params[i]));
-		if(s=="C") AddFloat(s,(float*)(params[i]));
-		if(s=="tau") AddFloat(s,(float*)(params[i]));
-		if(s=="hither") AddFloat(s,(float*)(params[i]));
-		if(s=="yon") AddFloat(s,(float*)(params[i]));
-		if(s=="shutteropen") AddFloat(s,(float*)(params[i]));
-		if(s=="shutterclose") AddFloat(s,(float*)(params[i]));
-		if(s=="lensradius") AddFloat(s,(float*)(params[i]));
-		if(s=="focaldistance") AddFloat(s,(float*)(params[i]));
-		if(s=="frameaspectratio") AddFloat(s,(float*)(params[i]));
-		if(s=="screenwindow") AddFloat(s,(float*)(params[i]),4);
-		if(s=="fov") AddFloat(s,(float*)(params[i]));
-		if(s=="cropwindow") AddFloat(s,(float*)(params[i]),4);
-		if(s=="radius") AddFloat(s,(float*)(params[i]));
-		if(s=="height") AddFloat(s,(float*)(params[i]));
-		if(s=="phimax") AddFloat(s,(float*)(params[i]));
-		if(s=="zmin") AddFloat(s,(float*)(params[i]));
-		if(s=="zmax") AddFloat(s,(float*)(params[i]));
-		if(s=="innerradius") AddFloat(s,(float*)(params[i]));
-		if(s=="uknots") AddFloat(s,(float*)(params[i]),FindOneInt("nu", i)+FindOneInt("uorder", i));
-		if(s=="vknots") AddFloat(s,(float*)(params[i]),FindOneInt("nv", i)+FindOneInt("vorder", i));
-		if(s=="u0") AddFloat(s,(float*)(params[i]));
-		if(s=="v0") AddFloat(s,(float*)(params[i]));
-		if(s=="u1") AddFloat(s,(float*)(params[i]));
-		if(s=="v1") AddFloat(s,(float*)(params[i]));
-		if(s=="Pw") AddFloat(s,(float*)(params[i]),4*FindOneInt("nu", i)*FindOneInt("nv", i));
-		if(s=="st") AddFloat(s,(float*)(params[i]),2*FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="uv") AddFloat(s,(float*)(params[i]),2*FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="emptybonus") AddInt(s,(int*)(params[i]));
-		if(s=="uscale") AddFloat(s,(float*)(params[i]));
-		if(s=="vscale") AddFloat(s,(float*)(params[i]));
-		if(s=="udelta") AddFloat(s,(float*)(params[i]));
-		if(s=="vdelta") AddFloat(s,(float*)(params[i]));
-		if(s=="v00") AddFloat(s,(float*)(params[i]));
-		if(s=="v01") AddFloat(s,(float*)(params[i]));
-		if(s=="v10") AddFloat(s,(float*)(params[i]));
-		if(s=="v11") AddFloat(s,(float*)(params[i]));
-		if(s=="maxanisotropy") AddFloat(s,(float*)(params[i]));
-		if(s=="roughness" && pn=="fbm") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="wrinkled") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="marble") AddTexture(s,std::string(params[i]));
-		if(s=="variation") AddFloat(s,(float*)(params[i]));
-		if(s=="g") AddFloat(s,(float*)(params[i]));
-		if(s=="a") AddFloat(s,(float*)(params[i]));
-		if(s=="b") AddFloat(s,(float*)(params[i]));
-		if(s=="density") AddFloat(s,(float*)(params[i]),FindOneInt("nx", i)*FindOneInt("ny", i)*FindOneInt("ny", i));
-		if(s=="coneangle") AddFloat(s,(float*)(params[i]));
-		if(s=="conedeltaangle") AddFloat(s,(float*)(params[i]));
-		if(s=="maxdist") AddFloat(s,(float*)(params[i]));
-		if(s=="maxerror") AddFloat(s,(float*)(params[i]));
-		if(s=="stepsize") AddFloat(s,(float*)(params[i]));
-		
+		if (s == "B")
+			AddFloat(s,(float*)(params[i]));
+		if (s == "C")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "Pw")
+			AddFloat(s, (float*)(params[i]),
+				4 * FindOneInt("nu", i) * FindOneInt("nv", i));
+		if (s == "Pz")
+			AddFloat(s, (float*)(params[i]),
+				FindOneInt("nu", i) * FindOneInt("nv", i));
+		if (s == "a")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "aconst")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "alpha")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "aperture")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "aperture_diameter")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "b")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "baseflatness")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "bconst")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "brickdepth")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "brickheight")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "brickwidth")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "bright")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "bumpmapsampledistance")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "burn")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "cconst")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "compo_override_alpha_value")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "coneangle")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "conedeltaangle")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "contrast")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "contrast_ywa")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "cropwindow")
+			AddFloat(s, (float*)(params[i]), 4);
+/*		if (s == "data")
+			AddFloat(s, (float*)(params[i]));*/ //FIXME - there's currently no way of getting the array length for regular and irregular spectrum data
+		if (s == "dconst")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "density") AddFloat(s, (float*)(params[i]), FindOneInt("nx", i) * FindOneInt("ny", i) * FindOneInt("ny", i));
+		if (s == "diffusereflectreject_threshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "diffuserefractreject_threshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "distamount")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "distancethreshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "dmoffset")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "dmscale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "econst")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "efficacy")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "emptybonus")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "end")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "energy")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "exposure")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "eyerrthreshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "filmdiag")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "filmdistance")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "focaldistance")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "fov")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "frameaspectratio")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "freq")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "fstop")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "fullsweepthreshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "g")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "gain")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "gamma")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "gatherangle")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "glossyreflectreject_threshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "glossyrefractreject_threshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "h")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "height")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "hither")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "innerradius")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "lacu")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "largemutationprob")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "lensradius")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "lightrrthreshold")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "linear_exposure")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "linear_fstop")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "linear_gamma")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "linear_sensitivity")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "majorradius")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "maxY")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "maxanisotropy")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "maxphotondist")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "micromutationprob")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "mindist")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "minkovsky_exp")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "minorradius")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "mortarsize")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "mutationrange")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "nabla")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "noiseoffset")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "noisescale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "noisesize")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "octs")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "offset")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "omega")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "outscale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "phimax")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "postscale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "power" && pn == "area")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "prescale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "radius")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "reinhard_burn")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "reinhard_postscale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "reinhard_prescale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "relsize")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "roughness")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "rrcontinueprob")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "scale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "screenwindow")
+			AddFloat(s, (float*)(params[i]), 4);
+		if (s == "sensitivity")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "sharpness")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "shutterclose")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "shutteropen")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "spheresize")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "st")
+			AddFloat(s, (float*)(params[i]),
+				2 * FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if (s == "start")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "stepsize")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "tau")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "temperature")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "thetamax")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "thetamin")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "turbidity")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "turbulance")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "turbulence")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "u0")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "u1")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "udelta")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "uknots")
+			AddFloat(s, (float*)(params[i]),
+				FindOneInt("nu", i) + FindOneInt("uorder", i));
+		if (s == "uscale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "uv")
+			AddFloat(s, (float*)(params[i]),
+				2 * FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if (s == "v0")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "v00")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "v01")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "v1")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "v10")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "v11")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "value")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "variability")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "variation")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "vdelta")
+			AddFloat(s,(float*)(params[i]));
+		if (s == "vknots")
+			AddFloat(s, (float*)(params[i]),
+				FindOneInt("nv", i) + FindOneInt("vorder", i));
+		if (s == "vscale")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "w1")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "w2")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "w3")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "w4")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "wavelength")
+			AddFloat(s, (float*)(params[i]));
+/*		if (s == "wavelengths")
+			AddFloat(s, (float*)(params[i]));*/ //FIXME - there's currently no way of getting the array length for irregular spectrum data
+		if (s == "width")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "xwidth")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "yon")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "ywa")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "ywidth")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "zmax")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "zmin")
+			AddFloat(s, (float*)(params[i]));
+
 		//int parameters
-		if(s=="pixelsamples") AddInt(s,(int*)(params[i]));
-		if(s=="xsamples") AddInt(s,(int*)(params[i]));
-		if(s=="ysamples") AddInt(s,(int*)(params[i]));
-		if(s=="xresolution") AddInt(s,(int*)(params[i]));
-		if(s=="yresolution") AddInt(s,(int*)(params[i]));
-		if(s=="writefrequency") AddInt(s,(int*)(params[i]));
-		if(s=="premultiplyalpha") AddInt(s,(int*)(params[i]));
-		if(s=="nu") AddInt(s,(int*)(params[i]));
-		if(s=="nv") AddInt(s,(int*)(params[i]));
-		if(s=="uorder") AddInt(s,(int*)(params[i]));
-		if(s=="vorder") AddInt(s,(int*)(params[i]));
-		if(s=="nlevels") AddInt(s,(int*)(params[i]));
-		if(s=="indices") AddInt(s,(int*)(params[i]),FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="intersectcost") AddInt(s,(int*)(params[i]));
-		if(s=="traversalcost") AddInt(s,(int*)(params[i]));
-		if(s=="maxprims") AddInt(s,(int*)(params[i]));
-		if(s=="maxdepth") AddInt(s,(int*)(params[i]));
-		if(s=="dimension") AddInt(s,(int*)(params[i]));
-		if(s=="octaves") AddInt(s,(int*)(params[i]));
-		if(s=="nx") AddInt(s,(int*)(params[i]));
-		if(s=="ny") AddInt(s,(int*)(params[i]));
-		if(s=="nz") AddInt(s,(int*)(params[i]));
-		if(s=="nsamples") AddInt(s,(int*)(params[i]));
-		if(s=="causticphotons") AddInt(s,(int*)(params[i]));
-		if(s=="indirectphotons") AddInt(s,(int*)(params[i]));
-		if(s=="directphotons") AddInt(s,(int*)(params[i]));
-		if(s=="nused") AddInt(s,(int*)(params[i]));
-		if(s=="finalgathersamples") AddInt(s,(int*)(params[i]));
-		if(s=="maxspeculardepth") AddInt(s,(int*)(params[i]));
-		if(s=="maxindirectdepth") AddInt(s,(int*)(params[i]));
-		
-		
+		if (s == "blades")
+			AddInt(s, (int*)(params[i]));
+		if (s == "causticphotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "chainlength")
+			AddInt(s, (int*)(params[i]));
+		if (s == "coltype")
+			AddInt(s, (int*)(params[i]));
+		if (s == "costsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffusereflectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffusereflectsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffuserefractdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "diffuserefractsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "dimension")
+			AddInt(s, (int*)(params[i]));
+		if (s == "directphotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "directsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "discardmipmaps")
+			AddInt(s, (int*)(params[i]));
+		if (s == "displayinterval")
+			AddInt(s, (int*)(params[i]));
+		if (s == "eyedepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "finalgathersamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyreflectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyreflectsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyrefractdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "glossyrefractsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "haltspp")
+			AddInt(s, (int*)(params[i]));
+		if( s == "indices")
+			AddInt(s, (int*)(params[i]),
+				FindOneInt("nvertices", i));  // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if (s == "indirectphotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "indirectsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "intersectcost")
+			AddInt(s, (int*)(params[i]));
+		if (s == "lightdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxconsecrejects")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxphotondepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxprims")
+			AddInt(s, (int*)(params[i]));
+		if (s == "maxprimsperleaf")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nlevels")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nlights")
+			AddInt(s, (int*)(params[i]));
+		if (s == "noisedepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nphotonused")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nsets")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nsubdivlevels")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nu")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nv")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nx")
+			AddInt(s, (int*)(params[i]));
+		if (s == "ny")
+			AddInt(s, (int*)(params[i]));
+		if (s == "nz")
+			AddInt(s, (int*)(params[i]));
+		if (s == "octaves")
+			AddInt(s, (int*)(params[i]));
+		if (s == "pixelsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "power" && pn == "perspective")
+			AddInt(s, (int*)(params[i]));
+/*		if (s == "quadindices")
+			AddInt(s, (int*)(params[i]));*/ //FIXME - there's no way of knowinf the number of elements
+		if (s == "radiancephotons")
+			AddInt(s, (int*)(params[i]));
+		if (s == "reject_warmup")
+			AddInt(s, (int*)(params[i]));
+		if (s == "skipfactor")
+			AddInt(s, (int*)(params[i]));
+		if (s == "specularreflectdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "specularrefractdepth")
+			AddInt(s, (int*)(params[i]));
+		if (s == "spheres")
+			AddInt(s, (int*)(params[i]));
+		if (s == "traversalcost")
+			AddInt(s, (int*)(params[i]));
+		if (s == "treetype")
+			AddInt(s, (int*)(params[i]));
+/*		if( s == "triindices")
+			AddInt(s, (int*)(params[i]));*/ //FIXME - there's no way of knowing the number of elements
+		if (s == "uorder")
+			AddInt(s, (int*)(params[i]));
+		if (s == "vorder")
+			AddInt(s, (int*)(params[i]));
+		if (s == "writeinterval")
+			AddInt(s, (int*)(params[i]));
+		if (s == "xresolution")
+			AddInt(s, (int*)(params[i]));
+		if (s == "xsamples")
+			AddInt(s, (int*)(params[i]));
+		if (s == "yresolution")
+			AddInt(s, (int*)(params[i]));
+		if (s == "ysamples")
+			AddInt(s, (int*)(params[i]));
+
 		//bool parameters
-		if(s=="jitter") AddBool(s,(bool*)(params[i]));
-		if(s=="refineimmediately") AddBool(s,(bool*)(params[i]));
-		if(s=="trilinear") AddBool(s,(bool*)(params[i]));
-		if(s=="finalgather") AddBool(s,(bool*)(params[i]));
-		if(s=="directwithphotons") AddBool(s,(bool*)(params[i]));
+		if (s == "architectural")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "autofocus")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_override_alpha")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_use_key")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_emission")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_indirect_emission")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_indirect_material")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "compo_visible_material")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enabledirect")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableindircaustic")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableindirdiffuse")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableindirspecular")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dbg_enableradiancemap")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "debug")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "diffusereflectreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "diffuserefractreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "directdiffuse")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "directglossy")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "directsampleall")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dmnormalsmooth")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "dmsharpboundary")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "finalgather")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "flipxy")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "flipz")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "glossyreflectreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "glossyrefractreject")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "includeenvironment")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "indirectdiffuse")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "indirectglossy")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "indirectsampleall")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "premultiplyalpha")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "refineimmediately")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "restart_resume_flm")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "smooth")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "usevariance")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_ZBuf")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_applyimaging")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_gamutclamp")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_halftype")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png_16bit")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png_ZBuf")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_png_gamutclamp")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_resume_flm")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_tga")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_tga_ZBuf")
+			AddBool(s, (bool*)(params[i]));
+		if (s == "write_tga_gamutclamp")
+			AddBool(s, (bool*)(params[i]));
 		
 		//string parameters
-		if(s=="filename") { string *str=new string(params[i]); std::cout<<*str<<std::endl; AddString(s,str); delete str; }
-		if(s=="mapping") AddString(s,(string*)(params[i]));
-		if(s=="wrap") AddString(s,(string*)(params[i]));
-		if(s=="aamode") AddString(s,(string*)(params[i]));
-		if(s=="mapname") AddString(s,(string*)(params[i]));
-		if(s=="strategy") AddString(s,(string*)(params[i]));
-		
+		if (s == "aamode")
+			AddString(s, new string(params[i]));
+		if (s == "acceltype")
+			AddString(s, new string(params[i]));
+		if (s == "basesampler")
+			AddString(s, new string(params[i]));
+		if (s == "displacementmap")
+			AddString(s, new string(params[i]));
+		if (s == "distmetric")
+			AddString(s, new string(params[i]));
+		if (s == "distribution")
+			AddString(s, new string(params[i]));
+		if (s == "endtransform")
+			AddString(s, new string(params[i]));
+		if (s == "filename")
+			AddString(s, new string(params[i]));
+		if (s == "filtertype")
+			AddString(s, new string(params[i]));
+		if (s == "iesname")
+			AddString(s, new string(params[i]));
+		if (s == "ldr_clamp_method")
+			AddString(s, new string(params[i]));
+		if (s == "mapname")
+			AddString(s, new string(params[i]));
+		if (s == "mapping")
+			AddString(s, new string(params[i]));
+		if (s == "name")
+			AddString(s, new string(params[i]));
+		if (s == "namedmaterial1")
+			AddString(s, new string(params[i]));
+		if (s == "namedmaterial2")
+			AddString(s, new string(params[i]));
+		if (s == "noisebasis")
+			AddString(s, new string(params[i]));
+		if (s == "noisebasis2")
+			AddString(s, new string(params[i]));
+		if (s == "noisetype")
+			AddString(s, new string(params[i]));
+		if (s == "photonmapsfile")
+			AddString(s, new string(params[i]));
+		if (s == "pixelsampler")
+			AddString(s, new string(params[i]));
+		if (s == "quadtype")
+			AddString(s, new string(params[i]));
+		if (s == "renderingmode")
+			AddString(s, new string(params[i]));
+		if (s == "rrstrategy")
+			AddString(s, new string(params[i]));
+		if (s == "scheme")
+			AddString(s, new string(params[i]));
+		if (s == "shutterdistribution")
+			AddString(s, new string(params[i]));
+		if (s == "specfile")
+			AddString(s, new string(params[i]));
+		if (s == "strategy")
+			AddString(s, new string(params[i]));
+		if (s == "subdivscheme")
+			AddString(s, new string(params[i]));
+		if (s == "tonemapkernel")
+			AddString(s, new string(params[i]));
+		if (s == "tritype")
+			AddString(s, new string(params[i]));
+		if (s == "type")
+			AddString(s, new string(params[i]));
+		if (s == "wrap")
+			AddString(s, new string(params[i]));
+		if (s == "write_exr_channels")
+			AddString(s, new string(params[i]));
+		if (s == "write_exr_compressiontype")
+			AddString(s, new string(params[i]));
+		if (s == "write_exr_zbuf_normalization")
+			AddString(s, new string(params[i]));
+		if (s == "write_png_channels")
+			AddString(s, new string(params[i]));
+		if (s == "write_pxr_zbuf_normalization")
+			AddString(s, new string(params[i]));
+		if (s == "write_tga_channels")
+			AddString(s, new string(params[i]));
+		if (s == "write_tga_zbuf_normalization")
+			AddString(s, new string(params[i]));
+
 		//point parameters
-		if(s=="p1") AddPoint(s,(Point*)(params[i]));
-		if(s=="p2") AddPoint(s,(Point*)(params[i]));
-		if(s=="P" && pn=="nurbs") AddPoint(s,(Point*)(params[i]),FindOneInt("nu", i)*FindOneInt("nv", i));
-		if(s=="P" && pn=="trianglemesh") AddPoint(s,(Point*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="p0") AddPoint(s,(Point*)(params[i]));
-		//if(s=="from") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
-		//if(s=="to") { Point *p=new Point(((float*)(params[i]))[0],((float*)(params[i]))[1],((float*)(params[i]))[2]); AddPoint(s,(Point*)(params[i])); delete p; }
-		if(s=="from") { Point *p=new Point((float*)params[i]); AddPoint(s,p); delete p; }
-		if(s=="to") { Point *p=new Point((float*)params[i]); AddPoint(s,p); delete p; }
-				
-		
-		//normal paraneters
-		if(s=="N") AddNormal(s,(Normal*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		if (s == "P") {
+			if (pn == "nurbs")
+				AddPoint(s, (Point*)(params[i]),
+					FindOneInt("nu", i) * FindOneInt("nv", i));
+			else
+				AddPoint(s, (Point*)(params[i]),
+					FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
+		}
+		if (s == "from")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "p0")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "p1")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "p2")
+			AddPoint(s, (Point*)(params[i]));
+		if (s == "to")
+			AddPoint(s,(Point*)(params[i]));
+
+		//normal parameters
+		if (s == "N")
+			AddNormal(s, (Normal*)(params[i]),
+				FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
 		
 		//vector parameters
-		if(s=="S") AddVector(s,(Vector*)(params[i]),FindOneInt("nvertices", i)); // jromang - p.926 find 'n' ? - [a ajouter dans le vecteur lors de l'appel de la fonction, avec un parametre 'nvertices supplementaire dans l API]
-		if(s=="v1") AddVector(s,(Vector*)(params[i]));
-		if(s=="v2") AddVector(s,(Vector*)(params[i]));
-		if(s=="updir") AddVector(s,(Vector*)(params[i]));
+		if (s == "rotate")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "scale")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "sundir")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "translate")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "updir")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "v1")
+			AddVector(s, (Vector*)(params[i]));
+		if (s == "v2")
+			AddVector(s, (Vector*)(params[i]));
 		
 		//texture parameters
-		if(s=="bumpmap") AddTexture(s,std::string(params[i]));
-		if(s=="Kd") AddTexture(s,std::string(params[i]));
-		if(s=="sigma") AddTexture(s,std::string(params[i]));
-		if(s=="Ks") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="plastic") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="translucent") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="shinymetal") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="glossy") AddTexture(s,std::string(params[i]));
-		if(s=="roughness" && pn=="uber") AddTexture(s,std::string(params[i]));
-		if(s=="reflect") AddTexture(s,std::string(params[i]));
-		if(s=="transmit") AddTexture(s,std::string(params[i]));
-		if(s=="Kr") AddTexture(s,std::string(params[i]));
-		if(s=="Kt") AddTexture(s,std::string(params[i]));
-		if(s=="index") AddTexture(s,std::string(params[i]));
-		if(s=="uroughness") AddTexture(s,std::string(params[i]));
-		if(s=="vroughness") AddTexture(s,std::string(params[i]));
-		if(s=="opacity") AddTexture(s,std::string(params[i]));
-		if(s=="value") AddTexture(s,std::string(params[i]));
-		if(s=="tex1") AddTexture(s,std::string(params[i]));
-		if(s=="tex2") AddTexture(s,std::string(params[i]));
-		if(s=="amount") AddTexture(s,std::string(params[i]));
-		if(s=="inside") AddTexture(s,std::string(params[i]));
-		if(s=="outside") AddTexture(s,std::string(params[i]));
+		if (s == "Ka")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Kd")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Kr")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Ks3")
+			AddTexture(s, std::string(params[i]));
+		if (s == "Kt")
+			AddTexture(s, std::string(params[i]));
+		if (s == "L")
+			AddTexture(s, std::string(params[i]));
+		if (s == "M1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "M2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "M3")
+			AddTexture(s, std::string(params[i]));
+		if (s == "R1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "R2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "R3")
+			AddTexture(s, std::string(params[i]));
+		if (s == "amount")
+			AddTexture(s, std::string(params[i]));
+		if (s == "bricktex")
+			AddTexture(s, std::string(params[i]));
+		if (s == "bumpmap")
+			AddTexture(s, std::string(params[i]));
+		if (s == "cauchyb")
+			AddTexture(s, std::string(params[i]));
+		if (s == "d")
+			AddTexture(s, std::string(params[i]));
+		if (s == "film")
+			AddTexture(s, std::string(params[i]));
+		if (s == "filmindex")
+			AddTexture(s, std::string(params[i]));
+		if (s == "index")
+			AddTexture(s, std::string(params[i]));
+		if (s == "inside")
+			AddTexture(s, std::string(params[i]));
+		if (s == "mortartex")
+			AddTexture(s, std::string(params[i]));
+		if (s == "outside")
+			AddTexture(s, std::string(params[i]));
+		if (s == "sigma")
+			AddTexture(s, std::string(params[i]));
+		if (s == "tex1")
+			AddTexture(s, std::string(params[i]));
+		if (s == "tex2")
+			AddTexture(s, std::string(params[i]));
+		if (s == "uroughness")
+			AddTexture(s, std::string(params[i]));
+		if (s == "vroughness")
+			AddTexture(s, std::string(params[i]));
 		
 		//color (RGBColor) parameters
-		if(s=="sigma_a") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="sigma_s") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="Le") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="L") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="I") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="tex1") AddRGBColor(s, new RGBColor((float*)params[i]));
-		if(s=="tex2") AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "L")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "Le")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "compo_key_color")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "sigma_a")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "sigma_s")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v00")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v01")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v10")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "v11")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
+		if (s == "value")
+			AddRGBColor(s, new RGBColor((float*)params[i]));
 		
 		//unknown parameter
 		/*

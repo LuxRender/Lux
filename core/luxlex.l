@@ -58,9 +58,10 @@ int str_pos;
 
 void add_string_char( char c )
 {
-	if (str_pos >= 1023)
+	if (str_pos == 1023) {
 		luxError(LUX_LIMIT, LUX_ERROR, "String is too long.");
-	else {
+		++str_pos;
+	} else if (str_pos < 1023) {
 		yylval.string[str_pos++] = c;
 		yylval.string[str_pos] = '\0';
 	}

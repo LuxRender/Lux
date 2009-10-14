@@ -160,7 +160,7 @@ END_EVENT_TABLE()
 bool copyLog2Console = false;
 
 LuxGui::LuxGui(wxWindow* parent, bool opengl, bool copylog2console) :
-	LuxMainFrame(parent), m_opengl(opengl), m_copyLog2Console(copylog2console) {
+	LuxMainFrame(parent), m_opengl(opengl), m_copyLog2Console(copylog2console), m_showWarningDialog(true) {
 	// Load images and icons from header.
 	LoadImages();
 
@@ -3458,39 +3458,33 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 
 	std::stringstream ss("");
 	ss << '[' << boost::posix_time::second_clock::local_time() << ' ';
-	switch(event.GetError()->GetSeverity()) {
+	int severity = event.GetError()->GetSeverity();
+	switch (severity) {
 		case LUX_DEBUG:
-			ss << "Debug: "; break;
-		case LUX_INFO:
-			ss << "Info: ";	break;
-		case LUX_WARNING:
-			ss << "Warning: ";	break;
-		case LUX_ERROR:
-			ss << "Error: ";	break;
-		case LUX_SEVERE:
-			ss << "Severe error: ";	break;
-	}
-	ss << event.GetError()->GetCode() << "] ";
-
-	// Dade - RenderWill's patch (feature request 568) for colored message
-	switch(event.GetError()->GetSeverity()) {
-		case LUX_DEBUG:
+			ss << "Debug: ";
 			m_logTextCtrl->SetDefaultStyle(debugColour);
 			break;
 		case LUX_INFO:
-		default:
+			ss << "Info: ";
 			m_logTextCtrl->SetDefaultStyle(infoColour);
 			break;
 		case LUX_WARNING:
+			ss << "Warning: ";
 			m_logTextCtrl->SetDefaultStyle(warningColour);
 			break;
 		case LUX_ERROR:
+			ss << "Error: ";
 			m_logTextCtrl->SetDefaultStyle(errorColour);
 			break;
 		case LUX_SEVERE:
+			ss << "Severe error: ";
 			m_logTextCtrl->SetDefaultStyle(severeColour);
 			break;
-    }
+		default:
+			m_logTextCtrl->SetDefaultStyle(infoColour);
+	}
+	ss << event.GetError()->GetCode() << "] ";
+
 	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
 
 	m_logTextCtrl->SetDefaultStyle(*wxBLACK);
@@ -3498,6 +3492,14 @@ void LuxGui::OnError(wxLuxErrorEvent &event) {
 	ss << event.GetError()->GetMessage() << std::endl;
 	m_logTextCtrl->AppendText(wxString::FromAscii(ss.str().c_str()));
 	m_logTextCtrl->ShowPosition(m_logTextCtrl->GetLastPosition());
+
+	// Feature request #584: Show a dialog in case of warning/error
+	if (m_showWarningDialog && severity > LUX_INFO) {
+		m_showWarningDialog = false;
+		wxMessageBox(wxT("There was an abnormal condition reported. Please, check the Log tab for more information."),
+			wxT("LuxRender Notification"),
+			wxOK | (severity == LUX_WARNING ? wxICON_EXCLAMATION : wxICON_ERROR), this);
+	}
 }
 
 void LuxGui::OnTimer(wxTimerEvent& event) {
@@ -3527,6 +3529,8 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			break;
 		case ID_LOADUPDATE:
+			if (!m_progDialog)
+				break;
 			m_progDialog->Pulse();
 			if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
 				m_progDialog->Destroy();
@@ -3553,8 +3557,7 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 					ResetLightGroupsFromFilm( false );
 					Refresh();
 				}
-			}
-			else if( luxStatistics("filmIsReady") ) {
+			} else if( luxStatistics("filmIsReady") ) {
 				m_progDialog->Destroy();
 				delete m_progDialog;
 				m_progDialog = NULL;
@@ -3582,7 +3585,10 @@ void LuxGui::OnTimer(wxTimerEvent& event) {
 			}
 			break;
 		case ID_SAVEUPDATE:
+			if (!m_progDialog)
+				break;
 			m_progDialog->Pulse();
+			break;
 		case ID_NETUPDATE:
 			UpdateNetworkTree();
 			break;
@@ -3686,6 +3692,9 @@ void LuxGui::RenderScenefile(wxString filename) {
 	m_progDialog = new wxProgressDialog(wxT("Loading scene..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
 	m_progDialog->Pulse();
 	m_loadTimer->Start(1000, wxTIMER_CONTINUOUS);
+
+	// Dade - reset flags for warning/error dialogs
+	m_showWarningDialog = true;
 
 	// Start main render thread
 	delete m_engineThread;

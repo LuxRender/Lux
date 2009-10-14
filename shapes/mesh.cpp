@@ -596,7 +596,7 @@ Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const Pa
 	int triIndicesCount;
 	const int *triIndices = params.FindInt("triindices", &triIndicesCount);
 	int uvCoordinatesCount;
-	const float *uvCoordinates = params.FindFloat("UV", &uvCoordinatesCount);
+	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
 
 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);

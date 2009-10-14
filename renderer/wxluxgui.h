@@ -180,6 +180,8 @@ protected:
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 	bool m_opengl;
 	bool m_copyLog2Console;
+        // Memorize warn user condition
+        bool m_showWarningDialog;
 	double m_samplesSec;
 	LuxGuiRenderState m_guiRenderState;
 	LuxGuiWindowState m_guiWindowState;

@@ -85,7 +85,7 @@ SWCSpectrum::SWCSpectrum(const TsPack *tspack, const SPD *s) {
 	}
 }
 
-SWCSpectrum::SWCSpectrum(const TsPack *tspack, RGBColor s) {
+SWCSpectrum::SWCSpectrum(const TsPack *tspack, const RGBColor &s) {
 	SpectrumWavelengths *sw = tspack->swl;
 	const float r = s.c[0];
 	const float g = s.c[1];
