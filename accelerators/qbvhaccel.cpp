@@ -28,7 +28,11 @@
 namespace lux
 {
 
-class QuadRay {
+#if defined(WIN32) && !defined(__CYGWIN__)
+class __declspec(align(16)) QuadRay {
+#else 
+class class QuadRay {
+#endif
 public:
 	QuadRay(const Ray &ray)
 	{
@@ -45,7 +49,11 @@ public:
 	__m128 ox, oy, oz;
 	__m128 dx, dy, dz;
 	mutable __m128 mint, maxt;
+#if defined(WIN32) && !defined(__CYGWIN__)
+};
+#else 
 } __attribute__ ((aligned(16)));
+#endif 
 
 class QuadPrimitive : public Aggregate {
 public:
