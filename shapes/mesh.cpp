@@ -422,9 +422,11 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	// Build acceleration structure
 	if (concreteAccelType == ACCEL_NONE) {
 		// Copy primitives
-		refined.reserve(refined.size() + refinedPrims.size());
+		// NOTE - lordcrc - use resize+swap to avoid shared_ptr count from changing
+		const u_int offset = refined.size();
+		refined.resize(refined.size() + refinedPrims.size());
 		for(u_int i = 0; i < refinedPrims.size(); ++i)
-			refined.push_back(refinedPrims[i]);
+			refined[offset+j].swap(refinedPrims[i]);
 	} else  {
 		ParamSet paramset;
 		boost::shared_ptr<Aggregate> accel;
