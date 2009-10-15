@@ -426,7 +426,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const u_int offset = refined.size();
 		refined.resize(refined.size() + refinedPrims.size());
 		for(u_int i = 0; i < refinedPrims.size(); ++i)
-			refined[offset+j].swap(refinedPrims[i]);
+			refined[offset+i].swap(refinedPrims[i]);
 	} else  {
 		ParamSet paramset;
 		boost::shared_ptr<Aggregate> accel;
