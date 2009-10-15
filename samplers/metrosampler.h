@@ -45,7 +45,6 @@ public:
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	virtual void GetBufferType(BufferType *t) { *t = BUF_TYPE_PER_SCREEN; }
 	virtual bool IsMutating() { return true; }
 
 	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
