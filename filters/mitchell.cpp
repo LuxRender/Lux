@@ -43,7 +43,7 @@ Filter* MitchellFilter::CreateFilter(const ParamSet &ps) {
 	float yw = ps.FindOneFloat("ywidth", 2.);
 	float B = ps.FindOneFloat("B", 1.f/3.f);
 	float C = ps.FindOneFloat("C", 1.f/3.f);
-	bool sup = ps.FindOneBool("supersample", "false");
+	bool sup = ps.FindOneBool("supersample", false);
 	return new MitchellFilter(sup, B, C, xw, yw);
 }
 
