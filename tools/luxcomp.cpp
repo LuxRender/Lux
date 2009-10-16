@@ -105,8 +105,7 @@ void PrintFilmInfo(const FlexImageFilm &film) {
 	}
 }
 
-
-double sqr(double a) {
+static inline double sqr(double a) {
 	return a * a;
 }
 
@@ -143,7 +142,13 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 	Buffer *refBuf = refFilm.GetBufferGroup(0).getBuffer(bufferIndex);
 	Buffer *testBuf = testFilm.GetBufferGroup(0).getBuffer(bufferIndex);
 
+	// Dade - some metric here was copied exrdiff from PBRT 2.0
+
 	double mse = 0.0;
+	double sum1 = 0.0;
+	double sum2 = 0.0;
+    int smallDiff = 0;
+	int bigDiff = 0;
 	XYZColor refXYZ, testXYZ;
 	float refAlpha, testAlpha;
 	for (int y = 0; y < refBuf->yPixelCount; y++) {
@@ -151,50 +156,56 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 			refBuf->GetData(x, y, &refXYZ, &refAlpha);
 			testBuf->GetData(x, y, &testXYZ, &testAlpha);
 
-			mse += sqr(refXYZ.c[0] - testXYZ.c[0]);
-			mse += sqr(refXYZ.c[1] - testXYZ.c[1]);
-			mse += sqr(refXYZ.c[2] - testXYZ.c[2]);
+			for (int i = 0; i < 3; i++) {
+				sum1 += refXYZ.c[i];
+				sum2 += testXYZ.c[i];
+				mse += sqr(refXYZ.c[i] - testXYZ.c[i]);
+
+				double d;
+				if (refXYZ.c[i] == 0.0)
+					d = fabs(refXYZ.c[i] - testXYZ.c[i]);
+				else
+					d = fabs(refXYZ.c[i] - testXYZ.c[i]) / refXYZ.c[i];
+
+				if (d > 0.05)
+					smallDiff++;
+				if (d > 0.5)
+					bigDiff++;
+			}
 		}
 	}
 
-	return mse / (refBuf->xPixelCount * refBuf->yPixelCount);
-}
+	const u_int pixelCount = refBuf->xPixelCount * refBuf->yPixelCount;
+	const double avg1 = sum1 / pixelCount;
+    const double avg2 = sum2 / pixelCount;
+    double avgDelta = 100.0 * (avg1 - avg2) / min(avg1, avg2);
+	const u_int compCount = 3 * pixelCount;
+	mse /= compCount;
 
-// Dade - compare 2 buffers returning the Normalized Mean Square Error
-double CompareFilmWithNormalizedMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
-	if (!CheckFilms(bufferIndex, refFilm, testFilm))
-		return INFINITY;
+	std::stringstream ss;
+	ss << "Big diff.: " << bigDiff << " (" << (100.0 * bigDiff / compCount) << "%)";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	ss.str("");
+	ss << "Small diff.: " << smallDiff << " (" << (100.0 * smallDiff / compCount) << "%)";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	ss.str("");
+	ss << "Avg. reference: " << avg1;
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	ss.str("");
+	ss << "Avg. test: " << avg2;
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	ss.str("");
+	ss << "Avg. delta: " << avgDelta;
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	ss.str("");
+	ss << "MSE: " << mse;
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	// Dade - there are several assumption here about the number of buffers, etc.
-	Buffer *refBuf = refFilm.GetBufferGroup(0).getBuffer(bufferIndex);
-	Buffer *testBuf = testFilm.GetBufferGroup(0).getBuffer(bufferIndex);
-
-	double mse = 0.0;
-	XYZColor refXYZ, testXYZ;
-	float refAlpha, testAlpha;
-	for (int y = 0; y < refBuf->yPixelCount; y++) {
-		for (int x = 0; x < refBuf->xPixelCount; x++) {
-			refBuf->GetData(x, y, &refXYZ, &refAlpha);
-			testBuf->GetData(x, y, &testXYZ, &testAlpha);
-
-			float lum = fabs(refXYZ.Y());
-			if (lum > 1e-5f) {
-				mse += (sqr(refXYZ.c[0] - testXYZ.c[0]) +
-						sqr(refXYZ.c[1] - testXYZ.c[1]) +
-						sqr(refXYZ.c[2] - testXYZ.c[2])) / lum;
-			} else
-				mse += sqr(refXYZ.c[0] - testXYZ.c[0]) +
-					sqr(refXYZ.c[1] - testXYZ.c[1]) +
-					sqr(refXYZ.c[2] - testXYZ.c[2]);
-		}
-	}
-
-	return mse / (refBuf->xPixelCount * refBuf->yPixelCount);
+	return mse;
 }
 
 enum ComparisonTypes {
-	TYPE_NORMALIZED_MSE = 0,
-	TYPE_MSE = 1
+	TYPE_MSE = 0
 };
 
 int main(int ac, char *av[]) {
@@ -250,7 +261,7 @@ int main(int ac, char *av[]) {
 		if (vm.count("version"))
 			return 0;
 
-		ComparisonTypes compType = TYPE_NORMALIZED_MSE;
+		ComparisonTypes compType = TYPE_MSE;
 		if (vm.count("type"))
 			compType = (ComparisonTypes)vm["type"].as<int>();
 		ss.str("");
@@ -316,10 +327,6 @@ int main(int ac, char *av[]) {
 
 						switch (compType) {
 							default:
-							case TYPE_NORMALIZED_MSE:
-								bufResult = CompareFilmWithNormalizedMSE(
-										i, *refFilm, *testFilm);
-								break;
 							case TYPE_MSE:
 								bufResult = CompareFilmWithMSE(i, *refFilm, *testFilm);
 								break;
