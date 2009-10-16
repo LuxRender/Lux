@@ -31,7 +31,7 @@ namespace lux
 #if defined(WIN32) && !defined(__CYGWIN__)
 class __declspec(align(16)) QuadRay {
 #else 
-class class QuadRay {
+class QuadRay {
 #endif
 public:
 	QuadRay(const Ray &ray)
