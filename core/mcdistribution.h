@@ -114,7 +114,8 @@ namespace lux {
 		float Sample(float u, float *pdf) const {
 			// Find surrounding cdf segments
 			float *ptr = std::lower_bound(cdf, cdf+count+1, u);
-			int offset = (int) (ptr-cdf-1);
+                        // Dade - BUG #589: offset was - 1 in case u = 0.0 and ptr = cdf
+			int offset = max(0, (int)(ptr-cdf-1));
 			// Return offset along current cdf segment
 			u = (u - cdf[offset]) / (cdf[offset+1] - cdf[offset]);
 			*pdf = func[offset] * invFuncInt;
@@ -179,7 +180,7 @@ namespace lux {
 				return yFunc[ count - 1 ];
 
 			float *ptr = std::upper_bound(xFunc, xFunc+count, x);
-			int offset = (int) (ptr-xFunc-1);
+			int offset = max(0, (int)(ptr-xFunc-1));
 
 			float d = (x - xFunc[offset]) / (xFunc[offset+1] - xFunc[offset]);
 
