@@ -86,9 +86,12 @@ void RenderFarm::stopFilmUpdater() {
 		filmUpdateThread->interrupt();
 		delete filmUpdateThread;
 		filmUpdateThread = NULL;
-	} else {
-		luxError(LUX_ILLSTATE,LUX_ERROR,"RenderFarm::stopFilmUpdater() called but update thread not started.");
 	}
+	// Dade - stopFilmUpdater() is called multiple times at the moment (for instance
+	// haltspp + luxconsole)
+	/*else {
+		luxError(LUX_ILLSTATE,LUX_ERROR,"RenderFarm::stopFilmUpdater() called but update thread not started.");
+	}*/
 }
 
 void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {

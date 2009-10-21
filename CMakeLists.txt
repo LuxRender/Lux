@@ -98,7 +98,8 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-FIND_PACKAGE(Boost REQUIRED)
+# Dade - backported from v0.7 branch
+FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
@@ -110,7 +111,6 @@ IF(Boost_FOUND)
 	ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem boost_serialization boost_iostreams boost_regex)
 	ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-		SET(Boost_LIBRARIES boost_thread-mt boost_program_options-mt boost_filesystem-mt boost_serialization-mt boost_iostreams-mt boost_regex-mt)
 	ENDIF(CYGWIN)
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
