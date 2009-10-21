@@ -147,7 +147,7 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 	double mse = 0.0;
 	double sum1 = 0.0;
 	double sum2 = 0.0;
-    int smallDiff = 0;
+	int smallDiff = 0;
 	int bigDiff = 0;
 	XYZColor refXYZ, testXYZ;
 	float refAlpha, testAlpha;
