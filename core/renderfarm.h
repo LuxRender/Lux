@@ -114,6 +114,8 @@ private:
 		string sid;
 
 		boost::posix_time::ptime timeLastContact;
+		// Dade - BUG 590: changed to return the max. number of samples among
+		// all buffer groups in the film
 		double numberOfSamplesReceived;
 
 		bool flushed;

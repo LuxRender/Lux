@@ -895,7 +895,10 @@ void FlexImageFilm::AddSampleCount(float count) {
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 		bufferGroups[i].numberOfSamples += count;
 
-		// Dade - check if we have enough samples per pixel
+		// Dade - check if we have enough samples per pixel. The rendering stop
+		// when one of the buffer groups has enough samples (at the moment all
+		// buffer groups have always the same samples count; in the future
+		// it could be better to stop when all buffer groups have enough samples)
 		if ((haltSamplePerPixel > 0) &&
 			(bufferGroups[i].numberOfSamples  >= haltSamplePerPixel * samplePerPass))
 			enoughSamplePerPixel = true;
@@ -1731,7 +1734,9 @@ void FlexImageFilm::TransmitFilm(
 		header.numParams = 0;
 	}
 	header.Write(os, isLittleEndian);
+
 	// Write each buffer group
+	float totNumberOfSamples = 0.f;
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 		BufferGroup& bufferGroup = bufferGroups[i];
 		// Write number of samples
@@ -1760,6 +1765,11 @@ void FlexImageFilm::TransmitFilm(
 			}
 		}
 
+		totNumberOfSamples += bufferGroup.numberOfSamples;
+		ss.str("");
+		ss << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i;
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
 		if (clearBuffers) {
 			// Dade - reset the rendering buffer
 			bufferGroup.numberOfSamples = 0;
@@ -1770,6 +1780,10 @@ void FlexImageFilm::TransmitFilm(
 		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while preparing film data for transmission");
 		return;
 	}
+
+	ss.str("");
+	ss << "Transmitted a film with " << totNumberOfSamples << " samples";
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	filtering_streambuf<input> in;
 	in.push(gzip_compressor(9));
@@ -1837,6 +1851,7 @@ float FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 
 	// Dade - check for errors
 	float totNumberOfSamples = 0.f;
+	float maxTotNumberOfSamples = 0.f;
 	if (in.good()) {
 		// Update parameters
 		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
@@ -1869,10 +1884,15 @@ float FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 				(currentGroup.numberOfSamples >= haltSamplePerPixel * samplePerPass))
 				enoughSamplePerPixel = true;
 			totNumberOfSamples += bufferGroupNumSamples[i];
+			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
+
+			ss.str("");
+			ss << "Received " << bufferGroupNumSamples[i] << " samples for buffer group " << i;
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		}
 
 		if (scene != NULL)
-			scene->numberOfSamplesFromNetwork += totNumberOfSamples;
+			scene->numberOfSamplesFromNetwork += maxTotNumberOfSamples;
 
 		ss.str("");
 		ss << "Received film with " << totNumberOfSamples << " samples";
@@ -1884,7 +1904,7 @@ float FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 	for (u_int i = 0; i < tmpPixelArrays.size(); ++i)
 		delete tmpPixelArrays[i];
 
-	return totNumberOfSamples;
+	return maxTotNumberOfSamples;
 }
 
 void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name, float values[2]) {
