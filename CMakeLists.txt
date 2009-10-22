@@ -524,8 +524,6 @@ SET(lux_shapes_src
 	shapes/paraboloid.cpp
 	shapes/plymesh.cpp
 	shapes/plymesh/rply.c
-	shapes/quad.cpp
-	shapes/quadrilateral.cpp
 	shapes/sphere.cpp
 	shapes/torus.cpp
 	)
