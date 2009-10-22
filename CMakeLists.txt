@@ -610,23 +610,36 @@ SET(lux_lib_src
 	${lux_tonemaps_src}
 	${lux_volumes_src}
 	)
-INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
-                    ${JPEG_INCLUDE_DIR}
-					${TIFF_INCLUDE_DIR}
-					${PNG_INCLUDE_DIR}
-					${OPENEXR_INCLUDE_DIRS}
-					${Boost_INCLUDE_DIRS}
-					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
-					${CMAKE_SOURCE_DIR}/core/reflection ${CMAKE_SOURCE_DIR}/core/reflection/bxdf ${CMAKE_SOURCE_DIR}/spds
-					${CMAKE_SOURCE_DIR}/core/reflection/fresnel ${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
-					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
-					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/lights/sphericalfunction
-					${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
-					${CMAKE_SOURCE_DIR}/shapes ${CMAKE_SOURCE_DIR}/textures ${CMAKE_SOURCE_DIR}/tonemaps
-					${CMAKE_SOURCE_DIR}/volumes ${CMAKE_SOURCE_DIR}/integrationsamplers ${CMAKE_SOURCE_DIR}/pixelsamplers
-					${CMAKE_SOURCE_DIR}/renderer/include
-					${CMAKE_BINARY_DIR}
-					)
+INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR}
+	${JPEG_INCLUDE_DIR}
+	${TIFF_INCLUDE_DIR}
+	${PNG_INCLUDE_DIR}
+	${OPENEXR_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIRS}
+	${CMAKE_SOURCE_DIR}/core/external
+	)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
+	${CMAKE_SOURCE_DIR}/core/reflection
+	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
+	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
+	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
+	${CMAKE_SOURCE_DIR}/spds
+	${CMAKE_SOURCE_DIR}/accelerators
+	${CMAKE_SOURCE_DIR}/cameras
+	${CMAKE_SOURCE_DIR}/film
+	${CMAKE_SOURCE_DIR}/filters
+	${CMAKE_SOURCE_DIR}/integrators
+	${CMAKE_SOURCE_DIR}/lights
+	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
+	${CMAKE_SOURCE_DIR}/materials
+	${CMAKE_SOURCE_DIR}/pixelsamplers
+	${CMAKE_SOURCE_DIR}/samplers
+	${CMAKE_SOURCE_DIR}/shapes
+	${CMAKE_SOURCE_DIR}/textures
+	${CMAKE_SOURCE_DIR}/tonemaps
+	${CMAKE_SOURCE_DIR}/volumes
+	${CMAKE_BINARY_DIR}
+	)
 
 
 #############################################################################
