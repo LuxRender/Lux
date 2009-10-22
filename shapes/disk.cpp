@@ -58,7 +58,8 @@ bool Disk::Intersect(const Ray &r, float *tHit,
 		return false;
 	// Test disk $\phi$ value against \phimax
 	float phi = atan2f(phit.y, phit.x);
-	if (phi < 0) phi += 2. * M_PI;
+	if (phi < 0.f)
+		phi += 2.f * M_PI;
 	if (phi > phiMax)
 		return false;
 	// Find parametric representation of disk hit
@@ -98,7 +99,8 @@ bool Disk::IntersectP(const Ray &r) const {
 		return false;
 	// Test disk $\phi$ value against \phimax
 	float phi = atan2f(phit.y, phit.x);
-	if (phi < 0) phi += 2. * M_PI;
+	if (phi < 0.f)
+		phi += 2.f * M_PI;
 	if (phi > phiMax)
 		return false;
 	return true;

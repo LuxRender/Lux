@@ -92,9 +92,9 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom
 	float m2 = M2->Evaluate(tspack, dgs);
 	float m3 = M3->Evaluate(tspack, dgs);
 
-	MicrofacetDistribution *md1 = ARENA_ALLOC(tspack->arena, Blinn)((2.0 * M_PI / (m1 * m1)) - 1.0);
-	MicrofacetDistribution *md2 = ARENA_ALLOC(tspack->arena, Blinn)((2.0 * M_PI / (m2 * m2)) - 1.0);
-	MicrofacetDistribution *md3 = ARENA_ALLOC(tspack->arena, Blinn)((2.0 * M_PI / (m3 * m3)) - 1.0);
+	MicrofacetDistribution *md1 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m1 * m1)) - 1.f);
+	MicrofacetDistribution *md2 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m2 * m2)) - 1.f);
+	MicrofacetDistribution *md3 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m3 * m3)) - 1.f);
 
 	// The Slick approximation is much faster and visually almost the same
 	Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1);

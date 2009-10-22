@@ -912,7 +912,7 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	const float weight = contrib->variance;
 
 	// Issue warning if unexpected radiance value returned
-	if (xyz.IsNaN() || xyz.Y() < -1e-5f || isinf(xyz.Y())) {
+	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
 		if(debug_mode) {
 			std::stringstream ss;
 			ss << "Out of bound intensity in FlexImageFilm::AddSample: "
@@ -922,11 +922,25 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 		return;
 	}
 
-	if (alpha < 0 || isnan(alpha) || isinf(alpha))
+	if (!(alpha >= 0.f) || isinf(alpha)) {
+		if(debug_mode) {
+			std::stringstream ss;
+			ss << "Out of bound  alpha in FlexImageFilm::AddSample: "
+			   << alpha << ", sample discarded";
+			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+		}
 		return;
+	}
 
-	if (weight < 0 || isnan(weight) || isinf(weight))
+	if (!(weight >= 0.f) || isinf(weight)) {
+		if(debug_mode) {
+			std::stringstream ss;
+			ss << "Out of bound  weight in FlexImageFilm::AddSample: "
+			   << weight << ", sample discarded";
+			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+		}
 		return;
+	}
 
 	// Reject samples higher than max Y() after warmup period
 	if (warmupComplete && xyz.Y() > maxY)
@@ -1197,7 +1211,11 @@ void FlexImageFilm::WriteImage(ImageType type)
 	}
 	Y /= nPix;
 	WriteImage2(type, pixels, alpha, "");
-	EV = logf(Y * 10.f) / logf(2.f);
+	// The relation between EV and luminance in cd.m-2 is:
+	// EV = log2(L * S / K)
+	// where L is the luminance, S is the ISO speed and K is a constant
+	// usually S is taken to be 100 and K to be 12.5
+	EV = logf(Y * 8.f) / logf(2.f);
 }
 
 // GUI LDR framebuffer access methods

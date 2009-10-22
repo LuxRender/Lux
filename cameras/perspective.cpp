@@ -35,8 +35,8 @@
 
 using namespace lux;
 
-#define honeyRad 0.866025403
-#define radIndex 57.2957795
+#define honeyRad 0.866025403f
+#define radIndex 57.2957795f
 
 class PerspectiveBxDF : public BxDF
 {
@@ -135,7 +135,7 @@ PerspectiveCamera::
 		posPdf = 1.f;
 
 	R = 1.f;
-	float templength = R * tan(fov / 2.f) * 2.f;	
+	float templength = R * tanf(fov / 2.f) * 2.f;	
 	int xS, xE, yS, yE;
 	f->GetSampleExtent(&xS, &xE, &yS, &yE);
 	xStart = xS;
@@ -324,15 +324,15 @@ void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) con
 	static const float index = subDiv / radIndex;
 	static const float honeyRadius = cosf(index);
 
-	int temp = rand() % (shape * 2); //FIXME don't use rand()
+	int temp = min(Floor2Int(2.f * shape * u2), 2 * shape - 1);
 
 	float theta;
 	if (shape == 3 && temp % 2 == 0)
-		theta = 2.f * M_PI * (temp + sqrtf(u2)) / (shape * 2);
+		theta = 2.f * M_PI * (temp + sqrtf(2.f * shape * u2 - temp)) / (shape * 2);
 	else
-		theta = 2.f * M_PI * (temp + u2) / (shape * 2);
+		theta = 2.f * M_PI * u2;
 
-	const int sector = theta / index;
+	const int sector = Floor2Int(theta / index);
 	const float rho = (sector % 2 == 0) ? theta - sector * index :
 		(sector - 1) * index - theta;
 

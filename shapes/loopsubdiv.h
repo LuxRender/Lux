@@ -37,7 +37,6 @@ namespace lux
 
 // LoopSubdiv Local Structures
 struct SDFace;
-struct SDFace;
 struct SDVertex {
 	// SDVertex Constructor
 	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f)
@@ -46,7 +45,7 @@ struct SDVertex {
 	}
 
 	// SDVertex Methods
-	int valence();
+	u_int valence();
 	void oneRing(Point *P);
 	void oneRing(SDVertex **V);
 
@@ -60,20 +59,21 @@ struct SDVertex {
 struct SDFace {
 	// SDFace Constructor
 	SDFace() {
-		int i;
-		for (i = 0; i < 3; ++i) {
+		for (u_int i = 0; i < 3; ++i) {
 			v[i] = NULL;
 			f[i] = NULL;
 		}
-		for (i = 0; i < 4; ++i)
+		for (u_int i = 0; i < 4; ++i)
 			children[i] = NULL;
 	}
 	// SDFace Methods
-	int vnum(SDVertex *vert) const {
-		for (int i = 0; i < 3; ++i)
-			if (v[i] == vert) return i;
+	u_int vnum(SDVertex *vert) const {
+		for (u_int i = 0; i < 3; ++i) {
+			if (v[i] == vert)
+				return i;
+		}
 		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDFace::vnum()");
-		return -1;
+		return 0;
 	}
 	SDFace *nextFace(SDVertex *vert) {
 		return f[vnum(vert)];
@@ -88,9 +88,10 @@ struct SDFace {
 		return v[PREV(vnum(vert))];
 	}
 	SDVertex *otherVert(SDVertex *v0, SDVertex *v1) {
-		for (int i = 0; i < 3; ++i)
+		for (u_int i = 0; i < 3; ++i) {
 			if (v[i] != v0 && v[i] != v1)
 				return v[i];
+		}
 		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDVertex::otherVert()");
 		return NULL;
 	}
@@ -105,7 +106,7 @@ struct SDEdge {
 		v[0] = min(v0, v1);
 		v[1] = max(v0, v1);
 		f[0] = f[1] = NULL;
-		f0edgeNum = -1;
+		f0edgeNum = 0;
 	}
 	// SDEdge Comparison Function
 	bool operator<(const SDEdge &e2) const {
@@ -114,7 +115,7 @@ struct SDEdge {
 	}
 	SDVertex *v[2];
 	SDFace *f[2];
-	int f0edgeNum;
+	u_int f0edgeNum;
 };
 
 // LoopSubdiv Declarations
@@ -122,8 +123,8 @@ class LoopSubdiv : public Shape {
 public:
 	// LoopSubdiv Public Methods
 	LoopSubdiv(const Transform &o2w, bool ro,
-			int nt, int nv, const int *vi,
-			const Point *P, const float *uv, int nlevels,
+			u_int nt, u_int nv, const int *vi,
+			const Point *P, const float *uv, u_int nlevels,
 			const boost::shared_ptr<Texture<float> > dismap,
 			float dmscale, float dmoffset,
 			bool dmnormalsmooth, bool dmsharpboundary);
@@ -138,7 +139,7 @@ public:
 
 	class SubdivResult {
 	public:
-		SubdivResult(int aNtris, int aNverts, const int* aIndices,
+		SubdivResult(u_int aNtris, u_int aNverts, const int* aIndices,
 			const Point *aP, const Normal *aN, const float *aUv)
 			: ntris(aNtris), nverts(aNverts), indices(aIndices),
 			P(aP), N(aN), uv(aUv)
@@ -147,14 +148,12 @@ public:
 		~SubdivResult() {
 			delete[] indices;
 			delete[] P;
-			if( N )
-				delete[] N;
-			if( uv )
-				delete[] uv;
+			delete[] N;
+			delete[] uv;
 		}
 
-		const int ntris;
-		const int nverts;
+		const u_int ntris;
+		const u_int nverts;
 
 		const int * const indices;
 		const Point * const P;
@@ -165,13 +164,13 @@ public:
 
 private:
 	// LoopSubdiv Private Methods
-	float beta(int valence) const {
+	float beta(u_int valence) const {
 		if (valence == 3) return 3.f/16.f;
 		else return 3.f / (8.f * valence);
 	}
 	void weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) const ;
 	void weightBoundary(SDVertex *destVert, SDVertex *vert, float beta) const;
-	float gamma(int valence) const {
+	float gamma(u_int valence) const {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
 	static void GenerateNormals(const vector<SDVertex *> verts, Normal *Ns);
@@ -182,7 +181,7 @@ private:
 			const float *uvs) const;
 
 	// LoopSubdiv Private Data
-	int nLevels;
+	u_int nLevels;
 	vector<SDVertex *> vertices;
 	vector<SDFace *> faces;
 
@@ -198,24 +197,29 @@ private:
 };
 
 // LoopSubdiv Inline Functions
-inline int SDVertex::valence() {
+inline u_int SDVertex::valence() {
 	SDFace *f = startFace;
 	if (!boundary) {
 		// Compute valence of interior vertex
-		int nf = 1;
-		while ((f = f->nextFace(this)) != startFace)
+		u_int nf = 0;
+		do {
+			f = f->nextFace(this);
 			++nf;
+		} while (f != startFace);
 		return nf;
-	}
-	else {
+	} else {
 		// Compute valence of boundary vertex
-		int nf = 1;
-		while ((f = f->nextFace(this)) != NULL)
+		u_int nf = 0;
+		do {
+			f = f->nextFace(this);
 			++nf;
+		} while (f != startFace);
 		f = startFace;
-		while ((f = f->prevFace(this)) != NULL)
+		do {
+			f = f->prevFace(this);
 			++nf;
-		return nf+1;
+		} while (f);
+		return nf;
 	}
 }
 

@@ -79,7 +79,7 @@ public:
 	// ProjectiveCamera Public Methods
 	ProjectiveCamera(const Transform &world2cam,
 		const Transform &world2camEnd,
-	    const Transform &proj, const float Screen[4],
+		const Transform &proj, const float Screen[4],
 		float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, Film *film);

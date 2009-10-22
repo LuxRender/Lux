@@ -119,7 +119,7 @@ public:
 		BxDFType flags = BSDF_ALL) const = 0;
 
 	// BSDF Public Data
-	Normal nn, ng;
+	const Normal nn, ng;
 	const DifferentialGeometry dgShading;
 	const float eta;
 

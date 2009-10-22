@@ -32,11 +32,11 @@ using namespace lux;
 
 // LoopSubdiv Method Definitions
 LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
-        int nfaces, int nvertices,
+        u_int nfaces, u_int nvertices,
 		const int *vertexIndices,
 		const Point *P,
 		const float *uv,
-		int nl,
+		u_int nl,
 		const boost::shared_ptr<Texture<float> > dismap,
 		float dmscale, float dmoffset,
 		bool dmnormalsmooth, bool dmsharpboundary)
@@ -47,9 +47,8 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 	hasUV = (uv != NULL);
 
 	// Allocate _LoopSubdiv_ vertices and faces
-	int i;
 	SDVertex *verts = new SDVertex[nvertices];
-	for (i = 0; i < nvertices; ++i) {
+	for (u_int i = 0; i < nvertices; ++i) {
 		if (hasUV)
 			verts[i] = SDVertex(P[i], uv[2 * i], uv[2 * i + 1]);
 		else
@@ -59,13 +58,13 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 	}
 
 	SDFace *fs = new SDFace[nfaces];
-	for (i = 0; i < nfaces; ++i)
+	for (u_int i = 0; i < nfaces; ++i)
 		faces.push_back(&fs[i]);
 	// Set face to vertex pointers
 	const int *vp = vertexIndices;
-	for (i = 0; i < nfaces; ++i) {
+	for (u_int i = 0; i < nfaces; ++i) {
 		SDFace *f = faces[i];
-		for (int j = 0; j < 3; ++j) {
+		for (u_int j = 0; j < 3; ++j) {
 			SDVertex *v = vertices[vp[j]];
 			f->v[j] = v;
 			v->startFace = f;
@@ -75,19 +74,18 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 
 	// Set neighbor pointers in _faces_
 	set<SDEdge> edges;
-	for (i = 0; i < nfaces; ++i) {
+	for (u_int i = 0; i < nfaces; ++i) {
 		SDFace *f = faces[i];
-		for (int edgeNum = 0; edgeNum < 3; ++edgeNum) {
+		for (u_int edgeNum = 0; edgeNum < 3; ++edgeNum) {
 			// Update neighbor pointer for _edgeNum_
-			int v0 = edgeNum, v1 = NEXT(edgeNum);
+			u_int v0 = edgeNum, v1 = NEXT(edgeNum);
 			SDEdge e(f->v[v0], f->v[v1]);
 			if (edges.find(e) == edges.end()) {
 				// Handle new edge
 				e.f[0] = f;
 				e.f0edgeNum = edgeNum;
 				edges.insert(e);
-			}
-			else {
+			} else {
 				// Handle previously-seen edge
 				e = *edges.find(e);
 				e.f[0]->f[e.f0edgeNum] = f;
@@ -96,8 +94,8 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 				// other face is opposite of the 
 				// current face, otherwise we have 
 				// inconsistent winding
-				int otherv0 = e.f[0]->vnum(f->v[v0]);
-				int otherv1 = e.f[0]->vnum(f->v[v1]);
+				u_int otherv0 = e.f[0]->vnum(f->v[v0]);
+				u_int otherv1 = e.f[0]->vnum(f->v[v1]);
 				if (PREV(otherv0) != otherv1) {
 					luxError(LUX_CONSISTENCY, LUX_ERROR, "Inconsistent vertex winding in mesh, aborting subdivision.");
 					// prevent subdivision
@@ -110,7 +108,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 	}
 
 	// Finish vertex initialization
-	for (i = 0; i < nvertices; ++i) {
+	for (u_int i = 0; i < nvertices; ++i) {
 		SDVertex *v = vertices[i];
 		SDFace *f = v->startFace;
 		do {
@@ -155,7 +153,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 	// check that we should do any subdivision
 	if (nLevels < 1) {
-		return boost::shared_ptr<LoopSubdiv::SubdivResult>((LoopSubdiv::SubdivResult*)NULL);
+		return boost::shared_ptr<LoopSubdiv::SubdivResult>();
 	}
 
 	std::stringstream ss;
@@ -167,7 +165,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	boost::object_pool<SDVertex> vertexArena;
 	boost::object_pool<SDFace> faceArena;
 
-	for (int i = 0; i < nLevels; ++i) {
+	for (u_int i = 0; i < nLevels; ++i) {
 		// Update _f_ and _v_ for next level of subdivision
 		vector<SDFace *> newFaces;
 		vector<SDVertex *> newVertices;
@@ -180,7 +178,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 			newVertices.push_back(v[j]->child);
 		}
 		for (u_int j = 0; j < f.size(); ++j)
-			for (int k = 0; k < 4; ++k) {
+			for (u_int k = 0; k < 4; ++k) {
 				f[j]->children[k] = faceArena.malloc();//new (faceArena) SDFace;
 				newFaces.push_back(f[j]->children[k]);
 			}
@@ -204,7 +202,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		map<SDEdge, SDVertex *> edgeVerts;
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
-			for (int k = 0; k < 3; ++k) {
+			for (u_int k = 0; k < 3; ++k) {
 				// Compute odd vertex on _k_th edge
 				SDEdge edge(face->v[k], face->v[NEXT(k)]);
 				SDVertex *vert = edgeVerts[edge];
@@ -249,7 +247,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		// Update even vertex face pointers
 		for (u_int j = 0; j < v.size(); ++j) {
 			SDVertex *vert = v[j];
-			int vertNum = vert->startFace->vnum(vert);
+			u_int vertNum = vert->startFace->vnum(vert);
 			vert->child->startFace =
 			    vert->startFace->children[vertNum];
 		}
@@ -257,7 +255,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		// Update face neighbor pointers
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
-			for (int k = 0; k < 3; ++k) {
+			for (u_int k = 0; k < 3; ++k) {
 				// Update children _f_ pointers for siblings
 				face->children[3]->f[k] = face->children[NEXT(k)];
 				face->children[k]->f[NEXT(k)] = face->children[3];
@@ -274,7 +272,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		// Update face vertex pointers
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
-			for (int k = 0; k < 3; ++k) {
+			for (u_int k = 0; k < 3; ++k) {
 				// Update child vertex pointer to new even vertex
 				face->children[k]->v[k] = face->v[k]->child;
 				// Update child vertex pointer to new odd vertex
@@ -307,15 +305,15 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	delete[] Vlimit;
 
 	// Create _TriangleMesh_ from subdivision mesh
-	u_int ntris = u_int(f.size());
-	u_int nverts = u_int(v.size());
+	u_int ntris = f.size();
+	u_int nverts = v.size();
 	int *verts = new int[3*ntris];
 	int *vp = verts;
 	map<SDVertex *, int> usedVerts;
 	for (u_int i = 0; i < nverts; ++i)
 		usedVerts[v[i]] = i;
 	for (u_int i = 0; i < ntris; ++i) {
-		for (int j = 0; j < 3; ++j) {
+		for (u_int j = 0; j < 3; ++j) {
 			*vp = usedVerts[f[i]->v[j]];
 			++vp;
 		}
@@ -355,7 +353,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	for (u_int i = 0; i < nverts; ++i)
 		Plimit[i] = v[i]->P;
 
-	if( !displacementMapNormalSmooth ) {
+	if (!displacementMapNormalSmooth) {
 		delete[] Ns;
 		Ns = NULL;
 	}
@@ -364,7 +362,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 }
 
 void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-	if(refinedShape) {
+	if (refinedShape) {
 		refined.push_back(refinedShape);
 		return;
 	}
@@ -388,12 +386,12 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 
 void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
 	// Compute vertex tangents on limit surface
-	int ringSize = 16;
+	u_int ringSize = 16;
 	Point *Pring = new Point[ringSize];
 	for (u_int i = 0; i < v.size(); ++i) {
 		SDVertex *vert = v[i];
 		Vector S(0,0,0), T(0,0,0);
-		int valence = vert->valence();
+		u_int valence = vert->valence();
 		if (valence > ringSize) {
 			ringSize = valence;
 			delete[] Pring;
@@ -403,7 +401,7 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
 	
 		if (!vert->boundary) {
 			// Compute tangents of interior face
-			for (int k = 0; k < valence; ++k) {
+			for (u_int k = 0; k < valence; ++k) {
 				S += cosf(2.f*M_PI*k/valence) * Vector(Pring[k]);
 				T += sinf(2.f*M_PI*k/valence) * Vector(Pring[k]);
 			}
@@ -418,9 +416,9 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
 				T = Vector(-1*Pring[0] + 2*Pring[1] + 2*Pring[2] +
 					-1*Pring[3] + -2*vert->P);
 			else {
-				float theta = M_PI / float(valence-1);
+				float theta = M_PI / static_cast<float>(valence - 1);
 				T = Vector(sinf(theta) * (Pring[0] + Pring[valence-1]));
-				for (int k = 1; k < valence-1; ++k) {
+				for (u_int k = 1; k < valence - 1; ++k) {
 					float wt = (2*cosf(theta) - 2) * sinf((k) * theta);
 					T += Vector(wt * Pring[k]);
 				}
@@ -473,7 +471,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 
 void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) const {
 	// Put _vert_ one-ring in _Pring_
-	int valence = vert->valence();
+	u_int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
 	vert->oneRing(Vring);
 
@@ -481,7 +479,7 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) c
 	float u = (1 - valence * beta) * vert->u;
 	float v = (1 - valence * beta) * vert->v;
 
-	for (int i = 0; i < valence; ++i) {
+	for (u_int i = 0; i < valence; ++i) {
 		P += beta * Vring[i]->P;
 		u += beta * Vring[i]->u;
 		v += beta * Vring[i]->v;
@@ -540,7 +538,7 @@ void SDVertex::oneRing(Point *P) {
 void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
                                  float beta) const {
 	// Put _vert_ one-ring in _Pring_
-	int valence = vert->valence();
+	u_int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
 	vert->oneRing(Vring);
 

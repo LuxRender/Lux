@@ -29,28 +29,30 @@ using namespace lux;
 
 // Cloud Method Definitions
 VolumeRegion * Cloud::CreateVolumeRegion(const Transform &volume2world,
-		const ParamSet &params) {
+	const ParamSet &params)
+{
 	// Initialize common volume region parameters
-	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", 0.);
-	RGBColor sigma_s = params.FindOneRGBColor("sigma_s", 0.);
-	float g = params.FindOneFloat("g", 0.);
-	RGBColor Le = params.FindOneRGBColor("Le", 0.);
+	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", 0.f);
+	RGBColor sigma_s = params.FindOneRGBColor("sigma_s", 0.f);
+	float g = params.FindOneFloat("g", 0.f);
+	RGBColor Le = params.FindOneRGBColor("Le", 0.f);
 	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
 	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
 	//Cloud parameters
-	float radius = params.FindOneFloat("radius", 0.5);
-	float noiseScale = params.FindOneFloat("noisescale", 0.5);
-	float turbulence = params.FindOneFloat("turbulence", 0.01);
-	float sharpness = params.FindOneFloat("sharpness", 6.0);
-	float offSet = params.FindOneFloat("noiseoffset", 0.);
-	int numSpheres = params.FindOneInt("spheres", 0 );
-	int octaves = params.FindOneInt("octaves", 1 );
-	float omega = params.FindOneFloat("omega", 0.75 );
-	float variability = params.FindOneFloat("variability", 0.9 );
-	float baseflatness = params.FindOneFloat("baseflatness", 0.8 );
-	float spheresize = params.FindOneFloat("spheresize", 0.15 );
+	float radius = params.FindOneFloat("radius", 0.5f);
+	float noiseScale = params.FindOneFloat("noisescale", 0.5f);
+	float turbulence = params.FindOneFloat("turbulence", 0.01f);
+	float sharpness = params.FindOneFloat("sharpness", 6.0f);
+	float offSet = params.FindOneFloat("noiseoffset", 0.f);
+	int numSpheres = params.FindOneInt("spheres", 0);
+	int octaves = params.FindOneInt("octaves", 1);
+	float omega = params.FindOneFloat("omega", 0.75f);
+	float variability = params.FindOneFloat("variability", 0.9f);
+	float baseflatness = params.FindOneFloat("baseflatness", 0.8f);
+	float spheresize = params.FindOneFloat("spheresize", 0.15f);
 	return new Cloud(sigma_a, sigma_s, g, Le, BBox(p0, p1), radius,
-		volume2world, noiseScale, turbulence, sharpness, variability, baseflatness, octaves, omega, offSet, numSpheres, spheresize );
+		volume2world, noiseScale, turbulence, sharpness, variability,
+		baseflatness, octaves, omega, offSet, numSpheres, spheresize);
 }
 
 static DynamicLoader::RegisterVolumeRegion<Cloud> r("cloud");
