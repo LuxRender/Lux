@@ -177,7 +177,7 @@ public:
 			_mm_and_ps(_mm_cmpgt_ps(t, ray4.mint),
 			_mm_cmplt_ps(t, _mm_sub_ps(ray4.maxt,
 			_mm_mul_ps(t, _mm_set1_ps(RAY_EPSILON))))));
-		int hit = -1;
+		u_int hit = 4;
 		for (u_int i = 0; i < 4; ++i) {
 			if (reinterpret_cast<int32_t *>(&test)[i] &&
 				reinterpret_cast<const float *>(&t)[i] < ray.maxt) {
@@ -185,7 +185,7 @@ public:
 				ray.maxt = reinterpret_cast<const float *>(&t)[i];
 			}
 		}
-		if (hit < 0)
+		if (hit == 4)
 			return false;
 		ray4.maxt = _mm_set1_ps(ray.maxt);
 
@@ -309,7 +309,7 @@ const boost::int16_t QBVHAccel::pathTable[] = {
 
 
 /***************************************************/
-QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, float fst, int sf) : fullSweepThreshold(fst), skipFactor(sf), maxPrimsPerLeaf(mp)
+QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int mp, u_int fst, u_int sf) : fullSweepThreshold(fst), skipFactor(sf), maxPrimsPerLeaf(mp)
 {
 	// Refine all primitives
 	vector<boost::shared_ptr<Primitive> > vPrims;
@@ -500,7 +500,8 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	// Find the best split axis,
 	// there must be at least a bin on the right side
 	for (int i = 0; i < NB_BINS - 1; ++i) {
-		float cost = vLeft[i] * nbPrimsLeft[i] + vRight[i + 1] * nbPrimsRight[i + 1];
+		float cost = vLeft[i] * nbPrimsLeft[i] +
+			vRight[i + 1] * nbPrimsRight[i + 1];
 		if (cost < minCost) {
 			minBin = i;
 			minCost = cost;
@@ -883,7 +884,7 @@ void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 Aggregate* QBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
 {
 	int maxPrimsPerLeaf = ps.FindOneInt("maxprimsperleaf", 4);
-	float fullSweepThreshold = ps.FindOneFloat("fullsweepthreshold", 4 * maxPrimsPerLeaf);
+	float fullSweepThreshold = ps.FindOneInt("fullsweepthreshold", 4 * maxPrimsPerLeaf);
 	int skipFactor = ps.FindOneInt("skipfactor", 1);
 	return new QBVHAccel(prims, maxPrimsPerLeaf, fullSweepThreshold, skipFactor);
 

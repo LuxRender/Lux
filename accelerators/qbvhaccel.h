@@ -141,7 +141,7 @@ public:
 	   @return
 	*/
 	inline u_int NbQuadsInLeaf(int i) const {
-		return (((children[i] >> 27) & 15)) + 1;
+		return static_cast<u_int>((children[i] >> 27) & 0xf) + 1;
 	}
 
 	/**
@@ -149,7 +149,7 @@ public:
 	   @param index
 	*/
 	inline static u_int NbQuadPrimitives(int32_t index) {
-		return ((index >> 27) & 15) + 1;
+		return static_cast<u_int>((index >> 27) & 0xf) + 1;
 	}
 	
 	/**
@@ -194,9 +194,9 @@ public:
 			// Put the negative sign in a plateform independent way
 			children[i] = 0x80000000;//-1L & ~(-1L >> 1L);
 			
-			children[i] |=  ((nbQuads - 1) & 0xff) << 27;
+			children[i] |=  ((static_cast<int32_t>(nbQuads) - 1) & 0xf) << 27;
 
-			children[i] |= firstQuadIndex & 0x07ffffff;
+			children[i] |= static_cast<int32_t>(firstQuadIndex) & 0x07ffffff;
 		}
 	}
 
@@ -207,8 +207,8 @@ public:
 	*/
 	inline void SetBBox(int i, const BBox &bbox) {
 		for (int axis = 0; axis < 3; ++axis) {
-			((float *)&(bboxes[0][axis]))[i] = bbox.pMin[axis];
-			((float *)&(bboxes[1][axis]))[i] = bbox.pMax[axis];
+			reinterpret_cast<float *>(&(bboxes[0][axis]))[i] = bbox.pMin[axis];
+			reinterpret_cast<float *>(&(bboxes[1][axis]))[i] = bbox.pMax[axis];
 		}
 	}
 
@@ -240,7 +240,7 @@ public:
 	   @param fst the threshold before switching to full sweep for split
 	   @param sf the skip factor during split determination
 	*/
-	QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, float fst, int sf);
+	QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int mp, u_int fst, u_int sf);
 
 	/**
 	   to free the memory.

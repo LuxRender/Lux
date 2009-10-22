@@ -40,7 +40,7 @@ using std::ptr_fun;
 using namespace lux;
 
 // BVHAccel Method Definitions
-BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int treetype, int csamples, int icost, int tcost, float ebonus) :
+BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetype, int csamples, int icost, int tcost, float ebonus) :
 			costSamples(csamples), isectCost(icost), traversalCost(tcost), emptyBonus(ebonus) {
 	vector<boost::shared_ptr<Primitive> > vPrims;
 	const PrimitiveRefinementHints refineHints(false);
@@ -116,7 +116,8 @@ boost::shared_ptr<BVHAccelTreeNode> BVHAccel::BuildHierarchy(vector<boost::share
 	boost::shared_ptr<BVHAccelTreeNode> parent(new BVHAccelTreeNode());
 	parent->primitive = NULL;
 
-	vector<u_int> splits; splits.reserve(treeType+1);
+	vector<u_int> splits;
+	splits.reserve(treeType + 1);
 	splits.push_back(begin); splits.push_back(end);
 	for(u_int i = 2; i <= treeType; i *= 2) {  //Calculate splits, according to tree type and do partition
 		for(u_int j = 0, offset = 0; j+offset < i && splits.size() > j+1; j += 2) {
