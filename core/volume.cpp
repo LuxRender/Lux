@@ -31,30 +31,29 @@ float PhaseIsotropic(const Vector &, const Vector &) {
 	return 1.f / (4.f * M_PI);
 }
  float PhaseRayleigh(const Vector &w, const Vector &wp) {
-	float costheta = Dot(w, wp);
-	return  3.f/(16.f*M_PI) * (1 + costheta * costheta);
+	const float costheta = Dot(w, wp);
+	return  3.f / (16.f * M_PI) * (1.f + costheta * costheta);
 }
  float PhaseMieHazy(const Vector &w, const Vector &wp) {
-	float costheta = Dot(w, wp);
-	return (0.5f + 4.5f * powf(0.5 * (1.f + costheta), 8.f)) / (4.f*M_PI);
+	const float costheta = Dot(w, wp);
+	return (0.5f + 4.5f * powf(0.5f * (1.f + costheta), 8.f)) / (4.f * M_PI);
 }
  float PhaseMieMurky(const Vector &w, const Vector &wp) {
-	float costheta = Dot(w, wp);
-	return (0.5f + 16.5f * powf(0.5 * (1.f + costheta), 32.f)) / (4.f*M_PI);
+	const float costheta = Dot(w, wp);
+	return (0.5f + 16.5f * powf(0.5f * (1.f + costheta), 32.f)) / (4.f * M_PI);
 }
 
 float PhaseHG(const Vector &w, const Vector &wp, float g) {
-	float costheta = Dot(w, wp);
-	return 1.f / (4.f * M_PI) * (1.f - g*g) /
-		powf(1.f + g*g - 2.f * g * costheta, 1.5f);
+	const float costheta = Dot(w, wp);
+	return 1.f / (4.f * M_PI) * (1.f - g * g) /
+		powf(1.f + g * g - 2.f * g * costheta, 1.5f);
 }
 
 float PhaseSchlick(const Vector &w,
                    const Vector &wp, float g) {
-	float k = 1.55f * g - .55f * g * g * g;
-	float kcostheta = k * Dot(w, wp);
-	return 1.f / (4.f * M_PI) * (1.f - k*k) /
-		((1.f - kcostheta) * (1.f - kcostheta));
+	const float k = g * (1.55f - .55f * g * g);
+	const float compkcostheta = 1.f - k * Dot(w, wp);
+	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
 }
 RGBColor VolumeRegion::sigma_t(const Point &p,
                                const Vector &w) const {

@@ -31,7 +31,7 @@ void BlackbodySPD::init(float t) {
 	lambdaMin = BB_CACHE_START;
 	lambdaMax = BB_CACHE_END;
 	delta = (BB_CACHE_END - BB_CACHE_START) / (BB_CACHE_SAMPLES-1);
-    invDelta = 1.f / delta;
+	invDelta = 1.f / delta;
 	nSamples = BB_CACHE_SAMPLES;
 
 	AllocateSamples(BB_CACHE_SAMPLES);

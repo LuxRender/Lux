@@ -40,10 +40,10 @@ public:
 	};
 
 	// DirectLightingIntegrator Public Methods
-	DirectLightingIntegrator(LightStrategy ls, int md);
+	DirectLightingIntegrator(LightStrategy ls, u_int md);
 	virtual ~DirectLightingIntegrator() { }
 
-	virtual int Li(const TsPack *tspack, const Scene *scene,
+	virtual u_int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
@@ -51,15 +51,15 @@ public:
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
-	int LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
-		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, int rayDepth) const;
+	u_int LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
+		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, u_int rayDepth) const;
 
 	// DirectLighting Private Data
 	LightStrategy lightStrategy;
 
-	int maxDepth; // NOBOOK
+	u_int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
-	int sampleOffset, bufferId;
+	u_int sampleOffset, bufferId;
 };
 
 }//namespace lux

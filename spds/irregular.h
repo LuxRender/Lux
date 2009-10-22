@@ -30,37 +30,37 @@
 
 namespace lux
 {
-  // only use spline for regular data
-  enum SPDResamplingMethod { Linear, Spline };
+// only use spline for regular data
+enum SPDResamplingMethod { Linear, Spline };
 
-  // Irregularly sampled SPD
-  // Resampled to a fixed resolution (at construction)
-  // using cubic spline interpolation
-  class IrregularSPD : public SPD {
-  public:
+// Irregularly sampled SPD
+// Resampled to a fixed resolution (at construction)
+// using cubic spline interpolation
+class IrregularSPD : public SPD {
+public:
 
-    IrregularSPD() : SPD() {}
+	IrregularSPD() : SPD() {}
 
-    // creates an irregularly sampled SPD
-    // may "truncate" the edges to fit the new resolution
-    //  wavelengths   array containing the wavelength of each sample
-    //  samples       array of sample values at the given wavelengths
-    //  n             number of samples
-    //  resolution    resampling resolution (in nm)
-    IrregularSPD(const float* const wavelengths, const float* const samples,
-			int n, float resolution = 5, SPDResamplingMethod resamplignMethod = Linear);
+	// creates an irregularly sampled SPD
+	// may "truncate" the edges to fit the new resolution
+	//  wavelengths   array containing the wavelength of each sample
+	//  samples       array of sample values at the given wavelengths
+	//  n             number of samples
+	//  resolution    resampling resolution (in nm)
+	IrregularSPD(const float* const wavelengths, const float* const samples,
+		u_int n, float resolution = 5, SPDResamplingMethod resamplignMethod = Linear);
 
-    virtual ~IrregularSPD() {}
+	virtual ~IrregularSPD() {}
 
-  protected:
-	  void init(float lMin, float lMax, const float* const s, int n);
+protected:
+	  void init(float lMin, float lMax, const float* const s, u_int n);
 
-  private:
-    // computes data for natural spline interpolation
-    // from Numerical Recipes in C
-    void calc_spline_data(const float* const wavelengths,
-			const float* const amplitudes, int n, float *spline_data);
-  };
+private:
+	// computes data for natural spline interpolation
+	// from Numerical Recipes in C
+	void calc_spline_data(const float* const wavelengths,
+		const float* const amplitudes, u_int n, float *spline_data);
+};
 
 }//namespace lux
 

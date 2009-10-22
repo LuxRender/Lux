@@ -38,16 +38,16 @@ public:
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// PathIntegrator Public Methods
-	PathIntegrator(LightStrategy st, RRStrategy rst, int md, float cp, bool ie) {
+	PathIntegrator(LightStrategy st, RRStrategy rst, u_int md, float cp, bool ie) {
 		lightStrategy = st;
 		rrStrategy = rst;
 		maxDepth = md;
 		continueProbability = cp;
-		bufferId = -1;
+		bufferId = 0;
 		includeEnvironment = ie;
 	}
 	virtual ~PathIntegrator() { }
-	virtual int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
+	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
@@ -55,10 +55,10 @@ private:
 	// PathIntegrator Private Data
 	LightStrategy lightStrategy;
 	RRStrategy rrStrategy;
-	int maxDepth;
+	u_int maxDepth;
 	float continueProbability;
 	// Declare sample parameters for light source sampling
-	int sampleOffset, bufferId;
+	u_int sampleOffset, bufferId;
 	bool includeEnvironment;
 };
 

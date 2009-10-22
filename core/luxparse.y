@@ -34,7 +34,7 @@
 using namespace lux;
 
 extern int yylex( void );
-int line_num = 0;
+u_int line_num = 0;
 string current_file;
 
 #define YYMAXDEPTH 100000000
@@ -63,11 +63,11 @@ void ParseError( const char *format, ... ) {
 	va_end( args );
 }*/
 
-int cur_paramlist_allocated = 0;
-int cur_paramlist_size = 0;
+u_int cur_paramlist_allocated = 0;
+u_int cur_paramlist_size = 0;
 const char **cur_paramlist_tokens = NULL;
 void **cur_paramlist_args = NULL;
-int *cur_paramlist_sizes = NULL;
+u_int *cur_paramlist_sizes = NULL;
 bool *cur_paramlist_texture_helper = NULL;
 
 #define CPS cur_paramlist_size
@@ -77,9 +77,9 @@ bool *cur_paramlist_texture_helper = NULL;
 #define CPSZ cur_paramlist_sizes
 
 typedef struct ParamArray {
-	int element_size;
-	int allocated;
-	int nelems;
+	u_int element_size;
+	u_int allocated;
+	u_int nelems;
 	void *array;
 } ParamArray;
 
@@ -95,7 +95,7 @@ void AddArrayElement( void *elem ) {
 		cur_array->array = realloc( cur_array->array,
 			cur_array->allocated*cur_array->element_size );
 	}
-	char *next = ((char *)cur_array->array) + cur_array->nelems *
+	char *next = static_cast<char *>(cur_array->array) + cur_array->nelems *
 		cur_array->element_size;
 	memcpy( next, elem, cur_array->element_size );
 	cur_array->nelems++;
@@ -120,18 +120,18 @@ void ArrayFree( ParamArray *ra )
 
 void FreeArgs()
 {
-	for (int i = 0; i < cur_paramlist_size; ++i) {
+	for (u_int i = 0; i < cur_paramlist_size; ++i) {
 		// NOTE - Ratow - freeing up strings inside string type args
 		if(memcmp("string", cur_paramlist_tokens[i], 6) == 0 ||
 				memcmp("texture", cur_paramlist_tokens[i], 6) == 0) {
-			for (int j = 0; j < cur_paramlist_sizes[i]; ++j)
-				free(((char **)cur_paramlist_args[i])[j]);
+			for (u_int j = 0; j < cur_paramlist_sizes[i]; ++j)
+				free(static_cast<char **>(cur_paramlist_args[i])[j]);
 		}
-		delete[] ((char *)cur_paramlist_args[i]);
+		delete[] static_cast<char *>(cur_paramlist_args[i]);
 	}
 }
 
-static bool VerifyArrayLength( ParamArray *arr, int required,
+static bool VerifyArrayLength( ParamArray *arr, u_int required,
 	const char *command ) {
 	if (arr->nelems != required) {
 		std::stringstream ss;
@@ -144,8 +144,8 @@ static bool VerifyArrayLength( ParamArray *arr, int required,
 enum { PARAM_TYPE_INT, PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_POINT,
 	PARAM_TYPE_VECTOR, PARAM_TYPE_NORMAL, PARAM_TYPE_COLOR,
 	PARAM_TYPE_STRING, PARAM_TYPE_TEXTURE };
-static void InitParamSet(ParamSet &ps, int count, const char **tokens,
-	void **args, int *sizes, bool *texture_helper);
+static void InitParamSet(ParamSet &ps, u_int count, const char **tokens,
+	void **args, u_int *sizes, bool *texture_helper);
 static bool lookupType(const char *token, int *type, string &name);
 #define YYPRINT(file, type, value)  \
 { \
@@ -296,10 +296,10 @@ paramlist_entry: STRING array
 	memcpy(arg, $2->array, $2->nelems * $2->element_size);
 	if (cur_paramlist_size >= cur_paramlist_allocated) {
 		cur_paramlist_allocated = 2*cur_paramlist_allocated + 1;
-		cur_paramlist_tokens = (const char **) realloc(cur_paramlist_tokens, cur_paramlist_allocated*sizeof(const char *) );
-		cur_paramlist_args = (void * *) realloc( cur_paramlist_args, cur_paramlist_allocated*sizeof(void *) );
-		cur_paramlist_sizes = (int *) realloc( cur_paramlist_sizes, cur_paramlist_allocated*sizeof(int) );
-		cur_paramlist_texture_helper = (bool *) realloc( cur_paramlist_texture_helper, cur_paramlist_allocated*sizeof(bool) );
+		cur_paramlist_tokens = static_cast<const char **>(realloc(cur_paramlist_tokens, cur_paramlist_allocated*sizeof(const char *) ));
+		cur_paramlist_args = static_cast<void **>(realloc( cur_paramlist_args, cur_paramlist_allocated*sizeof(void *) ));
+		cur_paramlist_sizes = static_cast<u_int *>(realloc( cur_paramlist_sizes, cur_paramlist_allocated*sizeof(u_int) ));
+		cur_paramlist_texture_helper = static_cast<bool *>(realloc( cur_paramlist_texture_helper, cur_paramlist_allocated*sizeof(bool) ));
 	}
 	cur_paramlist_tokens[cur_paramlist_size] = $1;
 	cur_paramlist_sizes[cur_paramlist_size] = $2->nelems;
@@ -347,7 +347,7 @@ ri_stmt: ACCELERATOR STRING paramlist
 | CONCATTRANSFORM num_array
 {
 	if (VerifyArrayLength( $2, 16, "ConcatTransform" ))
-		Context::luxConcatTransform( (float *) $2->array );
+		Context::luxConcatTransform(static_cast<float *>($2->array));
 	ArrayFree( $2 );
 }
 | COORDINATESYSTEM STRING
@@ -493,7 +493,7 @@ ri_stmt: ACCELERATOR STRING paramlist
 | TRANSFORM real_num_array
 {
 	if (VerifyArrayLength( $2, 16, "Transform" ))
-		Context::luxTransform( (float *) $2->array );
+		Context::luxTransform(static_cast<float *>($2->array));
 	ArrayFree( $2 );
 }
 | TRANSLATE NUM NUM NUM
@@ -523,10 +523,10 @@ ri_stmt: ACCELERATOR STRING paramlist
 	Context::luxWorldEnd();
 };
 %%
-static void InitParamSet(ParamSet &ps, int count, const char **tokens,
-		void **args, int *sizes, bool *texture_helper) {
+static void InitParamSet(ParamSet &ps, u_int count, const char **tokens,
+		void **args, u_int *sizes, bool *texture_helper) {
 	ps.Clear();
-	for (int i = 0; i < count; ++i) {
+	for (u_int i = 0; i < count; ++i) {
 		int type;
 		string name;
 		if (lookupType(tokens[i], &type, name)) {
@@ -539,23 +539,23 @@ static void InitParamSet(ParamSet &ps, int count, const char **tokens,
 				type = PARAM_TYPE_TEXTURE;
 			}
 			void *data = args[i];
-			int nItems = sizes[i];
+			u_int nItems = sizes[i];
 			if (type == PARAM_TYPE_INT) {
 				// parser doesn't handle ints, so convert from floats here....
-				int nAlloc = sizes[i];
+				u_int nAlloc = sizes[i];
 				int *idata = new int[nAlloc];
-				float *fdata = (float *)data;
-				for (int j = 0; j < nAlloc; ++j)
-					idata[j] = int(fdata[j]);
+				float *fdata = static_cast<float *>(data);
+				for (u_int j = 0; j < nAlloc; ++j)
+					idata[j] = static_cast<int>(fdata[j]);
 				ps.AddInt(name, idata, nItems);
 				delete[] idata;
 			}
 			else if (type == PARAM_TYPE_BOOL) {
 				// strings -> bools
-				int nAlloc = sizes[i];
+				u_int nAlloc = sizes[i];
 				bool *bdata = new bool[nAlloc];
-				for (int j = 0; j < nAlloc; ++j) {
-					string s(*((const char **)data));
+				for (u_int j = 0; j < nAlloc; ++j) {
+					string s(*static_cast<const char **>(data));
 					if (s == "true") bdata[j] = true;
 					else if (s == "false") bdata[j] = false;
 					else {
@@ -571,25 +571,25 @@ static void InitParamSet(ParamSet &ps, int count, const char **tokens,
 				delete[] bdata;
 			}
 			else if (type == PARAM_TYPE_FLOAT) {
-				ps.AddFloat(name, (float *)data, nItems);
+				ps.AddFloat(name, static_cast<float *>(data), nItems);
 			} else if (type == PARAM_TYPE_POINT) {
-				ps.AddPoint(name, (Point *)data, nItems / 3);
+				ps.AddPoint(name, static_cast<Point *>(data), nItems / 3);
 			} else if (type == PARAM_TYPE_VECTOR) {
-				ps.AddVector(name, (Vector *)data, nItems / 3);
+				ps.AddVector(name, static_cast<Vector *>(data), nItems / 3);
 			} else if (type == PARAM_TYPE_NORMAL) {
-				ps.AddNormal(name, (Normal *)data, nItems / 3);
+				ps.AddNormal(name, static_cast<Normal *>(data), nItems / 3);
 			} else if (type == PARAM_TYPE_COLOR) {
-				ps.AddRGBColor(name, (RGBColor *)data, nItems / COLOR_SAMPLES);
+				ps.AddRGBColor(name, static_cast<RGBColor *>(data), nItems / COLOR_SAMPLES);
 			} else if (type == PARAM_TYPE_STRING) {
 				string *strings = new string[nItems];
-				for (int j = 0; j < nItems; ++j)
-					strings[j] = string(*((const char **)data+j));
+				for (u_int j = 0; j < nItems; ++j)
+					strings[j] = string(static_cast<const char **>(data)[j]);
 				ps.AddString(name, strings, nItems);
 				delete[] strings;
 			}
 			else if (type == PARAM_TYPE_TEXTURE) {
 				if (nItems == 1) {
-					string val(*((const char **)data));
+					string val(*static_cast<const char **>(data));
 					ps.AddTexture(name, val);
 				}
 				else

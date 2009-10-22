@@ -30,8 +30,8 @@
 
 // Peak + fallof SPD using gaussian distribution
 
-#define GAUSS_CACHE_START   380. // precomputed cache starts at wavelength,
-#define GAUSS_CACHE_END     720. // and ends at wavelength
+#define GAUSS_CACHE_START   380.f // precomputed cache starts at wavelength,
+#define GAUSS_CACHE_END     720.f // and ends at wavelength
 #define GAUSS_CACHE_SAMPLES 512  // total number of cache samples 
 
 namespace lux

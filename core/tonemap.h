@@ -33,7 +33,7 @@ class ToneMap {
 public:
 	// ToneMap Interface
 	virtual ~ToneMap() { }
-	virtual void Map(vector<XYZColor> &xyz, int xRes, int yRes, float maxDisplayY) const = 0;
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const = 0;
 };
 
 }

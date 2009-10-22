@@ -30,7 +30,7 @@
 namespace lux
 {
 
-	long double normsinv(long double p);
+	double normsinv(double p);
 		
 	void RejectionSampleDisk(float u1, float u2, float *x, float *y);
 	Vector UniformSampleHemisphere(float u1, float u2);
@@ -45,8 +45,8 @@ namespace lux
 	void UniformSampleTriangle(float ud1, float ud2, float *u, float *v);
 	Vector SampleHG(const Vector &w, float g, float u1, float u2);
 	float HGPdf(const Vector &w, const Vector &wp, float g);
-	void ComputeStep1dCDF(float *f, int nValues, float *c, float *cdf);
-	float SampleStep1d(float *f, float *cdf, float c, int nSteps, float u,
+	void ComputeStep1dCDF(const float *f, u_int nValues, float *c, float *cdf);
+	float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps, float u,
 		float *weight);
 	void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
 	float GaussianSampleDisk(float u1);
@@ -67,13 +67,13 @@ namespace lux
 	inline float CosineHemispherePdf(float costheta, float phi) {
 		return costheta * INV_PI;
 	}
-	inline float BalanceHeuristic(int nf, float fPdf, int ng, float gPdf)
+	inline float BalanceHeuristic(u_int nf, float fPdf, u_int ng, float gPdf)
 	{
 		return (nf * fPdf) / (nf * fPdf + ng * gPdf);
 	}
-	inline float PowerHeuristic(int nf, float fPdf, int ng,	float gPdf)
+	inline float PowerHeuristic(u_int nf, float fPdf, u_int ng, float gPdf)
 	{
-		float f = nf * fPdf, g = ng * gPdf;
+		const float f = nf * fPdf, g = ng * gPdf;
 		return (f * f) / (f * f + g * g);
 	}
 

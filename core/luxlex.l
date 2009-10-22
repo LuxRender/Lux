@@ -172,7 +172,7 @@ WorldEnd 		{ return WORLDEND;		}
 \r /* jromang - do nothing */
 \n { line_num++; }
 {NUMBER} {
-  yylval.num = (float) atof(yytext);
+  yylval.num = static_cast<float>(atof(yytext));
   return NUM;
 }
 {IDENT} {
@@ -190,9 +190,7 @@ WorldEnd 		{ return WORLDEND;		}
 <STR>\\\" {add_string_char('\"');}
 <STR>\\\\ {add_string_char('\\');}
 <STR>\\[0-9]{3} {
-  int val = atoi(yytext+1);
-  while(val > 256)
-    val -= 256;
+  char val = static_cast<char>(atoi(yytext+1) & 0xff);
   add_string_char(val);
 }
 <STR>\\\n {line_num++;}

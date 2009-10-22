@@ -66,11 +66,8 @@ private:
 
 class RenderFarm {
 public:
-	RenderFarm() : serverUpdateInterval(3*60), filmUpdateThread(NULL) {}
-        ~RenderFarm() {
-            if (filmUpdateThread)
-                delete filmUpdateThread;
-        }
+	RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL) { }
+	~RenderFarm() { delete filmUpdateThread; }
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	// Dade - Disconnect from all servers
@@ -87,36 +84,37 @@ public:
 	void send(const std::string &command, const string &name, const string &type, const string &texname, const ParamSet &params);
 	void send(const std::string &command, const std::string &name, float a, float b, const std::string &transform);
 
-    //!< Sends immediately all commands in the buffer to the servers
+	//!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-    int getServerCount() { return serverInfoList.size(); }
-	int getServersStatus(RenderingServerInfo *info, int maxInfoCount);
+	u_int getServerCount() { return serverInfoList.size(); }
+	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
 
-    // Dade - used to periodically update the film
-    void startFilmUpdater(Scene *scene);
-    void stopFilmUpdater();
-    //!<Gets the films from the network, and merge them to the film given in parameter
+	// Dade - used to periodically update the film
+	void startFilmUpdater(Scene *scene);
+	void stopFilmUpdater();
+	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
 
 public:
-    // Dade - film update infromation
-    int serverUpdateInterval;
+	// Dade - film update infromation
+	int serverUpdateInterval;
 
 private:
 	struct ExtRenderingServerInfo {
-		ExtRenderingServerInfo(string n, string p, string id) : name(n),
-				port(p), sid(id), timeLastContact(boost::posix_time::second_clock::local_time()),
-				numberOfSamplesReceived(0.0), flushed(false) { }
+		ExtRenderingServerInfo(string n, string p, string id) :
+			timeLastContact(boost::posix_time::second_clock::local_time()),
+			numberOfSamplesReceived(0.),
+			name(n), port(p), sid(id), flushed(false) { }
+
+		boost::posix_time::ptime timeLastContact;
+		// to return the max. number of samples among
+		// all buffer groups in the film
+		double numberOfSamplesReceived;
 
 		string name;
 		string port;
 		string sid;
-
-		boost::posix_time::ptime timeLastContact;
-		// Dade - BUG 590: changed to return the max. number of samples among
-		// all buffer groups in the film
-		double numberOfSamplesReceived;
 
 		bool flushed;
 	};
@@ -128,8 +126,8 @@ private:
 
 	std::stringstream netBuffer;
 
-    // Dade - film update information
-    FilmUpdaterThread *filmUpdateThread;
+	// Dade - film update information
+	FilmUpdaterThread *filmUpdateThread;
 };
 
 }//namespace lux

@@ -63,7 +63,7 @@ Timer::Timer()
 #elif defined( WIN32 ) || defined(__CYGWIN__)
 	// Windows Timer Initialization
 	QueryPerformanceFrequency( &performance_frequency );
-	one_over_frequency = 1.0/((double)performance_frequency.QuadPart);
+	one_over_frequency = 1. / static_cast<double>(performance_frequency.QuadPart);
 #endif
 	time0 = elapsed = 0;
 	running = 0;
@@ -87,7 +87,7 @@ double Timer::GetTime()
 #elif defined( WIN32 ) || defined(__CYGWIN__)
 	// Windows GetTime
 	QueryPerformanceCounter( &performance_counter );
-	return (double) performance_counter.QuadPart * one_over_frequency;
+	return static_cast<double>(performance_counter.QuadPart) * one_over_frequency;
 #else
 	// UNIX GetTime
 	gettimeofday( &timeofday, NULL );

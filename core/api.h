@@ -45,43 +45,43 @@ void luxTransform(float transform[16]);
 void luxCoordinateSystem(const char *);
 void luxCoordSysTransform(const char *);
 void luxPixelFilter(const char *name, ...);
-void luxPixelFilterV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxPixelFilterV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxFilm(const char *name, ...);
-void luxFilmV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxFilmV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxSampler(const char *name, ...);
-void luxSamplerV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxSamplerV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxAccelerator(const char *name, ...);
-void luxAcceleratorV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxAcceleratorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxSurfaceIntegrator(const char *name, ...);
-void luxSurfaceIntegratorV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxSurfaceIntegratorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxVolumeIntegrator(const char *name, ...);
-void luxVolumeIntegratorV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxVolumeIntegratorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxCamera(const char *name, ...);
-void luxCameraV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxCameraV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxWorldBegin();
 void luxAttributeBegin();
 void luxAttributeEnd();
 void luxTransformBegin();
 void luxTransformEnd();
 void luxTexture(const char *name, const char *type, const char *texname, ...);
-void luxTextureV(const char *name, const char *type, const char *texname, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxTextureV(const char *name, const char *type, const char *texname, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxMaterial(const char *name, ...);
-void luxMaterialV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxMaterialV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxMakeNamedMaterial(const char *name, ...);
-void luxMakeNamedMaterialV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxMakeNamedMaterialV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxNamedMaterial(const char *name, ...);
-void luxNamedMaterialV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxNamedMaterialV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxLightSource(const char *name, ...);
-void luxLightSourceV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxLightSourceV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxAreaLightSource(const char *name, ...);
-void luxAreaLightSourceV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxAreaLightSourceV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxPortalShape(const char *name, ...);
-void luxPortalShapeV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxPortalShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxShape(const char *name, ...);
-void luxShapeV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxReverseOrientation();
 void luxVolume(const char *name, ...);
-void luxVolumeV(const char *name, int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxVolumeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxObjectBegin(const char *name);
 void luxObjectEnd();
 void luxObjectInstance(const char *name);
@@ -103,24 +103,24 @@ void luxWait();
 void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone);
 
 /* Controlling number of threads */
-int luxAddThread();
+unsigned int luxAddThread();
 void luxRemoveThread();
 
 enum ThreadSignals { RUN, PAUSE, EXIT};
 struct RenderingThreadInfo {
-	int threadIndex;
+	unsigned int threadIndex;
 	ThreadSignals status;
 };
 // Dade - return the number of rendering threads and fill the info buffer with
 // information about the threads
-int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
+unsigned int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, unsigned int maxInfoCount);
 
 /* Framebuffer access */
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();
 
 /* Histogram access */
-void luxGetHistogramImage(unsigned char *outPixels, int width, int height, int options);
+void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 //histogram drawing options
 #define    LUX_HISTOGRAM_RGB    	1
 #define    LUX_HISTOGRAM_RGB_ADD	2
@@ -201,19 +201,19 @@ enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 };
 
 // Parameter Access functions
-void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index = 0);
-double luxGetParameterValue(luxComponent comp, luxComponentParameters param, int index = 0);
-double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index = 0);
-void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
+void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index = 0);
+double luxGetParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index = 0);
+double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index = 0);
+void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, unsigned int index = 0);
 // an 0-terminated string is copied to dst (a buffer of at least dstlen chars), the length of the entire string is returned
-int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, int dstlen, int index = 0);
-int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, int dstlen, int index = 0);
+unsigned int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index = 0);
+unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index = 0);
 
 
 /* Networking */
 void luxAddServer(const char * name);
 void luxRemoveServer(const char * name);
-int luxGetServerCount();
+unsigned int luxGetServerCount();
 void luxUpdateFilmFromNetwork();
 void luxSetNetworkServerUpdateInterval(int updateInterval);
 int luxGetNetworkServerUpdateInterval();
@@ -226,12 +226,12 @@ struct RenderingServerInfo {
 	const char *port; // Dade - tcp port of the server
 	const char *sid; // Dade - session id for the server
 
-	unsigned int secsSinceLastContact;
 	double numberOfSamplesReceived;
+	unsigned int secsSinceLastContact;
 };
 // Dade - return the number of rendering servers and fill the info buffer with
 // information about the servers
-int luxGetRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount);
+unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info, unsigned int maxInfoCount);
 
 /* Informations and statistics */
 double luxStatistics(const char *statName);

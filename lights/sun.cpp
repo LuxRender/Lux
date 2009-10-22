@@ -66,7 +66,7 @@ private:
 
 // SunLight Method Definitions
 SunLight::SunLight(const Transform &light2world,
-		const float sunscale, const Vector &dir, float turb , float relSize, int ns)
+		const float sunscale, const Vector &dir, float turb , float relSize, u_int ns)
 	: Light(light2world, ns) {
 	sundir = Normalize(LightToWorld(dir));
 	turbidity = turb;
@@ -103,7 +103,7 @@ SunLight::SunLight(const Transform &light2world,
 	float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
 	float tauR, tauA, tauO, tauG, tauWA;
 
-	float m = 1.f / (cos(thetaS) + 0.00094f * powf(1.6386f - thetaS, -1.253f));  // Relative Optical Mass
+	float m = 1.f / (cosf(thetaS) + 0.00094f * powf(1.6386f - thetaS, -1.253f));  // Relative Optical Mass
 
 	int i;
 	float lambda;
@@ -116,7 +116,7 @@ SunLight::SunLight(const Transform &light2world,
 			// beta - amount of aerosols present
 			// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
 		const float alpha = 1.3f;
-		tauA = expf(-m * beta * pow(lambda / 1000.f, -alpha));  // lambda should be in um
+		tauA = expf(-m * beta * powf(lambda / 1000.f, -alpha));  // lambda should be in um
 			// Attenuation due to ozone absorption
 			// lOzone - amount of ozone in cm(NTP)
 		const float lOzone = .35f;
@@ -169,7 +169,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {
 		*pdf = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(ps, sundir);
 			ray.mint = -INFINITY;
@@ -192,7 +192,7 @@ bool SunLight::checkPortals(Ray portalRay) const {
 	Ray isectRay(portalRay);
 	Intersection isect;
 	bool found = false;
-	for (int i = 0; i < nrPortalShapes; ++i) {
+	for (u_int i = 0; i < nrPortalShapes; ++i) {
 		// Dade - I need to use Intersect instead of IntersectP
 		// because of the normal
 		if (PortalShapes[i]->Intersect(isectRay, &isect)) {
@@ -261,10 +261,10 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	} else {
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
-		int shapeidx = 0;
+		u_int shapeidx = 0;
 		if(nrPortalShapes > 1)
 			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(tspack->rng->floatValue() * nrPortalShapes)); // TODO - REFACT - add passed value from sample
+					Floor2UInt(tspack->rng->floatValue() * nrPortalShapes)); // TODO - REFACT - add passed value from sample
 
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
@@ -317,10 +317,10 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	} else  {
 		// Choose a random portal
-		int shapeIndex = 0;
+		u_int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
 			shapeIndex = min(nrPortalShapes - 1,
-				Floor2Int(u3 * nrPortalShapes));
+				Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -336,7 +336,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		}
 
 		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / cosPortal;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
@@ -408,7 +408,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {
 		*pdf = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(ps, sundir);
 			ray.mint = -INFINITY;

@@ -26,7 +26,7 @@
 
 using namespace lux;
 
-MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, int n)
+MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 	: MeshBaryTriangle(m, n)
 {
 	// Reorder vertices so that edges lengths will be as close as possible

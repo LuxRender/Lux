@@ -66,7 +66,7 @@ MotionSystem::MotionSystem(float st, float et,
 	hasScaleZ = startT.Sz != endT.Sz;
 	hasScale = hasScaleX || hasScaleY || hasScaleZ;
 
-	hasRotation = fabsf(Dot(startQ, endQ) - 1) >= 1e-6;
+	hasRotation = fabsf(Dot(startQ, endQ) - 1.f) >= 1e-6f;
 
 	isActive = hasTranslation ||
 		hasScale || hasRotation;
@@ -83,9 +83,9 @@ Transform MotionSystem::Sample(float time) const {
 	if(time >= endTime)
 		return end;
 
-	float w = endTime - startTime;
-	float d = time - startTime;
-	float le = d / w;
+	const float w = endTime - startTime;
+	const float d = time - startTime;
+	const float le = d / w;
 
 	float interMatrix[4][4];
 
@@ -123,18 +123,18 @@ Transform MotionSystem::Sample(float time) const {
 */
 
 	if (hasScale) {
-		float Sx = Lerp(le, startT.Sx, endT.Sx);
-		float Sy = Lerp(le, startT.Sy, endT.Sy); 
-		float Sz = Lerp(le, startT.Sz, endT.Sz);
+		const float Sx = Lerp(le, startT.Sx, endT.Sx);
+		const float Sy = Lerp(le, startT.Sy, endT.Sy); 
+		const float Sz = Lerp(le, startT.Sz, endT.Sz);
 
 		// T * S * R
-		for (int j = 0; j < 3; j++) {
+		for (u_int j = 0; j < 3; ++j) {
 			interMatrix[0][j] = Sx * interMatrix[0][j];
 			interMatrix[1][j] = Sy * interMatrix[1][j];
 			interMatrix[2][j] = Sz * interMatrix[2][j];
 		}
 	} else {
-		for (int j = 0; j < 3; j++) {
+		for (u_int j = 0; j < 3; ++j) {
 			interMatrix[0][j] = startT.Sx * interMatrix[0][j];
 			interMatrix[1][j] = startT.Sy * interMatrix[1][j];
 			interMatrix[2][j] = startT.Sz * interMatrix[2][j];
@@ -176,24 +176,25 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 	/* Normalize the matrix. */
 	if (locmat->m[3][3] == 0)
 		return false;
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
+	for (u_int i = 0; i < 4; ++i) {
+		for (u_int j = 0; j < 4; ++j)
 			locmat->m[i][j] /= locmat->m[3][3];
+	}
 	/* pmat is used to solve for perspective, but it also provides
 	 * an easy way to test for singularity of the upper 3x3 component.
 	 */
 	boost::shared_ptr<Matrix4x4> pmat(new Matrix4x4(locmat->m));
-	for (int i = 0; i < 3; i++)
-		pmat->m[i][3] = 0;
-	pmat->m[3][3] = 1;
+	for (u_int i = 0; i < 3; i++)
+		pmat->m[i][3] = 0.f;
+	pmat->m[3][3] = 1.f;
 
 	// Note - radiance - disables as memory bug on win32
-	if ( pmat->Determinant() == 0.0 )
+	if (pmat->Determinant() == 0.f)
 		return false;
 
 	/* First, isolate perspective.  This is the messiest. */
-	if ( locmat->m[3][0] != 0 || locmat->m[3][1] != 0 ||
-		locmat->m[3][2] != 0 ) {
+	if (locmat->m[3][0] != 0.f || locmat->m[3][1] != 0.f ||
+		locmat->m[3][2] != 0.f) {
 		/* prhs is the right hand side of the equation. */
 		float prhs[4];
 		prhs[0] = locmat->m[3][0];
@@ -207,8 +208,7 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 		 * inverse function (and det4x4, above) from the Matrix
 		 * Inversion gem in the first volume.
 		 */
-		boost::shared_ptr<Matrix4x4> tinvpmat = 
-			pmat->Inverse()->Transpose();
+		boost::shared_ptr<Matrix4x4> tinvpmat(pmat->Inverse()->Transpose());
 		float psol[4];
 		V4MulByMatrix(tinvpmat, prhs, psol);
  
@@ -219,9 +219,8 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 		trans.Pw = psol[3];
 		//trans.Px = trans.Py = trans.Pz = trans.Pw = 0;
 		/* Clear the perspective partition. */
-		locmat->m[3][0] = locmat->m[3][1] =
-			locmat->m[3][2] = 0;
-		locmat->m[3][3] = 1;
+		locmat->m[3][0] = locmat->m[3][1] = locmat->m[3][2] = 0.f;
+		locmat->m[3][3] = 1.f;
 	};
 //	else		/* No perspective. */
 //		tran[U_PERSPX] = tran[U_PERSPY] = tran[U_PERSPZ] =
@@ -231,12 +230,12 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 	trans.Tx = locmat->m[0][3];
 	trans.Ty = locmat->m[1][3];
 	trans.Tz = locmat->m[2][3];
-	for (int i = 0; i < 3; i++ )
-		locmat->m[i][3] = 0;
+	for (u_int i = 0; i < 3; ++i)
+		locmat->m[i][3] = 0.f;
 	
 	Vector row[3];
 	/* Now get scale and shear. */
-	for (int i = 0; i < 3; i++ ) {
+	for (u_int i = 0; i < 3; ++i) {
 		row[i].x = locmat->m[i][0];
 		row[i].y = locmat->m[i][1];
 		row[i].z = locmat->m[i][2];
@@ -244,7 +243,7 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 
 	/* Compute X scale factor and normalize first row. */
 	trans.Sx = row[0].Length();
-	row[0] *= 1 / trans.Sx;
+	row[0] *= 1.f / trans.Sx;
 
 	/* Compute XY shear factor and make 2nd row orthogonal to 1st. */
 	trans.Sxy = Dot(row[0], row[1]);
@@ -252,7 +251,7 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 
 	/* Now, compute Y scale and normalize 2nd row. */
 	trans.Sy = row[1].Length();
-	row[1] *= 1.0 / trans.Sy;
+	row[1] *= 1.f / trans.Sy;
 	trans.Sxy /= trans.Sy;
 
 	/* Compute XZ and YZ shears, orthogonalize 3rd row. */
@@ -263,7 +262,7 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 
 	/* Next, get Z scale and normalize 3rd row. */
 	trans.Sz = row[2].Length();
-	row[2] *= 1.0 / trans.Sz;
+	row[2] *= 1.f / trans.Sz;
 	trans.Sxz /= trans.Sz;
 	trans.Syz /= trans.Sz;
 
@@ -271,19 +270,19 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transfo
 	 * Check for a coordinate system flip.  If the determinant
 	 * is -1, then negate the matrix and the scaling factors.
 	 */
-	if (Dot(row[0], Cross(row[1], row[2])) < 0) {
-		trans.Sx *= -1;
-		trans.Sy *= -1;
-		trans.Sz *= -1;
-		for (int i = 0; i < 3; i++ ) {
-			row[i].x *= -1;
-			row[i].y *= -1;
-			row[i].z *= -1;
+	if (Dot(row[0], Cross(row[1], row[2])) < 0.f) {
+		trans.Sx *= -1.f;
+		trans.Sy *= -1.f;
+		trans.Sz *= -1.f;
+		for (u_int i = 0; i < 3; ++i) {
+			row[i].x *= -1.f;
+			row[i].y *= -1.f;
+			row[i].z *= -1.f;
 		}
 	}
 
 	/* Now, get the rotations out */
-	for (int i = 0; i < 3; i++ ) {
+	for (u_int i = 0; i < 3; ++i) {
 		locmat->m[i][0] = row[i].x;
 		locmat->m[i][1] = row[i].y;
 		locmat->m[i][2] = row[i].z;

@@ -29,13 +29,13 @@
 using namespace lux;
 
 // HighContrastOp Method Definitions
-void HighContrastOp::Map(vector<XYZColor> &xyz, int xRes, int yRes,
+void HighContrastOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,
 		float maxDisplayY) const {
-	const int numPixels = xRes * yRes;
+	const u_int numPixels = xRes * yRes;
 	float *lum = new float[numPixels];
 	// Find minimum and maximum image luminances
 	float minY = INFINITY, maxY = 0.f;
-	for (int i = 0; i < numPixels; ++i) {
+	for (u_int i = 0; i < numPixels; ++i) {
 		lum[i] = xyz[i].Y() * 683.f;
 		minY = min(minY, lum[i]);
 		maxY = max(maxY, lum[i]);
@@ -47,9 +47,9 @@ void HighContrastOp::Map(vector<XYZColor> &xyz, int xRes, int yRes,
 	delete[] lum;
 	// Apply high contrast tone mapping operator
 	ProgressReporter progress(xRes*yRes, "Tone Mapping"); // NOBOOK
-	for (int y = 0; y < yRes; ++y) {
+	for (u_int y = 0; y < yRes; ++y) {
 		float yc = (float(y) + .5f) / float(yRes);
-		for (int x = 0; x < xRes; ++x) {
+		for (u_int x = 0; x < xRes; ++x) {
 			float xc = (float(x) + .5f) / float(xRes);
 			// Compute local adaptation luminance at $(x,y)$
 			float dwidth = 1.f / float(max(xRes, yRes));

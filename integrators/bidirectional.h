@@ -46,7 +46,7 @@ public:
 	}
 	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods
-	virtual int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
+	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);

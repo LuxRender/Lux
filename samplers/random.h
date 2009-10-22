@@ -32,16 +32,13 @@ class RandomSampler : public Sampler
 {
 public:
 	RandomSampler(int xstart, int xend, int ystart, int yend,
-		int ps, string pixelsampler);
+		u_int ps, string pixelsampler);
 	virtual ~RandomSampler();
 
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
-	virtual int RoundSize(int sz) const
-	{
-		return sz;
-	}
+	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
@@ -49,10 +46,11 @@ public:
 private:
 	// RandomSampler Private Data
 	bool jitterSamples;
-	int xPos, yPos, pixelSamples;
+	int xPos, yPos;
+	u_int pixelSamples;
 	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
 		*singleWavelengthSamples;
-	int samplePos;
+	u_int samplePos;
 	u_int TotalPixels;
 	PixelSampler* pixelSampler;
 	bool init;

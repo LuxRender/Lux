@@ -36,7 +36,7 @@ LowdiscrepancyPixelSampler::LowdiscrepancyPixelSampler(int xstart, int xend,
 	xSeed = lux::random::uintValueP();
 	ySeed = lux::random::uintValueP();
 
-	TotalPx = (xend - xstart) * (yend - ystart);
+	TotalPx = static_cast<u_int>((xend - xstart) * (yend - ystart));
 	pixelCounter = 0;
 }
 
@@ -56,8 +56,8 @@ bool LowdiscrepancyPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_p
 
 	pixelCounter++;
 
-	xPos = xPixelStart + Floor2Int( VanDerCorput( *use_pos, xSeed ) * (xPixelEnd - xPixelStart) );
-	yPos = yPixelStart + Floor2Int( Sobol2( *use_pos, ySeed ) * (yPixelEnd - yPixelStart) );
+	xPos = xPixelStart + Floor2Int(VanDerCorput(*use_pos, xSeed) * (xPixelEnd - xPixelStart));
+	yPos = yPixelStart + Floor2Int(Sobol2(*use_pos, ySeed) * (yPixelEnd - yPixelStart));
 
 	return hasMorePixel;
 }

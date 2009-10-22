@@ -41,20 +41,20 @@ namespace lux
 		TextureColorBase(){};
 	};
 
-	template <class T,int colorSamples> class TextureColor : public TextureColorBase {
+	template <class T, u_int colorSamples> class TextureColor : public TextureColorBase {
 			friend class boost::serialization::access;
 		public:
 			TextureColor(T v = 0) {
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					c[i] = v;
 			}
 			TextureColor(T cs[colorSamples]) {
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					c[i] = cs[i];
 			}
 
 			TextureColor<T,colorSamples> &operator+=(const TextureColor<T,colorSamples> &s2) {
-			for (int i = 0; i < colorSamples; ++i)
+			for (u_int i = 0; i < colorSamples; ++i)
 				if (c[i] > std::numeric_limits<T>::max() - s2.c[i])
 					c[i] = std::numeric_limits<T>::max();
 				else
@@ -62,7 +62,7 @@ namespace lux
 			return *this;
 			}
 			TextureColor<T,colorSamples> &operator-=(const TextureColor<T,colorSamples> &s2) {
-			for (int i = 0; i < colorSamples; ++i)
+			for (u_int i = 0; i < colorSamples; ++i)
 				if (c[i] < std::numeric_limits<T>::min() + s2.c[i])
 					c[i] = std::numeric_limits<T>::min();
 				else
@@ -71,7 +71,7 @@ namespace lux
 			}
 			TextureColor<T,colorSamples> operator+(const TextureColor<T,colorSamples>  &s2) const {
 				TextureColor<T,colorSamples> ret = *this;
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					if (ret.c[i] > std::numeric_limits<T>::max() - s2.c[i])
 						ret.c[i] = std::numeric_limits<T>::max();
 					else
@@ -80,7 +80,7 @@ namespace lux
 			}
 			TextureColor<T,colorSamples> operator-(const TextureColor<T,colorSamples>  &s2) const {
 				TextureColor<T,colorSamples> ret = *this;
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					if (c[i] < s2.c[i])
 						ret.c[i] = 0;
 					else
@@ -89,22 +89,22 @@ namespace lux
 			}
 			TextureColor<T,colorSamples> operator/(const TextureColor<T,colorSamples>  &s2) const {
 				TextureColor<T,colorSamples> ret = *this;
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					ret.c[i] /= s2.c[i];
 				return ret;
 			}
 			TextureColor<T,colorSamples> operator*(const TextureColor<T,colorSamples> &sp) const {
 				TextureColor<T,colorSamples> ret = *this;
-				for (int i = 0; i < colorSamples; ++i)
-					if ((float)ret.c[i]*sp.c[i] > std::numeric_limits<T>::max())
+				for (u_int i = 0; i < colorSamples; ++i)
+					if (ret.c[i] * sp.c[i] > std::numeric_limits<T>::max())
 						ret.c[i] = std::numeric_limits<T>::max();
 					else
 						ret.c[i] *= sp.c[i];
 				return ret;
 			}
 			TextureColor<T,colorSamples> &operator*=(const TextureColor<T,colorSamples> &sp) {
-				for (int i = 0; i < colorSamples; ++i)
-				if ((float)c[i]*sp.c[i] > std::numeric_limits<T>::max())
+				for (u_int i = 0; i < colorSamples; ++i)
+				if (c[i] * sp.c[i] > std::numeric_limits<T>::max())
 					c[i] = std::numeric_limits<T>::max();
 				else
 					c[i] *= sp.c[i];
@@ -112,15 +112,15 @@ namespace lux
 			}
 			TextureColor<T,colorSamples> operator*(float a) const {
 				TextureColor<T,colorSamples> ret = *this;
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					if (a*ret.c[i] > std::numeric_limits<T>::max())
 						ret.c[i] = std::numeric_limits<T>::max();
 					else
-						ret.c[i] = (T)(a*ret.c[i]);
+						ret.c[i] = a * ret.c[i];
 				return ret;
 			}
 			TextureColor<T, colorSamples> &operator*=(float a) {
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					if (a*c[i] > std::numeric_limits<T>::max())
 						c[i] = std::numeric_limits<T>::max();
 					else
@@ -135,17 +135,17 @@ namespace lux
 				return *this * (1.f / a);
 			}
 			TextureColor<T,colorSamples> &operator/=(float a) {
-				float inv = 1.f / a;
-				for (int i = 0; i < colorSamples; ++i)
+				const float inv = 1.f / a;
+				for (u_int i = 0; i < colorSamples; ++i)
 					c[i] *= inv;
 				return *this;
 			}
 			void AddWeighted(float w, const TextureColor<T,colorSamples> &s) {
-				for (int i = 0; i < colorSamples; ++i)
-					c[i] += (T)(w * s.c[i]);
+				for (u_int i = 0; i < colorSamples; ++i)
+					c[i] += w * s.c[i];
 			}
 			bool operator==(const TextureColor<T,colorSamples> &sp) const {
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					if (c[i] != sp.c[i]) return false;
 				return true;
 			}
@@ -154,15 +154,15 @@ namespace lux
 			}
 			TextureColor<T,colorSamples> operator-() const {
 				TextureColor<T,colorSamples> ret;
-				for (int i = 0; i < colorSamples; ++i)
+				for (u_int i = 0; i < colorSamples; ++i)
 					ret.c[i] = -c[i];
 				return ret;
 			}
 			TextureColor<T,colorSamples> Clamp(float low = 0.f,
 						   float high = INFINITY) const {
 				TextureColor<T,colorSamples> ret;
-				for (int i = 0; i < colorSamples; ++i)
-					ret.c[i] = (T)::Clamp((float)c[i], low, high);
+				for (u_int i = 0; i < colorSamples; ++i)
+					ret.c[i] = ::Clamp<float>(c[i], low, high);
 				return ret;
 			}
 			// Color Public Data

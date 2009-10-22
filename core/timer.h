@@ -46,10 +46,9 @@ public:
 	
 	double Time();
 private:
+	double GetTime();
 	// Private Timer Data
 	double time0, elapsed;
-	bool running;
-	double GetTime();
 #if defined( IRIX ) || defined( IRIX64 )
 	// Private IRIX Timer Data
 	int fd;
@@ -66,11 +65,12 @@ private:
 	int unmapSize;
 #elif defined( WIN32 ) || defined(__CYGWIN__)
 	// Private Windows Timer Data
-	LARGE_INTEGER performance_counter, performance_frequency;
 	double one_over_frequency;
+	LARGE_INTEGER performance_counter, performance_frequency;
 #else
 	// Private UNIX Timer Data
 	struct timeval timeofday;
 #endif
+	bool running;
 };
 #endif // LUX_TIMER_H

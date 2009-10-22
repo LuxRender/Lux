@@ -40,14 +40,14 @@ static inline float Determinant3x3(const float matrix[3][3])
 
 static inline bool Invert3x3(const float matrix[3][3], float result[3][3])
 {
-	float det = Determinant3x3(matrix);
+	const float det = Determinant3x3(matrix);
 	if (fabsf(det) < 1e-12f)
 		return false;
-	float a = matrix[0][0], b = matrix[0][1], c = matrix[0][2],
+	const float a = matrix[0][0], b = matrix[0][1], c = matrix[0][2],
 		d = matrix[1][0], e = matrix[1][1], f = matrix[1][2],
 		g = matrix[2][0], h = matrix[2][1], i = matrix[2][2];
 
-	double idet = 1.0 / det;
+	const float idet = 1.f / det;
 
 	result[0][0] = (e * i - f * h) * idet;
 	result[0][1] = (c * h - b * i) * idet;

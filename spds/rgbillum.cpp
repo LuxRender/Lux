@@ -28,65 +28,52 @@ using namespace lux;
 
 #include "data/rgbD65_32.h"
 
-void RGBIllumSPD::init(RGBColor s) {
+void RGBIllumSPD::init(RGBColor s)
+{
 	lambdaMin = illumrgb2spect_start;
 	lambdaMax = illumrgb2spect_end;
-	int n = illumrgb2spect_bins;
-	delta = (lambdaMax - lambdaMin) / (n-1);
+	u_int n = illumrgb2spect_bins;
+	delta = (lambdaMax - lambdaMin) / (n - 1);
 	invDelta = 1.f / delta;
 	nSamples = n;
 
 	AllocateSamples(n);
 
-    // Zero out
-	for (int i = 0; i < n; i++)
+	// Zero out
+	for (u_int i = 0; i < n; ++i)
 		samples[i] = 0.f;
 
 	float r = s.c[0];
 	float g = s.c[1];
 	float b = s.c[2];
 
-	if (r <= g && r <= b)
-	{
+	if (r <= g && r <= b) {
 		AddWeighted(r, illumrgb2spect_white);
 
-		if (g <= b)
-		{
+		if (g <= b) {
 			AddWeighted(g - r, illumrgb2spect_cyan);
 			AddWeighted(b - g, illumrgb2spect_blue);
-		}
-		else
-		{
+		} else {
 			AddWeighted(b - r, illumrgb2spect_cyan);
 			AddWeighted(g - b, illumrgb2spect_green);
 		}
-	}
-	else if (g <= r && g <= b)
-	{
+	} else if (g <= r && g <= b) {
 		AddWeighted(g, illumrgb2spect_white);
 
-		if (r <= b)
-		{
+		if (r <= b) {
 			AddWeighted(r - g, illumrgb2spect_magenta);
 			AddWeighted(b - r, illumrgb2spect_blue);
-		}
-		else
-		{
+		} else {
 			AddWeighted(b - g, illumrgb2spect_magenta);
 			AddWeighted(r - b, illumrgb2spect_red);
 		}
-	}
-	else // blue <= red && blue <= green
-	{
+	} else { // blue <= red && blue <= green
 		AddWeighted(b, illumrgb2spect_white);
 
-		if (r <= g)
-		{
+		if (r <= g) {
 			AddWeighted(r - b, illumrgb2spect_yellow);
 			AddWeighted(g - r, illumrgb2spect_green);
-		}
-		else
-		{
+		} else {
 			AddWeighted(g - b, illumrgb2spect_yellow);
 			AddWeighted(r - g, illumrgb2spect_red);
 		}

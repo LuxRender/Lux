@@ -42,7 +42,7 @@ public:
 
 	// FlexImageFilm Public Methods
 
-	FlexImageFilm(int xres, int yres, Filter *filt, const float crop[4],
+	FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float crop[4],
 		const string &filename1, bool premult, int wI, int dI, int cM,
 		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
@@ -64,12 +64,12 @@ public:
 	}
 
 	virtual void RequestBufferGroups(const vector<string> &bg);
-	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
+	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 	virtual void CreateBuffers();
 	virtual u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
-	virtual const BufferConfig& GetBufferConfig( u_int index ) const { return bufferConfigs[index]; }
+	virtual const BufferConfig& GetBufferConfig(u_int index) const { return bufferConfigs[index]; }
 	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
-        virtual const BufferGroup& GetBufferGroup( u_int index ) const { return bufferGroups[index]; }
+        virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
 	virtual void SetGroupName(u_int index, const string& name);
 	virtual string GetGroupName(u_int index) const;
 	virtual void SetGroupEnable(u_int index, bool status);
@@ -82,9 +82,6 @@ public:
 	virtual float GetGroupTemperature(u_int index) const;
 	virtual void ComputeGroupScale(u_int index);
 
-	virtual int GetXPixelCount() const { return xPixelCount; }
-	virtual int GetYPixelCount() const { return yPixelCount; }
-
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	virtual void AddSample(Contribution *contrib);
 	virtual void AddSampleCount(float count);
@@ -95,21 +92,22 @@ public:
 	virtual void updateFrameBuffer();
 	virtual unsigned char* getFrameBuffer();
 	virtual void createFrameBuffer();
-	virtual float getldrDisplayInterval() {
-		return displayInterval;
-	}
+	virtual int getldrDisplayInterval() { return displayInterval; }
 
 	// Parameter Access functions
-	virtual void SetParameterValue(luxComponentParameters param, double value, int index);
-	virtual double GetParameterValue(luxComponentParameters param, int index);
-	virtual double GetDefaultParameterValue(luxComponentParameters param, int index);
-	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, int index);
-	virtual string GetStringParameterValue(luxComponentParameters param, int index);
+	virtual void SetParameterValue(luxComponentParameters param, double value, u_int index);
+	virtual double GetParameterValue(luxComponentParameters param, u_int index);
+	virtual double GetDefaultParameterValue(luxComponentParameters param, u_int index);
+	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index);
+	virtual string GetStringParameterValue(luxComponentParameters param, u_int index);
 
 	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	// Dade - method useful for transmitting the samples to a client
 	virtual void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
-	virtual float UpdateFilm(std::basic_istream<char> &stream);
+	virtual double UpdateFilm(std::basic_istream<char> &stream);
+
+	u_int GetXPixelCount() const { return xPixelCount; }
+	u_int GetYPixelCount() const { return yPixelCount; }
 
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 	/**
@@ -128,47 +126,33 @@ private:
 	void WriteResumeFilm(const string &filename);
 
 	// FlexImageFilm Private Data
-	Filter *filter;
-	int writeInterval;
-	int displayInterval;
-	int clampMethod;
 	string filename;
-	bool premultiplyAlpha, buffersInited;
-	float cropWindow[4], *filterTable;
-	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
-	//ParamSet toneParams;
-	//float gamma;
+
+	u_int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
+	float cropWindow[4];
+
 	double reject_warmup_samples;
-
-	//bool writeTmExr, writeUtmExr, writeTmIgi, writeUtmIgi, writeTmTga;
-	bool write_EXR, write_EXR_halftype, write_EXR_applyimaging, write_EXR_gamutclamp, write_EXR_ZBuf;
-	bool write_PNG, write_PNG_16bit, write_PNG_gamutclamp, write_PNG_ZBuf;
-	bool write_TGA,write_TGA_gamutclamp, write_TGA_ZBuf;
-	int write_EXR_compressiontype;
-	ZBufNormalization write_EXR_ZBuf_normalizationtype;
-	OutputChannels write_EXR_channels;
-	ZBufNormalization write_PNG_ZBuf_normalizationtype;
-	OutputChannels write_PNG_channels;
-	ZBufNormalization write_TGA_ZBuf_normalizationtype;
-	OutputChannels write_TGA_channels;
-	
-	bool use_Zbuf;
-	PerPixelNormalizedFloatBuffer *ZBuffer;
-
-	bool writeResumeFlm, restartResumeFlm;
-
-	unsigned char *framebuffer;
-
-	boost::xtime lastWriteImageTime;
-
-	bool debug_mode;
+	double warmupSamples;
+	float maxY;
 
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
+	unsigned char *framebuffer;
+	PerPixelNormalizedFloatBuffer *ZBuffer;
 
-	float maxY;
-	double warmupSamples;
-	bool warmupComplete;
+	Filter *filter;
+	float *filterTable;
+
+	float m_RGB_X_White, d_RGB_X_White;
+	float m_RGB_Y_White, d_RGB_Y_White;
+	float m_RGB_X_Red, d_RGB_X_Red;
+	float m_RGB_Y_Red, d_RGB_Y_Red;
+	float m_RGB_X_Green, d_RGB_X_Green;
+	float m_RGB_Y_Green, d_RGB_Y_Green;
+	float m_RGB_X_Blue, d_RGB_X_Blue;
+	float m_RGB_Y_Blue, d_RGB_Y_Blue;
+	float m_Gamma, d_Gamma;
+	int clampMethod;
 	ColorSystem colorSpace;
 
 	int m_TonemapKernel, d_TonemapKernel;
@@ -180,39 +164,50 @@ private:
 	float m_LinearFStop, d_LinearFStop;
 	float m_LinearGamma, d_LinearGamma;
 	float m_ContrastYwa, d_ContrastYwa;
-	float m_RGB_X_White, d_RGB_X_White;
-	float m_RGB_Y_White, d_RGB_Y_White;
-	float m_RGB_X_Red, d_RGB_X_Red;
-	float m_RGB_Y_Red, d_RGB_Y_Red;
-	float m_RGB_X_Green, d_RGB_X_Green;
-	float m_RGB_Y_Green, d_RGB_Y_Green;
-	float m_RGB_X_Blue, d_RGB_X_Blue;
-	float m_RGB_Y_Blue, d_RGB_Y_Blue;
-	float m_Gamma, d_Gamma;
+
+	int writeInterval;
+	boost::xtime lastWriteImageTime;
+	int displayInterval;
+	int write_EXR_compressiontype;
+	ZBufNormalization write_EXR_ZBuf_normalizationtype;
+	OutputChannels write_EXR_channels;
+	ZBufNormalization write_PNG_ZBuf_normalizationtype;
+	OutputChannels write_PNG_channels;
+	ZBufNormalization write_TGA_ZBuf_normalizationtype;
+	OutputChannels write_TGA_channels;
+
+	bool buffersInited, warmupComplete;
+	bool use_Zbuf;
+	bool debug_mode;
+	bool premultiplyAlpha;
+	bool write_EXR, write_EXR_halftype, write_EXR_applyimaging, write_EXR_gamutclamp, write_EXR_ZBuf;
+	bool write_PNG, write_PNG_16bit, write_PNG_gamutclamp, write_PNG_ZBuf;
+	bool write_TGA,write_TGA_gamutclamp, write_TGA_ZBuf;
+	bool writeResumeFlm, restartResumeFlm;
 
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 	ChiuParams m_chiuParams, d_chiuParams;
 
 	XYZColor * m_bloomImage; // Persisting bloom layer image 
+	float m_BloomRadius, d_BloomRadius;
+	float m_BloomWeight, d_BloomWeight;
 	bool m_BloomUpdateLayer;
 	bool m_BloomDeleteLayer;
 	bool m_HaveBloomImage;
-	float m_BloomRadius, d_BloomRadius;
-	float m_BloomWeight, d_BloomWeight;
 
-	bool m_VignettingEnabled, d_VignettingEnabled;
 	float m_VignettingScale, d_VignettingScale;
+	bool m_VignettingEnabled, d_VignettingEnabled;
 
-	bool m_AberrationEnabled, d_AberrationEnabled;
 	float m_AberrationAmount, d_AberrationAmount;
+	bool m_AberrationEnabled, d_AberrationEnabled;
 
 	XYZColor * m_glareImage; // Persisting glarelayer image 
+	float m_GlareAmount, d_GlareAmount;
+	float m_GlareRadius, d_GlareRadius;
+	u_int m_GlareBlades, d_GlareBlades;
 	bool m_GlareUpdateLayer;
 	bool m_GlareDeleteLayer;
 	bool m_HaveGlareImage;
-	float m_GlareAmount, d_GlareAmount;
-	float m_GlareRadius, d_GlareRadius;
-	int m_GlareBlades, d_GlareBlades;
 
 	bool m_HistogramEnabled, d_HistogramEnabled;
 };

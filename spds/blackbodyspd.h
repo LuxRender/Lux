@@ -28,8 +28,8 @@
 #include "spectrum.h"
 #include "spd.h"
 
-#define BB_CACHE_START   380. // precomputed cache starts at wavelength,
-#define BB_CACHE_END     720. // and ends at wavelength
+#define BB_CACHE_START   380.f // precomputed cache starts at wavelength,
+#define BB_CACHE_END     720.f // and ends at wavelength
 #define BB_CACHE_SAMPLES 256  // total number of cache samples 
 
 namespace lux

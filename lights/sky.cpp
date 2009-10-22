@@ -125,8 +125,8 @@ private:
 
 static float PerezBase(const float lam[6], float theta, float gamma)
 {
-	return (1.f + lam[1] * exp(lam[2] / cos(theta))) *
-		(1.f + lam[3] * exp(lam[4] * gamma)  + lam[5] * cos(gamma) * cos(gamma));
+	return (1.f + lam[1] * expf(lam[2] / cosf(theta))) *
+		(1.f + lam[3] * expf(lam[4] * gamma)  + lam[5] * cosf(gamma) * cosf(gamma));
 }
 
 static const RegularSPD S0(S0Amplitudes, 300.f, 830.f, 54);
@@ -141,7 +141,7 @@ SkyLight::~SkyLight() {
 }
 
 SkyLight::SkyLight(const Transform &light2world,
-		                const float skyscale, int ns, Vector sd, float turb,
+		                const float skyscale, u_int ns, Vector sd, float turb,
 										float aconst, float bconst, float cconst, float dconst, float econst)
 	: Light(light2world, ns) {
 	skyScale = skyscale;
@@ -201,7 +201,7 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const RayDifferential &r) const {
 	const float theta = SphericalTheta(wh);
 
 	SWCSpectrum L;
-	GetSkySpectralRadiance(tspack, theta,phi,(SWCSpectrum * const)&L);
+	GetSkySpectralRadiance(tspack, theta, phi, &L);
 	L *= skyScale;
 
 	return L;
@@ -233,7 +233,7 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 			ARENA_ALLOC(tspack->arena, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, ~0U, u3));
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, u3, &dg);
 			Vector w(dg.p - ps);
 			if (Dot(w, dg.nn) > 0.f) {
@@ -279,10 +279,10 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 					 v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
 	} else {
 		// Sample a random Portal
-		int shapeIndex = 0;
+		u_int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
 			shapeIndex = min(nrPortalShapes - 1,
-					Floor2Int(u3 * nrPortalShapes));
+					Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -307,7 +307,7 @@ float SkyLight::Pdf(const Point &p, const Normal &n,
 		return AbsDot(n, wi) * INV_TWOPI;
 	else {
 		float pdf = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(p, wi);
 			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
@@ -326,7 +326,7 @@ float SkyLight::Pdf(const Point &p, const Normal &n,
 		return AbsDot(n, wi) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
 	} else {
 		float pdf = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(p, wi);
 			ray.mint = -INFINITY;
@@ -346,10 +346,10 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		*pdf = UniformSpherePdf();
 	} else {
 		// Sample a random Portal
-		int shapeIndex = 0;
+		u_int shapeIndex = 0;
 		if(nrPortalShapes > 1) {
 			shapeIndex = min(nrPortalShapes - 1,
-					Floor2Int(u3 * nrPortalShapes));
+					Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -394,10 +394,10 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	} else {
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
-		int shapeidx = 0;
-		if(nrPortalShapes > 1)
+		u_int shapeidx = 0;
+		if (nrPortalShapes > 1)
 			shapeidx = min(nrPortalShapes - 1,
-					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
+				Floor2UInt(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
@@ -427,9 +427,9 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
-		int shapeIndex = 0;
-		if(nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
+		u_int shapeIndex = 0;
+		if (nrPortalShapes > 1) {
+			shapeIndex = min(nrPortalShapes - 1, Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -450,7 +450,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = AbsDot(ns, wi) / (distance * distance);
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i != shapeIndex) {
 				PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
 				wi = ps - dgs.p;
@@ -470,7 +470,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
-	int shapeIndex = 0;
+	u_int shapeIndex = 0;
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
@@ -493,7 +493,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	} else {
 		// Sample a random Portal
 		if(nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
+			shapeIndex = min(nrPortalShapes - 1, Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -529,7 +529,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
 		dgs.time = tspack->time;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
 			Vector w(ps - dgs.p);
 			if (Dot(wi, dg.nn) < 0.f) {
@@ -564,10 +564,12 @@ Light* SkyLight::CreateLight(const Transform &light2world,
 /* All angles in radians, theta angles measured from normal */
 inline float RiAngleBetween(float thetav, float phiv, float theta, float phi)
 {
-  float cospsi = sin(thetav) * sin(theta) * cos(phi-phiv) + cos(thetav) * cos(theta);
-  if (cospsi > 1) return 0;
-  if (cospsi < -1) return M_PI;
-  return  acos(cospsi);
+	const float cospsi = sinf(thetav) * sinf(theta) * cosf(phi - phiv) + cosf(thetav) * cosf(theta);
+	if (cospsi >= 1.f)
+		return 0.f;
+	if (cospsi <= -1.f)
+		return M_PI;
+	return acosf(cospsi);
 }
 
 /**********************************************************

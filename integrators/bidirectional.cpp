@@ -689,7 +689,7 @@ static bool getLight(const TsPack *tspack, const Scene *scene,
 	return result;
 }
 
-int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
+u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
 	int nrContribs = 0;

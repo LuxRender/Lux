@@ -43,13 +43,13 @@ public:
 
 class SurfaceIntegrator : public Integrator {
 public:
-	virtual int Li(const TsPack *tspack, const Scene *scene,
+	virtual u_int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const = 0;
 };
 
 class VolumeIntegrator : public Integrator {
 public:
-	virtual int Li(const TsPack *tspack, const Scene *scene,
+	virtual u_int Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		SWCSpectrum *L, float *alpha) const = 0;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
@@ -60,17 +60,17 @@ public:
  SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, 
 	const Sample *sample, 
-	float &ls1, float &ls2, float &ls3, float &bs1, float &bs2, float &bcs);
+	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs);
  SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, float *lightSample = NULL,
-	float *lightNum = NULL, float *bsdfSample = NULL,
-	float *bsdfComponent = NULL);
- int UniformSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
+	const Sample *sample, const float *lightSample = NULL,
+	const float *lightNum = NULL, const float *bsdfSample = NULL,
+	const float *bsdfComponent = NULL);
+ u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
 	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, float *lightSample,
-	float *lightNum, float *bsdfSample,
-	float *bsdfComponent, SWCSpectrum *L);
+	const Sample *sample, const float *lightSample,
+	const float *lightNum, const float *bsdfSample,
+	const float *bsdfComponent, SWCSpectrum *L);
 
 // Note - Radiance - disabled as this code is broken. (not threadsafe)
 /*

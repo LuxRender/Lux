@@ -33,26 +33,24 @@ namespace lux
 
 // regularly sampled SPD, reconstructed using linear interpolation
 class RegularSPD : public SPD {
-  public:
-    RegularSPD() : SPD() {}
+public:
+	RegularSPD() : SPD() {}
 
-    //  creates a regularly sampled SPD
-    //  samples    array of sample values
-    //  lambdaMin  wavelength (nm) of first sample
-    //  lambdaMax  wavelength (nm) of last sample
-    //  n          number of samples
-    RegularSPD(const float* const s, float lMin, float lMax, int n) : SPD() {
-      init(lMin, lMax, s, n);
-    }
+	//  creates a regularly sampled SPD
+	//  samples    array of sample values
+	//  lambdaMin  wavelength (nm) of first sample
+	//  lambdaMax  wavelength (nm) of last sample
+	//  n          number of samples
+	RegularSPD(const float* const s, float lMin, float lMax, u_int n) : SPD() {
+		init(lMin, lMax, s, n);
+	}
 
-    virtual ~RegularSPD() {}
+	virtual ~RegularSPD() {}
 
-  protected:
-    void init(float lMin, float lMax, const float* const s, int n);
+protected:
+	void init(float lMin, float lMax, const float* const s, u_int n);
+};
 
-  private:   
-  };
-
-  }//namespace lux
+}//namespace lux
 
 #endif // LUX_REGULARSPD_H

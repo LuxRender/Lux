@@ -35,7 +35,7 @@ namespace lux
 class InfiniteAreaLight : public Light {
 public:
 	// InfiniteAreaLight Public Methods
-	InfiniteAreaLight(const Transform &light2world, const RGBColor &l, int ns, const string &texmap,
+	InfiniteAreaLight(const Transform &light2world, const RGBColor &l, u_int ns, const string &texmap,
 		EnvironmentMapping *m, float gain, float gamma);
 	virtual ~InfiniteAreaLight();
 	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {

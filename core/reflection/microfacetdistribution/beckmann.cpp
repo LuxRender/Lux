@@ -32,21 +32,21 @@ Beckmann::Beckmann(float rms) {
 
 float Beckmann::D(const Vector &wh) const {
   float costhetah = CosTheta(wh);
-  float theta = acos(costhetah);
-  float tanthetah = tan(theta);
+  float theta = acosf(costhetah);
+  float tanthetah = tanf(theta);
 
   float dfac = tanthetah / r;
 
-  return exp(-(dfac * dfac)) / (r * r * powf(costhetah, 4.0));
+  return expf(-(dfac * dfac)) / (r * r * powf(costhetah, 4.f));
 }
 
 void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
   // Compute sampled half-angle vector $\wh$ for Beckmann distribution
   // Adapted from B. Walter et al, Microfacet Models for Refraction, Eurographics Symposium on Rendering, 2007, page 7
 
-  float theta = atan (sqrt (-(r * r) * log(1.0 - u1)));
-  float costheta = cos (theta);
-  float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
+  float theta = atanf(sqrtf(-(r * r) * logf(1.f - u1)));
+  float costheta = cosf(theta);
+  float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
   float phi = u2 * 2.f * M_PI;
 
   Vector H = SphericalDirection(sintheta, costheta, phi);
@@ -61,7 +61,7 @@ void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float 
   // the Beckmann distribution is not available in closed form, so this is not really correct
   // (see Kelemen and Szirmay-Kalos / Microfacet Based BRDF Model, Eurographics 2001)
 
-  float conversion_factor = 1.0 / (4.f * Dot(wo, H));
+  float conversion_factor = 1.f / (4.f * Dot(wo, H));
   float beckmann_pdf = conversion_factor * D(H);
 
   *pdf = beckmann_pdf;
@@ -70,7 +70,7 @@ void Beckmann::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float 
 // NB: See note above!
 float Beckmann::Pdf(const Vector &wo, const Vector &wi) const {
   Vector H = Normalize(wo + wi);
-  float conversion_factor = 1.0 / 4.f * Dot(wo, H);
+  float conversion_factor = 1.f / 4.f * Dot(wo, H);
   float beckmann_pdf = conversion_factor * D(H);
 
   return beckmann_pdf;

@@ -570,7 +570,7 @@ Shape *LoopSubdiv::CreateShape(
 {
 	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
 	int nlevels = params.FindOneInt("nlevels", 3);
-	int nps, nIndices, nuvi;
+	u_int nps, nIndices, nuvi;
 	const int *vi = params.FindInt("indices", &nIndices);
 	const Point *P = params.FindPoint("P", &nps);
 	if (!vi || !P) return NULL;

@@ -32,8 +32,8 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 	int xPos = xstart;
 	int yPos = ystart;
 	// fill Pxa array in film pixel order
-	short int x = (unsigned short int) xPos;
-	short int y = (unsigned short int) yPos;
+	int x = xPos;
+	int y = yPos;
 	TotalPx = 0;
 	while(true) {
 		PxLoc px;
@@ -50,11 +50,9 @@ VegasPixelSampler::VegasPixelSampler(int xstart, int xend,
 	}
 
 	// Shuffle elements by randomly exchanging each with one other.
-    for (u_int i=0; i<TotalPx; i++) {
-		u_int r = Floor2Int( lux::random::floatValueP() * TotalPx );
-		// swap
-		short int temp = Pxa[i].x; Pxa[i].x = Pxa[r].x; Pxa[r].x = temp;
-		temp = Pxa[i].y; Pxa[i].y = Pxa[r].y; Pxa[r].y = temp;
+	for (u_int i=0; i<TotalPx; i++) {
+		u_int r = Floor2UInt(lux::random::floatValueP() * TotalPx);
+		swap(Pxa[i], Pxa[r]);
     } 
 }
 

@@ -29,11 +29,10 @@
 namespace lux
 {
 
-static const int	refrgb2spect_bins  = 32;
-static const float  refrgb2spect_start = 380.f;
-static const float  refrgb2spect_end   = 720.f;
-//static const float	refrgb2spect_scale = 1.f;
-static const float	refrgb2spect_scale = 0.94112876f;
+static const unsigned int refrgb2spect_bins  = 32;
+static const float refrgb2spect_start = 380.f;
+static const float refrgb2spect_end   = 720.f;
+static const float refrgb2spect_scale = 0.94112876f;
 
 static float refrgb2spect_white[] =	      { 1.0618958571272863e+00,   1.0615019980348779e+00,
 											1.0614335379927147e+00,   1.0622711654692485e+00,

@@ -34,7 +34,7 @@ namespace lux
 class SunLight : public Light {
 public:
 	// SunLight Public Methods
-	SunLight(const Transform &light2world, const float sunscale, const Vector &dir, float turb, float relSize, int ns);
+	SunLight(const Transform &light2world, const float sunscale, const Vector &dir, float turb, float relSize, u_int ns);
 	virtual ~SunLight() { delete LSPD; }
 	virtual bool IsDeltaLight() const { return cosThetaMax == 1.0; }
 	virtual bool IsEnvironmental() const { return true; }

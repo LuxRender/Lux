@@ -23,7 +23,6 @@
 // mc.cpp*
 #include "lux.h"
 #include "randomgen.h"
-#include "shape.h"
 #include "mc.h"
 #include "volume.h"
 
@@ -33,25 +32,25 @@ namespace lux
 {
 
 // MC Function Definitions
-void ComputeStep1dCDF(float *f, int nSteps, float *c,
-		float *cdf) {
+void ComputeStep1dCDF(const float *f, u_int nSteps, float *c, float *cdf)
+{
 	// Compute integral of step function at $x_i$
-	int i;
-	cdf[0] = 0.;
-	for (i = 1; i < nSteps+1; ++i)
-		cdf[i] = cdf[i-1] + f[i-1] / nSteps;
+	cdf[0] = 0.f;
+	for (u_int i = 1; i < nSteps + 1; ++i)
+		cdf[i] = cdf[i - 1] + f[i - 1] / nSteps;
 	// Transform step function integral into cdf
 	*c = cdf[nSteps];
-	for (i = 1; i < nSteps+1; ++i)
+	for (u_int i = 1; i < nSteps + 1; ++i)
 		cdf[i] /= *c;
 }
-float SampleStep1d(float *f, float *cdf, float c,
-		int nSteps, float u, float *pdf) {
+float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps,
+	float u, float *pdf)
+{
 	// Find surrounding cdf segments
-	float *ptr = std::lower_bound(cdf, cdf+nSteps+1, u);
-	int offset = (int) (ptr-cdf-1);
+	const float *ptr = std::lower_bound(cdf, cdf + nSteps + 1, u);
+	u_int offset = static_cast<u_int>(max(ptr - cdf - 1, 0));
 	// Return offset along current cdf segment
-	u = (u - cdf[offset]) / (cdf[offset+1] - cdf[offset]);
+	u = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);
 	*pdf = f[offset] / c;
 	return (offset + u) / nSteps;
 }
@@ -67,7 +66,7 @@ void RejectionSampleDisk(const TsPack *tspack, float *x, float *y) {
  Vector UniformSampleHemisphere(float u1, float u2) {
 	float z = u1;
 	float r = sqrtf(max(0.f, 1.f - z*z));
-	float phi = 2 * M_PI * u2;
+	float phi = 2.f * M_PI * u2;
 	float x = r * cosf(phi);
 	float y = r * sinf(phi);
 	return Vector(x, y, z);
@@ -97,20 +96,20 @@ void RejectionSampleDisk(const TsPack *tspack, float *x, float *y) {
 		float *dx, float *dy) {
 	float r, theta;
 	// Map uniform random numbers to $[-1,1]^2$
-	float sx = 2 * u1 - 1;
-	float sy = 2 * u2 - 1;
+	float sx = 2.f * u1 - 1.f;
+	float sy = 2.f * u2 - 1.f;
 	// Map square to $(r,\theta)$
 	// Handle degeneracy at the origin
-	if (sx == 0.0 && sy == 0.0) {
-		*dx = 0.0;
-		*dy = 0.0;
+	if (sx == 0.f && sy == 0.f) {
+		*dx = 0.f;
+		*dy = 0.f;
 		return;
 	}
 	if (sx >= -sy) {
 		if (sx > sy) {
 			// Handle first region of disk
 			r = sx;
-			if (sy > 0.0)
+			if (sy > 0.f)
 				theta = sy/r;
 			else
 				theta = 8.0f + sy/r;
@@ -166,7 +165,7 @@ Vector UniformSampleCone(float u1, float u2,
  Vector SampleHG(const Vector &w, float g,
 		float u1, float u2) {
 	float costheta;
-	if (fabsf(g) < 1e-3)
+	if (fabsf(g) < 1e-3f)
 		costheta = 1.f - 2.f * u1;
 	else {
 		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000082: bug in SampleHG
@@ -244,14 +243,18 @@ if(( 0 < p)&&(p < 1)){
 
 }
 
+inline float normsinvf(float p)
+{
+	return static_cast<float>(normsinv(p));
+}
 
 float GaussianSampleDisk(float u1)
 {
-	return Clamp<float>(normsinv(u1), 0.f, 1.f);
+	return Clamp(normsinvf(u1), 0.f, 1.f);
 }
 float InverseGaussianSampleDisk(float u1)
 {
-	return Clamp<float>(1.f - normsinv(u1), 0.f, 1.f);
+	return Clamp(1.f - normsinvf(u1), 0.f, 1.f);
 }
 float ExponentialSampleDisk(float u1, int power)
 {

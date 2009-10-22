@@ -38,8 +38,8 @@ class  Light {
 public:
 	// Light Interface
 	virtual ~Light();
-	Light(const Transform &l2w, int ns = 1)
-		: nSamples(max(1, ns)), LightToWorld(l2w),
+	Light(const Transform &l2w, u_int ns = 1U)
+		: nSamples(max(1U, ns)), LightToWorld(l2w),
 		  WorldToLight(l2w.GetInverse()) {
 		if (WorldToLight.HasScale())
 			luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-light transformation!\nThe system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
@@ -89,16 +89,17 @@ public:
 	void AddPortalShape(boost::shared_ptr<Primitive> shape);
 
 	// Light Public Data
-	const int nSamples;
-	bool havePortalShape;
-	int nrPortalShapes;
+	const u_int nSamples;
+	u_int nrPortalShapes;
 	vector<boost::shared_ptr<Primitive> > PortalShapes;
 	float PortalArea;
-	int group;
+	u_int group;
 protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;
 	mutable bool warnOnce;
+public: // Put last for better data alignment
+	bool havePortalShape;
 };
 
 struct VisibilityTester {
@@ -107,22 +108,21 @@ struct VisibilityTester {
 	void SetSegment(const Point &p1, const Point & p2, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
-		Vector w = p2 - p1;
-		float epsilon = SHADOW_RAY_EPSILON / w.Length();
-		r = Ray(p1, w, epsilon, 1.f - epsilon);
+		const Vector w = p2 - p1;
+		const float length = w.Length();
+		r = Ray(p1, w / length, SHADOW_RAY_EPSILON, length - SHADOW_RAY_EPSILON);
 		r.time = time;
 	}
 
 	void SetRay(const Point &p, const Vector & w, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
-		float epsilon = SHADOW_RAY_EPSILON / w.Length();
-		r = Ray(p, w, epsilon);
+		r = Ray(p, Normalize(w), SHADOW_RAY_EPSILON);
 		r.time = time;
 	}
 
 	bool Unoccluded(const Scene * scene) const;
-	bool TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum * f, float *pdf = NULL, float *pdfR = NULL) const;
+	bool TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f, float *pdf = NULL, float *pdfR = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	void Transmittance(const TsPack *tspack, const Scene * scene, const Sample *sample, SWCSpectrum *const L) const;
 	Ray r;
@@ -134,7 +134,7 @@ public:
 	AreaLight(const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e,
 		SampleableSphericalFunction *ssf,
-		int ns, const boost::shared_ptr<Primitive> &prim);
+		u_int ns, const boost::shared_ptr<Primitive> &prim);
 	virtual ~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack, const DifferentialGeometry &dg, const Vector& w) const {
 		if( Dot(dg.nn, w) > 0 ) {

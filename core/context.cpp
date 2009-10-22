@@ -137,14 +137,14 @@ void Context::removeServer(const string &n) {
 		renderFarm->stopFilmUpdater();
 }
 
-int Context::getServerCount() {
+u_int Context::getServerCount() {
 	if (!renderFarm)
 		return 0;
 
 	return renderFarm->getServerCount();
 }
 
-int Context::getRenderingServersStatus(RenderingServerInfo *info, int maxInfoCount) {
+u_int Context::getRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
 	if (!renderFarm)
 		return 0;
 
@@ -906,9 +906,9 @@ void Context::pause() {
 
 void Context::setHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
 		bool suspendThreadsWhenDone) {
-	FlexImageFilm *fif = (FlexImageFilm *)luxCurrentScene->camera->film;
-	fif->haltSamplePerPixel = haltspp;
-	fif->enoughSamplePerPixel = haveEnoughSamplePerPixel;
+	Film *film = luxCurrentScene->camera->film;
+	film->haltSamplePerPixel = haltspp;
+	film->enoughSamplePerPixel = haveEnoughSamplePerPixel;
 	luxCurrentScene->suspendThreadsWhenDone = suspendThreadsWhenDone;
 }
 
@@ -935,19 +935,19 @@ void Context::exit() {
 }
 
 //controlling number of threads
-int Context::addThread() {
-	return luxCurrentScene->AddThread();
+u_int Context::addThread() {
+	return luxCurrentScene->CreateRenderThread();
 }
 
 void Context::removeThread() {
-	luxCurrentScene->RemoveThread();
+	luxCurrentScene->RemoveRenderThread();
 }
 
-int Context::getRenderingThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
+u_int Context::getRenderingThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount) {
 	if (!luxCurrentScene)
 		return 0;
 
-	return luxCurrentScene->getThreadsStatus(info, maxInfoCount);
+	return luxCurrentScene->GetThreadsStatus(info, maxInfoCount);
 }
 
 //framebuffer access
@@ -960,27 +960,27 @@ unsigned char* Context::framebuffer() {
 }
 
 //histogram access
-void Context::getHistogramImage(unsigned char *outPixels, int width, int height, int options){
-	luxCurrentScene->getHistogramImage(outPixels, width, height, options);
+void Context::getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options){
+	luxCurrentScene->GetHistogramImage(outPixels, width, height, options);
 }
 
 // Parameter Access functions
-void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
+void Context::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, u_int index) { 
 	luxCurrentScene->SetParameterValue(comp, param, value, index);
 }
-double Context::GetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+double Context::GetParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	return luxCurrentScene->GetParameterValue(comp, param, index);
 }
-double Context::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+double Context::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	return luxCurrentScene->GetDefaultParameterValue(comp, param, index);
 }
-void Context::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index) { 
+void Context::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, u_int index) { 
 	return luxCurrentScene->SetStringParameterValue(comp, param, value, index);
 }
-string Context::GetStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+string Context::GetStringParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	return luxCurrentScene->GetStringParameterValue(comp, param, index);
 }
-string Context::GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+string Context::GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	return luxCurrentScene->GetDefaultStringParameterValue(comp, param, index);
 }
 

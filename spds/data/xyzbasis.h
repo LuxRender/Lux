@@ -29,9 +29,9 @@
 namespace lux
 {
 
-static const int CIEstart = 360;
-static const int CIEend = 830;
-static const int nCIE = CIEend-CIEstart+1;
+static const unsigned int CIEstart = 360;
+static const unsigned int CIEend = 830;
+static const unsigned int nCIE = CIEend - CIEstart + 1;
 
 static const float CIE_X[nCIE] = {
 	// CIE X function values

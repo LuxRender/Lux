@@ -46,10 +46,10 @@ template <class T> struct ParamSetItem {
 	}
 	ParamSetItem() { data=0; }
 	// The const_cast forces a copy of the string data
-	ParamSetItem(const string &n, const T *v, int ni = 1) :
+	ParamSetItem(const string &n, const T *v, u_int ni = 1) :
 		name(const_cast<string &>(n)), nItems(ni), lookedUp(false) {
 		data = new T[nItems];
-		for (int i = 0; i < nItems; ++i)
+		for (u_int i = 0; i < nItems; ++i)
 			data[i] = v[i];
 	}
 	~ParamSetItem();
@@ -59,7 +59,7 @@ template <class T> struct ParamSetItem {
 		ar & name;
 		ar & nItems;
 
-		for(int i=0;i<nItems;i++)
+		for(u_int i = 0; i < nItems; ++i)
 			ar & data[i];
 
 		ar & lookedUp;
@@ -72,7 +72,7 @@ template <class T> struct ParamSetItem {
 		if(data!=0)
 			delete[] data;
 		data=new T[nItems];
-		for(int i=0;i<nItems;i++)
+		for(u_int i = 0; i < nItems; ++i)
 			ar & data[i];
 
 		ar & lookedUp;
@@ -81,7 +81,7 @@ template <class T> struct ParamSetItem {
 	
 	// ParamSetItem Data
 	string name;
-	int nItems;
+	u_int nItems;
 	T *data;
 	mutable bool lookedUp;
 };
@@ -93,17 +93,17 @@ public:
 	ParamSet() { }
 	ParamSet &operator=(const ParamSet &p2);
 	ParamSet(const ParamSet &p2);
-	ParamSet(int n, const char *pluginName, const char * const tokens[], const char * const params[]);
+	ParamSet(u_int n, const char *pluginName, const char * const tokens[], const char * const params[]);
 	
 	void Add(ParamSet& params);
-	void AddFloat(const string &, const float *, int nItems = 1);
-	void AddInt(const string &, const int *, int nItems = 1);
-	void AddBool(const string &, const bool *, int nItems = 1);
-	void AddPoint(const string &, const Point *, int nItems = 1);
-	void AddVector(const string &, const Vector *, int nItems = 1);
-	void AddNormal(const string &, const Normal *, int nItems = 1);
-	void AddRGBColor(const string &, const RGBColor *, int nItems = 1);
-	void AddString(const string &, const string *, int nItems = 1);
+	void AddFloat(const string &, const float *, u_int nItems = 1);
+	void AddInt(const string &, const int *, u_int nItems = 1);
+	void AddBool(const string &, const bool *, u_int nItems = 1);
+	void AddPoint(const string &, const Point *, u_int nItems = 1);
+	void AddVector(const string &, const Vector *, u_int nItems = 1);
+	void AddNormal(const string &, const Normal *, u_int nItems = 1);
+	void AddRGBColor(const string &, const RGBColor *, u_int nItems = 1);
+	void AddString(const string &, const string *, u_int nItems = 1);
 	void AddTexture(const string &, const string &);
 	bool EraseInt(const string &);
 	bool EraseBool(const string &);
@@ -123,16 +123,16 @@ public:
 	const RGBColor &FindOneRGBColor(const string &, const RGBColor &d) const;
 	const string &FindOneString(const string &, const string &d) const;
 	const string &FindTexture(const string &) const;
-	const float *FindFloat(const string &, int *nItems) const;
-	const int *FindInt(const string &, int *nItems) const;
-	const bool *FindBool(const string &, int *nItems) const;
-	const Point *FindPoint(const string &, int *nItems) const;
-	const Vector *FindVector(const string &, int *nItems) const;
-	const Normal *FindNormal(const string &, int *nItems) const;
+	const float *FindFloat(const string &, u_int *nItems) const;
+	const int *FindInt(const string &, u_int *nItems) const;
+	const bool *FindBool(const string &, u_int *nItems) const;
+	const Point *FindPoint(const string &, u_int *nItems) const;
+	const Vector *FindVector(const string &, u_int *nItems) const;
+	const Normal *FindNormal(const string &, u_int *nItems) const;
 	const RGBColor *FindRGBColor(const string &,
-	                             int *nItems) const;
+	                             u_int *nItems) const;
 	const string *FindString(const string &,
-	                         int *nItems) const;
+	                         u_int *nItems) const;
 	void ReportUnused() const;
 	~ParamSet() {
 		Clear();
@@ -187,7 +187,7 @@ public:
 			materialParams.FindOneFloat(n, d));
 	}
 
-	const float *FindFloats(const string &n, int *nItems) const {
+	const float *FindFloats(const string &n, u_int *nItems) const {
 		return geomParams.FindFloat(n, nItems);
 	}
 

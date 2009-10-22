@@ -175,7 +175,7 @@ SWCSpectrum LightPhotonMap::EPhoton(const TsPack *tspack, const Point &p,
 	// Lookup nearby photons at irradiance computation point
 	NearSetPhotonProcess<LightPhoton> proc(nLookup, p);
 	proc.photons = 
-		(ClosePhoton<LightPhoton> *) alloca(nLookup * sizeof (ClosePhoton<LightPhoton>));
+		static_cast<ClosePhoton<LightPhoton> *>(alloca(nLookup * sizeof (ClosePhoton<LightPhoton>)));
 	float md2 = maxDistSquared;
 	lookup(p, proc, md2);
 
@@ -203,7 +203,7 @@ SWCSpectrum LightPhotonMap::LPhoton(const TsPack* tspack, const BSDF *bsdf,
 	// Initialize _PhotonProcess_ object, _proc_, for photon map lookups
 	NearSetPhotonProcess<LightPhoton> proc(nLookup, isect.dg.p);
 	proc.photons = 
-		(ClosePhoton<LightPhoton> *) alloca(nLookup * sizeof (ClosePhoton<LightPhoton>));
+		static_cast<ClosePhoton<LightPhoton> *>(alloca(nLookup * sizeof (ClosePhoton<LightPhoton>)));
 	// Do photon map lookup
 	float md2 = maxDistSquared;
 	lookup(isect.dg.p, proc, md2);
@@ -243,7 +243,7 @@ SWCSpectrum LightPhotonMap::LPhotonDiffuseApprox(const TsPack* tspack,
 	// Initialize _PhotonProcess_ object, _proc_, for photon map lookups
 	NearSetPhotonProcess<LightPhoton> proc(nLookup, isect.dg.p);
 	proc.photons = 
-		(ClosePhoton<LightPhoton> *) alloca(nLookup * sizeof (ClosePhoton<LightPhoton>));
+		static_cast<ClosePhoton<LightPhoton> *>(alloca(nLookup * sizeof (ClosePhoton<LightPhoton>)));
 	// Do photon map lookup
 	float md2 = maxDistSquared;
 	lookup(isect.dg.p, proc, md2);
@@ -291,7 +291,7 @@ SWCSpectrum LightPhotonMap::LDiffusePhoton(const TsPack* tspack,
 	// Initialize _PhotonProcess_ object, _proc_, for photon map lookups
 	NearSetPhotonProcess<LightPhoton> proc(nLookup, isect.dg.p);
 	proc.photons = 
-		(ClosePhoton<LightPhoton> *) alloca(nLookup * sizeof (ClosePhoton<LightPhoton>));
+		static_cast<ClosePhoton<LightPhoton> *>(alloca(nLookup * sizeof (ClosePhoton<LightPhoton>)));
 	// Do photon map lookup
 	float md2 = maxDistSquared;
 	lookup(isect.dg.p, proc, md2);
@@ -322,7 +322,7 @@ SWCSpectrum LightPhotonMap::LDiffusePhoton(const TsPack* tspack,
 	return L;
 }
 
-static bool unsuccessful(int needed, int found, int shot)
+static bool unsuccessful(u_int needed, u_int found, u_int shot)
 {
 	return (found < needed && (found == 0 || found < shot / 1024));
 }
@@ -464,9 +464,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	SpectrumWavelengths *thr_wl = tspack->swl;
 
 	// Compute light power CDF for photon shooting
-	u_int nLights = int(scene->lights.size());
-	float *lightPower = (float *)alloca(nLights * sizeof(float));
-	float *lightCDF = (float *)alloca((nLights + 1) * sizeof(float));
+	u_int nLights = scene->lights.size();
+	float *lightPower = static_cast<float *>(alloca(nLights * sizeof(float)));
+	float *lightCDF = static_cast<float *>(alloca((nLights + 1) * sizeof(float)));
 
 	// Dade - avarge the light power
 	const u_int spectrumSamples = 128;
@@ -529,7 +529,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		
 		++nshot;
 
-        // Give up if we're not storing enough photons
+		// Give up if we're not storing enough photons
 		if (nshot > 500000) {
 			if (indirectDone && unsuccessful(nCausticPhotons, causticPhotons.size(), nshot)) {
 				// Dade - disable castic photon map: we are unable to store
@@ -560,7 +560,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		// Choose light to shoot photon from
 		float lightPdf;
 		float uln = RadicalInverse(nshot, 13);
-		u_int lightNum = Floor2Int(SampleStep1d(lightPower, lightCDF,
+		u_int lightNum = Floor2UInt(SampleStep1d(lightPower, lightCDF,
 				totalPower, nLights, uln, &lightPdf) * nLights);
 		lightNum = min(lightNum, nLights - 1);
 		const Light *light = scene->lights[lightNum];
@@ -817,8 +817,8 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 }
 
 SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
-	const Scene *scene, const Sample *sample, int sampleFinalGather1Offset,
-	int sampleFinalGather2Offset, int gatherSamples, float cosGatherAngle,
+	const Scene *scene, const Sample *sample, u_int sampleFinalGather1Offset,
+	u_int sampleFinalGather2Offset, u_int gatherSamples, float cosGatherAngle,
 	PhotonMapRRStrategy rrStrategy, float rrContinueProbability,
 	const LightPhotonMap *indirectMap, const RadiancePhotonMap *radianceMap,
 	const Vector &wo, const BSDF *bsdf, const BxDFType bxdfType) 
@@ -834,10 +834,10 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 		u_int nIndirSamplePhotons = indirectMap->nLookup;
 		NearSetPhotonProcess<LightPhoton> proc(nIndirSamplePhotons, p);
 		proc.photons = 
-			(ClosePhoton<LightPhoton> *) alloca(nIndirSamplePhotons * sizeof(ClosePhoton<LightPhoton>));
+			static_cast<ClosePhoton<LightPhoton> *>(alloca(nIndirSamplePhotons * sizeof(ClosePhoton<LightPhoton>)));
 		float searchDist2 = indirectMap->maxDistSquared;
 
-		int sanityCheckIndex = 0;
+		u_int sanityCheckIndex = 0;
 		while (proc.foundPhotons < nIndirSamplePhotons) {
 			float md2 = searchDist2;
 			proc.foundPhotons = 0;
@@ -856,14 +856,14 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 		}
 
 		// Copy photon directions to local array
-		Vector *photonDirs = (Vector *) alloca(nIndirSamplePhotons * sizeof(Vector));
+		Vector *photonDirs = static_cast<Vector *>(alloca(nIndirSamplePhotons * sizeof(Vector)));
 		for (u_int i = 0; i < nIndirSamplePhotons; ++i)
 			photonDirs[i] = proc.photons[i].photon->wi;
 
 		const float scaledCosGatherAngle = 0.999f * cosGatherAngle;
 		// Use BSDF to do final gathering
 		SWCSpectrum Li(0.f);
-		for (int i = 0; i < gatherSamples ; ++i) {
+		for (u_int i = 0; i < gatherSamples ; ++i) {
 			float *sampleFGData = sample->sampler->GetLazyValues(
 				const_cast<Sample *>(sample), sampleFinalGather1Offset, i);
 
@@ -931,7 +931,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 
 		// Use nearby photons to do final gathering
 		Li = 0.f;
-		for (int i = 0; i < gatherSamples; ++i) {
+		for (u_int i = 0; i < gatherSamples; ++i) {
 			float *sampleFGData = sample->sampler->GetLazyValues(
 				const_cast<Sample *>(sample), sampleFinalGather2Offset, i);
 
@@ -939,8 +939,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			float u1 = sampleFGData[2];
 			float u2 = sampleFGData[0];
 			float u3 = sampleFGData[1];
-			int photonNum = min<u_int>(nIndirSamplePhotons - 1,
-					Floor2Int(u1 * nIndirSamplePhotons));
+			u_int photonNum = min(nIndirSamplePhotons - 1,
+					Floor2UInt(u1 * nIndirSamplePhotons));
 			// Sample gather ray direction from _photonNum_
 			Vector vx, vy;
 			CoordinateSystem(photonDirs[photonNum], &vx, &vy);
@@ -1010,7 +1010,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 }
 
 SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
-	const Sample *sample, int sampleFinalGatherOffset, int gatherSamples,
+	const Sample *sample, u_int sampleFinalGatherOffset, u_int gatherSamples,
 	PhotonMapRRStrategy rrStrategy, float rrContinueProbability,
 	const LightPhotonMap *indirectMap, const RadiancePhotonMap *radianceMap,
 	const Vector &wo, const BSDF *bsdf, const BxDFType bxdfType) 
@@ -1024,7 +1024,7 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 
 		// Use BSDF to do final gathering
 		SWCSpectrum Li(0.f);
-		for (int i = 0; i < gatherSamples ; ++i) {
+		for (u_int i = 0; i < gatherSamples ; ++i) {
 			float *sampleFGData = sample->sampler->GetLazyValues(
 				const_cast<Sample *>(sample), sampleFinalGatherOffset, i);
 
@@ -1089,14 +1089,12 @@ void LightPhotonMap::load(std::basic_istream<char> &stream, LightPhotonMap *map)
 	bool isLittleEndian = osIsLittleEndian();
 
 	// Dade - read the size of the map
-	int count;
-	count = osReadLittleEndianInt(isLittleEndian, stream);
+	u_int count = osReadLittleEndianUInt(isLittleEndian, stream);
 
-	int npaths;
-	npaths = osReadLittleEndianInt(isLittleEndian, stream);
+	u_int npaths = osReadLittleEndianUInt(isLittleEndian, stream);
 
 	vector<LightPhoton> photons(count);
-	for (int i = 0; i < count; ++i)
+	for (u_int i = 0; i < count; ++i)
 		photons[i].load(isLittleEndian, stream);
 
 	if (count > 0)
@@ -1108,12 +1106,12 @@ void LightPhotonMap::save(std::basic_ostream<char> &stream) const
 	bool isLittleEndian = osIsLittleEndian();
 
 	// Dade - write the size of the map
-	osWriteLittleEndianInt(isLittleEndian, stream, photonCount);
-	osWriteLittleEndianInt(isLittleEndian, stream, nPaths);
+	osWriteLittleEndianUInt(isLittleEndian, stream, photonCount);
+	osWriteLittleEndianUInt(isLittleEndian, stream, nPaths);
 
 	if (photonmap != NULL) {
 		LightPhoton *photons = photonmap->getNodeData();
-		for (int i = 0; i < photonCount; i++)
+		for (u_int i = 0; i < photonCount; i++)
 			photons[i].save(isLittleEndian, stream);
 	}
 }
@@ -1126,11 +1124,10 @@ void RadiancePhotonMap::load(std::basic_istream<char> &stream, RadiancePhotonMap
 	bool isLittleEndian = osIsLittleEndian();
 
 	// Dade - read the size of the map
-	int count;
-	count = osReadLittleEndianInt(isLittleEndian, stream);
+	u_int count = osReadLittleEndianUInt(isLittleEndian, stream);
 
 	vector<RadiancePhoton> photons(count);
-	for (int i = 0; i < count; ++i)
+	for (u_int i = 0; i < count; ++i)
 		photons[i].load(isLittleEndian, stream);
 
 	if (count > 0)
@@ -1142,11 +1139,11 @@ void RadiancePhotonMap::save(std::basic_ostream<char> &stream) const
 	bool isLittleEndian = osIsLittleEndian();
 
 	// Dade - write the size of the map
-	osWriteLittleEndianInt(isLittleEndian, stream, photonCount);
+	osWriteLittleEndianUInt(isLittleEndian, stream, photonCount);
 
 	if (photonmap != NULL) {
 		RadiancePhoton *photons = photonmap->getNodeData();
-		for (int i = 0; i < photonCount; ++i)
+		for (u_int i = 0; i < photonCount; ++i)
 			photons[i].save(isLittleEndian, stream);
 	}
 }

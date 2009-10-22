@@ -33,20 +33,20 @@ WardIsotropic::WardIsotropic(float rms) {
 
 float WardIsotropic::D(const Vector &wh) const {
   float costhetah = CosTheta(wh);
-  float theta = acos(costhetah);
-  float tanthetah = tan(theta);
+  float theta = acosf(costhetah);
+  float tanthetah = tanf(theta);
 
   float dfac = tanthetah / r;
 
-  return exp(-(dfac * dfac)) / (M_PI * r * r * powf(costhetah, 3.0));
+  return expf(-(dfac * dfac)) / (M_PI * r * r * powf(costhetah, 3.f));
 }
 
 void WardIsotropic::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const {
   // Compute sampled half-angle vector $\wh$ for Ward distribution
 
-  float theta = atan (r * sqrt (-log(1.0 - u1)));
-  float costheta = cos (theta);
-  float sintheta = sqrtf(max(0.f, 1.f - costheta*costheta));
+  float theta = atanf(r * sqrtf(-logf(1.f - u1)));
+  float costheta = cosf(theta);
+  float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
   float phi = u2 * 2.f * M_PI;
 
   Vector H = SphericalDirection(sintheta, costheta, phi);
@@ -59,7 +59,7 @@ void WardIsotropic::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, f
 
   // Compute PDF for \wi from isotropic Ward distribution
 
-  float conversion_factor = 1.0 / (4.f * Dot(wo, H));
+  float conversion_factor = 1.f / (4.f * Dot(wo, H));
   float ward_pdf = conversion_factor * D(H);
 
   *pdf = ward_pdf;
@@ -67,7 +67,7 @@ void WardIsotropic::Sample_f(const Vector &wo, Vector *wi, float u1, float u2, f
 
 float WardIsotropic::Pdf(const Vector &wo, const Vector &wi) const {
   Vector H = Normalize(wo + wi);
-  float conversion_factor = 1.0 / 4.f * Dot(wo, H);
+  float conversion_factor = 1.f / 4.f * Dot(wo, H);
   float ward_pdf = conversion_factor * D(H);
 
   return ward_pdf;

@@ -34,14 +34,13 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
-	ERPTSampler(int totMutations, float microProb, float rng,
-		Sampler *sampler);
+	ERPTSampler(u_int totMutations, float rng, Sampler *sampler);
 	virtual ~ERPTSampler();
 
 	virtual ERPTSampler* clone() const;
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	virtual u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
-	virtual int RoundSize(int size) const { return baseSampler->RoundSize(size); }
+	virtual u_int RoundSize(u_int size) const { return baseSampler->RoundSize(size); }
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
@@ -50,12 +49,14 @@ public:
 
 	virtual bool IsMutating() { return true; }
 
-	int normalSamples, totalSamples, totalTimes, totalMutations;
+	u_int normalSamples, totalSamples, totalTimes, totalMutations;
 	float pMicro, range;
 	Sampler *baseSampler;
 	float *baseImage, *sampleImage, *currentImage;
-	int *baseTimeImage, *timeImage, *currentTimeImage, *offset;
-	int numChains, chain, mutation, stamp, numMicro, posMicro;
+	int *baseTimeImage, *timeImage, *currentTimeImage;
+	u_int *offset;
+	u_int numChains, chain, mutation;
+	int stamp;
 	float baseLY, quantum, weight, LY, alpha;
 	vector<Contribution> oldContributions, baseContributions;
 	double totalLY, sampleCount;

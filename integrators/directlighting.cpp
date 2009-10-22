@@ -30,7 +30,7 @@
 using namespace lux;
 
 // DirectLightingIntegrator Method Definitions
-DirectLightingIntegrator::DirectLightingIntegrator(LightStrategy st, int md) {
+DirectLightingIntegrator::DirectLightingIntegrator(LightStrategy st, u_int md) {
 	maxDepth = md;
 	lightStrategy = st;
 }
@@ -61,10 +61,10 @@ void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *sce
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 }
 
-int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
+u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		vector<SWCSpectrum> &L, float *alpha, int rayDepth) const {
-	int nContribs = 0;
+		vector<SWCSpectrum> &L, float *alpha, u_int rayDepth) const {
+	u_int nContribs = 0;
 	Intersection isect;
 	const float time = ray.time; // save time for motion blur
 
@@ -99,7 +99,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 					const float lIncrement = 1.f / nLights;
 					float l = *lightNum * lIncrement;
 					for (u_int i = 0; i < nLights; ++i, l += lIncrement) {
-						int g = UniformSampleOneLight(tspack, scene, p, n,
+						u_int g = UniformSampleOneLight(tspack, scene, p, n,
 							wo, bsdf, sample,
 							lightSample, &l, bsdfSample, bsdfComponent, &Ll);
 						if (!Ll.Black()) {
@@ -112,7 +112,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 				}
 				case SAMPLE_ONE_UNIFORM:
 				{
-					int g = UniformSampleOneLight(tspack, scene, p, n,
+					u_int g = UniformSampleOneLight(tspack, scene, p, n,
 						wo, bsdf, sample,
 						lightSample, lightNum, bsdfSample, bsdfComponent, &Ll);
 					if (!Ll.Black()) {
@@ -151,7 +151,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 				rd.ry.d = wi - dwody +
 					2 * Vector(Dot(wo, n) * dndy + dDNdy * n);
 				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
-				int nc = LiInternal(tspack, scene, rd, sample, Lr, alpha, rayDepth + 1);
+				u_int nc = LiInternal(tspack, scene, rd, sample, Lr, alpha, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f * AbsDot(wi, n));
 					for (u_int i = 0; i < L.size(); ++i)
@@ -186,7 +186,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
 				vector<SWCSpectrum> Lt(scene->lightGroups.size(), SWCSpectrum(0.f));
-				int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, rayDepth + 1);
+				u_int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f * AbsDot(wi, n));
 					for (u_int i = 0; i < L.size(); ++i)
@@ -215,7 +215,7 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 			L[i] *= Lt;
 	}
 	SWCSpectrum VLi(0.f);
-	int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &VLi, alpha);
+	u_int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &VLi, alpha);
 	if (!VLi.Black()) {
 		L[g] += VLi;
 		++nContribs;
@@ -224,14 +224,14 @@ int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scen
 	return nContribs;
 }
 
-int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
+u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
         RayDifferential ray;
         float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
-	int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, 0);
+	u_int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, 0);
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
 			L[i].ToXYZ(tspack) * rayWeight, alpha, 0.f, bufferId, i);
@@ -254,7 +254,7 @@ SurfaceIntegrator* DirectLightingIntegrator::CreateSurfaceIntegrator(const Param
 		estrategy = SAMPLE_AUTOMATIC;
 	}
 
-	return new DirectLightingIntegrator(estrategy, maxDepth);
+	return new DirectLightingIntegrator(estrategy, max(maxDepth, 0));
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<DirectLightingIntegrator> r("directlighting");

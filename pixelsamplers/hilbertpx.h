@@ -41,7 +41,7 @@ public:
 
 private:
 	void HilberCurve(
-		int n,
+		u_int n,
 		int xo, int yo,
 		int xd, int yd, int xp, int yp,
 		int xEnd, int yEnd);		

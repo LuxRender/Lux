@@ -71,9 +71,9 @@ public:
 	}
 
 	inline void Normalize() {
-		float len = sqrt(w*w + Dot(v, v));
-		w = w/len;
-		v = v * (1.0/len);
+		const float invLength = 1.f / sqrtf(w * w + Dot(v, v));
+		w *= invLength;
+		v *= invLength;
 	}
 
 	// get the rotation matrix from quaternion

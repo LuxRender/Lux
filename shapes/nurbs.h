@@ -33,9 +33,9 @@ namespace lux
 class NURBS : public Shape {
 public:
 	// NURBS Methods
-	NURBS(const Transform &o2w, bool reverseOrientation, int nu, int uorder,
+	NURBS(const Transform &o2w, bool reverseOrientation, u_int nu, u_int uorder,
 		const float *uknot, float umin, float umax,
-		int nv, int vorder, const float *vknot, float vmin, float vmax,
+		u_int nv, u_int vorder, const float *vknot, float vmin, float vmax,
 		const float *P, bool isHomogeneous);
 	virtual ~NURBS();
 	virtual BBox ObjectBound() const;
@@ -46,7 +46,7 @@ public:
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
 private:
 	// NURBS Data
-	int nu, uorder, nv, vorder;
+	u_int nu, uorder, nv, vorder;
 	float umin, umax, vmin, vmax;
 	float *uknot, *vknot;
 	bool isHomogeneous;

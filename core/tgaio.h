@@ -30,9 +30,9 @@ namespace lux
 {
 
 void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<RGBColor> &pixels,
-        vector<float> &alpha, int xPixelCount, int yPixelCount,
-        int xResolution, int yResolution,
-        int xPixelStart, int yPixelStart);
+        vector<float> &alpha, u_int xPixelCount, u_int yPixelCount,
+        u_int xResolution, u_int yResolution,
+        u_int xPixelStart, u_int yPixelStart);
 
 
 }//namespace lux

@@ -47,14 +47,14 @@ namespace lux
 class Contribution {
 public:
 	Contribution(float x=0.f, float y=0.f, const XYZColor &c=0.f, float a=0.f, float zd=0.f,
-		float v=0.f, int b=0, int g=0) :
+		float v=0.f, u_int b=0, u_int g=0) :
 		imageX(x), imageY(y), color(c), alpha(a), zdepth(zd), variance(v),
 		buffer(b), bufferGroup(g) { }
 
 	float imageX, imageY;
 	XYZColor color;
 	float alpha, zdepth, variance;
-	int buffer, bufferGroup;
+	u_int buffer, bufferGroup;
 };
 
 class ContributionBuffer {
@@ -97,9 +97,9 @@ public:
 	}
 
 	bool Add(Contribution* c, float weight=1.f) {
-		while (c->bufferGroup >= int(buffers.size()))
+		while (c->bufferGroup >= buffers.size())
 			buffers.push_back(vector<Buffer *>(0));
-		while (c->buffer >= int(buffers[c->bufferGroup].size()))
+		while (c->buffer >= buffers[c->bufferGroup].size())
 			buffers[c->bufferGroup].push_back(new Buffer());
 		return buffers[c->bufferGroup][c->buffer]->Add(c, weight);
 	}

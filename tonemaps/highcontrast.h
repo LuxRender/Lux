@@ -31,7 +31,7 @@ namespace lux
 class HighContrastOp : public ToneMap {
 public:
 	virtual ~HighContrastOp() { }
-	virtual void Map(vector<XYZColor> &xyz, int xRes, int yRes, float maxDisplayY) const;
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
 			 
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:

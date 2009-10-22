@@ -32,11 +32,11 @@ using namespace lux;
 
 // Sampler Method Definitions
 Sampler::Sampler(int xstart, int xend, int ystart, int yend,
-		int spp) {
-	xPixelStart = xstart;
-	xPixelEnd = xend;
-	yPixelStart = ystart;
-	yPixelEnd = yend;
+		u_int spp) {
+	xPixelStart = min(xstart, xend);
+	xPixelEnd = max(xstart, xend);
+	yPixelStart = min(ystart, yend);
+	yPixelEnd = max(ystart, yend);
 	samplesPerPixel = spp;
 }
 float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
@@ -65,7 +65,7 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 	surf->RequestSamples(this, scene);
 	vol->RequestSamples(this, scene);
 	// Allocate storage for sample pointers
-	int nPtrs = n1D.size() + n2D.size() + nxD.size();
+	u_int nPtrs = n1D.size() + n2D.size() + nxD.size();
 	if (!nPtrs) {
 		oneD = twoD = xD = NULL;
 		return;
@@ -75,8 +75,8 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 	twoD = oneD + n1D.size();
 	xD = twoD + n2D.size();
 	// Compute total number of sample values needed
-	int totSamples = 0;
-	int totTime = 0;
+	u_int totSamples = 0;
+	u_int totTime = 0;
 	for (u_int i = 0; i < n1D.size(); ++i)
 		totSamples += n1D[i];
 	for (u_int i = 0; i < n2D.size(); ++i)
@@ -112,42 +112,42 @@ namespace lux
 {
 
 // Sampling Function Definitions
- void StratifiedSample1D(const TsPack *tspack, float *samp, int nSamples,
+ void StratifiedSample1D(const TsPack *tspack, float *samp, u_int nSamples,
 		bool jitter) {
 	float invTot = 1.f / nSamples;
-	for (int i = 0;  i < nSamples; ++i) {
+	for (u_int i = 0;  i < nSamples; ++i) {
 		float delta = jitter ? tspack->rng->floatValue() : 0.5f;
 		*samp++ = (i + delta) * invTot;
 	}
 }
- void StratifiedSample2D(const TsPack *tspack, float *samp, int nx, int ny,
+ void StratifiedSample2D(const TsPack *tspack, float *samp, u_int nx, u_int ny,
 		bool jitter) {
 	float dx = 1.f / nx, dy = 1.f / ny;
-	for (int y = 0; y < ny; ++y)
-		for (int x = 0; x < nx; ++x) {
+	for (u_int y = 0; y < ny; ++y)
+		for (u_int x = 0; x < nx; ++x) {
 			float jx = jitter ? tspack->rng->floatValue() : 0.5f;
 			float jy = jitter ? tspack->rng->floatValue() : 0.5f;
 			*samp++ = (x + jx) * dx;
 			*samp++ = (y + jy) * dy;
 		}
 }
- void Shuffle(const TsPack *tspack, float *samp, int count, int dims) {
-	for (int i = 0; i < count; ++i) {
+ void Shuffle(const TsPack *tspack, float *samp, u_int count, u_int dims) {
+	for (u_int i = 0; i < count; ++i) {
 		u_int other = tspack->rng->uintValue() % count;
-		for (int j = 0; j < dims; ++j)
+		for (u_int j = 0; j < dims; ++j)
 			swap(samp[dims*i + j], samp[dims*other + j]);
 	}
 }
  void LatinHypercube(const TsPack *tspack, float *samples,
-                             int nSamples, int nDim) {
+                             u_int nSamples, u_int nDim) {
 	// Generate LHS samples along diagonal
 	float delta = 1.f / nSamples;
-	for (int i = 0; i < nSamples; ++i)
-		for (int j = 0; j < nDim; ++j)
+	for (u_int i = 0; i < nSamples; ++i)
+		for (u_int j = 0; j < nDim; ++j)
 			samples[nDim * i + j] = (i + tspack->rng->floatValue()) * delta;
 	// Permute LHS samples in each dimension
-	for (int i = 0; i < nDim; ++i) {
-		for (int j = 0; j < nSamples; ++j) {
+	for (u_int i = 0; i < nDim; ++i) {
+		for (u_int j = 0; j < nSamples; ++j) {
 			u_int other = tspack->rng->uintValue() % nSamples;
 			swap(samples[nDim * j + i],
 			     samples[nDim * other + i]);

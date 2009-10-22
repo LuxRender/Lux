@@ -28,11 +28,11 @@
 using namespace lux;
 
 // ContrastOp Method Definitions
-void ContrastOp::Map(vector<XYZColor> &xyz, int xRes, int yRes,
+void ContrastOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,
 		float maxDisplayY) const {
 	// Compute world adaptation luminance, _Ywa_
 	float Ywa = 0.;
-	for (int i = 0; i < xRes * yRes; ++i) {
+	for (u_int i = 0; i < xRes * yRes; ++i) {
 		if (xyz[i].Y() > 0) 
 			Ywa += logf(xyz[i].Y());
 	}
@@ -41,7 +41,7 @@ void ContrastOp::Map(vector<XYZColor> &xyz, int xRes, int yRes,
 	// Compute contrast-preserving scalefactor, _s_
 	float s = powf((1.219f + powf(displayAdaptationY, 0.4f)) /
 		(1.219f + powf(Ywa, 0.4f)), 2.5f) / maxDisplayY;
-	for (int i = 0; i < xRes*yRes; ++i)
+	for (u_int i = 0; i < xRes*yRes; ++i)
 		xyz[i] *= s;
 }
 ToneMap * ContrastOp::CreateToneMap(const ParamSet &ps) {

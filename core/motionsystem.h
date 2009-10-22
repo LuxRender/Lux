@@ -69,20 +69,16 @@ public:
 	BBox Bound(BBox ibox) {
       		// Compute total bounding box by naive unions.
 		// NOTE - radiance - this needs some work.
-       	BBox tbox;
-		const float s = 1.f/1024;
-       	for(u_int i=0; i<=1024; i++) {
-              		Transform t = Sample(s*i);
-             		tbox = Union(tbox, t(ibox));
-       	}
-       	return tbox;
+		BBox tbox;
+		const float s = 1.f / 1024.f;
+		for(float time = 0.f; time < 1.f; time += s) {
+			Transform t = Sample(time);
+			tbox = Union(tbox, t(ibox));
+		}
+		return tbox;
 	}
 
-	// false if start and end transformations are identical
-	bool isActive;
-
 protected:
-
 	// decomposes the matrix m into a series of transformations
 	// [Sx][Sy][Sz][Shearx/y][Sx/z][Sz/y][Rx][Ry][Rz][Tx][Ty][Tz][P(x,y,z,w)]
 	// based on unmatrix() by Spencer W. Thomas from Graphic Gems II
@@ -98,6 +94,9 @@ protected:
 	bool hasRotation, hasTranslation, hasScale;
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;
 	bool hasScaleX, hasScaleY, hasScaleZ;
+public:
+	// false if start and end transformations are identical
+	bool isActive; // At the end to get better data alignment
 };
 
 }//namespace lux

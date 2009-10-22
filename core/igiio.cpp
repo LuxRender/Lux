@@ -37,31 +37,32 @@ using namespace lux;
 
 namespace lux {
 // IGI Function Definitions
- RGBColor *ReadIgiImage(const string &name, int *width, int *height) {
+RGBColor *ReadIgiImage(const string &name, u_int *width, u_int *height)
+{
 	// radiance - NOTE - unimplemented yet
 		printf("IGI file format input not implemented yet");
 		return NULL;
- }
+}
 
- void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
-		vector<float> &alpha, int xRes, int yRes,
-		int totalXRes, int totalYRes,
-		int xOffset, int yOffset) {
-
-    IndigoImageHeader header;
+void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
+	vector<float> &alpha, u_int xRes, u_int yRes,
+	u_int totalXRes, u_int totalYRes,
+	u_int xOffset, u_int yOffset)
+{
+	IndigoImageHeader header;
 
 	// create XYZ float buffer
-    u_int xyzSize = xRes * yRes;
+	u_int xyzSize = xRes * yRes;
 	float *xyz = new float[3 * xyzSize];
 	for (u_int i = 0; i < xyzSize; ++i) {
 		// convert RGB values to XYZ colour space.
 		xyz[3 * i] = 0.436052025f * pixels[i].c[0] + 0.385081593f * pixels[i].c[1] + 0.143087414f * pixels[i].c[2];
 		xyz[3 * i + 1] = 0.222491598f * pixels[i].c[0] + 0.71688606f * pixels[i].c[1] + 0.060621486f * pixels[i].c[2];
 		xyz[3 * i + 2] = 0.013929122f * pixels[i].c[0] + 0.097097002f * pixels[i].c[1] + 0.71418547f  * pixels[i].c[2];
-    }
+	}
 
 	std::ofstream file(name.c_str(), std::ios::binary);
-	if(!file) {
+	if (!file) {
 		std::stringstream ss;
 	 	ss<< "Cannot open file '"<<name<<"' for output";
 		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
@@ -78,15 +79,15 @@ namespace lux {
 	header.height = yRes;
 	header.supersample_factor = 1;
 	header.zipped = false;
-	header.image_data_size = xyzSize * 12;
+	header.image_data_size = static_cast<int>(xyzSize * 12);
 	header.colour_space = 0;
 
 	// write header
-	file.write((const char*)&header, sizeof(header));
+	file.write(reinterpret_cast<char *>(&header), sizeof(header));
 	// write xyz data
-	file.write((const char*)&xyz[0], header.image_data_size);
+	file.write(reinterpret_cast<char *>(&xyz[0]), header.image_data_size);
 
-	if(!file.good()) {
+	if (!file.good()) {
 		std::stringstream ss;
 	 	ss<< "Error writing IGI output file '"<<name<<"'";
 		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());

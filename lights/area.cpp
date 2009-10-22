@@ -52,7 +52,7 @@ AreaLight::AreaLight(const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > le,
 		float g, float pow, float e, 
 		SampleableSphericalFunction *ssf,
-		int ns, const boost::shared_ptr<Primitive> &p)
+		u_int ns, const boost::shared_ptr<Primitive> &p)
 	: Light(light2world, ns) {
 	Le = le;
 	gain = g;

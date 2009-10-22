@@ -33,7 +33,7 @@ Texture<float> * RegularDataTexture::CreateFloatTexture(const Transform &tex2wor
 	// Dade - unused parameters
 	/*float start =*/ tp.FindFloat("start", 380.f);
 	/*float end =*/ tp.FindFloat("end", 720.f);
-	int dataCount = 0;
+	u_int dataCount = 0;
 	/*const float *data =*/ tp.FindFloats("data", &dataCount);
 	if (dataCount < 1) {
 		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in regulardata texture");
@@ -45,7 +45,7 @@ Texture<SWCSpectrum> * RegularDataTexture::CreateSWCSpectrumTexture(const Transf
 		const TextureParams &tp) {
 	float start = tp.FindFloat("start", 380.f);
 	float end = tp.FindFloat("end", 720.f);
-	int dataCount = 0;
+	u_int dataCount = 0;
 	const float *data = tp.FindFloats("data", &dataCount);
 	if (dataCount < 1) {
 		luxError(LUX_MISSINGDATA, LUX_ERROR, "No data in regulardata texture");

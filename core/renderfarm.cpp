@@ -396,7 +396,7 @@ void RenderFarm::send(const std::string &command, const std::string &name, float
 	}
 }
 
-int RenderFarm::getServersStatus(RenderingServerInfo *info, int maxInfoCount) {
+u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
 	ptime now = second_clock::local_time();
 	for (size_t i = 0; i < min<size_t>(serverInfoList.size(), maxInfoCount); ++i) {
 		info[i].serverIndex = i;

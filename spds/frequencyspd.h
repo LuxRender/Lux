@@ -30,8 +30,8 @@
 
 // Sin frequency/phase distribution
 
-#define FREQ_CACHE_START   380. // precomputed cache starts at wavelength,
-#define FREQ_CACHE_END     720. // and ends at wavelength
+#define FREQ_CACHE_START   380.f // precomputed cache starts at wavelength,
+#define FREQ_CACHE_END     720.f // and ends at wavelength
 #define FREQ_CACHE_SAMPLES 2048  // total number of cache samples 
 
 namespace lux

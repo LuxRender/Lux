@@ -32,29 +32,23 @@ namespace lux
 {
 
 // reflectant SPD, from RGB color, using smits conversion, reconstructed using linear interpolation
-  class RGBReflSPD : public SPD {
-  public:
-    RGBReflSPD() : SPD() {
-	  init(RGBColor(1.f));
-    }
+class RGBReflSPD : public SPD {
+public:
+	RGBReflSPD() : SPD() { init(RGBColor(1.f)); }
 
-    RGBReflSPD(RGBColor s) : SPD() {
-      init(s);
-    }
+	RGBReflSPD(RGBColor s) : SPD() { init(s); }
 
-    virtual ~RGBReflSPD() {}
+	virtual ~RGBReflSPD() {}
 
-  protected:
-	  void AddWeighted(float w, float *c) {
-		  for(int i=0; i<nSamples; i++) {
+protected:
+	void AddWeighted(float w, float *c) {
+		for (u_int i = 0; i < nSamples; ++i) {
 			samples[i] += c[i] * w;
-		  }
-	  }
+		}
+	}
 
 	void init(RGBColor s);
-
-  private:   
-  };
+};
 
 }//namespace lux
 

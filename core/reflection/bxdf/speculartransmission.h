@@ -36,8 +36,7 @@ public:
 	// SpecularTransmission Public Methods
 	SpecularTransmission(const SWCSpectrum &t, Fresnel *fr, bool disp, bool archi = false)
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
-		  T(t), dispersive(disp), architectural(archi),
-		  fresnel(fr) {}
+		  T(t), fresnel(fr), dispersive(disp), architectural(archi) { }
 	virtual ~SpecularTransmission() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
@@ -49,8 +48,8 @@ public:
 private:
 	// SpecularTransmission Private Data
 	SWCSpectrum T;
-	bool dispersive, architectural;
 	Fresnel *fresnel;
+	bool dispersive, architectural;
 };
 
 }//namespace lux

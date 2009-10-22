@@ -35,27 +35,28 @@ namespace lux
 class MetropolisSampler : public Sampler {
 public:
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		int maxRej, float largeProb, float microProb, float rng, bool useV);
+		u_int maxRej, float largeProb, float rng, bool useV);
 	virtual ~MetropolisSampler();
 
 	virtual MetropolisSampler* clone() const;
 	virtual u_int GetTotalSamplePos() { return 0; }
-	virtual int RoundSize(int size) const { return size; }
+	virtual u_int RoundSize(u_int size) const { return size; }
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	virtual bool IsMutating() { return true; }
 
-	int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
+	u_int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
 	float pLarge, pMicro, range;
 	bool useVariance;
 	float *sampleImage;
-	int *timeImage, *offset;
+	int *timeImage;
+	u_int *offset;
 	float *rngSamples, *rngRotation;
 	u_int rngBase, rngOffset;
 	bool large;
-	int stamp, numMicro, posMicro;
+	int stamp;
 	float weight, LY, alpha;
 	vector <Contribution> oldContributions;
 	double totalLY, sampleCount;

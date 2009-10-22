@@ -35,7 +35,7 @@ namespace lux
 class SkyLight : public Light {
 public:
 	// SkyLight Public Methods
-	SkyLight(const Transform &light2world,	const float skyscale, int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
+	SkyLight(const Transform &light2world,	const float skyscale, u_int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
 	virtual ~SkyLight();
 	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
 		Point worldCenter;

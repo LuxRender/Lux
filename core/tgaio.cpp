@@ -31,9 +31,9 @@ namespace lux
 {
 
 void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<RGBColor> &pixels,
-        vector<float> &alpha, int xPixelCount, int yPixelCount,
-        int xResolution, int yResolution,
-        int xPixelStart, int yPixelStart) {
+        vector<float> &alpha, u_int xPixelCount, u_int yPixelCount,
+        u_int xResolution, u_int yResolution,
+        u_int xPixelStart, u_int yPixelStart) {
 	// Open file
 	FILE* tgaFile = fopen(name.c_str(),"wb");
 	if (!tgaFile) {
@@ -53,12 +53,10 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	else
 		header[2] = 3;							// set the data type of the targa (3 = GREYSCALE uncompressed)
 
-	short xResShort = xResolution;			// set the resolution and make sure the bytes are in the right order
-	header[13] = (char) (xResShort >> 8);
-	header[12] = xResShort & 0xFF;
-	short yResShort = yResolution;
-	header[15] = (char) (yResShort >> 8);
-	header[14] = yResShort & 0xFF;
+	header[13] = static_cast<char>((xResolution >> 8) & 0xFF);
+	header[12] = static_cast<char>(xResolution & 0xFF);
+	header[15] = static_cast<char>((yResolution >> 8) & 0xFF);
+	header[14] = static_cast<char>(yResolution & 0xFF);
 	if(channeltype == 0)
 		header[16] = 8;						// bitdepth for BW
 	else if(channeltype == 1)
@@ -67,25 +65,25 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 		header[16] = 32;						// bitdepth for RGBA
 
 	// put the header data into the file
-	for (int i = 0; i < 18; ++i)
+	for (u_int i = 0; i < 18; ++i)
 		fputc(header[i], tgaFile);
 
 	// write the bytes of data out
-	for (int i = yPixelCount - 1;  i >= 0 ; --i) {
-		for (int j = 0; j < xPixelCount; ++j) {
-			if(channeltype == 0) {
+	for (u_int i = 0;  i < yPixelCount ; ++i) {
+		const u_int line = yPixelCount - i - 1;
+		for (u_int j = 0; j < xPixelCount; ++j) {
+			const u_int offset = line * xPixelCount + j;
+			if (channeltype == 0) {
 				// BW
-				float c = (0.3f * pixels[i * xPixelCount + j].c[0]) + 
-					(0.59f * pixels[i * xPixelCount + j].c[1]) + 
-					(0.11f * pixels[i * xPixelCount + j].c[2]);
-				fputc(static_cast<unsigned char>(Clamp(256 * c, 0.f, 255.f)), tgaFile);
+				float c = pixels[offset].Y();
+				fputc(static_cast<unsigned char>(Clamp(256.f * c, 0.f, 255.f)), tgaFile);
 			} else {
 				// RGB(A)
-				fputc(static_cast<unsigned char>(Clamp(256 * pixels[i * xPixelCount + j].c[2], 0.f, 255.f)), tgaFile);
-				fputc(static_cast<unsigned char>(Clamp(256 * pixels[i * xPixelCount + j].c[1], 0.f, 255.f)), tgaFile);
-				fputc(static_cast<unsigned char>(Clamp(256 * pixels[i * xPixelCount + j].c[0], 0.f, 255.f)), tgaFile);
+				fputc(static_cast<unsigned char>(Clamp(256.f * pixels[offset].c[2], 0.f, 255.f)), tgaFile);
+				fputc(static_cast<unsigned char>(Clamp(256.f * pixels[offset].c[1], 0.f, 255.f)), tgaFile);
+				fputc(static_cast<unsigned char>(Clamp(256.f * pixels[offset].c[0], 0.f, 255.f)), tgaFile);
 				if(channeltype == 2) //  Alpha
-					fputc(static_cast<unsigned char>(Clamp(256 * alpha[(i * xPixelCount + j)], 0.f, 255.f)), tgaFile);
+					fputc(static_cast<unsigned char>(Clamp(256.f * alpha[offset], 0.f, 255.f)), tgaFile);
 			}
 		}
 	}

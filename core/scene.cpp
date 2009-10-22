@@ -64,21 +64,12 @@ void Scene::Exit() {
     SignalThreads(EXIT);
 }
 
-// Engine Thread Control (adding/removing)
-int Scene::AddThread() {
-    return CreateRenderThread();
-}
-
-void Scene::RemoveThread() {
-    RemoveRenderThread();
-}
-
-int Scene::getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount) {
+u_int Scene::GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount) {
 #if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
 
-	for (int i = 0; i < min<int>(renderThreads.size(), maxInfoCount); i++) {
+	for (u_int i = 0; i < min(renderThreads.size(), maxInfoCount); ++i) {
 		info[i].threadIndex = renderThreads[i]->n;
 		info[i].status = renderThreads[i]->signal;
 	}
@@ -100,49 +91,49 @@ unsigned char* Scene::GetFramebuffer() {
 }
 
 // histogram access for GUI
-void Scene::getHistogramImage(unsigned char *outPixels, int width, int height, int options){
+void Scene::GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options){
 	camera->film->getHistogramImage(outPixels, width, height, options);
 }
 
 
 // Parameter Access functions
-void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index) { 
+void Scene::SetParameterValue(luxComponent comp, luxComponentParameters param, double value, u_int index) { 
 	if(comp == LUX_FILM)
 		camera->film->SetParameterValue(param, value, index);
 }
-double Scene::GetParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+double Scene::GetParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)
 		return camera->film->GetParameterValue(param, index);
 	else
 		return 0.;
 }
-double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+double Scene::GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)
 		return camera->film->GetDefaultParameterValue(param, index);
 	else
 		return 0.;
 }
-void Scene::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index) { 
+void Scene::SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, u_int index) { 
 }
-string Scene::GetStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+string Scene::GetStringParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	if(comp == LUX_FILM)
 		return camera->film->GetStringParameterValue(param, index);
 	else
 		return "";
 }
-string Scene::GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index) {
+string Scene::GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, u_int index) {
 	return "";
 }
 
 int Scene::DisplayInterval() {
-    return (int)camera->film->getldrDisplayInterval();
+    return camera->film->getldrDisplayInterval();
 }
 
-int Scene::FilmXres() {
+u_int Scene::FilmXres() {
     return camera->film->xResolution;
 }
 
-int Scene::FilmYres() {
+u_int Scene::FilmYres() {
     return camera->film->yResolution;
 }
 
@@ -257,12 +248,12 @@ void Scene::SignalThreads(ThreadSignals signal) {
 }
 
 // Scene Methods -----------------------
-void RenderThread::render(RenderThread *myThread) {
+void RenderThread::Render(RenderThread *myThread) {
 	if (myThread->scene->IsFilmOnly())
 		return;
 
 	// Dade - wait the end of the preprocessing phase
-	while(!myThread->scene->preprocessDone) {
+	while (!myThread->scene->preprocessDone) {
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		++xt.sec;
@@ -270,7 +261,7 @@ void RenderThread::render(RenderThread *myThread) {
 	}
 
 	// initialize the thread's rangen
-	int seed = myThread->scene->seedBase + myThread->n;
+	u_long seed = myThread->scene->seedBase + myThread->n;
 	std::stringstream ss;
 	ss << "Thread " << myThread->n << " uses seed: " << seed;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -295,21 +286,21 @@ void RenderThread::render(RenderThread *myThread) {
 
 	// Trace rays: The main loop
 	while (true) {
-		if(!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
+		if (!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
 
 			// Dade - we have done, check what we have to do now
 			if (myThread->scene->suspendThreadsWhenDone) {
 				myThread->signal = PAUSE;
 
 				// Dade - wait for a resume rendering or exit
-				while(myThread->signal == PAUSE) {
+				while (myThread->signal == PAUSE) {
 					boost::xtime xt;
 					boost::xtime_get(&xt, boost::TIME_UTC);
 					xt.sec += 1;
 					boost::thread::sleep(xt);
 				}
 
-				if(myThread->signal == EXIT)
+				if (myThread->signal == EXIT)
 					break;
 				else
 					continue;
@@ -325,64 +316,64 @@ void RenderThread::render(RenderThread *myThread) {
 		// Sample new SWC thread wavelengths
 		myThread->tspack->swl->Sample(myThread->sample->wavelengths);
 
-        while(myThread->signal == PAUSE) {
-            boost::xtime xt;
-            boost::xtime_get(&xt, boost::TIME_UTC);
-            xt.sec += 1;
-            boost::thread::sleep(xt);
-        }
-        if(myThread->signal== EXIT)
-            break;
+		while (myThread->signal == PAUSE) {
+			boost::xtime xt;
+			boost::xtime_get(&xt, boost::TIME_UTC);
+			xt.sec += 1;
+			boost::thread::sleep(xt);
+		}
+		if (myThread->signal == EXIT)
+			break;
 
-            // Evaluate radiance along camera ray
-	// Jeanphi - Hijack statistics until volume integrator revamp
-		do {
+		// Evaluate radiance along camera ray
+		// Jeanphi - Hijack statistics until volume integrator revamp
+		{
 			fast_mutex::scoped_lock lockStats(myThread->statLock);
-	    myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
-					myThread->scene, myThread->sample);
-		} while(0);
+			myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
+				myThread->scene, myThread->sample);
+		}
 
 
-            // TODO - radiance - Add rayWeight to sample and take into account.
-            myThread->sampler->AddSample(*(myThread->sample));
+		// TODO - radiance - Add rayWeight to sample and take into account.
+		myThread->sampler->AddSample(*(myThread->sample));
 
-            // Free BSDF memory from computing image sample value
-            myThread->tspack->arena->FreeAll();
+		// Free BSDF memory from computing image sample value
+		myThread->tspack->arena->FreeAll();
 
-        // update samples statistics
-	do {
-		fast_mutex::scoped_lock lockThreads(myThread->statLock);
-        ++(myThread->samples);
-	} while(0);
+		// update samples statistics
+		{
+			fast_mutex::scoped_lock lockThreads(myThread->statLock);
+			++(myThread->samples);
+		}
 
-        // increment (locked) global sample pos if necessary (eg maxSampPos != 0)
-        if(*useSampPos == ~0U && maxSampPos != 0) {
-            fast_mutex::scoped_lock lock(sampPosMutex);
-            sampPos++;
-            if( sampPos == maxSampPos )
-                sampPos = 0;
-            *useSampPos = sampPos;
-        }
+		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
+		if (*useSampPos == ~0U && maxSampPos != 0) {
+			fast_mutex::scoped_lock lock(sampPosMutex);
+			sampPos++;
+			if (sampPos == maxSampPos)
+				sampPos = 0;
+			*useSampPos = sampPos;
+		}
 
 #ifdef WIN32
 		//Work around Windows bad scheduling -- Jeanphi
 		myThread->thread->yield();
 #endif
-    }
+	}
 
 	myThread->sampler->Cleanup();
 
-    delete useSampPos;
+	delete useSampPos;
 
 	delete myThread->tspack->swl;
 	delete myThread->tspack->rng;
 	delete myThread->tspack->arena;
 //	delete myThread->tspack->camera; //FIXME deleting the camera clone would delete the film!
 	delete myThread->tspack;
-    return;
+	return;
 }
 
-int Scene::CreateRenderThread()
+u_int Scene::CreateRenderThread()
 {
 	if (IsFilmOnly())
 		return 0;
@@ -396,9 +387,9 @@ int Scene::CreateRenderThread()
 		sampler, camera, this);
 
 	renderThreads.push_back(rt);
-	rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
+	rt->thread = new boost::thread(boost::bind(RenderThread::Render, rt));
 
-	return 0;
+	return renderThreads.size();
 }
 
 void Scene::RemoveRenderThread()
@@ -418,14 +409,14 @@ void Scene::RemoveRenderThread()
 void Scene::Render() {
 	if (IsFilmOnly())
 		return;
-    // Dade - I have to do initiliaziation here for the current thread. It can
-    // be used by the Preprocess() methods.
+	// Dade - I have to do initiliaziation here for the current thread.
+	// It can be used by the Preprocess() methods.
 
-    // initialize the thread's rangen
-    int seed = seedBase - 1;
-    std::stringstream ss;
-    ss << "Preprocess thread uses seed: " << seed;
-    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	// initialize the thread's rangen
+	u_long seed = seedBase - 1;
+	std::stringstream ss;
+	ss << "Preprocess thread uses seed: " << seed;
+	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	// initialize the contribution pool
 	contribPool = new ContributionPool();
@@ -438,61 +429,59 @@ void Scene::Render() {
 	tspack->rng->init(seed);
 	tspack->arena = new MemoryArena();
 
-    sampler->SetTsPack(tspack);
+	sampler->SetTsPack(tspack);
 
-    // integrator preprocessing
-    camera->film->SetScene(this);
-    sampler->SetFilm(camera->film);
+	// integrator preprocessing
+	camera->film->SetScene(this);
+	sampler->SetFilm(camera->film);
 	sampler->SetContributionPool(contribPool);
-    surfaceIntegrator->Preprocess(tspack, this);
-    volumeIntegrator->Preprocess(tspack, this);
-    camera->film->CreateBuffers();
+	surfaceIntegrator->Preprocess(tspack, this);
+	volumeIntegrator->Preprocess(tspack, this);
+	camera->film->CreateBuffers();
 
 	// Dade - to support autofocus for some camera model
 	camera->AutoFocus(this);
 
-    sampPos = 0;
+	sampPos = 0;
 
-    //start the timer
-    s_Timer.Start();
+	//start the timer
+	s_Timer.Start();
 
-    // Dade - preprocessing done
-    preprocessDone = true;
+	// Dade - preprocessing done
+	preprocessDone = true;
 	Context::luxSceneReady();
 
 	// initial thread signal is paused
-    CurThreadSignal = RUN;
+	CurThreadSignal = RUN;
 
 	// add a thread
-    CreateRenderThread();
+	if (CreateRenderThread() > 0) {
 
-	// Dade - BUG 564 fix: threads where removed from the array while the
-	// GetNumberOfSamples() was called
+		// The first thread can not be removed
+		// it will terminate when the rendering is finished
+		renderThreads[0]->thread->join();
 
-	// Dade - the first thread can not be removed and it will terminate when
-	// the rendering is finished
-	renderThreads[0]->thread->join();
-
-	// Dade - rendering done, now I can remove all rendering threads
-	{
+		// rendering done, now I can remove all rendering threads
+		{
 #if !defined(WIN32)
-		boost::mutex::scoped_lock lock(renderThreadsMutex);
+			boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
 
-		// wait all threads to finish their job
-		for(unsigned int i = 0; i < renderThreads.size(); i++) {
-			renderThreads[i]->thread->join();
-			delete renderThreads[i];
+			// wait for all threads to finish their job
+			for (u_int i = 0; i < renderThreads.size(); ++i) {
+				renderThreads[i]->thread->join();
+				delete renderThreads[i];
+			}
+			renderThreads.clear();
 		}
-		renderThreads.clear();
+
+		// Flush the contribution pool
+		contribPool->Flush();
+		contribPool->Delete();
+
+		// Store final image
+		camera->film->WriteImage(static_cast<ImageType>(IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER));
 	}
-
-	// Flush the contribution pool
-	contribPool->Flush();
-	contribPool->Delete();
-
-    // Store final image
-    camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 	delete tspack->swl;
 	delete tspack->rng;
 	delete tspack->arena;
@@ -510,38 +499,38 @@ Scene::~Scene() {
 		delete lights[i];
 }
 
-Scene::Scene(Camera *cam, SurfaceIntegrator *si,
-        VolumeIntegrator *vi, Sampler *s,
-        boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
-        const vector<string> &lg, VolumeRegion *vr) {
+Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
+	Sampler *s, boost::shared_ptr<Primitive> accel,
+	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr)
+{
 	filmOnly = false;
-    lights = lts;
-    lightGroups = lg;
-    aggregate = accel;
-    camera = cam;
-    sampler = s;
-    surfaceIntegrator = si;
-    volumeIntegrator = vi;
-    volumeRegion = vr;
-    s_Timer.Reset();
-    lastSamples = 0.;
-    stat_Samples = 0.;
-    stat_blackSamples = 0.;
+	lights = lts;
+	lightGroups = lg;
+	aggregate = accel;
+	camera = cam;
+	sampler = s;
+	surfaceIntegrator = si;
+	volumeIntegrator = vi;
+	volumeRegion = vr;
+	s_Timer.Reset();
+	lastSamples = 0.;
+	stat_Samples = 0.;
+	stat_blackSamples = 0.;
 	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
-    lastTime = 0.;
-    if (lts.size() == 0) {
-        luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render. Exitting...");
-        exit(1);
-    }
-    // Scene Constructor Implementation
-    bound = aggregate->WorldBound();
-    if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
-    bound = Union(bound, camera->Bounds());
+	lastTime = 0.;
+	if (lts.size() == 0) {
+		luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render. Exitting...");
+		exit(1);
+	}
+	// Scene Constructor Implementation
+	bound = aggregate->WorldBound();
+	if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
+	bound = Union(bound, camera->Bounds());
 
-    // Dade - Initialize the base seed with the standard C lib random number generator
-    seedBase = rand();
+	// Dade - Initialize the base seed with the standard C lib random number generator
+	seedBase = rand();
 
-    preprocessDone = false;
+	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 	camera->film->RequestBufferGroups(lightGroups);
 
@@ -549,33 +538,30 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 	tspack = NULL;
 }
 
-Scene::Scene(Camera *cam) {
+Scene::Scene(Camera *cam)
+{
 	filmOnly = true;
 	for(u_int i = 0; i < cam->film->GetNumBufferGroups(); i++)
 		lightGroups.push_back( cam->film->GetGroupName(i) );
-    camera = cam;
-    sampler = NULL;
-    surfaceIntegrator = NULL;
-    volumeIntegrator = NULL;
-    volumeRegion = NULL;
-    s_Timer.Reset();
-    lastSamples = 0.;
+	camera = cam;
+	sampler = NULL;
+	surfaceIntegrator = NULL;
+	volumeIntegrator = NULL;
+	volumeRegion = NULL;
+	s_Timer.Reset();
+	lastSamples = 0.;
 	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
-    lastTime = 0.;
+	lastTime = 0.;
 
-    // Dade - Initialize the base seed with the standard C lib random number generator
-    seedBase = rand();
+	// Dade - Initialize the base seed with the standard C lib random number generator
+	seedBase = rand();
 
-    preprocessDone = false;
+	preprocessDone = false;
 	suspendThreadsWhenDone = false;
-	numberOfSamplesFromNetwork = 0; //TODO init with number of samples in film
+	numberOfSamplesFromNetwork = 0.; //TODO init with number of samples in film
 
 	contribPool = NULL;
 	tspack = NULL;
-}
-
-const BBox &Scene::WorldBound() const {
-    return bound;
 }
 
 SWCSpectrum Scene::Li(const RayDifferential &ray,

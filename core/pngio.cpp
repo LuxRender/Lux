@@ -39,9 +39,9 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 
 
   void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<RGBColor> &pixels,
-            vector<float> &alpha, int xPixelCount, int yPixelCount,
-        int xResolution, int yResolution,
-        int xPixelStart, int yPixelStart, ColorSystem &cSystem, float screenGamma) {
+            vector<float> &alpha, u_int xPixelCount, u_int yPixelCount,
+        u_int xResolution, u_int yResolution,
+        u_int xPixelStart, u_int yPixelStart, ColorSystem &cSystem, float screenGamma) {
 
     //
     // PNG writing starts here!
@@ -59,7 +59,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 		return;
 	}
 
-    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, (png_error_ptr) lux_png_error, NULL);
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, lux_png_error, NULL);
     png_infop info = png_create_info_struct(png);
     png_init_io(png, fp);
 
@@ -77,8 +77,8 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 
     png_text text;
     text.compression = PNG_TEXT_COMPRESSION_NONE;
-    text.key = (png_charp) "Software";
-    text.text = (png_charp) "LuxRender";
+    text.key = (png_charp)"Software";
+    text.text = (png_charp)"LuxRender";
     text.text_length = 4;
     png_set_text(png, info, &text, 1);
 

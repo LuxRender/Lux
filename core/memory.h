@@ -200,7 +200,7 @@ public:
 #if defined(LUX_ALIGNMENT)
 		sz = ((sz + (LUX_ALIGNMENT-1)) & (~(LUX_ALIGNMENT-1)));
 #else
-		sz = ((sz + 7) & (~7));
+		sz = ((sz + 7) & (~7U));
 #endif
 		if (curBlockPos + sz > blockSize) {
 			// Get new block of memory for _MemoryArena_
@@ -242,62 +242,62 @@ public:
 		uRes = b.uRes;
 		vRes = b.vRes;
 		uBlocks = RoundUp(uRes) >> logBlockSize;
-		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
-		for (int i = 0; i < nAlloc; ++i)
+		for (size_t i = 0; i < nAlloc; ++i)
 			new (&data[i]) T(b.data[i]);
 		if (d) {
-			for (int v = 0; v < b.vRes; ++v) {
-				for (int u = 0; u < b.uRes; ++u)
+			for (size_t v = 0; v < b.vRes; ++v) {
+				for (size_t u = 0; u < b.uRes; ++u)
 					(*this)(u, v) = d[v * uRes + u];
 			}
 		}
 	}
-	BlockedArray(int nu, int nv, const T *d = NULL) {
+	BlockedArray(size_t nu, size_t nv, const T *d = NULL) {
 		uRes = nu;
 		vRes = nv;
 		uBlocks = RoundUp(uRes) >> logBlockSize;
-		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
-		for (int i = 0; i < nAlloc; ++i)
+		for (size_t i = 0; i < nAlloc; ++i)
 			new (&data[i]) T();
 		if (d) {
-			for (int v = 0; v < nv; ++v) {
-				for (int u = 0; u < nu; ++u)
+			for (size_t v = 0; v < nv; ++v) {
+				for (size_t u = 0; u < nu; ++u)
 					(*this)(u, v) = d[v * uRes + u];
 			}
 		}
 	}
-	int BlockSize() const { return 1 << logBlockSize; }
-	int RoundUp(int x) const {
+	size_t BlockSize() const { return 1 << logBlockSize; }
+	size_t RoundUp(size_t x) const {
 		return (x + BlockSize() - 1) & ~(BlockSize() - 1);
 	}
-	int uSize() const { return uRes; }
-	int vSize() const { return vRes; }
+	size_t uSize() const { return uRes; }
+	size_t vSize() const { return vRes; }
 	~BlockedArray() {
-		for (int i = 0; i < uRes * vRes; ++i)
+		for (size_t i = 0; i < uRes * vRes; ++i)
 			data[i].~T();
 		lux::FreeAligned(data);
 	}
-	int Block(int a) const { return a >> logBlockSize; }
-	int Offset(int a) const { return (a & (BlockSize() - 1)); }
-	T &operator()(int u, int v) {
-		int bu = Block(u), bv = Block(v);
-		int ou = Offset(u), ov = Offset(v);
-		int offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
+	size_t Block(size_t a) const { return a >> logBlockSize; }
+	size_t Offset(size_t a) const { return (a & (BlockSize() - 1)); }
+	T &operator()(size_t u, size_t v) {
+		size_t bu = Block(u), bv = Block(v);
+		size_t ou = Offset(u), ov = Offset(v);
+		size_t offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
 		offset += BlockSize() * ov + ou;
 		return data[offset];
 	}
-	const T &operator()(int u, int v) const {
-		int bu = Block(u), bv = Block(v);
-		int ou = Offset(u), ov = Offset(v);
-		int offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
+	const T &operator()(size_t u, size_t v) const {
+		size_t bu = Block(u), bv = Block(v);
+		size_t ou = Offset(u), ov = Offset(v);
+		size_t offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
 		offset += BlockSize() * ov + ou;
 		return data[offset];
 	}
 	void GetLinearArray(T *a) const {
-		for (int v = 0; v < vRes; ++v) {
-			for (int u = 0; u < uRes; ++u)
+		for (size_t v = 0; v < vRes; ++v) {
+			for (size_t u = 0; u < uRes; ++u)
 				*a++ = (*this)(u, v);
 		}
 	}
@@ -305,7 +305,7 @@ public:
 private:
 	// BlockedArray Private Data
 	T *data;
-	int uRes, vRes, uBlocks;
+	size_t uRes, vRes, uBlocks;
 	
 	template<class Archive> void save(Archive & ar, const unsigned int version) const
 	{
@@ -313,8 +313,8 @@ private:
 		ar & vRes;
 		ar & uBlocks;
 
-		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
-		for (int i = 0; i < nAlloc; ++i)
+		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
+		for (size_t i = 0; i < nAlloc; ++i)
 			ar & data[i];
 	}
 
@@ -324,9 +324,9 @@ private:
 		ar & vRes;
 		ar & uBlocks;
 
-		int nAlloc = RoundUp(uRes) * RoundUp(vRes);
+		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
-		for (int i = 0; i < nAlloc; ++i)
+		for (size_t i = 0; i < nAlloc; ++i)
 			ar & data[i];
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()

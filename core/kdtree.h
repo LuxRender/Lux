@@ -34,16 +34,16 @@ struct KdNode {
 	void init(float p, u_int a) {
 		splitPos = p;
 		splitAxis = a;
-                // Dade - in order to avoid a gcc warning
+		// Dade - in order to avoid a gcc warning
 		rightChild = 0;
-                rightChild = ~rightChild;
+		rightChild = ~rightChild;
 		hasLeftChild = 0;
 	}
 	void initLeaf() {
 		splitAxis = 3;
 		// Dade - in order to avoid a gcc warning
 		rightChild = 0;
-                rightChild = ~rightChild;
+		rightChild = ~rightChild;
 		hasLeftChild = 0;
 	}
 	// KdNode Data
@@ -60,7 +60,7 @@ public:
 		FreeAligned(nodes);
 		delete[] nodeData;
 	}
-	void recursiveBuild(u_int nodeNum, int start, int end,
+	void recursiveBuild(u_int nodeNum, u_int start, u_int end,
 		vector<const NodeData *> &buildNodes);
 	void Lookup(const Point &p, const LookupProc &process,
 			float &maxDistSquared) const;
@@ -100,7 +100,7 @@ KdTree<NodeData,
 }
 template <class NodeData, class LookupProc> void
 KdTree<NodeData, LookupProc>::recursiveBuild(u_int nodeNum,
-		int start, int end,
+		u_int start, u_int end,
 		vector<const NodeData *> &buildNodes) {
 	// Create leaf node of kd-tree if we've reached the bottom
 	if (start + 1 == end) {
@@ -111,10 +111,10 @@ KdTree<NodeData, LookupProc>::recursiveBuild(u_int nodeNum,
 	// Choose split direction and partition data
 	// Compute bounds of data from _start_ to _end_
 	BBox bound;
-	for (int i = start; i < end; ++i)
+	for (u_int i = start; i < end; ++i)
 		bound = Union(bound, buildNodes[i]->p);
-	int splitAxis = bound.MaximumExtent();
-	int splitPos = (start+end)/2;
+	u_int splitAxis = bound.MaximumExtent();
+	u_int splitPos = (start + end)/2;
 	std::nth_element(&buildNodes[start], &buildNodes[splitPos],
 		&buildNodes[end-1], CompareNode<NodeData>(splitAxis)); // NOTE - radiance - [end-1] - fix
 

@@ -32,10 +32,10 @@ LinearPixelSampler::LinearPixelSampler(int xstart, int xend,
 	int xPos = xstart;
 	int yPos = ystart;
 	// fill Pxa array in film pixel order
-	short int x = (unsigned short int) xPos;
-	short int y = (unsigned short int) yPos;
+	int x = xPos;
+	int y = yPos;
 	TotalPx = 0;
-	while(true) {
+	while (true) {
 		PxLoc px;
 		px.x = x; px.y = y;
 		Pxa.push_back(px);

@@ -46,7 +46,7 @@ void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
 		SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
 	*L *= Exp(-tau);
 }
-int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
+u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		SWCSpectrum *Lv, float *alpha) const {
 	VolumeRegion *vr = scene->volumeRegion;
@@ -55,13 +55,13 @@ int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	// Do emission-only volume integration in _vr_
 	*Lv = 0.f;
 	// Prepare for volume integration stepping
-	int N = Ceil2Int((t1-t0) / stepSize);
+	u_int N = Ceil2Int((t1-t0) / stepSize);
 	float step = (t1 - t0) / N;
 	SWCSpectrum Tr(1.f);
 	Point p = ray(t0), pPrev;
 	Vector w = -ray.d;
 	t0 += sample->oneD[scatterSampleOffset][0] * step;
-	for (int i = 0; i < N; ++i, t0 += step) {
+	for (u_int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
 		pPrev = p;
 		p = ray(t0);

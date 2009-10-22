@@ -117,9 +117,10 @@ public:
 	}
 	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
-	const bool reverseOrientation, transformSwapsHandedness;
 protected:
 	boost::shared_ptr<Material> material;
+public: // Last to get better data alignment
+	const bool reverseOrientation, transformSwapsHandedness;
 };
 
 class PrimitiveSet : public Primitive {
@@ -145,14 +146,13 @@ public:
 	}
 	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		u_int sn;
-		if( primitives.size() <= 16) {
+		if (primitives.size() <= 16) {
 			for (sn = 0; sn < primitives.size()-1; ++sn)
 				if (u3 < areaCDF[sn]) break;
-		}
-		else {
-			sn = Clamp(
-				(u_int)(std::upper_bound(areaCDF.begin(), areaCDF.end(), u3) - areaCDF.begin()),
-				(u_int)(0), (u_int)(primitives.size() - 1));
+		} else {
+			sn = Clamp(static_cast<u_int>(std::upper_bound(areaCDF.begin(),
+				areaCDF.end(), u3) - areaCDF.begin()),
+				0U, primitives.size() - 1U);
 		}
 		primitives[sn]->Sample(u1, u2, u3, dg);
 	}

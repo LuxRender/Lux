@@ -49,13 +49,13 @@ struct VirtualLight {
 class IGIIntegrator : public SurfaceIntegrator {
 public:
 	// IGIIntegrator Public Methods
-	IGIIntegrator(int nl, int ns, int d, float md);
+	IGIIntegrator(u_int nl, u_int ns, u_int d, float md);
 	virtual ~IGIIntegrator () {
 		delete[] lightSampleOffset;
 		delete[] bsdfSampleOffset;
 		delete[] bsdfComponentOffset;
 	}
-	virtual int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
+	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
@@ -63,12 +63,12 @@ private:
 	// IGI Private Data
 	u_int nLightPaths, nLightSets;
 	vector<vector<VirtualLight> > virtualLights;
-	int maxSpecularDepth;
+	u_int maxSpecularDepth;
 	float minDist2;
-	int vlSetOffset, bufferId;
+	u_int vlSetOffset, bufferId;
 
-	int *lightSampleOffset, lightNumOffset;
-	int *bsdfSampleOffset, *bsdfComponentOffset;
+	u_int *lightSampleOffset;
+	u_int *bsdfSampleOffset, *bsdfComponentOffset;
 };
 
 }//namespace lux

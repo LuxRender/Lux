@@ -32,21 +32,16 @@ namespace lux
 // Per Material/BSDF CompositingParams for precise control
 // when rendering objects in a compositing animation pipeline
 struct CompositingParams {
-	CompositingParams() {
-		tVm = tVl = tiVm = tiVl = true;
-		oA = false;
-		A = 0.f;
-		K = false;
-		Kc = RGBColor(1.f);
-	}
+	CompositingParams() : Kc(1.f), A(0.f), tVm(true), tVl(true), tiVm(true),
+		tiVl(true), oA(false), K(false) { }
+	RGBColor Kc; // Colour Key/Chroma RGB Colour
+	float A;  // Overridden Alpha Value
 	bool tVm; // Trace Visibility for material
 	bool tVl; // Trace Visibility for emission
 	bool tiVm; // Trace Indirect Visibility for material
 	bool tiVl; // Trace Indirect Visibility for emission
 	bool oA;  // Override Alpha
-	float A;  // Overridden Alpha Value
 	bool K;   // Colour/Chroma Key
-	RGBColor Kc; // Colour Key/Chroma RGB Colour
 };
 
 // Material Class Declarations

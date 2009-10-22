@@ -36,15 +36,15 @@ namespace lux
 class ProgressReporter {
 public:
 	// ProgressReporter Public Methods
-	ProgressReporter(int totalWork, const string &title, int barLength=58);
+	ProgressReporter(u_int totalWork, const string &title, u_int barLength=58);
 	~ProgressReporter();
-	void Update(int num = 1) const;
+	void Update(u_int num = 1) const;
 	void Done() const;
 	// ProgressReporter Data
-	const int totalPlusses;
+	const u_int totalPlusses;
 	float frequency;
 	mutable float count;
-	mutable int plussesPrinted;
+	mutable u_int plussesPrinted;
 	mutable Timer *timer;
 	FILE *outFile;
 	char *buf;
@@ -58,7 +58,7 @@ public:
 	void operator++(int) { ++num; }
 	void Max(StatsCounterType val) { num = max(val, num); }
 	void Min(StatsCounterType val) { num = min(val, num); }
-	operator double() const { return (double)num; }
+	operator double() const { return static_cast<double>(num); }
 private:
 	// StatsCounter Private Data
 	StatsCounterType num;

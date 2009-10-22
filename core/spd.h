@@ -30,28 +30,28 @@ namespace lux
 class SPD {
 public:
 	SPD() { 
-		nSamples = 0; 
-		lambdaMin = lambdaMax = delta = invDelta = 0.;
+		nSamples = 0U; 
+		lambdaMin = lambdaMax = delta = invDelta = 0.f;
 		samples = NULL;
 	}
 	virtual ~SPD() { FreeSamples(); }
 
 	// samples the SPD by performing a linear interpolation on the data
 	inline float sample(const float lambda) const {
-		if (nSamples < 1 || lambda < lambdaMin || lambda > lambdaMax)
+		if (nSamples <= 1 || lambda < lambdaMin || lambda > lambdaMax)
 			return 0.f;
 
 		// interpolate the two closest samples linearly
 		const float x = (lambda - lambdaMin) * invDelta;
-		const int b0 = Floor2Int(x);
-		const int b1 = min(b0 + 1, nSamples - 1);
+		const u_int b0 = Floor2UInt(x);
+		const u_int b1 = min(b0 + 1, nSamples - 1);
 		const float dx = x - b0;
 		return Lerp(dx, samples[b0], samples[b1]);
 	}
 
 	inline void sample(u_int n, const float lambda[], float *p) const {
 		for (u_int i = 0; i < n; ++i) {
-			if (nSamples < 1 || lambda[i] < lambdaMin ||
+			if (nSamples <= 1 || lambda[i] < lambdaMin ||
 				lambda[i] > lambdaMax) {
 				p[i] = 0.f;
 				continue;
@@ -59,8 +59,8 @@ public:
 
 			// interpolate the two closest samples linearly
 			const float x = (lambda[i] - lambdaMin) * invDelta;
-			const int b0 = Floor2Int(x);
-			const int b1 = min(b0 + 1, nSamples - 1);
+			const u_int b0 = Floor2UInt(x);
+			const u_int b1 = min(b0 + 1, nSamples - 1);
 			const float dx = x - b0;
 			p[i] = Lerp(dx, samples[b0], samples[b1]);
 		}
@@ -68,7 +68,7 @@ public:
 
 	float Y() const ;
 	XYZColor ToXYZ() const;
-	void AllocateSamples(int n);
+	void AllocateSamples(u_int n);
 	void FreeSamples();
 	void Normalize();
 	void Clamp();
@@ -76,10 +76,11 @@ public:
 	void Whitepoint(float temp);
 
 protected:
-	int nSamples;
+	u_int nSamples;
 	float lambdaMin, lambdaMax;
 	float delta, invDelta;
 	float *samples;
+
 };
 
 }//namespace lux

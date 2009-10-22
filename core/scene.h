@@ -39,32 +39,34 @@ namespace lux {
 
 class RenderThread : public boost::noncopyable {
 public:
-    RenderThread( int _n, ThreadSignals _signal, SurfaceIntegrator* _Si, VolumeIntegrator* _Vi,
-            Sampler* _Splr, Camera* _Cam, Scene* _Scn)
-    : n(_n), signal(_signal), surfaceIntegrator(_Si), volumeIntegrator(_Vi),
-            sample(NULL), sampler(_Splr->clone()), camera(_Cam), scene(_Scn),
-	    thread(NULL), samples(0.), blackSamples(0.) {
-        sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
-    }
+	RenderThread(u_int _n, ThreadSignals _signal, SurfaceIntegrator* _Si,
+		VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam,
+		Scene* _Scn) :
+		n(_n), signal(_signal), surfaceIntegrator(_Si),
+		volumeIntegrator(_Vi), sample(NULL), sampler(_Splr->clone()),
+		camera(_Cam), scene(_Scn), thread(NULL), samples(0.),
+		blackSamples(0.) {
+		sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
+	}
 
-    ~RenderThread()	{
-//	    delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
-        delete sample;
-        delete thread;
-    }
+	~RenderThread() {
+//		delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
+		delete sample;
+		delete thread;
+	}
 
-    static void render(RenderThread *r);
+	static void Render(RenderThread *r);
 
-    int  n;
+	u_int  n;
 	ThreadSignals signal;
-    SurfaceIntegrator *surfaceIntegrator;
-    VolumeIntegrator *volumeIntegrator;
-    Sample *sample;
-    Sampler *sampler;
-    Camera *camera;
-    Scene *scene;
+	SurfaceIntegrator *surfaceIntegrator;
+	VolumeIntegrator *volumeIntegrator;
+	Sample *sample;
+	Sampler *sampler;
+	Camera *camera;
+	Scene *scene;
 	TsPack *tspack;
-    boost::thread *thread; // keep pointer to delete the thread object
+	boost::thread *thread; // keep pointer to delete the thread object
 	double samples, blackSamples;
 	fast_mutex statLock;
 };
@@ -72,103 +74,107 @@ public:
 // Scene Declarations
 class  Scene {
 public:
-    // Scene Public Methods
-    void Render();
-    Scene(Camera *c, SurfaceIntegrator *in,
-            VolumeIntegrator *vi, Sampler *s,
-            boost::shared_ptr<Primitive> accel, const vector<Light *> &lts,
-            const vector<string> &lg, VolumeRegion *vr);
+	// Scene Public Methods
+	void Render();
+	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
+		Sampler *s, boost::shared_ptr<Primitive> accel,
+		const vector<Light *> &lts, const vector<string> &lg,
+		VolumeRegion *vr);
 	Scene(Camera *c);
-    ~Scene();
-    bool Intersect(const Ray &ray, Intersection *isect) const {
-        return aggregate->Intersect(ray, isect);
-    }
-    bool IntersectP(const Ray &ray) const {
-        return aggregate->IntersectP(ray);
-    }
-    const BBox &WorldBound() const;
-    SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
-            float *alpha = NULL) const;
+	~Scene();
+	bool Intersect(const Ray &ray, Intersection *isect) const {
+		return aggregate->Intersect(ray, isect);
+	}
+	bool IntersectP(const Ray &ray) const {
+		return aggregate->IntersectP(ray);
+	}
+	const BBox &WorldBound() const { return bound; }
+	SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
+		float *alpha = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
-    void Transmittance(const TsPack *tspack, const Ray &ray, const Sample *sample, SWCSpectrum *const L) const;
+	void Transmittance(const TsPack *tspack, const Ray &ray,
+		const Sample *sample, SWCSpectrum *const L) const;
 
-    //Control methods
-    void Start();
-    void Pause();
-    void Exit();
-    //controlling number of threads
-    int AddThread(); //returns the thread ID
-    void RemoveThread();
-	int getThreadsStatus(RenderingThreadInfo *info, int maxInfoCount);
+	//Control methods
+	void Start();
+	void Pause();
+	void Exit();
 
-	void SaveFLM( const string& filename );
-	bool IsFilmOnly() const { return filmOnly; }
+	u_int CreateRenderThread();
+	void RemoveRenderThread();
+	void SignalThreads(ThreadSignals signal);
+	u_int GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount);
 
-    double GetNumberOfSamples();
-    double Statistics_SamplesPSec();
-    double Statistics_SamplesPTotSec();
-    double Statistics_Efficiency();
-    double Statistics_SamplesPPx();
-    //framebuffer access
-    void UpdateFramebuffer();
-    unsigned char* GetFramebuffer();
+	//framebuffer access
+	void UpdateFramebuffer();
+	unsigned char* GetFramebuffer();
+	void SaveFLM(const string& filename);
 
 	//histogram access
-	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
+	void GetHistogramImage(unsigned char *outPixels, u_int width,
+		u_int height, int options);
 
 	// Parameter Access functions
-	void SetParameterValue(luxComponent comp, luxComponentParameters param, double value, int index);
-	double GetParameterValue(luxComponent comp, luxComponentParameters param, int index);
-	double GetDefaultParameterValue(luxComponent comp, luxComponentParameters param, int index);
-	void SetStringParameterValue(luxComponent comp, luxComponentParameters param, const string& value, int index);
-	string GetStringParameterValue(luxComponent comp, luxComponentParameters param, int index);
-	string GetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, int index);
+	void SetParameterValue(luxComponent comp, luxComponentParameters param,
+		double value, u_int index);
+	double GetParameterValue(luxComponent comp,
+		luxComponentParameters param, u_int index);
+	double GetDefaultParameterValue(luxComponent comp,
+		luxComponentParameters param, u_int index);
+	void SetStringParameterValue(luxComponent comp,
+		luxComponentParameters param, const string& value, u_int index);
+	string GetStringParameterValue(luxComponent comp,
+		luxComponentParameters param, u_int index);
+	string GetDefaultStringParameterValue(luxComponent comp,
+		luxComponentParameters param, u_int index);
 
-    int DisplayInterval();
-    int FilmXres();
-    int FilmYres();
-    Timer s_Timer;
-    double lastSamples, lastTime;
-    //statistics
-    double Statistics(const string &statName);
+	int DisplayInterval();
+	u_int FilmXres();
+	u_int FilmYres();
 
-    int CreateRenderThread();
-    void RemoveRenderThread();
-    void SignalThreads(ThreadSignals signal);
+	//statistics
+	double Statistics(const string &statName);
+	double GetNumberOfSamples();
+	double Statistics_SamplesPSec();
+	double Statistics_SamplesPTotSec();
+	double Statistics_Efficiency();
+	double Statistics_SamplesPPx();
+	bool IsFilmOnly() const { return filmOnly; }
 
-    // Scene Data
-    boost::shared_ptr<Primitive> aggregate;
-    vector<Light *> lights;
-    vector<string> lightGroups;
-    Camera *camera;
-    VolumeRegion *volumeRegion;
-    SurfaceIntegrator *surfaceIntegrator;
-    VolumeIntegrator *volumeIntegrator;
-    Sampler *sampler;
-    BBox bound;
-    int seedBase;
+	// Scene Data
+	// Put those first for better data alignment
+	Timer s_Timer;
+	double lastSamples, lastTime;
+	double numberOfSamplesFromNetwork;
+	double stat_Samples, stat_blackSamples;
+
+	boost::shared_ptr<Primitive> aggregate;
+	vector<Light *> lights;
+	vector<string> lightGroups;
+	Camera *camera;
+	VolumeRegion *volumeRegion;
+	SurfaceIntegrator *surfaceIntegrator;
+	VolumeIntegrator *volumeIntegrator;
+	Sampler *sampler;
+	BBox bound;
+	u_long seedBase;
 
 	ContributionPool *contribPool;
 
-    // Dade - number of samples received from network
-    double numberOfSamplesFromNetwork;
-    double stat_Samples, stat_blackSamples;
-
-    // Dade - used to suspend render threads until the preprocessing phase is done
-    bool preprocessDone;
-
-	// Dade - tell rendering threads what to do when they have done
-	bool suspendThreadsWhenDone;
-
 private:
-
-	// Dade - mutex used for adding/removing threads
+	// mutex used for adding/removing threads
 	boost::mutex renderThreadsMutex;
-    std::vector<RenderThread*> renderThreads;
-    //boost::thread_group threadGroup;
-    ThreadSignals CurThreadSignal;
+	std::vector<RenderThread*> renderThreads;
+	ThreadSignals CurThreadSignal;
 	TsPack *tspack;
 	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film
+
+public: // Put them last for better data alignment
+	// used to suspend render threads until the preprocessing phase is done
+	bool preprocessDone;
+
+	// tell rendering threads what to do when they have done
+	bool suspendThreadsWhenDone;
 };
 
 }//namespace lux

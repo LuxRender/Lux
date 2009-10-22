@@ -32,12 +32,23 @@ namespace lux
 class LinearOp : public ToneMap {
 public:
 	// LinearOp Public Methods
+	// The exposure index is given by:
+	// H = q * L * t / N^2
+	// where q is a filtering/conversion factor from cd.m-2 to lx,
+	// L is the luminance in cd.m-2, t is the exposure duration in s,
+	// N is the f-stop
+	// The following relations determine the output:
+	// Hsos = 10 / Ssos and Hsos maps to 118 in [0-255] at gamma=2.2
+	// where Ssos is the ISO speed
+	// q is left to compute for the camera, so the final formula is:
+	// R = L * t / N^2 * (118 / 255)^2.2 / (10 / Ssos)
+	// This is all taken from the ISO speed article of wikipedia
 	LinearOp(float sensitivity, float exposure, float fstop, float gamma) :
 		factor(exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma)) { }
 	virtual ~LinearOp() { }
-	virtual void Map(vector<XYZColor> &xyz, int xRes, int yRes, float maxDisplayY) const {
-		const int numPixels = xRes * yRes;
-		for (int i = 0; i < numPixels; ++i)
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
+		const u_int numPixels = xRes * yRes;
+		for (u_int i = 0; i < numPixels; ++i)
 			xyz[i] *= factor;
 	}
 	

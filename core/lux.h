@@ -257,6 +257,12 @@ inline int Round2Int(double val) {
 inline int Round2Int(float val) {
 	return static_cast<int>(val > 0.f ? val + .5f : val - .5f);
 }
+inline u_int Round2UInt(double val) {
+	return static_cast<u_int>(val > 0. ? val + .5 : 0.);
+}
+inline u_int Round2UInt(float val) {
+	return static_cast<u_int>(val > 0.f ? val + .5f : 0.f);
+}
 inline int Mod(int a, int b) {
 	// note - radiance - added 0 check to prevent divide by zero error(s)
 	if (b == 0)
@@ -282,6 +288,9 @@ inline int Log2Int(float v) {
 inline bool IsPowerOf2(int v) {
 	return (v & (v - 1)) == 0;
 }
+inline bool IsPowerOf2(u_int v) {
+	return (v & (v - 1)) == 0;
+}
 inline u_int RoundUpPow2(u_int v) {
 	v--;
 	v |= v >> 1;
@@ -294,17 +303,32 @@ inline u_int RoundUpPow2(u_int v) {
 template<class T> inline int Float2Int(T val) {
 	return static_cast<int>(val);
 }
+template<class T> inline u_int Float2UInt(T val) {
+	return static_cast<u_int>(val);
+}
 inline int Floor2Int(double val) {
 	return static_cast<int>(floor(val));
 }
 inline int Floor2Int(float val) {
 	return static_cast<int>(floorf(val));
 }
+inline u_int Floor2UInt(double val) {
+	return static_cast<u_int>(floor(val));
+}
+inline u_int Floor2UInt(float val) {
+	return static_cast<u_int>(floorf(val));
+}
 inline int Ceil2Int(double val) {
 	return static_cast<int>(ceil(val));
 }
 inline int Ceil2Int(float val) {
 	return static_cast<int>(ceilf(val));
+}
+inline u_int Ceil2UInt(double val) {
+	return static_cast<u_int>(ceil(val));
+}
+inline u_int Ceil2UInt(float val) {
+	return static_cast<u_int>(ceilf(val));
 }
 inline bool Quadratic(float A, float B, float C, float *t0, float *t1) {
 	// Find quadratic discriminant

@@ -48,13 +48,13 @@ template <class T> inline bool EraseParamType(vector<ParamSetItem<T> *> &vec,
 	return false;
 }
 template <class T> inline void AddParamType(vector<ParamSetItem<T> *> &vec,
-	const string &name, const T *data, int nItems)
+	const string &name, const T *data, u_int nItems)
 {
 	EraseParamType(vec, name);
 	vec.push_back(new ParamSetItem<T>(name, data, nItems));
 }
 template <class T> inline const T *LookupPtr(const vector<ParamSetItem<T> *> &vec,
-	const string &name, int *nItems)
+	const string &name, u_int *nItems)
 {
 	for (u_int i = 0; i < vec.size(); ++i)
 		if (vec[i]->name == name) {
@@ -131,7 +131,7 @@ ParamSet::ParamSet(const ParamSet &p2) {
 /* Here we create a paramset with the argument list provided by the C API.
  * We have to 'guess' the parameter type according the the parameter's name
  */
-ParamSet::ParamSet(int n, const char * pluginName, const char * const tokens[], const char * const params[])
+ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[], const char * const params[])
 {
 	//TODO - jromang : implement this using a std::map or string hashing
 
@@ -139,7 +139,7 @@ ParamSet::ParamSet(int n, const char * pluginName, const char * const tokens[], 
 
 	std::string pn(pluginName);
 	
-	for(int i=0;i<n;i++)
+	for(u_int i = 0; i < n; ++i)
 	{
 		std::string s(tokens[i]);
 		//float parameters
@@ -930,35 +930,35 @@ void ParamSet::Add(ParamSet &params) {
 		AddTexture(params.textures[i]->name, *(params.textures[i]->data));
 }
 
-void ParamSet::AddFloat(const string &name, const float *data, int nItems)
+void ParamSet::AddFloat(const string &name, const float *data, u_int nItems)
 {
 	AddParamType(floats, name, data, nItems);
 }
-void ParamSet::AddInt(const string &name, const int *data, int nItems)
+void ParamSet::AddInt(const string &name, const int *data, u_int nItems)
 {
 	AddParamType(ints, name, data, nItems);
 }
-void ParamSet::AddBool(const string &name, const bool *data, int nItems)
+void ParamSet::AddBool(const string &name, const bool *data, u_int nItems)
 {
 	AddParamType(bools, name, data, nItems);
 }
-void ParamSet::AddPoint(const string &name, const Point *data, int nItems)
+void ParamSet::AddPoint(const string &name, const Point *data, u_int nItems)
 {
 	AddParamType(points, name, data, nItems);
 }
-void ParamSet::AddVector(const string &name, const Vector *data, int nItems)
+void ParamSet::AddVector(const string &name, const Vector *data, u_int nItems)
 {
 	AddParamType(vectors, name, data, nItems);
 }
-void ParamSet::AddNormal(const string &name, const Normal *data, int nItems)
+void ParamSet::AddNormal(const string &name, const Normal *data, u_int nItems)
 {
 	AddParamType(normals, name, data, nItems);
 }
-void ParamSet::AddRGBColor(const string &name, const RGBColor *data, int nItems)
+void ParamSet::AddRGBColor(const string &name, const RGBColor *data, u_int nItems)
 {
 	AddParamType(spectra, name, data, nItems);
 }
-void ParamSet::AddString(const string &name, const string *data, int nItems)
+void ParamSet::AddString(const string &name, const string *data, u_int nItems)
 {
 	AddParamType(strings, name, data, nItems);
 }
@@ -997,15 +997,15 @@ float ParamSet::FindOneFloat(const string &name, float d) const
 {
 	return LookupOne(floats, name, d);
 }
-const float *ParamSet::FindFloat(const string &name, int *nItems) const
+const float *ParamSet::FindFloat(const string &name, u_int *nItems) const
 {
 	return LookupPtr(floats, name, nItems);
 }
-const int *ParamSet::FindInt(const string &name, int *nItems) const
+const int *ParamSet::FindInt(const string &name, u_int *nItems) const
 {
 	return LookupPtr(ints, name, nItems);
 }
-const bool *ParamSet::FindBool(const string &name, int *nItems) const
+const bool *ParamSet::FindBool(const string &name, u_int *nItems) const
 {
 	return LookupPtr(bools, name, nItems);
 }
@@ -1017,7 +1017,7 @@ bool ParamSet::FindOneBool(const string &name, bool d) const
 {
 	return LookupOne(bools, name, d);
 }
-const Point *ParamSet::FindPoint(const string &name, int *nItems) const
+const Point *ParamSet::FindPoint(const string &name, u_int *nItems) const
 {
 	return LookupPtr(points, name, nItems);
 }
@@ -1025,7 +1025,7 @@ const Point &ParamSet::FindOnePoint(const string &name, const Point &d) const
 {
 	return LookupOne(points, name, d);
 }
-const Vector *ParamSet::FindVector(const string &name, int *nItems) const
+const Vector *ParamSet::FindVector(const string &name, u_int *nItems) const
 {
 	return LookupPtr(vectors, name, nItems);
 }
@@ -1033,7 +1033,7 @@ const Vector &ParamSet::FindOneVector(const string &name, const Vector &d) const
 {
 	return LookupOne(vectors, name, d);
 }
-const Normal *ParamSet::FindNormal(const string &name, int *nItems) const
+const Normal *ParamSet::FindNormal(const string &name, u_int *nItems) const
 {
 	return LookupPtr(normals, name, nItems);
 }
@@ -1041,7 +1041,7 @@ const Normal &ParamSet::FindOneNormal(const string &name, const Normal &d) const
 {
 	return LookupOne(normals, name, d);
 }
-const RGBColor *ParamSet::FindRGBColor(const string &name, int *nItems) const
+const RGBColor *ParamSet::FindRGBColor(const string &name, u_int *nItems) const
 {
 	return LookupPtr(spectra, name, nItems);
 }
@@ -1049,7 +1049,7 @@ const RGBColor &ParamSet::FindOneRGBColor(const string &name, const RGBColor &d)
 {
 	return LookupOne(spectra, name, d);
 }
-const string *ParamSet::FindString(const string &name, int *nItems) const
+const string *ParamSet::FindString(const string &name, u_int *nItems) const
 {
 	return LookupPtr(strings, name, nItems);
 }
@@ -1089,28 +1089,28 @@ string ParamSet::ToString() const {
 	for (u_int i = 0; i < ints.size(); ++i) {
 		const ParamSetItem<int> *item = ints[i];
 		ret << "\"integer " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j] << " ";
 		ret << "] ";
 	}
 	for (u_int i = 0; i < bools.size(); ++i) {
 		const ParamSetItem<bool> *item = bools[i];
 		ret << "\"bool " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << (item->data[j] ? "true" : "false") << " ";
 		ret << "] ";
 	}
 	for (u_int i = 0; i < floats.size(); ++i) {
 		const ParamSetItem<float> *item = floats[i];
 		ret << "\"float " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j] << " ";
 		ret << "] ";
 	}
 	for (u_int i = 0; i < points.size(); ++i) {
 		const ParamSetItem<Point> *item = points[i];
 		ret << "\"point " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j].x << " " <<
 				item->data[j].y << " " <<
 				item->data[j].z << " ";
@@ -1119,7 +1119,7 @@ string ParamSet::ToString() const {
 	for (u_int i = 0; i < vectors.size(); ++i) {
 		const ParamSetItem<Vector> *item = vectors[i];
 		ret << "\"vector " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j].x << " " <<
 				item->data[j].y << " " <<
 				item->data[j].z << " ";
@@ -1128,7 +1128,7 @@ string ParamSet::ToString() const {
 	for (u_int i = 0; i < normals.size(); ++i) {
 		const ParamSetItem<Normal> *item = normals[i];
 		ret << "\"normal " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j].x << " " <<
 				item->data[j].y << " " <<
 				item->data[j].z << " ";
@@ -1137,21 +1137,21 @@ string ParamSet::ToString() const {
 	for (u_int i = 0; i < strings.size(); ++i) {
 		const ParamSetItem<string> *item = strings[i];
 		ret << "\"string " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j] << " ";
 		ret << "] ";
 	}
 	for (u_int i = 0; i < textures.size(); ++i) {
 		const ParamSetItem<string> *item = textures[i];
 		ret << "\"texture " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j] << " ";
 		ret << "] ";
 	}
 	for (u_int i = 0; i < spectra.size(); ++i) {
 		const ParamSetItem<RGBColor> *item = spectra[i];
 		ret << "\"color " << item->name << "\" [";
-		for (int j = 0; j < item->nItems; ++j)
+		for (u_int j = 0; j < item->nItems; ++j)
 			ret << item->data[j].c[0] << " " <<
 				item->data[j].c[1] << " " <<
 				item->data[j].c[2] << " ";

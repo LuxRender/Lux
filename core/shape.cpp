@@ -36,9 +36,8 @@ Shape::Shape(const Transform &o2w, bool ro)
 }
 Shape::Shape(const Transform &o2w, bool ro, boost::shared_ptr<Material> mat)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
-	reverseOrientation(ro),
-	transformSwapsHandedness(o2w.SwapsHandedness()),
-	material(mat)
+	material(mat), reverseOrientation(ro),
+	transformSwapsHandedness(o2w.SwapsHandedness())
 {
 	// Update shape creation statistics
 	// radiance - disabled for threading // static StatsCounter nShapesMade("Geometry","Total shapes created");
@@ -60,7 +59,7 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
 
 	// NOTE - ratow - Use accelerator for complex lights.
 	if(primitives.size() <= 16) {
-		accelerator = boost::shared_ptr<Primitive>((Primitive*)NULL);
+		accelerator = boost::shared_ptr<Primitive>();
 		worldbound = BBox();
 		for(u_int i = 0; i < primitives.size(); i++)
 			worldbound = Union(worldbound, primitives[i]->WorldBound());

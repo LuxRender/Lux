@@ -65,11 +65,11 @@ public:
 		return nxD.size()-1;
 	}
 	void AddContribution(float x, float y, const XYZColor &c, float a, float zd = 0,
-		int b = 0, int g = 0) const {
+		u_int b = 0, u_int g = 0) const {
 		contributions.push_back(Contribution(x, y, c, a, zd, 0.f, b, g));
 	}
 	void AddContribution(float x, float y, const XYZColor &c, float a, float zd,
-		float v, int b = 0, int g = 0) const {
+		float v, u_int b = 0, u_int g = 0) const {
 		contributions.push_back(Contribution(x, y, c, a, zd, v, b, g));
 	}
 	~Sample() {
@@ -105,14 +105,14 @@ class  Sampler {
 public:
 	// Sampler Interface
 	virtual ~Sampler() {}
-	Sampler(int xstart, int xend, int ystart, int yend, int spp);
+	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
 	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
 	virtual u_int GetTotalSamplePos() = 0;
-	int TotalSamples() const {
-		return samplesPerPixel * (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart);
+	u_int TotalSamples() const {
+		return samplesPerPixel * static_cast<u_int>((xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart));
 	}
-	virtual int RoundSize(int size) const = 0;
+	virtual u_int RoundSize(u_int size) const = 0;
 	void SetFilm(Film* f) { film = f; }
 	virtual void GetBufferType(BufferType *t) { }
 	virtual void AddSample(const Sample &sample);
@@ -132,7 +132,7 @@ public:
 
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
-	int samplesPerPixel;
+	u_int samplesPerPixel;
 	Film *film;
 	ContributionPool *contribPool;
 	ContributionBuffer *contribBuffer;
@@ -140,8 +140,8 @@ public:
 
 // PxLoc X and Y pixel coordinate struct
 struct PxLoc {
-	short x;
-	short y;
+	int x;
+	int y;
 };
 class PixelSampler {
 public:
@@ -156,33 +156,33 @@ public:
 	bool renderingDone;
 };
 
-void StratifiedSample1D(const TsPack *tspack, float *samples, int nsamples, bool jitter = true);
-void StratifiedSample2D(const TsPack *tspack, float *samples, int nx, int ny, bool jitter = true);
-void Shuffle(const TsPack *tspack, float *samp, int count, int dims);
-void LatinHypercube(const TsPack *tspack, float *samples, int nSamples, int nDim);
+void StratifiedSample1D(const TsPack *tspack, float *samples, u_int nsamples, bool jitter = true);
+void StratifiedSample2D(const TsPack *tspack, float *samples, u_int nx, u_int ny, bool jitter = true);
+void Shuffle(const TsPack *tspack, float *samp, u_int count, u_int dims);
+void LatinHypercube(const TsPack *tspack, float *samples, u_int nSamples, u_int nDim);
 
 // Sampling Inline Functions
-inline double RadicalInverse(int n, int base)
+inline double RadicalInverse(u_int n, u_int base)
 {
 	double val = 0.;
 	double invBase = 1. / base, invBi = invBase;
 	while (n > 0) {
 		// Compute next digit of radical inverse
-		int d_i = (n % base);
+		u_int d_i = (n % base);
 		val += d_i * invBi;
 		n /= base;
 		invBi *= invBase;
 	}
 	return val;
 }
-inline double FoldedRadicalInverse(int n, int base)
+inline double FoldedRadicalInverse(u_int n, u_int base)
 {
-	double val = 0.;
-	double invBase = 1. / base, invBi = invBase;
-	int modOffset = 0;
+	const double invBase = 1. / base;
+	double val = 0., invBi = invBase;
+	u_int modOffset = 0;
 	while (val + base * invBi != val) {
 		// Compute next digit of folded radical inverse
-		int digit = ((n + modOffset) % base);
+		u_int digit = ((n + modOffset) % base);
 		val += digit * invBi;
 		n /= base;
 		invBi *= invBase;
@@ -198,44 +198,38 @@ inline float VanDerCorput(u_int n, u_int scramble = 0)
 	n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
 	n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
 	n ^= scramble;
-	return (float)n / (float)0x100000000LL;
+	return static_cast<float>(static_cast<double>(n) / static_cast<double>(0x100000000LL));
 }
 inline float Sobol2(u_int n, u_int scramble = 0)
 {
 	for (u_int v = 1u << 31; n != 0; n >>= 1, v ^= v >> 1)
 		if (n & 0x1) scramble ^= v;
-	return (float)scramble / (float)0x100000000LL;
+	return static_cast<float>(static_cast<double>(scramble) / static_cast<double>(0x100000000LL));
 }
 inline float LarcherPillichshammer2(u_int n, u_int scramble = 0)
 {
 	for (u_int v = 1u << 31; n != 0; n >>= 1, v |= v >> 1)
 		if (n & 0x1) scramble ^= v;
-	return (float)scramble / (float)0x100000000LL;
+	return static_cast<float>(static_cast<double>(scramble) / static_cast<double>(0x100000000LL));
 }
 inline float Halton(u_int n, u_int scramble = 0)
 {
-	float s = FoldedRadicalInverse(n, 2);
-	u_int s0 = (u_int) (s * (float)0x100000000LL);
+	double s = FoldedRadicalInverse(n, 2);
+	u_int s0 = static_cast<u_int>(s * 0x100000000LL);
 	s0 ^= scramble;
-	return (float)s0 / (float)0x100000000LL;
+	return static_cast<float>(static_cast<double>(s0) / static_cast<double>(0x100000000LL));
 }
 inline float Halton2(u_int n, u_int scramble = 0)
 {
-	float s = FoldedRadicalInverse(n, 3);
-	u_int s0 = (u_int) (s * (float)0x100000000LL);
+	double s = FoldedRadicalInverse(n, 3);
+	u_int s0 = static_cast<u_int>(s * 0x100000000LL);
 	s0 ^= scramble;
-	return (float)s0 / (float)0x100000000LL;
+	return static_cast<float>(static_cast<double>(s0) / static_cast<double>(0x100000000LL));
 }
 inline void SampleHalton(u_int n, u_int scramble[2], float sample[2])
 {
-	sample[0] = FoldedRadicalInverse(n, 2);
-	sample[1] = FoldedRadicalInverse(n, 3);
-	u_int s0 = (u_int) (sample[0] * (float)0x100000000LL);
-	u_int s1 = (u_int) (sample[1] * (float)0x100000000LL);
-	s0 ^= scramble[0];
-	s1 ^= scramble[1];
-	sample[0] = (float)s0 / (float)0x100000000LL;
-	sample[1] = (float)s1 / (float)0x100000000LL;
+	sample[0] = Halton(n, scramble[0]);
+	sample[1] = Halton2(n, scramble[1]);
 }
 inline void Sample02(u_int n, u_int scramble[2], float sample[2])
 {
@@ -243,39 +237,39 @@ inline void Sample02(u_int n, u_int scramble[2], float sample[2])
 	sample[1] = Sobol2(n, scramble[1]);
 }
 
-inline void LDShuffleScrambled1D(const TsPack *tspack, int nSamples,
-		int nPixel, float *samples) {
+inline void LDShuffleScrambled1D(const TsPack *tspack, u_int nSamples,
+		u_int nPixel, float *samples) {
 	u_int scramble = tspack->rng->uintValue();
-	for (int i = 0; i < nSamples * nPixel; ++i)
+	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		samples[i] = VanDerCorput(i, scramble);
-	for (int i = 0; i < nPixel; ++i)
+	for (u_int i = 0; i < nPixel; ++i)
 		Shuffle(tspack, samples + i * nSamples, nSamples, 1);
 	Shuffle(tspack, samples, nPixel, nSamples);
 }
-inline void LDShuffleScrambled2D(const TsPack *tspack, int nSamples,
-		int nPixel, float *samples) {
+inline void LDShuffleScrambled2D(const TsPack *tspack, u_int nSamples,
+		u_int nPixel, float *samples) {
 	u_int scramble[2] = { tspack->rng->uintValue(), tspack->rng->uintValue() };
-	for (int i = 0; i < nSamples * nPixel; ++i)
+	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		Sample02(i, scramble, &samples[2*i]);
-	for (int i = 0; i < nPixel; ++i)
+	for (u_int i = 0; i < nPixel; ++i)
 		Shuffle(tspack, samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(tspack, samples, nPixel, 2 * nSamples);
 }
-inline void HaltonShuffleScrambled1D(const TsPack *tspack, int nSamples,
-		int nPixel, float *samples) {
+inline void HaltonShuffleScrambled1D(const TsPack *tspack, u_int nSamples,
+		u_int nPixel, float *samples) {
 	u_int scramble = tspack->rng->uintValue();
-	for (int i = 0; i < nSamples * nPixel; ++i)
+	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		samples[i] = Halton(i, scramble);
-	for (int i = 0; i < nPixel; ++i)
+	for (u_int i = 0; i < nPixel; ++i)
 		Shuffle(tspack, samples + i * nSamples, nSamples, 1);
 	Shuffle(tspack, samples, nPixel, nSamples);
 }
-inline void HaltonShuffleScrambled2D(const TsPack *tspack, int nSamples,
-		int nPixel, float *samples) {
+inline void HaltonShuffleScrambled2D(const TsPack *tspack, u_int nSamples,
+		u_int nPixel, float *samples) {
 	u_int scramble[2] = { tspack->rng->uintValue(), tspack->rng->uintValue() };
-	for (int i = 0; i < nSamples * nPixel; ++i)
+	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		SampleHalton(i, scramble, &samples[2*i]);
-	for (int i = 0; i < nPixel; ++i)
+	for (u_int i = 0; i < nPixel; ++i)
 		Shuffle(tspack, samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(tspack, samples, nPixel, 2 * nSamples);
 }

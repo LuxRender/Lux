@@ -35,8 +35,8 @@
 using namespace lux;
 
 ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm, LightStrategy st,
-	int ndir, int ncaus, int nindir, int nrad, int nl,
-	int mdepth, int mpdepth, float mdist, bool fg, int gs, float ga,
+	u_int ndir, u_int ncaus, u_int nindir, u_int nrad, u_int nl,
+	u_int mdepth, u_int mpdepth, float mdist, bool fg, u_int gs, float ga,
 	PhotonMapRRStrategy rrstrategy, float rrcontprob, float distThreshold,
 	string *mapsfn, bool dbgEnableDirect, bool dbgUseRadianceMap,
 	bool dbgEnableCaustic, bool dbgEnableIndirect, bool dbgEnableSpecular)
@@ -166,14 +166,14 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 		indirectMap, nCausticPhotons, causticMap, maxPhotonDepth);
 }
 
-int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
+u_int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
 	const Sample *sample) const 
 {
 	RayDifferential ray;
 	float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	SWCSpectrum L(0.f);
 	float alpha = 1.f;
-	switch(renderingMode) {
+	switch (renderingMode) {
 		case RM_DIRECTLIGHTING:
 			L = LiDirectLightingMode(tspack, scene, ray, sample, &alpha, 0, true);
 			break;
@@ -187,12 +187,12 @@ int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	sample->AddContribution(sample->imageX, sample->imageY,
 		L.ToXYZ(tspack) * rayWeight, alpha, bufferId);
 
-	return 1;
+	return L.Black() ? 0 : 1;
 }
 
 SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	const Scene *scene, const RayDifferential &ray, const Sample *sample,
-	float *alpha, const int reflectionDepth, const bool specularBounce) const 
+	float *alpha, const u_int reflectionDepth, const bool specularBounce) const 
 {
 	// Compute reflected radiance with photon map
 	SWCSpectrum L(0.f);
@@ -366,7 +366,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 	XYZColor color;
 	bool specularBounce = true, specular = true;
 
-	for (int pathLength = 0; ; ++pathLength) {
+	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
 		if (!scene->Intersect(ray, &isect)) {
@@ -585,8 +585,8 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	int maxPhotonDepth = params.FindOneInt("maxphotondepth", 10);
 
 	int nDirect = params.FindOneInt("directphotons", 200000);
-    int nCaustic = params.FindOneInt("causticphotons", 20000);
-    int nIndirect = params.FindOneInt("indirectphotons", 200000);
+	int nCaustic = params.FindOneInt("causticphotons", 20000);
+	int nIndirect = params.FindOneInt("indirectphotons", 200000);
 	int nRadiance = params.FindOneInt("radiancephotons", 200000);
 
 	int nUsed = params.FindOneInt("nphotonsused", 50);
@@ -595,12 +595,13 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	bool finalGather = params.FindOneBool("finalgather", true);
 	// Dade - use half samples for sampling along the BSDF and the other
 	// half to sample along photon incoming direction
-    int gatherSamples = params.FindOneInt("finalgathersamples", 32) / 2;
+	int gatherSamples = params.FindOneInt("finalgathersamples", 32) / 2;
 
 	string smode =  params.FindOneString("renderingmode", "directlighting");
 
 	RenderingMode renderingMode;
-	if (smode == "directlighting") renderingMode = RM_DIRECTLIGHTING;
+	if (smode == "directlighting")
+		renderingMode = RM_DIRECTLIGHTING;
 	else if (smode == "path") {
 		renderingMode = RM_PATH;
 		finalGather = true;
@@ -611,13 +612,16 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		renderingMode = RM_PATH;
 	}
 
-    float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
+	float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
 	PhotonMapRRStrategy rstrategy;
 	string rst = params.FindOneString("rrstrategy", "efficiency");
-	if (rst == "efficiency") rstrategy = RR_EFFICIENCY;
-	else if (rst == "probability") rstrategy = RR_PROBABILITY;
-	else if (rst == "none") rstrategy = RR_NONE;
+	if (rst == "efficiency")
+		rstrategy = RR_EFFICIENCY;
+	else if (rst == "probability")
+		rstrategy = RR_PROBABILITY;
+	else if (rst == "none")
+		rstrategy = RR_NONE;
 	else {
 		std::stringstream ss;
 		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficiency\".";
@@ -641,8 +645,8 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	bool debugEnableSpecular = params.FindOneBool("dbg_enableindirspecular", true);
 
     return new ExPhotonIntegrator(renderingMode, estrategy,
-			nDirect, nCaustic, nIndirect, nRadiance,
-            nUsed, maxDepth, maxPhotonDepth, maxDist, finalGather, gatherSamples, gatherAngle,
+			max(nDirect, 0), max(nCaustic, 0), max(nIndirect, 0), max(nRadiance, 0),
+            max(nUsed, 0), max(maxDepth, 0), max(maxPhotonDepth, 0), maxDist, finalGather, max(gatherSamples, 0), gatherAngle,
 			rstrategy, rrcontinueProb,
 			distanceThreshold,
 			mapsFileName,

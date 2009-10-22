@@ -97,7 +97,7 @@ struct FloatPixel {
 
 class Buffer {
 public:
-	Buffer(int x, int y) : xPixelCount(x), yPixelCount(y) {
+	Buffer(u_int x, u_int y) : xPixelCount(x), yPixelCount(y) {
 		pixels = new BlockedArray<Pixel>(x, y);
 	}
 
@@ -105,7 +105,7 @@ public:
 		delete pixels; 
 	}
 
-	void Add(int x, int y, XYZColor L, float alpha, float wt) {
+	void Add(u_int x, u_int y, XYZColor L, float alpha, float wt) {
 		Pixel &pixel = (*pixels)(x, y);
 		pixel.L.AddWeighted(wt, L);
 		pixel.alpha += alpha * wt;
@@ -113,8 +113,8 @@ public:
 	}
 
 	void Clear() {
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				Pixel &pixel = (*pixels)(x, y);
 				pixel.L.c[0] = 0.0f;
 				pixel.L.c[1] = 0.0f;
@@ -126,30 +126,30 @@ public:
 	}
 
 	virtual void GetData(XYZColor *color, float *alpha) const = 0;
-	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const = 0;
-	bool isFramebuffer;
-	int xPixelCount, yPixelCount;
-	float scaleFactor;
+	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const = 0;
+	u_int xPixelCount, yPixelCount;
 	BlockedArray<Pixel> *pixels;
+	float scaleFactor;
+	bool isFramebuffer;
 };
 
 // Per pixel normalized buffer
 class RawBuffer : public Buffer {
 public:
-	RawBuffer(int x, int y) : Buffer(x, y) { }
+	RawBuffer(u_int x, u_int y) : Buffer(x, y) { }
 
 	virtual ~RawBuffer() { }
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
 				color[offset] = pixel.L;
 				alpha[offset] = pixel.alpha;
 			}
 		}
 	}
-	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const {
+	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		*color = pixel.L;
 		*alpha = pixel.alpha;
@@ -160,13 +160,13 @@ public:
 // Per pixel normalized XYZColor buffer
 class PerPixelNormalizedBuffer : public Buffer {
 public:
-	PerPixelNormalizedBuffer(int x, int y) : Buffer(x, y) { }
+	PerPixelNormalizedBuffer(u_int x, u_int y) : Buffer(x, y) { }
 
 	virtual ~PerPixelNormalizedBuffer() { }
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
 				if (pixel.weightSum == 0.f) {
 					color[offset] = XYZColor(0.f);
@@ -179,7 +179,7 @@ public:
 			}
 		}
 	}
-	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const {
+	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum == 0.f) {
 			*color = XYZColor(0.f);
@@ -195,7 +195,7 @@ public:
 // Per pixel normalized floating point buffer
 class PerPixelNormalizedFloatBuffer {
 public:
-	PerPixelNormalizedFloatBuffer(int x, int y) {
+	PerPixelNormalizedFloatBuffer(u_int x, u_int y) {
 		floatpixels = new BlockedArray<FloatPixel>(x, y);
 	}
 
@@ -203,7 +203,7 @@ public:
 		delete floatpixels;
 	}
 
-	void Add(int x, int y, float value, float wt) {
+	void Add(u_int x, u_int y, float value, float wt) {
 		FloatPixel &fpixel = (*floatpixels)(x, y);
 		fpixel.V += value;
 		fpixel.weightSum += wt;
@@ -225,7 +225,7 @@ public:
 		}
 	}
 	*/
-	float GetData(int x, int y) const {
+	float GetData(u_int x, u_int y) const {
 		const FloatPixel &pixel = (*floatpixels)(x, y);
 		if (pixel.weightSum == 0.f) {
 			return 0.f;
@@ -239,15 +239,15 @@ private:
 // Per screen normalized XYZColor buffer
 class PerScreenNormalizedBuffer : public Buffer {
 public:
-	PerScreenNormalizedBuffer(int x, int y, const double *samples) :
+	PerScreenNormalizedBuffer(u_int x, u_int y, const double *samples) :
 		Buffer(x, y), numberOfSamples_(samples) { }
 
 	virtual ~PerScreenNormalizedBuffer() { }
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		const double inv = xPixelCount * yPixelCount / *numberOfSamples_;
-		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
-			for (int x = 0; x < xPixelCount; ++x, ++offset) {
+		const float inv = static_cast<float>(xPixelCount * yPixelCount / *numberOfSamples_);
+		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
 				color[offset] = pixel.L * inv;
 				if (pixel.weightSum > 0.f)
@@ -257,10 +257,10 @@ public:
 			}
 		}
 	}
-	virtual float GetData(int x, int y, XYZColor *color, float *alpha) const {
+	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum > 0.f) {
-			*color = pixel.L * (xPixelCount * yPixelCount / *numberOfSamples_);
+			*color = pixel.L * static_cast<float>(xPixelCount * yPixelCount / *numberOfSamples_);
 			*alpha = pixel.alpha;
 		} else {
 			*color = XYZColor(0.f);
@@ -276,14 +276,14 @@ private:
 class BufferGroup {
 public:
 	BufferGroup(const string &n) : numberOfSamples(0.f), name(n),
-		enable(true), globalScale(1.f), temperature(0.f),
-		rgbScale(1.f), scale(1.f) { }
+		globalScale(1.f), temperature(0.f),
+		rgbScale(1.f), scale(1.f), enable(true) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
 			delete *buffer;
 	}
 
-	void CreateBuffers(const vector<BufferConfig> &configs, int x, int y) {
+	void CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y) {
 		for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
 			switch ((*config).type) {
 			case BUF_TYPE_PER_PIXEL:
@@ -301,16 +301,16 @@ public:
 		}
 	}
 
-	Buffer *getBuffer(int index) const {
+	Buffer *getBuffer(u_int index) const {
 		return buffers[index];
 	}
 	double numberOfSamples;
 	vector<Buffer *> buffers;
 	string name;
-	bool enable;
 	float globalScale, temperature;
 	RGBColor rgbScale;
 	XYZColor scale;
+	bool enable;
 };
 
 // GREYCStoration Noise Reduction Filter Parameter structure
@@ -335,9 +335,9 @@ public:
 		threads = 1;		     // Number of threads used
 	}
 
-	bool enabled, fast_approx;
 	unsigned int nb_iter, interp, tile, btile, threads;
 	float amplitude, sharpness, anisotropy, alpha, sigma, gauss_prec, dl, da;
+	bool enabled, fast_approx;
 };
 
 // Chiu Noise Reduction Filter Parameter structure
@@ -350,8 +350,8 @@ public:
 		includecenter = false;	 // 
 	}
 
+	float radius;
 	bool enabled, includecenter;
-	double radius;
 };
 
 
@@ -364,9 +364,9 @@ public:
 	void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 private:
 	void CheckBucketNr();
-	int m_bucketNr, m_newBucketNr;
+	u_int m_bucketNr, m_newBucketNr;
 	float *m_buckets;
-	int m_zones[11];
+	u_int m_zones[11];
 	float m_lowRange, m_highRange, m_bucketSize;
 	float m_displayGamma;
 	boost::mutex m_mutex;
@@ -377,11 +377,11 @@ class Film {
 public:
 	// Film Interface
 
-	Film(int xres, int yres, int haltspp) :
-		xResolution(xres), yResolution(yres), EV(0.f),
-		haltSamplePerPixel(haltspp), enoughSamplePerPixel(false),
-		scene(NULL), histogram(NULL) {
-		samplePerPass = (double)xResolution * (double)yResolution;
+	Film(u_int xres, u_int yres, int haltspp) :
+		xResolution(xres), yResolution(yres),
+		haltSamplePerPixel(haltspp), EV(0.f),
+		scene(NULL), histogram(NULL), enoughSamplePerPixel(false) {
+		samplePerPass = xResolution * yResolution;
 	}
 	virtual ~Film() { delete histogram; }
 	virtual void AddSample(Contribution *contrib) = 0;
@@ -390,11 +390,11 @@ public:
 	virtual void WriteFilm(const string &filename) = 0;
 	// Dade - method useful for transmitting the samples to a client
 	virtual void TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false) = 0;
-	virtual float UpdateFilm(std::basic_istream<char> &stream) = 0;
+	virtual double UpdateFilm(std::basic_istream<char> &stream) = 0;
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
 
 	virtual void RequestBufferGroups(const vector<string> &bg) = 0;
-	virtual int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) = 0;
+	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) = 0;
 
 	virtual void CreateBuffers() { }
 	virtual u_int GetNumBufferConfigs() const = 0;
@@ -411,39 +411,39 @@ public:
 	virtual float GetGroupTemperature(u_int index) const = 0;
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
-	virtual float getldrDisplayInterval() = 0;
-	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
+	virtual int getldrDisplayInterval() = 0;
+	void getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
 
 	void SetScene(Scene *scene1) { scene = scene1; }
 
 	// Parameter Access functions
-	virtual void SetParameterValue(luxComponentParameters param, double value, int index) = 0;
-	virtual double GetParameterValue(luxComponentParameters param, int index) = 0;
-	virtual double GetDefaultParameterValue(luxComponentParameters param, int index) = 0;
-	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, int index) = 0;
-	virtual string GetStringParameterValue(luxComponentParameters param, int index) = 0;
+	virtual void SetParameterValue(luxComponentParameters param, double value, u_int index) = 0;
+	virtual double GetParameterValue(luxComponentParameters param, u_int index) = 0;
+	virtual double GetDefaultParameterValue(luxComponentParameters param, u_int index) = 0;
+	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
+	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+public:
 	// Film Public Data
-	int xResolution, yResolution;
-	float EV;
+	u_int xResolution, yResolution;
 
+protected: // Put it here for better data alignment
+	// Dade - (xResolution * yResolution)
+	double samplePerPass;
+
+public:
 	// Dade - Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop
 	int haltSamplePerPixel;
-	bool enoughSamplePerPixel;
-
+	float EV;
 	Scene *scene;
-
 	Histogram *histogram;
-
-protected:
-	// Dade - (xResolution * yResolution)
-	double samplePerPass;
+	bool enoughSamplePerPixel; // At the end to get better data alignment
 };
 
 // Image Pipeline Declarations
 void ApplyImagingPipeline(vector<XYZColor> &pixels,
-	int xResolution, int yResolution, 
+	u_int xResolution, u_int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,
@@ -451,7 +451,7 @@ void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	bool VignettingEnabled, float VignetScale,
 	bool aberrationEnabled, float aberrationAmount,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
-	float glareAmount, float glareRadius, int glareBlades,
+	float glareAmount, float glareRadius, u_int glareBlades,
 	const char *tonemap, const ParamSet *toneMapParams, float gamma,
 	float dither);
 

@@ -100,8 +100,8 @@ template<class T> void osWriteLittleEndian(bool isLittleEndian,
 		} f;
 		f.value = value;
 
-		for (unsigned int i = sizeof(T) - 1; i >= 0; --i)
-			os.write(f.bytes + i, 1);
+		for (const char *c = f.bytes + sizeof(T) - 1; c >= f.bytes; --c)
+			os.write(c, 1);
 	}
 }
 
@@ -115,8 +115,8 @@ template<class T> T osReadLittleEndian(bool isLittleEndian,
 	if (isLittleEndian) {
 		is.read(reinterpret_cast<char *>(&f.value), sizeof(T));
 	} else {
-		for (unsigned int i = sizeof(T) - 1; i >= 0; --i)
-			is.read(f.bytes + i, 1);
+		for (char *c = f.bytes + sizeof(T) - 1; c >= f.bytes; --c)
+			is.read(c, 1);
 	}
 	return f.value;
 }

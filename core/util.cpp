@@ -184,15 +184,16 @@ void StatsPrint(FILE *dest) {
 		}
 		fprintf(dest, "    %s", tr->name.c_str());
 		// Pad out to results column
-		int resultsColumn = 56;
-		int paddingSpaces = resultsColumn - (int) tr->name.size();
+		u_int resultsColumn = 56;
+		u_int paddingSpaces = resultsColumn - tr->name.size();
 		while (paddingSpaces-- > 0)
 			putc(' ', dest);
 		if (tr->ptrb == NULL)
 			StatsPrintVal(dest, *tr->ptra);
 		else {
 			if (*tr->ptrb > 0) {
-				float ratio = (float)*tr->ptra / (float)*tr->ptrb;
+				float ratio = static_cast<float>(*tr->ptra) /
+					static_cast<float>(*tr->ptrb);
 				StatsPrintVal(dest, *tr->ptra, *tr->ptrb);
 				if (tr->percentage)
 					fprintf(dest, " (%3.2f%%)", 100. * ratio);
@@ -210,7 +211,7 @@ static void StatsPrintVal(FILE *f, StatsCounterType v) {
 	if (v > 1e9) fprintf(f, "%.3fB", v / 1e9f);
 	else if (v > 1e6) fprintf(f, "%.3fM", v / 1e6f);
 	else if (v > 1e4) fprintf(f, "%.1fk", v / 1e3f);
-	else fprintf(f, "%.0f", (float)v);
+	else fprintf(f, "%.0f", v);
 }
 static void StatsPrintVal(FILE *f, StatsCounterType v1,
 		StatsCounterType v2) {
@@ -233,33 +234,33 @@ void StatsCleanup() {
 }
 
 // ProgressReporter Method Definitions
-ProgressReporter::ProgressReporter(int totalWork, const string &title, int bar_length)
+ProgressReporter::ProgressReporter(u_int totalWork, const string &title, u_int bar_length)
 	: totalPlusses(bar_length - title.size()) {
 	plussesPrinted = 0;
-	frequency = (float)totalWork / (float)totalPlusses;
+	frequency = static_cast<float>(totalWork) / static_cast<float>(totalPlusses);
 	count = frequency;
 	timer = new Timer();
 	timer->Start();
 	outFile = stdout;
 	// Initialize progress string
-	const int bufLen = title.size() + totalPlusses + 64;
+	const u_int bufLen = title.size() + totalPlusses + 64;
 	buf = new char[bufLen];
 	snprintf(buf, bufLen, "\r%s: [", title.c_str());
 	curSpace = buf + strlen(buf);
 	char *s = curSpace;
-	for (int i = 0; i < totalPlusses; ++i)
+	for (u_int i = 0; i < totalPlusses; ++i)
 		*s++ = ' ';
 	*s++ = ']';
 	*s++ = ' ';
 	*s++ = '\0';
-	fwrite(buf, sizeof(char), bufLen, outFile);
+	fputs(buf, outFile);
 	fflush(outFile);
 }
 ProgressReporter::~ProgressReporter() { delete[] buf; delete timer; }
-void ProgressReporter::Update(int num) const {
-	count -= num;
+void ProgressReporter::Update(u_int num) const {
+	count -= static_cast<float>(num);
 	bool updatedAny = false;
-	while (count <= 0) {
+	while (count <= 0.f) {
 		count += frequency;
 		if (plussesPrinted++ < totalPlusses)
 			*curSpace++ = '+';
@@ -268,8 +269,9 @@ void ProgressReporter::Update(int num) const {
 	if (updatedAny) {
 		fputs(buf, outFile);
 		// Update elapsed time and estimated time to completion
-		float percentDone = (float)plussesPrinted / (float)totalPlusses;
-		float seconds = (float) timer->Time();
+		float percentDone = static_cast<float>(plussesPrinted) /
+			static_cast<float>(totalPlusses);
+		float seconds = static_cast<float>(timer->Time());
 		float estRemaining = seconds / percentDone - seconds;
 		if (percentDone == 1.f)
 			fprintf(outFile, " (%.1fs)       ", seconds);
@@ -282,7 +284,7 @@ void ProgressReporter::Done() const {
 	while (plussesPrinted++ < totalPlusses)
 		*curSpace++ = '+';
 	fputs(buf, outFile);
-	float seconds = (float) timer->Time();
+	float seconds = static_cast<float>(timer->Time());
 	fprintf(outFile, " (%.1fs)       \n", seconds);
 	fflush(outFile);
 }
@@ -298,7 +300,7 @@ unsigned int DJBHash(const std::string& str)
 
    for(std::size_t i = 0; i < str.length(); i++)
    {
-      hash = ((hash << 5) + hash) + str[i];
+      hash = ((hash << 5) + hash) + static_cast<unsigned int>(str[i]);
    }
 
    return hash;

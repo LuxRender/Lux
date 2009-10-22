@@ -34,10 +34,10 @@ public:
 	// LDSampler Public Methods
 	LDSampler(int xstart, int xend,
 	          int ystart, int yend,
-			  int nsamp, string pixelsampler);
+			  u_int nsamp, string pixelsampler);
 	virtual ~LDSampler();
 
-	virtual int RoundSize(int size) const {
+	virtual u_int RoundSize(u_int size) const {
 		return RoundUpPow2(size);
 	}
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
@@ -49,12 +49,12 @@ public:
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
 	// LDSampler Private Data
-	int xPos, yPos, pixelSamples;
-	int samplePos;
+	int xPos, yPos;
+	u_int pixelSamples, samplePos;
 	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
 		*singleWavelengthSamples;
 	float **oneDSamples, **twoDSamples, **xDSamples;
-	int n1D, n2D, nxD;
+	u_int n1D, n2D, nxD;
 	u_int TotalPixels;
 	PixelSampler* pixelSampler;
 };

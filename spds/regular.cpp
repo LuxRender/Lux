@@ -26,18 +26,17 @@
 
 using namespace lux;
 
-void RegularSPD::init(float lMin, float lMax, const float* const s, int n) {
-  lambdaMin = lMin;
-  lambdaMax = lMax;
-  delta = (lambdaMax - lambdaMin) / (n-1);
-  invDelta = 1.f / delta;
-  nSamples = n;
+void RegularSPD::init(float lMin, float lMax, const float* const s, u_int n) {
+	lambdaMin = lMin;
+	lambdaMax = lMax;
+	delta = (lambdaMax - lambdaMin) / (n - 1);
+	invDelta = 1.f / delta;
+	nSamples = n;
 
-  AllocateSamples(n);
+	AllocateSamples(n);
 
-  // Copy samples
-  for (int i = 0; i < n; i++)
-    samples[i] = s[i];
-
+	// Copy samples
+	for (u_int i = 0; i < n; ++i)
+		samples[i] = s[i];
 }
 

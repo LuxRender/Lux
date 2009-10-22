@@ -30,10 +30,10 @@ using namespace lux;
 // IrregularDataTexture Method Definitions
 Texture<float> * IrregularDataTexture::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	int wlCount = 0;
+	u_int wlCount = 0;
 	// Dade - unused parameter
 	/*const float *wl =*/ tp.FindFloats("wavelengths", &wlCount);
-	int dataCount = 0;
+	u_int dataCount = 0;
 	// Dade - unused parameter
 	/*const float *data =*/ tp.FindFloats("data", &dataCount);
 	if(wlCount != dataCount) {
@@ -50,9 +50,9 @@ Texture<float> * IrregularDataTexture::CreateFloatTexture(const Transform &tex2w
 
 Texture<SWCSpectrum> * IrregularDataTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	int wlCount = 0;
+	u_int wlCount = 0;
 	const float *wl = tp.FindFloats("wavelengths", &wlCount);
-	int dataCount = 0;
+	u_int dataCount = 0;
 	const float *data = tp.FindFloats("data", &dataCount);
 	if(wlCount != dataCount) {
 		std::stringstream ss;

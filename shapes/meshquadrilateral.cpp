@@ -94,23 +94,23 @@ bool MeshQuadrilateral::IsConvex(const Point &p0, const Point &p1, const Point &
 	e[3] = p0 - p3;
 
 	// project edges onto the plane
-	for (int i = 0; i < 4; i++)
+	for (u_int i = 0; i < 4; ++i)
 		e[i] = Vector(Dot(e[i], b0), Dot(e[i], b1), 0);
 
 	// in a convex polygon, the x values should alternate between
 	// increasing and decreasing exactly twice
-	int altCount = 0;
+	u_int altCount = 0;
 	int curd, prevd;
 
 	// since b0 is constructed from the same edge as e0
 	// it's x component will always be positive (|e0| is always > 0)
 	// this is just a boot-strap, hence i=1..4 below
 	curd = 1;
-	for (int i = 1; i <= 4; i++) {
+	for (u_int i = 1; i <= 4; ++i) {
 		prevd = curd;
 		// if x component of edge is zero, we simply ignore it by
 		// using the previous direction
-		curd = (e[i & 3].x < 1e-6) ? (e[i & 3].x > -1e-6f ? prevd : -1) : 1;
+		curd = (e[i & 3].x < 1e-6f) ? (e[i & 3].x > -1e-6f ? prevd : -1) : 1;
 		altCount += prevd != curd ? 1 : 0;
 	}
 
@@ -123,8 +123,8 @@ bool MeshQuadrilateral::IsConvex(const Point &p0, const Point &p1, const Point &
 	int curs, prevs;
 	altCount = 0;
 
-	curs = (Cross(e[1], e[0]).z < 0) ? -1 : 1;
-	for (int i = 1; i < 4; i++) {
+	curs = (Cross(e[1], e[0]).z < 0.f) ? -1 : 1;
+	for (u_int i = 1; i < 4; i++) {
 		prevs = curs;
 		curs = (Cross(e[(i + 1) & 3], e[i]).z < 0) ? -1 : 1;
 		altCount += prevs != curs ? 1 : 0;
@@ -133,7 +133,7 @@ bool MeshQuadrilateral::IsConvex(const Point &p0, const Point &p1, const Point &
 	return altCount == 0;
 }
 
-int MeshQuadrilateral::MajorAxis(const Vector &v) {
+u_int MeshQuadrilateral::MajorAxis(const Vector &v) {
 	float absVx = fabsf(v.x);
 	float absVy = fabsf(v.y);
 	float absVz = fabsf(v.z);
@@ -147,7 +147,7 @@ void MeshQuadrilateral::ComputeV11BarycentricCoords(const Vector &e01,
 	const Vector &e02, const Vector &e03, float *a11, float *b11) {
 		const Vector N = Cross(e01, e03);
 
-	int Nma = MajorAxis(N);
+	u_int Nma = MajorAxis(N);
 
 	switch (Nma) {
 		case 0: {
@@ -177,14 +177,14 @@ void MeshQuadrilateral::ComputeV11BarycentricCoords(const Vector &e01,
 }
 
 //------------------------------------------------------------------------------
-MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, int n)
+MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 	: mesh(m), idx(&(mesh->quadVertexIndex[4 * n]))
 {
 	// LordCrc - check for problematic quads
 	const Point &p0 = mesh->WorldToObject(mesh->p[idx[0]]);
-    const Point &p1 = mesh->WorldToObject(mesh->p[idx[1]]);
-    const Point &p2 = mesh->WorldToObject(mesh->p[idx[2]]);
-    const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
+	const Point &p1 = mesh->WorldToObject(mesh->p[idx[1]]);
+	const Point &p2 = mesh->WorldToObject(mesh->p[idx[2]]);
+	const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
 
 	if (IsDegenerate(p0, p1, p2, p3)) {
 		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Degenerate quadrilateral detected").c_str());
@@ -203,7 +203,7 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, int n)
 		return;
 
 	// Dade - reorder the vertices if required
-	for(int i = 0; i < 4; i++) {
+	for(u_int i = 0; i < 4; i++) {
 		// Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
 		const Point &p00 = mesh->p[idx[0]];
 		const Point &p10 = mesh->p[idx[1]];
@@ -245,13 +245,13 @@ BBox MeshQuadrilateral::ObjectBound() const {
 		return BBox();
 
 	// Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
-    const Point &p0 = mesh->p[idx[0]];
-    const Point &p1 = mesh->p[idx[1]];
-    const Point &p2 = mesh->p[idx[2]];
-    const Point &p3 = mesh->p[idx[3]];
+	const Point &p0 = mesh->p[idx[0]];
+	const Point &p1 = mesh->p[idx[1]];
+	const Point &p2 = mesh->p[idx[2]];
+	const Point &p3 = mesh->p[idx[3]];
 
 	return Union(BBox(mesh->WorldToObject(p0), mesh->WorldToObject(p1)),
-            BBox(mesh->WorldToObject(p2), mesh->WorldToObject(p3)));
+		BBox(mesh->WorldToObject(p2), mesh->WorldToObject(p3)));
 }
 
 BBox MeshQuadrilateral::WorldBound() const {
@@ -260,12 +260,12 @@ BBox MeshQuadrilateral::WorldBound() const {
 		return BBox();
 
 	// Get quadrilateral vertices in _p0_, _p1_, _p2_, and _p3_
-    const Point &p0 = mesh->p[idx[0]];
-    const Point &p1 = mesh->p[idx[1]];
-    const Point &p2 = mesh->p[idx[2]];
-    const Point &p3 = mesh->p[idx[3]];
+	const Point &p0 = mesh->p[idx[0]];
+	const Point &p1 = mesh->p[idx[1]];
+	const Point &p2 = mesh->p[idx[2]];
+	const Point &p3 = mesh->p[idx[3]];
 
-    return Union(BBox(p0, p1), BBox(p2, p3));
+	return Union(BBox(p0, p1), BBox(p2, p3));
 }
 
 bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
@@ -278,11 +278,11 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 	if (!idx)
 		return false;
 
-    // Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
-    const Point &p00 = mesh->p[idx[0]];
-    const Point &p10 = mesh->p[idx[1]];
-    const Point &p11 = mesh->p[idx[2]];
-    const Point &p01 = mesh->p[idx[3]];
+	// Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
+	const Point &p00 = mesh->p[idx[0]];
+	const Point &p10 = mesh->p[idx[1]];
+	const Point &p11 = mesh->p[idx[2]];
+	const Point &p01 = mesh->p[idx[3]];
 
 	// Reject rays using the barycentric coordinates of
 	// the intersection point with respect to T.
@@ -290,19 +290,19 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 	const Vector e03 = p01 - p00;
 	const Vector P = Cross(ray.d, e03);
 	float det = Dot(e01, P);
-	if (fabsf(det) < 1e-7)
+	if (fabsf(det) < 1e-7f)
 		return false;
 
 	float invdet = 1.f / det;
 
 	const Vector T = ray.o - p00;
 	float alpha = Dot(T, P) * invdet;
-	if (alpha < 0)// || alpha > 1)
+	if (alpha < 0.f)// || alpha > 1)
 		return false;
 
 	const Vector Q = Cross(T, e01);
 	float beta = Dot(ray.d, Q) * invdet;
-	if (beta < 0)// || beta > 1)
+	if (beta < 0.f)// || beta > 1)
 		return false;
 
 	// Reject rays using the barycentric coordinates of
@@ -317,14 +317,14 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 		//float invdet2 = 1.f / det2;
 		// since we only reject if alpha or beta < 0
 		// we just need the sign info from det2
-		float invdet2 = (det2 < 0) ? -1 : 1;
+		float invdet2 = (det2 < 0) ? -1.f : 1.f;
 		const Vector T2 = ray.o - p11;
 		float alpha2 = Dot(T2, P2) * invdet2;
-		if (alpha2 < 0)
+		if (alpha2 < 0.f)
 			return false;
 		const Vector Q2 = Cross(T2, e23);
 		float beta2 = Dot(ray.d, Q2) * invdet2;
-		if (beta2 < 0)
+		if (beta2 < 0.f)
 			return false;
 	}
 
@@ -361,7 +361,7 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 		float C = alpha;
 
 		Quadratic(A, B, C, &u, &v);
-		if ((u < 0) || (u > 1))
+		if ((u < 0.f) || (u > 1.f))
 			u = v;
 
 		v = beta / (u * b11 + 1.f);
@@ -377,19 +377,19 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 
 	A[0][0] = uv[1][0] - uv[0][0];
 	A[0][1] = uv[1][1] - uv[0][1];
-	A[0][2] = uv[1][0]*uv[1][1] - uv[0][0]*uv[0][1];
+	A[0][2] = uv[1][0] * uv[1][1] - uv[0][0] * uv[0][1];
 	A[1][0] = uv[2][0] - uv[0][0];
 	A[1][1] = uv[2][1] - uv[0][1];
-	A[1][2] = uv[2][0]*uv[2][1] - uv[0][0]*uv[0][1];
+	A[1][2] = uv[2][0] * uv[2][1] - uv[0][0] * uv[0][1];
 	A[2][0] = uv[3][0] - uv[0][0];
 	A[2][1] = uv[3][1] - uv[0][1];
-	A[2][2] = uv[3][0]*uv[3][1] - uv[0][0]*uv[0][1];
+	A[2][2] = uv[3][0] * uv[3][1] - uv[0][0] * uv[0][1];
 
 	// invert matrix
 	if (!Invert3x3(A, InvA)) {
-        // Handle zero determinant for quadrilateral partial derivative matrix
+		// Handle zero determinant for quadrilateral partial derivative matrix
 		Vector N = Cross(e01, e02);
-        CoordinateSystem(Normalize(N), &dpdu, &dpdv);
+		CoordinateSystem(Normalize(N), &dpdu, &dpdv);
 	} else {
 		dpdu = Vector(
 			InvA[0][0] * e01.x + InvA[0][1] * e02.x + InvA[0][2] * e03.x,
@@ -401,25 +401,15 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 			InvA[1][0] * e01.z + InvA[1][1] * e02.z + InvA[1][2] * e03.z);
 	}
 
-	// Dade - using the intepolated normal here in order to fix bug #340
-	Normal nn;
-	if (mesh->n)
-		nn = Normalize(mesh->ObjectToWorld(
-				((1.0f - u) * (1.0f - v)) * mesh->n[idx[0]] +
-				(u * (1.0f - v)) * mesh->n[idx[1]] +
-				(u * v) * mesh->n[idx[2]] +
-				((1.0f - u) * v) * mesh->n[idx[3]]));
-	else {
-		Vector N = Cross(e01, e02);
-		nn = Normal(Normalize(N));
-	}
+	Vector N = Cross(e01, e02);
+	Normal nn(Normal(Normalize(N)));
 
-	if(isect) {
+	if (isect) {
 		isect->dg = DifferentialGeometry(ray(t),
-				nn,
-				dpdu, dpdv,
-				Normal(0, 0, 0), Normal(0, 0, 0),
-				u, v, this);
+			nn,
+			dpdu, dpdv,
+			Normal(0, 0, 0), Normal(0, 0, 0),
+			u, v, this);
 		isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
 		isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
 		ray.maxt = t;
@@ -438,9 +428,9 @@ float MeshQuadrilateral::Area() const {
 		return 0.f;
 
 	// assumes convex quadrilateral
-    const Point &p0 = mesh->p[idx[0]];
-    const Point &p1 = mesh->p[idx[1]];
-    const Point &p3 = mesh->p[idx[3]];
+	const Point &p0 = mesh->p[idx[0]];
+	const Point &p1 = mesh->p[idx[1]];
+	const Point &p3 = mesh->p[idx[3]];
 
 	Vector P = p1 - p0;
 	Vector Q = p3 - p1;
@@ -451,12 +441,12 @@ float MeshQuadrilateral::Area() const {
 }
 
 void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
-		const DifferentialGeometry &dg,
-		DifferentialGeometry *dgShading) const
+	const DifferentialGeometry &dg,
+	DifferentialGeometry *dgShading) const
 {
 	if (!mesh->n) {
 		*dgShading = dg;
-		if(!mesh->uvs) {
+		if (!mesh->uvs) {
 			// Lotus - the length of dpdu/dpdv can be important for bumpmapping
 			const BBox bounds = MeshQuadrilateral::WorldBound();
 			int maxExtent = bounds.MaximumExtent();
@@ -468,17 +458,20 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	// Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and _ts_
-	Normal ns = dg.nn;
+	Normal ns(Normalize(mesh->ObjectToWorld(
+		((1.0f - dg.u) * (1.0f - dg.v)) * mesh->n[idx[0]] +
+		(dg.u * (1.0f - dg.v)) * mesh->n[idx[1]] +
+		(dg.u * dg.v) * mesh->n[idx[2]] +
+		((1.0f - dg.u) * dg.v) * mesh->n[idx[3]])));
 	float lenDpDu = dg.dpdu.Length();
 	float lenDpDv = dg.dpdv.Length();
 	Vector ts = Normalize(Cross(dg.dpdu, ns));
 	Vector ss = Cross(ts, ns);
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
-	if(mesh->uvs) {
+	if (mesh->uvs) {
 		ss *= lenDpDu;
 		ts *= lenDpDv;
-	}
-	else {
+	} else {
 		const BBox bounds = MeshQuadrilateral::WorldBound();
 		int maxExtent = bounds.MaximumExtent();
 		float maxSize = bounds.pMax[maxExtent] - bounds.pMin[maxExtent];
@@ -532,11 +525,11 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	*dgShading = DifferentialGeometry(
-			dg.p,
-			ns,
-			ss, ts,
-			dndu, dndv,
-			dg.u, dg.v, this);
+		dg.p,
+		ns,
+		ss, ts,
+		dndu, dndv,
+		dg.u, dg.v, this);
 
 	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
 	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;

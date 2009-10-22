@@ -115,7 +115,7 @@ InfiniteAreaLight::~InfiniteAreaLight() {
 	delete mapping;
 }
 InfiniteAreaLight
-	::InfiniteAreaLight(const Transform &light2world, const RGBColor &l, int ns, const string &texmap, EnvironmentMapping *m, float gain, float gamma)
+	::InfiniteAreaLight(const Transform &light2world, const RGBColor &l, u_int ns, const string &texmap, EnvironmentMapping *m, float gain, float gamma)
 	: Light(light2world, ns) {
 	radianceMap = NULL;
 	if (texmap != "") {
@@ -186,7 +186,7 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene, cons
 			~0U, u3));
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, u3, &dg);
 			Vector w(dg.p - ps);
 			if (Dot(w, dg.nn) > 0.f) {
@@ -225,14 +225,14 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 					 v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
 	} else {
 	    // Sample Portal
-		int shapeidx = 0;
+		u_int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = min<float>(nrPortalShapes - 1, u3 * nrPortalShapes);
+			shapeidx = min(nrPortalShapes - 1U, Floor2UInt(u3 * nrPortalShapes));
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
 		Point ps;
 		bool found = false;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &dg);
 			ps = dg.p;
 			*wi = Normalize(ps - p);
@@ -268,7 +268,7 @@ float InfiniteAreaLight::Pdf(const Point &p, const Normal &n,
 		return AbsDot(n, wi) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
 	} else {
 		float pdf = 0.f;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(p, wi);
 			ray.mint = -INFINITY;
@@ -288,14 +288,14 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		*pdf = UniformSpherePdf();
 	} else {
 	    // Sample a random Portal
-		int shapeidx = 0;
+		u_int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = min<float>(nrPortalShapes - 1, u3 * nrPortalShapes);
+			shapeidx = min(nrPortalShapes - 1U, Floor2UInt(u3 * nrPortalShapes));
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
 		Point ps;
 		bool found = false;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &dg);
 			ps = dg.p;
 			*wi = Normalize(ps - p);
@@ -345,10 +345,10 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 	} else {
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
-		int shapeidx = 0;
+		u_int shapeidx = 0;
 		if(nrPortalShapes > 1) 
-			shapeidx = min<float>(nrPortalShapes - 1,
-					Floor2Int(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
+			shapeidx = min(nrPortalShapes - 1,
+					Floor2UInt(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
@@ -378,9 +378,9 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
-		int shapeIndex = 0;
+		u_int shapeIndex = 0;
 		if (nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
+			shapeIndex = min(nrPortalShapes - 1U, Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -401,7 +401,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, InfinitePortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3));
 		*pdf = AbsDot(ns, wi) / (distance * distance);
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i != shapeIndex) {
 				PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
 				wi = ps - dgs.p;
@@ -421,7 +421,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
-	int shapeIndex = 0;
+	u_int shapeIndex = 0;
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
@@ -442,7 +442,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 	} else {
 		// Sample a random Portal
 		if(nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3 * nrPortalShapes));
+			shapeIndex = min(nrPortalShapes - 1, Floor2UInt(u3 * nrPortalShapes));
 			u3 *= nrPortalShapes;
 			u3 -= shapeIndex;
 		}
@@ -478,7 +478,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
 		dgs.time = tspack->time;
-		for (int i = 0; i < nrPortalShapes; ++i) {
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, u3, &dgs);
 			Vector w(ps - dgs.p);
 			if (Dot(wi, dg.nn) < 0.f) {

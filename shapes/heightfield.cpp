@@ -28,7 +28,7 @@
 using namespace lux;
 
 // Heightfield Method Definitions
-Heightfield::Heightfield(const Transform &o2w, bool ro, int x, int y,
+Heightfield::Heightfield(const Transform &o2w, bool ro, u_int x, u_int y,
 		const float *zs)
 	: Shape(o2w, ro) {
 	nx = x;
@@ -41,7 +41,7 @@ Heightfield::~Heightfield() {
 }
 BBox Heightfield::ObjectBound() const {
 	float minz = z[0], maxz = z[0];
-	for (int i = 1; i < nx*ny; ++i) {
+	for (u_int i = 1; i < nx*ny; ++i) {
 		if (z[i] < minz) minz = z[i];
 		if (z[i] > maxz) maxz = z[i];
 	}
@@ -51,28 +51,26 @@ bool Heightfield::CanIntersect() const {
 	return false;
 }
 void Heightfield::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-	int ntris = 2*(nx-1)*(ny-1);
-	refined.reserve(ntris);
-	int *verts = new int[3*ntris];
-	Point *P = new Point[nx*ny];
-	float *uvs = new float[2*nx*ny];
-	int nverts = nx*ny;
-	int x, y;
+	const u_int nVerts = nx * ny;
+	Point *P = new Point[nVerts];
+	float *uvs = new float[2 * nVerts];
 	// Compute heightfield vertex positions
-	int pos = 0;
-	for (y = 0; y < ny; ++y) {
-		for (x = 0; x < nx; ++x) {
-			P[pos].x = uvs[2*pos]   = (float)x / (float)(nx-1);
-			P[pos].y = uvs[2*pos+1] = (float)y / (float)(ny-1);
+	u_int pos = 0;
+	for (u_int y = 0; y < ny; ++y) {
+		for (u_int x = 0; x < nx; ++x) {
+			P[pos].x = uvs[2 * pos]   = static_cast<float>(x) / static_cast<float>(nx - 1);
+			P[pos].y = uvs[2 * pos + 1] = static_cast<float>(y) / static_cast<float>(ny - 1);
 			P[pos].z = z[pos];
 			++pos;
 		}
 	}
 	// Fill in heightfield vertex offset array
+	const u_int nTris = 2 * (nx - 1) * (ny - 1);
+	int *verts = new int[3 * nTris];
 	int *vp = verts;
-	for (y = 0; y < ny-1; ++y) {
-		for (x = 0; x < nx-1; ++x) {
-	#define VERT(x,y) ((x)+(y)*nx)
+	for (u_int y = 0; y < ny - 1; ++y) {
+		for (u_int x = 0; x < nx - 1; ++x) {
+	#define VERT(x,y) static_cast<int>((x) + (y) * nx)
 			*vp++ = VERT(x, y);
 			*vp++ = VERT(x+1, y);
 			*vp++ = VERT(x+1, y+1);
@@ -84,9 +82,10 @@ void Heightfield::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	#undef VERT
 	}
 	ParamSet paramSet;
-	paramSet.AddInt("indices", verts, 3*ntris);
-	paramSet.AddFloat("uv", uvs, 2 * nverts);
-	paramSet.AddPoint("P", P, nverts);
+	paramSet.AddInt("indices", verts, 3 * nTris);
+	paramSet.AddFloat("uv", uvs, 2 * nVerts);
+	paramSet.AddPoint("P", P, nVerts);
+	refined.reserve(nTris);
 	refined.push_back(MakeShape("trianglemesh",
 			ObjectToWorld, reverseOrientation, paramSet));
 	delete[] P;
@@ -95,11 +94,13 @@ void Heightfield::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 }
 Shape* Heightfield::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
-	int nu = params.FindOneInt("nu", -1);
-	int nv = params.FindOneInt("nv", -1);
-	int nitems;
-	const float *Pz = params.FindFloat("Pz", &nitems);
-	BOOST_ASSERT(nitems == nu*nv);
+	int nu = params.FindOneInt("nu", 0);
+	int nv = params.FindOneInt("nv", 0);
+	u_int nItems;
+	const float *Pz = params.FindFloat("Pz", &nItems);
+	if (nu <= 0 || nv <= 0 || nItems != static_cast<u_int>(nu * nv))
+		return NULL;
+	BOOST_ASSERT(nItems == static_cast<u_int>(nu*nv));
 	BOOST_ASSERT(nu != -1 && nv != -1 && Pz != NULL);
 	return new Heightfield(o2w, reverseOrientation, nu, nv, Pz);
 }

@@ -118,14 +118,14 @@ static void printInfoThread()
 		boost::thread::sleep(xt);
 
 		boost::posix_time::time_duration td(0, 0,
-			(int) luxStatistics("secElapsed"), 0);
+			static_cast<int>(luxStatistics("secElapsed")), 0);
 
-		int sampleSec = (int)luxStatistics("samplesSec");
+		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
 		// Dade - print only if we are rendering something
 		if (sampleSec > 0) {
 			stringstream ss;
 			ss << td << "  " << sampleSec << " samples/sec " << " "
-				<< (float) luxStatistics("samplesPx") << " samples/pix";
+				<< luxStatistics("samplesPx") << " samples/pix";
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		}
 	}
@@ -184,10 +184,10 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 		char buf[64];
 		if (tmpFileList.size())
 			snprintf(buf, 64, "%5s_%08u%s", tmpFileList[0].c_str(),
-				(u_int)tmpFileList.size(), fileExt.c_str());
+				tmpFileList.size(), fileExt.c_str());
 		else
 			snprintf(buf, 64, "00000_%08u%s",
-				(u_int)tmpFileList.size(), fileExt.c_str());
+				tmpFileList.size(), fileExt.c_str());
 		string file = string(buf);
 
 		// Dade - replace the filename parameter
@@ -346,7 +346,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 		CMD_SPACE = 177605U,
 		CMD_MOTIONINSTANCE = 4223946185U;
 
-	int listenPort = serverThread->renderServer->tcpPort;
+	const int listenPort = serverThread->renderServer->tcpPort;
 	stringstream ss;
 	ss << "Launching server [" << serverThread->renderServer->threadCount <<
 		" threads] mode on port '" << listenPort << "'.";
