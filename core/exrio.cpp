@@ -240,72 +240,81 @@ namespace lux {
 	}
 
     ImageData *ReadImage(const string &name) {
-        boost::filesystem::path imagePath(name);
-        if (!boost::filesystem::exists(imagePath)) {
-            std::stringstream ss;
-            ss << "Unable to open image file '" << imagePath.string() << "'";
-            luxError(LUX_NOFILE, LUX_ERROR, ss.str().c_str());
-            return NULL;
-        }
+		try {
+			boost::filesystem::path imagePath(name);
+			// boost::filesystem::exists() can throw an exception under Windows
+			// if the driver in imagePath doesn't exist
+			if (!boost::filesystem::exists(imagePath)) {
+				std::stringstream ss;
+				ss << "Unable to open image file '" << imagePath.string() << "'";
+				luxError(LUX_NOFILE, LUX_ERROR, ss.str().c_str());
+				return NULL;
+			}
 
-        std::string extension = boost::filesystem::extension(imagePath).substr(1);
-        //transform extension to lowercase
-#if defined(WIN32) && !defined(__CYGWIN__)
-        std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower);
-#else
-        std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower);
-#endif
+			std::string extension = boost::filesystem::extension(imagePath).substr(1);
+			//transform extension to lowercase
+	#if defined(WIN32) && !defined(__CYGWIN__)
+			std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower);
+	#else
+			std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower);
+	#endif
 
-        if (extension == "exr") {
-            ExrImageReader exrReader;
-            ImageData* data = exrReader.read(name);
-            data->setIsExrImage(true);
+			if (extension == "exr") {
+				ExrImageReader exrReader;
+				ImageData* data = exrReader.read(name);
+				data->setIsExrImage(true);
 
-			return data;
-        }
-        /*
-        The CImg Library can NATIVELY handle the following file formats :
-         * RAW : consists in a very simple header (in ascii), then the image data.
-         * ASC (Ascii)
-         * HDR (Analyze 7.5)
-         * INR (Inrimage)
-         * PPM/PGM (Portable Pixmap)
-         * BMP (uncompressed)
-         * PAN (Pandore-5)
-         * DLM (Matlab ASCII)*/
-        if ((extension == "raw") ||
-                (extension == "asc") ||
-                (extension == "hdr") ||
-                (extension == "inr") ||
-                (extension == "ppm") ||
-                (extension == "pgm") ||
-                (extension == "bmp") ||
-                (extension == "pan") ||
-                (extension == "dlm")) {
-            //StandardImageReader stdImageReader;
-            StandardImageReader<unsigned char> stdImageReader;
-            return stdImageReader.read(name);
-        }
-        // linked formats
-        if ((extension == "jpg") ||
-            (extension == "jpeg")) {
-            //StandardImageReader stdImageReader;
-            StandardImageReader<unsigned char> stdImageReader;
-            return stdImageReader.read(name);
-        }
-		// handle potential 16 bit image types separately
-		if((extension == "png") || 
-		   (extension == "tif") || (extension == "tiff") ||
-		   (extension == "tga") ) {
-            //StandardImageReader stdImageReader;
-            StandardImageReader<unsigned short> stdImageReader;
-            return stdImageReader.read(name);
-        }
+				return data;
+			}
+			/*
+			The CImg Library can NATIVELY handle the following file formats :
+			 * RAW : consists in a very simple header (in ascii), then the image data.
+			 * ASC (Ascii)
+			 * HDR (Analyze 7.5)
+			 * INR (Inrimage)
+			 * PPM/PGM (Portable Pixmap)
+			 * BMP (uncompressed)
+			 * PAN (Pandore-5)
+			 * DLM (Matlab ASCII)*/
+			if ((extension == "raw") ||
+					(extension == "asc") ||
+					(extension == "hdr") ||
+					(extension == "inr") ||
+					(extension == "ppm") ||
+					(extension == "pgm") ||
+					(extension == "bmp") ||
+					(extension == "pan") ||
+					(extension == "dlm")) {
+				//StandardImageReader stdImageReader;
+				StandardImageReader<unsigned char> stdImageReader;
+				return stdImageReader.read(name);
+			}
+			// linked formats
+			if ((extension == "jpg") ||
+				(extension == "jpeg")) {
+				//StandardImageReader stdImageReader;
+				StandardImageReader<unsigned char> stdImageReader;
+				return stdImageReader.read(name);
+			}
+			// handle potential 16 bit image types separately
+			if((extension == "png") ||
+			   (extension == "tif") || (extension == "tiff") ||
+			   (extension == "tga") ) {
+				//StandardImageReader stdImageReader;
+				StandardImageReader<unsigned short> stdImageReader;
+				return stdImageReader.read(name);
+			}
 
-        std::stringstream ss;
-        ss << "Cannot recognise file format for image '" << name << "'";
-        luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
-        return NULL;
+			std::stringstream ss;
+			ss << "Cannot recognise file format for image '" << name << "'";
+			luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+			return NULL;
+		} catch (const std::exception &e) {
+			std::stringstream ss;
+			ss << "Unable to read EXR image file '" << name << "': " << e.what();
+			luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+			return NULL;
+		}
     }
 
    void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf, int compressiontype, const string &name, vector<RGBColor> &pixels,
