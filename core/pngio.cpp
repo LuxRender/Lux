@@ -159,14 +159,14 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 		// 16 bit per channel
 		std::vector<png_uint_16> row(xPixelCount*4);
 
-		for (int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
+		for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
 		{
 			int i = 0;
 
 			switch (colorType) {
 				case PNG_COLOR_TYPE_GRAY:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 //							const RGBColor &c = pixels[(x + y * xResolution)];
 //							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
@@ -179,7 +179,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					break;
 				case PNG_COLOR_TYPE_GRAY_ALPHA:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 //							const RGBColor &c = pixels[(x + y * xResolution)];
 //							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
@@ -194,7 +194,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					break;
 				case PNG_COLOR_TYPE_RGB:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 							const RGBColor &c = pixels[(x + y * xResolution)];
 							png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
@@ -209,7 +209,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					break;
 				case PNG_COLOR_TYPE_RGB_ALPHA:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 							const RGBColor &c = pixels[(x + y * xResolution)];
 							png_uint_16 r = static_cast<png_uint_16>(Clamp(65535.f * c.c[0], 0.f, 65535.f));
@@ -232,14 +232,14 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 		// 8 bit per channel
 		std::vector<png_byte> row(xPixelCount*4);
 
-		for (int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
+		for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y)
 		{
 			int i = 0;
 
 			switch (colorType) {
 				case PNG_COLOR_TYPE_GRAY:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 //							const RGBColor &c = pixels[(x + y * xResolution)];
 //							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
@@ -252,7 +252,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					break;
 				case PNG_COLOR_TYPE_GRAY_ALPHA:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 //							const RGBColor &c = pixels[(x + y * xResolution)];
 //							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
@@ -267,7 +267,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					break;
 				case PNG_COLOR_TYPE_RGB:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 							const RGBColor &c = pixels[(x + y * xResolution)];
 							png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));
@@ -282,7 +282,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					break;
 				case PNG_COLOR_TYPE_RGB_ALPHA:
 					{
-						for (int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
+						for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x)
 						{
 							const RGBColor &c = pixels[(x + y * xResolution)];
 							png_byte r = static_cast<png_byte>(Clamp(255.f * c.c[0], 0.f, 255.f));

@@ -151,7 +151,7 @@ public:
 	}
 
 	float Sample(const TsPack *tspack, Vector *wi, float u1, float u2, float u3) const {
-		u_int dn = Clamp(static_cast<u_int>(
+		size_t dn = Clamp<size_t>(static_cast<size_t>(
 			std::upper_bound(dirs.begin(), dirs.end(), Direction(u3)) - dirs.begin()),
 			0U, dirs.size() - 1);
 

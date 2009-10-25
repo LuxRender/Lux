@@ -965,10 +965,10 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	int x1 = Floor2Int(dImageX + filter->xWidth);
 	int y0 = Ceil2Int (dImageY - filter->yWidth);
 	int y1 = Floor2Int(dImageY + filter->yWidth);
-/*	x0 = max(x0, xPixelStart);
-	x1 = min(x1, xPixelStart + xPixelCount - 1);
-	y0 = max(y0, yPixelStart);
-	y1 = min(y1, yPixelStart + yPixelCount - 1);*/
+	x0 = max<int>(x0, xPixelStart);
+	x1 = min<int>(x1, xPixelStart + xPixelCount - 1);
+	y0 = max<int>(y0, yPixelStart);
+	y1 = min<int>(y1, yPixelStart + yPixelCount - 1);
 	if (x1 < x0 || y1 < y0) return;
 	// Loop over filter support and add sample to pixel arrays
 	// Precompute $x$ and $y$ filter table offsets

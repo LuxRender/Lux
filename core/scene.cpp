@@ -69,7 +69,7 @@ u_int Scene::GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount) {
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
 
-	for (u_int i = 0; i < min(renderThreads.size(), maxInfoCount); ++i) {
+	for (size_t i = 0; i < min<size_t>(renderThreads.size(), maxInfoCount); ++i) {
 		info[i].threadIndex = renderThreads[i]->n;
 		info[i].status = renderThreads[i]->signal;
 	}

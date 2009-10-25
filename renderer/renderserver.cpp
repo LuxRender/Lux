@@ -183,11 +183,11 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 		// Dade - replace the file name with a temporary name
 		char buf[64];
 		if (tmpFileList.size())
-			snprintf(buf, 64, "%5s_%08u%s", tmpFileList[0].c_str(),
-				tmpFileList.size(), fileExt.c_str());
+			snprintf(buf, 64, "%5s_%08lu%s", tmpFileList[0].c_str(),
+				tmpFileList.size(), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
 		else
-			snprintf(buf, 64, "00000_%08u%s",
-				tmpFileList.size(), fileExt.c_str());
+			snprintf(buf, 64, "00000_%08lu%s",
+				tmpFileList.size(), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
 		string file = string(buf);
 
 		// Dade - replace the filename parameter

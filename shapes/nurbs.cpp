@@ -281,7 +281,7 @@ Shape* NURBS::CreateShape(const Transform &o2w,
 	u_int nuknots, nvknots;
 	const float *uknots = params.FindFloat("uknots", &nuknots);
 	BOOST_ASSERT(nu != -1 && uorder != -1 && uknots != NULL);
-	BOOST_ASSERT(nuknots == nu + uorder);
+	BOOST_ASSERT(nuknots == static_cast<u_int>(nu) + uorder);
 	float u0 = params.FindOneFloat("u0", uknots[uorder-1]);
 	float u1 = params.FindOneFloat("u1", uknots[nu]);
 
@@ -289,7 +289,7 @@ Shape* NURBS::CreateShape(const Transform &o2w,
 	int vorder = params.FindOneInt("vorder", -1);
 	const float *vknots = params.FindFloat("vknots", &nvknots);
 	BOOST_ASSERT(nv != -1 && vorder != -1 && vknots != NULL);
-	BOOST_ASSERT(nvknots == nv + vorder);
+	BOOST_ASSERT(nvknots == static_cast<u_int>(nv) + vorder);
 	float v0 = params.FindOneFloat("v0", vknots[vorder-1]);
 	float v1 = params.FindOneFloat("v1", vknots[nv]);
 
@@ -303,7 +303,7 @@ Shape* NURBS::CreateShape(const Transform &o2w,
 		isHomogeneous = true;
 	}
 	BOOST_ASSERT(P);
-	BOOST_ASSERT(npts == nu*nv);
+	BOOST_ASSERT(npts == static_cast<u_int>(nu*nv));
 	return new NURBS(o2w, reverseOrientation, nu, uorder, uknots, u0, u1,
 		nv, vorder, vknots, v0, v1, const_cast<float *>(P),
 		isHomogeneous);

@@ -545,8 +545,8 @@ MIPMapImpl<T,U>::MIPMapImpl(
 		pyramid[0] = new BlockedArray<U>(sres, tres, img);
 		for (u_int i = 1; i < nLevels; ++i) {
 			// Initialize $i$th MIPMap level from $i-1$st level
-			const u_int sRes = max(1U, pyramid[i - 1]->uSize() / 2);
-			const u_int tRes = max(1U, pyramid[i - 1]->vSize() / 2);
+			const size_t sRes = max<size_t>(1U, pyramid[i - 1]->uSize() / 2);
+			const size_t tRes = max<size_t>(1U, pyramid[i - 1]->vSize() / 2);
 			pyramid[i] = new BlockedArray<U>(sRes, tRes);
 			// Filter four texels from finer level of pyramid
 			for (u_int t = 0; t < tRes; ++t) {

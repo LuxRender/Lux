@@ -151,8 +151,8 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 	int bigDiff = 0;
 	XYZColor refXYZ, testXYZ;
 	float refAlpha, testAlpha;
-	for (int y = 0; y < refBuf->yPixelCount; y++) {
-		for (int x = 0; x < refBuf->xPixelCount; x++) {
+	for (u_int y = 0; y < refBuf->yPixelCount; y++) {
+		for (u_int x = 0; x < refBuf->xPixelCount; x++) {
 			refBuf->GetData(x, y, &refXYZ, &refAlpha);
 			testBuf->GetData(x, y, &testXYZ, &testAlpha);
 

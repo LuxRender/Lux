@@ -199,9 +199,9 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			L += pathThroughput * Ld / scene->lights.size();
 		}
 		// Compute indirect illumination with virtual lights
-		u_int lSet = min(Floor2UInt(sample->oneD[vlSetOffset][0] * nLightSets),
-			max(1U, virtualLights.size()) - 1U);
-		for (u_int i = 0; i < virtualLights[lSet].size(); ++i) {
+		size_t lSet = min<size_t>(Floor2UInt(sample->oneD[vlSetOffset][0] * nLightSets),
+			max<size_t>(1U, virtualLights.size()) - 1U);
+		for (size_t i = 0; i < virtualLights[lSet].size(); ++i) {
 			const VirtualLight &vl = virtualLights[lSet][i];
 			// Add contribution from _VirtualLight_ _vl_
 			// Ignore light if it's too close
