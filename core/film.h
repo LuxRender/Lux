@@ -428,7 +428,7 @@ public:
 	u_int xResolution, yResolution;
 
 protected: // Put it here for better data alignment
-	// Dade - (xResolution * yResolution)
+	// Dade - (xResolution + filter->xWidth) * (yResolution + filter->yWidth)
 	double samplePerPass;
 
 public:

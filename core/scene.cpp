@@ -478,10 +478,8 @@ void Scene::Render() {
 		// Flush the contribution pool
 		contribPool->Flush();
 		contribPool->Delete();
-
-		// Store final image
-		camera->film->WriteImage(static_cast<ImageType>(IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER));
 	}
+
 	delete tspack->swl;
 	delete tspack->rng;
 	delete tspack->arena;
