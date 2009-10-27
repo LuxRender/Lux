@@ -311,7 +311,7 @@ namespace lux {
 			return NULL;
 		} catch (const std::exception &e) {
 			std::stringstream ss;
-			ss << "Unable to read EXR image file '" << name << "': " << e.what();
+			ss << "Unable to read image file '" << name << "': " << e.what();
 			luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
 			return NULL;
 		}
