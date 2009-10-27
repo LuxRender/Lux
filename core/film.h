@@ -437,7 +437,7 @@ public:
 	Histogram *histogram;
 
 protected:
-	// Dade - (xResolution * yResolution)
+	// Dade - (xResolution + filter->xWidth) * (yResolution + filter->yWidth)
 	double samplePerPass;
 };
 
