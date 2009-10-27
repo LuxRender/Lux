@@ -492,8 +492,6 @@ void Scene::Render() {
 	contribPool->Flush();
 	contribPool->Delete();
 
-    // Store final image
-    camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 	delete tspack->swl;
 	delete tspack->rng;
 	delete tspack->arena;
