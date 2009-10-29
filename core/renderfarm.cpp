@@ -217,6 +217,10 @@ void RenderFarm::flush() {
 	// Dade - the buffers with all commands
 	string commands = netBuffer.str();
 
+	ss.str("");
+	ss << "Compiled scene size: " << (commands.size() / 1024) << "KBytes";
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
 		if(serverInfoList[i].flushed == false) {
