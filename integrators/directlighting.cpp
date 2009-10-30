@@ -229,6 +229,17 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 {
         RayDifferential ray;
         float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
+	if (rayWeight > 0.f) {
+		// Generate ray differentials for camera ray
+		++(sample->imageX);
+		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
+		--(sample->imageX);
+		++(sample->imageY);
+		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
+		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
+		--(sample->imageY);
+	}
+
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
 	u_int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, 0);
