@@ -171,6 +171,17 @@ int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 {
 	RayDifferential ray;
 	float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
+	if (rayWeight > 0.f) {
+		// Generate ray differentials for camera ray
+		++(sample->imageX);
+		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
+		--(sample->imageX);
+		++(sample->imageY);
+		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
+		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
+		--(sample->imageY);
+	}
+
 	SWCSpectrum L(0.f);
 	float alpha = 1.f;
 	switch(renderingMode) {

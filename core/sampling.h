@@ -88,7 +88,9 @@ public:
 	Sampler *sampler;
 	SamplingType sampling;
 	// Camera _Sample_ Data
-	float imageX, imageY;
+	// mutable is required to generate RayDifferential after the ray has been
+	// generate by the Camera.
+	mutable float imageX, imageY;
 	float lensU, lensV;
 	float time;
 	float wavelengths, singleWavelength;

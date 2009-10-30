@@ -167,8 +167,19 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
-        RayDifferential r;
-        float rayWeight = tspack->camera->GenerateRay(*sample, &r);
+	RayDifferential r;
+	float rayWeight = tspack->camera->GenerateRay(*sample, &r);
+	if (rayWeight > 0.f) {
+		// Generate ray differentials for camera ray
+		++(sample->imageX);
+		float wt1 = tspack->camera->GenerateRay(*sample, &r.rx);
+		--(sample->imageX);
+		++(sample->imageY);
+		float wt2 = tspack->camera->GenerateRay(*sample, &r.ry);
+		r.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
+		--(sample->imageY);
+	}
+
 	RayDifferential ray(r);
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;

@@ -66,8 +66,19 @@ int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 {
 	int nrContribs = 0;
 	// Declare common path integration variables
-        RayDifferential r;
-        float rayWeight = tspack->camera->GenerateRay(*sample, &r);
+	RayDifferential r;
+	float rayWeight = tspack->camera->GenerateRay(*sample, &r);
+	if (rayWeight > 0.f) {
+		// Generate ray differentials for camera ray
+		++(sample->imageX);
+		float wt1 = tspack->camera->GenerateRay(*sample, &r.rx);
+		--(sample->imageX);
+		++(sample->imageY);
+		float wt2 = tspack->camera->GenerateRay(*sample, &r.ry);
+		r.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
+		--(sample->imageY);
+	}
+
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
