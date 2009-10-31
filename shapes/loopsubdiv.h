@@ -209,17 +209,13 @@ inline u_int SDVertex::valence() {
 		return nf;
 	} else {
 		// Compute valence of boundary vertex
-		u_int nf = 0;
-		do {
-			f = f->nextFace(this);
+		u_int nf = 1;
+		while ((f = f->nextFace(this)) != NULL)
 			++nf;
-		} while (f != startFace);
 		f = startFace;
-		do {
-			f = f->prevFace(this);
+		while ((f = f->prevFace(this)) != NULL)
 			++nf;
-		} while (f);
-		return nf;
+		return nf+1;
 	}
 }
 
