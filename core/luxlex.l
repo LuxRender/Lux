@@ -53,7 +53,7 @@ struct IncludeInfo {
 };
 vector<IncludeInfo> includeStack;
 
-extern int line_num;
+extern u_int line_num;
 int str_pos;
 
 void add_string_char( char c )
@@ -102,7 +102,7 @@ void include_push(char *filename) {
 
 void include_pop(void)
 {
-	extern int line_num;
+	extern u_int line_num;
 	extern string current_file;
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	yy_switch_to_buffer(includeStack.back().bufState);

@@ -28,7 +28,7 @@
 	extern FILE *yyin;
 	extern int yyparse(void);
 	extern string current_file;
-	extern int line_num;
+	extern u_int line_num;
 	/*extern int yydebug;
 
 	if (getenv("LUX_YYDEBUG") != NULL)

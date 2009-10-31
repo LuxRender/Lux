@@ -55,7 +55,7 @@ static void processError(const char *format, va_list args,
 	case LUX_ERROR_CONTINUE:
 		fprintf(stderr, "%s: %s\n", message, errorBuf);
 		// Print scene file and line number, if appropriate
-		extern int line_num;
+		extern u_int line_num;
 		if (line_num != 0) {
 			extern string current_file;
 			fprintf(stderr, "\tLine %d, file %s\n", line_num,
@@ -65,7 +65,7 @@ static void processError(const char *format, va_list args,
 	case LUX_ERROR_ABORT:
 		fprintf(stderr, "%s: %s\n", message, errorBuf);
 		// Print scene file and line number, if appropriate
-		extern int line_num;
+		extern u_int line_num;
 		if (line_num != 0) {
 			extern string current_file;
 			fprintf(stderr, "\tLine %d, file %s\n", line_num,
