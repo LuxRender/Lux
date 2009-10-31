@@ -30,16 +30,24 @@
 #include "paramset.h"
 #include "renderfarm.h"
 #include "camera.h"
+#include "osfunc.h"
 
 #include <fstream>
+#include <sstream>
 #include <boost/asio.hpp>
 #include <boost/archive/text_oarchive.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/bind.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
 using namespace lux;
+using namespace std;
 using boost::asio::ip::tcp;
 
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
@@ -115,7 +123,7 @@ void RenderFarm::decodeServerName(const string &serverName, string &name, string
 bool RenderFarm::connect(const string &serverName) {
 	// Dade - connect to the rendering server
 
-	std::stringstream ss;
+	stringstream ss;
 	try {
 		ss.str("");
 		ss << "Connecting server: " << serverName;
@@ -125,7 +133,7 @@ bool RenderFarm::connect(const string &serverName) {
 		decodeServerName(serverName, name, port);
 
 		tcp::iostream stream(name, port);
-		stream << "ServerConnect" << std::endl;
+		stream << "ServerConnect" << endl;
 
 		// Dede - check if the server accepted the connection
 
@@ -166,7 +174,7 @@ bool RenderFarm::connect(const string &serverName) {
 		}
 
 		serverInfoList.push_back(ExtRenderingServerInfo(name, port, sid));
-	} catch (std::exception& e) {
+	} catch (exception& e) {
 		ss.str("");
 		ss << "Unable to connect server: " << serverName;
 		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
@@ -201,7 +209,7 @@ void RenderFarm::disconnect(const string &serverName) {
 }
 
 void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
-	std::stringstream ss;
+	stringstream ss;
 	try {
 		ss.str("");
 		ss << "Disconnect from server: " <<
@@ -209,15 +217,15 @@ void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		tcp::iostream stream(serverInfo.name, serverInfo.port);
-		stream << "ServerDisconnect" << std::endl;
-		stream << serverInfo.sid << std::endl;
-	} catch (std::exception& e) {
+		stream << "ServerDisconnect" << endl;
+		stream << serverInfo.sid << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
 void RenderFarm::flush() {
-	std::stringstream ss;
+	stringstream ss;
 	// Dade - the buffers with all commands
 	string commands = netBuffer.str();
 
@@ -235,10 +243,10 @@ void RenderFarm::flush() {
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
-				stream << commands << std::endl;
+				stream << commands << endl;
 
 				serverInfoList[i].flushed = true;
-			} catch (std::exception& e) {
+			} catch (exception& e) {
 				luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 			}
 		}
@@ -256,7 +264,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 	// Dade - network rendering supports only FlexImageFilm
 	Film *film = scene->camera->film;
 
-	std::stringstream ss;
+	stringstream ss;
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
 		try {
 			ss.str("");
@@ -265,8 +273,8 @@ void RenderFarm::updateFilm(Scene *scene) {
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 			tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
-			stream << "luxGetFilm" << std::endl;
-			stream << serverInfoList[i].sid << std::endl;
+			stream << "luxGetFilm" << endl;
+			stream << serverInfoList[i].sid << endl;
 
 			if (stream.good()) {
 				serverInfoList[i].numberOfSamplesReceived += film->UpdateFilm(stream);
@@ -283,119 +291,142 @@ void RenderFarm::updateFilm(Scene *scene) {
 						serverInfoList[i].name << ":" << serverInfoList[i].port;
 				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 			}
-		} catch (std::exception& e) {
+		} catch (exception& e) {
 			luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 		}
 	}
 }
 
-void RenderFarm::send(const std::string &command) {
-	netBuffer << command << std::endl;
+void RenderFarm::sendParams(const ParamSet &params) {
+	// Serialize the parameters
+	stringstream zos(stringstream::in | stringstream::out | stringstream::binary);
+	std::streamsize size;
+	{
+		stringstream os(stringstream::in | stringstream::out | stringstream::binary);
+		{
+			// Serialize the parameters
+			boost::archive::text_oarchive oa(os);
+			oa << params;
+		}
+
+		// Compress the parameters
+		filtering_streambuf<input> in;
+		in.push(gzip_compressor(9));
+		in.push(os);
+		size = boost::iostreams::copy(in , zos);
+	}
+
+	// Write the size of the compressed chunk
+	osWriteLittleEndianUInt(isLittleEndian, netBuffer, size);
+	// Copy the compressed parameters to the newtwork buffer
+	netBuffer << zos.str();
 }
 
-void RenderFarm::send(const std::string &command, const std::string &name,
+void RenderFarm::send(const string &command) {
+	netBuffer << command << endl;
+}
+
+void RenderFarm::send(const string &command, const string &name,
 		const ParamSet &params) {
 	try {
-		netBuffer << command << std::endl << name << std::endl;
-		boost::archive::text_oarchive oa(netBuffer);
-		oa << params;
+		netBuffer << command << endl << name << endl;
+		sendParams(params);
 
 		//send the files
-		std::string file;
+		string file;
 		file = "";
-		file = params.FindOneString(std::string("mapname"), file);
+		file = params.FindOneString(string("mapname"), file);
 		if (file.size()) {
-			std::string s;
-			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+			string s;
+			ifstream in(file.c_str(), ios::in | ios::binary);
 			while (getline(in, s))
 				netBuffer << s << "\n";
 			netBuffer << "LUX_END_FILE\n";
 		}
 		file = "";
-		file = params.FindOneString(std::string("iesname"), file);
+		file = params.FindOneString(string("iesname"), file);
 		if (file.size()) {
-			std::string s;
-			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+			string s;
+			ifstream in(file.c_str(), ios::in | ios::binary);
 			while (getline(in, s))
 				netBuffer << s << "\n";
 			netBuffer << "LUX_END_FILE\n";
 		}
-	} catch (std::exception& e) {
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, const std::string &name) {
+void RenderFarm::send(const string &command, const string &name) {
 	try {
-		netBuffer << command << std::endl << name << std::endl;
-	} catch (std::exception& e) {
+		netBuffer << command << endl << name << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, float x, float y, float z) {
+void RenderFarm::send(const string &command, float x, float y, float z) {
 	try {
-		netBuffer << command << std::endl << x << ' ' << y << ' ' << z << std::endl;
-	} catch (std::exception& e) {
+		netBuffer << command << endl << x << ' ' << y << ' ' << z << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, float a, float x, float y,
+void RenderFarm::send(const string &command, float a, float x, float y,
 		float z) {
 	try {
-		netBuffer << command << std::endl << a << ' ' << x << ' ' << y << ' ' << z << std::endl;
-	} catch (std::exception& e) {
+		netBuffer << command << endl << a << ' ' << x << ' ' << y << ' ' << z << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, float ex, float ey, float ez,
+void RenderFarm::send(const string &command, float ex, float ey, float ez,
 		float lx, float ly, float lz, float ux, float uy, float uz) {
 	try {
-		netBuffer << command << std::endl << ex << ' ' << ey << ' ' << ez << ' ' << lx << ' ' << ly << ' ' << lz << ' ' << ux << ' ' << uy << ' ' << uz << std::endl;
-	} catch (std::exception& e) {
+		netBuffer << command << endl << ex << ' ' << ey << ' ' << ez << ' ' << lx << ' ' << ly << ' ' << lz << ' ' << ux << ' ' << uy << ' ' << uz << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, float tr[16]) {
+void RenderFarm::send(const string &command, float tr[16]) {
 	try {
-		netBuffer << command << std::endl; //<<x<<' '<<y<<' '<<z<<' ';
+		netBuffer << command << endl; //<<x<<' '<<y<<' '<<z<<' ';
 		for (int i = 0; i < 16; i++)
 			netBuffer << tr[i] << ' ';
-		netBuffer << std::endl;
-	} catch (std::exception& e) {
+		netBuffer << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, const string &name,
+void RenderFarm::send(const string &command, const string &name,
 		const string &type, const string &texname, const ParamSet &params) {
 	try {
-		netBuffer << command << std::endl << name << std::endl << type << std::endl << texname << std::endl;
-		boost::archive::text_oarchive oa(netBuffer);
-		oa << params;
+		netBuffer << command << endl << name << endl << type << endl << texname << endl;
+		sendParams(params);
 
 		//send the file
-		std::string file = "";
-		file = params.FindOneString(std::string("filename"), file);
+		string file = "";
+		file = params.FindOneString(string("filename"), file);
 		if (file.size()) {
-			std::string s;
-			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+			string s;
+			ifstream in(file.c_str(), ios::in | ios::binary);
 			while (getline(in, s))
 				netBuffer << s << "\n";
 			netBuffer << "LUX_END_FILE\n";
 		}
-	} catch (std::exception& e) {
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }
 
-void RenderFarm::send(const std::string &command, const std::string &name, float a, float b, const std::string &transform) {
+void RenderFarm::send(const string &command, const string &name, float a, float b, const string &transform) {
 	try {
-		netBuffer << command << std::endl << name << ' ' << a << ' ' << b << ' ' << transform << std::endl;
-	} catch (std::exception& e) {
+		netBuffer << command << endl << name << ' ' << a << ' ' << b << ' ' << transform << endl;
+	} catch (exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
 }

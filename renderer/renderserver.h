@@ -75,7 +75,7 @@ private:
     // Dade - used to send signals to the thread
     enum ThreadSignal { SIG_NONE, SIG_EXIT };
     ThreadSignal signal;
-    
+
 };
 
 // Dade - network rendering server

@@ -23,6 +23,8 @@
 #ifndef LUX_RENDERFARM_H
 #define LUX_RENDERFARM_H
 
+#include "osfunc.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -66,7 +68,8 @@ private:
 
 class RenderFarm {
 public:
-	RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL) { }
+	RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
+		isLittleEndian(osIsLittleEndian()) { }
 	~RenderFarm() { delete filmUpdateThread; }
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
@@ -121,6 +124,7 @@ private:
 
 	static void decodeServerName(const string &serverName, string &name, string &port);
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
+	void sendParams(const ParamSet &params);
 
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
@@ -128,6 +132,8 @@ private:
 
 	// Dade - film update information
 	FilmUpdaterThread *filmUpdateThread;
+
+	bool isLittleEndian;
 };
 
 }//namespace lux

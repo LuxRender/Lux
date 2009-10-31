@@ -1652,7 +1652,7 @@ void FlexImageFilm::TransmitFilm(
     ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
     luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-    std::stringstream os;
+    std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
 	// Write the header
 	FlmHeader header;
 	header.magicNumber = FLM_MAGIC_NUMBER;
@@ -1803,7 +1803,7 @@ void FlexImageFilm::TransmitFilm(
 	}
 
 	ss.str("");
-	ss << "Film transmission done (" << (size / 1024.0f) << " Kbytes sent)";
+	ss << "Film transmission done (" << (size / 1024) << "KBytes sent)";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 }
 

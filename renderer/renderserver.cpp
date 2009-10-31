@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "error.h"
 #include "color.h"
+#include "osfunc.h"
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION < 103401)
@@ -36,7 +37,14 @@
 #else
 #include <boost/filesystem.hpp>
 #endif
+#include <fstream>
 #include <boost/asio.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
@@ -131,7 +139,34 @@ static void printInfoThread()
 	}
 }
 
-static void processCommandFilm(void (&f)(const string &, const ParamSet &), basic_istream<char> &stream)
+static void processCommandParams(bool isLittleEndian,
+		ParamSet &params, basic_istream<char> &stream) {
+	stringstream uzos(stringstream::in | stringstream::out | stringstream::binary);
+	{
+		// Read the size of the compressed chunk
+		uint32_t size = osReadLittleEndianUInt(isLittleEndian, stream);
+
+		// Read the compressed chunk
+		char *zbuf = new char[size];
+		stream.read(zbuf, size);
+		stringstream zos(stringstream::in | stringstream::out  | stringstream::binary);
+		zos.write(zbuf, size);
+		delete zbuf;
+
+		// Uncompress the chunk
+		filtering_stream<input> in;
+		in.push(gzip_decompressor());
+		in.push(zos);
+		boost::iostreams::copy(in, uzos);
+	}
+
+	// Deserialize the parameters
+	boost::archive::text_iarchive ia(uzos);
+	ia >> params;
+}
+
+static void processCommandFilm(bool isLittleEndian,
+		void (&f)(const string &, const ParamSet &), basic_istream<char> &stream)
 {
 	string type;
 	getline(stream, type);
@@ -144,9 +179,8 @@ static void processCommandFilm(void (&f)(const string &, const ParamSet &), basi
 		return;
 	}
 
-	boost::archive::text_iarchive ia(stream);
 	ParamSet params;
-	ia >> params;
+	processCommandParams(isLittleEndian, params, stream);
 
 	// Dade - overwrite some option for the servers
 
@@ -220,14 +254,14 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 	}
 }
 
-static void processCommand(void (&f)(const string &, const ParamSet &), vector<string> &tmpFileList, basic_istream<char> &stream)
+static void processCommand(bool isLittleEndian,
+		void (&f)(const string &, const ParamSet &), vector<string> &tmpFileList, basic_istream<char> &stream)
 {
 	string type;
 	getline(stream, type);
 
 	ParamSet params;
-	boost::archive::text_iarchive ia(stream);
-	ia >> params;
+	processCommandParams(isLittleEndian, params, stream);
 
 	processFile("mapname", params, tmpFileList, stream);
 	processFile("iesName", params, tmpFileList, stream);
@@ -347,6 +381,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 		CMD_MOTIONINSTANCE = 4223946185U;
 
 	const int listenPort = serverThread->renderServer->tcpPort;
+	const bool isLittleEndian = osIsLittleEndian();
 	stringstream ss;
 	ss << "Launching server [" << serverThread->renderServer->threadCount <<
 		" threads] mode on port '" << listenPort << "'.";
@@ -464,29 +499,29 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					processCommand(Context::luxCoordSysTransform, stream);
 					break;
 				case CMD_LUXPIXELFILTER:
-					processCommand(Context::luxPixelFilter, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxPixelFilter, tmpFileList, stream);
 					break;
 				case CMD_LUXFILM: {
 					// Dade - Servers use a special kind of film to buffer the
 					// samples. I overwrite some option here.
 
-					processCommandFilm(Context::luxFilm, stream);
+					processCommandFilm(isLittleEndian, Context::luxFilm, stream);
 					break;
 				}
 				case CMD_LUXSAMPLER:
-					processCommand(Context::luxSampler, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxSampler, tmpFileList, stream);
 					break;
 				case CMD_LUXACCELERATOR:
-					processCommand(Context::luxAccelerator, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxAccelerator, tmpFileList, stream);
 					break;
 				case CMD_LUXSURFACEINTEGRATOR:
-					processCommand(Context::luxSurfaceIntegrator, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxSurfaceIntegrator, tmpFileList, stream);
 					break;
 				case CMD_LUXVOLUMEINTEGRATOR:
-					processCommand(Context::luxVolumeIntegrator, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxVolumeIntegrator, tmpFileList, stream);
 					break;
 				case CMD_LUXCAMERA:
-					processCommand(Context::luxCamera, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxCamera, tmpFileList, stream);
 					break;
 				case CMD_LUXWORLDBEGIN:
 					Context::luxWorldBegin();
@@ -511,8 +546,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					getline(stream, type);
 					getline(stream, texname);
 
-					boost::archive::text_iarchive ia(stream);
-					ia >> params;
+					processCommandParams(isLittleEndian, params, stream);
 
 					processFile("filename", params, tmpFileList, stream);
 
@@ -520,34 +554,34 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					break;
 				}
 				case CMD_LUXMATERIAL:
-					processCommand(Context::luxMaterial, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxMaterial, tmpFileList, stream);
 					break;
 				case CMD_LUXMAKENAMEDMATERIAL:
-					processCommand(Context::luxMakeNamedMaterial, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxMakeNamedMaterial, tmpFileList, stream);
 					break;
 				case CMD_LUXNAMEDMATERIAL:
-					processCommand(Context::luxNamedMaterial, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxNamedMaterial, tmpFileList, stream);
 					break;
 				case CMD_LUXLIGHTGROUP:
-					processCommand(Context::luxLightGroup, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxLightGroup, tmpFileList, stream);
 					break;
 				case CMD_LUXLIGHTSOURCE:
-					processCommand(Context::luxLightSource, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxLightSource, tmpFileList, stream);
 					break;
 				case CMD_LUXAREALIGHTSOURCE:
-					processCommand(Context::luxAreaLightSource, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxAreaLightSource, tmpFileList, stream);
 					break;
 				case CMD_LUXPORTALSHAPE:
-					processCommand(Context::luxPortalShape, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxPortalShape, tmpFileList, stream);
 					break;
 				case CMD_LUXSHAPE:
-					processCommand(Context::luxShape, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxShape, tmpFileList, stream);
 					break;
 				case CMD_LUXREVERSEORIENTATION:
 					Context::luxReverseOrientation();
 					break;
 				case CMD_LUXVOLUME:
-					processCommand(Context::luxVolume, tmpFileList, stream);
+					processCommand(isLittleEndian, Context::luxVolume, tmpFileList, stream);
 					break;
 				case CMD_LUXOBJECTBEGIN:
 					processCommand(Context::luxObjectBegin, stream);
