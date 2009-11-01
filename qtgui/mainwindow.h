@@ -149,6 +149,19 @@ private:
 	int _code;
 };
 
+class luxTreeData
+{
+public:
+
+	QString m_SlaveName;
+	QString m_SlaveFile;
+	QString m_SlavePort;
+	QString m_SlaveID;
+
+	unsigned int m_secsSinceLastContact;
+	double m_numberOfSamplesReceived;
+};
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -175,6 +188,8 @@ public:
 	static void updateWidgetValue(QSlider *slider, int value);
 	static void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
 	static void updateWidgetValue(QSpinBox *spinbox, int value);
+
+	void UpdateNetworkTree();
 
 private:
 	Ui::MainWindow *ui;
