@@ -1,0 +1,22 @@
+<RCC>
+  <qresource prefix="/" >
+    <file>icons/luxrender.png</file>
+    <file>icons/clipboardicon.png</file>
+    <file>icons/colorspaceicon.png</file>
+    <file>icons/colouredv2cbisfx4.png</file>
+    <file>icons/gammaicon.png</file>
+    <file>icons/histogramicon.png</file>
+    <file>icons/lenseffectsicon.png</file>
+    <file>icons/lightgroupsicon.png</file>
+    <file>icons/logtabicon.png</file>
+    <file>icons/minusicon.png</file>
+    <file>icons/networktabicon.png</file>
+    <file>icons/noisereductionicon.png</file>
+    <file>icons/pauseicon.png</file>
+    <file>icons/plusicon.png</file>
+    <file>icons/rendertabicon.png</file>
+    <file>icons/resumeicon.png</file>
+    <file>icons/stopicon.png</file>
+    <file>icons/tonemapicon.png</file>
+  </qresource>
+</RCC>

@@ -224,6 +224,15 @@ ENDIF(wxWidgets_FOUND)
 
 FIND_PACKAGE(Threads REQUIRED)
 
+#############################################################################
+#############################################################################
+############################   QT4 LIBRARIES    #############################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE( Qt4 REQUIRED )
+SET(QT_USE_QTOPENGL TRUE)
+INCLUDE( ${QT_USE_FILE} )
 
 #############################################################################
 #############################################################################
@@ -641,6 +650,33 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_BINARY_DIR}
 	)
 
+SET( LUXQTGUI_SRCS
+    qtgui/main.cpp
+    qtgui/histogramview.cpp
+    qtgui/mainwindow.cpp
+    qtgui/renderview.cpp
+    qtgui/luxapp.cpp
+    qtgui/aboutdialog.cpp
+    qtgui/lightgroupwidget.cpp
+    )
+SET( LUXQTGUI_MOC
+    qtgui/histogramview.h
+    qtgui/mainwindow.h
+    qtgui/aboutdialog.h
+    qtgui/luxapp.h
+    qtgui/renderview.h
+    qtgui/lightgroupwidget.h
+    )
+SET(LUXQTGUI_UIS
+    qtgui/luxrender.ui
+    qtgui/aboutdialog.ui
+    qtgui/lightgroup.ui
+    )
+SET( LUXQTGUI_RCS
+    qtgui/icons.qrc
+    qtgui/splash.qrc
+    qtgui/images.qrc
+    )
 
 #############################################################################
 #############################################################################
@@ -758,7 +794,16 @@ IF(wxWidgets_FOUND)
 	ENDIF(APPLE)
 ENDIF(wxWidgets_FOUND)
 
+#############################################################################
+#Here we build the QT4 GUI executable
+#############################################################################
 
+QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
+QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )
+QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} )
+
+ADD_EXECUTABLE(luxrenderqt ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
+TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
 
 #############################################################################
 
