@@ -65,7 +65,7 @@ void LuxGuiApp::init(void) {
 	if (ProcessCommandLine()) {
 		mainwin = new MainWindow(0,m_openglEnabled,m_copyLog2Console);
 		mainwin->show();
-		mainwin->setRenderThreads(m_threads);
+		mainwin->SetRenderThreads(m_threads);
 		if (!m_inputFile.isEmpty())
 			mainwin->renderScenefile(m_inputFile);
 	} else {
