@@ -426,18 +426,38 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	// Choose the split axis, taking the axis of maximum extent for the
 	// centroids (else weird cases can occur, where the maximum extent axis
 	// for the nodeBbox is an axis of 0 extent for the centroids one.).
-	int axis = centroidsBbox.MaximumExtent();
+	const int axis = centroidsBbox.MaximumExtent();
 
 	// Precompute values that are constant with respect to the current
 	// primitive considered.
-	float k0 = centroidsBbox.pMin[axis];
-	float k1 = NB_BINS / (centroidsBbox.pMax[axis] - k0);
+	const float k0 = centroidsBbox.pMin[axis];
+	const float k1 = NB_BINS / (centroidsBbox.pMax[axis] - k0);
 	
 	// If the bbox is a point, create a leaf, hoping there are not more
 	// than 64 primitives that share the same center.
 	if (isinf(k1)) {
+		if (end - start > 64)
+			luxError(LUX_LIMIT, LUX_ERROR, "QBVH unable to handle geometry, too many primitives with the same centroid");
 		CreateTempLeaf(parentIndex, childIndex, start, end, nodeBbox);
 		return;
+	}
+
+	// Create an intermediate node if the depth indicates to do so.
+	// Register the split axis.
+	if (depth % 2 == 0) {
+		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
+		leftChildIndex = 0;
+		rightChildIndex = 2;
+
+		nodes[currentNode].axisMain = axis;
+	} else {
+		if (childIndex == 0) {
+			//left subnode
+			nodes[currentNode].axisSubLeft = axis;
+		} else {
+			//right subnode
+			nodes[currentNode].axisSubRight = axis;
+		}
 	}
 
 	for (u_int i = start; i < end; i += step) {
@@ -445,7 +465,7 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 		
 		// Binning is relative to the centroids bbox and to the
 		// primitives' centroid.
-		int binId = min(NB_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
+		const int binId = min(NB_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
 
 		bins[binId]++;
 		binsBbox[binId] = Union(binsBbox[binId], primsBboxes[primIndex]);
@@ -505,24 +525,6 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 		if (cost < minCost) {
 			minBin = i;
 			minCost = cost;
-		}
-	}
-
-	// Create an intermediate node if the depth indicates to do so.
-	// Register the split axis.
-	if (depth % 2 == 0) {
-		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
-		leftChildIndex = 0;
-		rightChildIndex = 2;
-
-		nodes[currentNode].axisMain = axis;
-	} else {
-		if (childIndex == 0) {
-			//left subnode
-			nodes[currentNode].axisSubLeft = axis;
-		} else {
-			//right subnode
-			nodes[currentNode].axisSubRight = axis;
 		}
 	}
 
@@ -593,13 +595,9 @@ void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 
 	node.SetBBox(childIndex, nodeBbox);
 
-	if (nbPrimsTotal == 0) {
-		node.InitializeLeaf(childIndex, 0, 0);
-		return;
-	}
 
 	// Next multiple of 4, divided by 4
-	u_int quads = (nbPrimsTotal + 3) >> 2;
+	u_int quads = (nbPrimsTotal + 3) / 4;
 	
 	// Use the same encoding as the final one, but with a different meaning.
 	node.InitializeLeaf(childIndex, quads, start);
@@ -884,7 +882,7 @@ void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 Aggregate* QBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
 {
 	int maxPrimsPerLeaf = ps.FindOneInt("maxprimsperleaf", 4);
-	float fullSweepThreshold = ps.FindOneInt("fullsweepthreshold", 4 * maxPrimsPerLeaf);
+	int fullSweepThreshold = ps.FindOneInt("fullsweepthreshold", 4 * maxPrimsPerLeaf);
 	int skipFactor = ps.FindOneInt("skipfactor", 1);
 	return new QBVHAccel(prims, maxPrimsPerLeaf, fullSweepThreshold, skipFactor);
 
