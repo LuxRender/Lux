@@ -70,18 +70,20 @@ template<class T> T bilinearSampleImage(const vector<T> &pixels,
 	const u_int xResolution, const u_int yResolution, 
 	const float x, const float y)
 {
-	u_int x1 = Clamp(Floor2UInt(x), 0U, xResolution - 1);
-	u_int y1 = Clamp(Floor2UInt(y), 0U, yResolution - 1);
-	u_int x2 = Clamp(x1 + 1U, 0U, xResolution - 1);
-	u_int y2 = Clamp(y1 + 1U, 0U, yResolution - 1);
-	float tx = Clamp(x - x1, 0.f, 1.f);
-	float ty = Clamp(y - y1, 0.f, 1.f);
+	// warning: x and y can be negative
+	const u_int x1 = static_cast<u_int>(Clamp<int>(Floor2Int(x), 0, xResolution - 1));
+	const u_int y1 = static_cast<u_int>(Clamp<int>(Floor2Int(y), 0, yResolution - 1));
+	const u_int x2 = Clamp(x1 + 1U, 0U, xResolution - 1);
+	const u_int y2 = Clamp(y1 + 1U, 0U, yResolution - 1);
+	const float tx = Clamp(x - x1, 0.f, 1.f);
+	const float ty = Clamp(y - y1, 0.f, 1.f);
 
 	T c(0.f);
-	c.AddWeighted((1.f-tx) * (1.f-ty), pixels[y1*xResolution+x1]);
-	c.AddWeighted(tx       * (1.f-ty), pixels[y1*xResolution+x2]);
-	c.AddWeighted((1.f-tx) * ty,       pixels[y2*xResolution+x1]);
-	c.AddWeighted(tx       * ty,       pixels[y2*xResolution+x2]);
+	c.AddWeighted((1.f - tx) * (1.f - ty), pixels[y1 * xResolution + x1]);
+	c.AddWeighted(tx         * (1.f - ty), pixels[y1 * xResolution + x2]);
+	c.AddWeighted((1.f - tx) * ty,         pixels[y2 * xResolution + x1]);
+	c.AddWeighted(tx         * ty,         pixels[y2 * xResolution + x2]);
+
 	return c;
 }
 
@@ -342,8 +344,8 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 					const float redblue[] = {1.f, 0.f, 1.f};
 					const float green[] = {0.f, 1.f, 0.f};
 
-					outp[xResolution*y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
-					outp[xResolution*y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
+					outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
+					outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
 				}
 
 				// Vignetting
@@ -747,6 +749,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 			case 0:
 				bucket = m_zones[0];
 				break;  //white
+			default: // In order to suppress a GCC warning
 			case 1:
 				bucket = m_zones[10];
 				break; //black
