@@ -304,7 +304,7 @@ template<class T> inline int Float2Int(T val) {
 	return static_cast<int>(val);
 }
 template<class T> inline u_int Float2UInt(T val) {
-	return static_cast<u_int>(val);
+	return val >= 0 ? static_cast<u_int>(val) : 0;
 }
 inline int Floor2Int(double val) {
 	return static_cast<int>(floor(val));
@@ -313,10 +313,10 @@ inline int Floor2Int(float val) {
 	return static_cast<int>(floorf(val));
 }
 inline u_int Floor2UInt(double val) {
-	return static_cast<u_int>(floor(val));
+	return val > 0. ? static_cast<u_int>(floor(val)) : 0;
 }
 inline u_int Floor2UInt(float val) {
-	return static_cast<u_int>(floorf(val));
+	return val > 0.f ? static_cast<u_int>(floorf(val)) : 0;
 }
 inline int Ceil2Int(double val) {
 	return static_cast<int>(ceil(val));
@@ -325,10 +325,10 @@ inline int Ceil2Int(float val) {
 	return static_cast<int>(ceilf(val));
 }
 inline u_int Ceil2UInt(double val) {
-	return static_cast<u_int>(ceil(val));
+	return val > 0. ? static_cast<u_int>(ceil(val)) : 0;
 }
 inline u_int Ceil2UInt(float val) {
-	return static_cast<u_int>(ceilf(val));
+	return val > 0.f ? static_cast<u_int>(ceilf(val)) : 0;
 }
 inline bool Quadratic(float A, float B, float C, float *t0, float *t1) {
 	// Find quadratic discriminant
