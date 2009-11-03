@@ -27,16 +27,11 @@
 using namespace lux;
 
 // FrequencyTexture Method Definitions
-Texture<float> * FrequencyTexture::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return new FrequencyFloatTexture<float>(tp.FindFloat("energy", 1.f));
-}
-
-Texture<SWCSpectrum> * FrequencyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return new FrequencySpectrumTexture<SWCSpectrum>(tp.FindFloat("freq", .03f),
+Texture<SWCSpectrum> *FrequencyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
+	const TextureParams &tp)
+{
+	return new FrequencyTexture(tp.FindFloat("freq", .03f),
 			tp.FindFloat("phase", .5f), tp.FindFloat("energy", 1.f));
 }
 
-static DynamicLoader::RegisterFloatTexture<FrequencyTexture> r1("frequency");
-static DynamicLoader::RegisterSWCSpectrumTexture<FrequencyTexture> r2("frequency");
+static DynamicLoader::RegisterSWCSpectrumTexture<FrequencyTexture> r("frequency");

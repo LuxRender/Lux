@@ -61,6 +61,7 @@ public:
 		}
 		return outsideDot->Evaluate(tspack, dg);
 	}
+	virtual float Y() const { return (insideDot->Y() + outsideDot->Y()) / 2.f; }
 	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		outsideDot->SetPower(power, area);

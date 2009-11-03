@@ -33,13 +33,9 @@
 using namespace lux;
 
 // LampSpectrumTexture Method Definitions
-Texture<float> * LampSpectrumTexture::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return new IrregularDataFloatTexture<float>(1.f);
-}
-
 Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const TextureParams &tp)
+{
 	std::string name = tp.FindString("name");
 	const int wlcount = 250;
 
@@ -78,7 +74,7 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		//wl = lampspectrum_Candle_WL;
 		//data = lampspectrum_Candle_AP;
 		// Override with blackbody for incandescent sources due to poor calibration
-		return new BlackBodySpectrumTexture<SWCSpectrum>(1020.f);
+		return new BlackBodyTexture(1020.f);
 	}
 	else if(name == "CarbonArc") {
 		wl = lampspectrum_CarbonArc_WL;
@@ -204,7 +200,7 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		//wl = lampspectrum_Incandescent1_WL;
 		//data = lampspectrum_Incandescent1_AP;
 		// Override with blackbody for incandescent sources due to poor calibration
-		return new BlackBodySpectrumTexture<SWCSpectrum>(2750.f);
+		return new BlackBodyTexture(2750.f);
 	}
 	else if(name == "LCDS") {
 		wl = lampspectrum_LCDS_WL;
@@ -319,10 +315,9 @@ Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		//wl = lampspectrum_Incandescent2_WL;
 		//data = lampspectrum_Incandescent2_AP;
 		// Override with blackbody for incandescent sources due to poor calibration
-		return new BlackBodySpectrumTexture<SWCSpectrum>(2900.f);
+		return new BlackBodyTexture(2900.f);
 	}
-	return new IrregularDataSpectrumTexture<SWCSpectrum>(wlcount, wl, data, 0.1);
+	return new IrregularDataTexture(wlcount, wl, data, 0.1);
 }
 
-static DynamicLoader::RegisterFloatTexture<LampSpectrumTexture> r1("lampspectrum");
-static DynamicLoader::RegisterSWCSpectrumTexture<LampSpectrumTexture> r2("lampspectrum");
+static DynamicLoader::RegisterSWCSpectrumTexture<LampSpectrumTexture> r("lampspectrum");

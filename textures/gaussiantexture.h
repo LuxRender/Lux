@@ -30,42 +30,26 @@ namespace lux
 {
 
 // GaussianTexture Declarations
-template <class T>
-class GaussianFloatTexture : public Texture<T> {
+class GaussianTexture : public Texture<SWCSpectrum> {
 public:
 	// GaussianTexture Public Methods
-	GaussianFloatTexture(const T &v) { value = v; }
-	virtual ~GaussianFloatTexture() { }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return value;
+	GaussianTexture(float m, float w, float r) : GSPD(m, w, r) { }
+	virtual ~GaussianTexture() { }
+	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		return SWCSpectrum(tspack, &GSPD);
 	}
-private:
-	T value;
-};
-
-template <class T>
-class GaussianSpectrumTexture : public Texture<T> {
-public:
-	// GaussianTexture Public Methods
-	GaussianSpectrumTexture(const float &m, const float &w, const float &r) {
-		GSPD = new GaussianSPD(m, w, r);
-	}
-	virtual ~GaussianSpectrumTexture() { delete GSPD; }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, GSPD);
-	}
+	virtual float Y() const { return GSPD.Y(); }
 	virtual void SetPower(float power, float area) {
-		GSPD->Scale(power / (area * M_PI * GSPD->Y()));
+		const float y = Y();
+		if (!(y > 0.f))
+			return;
+		GSPD.Scale(power / (area * M_PI * y));
 	}
-private:
-	GaussianSPD* GSPD;
-};
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
-class GaussianTexture
-{
-public:
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	GaussianSPD GSPD;
 };
 
 }//namespace lux

@@ -30,42 +30,27 @@ namespace lux
 {
 
 // FrequencyTexture Declarations
-template <class T>
-class FrequencyFloatTexture : public Texture<T> {
+class FrequencyTexture : public Texture<SWCSpectrum> {
 public:
 	// FrequencyTexture Public Methods
-	FrequencyFloatTexture(const T &v) { value = v; }
-	virtual ~FrequencyFloatTexture() { }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return value;
+	FrequencyTexture(float w, float p, float r)
+		: FSPD(w, p, r) { }
+	virtual ~FrequencyTexture() { }
+	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		return SWCSpectrum(tspack, &FSPD);
 	}
-private:
-	T value;
-};
-
-template <class T>
-class FrequencySpectrumTexture : public Texture<T> {
-public:
-	// FrequencyTexture Public Methods
-	FrequencySpectrumTexture(const float &w, const float &p, const float &r) {
-		FSPD = new FrequencySPD(w, p, r);
-	}
-	virtual ~FrequencySpectrumTexture() { delete FSPD; }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, FSPD);
-	}
+	virtual float Y() const { return FSPD.Y(); }
 	virtual void SetPower(float power, float area) {
-		FSPD->Scale(power / (area * M_PI * FSPD->Y()));
+		const float y = Y();
+		if (!(y > 0.f))
+			return;
+		FSPD.Scale(power / (area * M_PI * y));
 	}
-private:
-	FrequencySPD* FSPD;
-};
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
-class FrequencyTexture
-{
-public:
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	FrequencySPD FSPD;
 };
 
 }//namespace lux

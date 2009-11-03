@@ -43,6 +43,7 @@ public:
 	virtual T2 Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		return tex1->Evaluate(tspack, dg) * tex2->Evaluate(tspack, dg);
 	}
+	virtual float Y() const { return tex1->Y() * tex2->Y(); }
 	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);

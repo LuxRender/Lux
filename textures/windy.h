@@ -23,6 +23,7 @@
 // windy.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "equalspd.h"
 #include "paramset.h"
 
 // TODO - radiance - add methods for Power and Illuminant propagation
@@ -49,6 +50,7 @@ public:
 			FBm(P, dpdx, dpdy, .5f, 6);
 		return fabsf(windStrength) * waveHeight;
 	}
+	virtual float Y() const { return EqualSPD(.5f).Y(); }
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);

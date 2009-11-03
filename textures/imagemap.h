@@ -25,6 +25,7 @@
 #include "texture.h"
 #include "mipmap.h"
 #include "imagereader.h"
+#include "equalspd.h"
 #include "paramset.h"
 #include "error.h"
 #include <map>
@@ -59,6 +60,7 @@ public:
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
 	};
+	virtual float Y() const { return EqualSPD(1.f).Y(); }
 	
 	u_int getMemoryUsed() const {
 		if (mipmap)
@@ -120,6 +122,7 @@ public:
 		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
 		return SWCSpectrum(tspack, mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy));
 	};
+	virtual float Y() const { return EqualSPD(1.f).Y(); }
 	
 	u_int getMemoryUsed() const {
 		if (mipmap)

@@ -107,6 +107,10 @@ public:
 		// Inside brick
 		return tex1->Evaluate(tspack, dg);
     }
+	virtual float Y() const {
+		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
+		return Lerp(m, tex2->Y(), tex1->Y());
+	}
 	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);

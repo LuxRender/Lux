@@ -27,17 +27,10 @@
 using namespace lux;
 
 // BlackBodyTexture Method Definitions
-Texture<float> * BlackBodyTexture::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return new BlackBodyFloatTexture<float>(
-		tp.FindFloat("temperature", 6500.f));
+Texture<SWCSpectrum> *BlackBodyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
+	const TextureParams &tp)
+{
+	return new BlackBodyTexture(tp.FindFloat("temperature", 6500.f));
 }
 
-Texture<SWCSpectrum> * BlackBodyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return new BlackBodySpectrumTexture<SWCSpectrum>(
-		tp.FindFloat("temperature", 6500.f));
-}
-
-static DynamicLoader::RegisterFloatTexture<BlackBodyTexture> r1("blackbody");
-static DynamicLoader::RegisterSWCSpectrumTexture<BlackBodyTexture> r2("blackbody");
+static DynamicLoader::RegisterSWCSpectrumTexture<BlackBodyTexture> r("blackbody");

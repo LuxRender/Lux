@@ -31,36 +31,37 @@ namespace lux
 {
 
 // ConstantTexture Declarations
-template <class T>
-class ConstantFloatTexture : public Texture<T> {
+class ConstantFloatTexture : public Texture<float> {
 public:
 	// ConstantTexture Public Methods
-	ConstantFloatTexture(const T &v) { value = v; }
+	ConstantFloatTexture(const float &v) : value(v) { }
 	virtual ~ConstantFloatTexture() { }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual float Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
 		return value;
 	}
+	virtual float Y() const { return value; }
 private:
-	T value;
+	float value;
 };
 
-template <class T>
-class ConstantRGBColorTexture : public Texture<T> {
+class ConstantRGBColorTexture : public Texture<SWCSpectrum> {
 public:
 	// ConstantTexture Public Methods
-	ConstantRGBColorTexture(const RGBColor &s) {
-		color = s;
+	ConstantRGBColorTexture(const RGBColor &s) : color(s) {
 		RGBSPD = new RGBReflSPD(color);
 	}
 	virtual ~ConstantRGBColorTexture() { delete RGBSPD; }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
 		return SWCSpectrum(tspack, RGBSPD);
 	}
+	virtual float Y() const { return RGBSPD->Y(); }
 	virtual void SetPower(float power, float area) {
-		float Y = RGBSPD->Y();
-		if (!(Y > 0))
+		const float y = Y();
+		if (!(y > 0.f))
 			return;
-		RGBSPD->Scale(power / (area * M_PI * Y));
+		RGBSPD->Scale(power / (area * M_PI * y));
 	}
 	virtual void SetIlluminant() {
 		delete RGBSPD;
@@ -74,8 +75,8 @@ private:
 class Constant
 {
 public:
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 };
 
 }//namespace lux

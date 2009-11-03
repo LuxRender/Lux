@@ -30,42 +30,27 @@ namespace lux
 {
 
 // IrregularDataTexture Declarations
-template <class T>
-class IrregularDataFloatTexture : public Texture<T> {
-public:
-	// IrregularDataFloatTexture Public Methods
-	IrregularDataFloatTexture(const T &v) { value = v; }
-	virtual ~IrregularDataFloatTexture() { }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return value;
-	}
-private:
-	T value;
-};
-
-template <class T>
-class IrregularDataSpectrumTexture : public Texture<T> {
+class IrregularDataTexture : public Texture<SWCSpectrum> {
 public:
 	// IrregularDataSpectrumTexture Public Methods
-	IrregularDataSpectrumTexture(const int &n, const float *wl, const float *data, float resolution = 5) {
-		SPD = new IrregularSPD(wl, data, n, resolution);
+	IrregularDataTexture(u_int n, const float *wl, const float *data,
+		float resolution = 5.f) : SPD(wl, data, n, resolution) { }
+	virtual ~IrregularDataTexture() { }
+	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		return SWCSpectrum(tspack, &SPD);
 	}
-	virtual ~IrregularDataSpectrumTexture() { delete SPD; }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, SPD);
-	}
+	virtual float Y() const { return SPD.Y(); }
 	virtual void SetPower(float power, float area) {
-		SPD->Scale(power / (area * M_PI * SPD->Y()));
+		const float y = Y();
+		if (!(y > 0.f))
+			return;
+		SPD.Scale(power / (area * M_PI * y));
 	}
-private:
-	IrregularSPD* SPD;
-};
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
-class IrregularDataTexture
-{
-public:
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	IrregularSPD SPD;
 };
 
 }//namespace lux

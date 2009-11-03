@@ -29,12 +29,12 @@ using namespace lux;
 // ConstantTexture Method Definitions
 Texture<float> * Constant::CreateFloatTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new ConstantFloatTexture<float>(tp.FindFloat("value", 1.f));
+	return new ConstantFloatTexture(tp.FindFloat("value", 1.f));
 }
 
 Texture<SWCSpectrum> * Constant::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
-	return new ConstantRGBColorTexture<SWCSpectrum>(tp.FindRGBColor("value", RGBColor(1.f)));
+	return new ConstantRGBColorTexture(tp.FindRGBColor("value", RGBColor(1.f)));
 }
 
 static DynamicLoader::RegisterFloatTexture<Constant> r1("constant");

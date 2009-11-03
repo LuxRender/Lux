@@ -1176,7 +1176,7 @@ boost::shared_ptr<Texture<SWCSpectrum> >
 	}
 	RGBColor val = geomParams.FindOneRGBColor(n,
 		materialParams.FindOneRGBColor(n, def));
-	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture<SWCSpectrum>(val));
+	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture(val));
 }
 boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
 	string name = geomParams.FindTexture(n);
@@ -1197,7 +1197,7 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 	boost::shared_ptr<Texture<float> > texture = GetFloatTexture(n);
 	if (texture)  return texture;
 	float val = FindFloat(n, def);
-	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture<float>(val));
+	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
 }
 
 }

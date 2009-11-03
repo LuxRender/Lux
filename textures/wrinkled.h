@@ -23,6 +23,7 @@
 // wrinkled.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "equalspd.h"
 #include "paramset.h"
 
 // TODO - radiance - add methods for Power and Illuminant propagation
@@ -47,6 +48,7 @@ public:
 		Point P = mapping->Map(dg, &dpdx, &dpdy);
 		return Turbulence(P, dpdx, dpdy, omega, octaves);
 	}
+	virtual float Y() const { return EqualSPD(.5f).Y(); }
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);

@@ -58,6 +58,12 @@ public:
 
 		return SWCSpectrum(tspack, ColorLookupTable[lookupIndex]);
 	}
+	virtual float Y() const {
+		float y = 0.f;
+		for (u_int i = 0; i < HARLEQUIN_TEXTURE_PALETTE_SIZE; ++i)
+			y += ColorLookupTable[i].Y();
+		return y / HARLEQUIN_TEXTURE_PALETTE_SIZE;
+	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);

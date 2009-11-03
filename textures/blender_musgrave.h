@@ -80,14 +80,15 @@ public:
         int resultType = multitex(&tex, &P.x, &texres);
 
         if(resultType & TEX_RGB)
-            texres.tin = (0.35 * texres.tr + 0.45 * texres.tg
-                    + 0.2 * texres.tb);
+            texres.tin = (0.35f * texres.tr + 0.45f * texres.tg
+                    + 0.2f * texres.tb);
         else
             texres.tr = texres.tg = texres.tb = texres.tin;
 
 		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
 		return (1.f - texres.tin) * t1 + texres.tin * t2;
     }
+	virtual float Y() const { return (tex1->Y() + tex2->Y()) / 2.f; }
 	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);

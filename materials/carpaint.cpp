@@ -156,16 +156,16 @@ void DataFromName(const string name, boost::shared_ptr<Texture<SWCSpectrum> > *K
 							  break;
 					  }
 
-					  boost::shared_ptr<Texture<SWCSpectrum> > kd (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].kd));
-					  boost::shared_ptr<Texture<SWCSpectrum> > ks1 (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].ks1));
-					  boost::shared_ptr<Texture<SWCSpectrum> > ks2 (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].ks2));
-					  boost::shared_ptr<Texture<SWCSpectrum> > ks3 (new ConstantRGBColorTexture<SWCSpectrum>(carpaintdata[i].ks3));
-					  boost::shared_ptr<Texture<float> > r1 (new ConstantFloatTexture<float>(carpaintdata[i].r1));
-					  boost::shared_ptr<Texture<float> > r2 (new ConstantFloatTexture<float>(carpaintdata[i].r2));
-					  boost::shared_ptr<Texture<float> > r3 (new ConstantFloatTexture<float>(carpaintdata[i].r3));
-					  boost::shared_ptr<Texture<float> > m1 (new ConstantFloatTexture<float>(carpaintdata[i].m1));
-					  boost::shared_ptr<Texture<float> > m2 (new ConstantFloatTexture<float>(carpaintdata[i].m2));
-					  boost::shared_ptr<Texture<float> > m3 (new ConstantFloatTexture<float>(carpaintdata[i].m3));
+					  boost::shared_ptr<Texture<SWCSpectrum> > kd (new ConstantRGBColorTexture(carpaintdata[i].kd));
+					  boost::shared_ptr<Texture<SWCSpectrum> > ks1 (new ConstantRGBColorTexture(carpaintdata[i].ks1));
+					  boost::shared_ptr<Texture<SWCSpectrum> > ks2 (new ConstantRGBColorTexture(carpaintdata[i].ks2));
+					  boost::shared_ptr<Texture<SWCSpectrum> > ks3 (new ConstantRGBColorTexture(carpaintdata[i].ks3));
+					  boost::shared_ptr<Texture<float> > r1 (new ConstantFloatTexture(carpaintdata[i].r1));
+					  boost::shared_ptr<Texture<float> > r2 (new ConstantFloatTexture(carpaintdata[i].r2));
+					  boost::shared_ptr<Texture<float> > r3 (new ConstantFloatTexture(carpaintdata[i].r3));
+					  boost::shared_ptr<Texture<float> > m1 (new ConstantFloatTexture(carpaintdata[i].m1));
+					  boost::shared_ptr<Texture<float> > m2 (new ConstantFloatTexture(carpaintdata[i].m2));
+					  boost::shared_ptr<Texture<float> > m3 (new ConstantFloatTexture(carpaintdata[i].m3));
 
 					  *Kd = kd;
 					  *Ks1 = ks1;

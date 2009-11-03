@@ -44,8 +44,9 @@ public:
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
 		float amt = amount->Evaluate(tspack, dg);
-		return (1.f - amt) * t1 + amt * t2;
+		return Lerp(amt, t1, t2);
 	}
+	virtual float Y() const { return Lerp(amount->Y(), tex1->Y(), tex2->Y()); }
 	virtual void SetPower(float power, float area) {
 		// Update sub-textures
 		tex1->SetPower(power, area);

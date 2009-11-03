@@ -49,6 +49,10 @@ public:
 		cs[1] = t - Floor2Int(t);
 		return SWCSpectrum(tspack, RGBColor(cs));
 	}
+	virtual float Y() const {
+		const float cs[COLOR_SAMPLES] = {1.f, 1.f, 0.f};
+		return RGBColor(cs).Y() / 2.f;
+	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
