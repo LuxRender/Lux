@@ -59,7 +59,7 @@ template <class T> struct ParamSetItem {
 		ar & name;
 		ar & nItems;
 
-		for(u_int i = 0; i < nItems; ++i)
+		for (u_int i = 0; i < nItems; ++i)
 			ar & data[i];
 
 		ar & lookedUp;
@@ -72,7 +72,7 @@ template <class T> struct ParamSetItem {
 		if(data!=0)
 			delete[] data;
 		data=new T[nItems];
-		for(u_int i = 0; i < nItems; ++i)
+		for (u_int i = 0; i < nItems; ++i)
 			ar & data[i];
 
 		ar & lookedUp;

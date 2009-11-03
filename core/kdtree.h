@@ -114,7 +114,7 @@ KdTree<NodeData, LookupProc>::recursiveBuild(u_int nodeNum,
 	for (u_int i = start; i < end; ++i)
 		bound = Union(bound, buildNodes[i]->p);
 	u_int splitAxis = bound.MaximumExtent();
-	u_int splitPos = (start + end)/2;
+	u_int splitPos = (start + end) / 2;
 	std::nth_element(&buildNodes[start], &buildNodes[splitPos],
 		&buildNodes[end-1], CompareNode<NodeData>(splitAxis)); // NOTE - radiance - [end-1] - fix
 

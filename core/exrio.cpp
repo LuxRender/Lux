@@ -21,14 +21,11 @@
  ***************************************************************************/
 
 // exrio.cpp*
-//#ifdef __APPLE__
 #include "lux.h"
 #include "error.h"
 #include "color.h"
-#include "color.h"
 #include "spectrum.h"
 #include "imagereader.h"
-//#endif
 #include <algorithm>
 
 #include <boost/filesystem/path.hpp>
@@ -243,7 +240,7 @@ namespace lux {
 		try {
 			boost::filesystem::path imagePath(name);
 			// boost::filesystem::exists() can throw an exception under Windows
-			// if the driver in imagePath doesn't exist
+			// if the drive in imagePath doesn't exist
 			if (!boost::filesystem::exists(imagePath)) {
 				std::stringstream ss;
 				ss << "Unable to open image file '" << imagePath.string() << "'";
@@ -385,7 +382,7 @@ namespace lux {
 		half *hrgb = NULL;
 		half *ha = NULL;
 		const u_int bufSize = xRes * yRes;
-		const int bufOffset = xOffset + yOffset * xRes;
+		const u_int bufOffset = xOffset + yOffset * xRes;
 
 		if(!halftype) {
 			// Write framebuffer data for 32bit FLOAT type
