@@ -70,13 +70,12 @@ template<class T> T bilinearSampleImage(const vector<T> &pixels,
 	const u_int xResolution, const u_int yResolution, 
 	const float x, const float y)
 {
-	// warning: x and y can be negative
-	const u_int x1 = static_cast<u_int>(Clamp<int>(Floor2Int(x), 0, xResolution - 1));
-	const u_int y1 = static_cast<u_int>(Clamp<int>(Floor2Int(y), 0, yResolution - 1));
-	const u_int x2 = Clamp(x1 + 1U, 0U, xResolution - 1);
-	const u_int y2 = Clamp(y1 + 1U, 0U, yResolution - 1);
-	const float tx = Clamp(x - x1, 0.f, 1.f);
-	const float ty = Clamp(y - y1, 0.f, 1.f);
+	u_int x1 = Clamp(Floor2UInt(x), 0U, xResolution - 1);
+	u_int y1 = Clamp(Floor2UInt(y), 0U, yResolution - 1);
+	u_int x2 = Clamp(x1 + 1, 0U, xResolution - 1);
+	u_int y2 = Clamp(y1 + 1, 0U, yResolution - 1);
+	float tx = Clamp(x - static_cast<float>(x1), 0.f, 1.f);
+	float ty = Clamp(y - static_cast<float>(y1), 0.f, 1.f);
 
 	T c(0.f);
 	c.AddWeighted((1.f - tx) * (1.f - ty), pixels[y1 * xResolution + x1]);

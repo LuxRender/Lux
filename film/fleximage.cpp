@@ -965,8 +965,8 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	int x1 = Floor2Int(dImageX + filter->xWidth);
 	int y0 = Ceil2Int (dImageY - filter->yWidth);
 	int y1 = Floor2Int(dImageY + filter->yWidth);
-
-	if (x1 < x0 || y1 < y0) return;
+	if (x1 < x0 || y1 < y0 || x1 < 0 || y1 < 0)
+		return;
 	// Loop over filter support and add sample to pixel arrays
 	// Precompute $x$ and $y$ filter table offsets
 //	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
@@ -992,10 +992,8 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 	}
 	filterNorm = weight / filterNorm;
 
-	// x and y are intentionally signed
-	for (int y = max<int>(y0, static_cast<int>(yPixelStart)); y <= min<int>(y1, static_cast<int>(yPixelStart + yPixelCount - 1)); ++y) {
-		for (int x = max<int>(x0, static_cast<int>(xPixelStart)); x <= min<int>(x1, static_cast<int>(xPixelStart + xPixelCount - 1)); ++x) {
-			// Evaluate filter value at $(x,y)$ pixe
+	for (u_int y = static_cast<u_int>(max(y0, static_cast<int>(yPixelStart))); y <= static_cast<u_int>(min(y1, static_cast<int>(yPixelStart + yPixelCount - 1))); ++y) {
+		for (u_int x = static_cast<u_int>(max(x0, static_cast<int>(xPixelStart))); x <= static_cast<u_int>(min(x1, static_cast<int>(xPixelStart + xPixelCount - 1))); ++x) {
 			// Evaluate filter value at $(x,y)$ pixel
 			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
 			const float filterWt = filterTable[offset] * filterNorm;
