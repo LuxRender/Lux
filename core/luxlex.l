@@ -49,11 +49,12 @@ struct ParamArray;
 struct IncludeInfo {
 	string filename;
 	YY_BUFFER_STATE bufState;
-	int lineNum;
+	u_int lineNum;
 };
 vector<IncludeInfo> includeStack;
 
 extern u_int line_num;
+extern string current_file;
 int str_pos;
 
 void add_string_char( char c )
@@ -85,7 +86,6 @@ void include_push(char *filename) {
             luxError(LUX_NOFILE,LUX_SEVERE,ss.str().c_str());
         } else {
             IncludeInfo ii;
-            extern string current_file;
             ii.filename = current_file;
             ii.bufState = YY_CURRENT_BUFFER;
             ii.lineNum = line_num;
@@ -102,8 +102,6 @@ void include_push(char *filename) {
 
 void include_pop(void)
 {
-	extern u_int line_num;
-	extern string current_file;
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	yy_switch_to_buffer(includeStack.back().bufState);
 	current_file = includeStack.back().filename;
