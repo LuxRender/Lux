@@ -47,7 +47,8 @@ void RenderView::copyToClipboard()
 		unsigned char* fb = luxFramebuffer();
 		QImage image = QImage(fb, w, h, QImage::Format_RGB888);
 		QClipboard *clipboard = QApplication::clipboard();
-		clipboard->setImage(image);
+		// QT assumes 32bpp images for clipboard (DIBs)
+		clipboard->setImage(image.convertToFormat(QImage::Format_RGB32));
 	}
 }
 
