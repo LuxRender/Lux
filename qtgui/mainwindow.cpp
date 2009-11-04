@@ -37,6 +37,11 @@
 #include "ui_luxrender.h"
 #include "aboutdialog.h"
 
+#if defined(WIN32) && !defined(__CYGWIN__)
+#include "direct.h"
+#define chdir _chdir
+#endif
+
 using namespace lux;
 
 bool copyLog2Console = false;
