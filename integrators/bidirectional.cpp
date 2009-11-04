@@ -676,14 +676,14 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				vecV[eGroup] += Le.Filter(tspack);
 				vecL[eGroup] += Le;
 				++nrContribs;
+			}
+			if (nEye == 2) {
 				// Remove directly visible environment
 				// to allow compositing
-				if (nEye == 2)
-					alpha = 0.f;
-			}
-			// Tweak intersection distance for Z buffer
-			if (nEye == 2)
+				alpha = 0.f;
+				// Tweak intersection distance for Z buffer
 				eyePath[0].d2 = INFINITY;
+			}
 			// End eye path tracing
 			break;
 		}
