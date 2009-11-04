@@ -59,7 +59,7 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	header[14] = static_cast<char>(yResolution & 0xFF);
 	if(channeltype == 0)
 		header[16] = 8;						// bitdepth for BW
-	else if(channeltype == 1)
+	else if(channeltype == 2)
 		header[16] = 24;						// bitdepth for RGB
 	else
 		header[16] = 32;						// bitdepth for RGBA
@@ -82,7 +82,7 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 				fputc(static_cast<unsigned char>(Clamp(256.f * pixels[offset].c[2], 0.f, 255.f)), tgaFile);
 				fputc(static_cast<unsigned char>(Clamp(256.f * pixels[offset].c[1], 0.f, 255.f)), tgaFile);
 				fputc(static_cast<unsigned char>(Clamp(256.f * pixels[offset].c[0], 0.f, 255.f)), tgaFile);
-				if(channeltype == 2) //  Alpha
+				if(channeltype == 3) //  Alpha
 					fputc(static_cast<unsigned char>(Clamp(256.f * alpha[offset], 0.f, 255.f)), tgaFile);
 			}
 		}
