@@ -409,7 +409,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		default:
 			ss << "?";
 	}
-	ss << ", quads= " << numConcreteQuads << " ";
+	ss << ", quads = " << numConcreteQuads << " ";
 	switch (quadType) {
 		case QUAD_QUADRILATERAL:
 			ss << "quadrilateral";

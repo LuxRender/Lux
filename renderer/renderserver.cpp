@@ -587,6 +587,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 						luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
 
 						Context::luxTransmitFilm(stream);
+std::cout<<"wait for flush\n";
+						stream.flush();
+std::cout<<"flush done\n";
 						stream.close();
 
 						luxError(LUX_NOERROR, LUX_INFO, "Finished film samples transmission");
