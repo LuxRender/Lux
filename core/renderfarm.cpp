@@ -272,26 +272,76 @@ void RenderFarm::updateFilm(Scene *scene) {
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-			tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
-			stream << "luxGetFilm" << endl;
-			stream << serverInfoList[i].sid << endl;
+			// I'm using directly a tcp::socket here in order to be able to enable
+			// keep alive option and to set keep alive parameters
+			boost::asio::io_service ioService;
+			tcp::resolver resolver(ioService);
+			tcp::resolver::query query(serverInfoList[i].name, serverInfoList[i].port);
+			tcp::resolver::iterator iterator = resolver.resolve(query);
 
-			if (stream.good()) {
-				serverInfoList[i].numberOfSamplesReceived += film->UpdateFilm(stream);
+			// Connect to the server
+			tcp::socket slaveSocket(ioService);
+			slaveSocket.connect(*iterator);
 
-				ss.str("");
-				ss << "Samples received from '" <<
-						serverInfoList[i].name << ":" << serverInfoList[i].port << "'";
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			// Enable keep alive option
+			boost::asio::socket_base::keep_alive option(true);
+			slaveSocket.set_option(option);
+#if defined(__linux__) || defined(__MACOSX__)
+			// Set keep alive parameters on *nix platforms
+			const int nativeSocket = static_cast<int>(slaveSocket.native());
+			int optval = 3; // Retry count
+			const socklen_t optlen = sizeof(optval);
+			setsockopt(nativeSocket, SOL_TCP, TCP_KEEPCNT, &optval, optlen);
+			optval = 30; // Keep alive interval
+			setsockopt(nativeSocket, SOL_TCP, TCP_KEEPIDLE, &optval, optlen);
+			optval = 5; // Time between retries
+			setsockopt(nativeSocket, SOL_TCP, TCP_KEEPINTVL, &optval, optlen);
+#endif
 
-				serverInfoList[i].timeLastContact = second_clock::local_time();
-			} else {
-				ss.str("");
-				ss << "Error while contacting server: " <<
-						serverInfoList[i].name << ":" << serverInfoList[i].port;
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			// Send the command to get the film
+			ss.str("");
+			ss << "luxGetFilm" << std::endl;
+			boost::asio::write(slaveSocket, boost::asio::buffer(ss.str().c_str(), ss.str().size()));
+			ss.str("");
+			ss << serverInfoList[i].sid << std::endl;
+			boost::asio::write(slaveSocket, boost::asio::buffer(ss.str().c_str(), ss.str().size()));
+
+			// Receive the film in a compressed format
+			std::stringstream compressedStream(std::stringstream::in |
+					std::stringstream::out | std::stringstream::binary);
+			boost::array<char, 16 * 1024 > buf;
+			std::streamsize compressedSize = 0;
+			for (bool done = false; !done;) {
+				boost::system::error_code error;
+				std::size_t count = boost::asio::read(
+						slaveSocket, boost::asio::buffer(buf),
+						boost::asio::transfer_all(), error);
+				if (error == boost::asio::error::eof)
+					done = true;
+				else if (error)
+					throw boost::system::system_error(error);
+
+				compressedStream.write(buf.c_array(), count);
+				compressedSize += count;
 			}
-		} catch (exception& e) {
+
+			slaveSocket.close();
+
+			// Decopress and merge the film
+			serverInfoList[i].numberOfSamplesReceived += film->UpdateFilm(compressedStream);
+
+			ss.str("");
+			ss << "Samples received from '" <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
+					(compressedSize / 1024) << " Kbytes)";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			serverInfoList[i].timeLastContact = second_clock::local_time();
+		} catch (std::exception& e) {
+			ss.str("");
+			ss << "Error while communicating with server: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 			luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 		}
 	}

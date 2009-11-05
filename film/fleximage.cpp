@@ -1647,7 +1647,7 @@ void FlexImageFilm::TransmitFilm(
 
     std::stringstream ss;
     ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-    luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
     std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
 	// Write the header
@@ -1772,8 +1772,9 @@ void FlexImageFilm::TransmitFilm(
 
 		totNumberOfSamples += bufferGroup.numberOfSamples;
 		ss.str("");
-		ss << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		ss << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
+			" (buffer config size: " << bufferConfigs.size() << ")";
+		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 		if (clearBuffers) {
 			// Dade - reset the rendering buffer
@@ -1788,7 +1789,7 @@ void FlexImageFilm::TransmitFilm(
 
 	ss.str("");
 	ss << "Transmitted a film with " << totNumberOfSamples << " samples";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 	filtering_streambuf<input> in;
 	in.push(gzip_compressor(9));
@@ -1800,7 +1801,7 @@ void FlexImageFilm::TransmitFilm(
 	}
 
 	ss.str("");
-	ss << "Film transmission done (" << (size / 1024) << "KBytes sent)";
+	ss << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 }
 
@@ -1813,7 +1814,7 @@ double FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 
 	std::stringstream ss;
 	ss << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 	// Read header
 	FlmHeader header;
@@ -1852,6 +1853,11 @@ double FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 		}
 		if (!in.good())
 			break;
+
+		ss.str("");
+		ss << "Received " << bufferGroupNumSamples[i] << " samples for buffer group " << i <<
+			" (buffer config size: " << bufferConfigs.size() << ")";
+		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 	}
 
 	// Dade - check for errors
@@ -1890,10 +1896,6 @@ double FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 				enoughSamplePerPixel = true;
 			totNumberOfSamples += bufferGroupNumSamples[i];
 			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
-
-			ss.str("");
-			ss << "Received " << bufferGroupNumSamples[i] << " samples for buffer group " << i;
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		}
 
 		if (scene != NULL)
@@ -1901,7 +1903,7 @@ double FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
 
 		ss.str("");
 		ss << "Received film with " << totNumberOfSamples << " samples";
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 	} else
 		luxError(LUX_SYSTEM, LUX_ERROR, "IO error while receiving film buffers");
 
