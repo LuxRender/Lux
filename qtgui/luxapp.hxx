@@ -25,7 +25,7 @@
 
 #include <QtGui/QApplication>
 
-#include "mainwindow.h"
+#include "mainwindow.hxx"
 
 namespace lux
 {

@@ -51,9 +51,9 @@
 #include "lux.h"
 #include "api.h"
 #include "error.h"
-#include "renderview.h"
-#include "histogramview.h"
-#include "lightgroupwidget.h"
+#include "renderview.hxx"
+#include "histogramview.hxx"
+#include "lightgroupwidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
 

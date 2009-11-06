@@ -32,8 +32,8 @@
 #include "error.h"
 #include "osfunc.h"
 
-#include "luxapp.h"
-#include "mainwindow.h"
+#include "luxapp.hxx"
+#include "mainwindow.hxx"
 
 using namespace lux;
 

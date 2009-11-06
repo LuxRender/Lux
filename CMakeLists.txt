@@ -666,12 +666,12 @@ SET( LUXQTGUI_SRCS
     qtgui/lightgroupwidget.cpp
     )
 SET( LUXQTGUI_MOC
-    qtgui/histogramview.h
-    qtgui/mainwindow.h
-    qtgui/aboutdialog.h
-    qtgui/luxapp.h
-    qtgui/renderview.h
-    qtgui/lightgroupwidget.h
+    qtgui/histogramview.hxx
+    qtgui/mainwindow.hxx
+    qtgui/aboutdialog.hxx
+    qtgui/luxapp.hxx
+    qtgui/renderview.hxx
+    qtgui/lightgroupwidget.hxx
     )
 SET(LUXQTGUI_UIS
     qtgui/luxrender.ui

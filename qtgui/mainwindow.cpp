@@ -33,9 +33,9 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "mainwindow.h"
+#include "mainwindow.hxx"
 #include "ui_luxrender.h"
-#include "aboutdialog.h"
+#include "aboutdialog.hxx"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
