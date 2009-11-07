@@ -34,7 +34,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab_render">
        <property name="enabled">
@@ -58,6 +58,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
            <widget class="QToolButton" name="button_resume">
+            <property name="toolTip">
+             <string>Resume rendering</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -69,6 +72,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_pause">
+            <property name="toolTip">
+             <string>Pause current rendering</string>
+            </property>
             <property name="text">
              <string>||</string>
             </property>
@@ -80,6 +86,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_stop">
+            <property name="toolTip">
+             <string>Stop current rendering</string>
+            </property>
             <property name="text">
              <string>[]</string>
             </property>
@@ -105,6 +114,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_addThread">
+            <property name="toolTip">
+             <string>Add a rendering thread</string>
+            </property>
             <property name="text">
              <string>+</string>
             </property>
@@ -116,6 +128,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_removeThread">
+            <property name="toolTip">
+             <string>Remove rendering thread</string>
+            </property>
             <property name="text">
              <string>-</string>
             </property>
@@ -134,6 +149,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_copyToClipboard">
+            <property name="toolTip">
+             <string>Copy rendering image to clipboard.</string>
+            </property>
             <property name="text">
              <string>[]</string>
             </property>
@@ -223,6 +241,9 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="toolTip">
+                <string>Reset Tone Mapping to default values</string>
+               </property>
                <property name="text">
                 <string>Reset</string>
                </property>
@@ -245,6 +266,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Enable automatic updates</string>
+               </property>
                <property name="text">
                 <string>Auto</string>
                </property>
@@ -257,6 +281,9 @@
               <widget class="QPushButton" name="button_imagingApply">
                <property name="enabled">
                 <bool>true</bool>
+               </property>
+               <property name="toolTip">
+                <string>Apply changes</string>
                </property>
                <property name="text">
                 <string>Apply</string>
@@ -281,7 +308,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>5</number>
                </property>
                <widget class="QWidget" name="page_toneMap">
                 <property name="enabled">
@@ -291,8 +318,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>541</width>
-                  <height>392</height>
+                  <width>538</width>
+                  <height>387</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -329,6 +356,9 @@
                    </item>
                    <item row="0" column="1">
                     <widget class="QComboBox" name="comboBox_kernel">
+                     <property name="toolTip">
+                      <string>Select Tonemapping Kernel</string>
+                     </property>
                      <item>
                       <property name="text">
                        <string>Reinhard / non-Linear</string>
@@ -374,6 +404,9 @@
                         </item>
                         <item row="0" column="1">
                          <widget class="QSlider" name="slider_prescale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Prescale</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -384,6 +417,9 @@
                         </item>
                         <item row="0" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_prescale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Prescale Value</string>
+                          </property>
                           <property name="decimals">
                            <number>3</number>
                           </property>
@@ -404,6 +440,9 @@
                         </item>
                         <item row="1" column="1">
                          <widget class="QSlider" name="slider_postscale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Postscale</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -414,6 +453,9 @@
                         </item>
                         <item row="1" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_postscale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Postscale Value</string>
+                          </property>
                           <property name="decimals">
                            <number>3</number>
                           </property>
@@ -434,6 +476,9 @@
                         </item>
                         <item row="2" column="1">
                          <widget class="QSlider" name="slider_burn">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Burn</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -444,6 +489,9 @@
                         </item>
                         <item row="2" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_burn">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Burn Value</string>
+                          </property>
                           <property name="decimals">
                            <number>3</number>
                           </property>
@@ -480,6 +528,9 @@
                         </item>
                         <item row="0" column="1">
                          <widget class="QSlider" name="slider_sensitivity">
+                          <property name="toolTip">
+                           <string>Adjust Sensitivity</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -490,6 +541,9 @@
                         </item>
                         <item row="0" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_sensitivity">
+                          <property name="toolTip">
+                           <string>Adjust Sensitivity Value</string>
+                          </property>
                           <property name="decimals">
                            <number>1</number>
                           </property>
@@ -513,6 +567,9 @@
                         </item>
                         <item row="1" column="1">
                          <widget class="QSlider" name="slider_exposure">
+                          <property name="toolTip">
+                           <string>Adjust Exposure</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -523,6 +580,9 @@
                         </item>
                         <item row="1" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_exposure">
+                          <property name="toolTip">
+                           <string>Adjust Exposure Value</string>
+                          </property>
                           <property name="decimals">
                            <number>3</number>
                           </property>
@@ -549,6 +609,9 @@
                         </item>
                         <item row="2" column="1">
                          <widget class="QSlider" name="slider_fstop">
+                          <property name="toolTip">
+                           <string>Adjust FStop</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -559,6 +622,9 @@
                         </item>
                         <item row="2" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_fstop">
+                          <property name="toolTip">
+                           <string>Adjust FStopValue</string>
+                          </property>
                           <property name="maximum">
                            <double>64.000000000000000</double>
                           </property>
@@ -576,6 +642,9 @@
                         </item>
                         <item row="3" column="1">
                          <widget class="QSlider" name="slider_gamma_linear">
+                          <property name="toolTip">
+                           <string>Adjust Gamma</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -586,6 +655,9 @@
                         </item>
                         <item row="3" column="2">
                          <widget class="QDoubleSpinBox" name="spinBox_gamma_linear">
+                          <property name="toolTip">
+                           <string>Adjust Gamma Value</string>
+                          </property>
                           <property name="maximum">
                            <double>5.000000000000000</double>
                           </property>
@@ -622,6 +694,9 @@
                         </item>
                         <item row="1" column="0">
                          <widget class="QSlider" name="slider_ywa">
+                          <property name="toolTip">
+                           <string>Adjust Ywa</string>
+                          </property>
                           <property name="maximum">
                            <number>512</number>
                           </property>
@@ -632,6 +707,9 @@
                         </item>
                         <item row="1" column="1">
                          <widget class="QDoubleSpinBox" name="spinBox_ywa">
+                          <property name="toolTip">
+                           <string>Adjust Ywa Value</string>
+                          </property>
                           <property name="decimals">
                            <number>4</number>
                           </property>
@@ -674,7 +752,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>356</height>
+                  <height>364</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -694,7 +772,7 @@
                     <bool>true</bool>
                    </property>
                    <property name="currentIndex">
-                    <number>0</number>
+                    <number>3</number>
                    </property>
                    <widget class="QWidget" name="tab_gaussianBloom">
                     <attribute name="title">
@@ -707,6 +785,9 @@
                         <widget class="QPushButton" name="button_gaussianDeleteLayer">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Delete/Disable Bloom image layer</string>
                          </property>
                          <property name="text">
                           <string>Delete layer</string>
@@ -728,16 +809,26 @@
                        </item>
                        <item row="2" column="0" colspan="2">
                         <widget class="QPushButton" name="button_gaussianComputeLayer">
+                         <property name="toolTip">
+                          <string>Compute/Update Bloom image layer</string>
+                         </property>
                          <property name="text">
                           <string>Compute layer</string>
                          </property>
                         </widget>
                        </item>
                        <item row="1" column="4">
-                        <widget class="QDoubleSpinBox" name="spinBox_gaussianRadius"/>
+                        <widget class="QDoubleSpinBox" name="spinBox_gaussianRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Bloom Radius Value</string>
+                         </property>
+                        </widget>
                        </item>
                        <item row="1" column="1" colspan="3">
                         <widget class="QSlider" name="slider_gaussianRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Bloom Radius</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -761,12 +852,18 @@
                          <property name="enabled">
                           <bool>false</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Adjust Bloom amount Value</string>
+                         </property>
                         </widget>
                        </item>
                        <item row="0" column="1" colspan="3">
                         <widget class="QSlider" name="slider_gaussianAmount">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Bloom amount</string>
                          </property>
                          <property name="maximum">
                           <number>512</number>
@@ -810,6 +907,9 @@
                     <layout class="QVBoxLayout" name="verticalLayout_4">
                      <item>
                       <widget class="QCheckBox" name="checkBox_vignettingEnabled">
+                       <property name="toolTip">
+                        <string>Enable Vignetting</string>
+                       </property>
                        <property name="text">
                         <string>Enabled</string>
                        </property>
@@ -859,6 +959,9 @@
                          <property name="enabled">
                           <bool>true</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Adjust Vignetting Amount</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -877,6 +980,9 @@
                         <widget class="QDoubleSpinBox" name="spinBox_vignettingAmount">
                          <property name="enabled">
                           <bool>true</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Vignetting Amount Value</string>
                          </property>
                          <property name="decimals">
                           <number>3</number>
@@ -916,6 +1022,9 @@
                     <layout class="QVBoxLayout" name="verticalLayout_5">
                      <item>
                       <widget class="QCheckBox" name="checkBox_caEnabled">
+                       <property name="toolTip">
+                        <string>Enable Chromatic Abberation</string>
+                       </property>
                        <property name="text">
                         <string>Enabled</string>
                        </property>
@@ -962,6 +1071,9 @@
                        </item>
                        <item row="1" column="0" colspan="3">
                         <widget class="QSlider" name="slider_caAmount">
+                         <property name="toolTip">
+                          <string>Adjust Chromatic Abberation Amount</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -978,6 +1090,9 @@
                        </item>
                        <item row="1" column="3">
                         <widget class="QDoubleSpinBox" name="spinBox_caAmount">
+                         <property name="toolTip">
+                          <string>Adjust Chromatic Abberation Amount Value</string>
+                         </property>
                          <property name="decimals">
                           <number>3</number>
                          </property>
@@ -1048,6 +1163,9 @@
                        </item>
                        <item row="4" column="0" colspan="2">
                         <widget class="QPushButton" name="button_glareComputeLayer">
+                         <property name="toolTip">
+                          <string>Compute/Update Glare image layer</string>
+                         </property>
                          <property name="text">
                           <string>Compute layer</string>
                          </property>
@@ -1071,6 +1189,9 @@
                          <property name="enabled">
                           <bool>false</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Delete/Disable Glare image layer</string>
+                         </property>
                          <property name="text">
                           <string>Delete layer</string>
                          </property>
@@ -1078,6 +1199,9 @@
                        </item>
                        <item row="3" column="5" colspan="2">
                         <widget class="QDoubleSpinBox" name="spinBox_glareRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Glare Value</string>
+                         </property>
                          <property name="decimals">
                           <number>3</number>
                          </property>
@@ -1104,6 +1228,9 @@
                        </item>
                        <item row="3" column="1" colspan="4">
                         <widget class="QSlider" name="slider_glareRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Glare Radius</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -1114,6 +1241,9 @@
                        </item>
                        <item row="3" column="0">
                         <widget class="QSpinBox" name="spinBox_glareBlades">
+                         <property name="toolTip">
+                          <string>Adjust number of Glare blades used</string>
+                         </property>
                          <property name="maximum">
                           <number>100</number>
                          </property>
@@ -1123,6 +1253,9 @@
                         <widget class="QDoubleSpinBox" name="spinBox_glareAmount">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Glare amount Value</string>
                          </property>
                          <property name="decimals">
                           <number>3</number>
@@ -1135,10 +1268,13 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="1" column="0" colspan="5">
+                       <item row="1" column="0" colspan="6">
                         <widget class="QSlider" name="slider_glareAmount">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Glare amount</string>
                          </property>
                          <property name="maximum">
                           <number>512</number>
@@ -1191,7 +1327,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>356</height>
+                  <height>364</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1222,6 +1358,9 @@
                    </item>
                    <item row="0" column="1">
                     <widget class="QComboBox" name="comboBox_colorSpacePreset">
+                     <property name="toolTip">
+                      <string>Select ColorSpace Preset</string>
+                     </property>
                      <item>
                       <property name="text">
                        <string>sRGB - HDTV (ITU-R BT.709-5)</string>
@@ -1267,7 +1406,7 @@
                    <item row="1" column="0" colspan="2">
                     <widget class="QTabWidget" name="tabs_colorSpaceTabs">
                      <property name="currentIndex">
-                      <number>0</number>
+                      <number>1</number>
                      </property>
                      <widget class="QWidget" name="tab_whitepoint">
                       <attribute name="title">
@@ -1363,6 +1502,9 @@
                          </item>
                          <item row="1" column="2">
                           <widget class="QSlider" name="slider_whitePointX">
+                           <property name="toolTip">
+                            <string>Adjust Whitepoint X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1373,6 +1515,9 @@
                          </item>
                          <item row="1" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_whitePointX">
+                           <property name="toolTip">
+                            <string>White X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1393,6 +1538,9 @@
                          </item>
                          <item row="2" column="2">
                           <widget class="QSlider" name="slider_whitePointY">
+                           <property name="toolTip">
+                            <string>Adjust Whitepoint Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1403,6 +1551,9 @@
                          </item>
                          <item row="2" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_whitePointY">
+                           <property name="toolTip">
+                            <string>White Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1444,6 +1595,9 @@
                          </item>
                          <item row="1" column="0">
                           <widget class="QSlider" name="slider_redX">
+                           <property name="toolTip">
+                            <string>Red X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1454,6 +1608,9 @@
                          </item>
                          <item row="1" column="1">
                           <widget class="QDoubleSpinBox" name="spinBox_redX">
+                           <property name="toolTip">
+                            <string>Red X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1464,6 +1621,9 @@
                          </item>
                          <item row="1" column="2">
                           <widget class="QSlider" name="slider_redY">
+                           <property name="toolTip">
+                            <string>Red Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1474,6 +1634,9 @@
                          </item>
                          <item row="1" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_redY">
+                           <property name="toolTip">
+                            <string>Red Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1484,6 +1647,9 @@
                          </item>
                          <item row="2" column="0">
                           <widget class="QSlider" name="slider_greenX">
+                           <property name="toolTip">
+                            <string>Green X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1494,6 +1660,9 @@
                          </item>
                          <item row="2" column="1">
                           <widget class="QDoubleSpinBox" name="spinBox_greenX">
+                           <property name="toolTip">
+                            <string>Green X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1504,6 +1673,9 @@
                          </item>
                          <item row="2" column="2">
                           <widget class="QSlider" name="slider_greenY">
+                           <property name="toolTip">
+                            <string>Green Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1514,6 +1686,9 @@
                          </item>
                          <item row="2" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_greenY">
+                           <property name="toolTip">
+                            <string>Green Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1524,6 +1699,9 @@
                          </item>
                          <item row="3" column="0">
                           <widget class="QSlider" name="slider_blueX">
+                           <property name="toolTip">
+                            <string>Blue X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1534,6 +1712,9 @@
                          </item>
                          <item row="3" column="1">
                           <widget class="QDoubleSpinBox" name="spinBox_blueX">
+                           <property name="toolTip">
+                            <string>Blue X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1544,6 +1725,9 @@
                          </item>
                          <item row="3" column="2">
                           <widget class="QSlider" name="slider_blueY">
+                           <property name="toolTip">
+                            <string>Blue Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1554,6 +1738,9 @@
                          </item>
                          <item row="3" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_blueY">
+                           <property name="toolTip">
+                            <string>Blue Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1594,7 +1781,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>356</height>
+                  <height>364</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1612,6 +1799,9 @@
                   <layout class="QHBoxLayout" name="horizontalLayout">
                    <item>
                     <widget class="QSlider" name="slider_gamma">
+                     <property name="toolTip">
+                      <string>Adjust Gamma Correction</string>
+                     </property>
                      <property name="maximum">
                       <number>512</number>
                      </property>
@@ -1622,6 +1812,9 @@
                    </item>
                    <item>
                     <widget class="QDoubleSpinBox" name="spinBox_gamma">
+                     <property name="toolTip">
+                      <string>Adjust Gamma Correction Value</string>
+                     </property>
                      <property name="maximum">
                       <double>5.000000000000000</double>
                      </property>
@@ -1656,7 +1849,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>356</height>
+                  <height>364</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1684,6 +1877,9 @@
                    </item>
                    <item row="0" column="1">
                     <widget class="QComboBox" name="comboBox_histogramChannel">
+                     <property name="toolTip">
+                      <string>Pick a channel displayed on the histogram</string>
+                     </property>
                      <item>
                       <property name="text">
                        <string>R+G+B</string>
@@ -1731,6 +1927,9 @@
                    </item>
                    <item row="0" column="4">
                     <widget class="QCheckBox" name="checkBox_histogramLog">
+                     <property name="toolTip">
+                      <string>Toggle between logarithm and linear histogram output</string>
+                     </property>
                      <property name="text">
                       <string>Log</string>
                      </property>
@@ -1774,7 +1973,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>356</height>
+                  <height>364</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1791,7 +1990,7 @@
                  <item row="0" column="0">
                   <widget class="QTabWidget" name="tabs_noiseReduction">
                    <property name="currentIndex">
-                    <number>0</number>
+                    <number>1</number>
                    </property>
                    <widget class="QWidget" name="tab_GREYC">
                     <attribute name="title">
@@ -1804,7 +2003,7 @@
                      <item>
                       <widget class="QTabWidget" name="tabs_GREYC">
                        <property name="currentIndex">
-                        <number>0</number>
+                        <number>2</number>
                        </property>
                        <widget class="QWidget" name="tab_regularization">
                         <attribute name="title">
@@ -1817,6 +2016,9 @@
                             <widget class="QCheckBox" name="checkBox_regularizationEnabled">
                              <property name="enabled">
                               <bool>true</bool>
+                             </property>
+                             <property name="toolTip">
+                              <string>Enable GREYCStoration Noise Reduction Filter</string>
                              </property>
                              <property name="text">
                               <string>Enabled</string>
@@ -1838,6 +2040,9 @@
                            </item>
                            <item row="0" column="3" colspan="2">
                             <widget class="QCheckBox" name="checkBox_fastApproximation">
+                             <property name="toolTip">
+                              <string>Use Fast Approximation</string>
+                             </property>
                              <property name="text">
                               <string>Fast approximation</string>
                              </property>
@@ -1855,6 +2060,9 @@
                            </item>
                            <item row="1" column="1" colspan="3">
                             <widget class="QSlider" name="slider_iterations">
+                             <property name="toolTip">
+                              <string>Adjust number of Iterations</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1865,6 +2073,9 @@
                            </item>
                            <item row="1" column="4">
                             <widget class="QDoubleSpinBox" name="spinBox_iterations">
+                             <property name="toolTip">
+                              <string>Adjust number of Iterations Value</string>
+                             </property>
                              <property name="maximum">
                               <double>16.000000000000000</double>
                              </property>
@@ -1885,6 +2096,9 @@
                            </item>
                            <item row="2" column="1" colspan="3">
                             <widget class="QSlider" name="slider_amplitude">
+                             <property name="toolTip">
+                              <string>Adjust Filter Strength/Amplitude</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1895,6 +2109,9 @@
                            </item>
                            <item row="2" column="4">
                             <widget class="QDoubleSpinBox" name="spinBox_amplitude">
+                             <property name="toolTip">
+                              <string>Adjust Filter Strength/Amplitude Value</string>
+                             </property>
                              <property name="maximum">
                               <double>200.000000000000000</double>
                              </property>
@@ -1915,6 +2132,9 @@
                            </item>
                            <item row="3" column="1" colspan="3">
                             <widget class="QSlider" name="slider_precision">
+                             <property name="toolTip">
+                              <string>Adjust precision of Gaussian Filter Kernel</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1925,6 +2145,9 @@
                            </item>
                            <item row="3" column="4">
                             <widget class="QDoubleSpinBox" name="spinBox_precision">
+                             <property name="toolTip">
+                              <string>Adjust precision of Gaussian Filter Kernel Value</string>
+                             </property>
                              <property name="maximum">
                               <double>12.000000000000000</double>
                              </property>
@@ -1969,6 +2192,9 @@
                            </item>
                            <item row="0" column="1">
                             <widget class="QSlider" name="slider_alpha">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Alpha</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1979,6 +2205,9 @@
                            </item>
                            <item row="0" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_alpha">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Alpha Value</string>
+                             </property>
                              <property name="maximum">
                               <double>12.000000000000000</double>
                              </property>
@@ -1997,18 +2226,11 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="1">
-                            <widget class="QSlider" name="slider_sigma">
-                             <property name="maximum">
-                              <number>512</number>
-                             </property>
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                            </widget>
-                           </item>
                            <item row="1" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_sigma">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Sigma Value</string>
+                             </property>
                              <property name="maximum">
                               <double>12.000000000000000</double>
                              </property>
@@ -2029,6 +2251,9 @@
                            </item>
                            <item row="2" column="1">
                             <widget class="QSlider" name="slider_sharpness">
+                             <property name="toolTip">
+                              <string>Adjust Sharpness</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -2039,6 +2264,9 @@
                            </item>
                            <item row="2" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_sharpness">
+                             <property name="toolTip">
+                              <string>Adjust Sharpness Value</string>
+                             </property>
                              <property name="maximum">
                               <double>2.000000000000000</double>
                              </property>
@@ -2059,6 +2287,9 @@
                            </item>
                            <item row="3" column="1">
                             <widget class="QSlider" name="slider_aniso">
+                             <property name="toolTip">
+                              <string>Adjust Filter Anisotropy</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -2069,6 +2300,9 @@
                            </item>
                            <item row="3" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_aniso">
+                             <property name="toolTip">
+                              <string>Adjust Filter Anisotropy Value</string>
+                             </property>
                              <property name="decimals">
                               <number>3</number>
                              </property>
@@ -2077,6 +2311,19 @@
                              </property>
                              <property name="singleStep">
                               <double>0.050000000000000</double>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="1">
+                            <widget class="QSlider" name="slider_sigma">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Sigma</string>
+                             </property>
+                             <property name="maximum">
+                              <number>512</number>
+                             </property>
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
                              </property>
                             </widget>
                            </item>
@@ -2124,6 +2371,9 @@
                                 </item>
                                 <item row="0" column="1">
                                  <widget class="QSlider" name="slider_spatial">
+                                  <property name="toolTip">
+                                   <string>Amount of Spatial Integration</string>
+                                  </property>
                                   <property name="maximum">
                                    <number>512</number>
                                   </property>
@@ -2134,6 +2384,9 @@
                                 </item>
                                 <item row="0" column="2">
                                  <widget class="QDoubleSpinBox" name="spinBox_spatial">
+                                  <property name="toolTip">
+                                   <string>Amount of Spatial Integration Value</string>
+                                  </property>
                                   <property name="decimals">
                                    <number>3</number>
                                   </property>
@@ -2157,6 +2410,9 @@
                                 </item>
                                 <item row="1" column="1">
                                  <widget class="QSlider" name="slider_angular">
+                                  <property name="toolTip">
+                                   <string>Amount of Angular Integration</string>
+                                  </property>
                                   <property name="maximum">
                                    <number>512</number>
                                   </property>
@@ -2167,6 +2423,9 @@
                                 </item>
                                 <item row="1" column="2">
                                  <widget class="QDoubleSpinBox" name="spinBox_angular">
+                                  <property name="toolTip">
+                                   <string>Amount of Angular Integration Value</string>
+                                  </property>
                                   <property name="decimals">
                                    <number>1</number>
                                   </property>
@@ -2189,6 +2448,9 @@
                            </item>
                            <item row="1" column="1">
                             <widget class="QComboBox" name="comboBox_interpolType">
+                             <property name="toolTip">
+                              <string>Choose Interpolation Kernel Type</string>
+                             </property>
                              <item>
                               <property name="text">
                                <string>Nearest-Neighbour</string>
@@ -2236,6 +2498,9 @@
                       <layout class="QGridLayout" name="gridLayout_8">
                        <item row="0" column="0" colspan="2">
                         <widget class="QCheckBox" name="checkBox_chiuEnabled">
+                         <property name="toolTip">
+                          <string>Enable Chiu Noise Reduction Filter</string>
+                         </property>
                          <property name="text">
                           <string>Enabled</string>
                          </property>
@@ -2256,6 +2521,9 @@
                        </item>
                        <item row="0" column="3" colspan="2">
                         <widget class="QCheckBox" name="checkBox_includeCenter">
+                         <property name="toolTip">
+                          <string>Include Center Pixel in Filter</string>
+                         </property>
                          <property name="text">
                           <string>Include center</string>
                          </property>
@@ -2273,6 +2541,9 @@
                        </item>
                        <item row="1" column="1" colspan="3">
                         <widget class="QSlider" name="slider_chiuRadius">
+                         <property name="toolTip">
+                          <string>Adjust Filter Radius</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -2283,6 +2554,9 @@
                        </item>
                        <item row="1" column="4">
                         <widget class="QDoubleSpinBox" name="spinBox_chiuRadius">
+                         <property name="toolTip">
+                          <string>Adjust Filter Radius Value</string>
+                         </property>
                          <property name="minimum">
                           <double>1.000000000000000</double>
                          </property>
@@ -2345,7 +2619,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>253</height>
+                  <height>257</height>
                  </rect>
                 </property>
                 <attribute name="label">
@@ -2486,10 +2760,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_server"/>
+           <widget class="QLineEdit" name="lineEdit_server">
+            <property name="toolTip">
+             <string>Type the address of a network server</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="button_addServer">
+            <property name="toolTip">
+             <string>Add Server</string>
+            </property>
             <property name="text">
              <string>+</string>
             </property>
@@ -2501,6 +2782,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_removeServer">
+            <property name="toolTip">
+             <string>Remove Server</string>
+            </property>
             <property name="text">
              <string>-</string>
             </property>
@@ -2535,6 +2819,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>Enter the number of seconds between server updates</string>
+            </property>
             <property name="maximum">
              <number>86400</number>
             </property>
@@ -2557,7 +2844,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">

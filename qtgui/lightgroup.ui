@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>407</width>
-    <height>446</height>
+    <height>443</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,6 +43,9 @@
          <height>0</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>Adjust LightGroup Gain/Intensity</string>
+       </property>
        <property name="maximum">
         <number>512</number>
        </property>
@@ -65,6 +68,9 @@
          <height>25</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>Adjust LightGroup Gain/Intensity Value</string>
+       </property>
        <property name="decimals">
         <number>7</number>
        </property>
@@ -78,6 +84,9 @@
      </item>
      <item row="1" column="0">
       <widget class="QCheckBox" name="checkBox_enableRGB">
+       <property name="toolTip">
+        <string>Enable RGB Colour adjustment</string>
+       </property>
        <property name="text">
         <string>RGB</string>
        </property>
@@ -85,6 +94,9 @@
      </item>
      <item row="1" column="1" colspan="2">
       <widget class="QCheckBox" name="checkBox_enableBB">
+       <property name="toolTip">
+        <string>Enable BlackBody Temperature Adjustment</string>
+       </property>
        <property name="text">
         <string>Black Body temperature</string>
        </property>
@@ -120,6 +132,9 @@
      </item>
      <item row="2" column="0" rowspan="2">
       <widget class="QToolButton" name="toolButton_colorpicker">
+       <property name="toolTip">
+        <string>Adjust RGB Colour</string>
+       </property>
        <property name="layoutDirection">
         <enum>Qt::LeftToRight</enum>
        </property>
@@ -148,6 +163,9 @@
          <height>0</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>Adjust BlackBody Temperature</string>
+       </property>
        <property name="maximum">
         <number>512</number>
        </property>
@@ -169,6 +187,9 @@
          <width>100</width>
          <height>25</height>
         </size>
+       </property>
+       <property name="toolTip">
+        <string>Adjust BlackBody Temperature Value</string>
        </property>
        <property name="decimals">
         <number>0</number>
