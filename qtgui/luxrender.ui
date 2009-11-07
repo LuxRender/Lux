@@ -184,7 +184,7 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>300</width>
+             <width>320</width>
              <height>0</height>
             </size>
            </property>
@@ -291,8 +291,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>553</width>
-                  <height>374</height>
+                  <width>541</width>
+                  <height>392</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -673,8 +673,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>212</width>
-                  <height>169</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1190,8 +1190,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>222</width>
-                  <height>174</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1593,8 +1593,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
-                  <height>28</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1655,8 +1655,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>215</width>
-                  <height>30</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1773,8 +1773,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>247</width>
-                  <height>190</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -2344,8 +2344,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
-                  <height>28</height>
+                  <width>556</width>
+                  <height>253</height>
                  </rect>
                 </property>
                 <attribute name="label">
