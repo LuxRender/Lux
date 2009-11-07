@@ -1698,7 +1698,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	static const QColor severeColour = Qt::red;
 	
 	QTextStream ss(new QString());
-	ss << '[' << QDateTime::currentDateTime().toString(tr("yyyy-MM-dd hh:mmm:ss")) << ' ';
+	ss << '[' << QDateTime::currentDateTime().toString(tr("yyyy-MM-dd hh:mm:ss")) << ' ';
 	bool warning = false;
 	bool error = false;
 
