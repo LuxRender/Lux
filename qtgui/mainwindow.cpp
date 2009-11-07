@@ -1210,7 +1210,7 @@ bool MainWindow::canStopRendering()
 {
 	if (m_guiRenderState == RENDERING) {
 		// Give warning that current rendering is not stopped
-		if (QMessageBox::question(this, "Current file is still rendering","Do you want to stop the current render and start a new one?", QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+		if (QMessageBox::question(this, tr("Current file is still rendering"),tr("Do you want to stop the current render and start a new one?"), QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
 			return false;
 		}
 	}
@@ -1269,7 +1269,7 @@ void MainWindow::loadFLM()
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
-	m_progDialog = new QProgressDialog("Loading FLM...",QString(),0,0,NULL);
+	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,NULL);
 	m_progDialog->setWindowModality(Qt::WindowModal);
 	m_progDialog->show();
 
@@ -1294,7 +1294,7 @@ void MainWindow::saveFLM()
 		return;
 
 	// Start save thread
-	m_progDialog = new QProgressDialog("Saving FLM...",QString(),0,0,NULL);
+	m_progDialog = new QProgressDialog(tr("Saving FLM..."),QString(),0,0,NULL);
 	m_progDialog->setWindowModality(Qt::WindowModal);
 	m_progDialog->show();
 	m_saveTimer->start(1000);
@@ -1352,7 +1352,7 @@ void MainWindow::stopRender()
 		// Make sure lux core stops
 		luxSetHaltSamplePerPixel(1, true, true);
 		
-		statusMessage->setText("Waiting for render threads to stop.");
+		statusMessage->setText(tr("Waiting for render threads to stop."));
 		changeRenderState(STOPPING);
 	}
 }
@@ -1419,11 +1419,11 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	if (m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
     (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
 		if (!withlayercomputation) {
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
-			statusMessage->setText("Tonemapping...");
+			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
+			statusMessage->setText(tr("Tonemapping..."));
 		} else {
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer/Computing Lens Effect Layer(s)...");
-			statusMessage->setText("Computing Lens Effect Layer(s) & Tonemapping...");
+			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data());
+			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -1454,7 +1454,7 @@ void MainWindow::engineThread(QString filename)
 	} else {
 		luxWait();
 		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
-		luxError(LUX_NOERROR, LUX_INFO, "Rendering done.");
+		luxError(LUX_NOERROR, LUX_INFO, tr("Rendering done.").toLatin1().data());
 	}
 }
 
@@ -1537,7 +1537,7 @@ void MainWindow::renderScenefile(QString filename)
 	// NOTE - lordcrc - create progress dialog before starting engine thread
 	//                  so we don't try to destroy it before it's properly created
 	
-	m_progDialog = new QProgressDialog("Loading scene...",QString(),0,0,NULL);
+	m_progDialog = new QProgressDialog(tr("Loading scene..."),QString(),0,0,NULL);
 	m_progDialog->setWindowModality(Qt::WindowModal);
 	m_progDialog->show();
 
@@ -1707,26 +1707,26 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	switch(event->getSeverity()) {
 		case LUX_DEBUG:
-			ss << "Debug: ";
+			ss << tr("Debug: ");
 			ui->textEdit_log->setTextColor(debugColour);
 			break;
 		case LUX_INFO:
 		default:
-			ss << "Info: ";
+			ss << tr("Info: ");
 			ui->textEdit_log->setTextColor(infoColour);
 			break;
 		case LUX_WARNING:
-			ss << "Warning: ";
+			ss << tr("Warning: ");
 			ui->textEdit_log->setTextColor(warningColour);
 			warning = true;
 			break;
 		case LUX_ERROR:
-			ss << "Error: ";
+			ss << tr("Error: ");
 			ui->textEdit_log->setTextColor(errorColour);
 			error = true;
 			break;
 		case LUX_SEVERE:
-			ss << "Severe error: ";
+			ss << tr("Severe error: ");
 			ui->textEdit_log->setTextColor(severeColour);
 			break;
 	}
@@ -1744,7 +1744,7 @@ void MainWindow::renderTimeout()
 {
 	if (m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
 		(m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
-		luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
+		luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 		statusMessage->setText("Tonemapping...");
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -1756,13 +1756,13 @@ void MainWindow::statsTimeout()
 		updateStatistics();
 		if(m_guiRenderState == STOPPING && m_samplesSec == 0.0) {
 			// Render threads stopped, do one last render update
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
-			statusMessage->setText("Tonemapping...");
+			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
+			statusMessage->setText(tr("Tonemapping..."));
 			delete m_updateThread;
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
 			luxPause();
-			luxError(LUX_NOERROR, LUX_INFO, "Rendering stopped by user.");
+			luxError(LUX_NOERROR, LUX_INFO, tr("Rendering stopped by user.").toLatin1().data());
 			changeRenderState(STOPPED);
 		}
 	}
