@@ -678,7 +678,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				alpha = anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&
 					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
-				photonRay = RayDifferential(photonIsect.dg.p, wi);
+				photonRay = RayDifferential(photonIsect.dg.p, wi, scene->machineEpsilon);
 			}
 		}
 
@@ -895,7 +895,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			}
 
 			// Trace BSDF final gather ray and accumulate radiance
-			RayDifferential bounceRay(p, wi);
+			RayDifferential bounceRay(p, wi, scene->machineEpsilon);
 			Intersection gatherIsect;
 			if (scene->Intersect(bounceRay, &gatherIsect)) {
 				// Compute exitant radiance using precomputed irradiance
@@ -977,7 +977,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				fr /= rrContinueProbability;
 			}
 
-			RayDifferential bounceRay(p, wi);
+			RayDifferential bounceRay(p, wi, scene->machineEpsilon);
 			Intersection gatherIsect;
 			if (scene->Intersect(bounceRay, &gatherIsect)) {
 				// Compute exitant radiance using precomputed irradiance
@@ -1056,7 +1056,7 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 			}
 
 			// Trace BSDF final gather ray and accumulate radiance
-			RayDifferential bounceRay(p, wi);
+			RayDifferential bounceRay(p, wi, scene->machineEpsilon);
 			Intersection gatherIsect;
 			if (scene->Intersect(bounceRay, &gatherIsect)) {
 				// Compute exitant radiance using precomputed irradiance

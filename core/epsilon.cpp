@@ -24,17 +24,13 @@
 
 using namespace lux;
 
-MachineEpsilon::MachineEpsilon() 
+MachineEpsilon::MachineEpsilon(const float minValue, const float maxValue)
 {
-	minEpsilon = DEFAULT_EPSILON_MIN;
-#if defined(MACHINE_EPSILON_DEBUG)
-		DebugPrint("minEpsilon", minEpsilon);
-#endif
+	minEpsilon = minValue;
+	DEBUG("minEpsilon", minEpsilon);
 
-	maxEpsilon = DEFAULT_EPSILON_MAX;
-#if defined(MACHINE_EPSILON_DEBUG)
-		DebugPrint("maxEpsilon", maxEpsilon);
-#endif
+	maxEpsilon = maxValue;
+	DEBUG("maxEpsilon", maxEpsilon);
 
 	UpdateAvarageEpsilon();
 }

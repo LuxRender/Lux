@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "paramset.h"
-#include "epsilon.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -197,6 +196,9 @@ public:
     // Note - Ratow - Adding specific call to disable random seed
     static void luxDisableRandomMode() { activeContext->disableRandomMode(); }
 
+	// Set the minimum and maximum value used for epsilon
+	static void luxSetEpsilon(const float minValue, const float maxValue) { activeContext->setEpsilon(minValue, maxValue); }
+
 private:
 	void init();
 	void free();
@@ -303,6 +305,8 @@ private:
 	void enableDebugMode();
 	void disableRandomMode();
 
+	void setEpsilon(const float minValue, const float maxValue);
+
 	// API Local Classes
 	struct RenderOptions {
 		// RenderOptions Public Methods
@@ -320,7 +324,7 @@ private:
 			randomMode = true;
 		}
 
-		Scene *MakeScene() const;
+		Scene *MakeScene(const float epsilonMin, const float epsilonMax) const;
 		// RenderOptions Public Data
 		string FilterName;
 		ParamSet FilterParams;
@@ -391,7 +395,7 @@ private:
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<Transform> pushedTransforms;
 	RenderFarm *renderFarm;
-	MachineEpsilon machineEpsilon;
+	float epsilonMin, epsilonMax;
 
 	ParamSet *filmOverrideParams;
 	

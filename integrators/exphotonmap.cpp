@@ -302,7 +302,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 			if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, &pdf,
 				BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY), &sampledType, NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
-				RayDifferential rd(p, wi);
+				RayDifferential rd(p, wi, scene->machineEpsilon);
 				rd.hasDifferentials = true;
 				rd.rx.o = p + isect.dg.dpdx;
 				rd.ry.o = p + isect.dg.dpdy;
@@ -494,7 +494,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 					float pdf;
 					SWCSpectrum fr;
 					if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, diffuseType, NULL, NULL, true)) {
-						RayDifferential bounceRay(p, wi);
+						RayDifferential bounceRay(p, wi, scene->machineEpsilon);
 
 						Intersection gatherIsect;
 						if (scene->Intersect(bounceRay, &gatherIsect)) {
@@ -573,7 +573,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		pathThroughput *= f;
 		pathThroughput *= dp;
 
-		ray = RayDifferential(p, wi);
+		ray = RayDifferential(p, wi, scene->machineEpsilon);
 	}
 
 	return L;

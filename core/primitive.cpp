@@ -65,15 +65,15 @@ void Primitive::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) c
 float Primitive::Pdf(const Point &p) const {
 	return 1.f / Area();
 }
-void Primitive::Sample(const Point &p,
+void Primitive::Sample(const TsPack *tspack, const Point &p,
 		float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	Sample(u1, u2, u3, dg);
 }
-float Primitive::Pdf(const Point &p, const Vector &wi) const {
+float Primitive::Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
 	// Intersect sample ray with area light geometry
 	Intersection isect;
-	Ray ray(p, wi);
+	Ray ray(p, wi, tspack->machineEpsilon);
 	if (!Intersect(ray, &isect)) return 0.f;
 	// Convert light sample weight to solid angle measure
 	float pdf = DistanceSquared(p, ray(ray.maxt)) /
@@ -81,7 +81,7 @@ float Primitive::Pdf(const Point &p, const Vector &wi) const {
 	if (AbsDot(isect.dg.nn, -wi) == 0.f) pdf = INFINITY;
 	return pdf;
 }
-float Primitive::Pdf(const Point &p, const Point &po) const {
+float Primitive::Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
 	return 1.f / Area();
 }
 

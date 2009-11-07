@@ -196,6 +196,7 @@ namespace lux
   class MotionSystem;
   class Distribution1D;
   class IrregularDistribution1D;
+  class MachineEpsilon;
 }
 
 // Global Constants
@@ -235,11 +236,14 @@ namespace lux
 namespace lux {
 
 	struct TsPack {
+		// Thread specific data
 		SpectrumWavelengths *swl;
 		RandomGenerator *rng;
 		MemoryArena *arena;
 		Camera *camera;
 		float time;
+		// Data shared among al threads
+		MachineEpsilon *machineEpsilon;
 	};
 
 }

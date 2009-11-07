@@ -46,7 +46,7 @@ public:
 		if (reverseOrientation) *ns *= -1.f;
 		return ObjectToWorld(p);
 	}
-	virtual Point Sample(const Point &p,
+	virtual Point Sample(const TsPack *tspack, const Point &p,
 			float u1, float u2, float u3, Normal *ns) const {
 		// Compute coordinate system for sphere sampling
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
@@ -63,7 +63,7 @@ public:
 		float thit;
 		Point ps;
 		Ray r(p,
-		      UniformSampleCone(u1, u2, cosThetaMax, wcX, wcY, wc));
+		      UniformSampleCone(u1, u2, cosThetaMax, wcX, wcY, wc), tspack->machineEpsilon);
 		if (!Intersect(r, &thit, &dgSphere)) {
 			ps = Pcenter - radius * wc;
 		} else {
@@ -73,21 +73,21 @@ public:
 		if (reverseOrientation) *ns *= -1.f;
 		return ps;
 	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
 		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
-			return Shape::Pdf(p, wi);
+			return Shape::Pdf(tspack, p, wi);
 		// Compute general sphere weight
 		float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
 			DistanceSquared(p, Pcenter)));
 		return UniformConePdf(cosThetaMax);
 	}
-	virtual float Pdf(const Point &p, const Point &po) const {
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
 		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
-			return Shape::Pdf(p, po);
+			return Shape::Pdf(tspack, p, po);
 		// Compute general sphere weight
 		const float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
 			DistanceSquared(p, Pcenter)));

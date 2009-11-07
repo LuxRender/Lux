@@ -99,10 +99,10 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, 
 	*pdf = UniformConePdf(cosTotalWidth);
 	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(ray->d));
 }
-float ProjectionLight::Pdf(const Point &, const Vector &) const {
+float ProjectionLight::Pdf(const TsPack *, const Point &, const Vector &) const {
 	return 0.;
 }
-float ProjectionLight::Pdf(const Point &p, const Normal &n,
+float ProjectionLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	return 0.f;

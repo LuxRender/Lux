@@ -319,7 +319,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					RayDifferential rd(p, wi, scene->machineEpsilon);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -361,7 +361,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					RayDifferential rd(p, wi, scene->machineEpsilon);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -405,7 +405,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					RayDifferential rd(p, wi, scene->machineEpsilon);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -447,7 +447,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					RayDifferential rd(p, wi, scene->machineEpsilon);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -471,7 +471,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		if (rayDepth < specularreflectDepth) {
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
-				RayDifferential rd(p, wi);
+				RayDifferential rd(p, wi, scene->machineEpsilon);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
@@ -483,7 +483,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		if (rayDepth < specularrefractDepth) {
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
-				RayDifferential rd(p, wi);
+				RayDifferential rd(p, wi, scene->machineEpsilon);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);

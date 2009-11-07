@@ -87,29 +87,29 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		VisibilityTester *visibility) const {
 	DifferentialGeometry dg;
 	dg.time = tspack->time;
-	prim->Sample(p, u1, u2, u3, &dg);
+	prim->Sample(tspack, p, u1, u2, u3, &dg);
 	*wi = Normalize(dg.p - p);
-	*pdf = prim->Pdf(p, *wi);
+	*pdf = prim->Pdf(tspack, p, *wi);
 	visibility->SetSegment(p, dg.p, tspack->time);
 	return L(tspack, dg, -*wi);
 }
-float AreaLight::Pdf(const Point &p, const Normal &N,
+float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
 		const Vector &wi) const {
-	return prim->Pdf(p, wi);
+	return prim->Pdf(tspack, p, wi);
 }
-float AreaLight::Pdf(const Point &p, const Normal &N,
+float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
 	const Point &po, const Normal &ns) const
 {
-	return prim->Pdf(p, po);
+	return prim->Pdf(tspack, p, po);
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
 		VisibilityTester *visibility) const {
 	DifferentialGeometry dg;
 	dg.time = tspack->time;
-	prim->Sample(P, u1, u2, u3, &dg);
+	prim->Sample(tspack, P, u1, u2, u3, &dg);
 	*wo = Normalize(dg.p - P);
-	*pdf = prim->Pdf(P, *wo);
+	*pdf = prim->Pdf(tspack, P, *wo);
 	visibility->SetSegment(P, dg.p, tspack->time);
 	return L(tspack, dg, -*wo);
 }
@@ -125,8 +125,8 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 	*pdf = prim->Pdf(ray->o) * INV_TWOPI;
 	return L(tspack, dg, ray->d);
 }
-float AreaLight::Pdf(const Point &P, const Vector &w) const {
-	return prim->Pdf(P, w);
+float AreaLight::Pdf(const TsPack *tspack, const Point &P, const Vector &w) const {
+	return prim->Pdf(tspack, P, w);
 }
 bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
@@ -153,10 +153,10 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 {
 	DifferentialGeometry dg;
 	dg.time = tspack->time;
-	prim->Sample(p, u1, u2, u3, &dg);
+	prim->Sample(tspack, p, u1, u2, u3, &dg);
 	Vector wo(Normalize(dg.p - p));
 	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(p, dg.p);
+	*pdfDirect = prim->Pdf(tspack, p, dg.p);
 	if (*pdfDirect > 0.f) {
 		if(func)
 			*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
@@ -180,7 +180,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
 			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(ray.o, dg.p);
+	*pdfDirect = prim->Pdf(tspack, ray.o, dg.p);
 	return L(tspack, dg, -ray.d);
 }
 

@@ -87,7 +87,7 @@ public:
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 	}
-	virtual void Sample(const Point &p, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual void Sample(const TsPack *tspack, const Point &p, float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		dg->p = Sample(p, u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		//TODO fill in uv coordinates

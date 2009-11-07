@@ -28,15 +28,12 @@
 #include "error.h"
 #include "geometry/vector.h"
 #include "geometry/point.h"
-#include "geometry/ray.h"
-#include "geometry/bbox.h"
-
 
 #include <sstream>
 #include <boost/math/special_functions/trunc.hpp>
 #include <boost/math/special_functions/next.hpp>
 
-#define MACHINE_EPSILON_DEBUG 0
+//#define MACHINE_EPSILON_DEBUG 1
 
 #if defined(MACHINE_EPSILON_DEBUG)
 #define DEBUG(TYPE, VALUE) DebugPrint(TYPE, VALUE)
@@ -59,7 +56,8 @@ public:
 	static const float DEFAULT_EPSILON_MAX = 1e-1f;
 	static const int DEFAULT_EPSILON_ADVANCE = 512;
 
-	MachineEpsilon();
+	MachineEpsilon() { MachineEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX); }
+	MachineEpsilon(const float minValue, const float maxValue);
 
 	// Not thread-safe method
 	void SetMin(const float min) { minEpsilon = min; UpdateAvarageEpsilon(); }
@@ -67,7 +65,7 @@ public:
 	void SetMax(const float max) { maxEpsilon = max; UpdateAvarageEpsilon(); }
 
 	// Thread-safe method
-	float e() const {
+	float E() const {
 		return avarageEpsilon;
 	}
 
@@ -97,9 +95,9 @@ public:
 		return max(E(p.x), max(E(p.y), E(p.z)));
 	}
 
-	float E(const Ray &r) const {
+	/*float E(const Ray &r) const {
 		return E(r(r.mint));
-	}
+	}*/
 
 private:
 	union MachineFloat {
@@ -120,41 +118,6 @@ private:
 		avarageEpsilon = Exp2Float(avgExp);
 		DEBUG("avarageEpsilon", avarageEpsilon);
 	}
-
-	/*float Exp2Float(const int exp) const {
-		// IEEE 754-2008 exponent is encoded in offset binary format
-
-		// Convert the exponenet to offset binary format and build the float
-		// point number
-
-		MachineFloat v;
-		v.i = static_cast<u_int>(exp + 127) << 23;
-
-		return v.f;
-	}
-
-	int FloatSign(const float value) const {
-		MachineFloat v;
-		v.f = value;
-
-		return (v.i & 0x80000000u) ? -1 : 1;
-	}
-
-	int FloatExponent(const float value) const {
-		MachineFloat v;
-		v.f = value;
-
-		return static_cast<int>((v.i & 0x7f800000u) >> 23) - 127;
-	}
-
-	u_int FloatSignificandPrecision(const float value) const {
-		MachineFloat v;
-		v.f = value;
-		// Mask current sign end exponent
-		v.i &= 0x007fffffu;
-
-		return v.i;
-	}*/
 
 	float Exp2Float(const int exp) const {
 		return ldexpf(1.f, exp);
@@ -188,9 +151,6 @@ private:
 		sprintf(buf,"Epsilon.DebugPrint: %s=%e %x [%d * 2^%d * %f]",
 			type.c_str(), mf.f, mf.i,
 			FloatSign(e), FloatExponent(e), FloatSignificandPrecision(e));
-		/*sprintf(buf,"Epsilon.DebugPrint: %s=%e %x [%d, %d, %d]",
-			type.c_str(), v.f, v.i,
-			FloatSign(e), FloatExponent(e), FloatSignificandPrecision(e));*/
 		luxError(LUX_NOERROR, LUX_DEBUG, buf);
 	}
 

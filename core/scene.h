@@ -28,6 +28,7 @@
 #include "primitive.h"
 #include "sampling.h"
 #include "timer.h"
+#include "epsilon.h"
 
 #include "fastmutex.h"
 
@@ -79,7 +80,7 @@ public:
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
 		Sampler *s, boost::shared_ptr<Primitive> accel,
 		const vector<Light *> &lts, const vector<string> &lg,
-		VolumeRegion *vr);
+		VolumeRegion *vr, MachineEpsilon *me);
 	Scene(Camera *c);
 	~Scene();
 	bool Intersect(const Ray &ray, Intersection *isect) const {
@@ -160,6 +161,8 @@ public:
 	u_long seedBase;
 
 	ContributionPool *contribPool;
+
+	MachineEpsilon *machineEpsilon;
 
 private:
 	// mutex used for adding/removing threads

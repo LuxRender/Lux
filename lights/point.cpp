@@ -90,10 +90,10 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 		return Lbase->Evaluate(tspack, dummydg) * gain;
 	}
 }
-float PointLight::Pdf(const Point &, const Vector &) const {
+float PointLight::Pdf(const TsPack *, const Point &, const Vector &) const {
 	return 0.;
 }
-float PointLight::Pdf(const Point &p, const Normal &n,
+float PointLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	return AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);

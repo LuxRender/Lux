@@ -274,10 +274,10 @@ void RenderThread::Render(RenderThread *myThread) {
 	myThread->tspack->rng->init(seed);
 	myThread->tspack->arena = new MemoryArena();
 	myThread->tspack->camera = myThread->scene->camera->Clone();
+	myThread->tspack->machineEpsilon = myThread->scene->machineEpsilon;
+	myThread->tspack->time = 0.f;
 
 	myThread->sampler->SetTsPack(myThread->tspack);
-
-	myThread->tspack->time = 0.f;
 
 	// allocate sample pos
 	u_int *useSampPos = new u_int();
@@ -495,11 +495,13 @@ Scene::~Scene() {
 	delete volumeRegion;
 	for (u_int i = 0; i < lights.size(); ++i)
 		delete lights[i];
+	delete machineEpsilon;
 }
 
 Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	Sampler *s, boost::shared_ptr<Primitive> accel,
-	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr)
+	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr,
+	MachineEpsilon *me)
 {
 	filmOnly = false;
 	lights = lts;
@@ -532,6 +534,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	suspendThreadsWhenDone = false;
 	camera->film->RequestBufferGroups(lightGroups);
 
+	machineEpsilon = me;
+
 	contribPool = NULL;
 	tspack = NULL;
 }
@@ -557,6 +561,8 @@ Scene::Scene(Camera *cam)
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 	numberOfSamplesFromNetwork = 0.; //TODO init with number of samples in film
+
+	machineEpsilon = NULL;
 
 	contribPool = NULL;
 	tspack = NULL;

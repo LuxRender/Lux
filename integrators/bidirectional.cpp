@@ -473,7 +473,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Connect light vertex to eye vertex
 		// Compute direct lighting pdf for first light vertex
-		const float directPdf = light->Pdf(eye0.p, eye0.bsdf->ng,
+		const float directPdf = light->Pdf(tspack, eye0.p, eye0.bsdf->ng,
 			light0.p, light0.bsdf->ng) * directWeight;
 		SWCSpectrum Ll(Le);
 		float weight;
@@ -500,7 +500,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				(light0.pdf * light0.cosi);
 			light0.rr = min(1.f, max(lightThreshold,
 				light0.flux.Filter(tspack)));
-			RayDifferential ray(light0.p, light0.wo);
+			RayDifferential ray(light0.p, light0.wo, scene->machineEpsilon);
 			ray.time = tspack->time;
 			Intersection isect;
 			u_int through = 0;
@@ -525,7 +525,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				// Compute light direct Pdf between
 				// the first 2 vertices
 				if (nLight == 2)
-					lightDirectPdf = light->Pdf(v.p,
+					lightDirectPdf = light->Pdf(tspack, v.p,
 						v.bsdf->ng, lightPath[0].p,
 						lightPath[0].bsdf->ng) * directWeight;
 
@@ -591,7 +591,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				}
 
 				// Initialize _ray_ for next segment of path
-				ray = RayDifferential(v.p, v.wo);
+				ray = RayDifferential(v.p, v.wo, scene->machineEpsilon);
 				ray.time = tspack->time;
 			}
 		}
@@ -614,7 +614,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		eye0.flux.Filter(tspack) * (cosins0 * eye0.coso / (eye0.cosi * eye0.pdf))));
 	eye0.flux *= (cosins0 / eye0.pdfR);
 	eye0.rrR = min(1.f, max(eyeThreshold, eye0.flux.Filter(tspack)));
-	RayDifferential ray(eyePath[0].p, eyePath[0].wi);
+	RayDifferential ray(eyePath[0].p, eyePath[0].wi, scene->machineEpsilon);
 	ray.time = tspack->time;
 	tspack->camera->ClampRay(ray);
 	Intersection isect;
@@ -633,7 +633,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				const Light *light = scene->lights[lightNumber];
 				if (!light->IsEnvironmental())
 					continue;
-				RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi);
+				RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi, scene->machineEpsilon);
 				r.time = tspack->time;
 				BSDF *eBsdf;
 				float ePdfDirect;
@@ -701,7 +701,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Test intersection with a light source
 		if (isect.arealight) {
-			RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi);
+			RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi, scene->machineEpsilon);
 			r.time = tspack->time;
 			BSDF *eBsdf;
 			float ePdfDirect;
@@ -778,7 +778,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Connect eye subpath to light subpath
 		if (nLight > 0) {
 			// Compute direct lighting pdf for first light vertex
-			float directPdf = light->Pdf(v.p, v.bsdf->ng, lightPath[0].p,
+			float directPdf = light->Pdf(tspack, v.p, v.bsdf->ng, lightPath[0].p,
 				lightPath[0].bsdf->ng) * directWeight;
 			// Go through all light vertices
 			for (u_int j = 1; j <= nLight; ++j) {
@@ -853,7 +853,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		}
 
 		// Initialize _ray_ for next segment of path
-		ray = RayDifferential(v.p, v.wi);
+		ray = RayDifferential(v.p, v.wi, scene->machineEpsilon);
 		ray.time = tspack->time;
 	}
 	const float d = sqrtf(eyePath[0].d2);

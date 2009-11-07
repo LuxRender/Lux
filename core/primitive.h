@@ -27,6 +27,7 @@
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
+#include "epsilon.h"
 
 namespace lux
 {
@@ -126,7 +127,7 @@ public:
 	 * @param u3 The subprimitive to sample.
 	 * @param dg The destination to store the sampled point in.
 	 */
-	virtual void Sample(const Point &p,
+	virtual void Sample(const TsPack *tspack, const Point &p,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	/**
 	 * Returns the probability density for sampling the given point.
@@ -135,7 +136,7 @@ public:
 	 * @param wi The direction from the above point to the sampled point.
 	 * @return The pdf value (w.r.t. solid angle) for the given point.
 	 */
-	virtual float Pdf(const Point &p, const Vector &wi) const;
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const;
 	/**
 	 * Returns the probability density for sampling the given point.
 	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
@@ -144,7 +145,7 @@ public:
 	 * @param po The point that was sampled.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const Point &p, const Point &po) const;
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const;
 };
 
 class PrimitiveRefinementHints {
@@ -214,15 +215,15 @@ public:
 		prim->Sample(u1, u2, u3, dg);
 	}
 	virtual float Pdf(const Point &p) const { return prim->Pdf(p); }
-	virtual void Sample(const Point &P,
+	virtual void Sample(const TsPack *tspack, const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		prim->Sample(P, u1, u2, u3, dg);
+		prim->Sample(tspack, P, u1, u2, u3, dg);
 	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		return prim->Pdf(p, wi);
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
+		return prim->Pdf(tspack, p, wi);
 	}
-	virtual float Pdf(const Point &p, const Point &po) const {
-		return prim->Pdf(p, po);
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
+		return prim->Pdf(tspack, p, po);
 	}
 private:
 	// AreaLightPrimitive Private Data
@@ -279,9 +280,9 @@ public:
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
 	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
-	virtual void Sample(const Point &P,
+	virtual void Sample(const TsPack *tspack, const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
+		instance->Sample(tspack, WorldToInstance(P), u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
 		dg->dpdu = InstanceToWorld(dg->dpdu);
@@ -289,11 +290,11 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		return instance->Pdf(p, wi);
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
+		return instance->Pdf(tspack, p, wi);
 	}
-	virtual float Pdf(const Point &p, const Point &po) const {
-		return instance->Pdf(p, po);
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
+		return instance->Pdf(tspack, p, po);
 	}
 private:
 	// InstancePrimitive Private Data
@@ -366,9 +367,9 @@ public:
 		dg->dndv = InstanceToWorld(dg->dndv);
     }
     virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
-    virtual void Sample(const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+    virtual void Sample(const TsPack *tspack, const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		Transform InstanceToWorld = motionSystem->Sample(dg->time);
-		instance->Sample(InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
+		instance->Sample(tspack, InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
 		dg->dpdu = InstanceToWorld(dg->dpdu);
@@ -376,11 +377,11 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-    virtual float Pdf(const Point &p, const Vector &wi) const {
-        return instance->Pdf(p, wi);
+    virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
+        return instance->Pdf(tspack, p, wi);
      }
-    virtual float Pdf(const Point &p, const Point &po) const {
-        return instance->Pdf(p, po);
+    virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
+        return instance->Pdf(tspack, p, po);
      }
 private:
     // MotionPrimitive Private Data

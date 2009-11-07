@@ -238,7 +238,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!specular)
 			VContrib += dp;
 
-		ray = RayDifferential(p, wi);
+		ray = RayDifferential(p, wi, scene->machineEpsilon);
 		ray.time = r.time;
 	}
 	for (u_int i = 0; i < scene->lightGroups.size(); ++i) {

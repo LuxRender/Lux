@@ -171,7 +171,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		*pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, sundir);
+			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosPortal = Dot(-sundir, isect.dg.nn);
@@ -224,13 +224,13 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, f
 
 	return SWCSpectrum(tspack, LSPD);
 }
-float SunLight::Pdf(const Point &, const Vector &) const {
+float SunLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	if(cosThetaMax == 1)
 		return 0.f;
 	else
 		return UniformConePdf(cosThetaMax);
 }
-float SunLight::Pdf(const Point &p, const Normal &n,
+float SunLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	const float cosTheta = AbsDot(Normalize(p - po), ns);
@@ -340,7 +340,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(ps, sundir);
+			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
@@ -410,7 +410,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, sundir);
+			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosPortal = Dot(ns, isect.dg.nn);

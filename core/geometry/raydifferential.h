@@ -36,10 +36,13 @@ class  RayDifferential : public Ray {
 public:
 	// RayDifferential Methods
 	RayDifferential() { hasDifferentials = false; }
-	RayDifferential(const Point &org, const Vector &dir)
-			: Ray(org, dir) {
+	RayDifferential(const MachineEpsilon *me) : Ray(me) { hasDifferentials = false; }
+
+	RayDifferential(const Point &org, const Vector &dir, const MachineEpsilon *me)
+		: Ray(org, dir, me) {
 		hasDifferentials = false;
 	}
+
 	explicit RayDifferential(const Ray &ray) : Ray(ray) {
 		hasDifferentials = false;
 	}
@@ -47,8 +50,6 @@ public:
 	
 	Ray rx, ry;
 	bool hasDifferentials;
-	
-
 };
 
 // DifferentialGeometry Declarations
