@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "paramset.h"
+#include "epsilon.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -43,13 +44,13 @@ class FlexImageFilm;
 class Context {
 public:
 
-	Context(std::string n="Lux default context") : name(n) {
-            init();
+	Context(std::string n = "Lux default context") : name(n) {
+		init();
 	}
 
-        ~Context() {
-            free();
-        }
+	~Context() {
+		free();
+	}
 
 	//static bool checkMode(unsigned char modeMask, std::string callerName, int errorCode); //!< Check the graphics state mode in the active context
 
@@ -390,6 +391,7 @@ private:
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<Transform> pushedTransforms;
 	RenderFarm *renderFarm;
+	MachineEpsilon machineEpsilon;
 
 	ParamSet *filmOverrideParams;
 	
