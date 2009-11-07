@@ -31,7 +31,9 @@
 
 #include <QList>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+//#include <boost/date_time/posix_time/posix_time.hpp>
+#include <QDateTime>
+#include <QTextStream>
 
 #include "mainwindow.hxx"
 #include "ui_luxrender.h"
@@ -1426,7 +1428,7 @@ void MainWindow::engineThread(QString filename)
 	chdir(fullPath.branch_path().string().c_str());
 
 	// NOTE - lordcrc - initialize rand()
-	srand(time(NULL));
+	qsrand(time(NULL));
 
 	// if stdin is input, don't use full path
 	if (filename == QString::fromAscii("-"))
@@ -1694,9 +1696,9 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	static const QColor warningColour = Qt::darkYellow;
 	static const QColor errorColour = Qt::red;
 	static const QColor severeColour = Qt::red;
-
-	std::stringstream ss("");
-	ss << '[' << boost::posix_time::second_clock::local_time() << ' ';
+	
+	QTextStream ss(new QString());
+	ss << '[' << QDateTime::currentDateTime().toString(tr("yyyy-MM-dd hh:mmm:ss")) << ' ';
 	bool warning = false;
 	bool error = false;
 
@@ -1727,15 +1729,13 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	}
 
 	ss << event->getCode() << "] ";
-
-	ui->textEdit_log->textCursor().insertText(ss.str().c_str());
+	ss.flush();
+	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	//ui->textEdit_log->append(ss.str().c_str());
 	ui->textEdit_log->setTextColor(Qt::black);
-	
-    ss.str("");
-	ss << event->getMessage().toStdString() << std::endl;
+	ss << event->getMessage() << endl;
 	//ui->textEdit_log->append(ss.str().c_str());
-	ui->textEdit_log->textCursor().insertText(ss.str().c_str());
+	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	ui->textEdit_log->ensureCursorVisible();
 }
 
@@ -2511,3 +2511,4 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 	// Update
 	UpdateLightGroupWidgetValues();
 }
+
