@@ -72,7 +72,7 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1,
 		VisibilityTester *visibility) const {
 	*wo = Normalize(lightPos - P);
 	*pdf = 1.f;
-	visibility->SetSegment(P, lightPos, tspack->time);
+	visibility->SetSegment(tspack, P, lightPos, tspack->time);
 	return L(tspack, WorldToLight(-*wo)) / DistanceSquared(lightPos, P);
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
@@ -145,7 +145,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, Lambertian)(1.f));
-	visibility->SetSegment(p, lightPos, tspack->time);
+	visibility->SetSegment(tspack, p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
 	return true;
 }

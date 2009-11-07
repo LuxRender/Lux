@@ -193,10 +193,14 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 
 	const float t = nd - o0 - nu * o1 - nv * o2;
 	if (det > 0.f) {
-		if (t <= det * ray.mint || t >= det * ray.maxt - t * RAY_EPSILON)
+		// Old code: ray.mint and ray.maxt have already to factor the usage of EPSILON
+		//if (t <= det * ray.mint || t >= det * ray.maxt - t * RAY_EPSILON)
+		if (t <= det * ray.mint || t >= det * ray.maxt)
 			return false;
 	} else {
-		if (t >= det * ray.mint || t <= det * ray.maxt - t * RAY_EPSILON)
+		// Old code: ray.mint and ray.maxt have already to factor the usage of EPSILON
+		// if (t >= det * ray.mint || t <= det * ray.maxt - t * RAY_EPSILON)
+		if (t >= det * ray.mint || t <= det * ray.maxt)
 			return false;
 	}
 
@@ -275,10 +279,14 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const
 
 	const float t = nd - o0 - nu * o1 - nv * o2;
 	if (det > 0.f) {
-		if (t <= det * ray.mint || t >= det * ray.maxt - t * RAY_EPSILON)
+		// Old code: ray.mint and ray.maxt have already to factor the usage of EPSILON
+		//if (t <= det * ray.mint || t >= det * ray.maxt - t * RAY_EPSILON)
+		if (t <= det * ray.mint || t >= det * ray.maxt)
 			return false;
 	} else {
-		if (t >= det * ray.mint || t <= det * ray.maxt - t * RAY_EPSILON)
+		// Old code: ray.mint and ray.maxt have already to factor the usage of EPSILON
+		//if (t >= det * ray.mint || t <= det * ray.maxt - t * RAY_EPSILON)
+		if (t >= det * ray.mint || t <= det * ray.maxt)
 			return false;
 	}
 

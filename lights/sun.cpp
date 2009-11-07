@@ -216,7 +216,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, f
 		*wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
 		*pdf = UniformConePdf(cosThetaMax);
 	}
-	visibility->SetRay(p, *wi, tspack->time);
+	visibility->SetRay(tspack, p, *wi, tspack->time);
 
 	// Dade - check if the portals are excluding this ray
 /*	if (!checkPortals(Ray(p, *wi)))
@@ -422,7 +422,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	}
 	if (cosThetaMax < 1.f)
 		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
-	visibility->SetSegment(p, ps, tspack->time);
+	visibility->SetSegment(tspack, p, ps, tspack->time);
 
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;

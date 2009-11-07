@@ -105,19 +105,21 @@ public: // Put last for better data alignment
 struct VisibilityTester {
 	// VisibilityTester Public Methods
 
-	void SetSegment(const Point &p1, const Point & p2, float time) {
+	void SetSegment(const TsPack *tspack, const Point &p1, const Point & p2, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
 		const Vector w = p2 - p1;
 		const float length = w.Length();
-		r = Ray(p1, w / length, SHADOW_RAY_EPSILON, length - SHADOW_RAY_EPSILON);
+		const float shadowRayEpsilon = min(length,
+			max(tspack->machineEpsilon->E(p1), tspack->machineEpsilon->E(length)));
+		r = Ray(p1, w / length, shadowRayEpsilon, length - shadowRayEpsilon);
 		r.time = time;
 	}
 
-	void SetRay(const Point &p, const Vector & w, float time) {
+	void SetRay(const TsPack *tspack, const Point &p, const Vector & w, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
-		r = Ray(p, Normalize(w), SHADOW_RAY_EPSILON);
+		r = Ray(p, Normalize(w), tspack->machineEpsilon);
 		r.time = time;
 	}
 

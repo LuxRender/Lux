@@ -231,8 +231,9 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				(G / virtualLights[lSet].size());
 			scene->Transmittance(tspack, Ray(p, vl.p - p, scene->machineEpsilon),
 				sample, &Llight);
-			if (!scene->IntersectP(Ray(p, vl.p - p, RAY_EPSILON,
-				1.f - RAY_EPSILON)))
+			const float rayEpsilon = tspack->machineEpsilon->E(p);
+			if (!scene->IntersectP(Ray(p, vl.p - p, rayEpsilon,
+				1.f - rayEpsilon)))
 				L += pathThroughput * Llight;
 		}
 		// Trace rays for specular reflection and refraction

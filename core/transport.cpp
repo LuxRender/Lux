@@ -195,7 +195,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					RayDifferential ray(p, wi, scene->machineEpsilon);
 					ray.time = tspack->time;
 					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-					for (u_int i = 0; i < 10000; ++i) {
+					for (;;) {
 						if (!scene->Intersect(ray, &lightIsect)) {
 							Li *= light->Le(tspack, ray);
 							break;
@@ -210,7 +210,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 							break;
 						Li *= AbsDot(ibsdf->dgShading.nn, wi);
 
-						ray.mint = ray.maxt + RAY_EPSILON;
+						ray.mint = tspack->machineEpsilon->addE(ray.maxt);
 						ray.maxt = INFINITY;
 					}
 					if (!Li.Black()) {

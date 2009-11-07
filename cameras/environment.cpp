@@ -94,7 +94,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)());
 	*pdf = UniformSpherePdf();
 	*pdfDirect = 1.f;
-	visibility->SetSegment(p, pos, tspack->time);
+	visibility->SetSegment(tspack, p, pos, tspack->time);
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
@@ -102,7 +102,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 BBox EnvironmentCamera::Bounds() const
 {
 	BBox bound(pos);
-	bound.Expand(SHADOW_RAY_EPSILON);
+	bound.Expand(MachineEpsilon::staticE(bound));
 	return bound;
 }
 

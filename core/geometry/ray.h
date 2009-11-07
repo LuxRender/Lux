@@ -30,8 +30,6 @@
 
 namespace lux
 {
-#define RAY_EPSILON 1e-5f
-#define SHADOW_RAY_EPSILON 1e-5f
 
 class  Ray {
 public:

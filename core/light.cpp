@@ -43,14 +43,9 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 	RayDifferential ray(r);
 	ray.time = tspack->time;
 	Vector d(Normalize(ray.d));
-	// Dade - need to scale the RAY_EPSILON value because the ray direction
-	// is not normalized (in order to avoid light leaks: bug #295)
-	const float epsilon = SHADOW_RAY_EPSILON / ray.d.Length();
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-	// The for loop prevent an infinite sequence when the ray is almost
-	// parrallel to the surface and is self shadowed
-	for (u_int i = 0; i < 10000; ++i) {
+	for (;;) {
 		if (!scene->Intersect(ray, &isect))
 			return true;
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
@@ -64,7 +59,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 		if (pdfR)
 			*pdfR *= bsdf->Pdf(tspack, d, -d);
 
-		ray.mint = ray.maxt + epsilon;
+		ray.mint = tspack->machineEpsilon->addE(ray.maxt);
 		ray.maxt = r.maxt;
 	}
 	return false;

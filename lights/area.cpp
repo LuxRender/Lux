@@ -90,7 +90,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
 	prim->Sample(tspack, p, u1, u2, u3, &dg);
 	*wi = Normalize(dg.p - p);
 	*pdf = prim->Pdf(tspack, p, *wi);
-	visibility->SetSegment(p, dg.p, tspack->time);
+	visibility->SetSegment(tspack, p, dg.p, tspack->time);
 	return L(tspack, dg, -*wi);
 }
 float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
@@ -110,7 +110,7 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
 	prim->Sample(tspack, P, u1, u2, u3, &dg);
 	*wo = Normalize(dg.p - P);
 	*pdf = prim->Pdf(tspack, P, *wo);
-	visibility->SetSegment(P, dg.p, tspack->time);
+	visibility->SetSegment(tspack, P, dg.p, tspack->time);
 	return L(tspack, dg, -*wo);
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
@@ -164,7 +164,7 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 		else
 			*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
 				ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)));
-		visibility->SetSegment(p, dg.p, tspack->time);
+		visibility->SetSegment(tspack, p, dg.p, tspack->time);
 		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
 		return true;
 	}

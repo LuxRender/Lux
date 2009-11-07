@@ -173,10 +173,14 @@ public:
 		const __m128 t = _mm_div_ps(_mm_add_ps(_mm_mul_ps(edge2x, s2x),
 			_mm_add_ps(_mm_mul_ps(edge2y, s2y),
 			_mm_mul_ps(edge2z, s2z))), divisor);
+		/* Old code: ray4.mint and ray4.maxt have already to factor the usage of EPSILON
 		test = _mm_and_ps(test,
 			_mm_and_ps(_mm_cmpgt_ps(t, ray4.mint),
 			_mm_cmplt_ps(t, _mm_sub_ps(ray4.maxt,
-			_mm_mul_ps(t, _mm_set1_ps(RAY_EPSILON))))));
+			_mm_mul_ps(t, _mm_set1_ps(RAY_EPSILON)))))); */
+		test = _mm_and_ps(test,
+			_mm_and_ps(_mm_cmpgt_ps(t, ray4.mint),
+			_mm_cmplt_ps(t, ray4.maxt)));
 		u_int hit = 4;
 		for (u_int i = 0; i < 4; ++i) {
 			if (reinterpret_cast<int32_t *>(&test)[i] &&
@@ -356,7 +360,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int mp, u
 
 		// Compute the bounding box for the triangle
 		primsBboxes[i] = vPrims[i]->WorldBound();
-		primsBboxes[i].Expand(RAY_EPSILON);
+		primsBboxes[i].Expand(MachineEpsilon::staticE(primsBboxes[i]));
 		primsCentroids[i] = (primsBboxes[i].pMin +
 			primsBboxes[i].pMax) * .5f;
 

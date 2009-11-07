@@ -298,7 +298,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 			return 0.f;
 		}
 	}
-	visibility->SetRay(p, *wi, tspack->time);
+	visibility->SetRay(tspack, p, *wi, tspack->time);
 	return Le(tspack, RayDifferential(p, *wi, tspack->machineEpsilon));
 }
 float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
@@ -365,7 +365,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 			return 0.f;
 		}
 	}
-	visibility->SetRay(p, *wi, tspack->time);
+	visibility->SetRay(tspack, p, *wi, tspack->time);
 	return Le(tspack, RayDifferential(p, *wi, tspack->machineEpsilon));
 }
 float SkyLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
@@ -540,7 +540,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	visibility->SetSegment(p, ps, tspack->time);
+	visibility->SetSegment(tspack, p, ps, tspack->time);
 	*Le = SWCSpectrum(skyScale);
 	return true;
 }

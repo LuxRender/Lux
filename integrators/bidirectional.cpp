@@ -101,7 +101,7 @@ static bool visible(const TsPack *tspack, const Scene *scene, const Point &P0,
 	const Point &P1, float *pdf, float *pdfR, SWCSpectrum *f)
 {
 	VisibilityTester vt;
-	vt.SetSegment(P0, P1, tspack->time);
+	vt.SetSegment(tspack, P0, P1, tspack->time);
 	return vt.TestOcclusion(tspack, scene, f, pdf, pdfR);
 }
 
@@ -240,7 +240,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	// Prepare eye vertex for connection
 	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
 	const float d2 = DistanceSquared(eyeV.p, lightV.p);
-	if (d2 < SHADOW_RAY_EPSILON)
+	if (d2 < max(tspack->machineEpsilon->E(eyeV.p), tspack->machineEpsilon->E(lightV.p)))
 		return false;
 	const float ecosins = AbsDot(ewi, eyeV.bsdf->nn);
 	SWCSpectrum eflux(ef); // No pdf as it is a direct connection

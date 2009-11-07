@@ -26,6 +26,7 @@
 #include "mc.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "epsilon.h"
 
 using namespace lux;
 
@@ -61,7 +62,7 @@ ProjectionLight::
 		screenX0 = -1.f;            screenX1 =  1.f;
 		screenY0 = -1.f / aspect;   screenY1 =  1.f / aspect;
 	}
-	hither = RAY_EPSILON;
+	hither = MachineEpsilon::staticE();
 	yon = 1e30f;
 	lightProjection = Perspective(fov, hither, yon);
 	// Compute cosine of cone surrounding projection directions
@@ -88,7 +89,7 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, floa
 		VisibilityTester *visibility) const {
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;
-	visibility->SetSegment(p, lightPos, tspack->time);
+	visibility->SetSegment(tspack, p, lightPos, tspack->time);
 	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(-*wi)) / DistanceSquared(lightPos, p);
 }
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,

@@ -25,6 +25,7 @@
 #include "paramset.h"
 #include "error.h"
 #include "dynload.h"
+#include "epsilon.h"
 
 using namespace lux;
 
@@ -62,9 +63,8 @@ TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
     for (u_int i = 0; i < vPrims.size(); ++i) {
         BBox b = prims[i]->WorldBound();
 
-        // Dade - expand the bbox by EPSILON in order to avoid numerical problems
-#define KDTREE_EPSILON 1e-3f
-	b.Expand(KDTREE_EPSILON);
+	// Dade - expand the bbox by EPSILON in order to avoid numerical problems
+	b.Expand(MachineEpsilon::staticE(b));
 
         bounds = Union(bounds, b);
         primBounds.push_back(b);
@@ -308,8 +308,8 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
 
         // Dade - it looks like using mint/maxt here is faster than use the
         // inverse mailboxes
-        ray.mint = max(stack[enPt].t - KDTREE_EPSILON, originalMint);
-        ray.maxt = min(stack[exPt].t + KDTREE_EPSILON, originalMaxt);
+        ray.mint = max(stack[enPt].t - MachineEpsilon::staticE(stack[enPt].t), originalMint);
+        ray.maxt = min(stack[exPt].t + MachineEpsilon::staticE(stack[exPt].t), originalMaxt);
 
         // Check for intersections inside leaf node
         u_int nPrimitives = currNode->nPrimitives();

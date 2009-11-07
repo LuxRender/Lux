@@ -30,6 +30,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "memory.h"
+#include "epsilon.h"
 
 #include "error.h"
 
@@ -67,7 +68,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetyp
 		boost::shared_ptr<BVHAccelTreeNode> ptr(new BVHAccelTreeNode());
 		ptr->bbox = prims[i]->WorldBound();
 		// NOTE - Ratow - Expand bbox a little to make sure rays collide
-		ptr->bbox.Expand(RAY_EPSILON);
+		ptr->bbox.Expand(MachineEpsilon::staticE(ptr->bbox));
 		ptr->primitive = prims[i].get();
 		bvList.push_back(ptr);
 	}
