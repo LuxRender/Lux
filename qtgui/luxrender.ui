@@ -291,8 +291,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>553</width>
-                  <height>374</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -673,8 +673,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>212</width>
-                  <height>169</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1190,8 +1190,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>222</width>
-                  <height>174</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1593,8 +1593,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
-                  <height>28</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1655,8 +1655,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>215</width>
-                  <height>30</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1773,8 +1773,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>247</width>
-                  <height>190</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -2344,8 +2344,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
-                  <height>28</height>
+                  <width>571</width>
+                  <height>258</height>
                  </rect>
                 </property>
                 <attribute name="label">
@@ -2445,10 +2445,38 @@
         <string>Network</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_11">
-        <item row="0" column="0">
+        <item row="2" column="0">
+         <widget class="QTableWidget" name="table_servers">
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>IP</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Port</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Samples</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="1" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QLabel" name="label_updateInterval">
+           <widget class="QLabel" name="label_servers">
             <property name="text">
              <string>Server:</string>
             </property>
@@ -2490,7 +2518,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_18">
+           <widget class="QLabel" name="label_interval">
             <property name="text">
              <string>Update interval:</string>
             </property>
@@ -2503,16 +2531,19 @@
            <widget class="QSpinBox" name="spinBox_updateInterval">
             <property name="minimumSize">
              <size>
-              <width>60</width>
+              <width>100</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="maximum">
+             <number>86400</number>
+            </property>
+            <property name="value">
+             <number>180</number>
             </property>
            </widget>
           </item>
          </layout>
-        </item>
-        <item row="1" column="0">
-         <widget class="QListView" name="listView_server"/>
         </item>
        </layout>
       </widget>
@@ -2526,7 +2557,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">

@@ -410,6 +410,11 @@ private slots:
 	void chiuRadiusChanged(int value);
 	void chiuRadiusChanged(double value);
 	
+	void addServer();
+	void removeServer();
+	void updateIntervalChanged(int value);
+	void networknodeSelectionChanged();
+	
 	void copyToClipboard ();
 };
 
