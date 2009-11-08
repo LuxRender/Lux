@@ -80,6 +80,7 @@ public:
 	void send(const std::string &command);
 	void send(const std::string &command, const std::string &name, const ParamSet &params);
 	void send(const std::string &command, const std::string &name);
+	void send(const std::string &command, float x, float y);
 	void send(const std::string &command, float x, float y, float z);
 	void send(const std::string &command, float a, float x, float y, float z);
 	void send(const std::string &command, float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz);

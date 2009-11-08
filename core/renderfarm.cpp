@@ -423,6 +423,14 @@ void RenderFarm::send(const string &command, float x, float y, float z) {
 	}
 }
 
+void RenderFarm::send(const string &command, float x, float y) {
+	try {
+		netBuffer << command << endl << x << ' ' << y << endl;
+	} catch (exception& e) {
+		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+	}
+}
+
 void RenderFarm::send(const string &command, float a, float x, float y,
 		float z) {
 	try {

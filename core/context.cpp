@@ -89,7 +89,7 @@ void Context::init() {
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
 	epsilonMin = MachineEpsilon::DEFAULT_EPSILON_MIN;
-	epsilonMin = MachineEpsilon::DEFAULT_EPSILON_MAX;
+	epsilonMax = MachineEpsilon::DEFAULT_EPSILON_MAX;
 }
 
 void Context::free() {
@@ -234,8 +234,9 @@ void Context::coordSysTransform(const string &n) {
 void Context::setEpsilon(const float minValue, const float maxValue)
 {
 	VERIFY_INITIALIZED("SetEpsilon");
-	renderFarm->send("luxSetEpsilon", minValue, maxValue, 0.f);
-	activeContext->setEpsilon(minValue, maxValue);
+	renderFarm->send("luxSetEpsilon", minValue, maxValue);
+	epsilonMin = minValue;
+	epsilonMax = maxValue;
 }
 void Context::enableDebugMode() {
     VERIFY_OPTIONS("EnableDebugMode");

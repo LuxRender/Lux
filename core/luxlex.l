@@ -136,6 +136,7 @@ Camera			{ return CAMERA;		}
 ConcatTransform 	{ return CONCATTRANSFORM; 	}
 CoordinateSystem	{ return COORDINATESYSTEM;	}
 CoordSysTransform	{ return COORDSYSTRANSFORM;	}
+SetEpsilon			{ return SETEPSILON; }
 Film	 		{ return FILM;	 		}
 Identity		{ return IDENTITY;		}
 LightGroup		{ return LIGHTGROUP;		}
