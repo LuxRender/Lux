@@ -45,7 +45,7 @@ public:
 		  float sclose, int sdist, float filmdistance, float aperture_diameter, string specfile,
 		  float filmdiag, Film *film);
   virtual ~RealisticCamera(void);
-  virtual float GenerateRay(const Sample &sample, Ray *) const;
+  virtual float GenerateRay(const TsPack *tspack, const Sample &sample, Ray *) const;
 
   virtual RealisticCamera* Clone() const {
 	  return new RealisticCamera(*this);

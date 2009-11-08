@@ -45,7 +45,7 @@ boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &na
 	const Transform &tex2world, const TextureParams &tp);
 Light *MakeLight(const string &name, const Transform &light2world,
 	const ParamSet &paramSet, const TextureParams &tp);
-AreaLight *MakeAreaLight(const string &name,
+AreaLight *MakeAreaLight(const MachineEpsilon *me, const string &name,
 	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 	const boost::shared_ptr<Primitive> &prim);
 VolumeRegion *MakeVolumeRegion(const string &name,
@@ -54,7 +54,9 @@ SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet);
 VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 	const ParamSet &paramSet);
-boost::shared_ptr<Aggregate> MakeAccelerator(const string &name, const vector<boost::shared_ptr<Primitive> > &prims,
+boost::shared_ptr<Aggregate> MakeAccelerator(
+	const MachineEpsilon *me,
+	const string &name, const vector<boost::shared_ptr<Primitive> > &prims,
 	const ParamSet &paramSet);
 Camera *MakeCamera(const string &name, const Transform &world2cam,
 	const Transform &world2camEnd, const ParamSet &paramSet, Film *film);
@@ -124,7 +126,8 @@ public:
 		virtual ~RegisterLight<T>() {}
 	};
 
-	typedef AreaLight *(*CreateAreaLight)(const Transform&, const ParamSet&, const TextureParams&,
+	typedef AreaLight *(*CreateAreaLight)(const MachineEpsilon *me,
+		const Transform&, const ParamSet&, const TextureParams&,
 		const boost::shared_ptr<Primitive>&);
 	static map<string, CreateAreaLight> &registeredAreaLights();
 	template <class T> class RegisterAreaLight : public RegisterLoader<CreateAreaLight> {
@@ -162,7 +165,8 @@ public:
 		virtual ~RegisterVolumeIntegrator<T>() {}
 	};
 
-	typedef Aggregate *(*CreateAccelerator)(const vector<boost::shared_ptr<Primitive> >&,
+	typedef Aggregate *(*CreateAccelerator)(const MachineEpsilon *me,
+		const vector<boost::shared_ptr<Primitive> >&,
 		const ParamSet&);
 	static map<string, CreateAccelerator> &registeredAccelerators();
 	template <class T> class RegisterAccelerator : public RegisterLoader<CreateAccelerator> {

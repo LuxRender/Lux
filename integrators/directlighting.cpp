@@ -68,7 +68,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 	Intersection isect;
 	const float time = ray.time; // save time for motion blur
 
-	if (scene->Intersect(ray, &isect)) {
+	if (scene->Intersect(tspack, ray, &isect)) {
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
 		float *lightSample = &sampleData[0];
@@ -228,14 +228,14 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
         RayDifferential ray;
-        float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
+        float rayWeight = tspack->camera->GenerateRay(tspack, *sample, &ray);
 	if (rayWeight > 0.f) {
 		// Generate ray differentials for camera ray
 		++(sample->imageX);
-		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
+		float wt1 = tspack->camera->GenerateRay(tspack, *sample, &ray.rx);
 		--(sample->imageX);
 		++(sample->imageY);
-		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
+		float wt2 = tspack->camera->GenerateRay(tspack, *sample, &ray.ry);
 		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
 		--(sample->imageY);
 	}

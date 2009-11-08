@@ -31,13 +31,14 @@
 using namespace lux;
 
 // BruteForceAccel Method Definitions
-BruteForceAccel::BruteForceAccel(const vector<boost::shared_ptr<Primitive> > &p) {
+BruteForceAccel::BruteForceAccel(const MachineEpsilon *me,
+		const vector<boost::shared_ptr<Primitive> > &p) {
 	PrimitiveRefinementHints refineHints(false);
 	for (u_int i = 0; i < p.size(); ++i) {
 		if(p[i]->CanIntersect())
 			prims.push_back(p[i]);
 		else
-			p[i]->Refine(prims, refineHints, p[i]);
+			p[i]->Refine(me, prims, refineHints, p[i]);
 	}
 	// Compute bounds
 	for (u_int i = 0; i < prims.size(); ++i)
@@ -51,7 +52,7 @@ BBox BruteForceAccel::WorldBound() const {
 	return bounds;
 }
 
-bool BruteForceAccel::Intersect(const Ray &ray,
+bool BruteForceAccel::Intersect(const TsPack *tspack, const Ray &ray,
                           Intersection *isect) const {
 	bool hitSomething = false;
 
@@ -59,18 +60,18 @@ bool BruteForceAccel::Intersect(const Ray &ray,
 		return false;
 
 	for (u_int i = 0; i < prims.size(); ++i) {
-		hitSomething |= prims[i]->Intersect(ray, isect);
+		hitSomething |= prims[i]->Intersect(tspack, ray, isect);
 	}
 
 	return hitSomething;
 }
 
-bool BruteForceAccel::IntersectP(const Ray &ray) const {
+bool BruteForceAccel::IntersectP(const TsPack *tspack, const Ray &ray) const {
 	if (!bounds.IntersectP(ray))
 		return false;
 
 	for (u_int i = 0; i < prims.size(); ++i) {
-		if(prims[i]->IntersectP(ray))
+		if(prims[i]->IntersectP(tspack, ray))
 			return true;
 	}
 
@@ -84,9 +85,10 @@ void BruteForceAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primi
 	}
 }
 
-Aggregate* BruteForceAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
+Aggregate* BruteForceAccel::CreateAccelerator(const MachineEpsilon *me,
+		const vector<boost::shared_ptr<Primitive> > &prims,
 		const ParamSet &ps) {
-	return new BruteForceAccel(prims);
+	return new BruteForceAccel(me, prims);
 }
 
 static DynamicLoader::RegisterAccelerator<BruteForceAccel> r("bruteforce");

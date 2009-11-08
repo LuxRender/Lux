@@ -63,7 +63,7 @@ public:
 		const ParamSet &paramSet, const TextureParams &tp);
 
 private:
-	bool checkPortals(Ray portalRay) const;
+	bool checkPortals(const TsPack *tspack, Ray portalRay) const;
 
 	// SunLight Private Data
 	Vector sundir;

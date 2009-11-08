@@ -196,7 +196,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					ray.time = tspack->time;
 					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 					for (;;) {
-						if (!scene->Intersect(ray, &lightIsect)) {
+						if (!scene->Intersect(tspack, ray, &lightIsect)) {
 							Li *= light->Le(tspack, ray);
 							break;
 						} else if (lightIsect.arealight == light) {

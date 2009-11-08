@@ -440,7 +440,7 @@ void Scene::Render() {
 	camera->film->CreateBuffers();
 
 	// Dade - to support autofocus for some camera model
-	camera->AutoFocus(this);
+	camera->AutoFocus(tspack, this);
 
 	sampPos = 0;
 
@@ -503,6 +503,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr,
 	MachineEpsilon *me)
 {
+	machineEpsilon = me;
+
 	filmOnly = false;
 	lights = lts;
 	lightGroups = lg;
@@ -525,7 +527,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	// Scene Constructor Implementation
 	bound = aggregate->WorldBound();
 	if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
-	bound = Union(bound, camera->Bounds());
+	bound = Union(bound, camera->Bounds(machineEpsilon));
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
 	seedBase = rand();
@@ -533,8 +535,6 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 	camera->film->RequestBufferGroups(lightGroups);
-
-	machineEpsilon = me;
 
 	contribPool = NULL;
 	tspack = NULL;

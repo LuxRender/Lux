@@ -52,7 +52,7 @@ PrimitiveSet::PrimitiveSet(boost::shared_ptr<Aggregate> a) {
 
 	accelerator = a;
 }
-PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
+PrimitiveSet::PrimitiveSet(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &p) {
 	primitives = p;
 
 	initAreas();
@@ -68,19 +68,19 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
 		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
 	} else {
 		accelerator = boost::shared_ptr<Primitive>(
-				MakeAccelerator("kdtree", primitives, ParamSet()));
+				MakeAccelerator(me, "kdtree", primitives, ParamSet()));
 		if (!accelerator)
 			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
 	}
 }
-bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
+bool PrimitiveSet::Intersect(const TsPack *tspack, const Ray &ray, Intersection *in) const {
 	if(accelerator) {
-		return accelerator->Intersect(ray, in);
+		return accelerator->Intersect(tspack, ray, in);
 	} else if(worldbound.IntersectP(ray)) {
 		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
 		bool anyHit = false;
 		for (u_int i = 0; i < primitives.size(); ++i) {
-			if (primitives[i]->Intersect(ray, in)) {
+			if (primitives[i]->Intersect(tspack, ray, in)) {
 				anyHit = true;
 			}
 		}
@@ -89,12 +89,12 @@ bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
 	return false;
 }
 
-bool PrimitiveSet::IntersectP(const Ray &ray) const {
+bool PrimitiveSet::IntersectP(const TsPack *tspack, const Ray &ray) const {
 	if(accelerator) {
-		return accelerator->IntersectP(ray);
+		return accelerator->IntersectP(tspack, ray);
 	} else if(worldbound.IntersectP(ray)) {
 		for (u_int i = 0; i < primitives.size(); ++i) {
-			if (primitives[i]->IntersectP(ray)) {
+			if (primitives[i]->IntersectP(tspack, ray)) {
 				return true;
 			}
 		}

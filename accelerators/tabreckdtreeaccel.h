@@ -141,18 +141,20 @@ struct TaBRecInverseMailboxes {
 class  TaBRecKdTreeAccel : public Aggregate {
 public:
     // TaBRecKdTreeAccel Public Methods
-    TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
+    TaBRecKdTreeAccel(const MachineEpsilon *me,
+			const vector<boost::shared_ptr<Primitive> > &p,
             int icost, int scost,
             float ebonus, int maxp, int maxDepth);
     virtual BBox WorldBound() const { return bounds; }
     virtual bool CanIntersect() const { return true; }
     virtual ~TaBRecKdTreeAccel();
-    virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-    virtual bool IntersectP(const Ray &ray) const;
+    virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
+    virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 
     virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
 
-    static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
+    static Aggregate *CreateAccelerator(const MachineEpsilon *me,
+		const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
 private:
     void buildTree(int nodeNum, const BBox &bounds,

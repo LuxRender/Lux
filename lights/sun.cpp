@@ -173,7 +173,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 			Intersection isect;
 			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect)) {
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect)) {
 				float cosPortal = Dot(-sundir, isect.dg.nn);
 				if (cosPortal > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
@@ -185,7 +185,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	return SWCSpectrum(tspack, LSPD);
 }
 
-bool SunLight::checkPortals(Ray portalRay) const {
+bool SunLight::checkPortals(const TsPack *tspack, Ray portalRay) const {
 	if (!havePortalShape)
 		return true;
 
@@ -195,7 +195,7 @@ bool SunLight::checkPortals(Ray portalRay) const {
 	for (u_int i = 0; i < nrPortalShapes; ++i) {
 		// Dade - I need to use Intersect instead of IntersectP
 		// because of the normal
-		if (PortalShapes[i]->Intersect(isectRay, &isect)) {
+		if (PortalShapes[i]->Intersect(tspack, isectRay, &isect)) {
 			// Dade - found a valid portal, check the orientation
 			if (Dot(portalRay.d, isect.dg.nn) < 0.f) {
 				found = true;
@@ -342,7 +342,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 			Intersection isect;
 			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect)) {
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
 				if (cosP > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosP;
@@ -412,7 +412,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 			Intersection isect;
 			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect)) {
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect)) {
 				float cosPortal = Dot(ns, isect.dg.nn);
 				if (cosPortal > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;

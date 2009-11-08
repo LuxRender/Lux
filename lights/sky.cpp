@@ -81,7 +81,7 @@ public:
 				Intersection isect;
 				RayDifferential ray(ps, wiW, tspack->machineEpsilon);
 				ray.mint = -INFINITY;
-				if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
+				if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
 					*pdf += PortalShapes[i]->Pdf(tspack, ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(wiW, isect.dg.nn);
 			}
 		}
@@ -108,7 +108,7 @@ public:
 			Intersection isect;
 			RayDifferential ray(ps, w, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
 				pdf += PortalShapes[i]->Pdf(tspack, ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(w, isect.dg.nn);
 		}
 		return pdf / PortalShapes.size();
@@ -243,7 +243,7 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 			Intersection isect;
 			RayDifferential ray(r);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(tspack, r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
@@ -310,7 +310,7 @@ float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
 			RayDifferential ray(p, wi, tspack->machineEpsilon);
-			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
 				pdf += PortalShapes[i]->Pdf(tspack, p, wi);
 		}
 		pdf /= nrPortalShapes;
@@ -330,7 +330,7 @@ float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 			Intersection isect;
 			RayDifferential ray(p, wi, tspack->machineEpsilon);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect) &&
+			if (PortalShapes[i]->Intersect(tspack, ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
 				pdf += PortalShapes[i]->Pdf(tspack, p, isect.dg.p) * DistanceSquared(p, isect.dg.p) / DistanceSquared(p, po) * AbsDot(wi, ns) / AbsDot(wi, isect.dg.nn);
 		}

@@ -33,7 +33,8 @@ using namespace lux;
 //static StatsRatio rayHits("Grid Accelerator", "Intersections found per ray"); // NOBOOK
 
 // GridAccel Method Definitions
-GridAccel::GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
+GridAccel::GridAccel(const MachineEpsilon *me,
+		const vector<boost::shared_ptr<Primitive> > &p,
 		bool forRefined, bool refineImmediately)
 	: gridForRefined(forRefined) {
 	// Initialize _prims_ with primitives for grid
@@ -44,7 +45,7 @@ GridAccel::GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
 			if(p[i]->CanIntersect())
 				prims.push_back(p[i]);
 			else
-				p[i]->Refine(prims, refineHints, p[i]);
+				p[i]->Refine(me, prims, refineHints, p[i]);
 		}
 	}
 	else
@@ -136,7 +137,7 @@ GridAccel::~GridAccel() {
 		if (voxels[i]) voxels[i]->~Voxel();
 	FreeAligned(voxels);
 }
-bool GridAccel::Intersect(const Ray &ray,
+bool GridAccel::Intersect(const TsPack *tspack, const Ray &ray,
                           Intersection *isect) const {
 	if (!gridForRefined) { // NOBOOK
 		//rayTests.Add(0, 1); // NOBOOK
@@ -182,7 +183,7 @@ bool GridAccel::Intersect(const Ray &ray,
 		Voxel *voxel =
 			voxels[Offset(Pos[0],	Pos[1], Pos[2])];
 		if (voxel != NULL)
-			hitSomething |= voxel->Intersect(ray, isect, rayId);
+			hitSomething |= voxel->Intersect(tspack, ray, isect, rayId);
 		// Advance to next voxel
 		// Find _stepAxis_ for stepping to next voxel
 		int bits = ((NextCrossingT[0] < NextCrossingT[1]) << 2) +
@@ -200,9 +201,10 @@ bool GridAccel::Intersect(const Ray &ray,
 	return hitSomething;
 }
 int GridAccel::curMailboxId = 0;
-bool Voxel::Intersect(const Ray &ray,
-                      Intersection *isect,
-					  int rayId) {
+bool Voxel::Intersect(const TsPack *tspack,
+		const Ray &ray,
+		Intersection *isect,
+		int rayId) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
 		GMailboxPrim **mpp;
@@ -214,12 +216,12 @@ bool Voxel::Intersect(const Ray &ray,
 			if (!mp->primitive->CanIntersect()) {
 				vector<boost::shared_ptr<Primitive> > p;
 				PrimitiveRefinementHints refineHints(false);
-				mp->primitive->Refine(p, refineHints, mp->primitive);
+				mp->primitive->Refine(tspack->machineEpsilon, p, refineHints, mp->primitive);
 				BOOST_ASSERT(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
 				else {
-					boost::shared_ptr<Primitive> o (new GridAccel(p, true, false));
+					boost::shared_ptr<Primitive> o (new GridAccel(tspack->machineEpsilon, p, true, false));
 					mp->primitive = o;
 				}
 			}
@@ -239,14 +241,14 @@ bool Voxel::Intersect(const Ray &ray,
 		// Check for ray--primitive intersection
 		mp->lastMailboxId = rayId;
 		//rayTests.Add(1, 0); // NOBOOK
-		if (mp->primitive->Intersect(ray, isect)) {
+		if (mp->primitive->Intersect(tspack, ray, isect)) {
 			//rayHits.Add(1, 0); // NOBOOK
 			hitSomething = true;
 		}
 	}
 	return hitSomething;
 }
-bool GridAccel::IntersectP(const Ray &ray) const {
+bool GridAccel::IntersectP(const TsPack *tspack, const Ray &ray) const {
 	// radiance - disabled for threading // if (!gridForRefined) { // NOBOOK
 	// radiance - disabled for threading // 	//rayTests.Add(0, 1); // NOBOOK
 	// radiance - disabled for threading // 	//rayHits.Add(0, 1); // NOBOOK
@@ -288,7 +290,7 @@ bool GridAccel::IntersectP(const Ray &ray) const {
 	for (;;) {
 		int offset = Offset(Pos[0], Pos[1], Pos[2]);
 		Voxel *voxel = voxels[offset];
-		if (voxel && voxel->IntersectP(ray, rayId))
+		if (voxel && voxel->IntersectP(tspack, ray, rayId))
 			return true;
 		// Advance to next voxel
 		// Find _stepAxis_ for stepping to next voxel
@@ -306,7 +308,7 @@ bool GridAccel::IntersectP(const Ray &ray) const {
 	}
 	return false;
 }
-bool Voxel::IntersectP(const Ray &ray, int rayId) {
+bool Voxel::IntersectP(const TsPack *tspack, const Ray &ray, int rayId) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
 		GMailboxPrim **mpp;
@@ -318,12 +320,12 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 			if (!mp->primitive->CanIntersect()) {
 				vector<boost::shared_ptr<Primitive> > p;
 				PrimitiveRefinementHints refineHints(false);
-				mp->primitive->Refine(p, refineHints, mp->primitive);
+				mp->primitive->Refine(tspack->machineEpsilon, p, refineHints, mp->primitive);
 				BOOST_ASSERT(p.size() > 0); // NOBOOK
 				if (p.size() == 1)
 					mp->primitive = p[0];
 				else {
-					boost::shared_ptr<Primitive> o (new GridAccel(p, true, false));
+					boost::shared_ptr<Primitive> o (new GridAccel(tspack->machineEpsilon, p, true, false));
 					mp->primitive = o;
 				}
 			}
@@ -341,7 +343,7 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 		// Check for ray--primitive intersection for shadow ray
 		mp->lastMailboxId = rayId;
 		// radiance - disabled for threading // //rayTests.Add(1, 0);
-		if (mp->primitive->IntersectP(ray)) {
+		if (mp->primitive->IntersectP(tspack,ray)) {
 			// radiance - disabled for threading // //rayHits.Add(1, 0);
 			return true;
 		}
@@ -354,10 +356,10 @@ void GridAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 		primitives.push_back(mailboxes[i].primitive);
 	}
 }
-Aggregate *GridAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
+Aggregate *GridAccel::CreateAccelerator(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &prims,
 		const ParamSet &ps) {
 	bool refineImmediately = ps.FindOneBool("refineimmediately", false);
-	return new GridAccel(prims, false, refineImmediately);
+	return new GridAccel(me, prims, false, refineImmediately);
 }
 
 static DynamicLoader::RegisterAccelerator<GridAccel> r("grid");

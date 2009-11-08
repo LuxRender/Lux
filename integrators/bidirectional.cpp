@@ -296,7 +296,7 @@ static bool eyeConnect(const TsPack *tspack, const Sample *sample, const BidirVe
 	u_int bufferId, u_int groupId)
 {
 	float xd, yd;
-	if (!tspack->camera->GetSamplePosition(eye.p, eye.wi, distance,
+	if (!tspack->camera->GetSamplePosition(tspack->machineEpsilon, eye.p, eye.wi, distance,
 		&xd, &yd))
 		return false;
 	sample->AddContribution(xd, yd, color, alpha, distance, weight,
@@ -508,7 +508,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 			// Trace light subpath and connect to eye vertex
 			while (true) {
-				if (!scene->Intersect(ray, &isect))
+				if (!scene->Intersect(tspack, ray, &isect))
 					break;
 				BidirVertex &v = lightPath[nLight++];
 
@@ -627,7 +627,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float &variance(vecV[lightGroup]);
 	while (true) {
 		BidirVertex &v = eyePath[nEye++];
-		if (!scene->Intersect(ray, &isect)) {
+		if (!scene->Intersect(tspack, ray, &isect)) {
 			vector<BidirVertex> path(0);
 			for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 				const Light *light = scene->lights[lightNumber];
@@ -858,7 +858,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	}
 	const float d = sqrtf(eyePath[0].d2);
 	float xl, yl;
-	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
+	if (!tspack->camera->GetSamplePosition(tspack->machineEpsilon, eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
 		return nrContribs;
 	for (u_int i = 0; i < nGroups; ++i) {
 		if (!vecL[i].Black())

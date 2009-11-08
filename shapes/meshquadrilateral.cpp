@@ -268,7 +268,7 @@ BBox MeshQuadrilateral::WorldBound() const {
 	return Union(BBox(p0, p1), BBox(p2, p3));
 }
 
-bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
+bool MeshQuadrilateral::Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const {
 	// Compute intersection for quadrilateral
 	// based on "An Efficient Ray-Quadrilateral Intersection Test"
 	// by Ares Lagae and Philip Dutr�
@@ -418,8 +418,8 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 	return true;
 }
 
-bool MeshQuadrilateral::IntersectP(const Ray &ray) const {
-	return Intersect(ray, NULL);
+bool MeshQuadrilateral::IntersectP(const TsPack *tspack, const Ray &ray) const {
+	return Intersect(tspack, ray, NULL);
 }
 
 float MeshQuadrilateral::Area() const {

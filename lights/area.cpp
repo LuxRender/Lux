@@ -48,7 +48,8 @@ private:
 };
 
 // AreaLight Method Definitions
-AreaLight::AreaLight(const Transform &light2world,
+AreaLight::AreaLight(const MachineEpsilon *me,
+		const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > le,
 		float g, float pow, float e, 
 		SampleableSphericalFunction *ssf,
@@ -66,10 +67,10 @@ AreaLight::AreaLight(const Transform &light2world,
 		// Create _PrimitiveSet_ for _Primitive_
 		vector<boost::shared_ptr<Primitive> > refinedPrims;
 		PrimitiveRefinementHints refineHints(true);
-		p->Refine(refinedPrims, refineHints, p);
+		p->Refine(me, refinedPrims, refineHints, p);
 		if (refinedPrims.size() == 1) prim = refinedPrims[0];
 		else {
-			prim = boost::shared_ptr<Primitive>(new PrimitiveSet(refinedPrims));
+			prim = boost::shared_ptr<Primitive>(new PrimitiveSet(me, refinedPrims));
 		}
 	}
 	area = prim->Area();
@@ -194,7 +195,8 @@ private:
 	const boost::shared_ptr<const SphericalFunction> sf;
 };
 
-AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
+AreaLight* AreaLight::CreateAreaLight(const MachineEpsilon *me,
+		const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 		const boost::shared_ptr<Primitive> &prim) {
 	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
 
@@ -210,7 +212,7 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamS
 	}
 
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
+	return new AreaLight(me, light2world, L, g, p, e, ssf, nSamples, prim);
 }
 
 static DynamicLoader::RegisterAreaLight<AreaLight> r("area");

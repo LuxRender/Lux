@@ -216,9 +216,10 @@ private:
 	const boost::shared_ptr<Primitive> ptr;
 };
 
-void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
-	const PrimitiveRefinementHints &refineHints,
-	boost::shared_ptr<Primitive> thisPtr)
+void Mesh::Refine(const MachineEpsilon *me,
+		vector<boost::shared_ptr<Primitive> > &refined,
+		const PrimitiveRefinementHints &refineHints,
+		boost::shared_ptr<Primitive> thisPtr)
 {
 	if (ntris + nquads == 0)
 		return;
@@ -432,16 +433,16 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		boost::shared_ptr<Aggregate> accel;
 		switch (concreteAccelType) {
 			case ACCEL_KDTREE:
-				accel = MakeAccelerator("kdtree", refinedPrims, paramset);
+				accel = MakeAccelerator(me, "kdtree", refinedPrims, paramset);
 				break;
 			case ACCEL_QBVH:
-				accel = MakeAccelerator("qbvh", refinedPrims, paramset);
+				accel = MakeAccelerator(me, "qbvh", refinedPrims, paramset);
 				break;
 			case ACCEL_GRID:
-				accel = MakeAccelerator("grid", refinedPrims, paramset);
+				accel = MakeAccelerator(me, "grid", refinedPrims, paramset);
 				break;
 			case ACCEL_BRUTEFORCE:
-				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
+				accel = MakeAccelerator(me, "bruteforce", refinedPrims, paramset);
 				break;
 			default:
 				std::stringstream ss;

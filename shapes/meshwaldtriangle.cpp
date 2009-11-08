@@ -153,7 +153,7 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 	}
 }
 
-bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
+bool MeshWaldTriangle::Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const
 {
 	float o0, o1, o2, d0, d1, d2;
 	switch (intersectionType) {
@@ -239,7 +239,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 	return true;
 }
 
-bool MeshWaldTriangle::IntersectP(const Ray &ray) const
+bool MeshWaldTriangle::IntersectP(const TsPack *tspack, const Ray &ray) const
 {
 	float o0, o1, o2, d0, d1, d2;
 	switch (intersectionType) {

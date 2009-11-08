@@ -240,7 +240,7 @@ public:
 	   @param fst the threshold before switching to full sweep for split
 	   @param sf the skip factor during split determination
 	*/
-	QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int mp, u_int fst, u_int sf);
+	QBVHAccel(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &p, u_int mp, u_int fst, u_int sf);
 
 	/**
 	   to free the memory.
@@ -260,14 +260,14 @@ public:
 	   @param isect pointer to the intersection object to fill.
 	   @return true if there is an intersection.
 	*/
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
 
 	/**
 	   Predicate version, only tests if there is intersection.
 	   @param ray in world space
 	   @return true if there is intersection.
 	*/
-	virtual bool IntersectP(const Ray &ray) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 
 	/**
 	   Fills an array with the primitives
@@ -280,7 +280,7 @@ public:
 	   @param prims vector of primitives to store into the QBVH
 	   @param ps configuration parameters
 	*/
-	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
+	static Aggregate *CreateAccelerator(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
 private:
 	/**

@@ -31,16 +31,18 @@ namespace lux
 class  BruteForceAccel : public Aggregate {
 public:
 	// BruteForceAccel Public Methods
-	BruteForceAccel(const vector<boost::shared_ptr<Primitive> > &p);
+	BruteForceAccel(const MachineEpsilon *me,
+			const vector<boost::shared_ptr<Primitive> > &p);
 	virtual ~BruteForceAccel();
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return true; }
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-	virtual bool IntersectP(const Ray &ray) const;
+	virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 
 	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
 
-	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
+	static Aggregate *CreateAccelerator(const MachineEpsilon *me,
+		const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
 private:
 	// BruteForceAccel Private Data

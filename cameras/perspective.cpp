@@ -148,11 +148,11 @@ PerspectiveCamera::
 	yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
-	RasterToCameraBidir = Perspective(fov1, MachineEpsilon::staticE(), INFINITY).GetInverse() * RasterToScreen;
+	RasterToCameraBidir = Perspective(fov1, MachineEpsilon::DEFAULT_EPSILON_STATIC, INFINITY).GetInverse() * RasterToScreen;
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
-void PerspectiveCamera::AutoFocus(Scene* scene)
+void PerspectiveCamera::AutoFocus(const TsPack *tspack, Scene* scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -188,7 +188,7 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		Intersection isect;
-		if (scene->Intersect(ray, &isect))
+		if (scene->Intersect(tspack, ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			luxError(LUX_NOERROR, LUX_WARNING, "Unable to define the Autofocus focal distance");
@@ -199,7 +199,7 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 	}
 }
 
-float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
+float PerspectiveCamera::GenerateRay(const TsPack *tspack, const Sample &sample, Ray *ray) const
 {
 	// Generate raster and camera samples
 	Point Pras(sample.imageX, sample.imageY, 0);
@@ -277,16 +277,17 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	return true;
 }
 
-BBox PerspectiveCamera::Bounds() const
+BBox PerspectiveCamera::Bounds(const MachineEpsilon *me) const
 {
 	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
 		Point(LensRadius, LensRadius, 0.f));
 	bound = CameraToWorld(bound);
-	bound.Expand(MachineEpsilon::staticE(bound));
+	bound.Expand(me->E(bound));
 	return bound;
 }
 
-bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
+bool PerspectiveCamera::GetSamplePosition(const MachineEpsilon *me,
+	const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
 	Vector direction(normal);
 	const float cosi = Dot(wi, direction);

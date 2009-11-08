@@ -170,14 +170,14 @@ u_int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const 
 {
 	RayDifferential ray;
-	float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
+	float rayWeight = tspack->camera->GenerateRay(tspack, *sample, &ray);
 	if (rayWeight > 0.f) {
 		// Generate ray differentials for camera ray
 		++(sample->imageX);
-		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
+		float wt1 = tspack->camera->GenerateRay(tspack, *sample, &ray.rx);
 		--(sample->imageX);
 		++(sample->imageY);
-		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
+		float wt2 = tspack->camera->GenerateRay(tspack, *sample, &ray.ry);
 		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
 		--(sample->imageY);
 	}
@@ -209,7 +209,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	SWCSpectrum L(0.f);
 
 	Intersection isect;
-	if (scene->Intersect(ray, &isect)) {
+	if (scene->Intersect(tspack, ray, &isect)) {
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
 		float *lightSample = &sampleData[0];
@@ -380,7 +380,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
-		if (!scene->Intersect(ray, &isect)) {
+		if (!scene->Intersect(tspack, ray, &isect)) {
 			// Stop path sampling since no intersection was found
 			SWCSpectrum Lv;
 			scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
@@ -497,7 +497,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 						RayDifferential bounceRay(p, wi, scene->machineEpsilon);
 
 						Intersection gatherIsect;
-						if (scene->Intersect(bounceRay, &gatherIsect)) {
+						if (scene->Intersect(tspack, bounceRay, &gatherIsect)) {
 							// Dade - check the distance threshold option, if the intersection
 							// distance is smaller than the threshold, revert to standard path
 							// tracing in order to avoid corner artifacts

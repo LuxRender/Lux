@@ -41,7 +41,7 @@ using std::ptr_fun;
 using namespace lux;
 
 // BVHAccel Method Definitions
-BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetype, int csamples, int icost, int tcost, float ebonus) :
+BVHAccel::BVHAccel(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &p, u_int treetype, int csamples, int icost, int tcost, float ebonus) :
 			costSamples(csamples), isectCost(icost), traversalCost(tcost), emptyBonus(ebonus) {
 	vector<boost::shared_ptr<Primitive> > vPrims;
 	const PrimitiveRefinementHints refineHints(false);
@@ -49,7 +49,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetyp
 		if(p[i]->CanIntersect())
 			vPrims.push_back(p[i]);
 		else
-			p[i]->Refine(vPrims, refineHints, p[i]);
+			p[i]->Refine(me, vPrims, refineHints, p[i]);
 	}
 
 	// Make sure treeType is 2, 4 or 8
@@ -68,7 +68,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetyp
 		boost::shared_ptr<BVHAccelTreeNode> ptr(new BVHAccelTreeNode());
 		ptr->bbox = prims[i]->WorldBound();
 		// NOTE - Ratow - Expand bbox a little to make sure rays collide
-		ptr->bbox.Expand(MachineEpsilon::staticE(ptr->bbox));
+		ptr->bbox.Expand(me->E(ptr->bbox));
 		ptr->primitive = prims[i].get();
 		bvList.push_back(ptr);
 	}
@@ -266,7 +266,7 @@ BBox BVHAccel::WorldBound() const {
 	return bvhTree[0].bbox;
 }
 
-bool BVHAccel::Intersect(const Ray &ray,
+bool BVHAccel::Intersect(const TsPack *tspack, const Ray &ray,
                           Intersection *isect) const {
 	u_int currentNode = 0; // Root Node
 	u_int stopNode = bvhTree[0].skipIndex; // Non-existent
@@ -275,7 +275,7 @@ bool BVHAccel::Intersect(const Ray &ray,
 	while(currentNode < stopNode) {
 		if(bvhTree[currentNode].bbox.IntersectP(ray)) {
 			if(bvhTree[currentNode].primitive != NULL)
-				if(bvhTree[currentNode].primitive->Intersect(ray, isect))
+				if(bvhTree[currentNode].primitive->Intersect(tspack, ray, isect))
 					hit = true; // Continue testing for closer intersections
 			currentNode++;
 		} else {
@@ -286,14 +286,14 @@ bool BVHAccel::Intersect(const Ray &ray,
 	return hit;
 }
 
-bool BVHAccel::IntersectP(const Ray &ray) const {
+bool BVHAccel::IntersectP(const TsPack *tspack, const Ray &ray) const {
 	u_int currentNode = 0; // Root Node
 	u_int stopNode = bvhTree[0].skipIndex; // Non-existent
 
 	while(currentNode < stopNode) {
 		if(bvhTree[currentNode].bbox.IntersectP(ray)) {
 			if(bvhTree[currentNode].primitive != NULL)
-				if(bvhTree[currentNode].primitive->IntersectP(ray))
+				if(bvhTree[currentNode].primitive->IntersectP(tspack, ray))
 					return true;
 			currentNode++;
 		} else {
@@ -311,14 +311,14 @@ void BVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) 
 	}
 }
 
-Aggregate* BVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
+Aggregate* BVHAccel::CreateAccelerator(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &prims,
 		const ParamSet &ps) {
 	int treeType = ps.FindOneInt("treetype", 4); // Tree type to generate (2 = binary, 4 = quad, 8 = octree)
 	int costSamples = ps.FindOneInt("costsamples", 0); // Samples to get for cost minimization
 	int isectCost = ps.FindOneInt("intersectcost", 80);
 	int travCost = ps.FindOneInt("traversalcost", 10);
 	float emptyBonus = ps.FindOneFloat("emptybonus", 0.5f);
-	return new BVHAccel(prims, treeType, costSamples, isectCost, travCost, emptyBonus);
+	return new BVHAccel(me, prims, treeType, costSamples, isectCost, travCost, emptyBonus);
 
 }
 

@@ -47,9 +47,10 @@ public:
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return false; }
-	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
-			const PrimitiveRefinementHints &refineHints,
-			boost::shared_ptr<Primitive> thisPtr);
+	virtual void Refine(const MachineEpsilon *me,
+		vector<boost::shared_ptr<Primitive> > &refined,
+		const PrimitiveRefinementHints &refineHints,
+		boost::shared_ptr<Primitive> thisPtr);
 	virtual bool CanSample() const { return false; }
 
 	friend class MeshWaldTriangle;
@@ -122,8 +123,8 @@ public:
     virtual BBox WorldBound() const;
 
     virtual bool CanIntersect() const { return true; }
-    virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-    virtual bool IntersectP(const Ray &ray) const;
+    virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
+    virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 
     virtual void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,
@@ -167,8 +168,8 @@ public:
 	MeshWaldTriangle(const Mesh *m, u_int n);
 	virtual ~MeshWaldTriangle() { }
 
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-	virtual bool IntersectP(const Ray &ray) const;
+	virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 
 	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	virtual bool isDegenerate() const;
@@ -208,8 +209,8 @@ public:
 	virtual BBox WorldBound() const;
 
 	virtual bool CanIntersect() const { return true; }
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-	virtual bool IntersectP(const Ray &ray) const;
+	virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 
 	virtual void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,

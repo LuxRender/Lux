@@ -33,4 +33,12 @@ MachineEpsilon::MachineEpsilon(const float minValue, const float maxValue)
 	DEBUG("maxEpsilon", maxEpsilon);
 
 	UpdateAvarageEpsilon();
+
+#if defined(MACHINE_EPSILON_DEBUG)
+	char buf[256];
+	for (float v = 1e-5f; v < 1e5f; v *= 2.0f) {
+		sprintf(buf,"Epsilon.Test: %f => %e", v, this->E(v));
+		luxError(LUX_NOERROR, LUX_DEBUG, buf);
+	}
+#endif
 }

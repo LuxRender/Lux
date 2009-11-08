@@ -57,7 +57,7 @@ public:
 	static const float DEFAULT_EPSILON_MAX = 1e-1f;
 	static const float DEFAULT_EPSILON_STATIC = 1e-5f;
 
-	static const int DEFAULT_EPSILON_ADVANCE = 512;
+	static const int DEFAULT_EPSILON_ADVANCE = 128;
 
 	MachineEpsilon() { MachineEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX); }
 	MachineEpsilon(const float minValue, const float maxValue);
@@ -100,39 +100,6 @@ public:
 
 	float E(const BBox &bb) const {
 		return max(E(bb.pMin), E(bb.pMax));
-	}
-
-	static float staticE() {
-		return DEFAULT_EPSILON_STATIC;
-	}
-
-	static float staticE(const float value) {
-		DEBUG("staticE(float).value", value);
-		const float epsilon = staticAddE(value) - value;
-		DEBUG("staticE(float).epsilon", epsilon);
-
-		return epsilon;
-	}
-
-	static float staticAddE(const float value) {
-		DEBUG("staticAddE(float).value", value);
-		const float valuePlusEpsilon = boost::math::float_advance(value,
-			DEFAULT_EPSILON_ADVANCE);
-		DEBUG("staticAddE(float).epsilon", valuePlusEpsilon);
-
-		return valuePlusEpsilon;
-	}
-
-	static float staticE(const Vector &v) {
-		return max(staticE(v.x), max(staticE(v.y), staticE(v.z)));
-	}
-
-	static float staticE(const Point &p) {
-		return max(staticE(p.x), max(staticE(p.y), staticE(p.z)));
-	}
-
-	static float staticE(const BBox &bb) {
-		return max(staticE(bb.pMin), staticE(bb.pMax));
 	}
 
 private:

@@ -50,7 +50,7 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
-void OrthoCamera::AutoFocus(Scene* scene)
+void OrthoCamera::AutoFocus(const TsPack *tspack, Scene* scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -85,7 +85,7 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		Intersection isect;
-		if (scene->Intersect(ray, &isect))
+		if (scene->Intersect(tspack, ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			luxError(LUX_NOERROR, LUX_WARNING, "Unable to define the Autofocus focal distance");
@@ -96,7 +96,7 @@ void OrthoCamera::AutoFocus(Scene* scene)
 	}
 }
 
-float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
+float OrthoCamera::GenerateRay(const TsPack *tspack, const Sample &sample, Ray *ray) const
 {
 	// Generate raster and camera samples
 	Point Pras(sample.imageX, sample.imageY, 0);
@@ -147,9 +147,9 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point
 {
 	return false;
 }
-bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
+bool OrthoCamera::GetSamplePosition(const MachineEpsilon *me, const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
-	if (Dot(wi, normal) < 1.f - MachineEpsilon::staticE(1.f) || (!isinf(distance) && (distance < ClipHither || distance > ClipYon)))
+	if (Dot(wi, normal) < 1.f - me->E(1.f) || (!isinf(distance) && (distance < ClipHither || distance > ClipYon)))
 		return false;
 	Point ps(WorldToRasterBidir(p));
 	*x = ps.x;
@@ -163,11 +163,11 @@ void OrthoCamera::ClampRay(Ray &ray) const
 	ray.maxt = ClipYon;
 }
 
-BBox OrthoCamera::Bounds() const
+BBox OrthoCamera::Bounds(const MachineEpsilon *me) const
 {
 	BBox bound(Point(0, 0, 0), Point(1, 1, 0));
 	bound = WorldToScreen.GetInverse()(bound);
-	bound.Expand(MachineEpsilon::staticE(bound));
+	bound.Expand(me->E(bound));
 	return bound;
 }
 

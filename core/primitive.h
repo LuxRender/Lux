@@ -55,7 +55,8 @@ public:
 	 * @param refineHints The hints for the refinement.
 	 * @param thisPtr     The shared pointer to this primitive.
 	 */
-	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
+	virtual void Refine(const MachineEpsilon *me,
+		vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
 		boost::shared_ptr<Primitive> thisPtr);
 
@@ -72,13 +73,13 @@ public:
 	 * @param in The destination of the intersection information.
 	 * @return Whether an intersection was found.
 	 */
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
 	/**
 	 * Tests for intersection of this primitive with the given ray.
 	 * @param r  The ray to intersect with this primitive.
 	 * @return Whether an intersection was found.
 	 */
-	virtual bool IntersectP(const Ray &r) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
 
 	// Material
 	/**
@@ -196,13 +197,14 @@ public:
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
-	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
-			const PrimitiveRefinementHints& refineHints,
-			boost::shared_ptr<Primitive> thisPtr);
+	virtual void Refine(const MachineEpsilon *me,
+		vector<boost::shared_ptr<Primitive> > &refined,
+		const PrimitiveRefinementHints& refineHints,
+		boost::shared_ptr<Primitive> thisPtr);
 
 	virtual bool CanIntersect() const { return prim->CanIntersect(); }
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const Ray &r) const { return prim->IntersectP(r); }
+	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const { return prim->IntersectP(tspack, r); }
 
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const {
@@ -263,8 +265,8 @@ public:
 	}
 
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const Ray &r) const;
+	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
@@ -349,8 +351,8 @@ public:
     virtual BBox WorldBound() const;
 
     virtual bool CanIntersect() const { return instance->CanIntersect(); }
-    virtual bool Intersect(const Ray &r, Intersection *in) const;
-    virtual bool IntersectP(const Ray &r) const;
+    virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
+    virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 

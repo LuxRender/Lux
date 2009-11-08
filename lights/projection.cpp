@@ -62,7 +62,7 @@ ProjectionLight::
 		screenX0 = -1.f;            screenX1 =  1.f;
 		screenY0 = -1.f / aspect;   screenY1 =  1.f / aspect;
 	}
-	hither = MachineEpsilon::staticE();
+	hither = MachineEpsilon::DEFAULT_EPSILON_STATIC;
 	yon = 1e30f;
 	lightProjection = Perspective(fov, hither, yon);
 	// Compute cosine of cone surrounding projection directions
