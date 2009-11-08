@@ -40,7 +40,7 @@ BBox Disk::ObjectBound() const {
 	return BBox(Point(-radius, -radius, height),
 				Point(radius, radius, height));
 }
-bool Disk::Intersect(const Ray &r, float *tHit,
+bool Disk::Intersect(const TsPack *tspack, const Ray &r, float *tHit,
 		DifferentialGeometry *dg) const {
 	// Transform _Ray_ to object space
 	Ray ray;
@@ -82,7 +82,7 @@ bool Disk::Intersect(const Ray &r, float *tHit,
 	*tHit = thit;
 	return true;
 }
-bool Disk::IntersectP(const Ray &r) const {
+bool Disk::IntersectP(const TsPack *tspack, const Ray &r) const {
 	// Transform _Ray_ to object space
 	Ray ray;
 	WorldToObject(r, &ray);

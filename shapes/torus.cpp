@@ -351,7 +351,7 @@ BBox Torus::ObjectBound() const {
 		Point(majorRadius+minorRadius, majorRadius+minorRadius, minorRadius));
 }
 
-bool Torus::Intersect(const Ray &r, float *tHit,
+bool Torus::Intersect(const TsPack *tspack, const Ray &r, float *tHit,
 		DifferentialGeometry *dg) const {
 	float phi, theta;
 	float thit;
@@ -435,7 +435,7 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 	return true;
 }
 
-bool Torus::IntersectP(const Ray &r) const {
+bool Torus::IntersectP(const TsPack *tspack, const Ray &r) const {
 	float phi, theta;
 	float thit;
 	Point phit;

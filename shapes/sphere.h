@@ -35,9 +35,9 @@ public:
 	       float zmin, float zmax, float phiMax);
 	virtual ~Sphere() { }
 	virtual BBox ObjectBound() const;
-	virtual bool Intersect(const Ray &ray, float *tHit,
+	virtual bool Intersect(const TsPack *tspack, const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	virtual bool IntersectP(const Ray &ray) const;
+	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
 	virtual float Area() const;
 	virtual Point Sample(float u1, float u2, float u3, Normal *ns) const {
 		Point p = Point(0,0,0) + radius *
@@ -64,7 +64,7 @@ public:
 		Point ps;
 		Ray r(p,
 		      UniformSampleCone(u1, u2, cosThetaMax, wcX, wcY, wc), tspack->machineEpsilon);
-		if (!Intersect(r, &thit, &dgSphere)) {
+		if (!Intersect(tspack, r, &thit, &dgSphere)) {
 			ps = Pcenter - radius * wc;
 		} else {
 			ps = r(thit);

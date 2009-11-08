@@ -42,7 +42,7 @@ BBox Paraboloid::ObjectBound() const {
 	Point p2 = Point(  radius,  radius, zmax );
 	return BBox( p1, p2 );
 }
-bool Paraboloid::Intersect(const Ray &r, float *tHit,
+bool Paraboloid::Intersect(const TsPack *tspack, const Ray &r, float *tHit,
 		DifferentialGeometry *dg) const {
 	float phi;
 	Point phit;
@@ -128,7 +128,7 @@ bool Paraboloid::Intersect(const Ray &r, float *tHit,
 	return true;
 }
 
-bool Paraboloid::IntersectP(const Ray &r) const {
+bool Paraboloid::IntersectP(const TsPack *tspack, const Ray &r) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
