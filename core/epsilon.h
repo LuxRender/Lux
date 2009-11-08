@@ -31,8 +31,8 @@
 #include "geometry/bbox.h"
 
 #include <sstream>
-#include <boost/math/special_functions/trunc.hpp>
-#include <boost/math/special_functions/next.hpp>
+//#include <boost/math/special_functions/trunc.hpp>
+//#include <boost/math/special_functions/next.hpp>
 
 //#define MACHINE_EPSILON_DEBUG 1
 
@@ -57,7 +57,7 @@ public:
 	static const float DEFAULT_EPSILON_MAX = 1e-1f;
 	static const float DEFAULT_EPSILON_STATIC = 1e-5f;
 
-	static const int DEFAULT_EPSILON_ADVANCE = 128;
+	//static const int DEFAULT_EPSILON_ADVANCE = 128;
 
 	MachineEpsilon() { MachineEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX); }
 	MachineEpsilon(const float minValue, const float maxValue);
@@ -83,8 +83,10 @@ public:
 
 	float addE(const float value) const {
 		DEBUG("addE(float).value", value);
-		const float valuePlusEpsilon = boost::math::float_advance(value,
-			DEFAULT_EPSILON_ADVANCE);
+		// Boost version of float_advance is very very slow
+		//const float valuePlusEpsilon = boost::math::float_advance(value,
+		//	DEFAULT_EPSILON_ADVANCE);
+		const float valuePlusEpsilon = FloatAdvance(value);
 		DEBUG("addE(float).epsilon", valuePlusEpsilon);
 
 		return valuePlusEpsilon;
@@ -109,6 +111,16 @@ private:
 	};
 
 	float minEpsilon, maxEpsilon, avarageEpsilon;
+
+	float FloatAdvance(const float value) const {
+		// TODO - optimize this method
+		int exp;
+		float s = frexpf(value, &exp);
+		s += avarageEpsilon;
+		if (s >= 1.f) s = 1.f;
+
+		return ldexpf(s, exp);
+	}
 
 	void UpdateAvarageEpsilon() {
 		const int minExp = FloatExponent(minEpsilon);
