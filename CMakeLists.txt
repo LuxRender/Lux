@@ -272,7 +272,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 # Dade - default compiler options
-#ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 
 #############################################################################
@@ -283,7 +283,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #ADD_DEFINITIONS(-fPIC)
 
 # Jens - default Mac compiler options with OpenGL
-ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
 #ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
@@ -386,7 +386,7 @@ IF(APPLE)
 	COMMAND mkdir luxrenderqt.app/Contents/MacOS 
 	COMMAND mkdir luxrenderqt.app/Contents/Resources
 	COMMAND cp ../macos/Info.plist luxrenderqt.app/Contents
-	COMMAND cp luxrenderqt.icns luxrenderqt.app/Contents/Resources
+	COMMAND cp luxrender.icns luxrenderqt.app/Contents/Resources
 	COMMAND echo APPLnone > luxrenderqt.app/Contents/PkgInfo
 	COMMAND cp luxrenderqt luxrenderqt.app/Contents/MacOS/luxrenderqt)
 ENDIF(APPLE)
