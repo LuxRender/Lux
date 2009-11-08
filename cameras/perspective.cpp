@@ -148,7 +148,7 @@ PerspectiveCamera::
 	yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
-	RasterToCameraBidir = Perspective(fov1, MachineEpsilon::DEFAULT_EPSILON_STATIC, INFINITY).GetInverse() * RasterToScreen;
+	RasterToCameraBidir = Perspective(fov1, DEFAULT_EPSILON_STATIC, INFINITY).GetInverse() * RasterToScreen;
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 

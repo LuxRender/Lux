@@ -88,8 +88,8 @@ void Context::init() {
 	pushedTransforms.clear();
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
-	epsilonMin = MachineEpsilon::DEFAULT_EPSILON_MIN;
-	epsilonMax = MachineEpsilon::DEFAULT_EPSILON_MAX;
+	epsilonMin = DEFAULT_EPSILON_MIN;
+	epsilonMax = DEFAULT_EPSILON_MAX;
 }
 
 void Context::free() {

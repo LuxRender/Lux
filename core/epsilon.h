@@ -51,14 +51,13 @@ namespace lux {
 // http://www.boost.org/doc/libs/1_39_0/libs/math/doc/sf_and_dist/html/math_toolkit/special/next_float/float_advance.html
 // float_advance() advances a floating point number by a specified number of ULPs.
 
+#define DEFAULT_EPSILON_MIN 1e-9f
+#define DEFAULT_EPSILON_MAX 1e-1f
+#define DEFAULT_EPSILON_STATIC 1e-5f
+//#define DEFAULT_EPSILON_ADVANCE = 128;
+
 class MachineEpsilon {
 public:
-	static const float DEFAULT_EPSILON_MIN = 1e-9f;
-	static const float DEFAULT_EPSILON_MAX = 1e-1f;
-	static const float DEFAULT_EPSILON_STATIC = 1e-5f;
-
-	//static const int DEFAULT_EPSILON_ADVANCE = 128;
-
 	MachineEpsilon() { MachineEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX); }
 	MachineEpsilon(const float minValue, const float maxValue);
 
