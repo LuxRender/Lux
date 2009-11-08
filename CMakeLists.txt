@@ -231,10 +231,14 @@ FIND_PACKAGE(Threads REQUIRED)
 #############################################################################
 
 FIND_PACKAGE(Qt4)
-IF(Qt4_FOUND)
+IF(QT4_FOUND)
+	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
+	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
 	SET(QT_USE_QTOPENGL TRUE)
 	INCLUDE(${QT_USE_FILE})
-ENDIF(Qt4_FOUND)
+ELSE(QT4_FOUND)
+	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
+ENDIF(QT4_FOUND)
 
 #############################################################################
 #############################################################################
@@ -800,14 +804,14 @@ ENDIF(wxWidgets_FOUND)
 #############################################################################
 #Here we build the QT4 GUI executable
 #############################################################################
-IF(Qt4_FOUND)
+IF(QT4_FOUND)
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
 	QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )
 	QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} )
 
 	ADD_EXECUTABLE(luxrenderqt ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
 	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
-ENDIF(Qt4_FOUND)
+ENDIF(QT4_FOUND)
 
 #############################################################################
 
