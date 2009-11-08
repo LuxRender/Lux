@@ -34,7 +34,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_render">
        <property name="enabled">
@@ -308,7 +308,7 @@
                 </size>
                </property>
                <property name="currentIndex">
-                <number>5</number>
+                <number>0</number>
                </property>
                <widget class="QWidget" name="page_toneMap">
                 <property name="enabled">
@@ -318,8 +318,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>538</width>
-                  <height>387</height>
+                  <width>541</width>
+                  <height>392</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -751,8 +751,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>364</height>
+                  <width>249</width>
+                  <height>188</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1326,8 +1326,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>364</height>
+                  <width>253</width>
+                  <height>198</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1780,8 +1780,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>364</height>
+                  <width>96</width>
+                  <height>33</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1848,8 +1848,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>364</height>
+                  <width>242</width>
+                  <height>35</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1973,7 +1973,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>556</width>
-                  <height>364</height>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -2618,8 +2618,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>257</height>
+                  <width>96</width>
+                  <height>26</height>
                  </rect>
                 </property>
                 <attribute name="label">
