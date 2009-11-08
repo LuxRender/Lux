@@ -43,7 +43,7 @@
         <location filename="../luxrender.ui" line="54"/>
         <location filename="../luxrender.ui" line="2577"/>
         <source>Render</source>
-        <translation></translation>
+        <translation>Render</translation>
     </message>
     <message>
         <location filename="../luxrender.ui" line="73"/>
@@ -168,7 +168,7 @@
     <message>
         <location filename="../luxrender.ui" line="685"/>
         <source>Lens Effects</source>
-        <translation type="unfinished"></translation>
+        <translation>Linsen Effekte</translation>
     </message>
     <message>
         <location filename="../luxrender.ui" line="701"/>

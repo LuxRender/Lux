@@ -26,6 +26,7 @@
 #include <sstream>
 
 #include <QtGui/QApplication>
+#include <QTranslator>
 
 #include "lux.h"
 #include "api.h"
@@ -40,7 +41,15 @@ using namespace lux;
 int main(int argc, char *argv[])
 {
 	lux::LuxGuiApp application(argc, argv);
+	
+	QString locale = QLocale::system().name();
+
+	QTranslator translator;
+	translator.load(QString("luxrender_") + locale);
+	application.installTranslator(&translator);
+	
 	application.init();
+	
 	if (application.mainwin != NULL)
 		return application.exec();
 	else
