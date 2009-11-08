@@ -98,7 +98,11 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+IF(APPLE)
+	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS system-xgcc40-mt-1_39 thread-xgcc40-mt-1_39 program_options-xgcc40-mt-1_39 filesystem-xgcc40-mt-1_39 serialization-xgcc40-mt-1_39 iostreams-xgcc40-mt-1_39 regex-xgcc40-mt-1_39)
+ELSE(APPLE)
+	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+ENDIF(APPLE)
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
@@ -268,7 +272,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 # Dade - default compiler options
-ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 
 #############################################################################
@@ -279,7 +283,7 @@ ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -D
 #ADD_DEFINITIONS(-fPIC)
 
 # Jens - default Mac compiler options with OpenGL
-#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
 #ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
@@ -373,6 +377,18 @@ IF(APPLE)
 	COMMAND cp LuxRender.icns LuxRender.app/Contents/Resources
 	COMMAND echo APPLnone > LuxRender.app/Contents/PkgInfo
 	COMMAND cp luxrender LuxRender.app/Contents/MacOS/LuxRender)
+	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderqt)
+	ADD_CUSTOM_COMMAND(
+	TARGET dist POST_BUILD
+	COMMAND rm -rf luxrenderqt.app 
+	COMMAND mkdir luxrenderqt.app 
+	COMMAND mkdir luxrenderqt.app/Contents 
+	COMMAND mkdir luxrenderqt.app/Contents/MacOS 
+	COMMAND mkdir luxrenderqt.app/Contents/Resources
+	COMMAND cp ../macos/Info.plist luxrenderqt.app/Contents
+	COMMAND cp luxrenderqt.icns luxrenderqt.app/Contents/Resources
+	COMMAND echo APPLnone > luxrenderqt.app/Contents/PkgInfo
+	COMMAND cp luxrenderqt luxrenderqt.app/Contents/MacOS/luxrenderqt)
 ENDIF(APPLE)
 
 
@@ -811,14 +827,34 @@ IF(QT4_FOUND)
 	file (GLOB TRANSLATIONS_FILES qtgui/translations/*.ts)
 	qt4_create_translation(QM_FILES ${FILES_TO_TRANSLATE} ${TRANSLATIONS_FILES})
 
-	ADD_EXECUTABLE(luxrenderqt ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
+	ADD_EXECUTABLE(luxrenderqt ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
+	IF(APPLE)
+		INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
+		FIND_LIBRARY(CARBON_LIBRARY Carbon)
+		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
+		FIND_LIBRARY(QT_LIBRARY QTCore QTGui QTOpenGL)
+		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
+		FIND_LIBRARY(AGL_LIBRARY AGL )
+		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
+
+		MESSAGE(STATUS ${CARBON_LIBRARY})
+		MARK_AS_ADVANCED (CARBON_LIBRARY)
+		MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
+		MARK_AS_ADVANCED (QT_LIBRARY)
+		MARK_AS_ADVANCED (OPENGL_LIBRARY)
+		MARK_AS_ADVANCED (AGL_LIBRARY)
+		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
+		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+		TARGET_LINK_LIBRARIES(luxrenderqt -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${QT_GUI_LIBRARIES} ${QT_OPENGL_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
+	ENDIF(APPLE)
 ENDIF(QT4_FOUND)
 
 #############################################################################
 
 #Install target
-INSTALL(TARGETS luxrender luxconsole luxmerger
+INSTALL(TARGETS luxrender luxrenderqt luxconsole luxmerger
         RUNTIME DESTINATION bin
 )
 
