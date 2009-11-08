@@ -6,16 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>509</width>
-    <height>282</height>
+    <width>407</width>
+    <height>443</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>6</number>
+   </property>
+   <property name="margin">
+    <number>7</number>
+   </property>
    <item>
     <layout class="QGridLayout" name="gridLayout">
+     <property name="verticalSpacing">
+      <number>6</number>
+     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="label_gain">
        <property name="text">
@@ -28,6 +37,15 @@
      </item>
      <item row="0" column="1">
       <widget class="QSlider" name="slider_gain">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Adjust LightGroup Gain/Intensity</string>
+       </property>
        <property name="maximum">
         <number>512</number>
        </property>
@@ -38,8 +56,23 @@
      </item>
      <item row="0" column="2">
       <widget class="QDoubleSpinBox" name="spinBox_gain">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Adjust LightGroup Gain/Intensity Value</string>
+       </property>
        <property name="decimals">
-        <number>10</number>
+        <number>7</number>
        </property>
        <property name="maximum">
         <double>10000.000000000000000</double>
@@ -51,33 +84,41 @@
      </item>
      <item row="1" column="0">
       <widget class="QCheckBox" name="checkBox_enableRGB">
+       <property name="toolTip">
+        <string>Enable RGB Colour adjustment</string>
+       </property>
        <property name="text">
         <string>RGB</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="1" column="1" colspan="2">
       <widget class="QCheckBox" name="checkBox_enableBB">
+       <property name="toolTip">
+        <string>Enable BlackBody Temperature Adjustment</string>
+       </property>
        <property name="text">
         <string>Black Body temperature</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QToolButton" name="toolButton_colorpicker">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>16</height>
-        </size>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="1">
       <widget class="QLabel" name="label_colortemp">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -89,8 +130,42 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="2" column="0" rowspan="2">
+      <widget class="QToolButton" name="toolButton_colorpicker">
+       <property name="toolTip">
+        <string>Adjust RGB Colour</string>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
       <widget class="QSlider" name="slider_colortemp">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Adjust BlackBody Temperature</string>
+       </property>
        <property name="maximum">
         <number>512</number>
        </property>
@@ -99,8 +174,23 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
+     <item row="3" column="2">
       <widget class="QDoubleSpinBox" name="spinBox_colortemp">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Adjust BlackBody Temperature Value</string>
+       </property>
        <property name="decimals">
         <number>0</number>
        </property>
@@ -132,6 +222,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>slider_gain</tabstop>
+  <tabstop>spinBox_gain</tabstop>
+  <tabstop>checkBox_enableRGB</tabstop>
+  <tabstop>checkBox_enableBB</tabstop>
+  <tabstop>toolButton_colorpicker</tabstop>
+  <tabstop>slider_colortemp</tabstop>
+  <tabstop>spinBox_colortemp</tabstop>
+ </tabstops>
  <resources>
   <include location="images.qrc"/>
  </resources>

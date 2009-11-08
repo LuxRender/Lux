@@ -26,21 +26,30 @@
 #include <sstream>
 
 #include <QtGui/QApplication>
+#include <QTranslator>
 
 #include "lux.h"
 #include "api.h"
 #include "error.h"
 #include "osfunc.h"
 
-#include "luxapp.h"
-#include "mainwindow.h"
+#include "luxapp.hxx"
+#include "mainwindow.hxx"
 
 using namespace lux;
 
 int main(int argc, char *argv[])
 {
 	lux::LuxGuiApp application(argc, argv);
+	
+	QString locale = QLocale::system().name();
+
+	QTranslator translator;
+	translator.load(QString("luxrender_") + locale);
+	application.installTranslator(&translator);
+	
 	application.init();
+	
 	if (application.mainwin != NULL)
 		return application.exec();
 	else

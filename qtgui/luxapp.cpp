@@ -33,8 +33,8 @@
 #include "error.h"
 #include "osfunc.h"
 
-#include "mainwindow.h"
-#include "luxapp.h"
+#include "mainwindow.hxx"
+#include "luxapp.hxx"
 
 using namespace lux;
 namespace po = boost::program_options;

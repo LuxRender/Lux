@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "histogramview.h"
+#include "histogramview.hxx"
 
 HistogramView::HistogramView(QWidget *parent) : QGraphicsView(parent) {
 	frame = parent;

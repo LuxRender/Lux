@@ -1,4 +1,4 @@
-#include "aboutdialog.h"
+#include "aboutdialog.hxx"
 #include "ui_aboutdialog.h"
 
 AboutDialog::AboutDialog(QWidget *parent)

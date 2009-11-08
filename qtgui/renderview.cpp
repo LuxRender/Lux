@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "renderview.h"
+#include "renderview.hxx"
 
 RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
     if (opengl)
