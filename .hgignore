@@ -12,5 +12,8 @@
 ^luxcomp
 syntax: glob
 *.directory
+*.cdtproject
+*.cproject
+*.project
 moc_*.cxx
 *~

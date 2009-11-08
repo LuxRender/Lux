@@ -1618,9 +1618,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 bool MainWindow::event (QEvent *event)
 {
 	bool retval = FALSE;
-	
+	int eventtype = event->type();
+
 	// Check if it's one of "our" events
-	if (event->type() == EVT_LUX_TONEMAPPED) {
+	if (eventtype == EVT_LUX_TONEMAPPED) {
 		// Make sure the update thread has ended so we can start another one later.
 		if (m_updateThread)
 			m_updateThread->join();
@@ -1631,7 +1632,7 @@ bool MainWindow::event (QEvent *event)
 		histogramView->Update();
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_PARSEERROR) {
+	else if (eventtype == EVT_LUX_PARSEERROR) {
 		m_progDialog->cancel();
 		delete m_progDialog;
 		m_progDialog = NULL;
@@ -1641,7 +1642,7 @@ bool MainWindow::event (QEvent *event)
 		changeRenderState(FINISHED);
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_FLMLOADERROR) {
+	else if (eventtype == EVT_LUX_FLMLOADERROR) {
 		//wxMessageBox(wxT("FLM load error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
@@ -1651,7 +1652,7 @@ bool MainWindow::event (QEvent *event)
 		changeRenderState(WAITING);
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_FINISHED) {
+	else if (eventtype == EVT_LUX_FINISHED) {
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
 			//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
@@ -1664,7 +1665,7 @@ bool MainWindow::event (QEvent *event)
 		}
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_SAVEDFLM) {
+	else if (eventtype == EVT_LUX_SAVEDFLM) {
 		m_progDialog->cancel();
 		delete m_progDialog;
 		m_progDialog = NULL;
@@ -1676,17 +1677,14 @@ bool MainWindow::event (QEvent *event)
 		m_flmsaveThread = NULL;
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_LOGEVENT)
+	else if (eventtype == EVT_LUX_LOGEVENT)
 		logEvent((LuxLogEvent *)event);
 
 	if (retval)
 		// Was our event, stop the event propagation
 		event->accept();
-    else
-		// Give the other widgets the chance to look at the event
-		retval = QWidget::event(event);
 
-	return retval;
+	return QMainWindow::event(event);
 }
 
 void MainWindow::logEvent(LuxLogEvent *event)

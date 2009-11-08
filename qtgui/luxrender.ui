@@ -318,8 +318,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>541</width>
-                  <height>392</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -751,8 +751,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>356</height>
+                  <width>282</width>
+                  <height>185</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1326,8 +1326,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>356</height>
+                  <width>277</width>
+                  <height>196</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1780,8 +1780,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>356</height>
+                  <width>94</width>
+                  <height>34</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1848,8 +1848,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>356</height>
+                  <width>251</width>
+                  <height>34</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1972,8 +1972,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>556</width>
-                  <height>356</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -2003,7 +2003,7 @@
                      <item>
                       <widget class="QTabWidget" name="tabs_GREYC">
                        <property name="currentIndex">
-                        <number>2</number>
+                        <number>0</number>
                        </property>
                        <widget class="QWidget" name="tab_regularization">
                         <attribute name="title">
@@ -2618,8 +2618,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>96</width>
-                  <height>26</height>
+                  <width>94</width>
+                  <height>24</height>
                  </rect>
                 </property>
                 <attribute name="label">
@@ -2844,7 +2844,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
