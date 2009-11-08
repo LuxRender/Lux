@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 	QString locale = QLocale::system().name();
 
 	QTranslator translator;
-	translator.load(QString("luxrender_") + locale);
-	application.installTranslator(&translator);
+	if (translator.load(QString("luxrender_") + locale))
+		application.installTranslator(&translator);
 	
 	application.init();
 	
