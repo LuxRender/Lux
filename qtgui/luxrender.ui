@@ -751,8 +751,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>249</width>
-                  <height>188</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -772,7 +772,7 @@
                     <bool>true</bool>
                    </property>
                    <property name="currentIndex">
-                    <number>3</number>
+                    <number>0</number>
                    </property>
                    <widget class="QWidget" name="tab_gaussianBloom">
                     <attribute name="title">
@@ -1326,8 +1326,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>253</width>
-                  <height>198</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1406,7 +1406,7 @@
                    <item row="1" column="0" colspan="2">
                     <widget class="QTabWidget" name="tabs_colorSpaceTabs">
                      <property name="currentIndex">
-                      <number>1</number>
+                      <number>0</number>
                      </property>
                      <widget class="QWidget" name="tab_whitepoint">
                       <attribute name="title">
@@ -1417,11 +1417,11 @@
                         <layout class="QGridLayout" name="gridLayout_28">
                          <item row="0" column="0">
                           <widget class="QLabel" name="label_whitePointPreset">
-                           <property name="maximumSize">
-                            <size>
-                             <width>50</width>
-                             <height>16777215</height>
-                            </size>
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
                            </property>
                            <property name="text">
                             <string>Preset</string>
@@ -1780,8 +1780,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>96</width>
-                  <height>33</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1848,8 +1848,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>242</width>
-                  <height>35</height>
+                  <width>556</width>
+                  <height>356</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1990,7 +1990,7 @@
                  <item row="0" column="0">
                   <widget class="QTabWidget" name="tabs_noiseReduction">
                    <property name="currentIndex">
-                    <number>1</number>
+                    <number>0</number>
                    </property>
                    <widget class="QWidget" name="tab_GREYC">
                     <attribute name="title">

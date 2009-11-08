@@ -1189,29 +1189,37 @@
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1212"/>
+        <location filename="../mainwindow.cpp~" line="1213"/>
         <source>Current file is still rendering</source>
         <translation>Aktuelle Datei rendert noch</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1212"/>
+        <location filename="../mainwindow.cpp~" line="1213"/>
         <source>Do you want to stop the current render and start a new one?</source>
         <translation>Wollen Sie den aktuellen  Rendervorgang abbrechen und einen neuen beginnen?</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1230"/>
         <location filename="../mainwindow.cpp" line="1243"/>
+        <location filename="../mainwindow.cpp~" line="1231"/>
+        <location filename="../mainwindow.cpp~" line="1244"/>
         <source>Choose a scene file to open</source>
         <translation>Datei zum öffnen auswählen</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1230"/>
         <location filename="../mainwindow.cpp" line="1243"/>
+        <location filename="../mainwindow.cpp~" line="1231"/>
+        <location filename="../mainwindow.cpp~" line="1244"/>
         <source>LuxRender Files (*.lxs)</source>
         <translation>LuxRender Dateien (*.lxs)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1248"/>
         <location filename="../mainwindow.cpp" line="1262"/>
+        <location filename="../mainwindow.cpp~" line="1249"/>
+        <location filename="../mainwindow.cpp~" line="1263"/>
         <source>Choose an FLM file to open</source>
         <translation>FLM Datei zum öffnen auswählen</translation>
     </message>
@@ -1219,26 +1227,33 @@
         <location filename="../mainwindow.cpp" line="1248"/>
         <location filename="../mainwindow.cpp" line="1262"/>
         <location filename="../mainwindow.cpp" line="1290"/>
+        <location filename="../mainwindow.cpp~" line="1249"/>
+        <location filename="../mainwindow.cpp~" line="1263"/>
+        <location filename="../mainwindow.cpp~" line="1291"/>
         <source>LuxRender FLM files (*.flm)</source>
         <translation>LuxRender FLM Dateien (*.flm)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1271"/>
+        <location filename="../mainwindow.cpp~" line="1272"/>
         <source>Loading FLM...</source>
         <translation>Lade FLM...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1290"/>
+        <location filename="../mainwindow.cpp~" line="1291"/>
         <source>Choose an FLM file to save to</source>
         <translation>FLM Datei zum speichern auswähen</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1296"/>
+        <location filename="../mainwindow.cpp~" line="1297"/>
         <source>Saving FLM...</source>
         <translation>Speichere FLM...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1354"/>
+        <location filename="../mainwindow.cpp~" line="1355"/>
         <source>Waiting for render threads to stop.</source>
         <translation>Warte auf bis der Render Thread angehalten ist.</translation>
     </message>
@@ -1246,67 +1261,83 @@
         <location filename="../mainwindow.cpp" line="1421"/>
         <location filename="../mainwindow.cpp" line="1746"/>
         <location filename="../mainwindow.cpp" line="1758"/>
+        <location filename="../mainwindow.cpp~" line="1422"/>
+        <location filename="../mainwindow.cpp~" line="1747"/>
+        <location filename="../mainwindow.cpp~" line="1759"/>
         <source>GUI: Updating framebuffer...</source>
         <translation>GUI: Aktuallisiere framebuffer...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1422"/>
         <location filename="../mainwindow.cpp" line="1759"/>
+        <location filename="../mainwindow.cpp~" line="1423"/>
+        <location filename="../mainwindow.cpp~" line="1760"/>
         <source>Tonemapping...</source>
         <translation>Tonemapping...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1424"/>
+        <location filename="../mainwindow.cpp~" line="1425"/>
         <source>GUI: Updating framebuffer/Computing Lens Effect Layer(s)...</source>
         <translation>GUI: Aktuallisiere framebuffer/Berechne Linsen Effekt Ebene(n)...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1425"/>
+        <location filename="../mainwindow.cpp~" line="1426"/>
         <source>Computing Lens Effect Layer(s) &amp; Tonemapping...</source>
         <translation>Berechne Linsen Effekt Ebene(n) &amp; Tonemapping...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1456"/>
+        <location filename="../mainwindow.cpp~" line="1457"/>
         <source>Rendering done.</source>
         <translation>Rendering abgeschlossen.</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1539"/>
+        <location filename="../mainwindow.cpp~" line="1540"/>
         <source>Loading scene...</source>
         <translation>Lade Szene...</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1703"/>
+        <location filename="../mainwindow.cpp~" line="1704"/>
         <source>yyyy-MM-dd hh:mm:ss</source>
         <translation>dd.MM.yyyy hh:mm:ss</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1709"/>
+        <location filename="../mainwindow.cpp~" line="1710"/>
         <source>Debug: </source>
         <translation>Debug: </translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1714"/>
+        <location filename="../mainwindow.cpp~" line="1715"/>
         <source>Info: </source>
         <translation>Info: </translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1718"/>
+        <location filename="../mainwindow.cpp~" line="1719"/>
         <source>Warning: </source>
         <translation>Warnung: </translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1723"/>
+        <location filename="../mainwindow.cpp~" line="1724"/>
         <source>Error: </source>
         <translation>Fehler: </translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1728"/>
+        <location filename="../mainwindow.cpp~" line="1729"/>
         <source>Severe error: </source>
         <translation>Schwerer Fehler:</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1764"/>
+        <location filename="../mainwindow.cpp~" line="1765"/>
         <source>Rendering stopped by user.</source>
         <translation>Rendering vom Benutzer angehalten.</translation>
     </message>
