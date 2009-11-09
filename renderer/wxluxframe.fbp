@@ -928,7 +928,7 @@
                                                     <event name="OnUpdateUI"></event>
                                                     <object class="auinotebookpage" expanded="1">
                                                         <property name="bitmap">; Load From File</property>
-                                                        <property name="label">LightGroups</property>
+                                                        <property name="label">Light Groups</property>
                                                         <property name="select">0</property>
                                                         <object class="wxScrolledWindow" expanded="1">
                                                             <property name="bg"></property>
