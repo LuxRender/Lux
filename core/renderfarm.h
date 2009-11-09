@@ -126,6 +126,7 @@ private:
 	static void decodeServerName(const string &serverName, string &name, string &port);
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void sendParams(const ParamSet &params);
+	void sendFile(std::string file);
 
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 

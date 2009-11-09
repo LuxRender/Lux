@@ -227,29 +227,36 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 		// Dade - replace the filename parameter
 		params.AddString(fileParam, &file);
 
+		// Read the file size
+		string slen;
+		getline(stream, slen); // Eat the \n
+		getline(stream, slen);
+		// Limiting the file size to 2G should be a problem
+		int len = atoi(slen.c_str());
+
 		stringstream ss("");
 		ss << "Receiving file: '" << originalFile << "' (in '" <<
-			file << "')";
+			file << "' size: " << (len / 1024) << " Kbytes)";
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-		bool first = true;
-		string s;
-		ofstream out;
-		while (getline(stream, s) && (s != "LUX_END_FILE")) {
-			if (!first)
-				out << "\n";
-			else {
-				// Dade - fix for bug 514: avoid to create the file if it is empty
-				out.open(file.c_str(), ios::out | ios::binary);
-				first = false;
-			}
+		// Dade - fix for bug 514: avoid to create the file if it is empty
+		if (len > 0) {
+			// Allocate a buffer to read all the file
+			char *buf = new char[len];
+			stream.read(buf, len);
 
-			out << s;
-		}
-
-		if (!first) {
+			ofstream out(file.c_str(), ios::out | ios::binary);
+			out.write(buf, len);
 			out.flush();
 			tmpFileList.push_back(file);
+
+			if (out.fail()) {
+				std::stringstream ss;
+				ss << "There was an error while writing file '" << file << "'";
+				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			}
+
+			delete buf;
 		}
 	}
 }
@@ -264,7 +271,7 @@ static void processCommand(bool isLittleEndian,
 	processCommandParams(isLittleEndian, params, stream);
 
 	processFile("mapname", params, tmpFileList, stream);
-	processFile("iesName", params, tmpFileList, stream);
+	processFile("iesname", params, tmpFileList, stream);
 
 	f(type.c_str(), params);
 }
