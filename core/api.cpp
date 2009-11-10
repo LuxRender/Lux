@@ -531,7 +531,7 @@ extern "C" void luxSetStringParameterValue(luxComponent comp, luxComponentParame
 }
 extern "C" unsigned int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index) {
 	const string str = Context::luxGetStringParameterValue(comp, param, index);
-	unsigned int nToCopy = str.length() <= dstlen ? str.length() : dstlen;
+	unsigned int nToCopy = str.length() + 1 <= dstlen ? str.length() + 1 : dstlen;
 	if (nToCopy > 0) {
 		strncpy(dst, str.c_str(), nToCopy - 1);
 		dst[nToCopy - 1] = '\0';
@@ -540,7 +540,7 @@ extern "C" unsigned int luxGetStringParameterValue(luxComponent comp, luxCompone
 }
 extern "C" unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index) {
 	const string str = Context::luxGetDefaultStringParameterValue(comp, param, index);
-	unsigned int nToCopy = str.length() <= dstlen ? str.length() : dstlen;
+	unsigned int nToCopy = str.length() + 1 <= dstlen ? str.length() + 1 : dstlen;
 	if (nToCopy > 0) {
 		strncpy(dst, str.c_str(), nToCopy - 1);
 		dst[nToCopy - 1] = '\0';
