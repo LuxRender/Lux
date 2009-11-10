@@ -30,6 +30,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "memory.h"
+#include "epsilon.h"
 
 #include "error.h"
 
@@ -67,7 +68,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetyp
 		boost::shared_ptr<BVHAccelTreeNode> ptr(new BVHAccelTreeNode());
 		ptr->bbox = prims[i]->WorldBound();
 		// NOTE - Ratow - Expand bbox a little to make sure rays collide
-		ptr->bbox.Expand(RAY_EPSILON);
+		ptr->bbox.Expand(MachineEpsilon::E(ptr->bbox));
 		ptr->primitive = prims[i].get();
 		bvList.push_back(ptr);
 	}
@@ -265,8 +266,7 @@ BBox BVHAccel::WorldBound() const {
 	return bvhTree[0].bbox;
 }
 
-bool BVHAccel::Intersect(const Ray &ray,
-                          Intersection *isect) const {
+bool BVHAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	u_int currentNode = 0; // Root Node
 	u_int stopNode = bvhTree[0].skipIndex; // Non-existent
 	bool hit = false;

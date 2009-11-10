@@ -32,6 +32,7 @@
 #include "dynload.h"
 #include "disk.h"
 #include "error.h"
+#include "epsilon.h"
 
 using namespace lux;
 
@@ -147,7 +148,7 @@ PerspectiveCamera::
 	yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
-	RasterToCameraBidir = Perspective(fov1, RAY_EPSILON, INFINITY).GetInverse() * RasterToScreen;
+	RasterToCameraBidir = Perspective(fov1, DEFAULT_EPSILON_STATIC, INFINITY).GetInverse() * RasterToScreen;
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
@@ -281,11 +282,12 @@ BBox PerspectiveCamera::Bounds() const
 	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
 		Point(LensRadius, LensRadius, 0.f));
 	bound = CameraToWorld(bound);
-	bound.Expand(SHADOW_RAY_EPSILON);
+	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
 
-bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
+bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
+	float distance, float *x, float *y) const
 {
 	Vector direction(normal);
 	const float cosi = Dot(wi, direction);

@@ -74,9 +74,7 @@ struct Voxel {
 	~Voxel() {
 		if (nPrimitives > 1) delete[] primitives;
 	}
-	bool Intersect(const Ray &ray,
-	               Intersection *isect,
-				   int rayId);
+	bool Intersect(const Ray &ray, Intersection *isect, int rayId);
 	bool IntersectP(const Ray &ray, int rayId);
 	union {
 		GMailboxPrim *onePrimitive;
@@ -90,7 +88,7 @@ class  GridAccel : public Aggregate {
 public:
 	// GridAccel Public Methods
 	GridAccel(const vector<boost::shared_ptr<Primitive> > &p,
-	          bool forRefined, bool refineImmediately);
+		bool forRefined, bool refineImmediately);
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return true; }
 	virtual ~GridAccel();

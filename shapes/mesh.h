@@ -48,8 +48,8 @@ public:
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return false; }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
-			const PrimitiveRefinementHints &refineHints,
-			boost::shared_ptr<Primitive> thisPtr);
+		const PrimitiveRefinementHints &refineHints,
+		boost::shared_ptr<Primitive> thisPtr);
 	virtual bool CanSample() const { return false; }
 
 	friend class MeshWaldTriangle;

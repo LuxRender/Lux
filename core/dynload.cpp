@@ -178,7 +178,8 @@ VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 }
 
 boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
-	const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &paramSet)
+	const vector<boost::shared_ptr<Primitive> > &prims,
+	const ParamSet &paramSet)
 {
 	if (DynamicLoader::registeredAccelerators().find(name) !=
 		DynamicLoader::registeredAccelerators().end()) {

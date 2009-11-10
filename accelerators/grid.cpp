@@ -136,8 +136,7 @@ GridAccel::~GridAccel() {
 		if (voxels[i]) voxels[i]->~Voxel();
 	FreeAligned(voxels);
 }
-bool GridAccel::Intersect(const Ray &ray,
-                          Intersection *isect) const {
+bool GridAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	if (!gridForRefined) { // NOBOOK
 		//rayTests.Add(0, 1); // NOBOOK
 		//rayHits.Add(0, 1); // NOBOOK
@@ -200,9 +199,7 @@ bool GridAccel::Intersect(const Ray &ray,
 	return hitSomething;
 }
 int GridAccel::curMailboxId = 0;
-bool Voxel::Intersect(const Ray &ray,
-                      Intersection *isect,
-					  int rayId) {
+bool Voxel::Intersect(const Ray &ray, Intersection *isect, int rayId) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
 		GMailboxPrim **mpp;

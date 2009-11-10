@@ -94,10 +94,10 @@ SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Point &p, float u1, 
 	return Lbase->Evaluate(tspack, dummydg) * gain * Falloff(-*wi) /
 		DistanceSquared(lightPos, p);
 }
-float SpotLight::Pdf(const Point &, const Vector &) const {
+float SpotLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 0.;
 }
-float SpotLight::Pdf(const Point &p, const Normal &n,
+float SpotLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	return AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);

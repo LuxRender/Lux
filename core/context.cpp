@@ -35,6 +35,7 @@
 #include "stats.h"
 #include "renderfarm.h"
 #include "fleximage.h"
+#include "epsilon.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -227,6 +228,13 @@ void Context::coordSysTransform(const string &n) {
 	renderFarm->send("luxCoordSysTransform", n);
 	if (namedCoordinateSystems.find(n) != namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[n];
+}
+void Context::setEpsilon(const float minValue, const float maxValue)
+{
+	VERIFY_INITIALIZED("SetEpsilon");
+	renderFarm->send("luxSetEpsilon", minValue, maxValue);
+	MachineEpsilon::SetMin(minValue);
+	MachineEpsilon::SetMax(maxValue);
 }
 void Context::enableDebugMode() {
     VERIFY_OPTIONS("EnableDebugMode");
@@ -687,8 +695,7 @@ void Context::objectInstance(const string &n) {
 	}
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
-		boost::shared_ptr<Primitive> accel(MakeAccelerator(
-				renderOptions->AcceleratorName, in,
+		boost::shared_ptr<Primitive> accel(MakeAccelerator(renderOptions->AcceleratorName, in,
 				renderOptions->AcceleratorParams));
 		if (!accel)
 			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
@@ -731,8 +738,7 @@ void Context::motionInstance(const string &n, float startTime, float endTime, co
 	}
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
-		boost::shared_ptr<Primitive> accel(MakeAccelerator(
-						renderOptions->AcceleratorName, in,
+		boost::shared_ptr<Primitive> accel(MakeAccelerator(renderOptions->AcceleratorName, in,
 						renderOptions->AcceleratorParams));
 		if (!accel)
 			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
@@ -851,6 +857,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 		luxError(LUX_BUG,LUX_SEVERE,"Unable to create scene due to missing plug-ins");
 		return NULL;
 	}
+
 	Scene *ret = new Scene(camera,
 			surfaceIntegrator, volumeIntegrator,
 			sampler, accelerator, lights, lightGroups, volumeRegion);

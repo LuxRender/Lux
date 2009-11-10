@@ -45,7 +45,8 @@ struct BVHAccelArrayNode {
 class  BVHAccel : public Aggregate {
 public:
 	// BVHAccel Public Methods
-	BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetype, int csamples, int icost, int tcost, float ebonus);
+	BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetype,
+		int csamples, int icost, int tcost, float ebonus);
 	virtual ~BVHAccel();
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return true; }

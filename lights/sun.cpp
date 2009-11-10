@@ -185,7 +185,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	return SWCSpectrum(tspack, LSPD);
 }
 
-bool SunLight::checkPortals(Ray portalRay) const {
+bool SunLight::checkPortals(const TsPack *tspack, Ray portalRay) const {
 	if (!havePortalShape)
 		return true;
 
@@ -224,13 +224,13 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, f
 
 	return SWCSpectrum(tspack, LSPD);
 }
-float SunLight::Pdf(const Point &, const Vector &) const {
+float SunLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	if(cosThetaMax == 1)
 		return 0.f;
 	else
 		return UniformConePdf(cosThetaMax);
 }
-float SunLight::Pdf(const Point &p, const Normal &n,
+float SunLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	const float cosTheta = AbsDot(Normalize(p - po), ns);

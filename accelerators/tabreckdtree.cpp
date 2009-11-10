@@ -25,12 +25,12 @@
 #include "paramset.h"
 #include "error.h"
 #include "dynload.h"
+#include "epsilon.h"
 
 using namespace lux;
 
 // TaBRecKdTreeAccel Method Definitions
-TaBRecKdTreeAccel::
-TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
+TaBRecKdTreeAccel::TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         int icost, int tcost,
         float ebonus, int maxp, int maxDepth)
 : isectCost(icost), traversalCost(tcost),
@@ -62,9 +62,8 @@ TaBRecKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
     for (u_int i = 0; i < vPrims.size(); ++i) {
         BBox b = prims[i]->WorldBound();
 
-        // Dade - expand the bbox by EPSILON in order to avoid numerical problems
-#define KDTREE_EPSILON 1e-3f
-	b.Expand(KDTREE_EPSILON);
+	// Dade - expand the bbox by EPSILON in order to avoid numerical problems
+	b.Expand(MachineEpsilon::E(b));
 
         bounds = Union(bounds, b);
         primBounds.push_back(b);
@@ -221,8 +220,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
 // "Heuristic Ray Shooting Algorithms" available at http://www.cgg.cvut.cz/members/havran/phdthesis.html
 // TaBRecKdTreeAccel::Intersect uses limts in mint/maxt while TaBRecKdTreeAccel::IntersectP
 // uses inverse mailboxes, it looks like the fastest combo.
-bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
-        Intersection *isect) const {
+bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float t, tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
@@ -302,14 +300,14 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray,
             stack[exPt].prev = tmp;
             stack[exPt].t = t;
             stack[exPt].node = farChild;
-	    stack[exPt].pb = ray(t);
+			stack[exPt].pb = ray(t);
             stack[exPt].pb[axis] = splitVal;
         }
 
         // Dade - it looks like using mint/maxt here is faster than use the
         // inverse mailboxes
-        ray.mint = max(stack[enPt].t - KDTREE_EPSILON, originalMint);
-        ray.maxt = min(stack[exPt].t + KDTREE_EPSILON, originalMaxt);
+        ray.mint = max(stack[enPt].t - MachineEpsilon::E(stack[enPt].t), originalMint);
+        ray.maxt = min(stack[exPt].t + MachineEpsilon::E(stack[exPt].t), originalMaxt);
 
         // Check for intersections inside leaf node
         u_int nPrimitives = currNode->nPrimitives();
@@ -431,7 +429,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
             stack[exPt].prev = tmp;
             stack[exPt].t = t;
             stack[exPt].node = farChild;
-	    stack[exPt].pb = ray(t);
+			stack[exPt].pb = ray(t);
             stack[exPt].pb[axis] = splitVal;
         }
 

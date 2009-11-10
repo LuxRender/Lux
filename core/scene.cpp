@@ -274,10 +274,9 @@ void RenderThread::Render(RenderThread *myThread) {
 	myThread->tspack->rng->init(seed);
 	myThread->tspack->arena = new MemoryArena();
 	myThread->tspack->camera = myThread->scene->camera->Clone();
+	myThread->tspack->time = 0.f;
 
 	myThread->sampler->SetTsPack(myThread->tspack);
-
-	myThread->tspack->time = 0.f;
 
 	// allocate sample pos
 	u_int *useSampPos = new u_int();

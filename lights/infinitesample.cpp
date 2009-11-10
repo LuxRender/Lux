@@ -119,7 +119,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, 
 	return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(fu * uDistrib->invCount,
 		fv * vDistribs[u]->invCount));
 }
-float InfiniteAreaLightIS::Pdf(const Point &,
+float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &,
 		const Vector &w) const {
 	Vector wi = WorldToLight(w);
 	float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
@@ -131,7 +131,7 @@ float InfiniteAreaLightIS::Pdf(const Point &,
            (uDistrib->funcInt * vDistribs[u]->funcInt) *
            1.f / (2.f * M_PI * M_PI * sin(theta));
 }
-float InfiniteAreaLightIS::Pdf(const Point &p, const Normal &n,
+float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	Vector wi = WorldToLight(Normalize(po - p));

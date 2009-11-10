@@ -90,12 +90,8 @@ private:
 //#endif
 
 inline Ray Transform::operator()(const Ray &r) const {
-	Ray ret;
-	(*this)(r.o, &ret.o);
-	(*this)(r.d, &ret.d);
-	ret.mint = r.mint;
-	ret.maxt = r.maxt;
-	ret.time = r.time;
+	Ray ret((*this)(r.o), (*this)(r.d), r.mint, r.maxt, r.time);
+
 	return ret;
 }
 inline void Transform::operator()(const Ray &r,

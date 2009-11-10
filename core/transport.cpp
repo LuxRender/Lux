@@ -186,7 +186,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			// Sample BSDF with multiple importance sampling
 			SWCSpectrum fBSDF;
 			if (bsdf->Sample_f(tspack, wo, &wi,	bs1, bs2, bcs, &fBSDF, &bsdfPdf, noSpecular, NULL, NULL, true)) {
-				lightPdf = light->Pdf(p, n, wi);
+				lightPdf = light->Pdf(tspack, p, n, wi);
 				if (lightPdf > 0.) {
 					// Add light contribution from BSDF sampling
 					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
@@ -195,6 +195,11 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					RayDifferential ray(p, wi);
 					ray.time = tspack->time;
 					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
+					// The for loop prevents an infinite
+					// loop when the ray is almost parallel
+					// to the surface
+					// It should much less frequent with
+					// dynamic epsilon, but it's safer
 					for (u_int i = 0; i < 10000; ++i) {
 						if (!scene->Intersect(ray, &lightIsect)) {
 							Li *= light->Le(tspack, ray);
@@ -210,7 +215,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 							break;
 						Li *= AbsDot(ibsdf->dgShading.nn, wi);
 
-						ray.mint = ray.maxt + RAY_EPSILON;
+						ray.mint = MachineEpsilon::addE(ray.maxt);
 						ray.maxt = INFINITY;
 					}
 					if (!Li.Black()) {

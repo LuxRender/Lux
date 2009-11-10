@@ -65,7 +65,7 @@ void Primitive::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) c
 float Primitive::Pdf(const Point &p) const {
 	return 1.f / Area();
 }
-void Primitive::Sample(const Point &p,
+void Primitive::Sample(const TsPack *tspack, const Point &p,
 		float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	Sample(u1, u2, u3, dg);
@@ -135,8 +135,7 @@ bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const {
 }
 
 // InstancePrimitive Method Definitions
-bool InstancePrimitive::Intersect(const Ray &r,
-								  Intersection *isect) const {
+bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const {
 	Ray ray = WorldToInstance(r);
 	if (!instance->Intersect(ray, isect))
 		return false;
@@ -181,8 +180,7 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 }
 
 // MotionPrimitive Method Definitions
-bool MotionPrimitive::Intersect(const Ray &r, 
-								Intersection *isect) const {
+bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const {
 
 	Transform InstanceToWorld = motionSystem->Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();

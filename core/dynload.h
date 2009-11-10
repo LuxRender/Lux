@@ -54,7 +54,8 @@ SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet);
 VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 	const ParamSet &paramSet);
-boost::shared_ptr<Aggregate> MakeAccelerator(const string &name, const vector<boost::shared_ptr<Primitive> > &prims,
+boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
+	const vector<boost::shared_ptr<Primitive> > &prims,
 	const ParamSet &paramSet);
 Camera *MakeCamera(const string &name, const Transform &world2cam,
 	const Transform &world2camEnd, const ParamSet &paramSet, Film *film);

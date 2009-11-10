@@ -65,7 +65,7 @@ public:
 			return false;
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		PortalShapes[shapeIndex]->Sample(tspack, ps, u1, u2, u3, &dg);
 		Vector wiW = Normalize(dg.p - ps);
 		Vector w = -Normalize(WorldToLight(wiW));
 		const float phi = SphericalPhi(w);
@@ -286,7 +286,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		}
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		*wi = Normalize(ps - p);
 		if (Dot(*wi, dg.nn) < 0.f)
@@ -299,7 +299,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 	visibility->SetRay(p, *wi, tspack->time);
 	return Le(tspack, RayDifferential(p, *wi));
 }
-float SkyLight::Pdf(const Point &p, const Normal &n,
+float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Vector &wi) const {
 	if (!havePortalShape)
 		return AbsDot(n, wi) * INV_TWOPI;
@@ -315,7 +315,7 @@ float SkyLight::Pdf(const Point &p, const Normal &n,
 		return pdf;
 	}
 }
-float SkyLight::Pdf(const Point &p, const Normal &n,
+float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	const Vector wi(po - p);
@@ -353,11 +353,11 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		}
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		*wi = Normalize(ps - p);
 		if (Dot(*wi, dg.nn) < 0.f)
-			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
+			*pdf = PortalShapes[shapeIndex]->Pdf( p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
 			return 0.f;
@@ -366,7 +366,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 	visibility->SetRay(p, *wi, tspack->time);
 	return Le(tspack, RayDifferential(p, *wi));
 }
-float SkyLight::Pdf(const Point &, const Vector &) const {
+float SkyLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
 SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
@@ -495,7 +495,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		}
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
 		if (Dot(wi, dg.nn) < 0.f) {

@@ -240,7 +240,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	// Prepare eye vertex for connection
 	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
 	const float d2 = DistanceSquared(eyeV.p, lightV.p);
-	if (d2 < SHADOW_RAY_EPSILON)
+	if (d2 < max(MachineEpsilon::E(eyeV.p), MachineEpsilon::E(lightV.p)))
 		return false;
 	const float ecosins = AbsDot(ewi, eyeV.bsdf->nn);
 	SWCSpectrum eflux(ef); // No pdf as it is a direct connection
@@ -473,7 +473,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Connect light vertex to eye vertex
 		// Compute direct lighting pdf for first light vertex
-		const float directPdf = light->Pdf(eye0.p, eye0.bsdf->ng,
+		const float directPdf = light->Pdf(tspack, eye0.p, eye0.bsdf->ng,
 			light0.p, light0.bsdf->ng) * directWeight;
 		SWCSpectrum Ll(Le);
 		float weight;
@@ -525,7 +525,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				// Compute light direct Pdf between
 				// the first 2 vertices
 				if (nLight == 2)
-					lightDirectPdf = light->Pdf(v.p,
+					lightDirectPdf = light->Pdf(tspack, v.p,
 						v.bsdf->ng, lightPath[0].p,
 						lightPath[0].bsdf->ng) * directWeight;
 
@@ -779,7 +779,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Connect eye subpath to light subpath
 		if (nLight > 0) {
 			// Compute direct lighting pdf for first light vertex
-			float directPdf = light->Pdf(v.p, v.bsdf->ng, lightPath[0].p,
+			float directPdf = light->Pdf(tspack, v.p, v.bsdf->ng, lightPath[0].p,
 				lightPath[0].bsdf->ng) * directWeight;
 			// Go through all light vertices
 			for (u_int j = 1; j <= nLight; ++j) {

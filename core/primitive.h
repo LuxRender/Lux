@@ -27,6 +27,7 @@
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
+#include "epsilon.h"
 
 namespace lux
 {
@@ -126,7 +127,7 @@ public:
 	 * @param u3 The subprimitive to sample.
 	 * @param dg The destination to store the sampled point in.
 	 */
-	virtual void Sample(const Point &p,
+	virtual void Sample(const TsPack *tspack, const Point &p,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	/**
 	 * Returns the probability density for sampling the given point.
@@ -196,8 +197,8 @@ public:
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
-			const PrimitiveRefinementHints& refineHints,
-			boost::shared_ptr<Primitive> thisPtr);
+		const PrimitiveRefinementHints& refineHints,
+		boost::shared_ptr<Primitive> thisPtr);
 
 	virtual bool CanIntersect() const { return prim->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in) const;
@@ -214,9 +215,9 @@ public:
 		prim->Sample(u1, u2, u3, dg);
 	}
 	virtual float Pdf(const Point &p) const { return prim->Pdf(p); }
-	virtual void Sample(const Point &P,
+	virtual void Sample(const TsPack *tspack, const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		prim->Sample(P, u1, u2, u3, dg);
+		prim->Sample(tspack, P, u1, u2, u3, dg);
 	}
 	virtual float Pdf(const Point &p, const Vector &wi) const {
 		return prim->Pdf(p, wi);
@@ -279,9 +280,9 @@ public:
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
 	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
-	virtual void Sample(const Point &P,
+	virtual void Sample(const TsPack *tspack, const Point &P,
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
+		instance->Sample(tspack, WorldToInstance(P), u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
 		dg->dpdu = InstanceToWorld(dg->dpdu);
@@ -366,9 +367,9 @@ public:
 		dg->dndv = InstanceToWorld(dg->dndv);
     }
     virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
-    virtual void Sample(const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
+    virtual void Sample(const TsPack *tspack, const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		Transform InstanceToWorld = motionSystem->Sample(dg->time);
-		instance->Sample(InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
+		instance->Sample(tspack, InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
 		dg->dpdu = InstanceToWorld(dg->dpdu);

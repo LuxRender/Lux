@@ -58,7 +58,7 @@ public:
 			return false;
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		PortalShapes[shapeIndex]->Sample(tspack, ps, u1, u2, u3, &dg);
 		Vector wiW = Normalize(dg.p - ps);
 		*f = light.Le(tspack, RayDifferential(Point(0.f), -wiW));
 		wi->x = Dot(wiW, X);
@@ -233,7 +233,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		Point ps;
 		bool found = false;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &dg);
+			PortalShapes[shapeidx]->Sample(tspack, p, u1, u2, u3, &dg);
 			ps = dg.p;
 			*wi = Normalize(ps - p);
 			if (Dot(*wi, dg.nn) < 0.f) {
@@ -255,11 +255,11 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 	visibility->SetRay(p, *wi, tspack->time);
 	return Le(tspack, RayDifferential(p, *wi));
 }
-float InfiniteAreaLight::Pdf(const Point &, const Normal &n,
+float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &, const Normal &n,
 		const Vector &wi) const {
 	return AbsDot(n, wi) * INV_TWOPI;
 }
-float InfiniteAreaLight::Pdf(const Point &p, const Normal &n,
+float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	const Vector wi(po - p);
@@ -296,7 +296,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		Point ps;
 		bool found = false;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[shapeidx]->Sample(p, u1, u2, u3, &dg);
+			PortalShapes[shapeidx]->Sample(tspack, p, u1, u2, u3, &dg);
 			ps = dg.p;
 			*wi = Normalize(ps - p);
 			if (Dot(*wi, dg.nn) < 0.f) {
@@ -318,7 +318,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 	visibility->SetRay(p, *wi, tspack->time);
 	return Le(tspack, RayDifferential(p, *wi));
 }
-float InfiniteAreaLight::Pdf(const Point &, const Vector &) const {
+float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
 }
 SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
@@ -448,7 +448,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 		}
 		DifferentialGeometry dg;
 		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
 		if (Dot(wi, dg.nn) < 0.f) {

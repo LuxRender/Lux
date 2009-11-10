@@ -106,6 +106,9 @@ void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool s
 unsigned int luxAddThread();
 void luxRemoveThread();
 
+/* Set the minimum and maximum value used for epsilon */
+void luxSetEpsilon(const float minValue, const float maxValue);
+
 enum ThreadSignals { RUN, PAUSE, EXIT};
 struct RenderingThreadInfo {
 	unsigned int threadIndex;

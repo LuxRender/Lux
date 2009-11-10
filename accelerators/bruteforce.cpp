@@ -51,8 +51,7 @@ BBox BruteForceAccel::WorldBound() const {
 	return bounds;
 }
 
-bool BruteForceAccel::Intersect(const Ray &ray,
-                          Intersection *isect) const {
+bool BruteForceAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	bool hitSomething = false;
 
 	if (!bounds.IntersectP(ray))

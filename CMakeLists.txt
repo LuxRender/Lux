@@ -98,7 +98,11 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+IF(APPLE)
+	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS system-xgcc40-mt-1_39 thread-xgcc40-mt-1_39 program_options-xgcc40-mt-1_39 filesystem-xgcc40-mt-1_39 serialization-xgcc40-mt-1_39 iostreams-xgcc40-mt-1_39 regex-xgcc40-mt-1_39)
+ELSE(APPLE)
+	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+ENDIF(APPLE)
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
@@ -231,10 +235,14 @@ FIND_PACKAGE(Threads REQUIRED)
 #############################################################################
 
 FIND_PACKAGE(Qt4)
-IF(Qt4_FOUND)
+IF(QT4_FOUND)
+	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
+	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
 	SET(QT_USE_QTOPENGL TRUE)
 	INCLUDE(${QT_USE_FILE})
-ENDIF(Qt4_FOUND)
+ELSE(QT4_FOUND)
+	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
+ENDIF(QT4_FOUND)
 
 #############################################################################
 #############################################################################
@@ -369,6 +377,18 @@ IF(APPLE)
 	COMMAND cp LuxRender.icns LuxRender.app/Contents/Resources
 	COMMAND echo APPLnone > LuxRender.app/Contents/PkgInfo
 	COMMAND cp luxrender LuxRender.app/Contents/MacOS/LuxRender)
+	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderqt)
+	ADD_CUSTOM_COMMAND(
+	TARGET dist POST_BUILD
+	COMMAND rm -rf luxrenderqt.app 
+	COMMAND mkdir luxrenderqt.app 
+	COMMAND mkdir luxrenderqt.app/Contents 
+	COMMAND mkdir luxrenderqt.app/Contents/MacOS 
+	COMMAND mkdir luxrenderqt.app/Contents/Resources
+	COMMAND cp ../macos/Info.plist luxrenderqt.app/Contents
+	COMMAND cp luxrender.icns luxrenderqt.app/Contents/Resources
+	COMMAND echo APPLnone > luxrenderqt.app/Contents/PkgInfo
+	COMMAND cp luxrenderqt luxrenderqt.app/Contents/MacOS/luxrenderqt)
 ENDIF(APPLE)
 
 
@@ -408,6 +428,7 @@ SET(lux_core_src
 	core/camera.cpp
 	core/color.cpp
 	core/context.cpp
+	core/epsilon.cpp
 	core/contribution.cpp
 	core/dynload.cpp
 	core/exrio.cpp
@@ -662,12 +683,12 @@ SET( LUXQTGUI_SRCS
     qtgui/lightgroupwidget.cpp
     )
 SET( LUXQTGUI_MOC
-    qtgui/histogramview.h
-    qtgui/mainwindow.h
-    qtgui/aboutdialog.h
-    qtgui/luxapp.h
-    qtgui/renderview.h
-    qtgui/lightgroupwidget.h
+    qtgui/histogramview.hxx
+    qtgui/mainwindow.hxx
+    qtgui/aboutdialog.hxx
+    qtgui/luxapp.hxx
+    qtgui/renderview.hxx
+    qtgui/lightgroupwidget.hxx
     )
 SET(LUXQTGUI_UIS
     qtgui/luxrender.ui
@@ -799,19 +820,42 @@ ENDIF(wxWidgets_FOUND)
 #############################################################################
 #Here we build the QT4 GUI executable
 #############################################################################
-IF(Qt4_FOUND)
+IF(QT4_FOUND)
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
 	QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )
 	QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} )
 
-	ADD_EXECUTABLE(luxrenderqt ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
+	file (GLOB TRANSLATIONS_FILES qtgui/translations/*.ts)
+	qt4_create_translation(QM_FILES ${FILES_TO_TRANSLATE} ${TRANSLATIONS_FILES})
+
+	ADD_EXECUTABLE(luxrenderqt ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
+	IF(APPLE)
+		INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
+		FIND_LIBRARY(CARBON_LIBRARY Carbon)
+		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
+		FIND_LIBRARY(QT_LIBRARY QTCore QTGui QTOpenGL)
+		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
+		FIND_LIBRARY(AGL_LIBRARY AGL )
+		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
+
+		MESSAGE(STATUS ${CARBON_LIBRARY})
+		MARK_AS_ADVANCED (CARBON_LIBRARY)
+		MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
+		MARK_AS_ADVANCED (QT_LIBRARY)
+		MARK_AS_ADVANCED (OPENGL_LIBRARY)
+		MARK_AS_ADVANCED (AGL_LIBRARY)
+		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
+		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+		TARGET_LINK_LIBRARIES(luxrenderqt -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
-ENDIF(Qt4_FOUND)
+	ENDIF(APPLE)
+ENDIF(QT4_FOUND)
 
 #############################################################################
 
 #Install target
-INSTALL(TARGETS luxrender luxconsole luxmerger
+INSTALL(TARGETS luxrender luxrenderqt luxconsole luxmerger
         RUNTIME DESTINATION bin
 )
 

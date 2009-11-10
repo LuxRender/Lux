@@ -58,6 +58,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
            <widget class="QToolButton" name="button_resume">
+            <property name="toolTip">
+             <string>Resume rendering</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -69,6 +72,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_pause">
+            <property name="toolTip">
+             <string>Pause current rendering</string>
+            </property>
             <property name="text">
              <string>||</string>
             </property>
@@ -80,6 +86,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_stop">
+            <property name="toolTip">
+             <string>Stop current rendering</string>
+            </property>
             <property name="text">
              <string>[]</string>
             </property>
@@ -105,6 +114,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_addThread">
+            <property name="toolTip">
+             <string>Add a rendering thread</string>
+            </property>
             <property name="text">
              <string>+</string>
             </property>
@@ -116,6 +128,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_removeThread">
+            <property name="toolTip">
+             <string>Remove rendering thread</string>
+            </property>
             <property name="text">
              <string>-</string>
             </property>
@@ -134,6 +149,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_copyToClipboard">
+            <property name="toolTip">
+             <string>Copy rendering image to clipboard.</string>
+            </property>
             <property name="text">
              <string>[]</string>
             </property>
@@ -184,7 +202,7 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>300</width>
+             <width>320</width>
              <height>0</height>
             </size>
            </property>
@@ -223,6 +241,9 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="toolTip">
+                <string>Reset Tone Mapping to default values</string>
+               </property>
                <property name="text">
                 <string>Reset</string>
                </property>
@@ -245,6 +266,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Enable automatic updates</string>
+               </property>
                <property name="text">
                 <string>Auto</string>
                </property>
@@ -257,6 +281,9 @@
               <widget class="QPushButton" name="button_imagingApply">
                <property name="enabled">
                 <bool>true</bool>
+               </property>
+               <property name="toolTip">
+                <string>Apply changes</string>
                </property>
                <property name="text">
                 <string>Apply</string>
@@ -308,368 +335,413 @@
                 <attribute name="label">
                  <string>Tonemap</string>
                 </attribute>
-                <widget class="QWidget" name="layoutWidget">
-                 <property name="geometry">
-                  <rect>
-                   <x>0</x>
-                   <y>1</y>
-                   <width>586</width>
-                   <height>367</height>
-                  </rect>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_31">
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="label_kernel">
-                    <property name="maximumSize">
-                     <size>
-                      <width>50</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                    <property name="text">
-                     <string>Kernel:</string>
-                    </property>
-                    <property name="buddy">
-                     <cstring>comboBox_kernel</cstring>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QComboBox" name="comboBox_kernel">
-                    <item>
-                     <property name="text">
-                      <string>Reinhard / non-Linear</string>
+                <layout class="QVBoxLayout" name="verticalLayout_3">
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_31">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_kernel">
+                     <property name="maximumSize">
+                      <size>
+                       <width>50</width>
+                       <height>16777215</height>
+                      </size>
                      </property>
-                    </item>
-                    <item>
                      <property name="text">
-                      <string>Linear</string>
+                      <string>Kernel:</string>
                      </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>Contrast</string>
+                     <property name="buddy">
+                      <cstring>comboBox_kernel</cstring>
                      </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>MaxWhite</string>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="comboBox_kernel">
+                     <property name="toolTip">
+                      <string>Select Tonemapping Kernel</string>
                      </property>
-                    </item>
-                   </widget>
-                  </item>
-                  <item row="1" column="0" colspan="2">
-                   <widget class="QFrame" name="frame_toneMapReinhard">
-                    <property name="frameShape">
-                     <enum>QFrame::StyledPanel</enum>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Raised</enum>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout">
                      <item>
-                      <layout class="QGridLayout" name="gridLayout_25">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_prescale">
-                         <property name="text">
-                          <string>Prescale</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_prescale</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QSlider" name="slider_prescale">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_prescale">
-                         <property name="decimals">
-                          <number>3</number>
-                         </property>
-                         <property name="maximum">
-                          <double>8.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="label_postscale">
-                         <property name="text">
-                          <string>Postscale</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_postscale</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QSlider" name="slider_postscale">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_postscale">
-                         <property name="decimals">
-                          <number>3</number>
-                         </property>
-                         <property name="maximum">
-                          <double>8.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="0">
-                        <widget class="QLabel" name="label_burn">
-                         <property name="text">
-                          <string>Burn</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_burn</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="1">
-                        <widget class="QSlider" name="slider_burn">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_burn">
-                         <property name="decimals">
-                          <number>3</number>
-                         </property>
-                         <property name="maximum">
-                          <double>12.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
+                      <property name="text">
+                       <string>Reinhard / non-Linear</string>
+                      </property>
                      </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item row="2" column="0" colspan="2">
-                   <widget class="QFrame" name="frame_toneMapLinear">
-                    <property name="frameShape">
-                     <enum>QFrame::StyledPanel</enum>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Raised</enum>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_16">
                      <item>
-                      <layout class="QGridLayout" name="gridLayout_17">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_sensitivity">
-                         <property name="text">
-                          <string>Sensitivity</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_prescale</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QSlider" name="slider_sensitivity">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_sensitivity">
-                         <property name="decimals">
-                          <number>1</number>
-                         </property>
-                         <property name="maximum">
-                          <double>1000.000000000000000</double>
-                         </property>
-                         <property name="singleStep">
-                          <double>10.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="label_exposure">
-                         <property name="text">
-                          <string>Exposure</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_postscale</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QSlider" name="slider_exposure">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_exposure">
-                         <property name="decimals">
-                          <number>3</number>
-                         </property>
-                         <property name="minimum">
-                          <double>0.000000000000000</double>
-                         </property>
-                         <property name="maximum">
-                          <double>100.000000000000000</double>
-                         </property>
-                         <property name="singleStep">
-                          <double>2.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="0">
-                        <widget class="QLabel" name="label_fstop">
-                         <property name="text">
-                          <string>FStop</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_burn</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="1">
-                        <widget class="QSlider" name="slider_fstop">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_fstop">
-                         <property name="maximum">
-                          <double>64.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="3" column="0">
-                        <widget class="QLabel" name="label_gamma_linear">
-                         <property name="text">
-                          <string>Gamma</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_burn</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="3" column="1">
-                        <widget class="QSlider" name="slider_gamma_linear">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="3" column="2">
-                        <widget class="QDoubleSpinBox" name="spinBox_gamma_linear">
-                         <property name="maximum">
-                          <double>5.000000000000000</double>
-                         </property>
-                         <property name="singleStep">
-                          <double>0.200000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
+                      <property name="text">
+                       <string>Linear</string>
+                      </property>
                      </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item row="3" column="0" colspan="2">
-                   <widget class="QFrame" name="frame_toneMapContrast">
-                    <property name="frameShape">
-                     <enum>QFrame::StyledPanel</enum>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Raised</enum>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_17">
                      <item>
-                      <layout class="QGridLayout" name="gridLayout_24">
-                       <item row="0" column="0" colspan="2">
-                        <widget class="QLabel" name="label_ywa">
-                         <property name="text">
-                          <string>Ywa (Display/World Adaptation Luminance)</string>
-                         </property>
-                         <property name="buddy">
-                          <cstring>slider_prescale</cstring>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QSlider" name="slider_ywa">
-                         <property name="maximum">
-                          <number>512</number>
-                         </property>
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QDoubleSpinBox" name="spinBox_ywa">
-                         <property name="decimals">
-                          <number>4</number>
-                         </property>
-                         <property name="minimum">
-                          <double>0.000000000000000</double>
-                         </property>
-                         <property name="maximum">
-                          <double>10000.000000000000000</double>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
+                      <property name="text">
+                       <string>Contrast</string>
+                      </property>
                      </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item row="4" column="0" colspan="2">
-                   <spacer name="verticalSpacer_4">
-                    <property name="orientation">
-                     <enum>Qt::Vertical</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>584</width>
-                      <height>28</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                 </layout>
-                </widget>
+                     <item>
+                      <property name="text">
+                       <string>MaxWhite</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item row="1" column="0" colspan="2">
+                    <widget class="QFrame" name="frame_toneMapReinhard">
+                     <property name="frameShape">
+                      <enum>QFrame::StyledPanel</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Raised</enum>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout">
+                      <item>
+                       <layout class="QGridLayout" name="gridLayout_25">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_prescale">
+                          <property name="text">
+                           <string>Prescale</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_prescale</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QSlider" name="slider_prescale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Prescale</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_prescale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Prescale Value</string>
+                          </property>
+                          <property name="decimals">
+                           <number>3</number>
+                          </property>
+                          <property name="maximum">
+                           <double>8.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="label_postscale">
+                          <property name="text">
+                           <string>Postscale</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_postscale</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QSlider" name="slider_postscale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Postscale</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_postscale">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Postscale Value</string>
+                          </property>
+                          <property name="decimals">
+                           <number>3</number>
+                          </property>
+                          <property name="maximum">
+                           <double>8.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="0">
+                         <widget class="QLabel" name="label_burn">
+                          <property name="text">
+                           <string>Burn</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_burn</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="1">
+                         <widget class="QSlider" name="slider_burn">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Burn</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_burn">
+                          <property name="toolTip">
+                           <string>Adjust Reinhard Burn Value</string>
+                          </property>
+                          <property name="decimals">
+                           <number>3</number>
+                          </property>
+                          <property name="maximum">
+                           <double>12.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="2" column="0" colspan="2">
+                    <widget class="QFrame" name="frame_toneMapLinear">
+                     <property name="frameShape">
+                      <enum>QFrame::StyledPanel</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Raised</enum>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_16">
+                      <item>
+                       <layout class="QGridLayout" name="gridLayout_17">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_sensitivity">
+                          <property name="text">
+                           <string>Sensitivity</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_prescale</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QSlider" name="slider_sensitivity">
+                          <property name="toolTip">
+                           <string>Adjust Sensitivity</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_sensitivity">
+                          <property name="toolTip">
+                           <string>Adjust Sensitivity Value</string>
+                          </property>
+                          <property name="decimals">
+                           <number>1</number>
+                          </property>
+                          <property name="maximum">
+                           <double>1000.000000000000000</double>
+                          </property>
+                          <property name="singleStep">
+                           <double>10.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="label_exposure">
+                          <property name="text">
+                           <string>Exposure</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_postscale</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QSlider" name="slider_exposure">
+                          <property name="toolTip">
+                           <string>Adjust Exposure</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_exposure">
+                          <property name="toolTip">
+                           <string>Adjust Exposure Value</string>
+                          </property>
+                          <property name="decimals">
+                           <number>3</number>
+                          </property>
+                          <property name="minimum">
+                           <double>0.000000000000000</double>
+                          </property>
+                          <property name="maximum">
+                           <double>100.000000000000000</double>
+                          </property>
+                          <property name="singleStep">
+                           <double>2.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="0">
+                         <widget class="QLabel" name="label_fstop">
+                          <property name="text">
+                           <string>FStop</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_burn</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="1">
+                         <widget class="QSlider" name="slider_fstop">
+                          <property name="toolTip">
+                           <string>Adjust FStop</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_fstop">
+                          <property name="toolTip">
+                           <string>Adjust FStopValue</string>
+                          </property>
+                          <property name="maximum">
+                           <double>64.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="3" column="0">
+                         <widget class="QLabel" name="label_gamma_linear">
+                          <property name="text">
+                           <string>Gamma</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_burn</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="3" column="1">
+                         <widget class="QSlider" name="slider_gamma_linear">
+                          <property name="toolTip">
+                           <string>Adjust Gamma</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="3" column="2">
+                         <widget class="QDoubleSpinBox" name="spinBox_gamma_linear">
+                          <property name="toolTip">
+                           <string>Adjust Gamma Value</string>
+                          </property>
+                          <property name="maximum">
+                           <double>5.000000000000000</double>
+                          </property>
+                          <property name="singleStep">
+                           <double>0.200000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="3" column="0" colspan="2">
+                    <widget class="QFrame" name="frame_toneMapContrast">
+                     <property name="frameShape">
+                      <enum>QFrame::StyledPanel</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Raised</enum>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_17">
+                      <item>
+                       <layout class="QGridLayout" name="gridLayout_24">
+                        <item row="0" column="0" colspan="2">
+                         <widget class="QLabel" name="label_ywa">
+                          <property name="text">
+                           <string>Ywa (Display/World Adaptation Luminance)</string>
+                          </property>
+                          <property name="buddy">
+                           <cstring>slider_prescale</cstring>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QSlider" name="slider_ywa">
+                          <property name="toolTip">
+                           <string>Adjust Ywa</string>
+                          </property>
+                          <property name="maximum">
+                           <number>512</number>
+                          </property>
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QDoubleSpinBox" name="spinBox_ywa">
+                          <property name="toolTip">
+                           <string>Adjust Ywa Value</string>
+                          </property>
+                          <property name="decimals">
+                           <number>4</number>
+                          </property>
+                          <property name="minimum">
+                           <double>0.000000000000000</double>
+                          </property>
+                          <property name="maximum">
+                           <double>10000.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="4" column="0" colspan="2">
+                    <spacer name="verticalSpacer_4">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>0</width>
+                       <height>28</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
                </widget>
                <widget class="QWidget" name="page_lensEffects">
                 <property name="enabled">
@@ -679,8 +751,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>379</height>
+                  <width>282</width>
+                  <height>185</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -714,6 +786,9 @@
                          <property name="enabled">
                           <bool>false</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Delete/Disable Bloom image layer</string>
+                         </property>
                          <property name="text">
                           <string>Delete layer</string>
                          </property>
@@ -734,16 +809,26 @@
                        </item>
                        <item row="2" column="0" colspan="2">
                         <widget class="QPushButton" name="button_gaussianComputeLayer">
+                         <property name="toolTip">
+                          <string>Compute/Update Bloom image layer</string>
+                         </property>
                          <property name="text">
                           <string>Compute layer</string>
                          </property>
                         </widget>
                        </item>
                        <item row="1" column="4">
-                        <widget class="QDoubleSpinBox" name="spinBox_gaussianRadius"/>
+                        <widget class="QDoubleSpinBox" name="spinBox_gaussianRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Bloom Radius Value</string>
+                         </property>
+                        </widget>
                        </item>
                        <item row="1" column="1" colspan="3">
                         <widget class="QSlider" name="slider_gaussianRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Bloom Radius</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -767,12 +852,18 @@
                          <property name="enabled">
                           <bool>false</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Adjust Bloom amount Value</string>
+                         </property>
                         </widget>
                        </item>
                        <item row="0" column="1" colspan="3">
                         <widget class="QSlider" name="slider_gaussianAmount">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Bloom amount</string>
                          </property>
                          <property name="maximum">
                           <number>512</number>
@@ -816,6 +907,9 @@
                     <layout class="QVBoxLayout" name="verticalLayout_4">
                      <item>
                       <widget class="QCheckBox" name="checkBox_vignettingEnabled">
+                       <property name="toolTip">
+                        <string>Enable Vignetting</string>
+                       </property>
                        <property name="text">
                         <string>Enabled</string>
                        </property>
@@ -865,6 +959,9 @@
                          <property name="enabled">
                           <bool>true</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Adjust Vignetting Amount</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -883,6 +980,9 @@
                         <widget class="QDoubleSpinBox" name="spinBox_vignettingAmount">
                          <property name="enabled">
                           <bool>true</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Vignetting Amount Value</string>
                          </property>
                          <property name="decimals">
                           <number>3</number>
@@ -922,6 +1022,9 @@
                     <layout class="QVBoxLayout" name="verticalLayout_5">
                      <item>
                       <widget class="QCheckBox" name="checkBox_caEnabled">
+                       <property name="toolTip">
+                        <string>Enable Chromatic Abberation</string>
+                       </property>
                        <property name="text">
                         <string>Enabled</string>
                        </property>
@@ -968,6 +1071,9 @@
                        </item>
                        <item row="1" column="0" colspan="3">
                         <widget class="QSlider" name="slider_caAmount">
+                         <property name="toolTip">
+                          <string>Adjust Chromatic Abberation Amount</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -984,6 +1090,9 @@
                        </item>
                        <item row="1" column="3">
                         <widget class="QDoubleSpinBox" name="spinBox_caAmount">
+                         <property name="toolTip">
+                          <string>Adjust Chromatic Abberation Amount Value</string>
+                         </property>
                          <property name="decimals">
                           <number>3</number>
                          </property>
@@ -1054,6 +1163,9 @@
                        </item>
                        <item row="4" column="0" colspan="2">
                         <widget class="QPushButton" name="button_glareComputeLayer">
+                         <property name="toolTip">
+                          <string>Compute/Update Glare image layer</string>
+                         </property>
                          <property name="text">
                           <string>Compute layer</string>
                          </property>
@@ -1077,6 +1189,9 @@
                          <property name="enabled">
                           <bool>false</bool>
                          </property>
+                         <property name="toolTip">
+                          <string>Delete/Disable Glare image layer</string>
+                         </property>
                          <property name="text">
                           <string>Delete layer</string>
                          </property>
@@ -1084,6 +1199,9 @@
                        </item>
                        <item row="3" column="5" colspan="2">
                         <widget class="QDoubleSpinBox" name="spinBox_glareRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Glare Value</string>
+                         </property>
                          <property name="decimals">
                           <number>3</number>
                          </property>
@@ -1110,6 +1228,9 @@
                        </item>
                        <item row="3" column="1" colspan="4">
                         <widget class="QSlider" name="slider_glareRadius">
+                         <property name="toolTip">
+                          <string>Adjust Image length Glare Radius</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -1120,6 +1241,9 @@
                        </item>
                        <item row="3" column="0">
                         <widget class="QSpinBox" name="spinBox_glareBlades">
+                         <property name="toolTip">
+                          <string>Adjust number of Glare blades used</string>
+                         </property>
                          <property name="maximum">
                           <number>100</number>
                          </property>
@@ -1129,6 +1253,9 @@
                         <widget class="QDoubleSpinBox" name="spinBox_glareAmount">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Glare amount Value</string>
                          </property>
                          <property name="decimals">
                           <number>3</number>
@@ -1141,10 +1268,13 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="1" column="0" colspan="5">
+                       <item row="1" column="0" colspan="6">
                         <widget class="QSlider" name="slider_glareAmount">
                          <property name="enabled">
                           <bool>false</bool>
+                         </property>
+                         <property name="toolTip">
+                          <string>Adjust Glare amount</string>
                          </property>
                          <property name="maximum">
                           <number>512</number>
@@ -1196,8 +1326,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>379</height>
+                  <width>277</width>
+                  <height>196</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1228,6 +1358,9 @@
                    </item>
                    <item row="0" column="1">
                     <widget class="QComboBox" name="comboBox_colorSpacePreset">
+                     <property name="toolTip">
+                      <string>Select ColorSpace Preset</string>
+                     </property>
                      <item>
                       <property name="text">
                        <string>sRGB - HDTV (ITU-R BT.709-5)</string>
@@ -1284,11 +1417,11 @@
                         <layout class="QGridLayout" name="gridLayout_28">
                          <item row="0" column="0">
                           <widget class="QLabel" name="label_whitePointPreset">
-                           <property name="maximumSize">
-                            <size>
-                             <width>50</width>
-                             <height>16777215</height>
-                            </size>
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
                            </property>
                            <property name="text">
                             <string>Preset</string>
@@ -1369,6 +1502,9 @@
                          </item>
                          <item row="1" column="2">
                           <widget class="QSlider" name="slider_whitePointX">
+                           <property name="toolTip">
+                            <string>Adjust Whitepoint X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1379,6 +1515,9 @@
                          </item>
                          <item row="1" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_whitePointX">
+                           <property name="toolTip">
+                            <string>White X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1399,6 +1538,9 @@
                          </item>
                          <item row="2" column="2">
                           <widget class="QSlider" name="slider_whitePointY">
+                           <property name="toolTip">
+                            <string>Adjust Whitepoint Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1409,6 +1551,9 @@
                          </item>
                          <item row="2" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_whitePointY">
+                           <property name="toolTip">
+                            <string>White Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1450,6 +1595,9 @@
                          </item>
                          <item row="1" column="0">
                           <widget class="QSlider" name="slider_redX">
+                           <property name="toolTip">
+                            <string>Red X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1460,6 +1608,9 @@
                          </item>
                          <item row="1" column="1">
                           <widget class="QDoubleSpinBox" name="spinBox_redX">
+                           <property name="toolTip">
+                            <string>Red X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1470,6 +1621,9 @@
                          </item>
                          <item row="1" column="2">
                           <widget class="QSlider" name="slider_redY">
+                           <property name="toolTip">
+                            <string>Red Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1480,6 +1634,9 @@
                          </item>
                          <item row="1" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_redY">
+                           <property name="toolTip">
+                            <string>Red Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1490,6 +1647,9 @@
                          </item>
                          <item row="2" column="0">
                           <widget class="QSlider" name="slider_greenX">
+                           <property name="toolTip">
+                            <string>Green X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1500,6 +1660,9 @@
                          </item>
                          <item row="2" column="1">
                           <widget class="QDoubleSpinBox" name="spinBox_greenX">
+                           <property name="toolTip">
+                            <string>Green X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1510,6 +1673,9 @@
                          </item>
                          <item row="2" column="2">
                           <widget class="QSlider" name="slider_greenY">
+                           <property name="toolTip">
+                            <string>Green Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1520,6 +1686,9 @@
                          </item>
                          <item row="2" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_greenY">
+                           <property name="toolTip">
+                            <string>Green Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1530,6 +1699,9 @@
                          </item>
                          <item row="3" column="0">
                           <widget class="QSlider" name="slider_blueX">
+                           <property name="toolTip">
+                            <string>Blue X</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1540,6 +1712,9 @@
                          </item>
                          <item row="3" column="1">
                           <widget class="QDoubleSpinBox" name="spinBox_blueX">
+                           <property name="toolTip">
+                            <string>Blue X</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1550,6 +1725,9 @@
                          </item>
                          <item row="3" column="2">
                           <widget class="QSlider" name="slider_blueY">
+                           <property name="toolTip">
+                            <string>Blue Y</string>
+                           </property>
                            <property name="maximum">
                             <number>512</number>
                            </property>
@@ -1560,6 +1738,9 @@
                          </item>
                          <item row="3" column="3">
                           <widget class="QDoubleSpinBox" name="spinBox_blueY">
+                           <property name="toolTip">
+                            <string>Blue Y</string>
+                           </property>
                            <property name="maximum">
                             <double>1.000000000000000</double>
                            </property>
@@ -1599,8 +1780,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>379</height>
+                  <width>94</width>
+                  <height>34</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1618,6 +1799,9 @@
                   <layout class="QHBoxLayout" name="horizontalLayout">
                    <item>
                     <widget class="QSlider" name="slider_gamma">
+                     <property name="toolTip">
+                      <string>Adjust Gamma Correction</string>
+                     </property>
                      <property name="maximum">
                       <number>512</number>
                      </property>
@@ -1628,6 +1812,9 @@
                    </item>
                    <item>
                     <widget class="QDoubleSpinBox" name="spinBox_gamma">
+                     <property name="toolTip">
+                      <string>Adjust Gamma Correction Value</string>
+                     </property>
                      <property name="maximum">
                       <double>5.000000000000000</double>
                      </property>
@@ -1661,8 +1848,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>379</height>
+                  <width>251</width>
+                  <height>34</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1690,6 +1877,9 @@
                    </item>
                    <item row="0" column="1">
                     <widget class="QComboBox" name="comboBox_histogramChannel">
+                     <property name="toolTip">
+                      <string>Pick a channel displayed on the histogram</string>
+                     </property>
                      <item>
                       <property name="text">
                        <string>R+G+B</string>
@@ -1737,6 +1927,9 @@
                    </item>
                    <item row="0" column="4">
                     <widget class="QCheckBox" name="checkBox_histogramLog">
+                     <property name="toolTip">
+                      <string>Toggle between logarithm and linear histogram output</string>
+                     </property>
                      <property name="text">
                       <string>Log</string>
                      </property>
@@ -1824,6 +2017,9 @@
                              <property name="enabled">
                               <bool>true</bool>
                              </property>
+                             <property name="toolTip">
+                              <string>Enable GREYCStoration Noise Reduction Filter</string>
+                             </property>
                              <property name="text">
                               <string>Enabled</string>
                              </property>
@@ -1844,6 +2040,9 @@
                            </item>
                            <item row="0" column="3" colspan="2">
                             <widget class="QCheckBox" name="checkBox_fastApproximation">
+                             <property name="toolTip">
+                              <string>Use Fast Approximation</string>
+                             </property>
                              <property name="text">
                               <string>Fast approximation</string>
                              </property>
@@ -1861,6 +2060,9 @@
                            </item>
                            <item row="1" column="1" colspan="3">
                             <widget class="QSlider" name="slider_iterations">
+                             <property name="toolTip">
+                              <string>Adjust number of Iterations</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1871,6 +2073,9 @@
                            </item>
                            <item row="1" column="4">
                             <widget class="QDoubleSpinBox" name="spinBox_iterations">
+                             <property name="toolTip">
+                              <string>Adjust number of Iterations Value</string>
+                             </property>
                              <property name="maximum">
                               <double>16.000000000000000</double>
                              </property>
@@ -1891,6 +2096,9 @@
                            </item>
                            <item row="2" column="1" colspan="3">
                             <widget class="QSlider" name="slider_amplitude">
+                             <property name="toolTip">
+                              <string>Adjust Filter Strength/Amplitude</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1901,6 +2109,9 @@
                            </item>
                            <item row="2" column="4">
                             <widget class="QDoubleSpinBox" name="spinBox_amplitude">
+                             <property name="toolTip">
+                              <string>Adjust Filter Strength/Amplitude Value</string>
+                             </property>
                              <property name="maximum">
                               <double>200.000000000000000</double>
                              </property>
@@ -1921,6 +2132,9 @@
                            </item>
                            <item row="3" column="1" colspan="3">
                             <widget class="QSlider" name="slider_precision">
+                             <property name="toolTip">
+                              <string>Adjust precision of Gaussian Filter Kernel</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1931,6 +2145,9 @@
                            </item>
                            <item row="3" column="4">
                             <widget class="QDoubleSpinBox" name="spinBox_precision">
+                             <property name="toolTip">
+                              <string>Adjust precision of Gaussian Filter Kernel Value</string>
+                             </property>
                              <property name="maximum">
                               <double>12.000000000000000</double>
                              </property>
@@ -1975,6 +2192,9 @@
                            </item>
                            <item row="0" column="1">
                             <widget class="QSlider" name="slider_alpha">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Alpha</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -1985,6 +2205,9 @@
                            </item>
                            <item row="0" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_alpha">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Alpha Value</string>
+                             </property>
                              <property name="maximum">
                               <double>12.000000000000000</double>
                              </property>
@@ -2003,18 +2226,11 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="1">
-                            <widget class="QSlider" name="slider_sigma">
-                             <property name="maximum">
-                              <number>512</number>
-                             </property>
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                            </widget>
-                           </item>
                            <item row="1" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_sigma">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Sigma Value</string>
+                             </property>
                              <property name="maximum">
                               <double>12.000000000000000</double>
                              </property>
@@ -2035,6 +2251,9 @@
                            </item>
                            <item row="2" column="1">
                             <widget class="QSlider" name="slider_sharpness">
+                             <property name="toolTip">
+                              <string>Adjust Sharpness</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -2045,6 +2264,9 @@
                            </item>
                            <item row="2" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_sharpness">
+                             <property name="toolTip">
+                              <string>Adjust Sharpness Value</string>
+                             </property>
                              <property name="maximum">
                               <double>2.000000000000000</double>
                              </property>
@@ -2065,6 +2287,9 @@
                            </item>
                            <item row="3" column="1">
                             <widget class="QSlider" name="slider_aniso">
+                             <property name="toolTip">
+                              <string>Adjust Filter Anisotropy</string>
+                             </property>
                              <property name="maximum">
                               <number>512</number>
                              </property>
@@ -2075,6 +2300,9 @@
                            </item>
                            <item row="3" column="2">
                             <widget class="QDoubleSpinBox" name="spinBox_aniso">
+                             <property name="toolTip">
+                              <string>Adjust Filter Anisotropy Value</string>
+                             </property>
                              <property name="decimals">
                               <number>3</number>
                              </property>
@@ -2083,6 +2311,19 @@
                              </property>
                              <property name="singleStep">
                               <double>0.050000000000000</double>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="1">
+                            <widget class="QSlider" name="slider_sigma">
+                             <property name="toolTip">
+                              <string>Adjust Gaussian Filter Sigma</string>
+                             </property>
+                             <property name="maximum">
+                              <number>512</number>
+                             </property>
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
                              </property>
                             </widget>
                            </item>
@@ -2130,6 +2371,9 @@
                                 </item>
                                 <item row="0" column="1">
                                  <widget class="QSlider" name="slider_spatial">
+                                  <property name="toolTip">
+                                   <string>Amount of Spatial Integration</string>
+                                  </property>
                                   <property name="maximum">
                                    <number>512</number>
                                   </property>
@@ -2140,6 +2384,9 @@
                                 </item>
                                 <item row="0" column="2">
                                  <widget class="QDoubleSpinBox" name="spinBox_spatial">
+                                  <property name="toolTip">
+                                   <string>Amount of Spatial Integration Value</string>
+                                  </property>
                                   <property name="decimals">
                                    <number>3</number>
                                   </property>
@@ -2163,6 +2410,9 @@
                                 </item>
                                 <item row="1" column="1">
                                  <widget class="QSlider" name="slider_angular">
+                                  <property name="toolTip">
+                                   <string>Amount of Angular Integration</string>
+                                  </property>
                                   <property name="maximum">
                                    <number>512</number>
                                   </property>
@@ -2173,6 +2423,9 @@
                                 </item>
                                 <item row="1" column="2">
                                  <widget class="QDoubleSpinBox" name="spinBox_angular">
+                                  <property name="toolTip">
+                                   <string>Amount of Angular Integration Value</string>
+                                  </property>
                                   <property name="decimals">
                                    <number>1</number>
                                   </property>
@@ -2195,6 +2448,9 @@
                            </item>
                            <item row="1" column="1">
                             <widget class="QComboBox" name="comboBox_interpolType">
+                             <property name="toolTip">
+                              <string>Choose Interpolation Kernel Type</string>
+                             </property>
                              <item>
                               <property name="text">
                                <string>Nearest-Neighbour</string>
@@ -2242,6 +2498,9 @@
                       <layout class="QGridLayout" name="gridLayout_8">
                        <item row="0" column="0" colspan="2">
                         <widget class="QCheckBox" name="checkBox_chiuEnabled">
+                         <property name="toolTip">
+                          <string>Enable Chiu Noise Reduction Filter</string>
+                         </property>
                          <property name="text">
                           <string>Enabled</string>
                          </property>
@@ -2262,6 +2521,9 @@
                        </item>
                        <item row="0" column="3" colspan="2">
                         <widget class="QCheckBox" name="checkBox_includeCenter">
+                         <property name="toolTip">
+                          <string>Include Center Pixel in Filter</string>
+                         </property>
                          <property name="text">
                           <string>Include center</string>
                          </property>
@@ -2279,6 +2541,9 @@
                        </item>
                        <item row="1" column="1" colspan="3">
                         <widget class="QSlider" name="slider_chiuRadius">
+                         <property name="toolTip">
+                          <string>Adjust Filter Radius</string>
+                         </property>
                          <property name="maximum">
                           <number>512</number>
                          </property>
@@ -2289,6 +2554,9 @@
                        </item>
                        <item row="1" column="4">
                         <widget class="QDoubleSpinBox" name="spinBox_chiuRadius">
+                         <property name="toolTip">
+                          <string>Adjust Filter Radius Value</string>
+                         </property>
                          <property name="minimum">
                           <double>1.000000000000000</double>
                          </property>
@@ -2350,8 +2618,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>258</height>
+                  <width>94</width>
+                  <height>24</height>
                  </rect>
                 </property>
                 <attribute name="label">
@@ -2451,10 +2719,38 @@
         <string>Network</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_11">
-        <item row="0" column="0">
+        <item row="2" column="0">
+         <widget class="QTableWidget" name="table_servers">
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>IP</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Port</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Samples</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="1" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QLabel" name="label_updateInterval">
+           <widget class="QLabel" name="label_servers">
             <property name="text">
              <string>Server:</string>
             </property>
@@ -2464,10 +2760,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_server"/>
+           <widget class="QLineEdit" name="lineEdit_server">
+            <property name="toolTip">
+             <string>Type the address of a network server</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="button_addServer">
+            <property name="toolTip">
+             <string>Add Server</string>
+            </property>
             <property name="text">
              <string>+</string>
             </property>
@@ -2479,6 +2782,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="button_removeServer">
+            <property name="toolTip">
+             <string>Remove Server</string>
+            </property>
             <property name="text">
              <string>-</string>
             </property>
@@ -2496,7 +2802,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_18">
+           <widget class="QLabel" name="label_interval">
             <property name="text">
              <string>Update interval:</string>
             </property>
@@ -2509,16 +2815,22 @@
            <widget class="QSpinBox" name="spinBox_updateInterval">
             <property name="minimumSize">
              <size>
-              <width>60</width>
+              <width>100</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>Enter the number of seconds between server updates</string>
+            </property>
+            <property name="maximum">
+             <number>86400</number>
+            </property>
+            <property name="value">
+             <number>180</number>
             </property>
            </widget>
           </item>
          </layout>
-        </item>
-        <item row="1" column="0">
-         <widget class="QListView" name="listView_server"/>
         </item>
        </layout>
       </widget>

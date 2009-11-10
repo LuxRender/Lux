@@ -102,11 +102,13 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 BBox EnvironmentCamera::Bounds() const
 {
 	BBox bound(pos);
-	bound.Expand(SHADOW_RAY_EPSILON);
+	bound.Expand(MachineEpsilon::E(bound));
+
 	return bound;
 }
 
-bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
+bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi,
+	float distance, float *x, float *y) const
 {
 	if (!isinf(distance) && (distance < ClipHither || distance > ClipYon))
 		return false;

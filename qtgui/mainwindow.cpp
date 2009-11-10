@@ -31,11 +31,12 @@
 
 #include <QList>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <QDateTime>
+#include <QTextStream>
 
-#include "mainwindow.h"
+#include "mainwindow.hxx"
 #include "ui_luxrender.h"
-#include "aboutdialog.h"
+#include "aboutdialog.hxx"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
@@ -204,6 +205,13 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(ui->slider_chiuRadius, SIGNAL(valueChanged(int)), this, SLOT(chiuRadiusChanged(int)));
 	connect(ui->spinBox_chiuRadius, SIGNAL(valueChanged(double)), this, SLOT(chiuRadiusChanged(double)));
 	
+	// Network tab
+	connect(ui->button_addServer, SIGNAL(clicked()), this, SLOT(addServer()));
+	connect(ui->lineEdit_server, SIGNAL(returnPressed()), this, SLOT(addServer()));
+	connect(ui->button_removeServer, SIGNAL(clicked()), this, SLOT(removeServer()));
+	connect(ui->spinBox_updateInterval, SIGNAL(valueChanged(int)), this, SLOT(updateIntervalChanged(int)));
+	connect(ui->table_servers, SIGNAL(itemSelectionChanged()), this, SLOT(networknodeSelectionChanged()));
+
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
 	connect(ui->button_imagingReset, SIGNAL(clicked()), this, SLOT(resetToneMapping()));
@@ -276,6 +284,8 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	QList<int> sizes;
 	sizes << 500 << 700;
 	ui->splitter->setSizes(sizes);
+
+	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
 
 	m_guiWindowState = SHOWN;
 	changeRenderState(WAITING);
@@ -1199,7 +1209,7 @@ bool MainWindow::canStopRendering()
 {
 	if (m_guiRenderState == RENDERING) {
 		// Give warning that current rendering is not stopped
-		if (QMessageBox::question(this, "Current file is still rendering","Do you want to stop the current render and start a new one?", QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+		if (QMessageBox::question(this, tr("Current file is still rendering"),tr("Do you want to stop the current render and start a new one?"), QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
 			return false;
 		}
 	}
@@ -1258,7 +1268,7 @@ void MainWindow::loadFLM()
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
-	m_progDialog = new QProgressDialog("Loading FLM...",QString(),0,0,NULL);
+	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,NULL);
 	m_progDialog->setWindowModality(Qt::WindowModal);
 	m_progDialog->show();
 
@@ -1283,7 +1293,7 @@ void MainWindow::saveFLM()
 		return;
 
 	// Start save thread
-	m_progDialog = new QProgressDialog("Saving FLM...",QString(),0,0,NULL);
+	m_progDialog = new QProgressDialog(tr("Saving FLM..."),QString(),0,0,NULL);
 	m_progDialog->setWindowModality(Qt::WindowModal);
 	m_progDialog->show();
 	m_saveTimer->start(1000);
@@ -1304,7 +1314,7 @@ void MainWindow::resumeRender()
 
 		m_renderTimer->start(1000*luxStatistics("displayInterval"));
 		m_statsTimer->start(1000);
-		m_netTimer->start(1000);
+		m_netTimer->start(10000);
 		
 		if (m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 			luxStart();
@@ -1341,7 +1351,7 @@ void MainWindow::stopRender()
 		// Make sure lux core stops
 		luxSetHaltSamplePerPixel(1, true, true);
 		
-		statusMessage->setText("Waiting for render threads to stop.");
+		statusMessage->setText(tr("Waiting for render threads to stop."));
 		changeRenderState(STOPPING);
 	}
 }
@@ -1408,11 +1418,11 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	if (m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
     (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
 		if (!withlayercomputation) {
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
-			statusMessage->setText("Tonemapping...");
+			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
+			statusMessage->setText(tr("Tonemapping..."));
 		} else {
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer/Computing Lens Effect Layer(s)...");
-			statusMessage->setText("Computing Lens Effect Layer(s) & Tonemapping...");
+			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data());
+			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -1426,7 +1436,7 @@ void MainWindow::engineThread(QString filename)
 	chdir(fullPath.branch_path().string().c_str());
 
 	// NOTE - lordcrc - initialize rand()
-	srand(time(NULL));
+	qsrand(time(NULL));
 
 	// if stdin is input, don't use full path
 	if (filename == QString::fromAscii("-"))
@@ -1443,7 +1453,7 @@ void MainWindow::engineThread(QString filename)
 	} else {
 		luxWait();
 		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
-		luxError(LUX_NOERROR, LUX_INFO, "Rendering done.");
+		luxError(LUX_NOERROR, LUX_INFO, tr("Rendering done.").toLatin1().data());
 	}
 }
 
@@ -1518,9 +1528,6 @@ void MainWindow::renderScenefile(QString sceneFilename, QString flmFilename)
 
 void MainWindow::renderScenefile(QString filename)
 {
-	//wxFileName fn(filename);
-	//SetTitle(wxT("LuxRender - ")+fn.GetName());
-
 	// CF
 	m_CurrentFile = filename;
 
@@ -1529,13 +1536,10 @@ void MainWindow::renderScenefile(QString filename)
 	// NOTE - lordcrc - create progress dialog before starting engine thread
 	//                  so we don't try to destroy it before it's properly created
 	
-	m_progDialog = new QProgressDialog("Loading scene...",QString(),0,0,NULL);
+	m_progDialog = new QProgressDialog(tr("Loading scene..."),QString(),0,0,NULL);
 	m_progDialog->setWindowModality(Qt::WindowModal);
 	m_progDialog->show();
 
-	//m_progDialog = new wxProgressDialog(wxT("Loading scene..."), wxT(""), 100, NULL, wxSTAY_ON_TOP);
-	//m_progDialog->Pulse();
-	
 	m_loadTimer->start(1000);
 
 	m_showParseWarningDialog = true;
@@ -1614,9 +1618,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 bool MainWindow::event (QEvent *event)
 {
 	bool retval = FALSE;
-	
+	int eventtype = event->type();
+
 	// Check if it's one of "our" events
-	if (event->type() == EVT_LUX_TONEMAPPED) {
+	if (eventtype == EVT_LUX_TONEMAPPED) {
 		// Make sure the update thread has ended so we can start another one later.
 		if (m_updateThread)
 			m_updateThread->join();
@@ -1627,7 +1632,7 @@ bool MainWindow::event (QEvent *event)
 		histogramView->Update();
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_PARSEERROR) {
+	else if (eventtype == EVT_LUX_PARSEERROR) {
 		m_progDialog->cancel();
 		delete m_progDialog;
 		m_progDialog = NULL;
@@ -1637,7 +1642,7 @@ bool MainWindow::event (QEvent *event)
 		changeRenderState(FINISHED);
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_FLMLOADERROR) {
+	else if (eventtype == EVT_LUX_FLMLOADERROR) {
 		//wxMessageBox(wxT("FLM load error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
@@ -1647,7 +1652,7 @@ bool MainWindow::event (QEvent *event)
 		changeRenderState(WAITING);
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_FINISHED) {
+	else if (eventtype == EVT_LUX_FINISHED) {
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
 			//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
@@ -1660,7 +1665,7 @@ bool MainWindow::event (QEvent *event)
 		}
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_SAVEDFLM) {
+	else if (eventtype == EVT_LUX_SAVEDFLM) {
 		m_progDialog->cancel();
 		delete m_progDialog;
 		m_progDialog = NULL;
@@ -1672,17 +1677,14 @@ bool MainWindow::event (QEvent *event)
 		m_flmsaveThread = NULL;
 		retval = TRUE;
 	}
-	else if (event->type() == EVT_LUX_LOGEVENT)
+	else if (eventtype == EVT_LUX_LOGEVENT)
 		logEvent((LuxLogEvent *)event);
 
 	if (retval)
 		// Was our event, stop the event propagation
 		event->accept();
-    else
-		// Give the other widgets the chance to look at the event
-		retval = QWidget::event(event);
 
-	return retval;
+	return QMainWindow::event(event);
 }
 
 void MainWindow::logEvent(LuxLogEvent *event)
@@ -1694,48 +1696,44 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	static const QColor warningColour = Qt::darkYellow;
 	static const QColor errorColour = Qt::red;
 	static const QColor severeColour = Qt::red;
-
-	std::stringstream ss("");
-	ss << '[' << boost::posix_time::second_clock::local_time() << ' ';
+	
+	QTextStream ss(new QString());
+	ss << '[' << QDateTime::currentDateTime().toString(tr("yyyy-MM-dd hh:mm:ss")) << ' ';
 	bool warning = false;
 	bool error = false;
 
 	switch(event->getSeverity()) {
 		case LUX_DEBUG:
-			ss << "Debug: ";
+			ss << tr("Debug: ");
 			ui->textEdit_log->setTextColor(debugColour);
 			break;
 		case LUX_INFO:
 		default:
-			ss << "Info: ";
+			ss << tr("Info: ");
 			ui->textEdit_log->setTextColor(infoColour);
 			break;
 		case LUX_WARNING:
-			ss << "Warning: ";
+			ss << tr("Warning: ");
 			ui->textEdit_log->setTextColor(warningColour);
 			warning = true;
 			break;
 		case LUX_ERROR:
-			ss << "Error: ";
+			ss << tr("Error: ");
 			ui->textEdit_log->setTextColor(errorColour);
 			error = true;
 			break;
 		case LUX_SEVERE:
-			ss << "Severe error: ";
+			ss << tr("Severe error: ");
 			ui->textEdit_log->setTextColor(severeColour);
 			break;
 	}
 
 	ss << event->getCode() << "] ";
-
-	ui->textEdit_log->textCursor().insertText(ss.str().c_str());
-	//ui->textEdit_log->append(ss.str().c_str());
+	ss.flush();
+	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	ui->textEdit_log->setTextColor(Qt::black);
-	
-    ss.str("");
-	ss << event->getMessage().toStdString() << std::endl;
-	//ui->textEdit_log->append(ss.str().c_str());
-	ui->textEdit_log->textCursor().insertText(ss.str().c_str());
+	ss << event->getMessage() << endl;
+	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	ui->textEdit_log->ensureCursorVisible();
 }
 
@@ -1743,7 +1741,7 @@ void MainWindow::renderTimeout()
 {
 	if (m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
 		(m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
-		luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
+		luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 		statusMessage->setText("Tonemapping...");
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -1755,13 +1753,13 @@ void MainWindow::statsTimeout()
 		updateStatistics();
 		if(m_guiRenderState == STOPPING && m_samplesSec == 0.0) {
 			// Render threads stopped, do one last render update
-			luxError(LUX_NOERROR, LUX_INFO, "GUI: Updating framebuffer...");
-			statusMessage->setText("Tonemapping...");
+			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
+			statusMessage->setText(tr("Tonemapping..."));
 			delete m_updateThread;
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
 			luxPause();
-			luxError(LUX_NOERROR, LUX_INFO, "Rendering stopped by user.");
+			luxError(LUX_NOERROR, LUX_INFO, tr("Rendering stopped by user.").toLatin1().data());
 			changeRenderState(STOPPED);
 		}
 	}
@@ -1792,7 +1790,6 @@ void MainWindow::loadTimeout()
 			ui->outputTabs->setEnabled (true);
 			resetToneMappingFromFilm (false);
 			ResetLightGroupsFromFilm (false);
-			//Refresh();
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
@@ -1818,8 +1815,6 @@ void MainWindow::loadTimeout()
 		renderView->reload();
 		// Update stats
 		updateStatistics();
-		// Refresh the GUI
-		//Refresh();
 	}
 }
 
@@ -1830,7 +1825,7 @@ void MainWindow::saveTimeout()
 
 void MainWindow::netTimeout()
 {
-	//UpdateNetworkTree();
+	UpdateNetworkTree();
 }
 
 void MainWindow::setTonemapKernel(int choice)
@@ -2511,3 +2506,82 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 	// Update
 	UpdateLightGroupWidgetValues();
 }
+
+void MainWindow::UpdateNetworkTree()
+{
+	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
+
+	int currentrow = ui->table_servers->currentRow();
+
+	ui->table_servers->setRowCount(0);
+	
+	int nServers = luxGetServerCount();
+
+	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
+	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
+
+	ui->table_servers->setRowCount(nServers);
+
+	double totalpixels = luxStatistics("filmXres") * luxStatistics("filmYres");
+	double spp;
+	
+	for( int n = 0; n < nServers; n++ ) {
+		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].name));
+		QTableWidgetItem *port = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].port));
+		
+		spp = pInfoList[n].numberOfSamplesReceived / totalpixels;
+		
+		QString s = QString("%1").arg(spp,0,'g',3);
+		
+		QTableWidgetItem *spp = new QTableWidgetItem(s);
+		
+		ui->table_servers->setItem(n, 0, servername);
+		ui->table_servers->setItem(n, 1, port);
+		ui->table_servers->setItem(n, 2, spp);
+	}
+
+	ui->table_servers->blockSignals (true);
+	ui->table_servers->selectRow(currentrow);
+	ui->table_servers->blockSignals (false);
+	
+	delete[] pInfoList;
+}
+
+void MainWindow::addServer()
+{
+	QString server = ui->lineEdit_server->text();
+
+	if (!server.isEmpty()) {
+		luxAddServer(server.toStdString().c_str());
+		UpdateNetworkTree();
+	}
+}
+
+void MainWindow::removeServer()
+{
+	QString server = ui->lineEdit_server->text();
+
+	if (!server.isEmpty()) {
+		luxRemoveServer(server.toStdString().c_str());
+		UpdateNetworkTree();
+	}
+}
+
+void MainWindow::updateIntervalChanged(int value)
+{
+	luxSetNetworkServerUpdateInterval(value);
+}
+
+void MainWindow::networknodeSelectionChanged()
+{
+	int currentrow = ui->table_servers->currentRow();
+	QTableWidgetItem *server = ui->table_servers->item(currentrow,0);
+	QTableWidgetItem *port = ui->table_servers->item(currentrow,1);
+
+	if (server) {
+		ui->table_servers->blockSignals (true);
+		ui->lineEdit_server->setText(QString("%1:%2").arg(server->text()).arg(port->text()));
+		ui->table_servers->blockSignals (false);
+	}
+}
+

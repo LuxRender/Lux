@@ -21,9 +21,9 @@
  ***************************************************************************/
 
 #include "ui_lightgroup.h"
-#include "lightgroupwidget.h"
+#include "lightgroupwidget.hxx"
 
-#include "mainwindow.h"
+#include "mainwindow.hxx"
 
 using namespace lux;
 

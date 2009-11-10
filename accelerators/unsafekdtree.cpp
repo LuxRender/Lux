@@ -28,8 +28,7 @@
 using namespace lux;
 
 // UnsafeKdTreeAccel Method Definitions
-UnsafeKdTreeAccel::
-UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
+UnsafeKdTreeAccel::UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         int icost, int tcost,
         float ebonus, int maxp, int maxDepth)
 : isectCost(icost), traversalCost(tcost),
@@ -206,8 +205,7 @@ void UnsafeKdTreeAccel::buildTree(int nodeNum,
             prims0, prims1 + nPrims, badRefines);
 }
 
-bool UnsafeKdTreeAccel::Intersect(const Ray &ray,
-        Intersection *isect) const {
+bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))

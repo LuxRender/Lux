@@ -57,18 +57,18 @@ public:
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *vis) const = 0;
-	virtual float Pdf(const Point &p,
-	                  const Vector &wi) const = 0;
+	virtual float Pdf(const TsPack *tspack, const Point &p,
+		const Vector &wi) const = 0;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
 			float u1, float u2, float u3, Vector *wi, float *pdf,
 			VisibilityTester *visibility) const {
 		return Sample_L(tspack, p, u1, u2, u3, wi, pdf, visibility);
 	}
-	virtual float Pdf(const Point &p, const Normal &n,
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 			const Vector &wi) const {
-		return Pdf(p, wi);
+		return Pdf(tspack, p, wi);
 	}
-	virtual float Pdf(const Point &p, const Normal &n,
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const = 0;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
@@ -110,14 +110,16 @@ struct VisibilityTester {
 		// is not normalized (in order to avoid light leaks: bug #295)
 		const Vector w = p2 - p1;
 		const float length = w.Length();
-		r = Ray(p1, w / length, SHADOW_RAY_EPSILON, length - SHADOW_RAY_EPSILON);
+		const float shadowRayEpsilon = min(length,
+			max(MachineEpsilon::E(p1), MachineEpsilon::E(length)));
+		r = Ray(p1, w / length, shadowRayEpsilon, length - shadowRayEpsilon);
 		r.time = time;
 	}
 
 	void SetRay(const Point &p, const Vector & w, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
-		r = Ray(p, Normalize(w), SHADOW_RAY_EPSILON);
+		r = Ray(p, Normalize(w));
 		r.time = time;
 	}
 
@@ -158,9 +160,9 @@ public:
 	}
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual float Pdf(const Point &, const Vector &) const;
-	virtual float Pdf(const Point &, const Normal &, const Vector &) const;
-	virtual float Pdf(const Point &p, const Normal &n,
+	virtual float Pdf(const TsPack *tspack, const Point &, const Vector &) const;
+	virtual float Pdf(const TsPack *, const Point &, const Normal &, const Vector &) const;
+	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, const Normal &N,
 		float u1, float u2, float u3, Vector *wo, float *pdf,
