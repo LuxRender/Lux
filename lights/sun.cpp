@@ -318,10 +318,9 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	} else  {
 		// Choose a random portal
 		int shapeIndex = 0;
-		if(nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1,
-				Floor2Int(u3 * nrPortalShapes));
+		if (nrPortalShapes > 1) {
 			u3 *= nrPortalShapes;
+			shapeIndex = min(nrPortalShapes - 1, Floor2Int(u3));
 			u3 -= shapeIndex;
 		}
 
