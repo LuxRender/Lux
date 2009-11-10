@@ -39,7 +39,7 @@ public:
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
-		*f += light.Le(tspack, RayDifferential(Point(0.f), -w, tspack->machineEpsilon));
+		*f += light.Le(tspack, RayDifferential(Point(0.f), -w));
 	}
 private:
 	const InfiniteAreaLight &light;
@@ -60,19 +60,19 @@ public:
 		dg.time = tspack->time;
 		PortalShapes[shapeIndex]->Sample(tspack, ps, u1, u2, u3, &dg);
 		Vector wiW = Normalize(dg.p - ps);
-		*f = light.Le(tspack, RayDifferential(Point(0.f), -wiW, tspack->machineEpsilon));
+		*f = light.Le(tspack, RayDifferential(Point(0.f), -wiW));
 		wi->x = Dot(wiW, X);
 		wi->y = Dot(wiW, Y);
 		wi->z = Dot(wiW, Z);
 		*wi = Normalize(*wi);
-		*pdf = PortalShapes[shapeIndex]->Pdf(tspack, ps, dg.p) * DistanceSquared(ps, dg.p) / AbsDot(wiW, dg.nn);
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) * DistanceSquared(ps, dg.p) / AbsDot(wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			if (i != shapeIndex) {
 				Intersection isect;
-				RayDifferential ray(ps, wiW, tspack->machineEpsilon);
+				RayDifferential ray(ps, wiW);
 				ray.mint = -INFINITY;
-				if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
-					*pdf += PortalShapes[i]->Pdf(tspack, ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(wiW, isect.dg.nn);
+				if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
+					*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(wiW, isect.dg.nn);
 			}
 		}
 		*pdf /= PortalShapes.size();
@@ -83,7 +83,7 @@ public:
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
-		*f += light.Le(tspack, RayDifferential(Point(0.f), -w, tspack->machineEpsilon));
+		*f += light.Le(tspack, RayDifferential(Point(0.f), -w));
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
 	{
@@ -91,10 +91,10 @@ public:
 		float pdf = 0.f;
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, w, tspack->machineEpsilon);
+			RayDifferential ray(ps, w);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
-				pdf += PortalShapes[i]->Pdf(tspack, ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(w, isect.dg.nn);
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(w, isect.dg.nn);
 		}
 		return pdf / PortalShapes.size();
 	}
@@ -196,8 +196,8 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene, cons
 			Intersection isect;
 			RayDifferential ray(r);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
-				*pdfDirect += PortalShapes[i]->Pdf(tspack, r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
+				*pdfDirect += PortalShapes[i]->Pdf(r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
 		*pdfDirect /= nrPortalShapes;
@@ -246,14 +246,14 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		}
 
 		if (found)
-			*pdf = PortalShapes[shapeidx]->Pdf(tspack, p, *wi);
+			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
 		else {
 			*pdf = 0.f;
 			return SWCSpectrum(0.f);
 		}
 	}
-	visibility->SetRay(tspack, p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi, tspack->machineEpsilon));
+	visibility->SetRay(p, *wi, tspack->time);
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &, const Normal &n,
 		const Vector &wi) const {
@@ -270,11 +270,11 @@ float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal 
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(p, wi, tspack->machineEpsilon);
+			RayDifferential ray(p, wi);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) &&
+			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
-				pdf += PortalShapes[i]->Pdf(tspack, p, isect.dg.p) * DistanceSquared(p, isect.dg.p) / DistanceSquared(p, po) * AbsDot(wi, ns) / AbsDot(wi, isect.dg.nn);
+				pdf += PortalShapes[i]->Pdf(p, isect.dg.p) * DistanceSquared(p, isect.dg.p) / DistanceSquared(p, po) * AbsDot(wi, ns) / AbsDot(wi, isect.dg.nn);
 		}
 		pdf /= nrPortalShapes;
 		return pdf;
@@ -309,14 +309,14 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
 		}
 
 		if (found)
-			*pdf = PortalShapes[shapeidx]->Pdf(tspack, p, *wi);
+			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
 		else {
 			*pdf = 0.f;
 			return SWCSpectrum(0.f);
 		}
 	}
-	visibility->SetRay(tspack, p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi, tspack->machineEpsilon));
+	visibility->SetRay(p, *wi, tspack->time);
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
@@ -360,7 +360,7 @@ SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
 	}
 
-	return Le(tspack, RayDifferential(ray->o, -ray->d, tspack->machineEpsilon));
+	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
 bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
@@ -452,7 +452,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
 		if (Dot(wi, dg.nn) < 0.f) {
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(tspack, p, ps) / nrPortalShapes;
+			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps) / nrPortalShapes;
 			*pdfDirect *= DistanceSquared(p, dg.p) / AbsDot(wi, dg.nn);
 		} else {
 			*Le = 0.f;
@@ -489,7 +489,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	visibility->SetSegment(tspack, p, ps, tspack->time);
+	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(1.f);
 	return true;
 }

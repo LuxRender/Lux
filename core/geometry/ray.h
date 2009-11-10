@@ -34,14 +34,13 @@ namespace lux
 class  Ray {
 public:
 	// Ray Public Methods
-	Ray(): mint(0.f), maxt(INFINITY), time(0.f) {}
-	Ray(const MachineEpsilon *me): maxt(INFINITY), time(0.f) {
-		mint = me->E();
+	Ray(): maxt(INFINITY), time(0.f) {
+		mint = MachineEpsilon::E(1.f);
 	}
 
-	Ray(const Point &origin, const Vector &direction, const MachineEpsilon *me)
+	Ray(const Point &origin, const Vector &direction)
 		: o(origin), d(direction), maxt(INFINITY), time(0.f) {
-		mint = me->E(origin);
+		mint = MachineEpsilon::E(origin);
 	}
 
 	Ray(const Point &origin, const Vector &direction,

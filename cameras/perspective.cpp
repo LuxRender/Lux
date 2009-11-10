@@ -152,7 +152,7 @@ PerspectiveCamera::
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
-void PerspectiveCamera::AutoFocus(const TsPack *tspack, Scene* scene)
+void PerspectiveCamera::AutoFocus(Scene* scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -188,7 +188,7 @@ void PerspectiveCamera::AutoFocus(const TsPack *tspack, Scene* scene)
 		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		Intersection isect;
-		if (scene->Intersect(tspack, ray, &isect))
+		if (scene->Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			luxError(LUX_NOERROR, LUX_WARNING, "Unable to define the Autofocus focal distance");
@@ -199,7 +199,7 @@ void PerspectiveCamera::AutoFocus(const TsPack *tspack, Scene* scene)
 	}
 }
 
-float PerspectiveCamera::GenerateRay(const TsPack *tspack, const Sample &sample, Ray *ray) const
+float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 {
 	// Generate raster and camera samples
 	Point Pras(sample.imageX, sample.imageY, 0);
@@ -272,21 +272,21 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		xStart, xEnd, yStart, yEnd));
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
-	visibility->SetSegment(tspack, p, ps, tspack->time);
+	visibility->SetSegment(p, ps, tspack->time);
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
 
-BBox PerspectiveCamera::Bounds(const MachineEpsilon *me) const
+BBox PerspectiveCamera::Bounds() const
 {
 	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
 		Point(LensRadius, LensRadius, 0.f));
 	bound = CameraToWorld(bound);
-	bound.Expand(me->E(bound));
+	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
 
-bool PerspectiveCamera::GetSamplePosition(const MachineEpsilon *me,
+bool PerspectiveCamera::GetSamplePosition(
 	const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
 	Vector direction(normal);

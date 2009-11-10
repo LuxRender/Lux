@@ -28,8 +28,7 @@
 using namespace lux;
 
 // UnsafeKdTreeAccel Method Definitions
-UnsafeKdTreeAccel::UnsafeKdTreeAccel(const MachineEpsilon *me,
-		const vector<boost::shared_ptr<Primitive> > &p,
+UnsafeKdTreeAccel::UnsafeKdTreeAccel(const vector<boost::shared_ptr<Primitive> > &p,
         int icost, int tcost,
         float ebonus, int maxp, int maxDepth)
 : isectCost(icost), traversalCost(tcost),
@@ -40,7 +39,7 @@ UnsafeKdTreeAccel::UnsafeKdTreeAccel(const MachineEpsilon *me,
     	if(p[i]->CanIntersect())
     	    prims.push_back(p[i]);
     	else
-    		p[i]->Refine(me, prims, refineHints, p[i]);
+    		p[i]->Refine(prims, refineHints, p[i]);
     }
     // Initialize mailboxes for _UnsafeKdTreeAccel_
     curMailboxId = 0;
@@ -206,8 +205,7 @@ void UnsafeKdTreeAccel::buildTree(int nodeNum,
             prims0, prims1 + nPrims, badRefines);
 }
 
-bool UnsafeKdTreeAccel::Intersect(const TsPack *tspack, const Ray &ray,
-        Intersection *isect) const {
+bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
@@ -271,7 +269,7 @@ bool UnsafeKdTreeAccel::Intersect(const TsPack *tspack, const Ray &ray,
                 // Check one primitive inside leaf node
                 if (mp->lastMailboxId != rayId) {
                     mp->lastMailboxId = rayId;
-                    if (mp->primitive->Intersect(tspack, ray, isect))
+                    if (mp->primitive->Intersect( ray, isect))
                         hit = true;
                 }
             }
@@ -282,7 +280,7 @@ bool UnsafeKdTreeAccel::Intersect(const TsPack *tspack, const Ray &ray,
                     // Check one primitive inside leaf node
                     if (mp->lastMailboxId != rayId) {
                         mp->lastMailboxId = rayId;
-                        if (mp->primitive->Intersect(tspack, ray, isect))
+                        if (mp->primitive->Intersect(ray, isect))
                             hit = true;
                     }
                 }
@@ -301,7 +299,7 @@ bool UnsafeKdTreeAccel::Intersect(const TsPack *tspack, const Ray &ray,
     return hit;
 }
 
-bool UnsafeKdTreeAccel::IntersectP(const TsPack *tspack, const Ray &ray) const {
+bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
@@ -325,7 +323,7 @@ bool UnsafeKdTreeAccel::IntersectP(const TsPack *tspack, const Ray &ray) const {
                 MailboxPrim *mp = node->onePrimitive;
                 if (mp->lastMailboxId != rayId) {
                     mp->lastMailboxId = rayId;
-                    if (mp->primitive->IntersectP(tspack, ray))
+                    if (mp->primitive->IntersectP(ray))
                         return true;
                 }
             }
@@ -335,7 +333,7 @@ bool UnsafeKdTreeAccel::IntersectP(const TsPack *tspack, const Ray &ray) const {
                     MailboxPrim *mp = prims[i];
                     if (mp->lastMailboxId != rayId) {
                         mp->lastMailboxId = rayId;
-                        if (mp->primitive->IntersectP(tspack, ray))
+                        if (mp->primitive->IntersectP(ray))
                             return true;
                     }
                 }
@@ -397,15 +395,14 @@ void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &pri
 	}
 }
 
-Aggregate *UnsafeKdTreeAccel::CreateAccelerator(const MachineEpsilon *me,
-		const vector<boost::shared_ptr<Primitive> > &prims,
+Aggregate *UnsafeKdTreeAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims,
         const ParamSet &ps) {
     int isectCost = ps.FindOneInt("intersectcost", 80);
     int travCost = ps.FindOneInt("traversalcost", 1);
     float emptyBonus = ps.FindOneFloat("emptybonus", 0.5f);
     int maxPrims = ps.FindOneInt("maxprims", 1);
     int maxDepth = ps.FindOneInt("maxdepth", -1);
-    return new UnsafeKdTreeAccel(me, prims, isectCost, travCost,
+    return new UnsafeKdTreeAccel(prims, isectCost, travCost,
             emptyBonus, maxPrims, maxDepth);
 }
 

@@ -67,14 +67,14 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	u_int nrContribs = 0;
 	// Declare common path integration variables
 	RayDifferential r;
-	float rayWeight = tspack->camera->GenerateRay(tspack, *sample, &r);
+	float rayWeight = tspack->camera->GenerateRay(*sample, &r);
 	if (rayWeight > 0.f) {
 		// Generate ray differentials for camera ray
 		++(sample->imageX);
-		float wt1 = tspack->camera->GenerateRay(tspack, *sample, &r.rx);
+		float wt1 = tspack->camera->GenerateRay(*sample, &r.rx);
 		--(sample->imageX);
 		++(sample->imageY);
-		float wt2 = tspack->camera->GenerateRay(tspack, *sample, &r.ry);
+		float wt2 = tspack->camera->GenerateRay(*sample, &r.ry);
 		r.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
 		--(sample->imageY);
 	}
@@ -91,7 +91,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
-		if (!scene->Intersect(tspack, ray, &isect)) {
+		if (!scene->Intersect(ray, &isect)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
 				SWCSpectrum Lv;
@@ -238,7 +238,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!specular)
 			VContrib += dp;
 
-		ray = RayDifferential(p, wi, scene->machineEpsilon);
+		ray = RayDifferential(p, wi);
 		ray.time = r.time;
 	}
 	for (u_int i = 0; i < scene->lightGroups.size(); ++i) {

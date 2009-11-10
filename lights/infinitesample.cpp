@@ -115,7 +115,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, 
 	// Compute PDF for sampled direction
 	*pdf = (pdfs[0] * pdfs[1]) / (2. * M_PI * M_PI * sintheta);
 	// Return radiance value for direction
-	visibility->SetRay(tspack, p, *wi, tspack->time);
+	visibility->SetRay(p, *wi, tspack->time);
 	return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(fu * uDistrib->invCount,
 		fv * vDistribs[u]->invCount));
 }
@@ -165,7 +165,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *sce
 	float costheta = AbsDot(to_center,ray->d);
 	*pdf =
 		costheta / ((4.f * M_PI * worldRadius * worldRadius));
-	return Le(tspack, RayDifferential(ray->o, -ray->d, tspack->machineEpsilon));
+	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
 Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {

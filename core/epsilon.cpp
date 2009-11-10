@@ -24,21 +24,16 @@
 
 using namespace lux;
 
-MachineEpsilon::MachineEpsilon(const float minValue, const float maxValue)
-{
-	minEpsilon = minValue;
-	DEBUG("minEpsilon", minEpsilon);
-
-	maxEpsilon = maxValue;
-	DEBUG("maxEpsilon", maxEpsilon);
-
-	UpdateAvarageEpsilon();
+float MachineEpsilon::minEpsilon = DEFAULT_EPSILON_MIN;
+float MachineEpsilon::maxEpsilon = DEFAULT_EPSILON_MAX;
+float MachineEpsilon::averageEpsilon = DEFAULT_EPSILON_STATIC;
 
 #if defined(MACHINE_EPSILON_DEBUG)
+void MachineEpsilon::Test() {
 	char buf[256];
 	for (float v = 1e-5f; v < 1e5f; v *= 2.0f) {
 		sprintf(buf,"Epsilon.Test: %f => %e", v, this->E(v));
 		luxError(LUX_NOERROR, LUX_DEBUG, buf);
 	}
-#endif
 }
+#endif

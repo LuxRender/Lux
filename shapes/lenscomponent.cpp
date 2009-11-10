@@ -56,7 +56,7 @@ BBox LensComponent::ObjectBound() const {
 return BBox(Point(-radius, -radius, zmin),
     Point(radius,  radius, zmax));
 }
-bool LensComponent::Intersect(const TsPack *tspack, const Ray &r, float *tHit,
+bool LensComponent::Intersect(const Ray &r, float *tHit,
 DifferentialGeometry *dg) const {
     float phi;
     Point phit;
@@ -135,7 +135,7 @@ DifferentialGeometry *dg) const {
     *tHit = thit;
     return true;
 }
-bool LensComponent::IntersectP(const TsPack *tspack, const Ray &r) const {
+bool LensComponent::IntersectP(const Ray &r) const {
     //float phi;
     Point phit;
     // Transform _Ray_ to object space

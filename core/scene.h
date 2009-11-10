@@ -80,14 +80,14 @@ public:
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
 		Sampler *s, boost::shared_ptr<Primitive> accel,
 		const vector<Light *> &lts, const vector<string> &lg,
-		VolumeRegion *vr, MachineEpsilon *me);
+		VolumeRegion *vr);
 	Scene(Camera *c);
 	~Scene();
-	bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const {
-		return aggregate->Intersect(tspack, ray, isect);
+	bool Intersect(const Ray &ray, Intersection *isect) const {
+		return aggregate->Intersect(ray, isect);
 	}
-	bool IntersectP(const TsPack *tspack, const Ray &ray) const {
-		return aggregate->IntersectP(tspack, ray);
+	bool IntersectP(const Ray &ray) const {
+		return aggregate->IntersectP(ray);
 	}
 	const BBox &WorldBound() const { return bound; }
 	SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
@@ -161,8 +161,6 @@ public:
 	u_long seedBase;
 
 	ContributionPool *contribPool;
-
-	MachineEpsilon *machineEpsilon;
 
 private:
 	// mutex used for adding/removing threads

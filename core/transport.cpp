@@ -192,11 +192,11 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
 					Intersection lightIsect;
 					Li = SWCSpectrum(1.f);
-					RayDifferential ray(p, wi, scene->machineEpsilon);
+					RayDifferential ray(p, wi);
 					ray.time = tspack->time;
 					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 					for (;;) {
-						if (!scene->Intersect(tspack, ray, &lightIsect)) {
+						if (!scene->Intersect(ray, &lightIsect)) {
 							Li *= light->Le(tspack, ray);
 							break;
 						} else if (lightIsect.arealight == light) {
@@ -210,7 +210,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 							break;
 						Li *= AbsDot(ibsdf->dgShading.nn, wi);
 
-						ray.mint = tspack->machineEpsilon->addE(ray.maxt);
+						ray.mint = MachineEpsilon::addE(ray.maxt);
 						ray.maxt = INFINITY;
 					}
 					if (!Li.Black()) {

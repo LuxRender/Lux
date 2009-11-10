@@ -31,11 +31,11 @@ using namespace lux;
 // Light Method Definitions
 Light::~Light() {
 }
-bool VisibilityTester::Unoccluded(const TsPack *tspack, const Scene *scene) const {
+bool VisibilityTester::Unoccluded(const Scene *scene) const {
 	// Update shadow ray statistics
 	// radiance - disabled for threading // static StatsCounter nShadowRays("Lights","Number of shadow rays traced");
 	// radiance - disabled for threading // ++nShadowRays;
-	return !scene->IntersectP(tspack, r);
+	return !scene->IntersectP(r);
 }
 
 bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f, float *pdf, float *pdfR) const
@@ -46,7 +46,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 	for (;;) {
-		if (!scene->Intersect(tspack, ray, &isect))
+		if (!scene->Intersect(ray, &isect))
 			return true;
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 
@@ -59,7 +59,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 		if (pdfR)
 			*pdfR *= bsdf->Pdf(tspack, d, -d);
 
-		ray.mint = tspack->machineEpsilon->addE(ray.maxt);
+		ray.mint = MachineEpsilon::addE(ray.maxt);
 		ray.maxt = r.maxt;
 	}
 	return false;
@@ -78,7 +78,7 @@ SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	return SWCSpectrum(0.f);
 }
 
-void Light::AddPortalShape(const MachineEpsilon *me, boost::shared_ptr<Primitive> s) {
+void Light::AddPortalShape(boost::shared_ptr<Primitive> s) {
 	if (s->CanIntersect() && s->CanSample()) {
 		PortalArea += s->Area();
 		PortalShapes.push_back(s);
@@ -87,7 +87,7 @@ void Light::AddPortalShape(const MachineEpsilon *me, boost::shared_ptr<Primitive
 		// Create _ShapeSet_ for _Shape_
 		vector<boost::shared_ptr<Primitive> > done;
 		PrimitiveRefinementHints refineHints(true);
-		s->Refine(me, done, refineHints, s);
+		s->Refine(done, refineHints, s);
 		for (u_int i = 0; i < done.size(); ++i) {
 			PortalArea += done[i]->Area();
 			PortalShapes.push_back(done[i]);

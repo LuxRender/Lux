@@ -274,7 +274,6 @@ void RenderThread::Render(RenderThread *myThread) {
 	myThread->tspack->rng->init(seed);
 	myThread->tspack->arena = new MemoryArena();
 	myThread->tspack->camera = myThread->scene->camera->Clone();
-	myThread->tspack->machineEpsilon = myThread->scene->machineEpsilon;
 	myThread->tspack->time = 0.f;
 
 	myThread->sampler->SetTsPack(myThread->tspack);
@@ -440,7 +439,7 @@ void Scene::Render() {
 	camera->film->CreateBuffers();
 
 	// Dade - to support autofocus for some camera model
-	camera->AutoFocus(tspack, this);
+	camera->AutoFocus(this);
 
 	sampPos = 0;
 
@@ -495,16 +494,12 @@ Scene::~Scene() {
 	delete volumeRegion;
 	for (u_int i = 0; i < lights.size(); ++i)
 		delete lights[i];
-	delete machineEpsilon;
 }
 
 Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	Sampler *s, boost::shared_ptr<Primitive> accel,
-	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr,
-	MachineEpsilon *me)
+	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr)
 {
-	machineEpsilon = me;
-
 	filmOnly = false;
 	lights = lts;
 	lightGroups = lg;
@@ -527,7 +522,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	// Scene Constructor Implementation
 	bound = aggregate->WorldBound();
 	if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
-	bound = Union(bound, camera->Bounds(machineEpsilon));
+	bound = Union(bound, camera->Bounds());
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
 	seedBase = rand();
@@ -561,8 +556,6 @@ Scene::Scene(Camera *cam)
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 	numberOfSamplesFromNetwork = 0.; //TODO init with number of samples in film
-
-	machineEpsilon = NULL;
 
 	contribPool = NULL;
 	tspack = NULL;

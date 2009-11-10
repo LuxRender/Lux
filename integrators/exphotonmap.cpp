@@ -170,14 +170,14 @@ u_int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const 
 {
 	RayDifferential ray;
-	float rayWeight = tspack->camera->GenerateRay(tspack, *sample, &ray);
+	float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	if (rayWeight > 0.f) {
 		// Generate ray differentials for camera ray
 		++(sample->imageX);
-		float wt1 = tspack->camera->GenerateRay(tspack, *sample, &ray.rx);
+		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
 		--(sample->imageX);
 		++(sample->imageY);
-		float wt2 = tspack->camera->GenerateRay(tspack, *sample, &ray.ry);
+		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
 		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
 		--(sample->imageY);
 	}
@@ -209,7 +209,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	SWCSpectrum L(0.f);
 
 	Intersection isect;
-	if (scene->Intersect(tspack, ray, &isect)) {
+	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
 		float *lightSample = &sampleData[0];
@@ -302,7 +302,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 			if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, &pdf,
 				BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY), &sampledType, NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
-				RayDifferential rd(p, wi, scene->machineEpsilon);
+				RayDifferential rd(p, wi);
 				rd.hasDifferentials = true;
 				rd.rx.o = p + isect.dg.dpdx;
 				rd.ry.o = p + isect.dg.dpdy;
@@ -380,7 +380,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
-		if (!scene->Intersect(tspack, ray, &isect)) {
+		if (!scene->Intersect(ray, &isect)) {
 			// Stop path sampling since no intersection was found
 			SWCSpectrum Lv;
 			scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
@@ -494,10 +494,10 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 					float pdf;
 					SWCSpectrum fr;
 					if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdf, diffuseType, NULL, NULL, true)) {
-						RayDifferential bounceRay(p, wi, scene->machineEpsilon);
+						RayDifferential bounceRay(p, wi);
 
 						Intersection gatherIsect;
-						if (scene->Intersect(tspack, bounceRay, &gatherIsect)) {
+						if (scene->Intersect(bounceRay, &gatherIsect)) {
 							// Dade - check the distance threshold option, if the intersection
 							// distance is smaller than the threshold, revert to standard path
 							// tracing in order to avoid corner artifacts
@@ -573,7 +573,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		pathThroughput *= f;
 		pathThroughput *= dp;
 
-		ray = RayDifferential(p, wi, scene->machineEpsilon);
+		ray = RayDifferential(p, wi);
 	}
 
 	return L;

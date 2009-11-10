@@ -43,8 +43,7 @@ public:
 	boost::shared_ptr<Material> GetMaterial() const { return material; }
 
 	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
-	virtual void Refine(const MachineEpsilon *me,
-		vector<boost::shared_ptr<Primitive> > &refined,
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		boost::shared_ptr<Primitive> thisPtr)
 	{
@@ -58,15 +57,15 @@ public:
 			}
 			else {
 				// Use primitive refine method
-				shape->Refine(me, refined, refineHints, shape);
+				shape->Refine(refined, refineHints, shape);
 			}
 		}
 	}
 
 	virtual bool CanIntersect() const { return true; }
-	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *isect) const {
+	virtual bool Intersect(const Ray &r, Intersection *isect) const {
 		float thit;
-		if (!Intersect(tspack, r, &thit, &isect->dg))
+		if (!Intersect(r, &thit, &isect->dg))
 			return false;
 		isect->dg.AdjustNormal(reverseOrientation, transformSwapsHandedness);
 		isect->Set(WorldToObject, this, material.get());
@@ -103,7 +102,7 @@ public:
 	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Refine() method called");
 	}
-	virtual bool Intersect(const TsPack *tspack, const Ray &ray, float *t_hitp,
+	virtual bool Intersect(const Ray &ray, float *t_hitp,
 			DifferentialGeometry *dg) const
 	{
 		luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Shape::Intersect() method called");
@@ -128,7 +127,7 @@ class PrimitiveSet : public Primitive {
 public:
 	// PrimitiveSet Public Methods
 	PrimitiveSet(boost::shared_ptr<Aggregate> a);
-	PrimitiveSet(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &p);
+	PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p);
 	virtual ~PrimitiveSet() { }
 
 	virtual BBox WorldBound() const { return worldbound; }
@@ -137,8 +136,8 @@ public:
 			if (!primitives[i]->CanIntersect()) return false;
 		return true;
 	}
-	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const;
 
 	virtual bool CanSample() const {
 		for (u_int i = 0; i < primitives.size(); ++i)

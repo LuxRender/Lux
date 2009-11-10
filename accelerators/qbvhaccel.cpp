@@ -75,17 +75,17 @@ public:
 			Union(primitives[2]->WorldBound(),
 			primitives[3]->WorldBound()));
 	}
-	virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const
 	{
 		bool hit = false;
 		for (u_int i = 0; i < 4; ++i)
-			hit |= primitives[i]->Intersect(tspack, ray, isect);
+			hit |= primitives[i]->Intersect(ray, isect);
 		return hit;
 	}
-	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const
+	virtual bool IntersectP(const Ray &ray) const
 	{
 		for (u_int i = 0; i < 4; ++i)
-			if (primitives[i]->IntersectP(tspack, ray))
+			if (primitives[i]->IntersectP(ray))
 				return true;
 		return false;
 	}
@@ -95,9 +95,9 @@ public:
 		for (u_int i = 0; i < 4; ++i)
 			prims.push_back(primitives[i]);
 	}
-	virtual bool Intersect(const TsPack *tspack, const QuadRay &ray4, const Ray &ray, Intersection *isect) const
+	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect) const
 	{
-		const bool hit = Intersect(tspack, ray, isect);
+		const bool hit = Intersect(ray, isect);
 		if (!hit)
 			return false;
 		ray4.maxt = _mm_set1_ps(ray.maxt);
@@ -313,8 +313,7 @@ const boost::int16_t QBVHAccel::pathTable[] = {
 
 
 /***************************************************/
-QBVHAccel::QBVHAccel(const MachineEpsilon *me,
-		const vector<boost::shared_ptr<Primitive> > &p,
+QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		u_int mp, u_int fst, u_int sf) : fullSweepThreshold(fst), skipFactor(sf), maxPrimsPerLeaf(mp)
 {
 	// Refine all primitives
@@ -324,7 +323,7 @@ QBVHAccel::QBVHAccel(const MachineEpsilon *me,
 		if(p[i]->CanIntersect())
 			vPrims.push_back(p[i]);
 		else
-			p[i]->Refine(me, vPrims, refineHints, p[i]);
+			p[i]->Refine(vPrims, refineHints, p[i]);
 	}
 
 	// Initialize primitives for _BVHAccel_
@@ -362,7 +361,7 @@ QBVHAccel::QBVHAccel(const MachineEpsilon *me,
 
 		// Compute the bounding box for the triangle
 		primsBboxes[i] = vPrims[i]->WorldBound();
-		primsBboxes[i].Expand(me->E(primsBboxes[i]));
+		primsBboxes[i].Expand(MachineEpsilon::E(primsBboxes[i]));
 		primsCentroids[i] = (primsBboxes[i].pMin +
 			primsBboxes[i].pMax) * .5f;
 
@@ -725,7 +724,7 @@ int32_t QBVHNode::BBoxIntersect(const QuadRay &ray4, const __m128 invDir[3],
 }
 
 /***************************************************/
-bool QBVHAccel::Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const
+bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 {
 	//------------------------------
 	// Prepare the ray for intersection
@@ -785,7 +784,7 @@ bool QBVHAccel::Intersect(const TsPack *tspack, const Ray &ray, Intersection *is
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
 			for (u_int primNumber = offset; primNumber < (offset + nbQuadPrimitives); ++primNumber)
-				hit |= prims[primNumber]->Intersect(tspack, ray4, ray, isect);
+				hit |= prims[primNumber]->Intersect(ray4, ray, isect);
 		}//end of the else
 	}
 
@@ -793,7 +792,7 @@ bool QBVHAccel::Intersect(const TsPack *tspack, const Ray &ray, Intersection *is
 }
 
 /***************************************************/
-bool QBVHAccel::IntersectP(const TsPack *tspack, const Ray &ray) const
+bool QBVHAccel::IntersectP(const Ray &ray) const
 {
 	//------------------------------
 	// Prepare the ray for intersection
@@ -852,7 +851,7 @@ bool QBVHAccel::IntersectP(const TsPack *tspack, const Ray &ray) const
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
 			for (u_int primNumber = offset; primNumber < (offset + nbQuadPrimitives); ++primNumber) {
-				if (prims[primNumber]->IntersectP(tspack, ray))
+				if (prims[primNumber]->IntersectP(ray))
 					return true;
 			}
 		} // end of the else
@@ -885,13 +884,12 @@ void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
 		prims[i]->GetPrimitives(primitives);
 }
 
-Aggregate* QBVHAccel::CreateAccelerator(const MachineEpsilon *me,
-	const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
+Aggregate* QBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
 {
 	int maxPrimsPerLeaf = ps.FindOneInt("maxprimsperleaf", 4);
 	int fullSweepThreshold = ps.FindOneInt("fullsweepthreshold", 4 * maxPrimsPerLeaf);
 	int skipFactor = ps.FindOneInt("skipfactor", 1);
-	return new QBVHAccel(me, prims, maxPrimsPerLeaf, fullSweepThreshold, skipFactor);
+	return new QBVHAccel(prims, maxPrimsPerLeaf, fullSweepThreshold, skipFactor);
 
 }
 

@@ -101,7 +101,7 @@ static bool visible(const TsPack *tspack, const Scene *scene, const Point &P0,
 	const Point &P1, float *pdf, float *pdfR, SWCSpectrum *f)
 {
 	VisibilityTester vt;
-	vt.SetSegment(tspack, P0, P1, tspack->time);
+	vt.SetSegment(P0, P1, tspack->time);
 	return vt.TestOcclusion(tspack, scene, f, pdf, pdfR);
 }
 
@@ -240,7 +240,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	// Prepare eye vertex for connection
 	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
 	const float d2 = DistanceSquared(eyeV.p, lightV.p);
-	if (d2 < max(tspack->machineEpsilon->E(eyeV.p), tspack->machineEpsilon->E(lightV.p)))
+	if (d2 < max(MachineEpsilon::E(eyeV.p), MachineEpsilon::E(lightV.p)))
 		return false;
 	const float ecosins = AbsDot(ewi, eyeV.bsdf->nn);
 	SWCSpectrum eflux(ef); // No pdf as it is a direct connection
@@ -296,7 +296,7 @@ static bool eyeConnect(const TsPack *tspack, const Sample *sample, const BidirVe
 	u_int bufferId, u_int groupId)
 {
 	float xd, yd;
-	if (!tspack->camera->GetSamplePosition(tspack->machineEpsilon, eye.p, eye.wi, distance,
+	if (!tspack->camera->GetSamplePosition(eye.p, eye.wi, distance,
 		&xd, &yd))
 		return false;
 	sample->AddContribution(xd, yd, color, alpha, distance, weight,
@@ -500,7 +500,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				(light0.pdf * light0.cosi);
 			light0.rr = min(1.f, max(lightThreshold,
 				light0.flux.Filter(tspack)));
-			RayDifferential ray(light0.p, light0.wo, scene->machineEpsilon);
+			RayDifferential ray(light0.p, light0.wo);
 			ray.time = tspack->time;
 			Intersection isect;
 			u_int through = 0;
@@ -508,7 +508,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 			// Trace light subpath and connect to eye vertex
 			while (true) {
-				if (!scene->Intersect(tspack, ray, &isect))
+				if (!scene->Intersect(ray, &isect))
 					break;
 				BidirVertex &v = lightPath[nLight++];
 
@@ -591,7 +591,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				}
 
 				// Initialize _ray_ for next segment of path
-				ray = RayDifferential(v.p, v.wo, scene->machineEpsilon);
+				ray = RayDifferential(v.p, v.wo);
 				ray.time = tspack->time;
 			}
 		}
@@ -614,7 +614,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		eye0.flux.Filter(tspack) * (cosins0 * eye0.coso / (eye0.cosi * eye0.pdf))));
 	eye0.flux *= (cosins0 / eye0.pdfR);
 	eye0.rrR = min(1.f, max(eyeThreshold, eye0.flux.Filter(tspack)));
-	RayDifferential ray(eyePath[0].p, eyePath[0].wi, scene->machineEpsilon);
+	RayDifferential ray(eyePath[0].p, eyePath[0].wi);
 	ray.time = tspack->time;
 	tspack->camera->ClampRay(ray);
 	Intersection isect;
@@ -627,13 +627,13 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float &variance(vecV[lightGroup]);
 	while (true) {
 		BidirVertex &v = eyePath[nEye++];
-		if (!scene->Intersect(tspack, ray, &isect)) {
+		if (!scene->Intersect(ray, &isect)) {
 			vector<BidirVertex> path(0);
 			for (u_int lightNumber = 0; lightNumber < scene->lights.size(); ++lightNumber) {
 				const Light *light = scene->lights[lightNumber];
 				if (!light->IsEnvironmental())
 					continue;
-				RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi, scene->machineEpsilon);
+				RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi);
 				r.time = tspack->time;
 				BSDF *eBsdf;
 				float ePdfDirect;
@@ -701,7 +701,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Test intersection with a light source
 		if (isect.arealight) {
-			RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi, scene->machineEpsilon);
+			RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi);
 			r.time = tspack->time;
 			BSDF *eBsdf;
 			float ePdfDirect;
@@ -853,12 +853,12 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		}
 
 		// Initialize _ray_ for next segment of path
-		ray = RayDifferential(v.p, v.wi, scene->machineEpsilon);
+		ray = RayDifferential(v.p, v.wi);
 		ray.time = tspack->time;
 	}
 	const float d = sqrtf(eyePath[0].d2);
 	float xl, yl;
-	if (!tspack->camera->GetSamplePosition(tspack->machineEpsilon, eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
+	if (!tspack->camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
 		return nrContribs;
 	for (u_int i = 0; i < nGroups; ++i) {
 		if (!vecL[i].Black())

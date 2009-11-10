@@ -242,8 +242,6 @@ namespace lux {
 		MemoryArena *arena;
 		Camera *camera;
 		float time;
-		// Data shared among al threads
-		MachineEpsilon *machineEpsilon;
 	};
 
 }

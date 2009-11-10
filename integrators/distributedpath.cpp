@@ -184,7 +184,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 	Intersection isect;
 	const float time = ray.time; // save time for motion blur
 
-	if (scene->Intersect(tspack, ray, &isect)) {
+	if (scene->Intersect(ray, &isect)) {
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		Vector wo = -ray.d;
@@ -319,7 +319,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags, NULL, true)) {
-					RayDifferential rd(p, wi, scene->machineEpsilon);
+					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -361,7 +361,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags, NULL, true)) {
-					RayDifferential rd(p, wi, scene->machineEpsilon);
+					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -405,7 +405,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags, NULL, true)) {
-					RayDifferential rd(p, wi, scene->machineEpsilon);
+					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -447,7 +447,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 				if (bsdf->Sample_f(tspack, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags, NULL, true)) {
-					RayDifferential rd(p, wi, scene->machineEpsilon);
+					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
@@ -471,7 +471,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		if (rayDepth < specularreflectDepth) {
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
-				RayDifferential rd(p, wi, scene->machineEpsilon);
+				RayDifferential rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
@@ -483,7 +483,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		if (rayDepth < specularrefractDepth) {
 			if (bsdf->Sample_f(tspack, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
-				RayDifferential rd(p, wi, scene->machineEpsilon);
+				RayDifferential rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
 				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
@@ -521,14 +521,14 @@ u_int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 	u_int nrContribs = 0;
 	float zdepth = 0.f;
 	RayDifferential ray;
-	float rayWeight = tspack->camera->GenerateRay(tspack, *sample, &ray);
+	float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	if (rayWeight > 0.f) {
 		// Generate ray differentials for camera ray
 		++(sample->imageX);
-		float wt1 = tspack->camera->GenerateRay(tspack, *sample, &ray.rx);
+		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
 		--(sample->imageX);
 		++(sample->imageY);
-		float wt2 = tspack->camera->GenerateRay(tspack, *sample, &ray.ry);
+		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
 		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
 		--(sample->imageY);
 	}

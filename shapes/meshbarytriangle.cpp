@@ -45,7 +45,7 @@ BBox MeshBaryTriangle::WorldBound() const
 	return Union(BBox(p1, p2), p3);
 }
 
-bool MeshBaryTriangle::Intersect(const TsPack *tspack, const Ray &ray, Intersection* isect) const
+bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const
 {
 	Vector e1, e2, s1;
 	// Compute $\VEC{s}_1$
@@ -120,7 +120,7 @@ bool MeshBaryTriangle::Intersect(const TsPack *tspack, const Ray &ray, Intersect
 	return true;
 }
 
-bool MeshBaryTriangle::IntersectP(const TsPack *tspack, const Ray &ray) const
+bool MeshBaryTriangle::IntersectP(const Ray &ray) const
 {
 	// Compute $\VEC{s}_1$
 	// Get triangle vertices in _p1_, _p2_, and _p3_

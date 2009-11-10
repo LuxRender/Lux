@@ -71,7 +71,7 @@ RealisticCamera::RealisticCamera(const Transform &world2camStart,
 }   
 RealisticCamera::~RealisticCamera(void) {
 }
-float RealisticCamera::GenerateRay(const TsPack *tspack, const Sample &sample, Ray *ray) const {
+float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
     // Generate raster and back lens samples
     Point Pras(sample.imageX, sample.imageY, 0.f);
     Point PCamera;
@@ -96,7 +96,7 @@ float RealisticCamera::GenerateRay(const TsPack *tspack, const Sample &sample, R
     DifferentialGeometry dg;
     float thit;
     for (int i = (int)lenses.size() -1 ; i >= 0; --i) {
-        if (lenses[i]->shape->Intersect(tspack, *ray, &thit, &dg)) {
+        if (lenses[i]->shape->Intersect(*ray, &thit, &dg)) {
             // intersection, compute refracted ray
             Normal n = (lenses[i]->entering == true) ? dg.nn : -dg.nn;
             float eta = lenses[i]->eta;

@@ -75,14 +75,14 @@ public:
 		wi->y = Dot(wiW, Y);
 		wi->z = Dot(wiW, Z);
 		*wi = Normalize(*wi);
-		*pdf = PortalShapes[shapeIndex]->Pdf(tspack, ps, dg.p) * DistanceSquared(ps, dg.p) / AbsDot(wiW, dg.nn);
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) * DistanceSquared(ps, dg.p) / AbsDot(wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			if (i != shapeIndex) {
 				Intersection isect;
-				RayDifferential ray(ps, wiW, tspack->machineEpsilon);
+				RayDifferential ray(ps, wiW);
 				ray.mint = -INFINITY;
-				if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
-					*pdf += PortalShapes[i]->Pdf(tspack, ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(wiW, isect.dg.nn);
+				if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wiW, isect.dg.nn) > 0.f)
+					*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(wiW, isect.dg.nn);
 			}
 		}
 		*pdf /= PortalShapes.size();
@@ -106,10 +106,10 @@ public:
 		float pdf = 0.f;
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, w, tspack->machineEpsilon);
+			RayDifferential ray(ps, w);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
-				pdf += PortalShapes[i]->Pdf(tspack, ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(w, isect.dg.nn);
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(w, isect.dg.nn) > 0.f)
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) * DistanceSquared(ps, isect.dg.p) / AbsDot(w, isect.dg.nn);
 		}
 		return pdf / PortalShapes.size();
 	}
@@ -243,8 +243,8 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 			Intersection isect;
 			RayDifferential ray(r);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
-				*pdfDirect += PortalShapes[i]->Pdf(tspack, r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(r.d, isect.dg.nn) < 0.f)
+				*pdfDirect += PortalShapes[i]->Pdf(r.o, isect.dg.p) * DistanceSquared(r.o, isect.dg.p) / DistanceSquared(r.o, ps) * AbsDot(r.d, ns) / AbsDot(r.d, isect.dg.nn);
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
 		*pdfDirect /= nrPortalShapes;
@@ -292,14 +292,14 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		Point ps = dg.p;
 		*wi = Normalize(ps - p);
 		if (Dot(*wi, dg.nn) < 0.f)
-			*pdf = PortalShapes[shapeIndex]->Pdf(tspack, p, *wi) / nrPortalShapes;
+			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
 			return 0.f;
 		}
 	}
-	visibility->SetRay(tspack, p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi, tspack->machineEpsilon));
+	visibility->SetRay(p, *wi, tspack->time);
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Vector &wi) const {
@@ -309,9 +309,9 @@ float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(p, wi, tspack->machineEpsilon);
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
-				pdf += PortalShapes[i]->Pdf(tspack, p, wi);
+			RayDifferential ray(p, wi);
+			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
+				pdf += PortalShapes[i]->Pdf(p, wi);
 		}
 		pdf /= nrPortalShapes;
 		return pdf;
@@ -328,11 +328,11 @@ float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(p, wi, tspack->machineEpsilon);
+			RayDifferential ray(p, wi);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect) &&
+			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
-				pdf += PortalShapes[i]->Pdf(tspack, p, isect.dg.p) * DistanceSquared(p, isect.dg.p) / DistanceSquared(p, po) * AbsDot(wi, ns) / AbsDot(wi, isect.dg.nn);
+				pdf += PortalShapes[i]->Pdf(p, isect.dg.p) * DistanceSquared(p, isect.dg.p) / DistanceSquared(p, po) * AbsDot(wi, ns) / AbsDot(wi, isect.dg.nn);
 		}
 		pdf /= nrPortalShapes;
 		return pdf;
@@ -359,14 +359,14 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
 		Point ps = dg.p;
 		*wi = Normalize(ps - p);
 		if (Dot(*wi, dg.nn) < 0.f)
-			*pdf = PortalShapes[shapeIndex]->Pdf(tspack, p, *wi) / nrPortalShapes;
+			*pdf = PortalShapes[shapeIndex]->Pdf( p, *wi) / nrPortalShapes;
 		else {
 			*pdf = 0.f;
 			return 0.f;
 		}
 	}
-	visibility->SetRay(tspack, p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi, tspack->machineEpsilon));
+	visibility->SetRay(p, *wi, tspack->time);
+	return Le(tspack, RayDifferential(p, *wi));
 }
 float SkyLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 1.f / (4.f * M_PI);
@@ -409,7 +409,7 @@ SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
 	}
 
-	return Le(tspack, RayDifferential(ray->o, -ray->d, tspack->machineEpsilon));
+	return Le(tspack, RayDifferential(ray->o, -ray->d));
 }
 bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
@@ -503,7 +503,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
 		if (Dot(wi, dg.nn) < 0.f) {
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(tspack, p, ps) / nrPortalShapes;
+			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps) / nrPortalShapes;
 			*pdfDirect *= DistanceSquared(p, dg.p) / AbsDot(wi, dg.nn);
 		} else {
 			*Le = 0.f;
@@ -540,7 +540,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	visibility->SetSegment(tspack, p, ps, tspack->time);
+	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(skyScale);
 	return true;
 }

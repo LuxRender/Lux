@@ -36,10 +36,9 @@ class  RayDifferential : public Ray {
 public:
 	// RayDifferential Methods
 	RayDifferential() { hasDifferentials = false; }
-	RayDifferential(const MachineEpsilon *me) : Ray(me) { hasDifferentials = false; }
 
-	RayDifferential(const Point &org, const Vector &dir, const MachineEpsilon *me)
-		: Ray(org, dir, me) {
+	RayDifferential(const Point &org, const Vector &dir)
+		: Ray(org, dir) {
 		hasDifferentials = false;
 	}
 

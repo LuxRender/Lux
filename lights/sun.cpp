@@ -171,9 +171,9 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		*pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
+			RayDifferential ray(ps, sundir);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect)) {
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosPortal = Dot(-sundir, isect.dg.nn);
 				if (cosPortal > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
@@ -195,7 +195,7 @@ bool SunLight::checkPortals(const TsPack *tspack, Ray portalRay) const {
 	for (u_int i = 0; i < nrPortalShapes; ++i) {
 		// Dade - I need to use Intersect instead of IntersectP
 		// because of the normal
-		if (PortalShapes[i]->Intersect(tspack, isectRay, &isect)) {
+		if (PortalShapes[i]->Intersect(isectRay, &isect)) {
 			// Dade - found a valid portal, check the orientation
 			if (Dot(portalRay.d, isect.dg.nn) < 0.f) {
 				found = true;
@@ -216,7 +216,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, f
 		*wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
 		*pdf = UniformConePdf(cosThetaMax);
 	}
-	visibility->SetRay(tspack, p, *wi, tspack->time);
+	visibility->SetRay(p, *wi, tspack->time);
 
 	// Dade - check if the portals are excluding this ray
 /*	if (!checkPortals(Ray(p, *wi)))
@@ -340,9 +340,9 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
+			RayDifferential ray(ps, sundir);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect)) {
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
 				if (cosP > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosP;
@@ -410,9 +410,9 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, sundir, tspack->machineEpsilon);
+			RayDifferential ray(ps, sundir);
 			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(tspack, ray, &isect)) {
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosPortal = Dot(ns, isect.dg.nn);
 				if (cosPortal > 0.f)
 					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
@@ -422,7 +422,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	}
 	if (cosThetaMax < 1.f)
 		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
-	visibility->SetSegment(tspack, p, ps, tspack->time);
+	visibility->SetSegment(p, ps, tspack->time);
 
 	*Le = SWCSpectrum(tspack, LSPD);
 	return true;

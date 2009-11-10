@@ -114,14 +114,14 @@ Light *MakeLight(const string &name,
 	return NULL;
 }
 
-AreaLight *MakeAreaLight(const MachineEpsilon *me, const string &name,
+AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 	const boost::shared_ptr<Primitive> &prim)
 {
 	if (DynamicLoader::registeredAreaLights().find(name) !=
 		DynamicLoader::registeredAreaLights().end()) {
 		AreaLight *ret =
-			DynamicLoader::registeredAreaLights()[name](me, light2world,
+			DynamicLoader::registeredAreaLights()[name](light2world,
 				paramSet, tp, prim);
 		paramSet.ReportUnused();
 		return ret;
@@ -177,14 +177,13 @@ VolumeIntegrator *MakeVolumeIntegrator(const string &name,
 	return NULL;
 }
 
-boost::shared_ptr<Aggregate> MakeAccelerator(const MachineEpsilon *me,
-		const string &name,
+boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
 		const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &paramSet)
 {
 	if (DynamicLoader::registeredAccelerators().find(name) !=
 		DynamicLoader::registeredAccelerators().end()) {
 		boost::shared_ptr<Aggregate> ret(
-			DynamicLoader::registeredAccelerators()[name](me, prims,
+			DynamicLoader::registeredAccelerators()[name](prims,
 				paramSet));
 		paramSet.ReportUnused();
 		return ret;

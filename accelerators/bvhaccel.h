@@ -45,18 +45,17 @@ struct BVHAccelArrayNode {
 class  BVHAccel : public Aggregate {
 public:
 	// BVHAccel Public Methods
-	BVHAccel(const MachineEpsilon *me, const vector<boost::shared_ptr<Primitive> > &p,
+	BVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 			u_int treetype, int csamples, int icost, int tcost, float ebonus);
 	virtual ~BVHAccel();
 	virtual BBox WorldBound() const;
 	virtual bool CanIntersect() const { return true; }
-	virtual bool Intersect(const TsPack *tspack, const Ray &ray, Intersection *isect) const;
-	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const Ray &ray) const;
 
 	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
 
-	static Aggregate *CreateAccelerator(const MachineEpsilon *me,
-		const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
+	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
 private:
 	// BVHAccel Private Methods

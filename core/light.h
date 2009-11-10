@@ -86,7 +86,7 @@ public:
 		return false;
 	}
 
-	void AddPortalShape(const MachineEpsilon *me, boost::shared_ptr<Primitive> shape);
+	void AddPortalShape(boost::shared_ptr<Primitive> shape);
 
 	// Light Public Data
 	const u_int nSamples;
@@ -105,25 +105,25 @@ public: // Put last for better data alignment
 struct VisibilityTester {
 	// VisibilityTester Public Methods
 
-	void SetSegment(const TsPack *tspack, const Point &p1, const Point & p2, float time) {
+	void SetSegment(const Point &p1, const Point & p2, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
 		const Vector w = p2 - p1;
 		const float length = w.Length();
 		const float shadowRayEpsilon = min(length,
-			max(tspack->machineEpsilon->E(p1), tspack->machineEpsilon->E(length)));
+			max(MachineEpsilon::E(p1), MachineEpsilon::E(length)));
 		r = Ray(p1, w / length, shadowRayEpsilon, length - shadowRayEpsilon);
 		r.time = time;
 	}
 
-	void SetRay(const TsPack *tspack, const Point &p, const Vector & w, float time) {
+	void SetRay(const Point &p, const Vector & w, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
-		r = Ray(p, Normalize(w), tspack->machineEpsilon);
+		r = Ray(p, Normalize(w));
 		r.time = time;
 	}
 
-	bool Unoccluded(const TsPack *tspack, const Scene * scene) const;
+	bool Unoccluded(const Scene * scene) const;
 	bool TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f, float *pdf = NULL, float *pdfR = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	void Transmittance(const TsPack *tspack, const Scene * scene, const Sample *sample, SWCSpectrum *const L) const;
@@ -133,7 +133,7 @@ struct VisibilityTester {
 class AreaLight : public Light {
 public:
 	// AreaLight Interface
-	AreaLight(const MachineEpsilon *me, const Transform &light2world,
+	AreaLight(const Transform &light2world,
 		boost::shared_ptr<Texture<SWCSpectrum> > Le, float g, float pow, float e,
 		SampleableSphericalFunction *ssf,
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
@@ -173,8 +173,7 @@ public:
 			float u3, float u4, Ray *ray, float *pdf) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
-	static AreaLight *CreateAreaLight(const MachineEpsilon *me,
-		const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
+	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 		const boost::shared_ptr<Primitive> &prim);
 protected:
 	// AreaLight Protected Data

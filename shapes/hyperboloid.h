@@ -35,9 +35,9 @@ public:
 	            float tm);
 	virtual ~Hyperboloid() { }
 	virtual BBox ObjectBound() const;
-	virtual bool Intersect(const TsPack *tspack, const Ray &ray, float *tHit,
+	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
-	virtual bool IntersectP(const TsPack *tspack, const Ray &ray) const;
+	virtual bool IntersectP(const Ray &ray) const;
 	virtual float Area() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);

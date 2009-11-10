@@ -37,7 +37,7 @@ public:
 	Camera(const Transform &w2cstart, const Transform &w2cend, float hither, float yon,
 		float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
-	virtual float GenerateRay(const TsPack *tspack, const Sample &sample, Ray *ray) const = 0;
+	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const {
 		if (!warnOnce)
 			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W");
@@ -50,13 +50,13 @@ public:
 		warnOnce = true;
 		return false;
 	}
-	virtual bool GetSamplePosition(const MachineEpsilon *me, const Point &p,
+	virtual bool GetSamplePosition(const Point &p,
 		const Vector &wi, float distance, float *x, float *y) const { return false; }
 	virtual void ClampRay(Ray &ray) const { }
 	virtual bool IsDelta() const;
 	virtual bool IsLensBased() const { return true; }
-	virtual void AutoFocus(const TsPack *tspack, Scene* scene) { }
-	virtual BBox Bounds(const MachineEpsilon *me) const { return BBox(); }
+	virtual void AutoFocus(Scene* scene) { }
+	virtual BBox Bounds() const { return BBox(); }
 
 	float GetTime(float u1) const;
 

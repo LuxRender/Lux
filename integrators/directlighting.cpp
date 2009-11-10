@@ -68,7 +68,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 	Intersection isect;
 	const float time = ray.time; // save time for motion blur
 
-	if (scene->Intersect(tspack, ray, &isect)) {
+	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
 		float *lightSample = &sampleData[0];
@@ -133,7 +133,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 			SWCSpectrum f;
 			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
-				RayDifferential rd(p, wi, scene->machineEpsilon);
+				RayDifferential rd(p, wi);
 				rd.time = time;
 				rd.hasDifferentials = true;
 				rd.rx.o = p + isect.dg.dpdx;
@@ -162,7 +162,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 
 			if (bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, .5f, &f, &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
 				// Compute ray differential _rd_ for specular transmission
-				RayDifferential rd(p, wi, scene->machineEpsilon);
+				RayDifferential rd(p, wi);
 				rd.time = time;
 				rd.hasDifferentials = true;
 				rd.rx.o = p + isect.dg.dpdx;
@@ -228,14 +228,14 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
         RayDifferential ray;
-        float rayWeight = tspack->camera->GenerateRay(tspack, *sample, &ray);
+        float rayWeight = tspack->camera->GenerateRay(*sample, &ray);
 	if (rayWeight > 0.f) {
 		// Generate ray differentials for camera ray
 		++(sample->imageX);
-		float wt1 = tspack->camera->GenerateRay(tspack, *sample, &ray.rx);
+		float wt1 = tspack->camera->GenerateRay(*sample, &ray.rx);
 		--(sample->imageX);
 		++(sample->imageY);
-		float wt2 = tspack->camera->GenerateRay(tspack, *sample, &ray.ry);
+		float wt2 = tspack->camera->GenerateRay(*sample, &ray.ry);
 		ray.hasDifferentials = (wt1 > 0.f) && (wt2 > 0.f);
 		--(sample->imageY);
 	}

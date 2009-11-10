@@ -55,8 +55,7 @@ public:
 	 * @param refineHints The hints for the refinement.
 	 * @param thisPtr     The shared pointer to this primitive.
 	 */
-	virtual void Refine(const MachineEpsilon *me,
-		vector<boost::shared_ptr<Primitive> > &refined,
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
 		boost::shared_ptr<Primitive> thisPtr);
 
@@ -73,13 +72,13 @@ public:
 	 * @param in The destination of the intersection information.
 	 * @return Whether an intersection was found.
 	 */
-	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
 	/**
 	 * Tests for intersection of this primitive with the given ray.
 	 * @param r  The ray to intersect with this primitive.
 	 * @return Whether an intersection was found.
 	 */
-	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
+	virtual bool IntersectP(const Ray &r) const;
 
 	// Material
 	/**
@@ -137,7 +136,7 @@ public:
 	 * @param wi The direction from the above point to the sampled point.
 	 * @return The pdf value (w.r.t. solid angle) for the given point.
 	 */
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const;
+	virtual float Pdf(const Point &p, const Vector &wi) const;
 	/**
 	 * Returns the probability density for sampling the given point.
 	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
@@ -146,7 +145,7 @@ public:
 	 * @param po The point that was sampled.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const;
+	virtual float Pdf(const Point &p, const Point &po) const;
 };
 
 class PrimitiveRefinementHints {
@@ -197,14 +196,13 @@ public:
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
-	virtual void Refine(const MachineEpsilon *me,
-		vector<boost::shared_ptr<Primitive> > &refined,
+	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		boost::shared_ptr<Primitive> thisPtr);
 
 	virtual bool CanIntersect() const { return prim->CanIntersect(); }
-	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const { return prim->IntersectP(tspack, r); }
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const { return prim->IntersectP(r); }
 
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const {
@@ -221,11 +219,11 @@ public:
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		prim->Sample(tspack, P, u1, u2, u3, dg);
 	}
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
-		return prim->Pdf(tspack, p, wi);
+	virtual float Pdf(const Point &p, const Vector &wi) const {
+		return prim->Pdf(p, wi);
 	}
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
-		return prim->Pdf(tspack, p, po);
+	virtual float Pdf(const Point &p, const Point &po) const {
+		return prim->Pdf(p, po);
 	}
 private:
 	// AreaLightPrimitive Private Data
@@ -265,8 +263,8 @@ public:
 	}
 
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
-	virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
@@ -292,11 +290,11 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
-		return instance->Pdf(tspack, p, wi);
+	virtual float Pdf(const Point &p, const Vector &wi) const {
+		return instance->Pdf(p, wi);
 	}
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
-		return instance->Pdf(tspack, p, po);
+	virtual float Pdf(const Point &p, const Point &po) const {
+		return instance->Pdf(p, po);
 	}
 private:
 	// InstancePrimitive Private Data
@@ -351,8 +349,8 @@ public:
     virtual BBox WorldBound() const;
 
     virtual bool CanIntersect() const { return instance->CanIntersect(); }
-    virtual bool Intersect(const TsPack *tspack, const Ray &r, Intersection *in) const;
-    virtual bool IntersectP(const TsPack *tspack, const Ray &r) const;
+    virtual bool Intersect(const Ray &r, Intersection *in) const;
+    virtual bool IntersectP(const Ray &r) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
@@ -379,11 +377,11 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-    virtual float Pdf(const TsPack *tspack, const Point &p, const Vector &wi) const {
-        return instance->Pdf(tspack, p, wi);
+    virtual float Pdf(const Point &p, const Vector &wi) const {
+        return instance->Pdf(p, wi);
      }
-    virtual float Pdf(const TsPack *tspack, const Point &p, const Point &po) const {
-        return instance->Pdf(tspack, p, po);
+    virtual float Pdf(const Point &p, const Point &po) const {
+        return instance->Pdf(p, po);
      }
 private:
     // MotionPrimitive Private Data

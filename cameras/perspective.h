@@ -38,14 +38,14 @@ public:
 		int distribution, int shape, int power,
 		Film *film);
 	virtual ~PerspectiveCamera() { }
-	virtual float GenerateRay(const TsPack *tspack, const Sample &sample, Ray *) const;
+	virtual float GenerateRay(const Sample &sample, Ray *) const;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
-	virtual bool GetSamplePosition(const MachineEpsilon *me, const Point &p, const Vector &wi, float distance, float *x, float *y) const;
+	virtual bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const;
 	virtual void ClampRay(Ray &ray) const;
 	virtual bool IsDelta() const { return LensRadius == 0.f; }
-	virtual BBox Bounds(const MachineEpsilon *me) const;
-	virtual void AutoFocus(const TsPack *tspack, Scene* scene);
+	virtual BBox Bounds() const;
+	virtual void AutoFocus(Scene* scene);
 	void SampleLens(float u1, float u2, float *dx, float *dy) const;
 
 	virtual PerspectiveCamera* Clone() const {
