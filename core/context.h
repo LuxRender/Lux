@@ -324,7 +324,7 @@ private:
 			randomMode = true;
 		}
 
-		Scene *MakeScene(const float epsilonMin, const float epsilonMax) const;
+		Scene *MakeScene() const;
 		// RenderOptions Public Data
 		string FilterName;
 		ParamSet FilterParams;
@@ -395,7 +395,6 @@ private:
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<Transform> pushedTransforms;
 	RenderFarm *renderFarm;
-	float epsilonMin, epsilonMax;
 
 	ParamSet *filmOverrideParams;
 	

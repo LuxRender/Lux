@@ -31,8 +31,6 @@
 #include "geometry/bbox.h"
 
 #include <sstream>
-//#include <boost/math/special_functions/trunc.hpp>
-//#include <boost/math/special_functions/next.hpp>
 
 //#define MACHINE_EPSILON_DEBUG 1
 
@@ -54,13 +52,10 @@ namespace lux {
 
 class MachineEpsilon {
 public:
-	MachineEpsilon() { MachineEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX); }
-	MachineEpsilon(const float minValue, const float maxValue);
-
 	// Not thread-safe method
-	static void SetMin(const float min) { minEpsilon = min; UpdateAvarageEpsilon(); }
+	static void SetMin(const float min);
 	// Not thread-safe method
-	static void SetMax(const float max) { maxEpsilon = max; UpdateAvarageEpsilon(); }
+	static void SetMax(const float max);
 
 	// Thread-safe method
 	static float E(const float value) {
@@ -71,6 +66,7 @@ public:
 		return Clamp(epsilon, minEpsilon, maxEpsilon);
 	}
 
+	// Thread-safe method
 	static float addE(const float value) {
 		DEBUG("addE(float).value", value);
 		const float valuePlusEpsilon = FloatAdvance(value);
@@ -79,17 +75,23 @@ public:
 		return valuePlusEpsilon;
 	}
 
+	// Thread-safe method
 	static float E(const Vector &v) {
 		return max(E(v.x), max(E(v.y), E(v.z)));
 	}
 
+	// Thread-safe method
 	static float E(const Point &p) {
 		return max(E(p.x), max(E(p.y), E(p.z)));
 	}
 
+	// Thread-safe method
 	static float E(const BBox &bb) {
 		return max(E(bb.pMin), E(bb.pMax));
 	}
+
+	// Thread-safe method
+	static void Test();
 
 private:
 	union MachineFloat {
@@ -99,28 +101,14 @@ private:
 
 	static float minEpsilon;
 	static float maxEpsilon;
-	static float averageEpsilon;
 
+	// This method doesn't handle NaN, INFINITY, etc.
 	static float FloatAdvance(const float value) {
-		// TODO - optimize this method
-		int exp;
-		float s = frexpf(value, &exp);
-		s += averageEpsilon;
-		if (s >= 1.f) s = 1.f;
+		MachineFloat mf;
+		mf.f = value;
+		mf.i += 0xff; // Advance by 256
 
-		return ldexpf(s, exp);
-	}
-
-	static void UpdateAvarageEpsilon() {
-		const int minExp = FloatExponent(minEpsilon);
-		DEBUG("minExp", minExp);
-
-		const int maxExp = FloatExponent(maxEpsilon);
-		DEBUG("maxExp", maxExp);
-
-		const int avgExp = (minExp + maxExp) / 2;
-		averageEpsilon = Exp2Float(avgExp);
-		DEBUG("avarageEpsilon", averageEpsilon);
+		return mf.f;
 	}
 
 	static float Exp2Float(const int exp) {
@@ -147,8 +135,6 @@ private:
 	}
 
 #if defined(MACHINE_EPSILON_DEBUG)
-	static Test() const;
-
 	static void DebugPrint(const string type, const float e) {
 		MachineFloat mf;
 		mf.f = e;

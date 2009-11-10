@@ -88,8 +88,6 @@ void Context::init() {
 	pushedTransforms.clear();
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
-	epsilonMin = DEFAULT_EPSILON_MIN;
-	epsilonMax = DEFAULT_EPSILON_MAX;
 }
 
 void Context::free() {
@@ -235,8 +233,8 @@ void Context::setEpsilon(const float minValue, const float maxValue)
 {
 	VERIFY_INITIALIZED("SetEpsilon");
 	renderFarm->send("luxSetEpsilon", minValue, maxValue);
-	epsilonMin = minValue;
-	epsilonMax = maxValue;
+	MachineEpsilon::SetMin(minValue);
+	MachineEpsilon::SetMax(maxValue);
 }
 void Context::enableDebugMode() {
     VERIFY_OPTIONS("EnableDebugMode");
@@ -793,7 +791,7 @@ void Context::worldEnd() {
 	}
 	if (!terminated) {
 		// Create scene and render
-		luxCurrentScene = renderOptions->MakeScene(epsilonMin, epsilonMax);
+		luxCurrentScene = renderOptions->MakeScene();
 		if (luxCurrentScene) {
 			// Dade - check if we have to start the network rendering updater thread
 			if (renderFarm->getServerCount() > 0)
@@ -825,8 +823,7 @@ void Context::worldEnd() {
 		namedCoordinateSystems.end());
 }
 
-Scene *Context::RenderOptions::MakeScene(const float epsilonMin,
-		const float epsilonMax) const {
+Scene *Context::RenderOptions::MakeScene() const {
 	// Create scene objects from API settings
 	Filter *filter = MakeFilter(FilterName, FilterParams);
 	Film *film = MakeFilm(FilmName, FilmParams, filter);
