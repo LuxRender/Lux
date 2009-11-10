@@ -453,7 +453,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 				continue;
 			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
 			wi = ps - dgs.p;
-			if (Dot(wi, dg.nn) < 0.f) {
+			if (Dot(wi, dg.nn) <= 0.f) {
 				distance = wi.LengthSquared();
 				*pdf += AbsDot(ns, wi) / (sqrtf(distance) * distance);
 			}
@@ -478,7 +478,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		ConcentricSampleDisk(u1, u2, &x, &y);
 		z = sqrtf(max(0.f, 1.f - x*x - y*y));
 		if (u3 < .5f)
-			z *= -1.f;
+			z = -z;
 		wi = Vector(x, y, z);
 		// Compute _pdf_ for cosine-weighted infinite light direction
 		*pdfDirect = fabsf(wi.z) * INV_TWOPI;
