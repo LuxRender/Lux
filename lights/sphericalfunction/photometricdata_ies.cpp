@@ -228,6 +228,7 @@ bool PhotometricDataIES::BuildLightData()
 	//////////////////////////////////////////////////////////////////	
 	// Read first two lines containing light vars.
 
+	/* Old parsing code doesn't work if parameters are split among several lines
 	ReadLine( templine );
 
 	unsigned int photometricTypeInt;
@@ -249,7 +250,24 @@ bool PhotometricDataIES::BuildLightData()
 	sscanf( &templine[0], "%lf %lf %lf", 
 			&BallastFactor,
 			&BallastLampPhotometricFactor,
-			&InputWatts );
+			&InputWatts );*/
+
+	m_fsIES >> m_NumberOfLamps;
+	m_fsIES >> m_LumensPerLamp;
+	m_fsIES >> m_CandelaMultiplier;
+	m_fsIES >> m_NumberOfVerticalAngles;
+	m_fsIES >> m_NumberOfHorizontalAngles;
+	unsigned int photometricTypeInt;
+	m_fsIES >> photometricTypeInt;
+	m_PhotometricType = PhotometricType(photometricTypeInt);
+	m_fsIES >> m_UnitsType;
+	m_fsIES >> m_LuminaireWidth;
+	m_fsIES >> m_LuminaireLength;
+	m_fsIES >> m_LuminaireHeight;
+
+	m_fsIES >> BallastFactor;
+	m_fsIES >> BallastLampPhotometricFactor;
+	m_fsIES >> InputWatts;
 
 	//////////////////////////////////////////////////////////////////	
 	// Read angle data
