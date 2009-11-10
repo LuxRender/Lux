@@ -98,20 +98,10 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 ########################### BOOST LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-# Dade - backported from v0.7 branch
 FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
-	IF(CYGWIN)
-		SET(Boost_LIBRARIES boost_thread-gcc-mt boost_program_options-gcc-mt boost_filesystem-gcc-mt boost_serialization-gcc-mt boost_iostreams-gcc-mt boost_regex-gcc-mt)
-	ELSEIF(APPLE)
-		SET(Boost_LIBRARIES boost_system-xgcc40-mt-1_39 boost_thread-xgcc40-mt-1_39 boost_program_options-xgcc40-mt-1_39 boost_filesystem-xgcc40-mt-1_39 boost_serialization-xgcc40-mt-1_39 boost_iostreams-xgcc40-mt-1_39 boost_regex-xgcc40-mt-1_39)
-#		SET(Boost_LIBRARIES boost_thread-mt-1_34_1 boost_program_options-mt-1_34_1 boost_filesystem-mt-1_34_1 boost_serialization-mt-1_34_1 boost_iostreams-mt-1_34_1 boost_regex-mt-1_34_1)
-	ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-		SET(Boost_LIBRARIES boost_thread boost_program_options boost_filesystem boost_serialization boost_iostreams boost_regex)
-	ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-	ENDIF(CYGWIN)
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
 ENDIF(Boost_FOUND)
@@ -234,6 +224,17 @@ ENDIF(wxWidgets_FOUND)
 
 FIND_PACKAGE(Threads REQUIRED)
 
+#############################################################################
+#############################################################################
+############################   QT4 LIBRARIES    #############################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE(Qt4)
+IF(Qt4_FOUND)
+	SET(QT_USE_QTOPENGL TRUE)
+	INCLUDE(${QT_USE_FILE})
+ENDIF(Qt4_FOUND)
 
 #############################################################################
 #############################################################################
@@ -534,8 +535,6 @@ SET(lux_shapes_src
 	shapes/paraboloid.cpp
 	shapes/plymesh.cpp
 	shapes/plymesh/rply.c
-	shapes/quad.cpp
-	shapes/quadrilateral.cpp
 	shapes/sphere.cpp
 	shapes/torus.cpp
 	)
@@ -622,24 +621,36 @@ SET(lux_lib_src
 	${lux_tonemaps_src}
 	${lux_volumes_src}
 	)
-INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR}
-                    ${JPEG_INCLUDE_DIR}
-					${TIFF_INCLUDE_DIR}
-					${PNG_INCLUDE_DIR}
-					${OPENEXR_INCLUDE_DIRS}
-					${Boost_INCLUDE_DIRS}
-					${CMAKE_SOURCE_DIR}/accelerators ${CMAKE_SOURCE_DIR}/cameras ${CMAKE_SOURCE_DIR}/core
-					${CMAKE_SOURCE_DIR}/core/reflection ${CMAKE_SOURCE_DIR}/core/reflection/bxdf ${CMAKE_SOURCE_DIR}/spds
-					${CMAKE_SOURCE_DIR}/core/reflection/fresnel ${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
-					${CMAKE_SOURCE_DIR}/film ${CMAKE_SOURCE_DIR}/filters ${CMAKE_SOURCE_DIR}/integrators
-					${CMAKE_SOURCE_DIR}/lights ${CMAKE_SOURCE_DIR}/lights/sphericalfunction
-					${CMAKE_SOURCE_DIR}/materials ${CMAKE_SOURCE_DIR}/samplers
-					${CMAKE_SOURCE_DIR}/shapes ${CMAKE_SOURCE_DIR}/textures ${CMAKE_SOURCE_DIR}/tonemaps
-					${CMAKE_SOURCE_DIR}/volumes ${CMAKE_SOURCE_DIR}/integrationsamplers ${CMAKE_SOURCE_DIR}/pixelsamplers
-					${CMAKE_SOURCE_DIR}/renderer/include
-					${CMAKE_BINARY_DIR}
-					)
-
+INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR}
+	${JPEG_INCLUDE_DIR}
+	${TIFF_INCLUDE_DIR}
+	${PNG_INCLUDE_DIR}
+	${OPENEXR_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIRS}
+	${CMAKE_SOURCE_DIR}/core/external
+	)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
+	${CMAKE_SOURCE_DIR}/core/reflection
+	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
+	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
+	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
+	${CMAKE_SOURCE_DIR}/spds
+	${CMAKE_SOURCE_DIR}/accelerators
+	${CMAKE_SOURCE_DIR}/cameras
+	${CMAKE_SOURCE_DIR}/film
+	${CMAKE_SOURCE_DIR}/filters
+	${CMAKE_SOURCE_DIR}/integrators
+	${CMAKE_SOURCE_DIR}/lights
+	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
+	${CMAKE_SOURCE_DIR}/materials
+	${CMAKE_SOURCE_DIR}/pixelsamplers
+	${CMAKE_SOURCE_DIR}/samplers
+	${CMAKE_SOURCE_DIR}/shapes
+	${CMAKE_SOURCE_DIR}/textures
+	${CMAKE_SOURCE_DIR}/tonemaps
+	${CMAKE_SOURCE_DIR}/volumes
+	${CMAKE_BINARY_DIR}
+	)
 
 #############################################################################
 #############################################################################
@@ -731,8 +742,6 @@ IF(wxWidgets_FOUND)
 		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ENDIF(wxWidgets_FOUND)
-
-
 
 #############################################################################
 
