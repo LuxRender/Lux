@@ -659,7 +659,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				v.dARWeight = eyePath[nEye - 2].pdfR *
 					eyePath[nEye - 2].tPdfR *
 					v.coso / eyePath[nEye - 2].d2;
-				Le *= eyePath[nEye - 2].flux;
+				Le *= eyePath[nEye - 2].flux * throughFlux;
 				// Evaluate factors for path weighting
 				v.dAWeight /= scene->lights.size();
 				ePdfDirect *= directWeight;
@@ -712,7 +712,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				v.flags = BxDFType(~BSDF_SPECULAR);
 				v.pdf = eBsdf->Pdf(tspack, Vector(v.bsdf->ng), v.wo,
 					v.flags);
-				Ll *= eyePath[nEye - 2].flux;
+				Ll *= eyePath[nEye - 2].flux * throughFlux;
 				// Evaluate factors for path weighting
 				v.dAWeight /= scene->lights.size();
 				ePdfDirect *= directWeight;
@@ -743,13 +743,13 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					min(Floor2UInt(portal),
 					numberOfLights - 1U);
 				portal -= lightDirectNumber;
+				const Light *directLight = scene->lights[lightDirectNumber];
 				if (getDirectLight(tspack, scene, *this,
-					eyePath, nEye,
-					scene->lights[lightDirectNumber],
+					eyePath, nEye, directLight,
 					directData[0], directData[1], portal,
 					directWeight, &Ld, &dWeight)) {
-					vecL[light->group] += Ld;
-					vecV[light->group] += Ld.Filter(tspack) * dWeight;
+					vecL[directLight->group] += Ld;
+					vecV[directLight->group] += Ld.Filter(tspack) * dWeight;
 					++nrContribs;
 				}
 				break;
@@ -758,13 +758,14 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				SWCSpectrum Ld;
 				float dWeight;
 				for (u_int l = 0; l < scene->lights.size(); ++l) {
+					const Light *directLight = scene->lights[l];
 					if (getDirectLight(tspack, scene, *this,
-						eyePath, nEye, scene->lights[l],
+						eyePath, nEye, directLight,
 						directData[0], directData[1],
 						directData[2], directWeight,
 						&Ld, &dWeight)) {
-						vecL[light->group] += Ld;
-						vecV[light->group] += Ld.Filter(tspack) * dWeight;
+						vecL[directLight->group] += Ld;
+						vecV[directLight->group] += Ld.Filter(tspack) * dWeight;
 						++nrContribs;
 					}
 					directData += 3;
