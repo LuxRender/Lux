@@ -1174,8 +1174,7 @@ boost::shared_ptr<Texture<SWCSpectrum> >
 			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		}
 	}
-	RGBColor val = geomParams.FindOneRGBColor(n,
-		materialParams.FindOneRGBColor(n, def));
+	RGBColor val = FindRGBColor(n, def);
 	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture(val));
 }
 boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
@@ -1198,6 +1197,24 @@ boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &
 	if (texture)  return texture;
 	float val = FindFloat(n, def);
 	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
+}
+boost::shared_ptr<Texture<ConcreteFresnel> > TextureParams::GetFresnelTexture(const string &n,
+	float def) const
+{
+	string name = geomParams.FindTexture(n);
+	if (name == "")
+		name = materialParams.FindTexture(n);
+	if (name != "") {
+		if (fresnelTextures.find(name) != fresnelTextures.end())
+			return fresnelTextures[name];
+		else {
+			std::stringstream ss;
+			ss << "Couldn't find fresnel texture named '" << name << "' for " << n;
+			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+		}
+	}
+	float val = FindFloat(n, def);
+	return boost::shared_ptr<Texture<ConcreteFresnel> >(new ConstantFresnelTexture(val));
 }
 
 }

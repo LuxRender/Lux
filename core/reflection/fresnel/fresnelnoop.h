@@ -35,6 +35,11 @@ public:
 	virtual ~FresnelNoOp() { }
 	virtual void Evaluate(const TsPack *tspack, float, SWCSpectrum *const f) const { *f = SWCSpectrum(1.f); }
 	virtual float Index(const TsPack *tspack) const { return INFINITY; }
+	virtual void ComplexEvaluate(const TsPack *tspack,
+		SWCSpectrum *fr, SWCSpectrum *fi) const {
+		*fr = SWCSpectrum(INFINITY);
+		*fi = SWCSpectrum(0.f);
+	}
 };
 
 }//namespace lux

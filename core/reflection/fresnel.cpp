@@ -26,28 +26,22 @@
 
 using namespace lux;
 
-Fresnel::~Fresnel() { }
-
 namespace lux
 {
 
 // Utility Functions
 void FrDiel(float cosi, float cost,
-				   const SWCSpectrum &etai,
-				   const SWCSpectrum &etat,
-				   SWCSpectrum *const f) {
-	SWCSpectrum Rparl = (etat * cosi - etai * cost) /
-						(etat * cosi + etai * cost);
-	SWCSpectrum Rperp = (etai * cosi - etat * cost) /
-						(etai * cosi + etat * cost);
-	*f = (Rparl*Rparl + Rperp*Rperp) * 0.5f;
+	const SWCSpectrum &etai, const SWCSpectrum &etat, SWCSpectrum *const f)
+{
+	FrDiel2(cosi, SWCSpectrum(cost), etat / etai, f);
 }
 void FrDiel2(float cosi, const SWCSpectrum &cost, const SWCSpectrum &eta, SWCSpectrum *f)
 {
-	SWCSpectrum R(eta * cost);
-	R = (SWCSpectrum(cosi) - R) / (SWCSpectrum(cosi) + R);
-	R *= R;
-	*f = R;
+	SWCSpectrum Rparl(eta * cosi);
+	Rparl = (cost - Rparl) / (cost + Rparl);
+	SWCSpectrum Rperp(eta * cost);
+	Rperp = (SWCSpectrum(cosi) - Rperp) / (SWCSpectrum(cosi) + Rperp);
+	*f = (Rparl * Rparl + Rperp * Rperp) * .5f;
 }
 void FrCond(float cosi,
 			const SWCSpectrum &eta,
@@ -75,13 +69,13 @@ void FrFull(float cosi, const SWCSpectrum &cost, const SWCSpectrum &eta, const S
 }
 SWCSpectrum FresnelApproxEta(const SWCSpectrum &Fr) {
 	SWCSpectrum sqrtReflectance = Fr.Clamp(0.f, .999f).Sqrt();
-	return (SWCSpectrum(1.) + sqrtReflectance) /
-		(SWCSpectrum(1.) - sqrtReflectance);
+	return (SWCSpectrum(1.f) + sqrtReflectance) /
+		(SWCSpectrum(1.f) - sqrtReflectance);
 }
  SWCSpectrum FresnelApproxK(const SWCSpectrum &Fr) {
 	SWCSpectrum reflectance = Fr.Clamp(0.f, .999f);
 	return 2.f * (reflectance /
-		(SWCSpectrum(1.) - reflectance)).Sqrt();
+		(SWCSpectrum(1.f) - reflectance)).Sqrt();
 }
 
 }//namespace lux

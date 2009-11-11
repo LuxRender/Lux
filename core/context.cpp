@@ -356,7 +356,7 @@ void Context::texture(const string &n, const string &type, const string &texname
 	renderFarm->send("luxTexture", n, type, texname, params);
 
 	TextureParams tp(params, params, graphicsState->floatTextures,
-			graphicsState->colorTextures);
+		graphicsState->colorTextures, graphicsState->fresnelTextures);
 	if (type == "float") {
 		// Create _float_ texture and store in _floatTextures_
 		if (graphicsState->floatTextures.find(n)
@@ -383,6 +383,19 @@ void Context::texture(const string &n, const string &type, const string &texname
 				curTransform, tp);
 		if (st)
 			graphicsState->colorTextures[n] = st;
+	} else if (type == "fresnel") {
+		// Create _fresnel_ texture and store in _fresnelTextures_
+		if (graphicsState->fresnelTextures.find(n)
+				!= graphicsState->fresnelTextures.end()) {
+			//Warning("Texture \"%s\" being redefined", n.c_str());
+			std::stringstream ss;
+			ss<<"Texture '"<<n<<"' being redefined.";
+			luxError(LUX_SYNTAX,LUX_WARNING,ss.str().c_str());
+		}
+		boost::shared_ptr<Texture<ConcreteFresnel> > st = MakeFresnelTexture(texname,
+				curTransform, tp);
+		if (st)
+			graphicsState->fresnelTextures[n] = st;
 	} else {
 		//Error("Texture type \"%s\" unknown.", type.c_str());
 		std::stringstream ss;
@@ -448,7 +461,8 @@ void Context::lightSource(const string &n, const ParamSet &params) {
 	renderFarm->send("luxLightSource", n, params);
 
 	TextureParams tp(params, graphicsState->materialParams,
-			graphicsState->floatTextures, graphicsState->colorTextures);
+		graphicsState->floatTextures, graphicsState->colorTextures,
+		graphicsState->fresnelTextures);
 	u_int lg = GetActiveLightGroup();
 
 	if (n == "sunsky") {
@@ -527,7 +541,8 @@ void Context::portalShape(const string &n, const ParamSet &params) {
 boost::shared_ptr<Material> Context::makematerial(const ParamSet& shapeparams, bool force) {
 	// Create base material
 	TextureParams mp(shapeparams, graphicsState->materialParams,
-		graphicsState->floatTextures, graphicsState->colorTextures);
+		graphicsState->floatTextures, graphicsState->colorTextures,
+		graphicsState->fresnelTextures);
 	boost::shared_ptr<Material> mtl = MakeMaterial(graphicsState->material, curTransform, mp);
 	if (!mtl && force) {
 		mtl = MakeMaterial("matte", curTransform, mp);
@@ -552,7 +567,9 @@ void Context::makemixmaterial(const ParamSet& shapeparams, const ParamSet& mater
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-				graphicsState->floatTextures, graphicsState->colorTextures);
+				graphicsState->floatTextures,
+				graphicsState->colorTextures,
+				graphicsState->fresnelTextures);
 			boost::shared_ptr<Material> mtl1 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -576,7 +593,9 @@ void Context::makemixmaterial(const ParamSet& shapeparams, const ParamSet& mater
 			ParamSet nparams = namedmaterials[i].materialParams;
 			nparams.EraseString("type");
 			TextureParams mp1(shapeparams, nparams,
-				graphicsState->floatTextures, graphicsState->colorTextures);
+				graphicsState->floatTextures,
+				graphicsState->colorTextures,
+				graphicsState->fresnelTextures);
 			boost::shared_ptr<Material> mtl2 = MakeMaterial(type, curTransform, mp1);
 
 			if(type == "mix")
@@ -609,7 +628,9 @@ void Context::shape(const string &n, const ParamSet &params) {
 	AreaLight *area= NULL;
 	if (graphicsState->areaLight != "") {
 		TextureParams amp(params, graphicsState->areaLightParams,
-			graphicsState->floatTextures, graphicsState->colorTextures);
+			graphicsState->floatTextures,
+			graphicsState->colorTextures,
+			graphicsState->fresnelTextures);
 		u_int lg = GetActiveLightGroup();
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
 				graphicsState->areaLightParams, amp, sh);

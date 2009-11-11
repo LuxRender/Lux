@@ -76,3 +76,12 @@ float FresnelDielectric::Index(const TsPack *tspack) const
 		eta_t + cb / (w[3] * w[3])};
 	return SWCSpectrum(i).Filter(tspack);
 }
+
+void FresnelDielectric::ComplexEvaluate(const TsPack *tspack,
+	SWCSpectrum *fr, SWCSpectrum *fi) const
+{
+	const float *w = tspack->swl->w;
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+		fr->c[i] = eta_t + cb / (w[i] * w[i]);
+	*fi = SWCSpectrum(0.f);
+}

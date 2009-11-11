@@ -174,14 +174,16 @@ public:
 	// TextureParams Public Methods
 	TextureParams(const ParamSet &geomp, const ParamSet &matp,
 		map<string, boost::shared_ptr<Texture<float> > > &ft,
-		map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &st) :
+		map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &st,
+		map<string, boost::shared_ptr<Texture<ConcreteFresnel> > > &frt) :
 		geomParams(geomp), materialParams(matp), floatTextures(ft),
-		SWCSpectrumTextures(st) { }
+		SWCSpectrumTextures(st), fresnelTextures(frt) { }
 	boost::shared_ptr<Texture<SWCSpectrum> > GetSWCSpectrumTexture(const string &name,
 		const RGBColor &def) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name) const;
 	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
 		float def) const;
+	boost::shared_ptr<Texture<ConcreteFresnel> > GetFresnelTexture(const string &name, float def) const;
 	float FindFloat(const string &n, float d) const {
 		return geomParams.FindOneFloat(n,
 			materialParams.FindOneFloat(n, d));
@@ -223,6 +225,7 @@ private:
 	const ParamSet &geomParams, &materialParams;
 	map<string, boost::shared_ptr<Texture<float> > >    &floatTextures;
 	map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &SWCSpectrumTextures;
+	map<string, boost::shared_ptr<Texture<ConcreteFresnel> > >    &fresnelTextures;
 };
 
 }//namespace lux

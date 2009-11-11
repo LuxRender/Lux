@@ -25,6 +25,7 @@
 #include "texture.h"
 #include "rgbrefl.h"
 #include "rgbillum.h"
+#include "fresneldielectric.h"
 #include "paramset.h"
 
 namespace lux
@@ -72,11 +73,27 @@ private:
 	RGBColor color;
 };
 
+class ConstantFresnelTexture : public Texture<ConcreteFresnel> {
+public:
+	// ConstantTexture Public Methods
+	ConstantFresnelTexture(const float &v) : value(1.f, v), val(v) { }
+	virtual ~ConstantFresnelTexture() { }
+	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		return ConcreteFresnel(&value);
+	}
+	virtual float Y() const { return val; }
+private:
+	FresnelDielectric value;
+	float val;
+};
+
 class Constant
 {
 public:
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const TextureParams &tp);
 };
 
 }//namespace lux

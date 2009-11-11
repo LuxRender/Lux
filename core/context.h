@@ -69,6 +69,9 @@ public:
 	static map<string, boost::shared_ptr<Texture<SWCSpectrum> > > *getActiveSWCSpectrumTextures() {
 		return &(activeContext->graphicsState->colorTextures);
 	}
+	static map<string, boost::shared_ptr<Texture<ConcreteFresnel> > > *getActiveFresnelTextures() {
+		return &(activeContext->graphicsState->fresnelTextures);
+	}
 	static u_int getActiveLightGroup() {
 		return activeContext->GetActiveLightGroup();
 	}
@@ -369,6 +372,7 @@ private:
 		// Graphics State
 		map<string, boost::shared_ptr<Texture<float> > > floatTextures;
 		map<string, boost::shared_ptr<Texture<SWCSpectrum> > > colorTextures;
+		map<string, boost::shared_ptr<Texture<ConcreteFresnel> > > fresnelTextures;
 		ParamSet materialParams;
 		string material;
 		ParamSet areaLightParams;

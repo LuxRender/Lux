@@ -39,6 +39,8 @@ public:
 	virtual ~FresnelDielectric() { }
 	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
 	virtual float Index(const TsPack *tspack) const;
+	virtual void ComplexEvaluate(const TsPack *tspack,
+		SWCSpectrum *fr, SWCSpectrum *fi) const;
 private:
 	// FresnelDielectric Private Data
 	float eta_t, cb;

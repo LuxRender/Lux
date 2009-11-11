@@ -43,6 +43,8 @@ boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
 boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &name,
 	const Transform &tex2world, const TextureParams &tp);
+boost::shared_ptr<Texture<ConcreteFresnel> > MakeFresnelTexture(const string &name,
+	const Transform &tex2world, const TextureParams &tp);
 Light *MakeLight(const string &name, const Transform &light2world,
 	const ParamSet &paramSet, const TextureParams &tp);
 AreaLight *MakeAreaLight(const string &name,
@@ -114,6 +116,16 @@ public:
 		RegisterSWCSpectrumTexture<T>(const string &name) :
 			RegisterLoader<CreateSWCSpectrumTexture>(registeredSWCSpectrumTextures(), name, &T::CreateSWCSpectrumTexture) {}
 		virtual ~RegisterSWCSpectrumTexture<T>() {}
+	};
+
+	typedef Texture<ConcreteFresnel> *(*CreateFresnelTexture)(const Transform&,
+		const TextureParams&);
+	static map<string, CreateFresnelTexture> &registeredFresnelTextures();
+	template <class T> class RegisterFresnelTexture : public RegisterLoader<CreateFresnelTexture> {
+	public:
+		RegisterFresnelTexture<T>(const string &name) :
+			RegisterLoader<CreateFresnelTexture>(registeredFresnelTextures(), name, &T::CreateFresnelTexture) {}
+		virtual ~RegisterFresnelTexture<T>() {}
 	};
 
 	typedef Light *(*CreateLight)(const Transform&, const ParamSet&, const TextureParams &tp);
