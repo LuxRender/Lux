@@ -292,13 +292,13 @@ inline void MixBSDF::Add(float weight, BSDF *bsdf)
 	if (!(weight > 0.f))
 		return;
 	BOOST_ASSERT(nBSDFs < MAX_BxDFS);
-	weights[nBSDFs] = weight;
-	bsdfs[nBSDFs++] = bsdf;
 	// Special case since totalWeight = 1 when nBSDFs = 0
 	if (nBSDFs == 0)
 		totalWeight = weight;
 	else
 		totalWeight += weight;
+	weights[nBSDFs] = weight;
+	bsdfs[nBSDFs++] = bsdf;
 }
 inline u_int MixBSDF::NumComponents() const
 {
