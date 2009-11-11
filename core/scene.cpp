@@ -408,6 +408,12 @@ void Scene::RemoveRenderThread()
 void Scene::Render() {
 	if (IsFilmOnly())
 		return;
+
+	if (lights.size() == 0) {
+		luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render.");
+		return;
+	}
+
 	// Dade - I have to do initiliaziation here for the current thread.
 	// It can be used by the Preprocess() methods.
 
@@ -515,10 +521,6 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	stat_blackSamples = 0.;
 	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
 	lastTime = 0.;
-	if (lts.size() == 0) {
-		luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render. Exitting...");
-		exit(1);
-	}
 	// Scene Constructor Implementation
 	bound = aggregate->WorldBound();
 	if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
