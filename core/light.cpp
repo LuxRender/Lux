@@ -63,7 +63,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 		if (pdfR)
 			*pdfR *= bsdf->Pdf(tspack, d, -d);
 
-		ray.mint = MachineEpsilon::addE(ray.maxt);
+		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = r.maxt;
 	}
 	return false;

@@ -50,6 +50,9 @@ namespace lux {
 #define DEFAULT_EPSILON_MAX 1e-1f
 #define DEFAULT_EPSILON_STATIC 1e-5f
 
+// This corrisponde to about 1e-5f for values near 1.f
+#define DEFAULT_EPSILON_DISTANCE_FROM_VALUE 0x80u
+
 class MachineEpsilon {
 public:
 	// Not thread-safe method
@@ -60,19 +63,10 @@ public:
 	// Thread-safe method
 	static float E(const float value) {
 		DEBUG("E(float).value", value);
-		const float epsilon = addE(value) - value;
+		const float epsilon = fabs(FloatAdvance(value) - value);
 		DEBUG("E(float).epsilon", epsilon);
 
 		return Clamp(epsilon, minEpsilon, maxEpsilon);
-	}
-
-	// Thread-safe method
-	static float addE(const float value) {
-		DEBUG("addE(float).value", value);
-		const float valuePlusEpsilon = FloatAdvance(value);
-		DEBUG("addE(float).epsilon", valuePlusEpsilon);
-
-		return valuePlusEpsilon;
 	}
 
 	// Thread-safe method
@@ -106,7 +100,8 @@ private:
 	static float FloatAdvance(const float value) {
 		MachineFloat mf;
 		mf.f = value;
-		mf.i += 0xff; // Advance by 256
+
+		mf.i += DEFAULT_EPSILON_DISTANCE_FROM_VALUE;
 
 		return mf.f;
 	}

@@ -215,7 +215,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 							break;
 						Li *= AbsDot(ibsdf->dgShading.nn, wi);
 
-						ray.mint = MachineEpsilon::addE(ray.maxt);
+						ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 						ray.maxt = INFINITY;
 					}
 					if (!Li.Black()) {
