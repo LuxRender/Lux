@@ -1013,8 +1013,11 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 
 	// Possibly write out in-progress image
 	if (timeToWriteImage) {
-		boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 		WriteImage(IMAGE_FILEOUTPUT);
+		// WriteImage can take a very long time to be executed (i.e. by saving
+		// the film. It is better to refresh lastWriteImageTime after the
+		// execution of WriteImage instead than before.
+		boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
 	}
 }
 
