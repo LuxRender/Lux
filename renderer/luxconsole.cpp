@@ -59,6 +59,7 @@ namespace po = boost::program_options;
 std::string sceneFileName;
 int threads;
 bool parseError;
+bool interruptInfoThread;
 
 void engineThread() {
 	// NOTE - lordcrc - initialize rand()
@@ -70,7 +71,7 @@ void engineThread() {
 }
 
 void infoThread() {
-    while (true) {
+    while (!interruptInfoThread) {
         boost::xtime xt;
         boost::xtime_get(&xt, boost::TIME_UTC);
         xt.sec += 5;
@@ -88,7 +89,7 @@ void infoThread() {
                     << (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
                     << (float) luxStatistics("samplesPx") << " samples/pix";
             luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-        }
+		}
     }
 }
 
@@ -283,10 +284,16 @@ int main(int ac, char *av[]) {
                     Context::luxAddThread();
 
                 //launch info printing thread
+				interruptInfoThread = false;
                 boost::thread info(&infoThread);
 
                 // Dade - wait for the end of the rendering
                 luxWait();
+
+				// We have to stop the info thread before to call luxExit()/luxCleanup()
+				interruptInfoThread = true;
+				info.join();
+
                 luxExit();
 
                 // Dade - print the total rendering time
