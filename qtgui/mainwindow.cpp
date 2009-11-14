@@ -274,6 +274,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	m_auto_tonemap = false;
 	resetToneMapping();
 	m_auto_tonemap = true;
+	m_showWarningDialog = true;
 
 	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
@@ -333,6 +334,21 @@ void MainWindow::WriteSettings()
 	settings.setValue("size", size());
 	settings.setValue("splittersizes", ui->splitter->saveState());
 	settings.endGroup();
+}
+
+void MainWindow::DialogBox(const std::string &msg, const std::string &caption, QMessageBox::Icon icon) {
+	QMessageBox msgBox;
+	msgBox.setIcon(icon);
+	msgBox.setText(msg.c_str());
+	msgBox.exec();
+}
+
+void MainWindow::WarningDialogBox(const std::string &msg, const std::string &caption) {
+	DialogBox(msg, caption, QMessageBox::Warning);
+}
+
+void MainWindow::ErrorDialogBox(const std::string &msg, const std::string &caption) {
+	DialogBox(msg, caption, QMessageBox::Critical);
 }
 
 void MainWindow::updateWidgetValue(QSlider *slider, int value)
@@ -1568,6 +1584,7 @@ void MainWindow::renderScenefile(QString filename)
 
 	m_showParseWarningDialog = true;
 	m_showParseErrorDialog = true;
+	m_showWarningDialog = true;
 
 	// Start main render thread
 	if (m_engineThread)
@@ -1662,12 +1679,11 @@ bool MainWindow::event (QEvent *event)
 		m_progDialog = NULL;
 		m_loadTimer->stop();
 
-		//wxMessageBox(wxT("Scene file parse error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
 		changeRenderState(FINISHED);
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-		//wxMessageBox(wxT("FLM load error.\nSee log for details."), wxT("Error"), wxOK | wxICON_ERROR, this);
+		ErrorDialogBox("FLM load error.\nSee log for details.");
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
 			delete m_flmloadThread;
@@ -1679,7 +1695,7 @@ bool MainWindow::event (QEvent *event)
 	else if (eventtype == EVT_LUX_FINISHED) {
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
-			//wxMessageBox(wxT("Rendering is finished."), wxT("LuxRender"), wxOK | wxICON_INFORMATION, this);
+			DialogBox("Rendering is finished.");
 			changeRenderState(FINISHED);
 			// Stop timers and update output one last time.
 			m_renderTimer->stop();
@@ -1759,6 +1775,15 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	ss << event->getMessage() << endl;
 	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	ui->textEdit_log->ensureCursorVisible();
+
+	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
+		m_showWarningDialog = false;
+		if (event->getSeverity() < LUX_SEVERE) {
+			WarningDialogBox("There was an abnormal condition reported. Please, check the Log tab for more information.");
+		} else {
+			ErrorDialogBox("There was severe error reported. Please, check the Log tab for more information.");
+		}
+	}
 }
 
 void MainWindow::renderTimeout()

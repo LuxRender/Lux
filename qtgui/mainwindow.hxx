@@ -192,6 +192,10 @@ public:
 
 	void UpdateNetworkTree();
 
+	void DialogBox(const std::string &msg, const std::string &caption = "LuxRender", QMessageBox::Icon icon = QMessageBox::Information);
+	void WarningDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
+	void ErrorDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
+
 private:
 	Ui::MainWindow *ui;
 
@@ -208,6 +212,7 @@ private:
 	bool m_copyLog2Console;
 	bool m_showParseWarningDialog;
 	bool m_showParseErrorDialog;
+	bool m_showWarningDialog;
 	double m_samplesSec;
 	
 	LuxGuiRenderState m_guiRenderState;
