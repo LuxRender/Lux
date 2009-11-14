@@ -280,7 +280,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 	//m_renderTimer->Start(1000*luxStatistics("displayInterval"));
 
-	// Set splitter sizes
+	// Set default splitter sizes
 	QList<int> sizes;
 	sizes << 500 << 700;
 	ui->splitter->setSizes(sizes);
@@ -289,6 +289,8 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 	m_guiWindowState = SHOWN;
 	changeRenderState(WAITING);
+	
+	ReadSettings();
 }
 
 MainWindow::~MainWindow()
@@ -309,6 +311,28 @@ MainWindow::~MainWindow()
 	delete m_renderTimer;
 	delete renderView;
 	delete histogramView;
+
+	WriteSettings();
+}
+
+void MainWindow::ReadSettings()
+{
+	QSettings settings("luxrender.net", "LuxRender GUI");
+
+	settings.beginGroup("MainWindow");
+	resize(settings.value("size", QSize(1024, 768)).toSize());
+	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
+	settings.endGroup();
+}
+
+void MainWindow::WriteSettings()
+{
+	QSettings settings("luxrender.net", "LuxRender GUI");
+
+	settings.beginGroup("MainWindow");
+	settings.setValue("size", size());
+	settings.setValue("splittersizes", ui->splitter->saveState());
+	settings.endGroup();
 }
 
 void MainWindow::updateWidgetValue(QSlider *slider, int value)

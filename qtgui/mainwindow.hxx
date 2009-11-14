@@ -47,6 +47,7 @@
 #include <QUrl>
 #include <QClipboard>
 #include <QVector>
+#include <QSettings>
 
 #include "lux.h"
 #include "api.h"
@@ -283,6 +284,9 @@ private:
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);
 	void ResetLightGroupsFromFilm(bool useDefaults);
+
+	void ReadSettings();
+	void WriteSettings();
 
 private slots:
 
