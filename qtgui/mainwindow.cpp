@@ -572,7 +572,7 @@ void MainWindow::gaussianRadiusChanged (double value)
 {
 	m_bloomradius = value;
 
-	int sliderval = (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomweight);
+	int sliderval = (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomradius);
 
 	updateWidgetValue(ui->slider_gaussianRadius, sliderval);
 	updateWidgetValue(ui->spinBox_gaussianRadius, m_bloomradius);
