@@ -296,6 +296,9 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 MainWindow::~MainWindow()
 {
+	if (m_guiRenderState != WAITING)
+		endRenderingSession();
+
 	for (QVector<LightGroupWidget*>::iterator it = m_LightGroupWidgets.begin(); it != m_LightGroupWidgets.end(); it++) {
 		LightGroupWidget *currWidget = *it;
 		ui->toolBox_lightgroups->removeItem(currWidget->GetIndex());
