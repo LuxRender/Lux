@@ -306,6 +306,8 @@ MainWindow::~MainWindow()
 	}
 	m_LightGroupWidgets.clear();
 
+	WriteSettings();
+
 	delete ui;
 	delete statsMessage;
 	delete m_engineThread;
@@ -315,8 +317,6 @@ MainWindow::~MainWindow()
 	delete m_renderTimer;
 	delete renderView;
 	delete histogramView;
-
-	WriteSettings();
 }
 
 void MainWindow::ReadSettings()
