@@ -539,7 +539,7 @@ u_int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
-		L[i].ToXYZ(tspack) * rayWeight, alpha, zdepth, bufferId, i);
+		XYZColor(tspack, L[i]) * rayWeight, alpha, zdepth, bufferId, i);
 
 	return nrContribs;
 }

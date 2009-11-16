@@ -245,7 +245,8 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(tspack);
 		sample->AddContribution(sample->imageX, sample->imageY,
-			L[i].ToXYZ(tspack) * rayWeight, alpha, distance, V[i], bufferId, i);
+			XYZColor(tspack, L[i]) * rayWeight, alpha, distance,
+			V[i], bufferId, i);
 	}
 
 	return nrContribs;

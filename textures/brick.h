@@ -23,6 +23,7 @@
 // brick.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "error.h"
 
@@ -159,8 +160,8 @@ template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTex
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("bricktex", 1.f);
-	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("mortartex", 0.2f);
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("bricktex", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("mortartex", RGBColor(0.2f));
 
 	float bw = tp.FindFloat("brickwidth", 0.3f);
 	float bh = tp.FindFloat("brickheight", 0.1f);

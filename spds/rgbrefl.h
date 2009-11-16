@@ -25,7 +25,6 @@
 // rgbrefl.h*
 #include "lux.h"
 #include "color.h"
-#include "spectrum.h"
 #include "spd.h"
 
 namespace lux
@@ -36,7 +35,7 @@ class RGBReflSPD : public SPD {
 public:
 	RGBReflSPD() : SPD() { init(RGBColor(1.f)); }
 
-	RGBReflSPD(RGBColor s) : SPD() { init(s); }
+	RGBReflSPD(const RGBColor &s) : SPD() { init(s); }
 
 	virtual ~RGBReflSPD() {}
 
@@ -47,7 +46,7 @@ protected:
 		}
 	}
 
-	void init(RGBColor s);
+	void init(const RGBColor &s);
 };
 
 }//namespace lux

@@ -21,33 +21,13 @@
  ***************************************************************************/
 
 // RGBColor.cpp*
-#include "color.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
+#include "color.h"
 #include "regular.h"
 #include "memory.h"
 
 using namespace lux;
-
-XYZColor SWCSpectrum::ToXYZ(const TsPack *tspack) const {
-	SpectrumWavelengths *sw = tspack->swl;
-	float xyz[3];
-	xyz[0] = xyz[1] = xyz[2] = 0.;
-	if (sw->single) {
-		const u_int j = sw->single_w;
-		xyz[0] = sw->cie_X[j] * c[j];
-		xyz[1] = sw->cie_Y[j] * c[j];
-		xyz[2] = sw->cie_Z[j] * c[j];
-	} else {
-		for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-			xyz[0] += sw->cie_X[j] * c[j];
-			xyz[1] += sw->cie_Y[j] * c[j];
-			xyz[2] += sw->cie_Z[j] * c[j];
-		}
-	} 
-
-	return XYZColor(xyz);
-}
 
 Scalar SWCSpectrum::Y(const TsPack *tspack) const {
 	SpectrumWavelengths *sw = tspack->swl;

@@ -225,6 +225,8 @@ public:
 	XYZColor(const Color &color) { // so that operators work
 		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
 	}
+	XYZColor(const TsPack *tspack, const SWCSpectrum &s);
+	XYZColor(const SPD &s);
 
 	float Y() const {
 		return c[1];

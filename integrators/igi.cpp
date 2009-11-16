@@ -250,9 +250,9 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		r.time = ray.time;
 		pathThroughput *= f * (AbsDot(wi, n) / pdf);
 	}
-	const XYZColor color(L.ToXYZ(tspack) * rayWeight);
-	sample->AddContribution(sample->imageX, sample->imageY, color,
-		alpha, bufferId, 0U);
+	const XYZColor color(tspack, L);
+	sample->AddContribution(sample->imageX, sample->imageY,
+		color * rayWeight, alpha, bufferId, 0U);
 	return L.Black() ? 0 : 1;
 }
 SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params)

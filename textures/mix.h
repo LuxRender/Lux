@@ -23,6 +23,7 @@
 // mix.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 
 namespace lux
@@ -72,8 +73,8 @@ template <class T> Texture<float> * MixTexture<T>::CreateFloatTexture(const Tran
 template <class T> Texture<SWCSpectrum> * MixTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
 		const TextureParams &tp) {
 	return new MixTexture<SWCSpectrum>(
-		tp.GetSWCSpectrumTexture("tex1", 0.f),
-		tp.GetSWCSpectrumTexture("tex2", 1.f),
+		tp.GetSWCSpectrumTexture("tex1", RGBColor(0.f)),
+		tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)),
 		tp.GetFloatTexture("amount", 0.5f));
 }
 

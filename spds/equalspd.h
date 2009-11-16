@@ -24,14 +24,12 @@
 #define LUX_EQUALSPD_H
 // equalspd.h*
 #include "lux.h"
-#include "color.h"
-#include "spectrum.h"
 #include "spd.h"
 
 // Equal energy SPD
 
-#define EQ_CACHE_START   380. // precomputed cache starts at wavelength,
-#define EQ_CACHE_END     720. // and ends at wavelength
+#define EQ_CACHE_START   380.f // precomputed cache starts at wavelength,
+#define EQ_CACHE_END     720.f // and ends at wavelength
 #define EQ_CACHE_SAMPLES 2  // total number of cache samples 
 
 namespace lux

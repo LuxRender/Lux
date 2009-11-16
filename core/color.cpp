@@ -23,11 +23,43 @@
 // color.cpp*
 #include "color.h"
 #include "geometry/matrix3x3.h"
+#include "spectrumwavelengths.h"
+#include "data/xyzbasis.h"
 
 using namespace lux;
 
 namespace lux
 {
+
+XYZColor::XYZColor(const TsPack *tspack, const SWCSpectrum &s)
+{
+	SpectrumWavelengths *sw = tspack->swl;
+	if (sw->single) {
+		const u_int j = sw->single_w;
+		c[0] = sw->cie_X[j] * s.c[j];
+		c[1] = sw->cie_Y[j] * s.c[j];
+		c[2] = sw->cie_Z[j] * s.c[j];
+	} else {
+		c[0] = c[1] = c[2] = 0.f;
+		for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
+			c[0] += sw->cie_X[j] * s.c[j];
+			c[1] += sw->cie_Y[j] * s.c[j];
+			c[2] += sw->cie_Z[j] * s.c[j];
+		}
+	}
+}
+
+XYZColor::XYZColor(const SPD &s)
+{
+	c[0] = c[1] = c[2] = 0.f;
+	for (u_int i = 0; i < nCIE; ++i) {
+		const float v = s.sample(i + CIEstart);
+		c[0] += v * CIE_X[i];
+		c[1] += v * CIE_Y[i];
+		c[2] += v * CIE_Z[i];
+	}
+	*this *= 683.f;
+}
 
 static float dot(const float a[3], const float b[3])
 {

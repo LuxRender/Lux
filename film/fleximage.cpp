@@ -886,7 +886,7 @@ void FlexImageFilm::ComputeGroupScale(u_int index)
 	bufferGroups[index].scale =
 		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
 	if (bufferGroups[index].temperature > 0.f) {
-		XYZColor factor(BlackbodySPD(bufferGroups[index].temperature).ToXYZ());
+		XYZColor factor(BlackbodySPD(bufferGroups[index].temperature));
 		bufferGroups[index].scale *= factor / (factor.Y() * white);
 	}
 	bufferGroups[index].scale *= bufferGroups[index].globalScale;

@@ -390,13 +390,13 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				Ld *= We;
 				if (light->IsEnvironmental()) {
 					if (eyeConnect(tspack, sample, eye0,
-						Ld.ToXYZ(tspack), 0.f, INFINITY,
-						dWeight, lightBufferId,
-						light->group))
+						XYZColor(tspack, Ld), 0.f,
+						INFINITY, dWeight,
+						lightBufferId, light->group))
 						++nrContribs;
 				} else {
 					if (eyeConnect(tspack, sample, eye0,
-						Ld.ToXYZ(tspack), 1.f,
+						XYZColor(tspack, Ld), 1.f,
 						sqrtf(eye0.d2), dWeight,
 						lightBufferId, light->group))
 						++nrContribs;
@@ -417,14 +417,16 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					Ld *= We;
 					if (light->IsEnvironmental()) {
 						if (eyeConnect(tspack, sample,
-							eye0, Ld.ToXYZ(tspack),
+							eye0,
+							XYZColor(tspack, Ld),
 							0.f, INFINITY, dWeight,
 							lightBufferId,
 							light->group))
 							++nrContribs;
 					} else {
 						if (eyeConnect(tspack, sample,
-							eye0, Ld.ToXYZ(tspack),
+							eye0,
+							XYZColor(tspack, Ld),
 							1.f, sqrtf(eye0.d2),
 							dWeight, lightBufferId,
 							light->group))
@@ -479,7 +481,8 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		float weight;
 		if (evalPath(tspack, scene, *this, eyePath, 1, lightPath, nLight,
 			directPdf, false, &weight, &Ll) &&
-			eyeConnect(tspack, sample, eye0, (Ll * We).ToXYZ(tspack),
+			eyeConnect(tspack, sample, eye0,
+			XYZColor(tspack, Ll * We),
 			light->IsEnvironmental() ? 0.f : 1.f,
 			light->IsEnvironmental() ? INFINITY : sqrtf(eye0.d2),
 			weight, lightBufferId, lightGroup))
@@ -538,7 +541,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						lightDirectPdf, false,
 						&weight, &Ll) &&
 						eyeConnect(tspack, sample, eye0,
-						(Ll * We).ToXYZ(tspack), 1.f,
+						XYZColor(tspack, Ll * We), 1.f,
 						sqrtf(eye0.d2), weight,
 						lightBufferId, lightGroup))
 						++nrContribs;
@@ -865,7 +868,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!vecL[i].Black())
 			vecV[i] /= vecL[i].Filter(tspack);
 		vecL[i] *= We;
-		XYZColor color(vecL[i].ToXYZ(tspack));
+		XYZColor color(tspack, vecL[i]);
 		sample->AddContribution(xl, yl,
 			color, alpha, d, vecV[i], eyeBufferId, i);
 	}

@@ -196,7 +196,7 @@ u_int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	}
 
 	sample->AddContribution(sample->imageX, sample->imageY,
-		L.ToXYZ(tspack) * rayWeight, alpha, bufferId);
+		XYZColor(tspack, L) * rayWeight, alpha, bufferId);
 
 	return L.Black() ? 0 : 1;
 }

@@ -23,6 +23,7 @@
 // dots.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "error.h"
 
@@ -135,8 +136,8 @@ template <class T> inline Texture<SWCSpectrum> * DotsTexture<T>::CreateSWCSpectr
 		map = new UVMapping2D;
 	}
 	return new DotsTexture<SWCSpectrum>(map,
-		tp.GetSWCSpectrumTexture("inside", 1.f),
-		tp.GetSWCSpectrumTexture("outside", 0.f));
+		tp.GetSWCSpectrumTexture("inside", RGBColor(1.f)),
+		tp.GetSWCSpectrumTexture("outside", RGBColor(0.f)));
 }
 
 }//namespace lux

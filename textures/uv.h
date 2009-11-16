@@ -23,6 +23,7 @@
 // uv.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 
 // TODO - radiance - add methods for Power and Illuminant propagation

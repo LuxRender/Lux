@@ -24,8 +24,6 @@
 #define LUX_FREQUENCYSPD_H
 // frequencyspd.h*
 #include "lux.h"
-#include "color.h"
-#include "spectrum.h"
 #include "spd.h"
 
 // Sin frequency/phase distribution

@@ -28,7 +28,7 @@ using namespace lux;
 
 #include "data/rgbE_32.h"
 
-void RGBReflSPD::init(RGBColor s)
+void RGBReflSPD::init(const RGBColor &s)
 {
 	lambdaMin = refrgb2spect_start;
 	lambdaMax = refrgb2spect_end;

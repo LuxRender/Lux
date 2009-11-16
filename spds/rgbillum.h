@@ -25,7 +25,6 @@
 // rgbillum.h*
 #include "lux.h"
 #include "color.h"
-#include "spectrum.h"
 #include "spd.h"
 
 namespace lux
@@ -36,7 +35,7 @@ class RGBIllumSPD : public SPD {
 public:
 	RGBIllumSPD() : SPD() { init(RGBColor(1.f)); }
 
-	RGBIllumSPD(RGBColor s) : SPD() { init(s); }
+	RGBIllumSPD(const RGBColor &s) : SPD() { init(s); }
 
 	virtual ~RGBIllumSPD() {}
 
@@ -46,7 +45,7 @@ protected:
 			samples[i] += c[i] * w;
 	}
 
-	void init(RGBColor s);
+	void init(const RGBColor &s);
 };
 
 }//namespace lux

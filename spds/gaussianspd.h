@@ -24,8 +24,6 @@
 #define LUX_GAUSSIANSPD_H
 // gaussian.h*
 #include "lux.h"
-#include "color.h"
-#include "spectrum.h"
 #include "spd.h"
 
 // Peak + fallof SPD using gaussian distribution

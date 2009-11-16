@@ -22,6 +22,7 @@
 
 #include "lux.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "error.h"
 #include "blender_texlib.h"
@@ -185,8 +186,8 @@ template <class T> Texture<SWCSpectrum> *BlenderStucciTexture3D<T>::CreateSWCSpe
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("tex2", RGBColor(0.f));
 
 	// Decode the noise type
     short type = TEX_PLASTIC;

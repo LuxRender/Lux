@@ -24,6 +24,7 @@
 // scale.cpp*
 #include "lux.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 
 namespace lux

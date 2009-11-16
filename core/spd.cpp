@@ -23,7 +23,6 @@
 // spd.cpp*
 #include "lux.h"
 #include "spd.h"
-#include "color.h"
 #include "memory.h"
 #include "data/xyzbasis.h"
 
@@ -101,15 +100,4 @@ float SPD::Filter() const
 	for (u_int i = 0; i < nSamples; ++i)
 		y += samples[i];
 	return y / nSamples;
-}
-XYZColor SPD::ToXYZ() const
-{
-	XYZColor c(0.f);
-	for (u_int i = 0; i < nCIE; ++i) {
-		const float s = sample(i + CIEstart);
-		c.c[0] += s * CIE_X[i];
-		c.c[1] += s * CIE_Y[i];
-		c.c[2] += s * CIE_Z[i];
-	}
-	return c * 683.f;
 }

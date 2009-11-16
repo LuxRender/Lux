@@ -28,7 +28,7 @@ using namespace lux;
 
 #include "data/rgbD65_32.h"
 
-void RGBIllumSPD::init(RGBColor s)
+void RGBIllumSPD::init(const RGBColor &s)
 {
 	lambdaMin = illumrgb2spect_start;
 	lambdaMax = illumrgb2spect_end;

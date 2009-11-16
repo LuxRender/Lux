@@ -245,7 +245,8 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	u_int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, 0);
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
-			L[i].ToXYZ(tspack) * rayWeight, alpha, 0.f, bufferId, i);
+			XYZColor(tspack, L[i]) * rayWeight, alpha, 0.f,
+			bufferId, i);
 
 	return nContribs;
 }
