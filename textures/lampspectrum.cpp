@@ -28,7 +28,7 @@
 #include "error.h"
 #include "dynload.h"
 
-#include "data/lamp_spect.h"
+#include "lights/data/lamp_spect.h"
 
 using namespace lux;
 

@@ -30,7 +30,7 @@
 #include "blinn.h"
 #include "fresnelslick.h"
 #include "microfacet.h"
-#include "constant.h"
+#include "textures/constant.h"
 #include "fresnelblend.h"
 #include "paramset.h"
 #include "dynload.h"

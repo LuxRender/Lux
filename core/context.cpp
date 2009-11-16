@@ -34,7 +34,7 @@
 #include "material.h"
 #include "stats.h"
 #include "renderfarm.h"
-#include "fleximage.h"
+#include "film/fleximage.h"
 #include "epsilon.h"
 
 #include <boost/iostreams/filtering_stream.hpp>

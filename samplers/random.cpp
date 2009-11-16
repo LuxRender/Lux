@@ -22,13 +22,13 @@
 
 // random.cpp*
 #include "random.h"
-#include "vegas.h"
-//#include "randompx.h"
-#include "lowdiscrepancypx.h"
-#include "linear.h"
-#include "tilepx.h"
+#include "pixelsamplers/vegas.h"
+//#include "pixelsamplers/randompx.h"
+#include "pixelsamplers/hilbertpx.h"
+#include "pixelsamplers/lowdiscrepancypx.h"
+#include "pixelsamplers/linear.h"
+#include "pixelsamplers/tilepx.h"
 #include "scene.h"
-#include "hilbertpx.h"
 #include "dynload.h"
 #include "error.h"
 

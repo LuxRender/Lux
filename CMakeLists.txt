@@ -656,21 +656,8 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
 	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
 	${CMAKE_SOURCE_DIR}/spds
-	${CMAKE_SOURCE_DIR}/accelerators
-	${CMAKE_SOURCE_DIR}/cameras
-	${CMAKE_SOURCE_DIR}/film
-	${CMAKE_SOURCE_DIR}/filters
-	${CMAKE_SOURCE_DIR}/integrators
-	${CMAKE_SOURCE_DIR}/lights
 	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
-	${CMAKE_SOURCE_DIR}/materials
-	${CMAKE_SOURCE_DIR}/pixelsamplers
-	${CMAKE_SOURCE_DIR}/samplers
-	${CMAKE_SOURCE_DIR}/shapes
-	${CMAKE_SOURCE_DIR}/textures
-	${CMAKE_SOURCE_DIR}/tonemaps
-	${CMAKE_SOURCE_DIR}/volumes
-	${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}
 	)
 
 SET( LUXQTGUI_SRCS

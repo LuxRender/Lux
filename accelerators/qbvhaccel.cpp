@@ -20,7 +20,7 @@
  ***************************************************************************/
 
 #include "qbvhaccel.h"
-#include "mesh.h"
+#include "shapes/mesh.h"
 #include "paramset.h"
 #include "dynload.h"
 #include "error.h"

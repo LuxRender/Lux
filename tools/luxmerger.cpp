@@ -40,7 +40,7 @@
 #include "lux.h"
 #include "api.h"
 #include "context.h"
-#include "fleximage.h"
+#include "film/fleximage.h"
 #include "error.h"
 #include "osfunc.h"
 

@@ -30,7 +30,7 @@
 #include "light.h"
 #include "paramset.h"
 #include "dynload.h"
-#include "disk.h"
+#include "shapes/disk.h"
 #include "error.h"
 #include "epsilon.h"
 

@@ -23,7 +23,7 @@
 // paramset.cpp*
 #include "paramset.h"
 #include "error.h"
-#include "constant.h"
+#include "textures/constant.h"
 #include <sstream>
 #include <string>
 

@@ -23,13 +23,13 @@
 // lowdiscrepancy.cpp*
 #include "lowdiscrepancy.h"
 #include "error.h"
-#include "vegas.h"
-//#include "randompx.h"
-#include "lowdiscrepancypx.h"
-#include "tilepx.h"
+#include "pixelsamplers/vegas.h"
+//#include "pixelsamplers/randompx.h"
+#include "pixelsamplers/hilbertpx.h"
+#include "pixelsamplers/linear.h"
+#include "pixelsamplers/lowdiscrepancypx.h"
+#include "pixelsamplers/tilepx.h"
 #include "scene.h"
-#include "linear.h"
-#include "hilbertpx.h"
 #include "dynload.h"
 
 using namespace lux;
