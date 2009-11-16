@@ -63,7 +63,7 @@ public:
 	// Thread-safe method
 	static float E(const float value) {
 		DEBUG("E(float).value", value);
-		const float epsilon = fabs(FloatAdvance(value) - value);
+		const float epsilon = fabsf(FloatAdvance(value) - value);
 		DEBUG("E(float).epsilon", epsilon);
 
 		return Clamp(epsilon, minEpsilon, maxEpsilon);
