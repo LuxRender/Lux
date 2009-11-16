@@ -27,7 +27,6 @@
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
-#include "epsilon.h"
 
 namespace lux
 {
