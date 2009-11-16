@@ -55,7 +55,7 @@ public:
 	virtual ~ConstantRGBColorTexture() { delete RGBSPD; }
 	virtual SWCSpectrum Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, RGBSPD);
+		return SWCSpectrum(tspack, *RGBSPD);
 	}
 	virtual float Y() const { return RGBSPD->Y(); }
 	virtual float Filter() const { return RGBSPD->Filter(); }

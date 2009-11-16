@@ -58,11 +58,10 @@ Scalar SWCSpectrum::Filter(const TsPack *tspack) const
 	return result;
 }
 
-SWCSpectrum::SWCSpectrum(const TsPack *tspack, const SPD *s) {
+SWCSpectrum::SWCSpectrum(const TsPack *tspack, const SPD &s) {
 	SpectrumWavelengths *sw = tspack->swl;
-	for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-		c[j] = s->sample(sw->w[j]);
-	}
+	for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j)
+		c[j] = s.sample(sw->w[j]);
 }
 
 SWCSpectrum::SWCSpectrum(const TsPack *tspack, const RGBColor &s) {

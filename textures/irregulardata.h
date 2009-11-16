@@ -38,7 +38,7 @@ public:
 	virtual ~IrregularDataTexture() { }
 	virtual SWCSpectrum Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, &SPD);
+		return SWCSpectrum(tspack, SPD);
 	}
 	virtual float Y() const { return SPD.Y(); }
 	virtual float Filter() const { return SPD.Filter(); }

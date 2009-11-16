@@ -60,8 +60,8 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	else
 		dgs = dgShading;
 
-	SWCSpectrum n(tspack, N.get());
-	SWCSpectrum k(tspack, K.get());
+	SWCSpectrum n(tspack, *N);
+	SWCSpectrum k(tspack, *K);
 
 	float u = nu->Evaluate(tspack, dgs);
 	float v = nv->Evaluate(tspack, dgs);

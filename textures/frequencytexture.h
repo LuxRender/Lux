@@ -38,7 +38,7 @@ public:
 	virtual ~FrequencyTexture() { }
 	virtual SWCSpectrum Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, &FSPD);
+		return SWCSpectrum(tspack, FSPD);
 	}
 	virtual float Y() const { return FSPD.Y(); }
 	virtual float Filter() const { return FSPD.Filter(); }

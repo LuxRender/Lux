@@ -37,7 +37,7 @@ public:
 	virtual ~BlackBodyTexture() { }
 	virtual SWCSpectrum Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, &BBSPD);
+		return SWCSpectrum(tspack, BBSPD);
 	}
 	virtual float Y() const { return BBSPD.Y(); }
 	virtual float Filter() const { return BBSPD.Filter(); }

@@ -47,7 +47,7 @@ public:
 	}
 	SWCSpectrum(const TsPack *tspack, const RGBColor &s);							// Note -radiance- - REFACT - can inline now.
 
-	SWCSpectrum(const TsPack *tspack, const SPD *s);
+	SWCSpectrum(const TsPack *tspack, const SPD &s);
 
 	SWCSpectrum(const float cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)

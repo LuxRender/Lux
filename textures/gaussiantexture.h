@@ -37,7 +37,7 @@ public:
 	virtual ~GaussianTexture() { }
 	virtual SWCSpectrum Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, &GSPD);
+		return SWCSpectrum(tspack, GSPD);
 	}
 	virtual float Y() const { return GSPD.Y(); }
 	virtual float Filter() const { return GSPD.Filter(); }

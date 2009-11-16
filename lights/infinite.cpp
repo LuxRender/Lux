@@ -196,10 +196,10 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack,
 		Vector wh = Normalize(WorldToLight(r.d));
 		float s, t;
 		mapping->Map(wh, &s, &t);
-		return SWCSpectrum(tspack, &SPDbase) *
+		return SWCSpectrum(tspack, SPDbase) *
 			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
 	} else
-		return SWCSpectrum(tspack, &SPDbase);
+		return SWCSpectrum(tspack, SPDbase);
 }
 
 SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
@@ -261,10 +261,10 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 		Vector wh = Normalize(WorldToLight(r.d));
 		float s, t;
 		mapping->Map(wh, &s, &t);
-		return SWCSpectrum(tspack, &SPDbase) *
+		return SWCSpectrum(tspack, SPDbase) *
 			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
 	} else
-		return SWCSpectrum(tspack, &SPDbase);
+		return SWCSpectrum(tspack, SPDbase);
 }
 
 SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
@@ -505,7 +505,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
-	*Le = SWCSpectrum(tspack, &SPDbase) * M_PI;
+	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
 	return true;
 }
 bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
@@ -592,7 +592,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	visibility->SetSegment(p, ps, tspack->time);
-	*Le = SWCSpectrum(tspack, &SPDbase) * M_PI;
+	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
 	return true;
 }
 

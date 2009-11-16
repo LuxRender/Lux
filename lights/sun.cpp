@@ -138,7 +138,7 @@ SunLight::SunLight(const Transform &light2world,
 SWCSpectrum SunLight::Le(const TsPack *tspack, const RayDifferential &r) const {
 	Vector w = r.d;
 	if(cosThetaMax < 1.f && Dot(w,sundir) > cosThetaMax)
-		return SWCSpectrum(tspack, LSPD);
+		return SWCSpectrum(tspack, *LSPD);
 	else
 		return SWCSpectrum(0.f);
 }
@@ -182,7 +182,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		*pdf /= nrPortalShapes;
 	}
 	*pdfDirect = UniformConePdf(cosThetaMax) * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
-	return SWCSpectrum(tspack, LSPD);
+	return SWCSpectrum(tspack, *LSPD);
 }
 
 bool SunLight::checkPortals(const TsPack *tspack, Ray portalRay) const {
@@ -222,7 +222,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Point &p, float u1, f
 /*	if (!checkPortals(Ray(p, *wi)))
 		return SWCSpectrum(0.f);*/
 
-	return SWCSpectrum(tspack, LSPD);
+	return SWCSpectrum(tspack, *LSPD);
 }
 float SunLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	if(cosThetaMax == 1)
@@ -257,7 +257,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		ray->d = -UniformSampleCone(u3, u4, cosThetaMax, x, y, sundir);
 		*pdf = UniformConePdf(cosThetaMax) / (M_PI * worldRadius * worldRadius);
 
-		return SWCSpectrum(tspack, LSPD);
+		return SWCSpectrum(tspack, *LSPD);
 	} else {
 		// Dade - choose a random portal. This strategy is quite bad if there
 		// is more than one portal.
@@ -298,7 +298,7 @@ SWCSpectrum SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		if (Dot(ray->d, dg.nn) <= 0.f)
 			return SWCSpectrum(0.f);
 		else
-			return SWCSpectrum(tspack, LSPD);
+			return SWCSpectrum(tspack, *LSPD);
 	}
 }
 
@@ -360,7 +360,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius));
 
-	*Le = SWCSpectrum(tspack, LSPD);
+	*Le = SWCSpectrum(tspack, *LSPD);
 	return true;
 }
 
@@ -423,7 +423,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 	visibility->SetSegment(p, ps, tspack->time);
 
-	*Le = SWCSpectrum(tspack, LSPD);
+	*Le = SWCSpectrum(tspack, *LSPD);
 	return true;
 }
 
