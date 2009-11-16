@@ -97,7 +97,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	float *lightPower = new float[nLights];
 	float *lightCDF = new float[nLights + 1];
 	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene->lights[i]->Power(tspack, scene).Y(tspack);
+		lightPower[i] = scene->lights[i]->Power(scene);
 	float totalPower;
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 	for (u_int s = 0; s < nLightSets; ++s) {

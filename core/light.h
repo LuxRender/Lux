@@ -48,7 +48,7 @@ public:
 		PortalArea = 0;
 		warnOnce = false;
 	}
-	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *) const = 0;
+	virtual float Power(const Scene *scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
@@ -155,8 +155,8 @@ public:
 		}
 	}
 	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
-	SWCSpectrum Power(const TsPack *tspack, const Scene *) const {
-		return Le->Evaluate(tspack, dummydg) * gain * area * M_PI * (func ? 2.f * func->Average_f() : 1.f);
+	virtual float Power(const Scene *scene) const {
+		return Le->Y() * gain * area * M_PI * (func ? 2.f * func->Average_f() : 1.f);
 	}
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }

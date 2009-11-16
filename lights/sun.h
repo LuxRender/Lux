@@ -38,12 +38,11 @@ public:
 	virtual ~SunLight() { delete LSPD; }
 	virtual bool IsDeltaLight() const { return cosThetaMax == 1.0; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
+	virtual float Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-		                                   &worldRadius);
-		return SWCSpectrum(tspack, LSPD) * (havePortalShape ? PortalArea : M_PI * worldRadius * worldRadius) * 2.f * M_PI * (1.f - cosThetaMax);
+		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+		return LSPD->Y() * (havePortalShape ? PortalArea : M_PI * worldRadius * worldRadius) * 2.f * M_PI * (1.f - cosThetaMax);
 	}
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,

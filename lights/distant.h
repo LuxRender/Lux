@@ -40,12 +40,11 @@ public:
 	virtual ~DistantLight();
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
+	virtual float Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-		                                   &worldRadius);
-		return Lbase->Evaluate(tspack, dummydg) * gain * M_PI * worldRadius * worldRadius;
+		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+		return Lbase->Y() * gain * M_PI * worldRadius * worldRadius;
 	}
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;

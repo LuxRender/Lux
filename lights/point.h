@@ -41,7 +41,7 @@ public:
 	virtual ~PointLight();
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *) const;
+	virtual float Power(const Scene *) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
 		Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,

@@ -34,16 +34,15 @@ namespace lux
 class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
-	InfiniteAreaLightIS(const Transform &light2world,	const RGBColor &power, int ns,
-			  const string &texmap);
+	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &power,
+		int ns, const string &texmap);
 	virtual ~InfiniteAreaLightIS();
-	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
+	virtual float Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-			&worldRadius);
-		return SWCSpectrum(tspack, Lbase * radianceMap->Lookup(.5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius);
+		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+		return Lbase.Y() * radianceMap->Lookup(.5f, .5f, .5f).Filter() *
+			M_PI * worldRadius * worldRadius;
 	}
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }

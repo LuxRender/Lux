@@ -64,8 +64,8 @@ PointLight::~PointLight() {
 	if(func)
 		delete func;
 }
-SWCSpectrum PointLight::Power(const TsPack *tspack, const Scene *) const {
-	return Lbase->Evaluate(tspack, dummydg) * gain * 4.f * M_PI * (func ? func->Average_f() : 1.f);
+float PointLight::Power(const Scene *) const {
+	return Lbase->Y() * gain * 4.f * M_PI * (func ? func->Average_f() : 1.f);
 }
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1, float u2,
 		float u3, Vector *wo, float *pdf,

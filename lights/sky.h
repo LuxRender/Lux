@@ -37,16 +37,7 @@ public:
 	// SkyLight Public Methods
 	SkyLight(const Transform &light2world,	const float skyscale, u_int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
 	virtual ~SkyLight();
-	virtual SWCSpectrum Power(const TsPack *tspack, const Scene *scene) const {
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter,
-		                                    &worldRadius);
-		SWCSpectrum zenith;
-		GetSkySpectralRadiance(tspack, 0.f, 0.f, &zenith);
-		return zenith * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
-		//return skyScale * M_PI * worldRadius * worldRadius;
-	}
+	virtual float Power(const Scene *scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;

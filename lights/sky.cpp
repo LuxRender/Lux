@@ -128,6 +128,17 @@ static float PerezBase(const float lam[6], float theta, float gamma)
 		(1.f + lam[3] * expf(lam[4] * gamma)  + lam[5] * cosf(gamma) * cosf(gamma));
 }
 
+/* All angles in radians, theta angles measured from normal */
+inline float RiAngleBetween(float thetav, float phiv, float theta, float phi)
+{
+	const float cospsi = sinf(thetav) * sinf(theta) * cosf(phi - phiv) + cosf(thetav) * cosf(theta);
+	if (cospsi >= 1.f)
+		return 0.f;
+	if (cospsi <= -1.f)
+		return M_PI;
+	return acosf(cospsi);
+}
+
 static const RegularSPD S0(S0Amplitudes, 300.f, 830.f, 54);
 static const RegularSPD S1(S1Amplitudes, 300.f, 830.f, 54);
 static const RegularSPD S2(S2Amplitudes, 300.f, 830.f, 54);
@@ -189,6 +200,25 @@ SkyLight::SkyLight(const Transform &light2world,
 	zenith_Y /= PerezBase(perez_Y, 0, thetaS);
 	zenith_x /= PerezBase(perez_x, 0, thetaS);
 	zenith_y /= PerezBase(perez_y, 0, thetaS);
+}
+
+float SkyLight::Power(const Scene *scene) const
+{
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	float cosTheta = -1.f, phi = 0.f, power = 0.f;
+	for (u_int i = 0; i < 100; ++i) {
+		for (u_int j = 0; j < 100; ++j) {
+			float theta = acosf(cosTheta);
+			float gamma = RiAngleBetween(theta, phi, thetaS, phiS);
+			theta = min(theta, M_PI * .5f - .001f);
+			power += zenith_Y * PerezBase(perez_Y, theta, gamma);
+			cosTheta += .02f;
+			phi += .02f * M_PI;
+		}
+	}
+	return power * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
 }
 
 SWCSpectrum SkyLight::Le(const TsPack *tspack, const RayDifferential &r) const {
@@ -568,17 +598,6 @@ Light* SkyLight::CreateLight(const Transform &light2world,
 	float econst = paramSet.FindOneFloat("econst", 1.0f);
 
 	return new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
-}
-
-/* All angles in radians, theta angles measured from normal */
-inline float RiAngleBetween(float thetav, float phiv, float theta, float phi)
-{
-	const float cospsi = sinf(thetav) * sinf(theta) * cosf(phi - phiv) + cosf(thetav) * cosf(theta);
-	if (cospsi >= 1.f)
-		return 0.f;
-	if (cospsi <= -1.f)
-		return M_PI;
-	return acosf(cospsi);
 }
 
 /**********************************************************

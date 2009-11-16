@@ -466,22 +466,10 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	// Compute light power CDF for photon shooting
 	u_int nLights = scene->lights.size();
 	float *lightPower = static_cast<float *>(alloca(nLights * sizeof(float)));
-	float *lightCDF = static_cast<float *>(alloca((nLights + 1) * sizeof(float)));
-
-	// Dade - avarge the light power
-	const u_int spectrumSamples = 128;
 	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = 0.f;
-	for (u_int j = 0; j < spectrumSamples; ++j) {
-		thr_wl->Sample(RadicalInverse(j, 2));
-
-		for (u_int i = 0; i < nLights; ++i)
-			lightPower[i] += scene->lights[i]->Power(tspack, scene).Y(tspack);
-	}
-	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] /= spectrumSamples;
-
+		lightPower[i] = scene->lights[i]->Power(scene);
 	float totalPower;
+	float *lightCDF = static_cast<float *>(alloca((nLights + 1) * sizeof(float)));
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 
 	// Declare radiance photon reflectance arrays
