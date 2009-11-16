@@ -95,6 +95,13 @@ float SPD::Y() const
 		y += sample(i + CIEstart) * CIE_Y[i];
 	return y * 683.f;
 }
+float SPD::Filter() const
+{
+	float y = 0.f;
+	for (u_int i = 0; i < nSamples; ++i)
+		y += samples[i];
+	return y / nSamples;
+}
 XYZColor SPD::ToXYZ() const
 {
 	XYZColor c(0.f);

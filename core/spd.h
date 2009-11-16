@@ -66,7 +66,8 @@ public:
 		}
 	}
 
-	float Y() const ;
+	float Y() const;
+	float Filter() const;
 	XYZColor ToXYZ() const;
 	void AllocateSamples(u_int n);
 	void FreeSamples();
