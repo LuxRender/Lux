@@ -86,7 +86,7 @@ public:
 			   (  s)*(1-t) * v10 +
 			   (  s)*(  t) * v11 );
 	}
-	virtual float Y() const { return (v00 + v01 + v10 + v11).Y() / 4.f; }
+	virtual float Y() const { return RGBColor(v00 + v01 + v10 + v11).Y() / 4.f; }
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 	

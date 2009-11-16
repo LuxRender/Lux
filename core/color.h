@@ -175,13 +175,6 @@ public:
 			fprintf(f, "%f ", c[i]);
 	}
 
-	float Y() const {
-		return 0.;
-	}
-
-	bool operator<(const Color &s2) const {
-		return Y() < s2.Y();
-	}
 	friend class lux::ParamSet;
 	
 	// Color Public Data
@@ -213,6 +206,7 @@ public:
 	float Y() const {
 		return 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
 	}
+	float Filter() const { return (c[0] + c[1] + c[2]) / 3.f; }
 };
 
 // XYZColor Declarations
