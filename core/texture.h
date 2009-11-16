@@ -145,7 +145,7 @@ public:
 	// Texture Interface
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const = 0;
 	virtual float Y() const = 0;
-	virtual void SetPower(float power, float area) { }
+	virtual float Filter() const { return Y(); }
 	virtual void SetIlluminant() { }
 	virtual ~Texture() { }
 };

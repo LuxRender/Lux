@@ -61,6 +61,7 @@ public:
 		return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
 	};
 	virtual float Y() const { return EqualSPD(1.f).Y(); }
+	virtual float Filter() const { return mipmap->Lookup(.5f, .5f, .5f); }
 	
 	u_int getMemoryUsed() const {
 		if (mipmap)

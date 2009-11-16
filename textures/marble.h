@@ -79,6 +79,15 @@ public:
 			cs += RGBColor(c[i]);
 		return cs.Y() / NC;
 	}
+	virtual float Filter() const {
+		static float c[][3] = { { .58f, .58f, .6f }, { .58f, .58f, .6f }, { .58f, .58f, .6f },
+			{ .5f, .5f, .5f }, { .6f, .59f, .58f }, { .58f, .58f, .6f },
+			{ .58f, .58f, .6f }, {.2f, .2f, .33f }, { .58f, .58f, .6f }, };
+		RGBColor cs(0.f);
+		for (u_int i = 0; i < NC; ++i)
+			cs += RGBColor(c[i]);
+		return cs.Filter() / NC;
+	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);

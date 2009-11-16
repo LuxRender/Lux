@@ -41,12 +41,7 @@ public:
 		return SWCSpectrum(tspack, &FSPD);
 	}
 	virtual float Y() const { return FSPD.Y(); }
-	virtual void SetPower(float power, float area) {
-		const float y = Y();
-		if (!(y > 0.f))
-			return;
-		FSPD.Scale(power / (area * M_PI * y));
-	}
+	virtual float Filter() const { return FSPD.Filter(); }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
 private:

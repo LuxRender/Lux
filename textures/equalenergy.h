@@ -40,10 +40,7 @@ public:
 		return SWCSpectrum(e);
 	}
 	virtual float Y() const { return EqualSPD(e).Y(); }
-	virtual void SetPower(float power, float area) {
-		e = 1.f;
-		e *= power / (area * M_PI * Y());
-	}
+	virtual float Filter() const { return e; }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
 
 private:

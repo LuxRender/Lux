@@ -49,6 +49,7 @@ public:
 		return Turbulence(P, dpdx, dpdy, omega, octaves);
 	}
 	virtual float Y() const { return EqualSPD(.5f).Y(); }
+	virtual float Filter() const { return .5f; }
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);

@@ -111,10 +111,9 @@ public:
 		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
 		return Lerp(m, tex2->Y(), tex1->Y());
 	}
-	virtual void SetPower(float power, float area) {
-		// Update sub-textures
-		tex1->SetPower(power, area);
-		tex2->SetPower(power, area);
+	virtual float Filter() const {
+		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
+		return Lerp(m, tex2->Filter(), tex1->Filter());
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures

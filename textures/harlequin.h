@@ -64,6 +64,12 @@ public:
 			y += ColorLookupTable[i].Y();
 		return y / HARLEQUIN_TEXTURE_PALETTE_SIZE;
 	}
+	virtual float Filter() const {
+		float y = 0.f;
+		for (u_int i = 0; i < HARLEQUIN_TEXTURE_PALETTE_SIZE; ++i)
+			y += ColorLookupTable[i].Filter();
+		return y / HARLEQUIN_TEXTURE_PALETTE_SIZE;
+	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);

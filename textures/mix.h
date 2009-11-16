@@ -47,11 +47,7 @@ public:
 		return Lerp(amt, t1, t2);
 	}
 	virtual float Y() const { return Lerp(amount->Y(), tex1->Y(), tex2->Y()); }
-	virtual void SetPower(float power, float area) {
-		// Update sub-textures
-		tex1->SetPower(power, area);
-		tex2->SetPower(power, area);
-	}
+	virtual float Filter() const { return Lerp(amount->Y(), tex1->Filter(), tex2->Filter()); }
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();

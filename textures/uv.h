@@ -53,6 +53,7 @@ public:
 		const float cs[COLOR_SAMPLES] = {1.f, 1.f, 0.f};
 		return RGBColor(cs).Y() / 2.f;
 	}
+	virtual float Filter() const { return 2.f / 3.f; }
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
