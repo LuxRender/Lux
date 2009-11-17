@@ -203,7 +203,7 @@ SWCSpectrum BxDF::rho(const TsPack *tspack, u_int nSamples, float *samples) cons
 		if (Sample_f(tspack, wo, &wi, samples[4*i+2], samples[4*i+3], &f_, &pdf_i) && pdf_i > 0.f)
 			r.AddWeighted(fabsf(wi.z * wo.z) / (pdf_o * pdf_i), f_);
 	}
-	return r / (M_PI*nSamples);
+	return r / (M_PI * nSamples);
 }
 float BxDF::Weight(const TsPack *tspack, const Vector &wo) const
 {

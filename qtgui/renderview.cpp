@@ -60,7 +60,7 @@ void RenderView::reload () {
 		if (luxlogo->isVisible ())
 			luxlogo->hide ();
 
-		luxfb->setPixmap( QPixmap::fromImage(QImage(fb, w, h, w*3, QImage::Format_RGB888)));
+		luxfb->setPixmap(QPixmap::fromImage(QImage(fb, w, h, w * 3, QImage::Format_RGB888)));
 
 		if (!luxfb->isVisible())
 			luxfb->show ();
