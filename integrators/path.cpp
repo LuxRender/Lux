@@ -273,7 +273,7 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	else if (rst == "none") rstrategy = RR_NONE;
 	else {
 		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficiency\".";
+		ss<<"Strategy  '"<<rst<<"' for russian roulette path termination unknown. Using \"efficiency\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		rstrategy = RR_EFFICIENCY;
 	}
