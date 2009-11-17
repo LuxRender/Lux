@@ -505,7 +505,7 @@ SET(lux_lights_src
 	lights/distant.cpp
 	lights/infinite.cpp
 	lights/infinitesample.cpp
-	lights/point.cpp
+	lights/pointlight.cpp
 	lights/projection.cpp
 	lights/sphericalfunction/photometricdata_ies.cpp
 	lights/sphericalfunction/sphericalfunction.cpp
