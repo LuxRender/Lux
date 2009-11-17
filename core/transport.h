@@ -25,6 +25,7 @@
 // transport.h*
 #include "lux.h"
 #include "spectrum.h"
+#include "renderinghints.h"
 
 namespace lux
 {
@@ -45,6 +46,9 @@ class SurfaceIntegrator : public Integrator {
 public:
 	virtual u_int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const = 0;
+
+protected:
+	SurfaceIntegratorRenderingHints hints;
 };
 
 class VolumeIntegrator : public Integrator {

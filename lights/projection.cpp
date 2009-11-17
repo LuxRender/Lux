@@ -114,7 +114,10 @@ Light* ProjectionLight::CreateLight(const Transform &light2world,
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");
-	return new ProjectionLight(light2world, L, g, texname, fov);
+
+	ProjectionLight *l = new ProjectionLight(light2world, L, g, texname, fov);
+	l->hints.Init(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<ProjectionLight> r("projection");

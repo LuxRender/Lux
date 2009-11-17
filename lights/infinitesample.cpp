@@ -173,7 +173,9 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 
-	return new InfiniteAreaLightIS(light2world, L, nSamples, texmap);
+	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap);
+	l->hints.Init(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<InfiniteAreaLightIS> r("infinitesample");

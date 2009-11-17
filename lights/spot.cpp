@@ -165,8 +165,11 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet, co
 	l2w *
 	Translate(Vector(from.x, from.y, from.z)) *
 	dirToZ.GetInverse();
-	return new SpotLight(light2world, L, g, coneangle,
+
+	SpotLight *l = new SpotLight(light2world, L, g, coneangle,
 		coneangle-conedelta);
+	l->hints.Init(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<SpotLight> r("spot");

@@ -83,7 +83,9 @@ Light* DistantLight::CreateLight(const Transform &light2world,
 	Point from = paramSet.FindOnePoint("from", Point(0,0,0));
 	Point to = paramSet.FindOnePoint("to", Point(0,0,1));
 	Vector dir = from-to;
-	return new DistantLight(light2world, L, g, dir);
+	DistantLight *l = new DistantLight(light2world, L, g, dir);
+	l->hints.Init(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<DistantLight> r("distant");
