@@ -32,14 +32,10 @@ namespace lux
 class PathIntegrator : public SurfaceIntegrator {
 public:
 	// PathIntegrator types
-	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
-		SAMPLE_AUTOMATIC
-	};
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// PathIntegrator Public Methods
-	PathIntegrator(LightStrategy st, RRStrategy rst, u_int md, float cp, bool ie) {
-		lightStrategy = st;
+	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie) {
 		rrStrategy = rst;
 		maxDepth = md;
 		continueProbability = cp;
@@ -51,9 +47,9 @@ public:
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+
 private:
 	// PathIntegrator Private Data
-	LightStrategy lightStrategy;
 	RRStrategy rrStrategy;
 	u_int maxDepth;
 	float continueProbability;

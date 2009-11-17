@@ -35,22 +35,15 @@ static const u_int passThroughLimit = 10000;
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
-	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene->sampler->IsMutating() || scene->lights.size() > 5)
-			lightStrategy = SAMPLE_ONE_UNIFORM;
-		else
-			lightStrategy = SAMPLE_ALL_UNIFORM;
-	}
-
 	vector<u_int> structure;
-	structure.push_back(2);	// light position sample
-	structure.push_back(1);	// light number sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
 	structure.push_back(2);	// bsdf direction sample for path
 	structure.push_back(1);	// bsdf component sample for path
 	if (rrStrategy != RR_NONE)
 		structure.push_back(1);	// continue sample
+
+	// Allocate and request samples for light sampling
+	hints.RequestLightSamples(structure);
+
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
 void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
@@ -59,6 +52,8 @@ void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene->sampler->GetBufferType(&type);
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+
+	hints.CreateLightStrategy(scene);
 }
 
 u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
@@ -132,7 +127,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		}
 
 		SWCSpectrum Lv;
-		u_int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
+		const u_int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
 		if (!Lv.Black()) {
 			Lv *= pathThroughput;
 			L[g] += Lv;
@@ -155,49 +150,23 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 		// Evaluate BSDF at hit point
-		float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 
-		SWCSpectrum Ll;
-		switch (lightStrategy) {
-			case SAMPLE_ALL_UNIFORM:
-			{
-				const u_int nLights = scene->lights.size();
-				if (nLights == 0)
-					break;
-				const float lIncrement = 1.f / nLights;
-				float l = data[2] * lIncrement;
-				for (u_int i = 0; i < nLights; ++i, l += lIncrement) {
-					g = UniformSampleOneLight(tspack, scene, p, n,
-						wo, bsdf, sample,
-						data, &l, data + 3, data + 5, &Ll);
-					if (!Ll.Black()) {
-						Ll *= pathThroughput;
-						Ll *= lIncrement;
-						L[g] += Ll;
-						V[g] += Ll.Filter(tspack) * VContrib;
-						++nrContribs;
-					}
-				}
-				break;
-			}
-			case SAMPLE_ONE_UNIFORM:
-				g = UniformSampleOneLight(tspack, scene, p, n,
-					wo, bsdf, sample,
-					data, data + 2, data + 3, data + 5, &Ll);
-				if (!Ll.Black()) {
-					Ll *= pathThroughput;
-					L[g] += Ll;
-					V[g] += Ll.Filter(tspack) * VContrib;
-					++nrContribs;
-				}
-				break;
-			default:
-				Ll = 0.f;
-				g = 0;
+		// Estimate direct lighting
+		if (scene->lights.size() > 0) {
+			const float *sampleData = &data[(rrStrategy == RR_NONE) ? 3 : 4];
+			// Direct lighting samples variance
+			vector<float> Vl(scene->lightGroups.size(), 0.f);
+			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
+					sample, sampleData, pathThroughput, L, Vl);
+
+			const u_int nLights = scene->lights.size();
+			for (u_int i = 0; i < nLights; ++i)
+				V[i] += Vl[i] * VContrib;
 		}
 
 		// Sample BSDF to get new path direction
@@ -205,7 +174,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f;
-		if (!bsdf->Sample_f(tspack, wo, &wi, data[6], data[7], data[8], &f, &pdf, BSDF_ALL, &flags, NULL, true))
+		if (!bsdf->Sample_f(tspack, wo, &wi, data[0], data[1], data[2], &f, &pdf, BSDF_ALL, &flags, NULL, true))
 			break;
 
 		const float dp = AbsDot(wi, n) / pdf;
@@ -214,12 +183,12 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(tspack) * dp);
-				if (q < data[9])
+				if (q < data[3])
 					break;
 				// increase path contribution
 				pathThroughput /= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[9])
+				if (continueProbability < data[3])
 					break;
 				// increase path contribution
 				pathThroughput /= continueProbability;
@@ -256,17 +225,6 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
 	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for plain RR (0.0-1.0)
-	LightStrategy estrategy;
-	string st = params.FindOneString("strategy", "auto");
-	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
-	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
-	else {
-		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		estrategy = SAMPLE_AUTOMATIC;
-	}
 	RRStrategy rstrategy;
 	string rst = params.FindOneString("rrstrategy", "efficiency");
 	if (rst == "efficiency") rstrategy = RR_EFFICIENCY;
@@ -274,12 +232,18 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	else if (rst == "none") rstrategy = RR_NONE;
 	else {
 		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficiency\".";
+		ss<<"Strategy  '"<<rst<<"' for russian roulette path termination unknown. Using \"efficiency\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		rstrategy = RR_EFFICIENCY;
 	}
 	bool include_environment = params.FindOneBool("includeenvironment", true);
-	return new PathIntegrator(estrategy, rstrategy, max(maxDepth, 0), RRcontinueProb, include_environment);
+
+	PathIntegrator *pi = new PathIntegrator(rstrategy,
+			max(maxDepth, 0), RRcontinueProb, include_environment);
+	// Initialize the rendering hints
+	pi->hints.Init(params);
+
+	return pi;
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<PathIntegrator> r("path");
