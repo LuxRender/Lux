@@ -32,7 +32,7 @@ namespace lux
 static const unsigned int illumrgb2spect_bins  = 32;
 static const float illumrgb2spect_start = 380.f;
 static const float illumrgb2spect_end   = 720.f;
-static const float illumrgb2spect_scale = 0.86445f;
+static const float illumrgb2spect_scale = 1.f / 77722.484375f;
 
 static float illumrgb2spect_white[] =     { 1.1565232050369776e+00,   1.1567225000119139e+00,
 											1.1566203150243823e+00,   1.1555782088080084e+00,
