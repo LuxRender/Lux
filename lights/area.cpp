@@ -76,7 +76,7 @@ AreaLight::AreaLight(const Transform &light2world,
 	Le->SetIlluminant(); // Illuminant must be set before updating gain
 	const float gainFactor = power * efficacy / (area * M_PI * Le->Y() * (func ? 2.f * func->Average_f() : 1.f));
 	if (gainFactor > 0.f && !isinf(gainFactor))
-		g *= gainFactor;
+		gain *= gainFactor;
 }
 AreaLight::~AreaLight() {
 	if(func)
