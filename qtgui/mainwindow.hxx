@@ -192,9 +192,9 @@ public:
 
 	void UpdateNetworkTree();
 
-	void DialogBox(const std::string &msg, const std::string &caption = "LuxRender", QMessageBox::Icon icon = QMessageBox::Information);
-	void WarningDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
-	void ErrorDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
+	void ShowDialogBox(const std::string &msg, const std::string &caption = "LuxRender", QMessageBox::Icon icon = QMessageBox::Information);
+	void ShowWarningDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
+	void ShowErrorDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
 
 private:
 	Ui::MainWindow *ui;
