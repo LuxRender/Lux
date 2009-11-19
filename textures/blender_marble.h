@@ -187,13 +187,17 @@ template <class T> Texture<float> *BlenderMarbleTexture3D<T>::CreateFloatTexture
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderMarbleTexture3D<float>(
 			tex1,
 			tex2,
             tp.FindFloat("noisesize", 0.250f),
             ntype,
             (short)tp.FindInt("noisedepth", 2),
-            tp.FindFloat("turbulance", 5.0f),
+            turb,
             type,
             basis2,
             basis,
@@ -286,13 +290,17 @@ template <class T> Texture<SWCSpectrum> *BlenderMarbleTexture3D<T>::CreateSWCSpe
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderMarbleTexture3D<SWCSpectrum>(
 			tex1,
 			tex2,
             tp.FindFloat("noisesize", 0.250f),
             ntype,
             (short)tp.FindInt("noisedepth", 2),
-            tp.FindFloat("turbulance", 5.0f),
+            turb,
             type,
             basis2,
             basis,
