@@ -97,11 +97,15 @@ template <class T> Texture<float> *BlenderMagicTexture3D<T>::CreateFloatTexture(
 	boost::shared_ptr<Texture<float> > tex1 = tp.GetFloatTexture("tex1", 1.f);
 	boost::shared_ptr<Texture<float> > tex2 = tp.GetFloatTexture("tex2", 0.f);
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderMagicTexture3D<float>(
 			tex1,
 			tex2,
             (short)tp.FindInt("noisedepth", 2),
-			tp.FindFloat("turbulance", 5.0f),
+			turb,
             tp.FindFloat("bright", 1.0f),
             tp.FindFloat("contrast", 1.0f),
             map);
@@ -119,11 +123,15 @@ template <class T> Texture<SWCSpectrum> *BlenderMagicTexture3D<T>::CreateSWCSpec
 	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("tex2", RGBColor(0.f));
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderMagicTexture3D<SWCSpectrum>(
 			tex1,
 			tex2,
             (short)tp.FindInt("noisedepth", 2),
-			tp.FindFloat("turbulance", 5.0f),
+			turb,
             tp.FindFloat("bright", 1.0f),
             tp.FindFloat("contrast", 1.0f),
             map);

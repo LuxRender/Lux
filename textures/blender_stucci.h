@@ -164,12 +164,16 @@ template <class T> Texture<float> *BlenderStucciTexture3D<T>::CreateFloatTexture
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderStucciTexture3D<float>(
 			tex1,
 			tex2,
             tp.FindFloat("noisesize", 0.250f),
 			ntype,
-			tp.FindFloat("turbulance", 5.0f),
+			turb,
 			type,
 			basis,
             tp.FindFloat("bright", 1.0f),
@@ -246,12 +250,16 @@ template <class T> Texture<SWCSpectrum> *BlenderStucciTexture3D<T>::CreateSWCSpe
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderStucciTexture3D<SWCSpectrum>(
 			tex1,
 			tex2,
             tp.FindFloat("noisesize", 0.250f),
 			ntype,
-			tp.FindFloat("turbulance", 5.0f),
+			turb,
 			type,
 			basis,
             tp.FindFloat("bright", 1.0f),
