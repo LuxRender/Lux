@@ -66,13 +66,13 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
 	bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
-	bool w_resume_FLM, bool restart_resume_FLM, int haltspp,
+	bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	int reject_warmup, bool debugmode) :
-	Film(xres, yres, haltspp), filename(filename1), framebuffer(NULL),
+	Film(xres, yres, haltspp, halttime), filename(filename1), framebuffer(NULL),
 	filter(filt), colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1],
 	cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f),
 	writeInterval(wI), displayInterval(dI), buffersInited(false),
@@ -893,6 +893,14 @@ void FlexImageFilm::ComputeGroupScale(u_int index)
 }
 
 void FlexImageFilm::AddSampleCount(float count) {
+	if (haltTime > 0) {
+		// Check if we have met the enough rendering time condition
+		boost::xtime t;
+		boost::xtime_get(&t, boost::TIME_UTC);
+		if (t.sec - creationTime.sec > haltTime)
+			enoughSamplePerPixel = true;
+	}
+
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 		bufferGroups[i].numberOfSamples += count;
 
@@ -2091,7 +2099,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	// Debugging mode (display erratic sample values and disable rejection mechanism)
 	bool debug_mode = params.FindOneBool("debug", false);
 
-	int haltspp = params.FindOneInt("haltspp", -1);
+	const int haltspp = params.FindOneInt("haltspp", -1);
+	const int halttime = params.FindOneInt("halttime", -1);
 
 	// Color space primaries and white point
 	// default is SMPTE
@@ -2136,7 +2145,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		clampMethod, w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 
-		w_resume_FLM, restart_resume_FLM, haltspp,
+		w_resume_FLM, restart_resume_FLM, haltspp, halttime,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_Gamma,
 		red, green, blue, white, reject_warmup, debug_mode);

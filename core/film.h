@@ -376,14 +376,15 @@ private:
 class Film {
 public:
 	// Film Interface
-
-	Film(u_int xres, u_int yres, int haltspp) :
+	Film(u_int xres, u_int yres, int haltspp, int halttime) :
 		xResolution(xres), yResolution(yres),
 		haltSamplePerPixel(haltspp), EV(0.f),
 		scene(NULL), histogram(NULL), enoughSamplePerPixel(false) {
 		samplePerPass = xResolution * yResolution;
+		boost::xtime_get(&creationTime, boost::TIME_UTC);
 	}
 	virtual ~Film() { delete histogram; }
+
 	virtual void AddSample(Contribution *contrib) = 0;
 	virtual void AddSampleCount(float count) = 0;
 	virtual void WriteImage(ImageType type) = 0;
@@ -430,11 +431,15 @@ public:
 protected: // Put it here for better data alignment
 	// Dade - (xResolution + filter->xWidth) * (yResolution + filter->yWidth)
 	double samplePerPass;
+	// Film creation time
+	boost::xtime creationTime;
 
 public:
-	// Dade - Samplers will check this flag to know if we have enough samples per
+	// Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop
 	int haltSamplePerPixel;
+	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
+	int haltTime;
 	float EV;
 	Scene *scene;
 	Histogram *histogram;

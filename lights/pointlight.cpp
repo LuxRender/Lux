@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 // point.cpp*
-#include "point.h"
+#include "pointlight.h"
 #include "mc.h"
 #include "reflection/bxdf.h"
 #include "reflection/bxdf/lambertian.h"

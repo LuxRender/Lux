@@ -31,8 +31,9 @@ class Cone: public Shape {
 public:
 	// Cone Public Methods
 	Cone(const Transform &o2w, bool ro,
-	     float height, float rad, float tm );
+	     float height, float rad,  float rad2, float tm );
 	virtual ~Cone() { }
+
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, float *tHit,
 	               DifferentialGeometry *dg) const;
@@ -40,7 +41,7 @@ public:
 	virtual float Area() const;
 	virtual Point Sample(float u1, float u2, float u3, 
 			Normal *Ns) const {
-		float z = u1 * height;
+		float z = u1 * ((radius2 > 0.f) ? height2 : height);
 		float t = u2 * phiMax;
 		Point p = Point(cosf(t), sinf(t), z);
 		float nz = radius / sqrtf(radius*radius + height*height);
@@ -48,6 +49,7 @@ public:
 		p.x *= radius * (1 - u1);
 		p.y *= radius * (1 - u1);
 		if (reverseOrientation) *Ns *= -1.f;
+
 		return ObjectToWorld(p);
 	}
 
@@ -55,7 +57,7 @@ public:
 
 protected:
 	// Cone Data
-	float radius, height, phiMax;
+	float radius, radius2, height, height2, phiMax;
 };
 
 }//namespace lux

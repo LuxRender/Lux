@@ -144,7 +144,7 @@ void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 	const float cy = yResolution * 0.5f;
 
 	for(u_int y = 0; y < maxRes; ++y) {
-		float px = 0 - maxRes * 0.5f;
+		float px = 0.f - maxRes * 0.5f;
 		float py = y - maxRes * 0.5f;
 
 		float rx = px * c - py * s + cx;
@@ -619,7 +619,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 			if (max > 0.f) {
 				//draw bars
 				for (u_int x = 0; x < plotW; ++x) {
-					const u_int bucket = Clamp(x * m_bucketNr / (plotW - 1U), 0U, m_bucketNr - 1);
+					const u_int bucket = Clamp(x * m_bucketNr / (plotW - 1), 0U, m_bucketNr - 1);
 					const float scale = plotH / max;
 					for (u_int ch = 0; ch < 3; ++ch) {
 						const u_int barHeight = Clamp(plotH - Round2UInt(buckets[bucket * 4 + ch] * scale), 0U, plotH);
@@ -671,7 +671,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 					u_int barHeight = Clamp(plotH - Round2UInt((buckets[bucket * 4] + buckets[bucket * 4 + 1] + buckets[bucket * 4 + 2]) * scale), 0U, plotH);
 					u_int newHeight = barHeight;
 					for (u_int ch = 0; ch < 3; ++ch) {
-						newHeight += buckets[bucket * 4 + ch] * scale + 0.5f;
+						newHeight += Floor2UInt(buckets[bucket * 4 + ch] * scale + 0.5f);
 						for (u_int y = barHeight; y < newHeight; ++y)
 							outPixels[PIXELIDX(x + borderW, y + borderW, canvasW) + ch] = 255;
 						barHeight = newHeight;
