@@ -751,8 +751,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>282</width>
-                  <height>185</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -822,6 +822,12 @@
                          <property name="toolTip">
                           <string>Adjust Image length Bloom Radius Value</string>
                          </property>
+                         <property name="maximum">
+                          <double>1.000000000000000</double>
+                         </property>
+                         <property name="singleStep">
+                          <double>0.020000000000000</double>
+                         </property>
                         </widget>
                        </item>
                        <item row="1" column="1" colspan="3">
@@ -854,6 +860,12 @@
                          </property>
                          <property name="toolTip">
                           <string>Adjust Bloom amount Value</string>
+                         </property>
+                         <property name="maximum">
+                          <double>1.000000000000000</double>
+                         </property>
+                         <property name="singleStep">
+                          <double>0.020000000000000</double>
                          </property>
                         </widget>
                        </item>
@@ -1326,8 +1338,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>277</width>
-                  <height>196</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1780,8 +1792,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>94</width>
-                  <height>34</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -1848,8 +1860,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>251</width>
-                  <height>34</height>
+                  <width>571</width>
+                  <height>379</height>
                  </rect>
                 </property>
                 <attribute name="icon">
@@ -2618,8 +2630,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>94</width>
-                  <height>24</height>
+                  <width>571</width>
+                  <height>258</height>
                  </rect>
                 </property>
                 <attribute name="label">

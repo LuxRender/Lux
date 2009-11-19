@@ -786,7 +786,7 @@ void MainWindow::computeGlareLayer()
 void MainWindow::deleteGlareLayer()
 {
 	// Signal film to delete glare layer
-	updateParam(LUX_FILM, LUX_FILM_UPDATEGLARELAYER, 1.0f);
+	updateParam(LUX_FILM, LUX_FILM_DELETEGLARELAYER, 1.0f);
 	ui->button_glareDeleteLayer->setEnabled (false);
 	ui->slider_glareAmount->setEnabled(false);
 	ui->spinBox_glareAmount->setEnabled(false);
