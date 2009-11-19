@@ -324,7 +324,7 @@ void MainWindow::ReadSettings()
 	QSettings settings("luxrender.net", "LuxRender GUI");
 
 	settings.beginGroup("MainWindow");
-	resize(settings.value("size", QSize(1024, 768)).toSize());
+	restoreGeometry(settings.value("geometry").toByteArray());
 	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
 	settings.endGroup();
 }
@@ -334,7 +334,7 @@ void MainWindow::WriteSettings()
 	QSettings settings("luxrender.net", "LuxRender GUI");
 
 	settings.beginGroup("MainWindow");
-	settings.setValue("size", size());
+	settings.setValue("geometry", saveGeometry());
 	settings.setValue("splittersizes", ui->splitter->saveState());
 	settings.endGroup();
 }
@@ -1745,6 +1745,18 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	bool warning = false;
 	bool error = false;
 
+	bool hasSelection = ui->textEdit_log->textCursor().hasSelection();
+	int startPos, endPos;
+	
+	// Remember current selection, if any
+	if (hasSelection) {
+		startPos = ui->textEdit_log->textCursor().selectionStart();
+		endPos = ui->textEdit_log->textCursor().selectionEnd();
+	}
+	
+	// Append log message to end of document
+	ui->textEdit_log->moveCursor(QTextCursor::End);
+
 	switch(event->getSeverity()) {
 		case LUX_DEBUG:
 			ss << tr("Debug: ");
@@ -1773,12 +1785,20 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	ss << event->getCode() << "] ";
 	ss.flush();
+	
 	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	ui->textEdit_log->setTextColor(Qt::black);
 	ss << event->getMessage() << endl;
 	ui->textEdit_log->textCursor().insertText(ss.readAll());
-	ui->textEdit_log->ensureCursorVisible();
 
+	// Restore previous selection, if any
+	if (hasSelection) {
+		ui->textEdit_log->textCursor().setPosition(endPos);
+		ui->textEdit_log->textCursor().setPosition(startPos);
+	}
+
+	ui->textEdit_log->ensureCursorVisible();
+	
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
 		if (event->getSeverity() < LUX_SEVERE) {

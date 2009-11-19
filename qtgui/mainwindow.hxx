@@ -48,6 +48,7 @@
 #include <QClipboard>
 #include <QVector>
 #include <QSettings>
+#include <QTextCursor>
 
 #include "lux.h"
 #include "api.h"
