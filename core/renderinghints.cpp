@@ -192,7 +192,7 @@ u_int LightStrategyOneImportance::SampleLights(
 // Light Sampling Strategies: LightStrategyPower
 //******************************************************************************
 
-LightStrategyOnePower::LightStrategyOnePower(const Scene *scene) {
+LightStrategyOnePowerImportance::LightStrategyOnePowerImportance(const Scene *scene) {
 	// Compute light power CDF
 	u_int nLights = scene->lights.size();
 	lightPower = new float[nLights];
@@ -207,14 +207,14 @@ LightStrategyOnePower::LightStrategyOnePower(const Scene *scene) {
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 }
 
-void LightStrategyOnePower::RequestSamples(vector<u_int> &structure) const {
+void LightStrategyOnePowerImportance::RequestSamples(vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
 	structure.push_back(1);	// bsdf component sample for light
 }
 
-u_int LightStrategyOnePower::SampleLights(
+u_int LightStrategyOnePowerImportance::SampleLights(
 	const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
@@ -269,7 +269,7 @@ void SurfaceIntegratorRenderingHints::Init(const ParamSet &params) {
 	else if (st == "all") lightStrategyType = LightStrategy::SAMPLE_ALL_UNIFORM;
 	else if (st == "auto") lightStrategyType = LightStrategy::SAMPLE_AUTOMATIC;
 	else if (st == "importance") lightStrategyType = LightStrategy::SAMPLE_ONE_IMPORTANCE;
-	else if (st == "power") lightStrategyType = LightStrategy::SAMPLE_ONE_POWER;
+	else if (st == "powerimp") lightStrategyType = LightStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
 	else {
 		std::stringstream ss;
 		ss << "Strategy  '" << st << "' unknown. Using \"auto\".";
@@ -297,8 +297,8 @@ void SurfaceIntegratorRenderingHints::CreateLightStrategy(const Scene *scene) {
 		case LightStrategy::SAMPLE_ONE_IMPORTANCE:
 			lightStrategy = new LightStrategyOneImportance(scene);
 			return;
-		case LightStrategy::SAMPLE_ONE_POWER:
-			lightStrategy = new LightStrategyOnePower(scene);
+		case LightStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
+			lightStrategy = new LightStrategyOnePowerImportance(scene);
 			return;
 		default:
 			BOOST_ASSERT(false);

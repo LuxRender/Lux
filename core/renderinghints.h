@@ -55,7 +55,7 @@ public:
 	enum LightStrategyType {
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC, SAMPLE_ONE_IMPORTANCE,
-		SAMPLE_ONE_POWER
+		SAMPLE_ONE_POWER_IMPORTANCE
 	};
 
 	LightStrategy() { }
@@ -121,10 +121,10 @@ private:
 	float *lightCDF;
 };
 
-class LightStrategyOnePower : public LightStrategy {
+class LightStrategyOnePowerImportance : public LightStrategy {
 public:
-	LightStrategyOnePower(const Scene *scene);
-	~LightStrategyOnePower() {
+	LightStrategyOnePowerImportance(const Scene *scene);
+	~LightStrategyOnePowerImportance() {
 		delete lightPower;
 		delete lightCDF;
 	}
