@@ -201,9 +201,10 @@ LightStrategyOnePower::LightStrategyOnePower(const Scene *scene) {
 	lightPower = new float[nLights];
 	lightCDF = new float[nLights + 1];
 
-	// Avarge the light power
+	// Averge the light power
 	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene->lights[i]->Power(scene);
+		lightPower[i] = scene->lights[i]->GetRenderingHints().GetImportance() *
+			scene->lights[i]->Power(scene);
 
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 }
