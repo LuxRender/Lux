@@ -44,7 +44,7 @@ public:
 
 private:
 	u_int LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
-		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, u_int rayDepth) const;
+		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, float &distance, u_int rayDepth) const;
 
 	u_int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling

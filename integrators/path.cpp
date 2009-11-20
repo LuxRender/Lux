@@ -46,6 +46,7 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
+
 void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 {
 	// Prepare image buffers
@@ -83,6 +84,8 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float alpha = 1.f;
 	float distance = INFINITY;
 	u_int through = 0;
+	const float nLights = scene->lights.size();
+
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
@@ -104,7 +107,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Possibly add horizon in render & reflections
 			if (includeEnvironment || pathLength > 0) {
 				if (specularBounce) {
-					for (u_int i = 0; i < scene->lights.size(); ++i) {
+					for (u_int i = 0; i < nLights; ++i) {
 						SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
 						Le *= pathThroughput;
 						if (!Le.Black()) {
@@ -157,16 +160,19 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const Normal &n = bsdf->dgShading.nn;
 
 		// Estimate direct lighting
-		if (scene->lights.size() > 0) {
+		if (nLights > 0) {
 			const float *sampleData = &data[(rrStrategy == RR_NONE) ? 3 : 4];
+			// Direct lighting
+			vector<SWCSpectrum> Ll(scene->lightGroups.size());
 			// Direct lighting samples variance
-			vector<float> Vl(scene->lightGroups.size(), 0.f);
+			vector<float> Vl(scene->lightGroups.size());
 			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, pathThroughput, L, Vl);
+					sample, sampleData, pathThroughput, Ll, &Vl);
 
-			const u_int nLights = scene->lights.size();
-			for (u_int i = 0; i < nLights; ++i)
+			for (u_int i = 0; i < nLights; ++i) {
+				L[i] += Ll[i];
 				V[i] += Vl[i] * VContrib;
+			}
 		}
 
 		// Sample BSDF to get new path direction
@@ -220,6 +226,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 	return nrContribs;
 }
+
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	// general

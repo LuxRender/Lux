@@ -54,12 +54,16 @@ void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *sce
 
 u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
-		vector<SWCSpectrum> &L, float *alpha, u_int rayDepth) const {
+		vector<SWCSpectrum> &L, float *alpha, float &distance, u_int rayDepth) const {
 	u_int nContribs = 0;
 	Intersection isect;
 	const float time = ray.time; // save time for motion blur
+	const float nLights = scene->lights.size();
 
 	if (scene->Intersect(ray, &isect)) {
+		if (rayDepth == 0)
+			distance = ray.maxt * ray.d.Length();
+
 		// Dade - collect samples
 		const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
 
@@ -76,11 +80,9 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 		}
 
 		// Compute direct lighting
-		if (scene->lights.size() > 0) {
-			// Ignoring variance
-			vector<float> V(scene->lightGroups.size(), 0.f);
+		if (nLights > 0) {
 			nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, 1.f, L, V);
+					sample, sampleData, 1.f, L);
 		}
 
 		if (rayDepth < maxDepth) {
@@ -108,7 +110,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 				rd.ry.d = wi - dwody +
 					2 * Vector(Dot(wo, n) * dndy + dDNdy * n);
 				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
-				u_int nc = LiInternal(tspack, scene, rd, sample, Lr, alpha, rayDepth + 1);
+				u_int nc = LiInternal(tspack, scene, rd, sample, Lr, alpha, distance, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f * AbsDot(wi, n));
 					for (u_int i = 0; i < L.size(); ++i)
@@ -143,7 +145,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
 				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
 				vector<SWCSpectrum> Lt(scene->lightGroups.size(), SWCSpectrum(0.f));
-				u_int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, rayDepth + 1);
+				u_int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, distance, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f * AbsDot(wi, n));
 					for (u_int i = 0; i < L.size(); ++i)
@@ -154,15 +156,17 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 		}
 	} else {
 		// Handle ray with no intersection
-		for (u_int i = 0; i < scene->lights.size(); ++i) {
+		for (u_int i = 0; i < nLights; ++i) {
 			SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
 			if (!Le.Black()) {
 				L[scene->lights[i]->group] += Le;
 				++nContribs;
 			}
 		}
-		if (rayDepth == 0)
+		if (rayDepth == 0) {
 			*alpha = 0.f;
+			distance = INFINITY;
+		}
 	}
 
 	if (nContribs > 0) {
@@ -199,17 +203,19 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
-	u_int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, 0);
-	for (u_int i = 0; i < L.size(); ++i)
+	float distance;
+	u_int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, distance, 0);
+
+	for (u_int i = 0; i < scene->lightGroups.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,
-			XYZColor(tspack, L[i]) * rayWeight, alpha, 0.f,
-			bufferId, i);
+			XYZColor(tspack, L[i]) * rayWeight, alpha, distance,
+			0.f, bufferId, i);
 
 	return nContribs;
 }
 
 SurfaceIntegrator* DirectLightingIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
-	int maxDepth = params.FindOneInt("maxdepth", 5);
+	int maxDepth = max(params.FindOneInt("maxdepth", 5), 0);
 
 	DirectLightingIntegrator *dli = new DirectLightingIntegrator(max(maxDepth, 0));
 	// Initialize the rendering hints
