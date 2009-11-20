@@ -378,7 +378,7 @@ public:
 	// Film Interface
 	Film(u_int xres, u_int yres, int haltspp, int halttime) :
 		xResolution(xres), yResolution(yres),
-		haltSamplePerPixel(haltspp), EV(0.f),
+		haltSamplePerPixel(haltspp), haltTime(halttime), EV(0.f),
 		scene(NULL), histogram(NULL), enoughSamplePerPixel(false) {
 		samplePerPass = xResolution * yResolution;
 		boost::xtime_get(&creationTime, boost::TIME_UTC);
