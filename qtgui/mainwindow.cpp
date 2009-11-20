@@ -324,7 +324,7 @@ void MainWindow::ReadSettings()
 	QSettings settings("luxrender.net", "LuxRender GUI");
 
 	settings.beginGroup("MainWindow");
-	resize(settings.value("size", QSize(1024, 768)).toSize());
+	restoreGeometry(settings.value("geometry").toByteArray());
 	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
 	settings.endGroup();
 }
@@ -334,24 +334,24 @@ void MainWindow::WriteSettings()
 	QSettings settings("luxrender.net", "LuxRender GUI");
 
 	settings.beginGroup("MainWindow");
-	settings.setValue("size", size());
+	settings.setValue("geometry", saveGeometry());
 	settings.setValue("splittersizes", ui->splitter->saveState());
 	settings.endGroup();
 }
 
-void MainWindow::DialogBox(const std::string &msg, const std::string &caption, QMessageBox::Icon icon) {
+void MainWindow::ShowDialogBox(const std::string &msg, const std::string &caption, QMessageBox::Icon icon) {
 	QMessageBox msgBox;
 	msgBox.setIcon(icon);
 	msgBox.setText(msg.c_str());
 	msgBox.exec();
 }
 
-void MainWindow::WarningDialogBox(const std::string &msg, const std::string &caption) {
-	DialogBox(msg, caption, QMessageBox::Warning);
+void MainWindow::ShowWarningDialogBox(const std::string &msg, const std::string &caption) {
+	ShowDialogBox(msg, caption, QMessageBox::Warning);
 }
 
-void MainWindow::ErrorDialogBox(const std::string &msg, const std::string &caption) {
-	DialogBox(msg, caption, QMessageBox::Critical);
+void MainWindow::ShowErrorDialogBox(const std::string &msg, const std::string &caption) {
+	ShowDialogBox(msg, caption, QMessageBox::Critical);
 }
 
 void MainWindow::updateWidgetValue(QSlider *slider, int value)
@@ -786,7 +786,7 @@ void MainWindow::computeGlareLayer()
 void MainWindow::deleteGlareLayer()
 {
 	// Signal film to delete glare layer
-	updateParam(LUX_FILM, LUX_FILM_UPDATEGLARELAYER, 1.0f);
+	updateParam(LUX_FILM, LUX_FILM_DELETEGLARELAYER, 1.0f);
 	ui->button_glareDeleteLayer->setEnabled (false);
 	ui->slider_glareAmount->setEnabled(false);
 	ui->spinBox_glareAmount->setEnabled(false);
@@ -1686,7 +1686,7 @@ bool MainWindow::event (QEvent *event)
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-		ErrorDialogBox("FLM load error.\nSee log for details.");
+		ShowErrorDialogBox("FLM load error.\nSee log for details.");
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
 			delete m_flmloadThread;
@@ -1698,7 +1698,7 @@ bool MainWindow::event (QEvent *event)
 	else if (eventtype == EVT_LUX_FINISHED) {
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
-			DialogBox("Rendering is finished.");
+			ShowDialogBox("Rendering is finished.");
 			changeRenderState(FINISHED);
 			// Stop timers and update output one last time.
 			m_renderTimer->stop();
@@ -1745,6 +1745,18 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	bool warning = false;
 	bool error = false;
 
+	bool hasSelection = ui->textEdit_log->textCursor().hasSelection();
+	int startPos, endPos;
+	
+	// Remember current selection, if any
+	if (hasSelection) {
+		startPos = ui->textEdit_log->textCursor().selectionStart();
+		endPos = ui->textEdit_log->textCursor().selectionEnd();
+	}
+	
+	// Append log message to end of document
+	ui->textEdit_log->moveCursor(QTextCursor::End);
+
 	switch(event->getSeverity()) {
 		case LUX_DEBUG:
 			ss << tr("Debug: ");
@@ -1773,18 +1785,26 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	ss << event->getCode() << "] ";
 	ss.flush();
+	
 	ui->textEdit_log->textCursor().insertText(ss.readAll());
 	ui->textEdit_log->setTextColor(Qt::black);
 	ss << event->getMessage() << endl;
 	ui->textEdit_log->textCursor().insertText(ss.readAll());
-	ui->textEdit_log->ensureCursorVisible();
 
+	// Restore previous selection, if any
+	if (hasSelection) {
+		ui->textEdit_log->textCursor().setPosition(endPos);
+		ui->textEdit_log->textCursor().setPosition(startPos);
+	}
+
+	ui->textEdit_log->ensureCursorVisible();
+	
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
 		if (event->getSeverity() < LUX_SEVERE) {
-			WarningDialogBox("There was an abnormal condition reported. Please, check the Log tab for more information.");
+			ShowWarningDialogBox("There was an abnormal condition reported. Please, check the Log tab for more information.");
 		} else {
-			ErrorDialogBox("There was severe error reported. Please, check the Log tab for more information.");
+			ShowErrorDialogBox("There was severe error reported. Please, check the Log tab for more information.");
 		}
 	}
 }

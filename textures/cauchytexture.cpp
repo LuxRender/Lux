@@ -20,39 +20,25 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <boost/program_options.hpp>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <QtGui/QApplication>
-#include <QTranslator>
-
-#include "lux.h"
-#include "api.h"
-#include "error.h"
-#include "osfunc.h"
-
-#include "luxapp.hxx"
-#include "mainwindow.hxx"
+// cauchytexture.cpp*
+#include "cauchytexture.h"
+#include "dynload.h"
 
 using namespace lux;
 
-int main(int argc, char *argv[])
+// CauchyTexture Method Definitions
+Texture<ConcreteFresnel> *CauchyTexture::CreateFresnelTexture(const Transform &tex2world,
+	const TextureParams &tp)
 {
-	lux::LuxGuiApp application(argc, argv);
-	
-/*	QString locale = QLocale::system().name();
-
-	QTranslator translator;
-	if (translator.load(QString("luxrender_") + locale))
-		application.installTranslator(&translator);
-*/	
-	application.init();
-	
-	if (application.mainwin != NULL)
-		return application.exec();
+	const float cauchyb = tp.FindFloat("cauchyb", 0.f);
+	const float index = tp.FindFloat("index", -1.f);
+	float cauchya;
+	if (index > 0.f)
+		cauchya = tp.FindFloat("cauchya", index - cauchyb * 1e6f /
+			(WAVELENGTH_END * WAVELENGTH_START));
 	else
-		return 0;
+		cauchya = tp.FindFloat("cauchya", 1.5f);
+	return new CauchyTexture(cauchya, cauchyb);
 }
 
+static DynamicLoader::RegisterFresnelTexture<CauchyTexture> r("cauchy");

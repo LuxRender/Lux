@@ -20,39 +20,35 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <boost/program_options.hpp>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <QtGui/QApplication>
-#include <QTranslator>
-
+// cauchytexture.h*
 #include "lux.h"
-#include "api.h"
-#include "error.h"
-#include "osfunc.h"
+#include "texture.h"
+#include "fresneldielectric.h"
+#include "paramset.h"
 
-#include "luxapp.hxx"
-#include "mainwindow.hxx"
-
-using namespace lux;
-
-int main(int argc, char *argv[])
+namespace lux
 {
-	lux::LuxGuiApp application(argc, argv);
-	
-/*	QString locale = QLocale::system().name();
 
-	QTranslator translator;
-	if (translator.load(QString("luxrender_") + locale))
-		application.installTranslator(&translator);
-*/	
-	application.init();
-	
-	if (application.mainwin != NULL)
-		return application.exec();
-	else
-		return 0;
-}
+// CauchyTexture Declarations
+class CauchyTexture : public Texture<ConcreteFresnel> {
+public:
+	// ConstantTexture Public Methods
+	CauchyTexture(float cauchya, float cauchyb) :
+		fresnel(1.f, cauchya, cauchyb),
+		index(cauchya + cauchyb * 1e6f /
+		(WAVELENGTH_END * WAVELENGTH_START)) { }
+	virtual ~CauchyTexture() { }
+	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		return ConcreteFresnel(&fresnel);
+	}
+	virtual float Y() const { return index; }
+
+	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	FresnelDielectric fresnel;
+	float index;
+};
+
+}//namespace lux
 

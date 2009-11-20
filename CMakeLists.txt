@@ -594,9 +594,13 @@ SET(lux_uniform_textures_src
 	textures/lampspectrum.cpp
 	textures/regulardata.cpp
 	)
+SET(lux_fresnel_textures_src
+	textures/cauchytexture.cpp
+	)
 SET(lux_textures_src
 	${lux_uniform_textures_src}
 	${lux_blender_textures_src}
+	${lux_fresnel_textures_src}
 	textures/bilerp.cpp
 	textures/brick.cpp
 	textures/checkerboard.cpp
@@ -659,6 +663,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/spds
 	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
 	${CMAKE_SOURCE_DIR}
+	${CMAKE_BINARY_DIR}
 	)
 
 SET( LUXQTGUI_SRCS

@@ -185,12 +185,16 @@ template <class T> Texture<float> *BlenderWoodTexture3D<T>::CreateFloatTexture(
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderWoodTexture3D<float>(
 			tex1,
 			tex2,
             tp.FindFloat("noisesize", 0.250f),
             ntype,
-            tp.FindFloat("turbulance", 5.0f),
+            turb,
             type,
             basis2,
             basis,
@@ -285,12 +289,16 @@ template <class T> Texture<SWCSpectrum> *BlenderWoodTexture3D<T>::CreateSWCSpect
         luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
     }
 
+	// For compatibility with a typo in an old version
+	float turb = tp.FindFloat("turbulance", 5.0f);
+	turb = tp.FindFloat("turbulence", turb);
+
     return new BlenderWoodTexture3D<SWCSpectrum>(
 			tex1,
 			tex2,
             tp.FindFloat("noisesize", 0.250f),
             ntype,
-            tp.FindFloat("turbulance", 5.0f),
+            turb,
             type,
             basis2,
             basis,
