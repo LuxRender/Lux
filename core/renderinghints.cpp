@@ -141,7 +141,7 @@ LightStrategyOneImportance::LightStrategyOneImportance(const Scene *scene) {
 	lightCDF = new float[nLights + 1];
 
 	for (u_int i = 0; i < nLights; ++i)
-		lightImportance[i] = scene->lights[i]->GetRenderingHints().GetImportance();
+		lightImportance[i] = scene->lights[i]->GetRenderingHints()->GetImportance();
 
 	ComputeStep1dCDF(lightImportance, nLights, &totalImportance, lightCDF);
 }
@@ -199,9 +199,10 @@ LightStrategyOnePower::LightStrategyOnePower(const Scene *scene) {
 	lightCDF = new float[nLights + 1];
 
 	// Averge the light power
-	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene->lights[i]->GetRenderingHints().GetImportance() *
-			scene->lights[i]->Power(scene);
+	for (u_int i = 0; i < nLights; ++i) {
+		const Light *l = scene->lights[i];
+		lightPower[i] = l->GetRenderingHints()->GetImportance() * l->Power(scene);
+	}
 
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 }

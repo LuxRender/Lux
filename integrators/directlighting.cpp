@@ -81,8 +81,13 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 
 		// Compute direct lighting
 		if (nLights > 0) {
+			const u_int lightGroupCount = scene->lightGroups.size();
+			vector<SWCSpectrum> Ld(lightGroupCount);
 			nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, 1.f, L);
+					sample, sampleData, 1.f, Ld);
+
+			for (u_int i = 0; i < lightGroupCount; ++i)
+				L[i] += Ld[i];
 		}
 
 		if (rayDepth < maxDepth) {
@@ -215,7 +220,7 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 }
 
 SurfaceIntegrator* DirectLightingIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
-	int maxDepth = max(params.FindOneInt("maxdepth", 5), 0);
+	int maxDepth = params.FindOneInt("maxdepth", 5);
 
 	DirectLightingIntegrator *dli = new DirectLightingIntegrator(max(maxDepth, 0));
 	// Initialize the rendering hints

@@ -162,16 +162,17 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Estimate direct lighting
 		if (nLights > 0) {
 			const float *sampleData = &data[(rrStrategy == RR_NONE) ? 3 : 4];
+			const u_int lightGroupCount = scene->lightGroups.size();
 			// Direct lighting
-			vector<SWCSpectrum> Ll(scene->lightGroups.size());
+			vector<SWCSpectrum> Ld(lightGroupCount);
 			// Direct lighting samples variance
-			vector<float> Vl(scene->lightGroups.size());
+			vector<float> Vd(lightGroupCount);
 			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, pathThroughput, Ll, &Vl);
+					sample, sampleData, pathThroughput, Ld, &Vd);
 
-			for (u_int i = 0; i < nLights; ++i) {
-				L[i] += Ll[i];
-				V[i] += Vl[i] * VContrib;
+			for (u_int i = 0; i < lightGroupCount; ++i) {
+				L[i] += Ld[i];
+				V[i] += Vd[i] * VContrib;
 			}
 		}
 

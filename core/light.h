@@ -86,7 +86,7 @@ public:
 		warnOnce = true;
 		return false;
 	}
-	LightRenderingHints GetRenderingHints() { return hints; }
+	const LightRenderingHints *GetRenderingHints() const { return &hints; }
 
 	void AddPortalShape(boost::shared_ptr<Primitive> shape);
 

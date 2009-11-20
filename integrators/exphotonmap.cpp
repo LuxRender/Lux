@@ -34,7 +34,7 @@
 
 using namespace lux;
 
-ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm, LightStrategy st,
+ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	u_int ndir, u_int ncaus, u_int nindir, u_int nrad, u_int nl,
 	u_int mdepth, u_int mpdepth, float mdist, bool fg, u_int gs, float ga,
 	PhotonMapRRStrategy rrstrategy, float rrcontprob, float distThreshold,
@@ -42,7 +42,6 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm, LightStrategy st,
 	bool dbgEnableCaustic, bool dbgEnableIndirect, bool dbgEnableSpecular)
 {
 	renderingMode = rm;
-	lightStrategy = st;
 
 	nDirectPhotons = ndir;
 	nCausticPhotons = ncaus;
@@ -83,24 +82,15 @@ ExPhotonIntegrator::~ExPhotonIntegrator()
 
 void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {
-	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene->lights.size() > 5)
-			lightStrategy = SAMPLE_ONE_UNIFORM;
-		else
-			lightStrategy = SAMPLE_ALL_UNIFORM;
-	}
-
 	// Dade - allocate and request samples
 	if (renderingMode == RM_DIRECTLIGHTING) {
 		vector<u_int> structure;
 
-		structure.push_back(2);	// light position sample
-		structure.push_back(1);	// light number/portal sample
-		structure.push_back(2);	// bsdf direction sample for light
-		structure.push_back(1);	// bsdf component sample for light
-
 		structure.push_back(2);	// reflection bsdf direction sample
 		structure.push_back(1);	// reflection bsdf component sample
+
+		// Allocate and request samples for light sampling
+		hints.RequestLightSamples(structure);
 
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
@@ -125,10 +115,6 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		}
 	} else if (renderingMode == RM_PATH) {
 		vector<u_int> structure;
-		structure.push_back(2);	// light position sample
-		structure.push_back(1);	// light number/portal sample
-		structure.push_back(2);	// bsdf direction sample for light
-		structure.push_back(1);	// bsdf component sample for light
 		structure.push_back(2);	// bsdf direction sample for path
 		structure.push_back(1);	// bsdf component sample for path
 		structure.push_back(2);	// bsdf direction sample for indirect light
@@ -136,6 +122,9 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 
 		if (rrStrategy != RR_NONE)
 			structure.push_back(1);	// continue sample
+
+		// Allocate and request samples for light sampling
+		hints.RequestLightSamples(structure);
 		
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 	} else
@@ -147,6 +136,8 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene->sampler->GetBufferType(&type);
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+
+	hints.CreateLightStrategy(scene);
 
 	// Create the photon maps
 	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
@@ -207,19 +198,17 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 {
 	// Compute reflected radiance with photon map
 	SWCSpectrum L(0.f);
+	// TODO
+	//u_int nContribs = 0;
+	const float nLights = scene->lights.size();
 
 	Intersection isect;
 	if (scene->Intersect(ray, &isect)) {
 		// Dade - collect samples
-		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
-		float *lightSample = &sampleData[0];
-		float *bsdfSample = &sampleData[3];
-		float *bsdfComponent = &sampleData[5];
-
-		float *reflectionSample = &sampleData[6];
-		float *reflectionComponent = &sampleData[8];
-
-		float *lightNum = &sampleData[2];
+		const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
+		const float *reflectionSample = &sampleData[0];
+		const float *reflectionComponent = &sampleData[2];
+		const float *lightSample = &sampleData[3];
 
 		Vector wo = -ray.d;
 
@@ -233,27 +222,15 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 		const Normal &ns = bsdf->dgShading.nn;
 		const Normal &ng = isect.dg.nn;
 
-		if (debugEnableDirect) {
-			// Apply direct lighting strategy
-			switch (lightStrategy) {
-				case SAMPLE_ALL_UNIFORM:
-					L += UniformSampleAllLights(tspack,
-						scene, p, ns, wo, bsdf, sample,
-						lightSample, lightNum,
-						bsdfSample, bsdfComponent);
-					break;
-				case SAMPLE_ONE_UNIFORM: {
-					SWCSpectrum Ld;
-					UniformSampleOneLight(tspack, scene, p,
-						ns, wo, bsdf, sample,
-						lightSample, lightNum,
-						bsdfSample, bsdfComponent, &Ld);
-					L += Ld;
-					break;
-				}
-				default:
-					break;
-			}
+		// Compute direct lighting
+		if (debugEnableDirect && (nLights > 0)) {
+			const u_int lightGroupCount = scene->lightGroups.size();
+			vector<SWCSpectrum> Ld(lightGroupCount);
+			hints.SampleLights(tspack, scene, p, ns, wo, bsdf,
+					sample, lightSample, 1.f, Ld);
+
+			for (u_int i = 0; i < lightGroupCount; ++i)
+				L += Ld[i];
 		}
 
 		if (debugUseRadianceMap) {
@@ -351,7 +328,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	} else {
 		// Handle ray with no intersection
 		if (specularBounce) {
-			for (u_int i = 0; i < scene->lights.size(); ++i)
+			for (u_int i = 0; i < nLights; ++i)
 				L += scene->lights[i]->Le(tspack, ray);
 		}
 
@@ -370,11 +347,13 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 	float *alpha) const
 {
 	SWCSpectrum L(0.f);
+	// TODO
+	//u_int nContribs = 0;
+	const float nLights = scene->lights.size();
 
 	// Declare common path integration variables
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.f);
-	XYZColor color;
 	bool specularBounce = true, specular = true;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
@@ -392,7 +371,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 
 				SWCSpectrum Le(0.f);
-				for (u_int i = 0; i < scene->lights.size(); ++i)
+				for (u_int i = 0; i < nLights; ++i)
 					Le += scene->lights[i]->Le(tspack, ray);
 				L += Le * pathThroughput;
 			}
@@ -426,49 +405,36 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 
 		// Dade - collect samples
 		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
-		float *lightSample = &sampleData[0];
-		float *bsdfSample = &sampleData[3];
-		float *bsdfComponent = &sampleData[5];
-		float *pathSample = &sampleData[6];
-		float *pathComponent = &sampleData[8];
-		float *indirectSample = &sampleData[9];
-		float *indirectComponent = &sampleData[11];
-
-		float *lightNum = &sampleData[2];
+		const float *pathSample = &sampleData[0];
+		const float *pathComponent = &sampleData[2];
+		const float *indirectSample = &sampleData[3];
+		const float *indirectComponent = &sampleData[5];
 
 		float *rrSample;
-		if (rrStrategy != RR_NONE)
-			rrSample = &sampleData[12];
-		else
+		float *lightSample;
+		if (rrStrategy != RR_NONE) {
+			rrSample = &sampleData[6];
+			lightSample = &sampleData[7];
+		} else {
 			rrSample = NULL;
-		
+			lightSample = &sampleData[6];
+		}
+
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 
-		// Dade - direct lighting
-		if (debugEnableDirect) {
-			switch (lightStrategy) {
-				case SAMPLE_ALL_UNIFORM:
-					currL += UniformSampleAllLights(tspack,
-						scene, p, n, wo, bsdf, sample,
-						lightSample, lightNum,
-						bsdfSample, bsdfComponent);
-					break;
-				case SAMPLE_ONE_UNIFORM: {
-					SWCSpectrum Ld;
-					UniformSampleOneLight(tspack, scene, p,
-						n, wo, bsdf, sample,
-						lightSample, lightNum,
-						bsdfSample, bsdfComponent, &Ld);
-					currL += Ld;
-					break;
-				}
-				default:
-					BOOST_ASSERT(false);
-			}
+		// Compute direct lighting
+		if (debugEnableDirect && (nLights > 0)) {
+			const u_int lightGroupCount = scene->lightGroups.size();
+			vector<SWCSpectrum> Ld(lightGroupCount);
+			hints.SampleLights(tspack, scene, p, n, wo, bsdf,
+					sample, lightSample, 1.f, Ld);
+
+			for (u_int i = 0; i < lightGroupCount; ++i)
+				L += Ld[i];
 		}
 
 		if (debugUseRadianceMap) {
@@ -580,18 +546,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 }
 
 SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
-	LightStrategy estrategy;
-	string st = params.FindOneString("strategy", "auto");
-	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
-	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
-	else {
-		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		estrategy = SAMPLE_AUTOMATIC;
-	}
-
 	int maxDepth = params.FindOneInt("maxdepth", 5);
 	int maxPhotonDepth = params.FindOneInt("maxphotondepth", 10);
 
@@ -635,7 +589,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		rstrategy = RR_NONE;
 	else {
 		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for russian roulette path termination unknown. Using \"efficiency\".";
+		ss << "Strategy  '" << rst << "' for russian roulette path termination unknown. Using \"efficiency\".";
 		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
 		rstrategy = RR_EFFICIENCY;
 	}
@@ -655,7 +609,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	bool debugEnableIndirect = params.FindOneBool("dbg_enableindirdiffuse", true);
 	bool debugEnableSpecular = params.FindOneBool("dbg_enableindirspecular", true);
 
-    return new ExPhotonIntegrator(renderingMode, estrategy,
+    ExPhotonIntegrator *epi =  new ExPhotonIntegrator(renderingMode,
 			max(nDirect, 0), max(nCaustic, 0), max(nIndirect, 0), max(nRadiance, 0),
             max(nUsed, 0), max(maxDepth, 0), max(maxPhotonDepth, 0), maxDist, finalGather, max(gatherSamples, 0), gatherAngle,
 			rstrategy, rrcontinueProb,
@@ -663,6 +617,10 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 			mapsFileName,
 			debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,
 			debugEnableIndirect, debugEnableSpecular);
+	// Initialize the rendering hints
+	epi->hints.Init(params);
+
+	return epi;
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<ExPhotonIntegrator> r("exphotonmap");
