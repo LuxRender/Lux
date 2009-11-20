@@ -55,7 +55,8 @@ public:
 	enum LightStrategyType {
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC, SAMPLE_ONE_IMPORTANCE,
-		SAMPLE_ONE_POWER_IMPORTANCE
+		SAMPLE_ONE_POWER_IMPORTANCE, SAMPLE_ALL_POWER_IMPORTANCE,
+		SAMPLE_ONE_LOG_POWER_IMPORTANCE
 	};
 
 	LightStrategy() { }
@@ -137,10 +138,31 @@ public:
 		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
 
-private:
+protected:
+	// Used by derived classes with their own constructor
+	LightStrategyOnePowerImportance() { }
+
 	float *lightPower;
 	float totalPower;
 	float *lightCDF;
+};
+
+class LightStrategyAllPowerImportance : public LightStrategyOnePowerImportance {
+public:
+	LightStrategyAllPowerImportance(const Scene *scene) :
+		LightStrategyOnePowerImportance(scene) { }
+
+	// Note: results are added to L
+	virtual u_int SampleLights(
+		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
+		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L) const;
+};
+
+class LightStrategyOneLogPowerImportance : public LightStrategyOnePowerImportance {
+public:
+	LightStrategyOneLogPowerImportance(const Scene *scene);
 };
 
 //------------------------------------------------------------------------------
