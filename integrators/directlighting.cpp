@@ -82,7 +82,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 		// Compute direct lighting
 		if (nLights > 0) {
 			const u_int lightGroupCount = scene->lightGroups.size();
-			vector<SWCSpectrum> Ld(lightGroupCount);
+			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
 					sample, sampleData, 1.f, Ld);
 
