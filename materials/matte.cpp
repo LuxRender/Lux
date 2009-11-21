@@ -46,7 +46,7 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
 	BxDF *bxdf;
-	if (sig == 0.)
+	if (sig == 0.f)
 		bxdf = ARENA_ALLOC(tspack->arena, Lambertian)(r);
 	else
 		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
