@@ -595,6 +595,7 @@ SET(lux_uniform_textures_src
 	)
 SET(lux_fresnel_textures_src
 	textures/cauchytexture.cpp
+	textures/sopratexture.cpp
 	)
 SET(lux_textures_src
 	${lux_uniform_textures_src}
