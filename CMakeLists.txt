@@ -662,7 +662,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
 	${CMAKE_SOURCE_DIR}/spds
 	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
-	${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}
 	${CMAKE_BINARY_DIR}
 	)
 
