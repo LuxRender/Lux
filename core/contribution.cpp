@@ -141,4 +141,10 @@ void ContributionPool::Delete()
 		delete CSplat[i];
 }
 
+void ContributionPool::CheckFilmWriteOuputInterval()
+{
+	boost::mutex::scoped_lock splattingAction(splattingMutex);
+	film->CheckWriteOuputInterval();
+}
+
 }

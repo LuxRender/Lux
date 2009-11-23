@@ -131,6 +131,10 @@ public:
 	void Flush();
 	void Delete();
 
+	// I have to implement this method here in order
+	// to acquire splattingMutex lock
+	void CheckFilmWriteOuputInterval();
+
 private:
 	unsigned int total;
 	vector<ContributionBuffer*> CFree; // Emptied/available buffers
