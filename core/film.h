@@ -390,6 +390,7 @@ public:
 	virtual void AddSampleCount(float count) = 0;
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void WriteFilm(const string &filename) = 0;
+	virtual void CheckWriteOuputInterval() = 0;
 	// Dade - method useful for transmitting the samples to a client
 	virtual void TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false) = 0;
 	virtual float UpdateFilm(std::basic_istream<char> &stream) = 0;

@@ -89,6 +89,7 @@ public:
 	virtual void AddSampleCount(float count);
 
 	virtual void WriteImage(ImageType type);
+	virtual void CheckWriteOuputInterval();
 
 	// GUI display methods
 	virtual void updateFrameBuffer();

@@ -545,9 +545,15 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 				// Start display update timer
 				m_renderOutput->Reload();
 				m_HistogramWindow->Update();
-				m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
-				m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
-				m_netTimer->Start(1000, wxTIMER_CONTINUOUS);
+
+				// Restart timers in case they have been stopped
+				if (!m_renderTimer->IsRunning())
+					m_renderTimer->Start(1000*luxStatistics("displayInterval"), wxTIMER_CONTINUOUS);
+				if (!m_statsTimer->IsRunning())
+					m_statsTimer->Start(1000, wxTIMER_CONTINUOUS);
+				if (!m_netTimer->IsRunning())
+					m_netTimer->Start(1000, wxTIMER_CONTINUOUS);
+
 				if(m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 					luxStart();
 				if(m_guiRenderState == STOPPED)
@@ -558,9 +564,14 @@ void LuxGui::OnMenu(wxCommandEvent& event) {
 		case ID_PAUSEITEM:
 		case ID_PAUSETOOL:
 			if(m_guiRenderState != PAUSED && m_guiRenderState != TONEMAPPING) {
-				// Stop display update timer
-				m_renderTimer->Stop();
-				m_statsTimer->Stop();
+				// We have to check if network rendering is enabled. In this case,
+				// we don't stop timer in order to save the image to the disk, etc.
+				if (luxGetServerCount() < 1) {
+					// Stop display update timer
+					m_renderTimer->Stop();
+					m_statsTimer->Stop();
+				}
+
 				if(m_guiRenderState == RENDERING)
 					luxPause();
 				ChangeRenderState(PAUSED);

@@ -52,12 +52,10 @@ static fast_mutex sampPosMutex;
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
     SignalThreads(RUN);
-    s_Timer.Start();
 }
 
 void Scene::Pause() {
     SignalThreads(PAUSE);
-    s_Timer.Stop();
 }
 
 void Scene::Exit() {
@@ -93,6 +91,10 @@ void Scene::SaveFLM( const string& filename ) {
 // Framebuffer Access for GUI
 void Scene::UpdateFramebuffer() {
     camera->film->updateFrameBuffer();
+
+	// I have to call ContributionPool method here in order
+	// to acquire splattingMutex lock
+	contribPool->CheckFilmWriteOuputInterval();
 }
 
 unsigned char* Scene::GetFramebuffer() {

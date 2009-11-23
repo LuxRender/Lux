@@ -1000,6 +1000,11 @@ void FlexImageFilm::AddSample(Contribution *contrib) {
 		}
 	}
 
+	CheckWriteOuputInterval();
+}
+
+void FlexImageFilm::CheckWriteOuputInterval()
+{
 	// Check write output interval
 	boost::xtime currentTime;
 	boost::xtime_get(&currentTime, boost::TIME_UTC);
