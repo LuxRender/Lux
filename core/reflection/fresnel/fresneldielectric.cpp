@@ -28,6 +28,7 @@
 using namespace lux;
 
 void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
+	// Compute Fresnel reflectance for dielectric
 	if (cb != 0.f && !tspack->swl->single) {
 		SWCSpectrum eta = SWCSpectrum(tspack->swl->w);
 		eta *= eta;
@@ -41,40 +42,35 @@ void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *
 		cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
 		FrDiel2(fabsf(cosi), cost, eta, f);
 	} else {
-		// Compute Fresnel reflectance for dielectric
-		cosi = Clamp(cosi, -1.f, 1.f);
 		// Compute indices of refraction for dielectric
-		bool entering = cosi > 0.;
-		float et = eta_t;
+		bool entering = cosi > 0.f;
+		float eta = eta_t;
 
 		// Handle dispersion using cauchy formula
 		if(cb != 0.f) { // We are already in single mode
 			const float w = tspack->swl->w[tspack->swl->single_w];
-			et += cb / (w * w);
+			eta += cb / (w * w);
 		}
 
 		// Compute _sint_ using Snell's law
-		const float sint = (entering ? 1.f / et : et) *
+		const float sint = (entering ? 1.f / eta : eta) *
 			sqrtf(max(0.f, 1.f - cosi * cosi));
 		// Handle total internal reflection
 		if (sint >= 1.f)
 			*f = SWCSpectrum(1.f);
 		else
-			FrDiel(fabsf(cosi), sqrtf(max(0.f, 1.f - sint * sint)),
-				1.f, et, f);
+			FrDiel2(fabsf(cosi),
+				SWCSpectrum(sqrtf(max(0.f, 1.f - sint * sint))),
+				SWCSpectrum(eta), f);
 	}
 }
 
 float FresnelDielectric::Index(const TsPack *tspack) const
 {
-	const float *w = tspack->swl->w;
-	if (tspack->swl->single)
-		return (eta_t + cb / (w[tspack->swl->single_w] * w[tspack->swl->single_w]));
-	const float i[4] = {eta_t + cb / (w[0] * w[0]),
-		eta_t + cb / (w[1] * w[1]),
-		eta_t + cb / (w[2] * w[2]),
-		eta_t + cb / (w[3] * w[3])};
-	return SWCSpectrum(i).Filter(tspack);
+	const SpectrumWavelengths *swl = tspack->swl;
+	if (swl->single)
+		return (eta_t + cb / (swl->w[swl->single_w] * swl->w[swl->single_w]));
+	return eta_t + cb / (WAVELENGTH_END * WAVELENGTH_START);
 }
 
 void FresnelDielectric::ComplexEvaluate(const TsPack *tspack,

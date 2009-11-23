@@ -20,52 +20,43 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// matte.cpp*
-#include "matte.h"
+// sopratexture.h*
+#include "lux.h"
 #include "memory.h"
-#include "bxdf.h"
-#include "lambertian.h"
-#include "orennayar.h"
 #include "texture.h"
+#include "irregular.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
-#include "dynload.h"
 
-using namespace lux;
+namespace lux
+{
 
-// Matte Method Definitions
-BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-	// Evaluate textures for _Matte_ material and allocate BRDF
-	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
-	BxDF *bxdf;
-	if (sig == 0.f)
-		bxdf = ARENA_ALLOC(tspack->arena, Lambertian)(r);
-	else
-		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+// CauchyTexture Declarations
+class SopraTexture : public Texture<ConcreteFresnel> {
+public:
+	// ConstantTexture Public Methods
+	SopraTexture(const vector<float> &wl, const vector<float> &n,
+		const vector<float> &k) :
+		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
+		index(N.Y()) { }
+	virtual ~SopraTexture() { }
+	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		// FIXME - Try to detect the best model to use
+		// FIXME - FresnelGeneral should take a float index for accurate
+		// non dispersive behaviour
+		FresnelGeneral *fresnel = ARENA_ALLOC(tspack->arena,
+			FresnelGeneral)(SWCSpectrum(tspack, N),
+			SWCSpectrum(tspack, K));
+		return ConcreteFresnel(fresnel);
+	}
+	virtual float Y() const { return index; }
 
-	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	IrregularSPD N, K;
+	float index;
+};
 
-	return bsdf;
-}
-Material* Matte::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f));
-	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
-	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-	return new Matte(Kd, sigma, bumpMap, cP);
-}
+}//namespace lux
 
-static DynamicLoader::RegisterMaterial<Matte> r("matte");
