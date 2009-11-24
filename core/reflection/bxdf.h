@@ -112,6 +112,7 @@ public:
 	// BSDF Public Data
 	const DifferentialGeometry dgShading;
 	const float eta;
+	Normal nn, ng;
 
 	// Compositing Parameters pointer
 	CompositingParams *compParams;
@@ -120,7 +121,6 @@ protected:
 	// BSDF Private Methods
 	virtual ~BSDF() { }
 	// BSDF Private Data
-	Normal nn, ng;
 	Vector sn, tn;
 };
 #define BSDF_ALLOC(TSPACK,T)  new (BSDF::Alloc((TSPACK), sizeof(T))) T

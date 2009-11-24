@@ -464,7 +464,20 @@ bool MixBSDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		wo, wi, u1, u2, u3 / weights[which], f_, pdf, flags,
 		sampledType, pdfBack, reverse))
 		return false;
-	*f_ *= weights[which];
+	// To make bump map work, we must compensate for the shading normal
+	// that can be different in the sub BSDF than in the mix. The values
+	// will always end up being multiplied by the cosine between the
+	// incoming light ray and the shading normal of the mix. By convention,
+	// the incoming light ray will be *wi if reverse and wo otherwise.
+	// Thus we divide by the cosine of the light ray and the mix shading
+	// normal and multiply by the cosine of the light ray and the sub BSDF
+	// shading normal.
+	if (reverse)
+		*f_ *= weights[which] * AbsDot(*wi, bsdfs[which]->nn) /
+			AbsDot(*wi, nn);
+	else
+		*f_ *= weights[which] * AbsDot(wo, bsdfs[which]->nn) /
+			AbsDot(wo, nn);
 	*pdf *= weights[which];
 	if (pdfBack)
 		*pdfBack *= weights[which];
@@ -472,11 +485,14 @@ bool MixBSDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		if (i == which)
 			continue;
 		BSDF *bsdf = bsdfs[i];
+		// Same trick than above for the shading normal
 		if (reverse)
-			f_->AddWeighted(weights[i],
+			f_->AddWeighted(weights[i] * AbsDot(*wi, bsdfs[i]->nn) /
+				AbsDot(*wi, nn),
 				bsdf->f(tspack, *wi, wo, flags));
 		else
-			f_->AddWeighted(weights[i],
+			f_->AddWeighted(weights[i] * AbsDot(wo, bsdfs[i]->nn) /
+				AbsDot(wo, nn),
 				bsdf->f(tspack, wo, *wi, flags));
 		*pdf += weights[i] * bsdf->Pdf(tspack, wo, *wi, flags);
 		if (pdfBack)
@@ -501,8 +517,17 @@ SWCSpectrum MixBSDF::f(const TsPack *tspack, const Vector &woW,
 {
 	SWCSpectrum ff(0.f);
 	for (int i = 0; i < nBSDFs; ++i) {
-		ff.AddWeighted(weights[i],
-			bsdfs[i]->f(tspack, woW, wiW, flags));
+		// To make bump map work, we must compensate for the shading
+		// normal that can be different in the sub BSDF than in the mix.
+		// The values will always end up being multiplied by the cosine
+		// between the incoming light ray and the shading normal of the
+		// mix. By convention, the incoming light ray should always be
+		// in woW.
+		// Thus we divide by the cosine of woW and the mix shading
+		// normal and multiply by the cosine of woW and the sub BSDF
+		// shading normal.
+		ff.AddWeighted(weights[i] * AbsDot(woW, bsdfs[i]->nn) /
+			AbsDot(woW, nn), bsdfs[i]->f(tspack, woW, wiW, flags));
 	}
 	return ff / totalWeight;
 }
