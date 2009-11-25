@@ -37,10 +37,8 @@ public:
 		short type) : mapping(tex2world) {
 		// Apply texture specified transformation option for 3D mapping
 		mapping.Apply3DTextureMappingOptions(tp);
-		boost::shared_ptr<Texture<float> > tex1 =
-			tp.GetFloatTexture("tex1", 0.f);
-		boost::shared_ptr<Texture<float> > tex2 =
-			tp.GetFloatTexture("tex2", 1.f);
+		tex1 = tp.GetFloatTexture("tex1", 0.f);
+		tex2 = tp.GetFloatTexture("tex2", 1.f);
 		tex.type = type;
 		tex.bright = tp.FindFloat("bright", 1.0f),
 		tex.contrast = tp.FindFloat("contrast", 1.0f),
