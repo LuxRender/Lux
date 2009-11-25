@@ -26,5 +26,4 @@
 using namespace lux;
 using namespace blender;
 
-static DynamicLoader::RegisterFloatTexture<BlenderVoronoiTexture3D<float> > r1("blender_voronoi");
-static DynamicLoader::RegisterSWCSpectrumTexture<BlenderVoronoiTexture3D<SWCSpectrum> > r2("blender_voronoi");
+static DynamicLoader::RegisterFloatTexture<BlenderVoronoiTexture3D> r("blender_voronoi");

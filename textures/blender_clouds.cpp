@@ -26,5 +26,4 @@
 using namespace lux;
 using namespace blender;
 
-static DynamicLoader::RegisterFloatTexture<BlenderCloudsTexture3D<float> > r1("blender_clouds");
-static DynamicLoader::RegisterSWCSpectrumTexture<BlenderCloudsTexture3D<SWCSpectrum> > r2("blender_clouds");
+static DynamicLoader::RegisterFloatTexture<BlenderCloudsTexture3D> r("blender_clouds");

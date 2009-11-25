@@ -570,6 +570,7 @@ SET(lux_spds_src
 	spds/rgbrefl.cpp
 	)
 SET(lux_blender_textures_src
+	textures/blender_base.cpp
 	textures/blender_blend.cpp
 	textures/blender_clouds.cpp
 	textures/blender_distortednoise.cpp
