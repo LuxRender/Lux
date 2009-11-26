@@ -117,8 +117,6 @@ struct VisibilityTester {
 	}
 
 	void SetRay(const Point &p, const Vector & w, float time) {
-		// Dade - need to scale the RAY_EPSILON value because the ray direction
-		// is not normalized (in order to avoid light leaks: bug #295)
 		r = Ray(p, Normalize(w));
 		r.time = time;
 	}
