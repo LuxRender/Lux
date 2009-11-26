@@ -75,7 +75,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const
 		return false;
 	// Compute _t_ to intersection point
 	const float t = Dot(e2, s2) * invDivisor;
-	if (t < ray.mint || t > ray.maxt - t * RAY_EPSILON)
+	if (t < ray.mint || t > ray.maxt)
 		return false;
 
 	// Fill in _DifferentialGeometry_ from triangle hit

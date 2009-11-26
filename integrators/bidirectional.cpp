@@ -452,7 +452,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		// Prepare eye vertex for connection
 		eyeV.cosi = AbsDot(eyeV.wi, eyeV.ng);
 		eyeV.d2 = DistanceSquared(eyeV.p, lightV.p);
-		if (eyeV.d2 < SHADOW_RAY_EPSILON)
+		if (eyeV.d2 < max(MachineEpsilon::E(eyeV.p), MachineEpsilon::E(lightV.p)))
 			return false;
 		const float ecosins = AbsDot(eyeV.wi, eyeV.ns);
 		eyeV.flux = eyeV.f; // No pdf as it is a direct connection

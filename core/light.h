@@ -107,17 +107,16 @@ struct VisibilityTester {
 	void SetSegment(const Point &p1, const Point & p2, float time) {
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
-		Vector w = p2 - p1;
-		float epsilon = SHADOW_RAY_EPSILON / w.Length();
-		r = Ray(p1, w, epsilon, 1.f - epsilon);
+		const Vector w = p2 - p1;
+		const float length = w.Length();
+		const float shadowRayEpsilon = min(length,
+			max(MachineEpsilon::E(p1), MachineEpsilon::E(length)));
+		r = Ray(p1, w / length, shadowRayEpsilon, length - shadowRayEpsilon);
 		r.time = time;
 	}
 
 	void SetRay(const Point &p, const Vector & w, float time) {
-		// Dade - need to scale the RAY_EPSILON value because the ray direction
-		// is not normalized (in order to avoid light leaks: bug #295)
-		float epsilon = SHADOW_RAY_EPSILON / w.Length();
-		r = Ray(p, w, epsilon);
+		r = Ray(p, Normalize(w));
 		r.time = time;
 	}
 

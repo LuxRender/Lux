@@ -661,3 +661,6 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message) {
 	std::cerr<<"] "<<message<<std::endl;
 }
 
+extern "C" void luxSetEpsilon(const float minValue, const float maxValue) {
+	Context::luxSetEpsilon(minValue, maxValue);
+}

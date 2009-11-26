@@ -94,7 +94,7 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo) const
 void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	if (!(architectural && Dot(wo, wi) < SHADOW_RAY_EPSILON - 1.f))
+	if (!(architectural && Dot(wo, wi) < MachineEpsilon::E(1.f) - 1.f))
 		return;
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;

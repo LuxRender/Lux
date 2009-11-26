@@ -228,6 +228,13 @@ void Context::coordSysTransform(const string &n) {
 	if (namedCoordinateSystems.find(n) != namedCoordinateSystems.end())
 		curTransform = namedCoordinateSystems[n];
 }
+void Context::setEpsilon(const float minValue, const float maxValue)
+{
+	VERIFY_INITIALIZED("SetEpsilon");
+	renderFarm->send("luxSetEpsilon", minValue, maxValue);
+	MachineEpsilon::SetMin(minValue);
+	MachineEpsilon::SetMax(maxValue);
+}
 void Context::enableDebugMode() {
     VERIFY_OPTIONS("EnableDebugMode");
     // Dade - I avoid to transmit the EnableDebugMode option to the renderFarm

@@ -537,7 +537,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	if (havePortalShape) {
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
+		for (int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;

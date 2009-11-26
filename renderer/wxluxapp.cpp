@@ -36,6 +36,7 @@
 #include "api.h"
 #include "error.h"
 #include "osfunc.h"
+#include "epsilon.h"
 
 #include "wxluxapp.h"
 #include "wxluxgui.h"
@@ -86,6 +87,8 @@ bool LuxGuiApp::ProcessCommandLine() {
 			("help,h", "Produce help message")
 			("debug,d", "Enable debug mode")
 			("fixedseed,f", "Disable random seed mode")
+			("minepsilon,e", po::value< float >(), "Set minimum epsilon")
+			("maxepsilon,E", po::value< float >(), "Set maximum epsilon")
 			("verbosity,V", po::value< int >(), "Log output verbosity")
 		;
 
@@ -186,6 +189,21 @@ bool LuxGuiApp::ProcessCommandLine() {
 
 		if (vm.count("fixedseed"))
 			luxDisableRandomMode();
+
+		if (vm.count("minepsilon")) {
+			const float mine = vm["minepsilon"].as<float>();
+			if (vm.count("maxepsilon")) {
+				const float maxe = vm["maxepsilon"].as<float>();
+				luxSetEpsilon(mine, maxe);
+			} else
+				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
+		} else {
+			if (vm.count("maxepsilon")) {
+				const float maxe = vm["maxepsilon"].as<float>();
+				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
+			} else
+				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
+		}
 
 		int serverInterval;
 		if(vm.count("serverinterval")) {

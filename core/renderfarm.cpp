@@ -376,6 +376,14 @@ void RenderFarm::send(const std::string &command, const std::string &name) {
 	}
 }
 
+void RenderFarm::send(const string &command, float x, float y) {
+	try {
+		netBuffer << command << std::endl << x << ' ' << y << std::endl;
+	} catch (std::exception& e) {
+		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+	}
+}
+
 void RenderFarm::send(const std::string &command, float x, float y, float z) {
 	try {
 		netBuffer << command << std::endl << x << ' ' << y << ' ' << z << std::endl;

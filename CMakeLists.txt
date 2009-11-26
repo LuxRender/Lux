@@ -410,6 +410,7 @@ SET(lux_core_src
 	core/context.cpp
 	core/contribution.cpp
 	core/dynload.cpp
+    core/epsilon.cpp
 	core/exrio.cpp
 	core/film.cpp
 	core/geometry/bbox.cpp

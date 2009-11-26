@@ -195,6 +195,9 @@ public:
     // Note - Ratow - Adding specific call to disable random seed
     static void luxDisableRandomMode() { activeContext->disableRandomMode(); }
 
+	// Set the minimum and maximum value used for epsilon
+	static void luxSetEpsilon(const float minValue, const float maxValue) { activeContext->setEpsilon(minValue, maxValue); }
+
 private:
 	static Context *activeContext;
 	string name;
@@ -305,6 +308,8 @@ private:
 
     void enableDebugMode();
     void disableRandomMode();
+
+	void setEpsilon(const float minValue, const float maxValue);
 
 	// API Local Classes
 	struct RenderOptions {

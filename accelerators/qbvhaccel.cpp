@@ -130,7 +130,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int mp, flo
 
 		// Compute the bounding box for the triangle
 		primsBboxes[i] = vPrims[i]->WorldBound();
-		primsBboxes[i].Expand(RAY_EPSILON);
+		primsBboxes[i].Expand(MachineEpsilon::E(1.f));
 		primsCentroids[i] = (primsBboxes[i].pMin +
 			primsBboxes[i].pMax) * .5f;
 

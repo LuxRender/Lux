@@ -67,7 +67,7 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, int treetype,
 		boost::shared_ptr<BVHAccelTreeNode> ptr(new BVHAccelTreeNode());
 		ptr->bbox = prims[i]->WorldBound();
 		// NOTE - Ratow - Expand bbox a little to make sure rays collide
-		ptr->bbox.Expand(RAY_EPSILON);
+		ptr->bbox.Expand(MachineEpsilon::E(ptr->bbox));
 		ptr->primitive = prims[i].get();
 		bvList.push_back(ptr);
 	}

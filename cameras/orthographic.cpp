@@ -149,7 +149,7 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point
 }
 bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
 {
-	if (Dot(wi, normal) < 1.f - SHADOW_RAY_EPSILON || distance < ClipHither || distance > ClipYon)
+	if (Dot(wi, normal) < 1.f - MachineEpsilon::E(1.f) || distance < ClipHither || distance > ClipYon)
 		return false;
 	Point ps(WorldToRasterBidir(p));
 	*x = ps.x;
@@ -167,7 +167,7 @@ BBox OrthoCamera::Bounds() const
 {
 	BBox bound(Point(0, 0, 0), Point(1, 1, 0));
 	bound = WorldToScreen.GetInverse()(bound);
-	bound.Expand(SHADOW_RAY_EPSILON);
+	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
 
