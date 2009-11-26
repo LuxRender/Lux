@@ -85,7 +85,8 @@ void Scene::UpdateFramebuffer() {
 
 	// I have to call ContributionPool method here in order
 	// to acquire splattingMutex lock
-	contribPool->CheckFilmWriteOuputInterval();
+	if (contribPool)
+		contribPool->CheckFilmWriteOuputInterval();
 }
 
 unsigned char* Scene::GetFramebuffer() {
