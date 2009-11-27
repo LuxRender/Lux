@@ -74,7 +74,7 @@ void infoThread() {
 		try {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 15;
+			xt.sec += 5;
 			boost::thread::sleep(xt);
 
 			boost::posix_time::time_duration td(0, 0,

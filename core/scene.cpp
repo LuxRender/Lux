@@ -395,14 +395,18 @@ int Scene::CreateRenderThread()
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
 
-	RenderThread *rt = new  RenderThread(renderThreads.size(),
-		CurThreadSignal, surfaceIntegrator, volumeIntegrator,
-		sampler, camera, this);
+	// Avoid to create the thread in case signal is EXIT. for instance, it
+	// can happen when the rendering is done.
+	if (CurThreadSignal != EXIT) {
+		RenderThread *rt = new  RenderThread(renderThreads.size(),
+			CurThreadSignal, surfaceIntegrator, volumeIntegrator,
+			sampler, camera, this);
 
-	renderThreads.push_back(rt);
-	rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
+		renderThreads.push_back(rt);
+		rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
 
-	return 0;
+		return 0;
+	}
 }
 
 void Scene::RemoveRenderThread()
@@ -489,6 +493,10 @@ void Scene::Render() {
 			delete renderThreads[i];
 		}
 		renderThreads.clear();
+
+		// I change the current signal to exit in order to disable the creation
+		// of new threads after this point
+		CurThreadSignal = EXIT;
 	}
 
 	// Flush the contribution pool
@@ -549,6 +557,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si,
 
 	contribPool = NULL;
 	tspack = NULL;
+
+	CurThreadSignal = PAUSE;
 }
 
 Scene::Scene(Camera *cam) {
@@ -574,6 +584,8 @@ Scene::Scene(Camera *cam) {
 
 	contribPool = NULL;
 	tspack = NULL;
+
+	CurThreadSignal = PAUSE;
 }
 
 const BBox &Scene::WorldBound() const {
