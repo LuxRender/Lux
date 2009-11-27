@@ -36,27 +36,11 @@
 #include "exrio.h"
 #include "tgaio.h"
 #include "pngio.h"
-#include "blackbodyspd.h"
 #include "osfunc.h"
 #include "dynload.h"
 
-#include <iostream>
-#include <fstream>
-
 #include <boost/thread/xtime.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
 
-using namespace boost::iostreams;
 using namespace lux;
 
 // FlexImageFilm Method Definitions
@@ -72,22 +56,12 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	float p_ContrastYwa, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	int reject_warmup, bool debugmode) :
-	Film(xres, yres, haltspp, halttime), filename(filename1), framebuffer(NULL),
-	filter(filt), colorSpace(cs_red[0], cs_red[1], cs_green[0], cs_green[1],
-	cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f),
-	writeInterval(wI), displayInterval(dI), buffersInited(false),
-	debug_mode(debugmode), premultiplyAlpha(premult),
-	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM)
+	Film(xres, yres, filt, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
+		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode), 
+	framebuffer(NULL),
+	writeInterval(wI), displayInterval(dI)
 {
-	// Compute film image extent
-	memcpy(cropWindow, crop, 4 * sizeof(float));
-	xPixelStart = Ceil2UInt(xResolution * cropWindow[0]);
-	xPixelCount = max(1U, Ceil2UInt(xResolution * cropWindow[1]) - xPixelStart);
-	yPixelStart = Ceil2UInt(yResolution * cropWindow[2]);
-	yPixelCount = max(1U, Ceil2UInt(yResolution * cropWindow[3]) - yPixelStart);
-	int xRealWidth = Floor2Int(xPixelStart + .5f + xPixelCount + filter->xWidth) - Floor2Int(xPixelStart + .5f - filter->xWidth);
-	int yRealHeight = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth) - Floor2Int(yPixelStart + .5f - filter->yWidth);
-	samplePerPass = xRealWidth * yRealHeight;
+	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
 
 	// Set Image Output parameters
 	clampMethod = cM;
@@ -110,12 +84,6 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	write_PNG_channels = cw_PNG_channels;
 	write_TGA_channels = cw_TGA_channels;
 	write_TGA_ZBuf_normalizationtype = cw_TGA_ZBuf_normalizationtype;
-
-	// Determing if we need a Zbuf buffer
-	if(write_EXR_ZBuf || write_PNG_ZBuf || write_TGA_ZBuf)
-		use_Zbuf = true;
-	else
-		use_Zbuf = false;
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
@@ -172,25 +140,6 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
-
-	// calculate reject warmup samples
-	reject_warmup_samples = (static_cast<double>(xRealWidth) * static_cast<double>(yRealHeight)) * reject_warmup;
-
-	// Precompute filter weight table
-	#define FILTER_TABLE_SIZE 16
-	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
-	float *ftp = filterTable;
-	for (u_int y = 0; y < FILTER_TABLE_SIZE; ++y) {
-		const float fy = (static_cast<float>(y) + .5f) * filter->yWidth / FILTER_TABLE_SIZE;
-		for (u_int x = 0; x < FILTER_TABLE_SIZE; ++x) {
-			const float fx = (static_cast<float>(x) + .5f) * filter->xWidth / FILTER_TABLE_SIZE;
-			*ftp++ = filter->Evaluate(fx, fy);
-		}
-	}
-
-	maxY = debug_mode ? INFINITY : 0.f;
-	warmupSamples = 0;
-	warmupComplete = debug_mode;
 }
 
 // Parameter Access functions
@@ -768,254 +717,6 @@ string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, u_in
 	return "";
 }
 
-void FlexImageFilm::GetSampleExtent(int *xstart, int *xend,
-	int *ystart, int *yend) const
-{
-	*xstart = Floor2Int(xPixelStart + .5f - filter->xWidth);
-	*xend   = Floor2Int(xPixelStart + .5f + xPixelCount + filter->xWidth);
-	*ystart = Floor2Int(yPixelStart + .5f - filter->yWidth);
-	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth);
-}
-
-void FlexImageFilm::RequestBufferGroups(const vector<string> &bg)
-{
-	for (u_int i = 0; i < bg.size(); ++i)
-		bufferGroups.push_back(BufferGroup(bg[i]));
-}
-
-u_int FlexImageFilm::RequestBuffer(BufferType type, BufferOutputConfig output,
-	const string& filePostfix)
-{
-	bufferConfigs.push_back(BufferConfig(type, output, filePostfix));
-	return bufferConfigs.size() - 1;
-}
-
-void FlexImageFilm::CreateBuffers()
-{
-	if (bufferGroups.size() == 0)
-		bufferGroups.push_back(BufferGroup("default"));
-	for (u_int i = 0; i < bufferGroups.size(); ++i)
-		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
-
-	// Allocate ZBuf buffer if needed
-	if(use_Zbuf)
-		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
-
-    // Dade - check if we have to resume a rendering and restore the buffers
-    if(writeResumeFlm && !restartResumeFlm) {
-        // Dade - check if the film file exists
-        string fname = filename+".flm";
-		std::ifstream ifs(fname.c_str(), std::ios_base::in | std::ios_base::binary);
-
-        if(ifs.good()) {
-            // Dade - read the data
-            luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
-            UpdateFilm(ifs);
-        }
-
-        ifs.close();
-    }
-}
-
-void FlexImageFilm::SetGroupName(u_int index, const string& name) 
-{
-	if( index >= bufferGroups.size())
-		return;
-	bufferGroups[index].name = name;
-}
-string FlexImageFilm::GetGroupName(u_int index) const
-{
-	if (index >= bufferGroups.size())
-		return "";
-	return bufferGroups[index].name;
-}
-void FlexImageFilm::SetGroupEnable(u_int index, bool status)
-{
-	if (index >= bufferGroups.size())
-		return;
-	bufferGroups[index].enable = status;
-}
-bool FlexImageFilm::GetGroupEnable(u_int index) const
-{
-	if (index >= bufferGroups.size())
-		return false;
-	return bufferGroups[index].enable;
-}
-void FlexImageFilm::SetGroupScale(u_int index, float value)
-{
-	if (index >= bufferGroups.size())
-		return;
-	bufferGroups[index].globalScale = value;
-	ComputeGroupScale(index);
-}
-float FlexImageFilm::GetGroupScale(u_int index) const
-{
-	if (index >= bufferGroups.size())
-		return 0.f;
-	return bufferGroups[index].globalScale;
-}
-void FlexImageFilm::SetGroupRGBScale(u_int index, const RGBColor &value)
-{
-	if (index >= bufferGroups.size())
-		return;
-	bufferGroups[index].rgbScale = value;
-	ComputeGroupScale(index);
-}
-RGBColor FlexImageFilm::GetGroupRGBScale(u_int index) const
-{
-	if (index >= bufferGroups.size())
-		return 0.f;
-	return bufferGroups[index].rgbScale;
-}
-void FlexImageFilm::SetGroupTemperature(u_int index, float value)
-{
-	if (index >= bufferGroups.size())
-		return;
-	bufferGroups[index].temperature = value;
-	ComputeGroupScale(index);
-}
-float FlexImageFilm::GetGroupTemperature(u_int index) const
-{
-	if (index >= bufferGroups.size())
-		return 0.f;
-	return bufferGroups[index].temperature;
-}
-void FlexImageFilm::ComputeGroupScale(u_int index)
-{
-	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
-	bufferGroups[index].scale =
-		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
-	if (bufferGroups[index].temperature > 0.f) {
-		XYZColor factor(BlackbodySPD(bufferGroups[index].temperature));
-		bufferGroups[index].scale *= factor / (factor.Y() * white);
-	}
-	bufferGroups[index].scale *= bufferGroups[index].globalScale;
-}
-
-void FlexImageFilm::AddSampleCount(float count) {
-	if (haltTime > 0) {
-		// Check if we have met the enough rendering time condition
-		boost::xtime t;
-		boost::xtime_get(&t, boost::TIME_UTC);
-		if (t.sec - creationTime.sec > haltTime)
-			enoughSamplePerPixel = true;
-	}
-
-	for (u_int i = 0; i < bufferGroups.size(); ++i) {
-		bufferGroups[i].numberOfSamples += count;
-
-		// Dade - check if we have enough samples per pixel. The rendering stop
-		// when one of the buffer groups has enough samples (at the moment all
-		// buffer groups have always the same samples count; in the future
-		// it could be better to stop when all buffer groups have enough samples)
-		if ((haltSamplePerPixel > 0) &&
-			(bufferGroups[i].numberOfSamples  >= haltSamplePerPixel * samplePerPass))
-			enoughSamplePerPixel = true;
-	}
-}
-
-void FlexImageFilm::AddSample(Contribution *contrib) {
-	XYZColor xyz = contrib->color;
-	const float alpha = contrib->alpha;
-	const float weight = contrib->variance;
-
-	// Issue warning if unexpected radiance value returned
-	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
-		if(debug_mode) {
-			std::stringstream ss;
-			ss << "Out of bound intensity in FlexImageFilm::AddSample: "
-			   << xyz.Y() << ", sample discarded";
-			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
-		}
-		return;
-	}
-
-	if (!(alpha >= 0.f) || isinf(alpha)) {
-		if(debug_mode) {
-			std::stringstream ss;
-			ss << "Out of bound  alpha in FlexImageFilm::AddSample: "
-			   << alpha << ", sample discarded";
-			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
-		}
-		return;
-	}
-
-	if (!(weight >= 0.f) || isinf(weight)) {
-		if(debug_mode) {
-			std::stringstream ss;
-			ss << "Out of bound  weight in FlexImageFilm::AddSample: "
-			   << weight << ", sample discarded";
-			luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
-		}
-		return;
-	}
-
-	// Reject samples higher than max Y() after warmup period
-	if (warmupComplete && xyz.Y() > maxY)
-		return;
-	else {
-	 	maxY = max(maxY, xyz.Y());
-		++warmupSamples;
-	 	if (warmupSamples >= reject_warmup_samples)
-			warmupComplete = true;
-	}
-
-	if (premultiplyAlpha)
-		xyz *= alpha;
-
-	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
-	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
-
-	// Compute sample's raster extent
-	float dImageX = contrib->imageX - 0.5f;
-	float dImageY = contrib->imageY - 0.5f;
-	int x0 = Ceil2Int (dImageX - filter->xWidth);
-	int x1 = Floor2Int(dImageX + filter->xWidth);
-	int y0 = Ceil2Int (dImageY - filter->yWidth);
-	int y1 = Floor2Int(dImageY + filter->yWidth);
-	if (x1 < x0 || y1 < y0 || x1 < 0 || y1 < 0)
-		return;
-	// Loop over filter support and add sample to pixel arrays
-	// Precompute $x$ and $y$ filter table offsets
-//	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-	int ifx[32];
-	for (int x = x0; x <= x1; ++x) {
-		float fx = fabsf((x - dImageX) *
-			filter->invXWidth * FILTER_TABLE_SIZE);
-		ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
-	}
-//	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-	int ify[32];
-	for (int y = y0; y <= y1; ++y) {
-		float fy = fabsf((y - dImageY) *
-			filter->invYWidth * FILTER_TABLE_SIZE);
-		ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
-	}
-	float filterNorm = 0.f;
-	for (int y = y0; y <= y1; ++y) {
-		for (int x = x0; x <= x1; ++x) {
-			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			filterNorm += filterTable[offset];
-		}
-	}
-	filterNorm = weight / filterNorm;
-
-	for (u_int y = static_cast<u_int>(max(y0, static_cast<int>(yPixelStart))); y <= static_cast<u_int>(min(y1, static_cast<int>(yPixelStart + yPixelCount - 1))); ++y) {
-		for (u_int x = static_cast<u_int>(max(x0, static_cast<int>(xPixelStart))); x <= static_cast<u_int>(min(x1, static_cast<int>(xPixelStart + xPixelCount - 1))); ++x) {
-			// Evaluate filter value at $(x,y)$ pixel
-			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			const float filterWt = filterTable[offset] * filterNorm;
-			// Update pixel values with filtered sample contribution
-			buffer->Add(x - xPixelStart,y - yPixelStart,
-				xyz, alpha, filterWt);
-			// Update ZBuffer values with filtered zdepth contribution
-			if(use_Zbuf && contrib->zdepth != 0.f)
-				ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib->zdepth, 1.0f);
-		}
-	}
-
-	CheckWriteOuputInterval();
-}
 
 void FlexImageFilm::CheckWriteOuputInterval()
 {
@@ -1152,6 +853,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
+					//framebuffer[4 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
+					//framebuffer[4 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
+					//framebuffer[4 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
+					//framebuffer[4 * i + 3] = static_cast<unsigned char>(Clamp(256 * alpha[i], 0.f, 255.f));
 					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
 					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
@@ -1236,7 +941,7 @@ void FlexImageFilm::createFrameBuffer()
 {
 	// allocate pixels
 	unsigned int nPix = xPixelCount * yPixelCount;
-	framebuffer = new unsigned char[3*nPix];			// TODO delete data
+	framebuffer = new unsigned char[4*nPix];			// TODO delete data
 
 	// zero it out
 	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
@@ -1257,25 +962,6 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 	return framebuffer;
 }
 
-void FlexImageFilm::WriteResumeFilm(const string &filename)
-{
-	// Dade - save the status of the film to the file
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing film status to file ") +
-			filename).c_str());
-
-    std::ofstream filestr(filename.c_str(), std::ios_base::out | std::ios_base::binary);
-	if(!filestr) {
-		std::stringstream ss;
-	 	ss << "Cannot open file '" << filename << "' for writing resume film";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
-
-		return;
-	}
-
-    TransmitFilm(filestr,false,true);
-
-    filestr.close();
-}
 
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
@@ -1334,600 +1020,6 @@ void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
 		xPixelStart, yPixelStart, zbuf);
-}
-
-/**
- * FLM format
- * ----------
- *
- * Layout:
- *
- *   HEADER
- *   magic_number                  - int   - the magic number number
- *   version_number                - int   - the version number
- *   x_resolution                  - int   - the x resolution of the buffers
- *   y_resolution                  - int   - the y resolution of the buffers
- *   #buffer_groups                - u_int - the number of lightgroups
- *   #buffer_configs               - u_int - the number of buffers per light group
- *   for i in 1:#buffer_configs
- *     buffer_type                 - int   - the type of the i'th buffer
- *   #parameters                   - u_int - the number of stored parameters
- *   for i in 1:#parameters
- *     param_type                  - int   - the type of the i'th parameter
- *     param_size                  - int   - the size of the value of the i'th parameter in bytes
- *     param_id                    - int   - the id of the i'th parameter
- *     param_index                 - int   - the index of the i'th parameter
- *     param_value                 - *     - the value of the i'th parameter
- *
- *   DATA
- *   for i in 1:#buffer_groups
- *     #samples                    - float - the number of samples in the i'th buffer group
- *     for j in 1:#buffer_configs
- *       for y in 1:y_resolution
- *         for x in 1:x_resolution
- *           X                     - float - the weighted sum of all X values added to the pixel
- *           Y                     - float - the weighted sum of all Y values added to the pixel
- *           Z                     - float - the weighted sum of all Z values added to the pixel
- *           alpha                 - float - the weighted sum of all alpha values added to the pixel
- *           weight_sum            - float - the sum of al weights of all values added to the pixel
- *     
- *
- * Remarks:
- *  - data is written as binary little-endian
- *  - data is gzipped
- *  - the version is not intended for backward/forward compatibility but just as a check
- */
-static const int FLM_MAGIC_NUMBER = 0xCEBCD816;
-static const int FLM_VERSION = 0; // should be incremented on each change to the format to allow detecting unsupported FLM data!
-enum FlmParameterType {
-	FLM_PARAMETER_TYPE_FLOAT = 0,
-	FLM_PARAMETER_TYPE_STRING = 1
-};
-
-class FlmParameter {
-public:
-	FlmParameter() {}
-	FlmParameter(FlexImageFilm *aFilm, FlmParameterType aType, luxComponentParameters aParam, u_int aIndex) {
-		type = aType;
-		id = aParam;
-		index = aIndex;
-		switch (type) {
-			case FLM_PARAMETER_TYPE_FLOAT:
-				size = 4;
-				floatValue = static_cast<float>(aFilm->GetParameterValue(aParam, aIndex));
-				break;
-			case FLM_PARAMETER_TYPE_STRING:
-				stringValue = aFilm->GetStringParameterValue(aParam, aIndex);
-				size = stringValue.size();
-				break;
-			default: {
-				std::stringstream ss;
-				ss << "Invalid parameter type (expected value in [0,1], got=" << type << ")";
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
-				break;
-			}
-		}
-	}
-
-	void Set(FlexImageFilm *aFilm) {
-		switch (type) {
-			case FLM_PARAMETER_TYPE_FLOAT:
-				aFilm->SetParameterValue(id, floatValue, index);
-				break;
-			case FLM_PARAMETER_TYPE_STRING:
-				aFilm->SetStringParameterValue(id, stringValue, index);
-				break;
-			default:
-				// ignore invalid type (already reported in constructor)
-				break;
-		}
-	}
-
-	bool Read(std::basic_istream<char> &is, bool isLittleEndian, FlexImageFilm *film ) {
-		int tmpType;
-		tmpType = osReadLittleEndianInt(isLittleEndian, is);
-		type = FlmParameterType(tmpType);
-		if (!is.good()) {
-			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-			return false;
-		}
-		size = osReadLittleEndianUInt(isLittleEndian, is);
-		if (!is.good()) {
-			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-			return false;
-		}
-		id = static_cast<luxComponentParameters>(osReadLittleEndianInt(isLittleEndian, is));
-		if (!is.good()) {
-			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-			return false;
-		}
-		index = osReadLittleEndianUInt(isLittleEndian, is);
-		if (!is.good()) {
-			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-			return false;
-		}
-		switch (type) {
-			case FLM_PARAMETER_TYPE_FLOAT:
-				if (size != 4) {
-					std::stringstream ss;
-					ss << "Invalid parameter size (expected value for float is 4, received=" << size << ")";
-					luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
-					return false;
-				}
-				floatValue = osReadLittleEndianFloat(isLittleEndian, is);
-				break;
-			case FLM_PARAMETER_TYPE_STRING: {
-				char* chars = new char[size+1];
-				is.read(chars, size);
-				chars[size] = '\0';
-				stringValue = string(chars);
-				delete[] chars;
-				break;
-			}
-			default: {
-				std::stringstream ss;
-				ss << "Invalid parameter type (expected value in [0,1], received=" << tmpType << ")";
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str() );
-				return false;
-			}
-		}
-		return true;
-	}
-	void Write(std::basic_ostream<char> &os, bool isLittleEndian) const {
-		osWriteLittleEndianInt(isLittleEndian, os, type);
-		osWriteLittleEndianUInt(isLittleEndian, os, size);
-		osWriteLittleEndianInt(isLittleEndian, os, id);
-		osWriteLittleEndianUInt(isLittleEndian, os, index);
-		switch (type) {
-			case FLM_PARAMETER_TYPE_FLOAT:
-				osWriteLittleEndianFloat(isLittleEndian, os, floatValue);
-				break;
-			case FLM_PARAMETER_TYPE_STRING:
-				os.write(stringValue.c_str(), size);
-				break;
-			default:
-				// ignore invalid type (already reported in constructor)
-				break;
-		}
-	}
-
-private:
-	FlmParameterType type;
-	u_int size;
-	luxComponentParameters id;
-	u_int index;
-		
-	float floatValue;
-	string stringValue;
-};
-
-class FlmHeader {
-public:
-	FlmHeader() {}
-	bool Read(filtering_stream<input> &in, bool isLittleEndian, FlexImageFilm *film );
-	void Write(std::basic_ostream<char> &os, bool isLittleEndian) const;
-
-	int magicNumber;
-	int versionNumber;
-	u_int xResolution;
-	u_int yResolution;
-	u_int numBufferGroups;
-	u_int numBufferConfigs;
-	vector<int> bufferTypes;
-	u_int numParams;
-	vector<FlmParameter> params;
-};
-
-bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, FlexImageFilm *film ) {
-	// Read and verify magic number and version
-	magicNumber = osReadLittleEndianInt(isLittleEndian, in);
-	if (!in.good()) {
-		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-		return false;
-	}
-	if (magicNumber != FLM_MAGIC_NUMBER) {
-		std::stringstream ss;
-		ss << "Invalid FLM magic number (expected=" << FLM_MAGIC_NUMBER 
-			<< ", received=" << magicNumber << ")";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	versionNumber = osReadLittleEndianInt(isLittleEndian, in);
-	if (!in.good()) {
-		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-		return false;
-	}
-	if (versionNumber != FLM_VERSION) {
-		std::stringstream ss;
-		ss << "Invalid FLM version (expected=" << FLM_VERSION 
-			<< ", received=" << versionNumber << ")";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	// Read and verify the buffer resolution
-	xResolution = osReadLittleEndianUInt(isLittleEndian, in);
-	yResolution = osReadLittleEndianUInt(isLittleEndian, in);
-	if (xResolution == 0 || yResolution == 0 ) {
-		std::stringstream ss;
-		ss << "Invalid resolution (expected positive resolution, received=" << xResolution << "x" << yResolution << ")";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	if (film != NULL &&
-		(xResolution != film->GetXPixelCount() ||
-		yResolution != film->GetYPixelCount())) {
-		std::stringstream ss;
-		ss << "Invalid resolution (expected=" << film->GetXPixelCount() << "x" << film->GetYPixelCount();
-		ss << ", received=" << xResolution << "x" << yResolution << ")";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	// Read and verify #buffer groups and buffer configs
-	numBufferGroups = osReadLittleEndianUInt(isLittleEndian, in);
-	if (!in.good()) {
-		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-		return false;
-	}
-	if (film != NULL && numBufferGroups != film->GetNumBufferGroups()) {
-		std::stringstream ss;
-		ss << "Invalid number of buffer groups (expected=" << film->GetNumBufferGroups() 
-			<< ", received=" << numBufferGroups << ")";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	numBufferConfigs = osReadLittleEndianUInt(isLittleEndian, in);
-	if (!in.good()) {
-		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-		return false;
-	}
-	if (film != NULL && numBufferConfigs != film->GetNumBufferConfigs()) {
-		std::stringstream ss;
-		ss << "Invalid number of buffers (expected=" << film->GetNumBufferConfigs()
-			<< ", received=" << numBufferConfigs << ")";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	for (u_int i = 0; i < numBufferConfigs; ++i) {
-		int type;
-		type = osReadLittleEndianInt(isLittleEndian, in);
-		if (!in.good()) {
-			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-			return false;
-		}
-		if (type < 0 || type >= NUM_OF_BUFFER_TYPES) {
-			std::stringstream ss;
-			ss << "Invalid buffer type for buffer " << i << "(expected number in [0," << NUM_OF_BUFFER_TYPES << "[, received=" << type << ")";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-			return false;
-		}
-		if (film != NULL && type != film->GetBufferConfig(i).type) {
-			std::stringstream ss;
-			ss << "Invalid buffer type for buffer " << i << " (expected=" << film->GetBufferConfig(i).type
-				<< ", received=" << type << ")";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-			return false;
-		}
-		bufferTypes.push_back(type);
-	}
-	// Read parameters
-	numParams = osReadLittleEndianUInt(isLittleEndian, in);
-	if (!in.good()) {
-		luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-		return false;
-	}
-	params.reserve(numParams);
-	for(u_int i = 0; i < numParams; ++i) {
-		FlmParameter param;
-		bool ok = param.Read(in, isLittleEndian, film);
-		if (!in.good()) {
-			luxError(LUX_SYSTEM, LUX_ERROR, "Error while receiving film");
-			return false;
-		}
-		if(!ok) {
-			//std::stringstream ss;
-			//ss << "Invalid parameter (id=" << param.id << ", index=" << param.index << ", value=" << param.value << ")";
-			//luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-			return false;
-		}
-		params.push_back(param);
-	}
-	return true;
-}
-
-void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
-{
-	// Write magic number and version
-	osWriteLittleEndianInt(isLittleEndian, os, magicNumber);
-	osWriteLittleEndianInt(isLittleEndian, os, versionNumber);
-	// Write buffer resolution
-	osWriteLittleEndianUInt(isLittleEndian, os, xResolution);
-	osWriteLittleEndianUInt(isLittleEndian, os, yResolution);
-	// Write #buffer groups and buffer configs for verification
-	osWriteLittleEndianUInt(isLittleEndian, os, numBufferGroups);
-	osWriteLittleEndianUInt(isLittleEndian, os, numBufferConfigs);
-	for (u_int i = 0; i < numBufferConfigs; ++i)
-		osWriteLittleEndianInt(isLittleEndian, os, bufferTypes[i]);
-	// Write parameters
-	osWriteLittleEndianUInt(isLittleEndian, os, numParams);
-	for(u_int i = 0; i < numParams; ++i) {
-		params[i].Write(os, isLittleEndian);
-	}
-}
-
-void FlexImageFilm::TransmitFilm(
-        std::basic_ostream<char> &stream,
-        bool clearBuffers,
-		bool transmitParams) 
-{
-    const bool isLittleEndian = osIsLittleEndian();
-
-    std::stringstream ss;
-    ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-    luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-
-    std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
-	// Write the header
-	FlmHeader header;
-	header.magicNumber = FLM_MAGIC_NUMBER;
-	header.versionNumber = FLM_VERSION;
-	header.xResolution = xPixelCount;
-	header.yResolution = yPixelCount;
-	header.numBufferGroups = bufferGroups.size();
-	header.numBufferConfigs = bufferConfigs.size();
-	for (u_int i = 0; i < bufferConfigs.size(); ++i)
-		header.bufferTypes.push_back(bufferConfigs[i].type);
-	// Write parameters
-	if (transmitParams) {
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_TONEMAPKERNEL, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_PRESCALE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_POSTSCALE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_BURN, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_SENSITIVITY, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_EXPOSURE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_FSTOP, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_GAMMA, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_CONTRAST_YWA, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_WHITE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_WHITE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_RED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_RED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_GREEN, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_GREEN, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_BLUE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_BLUE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_GAMMA, 0));
-
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEBLOOMLAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEBLOOMLAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMRADIUS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMWEIGHT, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_SCALE, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_AMOUNT, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEGLARELAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEGLARELAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_AMOUNT, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_RADIUS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_BLADES, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_RADIUS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_INCLUDECENTER, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_AMPLITUDE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_NBITER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SHARPNESS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ANISOTROPY, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ALPHA, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SIGMA, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_FASTAPPROX, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_GAUSSPREC, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DL, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DA, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_INTERP, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_TILE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_BTILE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_THREADS, 0));
-
-		for(u_int i = 0; i < GetNumBufferGroups(); ++i) {
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_ENABLE, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_RED, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_GREEN, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_BLUE, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_TEMPERATURE, i));
-
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_LG_NAME, i));
-		}
-
-		header.numParams = header.params.size();
-	} else {
-		header.numParams = 0;
-	}
-	header.Write(os, isLittleEndian);
-
-	// Write each buffer group
-	double totNumberOfSamples = 0.;
-	for (u_int i = 0; i < bufferGroups.size(); ++i) {
-		BufferGroup& bufferGroup = bufferGroups[i];
-		// Write number of samples
-		osWriteLittleEndianDouble(isLittleEndian, os, bufferGroup.numberOfSamples);
-
-		// Write each buffer
-		for (u_int j = 0; j < bufferConfigs.size(); ++j) {
-			Buffer* buffer = bufferGroup.getBuffer(j);
-
-			// Write pixels
-			const BlockedArray<Pixel>* pixelBuf = buffer->pixels;
-			for (u_int y = 0; y < pixelBuf->vSize(); ++y) {
-				for (u_int x = 0; x < pixelBuf->uSize(); ++x) {
-					const Pixel &pixel = (*pixelBuf)(x, y);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
-				}
-			}
-
-			if (clearBuffers) {
-				// Dade - reset the rendering buffer
-				buffer->Clear();
-			}
-		}
-
-		totNumberOfSamples += bufferGroup.numberOfSamples;
-		ss.str("");
-		ss << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
-			" (buffer config size: " << bufferConfigs.size() << ")";
-		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-
-		if (clearBuffers) {
-			// Dade - reset the rendering buffer
-			bufferGroup.numberOfSamples = 0;
-		}
-	}
-
-	if (!os.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while preparing film data for transmission");
-		return;
-	}
-
-	ss.str("");
-	ss << "Transmitted a film with " << totNumberOfSamples << " samples";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-
-	filtering_streambuf<input> in;
-	in.push(gzip_compressor(9));
-	in.push(os);
-	std::streamsize size = boost::iostreams::copy(in, stream);
-	if (!stream.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while transmitting film");
-		return;
-	}
-
-	ss.str("");
-	ss << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-}
-
-double FlexImageFilm::UpdateFilm(std::basic_istream<char> &stream) {
-	const bool isLittleEndian = osIsLittleEndian();
-
-	filtering_stream<input> in;
-	in.push(gzip_decompressor());
-	in.push(stream);
-
-	std::stringstream ss;
-	ss << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-
-	// Read header
-	FlmHeader header;
-	if (!header.Read(in, isLittleEndian, this))
-		return 0.f;
-
-	// Read buffer groups
-	vector<double> bufferGroupNumSamples(bufferGroups.size());
-	vector<BlockedArray<Pixel>*> tmpPixelArrays(bufferGroups.size() * bufferConfigs.size());
-	for (u_int i = 0; i < bufferGroups.size(); i++) {
-		double numberOfSamples;
-		numberOfSamples = osReadLittleEndianDouble(isLittleEndian, in);
-		if (!in.good())
-			break;
-		bufferGroupNumSamples[i] = numberOfSamples;
-
-		// Read buffers
-		for(u_int j = 0; j < bufferConfigs.size(); ++j) {
-			const Buffer* localBuffer = bufferGroups[i].getBuffer(j);
-			// Read pixels
-			BlockedArray<Pixel> *tmpPixelArr = new BlockedArray<Pixel>(
-				localBuffer->xPixelCount, localBuffer->yPixelCount);
-			tmpPixelArrays[i*bufferConfigs.size() + j] = tmpPixelArr;
-			for (u_int y = 0; y < tmpPixelArr->vSize(); ++y) {
-				for (u_int x = 0; x < tmpPixelArr->uSize(); ++x) {
-					Pixel &pixel = (*tmpPixelArr)(x, y);
-					pixel.L.c[0] = osReadLittleEndianFloat(isLittleEndian, in);
-					pixel.L.c[1] = osReadLittleEndianFloat(isLittleEndian, in);
-					pixel.L.c[2] = osReadLittleEndianFloat(isLittleEndian, in);
-					pixel.alpha = osReadLittleEndianFloat(isLittleEndian, in);
-					pixel.weightSum = osReadLittleEndianFloat(isLittleEndian, in);
-				}
-			}
-			if (!in.good())
-				break;
-		}
-		if (!in.good())
-			break;
-
-		ss.str("");
-		ss << "Received " << bufferGroupNumSamples[i] << " samples for buffer group " << i <<
-			" (buffer config size: " << bufferConfigs.size() << ")";
-		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-	}
-
-	// Dade - check for errors
-	double totNumberOfSamples = 0.;
-	double maxTotNumberOfSamples = 0.;
-	if (in.good()) {
-		// Update parameters
-		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
-			it->Set(this);
-
-		// Dade - add all received data
-		for (u_int i = 0; i < bufferGroups.size(); ++i) {
-			BufferGroup &currentGroup = bufferGroups[i];
-			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
-				const BlockedArray<Pixel> *receivedPixels = tmpPixelArrays[ i * bufferConfigs.size() + j ];
-				Buffer *buffer = currentGroup.getBuffer(j);
-
-				for (u_int y = 0; y < buffer->yPixelCount; ++y) {
-					for (u_int x = 0; x < buffer->xPixelCount; ++x) {
-						const Pixel &pixel = (*receivedPixels)(x, y);
-						Pixel &pixelResult = (*buffer->pixels)(x, y);
-
-						pixelResult.L.c[0] += pixel.L.c[0];
-						pixelResult.L.c[1] += pixel.L.c[1];
-						pixelResult.L.c[2] += pixel.L.c[2];
-						pixelResult.alpha += pixel.alpha;
-						pixelResult.weightSum += pixel.weightSum;
-					}
-				}
-			}
-
-			currentGroup.numberOfSamples += bufferGroupNumSamples[i];
-			// Check if we have enough samples per pixel
-			if ((haltSamplePerPixel > 0) &&
-				(currentGroup.numberOfSamples >= haltSamplePerPixel * samplePerPass))
-				enoughSamplePerPixel = true;
-			totNumberOfSamples += bufferGroupNumSamples[i];
-			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
-		}
-
-		if (scene != NULL)
-			scene->numberOfSamplesFromNetwork += maxTotNumberOfSamples;
-
-		ss.str("");
-		ss << "Received film with " << totNumberOfSamples << " samples";
-		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-	} else
-		luxError(LUX_SYSTEM, LUX_ERROR, "IO error while receiving film buffers");
-
-	// Clean up
-	for (u_int i = 0; i < tmpPixelArrays.size(); ++i)
-		delete tmpPixelArrays[i];
-
-	return maxTotNumberOfSamples;
 }
 
 void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name, float values[2]) {
@@ -2163,28 +1255,14 @@ Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
 	ParamSet dummyParams;
 	Filter *dummyFilter = MakeFilter("box", dummyParams);
 
-	// Read the FLM header
-	std::ifstream stream(flmFileName.c_str(), std::ios_base::in | std::ios_base::binary);
-	filtering_stream<input> in;
-	in.push(gzip_decompressor());
-	in.push(stream);
-	const bool isLittleEndian = osIsLittleEndian();
-	FlmHeader header;
-	bool headerOk = header.Read(in, isLittleEndian, NULL);
-	stream.close();
-	if (!headerOk)
-		return NULL;
-
 	// Create the default film
 	const string filename = flmFileName.substr(0, flmFileName.length() - 4); // remove .flm extention
 	static const bool boolTrue = true;
 	static const bool boolFalse = false;
-	const int xRes = static_cast<int>(header.xResolution);
-	const int yRes = static_cast<int>(header.yResolution);
 	ParamSet filmParams;
 	filmParams.AddString("filename", &filename );
-	filmParams.AddInt("xresolution", &xRes);
-	filmParams.AddInt("yresolution", &yRes);
+	//filmParams.AddInt("xresolution", 1);
+	//filmParams.AddInt("yresolution", 1);
 	filmParams.AddBool("write_resume_flm", &boolTrue);
 	filmParams.AddBool("restart_resume_flm", &boolFalse);
 	filmParams.AddBool("write_exr", &boolFalse);
@@ -2194,19 +1272,11 @@ Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
 	filmParams.AddBool("write_tga", &boolFalse);
 	filmParams.AddBool("write_tga_ZBuf", &boolFalse);
 	Film *film = FlexImageFilm::CreateFilm(filmParams, dummyFilter);
-	
-	// Create the buffers (also loads the FLM file)
-	for (u_int i = 0; i < header.numBufferConfigs; ++i)
-		film->RequestBuffer(BufferType(header.bufferTypes[i]), BUF_FRAMEBUFFER, "");
 
-	vector<string> bufferGroups;
-	for (u_int i = 0; i < header.numBufferGroups; ++i) {
-		std::stringstream ss;
-		ss << "lightgroup #" << (i + 1);
-		bufferGroups.push_back(ss.str());
+	if (!film->LoadResumeFilm(flmFileName)) {
+		delete film;
+		return NULL;
 	}
-	film->RequestBufferGroups(bufferGroups);
-	film->CreateBuffers();
 
 	return film;
 }
