@@ -409,6 +409,7 @@ SET(lux_core_reflection_src
 	core/reflection/bxdf/microfacet.cpp
 	core/reflection/bxdf/nulltransmission.cpp
 	core/reflection/bxdf/orennayar.cpp
+	core/reflection/bxdf/schlickbrdf.cpp
 	core/reflection/bxdf/specularreflection.cpp
 	core/reflection/bxdf/speculartransmission.cpp
 	core/reflection/fresnel/fresnelnoop.cpp
@@ -518,6 +519,7 @@ SET(lux_materials_src
 	materials/carpaint.cpp
 	materials/glass.cpp
 	materials/glossy.cpp
+	materials/glossy2.cpp
 	materials/matte.cpp
 	materials/mattetranslucent.cpp
 	materials/metal.cpp
