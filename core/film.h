@@ -27,6 +27,8 @@
 #include "color.h"
 #include "error.h"
 #include "memory.h"
+#include "filter.h"
+#include "contribution.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -376,41 +378,55 @@ private:
 class Film {
 public:
 	// Film Interface
-	Film(u_int xres, u_int yres, int haltspp, int halttime) :
-		xResolution(xres), yResolution(yres),
-		haltSamplePerPixel(haltspp), haltTime(halttime), EV(0.f),
-		scene(NULL), histogram(NULL), enoughSamplePerPixel(false) {
-		samplePerPass = xResolution * yResolution;
-		boost::xtime_get(&creationTime, boost::TIME_UTC);
+	Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
+		const string &filename1, bool premult, bool useZbuffer,
+		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
+		int reject_warmup, bool debugmode);
+
+	virtual ~Film() { 
+		delete[] filterTable;
+		delete filter;
+		if(ZBuffer)
+			delete ZBuffer;
+		delete histogram; 
 	}
-	virtual ~Film() { delete histogram; }
 
-	virtual void AddSample(Contribution *contrib) = 0;
-	virtual void AddSampleCount(float count) = 0;
+	virtual void AddSample(Contribution *contrib);
+	virtual void AddSampleCount(float count);
 	virtual void WriteImage(ImageType type) = 0;
-	virtual void WriteFilm(const string &filename) = 0;
-	virtual void CheckWriteOuputInterval() = 0;
+	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
+	virtual void CheckWriteOuputInterval() { }
 	// Dade - method useful for transmitting the samples to a client
-	virtual void TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false) = 0;
-	virtual double UpdateFilm(std::basic_istream<char> &stream) = 0;
-	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const = 0;
+	virtual void TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	virtual double UpdateFilm(std::basic_istream<char> &stream);
+	virtual void WriteResumeFilm(const string &filename);
+	virtual bool LoadResumeFilm(const string &filename);
+	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
-	virtual void RequestBufferGroups(const vector<string> &bg) = 0;
-	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix) = 0;
+	virtual void RequestBufferGroups(const vector<string> &bg);
+	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
 
-	virtual void CreateBuffers() { }
-	virtual u_int GetNumBufferConfigs() const = 0;
-	virtual const BufferConfig& GetBufferConfig(u_int index) const = 0;
-	virtual u_int GetNumBufferGroups() const = 0;
-	virtual string GetGroupName(u_int index) const = 0;
-	virtual void SetGroupEnable(u_int index, bool status) = 0;
-	virtual bool GetGroupEnable(u_int index) const = 0;
-	virtual void SetGroupScale(u_int index, float value) = 0;
-	virtual float GetGroupScale(u_int index) const = 0;
-	virtual void SetGroupRGBScale(u_int index, const RGBColor &value) = 0;
-	virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
-	virtual void SetGroupTemperature(u_int index, float value) = 0;
-	virtual float GetGroupTemperature(u_int index) const = 0;
+	virtual void CreateBuffers();
+	virtual u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
+	virtual const BufferConfig& GetBufferConfig(u_int index) const { return bufferConfigs[index]; }
+	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
+	virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
+
+	virtual void SetGroupName(u_int index, const string& name);
+	virtual string GetGroupName(u_int index) const;
+	virtual void SetGroupEnable(u_int index, bool status);
+	virtual bool GetGroupEnable(u_int index) const;
+	virtual void SetGroupScale(u_int index, float value);
+	virtual float GetGroupScale(u_int index) const;
+	virtual void SetGroupRGBScale(u_int index, const RGBColor &value);
+	virtual RGBColor GetGroupRGBScale(u_int index) const;
+	virtual void SetGroupTemperature(u_int index, float value);
+	virtual float GetGroupTemperature(u_int index) const;
+	virtual void ComputeGroupScale(u_int index);
+
+	u_int GetXPixelCount() const { return xPixelCount; }
+	u_int GetYPixelCount() const { return yPixelCount; }
+
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual int getldrDisplayInterval() = 0;
@@ -434,6 +450,31 @@ protected: // Put it here for better data alignment
 	double samplePerPass;
 	// Film creation time
 	boost::xtime creationTime;
+
+	float cropWindow[4];
+
+	Filter *filter;
+	float *filterTable;
+
+	string filename;
+
+	u_int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
+	ColorSystem colorSpace; // needed here for ComputeGroupScale()
+
+	std::vector<BufferConfig> bufferConfigs;
+	std::vector<BufferGroup> bufferGroups;
+	PerPixelNormalizedFloatBuffer *ZBuffer;
+	bool use_Zbuf;
+
+	bool debug_mode;
+	bool premultiplyAlpha;
+
+	bool warmupComplete;
+	double reject_warmup_samples;
+	double warmupSamples;
+	float maxY;
+
+	bool writeResumeFlm, restartResumeFlm;
 
 public:
 	// Samplers will check this flag to know if we have enough samples per

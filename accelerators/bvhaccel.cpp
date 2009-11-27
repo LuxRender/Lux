@@ -30,7 +30,6 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "memory.h"
-#include "epsilon.h"
 
 #include "error.h"
 

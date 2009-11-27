@@ -29,8 +29,6 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
-#include "filter.h"
-#include <boost/thread/xtime.hpp>
 
 namespace lux {
 
@@ -57,34 +55,7 @@ public:
 
 	virtual ~FlexImageFilm() {
 		delete[] framebuffer;
-		if(use_Zbuf && ZBuffer)
-			delete ZBuffer;
-		delete[] filterTable;
-		delete filter;
-	}
-
-	virtual void RequestBufferGroups(const vector<string> &bg);
-	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
-	virtual void CreateBuffers();
-	virtual u_int GetNumBufferConfigs() const { return bufferConfigs.size(); }
-	virtual const BufferConfig& GetBufferConfig(u_int index) const { return bufferConfigs[index]; }
-	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
-        virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
-	virtual void SetGroupName(u_int index, const string& name);
-	virtual string GetGroupName(u_int index) const;
-	virtual void SetGroupEnable(u_int index, bool status);
-	virtual bool GetGroupEnable(u_int index) const;
-	virtual void SetGroupScale(u_int index, float value);
-	virtual float GetGroupScale(u_int index) const;
-	virtual void SetGroupRGBScale(u_int index, const RGBColor &value);
-	virtual RGBColor GetGroupRGBScale(u_int index) const;
-	virtual void SetGroupTemperature(u_int index, float value);
-	virtual float GetGroupTemperature(u_int index) const;
-	virtual void ComputeGroupScale(u_int index);
-
-	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
-	virtual void AddSample(Contribution *contrib);
-	virtual void AddSampleCount(float count);
+	}	
 
 	virtual void WriteImage(ImageType type);
 	virtual void CheckWriteOuputInterval();
@@ -102,14 +73,6 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index);
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index);
 
-	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
-	// Dade - method useful for transmitting the samples to a client
-	virtual void TransmitFilm(std::basic_ostream<char> &stream,bool clearBuffers = true,bool transmitParams=false);
-	virtual double UpdateFilm(std::basic_istream<char> &stream);
-
-	u_int GetXPixelCount() const { return xPixelCount; }
-	u_int GetYPixelCount() const { return yPixelCount; }
-
 	static Film *CreateFilm(const ParamSet &params, Filter *filter);
 	/**
 	 * Constructs an image film that loads its data from the give FLM file. This film is already initialized with
@@ -124,25 +87,9 @@ private:
 	void WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
 	void WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
 	void WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
-	void WriteResumeFilm(const string &filename);
 
 	// FlexImageFilm Private Data
-	string filename;
-
-	u_int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
-	float cropWindow[4];
-
-	double reject_warmup_samples;
-	double warmupSamples;
-	float maxY;
-
-	std::vector<BufferConfig> bufferConfigs;
-	std::vector<BufferGroup> bufferGroups;
 	unsigned char *framebuffer;
-	PerPixelNormalizedFloatBuffer *ZBuffer;
-
-	Filter *filter;
-	float *filterTable;
 
 	float m_RGB_X_White, d_RGB_X_White;
 	float m_RGB_Y_White, d_RGB_Y_White;
@@ -153,8 +100,7 @@ private:
 	float m_RGB_X_Blue, d_RGB_X_Blue;
 	float m_RGB_Y_Blue, d_RGB_Y_Blue;
 	float m_Gamma, d_Gamma;
-	int clampMethod;
-	ColorSystem colorSpace;
+	int clampMethod;	
 
 	int m_TonemapKernel, d_TonemapKernel;
 	float m_ReinhardPreScale, d_ReinhardPreScale;
@@ -177,14 +123,9 @@ private:
 	ZBufNormalization write_TGA_ZBuf_normalizationtype;
 	OutputChannels write_TGA_channels;
 
-	bool buffersInited, warmupComplete;
-	bool use_Zbuf;
-	bool debug_mode;
-	bool premultiplyAlpha;
 	bool write_EXR, write_EXR_halftype, write_EXR_applyimaging, write_EXR_gamutclamp, write_EXR_ZBuf;
 	bool write_PNG, write_PNG_16bit, write_PNG_gamutclamp, write_PNG_ZBuf;
 	bool write_TGA,write_TGA_gamutclamp, write_TGA_ZBuf;
-	bool writeResumeFlm, restartResumeFlm;
 
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 	ChiuParams m_chiuParams, d_chiuParams;
