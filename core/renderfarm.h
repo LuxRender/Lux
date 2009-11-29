@@ -128,6 +128,8 @@ private:
 	void sendParams(const ParamSet &params);
 	void sendFile(std::string file);
 
+	// Any operation on servers must be synchronized via this mutex
+	boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
 	std::stringstream netBuffer;

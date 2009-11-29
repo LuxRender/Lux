@@ -190,21 +190,6 @@ bool LuxGuiApp::ProcessCommandLine() {
 		if (vm.count("fixedseed"))
 			luxDisableRandomMode();
 
-		if (vm.count("minepsilon")) {
-			const float mine = vm["minepsilon"].as<float>();
-			if (vm.count("maxepsilon")) {
-				const float maxe = vm["maxepsilon"].as<float>();
-				luxSetEpsilon(mine, maxe);
-			} else
-				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
-		} else {
-			if (vm.count("maxepsilon")) {
-				const float maxe = vm["maxepsilon"].as<float>();
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
-			} else
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
-		}
-
 		int serverInterval;
 		if(vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
@@ -250,6 +235,22 @@ bool LuxGuiApp::ProcessCommandLine() {
 				m_openglEnabled = false;
 				luxError(LUX_NOERROR, LUX_INFO, "GUI: OpenGL support was not compiled in - will not be used.");
 			#endif // LUX_USE_OPENGL
+		}
+
+		// Any call to Lux API must be done _after_ luxAddServer
+		if (vm.count("minepsilon")) {
+			const float mine = vm["minepsilon"].as<float>();
+			if (vm.count("maxepsilon")) {
+				const float maxe = vm["maxepsilon"].as<float>();
+				luxSetEpsilon(mine, maxe);
+			} else
+				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
+		} else {
+			if (vm.count("maxepsilon")) {
+				const float maxe = vm["maxepsilon"].as<float>();
+				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
+			} else
+				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
 		}
 
 		if(vm.count("input-file")) {

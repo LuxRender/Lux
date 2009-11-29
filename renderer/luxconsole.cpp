@@ -100,7 +100,6 @@ int main(int ac, char *av[]) {
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
-	bool useServer = false;
 	luxInit();
 
 	try {
@@ -203,6 +202,29 @@ int main(int ac, char *av[]) {
 				luxError(LUX_CONSISTENCY, LUX_WARNING, "Using random seed for server");
 		}
 
+		int serverInterval;
+		if (vm.count("serverinterval")) {
+			serverInterval = vm["serverinterval"].as<int>();
+			luxSetNetworkServerUpdateInterval(serverInterval);
+		} else
+			serverInterval = luxGetNetworkServerUpdateInterval();
+
+		if (vm.count("useserver")) {
+			std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
+
+			for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
+				luxAddServer((*i).c_str());
+
+			ss.str("");
+			ss << "Server requests interval: " << serverInterval << " secs";
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		}
+
+		int serverPort = RenderServer::DEFAULT_TCP_PORT;
+		if (vm.count("serverport"))
+			serverPort = vm["serverport"].as<int>();
+
+		// Any call to Lux API must be done _after_ luxAddServer
 		if (vm.count("minepsilon")) {
 			const float mine = vm["minepsilon"].as<float>();
 			if (vm.count("maxepsilon")) {
@@ -217,30 +239,6 @@ int main(int ac, char *av[]) {
 			} else
 				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
 		}
-
-		int serverInterval;
-		if (vm.count("serverinterval")) {
-			serverInterval = vm["serverinterval"].as<int>();
-			luxSetNetworkServerUpdateInterval(serverInterval);
-		} else
-			serverInterval = luxGetNetworkServerUpdateInterval();
-
-		if (vm.count("useserver")) {
-			std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
-
-			for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
-				luxAddServer((*i).c_str());
-
-			useServer = true;
-
-			ss.str("");
-			ss << "Server requests interval: " << serverInterval << " secs";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-		}
-
-		int serverPort = RenderServer::DEFAULT_TCP_PORT;
-		if (vm.count("serverport"))
-			serverPort = vm["serverport"].as<int>();
 
 		if (vm.count("input-file")) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();

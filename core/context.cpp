@@ -965,6 +965,10 @@ void Context::exit() {
 	
 	terminated = true;
 
+	// Rest Dynamic Epsilon values
+	MachineEpsilon::SetMin(DEFAULT_EPSILON_MIN);
+	MachineEpsilon::SetMax(DEFAULT_EPSILON_MAX);
+
 	if (!luxCurrentScene)
 		return;
 
