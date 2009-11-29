@@ -239,6 +239,14 @@ static void processCommand(void (&f)(const string &), basic_istream<char> &strea
 	f(type.c_str());
 }
 
+static void processCommand(void (&f)(float, float), basic_istream<char> &stream)
+{
+	float ax, ay;
+	stream >> ax;
+	stream >> ay;
+	f(ax, ay);
+}
+
 static void processCommand(void (&f)(float, float, float), basic_istream<char> &stream)
 {
 	float ax, ay, az;
@@ -340,7 +348,8 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 		CMD_SERVER_CONNECT = 332355398U,
 		CMD_VOID = 5381U,
 		CMD_SPACE = 177605U,
-		CMD_MOTIONINSTANCE = 4223946185U;
+		CMD_MOTIONINSTANCE = 4223946185U,
+		CMD_LUXSETEPSILON = 3945573060U;
 
 	int listenPort = serverThread->renderServer->tcpPort;
 	stringstream ss;
@@ -596,6 +605,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					}
 					break;
 				}
+				case CMD_LUXSETEPSILON:
+					processCommand(Context::luxSetEpsilon, stream);
+					break;
 				default:
 					ss.str("");
 					ss << "Unknown command '" << command << "'. Ignoring";

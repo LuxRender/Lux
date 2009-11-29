@@ -67,10 +67,10 @@ private:
 class RenderFarm {
 public:
 	RenderFarm() : serverUpdateInterval(3*60), filmUpdateThread(NULL) {}
-        ~RenderFarm() {
-            if (filmUpdateThread)
-                delete filmUpdateThread;
-        }
+	~RenderFarm() {
+		if (filmUpdateThread)
+			delete filmUpdateThread;
+	}
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	// Dade - Disconnect from all servers
@@ -125,6 +125,8 @@ private:
 	static void decodeServerName(const string &serverName, string &name, string &port);
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 
+	// Any operation on servers must be synchronized via this mutex
+	boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
 	std::stringstream netBuffer;
