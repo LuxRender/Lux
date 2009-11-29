@@ -185,6 +185,10 @@ Vector UniformSampleCone(float u1, float u2,
 	return PhaseHG(w, wp, g);
 }
 
+ // Code from "An algorithm for computing the 
+ // inverse normal cumulative distribution function"
+ // by Peter J. Acklam
+ // http://home.online.no/~pjacklam/notes/invnorm/index.html
 #define  A1  (-3.969683028665376e+01)
 #define  A2   2.209460984245205e+02
 #define  A3  (-2.759285104469687e+02)
@@ -246,6 +250,10 @@ if(( 0 < p)&&(p < 1)){
 inline float normsinvf(float p)
 {
 	return static_cast<float>(normsinv(p));
+}
+
+float NormalCDFInverse(float u) {
+	return normsinvf(u);
 }
 
 float GaussianSampleDisk(float u1)
