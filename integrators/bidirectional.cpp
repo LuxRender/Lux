@@ -267,7 +267,7 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	eyeV.dAWeight = lpdf * ltPdf * ecosi / d2;
 	if (nEye > 1)
 		eye[nEye - 2].dAWeight = epdf * eyeV.tPdf *
-				eye[nEye - 2].cosi / eye[nEye - 2].d2;
+			eye[nEye - 2].cosi / eye[nEye - 2].d2;
 	// Evaluate factors for light path weighting
 	const float lpdfR = lightV.bsdf->Pdf(tspack, lwo, lightV.wi, lightV.flags);
 	lightV.rr = min(1.f, max(lightThreshold, lf.Filter(tspack) *

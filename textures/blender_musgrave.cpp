@@ -26,5 +26,4 @@
 using namespace lux;
 using namespace blender;
 
-static DynamicLoader::RegisterFloatTexture<BlenderMusgraveTexture3D<float> > r1("blender_musgrave");
-static DynamicLoader::RegisterSWCSpectrumTexture<BlenderMusgraveTexture3D<SWCSpectrum> > r2("blender_musgrave");
+static DynamicLoader::RegisterFloatTexture<BlenderMusgraveTexture3D> r("blender_musgrave");

@@ -26,5 +26,4 @@
 using namespace lux;
 using namespace blender;
 
-static DynamicLoader::RegisterFloatTexture<BlenderMarbleTexture3D<float> > r1("blender_marble");
-static DynamicLoader::RegisterSWCSpectrumTexture<BlenderMarbleTexture3D<SWCSpectrum> > r2("blender_marble");
+static DynamicLoader::RegisterFloatTexture<BlenderMarbleTexture3D> r("blender_marble");
