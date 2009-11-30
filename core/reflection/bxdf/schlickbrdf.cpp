@@ -86,15 +86,15 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 			phi = GetPhi(u2 * u2, p * p);
 		} else if (u2 < 2.f) {
 			u2 = 2.f - u2;
-			phi = M_PI * .5f + GetPhi(u2 * u2, p * p);
+			phi = M_PI - GetPhi(u2 * u2, p * p);
 		} else if (u2 < 3.f) {
 			u2 -= 2.f;
 			phi = M_PI + GetPhi(u2 * u2, p * p);
 		} else {
 			u2 = 4.f - u2;
-			phi = M_PI * 1.5f + GetPhi(u2 * u2, p * p);
+			phi = M_PI * 2.f - GetPhi(u2 * u2, p * p);
 		}
-		if (anisotropy < 0.f)
+		if (anisotropy > 0.f)
 			phi += M_PI * .5f;
 		H = Vector(sintheta * cosf(phi), sintheta * sinf(phi), costheta);
 		if (wo.z < 0.f)
@@ -104,7 +104,8 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	}
 	if (!SameHemisphere(wo, *wi))
 		return false;
-	const float specPdf = SchlickZ(fabsf(H.z)) * SchlickA(SchlickW(H)) / (8.f * M_PI * cosWH);
+	const float specPdf = SchlickZ(fabsf(H.z)) * SchlickA(H) /
+		(8.f * cosWH);
 	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
 	if (!(*pdf > 0.f))
 		return false;
@@ -123,6 +124,7 @@ float SchlickBRDF::Pdf(const TsPack *tspack, const Vector &wo,
 	if (!SameHemisphere(wo, wi))
 		return 0.f;
 	const Vector H(Normalize(wo + wi));
-	return fabsf(wi.z) * INV_TWOPI + SchlickZ(fabsf(H.z)) * SchlickA(SchlickW(H)) / (8.f * M_PI * AbsDot(wi, H));
+	return fabsf(wi.z) * INV_TWOPI + SchlickZ(fabsf(H.z)) * SchlickA(H) /
+		(8.f * AbsDot(wi, H));
 }
 

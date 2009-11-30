@@ -42,31 +42,25 @@ public:
 		return Rs + powf(1.f - costheta, 5.f) * (SWCSpectrum(1.f) - Rs);
 	}
 	float SchlickG(float costheta) const {
-		const float k = roughness * sqrtf(2.f / M_PI);
-		return costheta / (costheta * (1.f - k) + k);
+		return costheta / (costheta * (1.f - roughness) + roughness);
 	}
 	float SchlickZ(float cosNH) const {
 		const float d = 1.f + (roughness - 1) * cosNH * cosNH;
 		return roughness / (d * d);
 	}
-	float SchlickW(const Vector &H) const {
+	float SchlickA(const Vector &H) const {
 		const float h = sqrtf(H.x * H.x + H.y * H.y);
 		if (h > 0.f) {
-			if (anisotropy > 0.f)
-				return H.x / h;
-			else
-				return H.y /h;
+			const float w = (anisotropy > 0.f ? H.x : H.y) / h;
+			const float p = 1.f - fabsf(anisotropy);
+			return sqrtf(p / (p * p + w * w * (1.f - p * p)));
 		}
-		return 0.f;
-	}
-	float SchlickA(float w) const {
-		const float p = 1.f - fabsf(anisotropy);
-		return sqrtf(p / (p * p + w * w * (1.f - p * p)));
+		return 1.f;
 	}
 	float SchlickD(float cos1, float cos2, const Vector &H) const {
 		const float G = SchlickG(cos1) * SchlickG(cos2);
 		return (1.f - G * (1.f - SchlickZ(fabsf(H.z)) *
-			SchlickA(SchlickW(H)))) / (4.f * M_PI * cos1 * cos2);
+			SchlickA(H))) / (4.f * M_PI * cos1 * cos2);
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
