@@ -191,21 +191,6 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		if (vm.count("fixedseed"))
 			luxDisableRandomMode();
 
-		if (vm.count("minepsilon")) {
-			const float mine = vm["minepsilon"].as<float>();
-			if (vm.count("maxepsilon")) {
-				const float maxe = vm["maxepsilon"].as<float>();
-				luxSetEpsilon(mine, maxe);
-			} else
-				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
-		} else {
-			if (vm.count("maxepsilon")) {
-				const float maxe = vm["maxepsilon"].as<float>();
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
-			} else
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
-		}
-
 		int serverInterval;
 		if(vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
@@ -253,6 +238,22 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			m_inputFile = QString(v[0].c_str());
 		} else {
 			m_inputFile.clear();
+		}
+
+		// Any call to Lux API must be done _after_ luxAddServer
+		if (vm.count("minepsilon")) {
+			const float mine = vm["minepsilon"].as<float>();
+			if (vm.count("maxepsilon")) {
+				const float maxe = vm["maxepsilon"].as<float>();
+				luxSetEpsilon(mine, maxe);
+			} else
+				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
+		} else {
+			if (vm.count("maxepsilon")) {
+				const float maxe = vm["maxepsilon"].as<float>();
+				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
+			} else
+				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
 		}
 
 		return true;

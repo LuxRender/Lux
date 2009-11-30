@@ -26,6 +26,7 @@
 #include "film.h"
 #include "sampling.h"
 #include "error.h"
+#include "mc.h"
 
 using namespace lux;
 
@@ -59,11 +60,22 @@ void Camera::SampleMotion(float time) {
 	WorldToCamera = CameraMotion.Sample(time);
 	CameraToWorld = WorldToCamera.GetInverse();
 }
+
 float Camera::GetTime(float u1) const {
 	if(ShutterDistribution == 0)
 		return Lerp(u1, ShutterOpen, ShutterClose);
-	else { // gaussian distribution
-			// TODO - radiance
+	else { 
+		// gaussian distribution
+		// default uses 2 standard deviations.
+		const float sigma = 2.f;
+		float x = NormalCDFInverse(u1);
+		// clamping leads to lumping at endpoints
+		// so redistribute points around the mean instead
+		if (fabsf(x) > sigma)
+			x = NormalCDFInverse(0.5f + u1 - Round2Int(u1));
+		
+		x = Clamp(x / (2.f*sigma) + 0.5f, 0.f, 1.f);
+		return Lerp(x, ShutterOpen, ShutterClose);
 	}
 
 	return 0.f;
