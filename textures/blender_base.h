@@ -61,7 +61,7 @@ public:
 
 		const float t1 = tex1->Evaluate(tspack, dg);
 		const float t2 = tex2->Evaluate(tspack, dg);
-		return Lerp(texres.tin, t1, t2);
+		return Lerp(Clamp(texres.tin, 0.f, 1.f), t1, t2);
 	}
 	virtual float Y() const { return (tex1->Y() + tex2->Y()) * .5f; }
 	virtual float Filter() const {
