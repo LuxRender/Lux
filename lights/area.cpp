@@ -41,7 +41,7 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sf(func) {}
 	virtual ~GonioAreaBxDF() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
-		*F += SWCSpectrum(tspack, sf->f(wi));
+		*F += SWCSpectrum(tspack, sf->f(wi)) * INV_PI;
 	}
 private:
 	const SampleableSphericalFunction *sf;
@@ -175,15 +175,21 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 }
 SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
-	if(func)
+	if (!(Dot(dg.nn, ray.d) < 0.f)) {
+		*pdfDirect = *pdf = 0.f;
+		return SWCSpectrum(tspack, 0.f);
+	}
+	SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
+	if(func) {
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
 			ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func));
-	else
+		Ll *= (*bsdf)->f(tspack, Vector(dg.nn), -ray.d);
+	} else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
 			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)));
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, dg.p);
-	return L(tspack, dg, -ray.d);
+	return Ll;
 }
 
 class HemiSphereSphericalFunction : public SphericalFunction {
