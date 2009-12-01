@@ -388,19 +388,18 @@ void RenderFarm::send(const string &command) {
 	netBuffer << command << endl;
 }
 
-void RenderFarm::sendFile(std::string file) {
-	std::string s;
+void RenderFarm::sendFile(const string file) {
 	std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
 
 	// Get length of file:
 	in.seekg (0, std::ifstream::end);
-	// Limiting the file size to 2G should be a problem
+	// Limiting the file size to 2G shouldn't be a problem
 	const int len = static_cast<int>(in.tellg());
 	in.seekg (0, std::ifstream::beg);
 
 	if (in.fail()) {
 		std::stringstream ss;
-		ss << "There was an error while checking the size of file '" << file;
+		ss << "There was an error while checking the size of file '" << file << "'";
 		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
 		// Send an empty file ot the slave
@@ -432,7 +431,7 @@ void RenderFarm::sendFile(std::string file) {
 	in.close();
 }
 
-void RenderFarm::send(const std::string &command, const std::string &name,
+void RenderFarm::send(const string &command, const string &name,
 		const ParamSet &params) {
 	try {
 		netBuffer << command << endl << name << endl;
@@ -442,7 +441,7 @@ void RenderFarm::send(const std::string &command, const std::string &name,
 		//send the files
 		string file;
 		file = "";
-		file = params.FindOneString(std::string("mapname"), file);
+		file = params.FindOneString(string("mapname"), file);
 		if (file.size())
 			sendFile(file);
 
