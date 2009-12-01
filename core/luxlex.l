@@ -179,7 +179,8 @@ WorldEnd 		{ return WORLDEND;		}
 }
 "[" { return LBRACK; }
 "]" { return RBRACK; }
-\" { BEGIN STR; str_pos = 0; }
+\" { BEGIN STR; str_pos = 0; yylval.string[0] = '\0';
+	/* I have to initialize the string as an empty one in order to handle empty strings (i.e. "") */ }
 <STR>\\n {add_string_char('\n');}
 <STR>\\t {add_string_char('\t');}
 <STR>\\r {add_string_char('\r');}
