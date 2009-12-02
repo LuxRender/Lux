@@ -185,7 +185,7 @@ public:
 class RussianRouletteStrategy : public Strategy {
 public:
 	enum RRStrategyType {
-		NONE, EFFICENCY, PROBABILITY
+		NONE, EFFICIENCY, PROBABILITY
 	};
 
 	RussianRouletteStrategy() { }
@@ -208,9 +208,9 @@ public:
 		const u_int pathLength, const SWCSpectrum &f, const float k) const { return 1.0f; }
 };
 
-class RREfficencyStrategy : public RussianRouletteStrategy {
+class RREfficiencyStrategy : public RussianRouletteStrategy {
 public:
-	RREfficencyStrategy() : rrPathLength(3) { }
+	RREfficiencyStrategy() : rrPathLength(3) { }
 	virtual void InitParam(const ParamSet &params) {
 		rrPathLength = max(params.FindOneInt("rrpathlength", 3), 0);
 	}
@@ -294,7 +294,7 @@ public:
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 		lightStrategy = NULL;
 
-		rrStrategyType = RussianRouletteStrategy::EFFICENCY;
+		rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 		rrStrategy = NULL;
 	};
 	~SurfaceIntegratorRenderingHints() {

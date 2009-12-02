@@ -450,13 +450,13 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 
 	st = params.FindOneString("rrstrategy", "efficiency");
 	if (st == "none") rrStrategyType = RussianRouletteStrategy::NONE;
-	else if (st == "efficiency") rrStrategyType = RussianRouletteStrategy::EFFICENCY;
+	else if (st == "efficiency") rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 	else if (st == "probability") rrStrategyType = RussianRouletteStrategy::PROBABILITY;
 	else {
 		std::stringstream ss;
 		ss << "Strategy  '" << st << "' for russian roulette unknown. Using \"efficiency\".";
 		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-		rrStrategyType = RussianRouletteStrategy::EFFICENCY;
+		rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 	}
 
 	// Create the RR strategy
@@ -464,8 +464,8 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 		case RussianRouletteStrategy::NONE:
 			rrStrategy = new RRNoneStrategy();
 			break;
-		case RussianRouletteStrategy::EFFICENCY:
-			rrStrategy =  new RREfficencyStrategy();
+		case RussianRouletteStrategy::EFFICIENCY:
+			rrStrategy =  new RREfficiencyStrategy();
 			break;
 		case RussianRouletteStrategy::PROBABILITY:
 			rrStrategy =  new RRProbabilityStrategy();
