@@ -20,36 +20,48 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// matte.cpp*
-#include "matte.h"
+// Glossy material - based on previous/pbrt 'substrate' material using optional absorption
+
+// glossy2.cpp*
+#include "glossy2.h"
 #include "memory.h"
 #include "bxdf.h"
-#include "lambertian.h"
-#include "orennayar.h"
+#include "schlickbrdf.h"
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
 
 using namespace lux;
 
-// Matte Method Definitions
-BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const {
+// Glossy Method Definitions
+BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
 		Bump(bumpMap, dgGeom, dgShading, &dgs);
 	else
 		dgs = dgShading;
-	// Evaluate textures for _Matte_ material and allocate BRDF
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
+	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
+	float i = index->Evaluate(tspack, dgs);
+	if(i > 0.0) {
+		const float ti = (i-1)/(i+1);
+		s *= ti*ti;
+	}
+	s.Clamp(0.f, 1.f);
+
+	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+
+	float u = nu->Evaluate(tspack, dgs);
+	float v = nv->Evaluate(tspack, dgs);
+	float ld = depth->Evaluate(tspack, dgs);
+
 	BxDF *bxdf;
-	if (sig == 0.f)
-		bxdf = ARENA_ALLOC(tspack->arena, Lambertian)(r);
+	if (u < v)
+		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld, sqrtf(u * v), 1.f - u / v);
 	else
-		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
+		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld, sqrtf(u * v), v / u - 1.f);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
@@ -57,15 +69,22 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	return bsdf;
 }
-Material* Matte::CreateMaterial(const Transform &xform,
+Material* Glossy2::CreateMaterial(const Transform &xform,
 		const TextureParams &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f));
-	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks = mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f));
+	boost::shared_ptr<Texture<float> > i = mp.GetFloatTexture("index", 0.0f);
+	boost::shared_ptr<Texture<float> > d = mp.GetFloatTexture("d", .0f);
+	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
+	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
+
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
-	return new Matte(Kd, sigma, bumpMap, cP);
+
+	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
 }
 
-static DynamicLoader::RegisterMaterial<Matte> r("matte");
+static DynamicLoader::RegisterMaterial<Glossy2> r("glossy2");

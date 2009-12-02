@@ -20,10 +20,41 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "blender_clouds.h"
-#include "dynload.h"
+// glossy2.cpp*
+#include "lux.h"
+#include "material.h"
 
-using namespace lux;
-using namespace blender;
+namespace lux
+{
 
-static DynamicLoader::RegisterFloatTexture<BlenderCloudsTexture3D> r("blender_clouds");
+// Glossy Class Declarations
+class Glossy2 : public Material {
+public:
+	// Glossy Public Methods
+	Glossy2(boost::shared_ptr<Texture<SWCSpectrum> > kd, boost::shared_ptr<Texture<SWCSpectrum> > ks,
+			boost::shared_ptr<Texture<SWCSpectrum> > ka, boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > d,
+			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
+			boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
+		Kd = kd;
+		Ks = ks;
+		Ka = ka;
+		index = i;
+		depth = d;
+		nu = u;
+		nv = v;
+		bumpMap = bump;
+		compParams = new CompositingParams(cp);
+	}
+	virtual ~Glossy2() { }
+	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	
+	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+private:
+	// Glossy Private Data
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;
+	boost::shared_ptr<Texture<float> > depth, index;
+	boost::shared_ptr<Texture<float> > nu, nv;
+	boost::shared_ptr<Texture<float> > bumpMap;
+};
+
+}//namespace lux

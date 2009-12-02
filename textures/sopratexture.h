@@ -20,10 +20,43 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "blender_clouds.h"
-#include "dynload.h"
+// sopratexture.h*
+#include "lux.h"
+#include "memory.h"
+#include "texture.h"
+#include "irregular.h"
+#include "fresnelgeneral.h"
+#include "paramset.h"
 
-using namespace lux;
-using namespace blender;
+namespace lux
+{
 
-static DynamicLoader::RegisterFloatTexture<BlenderCloudsTexture3D> r("blender_clouds");
+// CauchyTexture Declarations
+class SopraTexture : public Texture<ConcreteFresnel> {
+public:
+	// ConstantTexture Public Methods
+	SopraTexture(const vector<float> &wl, const vector<float> &n,
+		const vector<float> &k) :
+		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
+		index(N.Y()) { }
+	virtual ~SopraTexture() { }
+	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const {
+		// FIXME - Try to detect the best model to use
+		// FIXME - FresnelGeneral should take a float index for accurate
+		// non dispersive behaviour
+		FresnelGeneral *fresnel = ARENA_ALLOC(tspack->arena,
+			FresnelGeneral)(SWCSpectrum(tspack, N),
+			SWCSpectrum(tspack, K));
+		return ConcreteFresnel(fresnel);
+	}
+	virtual float Y() const { return index; }
+
+	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const TextureParams &tp);
+private:
+	IrregularSPD N, K;
+	float index;
+};
+
+}//namespace lux
+

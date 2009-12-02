@@ -409,6 +409,7 @@ SET(lux_core_reflection_src
 	core/reflection/bxdf/microfacet.cpp
 	core/reflection/bxdf/nulltransmission.cpp
 	core/reflection/bxdf/orennayar.cpp
+	core/reflection/bxdf/schlickbrdf.cpp
 	core/reflection/bxdf/specularreflection.cpp
 	core/reflection/bxdf/speculartransmission.cpp
 	core/reflection/fresnel/fresnelnoop.cpp
@@ -431,6 +432,7 @@ SET(lux_core_src
 	core/contribution.cpp
 	core/dynload.cpp
     core/epsilon.cpp
+	core/epsilon.cpp
 	core/exrio.cpp
 	core/film.cpp
 	core/geometry/bbox.cpp
@@ -519,6 +521,7 @@ SET(lux_materials_src
 	materials/carpaint.cpp
 	materials/glass.cpp
 	materials/glossy.cpp
+	materials/glossy2.cpp
 	materials/matte.cpp
 	materials/mattetranslucent.cpp
 	materials/metal.cpp
@@ -571,6 +574,7 @@ SET(lux_spds_src
 	spds/rgbrefl.cpp
 	)
 SET(lux_blender_textures_src
+	textures/blender_base.cpp
 	textures/blender_blend.cpp
 	textures/blender_clouds.cpp
 	textures/blender_distortednoise.cpp
@@ -596,6 +600,7 @@ SET(lux_uniform_textures_src
 	)
 SET(lux_fresnel_textures_src
 	textures/cauchytexture.cpp
+	textures/sopratexture.cpp
 	)
 SET(lux_textures_src
 	${lux_uniform_textures_src}

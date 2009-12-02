@@ -30,8 +30,6 @@
 namespace lux
 {
 
-	double normsinv(double p);
-		
 	void RejectionSampleDisk(float u1, float u2, float *x, float *y);
 	Vector UniformSampleHemisphere(float u1, float u2);
 	float  UniformHemispherePdf(float theta, float phi);
@@ -48,6 +46,7 @@ namespace lux
 	void ComputeStep1dCDF(const float *f, u_int nValues, float *c, float *cdf);
 	float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps, float u,
 		float *weight);
+	float NormalCDFInverse(float u);
 	void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
 	float GaussianSampleDisk(float u1);
 	float InverseGaussianSampleDisk(float u1);

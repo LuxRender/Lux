@@ -46,7 +46,7 @@ public:
 	SpotBxDF(float width, float fall) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosTotalWidth(width), cosFalloffStart(fall) {}
 	virtual ~SpotBxDF() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
-		*f += LocalFalloff(wi, cosTotalWidth, cosFalloffStart);
+		*f += LocalFalloff(wi, cosTotalWidth, cosFalloffStart) / fabsf(wo.z);
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
@@ -54,7 +54,7 @@ public:
 		*pdf = UniformConePdf(cosTotalWidth);
 		if (pdfBack)
 			*pdfBack = Pdf(tspack, *wi, wo);
-		*f = LocalFalloff(*wi, cosTotalWidth, cosFalloffStart);
+		*f = LocalFalloff(*wi, cosTotalWidth, cosFalloffStart) / fabsf(wi->z);
 		return true;
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const

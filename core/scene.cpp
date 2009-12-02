@@ -52,12 +52,10 @@ static fast_mutex sampPosMutex;
 // Engine Control (start/pause/restart) methods
 void Scene::Start() {
     SignalThreads(RUN);
-    s_Timer.Start();
 }
 
 void Scene::Pause() {
     SignalThreads(PAUSE);
-    s_Timer.Stop();
 }
 
 void Scene::Exit() {
@@ -84,6 +82,11 @@ void Scene::SaveFLM( const string& filename ) {
 // Framebuffer Access for GUI
 void Scene::UpdateFramebuffer() {
     camera->film->updateFrameBuffer();
+
+	// I have to call ContributionPool method here in order
+	// to acquire splattingMutex lock
+	if (contribPool)
+		contribPool->CheckFilmWriteOuputInterval();
 }
 
 unsigned char* Scene::GetFramebuffer() {
@@ -381,12 +384,16 @@ u_int Scene::CreateRenderThread()
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
 #endif
 
-	RenderThread *rt = new  RenderThread(renderThreads.size(),
-		CurThreadSignal, surfaceIntegrator, volumeIntegrator,
-		sampler, camera, this);
+	// Avoid to create the thread in case signal is EXIT. for instance, it
+	// can happen when the rendering is done.
+	if (CurThreadSignal != EXIT) {
+		RenderThread *rt = new  RenderThread(renderThreads.size(),
+			CurThreadSignal, surfaceIntegrator, volumeIntegrator,
+			sampler, camera, this);
 
-	renderThreads.push_back(rt);
-	rt->thread = new boost::thread(boost::bind(RenderThread::Render, rt));
+		renderThreads.push_back(rt);
+		rt->thread = new boost::thread(boost::bind(RenderThread::Render, rt));
+	}
 
 	return renderThreads.size();
 }
@@ -478,6 +485,10 @@ void Scene::Render() {
 				delete renderThreads[i];
 			}
 			renderThreads.clear();
+
+			// I change the current signal to exit in order to disable the creation
+			// of new threads after this point
+			CurThreadSignal = EXIT;
 		}
 
 		// Flush the contribution pool
@@ -535,6 +546,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 
 	contribPool = NULL;
 	tspack = NULL;
+
+	CurThreadSignal = PAUSE;
 }
 
 Scene::Scene(Camera *cam)
@@ -561,6 +574,8 @@ Scene::Scene(Camera *cam)
 
 	contribPool = NULL;
 	tspack = NULL;
+
+	CurThreadSignal = PAUSE;
 }
 
 SWCSpectrum Scene::Li(const RayDifferential &ray,

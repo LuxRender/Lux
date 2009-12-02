@@ -121,66 +121,68 @@ void RenderFarm::decodeServerName(const string &serverName, string &name, string
 }
 
 bool RenderFarm::connect(const string &serverName) {
-	// Dade - connect to the rendering server
+	{
+		boost::mutex::scoped_lock lock(serverListMutex);
 
-	stringstream ss;
-	try {
-		ss.str("");
-		ss << "Connecting server: " << serverName;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-		string name, port;
-		decodeServerName(serverName, name, port);
-
-		tcp::iostream stream(name, port);
-		stream << "ServerConnect" << endl;
-
-		// Dede - check if the server accepted the connection
-
-		string result;
-		if (!getline(stream, result)) {
+		stringstream ss;
+		try {
 			ss.str("");
-			ss << "Unable to connect server: " << serverName;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			ss << "Connecting server: " << serverName;
+			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-			return false;
-		}
+			string name, port;
+			decodeServerName(serverName, name, port);
 
-		ss.str("");
-		ss << "Server connect result: " << result;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			tcp::iostream stream(name, port);
+			stream << "ServerConnect" << std::endl;
 
-		string sid;
-		if ("OK" != result) {
-			ss.str("");
-			ss << "Unable to connect server: " << serverName;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			// Dede - check if the server accepted the connection
 
-			return false;
-		} else {
-			// Dade - read the session ID
+			string result;
 			if (!getline(stream, result)) {
 				ss.str("");
-				ss << "Unable read session ID from server: " << serverName;
+				ss << "Unable to connect server: " << serverName;
 				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
 				return false;
 			}
 
-			sid = result;
 			ss.str("");
-			ss << "Server session ID: " << sid;
+			ss << "Server connect result: " << result;
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+			string sid;
+			if ("OK" != result) {
+				ss.str("");
+				ss << "Unable to connect server: " << serverName;
+				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+				return false;
+			} else {
+				// Dade - read the session ID
+				if (!getline(stream, result)) {
+					ss.str("");
+					ss << "Unable read session ID from server: " << serverName;
+					luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+					return false;
+				}
+
+				sid = result;
+				ss.str("");
+				ss << "Server session ID: " << sid;
+				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			}
+
+			serverInfoList.push_back(ExtRenderingServerInfo(name, port, sid));
+		} catch (exception& e) {
+			ss.str("");
+			ss << "Unable to connect server: " << serverName;
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+			luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+			return false;
 		}
-
-		serverInfoList.push_back(ExtRenderingServerInfo(name, port, sid));
-	} catch (exception& e) {
-		ss.str("");
-		ss << "Unable to connect server: " << serverName;
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
-		return false;
 	}
 
 	if (netBuffer.rdbuf()->in_avail() > 0)
@@ -190,12 +192,16 @@ bool RenderFarm::connect(const string &serverName) {
 }
 
 void RenderFarm::disconnectAll() {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
 	for (size_t i = 0; i < serverInfoList.size(); i++)
 		disconnect(serverInfoList[i]);
 	serverInfoList.clear();
 }
 
 void RenderFarm::disconnect(const string &serverName) {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
 	string name, port;
 	decodeServerName(serverName, name, port);
 
@@ -225,7 +231,9 @@ void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 }
 
 void RenderFarm::flush() {
-	stringstream ss;
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	std::stringstream ss;
 	// Dade - the buffers with all commands
 	string commands = netBuffer.str();
 
@@ -261,6 +269,10 @@ void RenderFarm::flush() {
 }
 
 void RenderFarm::updateFilm(Scene *scene) {
+	// Using the mutex in order to not allow server disconnection while
+	// I'm downloading a film
+	boost::mutex::scoped_lock lock(serverListMutex);
+
 	// Dade - network rendering supports only FlexImageFilm
 	Film *film = scene->camera->film;
 
@@ -376,19 +388,18 @@ void RenderFarm::send(const string &command) {
 	netBuffer << command << endl;
 }
 
-void RenderFarm::sendFile(std::string file) {
-	std::string s;
+void RenderFarm::sendFile(const string file) {
 	std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
 
 	// Get length of file:
 	in.seekg (0, std::ifstream::end);
-	// Limiting the file size to 2G should be a problem
+	// Limiting the file size to 2G shouldn't be a problem
 	const int len = static_cast<int>(in.tellg());
 	in.seekg (0, std::ifstream::beg);
 
 	if (in.fail()) {
 		std::stringstream ss;
-		ss << "There was an error while checking the size of file '" << file;
+		ss << "There was an error while checking the size of file '" << file << "'";
 		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 
 		// Send an empty file ot the slave
@@ -420,7 +431,7 @@ void RenderFarm::sendFile(std::string file) {
 	in.close();
 }
 
-void RenderFarm::send(const std::string &command, const std::string &name,
+void RenderFarm::send(const string &command, const string &name,
 		const ParamSet &params) {
 	try {
 		netBuffer << command << endl << name << endl;
@@ -430,7 +441,7 @@ void RenderFarm::send(const std::string &command, const std::string &name,
 		//send the files
 		string file;
 		file = "";
-		file = params.FindOneString(std::string("mapname"), file);
+		file = params.FindOneString(string("mapname"), file);
 		if (file.size())
 			sendFile(file);
 
