@@ -220,7 +220,7 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamS
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 
 	AreaLight *l = new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

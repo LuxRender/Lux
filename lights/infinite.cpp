@@ -629,7 +629,7 @@ Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
 	InfiniteAreaLight *l =  new InfiniteAreaLight(light2world, L, nSamples, texmap, map, gain, gamma);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

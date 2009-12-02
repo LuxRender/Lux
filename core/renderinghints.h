@@ -29,28 +29,21 @@
 
 namespace lux {
 
-//------------------------------------------------------------------------------
-// Light Rendering Hints
-//------------------------------------------------------------------------------
+//******************************************************************************
+// Strategies
+//******************************************************************************
 
-class LightRenderingHints {
+class Strategy {
 public:
-	LightRenderingHints() {
-		importance = 1.f;
-	}
-	void Init(const ParamSet &params);
-
-	float GetImportance() const { return importance; }
-
-private:
-	float importance;
+	virtual void InitParam(const ParamSet &params) = 0;
+	virtual void Init(const Scene *scene) = 0;
 };
 
 //------------------------------------------------------------------------------
 // Light Sampling Strategies
 //------------------------------------------------------------------------------
 
-class LightStrategy {
+class LightsSamplingStrategy : public Strategy {
 public:
 	enum LightStrategyType {
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
@@ -59,7 +52,9 @@ public:
 		SAMPLE_ONE_LOG_POWER_IMPORTANCE
 	};
 
-	LightStrategy() { }
+	LightsSamplingStrategy() { }
+	virtual void InitParam(const ParamSet &params) { }
+	virtual void Init(const Scene *scene) { }
 
 	virtual void RequestSamples(vector<u_int> &structure) const = 0;
 	virtual u_int RequestSamplesCount() const = 0;
@@ -72,10 +67,8 @@ public:
 		vector<SWCSpectrum> &L) const = 0;
 };
 
-class LightStrategyAllUniform : public LightStrategy {
+class LSSAllUniform : public LightsSamplingStrategy {
 public:
-	LightStrategyAllUniform() { }
-
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
 	virtual u_int SampleLights(
@@ -86,10 +79,8 @@ public:
 
 };
 
-class LightStrategyOneUniform : public LightStrategy {
+class LSSOneUniform : public LightsSamplingStrategy {
 public:
-	LightStrategyOneUniform() { }
-
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
 	virtual u_int SampleLights(
@@ -99,13 +90,41 @@ public:
 		vector<SWCSpectrum> &L) const;
 };
 
-class LightStrategyOneImportance : public LightStrategy {
+class LSSAuto : public LightsSamplingStrategy {
 public:
-	LightStrategyOneImportance(const Scene *scene);
-	~LightStrategyOneImportance() {
+	LSSAuto() : strategy(NULL) { }
+	virtual void Init(const Scene *scene) {
+		if (scene->lights.size() > 5)
+			strategy = new LSSOneUniform();
+		else
+			strategy = new LSSAllUniform();
+
+		strategy->Init(scene);
+	}
+
+	virtual void RequestSamples(vector<u_int> &structure) const { strategy->RequestSamples(structure); }
+	virtual u_int RequestSamplesCount() const { return strategy->RequestSamplesCount(); }
+
+	virtual u_int SampleLights(
+		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
+		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L) const {
+		return strategy->SampleLights(tspack, scene, shadowRayCount,
+				p, n, wo, bsdf, sample, sampleData, scale, L);
+	}
+
+private:
+	LightsSamplingStrategy *strategy;
+};
+
+class LSSOneImportance : public LightsSamplingStrategy {
+public:
+	~LSSOneImportance() {
 		delete lightImportance;
 		delete lightCDF;
 	}
+	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
@@ -121,13 +140,13 @@ private:
 	float *lightCDF;
 };
 
-class LightStrategyOnePowerImportance : public LightStrategy {
+class LSSOnePowerImportance : public LightsSamplingStrategy {
 public:
-	LightStrategyOnePowerImportance(const Scene *scene);
-	~LightStrategyOnePowerImportance() {
+	~LSSOnePowerImportance() {
 		delete lightPower;
 		delete lightCDF;
 	}
+	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
@@ -139,19 +158,13 @@ public:
 		vector<SWCSpectrum> &L) const;
 
 protected:
-	// Used by derived classes with their own constructor
-	LightStrategyOnePowerImportance() { }
-
 	float *lightPower;
 	float totalPower;
 	float *lightCDF;
 };
 
-class LightStrategyAllPowerImportance : public LightStrategyOnePowerImportance {
+class LSSAllPowerImportance : public LSSOnePowerImportance {
 public:
-	LightStrategyAllPowerImportance(const Scene *scene) :
-		LightStrategyOnePowerImportance(scene) { }
-
 	// Note: results are added to L
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
@@ -160,9 +173,114 @@ public:
 		vector<SWCSpectrum> &L) const;
 };
 
-class LightStrategyOneLogPowerImportance : public LightStrategyOnePowerImportance {
+class LSSOneLogPowerImportance : public LSSOnePowerImportance {
 public:
-	LightStrategyOneLogPowerImportance(const Scene *scene);
+	virtual void Init(const Scene *scene);
+};
+
+//------------------------------------------------------------------------------
+// Russian Roulette Strategies
+//------------------------------------------------------------------------------
+
+class RussianRouletteStrategy : public Strategy {
+public:
+	enum RRStrategyType {
+		NONE, EFFICENCY, PROBABILITY
+	};
+
+	RussianRouletteStrategy() { }
+
+	virtual void InitParam(const ParamSet &params) { }
+	virtual void Init(const Scene *scene) { }
+
+	virtual void RequestSamples(vector<u_int> &structure) const = 0;
+	// pathLength = numeric_limits<u_int>::max() means this parameter should be
+	// ignored by RR
+	virtual float Continue(const TsPack *tspack, const float *sampleData,
+		const u_int pathLength, const SWCSpectrum &f, const float k) const = 0;
+};
+
+class RRNoneStrategy : public RussianRouletteStrategy {
+public:
+	virtual void RequestSamples(vector<u_int> &structure) const { };
+	virtual u_int RequestSamplesCount() const { return 0; }
+	virtual float Continue(const TsPack *tspack, const float *sampleData,
+		const u_int pathLength, const SWCSpectrum &f, const float k) const { return 1.0f; }
+};
+
+class RREfficencyStrategy : public RussianRouletteStrategy {
+public:
+	RREfficencyStrategy() : rrPathLength(3) { }
+	virtual void InitParam(const ParamSet &params) {
+		rrPathLength = max(params.FindOneInt("rrpathlength", 3), 0);
+	}
+
+	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
+	virtual u_int RequestSamplesCount() const { return 1; }
+	virtual float Continue(const TsPack *tspack, const float *sampleData,
+		const u_int pathLength, const SWCSpectrum &f, const float k) const {
+		if (pathLength > rrPathLength) {
+			const float q = min<float>(1.f, f.Filter(tspack) * k);
+			if (q < sampleData[0])
+				return 0.0f;
+			else
+				return q;
+		} else
+			return 1.0f;
+	}
+
+private:
+	// After how many steps should RR start to work
+	u_int rrPathLength;
+};
+
+class RRProbabilityStrategy : public RussianRouletteStrategy {
+public:
+	RRProbabilityStrategy() :
+		rrPathLength(3), continueProbability(.65f) { }
+	virtual void InitParam(const ParamSet &params) {
+		rrPathLength = max(params.FindOneInt("rrpathlength", 3), 0);
+		continueProbability = Clamp(params.FindOneFloat("rrcontinueprob", .65f), 0.f, 1.f);
+	}
+
+	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
+	virtual u_int RequestSamplesCount() const { return 1; }
+	virtual float Continue(const TsPack *tspack, const float *sampleData,
+		const u_int pathLength, const SWCSpectrum &f, const float k) const {
+		if (pathLength > rrPathLength) {
+			if (continueProbability < sampleData[0])
+				return 0.f;
+			else
+				return continueProbability;
+		} else
+			return 1.0f;
+	}
+
+private:
+	// After how many steps should RR start to work
+	u_int rrPathLength;
+	float continueProbability;
+};
+
+//******************************************************************************
+// Rendering Hints
+//******************************************************************************
+
+//------------------------------------------------------------------------------
+// Light Rendering Hints
+//------------------------------------------------------------------------------
+
+class LightRenderingHints {
+public:
+	LightRenderingHints() {
+		importance = 1.f;
+	}
+	void InitParam(const ParamSet &params);
+
+	float GetImportance() const { return importance; }
+
+private:
+	float importance;
 };
 
 //------------------------------------------------------------------------------
@@ -173,21 +291,27 @@ class SurfaceIntegratorRenderingHints {
 public:
 	SurfaceIntegratorRenderingHints() {
 		shadowRayCount = 1;
-		lightStrategyType = LightStrategy::SAMPLE_AUTOMATIC;
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 		lightStrategy = NULL;
+
+		rrStrategyType = RussianRouletteStrategy::EFFICENCY;
+		rrStrategy = NULL;
 	};
 	~SurfaceIntegratorRenderingHints() {
 		if (lightStrategy)
 			delete lightStrategy;
+		if (rrStrategy)
+			delete rrStrategy;
 	}
 
-	void Init(const ParamSet &params);
+	void InitParam(const ParamSet &params);
 
 	u_int GetShadowRaysCount() const { return shadowRayCount; }
-	LightStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
+	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
 
-	void CreateLightStrategy(const Scene *scene);
-	void RequestLightSamples(vector<u_int> &structure);
+	void InitStrategies(const Scene *scene);
+	void RequestSamples(vector<u_int> &structure);
+
 	// Note: results are added to L and optional parameter V content
 	u_int SampleLights(
 		const TsPack *tspack, const Scene *scene,
@@ -195,7 +319,7 @@ public:
 		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const {
 		const u_int nContribs = lightStrategy->SampleLights(tspack, scene,
-				shadowRayCount, p, n, wo, bsdf, sample, sampleData, scale, L);
+				shadowRayCount, p, n, wo, bsdf, sample, &sampleData[lightSampleOffset], scale, L);
 
 		if (V) {
 			const float nLights = scene->lights.size();
@@ -206,11 +330,20 @@ public:
 		return nContribs;
 	}
 
+	float RussianRouletteContinue(const TsPack *tspack, const float *sampleData,
+		const u_int pathLength, const SWCSpectrum &f, const float k) const {
+		return rrStrategy->Continue(tspack, &sampleData[rrSampleOffset], pathLength, f, k);
+	}
+
 private:
 	u_int shadowRayCount;
+	LightsSamplingStrategy::LightStrategyType lightStrategyType;
+	LightsSamplingStrategy *lightStrategy;
+	u_int lightSampleOffset;
 
-	LightStrategy::LightStrategyType lightStrategyType;
-	LightStrategy *lightStrategy;
+	RussianRouletteStrategy::RRStrategyType rrStrategyType;
+	RussianRouletteStrategy *rrStrategy;
+	u_int rrSampleOffset;
 };
 
 }

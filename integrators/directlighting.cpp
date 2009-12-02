@@ -37,7 +37,7 @@ DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	vector<u_int> structure;
 	// Allocate and request samples for light sampling
-	hints.RequestLightSamples(structure);
+	hints.RequestSamples(structure);
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
@@ -49,7 +49,7 @@ void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *sce
 	scene->sampler->GetBufferType(&type);
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
-	hints.CreateLightStrategy(scene);
+	hints.InitStrategies(scene);
 }
 
 u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
@@ -224,7 +224,7 @@ SurfaceIntegrator* DirectLightingIntegrator::CreateSurfaceIntegrator(const Param
 
 	DirectLightingIntegrator *dli = new DirectLightingIntegrator(max(maxDepth, 0));
 	// Initialize the rendering hints
-	dli->hints.Init(params);
+	dli->hints.InitParam(params);
 
 	return dli;
 }

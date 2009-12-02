@@ -174,7 +174,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 
 	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

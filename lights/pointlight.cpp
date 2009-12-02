@@ -166,7 +166,7 @@ Light* PointLight::CreateLight(const Transform &light2world,
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
 
 	PointLight *l = new PointLight(l2w, L, g, ssf);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

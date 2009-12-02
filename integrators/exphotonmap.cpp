@@ -37,7 +37,7 @@ using namespace lux;
 ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	u_int ndir, u_int ncaus, u_int nindir, u_int nrad, u_int nl,
 	u_int mdepth, u_int mpdepth, float mdist, bool fg, u_int gs, float ga,
-	PhotonMapRRStrategy rrstrategy, float rrcontprob, float distThreshold,
+	float distThreshold,
 	string *mapsfn, bool dbgEnableDirect, bool dbgUseRadianceMap,
 	bool dbgEnableCaustic, bool dbgEnableIndirect, bool dbgEnableSpecular)
 {
@@ -57,9 +57,6 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	finalGather = fg;
 	gatherSamples = gs;
 	cosGatherAngle = cos(Radians(ga));
-
-	rrStrategy = rrstrategy;
-	rrContinueProbability = rrcontprob;
 
 	distanceThreshold = distThreshold;
 
@@ -90,7 +87,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(1);	// reflection bsdf component sample
 
 		// Allocate and request samples for light sampling
-		hints.RequestLightSamples(structure);
+		hints.RequestSamples(structure);
 
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
@@ -102,15 +99,11 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 			structure.clear();
 			structure.push_back(2);	// gather bsdf direction sample 1
 			structure.push_back(1);	// gather bsdf component sample 1
-			if (rrStrategy != RR_NONE)
-				structure.push_back(1); // RR
 			sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
 
 			structure.clear();
 			structure.push_back(2);	// gather bsdf direction sample 2
 			structure.push_back(1);	// gather bsdf component sample 2
-			if (rrStrategy != RR_NONE)
-				structure.push_back(1); // RR
 			sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
 		}
 	} else if (renderingMode == RM_PATH) {
@@ -120,11 +113,8 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(2);	// bsdf direction sample for indirect light
 		structure.push_back(1);	// bsdf component sample for indirect light
 
-		if (rrStrategy != RR_NONE)
-			structure.push_back(1);	// continue sample
-
 		// Allocate and request samples for light sampling
-		hints.RequestLightSamples(structure);
+		hints.RequestSamples(structure);
 		
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 	} else
@@ -137,7 +127,7 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 	scene->sampler->GetBufferType(&type);
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
-	hints.CreateLightStrategy(scene);
+	hints.InitStrategies(scene);
 
 	// Create the photon maps
 	causticMap = new LightPhotonMap(nLookup, maxDistSquared);
@@ -258,8 +248,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 					tspack, scene, sample,
 					sampleFinalGather1Offset,
 					sampleFinalGather2Offset, gatherSamples,
-					cosGatherAngle, rrStrategy,
-					rrContinueProbability, indirectMap,
+					cosGatherAngle, hints, indirectMap,
 					radianceMap, wo, bsdf,
 					BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION));
 			else
@@ -409,16 +398,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		const float *pathComponent = &sampleData[2];
 		const float *indirectSample = &sampleData[3];
 		const float *indirectComponent = &sampleData[5];
-
-		float *rrSample;
-		float *lightSample;
-		if (rrStrategy != RR_NONE) {
-			rrSample = &sampleData[6];
-			lightSample = &sampleData[7];
-		} else {
-			rrSample = NULL;
-			lightSample = &sampleData[6];
-		}
+		const float *lightSample = &sampleData[6];
 
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
@@ -519,20 +499,10 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		const float dp = AbsDot(wi, n) / pdf;
 
 		// Possibly terminate the path
-		if (pathLength > 3) {
-			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.Filter(tspack) * dp);
-				if (q < rrSample[0])
-					break;
-				// increase path contribution
-				pathThroughput /= q;
-			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (rrContinueProbability < rrSample[0])
-					break;
-				// increase path contribution
-				pathThroughput /= rrContinueProbability;
-			}
-		}
+		const float rrProb = hints.RussianRouletteContinue(tspack, sampleData, pathLength, f, dp);
+		if (rrProb <= 0.f)
+			break;
+		pathThroughput /= rrProb;
 
 		specularBounce = (sampledType & BSDF_SPECULAR) != 0;
 		specular = specular && specularBounce;
@@ -579,23 +549,6 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 
 	float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
-	PhotonMapRRStrategy rstrategy;
-	string rst = params.FindOneString("rrstrategy", "efficiency");
-	if (rst == "efficiency")
-		rstrategy = RR_EFFICIENCY;
-	else if (rst == "probability")
-		rstrategy = RR_PROBABILITY;
-	else if (rst == "none")
-		rstrategy = RR_NONE;
-	else {
-		std::stringstream ss;
-		ss << "Strategy  '" << rst << "' for russian roulette path termination unknown. Using \"efficiency\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		rstrategy = RR_EFFICIENCY;
-	}
-	// continueprobability for plain RR (0.0-1.0)
-	float rrcontinueProb = params.FindOneFloat("rrcontinueprob", 0.65f);
-
 	float distanceThreshold = params.FindOneFloat("distancethreshold", maxDist * 1.25f);
 
 	string *mapsFileName = NULL;
@@ -612,13 +565,12 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     ExPhotonIntegrator *epi =  new ExPhotonIntegrator(renderingMode,
 			max(nDirect, 0), max(nCaustic, 0), max(nIndirect, 0), max(nRadiance, 0),
             max(nUsed, 0), max(maxDepth, 0), max(maxPhotonDepth, 0), maxDist, finalGather, max(gatherSamples, 0), gatherAngle,
-			rstrategy, rrcontinueProb,
 			distanceThreshold,
 			mapsFileName,
 			debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,
 			debugEnableIndirect, debugEnableSpecular);
 	// Initialize the rendering hints
-	epi->hints.Init(params);
+	epi->hints.InitParam(params);
 
 	return epi;
 }

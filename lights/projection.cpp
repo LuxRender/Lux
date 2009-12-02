@@ -116,7 +116,7 @@ Light* ProjectionLight::CreateLight(const Transform &light2world,
 	string texname = paramSet.FindOneString("mapname", "");
 
 	ProjectionLight *l = new ProjectionLight(light2world, L, g, texname, fov);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

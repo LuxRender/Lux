@@ -35,7 +35,7 @@ using namespace lux;
 // Light Rendering Hints
 //------------------------------------------------------------------------------
 
-void LightRenderingHints::Init(const ParamSet &params) {
+void LightRenderingHints::InitParam(const ParamSet &params) {
 	importance = max(params.FindOneFloat("importance", 1.f), 0.f);
 }
 
@@ -47,14 +47,14 @@ void LightRenderingHints::Init(const ParamSet &params) {
 // Light Sampling Strategies: LightStrategyAllUniform
 //******************************************************************************
 
-void LightStrategyAllUniform::RequestSamples(vector<u_int> &structure) const {
+void LSSAllUniform::RequestSamples(vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
 	structure.push_back(1);	// bsdf component sample for light
 }
 
-u_int LightStrategyAllUniform::SampleLights(
+u_int LSSAllUniform::SampleLights(
 	const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
@@ -95,14 +95,14 @@ u_int LightStrategyAllUniform::SampleLights(
 // Light Sampling Strategies: LightStrategyOneUniform
 //******************************************************************************
 
-void LightStrategyOneUniform::RequestSamples(vector<u_int> &structure) const {
+void LSSOneUniform::RequestSamples(vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
 	structure.push_back(1);	// bsdf component sample for light
 }
 
-u_int LightStrategyOneUniform::SampleLights(
+u_int LSSOneUniform::SampleLights(
 	const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
@@ -143,7 +143,7 @@ u_int LightStrategyOneUniform::SampleLights(
 // Light Sampling Strategies: LightStrategyOneImportance
 //******************************************************************************
 
-LightStrategyOneImportance::LightStrategyOneImportance(const Scene *scene) {
+void LSSOneImportance::Init(const Scene *scene) {
 	// Compute light importance CDF
 	const u_int nLights = scene->lights.size();
 	lightImportance = new float[nLights];
@@ -155,14 +155,14 @@ LightStrategyOneImportance::LightStrategyOneImportance(const Scene *scene) {
 	ComputeStep1dCDF(lightImportance, nLights, &totalImportance, lightCDF);
 }
 
-void LightStrategyOneImportance::RequestSamples(vector<u_int> &structure) const {
+void LSSOneImportance::RequestSamples(vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
 	structure.push_back(1);	// bsdf component sample for light
 }
 
-u_int LightStrategyOneImportance::SampleLights(
+u_int LSSOneImportance::SampleLights(
 	const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
@@ -208,7 +208,7 @@ u_int LightStrategyOneImportance::SampleLights(
 // Light Sampling Strategies: LightStrategyOnePowerImportance
 //******************************************************************************
 
-LightStrategyOnePowerImportance::LightStrategyOnePowerImportance(const Scene *scene) {
+void LSSOnePowerImportance::Init(const Scene *scene) {
 	// Compute light power CDF
 	const u_int nLights = scene->lights.size();
 	lightPower = new float[nLights];
@@ -223,14 +223,14 @@ LightStrategyOnePowerImportance::LightStrategyOnePowerImportance(const Scene *sc
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 }
 
-void LightStrategyOnePowerImportance::RequestSamples(vector<u_int> &structure) const {
+void LSSOnePowerImportance::RequestSamples(vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
 	structure.push_back(1);	// bsdf component sample for light
 }
 
-u_int LightStrategyOnePowerImportance::SampleLights(
+u_int LSSOnePowerImportance::SampleLights(
 	const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
@@ -276,7 +276,7 @@ u_int LightStrategyOnePowerImportance::SampleLights(
 // Light Sampling Strategies: LightStrategyAllPowerImportance
 //******************************************************************************
 
-u_int LightStrategyAllPowerImportance::SampleLights(
+u_int LSSAllPowerImportance::SampleLights(
 	const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
@@ -372,7 +372,7 @@ u_int LightStrategyAllPowerImportance::SampleLights(
 // Light Sampling Strategies: LightStrategyOneLogPowerImportance
 //******************************************************************************
 
-LightStrategyOneLogPowerImportance::LightStrategyOneLogPowerImportance(const Scene *scene) {
+void LSSOneLogPowerImportance::Init(const Scene *scene) {
 	// Compute light power CDF
 	const u_int nLights = scene->lights.size();
 	lightPower = new float[nLights];
@@ -391,8 +391,10 @@ LightStrategyOneLogPowerImportance::LightStrategyOneLogPowerImportance(const Sce
 // SurfaceIntegrator Rendering Hints
 //------------------------------------------------------------------------------
 
-void SurfaceIntegratorRenderingHints::Init(const ParamSet &params) {
+void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 	shadowRayCount = max(params.FindOneInt("shadowraycount", 1), 1);
+
+	// Light Strategy
 
 	// For sompatibility with past versions
 	string oldst = params.FindOneString("strategy", "auto");
@@ -403,56 +405,88 @@ void SurfaceIntegratorRenderingHints::Init(const ParamSet &params) {
 	else
 		st = oldst;
 
-	if (st == "one") lightStrategyType = LightStrategy::SAMPLE_ONE_UNIFORM;
-	else if (st == "all") lightStrategyType = LightStrategy::SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") lightStrategyType = LightStrategy::SAMPLE_AUTOMATIC;
-	else if (st == "importance") lightStrategyType = LightStrategy::SAMPLE_ONE_IMPORTANCE;
-	else if (st == "powerimp") lightStrategyType = LightStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
-	else if (st == "allpowerimp") lightStrategyType = LightStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
-	else if (st == "logpowerimp") lightStrategyType = LightStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
+	if (st == "one") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
+	else if (st == "all") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
+	else if (st == "auto") lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
+	else if (st == "importance") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE;
+	else if (st == "powerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
+	else if (st == "allpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
+	else if (st == "logpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
 	else {
 		std::stringstream ss;
 		ss << "Strategy  '" << st << "' unknown. Using \"auto\".";
 		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-		lightStrategyType = LightStrategy::SAMPLE_AUTOMATIC;
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 	}
-}
 
-void SurfaceIntegratorRenderingHints::CreateLightStrategy(const Scene *scene) {
+	// Create the light strategy
 	switch (lightStrategyType) {
-		case LightStrategy::SAMPLE_ALL_UNIFORM:
-			lightStrategy = new LightStrategyAllUniform();
-			return;
-		case LightStrategy::SAMPLE_ONE_UNIFORM:
-			lightStrategy =  new LightStrategyOneUniform();
-			return;
-		case LightStrategy::SAMPLE_AUTOMATIC:
-			if (scene->lights.size() > 5)
-				lightStrategyType = LightStrategy::SAMPLE_ONE_UNIFORM;
-			else
-				lightStrategyType = LightStrategy::SAMPLE_ALL_UNIFORM;
-
-			this->CreateLightStrategy(scene);
-			return;
-		case LightStrategy::SAMPLE_ONE_IMPORTANCE:
-			lightStrategy = new LightStrategyOneImportance(scene);
-			return;
-		case LightStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
-			lightStrategy = new LightStrategyOnePowerImportance(scene);
-			return;
-		case LightStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
-			lightStrategy = new LightStrategyAllPowerImportance(scene);
-			return;
-		case LightStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
-			lightStrategy = new LightStrategyOneLogPowerImportance(scene);
-			return;
+		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
+			lightStrategy = new LSSAllUniform();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
+			lightStrategy =  new LSSOneUniform();
+			break;
+		case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
+			lightStrategy =  new LSSAuto();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
+			lightStrategy = new LSSOneImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
+			lightStrategy = new LSSOnePowerImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
+			lightStrategy = new LSSAllPowerImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
+			lightStrategy = new LSSOneLogPowerImportance();
 		default:
 			BOOST_ASSERT(false);
 	}
+	lightStrategy->InitParam(params);
+
+	// RR Strategy
+
+	st = params.FindOneString("rrstrategy", "efficiency");
+	if (st == "none") rrStrategyType = RussianRouletteStrategy::NONE;
+	else if (st == "efficiency") rrStrategyType = RussianRouletteStrategy::EFFICENCY;
+	else if (st == "probability") rrStrategyType = RussianRouletteStrategy::PROBABILITY;
+	else {
+		std::stringstream ss;
+		ss << "Strategy  '" << st << "' for russian roulette unknown. Using \"efficiency\".";
+		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+		rrStrategyType = RussianRouletteStrategy::EFFICENCY;
+	}
+
+	// Create the RR strategy
+	switch (rrStrategyType) {
+		case RussianRouletteStrategy::NONE:
+			rrStrategy = new RRNoneStrategy();
+			break;
+		case RussianRouletteStrategy::EFFICENCY:
+			rrStrategy =  new RREfficencyStrategy();
+			break;
+		case RussianRouletteStrategy::PROBABILITY:
+			rrStrategy =  new RRProbabilityStrategy();
+			break;
+		default:
+			BOOST_ASSERT(false);
+	}
+	rrStrategy->InitParam(params);
 }
 
-void SurfaceIntegratorRenderingHints::RequestLightSamples(vector<u_int> &structure) {
+void SurfaceIntegratorRenderingHints::InitStrategies(const Scene *scene) {
+	lightStrategy->Init(scene);
+	rrStrategy->Init(scene);
+}
+
+void SurfaceIntegratorRenderingHints::RequestSamples(vector<u_int> &structure) {
+	lightSampleOffset = structure.size();
 	// Request samples for each shadow ray we have to trace
 	for (u_int i = 0; i <  shadowRayCount; ++i)
 		lightStrategy->RequestSamples(structure);
+
+	rrSampleOffset = structure.size();
+	rrStrategy->RequestSamples(structure);
 }

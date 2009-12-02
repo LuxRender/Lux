@@ -31,14 +31,9 @@ namespace lux
 // PathIntegrator Declarations
 class PathIntegrator : public SurfaceIntegrator {
 public:
-	// PathIntegrator types
-	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
-
 	// PathIntegrator Public Methods
-	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie) {
-		rrStrategy = rst;
+	PathIntegrator(u_int md, bool ie) {
 		maxDepth = md;
-		continueProbability = cp;
 		bufferId = 0;
 		includeEnvironment = ie;
 	}
@@ -50,9 +45,7 @@ public:
 
 private:
 	// PathIntegrator Private Data
-	RRStrategy rrStrategy;
 	u_int maxDepth;
-	float continueProbability;
 	// Declare sample parameters for light source sampling
 	u_int sampleOffset, bufferId;
 	bool includeEnvironment;

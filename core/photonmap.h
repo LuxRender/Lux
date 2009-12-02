@@ -31,6 +31,7 @@
 #include "bxdf.h"
 #include "primitive.h"
 #include "mc.h"
+#include "renderinghints.h"
 
 namespace lux
 {
@@ -437,8 +438,6 @@ inline float Ekernel(const BasicPhoton *photon, const Point &p, float md2) {
 	return 3.f / (md2 * M_PI) * s * s;
 }
 
-enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
-
 /**
  * Creates a number of photonmaps. This function should be called during 
  * the preprocess step of an integrator.
@@ -503,8 +502,7 @@ extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
 	u_int sampleFinalGather2Offset,
 	u_int gatherSamples,
 	float cosGatherAngle,
-	PhotonMapRRStrategy rrStrategy,
-	float rrContinueProbability,
+	const SurfaceIntegratorRenderingHints &hints,
 	const LightPhotonMap *indirectMap,
 	const RadiancePhotonMap *radianceMap,
 	const Vector &wo,
@@ -537,8 +535,7 @@ extern SWCSpectrum PhotonMapFinalGather(
 	const Sample *sample,
 	u_int sampleFinalGatherOffset,
 	u_int gatherSamples,
-	PhotonMapRRStrategy rrStrategy,
-	float rrContinueProbability,
+	const SurfaceIntegratorRenderingHints &hints,
 	const LightPhotonMap *indirectMap,
 	const RadiancePhotonMap *radianceMap,
 	const Vector &wo,

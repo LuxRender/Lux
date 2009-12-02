@@ -437,7 +437,7 @@ Light* SunLight::CreateLight(const Transform &light2world,
 	float relSize = paramSet.FindOneFloat("relsize", 1.0f);				// relative size to the sun. Set to 0 for old behavior.
 
 	SunLight *l = new SunLight(light2world, scale, sundir, turb, relSize, nSamples);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

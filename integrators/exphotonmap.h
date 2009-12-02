@@ -46,7 +46,6 @@ public:
 			u_int ndir, u_int ncaus, u_int nindir, u_int nrad,
 			u_int nLookup, u_int mdepth, u_int mpdepth,
 			float maxdist, bool finalGather, u_int gatherSamples, float ga,
-			PhotonMapRRStrategy rrstrategy, float rrcontprob,
 			float distThreshold,
 			string *mapsFileName,
 			bool dbgEnableDirect, bool dbgEnableDirectMap, bool dbgEnableCaustic,
@@ -76,7 +75,6 @@ private:
 	bool finalGather;
 	float cosGatherAngle;
 	u_int gatherSamples;
-	PhotonMapRRStrategy rrStrategy;
 	float rrContinueProbability;
 	float distanceThreshold;
 

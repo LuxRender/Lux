@@ -168,7 +168,7 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet, co
 
 	SpotLight *l = new SpotLight(light2world, L, g, coneangle,
 		coneangle-conedelta);
-	l->hints.Init(paramSet);
+	l->hints.InitParam(paramSet);
 	return l;
 }
 

@@ -38,11 +38,9 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	vector<u_int> structure;
 	structure.push_back(2);	// bsdf direction sample for path
 	structure.push_back(1);	// bsdf component sample for path
-	if (rrStrategy != RR_NONE)
-		structure.push_back(1);	// continue sample
 
-	// Allocate and request samples for light sampling
-	hints.RequestLightSamples(structure);
+	// Allocate and request samples for light sampling, RR, etc.
+	hints.RequestSamples(structure);
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }
@@ -54,7 +52,7 @@ void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	scene->sampler->GetBufferType(&type);
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
-	hints.CreateLightStrategy(scene);
+	hints.InitStrategies(scene);
 }
 
 u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
@@ -161,14 +159,13 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Estimate direct lighting
 		if (nLights > 0) {
-			const float *sampleData = &data[(rrStrategy == RR_NONE) ? 3 : 4];
 			const u_int lightGroupCount = scene->lightGroups.size();
 			// Direct lighting
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			// Direct lighting samples variance
 			vector<float> Vd(lightGroupCount, 0.f);
 			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, pathThroughput, Ld, &Vd);
+					sample, data, pathThroughput, Ld, &Vd);
 
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				L[i] += Ld[i];
@@ -187,20 +184,10 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const float dp = AbsDot(wi, n) / pdf;
 
 		// Possibly terminate the path
-		if (pathLength > 3) {
-			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.Filter(tspack) * dp);
-				if (q < data[3])
-					break;
-				// increase path contribution
-				pathThroughput /= q;
-			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[3])
-					break;
-				// increase path contribution
-				pathThroughput /= continueProbability;
-			}
-		}
+		const float rrProb = hints.RussianRouletteContinue(tspack, data, pathLength, f, dp);
+		if (rrProb <= 0.f)
+			break;
+		pathThroughput /= rrProb;
 
 		if (flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
 			if (through++ > passThroughLimit)
@@ -232,24 +219,11 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
-	float RRcontinueProb = params.FindOneFloat("rrcontinueprob", .65f);			// continueprobability for plain RR (0.0-1.0)
-	RRStrategy rstrategy;
-	string rst = params.FindOneString("rrstrategy", "efficiency");
-	if (rst == "efficiency") rstrategy = RR_EFFICIENCY;
-	else if (rst == "probability") rstrategy = RR_PROBABILITY;
-	else if (rst == "none") rstrategy = RR_NONE;
-	else {
-		std::stringstream ss;
-		ss<<"Strategy  '"<<rst<<"' for russian roulette path termination unknown. Using \"efficiency\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		rstrategy = RR_EFFICIENCY;
-	}
 	bool include_environment = params.FindOneBool("includeenvironment", true);
 
-	PathIntegrator *pi = new PathIntegrator(rstrategy,
-			max(maxDepth, 0), RRcontinueProb, include_environment);
+	PathIntegrator *pi = new PathIntegrator(max(maxDepth, 0), include_environment);
 	// Initialize the rendering hints
-	pi->hints.Init(params);
+	pi->hints.InitParam(params);
 
 	return pi;
 }
