@@ -51,6 +51,7 @@ PathIntegrator::PathIntegrator(u_int md, bool ie) {
 	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::NONE);
 	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::EFFICIENCY);
 	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::PROBABILITY);
+	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::IMPORTANCE);
 	// Set the defualt strategy supported
 	hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::EFFICIENCY);
 }
@@ -101,6 +102,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	vector<float> V(scene->lightGroups.size(), 0.f);
 	float VContrib = .1f;
+	float pathImportance = 1.0f;
 	bool specularBounce = true, specular = true;
 	float alpha = 1.f;
 	float distance = INFINITY;
@@ -204,10 +206,12 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!bsdf->Sample_f(tspack, wo, &wi, data[0], data[1], data[2], &f, &pdf, BSDF_ALL, &flags, NULL, true))
 			break;
 
-		const float dp = AbsDot(wi, n) / pdf;
+		const float adotWiN = AbsDot(wi, n);
+		pathImportance *= adotWiN;
+		const float dp = adotWiN / pdf;
 
 		// Possibly terminate the path
-		const float rrProb = hints.RussianRouletteContinue(tspack, data, pathLength, f, dp);
+		const float rrProb = hints.RussianRouletteContinue(data, pathLength, f.Filter(tspack) * dp, pathImportance);
 		if (rrProb <= 0.f)
 			break;
 		pathThroughput /= rrProb;

@@ -466,6 +466,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 		if (st == "none") rrStrategyType = RussianRouletteStrategy::NONE;
 		else if (st == "efficiency") rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 		else if (st == "probability") rrStrategyType = RussianRouletteStrategy::PROBABILITY;
+		else if (st == "importance") rrStrategyType = RussianRouletteStrategy::IMPORTANCE;
 		else {
 			std::stringstream ss;
 			ss << "Strategy  '" << st << "' for russian roulette unknown. Using \"efficiency\".";
@@ -496,6 +497,9 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 			case RussianRouletteStrategy::PROBABILITY:
 				rrStrategy =  new RRProbabilityStrategy();
 				break;
+			case RussianRouletteStrategy::IMPORTANCE:
+				rrStrategy =  new RRImportanceStrategy();
+				break;
 			default:
 				BOOST_ASSERT(false);
 		}
@@ -506,7 +510,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 
 void SurfaceIntegratorRenderingHints::InitStrategies(const Scene *scene) {
 	if (lsStrategy != NULL) {
-		if (lsStrategy->SupportMutatingSampler()) {
+		if (!lsStrategy->SupportMutatingSampler()) {
 			std::stringstream ss;
 			ss << "Light Sampling strategy doesn't support mutating sampler. Using \"one\".";
 			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());

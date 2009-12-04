@@ -517,7 +517,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		const float dp = AbsDot(wi, n) / pdf;
 
 		// Possibly terminate the path
-		const float rrProb = hints.RussianRouletteContinue(tspack, sampleData, pathLength, f, dp);
+		const float rrProb = hints.RussianRouletteContinue(sampleData, pathLength, f.Filter(tspack) * dp, 0.f);
 		if (rrProb <= 0.f)
 			break;
 		pathThroughput /= rrProb;

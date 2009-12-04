@@ -197,7 +197,7 @@ class RussianRouletteStrategy : public Strategy {
 public:
 	enum RRStrategyType {
 		NOT_SUPPORTED, // Used in the case RR strategies are not supported at all
-		NONE, EFFICIENCY, PROBABILITY
+		NONE, EFFICIENCY, PROBABILITY, IMPORTANCE
 	};
 
 	RussianRouletteStrategy() { }
@@ -208,16 +208,16 @@ public:
 	virtual void RequestSamples(vector<u_int> &structure) const = 0;
 	// pathLength = numeric_limits<u_int>::max() means this parameter should be
 	// ignored by RR
-	virtual float Continue(const TsPack *tspack, const float *sampleData,
-		const u_int pathLength, const SWCSpectrum &f, const float k) const = 0;
+	virtual float Continue(const float *sampleData,	const u_int pathLength,
+		const float k1, const float k2) const = 0;
 };
 
 class RRNoneStrategy : public RussianRouletteStrategy {
 public:
 	virtual void RequestSamples(vector<u_int> &structure) const { };
 	virtual u_int RequestSamplesCount() const { return 0; }
-	virtual float Continue(const TsPack *tspack, const float *sampleData,
-		const u_int pathLength, const SWCSpectrum &f, const float k) const { return 1.0f; }
+	virtual float Continue(const float *sampleData,
+		const u_int pathLength, float k1, const float k2) const { return 1.0f; }
 };
 
 class RREfficiencyStrategy : public RussianRouletteStrategy {
@@ -229,10 +229,10 @@ public:
 
 	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
 	virtual u_int RequestSamplesCount() const { return 1; }
-	virtual float Continue(const TsPack *tspack, const float *sampleData,
-		const u_int pathLength, const SWCSpectrum &f, const float k) const {
+	virtual float Continue(const float *sampleData,	const u_int pathLength,
+		const float k1, const float k2) const {
 		if (pathLength > rrPathLength) {
-			const float q = min<float>(1.f, f.Filter(tspack) * k);
+			const float q = min<float>(1.f, k1);
 			if (q < sampleData[0])
 				return 0.0f;
 			else
@@ -257,8 +257,8 @@ public:
 
 	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
 	virtual u_int RequestSamplesCount() const { return 1; }
-	virtual float Continue(const TsPack *tspack, const float *sampleData,
-		const u_int pathLength, const SWCSpectrum &f, const float k) const {
+	virtual float Continue(const float *sampleData,	const u_int pathLength,
+		const float k1, const float k2) const {
 		if (pathLength > rrPathLength) {
 			if (continueProbability < sampleData[0])
 				return 0.f;
@@ -272,6 +272,32 @@ private:
 	// After how many steps should RR start to work
 	u_int rrPathLength;
 	float continueProbability;
+};
+
+class RRImportanceStrategy : public RussianRouletteStrategy {
+public:
+	RRImportanceStrategy() : rrPathLength(1) { }
+	virtual void InitParam(const ParamSet &params) {
+		rrPathLength = max(params.FindOneInt("rrpathlength", 1), 0);
+	}
+
+	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
+	virtual u_int RequestSamplesCount() const { return 1; }
+	virtual float Continue(const float *sampleData,	const u_int pathLength,
+		const float k1, const float k2) const {
+		if (pathLength > rrPathLength) {
+			const float q = min<float>(1.f, k2);
+			if (q < sampleData[0])
+				return 0.0f;
+			else
+				return q;
+		} else
+			return 1.0f;
+	}
+
+private:
+	// After how many steps should RR start to work
+	u_int rrPathLength;
 };
 
 //******************************************************************************
@@ -400,9 +426,9 @@ public:
 		return nContribs;
 	}
 
-	float RussianRouletteContinue(const TsPack *tspack, const float *sampleData,
-		const u_int pathLength, const SWCSpectrum &f, const float k) const {
-		return rrStrategy->Continue(tspack, &sampleData[rrSampleOffset], pathLength, f, k);
+	float RussianRouletteContinue(const float *sampleData,
+		const u_int pathLength, const float k1, const float k2) const {
+		return rrStrategy->Continue(&sampleData[rrSampleOffset], pathLength, k1, k2);
 	}
 
 private:

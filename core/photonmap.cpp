@@ -868,8 +868,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				continue;
 
 			// Dade - russian roulette
-			const float rrProb = hints.RussianRouletteContinue(tspack, sampleFGData,
-					std::numeric_limits<u_int>::max(), fr, AbsDot(wi, n) / pdf);
+			const float rrProb = hints.RussianRouletteContinue(sampleFGData,
+					std::numeric_limits<u_int>::max(), fr.Filter(tspack) * AbsDot(wi, n) / pdf, 0.f);
 			if (rrProb <= 0.f)
 				break;
 			fr /= rrProb;
@@ -940,8 +940,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			}
 			photonPdf /= nIndirSamplePhotons;
 
-			const float rrProb = hints.RussianRouletteContinue(tspack, sampleFGData,
-					std::numeric_limits<u_int>::max(), fr, 1.f / photonPdf);
+			const float rrProb = hints.RussianRouletteContinue(sampleFGData,
+					std::numeric_limits<u_int>::max(), fr.Filter(tspack) * 1.f / photonPdf, 0.f);
 			if (rrProb <= 0.f)
 				break;
 			fr /= rrProb;
@@ -1008,8 +1008,8 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 				continue;
 
 			// Dade - russian roulette
-			const float rrProb = hints.RussianRouletteContinue(tspack, sampleFGData,
-					std::numeric_limits<u_int>::max(), fr, AbsDot(wi, n) / pdf);
+			const float rrProb = hints.RussianRouletteContinue(sampleFGData,
+					std::numeric_limits<u_int>::max(), fr.Filter(tspack) * AbsDot(wi, n) / pdf, 0.f);
 			if (rrProb <= 0.f)
 				break;
 			fr /= rrProb;
