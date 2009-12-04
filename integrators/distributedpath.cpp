@@ -31,18 +31,14 @@
 using namespace lux;
 
 // DistributedPath Method Definitions
-DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, bool dg, bool ida, u_int ids, bool idd, bool idg,
+DistributedPath::DistributedPath(bool da, bool dd, bool dg, bool ida, bool idd, bool idg,
 	u_int drd, u_int drs, u_int dtd, u_int dts, u_int grd, u_int grs, u_int gtd, u_int gts, u_int srd, u_int std,
 	bool drer, float drert, bool drfr, float drfrt,
 	bool grer, float grert, bool grfr, float grfrt) {
-	lightStrategy = st;
-
 	directAll = da;
-	directSamples = ds;
 	directDiffuse = dd;
 	directGlossy = dg;
 	indirectAll = ida;
-	indirectSamples = ids;
 	indirectDiffuse = idd;
 	indirectGlossy = idg;
 	diffusereflectDepth = drd;
@@ -64,16 +60,23 @@ DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, b
 	glossyreflectReject_thr = grert;
 	glossyrefractReject = grfr;
 	glossyrefractReject_thr = grfrt;
+
+	// Set the strategies supported by this integrator
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_UNIFORM);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+
+	// DistributedPath doesn't use RussianRouletteStrategies at all so none of them
+	// is supported
+	hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::NOT_SUPPORTED);
 }
 
 void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
-	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene->sampler->IsMutating() || scene->lights.size() > 7)
-			lightStrategy = SAMPLE_ONE_UNIFORM;
-		else
-			lightStrategy = SAMPLE_ALL_UNIFORM;
-	}
-
 	// determine maximum depth for samples
 	maxDepth = diffusereflectDepth;
 	maxDepth = max(maxDepth, diffuserefractDepth);
@@ -81,18 +84,6 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 	maxDepth = max(maxDepth, glossyrefractDepth);
 	maxDepth = max(maxDepth, specularreflectDepth);
 	maxDepth = max(maxDepth, specularrefractDepth);
-
-	// Direct lighting
-	// eye vertex
-	lightSampleOffset = sample->Add2D(directSamples);
-	lightNumOffset = sample->Add1D(directSamples);
-	bsdfSampleOffset = sample->Add2D(directSamples);
-	bsdfComponentOffset = sample->Add1D(directSamples);
-	// remaining vertices
-	indirectlightSampleOffset = sample->Add2D(indirectSamples * maxDepth);
-	indirectlightNumOffset = sample->Add1D(indirectSamples * maxDepth);
-	indirectbsdfSampleOffset = sample->Add2D(indirectSamples * maxDepth);
-	indirectbsdfComponentOffset = sample->Add1D(indirectSamples * maxDepth);
 
 	// Diffuse reflection
 	// eye vertex
@@ -126,6 +117,11 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 	indirectglossy_refractSampleOffset = sample->Add2D(glossyrefractDepth);
 	indirectglossy_refractComponentOffset = sample->Add1D(glossyrefractDepth);
 
+	vector<u_int> structure;
+	// Allocate and request samples for light sampling, RR, etc.
+	hints.RequestSamples(structure);
+	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+
 }
 void DistributedPath::Preprocess(const TsPack *tspack, const Scene *scene)
 {
@@ -133,6 +129,8 @@ void DistributedPath::Preprocess(const TsPack *tspack, const Scene *scene)
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene->sampler->GetBufferType(&type);
 	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+
+	hints.InitStrategies(scene);
 }
 
 void DistributedPath::Reject(const TsPack *tspack, vector< vector<SWCSpectrum> > &LL, 
@@ -239,53 +237,14 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 		// Compute direct lighting for _DistributedPath_ integrator
 		if (scene->lights.size() > 0) {
-			const u_int samples = rayDepth > 0 ? indirectSamples :
-				directSamples;
-			const float invsamples = 1.f / samples;
-			const float *lightSample, *lightNum, *bsdfSample, *bsdfComponent;
-			for (u_int i = 0; i < samples; ++i) {
-				// get samples
-				if (rayDepth > 0) {
-					lightSample = &sample->twoD[indirectlightSampleOffset][2 * i * rayDepth];
-					lightNum = &sample->oneD[indirectlightNumOffset][i * rayDepth];
-					bsdfSample = &sample->twoD[indirectbsdfSampleOffset][2 * i * rayDepth];
-					bsdfComponent = &sample->oneD[indirectbsdfComponentOffset][i * rayDepth];
-				} else {
-					lightSample = &sample->twoD[lightSampleOffset][2 * i];
-					lightNum = &sample->oneD[lightNumOffset][i];
-					bsdfSample = &sample->twoD[bsdfSampleOffset][2 * i];
-					bsdfComponent = &sample->oneD[bsdfComponentOffset][i];
-				}
+			const u_int lightGroupCount = scene->lightGroups.size();
+			const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
+			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
+			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
+					sample, sampleData, 1.f, Ld);
 
-				// Apply direct lighting strategy
-				switch (lightStrategy) {
-					case SAMPLE_ALL_UNIFORM:
-						for (u_int i = 0; i < scene->lights.size(); ++i) {
-							const SWCSpectrum Ld(EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-								sample, lightSample[0], lightSample[1], *lightNum, bsdfSample[0], bsdfSample[1], *bsdfComponent));
-							if (Ld.Filter(tspack) > 0.f) {
-								L[scene->lights[i]->group] += invsamples * Ld;
-								++nrContribs;
-							}
-							// TODO add bsdf selection flags
-						}
-						break;
-					case SAMPLE_ONE_UNIFORM:
-					{
-						SWCSpectrum Ld;
-						u_int g = UniformSampleOneLight(tspack, scene, p, n,
-							wo, bsdf, sample,
-							lightSample, lightNum, bsdfSample, bsdfComponent, &Ld);
-						if (Ld.Filter(tspack) > 0.f) {
-							L[g] += invsamples * Ld;
-							++nrContribs;
-						}
-						break;
-					}
-					default:
-						break;
-				}
-			}
+			for (u_int i = 0; i < lightGroupCount; ++i)
+				L[i] += Ld[i];
 		}
 
 		BxDFType flags;
@@ -548,12 +507,10 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 
 	// DirectLight Sampling
 	bool directall = params.FindOneBool("directsampleall", true);
-	int directsamples = params.FindOneInt("directsamples", 1);
 	bool directdiffuse = params.FindOneBool("directdiffuse", true);
 	bool directglossy = params.FindOneBool("directglossy", true);
 	// Indirect DirectLight Sampling
 	bool indirectall = params.FindOneBool("indirectsampleall", false);
-	int indirectsamples = params.FindOneInt("indirectsamples", 1);
 	bool indirectdiffuse = params.FindOneBool("indirectdiffuse", true);
 	bool indirectglossy = params.FindOneBool("indirectglossy", true);
 
@@ -571,18 +528,6 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 	int specularreflectdepth = params.FindOneInt("specularreflectdepth", 2);
 	int specularrefractdepth = params.FindOneInt("specularrefractdepth", 5);
 
-	LightStrategy estrategy;
-	string st = params.FindOneString("strategy", "auto");
-	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
-	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
-	else {
-		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
-		estrategy = SAMPLE_AUTOMATIC;
-	}
-
 	// Rejection System
 	bool diffusereflectreject = params.FindOneBool("diffusereflectreject", false);
 	float diffusereflectreject_thr = params.FindOneFloat("diffusereflectreject_threshold", 10.0f);
@@ -593,12 +538,16 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 	bool glossyrefractreject = params.FindOneBool("glossyrefractreject", false);;
 	float glossyrefractreject_thr = params.FindOneFloat("glossyrefractreject_threshold", 10.0f);
 
-	return new DistributedPath(estrategy, directall, max(directsamples, 0),
-		directdiffuse, directglossy, indirectall, max(indirectsamples, 0), indirectdiffuse, indirectglossy,
+	DistributedPath *di = new DistributedPath(directall,
+		directdiffuse, directglossy, indirectall, indirectdiffuse, indirectglossy,
 		max(diffusereflectdepth, 0), max(diffusereflectsamples, 0), max(diffuserefractdepth, 0), max(diffuserefractsamples, 0), max(glossyreflectdepth, 0), max(glossyreflectsamples, 0), 
 		max(glossyrefractdepth, 0), max(glossyrefractsamples, 0), max(specularreflectdepth, 0), max(specularrefractdepth, 0),
 		diffusereflectreject, diffusereflectreject_thr, diffuserefractreject, diffuserefractreject_thr,
 		glossyreflectreject, glossyreflectreject_thr, glossyrefractreject, glossyrefractreject_thr);
+		// Initialize the rendering hints
+	di->hints.InitParam(params);
+
+	return di;
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<DistributedPath> r("distributedpath");

@@ -33,17 +33,11 @@ namespace lux
 
 class DistributedPath : public SurfaceIntegrator {
 public:
-	// DistributedPath types
-	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
-		SAMPLE_AUTOMATIC
-	};
-
 	// DistributedPath Public Methods
-	DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, bool dg, bool ida, u_int ids, bool idd, bool idg,
-								 u_int drd, u_int drs, u_int dtd, u_int dts, u_int grd, u_int grs, u_int gtd, u_int gts, u_int srd, u_int std,
-								 bool drer, float drert, bool drfr, float drfrt,
-								 bool grer, float grert, bool grfr, float grfrt);
-	virtual ~DistributedPath() { }
+	DistributedPath(bool da, bool dd, bool dg, bool ida, bool idd, bool idg,
+			u_int drd, u_int drs, u_int dtd, u_int dts, u_int grd, u_int grs, u_int gtd, u_int gts, u_int srd, u_int std,
+			bool drer, float drert, bool drfr, float drfrt,
+			bool grer, float grert, bool grfr, float grfrt);
 
 	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
@@ -56,7 +50,6 @@ private:
 	void Reject(const TsPack *tspack, vector< vector<SWCSpectrum> > &LL, vector<SWCSpectrum> &L, float rejectrange) const;
 
 	// DistributedPath Private Data
-	LightStrategy lightStrategy;
 	bool directAll, directDiffuse, directGlossy, 
 		indirectAll, indirectDiffuse, indirectGlossy;
 	u_int directSamples, indirectSamples;
@@ -65,8 +58,6 @@ private:
 
 	// Declare sample parameters for light source sampling
 	u_int sampleOffset, bufferId;
-	u_int lightSampleOffset, lightNumOffset, bsdfSampleOffset, bsdfComponentOffset;
-	u_int indirectlightSampleOffset, indirectlightNumOffset, indirectbsdfSampleOffset, indirectbsdfComponentOffset;
 	u_int diffuse_reflectSampleOffset, diffuse_reflectComponentOffset, indirectdiffuse_reflectSampleOffset, indirectdiffuse_reflectComponentOffset;
 	u_int diffuse_refractSampleOffset, diffuse_refractComponentOffset, indirectdiffuse_refractSampleOffset, indirectdiffuse_refractComponentOffset;
 	u_int glossy_reflectSampleOffset, glossy_reflectComponentOffset, indirectglossy_reflectSampleOffset, indirectglossy_reflectComponentOffset;

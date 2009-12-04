@@ -57,6 +57,8 @@ public:
 	virtual void InitParam(const ParamSet &params) { }
 	virtual void Init(const Scene *scene) { }
 
+	virtual bool SupportMutatingSampler() { return false; };
+
 	virtual void RequestSamples(vector<u_int> &structure) const = 0;
 	virtual u_int RequestSamplesCount() const = 0;
 
@@ -82,6 +84,8 @@ public:
 
 class LSSOneUniform : public LightsSamplingStrategy {
 public:
+	virtual bool SupportMutatingSampler() { return true; };
+
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
 	virtual u_int SampleLights(
@@ -95,13 +99,15 @@ class LSSAuto : public LightsSamplingStrategy {
 public:
 	LSSAuto() : strategy(NULL) { }
 	virtual void Init(const Scene *scene) {
-		if (scene->lights.size() > 5)
+		if (scene->sampler->IsMutating() || scene->lights.size() > 5)
 			strategy = new LSSOneUniform();
 		else
 			strategy = new LSSAllUniform();
 
 		strategy->Init(scene);
 	}
+
+	virtual bool SupportMutatingSampler() { return true; };
 
 	virtual void RequestSamples(vector<u_int> &structure) const { strategy->RequestSamples(structure); }
 	virtual u_int RequestSamplesCount() const { return strategy->RequestSamplesCount(); }
@@ -127,6 +133,8 @@ public:
 	}
 	virtual void Init(const Scene *scene);
 
+	virtual bool SupportMutatingSampler() { return true; };
+
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
 	virtual u_int SampleLights(
@@ -148,6 +156,8 @@ public:
 		delete lightCDF;
 	}
 	virtual void Init(const Scene *scene);
+
+	virtual bool SupportMutatingSampler() { return true; };
 
 	virtual void RequestSamples(vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount() const { return 6; }
@@ -319,7 +329,7 @@ public:
 		supportedRRStrategies.push_back(st);
 	}
 
-	bool isSupported(LightsSamplingStrategy::LightStrategyType st) {
+	bool IsSupported(LightsSamplingStrategy::LightStrategyType st) {
 		for (u_int i = 0; i < supportedLSStrategies.size(); i++) {
 			if (st == supportedLSStrategies[i])
 				return true;
@@ -328,7 +338,7 @@ public:
 		return false;
 	}
 
-	bool isSupported(RussianRouletteStrategy::RRStrategyType st) {
+	bool IsSupported(RussianRouletteStrategy::RRStrategyType st) {
 		for (u_int i = 0; i < supportedRRStrategies.size(); i++) {
 			if (st == supportedRRStrategies[i])
 				return true;

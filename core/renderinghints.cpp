@@ -395,116 +395,130 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 	shadowRayCount = max(params.FindOneInt("shadowraycount", 1), 1);
 
 	// Light Strategy
+	if (supportedStrategies.GetDefaultLightSamplingStrategy() != LightsSamplingStrategy::NOT_SUPPORTED) {
+		// For sompatibility with past versions
+		string oldst = params.FindOneString("strategy", "auto");
+		string newst = params.FindOneString("lightstrategy", "auto");
+		string st;
+		if ((oldst == newst) || (oldst == "auto"))
+			st = newst;
+		else
+			st = oldst;
 
-	// For sompatibility with past versions
-	string oldst = params.FindOneString("strategy", "auto");
-	string newst = params.FindOneString("lightstrategy", "auto");
-	string st;
-	if ((oldst == newst) || (oldst == "auto"))
-		st = newst;
-	else
-		st = oldst;
+		if (st == "one") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
+		else if (st == "all") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
+		else if (st == "auto") lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
+		else if (st == "importance") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE;
+		else if (st == "powerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
+		else if (st == "allpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
+		else if (st == "logpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
+		else {
+			std::stringstream ss;
+			ss << "Strategy  '" << st << "' unknown. Using \"auto\".";
+			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+			lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
+		}
 
-	if (st == "one") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
-	else if (st == "all") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
-	else if (st == "importance") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE;
-	else if (st == "powerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
-	else if (st == "allpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
-	else if (st == "logpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
-	else {
-		std::stringstream ss;
-		ss << "Strategy  '" << st << "' unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
+		// Check if it is one of the supported Light Sampling strategies
+		if (!supportedStrategies.IsSupported(lightStrategyType)) {
+			std::stringstream ss;
+			ss << "Strategy  '" << st << "' for light sampling is unsupported by this integrator. Using the default.";
+			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+
+			lightStrategyType = supportedStrategies.GetDefaultLightSamplingStrategy();
+		}
+
+		// Create the light strategy
+		switch (lightStrategyType) {
+			case LightsSamplingStrategy::NOT_SUPPORTED:
+				lsStrategy = NULL;
+				break;
+			case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
+				lsStrategy = new LSSAllUniform();
+				break;
+			case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
+				lsStrategy =  new LSSOneUniform();
+				break;
+			case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
+				lsStrategy =  new LSSAuto();
+				break;
+			case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
+				lsStrategy = new LSSOneImportance();
+				break;
+			case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
+				lsStrategy = new LSSOnePowerImportance();
+				break;
+			case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
+				lsStrategy = new LSSAllPowerImportance();
+				break;
+			case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
+				lsStrategy = new LSSOneLogPowerImportance();
+			default:
+				BOOST_ASSERT(false);
+		}
+		if (lsStrategy)
+			lsStrategy->InitParam(params);
 	}
-
-	// Check if it is one of the supported Light Sampling strategies
-	if (!supportedStrategies.isSupported(lightStrategyType)) {
-		std::stringstream ss;
-		ss << "Strategy  '" << st << "' for light sampling is unsupported by this integrator. Using the default.";
-		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-
-		lightStrategyType = supportedStrategies.GetDefaultLightSamplingStrategy();
-	}
-
-	// Create the light strategy
-	switch (lightStrategyType) {
-		case LightsSamplingStrategy::NOT_SUPPORTED:
-			lsStrategy = NULL;
-			break;
-		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
-			lsStrategy = new LSSAllUniform();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
-			lsStrategy =  new LSSOneUniform();
-			break;
-		case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
-			lsStrategy =  new LSSAuto();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
-			lsStrategy = new LSSOneImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
-			lsStrategy = new LSSOnePowerImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
-			lsStrategy = new LSSAllPowerImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
-			lsStrategy = new LSSOneLogPowerImportance();
-		default:
-			BOOST_ASSERT(false);
-	}
-	if (lsStrategy)
-		lsStrategy->InitParam(params);
 
 	// RR Strategy
+	if (supportedStrategies.GetDefaultRussianRouletteStrategy() != RussianRouletteStrategy::NOT_SUPPORTED) {
+		string st = params.FindOneString("rrstrategy", "efficiency");
+		if (st == "none") rrStrategyType = RussianRouletteStrategy::NONE;
+		else if (st == "efficiency") rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
+		else if (st == "probability") rrStrategyType = RussianRouletteStrategy::PROBABILITY;
+		else {
+			std::stringstream ss;
+			ss << "Strategy  '" << st << "' for russian roulette unknown. Using \"efficiency\".";
+			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+			rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
+		}
 
-	st = params.FindOneString("rrstrategy", "efficiency");
-	if (st == "none") rrStrategyType = RussianRouletteStrategy::NONE;
-	else if (st == "efficiency") rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
-	else if (st == "probability") rrStrategyType = RussianRouletteStrategy::PROBABILITY;
-	else {
-		std::stringstream ss;
-		ss << "Strategy  '" << st << "' for russian roulette unknown. Using \"efficiency\".";
-		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-		rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
+		// Check if it is one of the supported RR strategies
+		if (!supportedStrategies.IsSupported(rrStrategyType)) {
+			std::stringstream ss;
+			ss << "Strategy  '" << st << "' for russian roulette is unsupported by this integrator. Using the default.";
+			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+
+			rrStrategyType = supportedStrategies.GetDefaultRussianRouletteStrategy();
+		}
+
+		// Create the RR strategy
+		switch (rrStrategyType) {
+			case RussianRouletteStrategy::NOT_SUPPORTED:
+				rrStrategy = NULL;
+				break;
+			case RussianRouletteStrategy::NONE:
+				rrStrategy = new RRNoneStrategy();
+				break;
+			case RussianRouletteStrategy::EFFICIENCY:
+				rrStrategy =  new RREfficiencyStrategy();
+				break;
+			case RussianRouletteStrategy::PROBABILITY:
+				rrStrategy =  new RRProbabilityStrategy();
+				break;
+			default:
+				BOOST_ASSERT(false);
+		}
+		if (rrStrategy != NULL)
+			rrStrategy->InitParam(params);
 	}
-
-	// Check if it is one of the supported RR strategies
-	if (!supportedStrategies.isSupported(rrStrategyType)) {
-		std::stringstream ss;
-		ss << "Strategy  '" << st << "' for russian roulette is unsupported by this integrator. Using the default.";
-		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-
-		rrStrategyType = supportedStrategies.GetDefaultRussianRouletteStrategy();
-	}
-
-	// Create the RR strategy
-	switch (rrStrategyType) {
-		case RussianRouletteStrategy::NOT_SUPPORTED:
-			rrStrategy = NULL;
-			break;
-		case RussianRouletteStrategy::NONE:
-			rrStrategy = new RRNoneStrategy();
-			break;
-		case RussianRouletteStrategy::EFFICIENCY:
-			rrStrategy =  new RREfficiencyStrategy();
-			break;
-		case RussianRouletteStrategy::PROBABILITY:
-			rrStrategy =  new RRProbabilityStrategy();
-			break;
-		default:
-			BOOST_ASSERT(false);
-	}
-	if (rrStrategy != NULL)
-		rrStrategy->InitParam(params);
 }
 
 void SurfaceIntegratorRenderingHints::InitStrategies(const Scene *scene) {
-	if (lsStrategy != NULL)
+	if (lsStrategy != NULL) {
+		if (lsStrategy->SupportMutatingSampler()) {
+			std::stringstream ss;
+			ss << "Light Sampling strategy doesn't support mutating sampler. Using \"one\".";
+			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+			BOOST_ASSERT(supportedStrategies.IsSupported(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM));
+
+			delete lsStrategy;
+			lsStrategy =  new LSSOneUniform();
+		}
+
 		lsStrategy->Init(scene);
+	}
+
 	if (rrStrategy != NULL)
 		rrStrategy->Init(scene);
 }

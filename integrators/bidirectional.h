@@ -43,6 +43,9 @@ public:
 		lightStrategy(ls), debug(d) {
 		eyeBufferId = 0;
 		lightBufferId = 0;
+
+		hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::NOT_SUPPORTED);
+		hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::NOT_SUPPORTED);
 	}
 	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods
