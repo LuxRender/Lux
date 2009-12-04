@@ -46,6 +46,7 @@ public:
 class LightsSamplingStrategy : public Strategy {
 public:
 	enum LightStrategyType {
+		NOT_SUPPORTED, // Used in the case LS strategies are not supported at all
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC, SAMPLE_ONE_IMPORTANCE,
 		SAMPLE_ONE_POWER_IMPORTANCE, SAMPLE_ALL_POWER_IMPORTANCE,
@@ -185,6 +186,7 @@ public:
 class RussianRouletteStrategy : public Strategy {
 public:
 	enum RRStrategyType {
+		NOT_SUPPORTED, // Used in the case RR strategies are not supported at all
 		NONE, EFFICIENCY, PROBABILITY
 	};
 
@@ -287,24 +289,82 @@ private:
 // SurfaceIntegrator Rendering Hints
 //------------------------------------------------------------------------------
 
+class SurfaceIntegratorSupportedStrategies {
+public:
+	SurfaceIntegratorSupportedStrategies() :
+		defaultLSStrategies(LightsSamplingStrategy::NOT_SUPPORTED),
+				defaultRRStrategies(RussianRouletteStrategy::NOT_SUPPORTED) { }
+
+	void SetDefaultLightSamplingStrategy(LightsSamplingStrategy::LightStrategyType st) {
+		defaultLSStrategies = st;
+	}
+
+	void SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::RRStrategyType st) {
+		defaultRRStrategies = st;
+	}
+
+	LightsSamplingStrategy::LightStrategyType GetDefaultLightSamplingStrategy() {
+		return defaultLSStrategies;
+	}
+
+	RussianRouletteStrategy::RRStrategyType GetDefaultRussianRouletteStrategy() {
+		return defaultRRStrategies;
+	}
+
+	void addLightSamplingStrategy(LightsSamplingStrategy::LightStrategyType st) {
+		supportedLSStrategies.push_back(st);
+	}
+
+	void addRussianRouletteStrategy(RussianRouletteStrategy::RRStrategyType st) {
+		supportedRRStrategies.push_back(st);
+	}
+
+	bool isSupported(LightsSamplingStrategy::LightStrategyType st) {
+		for (u_int i = 0; i < supportedLSStrategies.size(); i++) {
+			if (st == supportedLSStrategies[i])
+				return true;
+		}
+
+		return false;
+	}
+
+	bool isSupported(RussianRouletteStrategy::RRStrategyType st) {
+		for (u_int i = 0; i < supportedRRStrategies.size(); i++) {
+			if (st == supportedRRStrategies[i])
+				return true;
+		}
+
+		return false;
+	}
+
+private:
+	LightsSamplingStrategy::LightStrategyType defaultLSStrategies;
+	vector<LightsSamplingStrategy::LightStrategyType> supportedLSStrategies;
+
+	RussianRouletteStrategy::RRStrategyType defaultRRStrategies;
+	vector<RussianRouletteStrategy::RRStrategyType> supportedRRStrategies;
+};
+
 class SurfaceIntegratorRenderingHints {
 public:
 	SurfaceIntegratorRenderingHints() {
 		shadowRayCount = 1;
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
-		lightStrategy = NULL;
+		lsStrategy = NULL;
 
 		rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 		rrStrategy = NULL;
 	};
 	~SurfaceIntegratorRenderingHints() {
-		if (lightStrategy)
-			delete lightStrategy;
+		if (lsStrategy)
+			delete lsStrategy;
 		if (rrStrategy)
 			delete rrStrategy;
 	}
 
 	void InitParam(const ParamSet &params);
+
+	SurfaceIntegratorSupportedStrategies& GetSupportedStrategies() { return supportedStrategies; }
 
 	u_int GetShadowRaysCount() const { return shadowRayCount; }
 	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
@@ -318,7 +378,7 @@ public:
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const {
-		const u_int nContribs = lightStrategy->SampleLights(tspack, scene,
+		const u_int nContribs = lsStrategy->SampleLights(tspack, scene,
 				shadowRayCount, p, n, wo, bsdf, sample, &sampleData[lightSampleOffset], scale, L);
 
 		if (V) {
@@ -336,11 +396,15 @@ public:
 	}
 
 private:
+	SurfaceIntegratorSupportedStrategies supportedStrategies;
+
+	// Light Strategies
 	u_int shadowRayCount;
 	LightsSamplingStrategy::LightStrategyType lightStrategyType;
-	LightsSamplingStrategy *lightStrategy;
+	LightsSamplingStrategy *lsStrategy;
 	u_int lightSampleOffset;
 
+	// Russian Roulette Strategies
 	RussianRouletteStrategy::RRStrategyType rrStrategyType;
 	RussianRouletteStrategy *rrStrategy;
 	u_int rrSampleOffset;

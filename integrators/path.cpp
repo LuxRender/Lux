@@ -32,6 +32,29 @@ using namespace lux;
 
 static const u_int passThroughLimit = 10000;
 
+PathIntegrator::PathIntegrator(u_int md, bool ie) {
+	maxDepth = md;
+	bufferId = 0;
+	includeEnvironment = ie;
+
+	// Set the strategies supported by this integrator
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_UNIFORM);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE);
+	// Set the defualt strategy supported
+	hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+
+	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::NONE);
+	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::EFFICIENCY);
+	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::PROBABILITY);
+	// Set the defualt strategy supported
+	hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::EFFICIENCY);
+}
+
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {

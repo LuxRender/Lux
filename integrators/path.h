@@ -32,12 +32,8 @@ namespace lux
 class PathIntegrator : public SurfaceIntegrator {
 public:
 	// PathIntegrator Public Methods
-	PathIntegrator(u_int md, bool ie) {
-		maxDepth = md;
-		bufferId = 0;
-		includeEnvironment = ie;
-	}
-	virtual ~PathIntegrator() { }
+	PathIntegrator(u_int md, bool ie);
+
 	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual void Preprocess(const TsPack *tspack, const Scene *scene);

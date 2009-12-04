@@ -32,6 +32,20 @@ using namespace lux;
 // DirectLightingIntegrator Method Definitions
 DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 	maxDepth = md;
+
+	// Set the strategies supported by this integrator
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_UNIFORM);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE);
+	hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+
+	// DirectLighting doesn't use RussianRouletteStrategies at all so none of them
+	// is supported
+	hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::NOT_SUPPORTED);
 }
 
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene) {

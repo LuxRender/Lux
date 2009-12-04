@@ -419,32 +419,45 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 	}
 
+	// Check if it is one of the supported Light Sampling strategies
+	if (!supportedStrategies.isSupported(lightStrategyType)) {
+		std::stringstream ss;
+		ss << "Strategy  '" << st << "' for light sampling is unsupported by this integrator. Using the default.";
+		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+
+		lightStrategyType = supportedStrategies.GetDefaultLightSamplingStrategy();
+	}
+
 	// Create the light strategy
 	switch (lightStrategyType) {
+		case LightsSamplingStrategy::NOT_SUPPORTED:
+			lsStrategy = NULL;
+			break;
 		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
-			lightStrategy = new LSSAllUniform();
+			lsStrategy = new LSSAllUniform();
 			break;
 		case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
-			lightStrategy =  new LSSOneUniform();
+			lsStrategy =  new LSSOneUniform();
 			break;
 		case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
-			lightStrategy =  new LSSAuto();
+			lsStrategy =  new LSSAuto();
 			break;
 		case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
-			lightStrategy = new LSSOneImportance();
+			lsStrategy = new LSSOneImportance();
 			break;
 		case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
-			lightStrategy = new LSSOnePowerImportance();
+			lsStrategy = new LSSOnePowerImportance();
 			break;
 		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
-			lightStrategy = new LSSAllPowerImportance();
+			lsStrategy = new LSSAllPowerImportance();
 			break;
 		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
-			lightStrategy = new LSSOneLogPowerImportance();
+			lsStrategy = new LSSOneLogPowerImportance();
 		default:
 			BOOST_ASSERT(false);
 	}
-	lightStrategy->InitParam(params);
+	if (lsStrategy)
+		lsStrategy->InitParam(params);
 
 	// RR Strategy
 
@@ -459,8 +472,20 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 		rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 	}
 
+	// Check if it is one of the supported RR strategies
+	if (!supportedStrategies.isSupported(rrStrategyType)) {
+		std::stringstream ss;
+		ss << "Strategy  '" << st << "' for russian roulette is unsupported by this integrator. Using the default.";
+		luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
+
+		rrStrategyType = supportedStrategies.GetDefaultRussianRouletteStrategy();
+	}
+
 	// Create the RR strategy
 	switch (rrStrategyType) {
+		case RussianRouletteStrategy::NOT_SUPPORTED:
+			rrStrategy = NULL;
+			break;
 		case RussianRouletteStrategy::NONE:
 			rrStrategy = new RRNoneStrategy();
 			break;
@@ -473,20 +498,27 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 		default:
 			BOOST_ASSERT(false);
 	}
-	rrStrategy->InitParam(params);
+	if (rrStrategy != NULL)
+		rrStrategy->InitParam(params);
 }
 
 void SurfaceIntegratorRenderingHints::InitStrategies(const Scene *scene) {
-	lightStrategy->Init(scene);
-	rrStrategy->Init(scene);
+	if (lsStrategy != NULL)
+		lsStrategy->Init(scene);
+	if (rrStrategy != NULL)
+		rrStrategy->Init(scene);
 }
 
 void SurfaceIntegratorRenderingHints::RequestSamples(vector<u_int> &structure) {
-	lightSampleOffset = structure.size();
-	// Request samples for each shadow ray we have to trace
-	for (u_int i = 0; i <  shadowRayCount; ++i)
-		lightStrategy->RequestSamples(structure);
+	if (lsStrategy != NULL) {
+		lightSampleOffset = structure.size();
+		// Request samples for each shadow ray we have to trace
+		for (u_int i = 0; i <  shadowRayCount; ++i)
+			lsStrategy->RequestSamples(structure);
+	}
 
-	rrSampleOffset = structure.size();
-	rrStrategy->RequestSamples(structure);
+	if (rrStrategy != NULL) {
+		rrSampleOffset = structure.size();
+		rrStrategy->RequestSamples(structure);
+	}
 }
