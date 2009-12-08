@@ -27,6 +27,7 @@
 #include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
+#include "rgbillum.h"
 
 namespace lux
 {
@@ -34,19 +35,24 @@ namespace lux
 class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
-	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &power,
-		int ns, const string &texmap);
+	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &l,
+		u_int ns, const string &texmap, EnvironmentMapping *m,
+		float gain, float gamma);
 	virtual ~InfiniteAreaLightIS();
 	virtual float Power(const Scene *scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		return Lbase.Y() * radianceMap->Lookup(.5f, .5f, .5f).Filter() *
+		return SPDbase.Y() *
+			radianceMap->Lookup(.5f, .5f, .5f).Filter() *
 			M_PI * worldRadius * worldRadius;
 	}
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
+		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
+		float *pdfDirect) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
@@ -54,15 +60,23 @@ public:
 	virtual float Pdf(const TsPack *, const Point &, const Vector &) const;
 	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *Le) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+		const Point &p, const Normal &n, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		VisibilityTester *visibility, SWCSpectrum *Le) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp);
 
+	MIPMap<RGBColor> *radianceMap;
+	EnvironmentMapping *mapping;
 private:
 	// InfiniteAreaLightIS Private Data
-	RGBColor Lbase;
-	MIPMap<RGBColor> *radianceMap;
-	Distribution1D *uDistrib, **vDistribs;
+	RGBIllumSPD SPDbase;
+	Distribution2D *uvDistrib;
 };
 
 }

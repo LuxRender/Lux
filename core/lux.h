@@ -199,6 +199,7 @@ namespace lux
   class ContributionSystem;
   class MotionSystem;
   class Distribution1D;
+  class Distribution2D;
   class IrregularDistribution1D;
   class MachineEpsilon;
 }

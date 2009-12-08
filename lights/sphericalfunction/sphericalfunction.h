@@ -113,7 +113,7 @@ namespace lux {
 	class SampleableSphericalFunction : public SphericalFunction {
 	public:
 		SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction> aFunc, 
-			int xRes = 512, int yRes = 256);
+			u_int xRes = 512, u_int yRes = 256);
 		~SampleableSphericalFunction();
 
 		using SphericalFunction::f;
@@ -148,9 +148,7 @@ namespace lux {
 		 */
 		float Average_f() const;
 	private:
-		int nVDistribs;
-		Distribution1D* uDistrib;
-		Distribution1D** vDistribs;
+		Distribution2D* uvDistrib;
 		boost::shared_ptr<const SphericalFunction> func;
 	};
 
