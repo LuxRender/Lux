@@ -569,13 +569,13 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						v.flux.Filter(tspack) * cosins / v.pdfR));
 					v.flux *= (v.coso * cosins) /
 						(v.pdf * v.cosi);
+					v.rr = min(1.f, max(lightThreshold,
+						v.flux.Filter(tspack)));
 					if (through > 0) {
 						v.flux *= throughFlux;
 						throughFlux = SWCSpectrum(1.f);
 						through = 0;
 					}
-					v.rr = min(1.f, max(lightThreshold,
-						v.flux.Filter(tspack)));
 					if (nLight > rrStart) {
 						if (v.rr < data[0])
 							break;
@@ -834,12 +834,12 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			v.rr = min(1.f, max(lightThreshold,
 				v.flux.Filter(tspack) * (cosins * v.coso / (v.cosi * v.pdf))));
 			v.flux *= cosins / v.pdfR;
+			v.rrR = min(1.f, max(eyeThreshold, v.flux.Filter(tspack)));
 			if (through > 0) {
 				v.flux *= throughFlux;
 				throughFlux = SWCSpectrum(1.f);
 				through = 0;
 			}
-			v.rrR = min(1.f, max(eyeThreshold, v.flux.Filter(tspack)));
 			if (nEye > rrStart) {
 				if (v.rrR < data[0])
 					break;
