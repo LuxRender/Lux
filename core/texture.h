@@ -116,6 +116,7 @@ public:
 	// EnvironmentMapping Interface
 	virtual ~EnvironmentMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const = 0;
+	virtual Vector Map(float s, float t) const = 0;
 };
 class  LatLongMapping : public EnvironmentMapping {
 public:
@@ -123,6 +124,7 @@ public:
 	LatLongMapping() {}
 	virtual ~LatLongMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const;
+	virtual Vector Map(float s, float t) const;
 };
 class  AngularMapping : public EnvironmentMapping {
 public:
@@ -130,6 +132,7 @@ public:
 	AngularMapping() {}
 	virtual ~AngularMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const;
+	virtual Vector Map(float s, float t) const;
 };
 class  VerticalCrossMapping : public EnvironmentMapping {
 public:
@@ -137,6 +140,7 @@ public:
 	VerticalCrossMapping() {}
 	virtual ~VerticalCrossMapping() { }
 	virtual void Map(const Vector &wh, float *s, float *t) const;
+	virtual Vector Map(float s, float t) const;
 };
 
 template <class T> class Texture {

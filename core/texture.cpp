@@ -174,12 +174,26 @@ void LatLongMapping::Map(const Vector &wh, float *s, float *t) const {
 	*s = SphericalPhi(wh) * INV_TWOPI;
 	*t = SphericalTheta(wh) * INV_PI;
 }
+Vector LatLongMapping::Map(float s, float t) const
+{
+	const float phi = s * 2.f * M_PI;
+	const float theta = t * M_PI;
+	return SphericalDirection(sinf(theta), cosf(theta), phi);
+}
 void AngularMapping::Map(const Vector &wh, float *s, float *t) const {
 	float r = sqrtf(wh.y*wh.y + wh.z*wh.z);
 	if (r > 1e-9)
 		r = INV_TWOPI * acosf(Clamp(-wh.x, -1.f, 1.f)) / r;
 	*s = 0.5f - wh.y * r;
 	*t = 0.5f - wh.z * r;
+}
+Vector AngularMapping::Map(float s, float t) const
+{
+	const float Y = .5f - s;
+	const float Z = .5f - t;
+	const float x = -cosf(2.f * M_PI * sqrtf(Y * Y + Z * Z));
+	const float r = 2.f * sqrtf(1.f - x * x);
+	return Vector(x, Y * r, Z * r);
 }
 void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t) const {
 	int axis = 0;
@@ -242,6 +256,10 @@ void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t) const {
 	// rescale and offset to correct cube face in cross
 	*s = (*s + so) * (1.f / 3.f);
 	*t = (*t + to) * (1.f / 4.f);
+}
+Vector VerticalCrossMapping::Map(float s, float t) const
+{
+	return Vector(1, 0, 0);//FIXME to be implemented
 }
  float Noise(float x, float y, float z) {
 	// Compute noise cell coordinates and offsets
