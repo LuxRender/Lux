@@ -62,17 +62,26 @@ float SpecularReflection::Weight(const TsPack *tspack, const Vector &wo) const
 bool ArchitecturalReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const
 {
-	if (wo.z <= 0.f) {
-		*pdf = 0.f;
-		if (pdfBack)
-			*pdfBack = 0.f;
+	if (wo.z <= 0.f)
 		return false;
-	}
-	return SpecularReflection::Sample_f(tspack, wo, wi, u1, u2, f_, pdf, pdfBack, reverse);
+	// Compute perfect specular reflection direction
+	*wi = Vector(-wo.x, -wo.y, wo.z);
+	*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
+	fresnel->Evaluate(tspack, CosTheta(wo), f_);
+	*f_ *= SWCSpectrum(1.f) + (SWCSpectrum(1.f) - *f_) * (SWCSpectrum(1.f) - *f_);
+	if (film > 0.f)
+		PhaseDifference(tspack, wo, film, filmindex, f_);
+	*f_ *= R;
+	*f_ /= fabsf(CosTheta(wo));
+	return true;
+
 }
 float ArchitecturalReflection::Weight(const TsPack *tspack, const Vector &wo) const
 {
 	if (wo.z <= 0.f)
 		return 0.f;
-	return SpecularReflection::Weight(tspack, wo);
+	const float w = SpecularReflection::Weight(tspack, wo);
+	return w * (1.f + (1.f - w) * (1.f - w));
 }

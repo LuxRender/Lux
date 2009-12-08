@@ -47,7 +47,7 @@ public:
 	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
 		return 0.f;
 	}
-private:
+protected:
 	// SpecularReflection Private Data
 	SWCSpectrum R;
 	Fresnel *fresnel;
