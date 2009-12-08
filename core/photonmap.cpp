@@ -26,7 +26,7 @@
 #include "spectrumwavelengths.h"
 #include "error.h"
 #include "osfunc.h"
-#include "mc.h"
+#include "mcdistribution.h"
 
 #include <fstream>
 #include <boost/thread/xtime.hpp>
@@ -465,12 +465,11 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 
 	// Compute light power CDF for photon shooting
 	u_int nLights = scene->lights.size();
-	float *lightPower = static_cast<float *>(alloca(nLights * sizeof(float)));
+	float *lightPower = new float[nLights];
 	for (u_int i = 0; i < nLights; ++i)
 		lightPower[i] = scene->lights[i]->Power(scene);
-	float totalPower;
-	float *lightCDF = static_cast<float *>(alloca((nLights + 1) * sizeof(float)));
-	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
+	Distribution1D lightCDF(lightPower, nLights);
+	delete[] lightPower;
 
 	// Declare radiance photon reflectance arrays
 	vector<SWCSpectrum> rpReflectances;
@@ -548,9 +547,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		// Choose light to shoot photon from
 		float lightPdf;
 		float uln = RadicalInverse(nshot, 13);
-		u_int lightNum = Floor2UInt(SampleStep1d(lightPower, lightCDF,
-				totalPower, nLights, uln, &lightPdf) * nLights);
-		lightNum = min(lightNum, nLights - 1);
+		u_int lightNum = lightCDF.SampleDiscrete(uln, &lightPdf);
 		const Light *light = scene->lights[lightNum];
 
 		// Generate _photonRay_ from light source and initialize _alpha_

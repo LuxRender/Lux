@@ -25,7 +25,7 @@
 #include "scene.h"
 #include "light.h"
 #include "camera.h"
-#include "mc.h"
+#include "mcdistribution.h"
 #include "reflection/bxdf.h"
 #include "dynload.h"
 #include "paramset.h"
@@ -95,11 +95,10 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	tspack->swl->Sample(.5f);
 	u_int nLights = scene->lights.size();
 	float *lightPower = new float[nLights];
-	float *lightCDF = new float[nLights + 1];
 	for (u_int i = 0; i < nLights; ++i)
 		lightPower[i] = scene->lights[i]->Power(scene);
-	float totalPower;
-	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
+	Distribution1D lightCDF(lightPower, nLights);
+	delete[] lightPower;
 	for (u_int s = 0; s < nLightSets; ++s) {
 		for (u_int i = 0; i < nLightPaths; ++i) {
 			tspack->swl->Sample(tspack->rng->floatValue());
@@ -107,10 +106,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 			u_int sampOffset = s * nLightPaths + i;
 			// Choose light source to trace path from
 			float lightPdf;
-			u_int lNum = Floor2UInt(SampleStep1d(lightPower, lightCDF,
-				totalPower, nLights, lightNum[sampOffset],
-				&lightPdf) * nLights);
-			lNum = Clamp(lNum, 0U, nLights - 1U);
+			u_int lNum = lightCDF.SampleDiscrete(lightNum[sampOffset], &lightPdf);
 			Light *light = scene->lights[lNum];
 			// Sample ray leaving light source
 			RayDifferential ray;
@@ -157,8 +153,6 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 			}
 		}
 	}
-	delete[] lightCDF;
-	delete[] lightPower;
 	delete[] lightNum; // NOBOOK
 	delete[] lightSamp0; // NOBOOK
 	delete[] lightSamp1; // NOBOOK
