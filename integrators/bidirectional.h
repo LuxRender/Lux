@@ -44,8 +44,8 @@ public:
 		eyeBufferId = 0;
 		lightBufferId = 0;
 
-		hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::NOT_SUPPORTED);
-		hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::NOT_SUPPORTED);
+		hints.GetSupportedStrategies().RemoveAllLightsSamplingStrategy();
+		hints.GetSupportedStrategies().RemoveAllRussianRouletteStrategy();
 	}
 	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods

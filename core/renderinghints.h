@@ -327,15 +327,13 @@ private:
 
 class SurfaceIntegratorSupportedStrategies {
 public:
-	SurfaceIntegratorSupportedStrategies() :
-		defaultLSStrategies(LightsSamplingStrategy::NOT_SUPPORTED),
-				defaultRRStrategies(RussianRouletteStrategy::NOT_SUPPORTED) { }
+	SurfaceIntegratorSupportedStrategies();
 
-	void SetDefaultLightSamplingStrategy(LightsSamplingStrategy::LightStrategyType st) {
+	void SetDefaultStrategy(LightsSamplingStrategy::LightStrategyType st) {
 		defaultLSStrategies = st;
 	}
 
-	void SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::RRStrategyType st) {
+	void SetDefaultStrategy(RussianRouletteStrategy::RRStrategyType st) {
 		defaultRRStrategies = st;
 	}
 
@@ -347,12 +345,42 @@ public:
 		return defaultRRStrategies;
 	}
 
-	void addLightSamplingStrategy(LightsSamplingStrategy::LightStrategyType st) {
-		supportedLSStrategies.push_back(st);
+	void AddStrategy(LightsSamplingStrategy::LightStrategyType st) {
+		if (!this->IsSupported(st))
+			supportedLSStrategies.push_back(st);
 	}
 
-	void addRussianRouletteStrategy(RussianRouletteStrategy::RRStrategyType st) {
-		supportedRRStrategies.push_back(st);
+	void AddStrategy(RussianRouletteStrategy::RRStrategyType st) {
+		if (!this->IsSupported(st))
+			supportedRRStrategies.push_back(st);
+	}
+
+	void RemoveStrategy(LightsSamplingStrategy::LightStrategyType st) {
+		for (u_int i = 0; i < supportedLSStrategies.size(); i++) {
+			if (st == supportedLSStrategies[i]) {
+				supportedLSStrategies.erase(supportedLSStrategies.begin() + i);
+				return;
+			}
+		}
+	}
+
+	void RemoveStrategy(RussianRouletteStrategy::RRStrategyType st) {
+		for (u_int i = 0; i < supportedRRStrategies.size(); i++) {
+			if (st == supportedRRStrategies[i]) {
+				supportedRRStrategies.erase(supportedRRStrategies.begin() + i);
+				return;
+			}
+		}
+	}
+
+	void RemoveAllLightsSamplingStrategy() {
+		supportedLSStrategies.clear();
+		this->SetDefaultStrategy(LightsSamplingStrategy::NOT_SUPPORTED);
+	}
+
+	void RemoveAllRussianRouletteStrategy() {
+		supportedRRStrategies.clear();
+		this->SetDefaultStrategy(RussianRouletteStrategy::NOT_SUPPORTED);
 	}
 
 	bool IsSupported(LightsSamplingStrategy::LightStrategyType st) {

@@ -391,6 +391,25 @@ void LSSOneLogPowerImportance::Init(const Scene *scene) {
 // SurfaceIntegrator Rendering Hints
 //------------------------------------------------------------------------------
 
+SurfaceIntegratorSupportedStrategies::SurfaceIntegratorSupportedStrategies() {
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_ALL_UNIFORM);
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM);
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE);
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE);
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE);
+	this->AddStrategy(LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE);
+	// Set the defualt strategy supported
+	this->SetDefaultStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+
+	this->AddStrategy(RussianRouletteStrategy::NONE);
+	this->AddStrategy(RussianRouletteStrategy::EFFICIENCY);
+	this->AddStrategy(RussianRouletteStrategy::PROBABILITY);
+	this->AddStrategy(RussianRouletteStrategy::IMPORTANCE);
+	// Set the defualt strategy supported
+	this->SetDefaultStrategy(RussianRouletteStrategy::EFFICIENCY);
+}
+
 void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 	shadowRayCount = max(params.FindOneInt("shadowraycount", 1), 1);
 

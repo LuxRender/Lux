@@ -68,23 +68,10 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	debugEnableIndirect = dbgEnableIndirect;
 	debugEnableSpecular = dbgEnableSpecular;
 
+	// ExPhotonIntegrator supports all light strategies available
 
-	// Set the strategies supported by this integrator
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_UNIFORM);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE);
-	// Set the defualt strategy supported
-	hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
-
-	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::NONE);
-	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::EFFICIENCY);
-	hints.GetSupportedStrategies().addRussianRouletteStrategy(RussianRouletteStrategy::PROBABILITY);
-	// Set the defualt strategy supported
-	hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::EFFICIENCY);
+	// ExPhotonIntegrator doesn't support RussianRouletteStrategy::IMPORTANCE
+	hints.GetSupportedStrategies().RemoveStrategy(RussianRouletteStrategy::IMPORTANCE);
 }
 
 ExPhotonIntegrator::~ExPhotonIntegrator()

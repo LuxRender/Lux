@@ -61,19 +61,11 @@ DistributedPath::DistributedPath(bool da, bool dd, bool dg, bool ida, bool idd, 
 	glossyrefractReject = grfr;
 	glossyrefractReject_thr = grfrt;
 
-	// Set the strategies supported by this integrator
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_UNIFORM);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE);
-	hints.GetSupportedStrategies().addLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE);
-	hints.GetSupportedStrategies().SetDefaultLightSamplingStrategy(LightsSamplingStrategy::SAMPLE_AUTOMATIC);
+	// DistributedPath supports all light strategies available
 
 	// DistributedPath doesn't use RussianRouletteStrategies at all so none of them
 	// is supported
-	hints.GetSupportedStrategies().SetDefaultRussianRouletteStrategy(RussianRouletteStrategy::NOT_SUPPORTED);
+	hints.GetSupportedStrategies().RemoveAllRussianRouletteStrategy();
 }
 
 void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
