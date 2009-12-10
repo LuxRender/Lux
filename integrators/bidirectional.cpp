@@ -139,7 +139,7 @@ static float weightPath(const vector<BidirVertex> &eye, u_int nEye, u_int eyeDep
 		weight += pDirect * pDirect;
 	}
 	// Find other paths by extending light path toward eye path
-	const u_int nLightExt = min(nEye, lightDepth - nLight);
+	const u_int nLightExt = min(nEye, lightDepth - max(lightDepth, nLight));
 	for (u_int i = 1; i <= nLightExt; ++i) {
 		// Exit if the path is impossible
 		if (!(eye[nEye - i].dARWeight > 0.f && eye[nEye - i].dAWeight > 0.f))
@@ -164,7 +164,7 @@ static float weightPath(const vector<BidirVertex> &eye, u_int nEye, u_int eyeDep
 	// Reinitialize p to search paths in the other direction
 	p = pBase;
 	// Find other paths by extending eye path toward light path
-	u_int nEyeExt = min(nLight, eyeDepth - nEye);
+	u_int nEyeExt = min(nLight, eyeDepth - max(eyeDepth, nEye));
 	for (u_int i = 1; i <= nEyeExt; ++i) {
 		// Exit if the path is impossible
 		if (!(light[nLight - i].dARWeight > 0.f && light[nLight - i].dAWeight > 0.f))
@@ -713,7 +713,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				&ePdfDirect));
 			if (eBsdf && !Ll.Black()) {
 				v.flags = BxDFType(~BSDF_SPECULAR);
-				v.pdf = eBsdf->Pdf(tspack, Vector(v.bsdf->ng), v.wo,
+				v.pdf = eBsdf->Pdf(tspack, Vector(eBsdf->nn), v.wo,
 					v.flags);
 				Ll *= eyePath[nEye - 2].flux * throughFlux;
 				// Evaluate factors for path weighting
