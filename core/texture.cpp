@@ -170,32 +170,69 @@ void IdentityMapping3D::Apply3DTextureMappingOptions(const TextureParams &tp) {
 	Vector translatev = tp.FindVector("translate", Vector(0., 0., 0.));
 	WorldToTexture = WorldToTexture * Translate(-translatev);
 }
-void LatLongMapping::Map(const Vector &wh, float *s, float *t) const {
+void LatLongMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
+{
+	const float theta = SphericalTheta(wh);
 	*s = SphericalPhi(wh) * INV_TWOPI;
-	*t = SphericalTheta(wh) * INV_PI;
+	*t = theta * INV_PI;
+	if (!pdf)
+		return;
+	*pdf = INV_TWOPI * INV_PI / sinf(theta);
 }
-Vector LatLongMapping::Map(float s, float t) const
+void LatLongMapping::Map(float s, float t, Vector *wh, float *pdf) const
 {
 	const float phi = s * 2.f * M_PI;
 	const float theta = t * M_PI;
-	return SphericalDirection(sinf(theta), cosf(theta), phi);
+	const float sinTheta = sinf(theta);
+	*wh = SphericalDirection(sinTheta, cosf(theta), phi);
+	if (!pdf)
+		return;
+	*pdf = INV_TWOPI * INV_PI / sinTheta;
 }
-void AngularMapping::Map(const Vector &wh, float *s, float *t) const {
-	float r = sqrtf(wh.y*wh.y + wh.z*wh.z);
-	if (r > 1e-9)
-		r = INV_TWOPI * acosf(Clamp(-wh.x, -1.f, 1.f)) / r;
-	*s = 0.5f - wh.y * r;
-	*t = 0.5f - wh.z * r;
-}
-Vector AngularMapping::Map(float s, float t) const
+void AngularMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 {
-	const float Y = .5f - s;
-	const float Z = .5f - t;
-	const float x = -cosf(2.f * M_PI * sqrtf(Y * Y + Z * Z));
-	const float r = 2.f * sqrtf(1.f - x * x);
-	return Vector(x, Y * r, Z * r);
+	const float sinTheta = sqrtf(wh.y*wh.y + wh.z*wh.z);
+	const float r = INV_TWOPI * acosf(Clamp(-wh.x, -1.f, 1.f));
+	if (sinTheta > 1e-9f) {
+		const float factor = r / sinTheta;
+		*s = 0.5f - wh.y * factor;
+		*t = 0.5f - wh.z * factor;
+	} else if (fabsf(wh.y) > fabsf(wh.z)) {
+		*s = 0.5f * (1.f - SignOf(wh.y));
+		*t = 0.5f;
+	} else {
+		*s = 0.5f;
+		*t = 0.5f * (1.f - SignOf(wh.z));
+	}
+	if (!pdf)
+		return;
+	if (r > 1e-9f)
+		*pdf = INV_TWOPI * sinTheta / r;
+	else
+		*pdf = 1.f;
 }
-void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t) const {
+void AngularMapping::Map(float s, float t, Vector *wh, float *pdf) const
+{
+	const float r = sqrtf((s - .5f) * (s - .5f) + (t - .5f) * (t - .5f));
+	if (r > .5f) {
+		if (pdf)
+			*pdf = 0.f;
+		return;
+	}
+	const float theta = 2.f * M_PI * r;
+	wh->x = -cosf(theta);
+	const float phi = atan2f(t - .5f, s - .5f);
+	const float sinTheta = sinf(theta);
+	wh->y = sinTheta * cosf(phi);
+	wh->z = sinTheta * sinf(phi);
+	if (!pdf)
+		return;
+	if (r > 1e-9f)
+		*pdf = INV_TWOPI * sinTheta / r;
+	else
+		*pdf = 1.f;
+}
+void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const {
 	int axis = 0;
 	float ma = fabsf(wh.x);
 	if (fabsf(wh.y) > ma) {
@@ -256,10 +293,16 @@ void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t) const {
 	// rescale and offset to correct cube face in cross
 	*s = (*s + so) * (1.f / 3.f);
 	*t = (*t + to) * (1.f / 4.f);
+	if (!pdf)
+		return;
+	*pdf = 12.f * ima * ima * ima;
 }
-Vector VerticalCrossMapping::Map(float s, float t) const
+void VerticalCrossMapping::Map(float s, float t, Vector *wh, float *pdf) const
 {
-	return Vector(1, 0, 0);//FIXME to be implemented
+	//FIXME to be implemented
+	if (!pdf)
+		return;
+	*pdf = 0.f;
 }
  float Noise(float x, float y, float z) {
 	// Compute noise cell coordinates and offsets

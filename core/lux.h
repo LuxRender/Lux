@@ -360,4 +360,9 @@ inline float SmoothStep(float min, float max, float value) {
 	return v * v * (-2.f * v  + 3.f);
 }
 
+template <class T> int SignOf(T x)
+{
+	return (x > 0) - (x < 0);
+}
+
 #endif // LUX_LUX_H

@@ -49,8 +49,8 @@ public:
 		}
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		Vector wh = Normalize(WorldToLight(-w));
-		float s, t;
-		light.mapping->Map(wh, &s, &t);
+		float s, t, dummy;
+		light.mapping->Map(wh, &s, &t, &dummy);
 		*f += SWCSpectrum(tspack, light.radianceMap->Lookup(s, t)) *
 			INV_PI;
 	}
@@ -94,12 +94,17 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	float filter = 1.f / max(nu, nv);
 	float *img = new float[nu * nv];
 	for (u_int x = 0; x < nu; ++x) {
-		float xp = (float)x / (float)nu;
+		float xp = (x + .5f) / nu;
 		for (u_int y = 0; y < nv; ++y) {
-			float yp = (float)y / (float)nv;
-			//FIXME - use proper pdf from mapping: currently latlong
-			img[y + x * nv] = radianceMap->Lookup(xp, yp,
-				filter).Y() * sinf(M_PI * (yp + .5f / nv));
+			float yp = (y + .5f) / nv;
+			Vector dummy;
+			float pdf;
+			mapping->Map(xp, yp, &dummy, &pdf);
+			if (!(pdf > 0.f))
+				img[y + x * nv] = 0.f;
+			else
+				img[y + x * nv] = radianceMap->Lookup(xp, yp,
+					filter).Y() / pdf;
 		}
 	}
 	uvDistrib = new Distribution2D(img, nu, nv);
@@ -145,11 +150,9 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(r.d));
-		float s, t;
-		mapping->Map(wh, &s, &t);
-		//FIXME - use proper pdf from mapping
-		*pdfDirect = uvDistrib->Pdf(s, t) /
-			(2.f * M_PI * M_PI * sin(t * M_PI)) *
+		float s, t, pdfMap;
+		mapping->Map(wh, &s, &t, &pdfMap);
+		*pdfDirect = uvDistrib->Pdf(s, t) * pdfMap *
 			AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
 		return SWCSpectrum(tspack, SPDbase) *
 			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
@@ -194,11 +197,9 @@ float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &p,
 	const Vector d(Normalize(po - p));
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(d));
-		float s, t;
-		mapping->Map(wh, &s, &t);
-		// FIXME - use pdf from mapping
-		return uvDistrib->Pdf(s, t) /
-			(2.f * M_PI * M_PI * sin(t * M_PI)) *
+		float s, t, pdf;
+		mapping->Map(wh, &s, &t, &pdf);
+		return uvDistrib->Pdf(s, t) * pdf *
 			AbsDot(d, ns) / DistanceSquared(p, po);
 	} else {
 		return AbsDot(d, n) * INV_TWOPI *
@@ -264,15 +265,13 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 	float uv[2];
 	uvDistrib->SampleContinuous(u1, u2, uv, pdfDirect);
 	// Convert sample point to direction on the unit sphere
-	//FIXME - do proper conversion from mapping
-	float theta = uv[1] * M_PI;
-	float phi = uv[0] * 2.f * M_PI;
-	float costheta = cos(theta), sintheta = sin(theta);
-	// Transform direction to world space
-	const Vector wi(LightToWorld(SphericalDirection(sintheta, costheta,
-		phi)));
+	Vector wi;
+	float pdfMap;
+	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
+	if (!(pdfMap > 0.f))
+		return false;
 	// Compute PDF for sampled direction
-	*pdfDirect /= 2.f * M_PI * M_PI * sintheta;
+	*pdfDirect *= pdfMap;
 	const Vector toCenter(worldCenter - p);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, wi);

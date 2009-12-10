@@ -46,8 +46,8 @@ public:
 		}
 		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		Vector wh = Normalize(WorldToLight(-w));
-		float s, t;
-		light.mapping->Map(wh, &s, &t);
+		float s, t, dummy;
+		light.mapping->Map(wh, &s, &t, &dummy);
 		*f += SWCSpectrum(tspack, light.radianceMap->Lookup(s, t)) *
 			INV_PI;
 	}
@@ -80,8 +80,8 @@ public:
 		Vector wiW = Normalize(dg.p - ps);
 		if (light.radianceMap != NULL) {
 			Vector wh = Normalize(WorldToLight(-wiW));
-			float s, t;
-			light.mapping->Map(wh, &s, &t);
+			float s, t, dummy;
+			light.mapping->Map(wh, &s, &t, &dummy);
 			*f = SWCSpectrum(tspack,
 				light.radianceMap->Lookup(s, t)) * INV_PI;
 		} else
@@ -117,8 +117,8 @@ public:
 		}
 		const Vector w(wi.x * X + wi.y * Y + wi.z * Z);
 		const Vector wh = Normalize(WorldToLight(-w));
-		float s, t;
-		light.mapping->Map(wh, &s, &t);
+		float s, t, dummy;
+		light.mapping->Map(wh, &s, &t, &dummy);
 		*f += SWCSpectrum(tspack, light.radianceMap->Lookup(s, t)) *
 			INV_PI;
 	}
@@ -167,11 +167,11 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	radianceMap = NULL;
 	if (texmap != "") {
 		auto_ptr<ImageData> imgdata(ReadImage(texmap));
-		if(imgdata.get()!=NULL) {
+		if (imgdata.get() != NULL) {
 			radianceMap = imgdata->createMIPMap<RGBColor>(BILINEAR,
 				8.f, TEXTURE_REPEAT, 1.f, gamma);
 		} else
-			radianceMap=NULL;
+			radianceMap = NULL;
 	}
 }
 
@@ -193,8 +193,8 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack,
 	// Compute infinite light radiance for direction
 	if (radianceMap != NULL) {
 		Vector wh = Normalize(WorldToLight(r.d));
-		float s, t;
-		mapping->Map(wh, &s, &t);
+		float s, t, dummy;
+		mapping->Map(wh, &s, &t, &dummy);
 		return SWCSpectrum(tspack, SPDbase) *
 			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
 	} else
@@ -211,7 +211,8 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 	const Vector toCenter(worldCenter - r.o);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, r.d);
-	const float distance = approach + sqrtf(worldRadius * worldRadius - centerDistance + approach * approach);
+	const float distance = approach + sqrtf(worldRadius * worldRadius -
+		centerDistance + approach * approach);
 	const Point ps(r.o + distance * r.d);
 	const Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
@@ -257,8 +258,8 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 	}
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(r.d));
-		float s, t;
-		mapping->Map(wh, &s, &t);
+		float s, t, dummy;
+		mapping->Map(wh, &s, &t, &dummy);
 		return SWCSpectrum(tspack, SPDbase) *
 			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
 	} else
