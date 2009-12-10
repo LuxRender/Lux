@@ -171,14 +171,33 @@ void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	const Point &p3 = mesh->p[v[2]];
 	float b3 = 1.f - b1 - b2;
 	dg->p = b1 * p1 + b2 * p2 + b3 * p3;
-
 	dg->nn = Normalize(Normal(Cross(p2-p1, p3-p1)));
-	CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 
-	float uv[3][2];
-	GetUVs(uv);
-	dg->u = b1 * uv[0][0] + b2 * uv[1][0] + b3 * uv[2][0];
-	dg->v = b1 * uv[0][1] + b2 * uv[1][1] + b3 * uv[2][1];
+	float uvs[3][2];
+	GetUVs(uvs);
+	// Compute deltas for triangle partial derivatives
+	const float du1 = uvs[0][0] - uvs[2][0];
+	const float du2 = uvs[1][0] - uvs[2][0];
+	const float dv1 = uvs[0][1] - uvs[2][1];
+	const float dv2 = uvs[1][1] - uvs[2][1];
+	const Vector dp1 = p1 - p3, dp2 = p2 - p3;
+	const float determinant = du1 * dv2 - dv1 * du2;
+	if (determinant == 0.f) {
+		// Handle 0 determinant for triangle partial derivative matrix
+		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
+	} else {
+		const float invdet = 1.f / determinant;
+		dg->dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
+		dg->dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
+	}
+
+	// Interpolate $(u,v)$ triangle parametric coordinates
+	dg->u = b1 * uvs[0][0] + b2 * uvs[1][0] + b3 * uvs[2][0];
+	dg->v = b1 * uvs[0][1] + b2 * uvs[1][1] + b3 * uvs[2][1];
+
+	dg->triangleBaryCoords[0] = b1;
+	dg->triangleBaryCoords[1] = b2;
+	dg->triangleBaryCoords[2] = b3;
 }
 
 void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
