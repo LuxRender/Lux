@@ -521,7 +521,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 				continue;
 			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
 			wi = ps - dgs.p;
-			if (Dot(wi, dg.nn) < 0.f) {
+			if (Dot(wi, dgs.nn) < 0.f) {
 				const float d2 = wi.LengthSquared();
 				*pdf += AbsDot(ns, wi) /
 					(sqrtf(d2) * d2);
@@ -600,7 +600,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
 			Vector w(ps - dgs.p);
-			if (Dot(wi, dg.nn) < 0.f) {
+			if (Dot(wi, dgs.nn) < 0.f) {
 				float distance = w.LengthSquared();
 				*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
 			}

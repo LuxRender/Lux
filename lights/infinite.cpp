@@ -234,10 +234,11 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 			~0U, 0.f));
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
+		DifferentialGeometry dgs;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[i]->Sample(.5f, .5f, .5f, &dg);
-			const Vector w(dg.p - ps);
-			if (Dot(w, dg.nn) > 0.f) {
+			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
+			const Vector w(dgs.p - ps);
+			if (Dot(w, dgs.nn) > 0.f) {
 				const float distance = w.LengthSquared();
 				*pdf += AbsDot(ns, w) /
 					(sqrtf(distance) * distance);
@@ -496,7 +497,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 				continue;
 			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
 			wi = ps - dgs.p;
-			if (Dot(wi, dg.nn) < 0.f) {
+			if (Dot(wi, dgs.nn) < 0.f) {
 				const float d2 = wi.LengthSquared();
 				*pdf += AbsDot(ns, wi) /
 					(sqrtf(d2) * d2);
@@ -580,7 +581,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
 			Vector w(ps - dgs.p);
-			if (Dot(wi, dg.nn) < 0.f) {
+			if (Dot(wi, dgs.nn) < 0.f) {
 				float distance = w.LengthSquared();
 				*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
 			}
