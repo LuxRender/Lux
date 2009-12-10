@@ -111,7 +111,7 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene *scene) {
 
 	vector<u_int> structure;
 	// Allocate and request samples for light sampling, RR, etc.
-	hints.RequestSamples(structure);
+	hints.RequestSamples(scene, structure);
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
 }

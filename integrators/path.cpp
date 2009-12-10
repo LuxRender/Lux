@@ -48,7 +48,7 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	structure.push_back(1);	// bsdf component sample for path
 
 	// Allocate and request samples for light sampling, RR, etc.
-	hints.RequestSamples(structure);
+	hints.RequestSamples(scene, structure);
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }

@@ -57,10 +57,8 @@ public:
 	virtual void InitParam(const ParamSet &params) { }
 	virtual void Init(const Scene *scene) { }
 
-	virtual bool SupportMutatingSampler() { return false; };
-
-	virtual void RequestSamples(vector<u_int> &structure) const = 0;
-	virtual u_int RequestSamplesCount() const = 0;
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const = 0;
+	virtual u_int RequestSamplesCount(const Scene *scene) const = 0;
 
 	// Note: results are added to L
 	virtual u_int SampleLights(
@@ -72,8 +70,13 @@ public:
 
 class LSSAllUniform : public LightsSamplingStrategy {
 public:
-	virtual void RequestSamples(vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount() const { return 6; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
+	virtual u_int RequestSamplesCount(const Scene *scene) const {
+		if (scene->sampler->IsMutating())
+			return scene->lights.size() * 6;
+		else
+			return 6;
+	}
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
@@ -84,10 +87,8 @@ public:
 
 class LSSOneUniform : public LightsSamplingStrategy {
 public:
-	virtual bool SupportMutatingSampler() { return true; };
-
-	virtual void RequestSamples(vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount() const { return 6; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
@@ -99,7 +100,7 @@ class LSSAuto : public LightsSamplingStrategy {
 public:
 	LSSAuto() : strategy(NULL) { }
 	virtual void Init(const Scene *scene) {
-		if (scene->sampler->IsMutating() || scene->lights.size() > 5)
+		if (scene->lights.size() > 5)
 			strategy = new LSSOneUniform();
 		else
 			strategy = new LSSAllUniform();
@@ -107,10 +108,12 @@ public:
 		strategy->Init(scene);
 	}
 
-	virtual bool SupportMutatingSampler() { return true; };
-
-	virtual void RequestSamples(vector<u_int> &structure) const { strategy->RequestSamples(structure); }
-	virtual u_int RequestSamplesCount() const { return strategy->RequestSamplesCount(); }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const {
+		strategy->RequestSamples(scene, structure);
+	}
+	virtual u_int RequestSamplesCount(const Scene *scene) const {
+		return strategy->RequestSamplesCount(scene);
+	}
 
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
@@ -133,10 +136,8 @@ public:
 	}
 	virtual void Init(const Scene *scene);
 
-	virtual bool SupportMutatingSampler() { return true; };
-
-	virtual void RequestSamples(vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount() const { return 6; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
@@ -157,10 +158,8 @@ public:
 	}
 	virtual void Init(const Scene *scene);
 
-	virtual bool SupportMutatingSampler() { return true; };
-
-	virtual void RequestSamples(vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount() const { return 6; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
 	// Note: results are added to L
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
@@ -205,7 +204,8 @@ public:
 	virtual void InitParam(const ParamSet &params) { }
 	virtual void Init(const Scene *scene) { }
 
-	virtual void RequestSamples(vector<u_int> &structure) const = 0;
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const = 0;
+	virtual u_int RequestSamplesCount(const Scene *scene) const = 0;
 	// pathLength = numeric_limits<u_int>::max() means this parameter should be
 	// ignored by RR
 	virtual float Continue(const float *sampleData,	const u_int pathLength,
@@ -214,8 +214,8 @@ public:
 
 class RRNoneStrategy : public RussianRouletteStrategy {
 public:
-	virtual void RequestSamples(vector<u_int> &structure) const { };
-	virtual u_int RequestSamplesCount() const { return 0; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const { };
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 0; }
 	virtual float Continue(const float *sampleData,
 		const u_int pathLength, float k1, const float k2) const { return 1.0f; }
 };
@@ -227,8 +227,8 @@ public:
 		rrPathLength = max(params.FindOneInt("rrpathlength", 3), 0);
 	}
 
-	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
-	virtual u_int RequestSamplesCount() const { return 1; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const { structure.push_back(1); }
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 1; }
 	virtual float Continue(const float *sampleData,	const u_int pathLength,
 		const float k1, const float k2) const {
 		if (pathLength > rrPathLength) {
@@ -255,8 +255,8 @@ public:
 		continueProbability = Clamp(params.FindOneFloat("rrcontinueprob", .65f), 0.f, 1.f);
 	}
 
-	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
-	virtual u_int RequestSamplesCount() const { return 1; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const { structure.push_back(1); }
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 1; }
 	virtual float Continue(const float *sampleData,	const u_int pathLength,
 		const float k1, const float k2) const {
 		if (pathLength > rrPathLength) {
@@ -281,8 +281,8 @@ public:
 		rrPathLength = max(params.FindOneInt("rrpathlength", 1), 0);
 	}
 
-	virtual void RequestSamples(vector<u_int> &structure) const { structure.push_back(1); }
-	virtual u_int RequestSamplesCount() const { return 1; }
+	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const { structure.push_back(1); }
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 1; }
 	virtual float Continue(const float *sampleData,	const u_int pathLength,
 		const float k1, const float k2) const {
 		if (pathLength > rrPathLength) {
@@ -434,7 +434,7 @@ public:
 	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
 
 	void InitStrategies(const Scene *scene);
-	void RequestSamples(vector<u_int> &structure);
+	void RequestSamples(const Scene *scene, vector<u_int> &structure);
 
 	// Note: results are added to L and optional parameter V content
 	u_int SampleLights(

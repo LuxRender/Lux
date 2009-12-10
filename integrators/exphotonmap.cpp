@@ -92,7 +92,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(1);	// reflection bsdf component sample
 
 		// Allocate and request samples for light sampling
-		hints.RequestSamples(structure);
+		hints.RequestSamples(scene, structure);
 
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
@@ -119,7 +119,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(1);	// bsdf component sample for indirect light
 
 		// Allocate and request samples for light sampling
-		hints.RequestSamples(structure);
+		hints.RequestSamples(scene, structure);
 		
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 	} else

@@ -41,7 +41,7 @@ DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
 	vector<u_int> structure;
 	// Allocate and request samples for light sampling
-	hints.RequestSamples(structure);
+	hints.RequestSamples(scene, structure);
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 }

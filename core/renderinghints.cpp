@@ -47,11 +47,21 @@ void LightRenderingHints::InitParam(const ParamSet &params) {
 // Light Sampling Strategies: LightStrategyAllUniform
 //******************************************************************************
 
-void LSSAllUniform::RequestSamples(vector<u_int> &structure) const {
-	structure.push_back(2);	// light position sample
-	structure.push_back(1);	// light number/portal sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
+void LSSAllUniform::RequestSamples(const Scene *scene, vector<u_int> &structure) const {
+	if (scene->sampler->IsMutating()) {
+		const u_int nLights = scene->lights.size();
+		for (u_int j = 0; j < nLights; ++j) {
+			structure.push_back(2);	// light position sample
+			structure.push_back(1);	// light number/portal sample
+			structure.push_back(2);	// bsdf direction sample for light
+			structure.push_back(1);	// bsdf component sample for light
+		}
+	} else {
+		structure.push_back(2);	// light position sample
+		structure.push_back(1);	// light number/portal sample
+		structure.push_back(2);	// bsdf direction sample for light
+		structure.push_back(1);	// bsdf component sample for light
+	}
 }
 
 u_int LSSAllUniform::SampleLights(
@@ -65,25 +75,50 @@ u_int LSSAllUniform::SampleLights(
 		return 0;
 
 	const SWCSpectrum newScale = scale / shadowRayCount;
-	const u_int sampleCount = this->RequestSamplesCount();
+	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
-	for (u_int i = 0; i < shadowRayCount; ++i) {
-		const u_int offset = i * sampleCount;
-		const float *lightSample = &sampleData[offset];
-		const float *lightNum = &sampleData[offset + 2];
-		const float *bsdfSample = &sampleData[offset + 3];
-		const float *bsdfComponent =  &sampleData[offset + 5];
+	if (scene->sampler->IsMutating()) {
+		// Using a different sample for each lights
+		for (u_int i = 0; i < shadowRayCount; ++i) {
+			SWCSpectrum Ll;
+			for (u_int j = 0; j < nLights; ++j) {
+				const u_int offset = i * sampleCount + j * 6;
+				const float *lightSample = &sampleData[offset];
+				const float *lightNum = &sampleData[offset + 2];
+				const float *bsdfSample = &sampleData[offset + 3];
+				const float *bsdfComponent =  &sampleData[offset + 5];
 
-		SWCSpectrum Ll;
-		for (u_int i = 0; i < nLights; ++i) {
-			const Light *light = scene->lights[i];
-			Ll = EstimateDirect(tspack, scene, light,
-				p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
-				bsdfSample[0], bsdfSample[1], *bsdfComponent);
+				const Light *light = scene->lights[j];
+				Ll = EstimateDirect(tspack, scene, light,
+					p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
+					bsdfSample[0], bsdfSample[1], *bsdfComponent);
 
-			if (!Ll.Black()) {
-				L[light->group] += Ll * newScale;
-				++nContribs;
+				if (!Ll.Black()) {
+					L[light->group] += Ll * newScale;
+					++nContribs;
+				}
+			}
+		}
+	} else {
+		// Using one sample for all lights
+		for (u_int i = 0; i < shadowRayCount; ++i) {
+			const u_int offset = i * sampleCount;
+			const float *lightSample = &sampleData[offset];
+			const float *lightNum = &sampleData[offset + 2];
+			const float *bsdfSample = &sampleData[offset + 3];
+			const float *bsdfComponent =  &sampleData[offset + 5];
+
+			SWCSpectrum Ll;
+			for (u_int j = 0; j < nLights; ++j) {
+				const Light *light = scene->lights[j];
+				Ll = EstimateDirect(tspack, scene, light,
+					p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
+					bsdfSample[0], bsdfSample[1], *bsdfComponent);
+
+				if (!Ll.Black()) {
+					L[light->group] += Ll * newScale;
+					++nContribs;
+				}
 			}
 		}
 	}
@@ -95,7 +130,7 @@ u_int LSSAllUniform::SampleLights(
 // Light Sampling Strategies: LightStrategyOneUniform
 //******************************************************************************
 
-void LSSOneUniform::RequestSamples(vector<u_int> &structure) const {
+void LSSOneUniform::RequestSamples(const Scene *scene, vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
@@ -113,7 +148,7 @@ u_int LSSOneUniform::SampleLights(
 		return 0;
 
 	const SWCSpectrum newScale = static_cast<float>(nLights) * scale / shadowRayCount;
-	const u_int sampleCount = this->RequestSamplesCount();
+	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
 	for (u_int i = 0; i < shadowRayCount; ++i) {
 		const u_int offset = i * sampleCount;
@@ -155,7 +190,7 @@ void LSSOneImportance::Init(const Scene *scene) {
 	ComputeStep1dCDF(lightImportance, nLights, &totalImportance, lightCDF);
 }
 
-void LSSOneImportance::RequestSamples(vector<u_int> &structure) const {
+void LSSOneImportance::RequestSamples(const Scene *scene, vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
@@ -173,7 +208,7 @@ u_int LSSOneImportance::SampleLights(
 		return 0;
 
 	const SWCSpectrum newScale = scale / shadowRayCount;
-	const u_int sampleCount = this->RequestSamplesCount();
+	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
 	for (u_int i = 0; i < shadowRayCount; ++i) {
 		const u_int offset = i * sampleCount;
@@ -223,7 +258,7 @@ void LSSOnePowerImportance::Init(const Scene *scene) {
 	ComputeStep1dCDF(lightPower, nLights, &totalPower, lightCDF);
 }
 
-void LSSOnePowerImportance::RequestSamples(vector<u_int> &structure) const {
+void LSSOnePowerImportance::RequestSamples(const Scene *scene, vector<u_int> &structure) const {
 	structure.push_back(2);	// light position sample
 	structure.push_back(1);	// light number/portal sample
 	structure.push_back(2);	// bsdf direction sample for light
@@ -241,7 +276,7 @@ u_int LSSOnePowerImportance::SampleLights(
 		return 0;
 
 	const SWCSpectrum newScale = scale / shadowRayCount;
-	const u_int sampleCount = this->RequestSamplesCount();
+	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
 	for (u_int i = 0; i < shadowRayCount; ++i) {
 		const u_int offset = i * sampleCount;
@@ -286,7 +321,7 @@ u_int LSSAllPowerImportance::SampleLights(
 	if (nLights == 0)
 		return 0;
 
-	const u_int sampleCount = this->RequestSamplesCount();
+	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
 	if (nLights > shadowRayCount) {
 		// We don't have enough shadow rays, just work as LightStrategyOnePowerImportance
@@ -528,34 +563,23 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 }
 
 void SurfaceIntegratorRenderingHints::InitStrategies(const Scene *scene) {
-	if (lsStrategy != NULL) {
-		if (!lsStrategy->SupportMutatingSampler()) {
-			std::stringstream ss;
-			ss << "Light Sampling strategy doesn't support mutating sampler. Using \"one\".";
-			luxError(LUX_BADTOKEN, LUX_WARNING, ss.str().c_str());
-			BOOST_ASSERT(supportedStrategies.IsSupported(LightsSamplingStrategy::SAMPLE_ONE_UNIFORM));
-
-			delete lsStrategy;
-			lsStrategy =  new LSSOneUniform();
-		}
-
+	if (lsStrategy != NULL)
 		lsStrategy->Init(scene);
-	}
 
 	if (rrStrategy != NULL)
 		rrStrategy->Init(scene);
 }
 
-void SurfaceIntegratorRenderingHints::RequestSamples(vector<u_int> &structure) {
+void SurfaceIntegratorRenderingHints::RequestSamples(const Scene *scene, vector<u_int> &structure) {
 	if (lsStrategy != NULL) {
 		lightSampleOffset = structure.size();
 		// Request samples for each shadow ray we have to trace
 		for (u_int i = 0; i <  shadowRayCount; ++i)
-			lsStrategy->RequestSamples(structure);
+			lsStrategy->RequestSamples(scene, structure);
 	}
 
 	if (rrStrategy != NULL) {
 		rrSampleOffset = structure.size();
-		rrStrategy->RequestSamples(structure);
+		rrStrategy->RequestSamples(scene, structure);
 	}
 }
