@@ -79,16 +79,17 @@ u_int LSSAllUniform::SampleLights(
 	u_int nContribs = 0;
 	if (scene->sampler->IsMutating()) {
 		// Using a different sample for each lights
-		for (u_int i = 0; i < shadowRayCount; ++i) {
-			SWCSpectrum Ll;
-			for (u_int j = 0; j < nLights; ++j) {
+		SWCSpectrum Ll;
+		for (u_int j = 0; j < nLights; ++j) {
+			const Light *light = scene->lights[j];
+
+			for (u_int i = 0; i < shadowRayCount; ++i) {
 				const u_int offset = i * sampleCount + j * 6;
 				const float *lightSample = &sampleData[offset];
 				const float *lightNum = &sampleData[offset + 2];
 				const float *bsdfSample = &sampleData[offset + 3];
 				const float *bsdfComponent =  &sampleData[offset + 5];
 
-				const Light *light = scene->lights[j];
 				Ll = EstimateDirect(tspack, scene, light,
 					p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
 					bsdfSample[0], bsdfSample[1], *bsdfComponent);
@@ -101,16 +102,18 @@ u_int LSSAllUniform::SampleLights(
 		}
 	} else {
 		// Using one sample for all lights
-		for (u_int i = 0; i < shadowRayCount; ++i) {
-			const u_int offset = i * sampleCount;
-			const float *lightSample = &sampleData[offset];
-			const float *lightNum = &sampleData[offset + 2];
-			const float *bsdfSample = &sampleData[offset + 3];
-			const float *bsdfComponent =  &sampleData[offset + 5];
+		SWCSpectrum Ll;
 
-			SWCSpectrum Ll;
-			for (u_int j = 0; j < nLights; ++j) {
-				const Light *light = scene->lights[j];
+		for (u_int j = 0; j < nLights; ++j) {
+			const Light *light = scene->lights[j];
+
+			for (u_int i = 0; i < shadowRayCount; ++i) {
+				const u_int offset = i * sampleCount;
+				const float *lightSample = &sampleData[offset];
+				const float *lightNum = &sampleData[offset + 2];
+				const float *bsdfSample = &sampleData[offset + 3];
+				const float *bsdfComponent =  &sampleData[offset + 5];
+
 				Ll = EstimateDirect(tspack, scene, light,
 					p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
 					bsdfSample[0], bsdfSample[1], *bsdfComponent);
