@@ -139,7 +139,7 @@ static float weightPath(const vector<BidirVertex> &eye, u_int nEye, u_int eyeDep
 		weight += pDirect * pDirect;
 	}
 	// Find other paths by extending light path toward eye path
-	const u_int nLightExt = min(nEye, lightDepth - max(lightDepth, nLight));
+	const u_int nLightExt = min(nEye, lightDepth - min(lightDepth, nLight));
 	for (u_int i = 1; i <= nLightExt; ++i) {
 		// Exit if the path is impossible
 		if (!(eye[nEye - i].dARWeight > 0.f && eye[nEye - i].dAWeight > 0.f))
@@ -164,7 +164,7 @@ static float weightPath(const vector<BidirVertex> &eye, u_int nEye, u_int eyeDep
 	// Reinitialize p to search paths in the other direction
 	p = pBase;
 	// Find other paths by extending eye path toward light path
-	u_int nEyeExt = min(nLight, eyeDepth - max(eyeDepth, nEye));
+	u_int nEyeExt = min(nLight, eyeDepth - min(eyeDepth, nEye));
 	for (u_int i = 1; i <= nEyeExt; ++i) {
 		// Exit if the path is impossible
 		if (!(light[nLight - i].dARWeight > 0.f && light[nLight - i].dAWeight > 0.f))
@@ -219,20 +219,16 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	// Check Connectability
 	eyeV.flags = BxDFType(~BSDF_SPECULAR);
 	const Vector ewi(Normalize(lightV.p - eyeV.p));
-	const float epdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, ewi, eyeV.flags);
-	if (!(epdfR > 0.f))
-		return false;
-	lightV.flags = BxDFType(~BSDF_SPECULAR);
-	const Vector lwo(-ewi);
-	const float lpdf = lightV.bsdf->Pdf(tspack, lightV.wi, lwo, lightV.flags);
-	if (!(lpdf > 0.f))
-		return false;
 	const SWCSpectrum ef(eyeV.bsdf->f(tspack, ewi, eyeV.wo, eyeV.flags));
 	if (ef.Black())
 		return false;
+	lightV.flags = BxDFType(~BSDF_SPECULAR);
+	const Vector lwo(-ewi);
 	const SWCSpectrum lf(lightV.bsdf->f(tspack, lightV.wi, lwo, lightV.flags));
 	if (lf.Black())
 		return false;
+	const float epdfR = eyeV.bsdf->Pdf(tspack, eyeV.wo, ewi, eyeV.flags);
+	const float lpdf = lightV.bsdf->Pdf(tspack, lightV.wi, lwo, lightV.flags);
 	float ltPdf = 1.f;
 	float etPdfR = 1.f;
 	if (!visible(tspack, scene, lightV.p, eyeV.p, &ltPdf, &etPdfR, L))
