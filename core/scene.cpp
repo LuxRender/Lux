@@ -142,11 +142,11 @@ int Scene::DisplayInterval() {
 }
 
 int Scene::FilmXres() {
-    return camera->film->xResolution;
+    return camera->film->GetXPixelCount();
 }
 
 int Scene::FilmYres() {
-    return camera->film->yResolution;
+    return camera->film->GetYPixelCount();
 }
 
 // Statistics Access

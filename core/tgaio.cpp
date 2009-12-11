@@ -53,10 +53,10 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	else
 		header[2] = 3;							// set the data type of the targa (3 = GREYSCALE uncompressed)
 
-	short xResShort = xResolution;			// set the resolution and make sure the bytes are in the right order
+	short xResShort = xPixelCount;			// set the resolution and make sure the bytes are in the right order
 	header[13] = (char) (xResShort >> 8);
 	header[12] = xResShort & 0xFF;
-	short yResShort = yResolution;
+	short yResShort = yPixelCount;
 	header[15] = (char) (yResShort >> 8);
 	header[14] = yResShort & 0xFF;
 	if(channeltype == 0)
