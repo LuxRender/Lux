@@ -392,7 +392,6 @@ namespace lux {
 				// FIXME use the correct color space
 				for (u_int i = 0; i < bufSize; ++i)
 					fy[i] = (0.3f * pixels[i].c[0]) + (0.59f * pixels[i].c[1]) + (0.11f * pixels[i].c[2]);
-				fy -= (xOffset + yOffset * xRes);
 				fb.insert("Y", Slice(Imf::FLOAT, (char *)(fy - bufOffset), sizeof(float), xRes * sizeof(float)));
 			} else if(channeltype >= 2) {
 				// Save RGB
