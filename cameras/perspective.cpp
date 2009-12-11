@@ -291,7 +291,7 @@ bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
 {
 	Vector direction(normal);
 	const float cosi = Dot(wi, direction);
-	if (cosi <= 0.f || (!isinf(distance) && (distance / cosi < ClipHither || distance / cosi > ClipYon)))
+	if (cosi <= 0.f || (!isinf(distance) && (distance * cosi < ClipHither || distance * cosi > ClipYon)))
 		return false;
 	if (LensRadius > 0.f) {
 		Point pFC(p + wi * (FocalDistance / Dot(wi, direction)));
