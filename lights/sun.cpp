@@ -37,25 +37,29 @@ using namespace lux;
 class SunBxDF : public BxDF
 {
 public:
-	SunBxDF(float sin2Max, float radius) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sin2ThetaMax(sin2Max), cosThetaMax(sqrtf(1.f - sin2Max)), worldRadius(radius) {}
+	SunBxDF(float sin2Max, float radius) : BxDF(BxDFType(BSDF_REFLECTION |
+		BSDF_DIFFUSE)), sin2ThetaMax(sin2Max),
+		cosThetaMax(sqrtf(1.f - sin2Max)), worldRadius(radius) { }
 	virtual ~SunBxDF() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const {
-		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
+		SWCSpectrum *const f) const {
+		if (wi.z <= 0.f || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return;
 		*f += SWCSpectrum(1.f);
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf, float *pdfBack = NULL, bool reverse = false) const
-	{
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf,
+		float *pdfBack = NULL, bool reverse = false) const {
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = UniformConePdf(cosThetaMax);
 		if (pdfBack)
-			*pdfBack = Pdf(tspack, *wi, wo);
+			*pdfBack = 0.f;
 		*f = SWCSpectrum(1.f);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
-	{
-		if (wo.z < 0.f || wi.z < 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
+	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+		const Vector &wo) const {
+		if (wo.z <= 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax)
 			return 0.f;
 		else
 			return UniformConePdf(cosThetaMax);
@@ -65,8 +69,8 @@ private:
 };
 
 // SunLight Method Definitions
-SunLight::SunLight(const Transform &light2world,
-		const float sunscale, const Vector &dir, float turb , float relSize, u_int ns)
+SunLight::SunLight(const Transform &light2world, const float sunscale,
+	const Vector &dir, float turb , float relSize, u_int ns)
 	: Light(light2world, ns) {
 	sundir = Normalize(LightToWorld(dir));
 	turbidity = turb;
@@ -83,7 +87,8 @@ SunLight::SunLight(const Transform &light2world,
 		cosThetaMax = sqrtf(1.f - sin2ThetaMax);
 	} else {
 		std::stringstream ss;
-		ss << "Reducing relative sun size to " << sunMeanDistance / sunRadius;
+		ss << "Reducing relative sun size to " <<
+			sunMeanDistance / sunRadius;
 		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
 		cosThetaMax = 0.f;
 		sin2ThetaMax = 1.f;
@@ -93,7 +98,7 @@ SunLight::SunLight(const Transform &light2world,
 	phiS = SphericalPhi(wh);
 	thetaS = SphericalTheta(wh);
 
-    // NOTE - lordcrc - sun_k_oWavelengths contains 64 elements, while sun_k_oAmplitudes contains 65?!?
+	// NOTE - lordcrc - sun_k_oWavelengths contains 64 elements, while sun_k_oAmplitudes contains 65?!?
 	IrregularSPD k_oCurve(sun_k_oWavelengths, sun_k_oAmplitudes, 64);
 	IrregularSPD k_gCurve(sun_k_gWavelengths, sun_k_gAmplitudes, 4);
 	IrregularSPD k_waCurve(sun_k_waWavelengths, sun_k_waAmplitudes, 13);
@@ -103,7 +108,8 @@ SunLight::SunLight(const Transform &light2world,
 	float beta = 0.04608365822050f * turbidity - 0.04586025928522f;
 	float tauR, tauA, tauO, tauG, tauWA;
 
-	float m = 1.f / (cosf(thetaS) + 0.00094f * powf(1.6386f - thetaS, -1.253f));  // Relative Optical Mass
+	float m = 1.f / (cosf(thetaS) + 0.00094f * powf(1.6386f - thetaS,
+		-1.253f));  // Relative Optical Mass
 
 	int i;
 	float lambda;
@@ -122,14 +128,16 @@ SunLight::SunLight(const Transform &light2world,
 		const float lOzone = .35f;
 		tauO = expf(-m * k_oCurve.sample(lambda) * lOzone);
 			// Attenuation due to mixed gases absorption
-		tauG = expf(-1.41f * k_gCurve.sample(lambda) * m / powf(1.f + 118.93f * k_gCurve.sample(lambda) * m, 0.45f));
+		tauG = expf(-1.41f * k_gCurve.sample(lambda) * m / powf(1.f +
+			118.93f * k_gCurve.sample(lambda) * m, 0.45f));
 			// Attenuation due to water vapor absorbtion
 			// w - precipitable water vapor in centimeters (standard = 2)
 		const float w = 2.0f;
 		tauWA = expf(-0.2385f * k_waCurve.sample(lambda) * w * m /
 		powf(1.f + 20.07f * k_waCurve.sample(lambda) * w * m, 0.45f));
 
-		Ldata[i] = (solCurve.sample(lambda) * tauR * tauA * tauO * tauG * tauWA);
+		Ldata[i] = (solCurve.sample(lambda) *
+			tauR * tauA * tauO * tauG * tauWA);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);
 	LSPD->Scale(sunscale);
@@ -148,7 +156,8 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 {
 	const float xD = Dot(r.d, x);
 	const float yD = Dot(r.d, y);
-	if (cosThetaMax == 1.f || Dot(r.d, sundir) < 0.f || (xD * xD + yD * yD) > sin2ThetaMax) {
+	if (cosThetaMax == 1.f || Dot(r.d, sundir) < 0.f ||
+		(xD * xD + yD * yD) > sin2ThetaMax) {
 		*bsdf = NULL;
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
@@ -181,7 +190,8 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		}
 		*pdf /= nrPortalShapes;
 	}
-	*pdfDirect = UniformConePdf(cosThetaMax) * AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
+	*pdfDirect = UniformConePdf(cosThetaMax) * AbsDot(r.d, ns) /
+		DistanceSquared(r.o, ps);
 	return SWCSpectrum(tspack, *LSPD);
 }
 
@@ -364,31 +374,18 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	return true;
 }
 
-bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	const Point &p, const Normal &n, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	Vector wi;
 	if(cosThetaMax == 1.f) {
 		wi = sundir;
 		*pdfDirect = 1.f;
-
-		// Dade - check if the portals are excluding this ray
-/*		if (!checkPortals(Ray(p, wi))) {
-			*bsdf = NULL;
-			*pdf = 0.0f;
-			return SWCSpectrum(0.0f);
-		}*/
 	} else {
 		wi = UniformSampleCone(u1, u2, cosThetaMax, x, y, sundir);
 		*pdfDirect = UniformConePdf(cosThetaMax);
-
-		// Dade - check if the portals are excluding this ray
-/*		if (!checkPortals(Ray(p, wi))) {
-			*bsdf = NULL;
-			*pdf = 0.0f;
-			return SWCSpectrum(0.0f);
-		}*/
 	}
 
 	Point worldCenter;
