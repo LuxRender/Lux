@@ -412,6 +412,10 @@ public:
 	virtual RGBColor GetGroupRGBScale(u_int index) const = 0;
 	virtual void SetGroupTemperature(u_int index, float value) = 0;
 	virtual float GetGroupTemperature(u_int index) const = 0;
+
+	virtual u_int GetXPixelCount() const = 0;
+	virtual u_int GetYPixelCount() const = 0;
+
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual float getldrDisplayInterval() = 0;

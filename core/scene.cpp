@@ -142,15 +142,11 @@ int Scene::DisplayInterval() {
 }
 
 int Scene::FilmXres() {
-	// Dade: TOFIX reverted from last patch because it doesn't compile. The method is available only in v0.7.
-	return camera->film->xResolution;
-    //return camera->film->GetXPixelCount();
+	return camera->film->GetXPixelCount();
 }
 
 int Scene::FilmYres() {
-	// Dade: TOFIX reverted from last patch because it doesn't compile. The method is available only in v0.7.
-	return camera->film->yResolution;
-    //return camera->film->GetYPixelCount();
+	return camera->film->GetYPixelCount();
 }
 
 // Statistics Access
