@@ -349,33 +349,69 @@ void RenderFarm::send(const std::string &command) {
 	netBuffer << command << std::endl;
 }
 
+void RenderFarm::sendFile(std::string file) {
+	std::string s;
+	std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+
+	// Get length of file:
+	in.seekg(0, std::ifstream::end);
+	// Limiting the file size to 2G should be a problem
+	const int len = static_cast<int> (in.tellg());
+	in.seekg(0, std::ifstream::beg);
+
+	if (in.fail()) {
+		std::stringstream ss;
+		ss << "There was an error while checking the size of file '" << file;
+		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+		// Send an empty file ot the slave
+		netBuffer << "0\n";
+	} else {
+		// Allocate a buffer to read all the file
+		char *buf = new char[len];
+
+		in.read(buf, len);
+
+		if (in.fail()) {
+			std::stringstream ss;
+			ss << "There was an error while reading file '" << file << "'";
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+
+			// Send an empty file to the slave
+			netBuffer << "0\n";
+		} else {
+			// Send the file length
+			netBuffer << len << "\n";
+
+			// Send the file
+			netBuffer.write(buf, len);
+		}
+
+		delete buf;
+	}
+
+	in.close();
+}
+
 void RenderFarm::send(const std::string &command, const std::string &name,
 		const ParamSet &params) {
 	try {
 		netBuffer << command << std::endl << name << std::endl;
 		boost::archive::text_oarchive oa(netBuffer);
 		oa << params;
+		netBuffer << "\n";
 
 		//send the files
 		std::string file;
 		file = "";
 		file = params.FindOneString(std::string("mapname"), file);
-		if (file.size()) {
-			std::string s;
-			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
-			while (getline(in, s))
-				netBuffer << s << "\n";
-			netBuffer << "LUX_END_FILE\n";
-		}
+		if (file.size())
+			sendFile(file);
+
 		file = "";
 		file = params.FindOneString(std::string("iesname"), file);
-		if (file.size()) {
-			std::string s;
-			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
-			while (getline(in, s))
-				netBuffer << s << "\n";
-			netBuffer << "LUX_END_FILE\n";
-		}
+		if (file.size())
+			sendFile(file);
 	} catch (std::exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
@@ -440,17 +476,13 @@ void RenderFarm::send(const std::string &command, const string &name,
 		netBuffer << command << std::endl << name << std::endl << type << std::endl << texname << std::endl;
 		boost::archive::text_oarchive oa(netBuffer);
 		oa << params;
+		netBuffer << "\n";
 
 		//send the file
 		std::string file = "";
 		file = params.FindOneString(std::string("filename"), file);
-		if (file.size()) {
-			std::string s;
-			std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
-			while (getline(in, s))
-				netBuffer << s << "\n";
-			netBuffer << "LUX_END_FILE\n";
-		}
+		if (file.size())
+			sendFile(file);
 	} catch (std::exception& e) {
 		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 	}
