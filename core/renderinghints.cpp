@@ -453,7 +453,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 
 	// Light Strategy
 	if (supportedStrategies.GetDefaultLightSamplingStrategy() != LightsSamplingStrategy::NOT_SUPPORTED) {
-		// For sompatibility with past versions
+		// For compatibility with past versions
 		string oldst = params.FindOneString("strategy", "auto");
 		string newst = params.FindOneString("lightstrategy", "auto");
 		string st;

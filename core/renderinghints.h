@@ -100,7 +100,12 @@ class LSSAuto : public LightsSamplingStrategy {
 public:
 	LSSAuto() : strategy(NULL) { }
 	virtual void Init(const Scene *scene) {
-		if (scene->lights.size() > 5)
+		// The check for mutating sampler is here for coherence with the
+		// behavior of old code: otherwise LSSAllUniform would be used
+		// instead of LSSOneUniform (i.e. the number of reported samples
+		// per second would be a lot lower than in the past causing a lot
+		// of complain for sure)
+		if (scene->sampler->IsMutating() || (scene->lights.size() > 5))
 			strategy = new LSSOneUniform();
 		else
 			strategy = new LSSAllUniform();
@@ -418,7 +423,7 @@ public:
 
 		rrStrategyType = RussianRouletteStrategy::EFFICIENCY;
 		rrStrategy = NULL;
-	};
+	}
 	~SurfaceIntegratorRenderingHints() {
 		if (lsStrategy)
 			delete lsStrategy;
