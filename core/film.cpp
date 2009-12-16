@@ -513,15 +513,16 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		   int reject_warmup, bool debugmode) :
-	xResolution(xres), yResolution(yres), 
+	xResolution(xres), yResolution(yres),
 	filter(filt), filename(filename1),
-	premultiplyAlpha(premult), 
-	use_Zbuf(useZbuffer), ZBuffer(NULL), 
+	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
+	ZBuffer(NULL), use_Zbuf(useZbuffer),
+	debug_mode(debugmode), premultiplyAlpha(premult),
+	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	haltSamplePerPixel(haltspp), haltTime(halttime), enoughSamplePerPixel(false),	
-	reject_warmup_samples(reject_warmup), warmupComplete(false),
-	debug_mode(debugmode), EV(0.f),	scene(NULL), histogram(NULL),
-	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f) // default is SMPTE
+	haltSamplePerPixel(haltspp), haltTime(halttime),
+	EV(0.f), scene(NULL), histogram(NULL),
+	enoughSamplePerPixel(false)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));

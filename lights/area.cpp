@@ -177,6 +177,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 {
 	if (!(Dot(dg.nn, ray.d) < 0.f)) {
 		*pdfDirect = *pdf = 0.f;
+		*bsdf = NULL;
 		return SWCSpectrum(tspack, 0.f);
 	}
 	SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);

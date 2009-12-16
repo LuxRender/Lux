@@ -199,6 +199,7 @@ namespace lux
   class ContributionSystem;
   class MotionSystem;
   class Distribution1D;
+  class Distribution2D;
   class IrregularDistribution1D;
   class MachineEpsilon;
 }
@@ -214,8 +215,8 @@ namespace lux
 #  define INFINITY HUGE_VAL
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
-#define LUX_VERSION 0.6
-#define LUX_VERSION_STRING "0.6"
+#define LUX_VERSION 0.7
+#define LUX_VERSION_STRING "0.7 (devel)"
 #define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
@@ -357,6 +358,11 @@ inline bool Quadratic(float A, float B, float C, float *t0, float *t1) {
 inline float SmoothStep(float min, float max, float value) {
 	float v = Clamp((value - min) / (max - min), 0.f, 1.f);
 	return v * v * (-2.f * v  + 3.f);
+}
+
+template <class T> int SignOf(T x)
+{
+	return (x > 0) - (x < 0);
 }
 
 #endif // LUX_LUX_H

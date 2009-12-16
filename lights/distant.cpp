@@ -23,6 +23,8 @@
 // distant.cpp*
 #include "distant.h"
 #include "mc.h"
+#include "specularreflection.h"
+#include "fresnelnoop.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -41,6 +43,14 @@ DistantLight::DistantLight(const Transform &light2world,
 DistantLight::~DistantLight()
 {
 }
+SWCSpectrum DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	*bsdf = NULL;
+	*pdf = 0.f;
+	*pdfDirect = 0.f;
+	return SWCSpectrum(0.f);
+}
 SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
@@ -51,7 +61,7 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u
 float DistantLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 0.f;
 }
-float DistantLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
+float DistantLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	return 0.f;
@@ -76,6 +86,118 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
+
+bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+{
+	Vector x, y;
+	CoordinateSystem(lightDir, &x, &y);
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+
+	Point ps;
+	Normal ns(-lightDir);
+	if (!havePortalShape) {
+		float d1, d2;
+		ConcentricSampleDisk(u1, u2, &d1, &d2);
+		ps = worldCenter + worldRadius * (lightDir + d1 * x + d2 * y);
+		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	} else  {
+		// Choose a random portal
+		u_int shapeIndex = 0;
+		if (nrPortalShapes > 1) {
+			u3 *= nrPortalShapes;
+			shapeIndex = min(nrPortalShapes - 1, Floor2UInt(u3));
+			u3 -= shapeIndex;
+		}
+
+		DifferentialGeometry dg;
+		dg.time = tspack->time;
+		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
+		ps = dg.p;
+		const float cosPortal = Dot(ns, dg.nn);
+		if (cosPortal <= 0.f) {
+			*Le = SWCSpectrum(0.f);
+			return false;
+		}
+
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / cosPortal;
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
+			if (i == shapeIndex)
+				continue;
+			Intersection isect;
+			RayDifferential ray(ps, lightDir);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
+				float cosP = Dot(ns, isect.dg.nn);
+				if (cosP > 0.f)
+					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosP;
+			}
+		}
+		*pdf /= nrPortalShapes;
+		if (!(*pdf > 0.f)) {
+			*Le = SWCSpectrum(0.f);
+			return false;
+		}
+
+		ps += (worldRadius + Dot(worldCenter - ps, lightDir)) * lightDir;
+	}
+
+	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
+		0, 0, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
+		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f));
+
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	return true;
+}
+
+bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	const Point &p, const Normal &n, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect,
+	VisibilityTester *visibility, SWCSpectrum *Le) const
+{
+	Vector x, y;
+	CoordinateSystem(lightDir, &x, &y);
+	*pdfDirect = 1.f;
+
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	Vector toCenter(worldCenter - p);
+	float approach = Dot(toCenter, lightDir);
+	float distance = approach + worldRadius;
+	Point ps(p + distance * lightDir);
+	Normal ns(-lightDir);
+
+	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
+		0, 0, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
+		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f));
+	if (!havePortalShape)
+		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	else {
+		*pdf = 0.f;
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
+			Intersection isect;
+			RayDifferential ray(ps, lightDir);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
+				float cosPortal = Dot(ns, isect.dg.nn);
+				if (cosPortal > 0.f)
+					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+			}
+		}
+		*pdf /= nrPortalShapes;
+	}
+	visibility->SetSegment(p, ps, tspack->time);
+
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	return true;
+}
+
 Light* DistantLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));

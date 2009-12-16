@@ -42,86 +42,63 @@ namespace lux {
 		return mipMap->Lookup( phi * INV_TWOPI, theta * INV_PI );
 	}
 
-	// SampleableSphericalFunction
+// SampleableSphericalFunction
+SampleableSphericalFunction::SampleableSphericalFunction(
+	boost::shared_ptr<const SphericalFunction> aFunc,
+	u_int xRes, u_int yRes)
+{
+	func = aFunc;
 
-	SampleableSphericalFunction::SampleableSphericalFunction(
-		boost::shared_ptr<const SphericalFunction> aFunc, int xRes, int yRes)
-	{
-		func = aFunc;
-		nVDistribs = xRes;
-		
-		// Compute scalar-valued image
-		float *img = new float[xRes*yRes];
-		for (int x = 0; x < xRes; ++x) {
-			float xp = (float)(x + .5f) / (float)xRes;
-			for (int y = 0; y < yRes; ++y) {
-				float yp = (float)(y + .5f) / (float)yRes;
-				img[y+x*yRes] = func->f(xp * 2.f * M_PI, yp * M_PI).Y();
-			}
+	// Compute scalar-valued image
+	float *img = new float[xRes * yRes];
+	for (u_int x = 0; x < xRes; ++x) {
+		float xp = (x + .5f) / xRes;
+		for (u_int y = 0; y < yRes; ++y) {
+			float yp = (y + .5f) / yRes;
+			img[y + x * yRes] = func->f(xp * 2.f * M_PI,
+				yp * M_PI).Y() * sinf(M_PI * yp);
 		}
-		// Initialize sampling PDFs
-		int nu = xRes, nv = yRes;
-		float *func = (float *)alloca(max(nu, nv) * sizeof(float));
-		float *sinVals = (float *)alloca(nv * sizeof(float));
-		for (int i = 0; i < nv; ++i)
-			sinVals[i] = sin(M_PI * float(i + .5f)/float(nv));
-		vDistribs = new Distribution1D *[nu];
-		for (int u = 0; u < nu; ++u) {
-			// Compute sampling distribution for column _u_
-			for (int v = 0; v < nv; ++v)
-				func[v] = img[u*nv+v] *= sinVals[v];
-			vDistribs[u] = new Distribution1D(func, nv);
-		}
-		// Compute sampling distribution for columns of image
-		for (int u = 0; u < nu; ++u)
-			func[u] = vDistribs[u]->funcInt;
-		uDistrib = new Distribution1D(func, nu);
-		delete[] img;
 	}
-	SampleableSphericalFunction::~SampleableSphericalFunction() {
-		delete uDistrib;
-		for(int i = 0; i < nVDistribs; i++) {
-			delete vDistribs[i];
-		}
-		delete[] vDistribs;
-	}
+	// Initialize sampling PDFs
+	uvDistrib = new Distribution2D(img, xRes, yRes);
+	delete[] img;
+}
+SampleableSphericalFunction::~SampleableSphericalFunction() {
+	delete uvDistrib;
+}
 
-	RGBColor SampleableSphericalFunction::f(float phi, float theta) const {
-		return func->f(phi, theta);
-	}
+RGBColor SampleableSphericalFunction::f(float phi, float theta) const
+{
+	return func->f(phi, theta);
+}
 
-	RGBColor SampleableSphericalFunction::Sample_f(float u1, float u2, Vector *w, float *pdf) const {
-		// Find floating-point $(u,v)$ sample coordinates
-		float pdfs[2];
-		float fu = uDistrib->Sample(u1, &pdfs[0]);
-		int u = Float2Int(fu);
-		float fv = vDistribs[u]->Sample(u2, &pdfs[1]);
-		// Convert sample point to direction on the unit sphere
-		float theta = fv * vDistribs[u]->invCount * M_PI;
-		float phi = fu * uDistrib->invCount * 2.f * M_PI;
-		float costheta = cos(theta), sintheta = sin(theta);
-		float sinphi = sin(phi), cosphi = cos(phi);
-		*w = Vector(sintheta * cosphi, sintheta * sinphi, costheta);
-		// Compute PDF for sampled direction
-		*pdf = (pdfs[0] * pdfs[1]) / (2.f * M_PI * M_PI * sintheta);
-		// Return value for direction
-		return f(phi, theta);
-	}
+RGBColor SampleableSphericalFunction::Sample_f(float u1, float u2, Vector *w,
+	float *pdf) const
+{
+	// Find floating-point $(u,v)$ sample coordinates
+	float uv[2];
+	uvDistrib->SampleContinuous(u1, u2, uv, pdf);
+	// Convert sample point to direction on the unit sphere
+	const float theta = uv[1] * M_PI;
+	const float phi = uv[0] * 2.f * M_PI;
+	const float costheta = cos(theta), sintheta = sin(theta);
+	*w = SphericalDirection(sintheta, costheta, phi);
+	// Compute PDF for sampled direction
+	*pdf /= 2.f * M_PI * M_PI * sintheta;
+	// Return value for direction
+	return f(phi, theta);
+}
 
-	float SampleableSphericalFunction::Pdf(const Vector& w) const {
-		float theta = SphericalTheta(w), phi = SphericalPhi(w);
-		int u = Clamp(Float2Int(phi * INV_TWOPI * uDistrib->count),
-					  0, uDistrib->count-1);
-		int v = Clamp(Float2Int(theta * INV_PI * vDistribs[u]->count),
-					  0, vDistribs[u]->count-1);
-		return (uDistrib->func[u] * vDistribs[u]->func[v]) /
-			   (uDistrib->funcInt * vDistribs[u]->funcInt) *
-			   1.f / (2.f * M_PI * M_PI * sin(theta));
-	}
+float SampleableSphericalFunction::Pdf(const Vector& w) const
+{
+	float theta = SphericalTheta(w), phi = SphericalPhi(w);
+	return uvDistrib->Pdf(phi * INV_TWOPI, theta * INV_PI) /
+		(2.f * M_PI * M_PI * sinf(theta));
+}
 
-	float SampleableSphericalFunction::Average_f() const {
-		return uDistrib->funcInt;
-	}
+float SampleableSphericalFunction::Average_f() const {
+	return uvDistrib->Sum();
+}
 
 	SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet, const TextureParams &tp) {
 		bool flipZ = paramSet.FindOneBool("flipz", false);

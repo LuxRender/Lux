@@ -53,10 +53,11 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	else
 		header[2] = 3;							// set the data type of the targa (3 = GREYSCALE uncompressed)
 
-	header[13] = static_cast<char>((xResolution >> 8) & 0xFF);
-	header[12] = static_cast<char>(xResolution & 0xFF);
-	header[15] = static_cast<char>((yResolution >> 8) & 0xFF);
-	header[14] = static_cast<char>(yResolution & 0xFF);
+	// No cropping data: use directly the cropped size
+	header[13] = static_cast<char>((xPixelCount >> 8) & 0xFF);
+	header[12] = static_cast<char>(xPixelCount & 0xFF);
+	header[15] = static_cast<char>((yPixelCount >> 8) & 0xFF);
+	header[14] = static_cast<char>(yPixelCount & 0xFF);
 	if(channeltype == 0)
 		header[16] = 8;						// bitdepth for BW
 	else if(channeltype == 2)
