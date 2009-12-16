@@ -71,70 +71,6 @@ u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	return scene->lights[lightNumber]->group;
 }
 
-// Note - Radiance - disabled as this code is broken. (not threadsafe)
-/*
-SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample,
-	int lightSampleOffset, int lightNumOffset,
-	int bsdfSampleOffset, int bsdfComponentOffset,
-	float *&avgY, float *&avgYsample, float *&cdf, float &overallAvgY)
-{
-	int nLights = int(scene->lights.size());
-	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000079: handling NULL parameters and 0 lights for light sampling
-	if (nLights == 0)
-		return SWCSpectrum(0.f);
-	// Initialize _avgY_ array if necessary
-	if (!avgY) {
-		avgY = new float[nLights];
-		avgYsample = new float[nLights];
-		cdf = new float[nLights+1];
-		for (int i = 0; i < nLights; ++i)
-			avgY[i] = avgYsample[i] = 0.;
-	}
-	float ls1, ls2, ls3, bs1, bs2, bcs, lightNum;
-	ls1 = sample->twoD[lightSampleOffset][0];
-	ls2 = sample->twoD[lightSampleOffset][1];
-	lightNum = sample->oneD[lightNumOffset][0];
-	bs1 = sample->twoD[bsdfSampleOffset][0];
-	bs2 = sample->twoD[bsdfSampleOffset][1];
-	bcs = sample->twoD[bsdfComponentOffset][0];
-	SWCSpectrum L(0.);
-	if (overallAvgY == 0.) {
-		int lightNumber = min(Float2Int(nLights * lightNum), nLights-1);
-		ls3 = nLights * lightNum - lightNumber;
-		Light *light = scene->lights[lightNumber];
-		// Sample one light uniformly and initialize luminance arrays
-		L = EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-			sample, ls1, ls2, ls3, bs1, bs2, bcs);
-		float luminance = L.y(tspack);
-		overallAvgY = luminance;
-		for (int i = 0; i < nLights; ++i)
-			avgY[i] = luminance;
-	}
-	else {
-		// Choose _light_ according to average reflected luminance
-		float c, lightSampleWeight;
-		for (int i = 0; i < nLights; ++i)
-			avgYsample[i] = max(avgY[i], .1f * overallAvgY);
-		ComputeStep1dCDF(avgYsample, nLights, &c, cdf);
-		float t = SampleStep1d(avgYsample, cdf, c, nLights,
-			lightNum, &lightSampleWeight);
-		int lightNumber = min(Float2Int(nLights * t), nLights-1);
-		ls3 = nLights * t - lightNumber;
-		Light *light = scene->lights[lightNumber];
-		L = EstimateDirect(tspack, scene, light, p, n, wo, bsdf,
-			sample, ls1, ls2, ls3, bs1, bs2, bcs);
-		// Update _avgY_ array with reflected radiance due to light
-		float luminance = L.y(tspack);
-		avgY[lightNumber] = Lerp(.99f, luminance, avgY[lightNumber]);
-		overallAvgY = Lerp(.999f, luminance, overallAvgY);
-		L /= lightSampleWeight;
-	}
-	return L;
-}
-*/
-
 SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, const Sample *sample, 
 	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
@@ -229,6 +165,5 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 
 	return Ld;
 }
-
 
 }//namespace lux

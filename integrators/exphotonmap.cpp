@@ -37,7 +37,7 @@ using namespace lux;
 ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	u_int ndir, u_int ncaus, u_int nindir, u_int nrad, u_int nl,
 	u_int mdepth, u_int mpdepth, float mdist, bool fg, u_int gs, float ga,
-	float distThreshold,
+	PhotonMapRRStrategy rrstrategy, float rrcontprob, float distThreshold,
 	string *mapsfn, bool dbgEnableDirect, bool dbgUseRadianceMap,
 	bool dbgEnableCaustic, bool dbgEnableIndirect, bool dbgEnableSpecular)
 {
@@ -58,6 +58,9 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	gatherSamples = gs;
 	cosGatherAngle = cos(Radians(ga));
 
+	rrStrategy = rrstrategy;
+	rrContinueProbability = rrcontprob;
+
 	distanceThreshold = distThreshold;
 
 	mapsFileName = mapsfn;
@@ -67,11 +70,6 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	debugEnableCaustic = dbgEnableCaustic;
 	debugEnableIndirect = dbgEnableIndirect;
 	debugEnableSpecular = dbgEnableSpecular;
-
-	// ExPhotonIntegrator supports all light strategies available
-
-	// ExPhotonIntegrator doesn't support RussianRouletteStrategy::IMPORTANCE
-	hints.GetSupportedStrategies().RemoveStrategy(RussianRouletteStrategy::IMPORTANCE);
 }
 
 ExPhotonIntegrator::~ExPhotonIntegrator()
@@ -104,11 +102,15 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 			structure.clear();
 			structure.push_back(2);	// gather bsdf direction sample 1
 			structure.push_back(1);	// gather bsdf component sample 1
+			if (rrStrategy != RR_NONE)
+				structure.push_back(1); // RR
 			sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
 
 			structure.clear();
 			structure.push_back(2);	// gather bsdf direction sample 2
 			structure.push_back(1);	// gather bsdf component sample 2
+			if (rrStrategy != RR_NONE)
+				structure.push_back(1); // RR
 			sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
 		}
 	} else if (renderingMode == RM_PATH) {
@@ -118,9 +120,12 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(2);	// bsdf direction sample for indirect light
 		structure.push_back(1);	// bsdf component sample for indirect light
 
+		if (rrStrategy != RR_NONE)
+			structure.push_back(1);	// continue sample
+
 		// Allocate and request samples for light sampling
 		hints.RequestSamples(scene, structure);
-		
+
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 	} else
 		BOOST_ASSERT(false);
@@ -203,7 +208,6 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 		const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
 		const float *reflectionSample = &sampleData[0];
 		const float *reflectionComponent = &sampleData[2];
-		const float *lightSample = &sampleData[3];
 
 		Vector wo = -ray.d;
 
@@ -222,7 +226,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			hints.SampleLights(tspack, scene, p, ns, wo, bsdf,
-					sample, lightSample, 1.f, Ld);
+					sample, sampleData, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L += Ld[i];
@@ -253,7 +257,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 					tspack, scene, sample,
 					sampleFinalGather1Offset,
 					sampleFinalGather2Offset, gatherSamples,
-					cosGatherAngle, hints, indirectMap,
+					cosGatherAngle, rrStrategy,
+					rrContinueProbability, indirectMap,
 					radianceMap, wo, bsdf,
 					BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION));
 			else
@@ -403,8 +408,13 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		const float *pathComponent = &sampleData[2];
 		const float *indirectSample = &sampleData[3];
 		const float *indirectComponent = &sampleData[5];
-		const float *lightSample = &sampleData[6];
 
+		float *rrSample;
+		if (rrStrategy != RR_NONE)
+			rrSample = &sampleData[12];
+		else
+			rrSample = NULL;
+		
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		// Sample illumination from lights to find path contribution
@@ -416,7 +426,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, lightSample, 1.f, Ld);
+					sample, sampleData, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L += Ld[i];
@@ -504,10 +514,20 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		const float dp = AbsDot(wi, n) / pdf;
 
 		// Possibly terminate the path
-		const float rrProb = hints.RussianRouletteContinue(sampleData, pathLength, f.Filter(tspack) * dp, 0.f);
-		if (rrProb <= 0.f)
-			break;
-		pathThroughput /= rrProb;
+		if (pathLength > 3) {
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float q = min<float>(1.f, f.Filter(tspack) * dp);
+				if (q < rrSample[0])
+					break;
+				// increase path contribution
+				pathThroughput /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (rrContinueProbability < rrSample[0])
+					break;
+				// increase path contribution
+				pathThroughput /= rrContinueProbability;
+			}
+		}
 
 		specularBounce = (sampledType & BSDF_SPECULAR) != 0;
 		specular = specular && specularBounce;
@@ -554,6 +574,23 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 
 	float gatherAngle = params.FindOneFloat("gatherangle", 10.0f);
 
+	PhotonMapRRStrategy rstrategy;
+	string rst = params.FindOneString("rrstrategy", "efficiency");
+	if (rst == "efficiency")
+		rstrategy = RR_EFFICIENCY;
+	else if (rst == "probability")
+		rstrategy = RR_PROBABILITY;
+	else if (rst == "none")
+		rstrategy = RR_NONE;
+	else {
+		std::stringstream ss;
+		ss<<"Strategy  '" << rst << "' for russian roulette path termination unknown. Using \"efficiency\".";
+		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		rstrategy = RR_EFFICIENCY;
+	}
+	// continueprobability for plain RR (0.0-1.0)
+	float rrcontinueProb = params.FindOneFloat("rrcontinueprob", 0.65f);
+
 	float distanceThreshold = params.FindOneFloat("distancethreshold", maxDist * 1.25f);
 
 	string *mapsFileName = NULL;
@@ -570,6 +607,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
     ExPhotonIntegrator *epi =  new ExPhotonIntegrator(renderingMode,
 			max(nDirect, 0), max(nCaustic, 0), max(nIndirect, 0), max(nRadiance, 0),
             max(nUsed, 0), max(maxDepth, 0), max(maxPhotonDepth, 0), maxDist, finalGather, max(gatherSamples, 0), gatherAngle,
+			rstrategy, rrcontinueProb,
 			distanceThreshold,
 			mapsFileName,
 			debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,

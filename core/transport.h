@@ -46,9 +46,6 @@ class SurfaceIntegrator : public Integrator {
 public:
 	virtual u_int Li(const TsPack *tspack, const Scene *scene,
 		const Sample *sample) const = 0;
-
-protected:
-	SurfaceIntegratorRenderingHints hints;
 };
 
 class VolumeIntegrator : public Integrator {
@@ -75,15 +72,6 @@ public:
 	const Sample *sample, const float *lightSample,
 	const float *lightNum, const float *bsdfSample,
 	const float *bsdfComponent, SWCSpectrum *L);
-
-// Note - Radiance - disabled as this code is broken. (not threadsafe)
-/*
- SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
-	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, int lightSampleOffset, int lightNumOffset,
-	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,
-	float *&avgYsample, float *&cdf, float &overallAvgY);
-*/
 
 }//namespace lux
  

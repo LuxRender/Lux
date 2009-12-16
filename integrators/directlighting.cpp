@@ -32,10 +32,6 @@ using namespace lux;
 // DirectLightingIntegrator Method Definitions
 DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 	maxDepth = md;
-
-	// DirectLighting doesn't use RussianRouletteStrategies at all so none of them
-	// is supported
-	hints.GetSupportedStrategies().RemoveAllRussianRouletteStrategy();
 }
 
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene) {

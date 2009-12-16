@@ -58,9 +58,6 @@ IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float md)
 	minDist2 = md * md;
 	maxSpecularDepth = d;
 	virtualLights.resize(nLightSets);
-
-	hints.GetSupportedStrategies().RemoveAllLightsSamplingStrategy();
-	hints.GetSupportedStrategies().RemoveAllRussianRouletteStrategy();
 }
 void IGIIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 {

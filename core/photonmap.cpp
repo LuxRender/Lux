@@ -20,8 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <limits>
-
 #include "photonmap.h"
 #include "light.h"
 #include "mc.h"
@@ -806,7 +804,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 	const Scene *scene, const Sample *sample, u_int sampleFinalGather1Offset,
 	u_int sampleFinalGather2Offset, u_int gatherSamples, float cosGatherAngle,
-	const SurfaceIntegratorRenderingHints &hints,
+	PhotonMapRRStrategy rrStrategy, float rrContinueProbability,
 	const LightPhotonMap *indirectMap, const RadiancePhotonMap *radianceMap,
 	const Vector &wo, const BSDF *bsdf, const BxDFType bxdfType) 
 {
@@ -865,11 +863,21 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				continue;
 
 			// Dade - russian roulette
-			const float rrProb = hints.RussianRouletteContinue(sampleFGData,
-					std::numeric_limits<u_int>::max(), fr.Filter(tspack) * AbsDot(wi, n) / pdf, 0.f);
-			if (rrProb <= 0.f)
-				break;
-			fr /= rrProb;
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float dp = AbsDot(wi, n) / pdf;
+				const float q = min(1.f, fr.Filter(tspack) * dp);
+				if (q < sampleFGData[3])
+					continue;
+
+				// increase contribution
+				fr /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (rrContinueProbability < sampleFGData[3])
+					continue;
+
+				// increase path contribution
+				fr /= rrContinueProbability;
+			}
 
 			// Trace BSDF final gather ray and accumulate radiance
 			RayDifferential bounceRay(p, wi);
@@ -937,11 +945,22 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			}
 			photonPdf /= nIndirSamplePhotons;
 
-			const float rrProb = hints.RussianRouletteContinue(sampleFGData,
-					std::numeric_limits<u_int>::max(), fr.Filter(tspack) * 1.f / photonPdf, 0.f);
-			if (rrProb <= 0.f)
-				break;
-			fr /= rrProb;
+			// Dade - russian roulette
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float dp = 1.f / photonPdf;
+				const float q = min(1.f, fr.Filter(tspack) * dp);
+				if (q < sampleFGData[3])
+					continue;
+
+				// increase contribution
+				fr /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (rrContinueProbability < sampleFGData[3])
+					continue;
+
+				// increase path contribution
+				fr /= rrContinueProbability;
+			}
 
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
@@ -977,7 +996,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 
 SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 	const Sample *sample, u_int sampleFinalGatherOffset, u_int gatherSamples,
-	const SurfaceIntegratorRenderingHints &hints,
+	PhotonMapRRStrategy rrStrategy, float rrContinueProbability,
 	const LightPhotonMap *indirectMap, const RadiancePhotonMap *radianceMap,
 	const Vector &wo, const BSDF *bsdf, const BxDFType bxdfType) 
 {
@@ -1005,11 +1024,21 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 				continue;
 
 			// Dade - russian roulette
-			const float rrProb = hints.RussianRouletteContinue(sampleFGData,
-					std::numeric_limits<u_int>::max(), fr.Filter(tspack) * AbsDot(wi, n) / pdf, 0.f);
-			if (rrProb <= 0.f)
-				break;
-			fr /= rrProb;
+			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+				const float dp = AbsDot(wi, n) / pdf;
+				const float q = min(1.f, fr.Filter(tspack) * dp);
+				if (q < sampleFGData[3])
+					continue;
+
+				// increase contribution
+				fr /= q;
+			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+				if (rrContinueProbability < sampleFGData[3])
+					continue;
+
+				// increase path contribution
+				fr /= rrContinueProbability;
+			}
 
 			// Trace BSDF final gather ray and accumulate radiance
 			RayDifferential bounceRay(p, wi);

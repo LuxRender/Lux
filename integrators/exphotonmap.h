@@ -46,6 +46,7 @@ public:
 			u_int ndir, u_int ncaus, u_int nindir, u_int nrad,
 			u_int nLookup, u_int mdepth, u_int mpdepth,
 			float maxdist, bool finalGather, u_int gatherSamples, float ga,
+			PhotonMapRRStrategy rrstrategy, float rrcontprob,
 			float distThreshold,
 			string *mapsFileName,
 			bool dbgEnableDirect, bool dbgEnableDirectMap, bool dbgEnableCaustic,
@@ -66,6 +67,8 @@ private:
 		const RayDifferential &ray, const Sample *sample, float *alpha) const;
 
 	// ExPhotonIntegrator Private Data
+	SurfaceIntegratorRenderingHints hints;
+
 	RenderingMode renderingMode;
 	u_int nDirectPhotons, nCausticPhotons, nIndirectPhotons, nRadiancePhotons;
 	u_int nLookup;
@@ -75,6 +78,7 @@ private:
 	bool finalGather;
 	float cosGatherAngle;
 	u_int gatherSamples;
+	PhotonMapRRStrategy rrStrategy;
 	float rrContinueProbability;
 	float distanceThreshold;
 
