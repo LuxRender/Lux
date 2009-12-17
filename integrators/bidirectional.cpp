@@ -98,10 +98,10 @@ void BidirIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 
 // Visibility test
 static bool visible(const TsPack *tspack, const Scene *scene, const Point &P0,
-	const Point &P1, float *pdf, float *pdfR, SWCSpectrum *f)
+	const Point &P1, float *pdf, float *pdfR, SWCSpectrum *f, bool clip)
 {
 	VisibilityTester vt;
-	vt.SetSegment(P0, P1, tspack->time);
+	vt.SetSegment(P0, P1, tspack->time, clip);
 	return vt.TestOcclusion(tspack, scene, f, pdf, pdfR);
 }
 
@@ -231,7 +231,8 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	const float lpdf = lightV.bsdf->Pdf(tspack, lightV.wi, lwo, lightV.flags);
 	float ltPdf = 1.f;
 	float etPdfR = 1.f;
-	if (!visible(tspack, scene, lightV.p, eyeV.p, &ltPdf, &etPdfR, L))
+	if (!visible(tspack, scene, eyeV.p, lightV.p, &ltPdf, &etPdfR, L,
+		nEye == 1))
 		return false;
 	// Prepare eye vertex for connection
 	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);

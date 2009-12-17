@@ -94,7 +94,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)());
 	*pdf = UniformSpherePdf();
 	*pdfDirect = 1.f;
-	visibility->SetSegment(p, pos, tspack->time);
+	visibility->SetSegment(pos, p, tspack->time, true);
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
