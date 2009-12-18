@@ -406,7 +406,7 @@ int Scene::CreateRenderThread()
 		rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
 	}
 
-	return 0;
+	return renderThreads.size();
 }
 
 void Scene::RemoveRenderThread()
