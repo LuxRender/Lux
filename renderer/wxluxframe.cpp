@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 16 2008)
+// C++ code generated with wxFormBuilder (version Dec 29 2008)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -183,7 +183,7 @@ LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_LightGroups->SetSizer( m_LightGroupsSizer );
 	m_LightGroups->Layout();
 	m_LightGroupsSizer->Fit( m_LightGroups );
-	m_outputNotebook->AddPage( m_LightGroups, wxT("LightGroups"), false, wxNullBitmap );
+	m_outputNotebook->AddPage( m_LightGroups, wxT("Light Groups"), false, wxNullBitmap );
 	m_Tonemap = new wxScrolledWindow( m_outputNotebook, ID_TONEMAP, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxVSCROLL );
 	m_Tonemap->SetScrollRate( 5, 5 );
 	wxBoxSizer* bTonemapSizer;

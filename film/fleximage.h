@@ -81,8 +81,8 @@ public:
 	virtual float GetGroupTemperature(u_int index) const;
 	virtual void ComputeGroupScale(u_int index);
 
-	virtual int GetXPixelCount() const { return xPixelCount; }
-	virtual int GetYPixelCount() const { return yPixelCount; }
+	virtual u_int GetXPixelCount() const { return xPixelCount; }
+	virtual u_int GetYPixelCount() const { return yPixelCount; }
 
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 	virtual void AddSample(Contribution *contrib);

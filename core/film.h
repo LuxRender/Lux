@@ -417,8 +417,8 @@ public:
 	virtual float getldrDisplayInterval() = 0;
 	void getHistogramImage(unsigned char *outPixels, int width, int height, int options);
 
-	virtual int GetXPixelCount() const = 0;
-	virtual int GetYPixelCount() const = 0;
+	virtual u_int GetXPixelCount() const = 0;
+	virtual u_int GetYPixelCount() const = 0;
 
 	void SetScene(Scene *scene1) { scene = scene1; }
 

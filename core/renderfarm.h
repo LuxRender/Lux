@@ -124,6 +124,7 @@ private:
 
 	static void decodeServerName(const string &serverName, string &name, string &port);
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
+	void sendFile(std::string file);
 
 	// Any operation on servers must be synchronized via this mutex
 	boost::mutex serverListMutex;

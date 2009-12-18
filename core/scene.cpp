@@ -142,11 +142,11 @@ int Scene::DisplayInterval() {
 }
 
 int Scene::FilmXres() {
-    return camera->film->GetXPixelCount();
+	return camera->film->GetXPixelCount();
 }
 
 int Scene::FilmYres() {
-    return camera->film->GetYPixelCount();
+	return camera->film->GetYPixelCount();
 }
 
 // Statistics Access
@@ -404,9 +404,9 @@ int Scene::CreateRenderThread()
 
 		renderThreads.push_back(rt);
 		rt->thread = new boost::thread(boost::bind(RenderThread::render, rt));
-
-		return 0;
 	}
+
+	return 0;
 }
 
 void Scene::RemoveRenderThread()
