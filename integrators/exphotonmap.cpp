@@ -201,6 +201,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	// TODO
 	//u_int nContribs = 0;
 	const float nLights = scene->lights.size();
+	const u_int lightGroupCount = scene->lightGroups.size();
+	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 
 	Intersection isect;
 	if (scene->Intersect(ray, &isect)) {
@@ -223,8 +225,9 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 
 		// Compute direct lighting
 		if (debugEnableDirect && (nLights > 0)) {
-			const u_int lightGroupCount = scene->lightGroups.size();
-			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
+			for (u_int i = 0; i < lightGroupCount; ++i)
+				Ld[i] = 0.f;
+
 			hints.SampleLights(tspack, scene, p, ns, wo, bsdf,
 					sample, sampleData, 1.f, Ld);
 

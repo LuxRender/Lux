@@ -71,9 +71,6 @@ u_int LSSAllUniform::SampleLights(
 	vector<SWCSpectrum> &L) const {
 	// Sample all lights in the scene
 	const u_int nLights = scene->lights.size();
-	if (nLights == 0)
-		return 0;
-
 	const SWCSpectrum newScale = scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
@@ -147,9 +144,6 @@ u_int LSSOneUniform::SampleLights(
 	vector<SWCSpectrum> &L) const {
 	// Randomly choose a single light to sample
 	const u_int nLights = scene->lights.size();
-	if (nLights == 0)
-		return 0;
-
 	const SWCSpectrum newScale = static_cast<float>(nLights) * scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
@@ -207,9 +201,6 @@ u_int LSSOneImportance::SampleLights(
 	vector<SWCSpectrum> &L) const {
 	// Choose a single light to sample according the importance
 	const u_int nLights = scene->lights.size();
-	if (nLights == 0)
-		return 0;
-
 	const SWCSpectrum newScale = scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
@@ -275,9 +266,6 @@ u_int LSSOnePowerImportance::SampleLights(
 	vector<SWCSpectrum> &L) const {
 	// Choose a single light to sample according the importance
 	const u_int nLights = scene->lights.size();
-	if (nLights == 0)
-		return 0;
-
 	const SWCSpectrum newScale = scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
@@ -321,9 +309,6 @@ u_int LSSAllPowerImportance::SampleLights(
 	vector<SWCSpectrum> &L) const {
 	// Choose a single light to sample according the importance
 	u_int nLights = scene->lights.size();
-	if (nLights == 0)
-		return 0;
-
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
 	if (nLights > shadowRayCount) {

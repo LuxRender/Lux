@@ -240,6 +240,10 @@ public:
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const {
+		const u_int nLights = scene->lights.size();
+		if (nLights == 0)
+			return 0;
+
 		const u_int nContribs = lsStrategy->SampleLights(tspack, scene,
 				shadowRayCount, p, n, wo, bsdf, sample, &sampleData[lightSampleOffset], scale, L);
 

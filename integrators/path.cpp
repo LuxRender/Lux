@@ -75,16 +75,21 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		--(sample->imageY);
 	}
 
+	const float nLights = scene->lights.size();
+	const u_int lightGroupCount = scene->lightGroups.size();
+	// Direct lighting
+	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
+	// Direct lighting samples variance
+	vector<float> Vd(lightGroupCount, 0.f);
 	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
-	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
-	vector<float> V(scene->lightGroups.size(), 0.f);
+	vector<SWCSpectrum> L(lightGroupCount, 0.f);
+	vector<float> V(lightGroupCount, 0.f);
 	float VContrib = .1f;
 	bool specularBounce = true, specular = true;
 	float alpha = 1.f;
 	float distance = INFINITY;
 	u_int through = 0;
-	const float nLights = scene->lights.size();
 
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
@@ -161,11 +166,11 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Estimate direct lighting
 		if (nLights > 0) {
-			const u_int lightGroupCount = scene->lightGroups.size();
-			// Direct lighting
-			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
-			// Direct lighting samples variance
-			vector<float> Vd(lightGroupCount, 0.f);
+			for (u_int i = 0; i < lightGroupCount; ++i) {
+				L[i] = 0.f;
+				V[i] = 0.f;
+			}
+
 			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
 					sample, data, pathThroughput, Ld, &Vd);
 
@@ -216,7 +221,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		ray = RayDifferential(p, wi);
 		ray.time = r.time;
 	}
-	for (u_int i = 0; i < scene->lightGroups.size(); ++i) {
+	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(tspack);
 		sample->AddContribution(sample->imageX, sample->imageY,
