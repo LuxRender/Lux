@@ -257,8 +257,11 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 		return false;
 	// Evaluate factors for eye path weighting
 	const float epdf = eyeV.bsdf->Pdf(tspack, ewi, eyeV.wo, eyeV.flags);
-	eyeV.rr = min(1.f, max(lightThreshold, ef.Filter(tspack) *
-		eyeV.coso * ecosins / (ecosi * epdf)));
+	if (nEye == 1)
+		eyeV.rr = 1.f;
+	else
+		eyeV.rr = min(1.f, max(lightThreshold, ef.Filter(tspack) *
+			eyeV.coso * ecosins / (ecosi * epdf)));
 	eyeV.rrR = min(1.f, max(eyeThreshold, ef.Filter(tspack) *
 		ecosins / epdfR));
 	eyeV.dAWeight = lpdf * ltPdf * ecosi / d2;
@@ -269,8 +272,11 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	const float lpdfR = lightV.bsdf->Pdf(tspack, lwo, lightV.wi, lightV.flags);
 	lightV.rr = min(1.f, max(lightThreshold, lf.Filter(tspack) *
 		lcoso * lcosins / (lightV.cosi * lpdf)));
-	lightV.rrR = min(1.f, max(eyeThreshold, lf.Filter(tspack) *
-		lcosins / lpdfR));
+	if (nLight == 1)
+		lightV.rrR = 1.f;
+	else
+		lightV.rrR = min(1.f, max(eyeThreshold, lf.Filter(tspack) *
+			lcosins / lpdfR));
 	lightV.dARWeight = epdfR * etPdfR * lcoso / d2;
 	const float lWeight = nLight > 1 ? light[nLight - 2].dARWeight : 0.f;
 	if (nLight > 1)
