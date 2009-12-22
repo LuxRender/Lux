@@ -93,6 +93,8 @@ public:
 		cdf = new float[n + 1];
 		count = n;
 		memcpy(func, f, n * sizeof(float));
+		// funcInt is the sum of all f elements divided by the number
+		// of elements, ie the average value of f over [0;1)
 		ComputeStep1dCDF(func, n, &funcInt, cdf);
 		invFuncInt = 1.f / funcInt;
 		invCount = 1.f / count;
@@ -146,11 +148,11 @@ public:
 		u_int offset = max<int>(0, ptr - cdf - 1);
 
 		// Compute PDF for sampled offset
-		*pdf = func[offset] * invFuncInt;
+		*pdf = func[offset] * invFuncInt * invCount;
 		return offset;
 	}
 	float Pdf(float u) const { return func[Offset(u)] * invFuncInt; }
-	float Sum() const { return funcInt; }
+	float Average() const { return funcInt; }
 	u_int Offset(float u) const {
 		return min(count - 1, Floor2UInt(u * count));
 	}
@@ -184,7 +186,7 @@ public:
 		vector<float> marginalFunc;
 		marginalFunc.reserve(nv);
 		for (u_int v = 0; v < nv; ++v)
-			marginalFunc.push_back(pConditionalV[v]->Sum());
+			marginalFunc.push_back(pConditionalV[v]->Average());
 		pMarginal = new Distribution1D(&marginalFunc[0], nv);
 	}
 	~Distribution2D() {
@@ -210,7 +212,7 @@ public:
 		return pConditionalV[pMarginal->Offset(v)]->Pdf(u) *
 			pMarginal->Pdf(v);
 	}
-	float Sum() const { return pMarginal->Sum(); }
+	float Average() const { return pMarginal->Average(); }
 private:
 	// Distribution2D Private Data
 	vector<Distribution1D *> pConditionalV;

@@ -32,17 +32,55 @@ using namespace lux;
 
 class GonioBxDF : public BxDF {
 public:
-	GonioBxDF(const Normal &ns, const Vector &du, const Vector &dv, const SampleableSphericalFunction *func) :
-		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), x(du), y(dv), z(Vector(ns)), sf(func) {}
+	GonioBxDF(const Transform &WToL, const SampleableSphericalFunction *func) :
+		BxDF(BxDFType(BSDF_DIFFUSE)), WorldToLight(WToL), sf(func) { }
 	virtual ~GonioBxDF() { }
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const {
+		Vector w;
+		*f_ += SWCSpectrum(tspack, sf->Sample_f(u1, u2, &w, pdf));
+		*wi = Normalize(WorldToLight.GetInverse()(w));
+		*f_ /= fabsf(wi->z);
+		*pdfBack = 0.f;
+		return true;
+	}
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		// Transform to light coordinate system
-		const Vector wL(wi.x * x + wi.y * y + wi.z * z);
-		*F += SWCSpectrum(tspack, sf->f(wL)) * INV_PI;
+		const Vector wL(Normalize(WorldToLight(wi)));
+		*F += SWCSpectrum(tspack, sf->f(wL)) / fabsf(wi.z);
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+		const Vector &wo) const {
+		const Vector wL(Normalize(WorldToLight(wi)));
+		return sf->Pdf(wL);
 	}
 private:
-	Vector x, y, z; // s,t,n in the light coordinate system
+	const Transform &WorldToLight;
 	const SampleableSphericalFunction *sf;
+};
+
+class UniformBxDF : public BxDF {
+public:
+	UniformBxDF() : BxDF(BSDF_DIFFUSE) { }
+	virtual ~UniformBxDF() { }
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const {
+		*wi = UniformSampleSphere(u1, u2);
+		*pdf = UniformSpherePdf();
+		*f_ += 1.f / fabsf(wi->z);
+		*pdfBack = 0.f;
+		return true;
+	}
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+		// Transform to light coordinate system
+		*F += 1.f / fabsf(wi.z);
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+		const Vector &wo) const {
+		return UniformSpherePdf();
+	}
 };
 
 // PointLight Method Definitions
@@ -101,50 +139,37 @@ SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
-	Vector w;
-	if(func) {
-		func->Sample_f(u1, u2, &w, pdf);
-		w = LightToWorld(w);
-	}
-	else {
-		w = UniformSampleSphere(u1, u2);
-		*pdf = UniformSpherePdf();
-	}
-	Vector dpdu, dpdv;
-	CoordinateSystem(w, &dpdu, &dpdv);
-	const Normal ns(w);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	*pdf = 1.f;
+	const Normal ns(0, 0, 1);
+	DifferentialGeometry dg(lightPos, ns, Vector(1, 0, 0), Vector(0, 1, 0),
+		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func));
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, Lambertian)(1.f));
-	*Le = Lbase->Evaluate(tspack, dummydg) * gain * M_PI;
+			ARENA_ALLOC(tspack->arena, UniformBxDF)());
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
-	const Vector w(p - lightPos);
-	Normal ns = Normal(Normalize(w));
-	*pdfDirect = 1.f;
-	if(func)
-		*pdf = func->Pdf(Normalize(WorldToLight(w)));
-	else
-		*pdf = UniformSpherePdf();
+	const Normal ns(0, 0, 1);
 	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	if(func)
+	DifferentialGeometry dg(lightPos, ns, Vector(1, 0, 0), Vector(0, 1, 0),
+		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	*pdfDirect = 1.f;
+	*pdf = 1.f;
+	if (func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight(ns), WorldToLight(dpdu), WorldToLight(dpdv), func));
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func));
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, Lambertian)(1.f));
+			ARENA_ALLOC(tspack->arena, UniformBxDF)());
 	visibility->SetSegment(p, lightPos, tspack->time);
-	*Le = Lbase->Evaluate(tspack, dummydg) * gain * M_PI;
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
 SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,

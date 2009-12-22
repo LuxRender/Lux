@@ -51,12 +51,11 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 
 	// Compute scalar-valued image
 	float *img = new float[xRes * yRes];
-	for (u_int x = 0; x < xRes; ++x) {
-		float xp = (x + .5f) / xRes;
-		for (u_int y = 0; y < yRes; ++y) {
-			float yp = (y + .5f) / yRes;
-			img[y + x * yRes] = func->f(xp * 2.f * M_PI,
-				yp * M_PI).Y() * sinf(M_PI * yp);
+	for (u_int y = 0; y < yRes; ++y) {
+		float yp = M_PI * (y + .5f) / yRes;
+		for (u_int x = 0; x < xRes; ++x) {
+			float xp = 2.f * M_PI * (x + .5f) / xRes;
+			img[x + y * xRes] = func->f(xp, yp).Y() * sin(yp);
 		}
 	}
 	// Initialize sampling PDFs
@@ -81,7 +80,7 @@ RGBColor SampleableSphericalFunction::Sample_f(float u1, float u2, Vector *w,
 	// Convert sample point to direction on the unit sphere
 	const float theta = uv[1] * M_PI;
 	const float phi = uv[0] * 2.f * M_PI;
-	const float costheta = cos(theta), sintheta = sin(theta);
+	const float costheta = cosf(theta), sintheta = sinf(theta);
 	*w = SphericalDirection(sintheta, costheta, phi);
 	// Compute PDF for sampled direction
 	*pdf /= 2.f * M_PI * M_PI * sintheta;
@@ -97,7 +96,7 @@ float SampleableSphericalFunction::Pdf(const Vector& w) const
 }
 
 float SampleableSphericalFunction::Average_f() const {
-	return uvDistrib->Sum();
+	return uvDistrib->Average();
 }
 
 	SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet, const TextureParams &tp) {
