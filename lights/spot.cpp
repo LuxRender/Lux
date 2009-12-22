@@ -100,7 +100,7 @@ float SpotLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const 
 float SpotLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
-	return AbsDot(Normalize(p - po), ns) / DistanceSquared(p, po);
+	return 1.f;
 }
 SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
@@ -128,7 +128,7 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
 	const Vector w(p - lightPos);
-	*pdfDirect = 1.f / w.LengthSquared();
+	*pdfDirect = 1.f;
 	Normal ns = LightToWorld(Normal(0, 0, 1));
 	*pdf = 1.f;
 	Vector dpdu, dpdv;
