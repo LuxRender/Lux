@@ -124,6 +124,8 @@ private:
 	};
 
 	static void decodeServerName(const string &serverName, string &name, string &port);
+	bool connect(ExtRenderingServerInfo &serverInfo);
+	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void sendParams(const ParamSet &params);
 	void sendFile(std::string file);

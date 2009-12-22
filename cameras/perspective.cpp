@@ -272,7 +272,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		xStart, xEnd, yStart, yEnd));
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
-	visibility->SetSegment(p, ps, tspack->time);
+	visibility->SetSegment(ps, p, tspack->time, true);
 	*We = SWCSpectrum(posPdf);
 	return true;
 }

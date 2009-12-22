@@ -332,8 +332,10 @@ string RenderServer::createNewSessionID() {
 }
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
-	if (serverThread->renderServer->state != RenderServer::BUSY)
+	if (serverThread->renderServer->state != RenderServer::BUSY) {
+		luxError(LUX_NOERROR, LUX_INFO, "Slave has not any active session");
 		return false;
+	}
 
 	string sid;
 	if (!getline(stream, sid))
@@ -633,11 +635,14 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					break;
 				}
 				case CMD_LUXGETFILM: {
-					if (!serverThread->renderServer->validateAccess(stream))
-						break;
-
 					// Dade - check if we are rendering something
 					if (serverThread->renderServer->state == RenderServer::BUSY) {
+						if (!serverThread->renderServer->validateAccess(stream)) {
+							luxError(LUX_SYSTEM, LUX_ERROR, "Unknown session ID");
+							stream.close();
+							break;
+						}
+
 						luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
 
 						Context::luxTransmitFilm(stream);

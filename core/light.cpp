@@ -24,6 +24,7 @@
 #include "light.h"
 #include "scene.h"
 #include "shape.h"
+#include "camera.h"
 #include "reflection/bxdf.h"
 
 using namespace lux;
@@ -42,6 +43,11 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 {
 	RayDifferential ray(r);
 	ray.time = tspack->time;
+	if (cameraClip) {
+		tspack->camera->ClampRay(ray);
+		ray.mint = max(ray.mint, r.mint);
+		ray.maxt = min(ray.maxt, r.maxt);
+	}
 	Vector d(Normalize(ray.d));
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
@@ -54,14 +60,14 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 			return true;
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 
-		*f *= bsdf->f(tspack, -d, d, flags);
+		*f *= bsdf->f(tspack, d, -d, flags);
 		if (f->Black())
 			return false;
 		*f *= AbsDot(bsdf->dgShading.nn, d);
 		if (pdf)
-			*pdf *= bsdf->Pdf(tspack, -d, d);
+			*pdf *= bsdf->Pdf(tspack, d, -d);
 		if (pdfR)
-			*pdfR *= bsdf->Pdf(tspack, d, -d);
+			*pdfR *= bsdf->Pdf(tspack, -d, d);
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = r.maxt;

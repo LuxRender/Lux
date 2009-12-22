@@ -108,7 +108,8 @@ public: // Put last for better data alignment
 struct VisibilityTester {
 	// VisibilityTester Public Methods
 
-	void SetSegment(const Point &p1, const Point & p2, float time) {
+	void SetSegment(const Point &p1, const Point & p2, float time, bool clip = false) {
+		cameraClip = clip;
 		// Dade - need to scale the RAY_EPSILON value because the ray direction
 		// is not normalized (in order to avoid light leaks: bug #295)
 		const Vector w = p2 - p1;
@@ -122,6 +123,7 @@ struct VisibilityTester {
 	void SetRay(const Point &p, const Vector & w, float time) {
 		r = Ray(p, Normalize(w));
 		r.time = time;
+		cameraClip = false;
 	}
 
 	bool Unoccluded(const Scene * scene) const;
@@ -129,6 +131,7 @@ struct VisibilityTester {
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	void Transmittance(const TsPack *tspack, const Scene * scene, const Sample *sample, SWCSpectrum *const L) const;
 	Ray r;
+	bool cameraClip;
 };
 
 class AreaLight : public Light {
