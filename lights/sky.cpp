@@ -226,17 +226,24 @@ float SkyLight::Power(const Scene *scene) const
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	float cosTheta = -1.f, phi = 0.f, power = 0.f;
-	for (u_int i = 0; i < 100; ++i) {
-		for (u_int j = 0; j < 100; ++j) {
+
+	const u_int steps = 100;
+	const float deltaStep = 2.f / steps;
+	float phi = 0.f, power = 0.f;
+	for (u_int i = 0; i < steps; ++i) {
+		float cosTheta = -1.f;
+		for (u_int j = 0; j < steps; ++j) {
 			float theta = acosf(cosTheta);
 			float gamma = RiAngleBetween(theta, phi, thetaS, phiS);
 			theta = min(theta, M_PI * .5f - .001f);
 			power += zenith_Y * PerezBase(perez_Y, theta, gamma);
-			cosTheta += .02f;
-			phi += .02f * M_PI;
+			cosTheta += deltaStep;
 		}
+
+		phi += deltaStep * M_PI;
 	}
+	power /= steps * steps;
+
 	return power * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
 }
 
