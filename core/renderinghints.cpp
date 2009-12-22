@@ -420,9 +420,6 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 
 	// Create the light strategy
 	switch (lightStrategyType) {
-		case LightsSamplingStrategy::NOT_SUPPORTED:
-			lsStrategy = NULL;
-			break;
 		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
 			lsStrategy = new LSSAllUniform();
 			break;
@@ -443,6 +440,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 			break;
 		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
 			lsStrategy = new LSSOneLogPowerImportance();
+			break;
 		default:
 			BOOST_ASSERT(false);
 	}

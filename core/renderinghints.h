@@ -46,7 +46,6 @@ public:
 class LightsSamplingStrategy : public Strategy {
 public:
 	enum LightStrategyType {
-		NOT_SUPPORTED, // Used in the case LS strategies are not supported at all
 		SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
 		SAMPLE_AUTOMATIC, SAMPLE_ONE_IMPORTANCE,
 		SAMPLE_ONE_POWER_IMPORTANCE, SAMPLE_ALL_POWER_IMPORTANCE,
