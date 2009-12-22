@@ -222,32 +222,28 @@ bool SingleBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	bool reverse) const
 {
 	BOOST_ASSERT(bxdf); // NOBOOK
-	if (bxdf->MatchesFlags(flags)) {
-		// Sample chosen _BxDF_
-		Vector wi;
-		if (bxdf->Sample_f(tspack, WorldToLocal(woW), &wi, u1, u2, f_,
-			pdf, pdfBack, reverse)) {
-			if (sampledType)
-				*sampledType = bxdf->type;
-			*wiW = LocalToWorld(wi);
-			const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
-			if (sideTest > 0.f) {
-				// ignore BTDFs
-				if (bxdf->type & BSDF_TRANSMISSION)
-					return false;
-			} else if (sideTest < 0.f) {
-				// ignore BRDFs
-				if (bxdf->type & BSDF_REFLECTION)
-					return false;
-			} else
-				return false;
-			return true;
-		}
-	}
-	*pdf = 0.f;
-	if (pdfBack)
-		*pdfBack = 0.f;
-	return false;
+	if (!bxdf->MatchesFlags(flags))
+		return false;
+	// Sample chosen _BxDF_
+	Vector wi;
+	if (!bxdf->Sample_f(tspack, WorldToLocal(woW), &wi, u1, u2, f_,
+		pdf, pdfBack, reverse))
+		return false;
+	if (sampledType)
+		*sampledType = bxdf->type;
+	*wiW = LocalToWorld(wi);
+	const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
+	if (sideTest > 0.f) {
+		// ignore BTDFs
+		if (bxdf->type & BSDF_TRANSMISSION)
+			return false;
+	} else if (sideTest < 0.f) {
+		// ignore BRDFs
+		if (bxdf->type & BSDF_REFLECTION)
+			return false;
+	} else
+		return false;
+	return true;
 }
 float SingleBSDF::Pdf(const TsPack *tspack, const Vector &woW,
 	const Vector &wiW, BxDFType flags) const
