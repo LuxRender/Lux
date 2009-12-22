@@ -34,8 +34,8 @@ using namespace lux;
 BSDF *MixMaterial::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
 	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading, dgGeom.nn);
 	float amt = amount->Evaluate(tspack, dgShading);
-	bsdf->Add(amt, child1->GetBSDF(tspack, dgGeom, dgShading));
-	bsdf->Add(1.f - amt, child2->GetBSDF(tspack, dgGeom, dgShading));
+	bsdf->Add(1.f - amt, child1->GetBSDF(tspack, dgGeom, dgShading));
+	bsdf->Add(amt, child2->GetBSDF(tspack, dgGeom, dgShading));
 	bsdf->SetCompositingParams(compParams);
 	return bsdf;
 }
