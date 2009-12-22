@@ -630,7 +630,9 @@ Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	return new InfiniteAreaLight(light2world, L, nSamples, texmap, map, gain, gamma);
+	InfiniteAreaLight *l =  new InfiniteAreaLight(light2world, L, nSamples, texmap, map, gain, gamma);
+	l->hints.InitParam(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<InfiniteAreaLight> r("infinite");

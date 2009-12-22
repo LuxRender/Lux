@@ -25,6 +25,7 @@
 // transport.h*
 #include "lux.h"
 #include "spectrum.h"
+#include "renderinghints.h"
 
 namespace lux
 {
@@ -71,15 +72,6 @@ public:
 	const Sample *sample, const float *lightSample,
 	const float *lightNum, const float *bsdfSample,
 	const float *bsdfComponent, SWCSpectrum *L);
-
-// Note - Radiance - disabled as this code is broken. (not threadsafe)
-/*
- SWCSpectrum WeightedSampleOneLight(const TsPack *tspack, const Scene *scene, const Point &p,
-	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, int lightSampleOffset, int lightNumOffset,
-	int bsdfSampleOffset, int bsdfComponentOffset, float *&avgY,
-	float *&avgYsample, float *&cdf, float &overallAvgY);
-*/
 
 }//namespace lux
  

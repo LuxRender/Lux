@@ -29,6 +29,7 @@
 #include "primitive.h"
 #include "error.h"
 #include "sphericalfunction.h"
+#include "renderinghints.h"
 // Light Declarations
 
 namespace lux
@@ -85,6 +86,7 @@ public:
 		warnOnce = true;
 		return false;
 	}
+	const LightRenderingHints *GetRenderingHints() const { return &hints; }
 
 	void AddPortalShape(boost::shared_ptr<Primitive> shape);
 
@@ -98,6 +100,7 @@ protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;
 	mutable bool warnOnce;
+	LightRenderingHints hints;
 public: // Put last for better data alignment
 	bool havePortalShape;
 };

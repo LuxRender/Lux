@@ -432,7 +432,10 @@ Light* SunLight::CreateLight(const Transform &light2world,
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,-1));	// direction vector of the sun
 	float turb = paramSet.FindOneFloat("turbidity", 2.0f);				// [in] turb  Turbidity (1.0,30+) 2-6 are most useful for clear days.
 	float relSize = paramSet.FindOneFloat("relsize", 1.0f);				// relative size to the sun. Set to 0 for old behavior.
-	return new SunLight(light2world, scale, sundir, turb, relSize, nSamples);
+
+	SunLight *l = new SunLight(light2world, scale, sundir, turb, relSize, nSamples);
+	l->hints.InitParam(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<SunLight> r("sun");

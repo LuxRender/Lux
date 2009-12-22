@@ -164,7 +164,10 @@ Light* PointLight::CreateLight(const Transform &light2world,
 
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
-	return new PointLight(l2w, L, g, ssf);
+
+	PointLight *l = new PointLight(l2w, L, g, ssf);
+	l->hints.InitParam(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterLight<PointLight> r("point");

@@ -219,7 +219,10 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamS
 	}
 
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
-	return new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
+
+	AreaLight *l = new AreaLight(light2world, L, g, p, e, ssf, nSamples, prim);
+	l->hints.InitParam(paramSet);
+	return l;
 }
 
 static DynamicLoader::RegisterAreaLight<AreaLight> r("area");

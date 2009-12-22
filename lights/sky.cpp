@@ -641,7 +641,9 @@ Light* SkyLight::CreateLight(const Transform &light2world,
 	float dconst = paramSet.FindOneFloat("dconst", 1.0f);
 	float econst = paramSet.FindOneFloat("econst", 1.0f);
 
-	return new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
+	SkyLight *l = new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
+	l->hints.InitParam(paramSet);
+	return l;
 }
 
 /**********************************************************
