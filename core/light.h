@@ -120,6 +120,7 @@ struct VisibilityTester {
 	void SetRay(const Point &p, const Vector & w, float time) {
 		r = Ray(p, Normalize(w));
 		r.time = time;
+		cameraClip = false;
 	}
 
 	bool Unoccluded(const Scene * scene) const;
