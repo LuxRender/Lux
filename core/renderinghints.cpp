@@ -48,20 +48,10 @@ void LightRenderingHints::InitParam(const ParamSet &params) {
 //******************************************************************************
 
 void LSSAllUniform::RequestSamples(const Scene *scene, vector<u_int> &structure) const {
-	if (scene->sampler->IsMutating()) {
-		const u_int nLights = scene->lights.size();
-		for (u_int j = 0; j < nLights; ++j) {
-			structure.push_back(2);	// light position sample
-			structure.push_back(1);	// light number/portal sample
-			structure.push_back(2);	// bsdf direction sample for light
-			structure.push_back(1);	// bsdf component sample for light
-		}
-	} else {
-		structure.push_back(2);	// light position sample
-		structure.push_back(1);	// light number/portal sample
-		structure.push_back(2);	// bsdf direction sample for light
-		structure.push_back(1);	// bsdf component sample for light
-	}
+	structure.push_back(2);	// light position sample
+	structure.push_back(1);	// light number/portal sample
+	structure.push_back(2);	// bsdf direction sample for light
+	structure.push_back(1);	// bsdf component sample for light
 }
 
 u_int LSSAllUniform::SampleLights(
