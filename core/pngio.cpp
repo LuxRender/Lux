@@ -168,8 +168,6 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					{
 						for (u_int x = 0; x < xPixelCount; ++x)
 						{
-//							const RGBColor &c = pixels[(x + y * xResolution)];
-//							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
 							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
 								pixels[x + y * xPixelCount].Y(), 0.f, 65535.f));
 
@@ -181,8 +179,6 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					{
 						for (u_int x = 0; x < xPixelCount; ++x)
 						{
-//							const RGBColor &c = pixels[(x + y * xResolution)];
-//							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
 							png_uint_16 gray = static_cast<png_uint_16>(Clamp(65535.f * 
 								pixels[x + y * xPixelCount].Y(), 0.f, 65535.f));
 							png_uint_16 a = static_cast<png_uint_16>(Clamp(65535.f * alpha[x + y * xPixelCount], 0.f, 65535.f));
@@ -241,8 +237,6 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					{
 						for (u_int x = 0; x < xPixelCount; ++x)
 						{
-//							const RGBColor &c = pixels[(x + y * xResolution)];
-//							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
 							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
 								pixels[x + y * xPixelCount].Y(), 0.f, 255.f));
 
@@ -254,8 +248,6 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 					{
 						for (u_int x = 0; x < xPixelCount; ++x)
 						{
-//							const RGBColor &c = pixels[(x + y * xResolution)];
-//							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
 							png_byte gray = static_cast<png_byte>(Clamp(255.f * 
 								pixels[x + y * xPixelCount].Y(), 0.f, 255.f));
 							png_byte a = static_cast<png_byte>(Clamp(255.f * alpha[x + y * xPixelCount], 0.f, 255.f));
