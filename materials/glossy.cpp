@@ -59,12 +59,12 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	float v = nv->Evaluate(tspack, dgs);
 	float ld = depth->Evaluate(tspack, dgs);
 
-	BxDF *bxdf;
+	MicrofacetDistribution *md;
 	if(u == v)
-		bxdf = ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld, ARENA_ALLOC(tspack->arena, Blinn)(1.f/u));
+		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
 	else
-		bxdf = ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld, ARENA_ALLOC(tspack->arena, Anisotropic)(1.f/u, 1.f/v));
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld, md));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
