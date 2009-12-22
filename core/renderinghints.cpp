@@ -74,51 +74,27 @@ u_int LSSAllUniform::SampleLights(
 	const SWCSpectrum newScale = scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
-	if (scene->sampler->IsMutating()) {
-		// Using a different sample for each lights
-		SWCSpectrum Ll;
-		for (u_int j = 0; j < nLights; ++j) {
-			const Light *light = scene->lights[j];
 
-			for (u_int i = 0; i < shadowRayCount; ++i) {
-				const u_int offset = i * sampleCount + j * 6;
-				const float *lightSample = &sampleData[offset];
-				const float *lightNum = &sampleData[offset + 2];
-				const float *bsdfSample = &sampleData[offset + 3];
-				const float *bsdfComponent =  &sampleData[offset + 5];
+	// Using one sample for all lights
+	SWCSpectrum Ll;
 
-				Ll = EstimateDirect(tspack, scene, light,
-					p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
-					bsdfSample[0], bsdfSample[1], *bsdfComponent);
+	for (u_int j = 0; j < nLights; ++j) {
+		const Light *light = scene->lights[j];
 
-				if (!Ll.Black()) {
-					L[light->group] += Ll * newScale;
-					++nContribs;
-				}
-			}
-		}
-	} else {
-		// Using one sample for all lights
-		SWCSpectrum Ll;
+		for (u_int i = 0; i < shadowRayCount; ++i) {
+			const u_int offset = i * sampleCount;
+			const float *lightSample = &sampleData[offset];
+			const float *lightNum = &sampleData[offset + 2];
+			const float *bsdfSample = &sampleData[offset + 3];
+			const float *bsdfComponent =  &sampleData[offset + 5];
 
-		for (u_int j = 0; j < nLights; ++j) {
-			const Light *light = scene->lights[j];
+			Ll = EstimateDirect(tspack, scene, light,
+				p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
+				bsdfSample[0], bsdfSample[1], *bsdfComponent);
 
-			for (u_int i = 0; i < shadowRayCount; ++i) {
-				const u_int offset = i * sampleCount;
-				const float *lightSample = &sampleData[offset];
-				const float *lightNum = &sampleData[offset + 2];
-				const float *bsdfSample = &sampleData[offset + 3];
-				const float *bsdfComponent =  &sampleData[offset + 5];
-
-				Ll = EstimateDirect(tspack, scene, light,
-					p, n, wo, bsdf, sample, lightSample[0], lightSample[1], *lightNum,
-					bsdfSample[0], bsdfSample[1], *bsdfComponent);
-
-				if (!Ll.Black()) {
-					L[light->group] += Ll * newScale;
-					++nContribs;
-				}
+			if (!Ll.Black()) {
+				L[light->group] += Ll * newScale;
+				++nContribs;
 			}
 		}
 	}

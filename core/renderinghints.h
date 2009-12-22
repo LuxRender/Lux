@@ -72,10 +72,7 @@ class LSSAllUniform : public LightsSamplingStrategy {
 public:
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const {
-		if (scene->sampler->IsMutating())
-			return scene->lights.size() * 6;
-		else
-			return 6;
+		return 6;
 	}
 	virtual u_int SampleLights(
 		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
