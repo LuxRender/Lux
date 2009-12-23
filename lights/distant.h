@@ -35,10 +35,10 @@ class DistantLight : public Light {
 public:
 	// DistantLight Public Methods
 	DistantLight(const Transform &light2world, 
-		const boost::shared_ptr< Texture<SWCSpectrum> > L, float gain, 
-		const Vector &dir);
+		const boost::shared_ptr<Texture<SWCSpectrum> > L, float gain, 
+		float theta, const Vector &dir);
 	virtual ~DistantLight();
-	virtual bool IsDeltaLight() const { return true; }
+	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual float Power(const Scene *scene) const {
 		Point worldCenter;
@@ -63,10 +63,11 @@ public:
 		const ParamSet &paramSet, const TextureParams &tp);
 private:
 	// DistantLight Private Data
-	Vector lightDir;
-	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
+	Vector x, y, lightDir;
+	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
 	DifferentialGeometry dummydg;
-	float gain;
+	float gain, sin2ThetaMax, cosThetaMax;
+	BxDF *bxdf;
 };
 
 }//namespace lux

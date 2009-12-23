@@ -30,27 +30,109 @@
 
 using namespace lux;
 
+class DistantBxDF : public BxDF
+{
+public:
+	DistantBxDF(float sin2Max, float cosMax) : BxDF(BxDFType(BSDF_REFLECTION |
+		BSDF_GLOSSY)), sin2ThetaMax(sin2Max), cosThetaMax(cosMax),
+		conePdf(UniformConePdf(cosMax)) { }
+	virtual ~DistantBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
+		SWCSpectrum *const f) const {
+		if (wi.z <= 0.f || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
+			return;
+		*f += SWCSpectrum(1.f / conePdf);
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf,
+		float *pdfBack = NULL, bool reverse = false) const {
+		*wi = UniformSampleCone(u1, u2, cosThetaMax);
+		*pdf = conePdf;
+		if (pdfBack)
+			*pdfBack = 0.f;
+		*f = SWCSpectrum(1.f / conePdf);
+		return true;
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+		const Vector &wo) const {
+		if (wo.z <= 0.f || (wo.x * wo.x + wo.y * wo.y) > sin2ThetaMax)
+			return 0.f;
+		else
+			return conePdf;
+	}
+private:
+	float sin2ThetaMax, cosThetaMax, conePdf;
+};
+
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
-						   const boost::shared_ptr< Texture<SWCSpectrum> > L, 
-						   float g, const Vector &dir)
+	const boost::shared_ptr<Texture<SWCSpectrum> > L, 
+	float g, float theta, const Vector &dir)
 	: Light(light2world) {
 	lightDir = Normalize(LightToWorld(dir));
+	CoordinateSystem(lightDir, &x, &y);
 	Lbase = L;
 	Lbase->SetIlluminant();
 	gain = g;
+	if (theta == 0.f) {
+		sin2ThetaMax = 2.f * MachineEpsilon::E(1.f);
+		cosThetaMax = 1.f - MachineEpsilon::E(1.f);
+	} else {
+		sin2ThetaMax = sinf(theta) * sinf(theta);
+		cosThetaMax = cosf(theta);
+	}
+	bxdf = new DistantBxDF(sin2ThetaMax, cosThetaMax);
 }
+
 DistantLight::~DistantLight()
 {
+	delete bxdf;
 }
+
 SWCSpectrum DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
-	*bsdf = NULL;
-	*pdf = 0.f;
-	*pdfDirect = 0.f;
-	return SWCSpectrum(0.f);
+	const float xD = Dot(r.d, x);
+	const float yD = Dot(r.d, y);
+	const float cosRay = Dot(r.d, lightDir);
+	if (cosRay <= 0.f || (xD * xD + yD * yD) > sin2ThetaMax) {
+		*bsdf = NULL;
+		*pdf = 0.f;
+		*pdfDirect = 0.f;
+		return SWCSpectrum(0.f);
+	}
+	Point worldCenter;
+	float worldRadius;
+	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	Vector toCenter(worldCenter - r.o);
+	float approach = Dot(toCenter, lightDir);
+	float distance = (approach + worldRadius) / cosRay;
+	Point ps(r.o + distance * r.d);
+	Normal ns(-lightDir);
+	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
+		0, 0, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf);
+	if (!havePortalShape)
+		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+	else {
+		*pdf = 0.f;
+		for (u_int i = 0; i < nrPortalShapes; ++i) {
+			Intersection isect;
+			RayDifferential ray(ps, lightDir);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect)) {
+				float cosPortal = -Dot(lightDir, isect.dg.nn);
+				if (cosPortal > 0.f)
+					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+			}
+		}
+		*pdf /= nrPortalShapes;
+	}
+	*pdfDirect = UniformConePdf(cosThetaMax) * fabsf(cosRay) /
+		(distance * distance);
+	return Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
 }
+
 SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
 		Vector *wi, float *pdf, VisibilityTester *visibility) const {
 	*pdf = 1.f;
@@ -58,14 +140,23 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u
 	visibility->SetRay(p, *wi, tspack->time);
 	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
+
 float DistantLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
 	return 0.f;
 }
+
 float DistantLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
-	return 0.f;
+	const Vector w(p - po);
+	const float d2 = w.LengthSquared();
+	const float cosRay = AbsDot(w, ns) / sqrtf(d2);
+	if (cosRay < cosThetaMax)
+		return 0.f;
+	else
+		return UniformConePdf(cosThetaMax) * cosRay / d2;
 }
+
 SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4,
 		Ray *ray, float *pdf) const {
@@ -87,10 +178,9 @@ SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
 
-bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
+	float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
-	Vector x, y;
-	CoordinateSystem(lightDir, &x, &y);
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
@@ -145,11 +235,9 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, 
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
-		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f));
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf);
 
-	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	*Le = Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
 	return true;
 }
 
@@ -158,24 +246,22 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
-	Vector x, y;
-	CoordinateSystem(lightDir, &x, &y);
-	*pdfDirect = 1.f;
+	const Vector wi(UniformSampleCone(u1, u2, cosThetaMax, x, y, lightDir));
+	*pdfDirect = UniformConePdf(cosThetaMax);
 
+	const float cosRay = Dot(wi, lightDir);
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - p);
 	float approach = Dot(toCenter, lightDir);
-	float distance = approach + worldRadius;
-	Point ps(p + distance * lightDir);
+	float distance = (approach + worldRadius) / cosRay;
+	Point ps(p + distance * wi);
 	Normal ns(-lightDir);
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
-		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f));
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf);
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {
@@ -192,20 +278,23 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		}
 		*pdf /= nrPortalShapes;
 	}
+	*pdfDirect *= cosRay / (distance * distance);
 	visibility->SetSegment(p, ps, tspack->time);
 
-	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	*Le = Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
 	return true;
 }
 
 Light* DistantLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp) {
+	const ParamSet &paramSet, const TextureParams &tp)
+{
 	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
-	Point from = paramSet.FindOnePoint("from", Point(0,0,0));
-	Point to = paramSet.FindOnePoint("to", Point(0,0,1));
-	Vector dir = from-to;
-	DistantLight *l = new DistantLight(light2world, L, g, dir);
+	float theta = Radians(paramSet.FindOneFloat("theta", 0.f));
+	Point from = paramSet.FindOnePoint("from", Point(0, 0, 0));
+	Point to = paramSet.FindOnePoint("to", Point(0, 0, 1));
+	Vector dir = from - to;
+	DistantLight *l = new DistantLight(light2world, L, g, theta, dir);
 	l->hints.InitParam(paramSet);
 	return l;
 }
