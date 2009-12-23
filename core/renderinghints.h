@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "paramset.h"
 #include "scene.h"
+#include "mcdistribution.h"
 
 namespace lux {
 
