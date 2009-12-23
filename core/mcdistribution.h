@@ -110,6 +110,7 @@ public:
 	 * @param u   The random value used to sample.
 	 * @param pdf The pointer to the float where the pdf of the sample
 	 *            should be stored.
+	 * @param off Optional parameter to get the offset of the value
 	 *
 	 * @return The x value of the sample (i.e. the x in f(x)).
 	 */ 
@@ -139,13 +140,19 @@ public:
 	 * @param u   The random value used to sample.
 	 * @param pdf The pointer to the float where the pdf of the sample
 	 *            should be stored.
+	 * @param du  Optional parameter to get the remaining offset
 	 *
 	 * @return The index of the sampled interval.
 	 */ 
-	u_int SampleDiscrete(float u, float *pdf) const {
+	u_int SampleDiscrete(float u, float *pdf, float *du = NULL) const {
 		// Find surrounding CDF segments and _offset_
 		float *ptr = std::lower_bound(cdf, cdf + count + 1, u);
 		u_int offset = max<int>(0, ptr - cdf - 1);
+
+		// Compute offset along CDF segment
+		if (du)
+			*du = (u - cdf[offset]) /
+				(cdf[offset + 1] - cdf[offset]);
 
 		// Compute PDF for sampled offset
 		*pdf = func[offset] * invFuncInt * invCount;
