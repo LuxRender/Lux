@@ -35,6 +35,7 @@ namespace lux {
 
 class Strategy {
 public:
+	virtual ~Strategy() { }
 	virtual void InitParam(const ParamSet &params) = 0;
 	virtual void Init(const Scene *scene) = 0;
 };
@@ -53,6 +54,7 @@ public:
 	};
 
 	LightsSamplingStrategy() { }
+	virtual ~LightsSamplingStrategy() { }
 	virtual void InitParam(const ParamSet &params) { }
 	virtual void Init(const Scene *scene) { }
 
@@ -60,48 +62,45 @@ public:
 	virtual u_int RequestSamplesCount(const Scene *scene) const = 0;
 
 	// Note: results are added to L
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const = 0;
 };
 
 class LSSAllUniform : public LightsSamplingStrategy {
 public:
+	virtual ~LSSAllUniform() { }
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const {
 		return 6;
 	}
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
-
 };
 
 class LSSOneUniform : public LightsSamplingStrategy {
 public:
+	virtual ~LSSOneUniform() { }
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
 };
 
 class LSSAuto : public LightsSamplingStrategy {
 public:
 	LSSAuto() : strategy(NULL) { }
+	virtual ~LSSAuto() { delete strategy; }
 	virtual void Init(const Scene *scene) {
-		// The check for mutating sampler is here for coherence with the
-		// behavior of old code: otherwise LSSAllUniform would be used
-		// instead of LSSOneUniform (i.e. the number of reported samples
-		// per second would be a lot lower than in the past causing a lot
-		// of complain for sure)
-		if (scene->sampler->IsMutating() || (scene->lights.size() > 5))
+		if (scene->lights.size() > 5)
 			strategy = new LSSOneUniform();
 		else
 			strategy = new LSSAllUniform();
@@ -116,13 +115,13 @@ public:
 		return strategy->RequestSamplesCount(scene);
 	}
 
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const {
 		return strategy->SampleLights(tspack, scene, shadowRayCount,
-				p, n, wo, bsdf, sample, sampleData, scale, L);
+			p, n, wo, bsdf, sample, sampleData, scale, L);
 	}
 
 private:
@@ -131,61 +130,57 @@ private:
 
 class LSSOneImportance : public LightsSamplingStrategy {
 public:
-	~LSSOneImportance() {
-		delete lightImportance;
-		delete lightCDF;
+	virtual ~LSSOneImportance() {
+		delete lightDistribution;
 	}
 	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
 
 private:
-	float *lightImportance;
-	float totalImportance;
-	float *lightCDF;
+	Distribution1D *lightDistribution;
 };
 
 class LSSOnePowerImportance : public LightsSamplingStrategy {
 public:
-	~LSSOnePowerImportance() {
-		delete lightPower;
-		delete lightCDF;
+	virtual ~LSSOnePowerImportance() {
+		delete lightDistribution;
 	}
 	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
 	// Note: results are added to L
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
 
 protected:
-	float *lightPower;
-	float totalPower;
-	float *lightCDF;
+	Distribution1D *lightDistribution;
 };
 
 class LSSAllPowerImportance : public LSSOnePowerImportance {
 public:
+	virtual ~LSSAllPowerImportance() { }
 	// Note: results are added to L
-	virtual u_int SampleLights(
-		const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
-		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {
 public:
+	virtual ~LSSOneLogPowerImportance() { }
 	virtual void Init(const Scene *scene);
 };
 
@@ -218,8 +213,7 @@ public:
 		lsStrategy = NULL;
 	}
 	~SurfaceIntegratorRenderingHints() {
-		if (lsStrategy)
-			delete lsStrategy;
+		delete lsStrategy;
 	}
 
 	void InitParam(const ParamSet &params);
@@ -231,17 +225,18 @@ public:
 	void RequestSamples(const Scene *scene, vector<u_int> &structure);
 
 	// Note: results are added to L and optional parameter V content
-	u_int SampleLights(
-		const TsPack *tspack, const Scene *scene,
+	u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, vector<float> *V = NULL) const {
+		const Sample *sample, const float *sampleData,
+		const SWCSpectrum &scale, vector<SWCSpectrum> &L,
+		vector<float> *V = NULL) const {
 		const u_int nLights = scene->lights.size();
 		if (nLights == 0)
 			return 0;
 
 		const u_int nContribs = lsStrategy->SampleLights(tspack, scene,
-				shadowRayCount, p, n, wo, bsdf, sample, &sampleData[lightSampleOffset], scale, L);
+			shadowRayCount, p, n, wo, bsdf, sample,
+			&sampleData[lightSampleOffset], scale, L);
 
 		if (V) {
 			const float nLights = scene->lights.size();
