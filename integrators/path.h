@@ -23,7 +23,7 @@
 // path.cpp*
 #include "lux.h"
 #include "transport.h"
-#include "scene.h"
+#include "renderinghints.h"
 
 namespace lux
 {
@@ -35,13 +35,9 @@ public:
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// PathIntegrator Public Methods
-	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie) {
-		rrStrategy = rst;
-		maxDepth = md;
-		continueProbability = cp;
-		bufferId = 0;
-		includeEnvironment = ie;
-	}
+	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie)  :
+		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
+		sampleOffset(0), bufferId(0), includeEnvironment(ie) { }
 
 	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);

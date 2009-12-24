@@ -25,7 +25,6 @@
 // transport.h*
 #include "lux.h"
 #include "spectrum.h"
-#include "renderinghints.h"
 
 namespace lux
 {

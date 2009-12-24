@@ -89,9 +89,6 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		structure.push_back(2);	// reflection bsdf direction sample
 		structure.push_back(1);	// reflection bsdf component sample
 
-		// Allocate and request samples for light sampling
-		hints.RequestSamples(scene, structure);
-
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
 		if (finalGather) {
@@ -123,12 +120,12 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 		if (rrStrategy != RR_NONE)
 			structure.push_back(1);	// continue sample
 
-		// Allocate and request samples for light sampling
-		hints.RequestSamples(scene, structure);
-
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 	} else
 		BOOST_ASSERT(false);
+
+	// Allocate and request samples for light sampling
+	hints.RequestSamples(sample, scene, maxDepth + 1);
 }
 
 void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
@@ -206,11 +203,6 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 
 	Intersection isect;
 	if (scene->Intersect(ray, &isect)) {
-		// Dade - collect samples
-		const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
-		const float *reflectionSample = &sampleData[0];
-		const float *reflectionComponent = &sampleData[2];
-
 		Vector wo = -ray.d;
 
 		// Compute emitted light if ray hit an area light source
@@ -229,7 +221,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 				Ld[i] = 0.f;
 
 			hints.SampleLights(tspack, scene, p, ns, wo, bsdf,
-					sample, sampleData, 1.f, Ld);
+					sample, reflectionDepth, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L += Ld[i];
@@ -269,9 +261,12 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 		}
 
         if (debugEnableSpecular && (reflectionDepth < maxDepth)) {
-			float u1 = reflectionSample[0];
-			float u2 = reflectionSample[1];
-			float u3 = reflectionComponent[0];
+			// Collect samples
+			const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
+
+			float u1 = sampleData[0];
+			float u2 = sampleData[1];
+			float u3 = sampleData[2];
 
 			Vector wi;
 			float pdf;
@@ -414,7 +409,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 
 		float *rrSample;
 		if (rrStrategy != RR_NONE)
-			rrSample = &sampleData[12];
+			rrSample = &sampleData[6];
 		else
 			rrSample = NULL;
 		
@@ -429,7 +424,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, 1.f, Ld);
+					sample, pathLength, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L += Ld[i];

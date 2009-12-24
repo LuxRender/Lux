@@ -22,6 +22,8 @@
 
 // path.cpp*
 #include "path.h"
+#include "sampling.h"
+#include "scene.h"
 #include "bxdf.h"
 #include "light.h"
 #include "camera.h"
@@ -41,10 +43,10 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	if (rrStrategy != RR_NONE)
 		structure.push_back(1);	// continue sample
 
-	// Allocate and request samples for light sampling, RR, etc.
-	hints.RequestSamples(scene, structure);
-
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+
+	// Allocate and request samples for light sampling, RR, etc.
+	hints.RequestSamples(sample, scene, maxDepth + 1);
 }
 
 void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
@@ -167,12 +169,12 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Estimate direct lighting
 		if (nLights > 0) {
 			for (u_int i = 0; i < lightGroupCount; ++i) {
-				L[i] = 0.f;
-				V[i] = 0.f;
+				Ld[i] = 0.f;
+				Vd[i] = 0.f;
 			}
 
 			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, data, pathThroughput, Ld, &Vd);
+				sample, pathLength, pathThroughput, Ld, &Vd);
 
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				L[i] += Ld[i];
@@ -194,12 +196,12 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(tspack) * dp);
-				if (q < data[9])
+				if (q < data[3])
 					break;
 				// increase path contribution
 				pathThroughput /= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[9])
+				if (continueProbability < data[3])
 					break;
 				// increase path contribution
 				pathThroughput /= continueProbability;

@@ -24,9 +24,6 @@
 #define	_RENDERINGHINTS_H
 
 #include "lux.h"
-#include "paramset.h"
-#include "scene.h"
-#include "mcdistribution.h"
 
 namespace lux {
 
@@ -36,6 +33,7 @@ namespace lux {
 
 class Strategy {
 public:
+	Strategy() { }
 	virtual ~Strategy() { }
 	virtual void InitParam(const ParamSet &params) = 0;
 	virtual void Init(const Scene *scene) = 0;
@@ -54,7 +52,7 @@ public:
 		SAMPLE_ONE_LOG_POWER_IMPORTANCE
 	};
 
-	LightsSamplingStrategy() { }
+	LightsSamplingStrategy() : Strategy() { }
 	virtual ~LightsSamplingStrategy() { }
 	virtual void InitParam(const ParamSet &params) { }
 	virtual void Init(const Scene *scene) { }
@@ -72,6 +70,7 @@ public:
 
 class LSSAllUniform : public LightsSamplingStrategy {
 public:
+	LSSAllUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSAllUniform() { }
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const {
@@ -86,6 +85,7 @@ public:
 
 class LSSOneUniform : public LightsSamplingStrategy {
 public:
+	LSSOneUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSOneUniform() { }
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
@@ -98,16 +98,9 @@ public:
 
 class LSSAuto : public LightsSamplingStrategy {
 public:
-	LSSAuto() : strategy(NULL) { }
+	LSSAuto() : LightsSamplingStrategy(), strategy(NULL) { }
 	virtual ~LSSAuto() { delete strategy; }
-	virtual void Init(const Scene *scene) {
-		if (scene->lights.size() > 5)
-			strategy = new LSSOneUniform();
-		else
-			strategy = new LSSAllUniform();
-
-		strategy->Init(scene);
-	}
+	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const {
 		strategy->RequestSamples(scene, structure);
@@ -131,9 +124,8 @@ private:
 
 class LSSOneImportance : public LightsSamplingStrategy {
 public:
-	virtual ~LSSOneImportance() {
-		delete lightDistribution;
-	}
+	LSSOneImportance() : LightsSamplingStrategy(), lightDistribution(NULL) { }
+	virtual ~LSSOneImportance();
 	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
@@ -150,9 +142,8 @@ private:
 
 class LSSOnePowerImportance : public LightsSamplingStrategy {
 public:
-	virtual ~LSSOnePowerImportance() {
-		delete lightDistribution;
-	}
+	LSSOnePowerImportance() : LightsSamplingStrategy(), lightDistribution(NULL) { }
+	virtual ~LSSOnePowerImportance();
 	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
@@ -170,6 +161,7 @@ protected:
 
 class LSSAllPowerImportance : public LSSOnePowerImportance {
 public:
+	LSSAllPowerImportance() : LSSOnePowerImportance() { }
 	virtual ~LSSAllPowerImportance() { }
 	// Note: results are added to L
 	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
@@ -181,6 +173,7 @@ public:
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {
 public:
+	LSSOneLogPowerImportance() : LSSOnePowerImportance() { }
 	virtual ~LSSOneLogPowerImportance() { }
 	virtual void Init(const Scene *scene);
 };
@@ -210,6 +203,7 @@ class SurfaceIntegratorRenderingHints {
 public:
 	SurfaceIntegratorRenderingHints() {
 		shadowRayCount = 1;
+		nLights = 0;
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 		lsStrategy = NULL;
 	}
@@ -223,34 +217,17 @@ public:
 	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
 
 	void InitStrategies(const Scene *scene);
-	void RequestSamples(const Scene *scene, vector<u_int> &structure);
+	void RequestSamples(Sample *sample, const Scene *scene, u_int maxDepth);
 
 	// Note: results are added to L and optional parameter V content
 	u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L,
-		vector<float> *V = NULL) const {
-		const u_int nLights = scene->lights.size();
-		if (nLights == 0)
-			return 0;
-
-		const u_int nContribs = lsStrategy->SampleLights(tspack, scene,
-			shadowRayCount, p, n, wo, bsdf, sample,
-			&sampleData[lightSampleOffset], scale, L);
-
-		if (V) {
-			const float nLights = scene->lights.size();
-			for (u_int i = 0; i < nLights; ++i)
-				(*V)[i] += L[i].Filter(tspack);
-		}
-
-		return nContribs;
-	}
+		const Sample *sample, u_int depth, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
 
 private:
 	// Light Strategies
-	u_int shadowRayCount;
+	u_int shadowRayCount, nLights;
 	LightsSamplingStrategy::LightStrategyType lightStrategyType;
 	LightsSamplingStrategy *lsStrategy;
 	u_int lightSampleOffset;

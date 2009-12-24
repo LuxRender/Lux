@@ -27,10 +27,8 @@
 
 #include "lux.h"
 #include "transport.h"
-#include "scene.h"
-#include "kdtree.h"
-#include "sampling.h"
 #include "photonmap.h"
+#include "renderinghints.h"
 
 namespace lux
 {

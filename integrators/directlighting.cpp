@@ -35,11 +35,8 @@ DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 }
 
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
-	vector<u_int> structure;
 	// Allocate and request samples for light sampling
-	hints.RequestSamples(scene, structure);
-
-	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+	hints.RequestSamples(sample, scene, maxDepth + 1);
 }
 
 void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
@@ -64,9 +61,6 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 		if (rayDepth == 0)
 			distance = ray.maxt * ray.d.Length();
 
-		// Dade - collect samples
-		const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, rayDepth);
-
 		// Evaluate BSDF at hit point
 		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		Vector wo = -ray.d;
@@ -84,7 +78,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, sampleData, 1.f, Ld);
+					sample, rayDepth, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L[i] += Ld[i];
