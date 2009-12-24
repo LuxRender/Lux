@@ -330,23 +330,18 @@ void RenderThread::Render(RenderThread *myThread) {
 		// Evaluate radiance along camera ray
 		// Jeanphi - Hijack statistics until volume integrator revamp
 		{
-			fast_mutex::scoped_lock lockStats(myThread->statLock);
-			myThread->blackSamples += myThread->surfaceIntegrator->Li(myThread->tspack,
+			const u_int nContribs = myThread->surfaceIntegrator->Li(myThread->tspack,
 				myThread->scene, myThread->sample);
+			// update samples statistics
+			fast_mutex::scoped_lock lockStats(myThread->statLock);
+			myThread->blackSamples += nContribs;
+			++(myThread->samples);
 		}
 
-
-		// TODO - radiance - Add rayWeight to sample and take into account.
 		myThread->sampler->AddSample(*(myThread->sample));
 
 		// Free BSDF memory from computing image sample value
 		myThread->tspack->arena->FreeAll();
-
-		// update samples statistics
-		{
-			fast_mutex::scoped_lock lockThreads(myThread->statLock);
-			++(myThread->samples);
-		}
 
 		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
 		if (*useSampPos == ~0U && maxSampPos != 0) {
