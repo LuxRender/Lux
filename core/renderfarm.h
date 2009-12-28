@@ -66,7 +66,7 @@ private:
 
 class RenderFarm {
 public:
-	RenderFarm() : serverUpdateInterval(3*60), filmUpdateThread(NULL) {}
+	RenderFarm() : serverUpdateInterval(3*60), filmUpdateThread(NULL), netBufferComplete(false) {}
 	~RenderFarm() {
 		if (filmUpdateThread)
 			delete filmUpdateThread;
@@ -130,10 +130,12 @@ private:
 	boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
-	std::stringstream netBuffer;
-
     // Dade - film update information
     FilmUpdaterThread *filmUpdateThread;
+
+	std::stringstream netBuffer;
+	bool netBufferComplete; // Raise this flag if the scene is complete
+
 };
 
 }//namespace lux
