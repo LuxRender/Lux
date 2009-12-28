@@ -69,8 +69,11 @@ private:
 class RenderFarm {
 public:
 	RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
-		isLittleEndian(osIsLittleEndian()) { }
-	~RenderFarm() { delete filmUpdateThread; }
+		netBufferComplete(false), isLittleEndian(osIsLittleEndian()) { }
+	~RenderFarm() {
+		if (filmUpdateThread)
+			delete filmUpdateThread;
+	}
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	// Dade - Disconnect from all servers
@@ -134,11 +137,11 @@ private:
 	boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
+    // Dade - film update information
+    FilmUpdaterThread *filmUpdateThread;
+
 	std::stringstream netBuffer;
-
-	// Dade - film update information
-	FilmUpdaterThread *filmUpdateThread;
-
+	bool netBufferComplete; // Raise this flag if the scene is complete
 	bool isLittleEndian;
 };
 

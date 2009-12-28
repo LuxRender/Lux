@@ -207,8 +207,8 @@ bool RenderFarm::connect(const string &serverName) {
 		}
 	}
 
-	if (netBuffer.rdbuf()->in_avail() > 0)
-		flush();  // Only flush if commands are written already.
+	if (netBufferComplete)
+		flush();  // Only flush if scene is complete
 
 	return true;
 }
@@ -448,6 +448,10 @@ void RenderFarm::sendParams(const ParamSet &params) {
 
 void RenderFarm::send(const string &command) {
 	netBuffer << command << endl;
+
+	// Check if the scene is complete
+	if (command == "luxWorldEnd")
+		netBufferComplete = true;
 }
 
 void RenderFarm::sendFile(const string file) {
