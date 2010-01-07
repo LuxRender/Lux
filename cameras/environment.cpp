@@ -79,7 +79,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)());
-	*pdf = UniformSpherePdf();
+	*pdf = 1.f / (2.f * M_PI * M_PI * sinf(theta));
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
@@ -92,7 +92,7 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)());
-	*pdf = UniformSpherePdf();
+	*pdf = 1.f / (2.f * M_PI * M_PI * sqrtf(max(0.f, 1.f - ns.y * ns.y)));
 	*pdfDirect = 1.f;
 	visibility->SetSegment(pos, p, tspack->time, true);
 	*We = SWCSpectrum(*pdf);
