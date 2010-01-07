@@ -23,12 +23,75 @@
 // projection.cpp*
 #include "projection.h"
 #include "imagereader.h"
+#include "bxdf.h"
 #include "mc.h"
 #include "paramset.h"
 #include "dynload.h"
 #include "epsilon.h"
 
 using namespace lux;
+
+class ProjectionBxDF : public BxDF
+{
+public:
+	ProjectionBxDF(float A, const MIPMap<RGBColor> *map,
+		const Transform &proj, float xS, float xE, float yS, float yE) :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
+		xStart(xS), xEnd(xE), yStart(yS), yEnd(yE), Area(A),
+		Projection(proj), projectionMap(map) { }
+	virtual ~ProjectionBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	{
+		const float cos = wi.z;
+		if (cos < 0.f)
+			return;
+		const float cos2 = cos * cos;
+		const Point p0(Projection(Point(wi.x, wi.y, wi.z)));
+		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
+			return;
+		if (!projectionMap)
+			*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
+		else {
+			const float s = (p0.x - xStart) / (xEnd - xStart);
+			const float t = (p0.y - yStart) / (yEnd - yStart);
+			f->AddWeighted(1.f / (Area * cos2 * cos2),
+				SWCSpectrum(tspack, projectionMap->Lookup(s, t)));
+		}
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
+		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	{
+		const Point pS(Projection.GetInverse()(Point(u1 * (xEnd - xStart) + xStart, u2 * (yEnd - yStart) + yStart, 0.f)));
+		*wi = Normalize(Vector(pS.x, pS.y, pS.z));
+		const float cos = wi->z;
+		const float cos2 = cos * cos;
+		*pdf = 1.f / (Area * cos2 * cos);
+		if (pdfBack)
+			*pdfBack = 0.f;
+		if (!projectionMap)
+			*f = SWCSpectrum(1.f / (Area * cos2 * cos2));
+		else
+			*f = SWCSpectrum(tspack, projectionMap->Lookup(u1, u2)) /
+				(Area * cos2 * cos2);
+		return true;
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
+	{
+		const float cos = wo.z;
+		if (cos < 0.f)
+			return 0.f;
+		const float cos2 = cos * cos;
+		const Point p0(Projection(Point(wo.x, wo.y, wo.z)));
+		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
+			return 0.f;
+		else 
+			return 1.f / (Area * cos2 * cos);
+	}
+private:
+	float xStart, xEnd, yStart, yEnd, Area;
+	const Transform &Projection;
+	const MIPMap<RGBColor> *projectionMap;
+};
 
 // ProjectionLight Method Definitions
 ProjectionLight::
@@ -69,6 +132,7 @@ ProjectionLight::
 	float opposite = tanf(Radians(fov) / 2.f);
 	float tanDiag = opposite * sqrtf(1.f + 1.f/(aspect*aspect));
 	cosTotalWidth = cosf(atanf(tanDiag));
+	area = 4.f * opposite * opposite / aspect;
 }
 ProjectionLight::~ProjectionLight() { delete projectionMap; }
 RGBColor ProjectionLight::Projection(const Vector &w) const {
@@ -106,8 +170,45 @@ float ProjectionLight::Pdf(const TsPack *, const Point &, const Vector &) const 
 float ProjectionLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
-	return 0.f;
+	return 1.f;
 }
+bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+{
+	Normal ns = LightToWorld(Normal(0, 0, 1));
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
+			lightProjection, screenX0, screenX1, screenY0, screenY1));
+	*pdf = 1.f;
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	return true;
+}
+bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+	VisibilityTester *visibility, SWCSpectrum *Le) const
+{
+	const Vector w(p - lightPos);
+	*pdfDirect = 1.f;
+	Normal ns = LightToWorld(Normal(0, 0, 1));
+	*pdf = 1.f;
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
+			lightProjection, screenX0, screenX1, screenY0, screenY1));
+	visibility->SetSegment(p, lightPos, tspack->time);
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	return true;
+}
+SWCSpectrum ProjectionLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+{
+	return SWCSpectrum(0.f);
+}
+
 Light* ProjectionLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet, const TextureParams &tp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
