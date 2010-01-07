@@ -43,11 +43,10 @@ public:
 		: nSamples(max(1U, ns)), LightToWorld(l2w),
 		  WorldToLight(l2w.GetInverse()) {
 		if (WorldToLight.HasScale())
-			luxError(LUX_UNIMPLEMENT,LUX_WARNING,"Scaling detected in world-to-light transformation!\nThe system has numerous assumptions, implicit and explicit,\nthat this transform will have no scale factors in it.\nProceed at your own risk; your image may have errors or\nthe system may crash as a result of this.");
+			luxError(LUX_UNIMPLEMENT,LUX_DEBUG,"Scaling detected in world-to-light transformation! Some lights might not support it yet.");
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;
-		warnOnce = false;
 	}
 	virtual float Power(const Scene *scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
@@ -74,18 +73,8 @@ public:
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
 		Ray *ray, float *pdf) const = 0;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *L) const {
-		if (!warnOnce)
-			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L");
-		warnOnce = true;
-		return false;
-	}
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *L) const {
-		if (!warnOnce)
-			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Light::Sample_L");
-		warnOnce = true;
-		return false;
-	}
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *L) const = 0;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *L) const = 0;
 	const LightRenderingHints *GetRenderingHints() const { return &hints; }
 
 	void AddPortalShape(boost::shared_ptr<Primitive> shape);
@@ -99,7 +88,6 @@ public:
 protected:
 	// Light Protected Data
 	const Transform LightToWorld, WorldToLight;
-	mutable bool warnOnce;
 	LightRenderingHints hints;
 public: // Put last for better data alignment
 	bool havePortalShape;

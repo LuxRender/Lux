@@ -23,8 +23,7 @@
 // distant.cpp*
 #include "distant.h"
 #include "mc.h"
-#include "specularreflection.h"
-#include "fresnelnoop.h"
+#include "bxdf.h"
 #include "paramset.h"
 #include "dynload.h"
 

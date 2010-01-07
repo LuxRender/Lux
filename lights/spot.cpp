@@ -22,9 +22,9 @@
 
 // spot.cpp*
 #include "spot.h"
+#include "bxdf.h"
 #include "mc.h"
 #include "paramset.h"
-#include "reflection/bxdf.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -120,7 +120,7 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, SpotBxDF)(cosTotalWidth, cosFalloffStart));
 	*pdf = 1.f;
-	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
 bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
@@ -137,7 +137,7 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, SpotBxDF)(cosTotalWidth, cosFalloffStart));
 	visibility->SetSegment(p, lightPos, tspack->time);
-	*Le = Lbase->Evaluate(tspack, dummydg) * gain;
+	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
 SWCSpectrum SpotLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
