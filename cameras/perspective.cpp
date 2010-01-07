@@ -47,10 +47,12 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens),
 		FocalDistance(FD), fov(f), xStart(xS), xEnd(xE),
 		yStart(yS), yEnd(yE), Area(A),
-		p(pL), RasterToCamera(R2C) {}
+		p(pL), RasterToCamera(R2C) { }
 	virtual ~PerspectiveBxDF() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
 	{
+		if (wo.z <= 0.f)
+			return;
 		Vector wo0(wo.x, -wo.y, wo.z); //FIXME: inverted Y axis
 		if (hasLens) {
 			wo0 += Vector(p.x, p.y, p.z) * (wo.z / FocalDistance);
@@ -71,7 +73,7 @@ public:
 		const float cos = wi->z;
 		const float cos2 = cos * cos;
 		if (hasLens) {
-			*wi += Vector(p.x, p.y, p.z) * (wi->z / FocalDistance);
+			*wi -= Vector(p.x, p.y, p.z) * (wi->z / FocalDistance);
 			*wi = Normalize(*wi);
 		}
 		wi->y = -wi->y;//FIXME
@@ -83,6 +85,8 @@ public:
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
 	{
+		if (wo.z <= 0.f)
+			return 0.f;
 		Vector wi0(wi.x, -wi.y, wi.z); //FIXME: inverted Y axis
 		if (hasLens) {
 			wi0 += Vector(p.x, p.y, p.z) * (wi.z / FocalDistance);
