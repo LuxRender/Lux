@@ -87,4 +87,4 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
 }
 
-static DynamicLoader::RegisterMaterial<Glossy2> r("glossy2");
+static DynamicLoader::RegisterMaterial<Glossy2> r("glossy");

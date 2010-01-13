@@ -89,6 +89,6 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
 }
 
-static DynamicLoader::RegisterMaterial<Glossy> r("glossy");
+static DynamicLoader::RegisterMaterial<Glossy> r("glossy_lossy");
 static DynamicLoader::RegisterMaterial<Glossy> r1("substrate"); // Backwards compatibility for 'substrate'
 static DynamicLoader::RegisterMaterial<Glossy> r2("plastic");   // Backwards compaticility for removed 'plastic'
