@@ -321,10 +321,10 @@ public:
 	GREYCStorationParams() { Reset(); }
 	void Reset() {
 		enabled = false;		 // GREYCStoration is enabled/disabled
-		amplitude = 40.0f;		 // Regularization strength for one iteration (>=0)
-		nb_iter = 2;			 // Number of regularization iterations (>0)
-		sharpness = 0.8f;		 // Contour preservation for regularization (>=0)
-		anisotropy = 0.2f;		 // Regularization anisotropy (0<=a<=1)
+		amplitude = 60.0f;		 // Regularization strength for one iteration (>=0)
+		nb_iter = 1;			 // Number of regularization iterations (>0)
+		sharpness = 0.91f;		 // Contour preservation for regularization (>=0)
+		anisotropy = 0.3f;		 // Regularization anisotropy (0<=a<=1)
 		alpha = 0.8f;			 // Noise scale(>=0)
 		sigma = 1.1f;			 // Geometry regularity (>=0)
 		fast_approx = true;		 // Use fast approximation for regularization (0 or 1)
