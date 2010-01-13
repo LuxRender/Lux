@@ -175,9 +175,8 @@ void LatLongMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 	const float theta = SphericalTheta(wh);
 	*s = SphericalPhi(wh) * INV_TWOPI;
 	*t = theta * INV_PI;
-	if (!pdf)
-		return;
-	*pdf = INV_TWOPI * INV_PI / sinf(theta);
+	if (pdf)
+		*pdf = INV_TWOPI * INV_PI / sinf(theta);
 }
 void LatLongMapping::Map(float s, float t, Vector *wh, float *pdf) const
 {
@@ -185,9 +184,8 @@ void LatLongMapping::Map(float s, float t, Vector *wh, float *pdf) const
 	const float theta = t * M_PI;
 	const float sinTheta = sinf(theta);
 	*wh = SphericalDirection(sinTheta, cosf(theta), phi);
-	if (!pdf)
-		return;
-	*pdf = INV_TWOPI * INV_PI / sinTheta;
+	if (pdf)
+		*pdf = INV_TWOPI * INV_PI / sinTheta;
 }
 void AngularMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 {
@@ -204,12 +202,12 @@ void AngularMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 		*s = 0.5f;
 		*t = 0.5f * (1.f - SignOf(wh.z));
 	}
-	if (!pdf)
-		return;
-	if (r > 1e-9f)
-		*pdf = INV_TWOPI * sinTheta / r;
-	else
-		*pdf = 1.f;
+	if (pdf) {
+		if (r > 1e-9f)
+			*pdf = INV_TWOPI * sinTheta / r;
+		else
+			*pdf = 1.f;
+	}
 }
 void AngularMapping::Map(float s, float t, Vector *wh, float *pdf) const
 {
@@ -225,12 +223,12 @@ void AngularMapping::Map(float s, float t, Vector *wh, float *pdf) const
 	const float sinTheta = sinf(theta);
 	wh->y = sinTheta * cosf(phi);
 	wh->z = sinTheta * sinf(phi);
-	if (!pdf)
-		return;
-	if (r > 1e-9f)
-		*pdf = INV_TWOPI * sinTheta / r;
-	else
-		*pdf = 1.f;
+	if (pdf) {
+		if (r > 1e-9f)
+			*pdf = INV_TWOPI * sinTheta / r;
+		else
+			*pdf = 1.f;
+	}
 }
 void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const {
 	int axis = 0;
@@ -293,16 +291,43 @@ void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t, float *pdf)
 	// rescale and offset to correct cube face in cross
 	*s = (*s + so) * (1.f / 3.f);
 	*t = (*t + to) * (1.f / 4.f);
-	if (!pdf)
-		return;
-	*pdf = 12.f * ima * ima * ima;
+	if (pdf)
+		*pdf = ima * ima * ima / 48.f;
 }
 void VerticalCrossMapping::Map(float s, float t, Vector *wh, float *pdf) const
 {
-	//FIXME to be implemented
-	if (!pdf)
-		return;
-	*pdf = 0.f;
+	const u_int so = min(2U, Floor2UInt(3.f * s));
+	const u_int to = min(3U, Floor2UInt(4.f * t));
+	const float sc = (3.f * s - so) * 2.f - 1.f;
+	const float tc = (4.f * t - to) * 2.f - 1.f;
+	switch (4 * so + to) {
+		case 1:
+			*wh = Vector(-sc, 1.f, -tc);
+			break;
+		case 4:
+			*wh = Vector(-tc, -sc, 1.f);
+			break;
+		case 5:
+			*wh = Vector(-1.f, -sc, -tc);
+			break;
+		case 6:
+			*wh = Vector(tc, -sc, -1.f);
+			break;
+		case 7:
+			*wh = Vector(1.f, -sc, tc);
+			break;
+		case 9:
+			*wh = Vector(sc, -1.f, -tc);
+			break;
+		default:
+			if (pdf)
+				*pdf = 0.f;
+			return;
+	}
+	const float ima = 1.f / wh->Length();
+	*wh *= ima;
+	if (pdf)
+		*pdf = ima * ima * ima / 48.f;
 }
  float Noise(float x, float y, float z) {
 	// Compute noise cell coordinates and offsets
