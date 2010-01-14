@@ -27,30 +27,28 @@
  bool ParseFile(const char *filename) {
 	extern FILE *yyin;
 	extern int yyparse(void);
-	extern string current_file;
-	extern u_int line_num;
-	/*extern int yydebug;
-
-	if (getenv("LUX_YYDEBUG") != NULL)
-		yydebug = 1;*/
+	extern string currentFile;
+	extern u_int lineNum;
 
 	if (strcmp(filename, "-") == 0)
 		yyin = stdin;
 	else
 		yyin = fopen(filename, "r");
 	if (yyin != NULL) {
-		current_file = filename;
-		if (yyin == stdin) current_file = "<standard input>";
-		line_num = 1;
+		currentFile = filename;
+		if (yyin == stdin)
+			currentFile = "<standard input>";
+		lineNum = 1;
 		yyparse();
-		if (yyin != stdin) fclose(yyin);
+		if (yyin != stdin)
+			fclose(yyin);
 	} else {
 		std::stringstream ss;
-		ss<<"Unable to read scenefile '"<<filename<<"'";
-		luxError(LUX_NOFILE, LUX_SEVERE, ss.str ().c_str());
+		ss << "Unable to read scenefile '" << filename << "'";
+		luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
 	}
 
-	current_file = "";
-	line_num = 0;
+	currentFile = "";
+	lineNum = 0;
 	return (yyin != NULL);
 }

@@ -82,7 +82,7 @@ u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 }
 VolumeIntegrator* EmissionIntegrator::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
-	return new EmissionIntegrator(stepSize, Context::getActiveLightGroup());
+	return new EmissionIntegrator(stepSize, Context::GetActiveLightGroup());
 }
 
 static DynamicLoader::RegisterVolumeIntegrator<EmissionIntegrator> r("emission");
