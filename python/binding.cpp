@@ -67,6 +67,8 @@ BOOST_PYTHON_MODULE(pylux)
     def("shape",luxShapeV);
     def("reverseOrientation",luxReverseOrientation);
     def("volume",luxVolumeV);
+    def("exterior",luxExteriorV);
+    def("interior",luxInteriorV);
     def("objectBegin",luxObjectBegin);
     def("objectEnd",luxObjectEnd);
     def("objectInstance",luxObjectInstance);
