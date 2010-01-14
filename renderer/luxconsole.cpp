@@ -38,7 +38,6 @@
 
 #include "lux.h"
 #include "api.h"
-#include "context.h"
 #include "error.h"
 #include "renderserver.h"
 #include "osfunc.h"
@@ -231,13 +230,13 @@ int main(int ac, char *av[]) {
 				const float maxe = vm["maxepsilon"].as<float>();
 				luxSetEpsilon(mine, maxe);
 			} else
-				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
+				luxSetEpsilon(mine, -1.f);
 		} else {
 			if (vm.count("maxepsilon")) {
 				const float maxe = vm["maxepsilon"].as<float>();
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
+				luxSetEpsilon(-1.f, maxe);
 			} else
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
+				luxSetEpsilon(-1.f, -1.f);
 		}
 
 		if (vm.count("input-file")) {
@@ -282,7 +281,7 @@ int main(int ac, char *av[]) {
 				//add rendering threads
 				int threadsToAdd = threads;
 				while (--threadsToAdd)
-					Context::luxAddThread();
+					luxAddThread();
 
 				//launch info printing thread
 				boost::thread info(&infoThread);

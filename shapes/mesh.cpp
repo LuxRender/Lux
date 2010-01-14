@@ -551,7 +551,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
 		// Lotus - read subdivision data
-		map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
+		map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
 
 		displacementMap = (*floatTextures)[displacementMapName];
 

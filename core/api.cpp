@@ -79,21 +79,24 @@ static bool initialized = false;
 
 extern "C" void luxAddServer(const char * name)
 {
-	Context::luxAddServer(std::string(name));
+	Context::GetActive()->AddServer(std::string(name));
 }
 
 extern "C" void luxRemoveServer(const char * name)
 {
-	Context::luxRemoveServer(std::string(name));
+	Context::GetActive()->RemoveServer(std::string(name));
 }
 
 extern "C" unsigned int luxGetServerCount()
 {
-	return Context::luxGetServerCount();
+	return Context::GetActive()->GetServerCount();
 }
 
-extern "C" unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info, unsigned int maxInfoCount) {
-	return Context::luxGetRenderingServersStatus(info, maxInfoCount);
+extern "C" unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info,
+	unsigned int maxInfoCount)
+{
+	return Context::GetActive()->GetRenderingServersStatus(info,
+		maxInfoCount);
 }
 
 extern "C" void luxCleanup()
@@ -101,330 +104,329 @@ extern "C" void luxCleanup()
 	// Context ::luxCleanup reinitializes the core
 	// so we must NOT change initialized to false
 	if (initialized == true)
-		Context::luxCleanup();
+		Context::GetActive()->Cleanup();
 	else
 		luxError(LUX_NOTSTARTED, LUX_ERROR, "luxCleanup() called without luxInit().");
 }
 
 extern "C" void luxIdentity()
 {
-	Context::luxIdentity();
+	Context::GetActive()->Identity();
 }
 extern "C" void luxTranslate(float dx, float dy, float dz)
 {
-	Context::luxTranslate(dx,dy,dz);
+	Context::GetActive()->Translate(dx,dy,dz);
 }
 extern "C" void luxTransform(float tr[16])
 {
-	Context::luxTransform(tr);
+	Context::GetActive()->Transform(tr);
 }
 extern "C" void luxConcatTransform(float tr[16]) {
-	Context::luxConcatTransform(tr);
+	Context::GetActive()->ConcatTransform(tr);
 }
 extern "C" void luxRotate(float angle, float dx, float dy, float dz)
 {
-	Context::luxRotate(angle,dx,dy,dz);
+	Context::GetActive()->Rotate(angle,dx,dy,dz);
 }
 extern "C" void luxScale(float sx, float sy, float sz)
 {
-	Context::luxScale(sx,sy,sz);
+	Context::GetActive()->Scale(sx,sy,sz);
 }
-extern "C" void luxLookAt(float ex, float ey, float ez, float lx, float ly, float lz,
-		float ux, float uy, float uz)
+extern "C" void luxLookAt(float ex, float ey, float ez,
+	float lx, float ly, float lz, float ux, float uy, float uz)
 {
-	Context::luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
+	Context::GetActive()->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
 }
 extern "C" void luxCoordinateSystem(const char *name)
 {
-	Context::luxCoordinateSystem(std::string(name));
+	Context::GetActive()->CoordinateSystem(std::string(name));
 }
 extern "C" void luxCoordSysTransform(const char *name)
 {
-	Context::luxCoordSysTransform(std::string(name));
+	Context::GetActive()->CoordSysTransform(std::string(name));
 }
-extern "C" void luxPixelFilter(const char *name, ...) //
+extern "C" void luxPixelFilter(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxPixelFilterV( name, PASS_PARAMETERS );
-}
-
-extern "C" void luxPixelFilterV (const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
-{
-	//TODO - jromang : construct the paramset
-	//Context::luxpixelFilter(name,params);
-	Context::luxPixelFilter(name,ParamSet(n,name,tokens,params));
+	EXTRACT_PARAMETERS(name);
+	luxPixelFilterV(name, PASS_PARAMETERS);
 }
 
-/*
-void luxFilm(const char *type, const ParamSet &params)
+extern "C" void luxPixelFilterV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxFilm(std::string(type),params);
-}*/
+	Context::GetActive()->PixelFilter(name,
+		ParamSet(n, name, tokens, params));
+}
+
 extern "C" void luxFilm(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxFilmV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxFilmV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxFilmV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxFilmV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxFilm(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Film(name, ParamSet(n, name, tokens, params));
 }
-
-
-/*
-void luxSampler(const char *name, const ParamSet &params)
-{
-	Context::luxSampler(std::string(name),params);
-}*/
 
 extern "C" void luxSampler(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxSamplerV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxSamplerV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxSamplerV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxSamplerV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxSampler(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Sampler(name, ParamSet(n, name, tokens, params));
 }
 
-/*
-void luxAccelerator(const char *name, const ParamSet &params)
-{
-	Context::luxAccelerator(std::string(name),params);
-}*/
 extern "C" void luxAccelerator(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxAcceleratorV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxAcceleratorV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxAcceleratorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxAcceleratorV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxAccelerator(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Accelerator(name,
+		ParamSet(n, name, tokens, params));
 }
-/*
-void luxSurfaceIntegrator(const char *name, const ParamSet &params)
-{
-	Context::luxSurfaceIntegrator(std::string(name),params);
-}*/
+
 extern "C" void luxSurfaceIntegrator(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxSurfaceIntegratorV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxSurfaceIntegratorV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxSurfaceIntegratorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxSurfaceIntegratorV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxSurfaceIntegrator(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->SurfaceIntegrator(name,
+		ParamSet(n, name, tokens, params));
 }
-
-/*
-void luxVolumeIntegrator(const char *name, const ParamSet &params)
-{
-	Context::luxVolumeIntegrator(std::string(name),params);
-}*/
 
 extern "C" void luxVolumeIntegrator(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxVolumeIntegratorV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxVolumeIntegratorV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxVolumeIntegratorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxVolumeIntegratorV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxVolumeIntegrator(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->VolumeIntegrator(name,
+		ParamSet(n, name, tokens, params));
 }
-
-/*
-void luxCamera(const char *name, const ParamSet &params)
-{
-	Context::luxCamera(std::string(name),params);
-}*/
 
 extern "C" void luxCamera(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxCameraV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxCameraV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxCameraV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxCameraV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxCamera(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Camera(name, ParamSet(n, name, tokens, params));
 }
 
 extern "C" void luxWorldBegin()
 {
-	Context::luxWorldBegin();
+	Context::GetActive()->WorldBegin();
 }
+
 extern "C" void luxAttributeBegin()
 {
-	Context::luxAttributeBegin();
+	Context::GetActive()->AttributeBegin();
 }
+
 extern "C" void luxAttributeEnd()
 {
-	Context::luxAttributeEnd();
+	Context::GetActive()->AttributeEnd();
 }
+
 extern "C" void luxTransformBegin()
 {
-	Context::luxTransformBegin();
+	Context::GetActive()->TransformBegin();
 }
+
 extern "C" void luxTransformEnd()
 {
-	Context::luxTransformEnd();
-}
-/*
-void luxTexture(const char *name, const char *type, const char *texname,
-		const ParamSet &params)
-{
-	Context::luxTexture(std::string(name), std::string(type), std::string(texname), params);
-}*/
-extern "C" void luxTexture(const char *name, const char *type, const char *texname, ...)
-{
-	EXTRACT_PARAMETERS( texname )
-	luxTextureV( name, type, texname, PASS_PARAMETERS );
+	Context::GetActive()->TransformEnd();
 }
 
-extern "C" void luxTextureV(const char *name, const char *type, const char *texname, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxTexture(const char *name, const char *type,
+	const char *texname, ...)
 {
-	Context::luxTexture(name,type,texname,ParamSet(n,name,tokens,params));
+	EXTRACT_PARAMETERS(texname);
+	luxTextureV(name, type, texname, PASS_PARAMETERS);
 }
-/*
-void luxMaterial(const char *name, const ParamSet &params)
+
+extern "C" void luxTextureV(const char *name, const char *type,
+	const char *texname, unsigned int n, const LuxToken tokens[],
+	const LuxPointer params[])
 {
-	Context::luxMaterial(name,params);
-}*/
+	Context::GetActive()->Texture(name, type, texname,
+		ParamSet(n, name, tokens, params));
+}
+
 extern "C" void luxMaterial(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxMaterialV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxMaterialV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxMaterialV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxMaterialV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxMaterial(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Material(name, ParamSet(n, name, tokens,
+		params));
 }
 
 extern "C" void luxMakeNamedMaterial(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxMakeNamedMaterialV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxMakeNamedMaterialV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxMakeNamedMaterialV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxMakeNamedMaterialV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxMakeNamedMaterial(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->MakeNamedMaterial(name,
+		ParamSet(n, name, tokens, params));
 }
 
 extern "C" void luxNamedMaterial(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxNamedMaterialV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxNamedMaterialV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxNamedMaterialV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxNamedMaterialV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxNamedMaterial(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->NamedMaterial(name,
+		ParamSet(n, name, tokens, params));
 }
-/*
-void luxLightSource(const char *name, const ParamSet &params)
-{
-	Context::luxLightSource(std::string(name),params);
-}*/
+
 extern "C" void luxLightSource(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxLightSourceV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxLightSourceV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxLightSourceV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxLightSourceV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxLightSource(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->LightSource(name,
+		ParamSet(n, name, tokens, params));
 }
 
-/*
-void luxAreaLightSource(const char *name, const ParamSet &params) {
-	Context::luxAreaLightSource(std::string(name),params);
-}*/
 extern "C" void luxAreaLightSource(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxAreaLightSourceV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name)
+	luxAreaLightSourceV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxAreaLightSourceV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxAreaLightSourceV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxAreaLightSource(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->AreaLightSource(name,
+		ParamSet(n, name, tokens, params));
 }
 
-/*
-void luxPortalShape(const char *name, const ParamSet &params) {
-	Context::luxPortalShape(std::string(name),params);
-}*/
 extern "C" void luxPortalShape(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxPortalShapeV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name)
+	luxPortalShapeV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxPortalShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxPortalShapeV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxPortalShape(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->PortalShape(name,
+		ParamSet(n, name, tokens, params));
 }
 
-/*
-void luxShape(const char *name, const ParamSet &params) {
-	Context::luxShape(std::string(name),params);
-}*/
 extern "C" void luxShape(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxShapeV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name)
+	luxShapeV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxShapeV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxShape(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Shape(name, ParamSet(n, name, tokens, params));
 }
 
 extern "C" void luxReverseOrientation() {
-	Context::luxReverseOrientation();
+	Context::GetActive()->ReverseOrientation();
 }
-/*
-void luxVolume(const char *name, const ParamSet &params) {
-	Context::luxVolume(std::string(name),params);
-}*/
+
 extern "C" void luxVolume(const char *name, ...)
 {
-	EXTRACT_PARAMETERS( name )
-	luxVolumeV( name, PASS_PARAMETERS );
+	EXTRACT_PARAMETERS(name);
+	luxVolumeV(name, PASS_PARAMETERS);
 }
 
-extern "C" void luxVolumeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxVolumeV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::luxVolume(name,ParamSet(n,name,tokens,params));
+	Context::GetActive()->Volume(name, ParamSet(n, name, tokens, params));
 }
 
-extern "C" void luxObjectBegin(const char *name) {
-	Context::luxObjectBegin(std::string(name));
+extern "C" void luxExterior(const char *name, ...)
+{
+	EXTRACT_PARAMETERS(name);
+	luxExteriorV(name, PASS_PARAMETERS);
 }
-extern "C" void luxObjectEnd() {
-	Context::luxObjectEnd();
+
+extern "C" void luxExteriorV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
+{
+	Context::GetActive()->Exterior(name, ParamSet(n, name, tokens, params));
 }
-extern "C" void luxObjectInstance(const char *name) {
-	Context::luxObjectInstance(std::string(name));
+
+extern "C" void luxInterior(const char *name, ...)
+{
+	EXTRACT_PARAMETERS(name);
+	luxInteriorV(name, PASS_PARAMETERS);
 }
-extern "C" void luxMotionInstance(const char *name, float startTime, float endTime, const char *toTransform) {
-	Context::luxMotionInstance(std::string(name), startTime, endTime, std::string(toTransform));
+
+extern "C" void luxInteriorV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
+{
+	Context::GetActive()->Interior(name, ParamSet(n, name, tokens, params));
+}
+
+extern "C" void luxObjectBegin(const char *name)
+{
+	Context::GetActive()->ObjectBegin(std::string(name));
+}
+extern "C" void luxObjectEnd()
+{
+	Context::GetActive()->ObjectEnd();
+}
+extern "C" void luxObjectInstance(const char *name)
+{
+	Context::GetActive()->ObjectInstance(std::string(name));
+}
+extern "C" void luxMotionInstance(const char *name, float startTime,
+	float endTime, const char *toTransform)
+{
+	Context::GetActive()->MotionInstance(std::string(name), startTime,
+		endTime, std::string(toTransform));
 }
 extern "C" void luxWorldEnd() {
-	Context::luxWorldEnd();
+	Context::GetActive()->WorldEnd();
 }
 
-
-extern "C" void luxInit() {
-
+extern "C" void luxInit()
+{
 	// System-wide initialization
 
 	// Make sure floating point unit's rounding stuff is set
@@ -441,26 +443,29 @@ extern "C" void luxInit() {
 #endif
 #endif // FAST_INT
 
-
 	// API Initialization
 	if (initialized)
 		luxError(LUX_ILLSTATE,LUX_ERROR,"luxInit() has already been called.");
 	else
-		Context::setActive(new Context());
+		Context::SetActive(new Context());
 
-	initialized=true;
+	initialized = true;
 }
 
 // Load/save FLM file
-extern "C" void luxLoadFLM(const char* name) {
-	Context::luxLoadFLM( string( name ) );
-}
-extern "C" void luxSaveFLM(const char* name) {
-	Context::luxSaveFLM( string( name ) );
+extern "C" void luxLoadFLM(const char* name)
+{
+	Context::GetActive()->LoadFLM(string(name));
 }
 
-extern "C" void luxOverrideResumeFLM(const char *name) {
-	Context::luxOverrideResumeFLM( string(name) );
+extern "C" void luxSaveFLM(const char* name)
+{
+	Context::GetActive()->SaveFLM(string(name));
+}
+
+extern "C" void luxOverrideResumeFLM(const char *name)
+{
+	Context::GetActive()->OverrideResumeFLM(string(name));
 }
 
 //interactive control
@@ -468,79 +473,115 @@ extern "C" void luxOverrideResumeFLM(const char *name) {
 //CORE engine control
 
 //user interactive thread functions
-extern "C" void luxStart() {
-	Context::luxStart();
+extern "C" void luxStart()
+{
+	Context::GetActive()->Start();
 }
 
-extern "C" void luxPause() {
-	Context::luxPause();
+extern "C" void luxPause()
+{
+	Context::GetActive()->Pause();
 }
 
-extern "C" void luxExit() {
-	Context::luxExit();
+extern "C" void luxExit()
+{
+	Context::GetActive()->Exit();
 }
 
-extern "C" void luxWait() {
-	Context::luxWait();
+extern "C" void luxWait()
+{
+	Context::GetActive()->Wait();
 }
 
-extern "C" void luxSetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
-		bool suspendThreadsWhenDone) {
-	Context::luxSetHaltSamplePerPixel(haltspp, haveEnoughSamplePerPixel, suspendThreadsWhenDone);
+extern "C" void luxSetHaltSamplePerPixel(int haltspp,
+	bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone)
+{
+	Context::GetActive()->SetHaltSamplePerPixel(haltspp,
+		haveEnoughSamplePerPixel, suspendThreadsWhenDone);
 }
 //controlling number of threads
-extern "C" unsigned int luxAddThread() {
-	return Context::luxAddThread();
+extern "C" unsigned int luxAddThread()
+{
+	return Context::GetActive()->AddThread();
 }
 
-extern "C" void luxRemoveThread() {
-	Context::luxRemoveThread();
+extern "C" void luxRemoveThread()
+{
+	Context::GetActive()->RemoveThread();
 }
 
-extern "C" unsigned int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, unsigned int maxInfoCount) {
-	return Context::luxGetRenderingThreadsStatus(info, maxInfoCount);
+extern "C" unsigned int luxGetRenderingThreadsStatus(RenderingThreadInfo *info,
+	unsigned int maxInfoCount)
+{
+	return Context::GetActive()->GetRenderingThreadsStatus(info,
+		maxInfoCount);
 }
 
 //framebuffer access
-extern "C" void luxUpdateFramebuffer() {
-	Context::luxUpdateFramebuffer();
+extern "C" void luxUpdateFramebuffer()
+{
+	Context::GetActive()->UpdateFramebuffer();
 }
 
-extern "C" unsigned char* luxFramebuffer() {
-	return Context::luxFramebuffer();
+extern "C" unsigned char* luxFramebuffer()
+{
+	return Context::GetActive()->Framebuffer();
 }
 
 //histogram access
-extern "C" void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options) {
-	Context::luxGetHistogramImage(outPixels, width, height, options);
+extern "C" void luxGetHistogramImage(unsigned char *outPixels,
+	unsigned int width, unsigned int height, int options)
+{
+	Context::GetActive()->GetHistogramImage(outPixels, width, height,
+		options);
 }
 
 // Parameter Access functions
-extern "C" void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index) {
-	return Context::luxSetParameterValue(comp, param, value, index);
+extern "C" void luxSetParameterValue(luxComponent comp,
+	luxComponentParameters param, double value, unsigned int index)
+{
+	return Context::GetActive()->SetParameterValue(comp, param, value,
+		index);
 }
-extern "C" double luxGetParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index) {
-	return Context::luxGetParameterValue(comp, param, index);
+extern "C" double luxGetParameterValue(luxComponent comp,
+	luxComponentParameters param, unsigned int index)
+{
+	return Context::GetActive()->GetParameterValue(comp, param, index);
 }
-extern "C" double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index) {
-	return Context::luxGetDefaultParameterValue(comp, param, index);
+extern "C" double luxGetDefaultParameterValue(luxComponent comp,
+	luxComponentParameters param, unsigned int index)
+{
+	return Context::GetActive()->GetDefaultParameterValue(comp, param,
+		index);
 }
 
-extern "C" void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, unsigned int index) {
-	return Context::luxSetStringParameterValue(comp, param, value, index);
+extern "C" void luxSetStringParameterValue(luxComponent comp,
+	luxComponentParameters param, const char* value, unsigned int index)
+{
+	return Context::GetActive()->SetStringParameterValue(comp, param, value,
+		index);
 }
-extern "C" unsigned int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index) {
-	const string str = Context::luxGetStringParameterValue(comp, param, index);
-	unsigned int nToCopy = str.length() < dstlen ? str.length() + 1 : dstlen;
+extern "C" unsigned int luxGetStringParameterValue(luxComponent comp,
+	luxComponentParameters param, char* dst, unsigned int dstlen,
+	unsigned int index)
+{
+	const string str = Context::GetActive()->GetStringParameterValue(comp,
+		param, index);
+	unsigned int nToCopy = str.length() < dstlen ?
+		str.length() + 1 : dstlen;
 	if (nToCopy > 0) {
 		strncpy(dst, str.c_str(), nToCopy - 1);
 		dst[nToCopy - 1] = '\0';
 	}
 	return str.length();
 }
-extern "C" unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index) {
-	const string str = Context::luxGetDefaultStringParameterValue(comp, param, index);
-	unsigned int nToCopy = str.length() < dstlen ? str.length() + 1 : dstlen;
+extern "C" unsigned int luxGetDefaultStringParameterValue(luxComponent comp,
+	luxComponentParameters param, char* dst, unsigned int dstlen,
+	unsigned int index)
+{
+	const string str = Context::GetActive()->GetDefaultStringParameterValue(comp, param, index);
+	unsigned int nToCopy = str.length() < dstlen ?
+		str.length() + 1 : dstlen;
 	if (nToCopy > 0) {
 		strncpy(dst, str.c_str(), nToCopy - 1);
 		dst[nToCopy - 1] = '\0';
@@ -548,39 +589,46 @@ extern "C" unsigned int luxGetDefaultStringParameterValue(luxComponent comp, lux
 	return str.length();
 }
 
-extern "C" double luxStatistics(const char *statName) {
+extern "C" double luxStatistics(const char *statName)
+{
 	if (initialized)
-		return Context::luxStatistics(statName);
+		return Context::GetActive()->Statistics(statName);
 	luxError(LUX_NOTSTARTED, LUX_SEVERE, "luxInit() must be called before calling 'luxStatistics'. Ignoring.");
 	return 0.;
 }
 
-extern "C" void luxEnableDebugMode() {
-	Context::luxEnableDebugMode();
+extern "C" void luxEnableDebugMode()
+{
+	Context::GetActive()->EnableDebugMode();
 }
 
-extern "C" void luxDisableRandomMode() {
-	Context::luxDisableRandomMode();
+extern "C" void luxDisableRandomMode()
+{
+	Context::GetActive()->DisableRandomMode();
 }
 
-extern "C" void luxUpdateFilmFromNetwork() {
-	Context::luxUpdateFilmFromNetwork();
+extern "C" void luxUpdateFilmFromNetwork()
+{
+	Context::GetActive()->UpdateFilmFromNetwork();
 }
 
-extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval) {
-	Context::luxSetNetworkServerUpdateInterval(updateInterval);
+extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval)
+{
+	Context::GetActive()->SetNetworkServerUpdateInterval(updateInterval);
 }
 
-extern "C" int luxGetNetworkServerUpdateInterval() {
-	return Context::luxGetNetworkServerUpdateInterval();
+extern "C" int luxGetNetworkServerUpdateInterval()
+{
+	return Context::GetActive()->GetNetworkServerUpdateInterval();
 }
 
 //error handling
-static LuxErrorHandler luxErrorDelegate=luxErrorPrint;
-int luxLastError=LUX_NOERROR;
+static LuxErrorHandler luxErrorDelegate = luxErrorPrint;
+int luxLastError = LUX_NOERROR;
 int luxLogFilter = -99;
 
-void luxErrorFilter(int code, int severity, const char *message) {
+void luxErrorFilter(int code, int severity, const char *message)
+{
 	if (severity >= luxLogFilter) {
 		luxErrorDelegate(code, severity, message);
 	}
@@ -588,31 +636,35 @@ void luxErrorFilter(int code, int severity, const char *message) {
 // The internal error handling function. It cannot changed through the 
 // API and allows to perform filtering on the errors before passing them to 
 // the (changeable) error handler 'luxErrorDelegate'.
-LuxErrorHandler luxError=luxErrorFilter;
+LuxErrorHandler luxError = luxErrorFilter;
 
-extern "C" void luxErrorHandler(LuxErrorHandler handler) {
-	luxErrorDelegate=handler;
+extern "C" void luxErrorHandler(LuxErrorHandler handler)
+{
+	luxErrorDelegate = handler;
 }
 
-extern "C" void luxErrorAbort(int code, int severity, const char *message) {
+extern "C" void luxErrorAbort(int code, int severity, const char *message)
+{
 	luxErrorPrint(code, severity, message);
-	if (severity!=LUX_INFO)
+	if (severity >= LUX_ERROR)
 		exit(code);
 }
 
-extern "C" void luxErrorIgnore(int code, int severity, const char *message) {
-	luxLastError=code;
+extern "C" void luxErrorIgnore(int code, int severity, const char *message)
+{
+	luxLastError = code;
 }
 
-extern "C" void luxErrorPrintFilter(int code, int severity, const char *message) {
-	if (severity >= luxLogFilter) {
+extern "C" void luxErrorPrintFilter(int code, int severity, const char *message)
+{
+	if (severity >= luxLogFilter)
 		luxErrorPrint(code, severity, message);
-	}
 }
 
 
-extern "C" void luxErrorPrint(int code, int severity, const char *message) {
-	luxLastError=code;
+extern "C" void luxErrorPrint(int code, int severity, const char *message)
+{
+	luxLastError = code;
 	std::cerr<<"[";
 #ifndef WIN32 //windows does not support ANSI escape codes
 	//set the color
@@ -660,6 +712,7 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message) {
 	std::cerr<<"] "<<message<<std::endl;
 }
 
-extern "C" void luxSetEpsilon(const float minValue, const float maxValue) {
-	Context::luxSetEpsilon(minValue, maxValue);
+extern "C" void luxSetEpsilon(const float minValue, const float maxValue)
+{
+	Context::GetActive()->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
 }

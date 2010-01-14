@@ -566,7 +566,7 @@ Shape *LoopSubdiv::CreateShape(
 		bool reverseOrientation,
 		const ParamSet &params)
 {
-	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::getActiveFloatTextures();
+	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
 	int nlevels = params.FindOneInt("nlevels", 3);
 	u_int nps, nIndices, nuvi;
 	const int *vi = params.FindInt("indices", &nIndices);
