@@ -101,7 +101,7 @@ MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 IF(APPLE)
 	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS system-xgcc40-mt-1_39 thread-xgcc40-mt-1_39 program_options-xgcc40-mt-1_39 filesystem-xgcc40-mt-1_39 serialization-xgcc40-mt-1_39 iostreams-xgcc40-mt-1_39 regex-xgcc40-mt-1_39)
 ELSE(APPLE)
-	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+	FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system python)
 ENDIF(APPLE)
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
@@ -257,6 +257,18 @@ IF(CYGWIN)
 	ADD_DEFINITIONS(-D_WIN32_WINNT=0x0551 -D__USE_W32_SOCKETS -D_GLIBCXX__PTHREADS)
 ENDIF(CYGWIN)
 
+#############################################################################
+#############################################################################
+###########################   PYTHON LIBRARIES    ###########################
+#############################################################################
+#############################################################################
+FIND_PACKAGE(PythonLibs)
+IF(PYTHONLIBS_FOUND)
+	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
+	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
+ELSE(PYTHONLIBS_FOUND)
+	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
+ENDIF(PYTHONLIBS_FOUND)
 
 #############################################################################
 #All dependencies OK !
@@ -272,7 +284,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 # Dade - default compiler options
-ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 
 #############################################################################
@@ -658,6 +670,7 @@ INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR}
 	${OPENEXR_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/core/external
+	${PYTHON_INCLUDE_PATH}
 	)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/reflection
@@ -704,7 +717,7 @@ SET( LUXQTGUI_RCS
 #############################################################################
 #############################################################################
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${JPEG_LIBRARY})
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${JPEG_LIBRARY} )
 
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
@@ -718,7 +731,7 @@ ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} )
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -743,7 +756,7 @@ ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} )
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -762,13 +775,26 @@ IF(APPLE)
 ENDIF(APPLE)
 
 #############################################################################
+#Here we build the python module
+#############################################################################
+IF(PYTHONLIBS_FOUND)
+	ADD_LIBRARY(pylux SHARED python/binding.cpp)
+	TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} )
+	ADD_CUSTOM_COMMAND(
+		TARGET pylux POST_BUILD
+		COMMAND mv libpylux.so pylux.so
+	)
+ENDIF(PYTHONLIBS_FOUND)
+
+
+#############################################################################
 #Here we build the luxcomp executable
 #############################################################################
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} python2.6)
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -810,7 +836,7 @@ IF(wxWidgets_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES})
 	ENDIF(APPLE)
 ENDIF(wxWidgets_FOUND)
 
@@ -845,7 +871,7 @@ IF(QT4_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrenderqt -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY} ${PYTHON_LIBRARIES})
 	ENDIF(APPLE)
 ENDIF(QT4_FOUND)
 
