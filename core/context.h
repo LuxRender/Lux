@@ -226,7 +226,7 @@ private:
 		lux::Transform worldToCameraEnd;
 		mutable vector<Light *> lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
-		mutable vector<VolumeRegion *> volumeRegions;
+		mutable vector<Region *> volumeRegions;
 		mutable map<string, vector<boost::shared_ptr<Primitive> > > instances;
 		mutable vector<string> lightGroups;
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstance;

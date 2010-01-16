@@ -624,7 +624,7 @@ void Context::ReverseOrientation() {
 void Context::Volume(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Volume");
 	renderFarm->send("luxVolume", n, params);
-	VolumeRegion *vr = MakeVolumeRegion(n, curTransform, params);
+	Region *vr = MakeVolumeRegion(n, curTransform, params);
 	if (vr)
 		renderOptions->volumeRegions.push_back(vr);
 }
@@ -828,13 +828,13 @@ Scene *Context::RenderOptions::MakeScene() const {
 		luxError(LUX_BUG, LUX_SEVERE,
 			"Unable to find \"kdtree\" accelerator");
 	// Initialize _volumeRegion_ from volume region(s)
-	VolumeRegion *volumeRegion;
+	Region *volumeRegion;
 	if (volumeRegions.size() == 0)
 		volumeRegion = NULL;
 	else if (volumeRegions.size() == 1)
 		volumeRegion = volumeRegions[0];
 	else
-		volumeRegion = new AggregateVolume(volumeRegions);
+		volumeRegion = new AggregateRegion(volumeRegions);
 	// Make sure all plugins initialized properly
 	if (!camera || !sampler || !film || !accelerator || !filter ||
 		!surfaceIntegrator || !volumeIntegrator) {

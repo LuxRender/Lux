@@ -27,32 +27,28 @@ namespace lux
 {
 
 // VolumeGrid Declarations
-class VolumeGrid : public DensityRegion {
+class VolumeGrid : public DensityVolume<RGBVolume> {
 public:
 	// VolumeGrid Public Methods
 	VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
-	 		const RGBColor &emit, const BBox &e, const Transform &v2w,
-			int nx, int ny, int nz, const float *d);
+ 		const RGBColor &emit, const BBox &e, const Transform &v2w,
+		int nx, int ny, int nz, const float *d);
 	virtual ~VolumeGrid() { delete[] density; }
-	virtual BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
-	virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
-		Ray ray = WorldToVolume(r);
-		return extent.IntersectP(ray, t0, t1);
-	}
 	virtual float Density(const Point &Pobj) const;
 	float D(int x, int y, int z) const {
-		x = Clamp(x, 0, nx-1);
-		y = Clamp(y, 0, ny-1);
-		z = Clamp(z, 0, nz-1);
-		return density[z*nx*ny + y*nx + x];
+		x = Clamp(x, 0, nx - 1);
+		y = Clamp(y, 0, ny - 1);
+		z = Clamp(z, 0, nz - 1);
+		return density[z * nx * ny + y * nx + x];
 	}
 	
-	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
+	static Region *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 private:
 	// VolumeGrid Private Data
 	float *density;
 	const int nx, ny, nz;
 	const BBox extent;
+	Transform WorldToVolume;
 };
 
 }//namespace lux

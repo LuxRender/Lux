@@ -29,44 +29,47 @@
 using namespace lux;
 
 // EmissionIntegrator Method Definitions
-void EmissionIntegrator::RequestSamples(Sample *sample,
-		const Scene *scene) {
+void EmissionIntegrator::RequestSamples(Sample *sample, const Scene *scene)
+{
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
 
 void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
-		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const {
+	const Ray &ray, const Sample *sample, float *alpha,
+	SWCSpectrum *const L) const
+{
 	if (!scene->volumeRegion) 
 		return;
-	//float step = sample ? stepSize : 4.f * stepSize;
-	float step = stepSize;
-	float offset = sample->oneD[tauSampleOffset][0];
-	SWCSpectrum tau =
-		SWCSpectrum(tspack, scene->volumeRegion->Tau(ray, step, offset));
+	const float step = stepSize;
+	const float offset = sample->oneD[tauSampleOffset][0];
+	const SWCSpectrum tau(scene->volumeRegion->Tau(tspack, ray, step,
+		offset));
 	*L *= Exp(-tau);
 }
 u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample,
-		SWCSpectrum *Lv, float *alpha) const {
-	VolumeRegion *vr = scene->volumeRegion;
-	float t0, t1;
-	if (!vr || !vr->IntersectP(ray, &t0, &t1)) return 0.f;
-	// Do emission-only volume integration in _vr_
+	const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum *Lv, float *alpha) const
+{
 	*Lv = 0.f;
+	Region *vr = scene->volumeRegion;
+	float t0, t1;
+	if (!vr || !vr->IntersectP(ray, &t0, &t1))
+		return 0;
+	// Do emission-only volume integration in _vr_
 	// Prepare for volume integration stepping
-	u_int N = Ceil2Int((t1-t0) / stepSize);
-	float step = (t1 - t0) / N;
+	const u_int N = Ceil2Int((t1 - t0) / stepSize);
+	const float step = (t1 - t0) / N;
 	SWCSpectrum Tr(1.f);
-	Point p = ray(t0), pPrev;
-	Vector w = -ray.d;
+	const Vector w = -ray.d;
 	t0 += sample->oneD[scatterSampleOffset][0] * step;
+	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);
 	for (u_int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
-		pPrev = p;
-		p = ray(t0);
-		SWCSpectrum stepTau = SWCSpectrum(tspack, vr->Tau(Ray(pPrev, p - pPrev, 0, 1),
-			.5f * stepSize, tspack->rng->floatValue()));	// TODO - REFACT - remove and add random value from sample
+		r.o = ray(t0);
+		// Ray is already offset above, no need to do it again
+		const SWCSpectrum stepTau(vr->Tau(tspack, r,
+			.5f * stepSize, 0.f));
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
 		if (Tr.Filter(tspack) < 1e-3f) {
@@ -75,7 +78,7 @@ u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		*Lv += Tr * SWCSpectrum(tspack, vr->Lve(p, w));
+		*Lv += Tr * vr->Lve(tspack, r.o, w);
 	}
 	*Lv *= step;
 	return group;

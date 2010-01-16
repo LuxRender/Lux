@@ -183,7 +183,8 @@ namespace lux
   class TriangleMesh;
   class PlyMesh;
   template <class T> class Texture;
-  class VolumeRegion;
+  class Volume;
+  class Region;
   class Light;
   struct VisibilityTester;
   class AreaLight;

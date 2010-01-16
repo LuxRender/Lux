@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "geometry/bbox.h"
+#include "spectrum.h"
 #include "color.h"
 
 namespace lux
@@ -33,82 +34,189 @@ namespace lux
 
 // Volume Scattering Declarations
 float PhaseIsotropic(const Vector &w, const Vector &wp);
-
 float PhaseRayleigh(const Vector &w, const Vector &wp);
-
 float PhaseMieHazy(const Vector &w, const Vector &wp);
-
 float PhaseMieMurky(const Vector &w, const Vector &wp);
 float PhaseHG(const Vector &w, const Vector &wp, float g);
 float PhaseSchlick(const Vector &w, const Vector &wp, float g);
-class  VolumeRegion {
+
+class Volume {
 public:
-	// VolumeRegion Interface
-	virtual ~VolumeRegion() { }
-	virtual BBox WorldBound() const = 0;
-	virtual bool IntersectP(const Ray &ray, float *t0,
-		float *t1) const = 0;
-	virtual RGBColor sigma_a(const Point &,
+	// Volume Interface
+	virtual ~Volume() { }
+	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &,
 		const Vector &) const = 0;
-	virtual RGBColor sigma_s(const Point &,
+	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &,
 		const Vector &) const = 0;
-	virtual
-		RGBColor Lve(const Point &, const Vector &) const = 0;
-	virtual float P(const Point &, const Vector &,
+	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &,
 		const Vector &) const = 0;
-	virtual RGBColor sigma_t(const Point &, const Vector &) const;
-	virtual RGBColor Tau(const Ray &ray,
-		float step = 1.f, float offset = 0.5) const = 0;
+	virtual float P(const TsPack *tspack, const Point &, const Vector &,
+		const Vector &) const = 0;
+	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return SigmaA(tspack, p, w) + SigmaS(tspack, p, w);
+	}
+	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+		float step = 1.f, float offset = 0.5f) const = 0;
 };
 
-class  DensityRegion : public VolumeRegion {
+class RGBVolume : public Volume {
 public:
-	// DensityRegion Public Methods
-	DensityRegion(const RGBColor &sig_a, const RGBColor &sig_s,
-		float g, const RGBColor &Le, const Transform &VolumeToWorld);
-	virtual ~DensityRegion() { }
-	virtual float Density(const Point &Pobj) const = 0;
-	virtual RGBColor sigma_a(const Point &p, const Vector &) const {
-		return Density(WorldToVolume(p)) * sig_a;
+	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
+		float gg) : sigA(sA), sigS(sS), le(l), g(gg) { }
+	virtual ~RGBVolume() { }
+	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
+		const Vector &) const {
+		return SWCSpectrum(tspack, sigA);
 	}
-	virtual RGBColor sigma_s(const Point &p, const Vector &) const {
-		return Density(WorldToVolume(p)) * sig_s;
+	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &p,
+		const Vector &) const {
+		return SWCSpectrum(tspack, sigS);
 	}
-	virtual RGBColor sigma_t(const Point &p, const Vector &) const {
-		return Density(WorldToVolume(p)) * (sig_a + sig_s);
+	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &p,
+		const Vector &) const {
+		//FIXME - use a D65 white point instead of the E white point
+		return SWCSpectrum(tspack, le);
 	}
-	virtual RGBColor Lve(const Point &p, const Vector &) const {
-		return Density(WorldToVolume(p)) * le;
-	}
-	virtual float P(const Point &p, const Vector &w,
-			const Vector &wp) const {
+	virtual float P(const TsPack *tspack, const Point &p, const Vector &w,
+		const Vector &wp) const {
 		return PhaseHG(w, wp, g);
 	}
-	virtual RGBColor Tau(const Ray &r, float stepSize, float offset) const;
-protected:
-	// DensityRegion Protected Data
-	Transform WorldToVolume;
-	RGBColor sig_a, sig_s, le;
+	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+		float step = 1.f, float offset = 0.5f) const {
+		return SigmaT(tspack, ray.o, -ray.d) *
+			(ray.d.Length() * (ray.maxt - ray.mint));
+	}
+private:
+	RGBColor sigA, sigS, le;
 	float g;
 };
 
-class  AggregateVolume : public VolumeRegion {
+class  Region : public Volume {
 public:
-	// AggregateVolume Public Methods
-	AggregateVolume(const vector<VolumeRegion *> &r);
-	virtual ~AggregateVolume();
-	virtual BBox WorldBound() const;
-	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const;
-	virtual RGBColor sigma_a(const Point &, const Vector &) const;
-	virtual RGBColor sigma_s(const Point &, const Vector &) const;
-	virtual RGBColor Lve(const Point &, const Vector &) const;
-	virtual float P(const Point &, const Vector &, const Vector &) const;
-	virtual RGBColor sigma_t(const Point &, const Vector &) const;
-	virtual RGBColor Tau(const Ray &ray, float, float) const;
-private:
-	// AggregateVolume Private Data
-	vector<VolumeRegion *> regions;
+	// VolumeRegion Interface
+	Region() { }
+	Region(const BBox &b) : bound(b) { }
+	virtual ~Region() { }
+	virtual BBox WorldBound() const { return bound; };
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
+		return bound.IntersectP(ray, t0, t1);
+	}
+protected:
 	BBox bound;
+};
+
+template<class T> class VolumeRegion : public Region {
+public:
+	VolumeRegion(const Transform &v2w, const BBox &b, const T &v) :
+		Region(v2w(b)), WorldToVolume(v2w.GetInverse()), region(b),
+		volume(v) { }
+	virtual ~VolumeRegion() { }
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
+		return region.IntersectP(WorldToVolume(ray), t0, t1);
+	}
+	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.SigmaA(tspack, p, w) : SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.SigmaA(tspack, p, w) : SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.SigmaT(tspack, p, w) : SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.Lve(tspack, p, w) : SWCSpectrum(0.f);
+	}
+	virtual float P(const TsPack *tspack, const Point &p, const Vector &w,
+		const Vector &wp) const {
+		return volume.P(tspack, p, w, wp);
+	}
+	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &r,
+		float stepSize, float offset) const {
+		float t0, t1;
+		Ray rn(r);
+		if (!IntersectP(rn, &t0, &t1))
+			return SWCSpectrum(0.f);
+		rn.mint = t0;
+		rn.maxt = t1;
+		return volume.Tau(tspack, rn, stepSize, offset);
+	}
+protected:
+	Transform WorldToVolume;
+	BBox region;
+	T volume;
+};
+
+template<class T> class  DensityVolume : public Volume {
+public:
+	// DensityVolume Public Methods
+	DensityVolume(const T &v) : volume(v) { }
+	virtual ~DensityVolume() { }
+	virtual float Density(const Point &Pobj) const = 0;
+	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return Density(p) * volume.SigmaA(tspack, p, w);
+	}
+	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return Density(p) * volume.SigmaA(tspack, p, w);
+	}
+	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return Density(p) * volume.SigmaT(tspack, p, w);
+	}
+	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &p,
+		const Vector &w) const {
+		return Density(p) * volume.Lve(tspack, p, w);
+	}
+	virtual float P(const TsPack *tspack, const Point &p, const Vector &w,
+		const Vector &wp) const {
+		return volume.P(tspack, p, w, wp);
+	}
+	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &r,
+		float stepSize, float offset) const {
+		if (!(r.d.Length() > 0.f))
+			return SWCSpectrum(0.f);
+		const float step = stepSize / r.d.Length();
+		SWCSpectrum tau(0.f);
+		for (float t0 = r.mint + offset * step; t0 < r.maxt; t0 += step)
+			tau += SigmaT(tspack, r(t0), -r.d);
+		return tau * stepSize;
+	}
+protected:
+	// DensityVolume Protected Data
+	T volume;
+};
+
+class  AggregateRegion : public Region {
+public:
+	// AggregateRegion Public Methods
+	AggregateRegion(const vector<Region *> &r);
+	virtual ~AggregateRegion();
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const;
+	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &,
+		const Vector &) const;
+	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &,
+		const Vector &) const;
+	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &,
+		const Vector &) const;
+	virtual float P(const TsPack *tspack, const Point &, const Vector &,
+		const Vector &) const;
+	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &,
+		const Vector &) const;
+	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+		float stepSize, float u) const;
+private:
+	// AggregateRegion Private Data
+	vector<Region *> regions;
 };
 
 }//namespace lux

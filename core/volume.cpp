@@ -55,68 +55,68 @@ float PhaseSchlick(const Vector &w,
 	const float compkcostheta = 1.f - k * Dot(w, wp);
 	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
 }
-RGBColor VolumeRegion::sigma_t(const Point &p,
-                               const Vector &w) const {
-	return sigma_a(p, w) + sigma_s(p, w);
-}
-DensityRegion::DensityRegion(const RGBColor &sa,
-		const RGBColor &ss, float gg,
-	 	const RGBColor &emit,
-		const Transform &VolumeToWorld)
-	: sig_a(sa), sig_s(ss), le(emit), g(gg)  {
-	WorldToVolume = VolumeToWorld.GetInverse();
-}
-AggregateVolume::
-	AggregateVolume(const vector<VolumeRegion *> &r) {
+AggregateRegion::AggregateRegion(const vector<Region *> &r)
+{
 	regions = r;
 	for (u_int i = 0; i < regions.size(); ++i)
 		bound = Union(bound, regions[i]->WorldBound());
 }
-RGBColor AggregateVolume::sigma_a(const Point &p,
-		const Vector &w) const {
-	RGBColor s(0.);
+SWCSpectrum AggregateRegion::SigmaA(const TsPack *tspack, const Point &p,
+	const Vector &w) const
+{
+	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->sigma_a(p, w);
+		s += regions[i]->SigmaA(tspack, p, w);
 	return s;
 }
-RGBColor AggregateVolume::sigma_s(const Point &p, const Vector &w) const {
-	RGBColor s(0.);
+SWCSpectrum AggregateRegion::SigmaS(const TsPack *tspack, const Point &p,
+	const Vector &w) const
+{
+	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->sigma_s(p, w);
+		s += regions[i]->SigmaA(tspack, p, w);
 	return s;
 }
-RGBColor AggregateVolume::Lve(const Point &p, const Vector &w) const {
-	RGBColor L(0.);
+SWCSpectrum AggregateRegion::Lve(const TsPack *tspack, const Point &p,
+	const Vector &w) const
+{
+	SWCSpectrum L(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		L += regions[i]->Lve(p, w);
+		L += regions[i]->Lve(tspack, p, w);
 	return L;
 }
-float AggregateVolume::P(const Point &p, const Vector &w, const Vector &wp) const {
-	float ph = 0, sumWt = 0;
+float AggregateRegion::P(const TsPack *tspack, const Point &p, const Vector &w,
+	const Vector &wp) const
+{
+	float ph = 0.f, sumWt = 0.f;
 	for (u_int i = 0; i < regions.size(); ++i) {
-		float sigt = regions[i]->sigma_t(p, w).Y();
-		if (sigt != 0.f) {
-			float wt = regions[i]->sigma_s(p, w).Y() / sigt;
+		const float sigt = regions[i]->SigmaT(tspack, p, w).Y(tspack);
+		if (sigt > 0.f) {
+			const float wt = regions[i]->SigmaA(tspack, p, w).Y(tspack) / sigt;
 			sumWt += wt;
-			ph += wt * regions[i]->P(p, w, wp);
+			ph += wt * regions[i]->P(tspack, p, w, wp);
 		}
 	}
 	return ph / sumWt;
 }
-RGBColor AggregateVolume::sigma_t(const Point &p, const Vector &w) const {
-	RGBColor s(0.);
+SWCSpectrum AggregateRegion::SigmaT(const TsPack *tspack, const Point &p,
+	const Vector &w) const
+{
+	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->sigma_t(p, w);
+		s += regions[i]->SigmaT(tspack, p, w);
 	return s;
 }
-RGBColor AggregateVolume::Tau(const Ray &ray, float step, float offset) const {
-	RGBColor t(0.);
+SWCSpectrum AggregateRegion::Tau(const TsPack *tspack, const Ray &ray,
+	float step, float offset) const
+{
+	SWCSpectrum t(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		t += regions[i]->Tau(ray, step, offset);
+		t += regions[i]->Tau(tspack, ray, step, offset);
 	return t;
 }
-bool AggregateVolume::IntersectP(const Ray &ray,
-		float *t0, float *t1) const {
+bool AggregateRegion::IntersectP(const Ray &ray, float *t0, float *t1) const
+{
 	*t0 = INFINITY;
 	*t1 = -INFINITY;
 	for (u_int i = 0; i < regions.size(); ++i) {
@@ -128,29 +128,9 @@ bool AggregateVolume::IntersectP(const Ray &ray,
 	}
 	return (*t0 < *t1);
 }
-AggregateVolume::~AggregateVolume() {
+AggregateRegion::~AggregateRegion() {
 	for (u_int i = 0; i < regions.size(); ++i)
 		delete regions[i];
-}
-BBox AggregateVolume::WorldBound() const {
-	return bound;
-}
-RGBColor DensityRegion::Tau(const Ray &r,
-		float stepSize, float u) const {
-	float t0, t1;
-	float length = r.d.Length();
-	if (length == 0.f) return 0.f;
-	Ray rn(r.o, r.d / length,
-	       r.mint * length,
-		   r.maxt * length);
-	if (!IntersectP(rn, &t0, &t1)) return 0.;
-	RGBColor tau(0.);
-	t0 += u * stepSize;
-	while (t0 < t1) {
-		tau += sigma_t(rn(t0), -rn.d);
-		t0 += stepSize;
-	}
-	return tau * stepSize;
 }
 
 }//namespace lux

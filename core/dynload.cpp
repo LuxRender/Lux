@@ -145,12 +145,12 @@ AreaLight *MakeAreaLight(const string &name,
 	return NULL;
 }
 
-VolumeRegion *MakeVolumeRegion(const string &name,
+Region *MakeVolumeRegion(const string &name,
 	const Transform &volume2world, const ParamSet &paramSet)
 {
 	if (DynamicLoader::registeredVolumeRegions().find(name) !=
 		DynamicLoader::registeredVolumeRegions().end()) {
-		VolumeRegion *ret =
+		Region *ret =
 			DynamicLoader::registeredVolumeRegions()[name](volume2world,
 				paramSet);
 		paramSet.ReportUnused();

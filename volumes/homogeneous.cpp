@@ -28,7 +28,7 @@
 using namespace lux;
 
 // HomogeneousVolume Method Definitions
-VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
+Region * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {
 	// Initialize common volume region parameters
 	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", 0.);
@@ -38,8 +38,8 @@ VolumeRegion * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2wor
 	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
 	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
 
-	return new HomogeneousVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world);
+	return new VolumeRegion<RGBVolume>(volume2world, BBox(p0, p1),
+		RGBVolume(sigma_a, sigma_s, Le, g));
 }
 
 static DynamicLoader::RegisterVolumeRegion<HomogeneousVolume> r("homogeneous");

@@ -29,39 +29,41 @@
 using namespace lux;
 
 // VolumeGrid Method Definitions
-VolumeGrid::VolumeGrid(const RGBColor &sa,
-		const RGBColor &ss, float gg,
- 		const RGBColor &emit, const BBox &e,
-		const Transform &v2w,
-		int x, int y, int z, const float *d)
-	: DensityRegion(sa, ss, gg, emit, v2w),
-	nx(x), ny(y), nz(z), extent(e) {
-	density = new float[nx*ny*nz];
-	memcpy(density, d, nx*ny*nz*sizeof(float));
+VolumeGrid::VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
+	const RGBColor &emit, const BBox &e, const Transform &v2w,
+	int x, int y, int z, const float *d)
+	: DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
+	nx(x), ny(y), nz(z), extent(e), WorldToVolume(v2w.GetInverse())
+{
+	density = new float[nx * ny * nz];
+	memcpy(density, d, nx * ny * nz * sizeof(float));
 }
-float VolumeGrid::Density(const Point &Pobj) const {
-	if (!extent.Inside(Pobj)) return 0;
-	// Compute voxel coordinates and offsets for _Pobj_
-	float voxx = (Pobj.x - extent.pMin.x) /
+float VolumeGrid::Density(const Point &p) const
+{
+	const Point pp(WorldToVolume(p));
+	if (!extent.Inside(pp))
+		return 0.f;
+	// Compute voxel coordinates and offsets for _pp_
+	float voxx = (pp.x - extent.pMin.x) /
 		(extent.pMax.x - extent.pMin.x) * nx - .5f;
-	float voxy = (Pobj.y - extent.pMin.y) /
+	float voxy = (pp.y - extent.pMin.y) /
 		(extent.pMax.y - extent.pMin.y) * ny - .5f;
-	float voxz = (Pobj.z - extent.pMin.z) /
+	float voxz = (pp.z - extent.pMin.z) /
 		(extent.pMax.z - extent.pMin.z) * nz - .5f;
 	int vx = Floor2Int(voxx);
 	int vy = Floor2Int(voxy);
 	int vz = Floor2Int(voxz);
 	float dx = voxx - vx, dy = voxy - vy, dz = voxz - vz;
 	// Trilinearly interpolate density values to compute local density
-	float d00 = Lerp(dx, D(vx, vy, vz),     D(vx+1, vy, vz));
-	float d10 = Lerp(dx, D(vx, vy+1, vz),  D(vx+1, vy+1, vz));
-	float d01 = Lerp(dx, D(vx, vy, vz+1),  D(vx+1, vy, vz+1));
-	float d11 = Lerp(dx, D(vx, vy+1, vz+1),D(vx+1, vy+1, vz+1));
+	float d00 = Lerp(dx, D(vx, vy, vz), D(vx + 1, vy, vz));
+	float d10 = Lerp(dx, D(vx, vy + 1, vz), D(vx + 1, vy + 1, vz));
+	float d01 = Lerp(dx, D(vx, vy, vz+1), D(vx+1, vy, vz+1));
+	float d11 = Lerp(dx, D(vx, vy + 1, vz + 1), D(vx + 1, vy + 1, vz + 1));
 	float d0 = Lerp(dy, d00, d10);
 	float d1 = Lerp(dy, d01, d11);
 	return Lerp(dz, d0, d1);
 }
-VolumeRegion * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
+Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 		const ParamSet &params) {
 	// Initialize common volume region parameters
 	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", 0.);
@@ -87,8 +89,9 @@ VolumeRegion * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 		luxError(LUX_CONSISTENCY,LUX_ERROR,ss.str().c_str());
 		return NULL;
 	}
-	return new VolumeGrid(sigma_a, sigma_s, g, Le, BBox(p0, p1),
-		volume2world, nx, ny, nz, data);
+	return new VolumeRegion<VolumeGrid>(volume2world, BBox(p0, p1),
+		VolumeGrid(sigma_a, sigma_s, g, Le, BBox(p0, p1),
+		volume2world, nx, ny, nz, data));
 }
 
 static DynamicLoader::RegisterVolumeRegion<VolumeGrid> r("volumegrid");

@@ -50,7 +50,7 @@ Light *MakeLight(const string &name, const Transform &light2world,
 AreaLight *MakeAreaLight(const string &name,
 	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
 	const boost::shared_ptr<Primitive> &prim);
-VolumeRegion *MakeVolumeRegion(const string &name,
+Region *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
 SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet);
@@ -147,7 +147,7 @@ public:
 		virtual ~RegisterAreaLight<T>() {}
 	};
 
-	typedef VolumeRegion *(*CreateVolumeRegion)(const Transform&,
+	typedef Region *(*CreateVolumeRegion)(const Transform&,
 		const ParamSet&);
 	static map<string, CreateVolumeRegion> &registeredVolumeRegions();
 	template <class T> class RegisterVolumeRegion : public RegisterLoader<CreateVolumeRegion> {

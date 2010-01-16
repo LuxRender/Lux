@@ -27,35 +27,28 @@ namespace lux
 {
 
 // ExponentialDensity Declarations
-class ExponentialDensity : public DensityRegion {
+class ExponentialDensity : public DensityVolume<RGBVolume> {
 public:
 	// ExponentialDensity Public Methods
 	ExponentialDensity(const RGBColor &sa, const RGBColor &ss,
 			float gg, const RGBColor &emit, const BBox &e,
 			const Transform &v2w, float aa, float bb,
 			const Vector &up)
-		: DensityRegion(sa, ss, gg, emit, v2w),
-		  extent(e), a(aa), b(bb) {
-		upDir = Normalize(up);
-	}
+		: DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
+		  base(v2w(e.pMin)), dir(Normalize(v2w(up))), a(aa), b(bb) { }
 	virtual ~ExponentialDensity() { }
-	virtual BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
-	virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
-		Ray ray = WorldToVolume(r);
-		return extent.IntersectP(ray, t0, t1);
-	}
 	virtual float Density(const Point &Pobj) const {
-		if (!extent.Inside(Pobj)) return 0;
-		float height = Dot(Pobj - extent.pMin, upDir);
+		const float height = Dot(Pobj - base, dir);
 		return a * expf(-b * height);
 	}
 	
-	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
+	static Region *CreateVolumeRegion(const Transform &volume2world,
+		const ParamSet &params);
 private:
 	// ExponentialDensity Private Data
-	BBox extent;
+	Point base;
+	Vector dir;
 	float a, b;
-	Vector upDir;
 };
 
 }//namespace lux

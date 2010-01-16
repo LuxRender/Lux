@@ -510,7 +510,7 @@ Scene::~Scene() {
 
 Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	Sampler *s, boost::shared_ptr<Primitive> accel,
-	const vector<Light *> &lts, const vector<string> &lg, VolumeRegion *vr)
+	const vector<Light *> &lts, const vector<string> &lg, Region *vr)
 {
 	filmOnly = false;
 	lights = lts;

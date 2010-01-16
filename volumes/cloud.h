@@ -40,30 +40,24 @@ private:
 };
 
 // Cloud Volume
-class Cloud : public DensityRegion {
+class CloudVolume : public DensityVolume<RGBVolume> {
 public:
-	// Cloud Public Methods
-	Cloud(const RGBColor &sa, const RGBColor &ss, float gg,
+	// CloudVolume Public Methods
+	CloudVolume(const RGBColor &sa, const RGBColor &ss, float gg,
 		const RGBColor &emit, const BBox &e, const float &r,
 		const Transform &v2w, const float &noiseScale, const float &t,
 		const float &sharp, const float &v, const float &baseflatness,
 		const u_int &octaves, const float &o, const float &offSet,
 		const u_int &numspheres, const float &spheresize);
-	virtual ~Cloud() {
+	virtual ~CloudVolume() {
 		delete sphereCentre;
 		delete[] spheres;
 	}
 			
-	virtual bool IntersectP(const Ray &r, float *t0, float *t1) const {
-		Ray ray = WorldToVolume(r);
-		return extent.IntersectP(ray, t0, t1);
-	}
-	virtual BBox WorldBound() const { return WorldToVolume.GetInverse()(extent); }
 	virtual float Density(const Point &p) const;
-	static VolumeRegion *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 			
 private:
-	// Cloud Private Data
+	// CloudVolume Private Data
 	bool SphereFunction(const Point &p) const;
 	float CloudShape(const Point &p) const;
 	float NoiseMask(const Point &p) const;
@@ -71,7 +65,7 @@ private:
 	Vector Turbulence(const Vector &v, float &noiseScale, u_int &octaves) const;
 	float CloudNoise(const Point &p, const float &omegaValue, u_int octaves) const;
 
-	BBox extent;
+	Transform WorldToVolume;
 	Vector scale;
 	Point *sphereCentre;
 	float inputRadius, radius;
@@ -86,15 +80,25 @@ private:
 	u_int numOctaves;
 };
 
-Cloud::Cloud(const RGBColor &sa, const RGBColor &ss,
+class Cloud {
+public:
+	static Region *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
+};
+
+static inline float CloudRand(int resolution)
+{
+	return static_cast<float>(rand() % resolution) / resolution;
+}
+
+CloudVolume::CloudVolume(const RGBColor &sa, const RGBColor &ss,
 	float gg, const RGBColor &emit, const BBox &e, const float &r,
 	const Transform &v2w, const float &noiseScale, const float &t,
 	const float &sharp, const float &v, const float &baseflatness,
 	const u_int &octaves, const float &o, const float &offSet,
 	const u_int &numspheres, const float &spheresize) :
-	DensityRegion(sa, ss, gg, emit, v2w),
-	extent(e), inputRadius(r), numSpheres(numspheres),
-	sphereSize(spheresize), sharpness(sharp),baseFlatness(baseflatness),
+	DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
+	WorldToVolume(v2w.GetInverse()), inputRadius(r), numSpheres(numspheres),
+	sphereSize(spheresize), sharpness(sharp), baseFlatness(baseflatness),
 	variability(v), omega(o), firstNoiseScale(noiseScale),
 	noiseOffSet(offSet), turbulenceAmount(t), numOctaves(octaves)
 {
@@ -102,25 +106,24 @@ Cloud::Cloud(const RGBColor &sa, const RGBColor &ss,
 		cumulus = false;
 	else
 		cumulus = true;
-		
-	radius = (extent.pMax.x-extent.pMin.x);	//radius begins as width of box
-		
+
+	// Radius begins as width of box
+	radius = (e.pMax.x - e.pMin.x);
+
 	firstNoiseScale *= radius;
 	turbulenceAmount *= radius;
-		
-	radius *= inputRadius;	//multiply by size given by user
-		
-	baseFadeDistance = (extent.pMax.z - extent.pMin.z) * (1.f - baseFlatness);
-	
-	sphereCentre = new Point( 
-		 (extent.pMax.x + extent.pMin.x) * 0.5f, 
-		 (extent.pMax.y + extent.pMin.y) * 0.5f,
-		 (extent.pMax.z + 2.f * extent.pMin.z) * 0.33f);	//centre of main hemisphere shape
-		
-	float angley, anglez;	//for positioning spheres in random spots around the main cloud hemisphere
-	Vector onEdge;				//the position of the cumulus sphere relative to the position of the main hemisphere
-	Point finalPosition;
-				
+
+	// Multiply by size given by user
+	radius *= inputRadius;
+
+	baseFadeDistance = (e.pMax.z - e.pMin.z) *
+		(1.f - baseFlatness);
+
+	// Centre of main hemisphere shape
+	sphereCentre = new Point((e.pMax.x + e.pMin.x) / 2.f,
+		 (e.pMax.y + e.pMin.y) / 2.f,
+		 (e.pMax.z + 2.f * e.pMin.z) / 3.f);
+
 	if (cumulus) {
 		//create spheres for cumulus shape. each should be at a point on the edge of the hemisphere
 		spheres = new CumulusSphere[numSpheres];
@@ -128,27 +131,27 @@ Cloud::Cloud(const RGBColor &sa, const RGBColor &ss,
 		srand(noiseOffSet);
 		
 		for (u_int i = 0; i < numSpheres; ++i) {
-			spheres[i].setRadius(((rand() % 10) * 0.05f + 0.5f) *
+			spheres[i].setRadius((CloudRand(10) / 2.f + 0.5f) *
 				sphereSize);
-			onEdge = Vector(radius * .5f * (rand() % 1000) / 1000.f,
+			Vector onEdge = Vector(radius / 2.f * CloudRand(1000),
 				0.f, 0.f);
-			angley = (rand() % 1000) / 1000.f * (-180.f);
-			anglez = (rand() % 1000) / 1000.f * 360.f;
-			onEdge = Vector(RotateY(angley)(onEdge));
-			onEdge = Vector(RotateZ(anglez)(onEdge));
-			finalPosition = *sphereCentre + onEdge;
-			finalPosition += Turbulence(finalPosition + Vector(noiseOffSet * 4.f, 0.f, 0.f), radius * 0.7f, 2) * radius * 1.5f;
+			const float angley = -180.f * CloudRand(1000);
+			const float anglez = 360.f * CloudRand(1000);
+			onEdge = RotateZ(anglez)(RotateY(angley)(onEdge));
+			Point finalPosition = *sphereCentre + onEdge;
+			finalPosition += Turbulence(finalPosition +
+				Vector(noiseOffSet * 4.f, 0.f, 0.f),
+				radius * 0.7f, 2) * radius * 1.5f;
 			spheres[i].setPosition(finalPosition);
 		}
 	}
 }
 
-float Cloud::Density(const Point &p) const
+float CloudVolume::Density(const Point &p) const
 {
-	if (!extent.Inside(p))
-		return 0.f;
-	float amount = CloudShape(p +
-		turbulenceAmount * Turbulence(p, firstNoiseScale, numOctaves));
+	const Point pp(WorldToVolume(p));
+	float amount = CloudShape(pp +
+		turbulenceAmount * Turbulence(pp, firstNoiseScale, numOctaves));
 
 	float finalValue = powf(amount, sharpness) *
 		powf(10.f, sharpness * 0.7f);
@@ -156,7 +159,7 @@ float Cloud::Density(const Point &p) const
 	return min(finalValue, 1.f);
 }
 
-Vector Cloud::Turbulence(const Point &p, float noiseScale, u_int octaves) const
+Vector CloudVolume::Turbulence(const Point &p, float noiseScale, u_int octaves) const
 {
 	Point noiseCoords[3];
 	noiseCoords[0] = Point(p.x / noiseScale, p.y / noiseScale, p.z / noiseScale);
@@ -186,12 +189,12 @@ Vector Cloud::Turbulence(const Point &p, float noiseScale, u_int octaves) const
 	return turbulence;
 }
 
-Vector Cloud::Turbulence(const Vector &v, float &noiseScale, u_int &octaves) const
+Vector CloudVolume::Turbulence(const Vector &v, float &noiseScale, u_int &octaves) const
 {
 	return Turbulence(Point(v.x, v.y, v.z), noiseScale, octaves);
 }
 
-float Cloud::CloudShape(const Point &p) const
+float CloudVolume::CloudShape(const Point &p) const
 {
 	if (cumulus) {
 		if (SphereFunction(p))		//shows cumulus spheres
@@ -215,13 +218,13 @@ float Cloud::CloudShape(const Point &p) const
 	return amount > 0.f ? amount : 0.f;
 }
 
-float Cloud::NoiseMask(const Point &p) const
+float CloudVolume::NoiseMask(const Point &p) const
 {
 	return CloudNoise(p / radius * 1.4f, omega, 1);
 }
 
 //returns whether a point is inside one of the cumulus spheres
-bool Cloud::SphereFunction(const Point &p) const
+bool CloudVolume::SphereFunction(const Point &p) const
 {
 	for (u_int i = 0; i < numSpheres; ++i) {
 		if ((p-spheres[i].getPosition()).Length() < spheres[i].getRadius())
@@ -230,7 +233,7 @@ bool Cloud::SphereFunction(const Point &p) const
 	return false;
 }
 
-float Cloud::CloudNoise(const Point &p, const float &omegaValue, u_int octaves) const
+float CloudVolume::CloudNoise(const Point &p, const float &omegaValue, u_int octaves) const
 {
 // Compute sum of octaves of noise
 	float sum = 0.f, lambda = 1.f, o = 1.f;

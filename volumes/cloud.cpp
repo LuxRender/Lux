@@ -28,7 +28,7 @@
 using namespace lux;
 
 // Cloud Method Definitions
-VolumeRegion * Cloud::CreateVolumeRegion(const Transform &volume2world,
+Region * Cloud::CreateVolumeRegion(const Transform &volume2world,
 	const ParamSet &params)
 {
 	// Initialize common volume region parameters
@@ -50,9 +50,10 @@ VolumeRegion * Cloud::CreateVolumeRegion(const Transform &volume2world,
 	float variability = params.FindOneFloat("variability", 0.9f);
 	float baseflatness = params.FindOneFloat("baseflatness", 0.8f);
 	float spheresize = params.FindOneFloat("spheresize", 0.15f);
-	return new Cloud(sigma_a, sigma_s, g, Le, BBox(p0, p1), radius,
+	return new VolumeRegion<CloudVolume>(volume2world, BBox(p0, p1),
+		CloudVolume(sigma_a, sigma_s, g, Le, BBox(p0, p1), radius,
 		volume2world, noiseScale, turbulence, sharpness, variability,
-		baseflatness, octaves, omega, offSet, numSpheres, spheresize);
+		baseflatness, octaves, omega, offSet, numSpheres, spheresize));
 }
 
 static DynamicLoader::RegisterVolumeRegion<Cloud> r("cloud");
