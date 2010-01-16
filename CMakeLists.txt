@@ -727,7 +727,7 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 #############################################################################
 #Here we build the console executable
 #############################################################################
-ADD_EXECUTABLE(LuxConsole renderer/LuxConsole.cpp)
+ADD_EXECUTABLE(LuxConsole renderer/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(LuxConsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES} )
 ELSE(APPLE)
@@ -752,7 +752,7 @@ ENDIF(APPLE)
 #############################################################################
 #Here we build the LuxMerger executable
 #############################################################################
-ADD_EXECUTABLE(LuxMerger tools/LuxMerger.cpp)
+ADD_EXECUTABLE(LuxMerger tools/luxmerger.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(LuxMerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES} )
 ELSE(APPLE)
@@ -799,7 +799,7 @@ ENDIF(PYTHONLIBS_FOUND)
 #############################################################################
 #Here we build the LuxComp executable
 #############################################################################
-ADD_EXECUTABLE(LuxComp tools/LuxComp.cpp)
+ADD_EXECUTABLE(LuxComp tools/luxcomp.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(LuxComp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES} )
 ELSE(APPLE)
