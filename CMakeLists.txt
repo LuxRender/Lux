@@ -295,7 +295,7 @@ ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -f
 #ADD_DEFINITIONS(-fPIC)
 
 # Jens - default Mac compiler options with OpenGL
-#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
 #ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
@@ -791,7 +791,7 @@ IF(PYTHONLIBS_FOUND)
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv libpylux.so pylux.so
-		)
+			)
 	ENDIF(APPLE)
 ENDIF(PYTHONLIBS_FOUND)
 
