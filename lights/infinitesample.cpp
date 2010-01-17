@@ -88,8 +88,11 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 		} else
 			radianceMap = NULL;
 	}
-	if (radianceMap == NULL)
-		return;
+	if (radianceMap == NULL) {
+		// Set default sampling array size
+		nu = 2;
+		nv = 128;
+	}
 	// Initialize sampling PDFs for infinite area light
 	float filter = 1.f / max(nu, nv);
 	float *img = new float[nu * nv];
@@ -102,9 +105,11 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 			mapping->Map(xp, yp, &dummy, &pdf);
 			if (!(pdf > 0.f))
 				img[y + x * nv] = 0.f;
-			else
+			else if (radianceMap)
 				img[y + x * nv] = radianceMap->Lookup(xp, yp,
 					filter).Y() / pdf;
+			else
+				img[y + x * nv] = 1.f / pdf;
 		}
 	}
 	uvDistrib = new Distribution2D(img, nu, nv);
