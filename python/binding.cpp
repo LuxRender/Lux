@@ -22,17 +22,173 @@
 
 /* This file is the Python binding to the Lux API */
 
+#include <iostream>
+#include <cstring>
 #include <boost/python.hpp>
+#include <boost/python/type_id.hpp>
+
 #include "api.h"
+
+//API test in python
+/*
+import pylux as lux
+lux.init()
+lux.lookAt(0,10,100,0,-1,0,0,1,0)
+lux.camera("perspective",[("fov",30.0)])
+lux.pixelFilter("mitchell",[ ("xwidth",2.0), ("ywidth",2.0)  ])
+lux.sampler("random",[])
+lux.film("multiimage", [ ("filename","simple.png"), ("xresolution",200), ("yresolution",200) ])
+lux.worldBegin()
+
+lux.attributeBegin()
+lux.coordSysTransform("camera")
+lux.lightSource("distant", [ ("from",(0.0,0.0,0.0)), ("to",(0.0,0.0,1.0)) ])
+lux.attributeEnd()
+
+lux.attributeBegin()
+lux.rotate(135.0,1.0,0.0,0.0)
+
+lux.texture("checks","color","checkerboard",[ ("uscale",4.0), ("vscale",4.0), ("tex1",(1.0,0.0,0.0)), ("tex2",(0.0,0.0,1.0)) ])
+lux.material("matte",[("Kd","checks")])
+lux.shape("disk",[ ("radius",20.0),("height",-1.0) ])
+lux.attributeEnd()
+lux.worldEnd()
+ */
+
+namespace lux{
 
 char const* greet()
 {
    return "Hello from pylux !";
 }
 
+//jromang - TODO bound checking
+LuxToken pythonTokens[64];
+LuxPointer pythonParams[64];
+
+
+int getParametersFromPython(boost::python::list *pList)
+{
+	boost::python::ssize_t n = boost::python::len(*pList);
+	for(boost::python::ssize_t i=0;i<n;i++)
+	{
+		//jromang - TODO bound checking
+		//jromang - TODO : MEMORY LEAKS : have to use boost memory pool
+
+		boost::python::tuple l=boost::python::extract<boost::python::tuple>((*pList)[i]);
+		std::string tokenString=boost::python::extract<std::string>(l[0]);
+		pythonTokens[i]=(LuxToken)malloc(sizeof(char)*tokenString.length()+1);
+		std::cout<<"We have a nice parameter : ["<<tokenString<<']'<<std::endl;
+
+		boost::python::extract<int> intExtractor(l[1]);
+		boost::python::extract<float> floatExtractor(l[1]);
+		boost::python::extract<boost::python::tuple> tupleExtractor(l[1]);
+		boost::python::extract<std::string> stringExtractor(l[1]);
+
+		if(intExtractor.check())
+		{
+			pythonParams[i]=(LuxPointer)malloc(sizeof(int));
+			*((int*)pythonParams[i])=intExtractor();
+			std::cout<<"this is an INT:"<<*((int*)pythonParams[i])<<std::endl;
+		}
+		else if(floatExtractor.check())
+		{
+			pythonParams[i]=(LuxPointer)malloc(sizeof(float));
+			*((float*)pythonParams[i])=floatExtractor();
+			std::cout<<"this is an FLOAT:"<<*((float*)pythonParams[i])<<std::endl;
+		}
+		else if(stringExtractor.check())
+		{
+			std::string s=stringExtractor();
+			pythonParams[i]=(LuxPointer)malloc(sizeof(char)*s.length()+1);
+			strcpy((char*)pythonParams[i],s.c_str());
+			std::cout<<"this is a STRING:"<<s<<std::endl;
+		}
+		else if(tupleExtractor.check())
+		{
+			//jromang - TODO assuming floats here, but do we only have floats in tuples ?
+			boost::python::tuple t=tupleExtractor();
+			boost::python::ssize_t tupleSize=boost::python::len(t);
+			pythonParams[i]=(LuxPointer)malloc(sizeof(float)*tupleSize);
+
+			std::cout<<"this is a TUPLE - WARNING ASSUMING FLOATS :";
+
+			for(boost::python::ssize_t j=0;j<tupleSize;j++)
+			{
+				*(((float*)pythonParams[i])+j)=boost::python::extract<float>(t[j]);
+				std::cout<<*(((float*)pythonParams[i])+j)<<';';
+			}
+			std::cout<<std::endl;
+		}
+		else
+		{
+			//jromang - TODO throw a good formatted error
+			std::cout<<"Error parameter type python"<<std::endl;
+		}
+
+	}
+	return(n);
+}
+
+void pyLuxCamera(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxCameraV(name,n,pythonTokens,pythonParams);
+}
+
+void pyLuxPixelFilter(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxPixelFilterV(name,n,pythonTokens,pythonParams);
+}
+
+void pyLuxSampler(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxSamplerV(name,n,pythonTokens,pythonParams);
+}
+
+void pyLuxFilm(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxFilmV(name,n,pythonTokens,pythonParams);
+}
+
+
+void pyLuxLightSource(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxLightSourceV(name,n,pythonTokens,pythonParams);
+}
+
+void pyLuxTexture(const char *name, const char *type, const char *texname, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxTextureV(name, type, texname, n, pythonTokens,pythonParams);
+}
+
+void pyLuxMaterial(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxMaterialV(name,n,pythonTokens,pythonParams);
+}
+
+void pyLuxShape(const char *name, boost::python::list params)
+{
+	int n=getParametersFromPython(&params);
+	luxShapeV(name,n,pythonTokens,pythonParams);
+}
+
+}//namespace lux
+
+
 BOOST_PYTHON_MODULE(pylux)
 {
     using namespace boost::python;
+    using namespace lux;
+
+    //def("camera2", pyLuxCamera);
+
     def("greet", greet);
     def("init", luxInit);
     def("cleanup", luxCleanup);
@@ -45,26 +201,26 @@ BOOST_PYTHON_MODULE(pylux)
     def("transform", luxTransform);
     def("coordinateSystem", luxCoordinateSystem);
     def("coordSysTransform", luxCoordSysTransform);
-    def("pixelFilter", luxPixelFilterV);
-    def("film",luxFilmV);
-    def("sampler",luxSamplerV);
+    def("pixelFilter", pyLuxPixelFilter); //wrapper
+    def("film",pyLuxFilm); //wrapper
+    def("sampler",pyLuxSampler); //wrapper
     def("accelerator",luxAcceleratorV);
     def("surfaceIntegrator",luxSurfaceIntegratorV);
     def("volumeIntegrator",luxVolumeIntegratorV);
-    def("camera",luxCameraV);
+    def("camera", pyLuxCamera); //wrapper
     def("worldBegin",luxWorldBegin);
     def("attributeBegin",luxAttributeBegin);
     def("attributeEnd",luxAttributeEnd);
     def("transformBegin",luxTransformBegin);
     def("transformEnd",luxTransformEnd);
-    def("texture",luxTextureV);
-    def("material",luxMaterialV);
+    def("texture",pyLuxTexture); //wrapper
+    def("material",pyLuxMaterial); //wrapper
     def("makeNamedMaterial",luxMakeNamedMaterialV);
     def("namedMaterial",luxNamedMaterialV);
-    def("lightSource",luxLightSourceV);
+    def("lightSource",pyLuxLightSource); //wrapper
     def("areaLightSource",luxAreaLightSourceV);
     def("portalShape",luxPortalShapeV);
-    def("shape",luxShapeV);
+    def("shape",pyLuxShape); //wrapper
     def("reverseOrientation",luxReverseOrientation);
     def("volume",luxVolumeV);
     def("exterior",luxExteriorV);
@@ -208,4 +364,3 @@ BOOST_PYTHON_MODULE(pylux)
 
     //TODO jromang : error handling in python
 }
-
