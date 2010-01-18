@@ -27,6 +27,8 @@
 #include <cstring>
 #include <boost/python.hpp>
 #include <boost/python/type_id.hpp>
+#include <boost/pool/pool.hpp>
+#include "error.h"
 
 #include "api.h"
 
@@ -66,12 +68,16 @@ lux.worldEnd()
 
 namespace lux{
 
+//The memory pool handles temporary allocations and is freed after each C API Call
+boost::pool<> memoryPool(sizeof(char));
+
+//Simple function to test if pylux module was successfully loaded in python
 char const* greet()
 {
    return "Hello from pylux !";
 }
 
-
+//jromang - TODO remove that :-) this just just for testing
 void testCAPI()
 {
 	float fov=30;
@@ -111,125 +117,206 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 {
 	boost::python::ssize_t n = boost::python::len(pList);
 
-	//jromang TODO : assert vectors are empty
-	aTokens.clear();
-	aValues.clear();
+	//Assert parameter vectors are empty
+	BOOST_ASSERT(aTokens.empty());
+	BOOST_ASSERT(aValues.empty());
 
 	for(boost::python::ssize_t i=0;i<n;i++)
 	{
-		//jromang - TODO bound checking
-		//jromang - TODO : MEMORY LEAKS : have to use boost memory pool
-
 		boost::python::tuple l=boost::python::extract<boost::python::tuple>(pList[i]);
 		std::string tokenString=boost::python::extract<std::string>(l[0]);
-		char *tok=(char *)malloc(sizeof(char)*tokenString.length()+1);
+		char *tok=(char *)memoryPool.ordered_malloc(sizeof(char)*tokenString.length()+1);
 		strcpy(tok,tokenString.c_str());
 		aTokens.push_back(tok);
 
-		std::cout<<"We have a nice parameter : ["<<tokenString<<']'<<std::endl;
+		//std::cout<<"We have a nice parameter : ["<<tokenString<<']'<<std::endl;
 
 		boost::python::extract<int> intExtractor(l[1]);
 		boost::python::extract<float> floatExtractor(l[1]);
 		boost::python::extract<boost::python::tuple> tupleExtractor(l[1]);
 		boost::python::extract<std::string> stringExtractor(l[1]);
 
+		//Automatic type detection
 		if(intExtractor.check())
 		{
-			int *pInt=(int*)malloc(sizeof(int));
+			int *pInt=(int*)memoryPool.ordered_malloc(sizeof(int));
 			*pInt=intExtractor();
 			aValues.push_back((LuxPointer)pInt);
-			std::cout<<"this is an INT:"<<*pInt<<std::endl;
+			//std::cout<<"this is an INT:"<<*pInt<<std::endl;
 		}
 		else if(floatExtractor.check())
 		{
-			float *pFloat=(float*)malloc(sizeof(float));
+			float *pFloat=(float*)memoryPool.ordered_malloc(sizeof(float));
 			*pFloat=floatExtractor();
 			aValues.push_back((LuxPointer)pFloat);
-			std::cout<<"this is an FLOAT:"<<*pFloat<<std::endl;
+			//std::cout<<"this is an FLOAT:"<<*pFloat<<std::endl;
 		}
 		else if(stringExtractor.check())
 		{
 			std::string s=stringExtractor();
-			char *pString=(char*)malloc(sizeof(char)*s.length()+1);
+			char *pString=(char*)memoryPool.ordered_malloc(sizeof(char)*s.length()+1);
 			strcpy(pString,s.c_str());
 			aValues.push_back((LuxPointer)pString);
-			std::cout<<"this is a STRING:"<<*pString<<std::endl;
+			//std::cout<<"this is a STRING:"<<*pString<<std::endl;
 		}
 		else if(tupleExtractor.check())
 		{
-			std::cout<<"this is a TUPLE - WARNING ASSUMING FLOATS :";
-			//jromang - TODO assuming floats here, but do we only have floats in tuples ? -> boost_assert here
+			//std::cout<<"this is a TUPLE - WARNING ASSUMING FLOATS :";
 			boost::python::tuple t=tupleExtractor();
 			boost::python::ssize_t tupleSize=boost::python::len(t);
-			float *pFloat=(float *)malloc(sizeof(float)*tupleSize);
+			float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*tupleSize);
 
 			for(boost::python::ssize_t j=0;j<tupleSize;j++)
 			{
-				pFloat[j]=boost::python::extract<float>(t[j]);
-				std::cout<<pFloat[j]<<';';
+				boost::python::extract<float> tupleFloatExtractor(t[j]);
+				//jromang - Assuming floats here, but do we only have floats in tuples ?
+				BOOST_ASSERT(tupleFloatExtractor.check());
+				pFloat[j]=tupleFloatExtractor();
+				//std::cout<<pFloat[j]<<';';
 			}
-			std::cout<<std::endl;
+			//std::cout<<std::endl;
 
 			aValues.push_back((LuxPointer)pFloat);
 		}
 		else
 		{
-			//jromang - TODO throw a good formatted error
-			std::cout<<"Error parameter type python"<<std::endl;
+			//Unrecognised parameter type : we throw an error
+			std::ostringstream o;
+			o<< "Passing unrecognised parameter type to Python API for '"<<tokenString<<"' token.";
+			luxError(LUX_CONSISTENCY, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
 		}
 
 	}
 	return(n);
 }
 
-void pyLuxCamera(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxCameraV(name, PASS_PARAMETERS);
-}
-
 void pyLuxPixelFilter(const char *name, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
 	luxPixelFilterV(name,PASS_PARAMETERS);
-}
-
-void pyLuxSampler(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxSamplerV(name,PASS_PARAMETERS);
+	memoryPool.purge_memory();
 }
 
 void pyLuxFilm(const char *name, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
 	luxFilmV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
 }
 
-
-void pyLuxLightSource(const char *name, boost::python::list params)
+void pyLuxSampler(const char *name, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
-	luxLightSourceV(name, PASS_PARAMETERS);
+	luxSamplerV(name,PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxAccelerator(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxAcceleratorV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxSurfaceIntegrator(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxSurfaceIntegratorV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxVolumeIntegrator(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxVolumeIntegratorV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxCamera(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxCameraV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
 }
 
 void pyLuxTexture(const char *name, const char *type, const char *texname, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
 	luxTextureV(name, type, texname, PASS_PARAMETERS);
+	memoryPool.purge_memory();
 }
 
 void pyLuxMaterial(const char *name, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
 	luxMaterialV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxMakeNamedMaterial(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxMakeNamedMaterialV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxNamedMaterial(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxNamedMaterialV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxLightSource(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxLightSourceV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxAreaLightSource(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxAreaLightSourceV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxPortalShape(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxPortalShapeV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
 }
 
 void pyLuxShape(const char *name, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
 	luxShapeV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
 }
+
+void pyLuxVolume(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxVolumeV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxExterior(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxExteriorV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+void pyLuxInterior(const char *name, boost::python::list params)
+{
+	EXTRACT_PARAMETERS(params);
+	luxInteriorV(name, PASS_PARAMETERS);
+	memoryPool.purge_memory();
+}
+
+
 
 }//namespace lux
 
@@ -240,7 +327,7 @@ BOOST_PYTHON_MODULE(pylux)
     using namespace lux;
 
     def("greet", greet);
-    def("testCAPI",testCAPI);
+    def("testCAPI",testCAPI); //jromang TODO : remove
 
     def("init", luxInit);
     def("cleanup", luxCleanup);
@@ -256,9 +343,9 @@ BOOST_PYTHON_MODULE(pylux)
     def("pixelFilter", pyLuxPixelFilter); //wrapper
     def("film",pyLuxFilm); //wrapper
     def("sampler",pyLuxSampler); //wrapper
-    def("accelerator",luxAcceleratorV);
-    def("surfaceIntegrator",luxSurfaceIntegratorV);
-    def("volumeIntegrator",luxVolumeIntegratorV);
+    def("accelerator",pyLuxAccelerator); //wrapper
+    def("surfaceIntegrator",pyLuxSurfaceIntegrator); //wrapper
+    def("volumeIntegrator",pyLuxVolumeIntegrator); //wrapper
     def("camera", pyLuxCamera); //wrapper
     def("worldBegin",luxWorldBegin);
     def("attributeBegin",luxAttributeBegin);
@@ -267,16 +354,16 @@ BOOST_PYTHON_MODULE(pylux)
     def("transformEnd",luxTransformEnd);
     def("texture",pyLuxTexture); //wrapper
     def("material",pyLuxMaterial); //wrapper
-    def("makeNamedMaterial",luxMakeNamedMaterialV);
-    def("namedMaterial",luxNamedMaterialV);
+    def("makeNamedMaterial",pyLuxMakeNamedMaterial); //wrapper
+    def("namedMaterial",pyLuxNamedMaterial); //wrapper
     def("lightSource",pyLuxLightSource); //wrapper
-    def("areaLightSource",luxAreaLightSourceV);
-    def("portalShape",luxPortalShapeV);
+    def("areaLightSource",pyLuxAreaLightSource); //wrapper
+    def("portalShape",pyLuxPortalShape); //wrapper
     def("shape",pyLuxShape); //wrapper
     def("reverseOrientation",luxReverseOrientation);
-    def("volume",luxVolumeV);
-    def("exterior",luxExteriorV);
-    def("interior",luxInteriorV);
+    def("volume",pyLuxVolume); //wrapper
+    def("exterior",pyLuxExterior); //wrapper
+    def("interior",pyLuxInterior); //wrapper
     def("objectBegin",luxObjectBegin);
     def("objectEnd",luxObjectEnd);
     def("objectInstance",luxObjectInstance);
