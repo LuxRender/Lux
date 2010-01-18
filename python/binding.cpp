@@ -23,11 +23,20 @@
 /* This file is the Python binding to the Lux API */
 
 #include <iostream>
+#include <vector>
 #include <cstring>
 #include <boost/python.hpp>
 #include <boost/python/type_id.hpp>
 
 #include "api.h"
+
+#define	EXTRACT_PARAMETERS(_params) \
+	std::vector<LuxToken> aTokens; \
+	std::vector<LuxPointer> aValues; \
+	int count = getParametersFromPython(_params, aTokens, aValues);
+
+#define PASS_PARAMETERS \
+	count, aTokens.size()>0?&aTokens[0]:0, aValues.size()>0?&aValues[0]:0
 
 //API test in python
 /*
@@ -62,22 +71,61 @@ char const* greet()
    return "Hello from pylux !";
 }
 
-//jromang - TODO bound checking
-LuxToken pythonTokens[64];
-LuxPointer pythonParams[64];
 
-
-int getParametersFromPython(boost::python::list *pList)
+void testCAPI()
 {
-	boost::python::ssize_t n = boost::python::len(*pList);
+	float fov=30;
+	float size=2, radius=20, height=-1;
+	int resolution=200;
+	float from[3]= {0,0,0};
+	float to[3]= {0,0,1};
+	float color1[3]={1,0,0},color2[3]={0,0,1};
+	float scale=4;
+	const char *filename="simple.png";
+
+	luxInit();
+	luxLookAt(0,10,100,0,-1,0,0,1,0);
+	luxCamera("perspective","fov",&fov,LUX_NULL);
+	luxPixelFilter("mitchell","xwidth", &size, "ywidth" , &size,LUX_NULL);
+	luxSampler("random",LUX_NULL);
+	luxFilm("multiimage","filename",filename,"xresolution",&resolution,"yresolution",&resolution,LUX_NULL);
+	luxWorldBegin();
+
+	luxAttributeBegin();
+	luxCoordSysTransform("camera");
+	luxLightSource("distant" ,"from",from,"to",to,LUX_NULL);
+	luxAttributeEnd();
+
+	luxAttributeBegin();
+	luxRotate(135,1,0,0);
+
+	luxTexture("checks","color","checkerboard" ,"uscale",&scale,"vscale",&scale,"tex1",color1, "tex2",color2,LUX_NULL);
+	luxMaterial("matte","Kd","checks",LUX_NULL);
+	luxShape("disk","radius",&radius,"height",&height,LUX_NULL);
+	luxAttributeEnd();
+	luxWorldEnd();
+
+}
+
+int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& aTokens, std::vector<LuxPointer>& aValues )
+{
+	boost::python::ssize_t n = boost::python::len(pList);
+
+	//jromang TODO : assert vectors are empty
+	aTokens.clear();
+	aValues.clear();
+
 	for(boost::python::ssize_t i=0;i<n;i++)
 	{
 		//jromang - TODO bound checking
 		//jromang - TODO : MEMORY LEAKS : have to use boost memory pool
 
-		boost::python::tuple l=boost::python::extract<boost::python::tuple>((*pList)[i]);
+		boost::python::tuple l=boost::python::extract<boost::python::tuple>(pList[i]);
 		std::string tokenString=boost::python::extract<std::string>(l[0]);
-		pythonTokens[i]=(LuxToken)malloc(sizeof(char)*tokenString.length()+1);
+		char *tok=(char *)malloc(sizeof(char)*tokenString.length()+1);
+		strcpy(tok,tokenString.c_str());
+		aTokens.push_back(tok);
+
 		std::cout<<"We have a nice parameter : ["<<tokenString<<']'<<std::endl;
 
 		boost::python::extract<int> intExtractor(l[1]);
@@ -87,38 +135,42 @@ int getParametersFromPython(boost::python::list *pList)
 
 		if(intExtractor.check())
 		{
-			pythonParams[i]=(LuxPointer)malloc(sizeof(int));
-			*((int*)pythonParams[i])=intExtractor();
-			std::cout<<"this is an INT:"<<*((int*)pythonParams[i])<<std::endl;
+			int *pInt=(int*)malloc(sizeof(int));
+			*pInt=intExtractor();
+			aValues.push_back((LuxPointer)pInt);
+			std::cout<<"this is an INT:"<<*pInt<<std::endl;
 		}
 		else if(floatExtractor.check())
 		{
-			pythonParams[i]=(LuxPointer)malloc(sizeof(float));
-			*((float*)pythonParams[i])=floatExtractor();
-			std::cout<<"this is an FLOAT:"<<*((float*)pythonParams[i])<<std::endl;
+			float *pFloat=(float*)malloc(sizeof(float));
+			*pFloat=floatExtractor();
+			aValues.push_back((LuxPointer)pFloat);
+			std::cout<<"this is an FLOAT:"<<*pFloat<<std::endl;
 		}
 		else if(stringExtractor.check())
 		{
 			std::string s=stringExtractor();
-			pythonParams[i]=(LuxPointer)malloc(sizeof(char)*s.length()+1);
-			strcpy((char*)pythonParams[i],s.c_str());
-			std::cout<<"this is a STRING:"<<s<<std::endl;
+			char *pString=(char*)malloc(sizeof(char)*s.length()+1);
+			strcpy(pString,s.c_str());
+			aValues.push_back((LuxPointer)pString);
+			std::cout<<"this is a STRING:"<<*pString<<std::endl;
 		}
 		else if(tupleExtractor.check())
 		{
-			//jromang - TODO assuming floats here, but do we only have floats in tuples ?
+			std::cout<<"this is a TUPLE - WARNING ASSUMING FLOATS :";
+			//jromang - TODO assuming floats here, but do we only have floats in tuples ? -> boost_assert here
 			boost::python::tuple t=tupleExtractor();
 			boost::python::ssize_t tupleSize=boost::python::len(t);
-			pythonParams[i]=(LuxPointer)malloc(sizeof(float)*tupleSize);
-
-			std::cout<<"this is a TUPLE - WARNING ASSUMING FLOATS :";
+			float *pFloat=(float *)malloc(sizeof(float)*tupleSize);
 
 			for(boost::python::ssize_t j=0;j<tupleSize;j++)
 			{
-				*(((float*)pythonParams[i])+j)=boost::python::extract<float>(t[j]);
-				std::cout<<*(((float*)pythonParams[i])+j)<<';';
+				pFloat[j]=boost::python::extract<float>(t[j]);
+				std::cout<<pFloat[j]<<';';
 			}
 			std::cout<<std::endl;
+
+			aValues.push_back((LuxPointer)pFloat);
 		}
 		else
 		{
@@ -132,51 +184,51 @@ int getParametersFromPython(boost::python::list *pList)
 
 void pyLuxCamera(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxCameraV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxCameraV(name, PASS_PARAMETERS);
 }
 
 void pyLuxPixelFilter(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxPixelFilterV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxPixelFilterV(name,PASS_PARAMETERS);
 }
 
 void pyLuxSampler(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxSamplerV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxSamplerV(name,PASS_PARAMETERS);
 }
 
 void pyLuxFilm(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxFilmV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxFilmV(name, PASS_PARAMETERS);
 }
 
 
 void pyLuxLightSource(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxLightSourceV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxLightSourceV(name, PASS_PARAMETERS);
 }
 
 void pyLuxTexture(const char *name, const char *type, const char *texname, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxTextureV(name, type, texname, n, pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxTextureV(name, type, texname, PASS_PARAMETERS);
 }
 
 void pyLuxMaterial(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxMaterialV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxMaterialV(name, PASS_PARAMETERS);
 }
 
 void pyLuxShape(const char *name, boost::python::list params)
 {
-	int n=getParametersFromPython(&params);
-	luxShapeV(name,n,pythonTokens,pythonParams);
+	EXTRACT_PARAMETERS(params);
+	luxShapeV(name, PASS_PARAMETERS);
 }
 
 }//namespace lux
@@ -187,9 +239,9 @@ BOOST_PYTHON_MODULE(pylux)
     using namespace boost::python;
     using namespace lux;
 
-    //def("camera2", pyLuxCamera);
-
     def("greet", greet);
+    def("testCAPI",testCAPI);
+
     def("init", luxInit);
     def("cleanup", luxCleanup);
     def("identity", luxIdentity);
