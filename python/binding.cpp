@@ -66,6 +66,25 @@ lux.attributeEnd()
 lux.worldEnd()
  */
 
+/*
+
+>>> import pylux as lux
+>>> lux.init()
+>>> def myPrettyCoolPythonErrorHandler(code,severity,message):
+...     print "This error is printed from python :" +message
+...     return
+...
+>>> lux.errorHandler(myPrettyCoolPythonErrorHandler)
+
+This error is printed from python :Compiled scene size: 1KBytes
+This error is printed from python :Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead
+This error is printed from python :Building KDTree, primitives: 1
+This error is printed from python :Preprocess thread uses seed: 1804289382
+This error is printed from python :Thread 0 uses seed: 1804289383
+
+
+ */
+
 namespace lux{
 
 //The memory pool handles temporary allocations and is freed after each C API Call
@@ -316,6 +335,20 @@ void pyLuxInterior(const char *name, boost::python::list params)
 	memoryPool.purge_memory();
 }
 
+//typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
+//extern void luxErrorHandler(LuxErrorHandler handler);
+boost::python::object pythonErrorHandler;
+
+void luxErrorPython(int code, int severity, const char *message)
+{
+	pythonErrorHandler(code, severity, message);
+}
+
+void pyLuxErrorHandler(boost::python::object handler)
+{
+	pythonErrorHandler=handler;
+	luxErrorHandler(luxErrorPython);
+}
 
 
 }//namespace lux
@@ -502,4 +535,5 @@ BOOST_PYTHON_MODULE(pylux)
     def("disableRandomMode",luxDisableRandomMode);
 
     //TODO jromang : error handling in python
+    def("errorHandler",pyLuxErrorHandler);
 }
