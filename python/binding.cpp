@@ -20,7 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-/* This file is the Python binding to the Lux API */
+
+
+/* This file defines the Python binding to the Lux API ("pylux") */
 
 #include <iostream>
 #include <vector>
@@ -29,7 +31,6 @@
 #include <boost/python/type_id.hpp>
 #include <boost/pool/pool.hpp>
 #include "error.h"
-
 #include "api.h"
 
 #define	EXTRACT_PARAMETERS(_params) \
@@ -40,50 +41,6 @@
 #define PASS_PARAMETERS \
 	count, aTokens.size()>0?&aTokens[0]:0, aValues.size()>0?&aValues[0]:0
 
-//API test in python
-/*
-import pylux as lux
-lux.init()
-lux.lookAt(0,10,100,0,-1,0,0,1,0)
-lux.camera("perspective",[("fov",30.0)])
-lux.pixelFilter("mitchell",[ ("xwidth",2.0), ("ywidth",2.0)  ])
-lux.sampler("random",[])
-lux.film("multiimage", [ ("filename","simple.png"), ("xresolution",200), ("yresolution",200) ])
-lux.worldBegin()
-
-lux.attributeBegin()
-lux.coordSysTransform("camera")
-lux.lightSource("distant", [ ("from",(0.0,0.0,0.0)), ("to",(0.0,0.0,1.0)) ])
-lux.attributeEnd()
-
-lux.attributeBegin()
-lux.rotate(135.0,1.0,0.0,0.0)
-
-lux.texture("checks","color","checkerboard",[ ("uscale",4.0), ("vscale",4.0), ("tex1",(1.0,0.0,0.0)), ("tex2",(0.0,0.0,1.0)) ])
-lux.material("matte",[("Kd","checks")])
-lux.shape("disk",[ ("radius",20.0),("height",-1.0) ])
-lux.attributeEnd()
-lux.worldEnd()
- */
-
-/*
-
->>> import pylux as lux
->>> lux.init()
->>> def myPrettyCoolPythonErrorHandler(code,severity,message):
-...     print "This error is printed from python :" +message
-...     return
-...
->>> lux.errorHandler(myPrettyCoolPythonErrorHandler)
-
-This error is printed from python :Compiled scene size: 1KBytes
-This error is printed from python :Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead
-This error is printed from python :Building KDTree, primitives: 1
-This error is printed from python :Preprocess thread uses seed: 1804289382
-This error is printed from python :Thread 0 uses seed: 1804289383
-
-
- */
 
 namespace lux{
 
@@ -96,42 +53,7 @@ char const* greet()
    return "Hello from pylux !";
 }
 
-//jromang - TODO remove that :-) this just just for testing
-void testCAPI()
-{
-	float fov=30;
-	float size=2, radius=20, height=-1;
-	int resolution=200;
-	float from[3]= {0,0,0};
-	float to[3]= {0,0,1};
-	float color1[3]={1,0,0},color2[3]={0,0,1};
-	float scale=4;
-	const char *filename="simple.png";
-
-	luxInit();
-	luxLookAt(0,10,100,0,-1,0,0,1,0);
-	luxCamera("perspective","fov",&fov,LUX_NULL);
-	luxPixelFilter("mitchell","xwidth", &size, "ywidth" , &size,LUX_NULL);
-	luxSampler("random",LUX_NULL);
-	luxFilm("multiimage","filename",filename,"xresolution",&resolution,"yresolution",&resolution,LUX_NULL);
-	luxWorldBegin();
-
-	luxAttributeBegin();
-	luxCoordSysTransform("camera");
-	luxLightSource("distant" ,"from",from,"to",to,LUX_NULL);
-	luxAttributeEnd();
-
-	luxAttributeBegin();
-	luxRotate(135,1,0,0);
-
-	luxTexture("checks","color","checkerboard" ,"uscale",&scale,"vscale",&scale,"tex1",color1, "tex2",color2,LUX_NULL);
-	luxMaterial("matte","Kd","checks",LUX_NULL);
-	luxShape("disk","radius",&radius,"height",&height,LUX_NULL);
-	luxAttributeEnd();
-	luxWorldEnd();
-
-}
-
+//Here we transform a python list to lux C API parameter lists
 int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& aTokens, std::vector<LuxPointer>& aValues )
 {
 	boost::python::ssize_t n = boost::python::len(pList);
@@ -147,7 +69,6 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 		char *tok=(char *)memoryPool.ordered_malloc(sizeof(char)*tokenString.length()+1);
 		strcpy(tok,tokenString.c_str());
 		aTokens.push_back(tok);
-
 		//std::cout<<"We have a nice parameter : ["<<tokenString<<']'<<std::endl;
 
 		boost::python::extract<int> intExtractor(l[1]);
@@ -209,6 +130,13 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 	return(n);
 }
 
+/*
+ * Following 'pyXXX' functions are wrappers to the C-API calls that need special operations :
+ * -parameter extractions from python lists
+ * -callback handling
+ * -creation of a python object as return value
+ * -...
+ */
 void pyLuxPixelFilter(const char *name, boost::python::list params)
 {
 	EXTRACT_PARAMETERS(params);
@@ -335,8 +263,7 @@ void pyLuxInterior(const char *name, boost::python::list params)
 	memoryPool.purge_memory();
 }
 
-//typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
-//extern void luxErrorHandler(LuxErrorHandler handler);
+//Error handling
 boost::python::object pythonErrorHandler;
 
 void luxErrorPython(int code, int severity, const char *message)
@@ -350,17 +277,31 @@ void pyLuxErrorHandler(boost::python::object handler)
 	luxErrorHandler(luxErrorPython);
 }
 
+//Framebuffer
+boost::python::list pyLuxFramebuffer()
+{
+	boost::python::list pyFrameBuffer;
+	int nvalues=((int)luxStatistics("filmXres")) * ((int)luxStatistics("filmYres")) * 3; //get the number of values to copy
+	unsigned char* framebuffer=luxFramebuffer(); //get the framebuffer
+	//copy the values
+	for(int i=0;i<nvalues;i++)
+		pyFrameBuffer.append(framebuffer[i]);
+	return pyFrameBuffer;
+}
+
 
 }//namespace lux
 
 
+/*
+ *  Finally, we create the python module using boost/python !
+ */
 BOOST_PYTHON_MODULE(pylux)
 {
     using namespace boost::python;
     using namespace lux;
 
-    def("greet", greet);
-    def("testCAPI",testCAPI); //jromang TODO : remove
+    def("greet", greet); //Simple test function to check the module is imported
 
     def("init", luxInit);
     def("cleanup", luxCleanup);
@@ -427,8 +368,8 @@ BOOST_PYTHON_MODULE(pylux)
     def("renderingThreadsStatus",luxGetRenderingThreadsStatus);
 
     // Framebuffer access
-    void luxUpdateFramebuffer();
-    unsigned char* luxFramebuffer();
+    def("updateFramebuffer", luxUpdateFramebuffer);
+    def("framebuffer", pyLuxFramebuffer); //wrapper
 
     // Histogram access
     def("getHistogramImage",luxGetHistogramImage);
@@ -534,6 +475,6 @@ BOOST_PYTHON_MODULE(pylux)
     def("enableDebugMode",luxEnableDebugMode);
     def("disableRandomMode",luxDisableRandomMode);
 
-    //TODO jromang : error handling in python
+    //Error handling in python
     def("errorHandler",pyLuxErrorHandler);
 }
