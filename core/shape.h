@@ -40,7 +40,9 @@ public:
 	virtual ~Shape() { }
 
 	void SetMaterial(boost::shared_ptr<Material> mat) { this->material = mat; }
-	boost::shared_ptr<Material> GetMaterial() const { return material; }
+	Material *GetMaterial() const { return material.get(); }
+	Volume *GetExterior() const { return exterior.get(); }
+	Volume *GetInterior() const { return interior.get(); }
 
 	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
@@ -68,7 +70,8 @@ public:
 		if (!Intersect(r, &thit, &isect->dg))
 			return false;
 		isect->dg.AdjustNormal(reverseOrientation, transformSwapsHandedness);
-		isect->Set(WorldToObject, this, material.get());
+		isect->Set(WorldToObject, this, material.get(), exterior.get(),
+			interior.get());
 		r.maxt = thit;
 		return true;
 	}
@@ -119,6 +122,7 @@ public:
 	const Transform ObjectToWorld, WorldToObject;
 protected:
 	boost::shared_ptr<Material> material;
+	boost::shared_ptr<Volume> exterior, interior;
 public: // Last to get better data alignment
 	const bool reverseOrientation, transformSwapsHandedness;
 };

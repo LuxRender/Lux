@@ -411,7 +411,8 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 			Normal(0, 0, 0), Normal(0, 0, 0),
 			u, v, this);
 		isect->dg.AdjustNormal(mesh->reverseOrientation, mesh->transformSwapsHandedness);
-		isect->Set(mesh->WorldToObject, this, mesh->GetMaterial().get());
+		isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+			mesh->GetExterior(), mesh->GetInterior());
 		ray.maxt = t;
 	}
 

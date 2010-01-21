@@ -31,10 +31,15 @@ namespace lux
 class Glossy2 : public Material {
 public:
 	// Glossy Public Methods
-	Glossy2(boost::shared_ptr<Texture<SWCSpectrum> > kd, boost::shared_ptr<Texture<SWCSpectrum> > ks,
-			boost::shared_ptr<Texture<SWCSpectrum> > ka, boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > d,
-			boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-			boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
+	Glossy2(boost::shared_ptr<Texture<SWCSpectrum> > kd,
+		boost::shared_ptr<Texture<SWCSpectrum> > ks,
+		boost::shared_ptr<Texture<SWCSpectrum> > ka,
+		boost::shared_ptr<Texture<float> > i,
+		boost::shared_ptr<Texture<float> > d,
+		boost::shared_ptr<Texture<float> > u,
+		boost::shared_ptr<Texture<float> > v,
+		boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp) {
 		Kd = kd;
 		Ks = ks;
 		Ka = ka;
@@ -46,9 +51,13 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Glossy2() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
 	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// Glossy Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;

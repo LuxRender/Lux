@@ -247,6 +247,8 @@ private:
 		map<string, boost::shared_ptr<lux::Texture<float> > > floatTextures;
 		map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > colorTextures;
 		map<string, boost::shared_ptr<lux::Texture<ConcreteFresnel> > > fresnelTextures;
+		boost::shared_ptr<lux::Volume> exterior;
+		boost::shared_ptr<lux::Volume> interior;
 		ParamSet materialParams;
 		string material;
 		ParamSet areaLightParams;

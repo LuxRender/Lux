@@ -35,7 +35,11 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
+	const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const
+{
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -45,7 +49,8 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(tspack, dgs);
 	float cb = cauchyb->Evaluate(tspack, dgs);
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, ior);
+	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
+		ior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -56,14 +61,20 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGe
 	if(urough == vrough)
 		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / urough);
 	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / urough, 1.f / vrough);
+		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / urough,
+			1.f / vrough);
 	if (!R.Black()) {
-		Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)(1.f, ior, cb);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(R, fresnel, md));
+		Fresnel *fresnel = ARENA_ALLOC(tspack->arena,
+			FresnelDielectric)(1.f, ior, cb);
+		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(R, fresnel,
+			md));
 	}
 	if (!T.Black()) {
-		Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectricComplement)(1.f, ior, cb);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, BRDFToBTDF)(ARENA_ALLOC(tspack->arena, Microfacet)(T, fresnel, md), 1.f, ior, cb));
+		Fresnel *fresnel = ARENA_ALLOC(tspack->arena,
+			FresnelDielectricComplement)(1.f, ior, cb);
+		bsdf->Add(ARENA_ALLOC(tspack->arena,
+			BRDFToBTDF)(ARENA_ALLOC(tspack->arena, Microfacet)(T,
+			fresnel, md), 1.f, ior, cb));
 	}
 
 	// Add ptr to CompositingParams structure

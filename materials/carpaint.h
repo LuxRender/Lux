@@ -31,24 +31,35 @@ namespace lux
 
 class CarPaint : public Material {
 public:
-  // CarPaint Public Methods
-  CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > kd,
-           boost::shared_ptr<Texture<SWCSpectrum> > ka,
-           boost::shared_ptr<Texture<float> > d,
-           boost::shared_ptr<Texture<SWCSpectrum> > ks1, boost::shared_ptr<Texture<SWCSpectrum> > ks2, boost::shared_ptr<Texture<SWCSpectrum> > ks3,
-           boost::shared_ptr<Texture<float> > r1, boost::shared_ptr<Texture<float> > r2, boost::shared_ptr<Texture<float> > r3,
-           boost::shared_ptr<Texture<float> > m1, boost::shared_ptr<Texture<float> > m2, boost::shared_ptr<Texture<float> > m3,
-           boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp);
-  virtual ~CarPaint() { }
+	// CarPaint Public Methods
+	CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > kd,
+		boost::shared_ptr<Texture<SWCSpectrum> > ka,
+		boost::shared_ptr<Texture<float> > d,
+		boost::shared_ptr<Texture<SWCSpectrum> > ks1,
+		boost::shared_ptr<Texture<SWCSpectrum> > ks2,
+		boost::shared_ptr<Texture<SWCSpectrum> > ks3,
+		boost::shared_ptr<Texture<float> > r1,
+		boost::shared_ptr<Texture<float> > r2,
+		boost::shared_ptr<Texture<float> > r3,
+		boost::shared_ptr<Texture<float> > m1,
+		boost::shared_ptr<Texture<float> > m2,
+		boost::shared_ptr<Texture<float> > m3,
+		boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp);
+	virtual ~CarPaint() { }
 
-  virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
 
-  static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
-  // CarPaint Private Data
-  boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ka, Ks1, Ks2, Ks3;
-  boost::shared_ptr<Texture<float> > depth, R1, R2, R3, M1, M2, M3;
-  boost::shared_ptr<Texture<float> > bumpMap;
+	// CarPaint Private Data
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ka, Ks1, Ks2, Ks3;
+	boost::shared_ptr<Texture<float> > depth, R1, R2, R3, M1, M2, M3;
+	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 struct CarPaintData {

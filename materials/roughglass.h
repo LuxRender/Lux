@@ -31,10 +31,14 @@ namespace lux
 class RoughGlass : public Material {
 public:
 	// RoughGlass Public Methods
-	RoughGlass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t, 
-			boost::shared_ptr<Texture<float> > urough, boost::shared_ptr<Texture<float> > vrough,
-			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf, boost::shared_ptr<Texture<float> > bump,
-			const CompositingParams &cp) {
+	RoughGlass(boost::shared_ptr<Texture<SWCSpectrum> > r,
+		boost::shared_ptr<Texture<SWCSpectrum> > t, 
+		boost::shared_ptr<Texture<float> > urough,
+		boost::shared_ptr<Texture<float> > vrough,
+		boost::shared_ptr<Texture<float> > i,
+		boost::shared_ptr<Texture<float> > cbf,
+		boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp) {
 		Kr = r;
 		Kt = t;
 		uroughness = urough;
@@ -45,9 +49,13 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~RoughGlass() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
+
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// RoughGlass Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;

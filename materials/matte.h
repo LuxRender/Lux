@@ -32,19 +32,22 @@ class Matte : public Material {
 public:
 	// Matte Public Methods
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > kd,
-			boost::shared_ptr<Texture<float> > sig,
-			boost::shared_ptr<Texture<float> > bump,
-			const CompositingParams &cp) {
+		boost::shared_ptr<Texture<float> > sig,
+		boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp) {
 		Kd = kd;
 		sigma = sig;
 		bumpMap = bump;
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Matte() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	              const DifferentialGeometry &dgShading) const;
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
 	              
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// Matte Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;

@@ -93,7 +93,7 @@ BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray)
 	dg.ComputeDifferentials(ray);
 	DifferentialGeometry dgShading;
 	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg, &dgShading);
-	return material->GetBSDF(tspack, dg, dgShading);
+	return material->GetBSDF(tspack, dg, dgShading, exterior, interior);
 }
 SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const {
 	return arealight ? arealight->L(tspack, dg, w) : SWCSpectrum(0.);

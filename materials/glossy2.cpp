@@ -34,7 +34,10 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const
+{
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -45,9 +48,9 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
 	float i = index->Evaluate(tspack, dgs);
-	if(i > 0.0) {
-		const float ti = (i-1)/(i+1);
-		s *= ti*ti;
+	if (i > 0.f) {
+		const float ti = (i - 1.f) / (i + 1.f);
+		s *= ti * ti;
 	}
 	s.Clamp(0.f, 1.f);
 
@@ -59,10 +62,13 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	BxDF *bxdf;
 	if (u < v)
-		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld, sqrtf(u * v), 1.f - u / v);
+		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
+			sqrtf(u * v), 1.f - u / v);
 	else
-		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld, sqrtf(u * v), v / u - 1.f);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
+			sqrtf(u * v), v / u - 1.f);
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
+		dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

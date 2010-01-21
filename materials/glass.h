@@ -31,10 +31,14 @@ namespace lux
 class Glass : public Material {
 public:
 	// Glass Public Methods
-	Glass(boost::shared_ptr<Texture<SWCSpectrum> > r, boost::shared_ptr<Texture<SWCSpectrum> > t,
-			boost::shared_ptr<Texture<float> > i, boost::shared_ptr<Texture<float> > cbf,
-			boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex,
-			bool archi, boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
+	Glass(boost::shared_ptr<Texture<SWCSpectrum> > r,
+		boost::shared_ptr<Texture<SWCSpectrum> > t,
+		boost::shared_ptr<Texture<float> > i,
+		boost::shared_ptr<Texture<float> > cbf,
+		boost::shared_ptr<Texture<float> > flm,
+		boost::shared_ptr<Texture<float> > flmindex,
+		bool archi, boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp) {
 		Kr = r;
 		Kt = t;
 		index = i;
@@ -46,9 +50,13 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Glass() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
 	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// Glass Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;

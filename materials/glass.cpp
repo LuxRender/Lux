@@ -34,7 +34,10 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const
+{
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)

@@ -35,9 +35,13 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Null() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
+
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// Null Private Data
 };

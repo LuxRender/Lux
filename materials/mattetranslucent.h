@@ -31,9 +31,11 @@ namespace lux
 class MatteTranslucent : public Material {
 public:
 	// MatteTranslucent Public Methods
-	MatteTranslucent(boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<SWCSpectrum> > kt,
-			boost::shared_ptr<Texture<float> > sig,
-			boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
+	MatteTranslucent(boost::shared_ptr<Texture<SWCSpectrum> > kr,
+		boost::shared_ptr<Texture<SWCSpectrum> > kt,
+		boost::shared_ptr<Texture<float> > sig,
+		boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp) {
 		Kr = kr;
 		Kt = kt;
 		sigma = sig;
@@ -41,10 +43,13 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~MatteTranslucent() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	              const DifferentialGeometry &dgShading) const;
-	              
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
+
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// MatteTranslucent Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;

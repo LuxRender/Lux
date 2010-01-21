@@ -53,8 +53,10 @@ public:
 
 	void InitGeneralParams(const TextureParams &mp);
 
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const = 0;
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const = 0;
 	void Bump(boost::shared_ptr<Texture<float> > d, const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading, DifferentialGeometry *dgBump) const;
 	void SetChild1(boost::shared_ptr<Material> x) { child1 = x; }

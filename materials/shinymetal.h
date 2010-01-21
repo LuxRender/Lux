@@ -32,10 +32,13 @@ class ShinyMetal : public Material {
 public:
 	// ShinyMetal Public Methods
 	ShinyMetal(boost::shared_ptr<Texture<SWCSpectrum> > ks,
-		boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-		boost::shared_ptr<Texture<float> > flm, boost::shared_ptr<Texture<float> > flmindex, 
-			boost::shared_ptr<Texture<SWCSpectrum> > kr, boost::shared_ptr<Texture<float> > bump,
-			const CompositingParams &cp) {
+		boost::shared_ptr<Texture<float> > u,
+		boost::shared_ptr<Texture<float> > v,
+		boost::shared_ptr<Texture<float> > flm,
+		boost::shared_ptr<Texture<float> > flmindex, 
+		boost::shared_ptr<Texture<SWCSpectrum> > kr,
+		boost::shared_ptr<Texture<float> > bump,
+		const CompositingParams &cp) {
 		Ks = ks;
 		Kr = kr;
 		nu = u;
@@ -46,9 +49,13 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~ShinyMetal() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
+
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// ShinyMetal Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks, Kr;

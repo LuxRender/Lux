@@ -33,8 +33,11 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading) const {
+BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack,
+	const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const
+{
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -43,20 +46,20 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack, const DifferentialGeometry
 		dgs = dgShading;
 
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn);
-    // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
 
 	if (!R.Black()) {
-		if (sig == 0.)
+		if (sig == 0.f)
 			bsdf->Add(ARENA_ALLOC(tspack->arena, Lambertian)(R));
 		else
 			bsdf->Add(ARENA_ALLOC(tspack->arena, OrenNayar)(R, sig));
 	}
 	if (!T.Black()) {
 		BxDF *base;
-		if (sig == 0.)
+		if (sig == 0.f)
 			base = ARENA_ALLOC(tspack->arena, Lambertian)(T);
 		else
 			base = ARENA_ALLOC(tspack->arena, OrenNayar)(T, sig);

@@ -52,7 +52,10 @@ Metal::Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k,
 	compParams = new CompositingParams(cp);
 }
 
-BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const
+{
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -67,14 +70,15 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, c
 	float v = nv->Evaluate(tspack, dgs);
 
 	MicrofacetDistribution *md;
-	if(u == v)
+	if (u == v)
 		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
 	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f/u, 1.f/v);
+		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
 
 	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
 	BxDF *bxdf = ARENA_ALLOC(tspack->arena, Microfacet)(1.f, fresnel, md);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, bxdf);
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
+		dgGeom.nn, bxdf);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

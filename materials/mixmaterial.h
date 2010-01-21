@@ -31,14 +31,19 @@ namespace lux
 class MixMaterial : public Material {
 public:
 	// MixMaterial Public Methods
-	MixMaterial(boost::shared_ptr<Texture<float> > a, const CompositingParams &cp) {
+	MixMaterial(boost::shared_ptr<Texture<float> > a,
+		const CompositingParams &cp) {
 		amount = a;
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~MixMaterial() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const;
-	
-	static Material * CreateMaterial(const Transform &xform, const TextureParams &mp);
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
+
+	static Material * CreateMaterial(const Transform &xform,
+		const TextureParams &mp);
 private:
 	// MixMaterial Private Data
 	boost::shared_ptr<Texture<float> > amount;

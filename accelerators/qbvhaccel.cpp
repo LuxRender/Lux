@@ -239,7 +239,9 @@ public:
 			Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, triangle);
 
 		isect->Set(triangle->mesh->WorldToObject, triangle,
-			triangle->mesh->GetMaterial().get());
+			triangle->mesh->GetMaterial(),
+			triangle->mesh->GetExterior(),
+			triangle->mesh->GetInterior());
 		isect->dg.triangleBaryCoords[0] = _b0;
 		isect->dg.triangleBaryCoords[1] = _b1;
 		isect->dg.triangleBaryCoords[2] = _b2;

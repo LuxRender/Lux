@@ -31,11 +31,17 @@
 using namespace lux;
 
 // MixMaterial Method Definitions
-BSDF *MixMaterial::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
-	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading, dgGeom.nn);
+BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
+	const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const {
+	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
+		dgGeom.nn);
 	float amt = amount->Evaluate(tspack, dgShading);
-	bsdf->Add(1.f - amt, child1->GetBSDF(tspack, dgGeom, dgShading));
-	bsdf->Add(amt, child2->GetBSDF(tspack, dgGeom, dgShading));
+	bsdf->Add(1.f - amt, child1->GetBSDF(tspack, dgGeom, dgShading,
+		exterior, interior));
+	bsdf->Add(amt, child2->GetBSDF(tspack, dgGeom, dgShading,
+		exterior, interior));
 	bsdf->SetCompositingParams(compParams);
 	return bsdf;
 }

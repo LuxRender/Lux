@@ -36,7 +36,10 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading) const {
+BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+	const DifferentialGeometry &dgShading,
+	const Volume *exterior, const Volume *interior) const
+{
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
 	if (bumpMap)
@@ -47,7 +50,7 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
 	float i = index->Evaluate(tspack, dgs);
-	if(i > 0.0) {
+	if (i > 0.f) {
 		const float ti = (i-1)/(i+1);
 		s *= ti*ti;
 	}
@@ -60,11 +63,13 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom, 
 	float ld = depth->Evaluate(tspack, dgs);
 
 	MicrofacetDistribution *md;
-	if(u == v)
+	if (u == v)
 		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
 	else
 		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs, dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld, md));
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
+		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
+		md));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
