@@ -206,6 +206,7 @@ private:
 	RenderView *renderView;
 	HistogramView *histogramView;
 	QString m_CurrentFile;
+	QMessageBox *msgBox;
 
 	QVector<LightGroupWidget*> m_LightGroupWidgets;
 
