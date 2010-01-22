@@ -59,7 +59,7 @@ public:
 	void		GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const;
 
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp);
+		const ParamSet &paramSet);
 
 private:
 		// internal methods

@@ -71,8 +71,7 @@ public:
 		return y / HARLEQUIN_TEXTURE_PALETTE_SIZE;
 	}
 
-	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
 	static RGBColor ColorLookupTable[];
@@ -81,13 +80,8 @@ private:
 RGBColor HarlequinTexture::ColorLookupTable[HARLEQUIN_TEXTURE_PALETTE_SIZE];
 
 // Harlequin Method Definitions
-Texture<float> *HarlequinTexture::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return NULL;
-}
-
 Texture<SWCSpectrum> *HarlequinTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp) {
 	return new HarlequinTexture();
 }
 

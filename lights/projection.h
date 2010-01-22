@@ -64,7 +64,7 @@ public:
 		float *pdfDirect) const;
 	
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp);
+		const ParamSet &paramSet);
 private:
 	// ProjectionLight Private Data
 	MIPMap<RGBColor> *projectionMap;

@@ -107,7 +107,7 @@ public:
 	virtual ~IdentityMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg, Vector *dpdx,
 		Vector *dpdy) const;
-		void Apply3DTextureMappingOptions(const TextureParams &tp);
+		void Apply3DTextureMappingOptions(const ParamSet &tp);
 //private:
 	Transform WorldToTexture;
 };

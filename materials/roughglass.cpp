@@ -29,6 +29,7 @@
 #include "blinn.h"
 #include "anisotropic.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -83,7 +84,7 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 	return bsdf;
 }
 Material* RoughGlass::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
+		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr = mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt = mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .001f);

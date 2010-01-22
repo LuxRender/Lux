@@ -157,18 +157,19 @@ Point IdentityMapping3D::Map(const DifferentialGeometry &dg,
 	*dpdy = WorldToTexture(dg.dpdy);
 	return WorldToTexture(dg.p);
 }
-void IdentityMapping3D::Apply3DTextureMappingOptions(const TextureParams &tp) {
+void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp) {
 	// Apply inverted scale
-	Vector scalev = tp.FindVector("scale", Vector(1., 1., 1.));
-	WorldToTexture = WorldToTexture * Scale(1.f/scalev.x, 1.f/scalev.y, 1.f/scalev.z);
+	Vector scale = tp.FindOneVector("scale", Vector(1.f, 1.f, 1.f));
+	WorldToTexture = WorldToTexture * Scale(1.f / scale.x, 1.f / scale.y,
+		1.f / scale.z);
 	// Apply rotations on X Y and Z axii
-	Vector rotatev = tp.FindVector("rotate", Vector(0., 0., 0.));
-	WorldToTexture = WorldToTexture * RotateX(rotatev.x);
-	WorldToTexture = WorldToTexture * RotateY(rotatev.y);
-	WorldToTexture = WorldToTexture * RotateZ(rotatev.z);
+	Vector rotate = tp.FindOneVector("rotate", Vector(0.f, 0.f, 0.f));
+	WorldToTexture = WorldToTexture * RotateX(rotate.x);
+	WorldToTexture = WorldToTexture * RotateY(rotate.y);
+	WorldToTexture = WorldToTexture * RotateZ(rotate.z);
 	// Apply negated Translation
-	Vector translatev = tp.FindVector("translate", Vector(0., 0., 0.));
-	WorldToTexture = WorldToTexture * Translate(-translatev);
+	Vector translate = tp.FindOneVector("translate", Vector(0.f, 0.f, 0.f));
+	WorldToTexture = WorldToTexture * Translate(-translate);
 }
 void LatLongMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 {

@@ -38,23 +38,34 @@ BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
 	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
 		dgGeom.nn);
 	float amt = amount->Evaluate(tspack, dgShading);
-	bsdf->Add(1.f - amt, child1->GetBSDF(tspack, dgGeom, dgShading,
+	bsdf->Add(1.f - amt, mat1->GetBSDF(tspack, dgGeom, dgShading,
 		exterior, interior));
-	bsdf->Add(amt, child2->GetBSDF(tspack, dgGeom, dgShading,
+	bsdf->Add(amt, mat2->GetBSDF(tspack, dgGeom, dgShading,
 		exterior, interior));
 	bsdf->SetCompositingParams(compParams);
 	return bsdf;
 }
 Material* MixMaterial::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
-	string namedmaterial1 = mp.FindString("namedmaterial1"); // discarded as these are passed trough Context::Shape()
-    string namedmaterial2 = mp.FindString("namedmaterial2"); // discarded as these are passed trough Context::Shape()
+		const ParamSet &mp) {
+	boost::shared_ptr<Material> mat1 = mp.GetMaterial("namedmaterial1");
+	if (!mat1) {
+		luxError(LUX_BADTOKEN, LUX_ERROR,
+			"First material of the mix is incorrect");
+		return NULL;
+	}
+	boost::shared_ptr<Material> mat2 = mp.GetMaterial("namedmaterial2");
+	if (!mat2) {
+		luxError(LUX_BADTOKEN, LUX_ERROR,
+			"Second material of the mix is incorrect");
+		return NULL;
+	}
+
 	boost::shared_ptr<Texture<float> > amount = mp.GetFloatTexture("amount", 0.5f);
 
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
-	return new MixMaterial(amount, cP);
+	return new MixMaterial(amount, mat1, mat2, cP);
 }
 
 static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

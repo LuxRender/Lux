@@ -51,8 +51,8 @@ public:
 	virtual float Y() const { return EqualSPD(.5f).Y(); }
 	virtual float Filter() const { return .5f; }
 	
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	// WrinkledTexture Private Data
 	int octaves;
@@ -63,25 +63,25 @@ private:
 
 // WrinkledTexture Method Definitions
 template <class T> inline Texture<float> * WrinkledTexture<T>::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
-	return new WrinkledTexture<float>(tp.FindInt("octaves", 8),
-		tp.FindFloat("roughness", .5f), map);
+	return new WrinkledTexture<float>(tp.FindOneInt("octaves", 8),
+		tp.FindOneFloat("roughness", .5f), map);
 }
 
 template <class T> inline Texture<SWCSpectrum> * WrinkledTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp) {
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
-	return new WrinkledTexture<SWCSpectrum>(tp.FindInt("octaves", 8),
-		tp.FindFloat("roughness", .5f), map);
+	return new WrinkledTexture<SWCSpectrum>(tp.FindOneInt("octaves", 8),
+		tp.FindOneFloat("roughness", .5f), map);
 }
 
 }//namespace lux

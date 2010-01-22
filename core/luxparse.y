@@ -411,12 +411,9 @@ ri_stmt: ACCELERATOR STRING paramlist
 	Context::GetActive()->MakeNamedMaterial($2, params);
 	FreeArgs();
 }
-| NAMEDMATERIAL STRING paramlist
+| NAMEDMATERIAL STRING
 {
-	ParamSet params;
-	InitParamSet(params, CPS, CP);
-	Context::GetActive()->NamedMaterial($2, params);
-	FreeArgs();
+	Context::GetActive()->NamedMaterial($2);
 }
 | OBJECTBEGIN STRING
 {

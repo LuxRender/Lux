@@ -64,8 +64,7 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > kd,
 BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgShading,
-	const Volume *exterior, const Volume *interior) const
-{
+	const Volume *exterior, const Volume *interior) const {
 
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	DifferentialGeometry dgs;
@@ -183,7 +182,8 @@ void DataFromName(const string name, boost::shared_ptr<Texture<SWCSpectrum> > *K
 					  *M3 = m3;
 }
 
-Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &mp) {
+Material* CarPaint::CreateMaterial(const Transform &xform, const ParamSet &mp)
+{
 
 	// Default values for missing parameters is from the Ford F8 dataset
 	float def_kd[3], def_ks1[3], def_ks2[3], def_ks3[3], def_r[3], def_m[3];
@@ -203,11 +203,11 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 	def_m[1] = carpaintdata[0].m2;
 	def_m[2] = carpaintdata[0].m3;
 
-	string paintname = mp.FindString("name");
+	string paintname = mp.FindOneString("name", "");
 
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
-    boost::shared_ptr<Texture<SWCSpectrum> > Ka;
-    boost::shared_ptr<Texture<float> > d;
+	boost::shared_ptr<Texture<SWCSpectrum> > Ka;
+	boost::shared_ptr<Texture<float> > d;
 
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks1;
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks2;
@@ -221,10 +221,10 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 	boost::shared_ptr<Texture<float> > M2;
 	boost::shared_ptr<Texture<float> > M3;
 
-    Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(0.0f));
-    d = mp.GetFloatTexture("d", 0.0f);
+	Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(0.0f));
+	d = mp.GetFloatTexture("d", 0.0f);
 
-	if (paintname.length() < 1) {
+	if (paintname == "") {
 		// we got no name, so try to read material properties directly
 		Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(def_kd));
 		Ks1 = mp.GetSWCSpectrumTexture("Ks1", RGBColor(def_ks1));
@@ -238,8 +238,7 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const TextureParams &
 		M1 = mp.GetFloatTexture("M1", def_m[0]);
 		M2 = mp.GetFloatTexture("M2", def_m[1]);
 		M3 = mp.GetFloatTexture("M3", def_m[2]);
-	}
-	else
+	} else
 		// Pick from presets, fall back to the first if name not found
 		DataFromName(paintname, &Kd, &Ks1, &Ks2, &Ks3, &R1, &R2, &R3, &M1, &M2, &M3);
 

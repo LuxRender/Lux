@@ -54,8 +54,8 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 	boost::shared_ptr<Texture<float> > amount;
@@ -63,7 +63,7 @@ private:
 
 // MixTexture Method Definitions
 template <class T> Texture<float> * MixTexture<T>::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp) {
 	return new MixTexture<float>(
 		tp.GetFloatTexture("tex1", 0.f),
 		tp.GetFloatTexture("tex2", 1.f),
@@ -71,7 +71,7 @@ template <class T> Texture<float> * MixTexture<T>::CreateFloatTexture(const Tran
 }
 
 template <class T> Texture<SWCSpectrum> * MixTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp) {
 	return new MixTexture<SWCSpectrum>(
 		tp.GetSWCSpectrumTexture("tex1", RGBColor(0.f)),
 		tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)),

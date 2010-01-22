@@ -32,22 +32,23 @@ public:
 	virtual ~BlenderVoronoiTexture3D() { }
 
 	BlenderVoronoiTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_VORONOI) {
-		tex.vn_distm = GetVoronoiType(tp.FindString("distmetric"));
-		tex.vn_coltype = tp.FindInt("coltype", 0);
-		tex.vn_mexp = tp.FindFloat("minkowsky_exp", 2.5f);
-		tex.ns_outscale = tp.FindFloat("outscale", 1.f);
-		tex.noisesize = tp.FindFloat("noisesize", 0.25f);
-		tex.nabla = tp.FindFloat("nabla", 0.025f);;
-		tex.vn_w1 = tp.FindFloat("w1", 1.f);
-		tex.vn_w2 = tp.FindFloat("w2", 0.f);
-		tex.vn_w3 = tp.FindFloat("w3", 0.f);
-		tex.vn_w4 = tp.FindFloat("w4", 0.f);
+		tex.vn_distm = GetVoronoiType(tp.FindOneString("distmetric",
+			"actual_distance"));
+		tex.vn_coltype = tp.FindOneInt("coltype", 0);
+		tex.vn_mexp = tp.FindOneFloat("minkowsky_exp", 2.5f);
+		tex.ns_outscale = tp.FindOneFloat("outscale", 1.f);
+		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
+		tex.nabla = tp.FindOneFloat("nabla", 0.025f);;
+		tex.vn_w1 = tp.FindOneFloat("w1", 1.f);
+		tex.vn_w2 = tp.FindOneFloat("w2", 0.f);
+		tex.vn_w3 = tp.FindOneFloat("w3", 0.f);
+		tex.vn_w4 = tp.FindOneFloat("w4", 0.f);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderVoronoiTexture3D(tex2world, tp);
 	}
 };

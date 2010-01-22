@@ -28,6 +28,7 @@
 #include "speculartransmission.h"
 #include "fresneldielectric.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -73,14 +74,14 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	return bsdf;
 }
 Material* Glass::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
+		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr = mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt = mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > index = mp.GetFloatTexture("index", 1.5f);
 	boost::shared_ptr<Texture<float> > cbf = mp.GetFloatTexture("cauchyb", 0.f);				// Cauchy B coefficient
 	boost::shared_ptr<Texture<float> > film = mp.GetFloatTexture("film", 0.f);				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex = mp.GetFloatTexture("filmindex", 1.5f);				// Thin film index of refraction
-	bool archi = mp.FindBool("architectural", false);
+	bool archi = mp.FindOneBool("architectural", false);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
 
 	// Get Compositing Params

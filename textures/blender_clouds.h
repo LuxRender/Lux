@@ -34,17 +34,19 @@ public:
 	virtual ~BlenderCloudsTexture3D() { }
 
 	BlenderCloudsTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_CLOUDS) {
-		tex.stype = GetCloudType(tp.FindString("type"));
-		tex.noisetype = GetNoiseType(tp.FindString("noisetype"));
-		tex.noisebasis = GetNoiseBasis(tp.FindString("noisebasis"));
-		tex.noisesize = tp.FindFloat("noisesize", 0.25f);
-		tex.noisedepth = tp.FindInt("noisedepth", 2);
+		tex.stype = GetCloudType(tp.FindOneString("type", "default"));
+		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
+			"soft_noise"));
+		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
+			"blender_original"));
+		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
+		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderCloudsTexture3D(tex2world, tp);
 	}
 };

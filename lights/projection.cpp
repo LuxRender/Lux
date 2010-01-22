@@ -210,8 +210,8 @@ SWCSpectrum ProjectionLight::Le(const TsPack *tspack, const Scene *scene, const 
 }
 
 Light* ProjectionLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+		const ParamSet &paramSet) {
+	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");

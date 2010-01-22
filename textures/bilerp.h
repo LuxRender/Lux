@@ -56,7 +56,7 @@ public:
 	}
 	virtual float Y() const { return (v00 + v01 + v10 + v11) / 4.f; }
 	
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:
 	// BilerpTexture Private Data
@@ -90,7 +90,7 @@ public:
 	virtual float Y() const { return RGBColor(v00 + v01 + v10 + v11).Y() / 4.f; }
 	virtual float Filter() const { return RGBColor(v00 + v01 + v10 + v11).Filter() / 4.f; }
 	
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:
 	// BilerpTexture Private Data

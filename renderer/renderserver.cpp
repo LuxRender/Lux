@@ -262,7 +262,24 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 }
 
 static void processCommand(bool isLittleEndian,
-		void (Context::*f)(const string &, const ParamSet &), vector<string> &tmpFileList, basic_istream<char> &stream)
+	void (Context::*f)(const string &, const ParamSet &),
+	vector<string> &tmpFileList, basic_istream<char> &stream)
+{
+	string type;
+	getline(stream, type);
+
+	ParamSet params;
+	processCommandParams(isLittleEndian, params, stream);
+
+	processFile("mapname", params, tmpFileList, stream);
+	processFile("iesname", params, tmpFileList, stream);
+
+	(Context::GetActive()->*f)(type, params);
+}
+
+static void processCommand(bool isLittleEndian,
+	void (Context::*f)(const string &, ParamSet &),
+	vector<string> &tmpFileList, basic_istream<char> &stream)
 {
 	string type;
 	getline(stream, type);
@@ -580,7 +597,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					processCommand(isLittleEndian, &Context::MakeNamedMaterial, tmpFileList, stream);
 					break;
 				case CMD_LUXNAMEDMATERIAL:
-					processCommand(isLittleEndian, &Context::NamedMaterial, tmpFileList, stream);
+					processCommand(&Context::NamedMaterial, stream);
 					break;
 				case CMD_LUXLIGHTGROUP:
 					processCommand(isLittleEndian, &Context::LightGroup, tmpFileList, stream);

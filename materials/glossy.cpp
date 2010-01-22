@@ -30,6 +30,7 @@
 #include "blinn.h"
 #include "anisotropic.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -77,7 +78,7 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	return bsdf;
 }
 Material* Glossy::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
+		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks = mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f));

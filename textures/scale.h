@@ -52,8 +52,8 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	boost::shared_ptr<Texture<T1> > tex1;
 	boost::shared_ptr<Texture<T2> > tex2;
@@ -61,13 +61,15 @@ private:
 
 // ScaleTexture Method Definitions
 template <class T, class U> inline Texture<float> * ScaleTexture<T,U>::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp)
+{
 	return new ScaleTexture<float, float>(tp.GetFloatTexture("tex1", 1.f),
 		tp.GetFloatTexture("tex2", 1.f));
 }
 
 template <class T,class U> inline Texture<SWCSpectrum> * ScaleTexture<T,U>::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp)
+{
 	return new ScaleTexture<SWCSpectrum, SWCSpectrum>(
 		tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f)),
 		tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));

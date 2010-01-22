@@ -121,8 +121,8 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
-    static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+    static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
     // BrickTexture3D Private Data
 	float brickwidth, brickheight, brickdepth, mortarsize;
@@ -132,7 +132,7 @@ private:
 
 template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
         const Transform &tex2world,
-        const TextureParams &tp) {
+        const ParamSet &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
     TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
@@ -142,18 +142,18 @@ template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 	boost::shared_ptr<Texture<float> > tex1 = tp.GetFloatTexture("bricktex", 1.f);
 	boost::shared_ptr<Texture<float> > tex2 = tp.GetFloatTexture("mortartex", 0.2f);
 
-	float bw = tp.FindFloat("brickwidth", 0.3f);
-	float bh = tp.FindFloat("brickheight", 0.1f);
-	float bd = tp.FindFloat("brickdepth", 0.15f);
+	float bw = tp.FindOneFloat("brickwidth", 0.3f);
+	float bh = tp.FindOneFloat("brickheight", 0.1f);
+	float bd = tp.FindOneFloat("brickdepth", 0.15f);
 
-	float m = tp.FindFloat("mortarsize", 0.01f);
+	float m = tp.FindOneFloat("mortarsize", 0.01f);
 
     return new BrickTexture3D<float>(tex1, tex2, bw, bh, bd, m, map);
 }
 
 template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTexture(
         const Transform &tex2world,
-        const TextureParams &tp) {
+        const ParamSet &tp) {
     // Initialize 3D texture mapping _map_ from _tp_
     TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
@@ -163,11 +163,11 @@ template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTex
 	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("bricktex", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("mortartex", RGBColor(0.2f));
 
-	float bw = tp.FindFloat("brickwidth", 0.3f);
-	float bh = tp.FindFloat("brickheight", 0.1f);
-	float bd = tp.FindFloat("brickdepth", 0.15f);
+	float bw = tp.FindOneFloat("brickwidth", 0.3f);
+	float bh = tp.FindOneFloat("brickheight", 0.1f);
+	float bd = tp.FindOneFloat("brickdepth", 0.15f);
 
-	float m = tp.FindFloat("mortarsize", 0.01f);
+	float m = tp.FindOneFloat("mortarsize", 0.01f);
 
     return new BrickTexture3D<SWCSpectrum>(tex1, tex2, bw, bh, bd, m, map);
 }

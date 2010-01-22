@@ -28,20 +28,20 @@ using namespace lux;
 
 // ConstantTexture Method Definitions
 Texture<float> *Constant::CreateFloatTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	return new ConstantFloatTexture(tp.FindFloat("value", 1.f));
+	return new ConstantFloatTexture(tp.FindOneFloat("value", 1.f));
 }
 
 Texture<SWCSpectrum> * Constant::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	return new ConstantRGBColorTexture(tp.FindRGBColor("value", RGBColor(1.f)));
+	return new ConstantRGBColorTexture(tp.FindOneRGBColor("value", RGBColor(1.f)));
 }
 
 Texture<ConcreteFresnel> *Constant::CreateFresnelTexture(const Transform &tex2world,
-	const TextureParams &tp) {
-	return new ConstantFresnelTexture(tp.FindFloat("value", 1.f));
+	const ParamSet &tp) {
+	return new ConstantFresnelTexture(tp.FindOneFloat("value", 1.f));
 }
 
 static DynamicLoader::RegisterFloatTexture<Constant> r1("constant");

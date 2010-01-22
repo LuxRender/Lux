@@ -34,19 +34,22 @@ public:
 	virtual ~BlenderMarbleTexture3D() { }
 
 	BlenderMarbleTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_MARBLE) {
-		tex.stype = GetMarbleType(tp.FindString("type"));
-		tex.noisetype = GetNoiseType(tp.FindString("noisetype"));
-		tex.noisebasis = GetNoiseBasis(tp.FindString("noisebasis"));
-		tex.noisebasis2 = GetNoiseShape(tp.FindString("noisebasis2"));
-		tex.noisesize = tp.FindFloat("noisesize", 0.25f);
-		tex.noisedepth = tp.FindInt("noisedepth", 2);
-		tex.turbul = tp.FindFloat("turbulence", 5.f);
+		tex.stype = GetMarbleType(tp.FindOneString("type", "soft"));
+		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
+			"soft_noise"));
+		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
+			"blender_original"));
+		tex.noisebasis2 = GetNoiseShape(tp.FindOneString("noisebasis2",
+			"sin"));
+		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
+		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
+		tex.turbul = tp.FindOneFloat("turbulence", 5.f);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderMarbleTexture3D(tex2world, tp);
 	}
 };

@@ -27,6 +27,7 @@
 #include "lambertian.h"
 #include "orennayar.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -61,7 +62,7 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	return bsdf;
 }
 Material* Matte::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
+		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
 	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");

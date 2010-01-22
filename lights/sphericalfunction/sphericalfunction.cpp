@@ -99,7 +99,7 @@ float SampleableSphericalFunction::Average_f() const {
 	return uvDistrib->Average();
 }
 
-	SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet, const TextureParams &tp) {
+	SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet) {
 		bool flipZ = paramSet.FindOneBool("flipz", false);
 		string texname = paramSet.FindOneString("mapname", "");
 		string iesname = paramSet.FindOneString("iesname", "");

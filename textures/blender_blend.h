@@ -32,13 +32,13 @@ public:
 	virtual ~BlenderBlendTexture3D() { }
 
 	BlenderBlendTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_BLEND) {
-		tex.stype = GetBlendType(tp.FindString("type"));
-		tex.flag = tp.FindBool("flipxy", false) ? TEX_FLIPBLEND : 0;
+		tex.stype = GetBlendType(tp.FindOneString("type", "lin"));
+		tex.flag = tp.FindOneBool("flipxy", false) ? TEX_FLIPBLEND : 0;
 	}
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderBlendTexture3D(tex2world, tp);
 	}
 };

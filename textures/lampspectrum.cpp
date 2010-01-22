@@ -34,9 +34,9 @@ using namespace lux;
 
 // LampSpectrumTexture Method Definitions
 Texture<SWCSpectrum> * LampSpectrumTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	std::string name = tp.FindString("name");
+	std::string name = tp.FindOneString("name", "Incandescent2");
 	const int wlcount = 250;
 
 	float *wl;

@@ -69,8 +69,8 @@ public:
 		outsideDot->SetIlluminant();
 		insideDot->SetIlluminant();
 	}
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:
 	// DotsTexture Private Data
@@ -81,28 +81,29 @@ private:
 
 // DotsTexture Method Definitions
 template <class T> inline Texture<float> * DotsTexture<T>::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
-	string type = tp.FindString("mapping");
-	if (type == "" || type == "uv") {
-		float su = tp.FindFloat("uscale", 1.);
-		float sv = tp.FindFloat("vscale", 1.);
-		float du = tp.FindFloat("udelta", 0.);
-		float dv = tp.FindFloat("vdelta", 0.);
+	string type = tp.FindOneString("mapping", "uv");
+	if (type == "uv") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
 		map = new UVMapping2D(su, sv, du, dv);
-	}
-	else if (type == "spherical") map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical") map = new CylindricalMapping2D(tex2world.GetInverse());
+	} else if (type == "spherical")
+		map = new SphericalMapping2D(tex2world.GetInverse());
+	else if (type == "cylindrical")
+		map = new CylindricalMapping2D(tex2world.GetInverse());
 	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindVector("v1", Vector(1,0,0)),
-			tp.FindVector("v2", Vector(0,1,0)),
-			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
+		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
+			tp.FindOneVector("v2", Vector(0,1,0)),
+			tp.FindOneFloat("udelta", 0.f),
+			tp.FindOneFloat("vdelta", 0.f));
 	else {
-		//Error("2D texture mapping \"%s\" unknown", type.c_str());
 		std::stringstream ss;
-		ss<<"2D texture mapping  '"<<type<<"' unknown";
-		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+		ss << "2D texture mapping  '" << type << "' unknown";
+		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		map = new UVMapping2D;
 	}
 	return new DotsTexture<float>(map,
@@ -111,28 +112,29 @@ template <class T> inline Texture<float> * DotsTexture<T>::CreateFloatTexture(co
 }
 
 template <class T> inline Texture<SWCSpectrum> * DotsTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
-	string type = tp.FindString("mapping");
-	if (type == "" || type == "uv") {
-		float su = tp.FindFloat("uscale", 1.);
-		float sv = tp.FindFloat("vscale", 1.);
-		float du = tp.FindFloat("udelta", 0.);
-		float dv = tp.FindFloat("vdelta", 0.);
+	string type = tp.FindOneString("mapping", "uv");
+	if (type == "uv") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
 		map = new UVMapping2D(su, sv, du, dv);
-	}
-	else if (type == "spherical") map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical") map = new CylindricalMapping2D(tex2world.GetInverse());
+	} else if (type == "spherical")
+		map = new SphericalMapping2D(tex2world.GetInverse());
+	else if (type == "cylindrical")
+		map = new CylindricalMapping2D(tex2world.GetInverse());
 	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindVector("v1", Vector(1,0,0)),
-			tp.FindVector("v2", Vector(0,1,0)),
-			tp.FindFloat("udelta", 0.f), tp.FindFloat("vdelta", 0.f));
+		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
+			tp.FindOneVector("v2", Vector(0,1,0)),
+			tp.FindOneFloat("udelta", 0.f),
+			tp.FindOneFloat("vdelta", 0.f));
 	else {
-		//Error("2D texture mapping \"%s\" unknown", type.c_str());
 		std::stringstream ss;
-		ss<<"2D texture mapping  '"<<type<<"' unknown";
-		luxError(LUX_BADTOKEN,LUX_ERROR,ss.str().c_str());
+		ss << "2D texture mapping  '" << type << "' unknown";
+		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		map = new UVMapping2D;
 	}
 	return new DotsTexture<SWCSpectrum>(map,

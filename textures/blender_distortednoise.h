@@ -33,17 +33,19 @@ public:
 	virtual ~BlenderDistortedNoiseTexture3D() { }
 
 	BlenderDistortedNoiseTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_DISTNOISE) {
-		tex.noisebasis2 = GetNoiseBasis(tp.FindString("type"));
-		tex.noisebasis = GetNoiseBasis(tp.FindString("noisebasis"));
-		tex.noisesize = tp.FindFloat("noisesize", 0.25f);
-		tex.dist_amount = tp.FindFloat("distamount", 1.f);
-		tex.nabla = tp.FindFloat("nabla", 0.025f);
+		tex.noisebasis2 = GetNoiseBasis(tp.FindOneString("type",
+			"blender_original"));
+		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
+			"blender_original"));
+		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
+		tex.dist_amount = tp.FindOneFloat("distamount", 1.f);
+		tex.nabla = tp.FindOneFloat("nabla", 0.025f);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderDistortedNoiseTexture3D(tex2world, tp);
 	}
 };

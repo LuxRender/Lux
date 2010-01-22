@@ -28,9 +28,9 @@ using namespace lux;
 
 // BlackBodyTexture Method Definitions
 Texture<SWCSpectrum> *BlackBodyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	return new BlackBodyTexture(tp.FindFloat("temperature", 6500.f));
+	return new BlackBodyTexture(tp.FindOneFloat("temperature", 6500.f));
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<BlackBodyTexture> r("blackbody");

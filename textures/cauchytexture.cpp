@@ -28,16 +28,16 @@ using namespace lux;
 
 // CauchyTexture Method Definitions
 Texture<ConcreteFresnel> *CauchyTexture::CreateFresnelTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	const float cauchyb = tp.FindFloat("cauchyb", 0.f);
-	const float index = tp.FindFloat("index", -1.f);
+	const float cauchyb = tp.FindOneFloat("cauchyb", 0.f);
+	const float index = tp.FindOneFloat("index", -1.f);
 	float cauchya;
 	if (index > 0.f)
-		cauchya = tp.FindFloat("cauchya", index - cauchyb * 1e6f /
+		cauchya = tp.FindOneFloat("cauchya", index - cauchyb * 1e6f /
 			(WAVELENGTH_END * WAVELENGTH_START));
 	else
-		cauchya = tp.FindFloat("cauchya", 1.5f);
+		cauchya = tp.FindOneFloat("cauchya", 1.5f);
 	return new CauchyTexture(cauchya, cauchyb);
 }
 

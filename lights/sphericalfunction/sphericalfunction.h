@@ -160,7 +160,7 @@ namespace lux {
 	 *
 	 * @return A spherical function or NULL.
 	 */
-	SphericalFunction *CreateSphericalFunction(const ParamSet &ps, const TextureParams &tp);
+	SphericalFunction *CreateSphericalFunction(const ParamSet &ps);
 
 } // namespace lux
 

@@ -33,15 +33,15 @@ public:
 
 	virtual ~BlenderTexture3D() { }
 
-	BlenderTexture3D(const Transform &tex2world, const TextureParams &tp,
+	BlenderTexture3D(const Transform &tex2world, const ParamSet &tp,
 		short type) : mapping(tex2world) {
 		// Apply texture specified transformation option for 3D mapping
 		mapping.Apply3DTextureMappingOptions(tp);
 		tex1 = tp.GetFloatTexture("tex1", 0.f);
 		tex2 = tp.GetFloatTexture("tex2", 1.f);
 		tex.type = type;
-		tex.bright = tp.FindFloat("bright", 1.0f),
-		tex.contrast = tp.FindFloat("contrast", 1.0f),
+		tex.bright = tp.FindOneFloat("bright", 1.0f),
+		tex.contrast = tp.FindOneFloat("contrast", 1.0f),
 		tex.rfac = 1.0f;
 		tex.gfac = 1.0f;
 		tex.bfac = 1.0f;

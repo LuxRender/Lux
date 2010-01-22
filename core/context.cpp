@@ -72,6 +72,54 @@ if (currentApiState == STATE_OPTIONS_BLOCK) { \
 	return; \
 }
 
+boost::shared_ptr<lux::Texture<float> > Context::GetFloatTexture(const string &n) const
+{
+	if (n != "") {
+		if (graphicsState->floatTextures.find(n) !=
+			graphicsState->floatTextures.end())
+			return graphicsState->floatTextures[n];
+		std::stringstream ss;
+		ss << "Couldn't find float texture named '" << n << "'";
+		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	}
+	return boost::shared_ptr<lux::Texture<float> >();
+}
+boost::shared_ptr<lux::Texture<SWCSpectrum> > Context::GetColorTexture(const string &n) const
+{
+	if (n != "") {
+		if (graphicsState->colorTextures.find(n) !=
+			graphicsState->colorTextures.end())
+			return graphicsState->colorTextures[n];
+		std::stringstream ss;
+		ss << "Couldn't find color texture named '" << n << "'";
+		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	}
+	return boost::shared_ptr<lux::Texture<SWCSpectrum> >();
+}
+boost::shared_ptr<lux::Texture<ConcreteFresnel> > Context::GetFresnelTexture(const string &n) const
+{
+	if (n != "") {
+		if (graphicsState->fresnelTextures.find(n) !=
+			graphicsState->fresnelTextures.end())
+			return graphicsState->fresnelTextures[n];
+		std::stringstream ss;
+		ss << "Couldn't find fresnel texture named '" << n << "'";
+		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	}
+	return boost::shared_ptr<lux::Texture<ConcreteFresnel> >();
+}
+boost::shared_ptr<lux::Material > Context::GetMaterial(const string &n) const
+{
+	if (n != "") {
+		if (graphicsState->namedMaterials.find(n) !=
+			graphicsState->namedMaterials.end())
+			return graphicsState->namedMaterials[n];
+		std::stringstream ss;
+		ss << "Couldn't find material named '" << n << "'";
+		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	}
+	return boost::shared_ptr<lux::Material>();
+}
 
 void Context::Init() {
 	// Dade - reinitialize
@@ -83,7 +131,6 @@ void Context::Init() {
 	namedCoordinateSystems.clear();
 	renderOptions = new RenderOptions;
 	graphicsState = new GraphicsState;
-	namedMaterials.clear();
 	pushedGraphicsStates.clear();
 	pushedTransforms.clear();
 	renderFarm = new RenderFarm();
@@ -338,8 +385,6 @@ void Context::Texture(const string &n, const string &type,
 	const string &texname, const ParamSet &params) {
 	VERIFY_WORLD("Texture");
 	renderFarm->send("luxTexture", n, type, texname, params);
-	TextureParams tp(params, params, graphicsState->floatTextures,
-		graphicsState->colorTextures, graphicsState->fresnelTextures);
 	if (type == "float") {
 		// Create _float_ texture and store in _floatTextures_
 		if (graphicsState->floatTextures.find(n) !=
@@ -348,8 +393,8 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<float> > ft = MakeFloatTexture(texname,
-			curTransform, tp);
+		boost::shared_ptr<lux::Texture<float> > ft =
+			MakeFloatTexture(texname, curTransform, params);
 		if (ft)
 			graphicsState->floatTextures[n] = ft;
 	} else if (type == "color") {
@@ -360,8 +405,8 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<SWCSpectrum> > st = MakeSWCSpectrumTexture(texname,
-			curTransform, tp);
+		boost::shared_ptr<lux::Texture<SWCSpectrum> > st =
+			MakeSWCSpectrumTexture(texname, curTransform, params);
 		if (st)
 			graphicsState->colorTextures[n] = st;
 	} else if (type == "fresnel") {
@@ -372,8 +417,8 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<ConcreteFresnel> > st = MakeFresnelTexture(texname,
-			curTransform, tp);
+		boost::shared_ptr<lux::Texture<ConcreteFresnel> > st =
+			MakeFresnelTexture(texname, curTransform, params);
 		if (st)
 			graphicsState->fresnelTextures[n] = st;
 	} else {
@@ -385,29 +430,30 @@ void Context::Texture(const string &n, const string &type,
 void Context::Material(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Material");
 	renderFarm->send("luxMaterial", n, params);
-	graphicsState->material = n;
-	graphicsState->materialParams = params;
+	graphicsState->material = MakeMaterial(n, curTransform, params);
 }
 
-void Context::MakeNamedMaterial(const string &n, const ParamSet &params) {
+void Context::MakeNamedMaterial(const string &n, ParamSet &params) {
 	VERIFY_WORLD("MakeNamedMaterial");
 	renderFarm->send("luxMakeNamedMaterial", n, params);
-	if (namedMaterials.find(n) != namedMaterials.end()) {
+	if (graphicsState->namedMaterials.find(n) !=
+		graphicsState->namedMaterials.end()) {
 		std::stringstream ss;
 		ss << "Named material '" << n << "' being redefined.";
 		luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 	}
-	namedMaterials[n] = params;
+	string type = params.FindOneString("type", "matte");
+	params.EraseString("type");
+	graphicsState->namedMaterials[n] = MakeMaterial(type, curTransform,
+		params);
 }
 
-void Context::NamedMaterial(const string &n, const ParamSet &params) {
+void Context::NamedMaterial(const string &n) {
 	VERIFY_WORLD("NamedMaterial");
-	renderFarm->send("luxNamedMaterial", n, params);
-	if (namedMaterials.find(n) != namedMaterials.end()) {
-		ParamSet nParams = namedMaterials[n];
-		string type = nParams.FindOneString("type", "matte");
-		nParams.EraseString("type");
-		Material(type, nParams);
+	renderFarm->send("luxNamedMaterial", n);
+	if (graphicsState->namedMaterials.find(n) !=
+		graphicsState->namedMaterials.end()) {
+		graphicsState->material = graphicsState->namedMaterials[n];
 	} else {
 		std::stringstream ss;
 		ss << "Named material '" << n << "' unknown";
@@ -433,14 +479,11 @@ void Context::LightGroup(const string &n, const ParamSet &params)
 void Context::LightSource(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("LightSource");
 	renderFarm->send("luxLightSource", n, params);
-	TextureParams tp(params, graphicsState->materialParams,
-		graphicsState->floatTextures, graphicsState->colorTextures,
-		graphicsState->fresnelTextures);
 	u_int lg = GetLightGroup();
 
 	if (n == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
-		Light *lt_sun = MakeLight("sun", curTransform, params, tp);
+		Light *lt_sun = MakeLight("sun", curTransform, params);
 		if (lt_sun == NULL) {
 			luxError(LUX_SYNTAX, LUX_ERROR,
 				"luxLightSource: light type sun unknown.");
@@ -451,7 +494,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLightPtr0 = lt_sun;
 			lt_sun->group = lg;
 		}
-		Light *lt_sky = MakeLight("sky", curTransform, params, tp);
+		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL) {
 			luxError(LUX_SYNTAX, LUX_ERROR,
 				"luxLightSource: light type sky unknown.");
@@ -464,7 +507,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 		}
 	} else {
 		// other lightsource type
-		Light *lt = MakeLight(n, curTransform, params, tp);
+		Light *lt = MakeLight(n, curTransform, params);
 		if (lt == NULL) {
 			std::stringstream ss;
 			ss << "luxLightSource: light type '" << n << "' unknown";
@@ -504,71 +547,6 @@ void Context::PortalShape(const string &n, const ParamSet &params) {
 	}
 }
 
-boost::shared_ptr<lux::Material> Context::MakeMaterial(const ParamSet& shapeparams, bool force) {
-	// Create base material
-	TextureParams mp(shapeparams, graphicsState->materialParams,
-		graphicsState->floatTextures, graphicsState->colorTextures,
-		graphicsState->fresnelTextures);
-	boost::shared_ptr<lux::Material> mtl = ::MakeMaterial(graphicsState->material, curTransform, mp);
-	if (!mtl && force) {
-		mtl = ::MakeMaterial("matte", curTransform, mp);
-		if (!mtl)
-			luxError(LUX_BUG, LUX_SEVERE,
-				"Unable to create \"matte\" material?!");
-	}
-
-	// Set child materials if mix material
-	if (mtl && graphicsState->material == "mix")
-		MakeMixMaterial(shapeparams, graphicsState->materialParams, mtl);
-	return mtl;
-}
-
-void Context::MakeMixMaterial(const ParamSet& shapeparams, const ParamSet& materialparams, boost::shared_ptr<lux::Material> mtl) {
-	// create 1st material
-	string namedMaterial1 = materialparams.FindOneString("namedmaterial1", "-");
-	if (namedMaterials.find(namedMaterial1) != namedMaterials.end()) {
-		ParamSet nParams = namedMaterials[namedMaterial1];
-		string type = nParams.FindOneString("type", "matte");
-		nParams.EraseString("type");
-		TextureParams mp1(shapeparams, nParams,
-			graphicsState->floatTextures,
-			graphicsState->colorTextures,
-			graphicsState->fresnelTextures);
-		boost::shared_ptr<lux::Material> mtl1 = ::MakeMaterial(type, curTransform, mp1);
-
-		if (type == "mix")
-			MakeMixMaterial(shapeparams, nParams, mtl1);
-		mtl->SetChild1(mtl1);
-	} else {
-		std::stringstream ss;
-		ss << "MixMaterial: NamedMaterial1 named '" << namedMaterial1 <<
-			"' unknown";
-		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
-	}
-
-	// create 2nd material
-	string namedMaterial2 = materialparams.FindOneString("namedmaterial2", "-");
-	if (namedMaterials.find(namedMaterial2) != namedMaterials.end()) {
-		ParamSet nParams = namedMaterials[namedMaterial2];
-		string type = nParams.FindOneString("type", "matte");
-		nParams.EraseString("type");
-		TextureParams mp2(shapeparams, nParams,
-			graphicsState->floatTextures,
-			graphicsState->colorTextures,
-			graphicsState->fresnelTextures);
-		boost::shared_ptr<lux::Material> mtl2 = ::MakeMaterial(type, curTransform, mp2);
-
-		if (type == "mix")
-			MakeMixMaterial(shapeparams, nParams, mtl2);
-		mtl->SetChild2(mtl2);
-	} else {
-		std::stringstream ss;
-		ss << "MixMaterial: NamedMaterial2 named '" << namedMaterial2 <<
-			"' unknown";
-		luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
-	}
-}
-
 void Context::Shape(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Shape");
 	renderFarm->send("luxShape", n, params);
@@ -581,22 +559,19 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	// Initialize area light for shape
 	AreaLight *area = NULL;
 	if (graphicsState->areaLight != "") {
-		TextureParams amp(params, graphicsState->areaLightParams,
-			graphicsState->floatTextures,
-			graphicsState->colorTextures,
-			graphicsState->fresnelTextures);
 		u_int lg = GetLightGroup();
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
-			graphicsState->areaLightParams, amp, sh);
+			graphicsState->areaLightParams, sh);
 		if (area)
 			area->group = lg;
 	}
 
-	// Initialize material for shape
-	boost::shared_ptr<lux::Material> mtl = MakeMaterial(params, true);
-
 	// Create primitive and add to scene or current instance
-	sh->SetMaterial(mtl); // Lotus - Set the material
+	if (!(graphicsState->material))
+		sh->SetMaterial(MakeMaterial("matte", curTransform,
+			ParamSet()));
+	else
+		sh->SetMaterial(graphicsState->material); // Lotus - Set the material
 	boost::shared_ptr<Primitive> prim;
 	if (area) {
 		// Lotus - add a decorator to set the arealight field
@@ -607,7 +582,11 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		if (area)
 			luxError(LUX_UNIMPLEMENT, LUX_WARNING,
 				"Area lights not supported with object instancing");
-		renderOptions->currentInstance->push_back(prim);
+		if (!prim->CanIntersect())
+			prim->Refine(*(renderOptions->currentInstance),
+				PrimitiveRefinementHints(false), prim);
+		else
+			renderOptions->currentInstance->push_back(prim);
 	} else {
 		renderOptions->primitives.push_back(prim);
 		if (area) {
@@ -679,11 +658,6 @@ void Context::ObjectInstance(const string &n) {
 	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
 	if (in.size() == 0)
 		return;
-	if (in.size() == 1 && !in[0]->CanIntersect()) {
-		boost::shared_ptr<Primitive> prim = in[0];
-		in.clear();
-		prim->Refine(in, PrimitiveRefinementHints(false), prim);
-	}
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
 		boost::shared_ptr<Primitive> accel(MakeAccelerator(renderOptions->acceleratorName, in,
@@ -698,10 +672,7 @@ void Context::ObjectInstance(const string &n) {
 	}
 
 	// Initialize material for instance
-	ParamSet params;
-	boost::shared_ptr<lux::Material> mat = MakeMaterial(params, false);
-
-	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform, mat));
+	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform, graphicsState->material));
 	renderOptions->primitives.push_back(o);
 }
 
@@ -723,11 +694,6 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
 	if (in.size() == 0)
 		return;
-	if( in.size() == 1 && !in[0]->CanIntersect() ) {
-		boost::shared_ptr<Primitive> prim = in[0];
-		in.clear();
-		prim->Refine(in, PrimitiveRefinementHints(false), prim);
-	}
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
 		boost::shared_ptr<Primitive> accel(MakeAccelerator(renderOptions->acceleratorName, in,
@@ -753,9 +719,6 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 	}
 
 	// Initialize material for instance
-	ParamSet params;
-	boost::shared_ptr<lux::Material> mat = MakeMaterial(params, false);
-
 	boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform,
 		EndTransform, startTime, endTime));
 	renderOptions->primitives.push_back(o);

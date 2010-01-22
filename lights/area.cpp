@@ -203,15 +203,16 @@ private:
 	const boost::shared_ptr<const SphericalFunction> sf;
 };
 
-AreaLight* AreaLight::CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
-		const boost::shared_ptr<Primitive> &prim) {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,
+	const ParamSet &paramSet, const boost::shared_ptr<Primitive> &prim)
+{
+	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
 
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float p = paramSet.FindOneFloat("power", 100.f);		// Power/Lm in Watts
 	float e = paramSet.FindOneFloat("efficacy", 17.f);		// Efficacy Lm per Watt
 
-	const SphericalFunction *sf = CreateSphericalFunction(paramSet, tp);
+	const SphericalFunction *sf = CreateSphericalFunction(paramSet);
 	SampleableSphericalFunction *ssf = NULL;
 	if (sf) {
 		sf = new HemiSphereSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));

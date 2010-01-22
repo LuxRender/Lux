@@ -42,7 +42,7 @@ public:
 	}
 	virtual float Y() const { return FSPD.Y(); }
 	virtual float Filter() const { return FSPD.Filter(); }
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
 	FrequencySPD FSPD;

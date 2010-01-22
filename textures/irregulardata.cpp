@@ -29,12 +29,12 @@ using namespace lux;
 
 // IrregularDataTexture Method Definitions
 Texture<SWCSpectrum> *IrregularDataTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
 	u_int wlCount = 0;
-	const float *wl = tp.FindFloats("wavelengths", &wlCount);
+	const float *wl = tp.FindFloat("wavelengths", &wlCount);
 	u_int dataCount = 0;
-	const float *data = tp.FindFloats("data", &dataCount);
+	const float *data = tp.FindFloat("data", &dataCount);
 	if (wlCount != dataCount) {
 		std::stringstream ss;
 		ss << "Number of wavelengths '" << wlCount <<

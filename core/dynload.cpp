@@ -56,7 +56,7 @@ boost::shared_ptr<Shape> MakeShape(const string &name,
 }
 
 boost::shared_ptr<Material> MakeMaterial(const string &name,
-	const Transform &mtl2world, const TextureParams &mp)
+	const Transform &mtl2world, const ParamSet &mp)
 {
 	if (DynamicLoader::registeredMaterials().find(name) !=
 		DynamicLoader::registeredMaterials().end()) {
@@ -72,7 +72,7 @@ boost::shared_ptr<Material> MakeMaterial(const string &name,
 }
 
 boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
-	const Transform &tex2world, const TextureParams &tp)
+	const Transform &tex2world, const ParamSet &tp)
 {
 	if (DynamicLoader::registeredFloatTextures().find(name) !=
 		DynamicLoader::registeredFloatTextures().end()) {
@@ -86,7 +86,7 @@ boost::shared_ptr<Texture<float> > MakeFloatTexture(const string &name,
 }
 
 boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &name,
-	const Transform &tex2world, const TextureParams &tp)
+	const Transform &tex2world, const ParamSet &tp)
 {
 	if (DynamicLoader::registeredSWCSpectrumTextures().find(name) !=
 		DynamicLoader::registeredSWCSpectrumTextures().end()) {
@@ -100,7 +100,7 @@ boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &na
 }
 
 boost::shared_ptr<Texture<ConcreteFresnel> > MakeFresnelTexture(const string &name,
-	const Transform &tex2world, const TextureParams &tp)
+	const Transform &tex2world, const ParamSet &tp)
 {
 	if (DynamicLoader::registeredFresnelTextures().find(name) !=
 		DynamicLoader::registeredFresnelTextures().end()) {
@@ -114,12 +114,12 @@ boost::shared_ptr<Texture<ConcreteFresnel> > MakeFresnelTexture(const string &na
 }
 
 Light *MakeLight(const string &name,
-	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp)
+	const Transform &light2world, const ParamSet &paramSet)
 {
 	if (DynamicLoader::registeredLights().find(name) !=
 		DynamicLoader::registeredLights().end()) {
 		Light *ret = DynamicLoader::registeredLights()[name](light2world,
-			paramSet, tp);
+			paramSet);
 		paramSet.ReportUnused();
 		return ret;
 	}
@@ -129,14 +129,14 @@ Light *MakeLight(const string &name,
 }
 
 AreaLight *MakeAreaLight(const string &name,
-	const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
+	const Transform &light2world, const ParamSet &paramSet,
 	const boost::shared_ptr<Primitive> &prim)
 {
 	if (DynamicLoader::registeredAreaLights().find(name) !=
 		DynamicLoader::registeredAreaLights().end()) {
 		AreaLight *ret =
 			DynamicLoader::registeredAreaLights()[name](light2world,
-				paramSet, tp, prim);
+				paramSet, prim);
 		paramSet.ReportUnused();
 		return ret;
 	}

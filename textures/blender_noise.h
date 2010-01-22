@@ -30,13 +30,13 @@ public:
 	virtual ~BlenderNoiseTexture3D() { }
 
 	BlenderNoiseTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_NOISE) {
-		tex.noisedepth = tp.FindInt("noisedepth", 2);
+		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderNoiseTexture3D(tex2world, tp);
 	}
 };

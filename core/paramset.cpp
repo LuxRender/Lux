@@ -23,6 +23,7 @@
 // paramset.cpp*
 #include "paramset.h"
 #include "error.h"
+#include "context.h"
 #include "textures/constant.h"
 #include <sstream>
 #include <string>
@@ -1159,62 +1160,45 @@ string ParamSet::ToString() const {
 	}
 	return ret.str();
 }
-// TextureParams Method Definitions
+
 boost::shared_ptr<Texture<SWCSpectrum> >
-	TextureParams::GetSWCSpectrumTexture(const string &n,
-             const RGBColor &def) const {
-	string name = geomParams.FindTexture(n);
-	if (name == "") name = materialParams.FindTexture(n);
-	if (name != "") {
-		if (SWCSpectrumTextures.find(name) != SWCSpectrumTextures.end())
-			return SWCSpectrumTextures[name];
-		else {
-			std::stringstream ss;
-			ss << "Couldn't find color texture named '" << name << "' for " << n;
-			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
-		}
-	}
-	RGBColor val = FindRGBColor(n, def);
+	ParamSet::GetSWCSpectrumTexture(const string &n,
+	const RGBColor &def) const
+{
+	boost::shared_ptr<Texture<SWCSpectrum> > texture =
+		Context::GetActive()->GetColorTexture(FindTexture(n));
+	if (texture)
+		return texture;
+	RGBColor val = FindOneRGBColor(n, def);
 	return boost::shared_ptr<Texture<SWCSpectrum> >(new ConstantRGBColorTexture(val));
 }
-boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n) const {
-	string name = geomParams.FindTexture(n);
-	if (name == "") name = materialParams.FindTexture(n);
-	if (name != "") {
-		if (floatTextures.find(name) != floatTextures.end())
-			return floatTextures[name];
-		else {
-			std::stringstream ss;
-			ss << "Couldn't find float texture named '" << name << "' for " << n;
-			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
-		}
-	}
-	return boost::shared_ptr<Texture<float> >();
+boost::shared_ptr<Texture<float> >
+	ParamSet::GetFloatTexture(const string &n) const
+{
+	return Context::GetActive()->GetFloatTexture(FindTexture(n));
 }
-boost::shared_ptr<Texture<float> > TextureParams::GetFloatTexture(const string &n,
-		float def) const {
+boost::shared_ptr<Texture<float> >
+	ParamSet::GetFloatTexture(const string &n, float def) const
+{
 	boost::shared_ptr<Texture<float> > texture = GetFloatTexture(n);
-	if (texture)  return texture;
-	float val = FindFloat(n, def);
+	if (texture)
+		return texture;
+	float val = FindOneFloat(n, def);
 	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
 }
-boost::shared_ptr<Texture<ConcreteFresnel> > TextureParams::GetFresnelTexture(const string &n,
-	float def) const
+boost::shared_ptr<Texture<ConcreteFresnel> >
+	ParamSet::GetFresnelTexture(const string &n, float def) const
 {
-	string name = geomParams.FindTexture(n);
-	if (name == "")
-		name = materialParams.FindTexture(n);
-	if (name != "") {
-		if (fresnelTextures.find(name) != fresnelTextures.end())
-			return fresnelTextures[name];
-		else {
-			std::stringstream ss;
-			ss << "Couldn't find fresnel texture named '" << name << "' for " << n;
-			luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
-		}
-	}
-	float val = FindFloat(n, def);
+	boost::shared_ptr<Texture<ConcreteFresnel> > texture =
+		Context::GetActive()->GetFresnelTexture(FindTexture(n));
+	if (texture)
+		return texture;
+	float val = FindOneFloat(n, def);
 	return boost::shared_ptr<Texture<ConcreteFresnel> >(new ConstantFresnelTexture(val));
+}
+boost::shared_ptr<Material> ParamSet::GetMaterial(const string &n) const
+{
+	return Context::GetActive()->GetMaterial(FindOneString(n, ""));
 }
 
 }

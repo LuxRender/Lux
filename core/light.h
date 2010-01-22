@@ -165,7 +165,8 @@ public:
 			float u3, float u4, Ray *ray, float *pdf) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
-	static AreaLight *CreateAreaLight(const Transform &light2world, const ParamSet &paramSet, const TextureParams &tp,
+	static AreaLight *CreateAreaLight(const Transform &light2world,
+		const ParamSet &paramSet,
 		const boost::shared_ptr<Primitive> &prim);
 protected:
 	// AreaLight Protected Data

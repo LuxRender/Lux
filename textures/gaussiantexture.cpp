@@ -28,10 +28,10 @@ using namespace lux;
 
 // GaussianTexture Method Definitions
 Texture<SWCSpectrum> * GaussianTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	return new GaussianTexture(tp.FindFloat("wavelength", 550.f),
-		tp.FindFloat("width", 50.f), tp.FindFloat("energy", 1.f));
+	return new GaussianTexture(tp.FindOneFloat("wavelength", 550.f),
+		tp.FindOneFloat("width", 50.f), tp.FindOneFloat("energy", 1.f));
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<GaussianTexture> r("gaussian");

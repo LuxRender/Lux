@@ -31,14 +31,14 @@ public:
 	virtual ~BlenderMagicTexture3D() { }
 
 	BlenderMagicTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_MAGIC) {
-		tex.noisedepth = tp.FindInt("noisedepth", 2);
-		tex.turbul = tp.FindFloat("turbulence", 5.0f);
+		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
+		tex.turbul = tp.FindOneFloat("turbulence", 5.0f);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderMagicTexture3D(tex2world, tp);
 	}
 };

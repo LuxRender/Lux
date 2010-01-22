@@ -130,7 +130,6 @@ namespace lux
   class BBox;
   class Transform;
   class DifferentialGeometry;
-  class TextureParams;
   class Scene;
   class Primitive;
   class AreaLightPrimitive;

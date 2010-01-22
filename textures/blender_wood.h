@@ -34,18 +34,21 @@ public:
 	virtual ~BlenderWoodTexture3D() { }
 
 	BlenderWoodTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_WOOD) {
-		tex.stype = GetWoodType(tp.FindString("type"));
-		tex.noisetype = GetNoiseType(tp.FindString("noisetype"));
-		tex.noisebasis = GetNoiseBasis(tp.FindString("noisebasis"));
-		tex.noisebasis2 = GetNoiseShape(tp.FindString("noisebasis2"));
-		tex.noisesize = tp.FindFloat("noisesize", 0.25f);
-		tex.turbul = tp.FindFloat("turbulence", 5.0f);
+		tex.stype = GetWoodType(tp.FindOneString("type", "bands"));
+		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
+			"soft_noise"));
+		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
+			"blender_original"));
+		tex.noisebasis2 = GetNoiseShape(tp.FindOneString("noisebasis2",
+			"sin"));
+		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
+		tex.turbul = tp.FindOneFloat("turbulence", 5.0f);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderWoodTexture3D(tex2world, tp);
 	}
 };

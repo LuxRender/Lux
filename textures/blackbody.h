@@ -41,7 +41,7 @@ public:
 	}
 	virtual float Y() const { return BBSPD.Y(); }
 	virtual float Filter() const { return BBSPD.Filter(); }
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
 	BlackbodySPD BBSPD;

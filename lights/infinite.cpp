@@ -612,7 +612,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 }
 
 Light* InfiniteAreaLight::CreateLight(const Transform &light2world,
-	const ParamSet &paramSet, const TextureParams &tp)
+	const ParamSet &paramSet)
 {
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.0));
 	string texmap = paramSet.FindOneString("mapname", "");

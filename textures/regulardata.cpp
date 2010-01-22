@@ -29,12 +29,12 @@ using namespace lux;
 
 // RegularDataTexture Method Definitions
 Texture<SWCSpectrum> *RegularDataTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	float start = tp.FindFloat("start", 380.f);
-	float end = tp.FindFloat("end", 720.f);
+	float start = tp.FindOneFloat("start", 380.f);
+	float end = tp.FindOneFloat("end", 720.f);
 	u_int dataCount = 0;
-	const float *data = tp.FindFloats("data", &dataCount);
+	const float *data = tp.FindFloat("data", &dataCount);
 	if (dataCount < 2) {
 		luxError(LUX_MISSINGDATA, LUX_ERROR, "Insufficient data in regulardata texture");
 		const float default_data[] = {1.f, 1.f};

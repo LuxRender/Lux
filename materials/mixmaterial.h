@@ -32,8 +32,12 @@ class MixMaterial : public Material {
 public:
 	// MixMaterial Public Methods
 	MixMaterial(boost::shared_ptr<Texture<float> > a,
+		boost::shared_ptr<Material> m1,
+		boost::shared_ptr<Material> m2,
 		const CompositingParams &cp) {
 		amount = a;
+		mat1 = m1;
+		mat2 = m2;
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~MixMaterial() { }
@@ -43,10 +47,11 @@ public:
 		const Volume *exterior, const Volume *interior) const;
 
 	static Material * CreateMaterial(const Transform &xform,
-		const TextureParams &mp);
+		const ParamSet &mp);
 private:
 	// MixMaterial Private Data
 	boost::shared_ptr<Texture<float> > amount;
+	boost::shared_ptr<Material> mat1, mat2;
 };
 
 }//namespace lux

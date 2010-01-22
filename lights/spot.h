@@ -61,12 +61,12 @@ public:
 		float *pdfDirect) const;
 	
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp);
+		const ParamSet &paramSet);
 private:
 	// SpotLight Private Data
 	float cosTotalWidth, cosFalloffStart;
 	Point lightPos;
-	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
+	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
 	DifferentialGeometry dummydg;
 	float gain;
 };

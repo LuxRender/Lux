@@ -27,6 +27,7 @@
 #include "lambertian.h"
 #include "orennayar.h"
 #include "texture.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -72,7 +73,7 @@ BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack,
 	return bsdf;
 }
 Material* MatteTranslucent::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
+		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr = mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt = mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f));
 	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);

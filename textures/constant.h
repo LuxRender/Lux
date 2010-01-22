@@ -86,9 +86,9 @@ private:
 class Constant
 {
 public:
-	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 }//namespace lux

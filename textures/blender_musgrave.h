@@ -33,21 +33,23 @@ public:
 	virtual ~BlenderMusgraveTexture3D() { }
 
 	BlenderMusgraveTexture3D(const Transform &tex2world,
-		const TextureParams &tp) :
+		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_MUSGRAVE) {
-		tex.stype = GetMusgraveType(tp.FindString("type"));
-		tex.noisebasis = GetNoiseBasis(tp.FindString("noisebasis"));
-		tex.mg_H = tp.FindFloat("h", 1.f);
-		tex.mg_lacunarity = tp.FindFloat("lacu", 2.f);
-		tex.mg_octaves = tp.FindFloat("octs", 2.f);
-		tex.mg_gain = tp.FindFloat("gain", 1.f);
-		tex.mg_offset = tp.FindFloat("offset", 1.f);
-		tex.noisesize = tp.FindFloat("noisesize", 0.25f);
-		tex.ns_outscale = tp.FindFloat("outscale", 1.f);
+		tex.stype = GetMusgraveType(tp.FindOneString("type",
+			"multifractal"));
+		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
+			"blender_original"));
+		tex.mg_H = tp.FindOneFloat("h", 1.f);
+		tex.mg_lacunarity = tp.FindOneFloat("lacu", 2.f);
+		tex.mg_octaves = tp.FindOneFloat("octs", 2.f);
+		tex.mg_gain = tp.FindOneFloat("gain", 1.f);
+		tex.mg_offset = tp.FindOneFloat("offset", 1.f);
+		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
+		tex.ns_outscale = tp.FindOneFloat("outscale", 1.f);
 	}
 
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+		const ParamSet &tp) {
 		return new BlenderMusgraveTexture3D(tex2world, tp);
 	}
 };

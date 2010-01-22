@@ -56,7 +56,7 @@ public:
 		const Volume *exterior, const Volume *interior) const;
 	
 	static Material * CreateMaterial(const Transform &xform,
-		const TextureParams &mp);
+		const ParamSet &mp);
 private:
 	// Glass Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;

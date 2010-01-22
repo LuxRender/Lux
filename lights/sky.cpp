@@ -629,7 +629,7 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 }
 
 Light* SkyLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp) {
+		const ParamSet &paramSet) {
 	float scale = paramSet.FindOneFloat("gain", 1.f);				// gain (aka scale) factor to apply to sun/skylight (0.005)
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,1));	// direction vector of the sun

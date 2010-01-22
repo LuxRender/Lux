@@ -178,11 +178,11 @@ SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &
 	return SWCSpectrum(0.f);
 }
 Light* PointLight::CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+		const ParamSet &paramSet) {
+	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 
-	const SphericalFunction *sf = CreateSphericalFunction(paramSet, tp);
+	const SphericalFunction *sf = CreateSphericalFunction(paramSet);
 	SampleableSphericalFunction *ssf = NULL;
 	if(sf)
 		ssf = new SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));

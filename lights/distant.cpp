@@ -285,9 +285,9 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 }
 
 Light* DistantLight::CreateLight(const Transform &light2world,
-	const ParamSet &paramSet, const TextureParams &tp)
+	const ParamSet &paramSet)
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float theta = Radians(paramSet.FindOneFloat("theta", 0.f));
 	Point from = paramSet.FindOnePoint("from", Point(0, 0, 0));

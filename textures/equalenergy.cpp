@@ -28,9 +28,9 @@ using namespace lux;
 
 // EqualEnergyTexture Method Definitions
 Texture<SWCSpectrum> *EqualEnergyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	return new EqualEnergyTexture(tp.FindFloat("energy", 1.f));
+	return new EqualEnergyTexture(tp.FindOneFloat("energy", 1.f));
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<EqualEnergyTexture> r("equalenergy");

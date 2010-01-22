@@ -207,10 +207,9 @@ void pyLuxMakeNamedMaterial(const char *name, boost::python::list params)
 	memoryPool.purge_memory();
 }
 
-void pyLuxNamedMaterial(const char *name, boost::python::list params)
+void pyLuxNamedMaterial(const char *name)
 {
-	EXTRACT_PARAMETERS(params);
-	luxNamedMaterialV(name, PASS_PARAMETERS);
+	luxNamedMaterial(name);
 	memoryPool.purge_memory();
 }
 

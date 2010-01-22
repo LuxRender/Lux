@@ -28,10 +28,10 @@ using namespace lux;
 
 // FrequencyTexture Method Definitions
 Texture<SWCSpectrum> *FrequencyTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const TextureParams &tp)
+	const ParamSet &tp)
 {
-	return new FrequencyTexture(tp.FindFloat("freq", .03f),
-			tp.FindFloat("phase", .5f), tp.FindFloat("energy", 1.f));
+	return new FrequencyTexture(tp.FindOneFloat("freq", .03f),
+		tp.FindOneFloat("phase", .5f), tp.FindOneFloat("energy", 1.f));
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<FrequencyTexture> r("frequency");

@@ -364,9 +364,9 @@ int IORFromFile(const string filename, vector<float> &wl, vector<float> &n, vect
 	return 1;
 }
 
-Material *Metal::CreateMaterial(const Transform &xform, const TextureParams &tp) {
+Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 
-	string metalname = tp.FindString("name");
+	string metalname = tp.FindOneString("name", "");
 
 	if (metalname == "")
 		metalname = DEFAULT_METAL;

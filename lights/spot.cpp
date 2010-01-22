@@ -145,8 +145,9 @@ SWCSpectrum SpotLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r
 {
 	return SWCSpectrum(0.f);
 }
-Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet, const TextureParams &tp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = tp.GetSWCSpectrumTexture("L", RGBColor(1.f));
+Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
+{
+	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);

@@ -93,7 +93,8 @@ public:
 	ParamSet() { }
 	ParamSet &operator=(const ParamSet &p2);
 	ParamSet(const ParamSet &p2);
-	ParamSet(u_int n, const char *pluginName, const char * const tokens[], const char * const params[]);
+	ParamSet(u_int n, const char *pluginName, const char * const tokens[],
+		const char * const params[]);
 	
 	void Add(ParamSet& params);
 	void AddFloat(const string &, const float *, u_int nItems = 1);
@@ -120,7 +121,8 @@ public:
 	const Point &FindOnePoint(const string &, const Point &d) const;
 	const Vector &FindOneVector(const string &, const Vector &d) const;
 	const Normal &FindOneNormal(const string &, const Normal &d) const;
-	const RGBColor &FindOneRGBColor(const string &, const RGBColor &d) const;
+	const RGBColor &FindOneRGBColor(const string &,
+		const RGBColor &d) const;
 	const string &FindOneString(const string &, const string &d) const;
 	const string &FindTexture(const string &) const;
 	const float *FindFloat(const string &, u_int *nItems) const;
@@ -129,10 +131,18 @@ public:
 	const Point *FindPoint(const string &, u_int *nItems) const;
 	const Vector *FindVector(const string &, u_int *nItems) const;
 	const Normal *FindNormal(const string &, u_int *nItems) const;
-	const RGBColor *FindRGBColor(const string &,
-	                             u_int *nItems) const;
-	const string *FindString(const string &,
-	                         u_int *nItems) const;
+	const RGBColor *FindRGBColor(const string &, u_int *nItems) const;
+	const string *FindString(const string &, u_int *nItems) const;
+	boost::shared_ptr<Texture<SWCSpectrum> >
+		GetSWCSpectrumTexture(const string &name,
+		const RGBColor &def) const;
+	boost::shared_ptr<Texture<float> >
+		GetFloatTexture(const string &name) const;
+	boost::shared_ptr<Texture<float> >
+		GetFloatTexture(const string &name, float def) const;
+	boost::shared_ptr<Texture<ConcreteFresnel> >
+		GetFresnelTexture(const string &name, float def) const;
+	boost::shared_ptr<Material> GetMaterial(const string &name) const;
 	void ReportUnused() const;
 	~ParamSet() {
 		Clear();
@@ -166,66 +176,6 @@ private:
 			ar & textures;
 		}
 	
-};
-
-// TextureParams Declarations
-class  TextureParams {
-public:
-	// TextureParams Public Methods
-	TextureParams(const ParamSet &geomp, const ParamSet &matp,
-		map<string, boost::shared_ptr<Texture<float> > > &ft,
-		map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &st,
-		map<string, boost::shared_ptr<Texture<ConcreteFresnel> > > &frt) :
-		geomParams(geomp), materialParams(matp), floatTextures(ft),
-		SWCSpectrumTextures(st), fresnelTextures(frt) { }
-	boost::shared_ptr<Texture<SWCSpectrum> > GetSWCSpectrumTexture(const string &name,
-		const RGBColor &def) const;
-	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name) const;
-	boost::shared_ptr<Texture<float> > GetFloatTexture(const string &name,
-		float def) const;
-	boost::shared_ptr<Texture<ConcreteFresnel> > GetFresnelTexture(const string &name, float def) const;
-	float FindFloat(const string &n, float d) const {
-		return geomParams.FindOneFloat(n,
-			materialParams.FindOneFloat(n, d));
-	}
-
-	const float *FindFloats(const string &n, u_int *nItems) const {
-		return geomParams.FindFloat(n, nItems);
-	}
-
-	const string &FindString(const string &n) const {
-		return geomParams.FindOneString(n, materialParams.FindOneString(n, ""));
-	}
-	int FindInt(const string &n, int d) const {
-		return geomParams.FindOneInt(n, materialParams.FindOneInt(n, d));
-	}
-	bool FindBool(const string &n, bool d) const {
-		return geomParams.FindOneBool(n, materialParams.FindOneBool(n, d));
-	}
-	const Point &FindPoint(const string &n, const Point &d) const {
-		return geomParams.FindOnePoint(n, materialParams.FindOnePoint(n, d));
-	}
-	const Vector &FindVector(const string &n, const Vector &d) const {
-		return geomParams.FindOneVector(n, materialParams.FindOneVector(n, d));
-	}
-	const Normal &FindNormal(const string &n, const Normal &d) const {
-		return geomParams.FindOneNormal(n, materialParams.FindOneNormal(n, d));
-	}
-	const RGBColor &FindRGBColor(const string &n, const RGBColor &d) const {
-		return geomParams.FindOneRGBColor(n, materialParams.FindOneRGBColor(n, d));
-	}
-	void ReportUnused() const {
-		//geomParams.ReportUnused(); // note - radiance - incompatible with mix material. (must recursiveley pass)
-		materialParams.ReportUnused();
-	}
-	const ParamSet &GetGeomParams() const { return geomParams; }
-	const ParamSet &GetMaterialParams() const { return materialParams; }
-private:
-	// TextureParams Private Data
-	const ParamSet &geomParams, &materialParams;
-	map<string, boost::shared_ptr<Texture<float> > >    &floatTextures;
-	map<string, boost::shared_ptr<Texture<SWCSpectrum> > > &SWCSpectrumTextures;
-	map<string, boost::shared_ptr<Texture<ConcreteFresnel> > >    &fresnelTextures;
 };
 
 }//namespace lux

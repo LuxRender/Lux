@@ -295,21 +295,13 @@ extern "C" void luxMakeNamedMaterial(const char *name, ...)
 extern "C" void luxMakeNamedMaterialV(const char *name, unsigned int n,
 	const LuxToken tokens[], const LuxPointer params[])
 {
-	Context::GetActive()->MakeNamedMaterial(name,
-		ParamSet(n, name, tokens, params));
+	ParamSet p(n, name, tokens, params);
+	Context::GetActive()->MakeNamedMaterial(name,p);
 }
 
-extern "C" void luxNamedMaterial(const char *name, ...)
+extern "C" void luxNamedMaterial(const char *name)
 {
-	EXTRACT_PARAMETERS(name);
-	luxNamedMaterialV(name, PASS_PARAMETERS);
-}
-
-extern "C" void luxNamedMaterialV(const char *name, unsigned int n,
-	const LuxToken tokens[], const LuxPointer params[])
-{
-	Context::GetActive()->NamedMaterial(name,
-		ParamSet(n, name, tokens, params));
+	Context::GetActive()->NamedMaterial(name);
 }
 
 extern "C" void luxLightSource(const char *name, ...)

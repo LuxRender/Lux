@@ -27,24 +27,19 @@
 using namespace lux;
 
 // MarbleTexture Method Definitions
-Texture<float> * MarbleTexture::CreateFloatTexture(const Transform &tex2world,
-		const TextureParams &tp) {
-	return NULL;
-}
-
 Texture<SWCSpectrum> * MarbleTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const TextureParams &tp) {
+	const ParamSet &tp)
+{
 	// Initialize 3D texture mapping _map_ from _tp_
 	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
-	return new MarbleTexture(tp.FindInt("octaves", 8),
-		tp.FindFloat("roughness", .5f),
-		tp.FindFloat("scale", 1.f),
-		tp.FindFloat("variation", .2f),
+	return new MarbleTexture(tp.FindOneInt("octaves", 8),
+		tp.FindOneFloat("roughness", .5f),
+		tp.FindOneFloat("scale", 1.f),
+		tp.FindOneFloat("variation", .2f),
 		map);
 }
 
-static DynamicLoader::RegisterFloatTexture<MarbleTexture> r1("marble");
 static DynamicLoader::RegisterSWCSpectrumTexture<MarbleTexture> r2("marble");

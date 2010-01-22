@@ -37,21 +37,18 @@ Material::~Material() {
 	if(compParams) delete compParams; 
 }
 
-void Material::InitGeneralParams(const TextureParams &mp) {
-	bumpmapSampleDistance = mp.FindFloat("bumpmapsampledistance", .001f);
+void Material::InitGeneralParams(const ParamSet &mp) {
+	bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
 }
 
-void Material::FindCompositingParams(const TextureParams &mp, CompositingParams *cp)
+void Material::FindCompositingParams(const ParamSet &mp, CompositingParams *cp)
 {
-	cp->tVm = mp.FindBool("compo_visible_material", true);
-	cp->tVl = mp.FindBool("compo_visible_emission", true);
-	cp->tiVm = mp.FindBool("compo_visible_indirect_material", true);
-	cp->tiVl = mp.FindBool("compo_visible_indirect_emission", true);
-	cp->oA = mp.FindBool("compo_override_alpha", false);
-	cp->A = mp.FindFloat("compo_override_alpha_value", 0.f);
-	cp->K = mp.FindBool("compo_use_key", false);
-	float cc[3] = { 0.f, 0.f, 1.f };
-	cp->Kc = mp.FindRGBColor("compo_key_color", RGBColor(cc));
+	cp->tVm = mp.FindOneBool("compo_visible_material", true);
+	cp->tVl = mp.FindOneBool("compo_visible_emission", true);
+	cp->tiVm = mp.FindOneBool("compo_visible_indirect_material", true);
+	cp->tiVl = mp.FindOneBool("compo_visible_indirect_emission", true);
+	cp->oA = mp.FindOneBool("compo_override_alpha", false);
+	cp->A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
 }
 
 void Material::Bump(boost::shared_ptr<Texture<float> > d,

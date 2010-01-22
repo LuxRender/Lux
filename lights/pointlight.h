@@ -57,7 +57,7 @@ public:
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 	
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp);
+		const ParamSet &paramSet);
 private:
 	/**
 	 * Return the emmitted radiance in the given diretion.

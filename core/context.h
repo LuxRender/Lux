@@ -70,14 +70,10 @@ public:
 		return activeContext->GetLightGroup();
 	}
 
-	/**
-	 * Creates a material using the given shape parameters, the current
-	 * material and the current textures.
-	 *
-	 * @param shapeparams The parameters of the shape.
-	 */
-	boost::shared_ptr<lux::Material> MakeMaterial(const ParamSet& shapeparams, bool force);
-	void MakeMixMaterial(const ParamSet& shapeparams, const ParamSet& materialparams, boost::shared_ptr<lux::Material> mtl);
+	boost::shared_ptr<lux::Texture<float> > GetFloatTexture(const string &n) const;
+	boost::shared_ptr<lux::Texture<SWCSpectrum> > GetColorTexture(const string &n) const;
+	boost::shared_ptr<lux::Texture<ConcreteFresnel> > GetFresnelTexture(const string &n) const;
+	boost::shared_ptr<lux::Material > GetMaterial(const string &n) const;
 
 	void Init();
 	void Cleanup();
@@ -100,11 +96,11 @@ public:
 	void LightSource(const string &name, const ParamSet &params);
 	void LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 		float ux, float uy, float uz);
-	void MakeNamedMaterial(const string &name, const ParamSet &params);
+	void MakeNamedMaterial(const string &name, ParamSet &params);
 	void Material(const string &name, const ParamSet &params);
 	void MotionInstance(const string &name, float startTime, float endTime,
 		const string &toTransform);
-	void NamedMaterial(const string &name, const ParamSet &params);
+	void NamedMaterial(const string &name);
 	void PixelFilter(const string &name, const ParamSet &params);
 	void PortalShape(const string &name, const ParamSet &params);
 	void ObjectBegin(const string &name);
@@ -239,7 +235,6 @@ private:
 		// Graphics State Methods
 		GraphicsState() {
 			// GraphicsState Constructor Implementation
-			material = "";
 			currentLightGroup = "";
 			reverseOrientation = false;
 		}
@@ -247,10 +242,10 @@ private:
 		map<string, boost::shared_ptr<lux::Texture<float> > > floatTextures;
 		map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > colorTextures;
 		map<string, boost::shared_ptr<lux::Texture<ConcreteFresnel> > > fresnelTextures;
+		map<string, boost::shared_ptr<lux::Material> > namedMaterials;
 		boost::shared_ptr<lux::Volume> exterior;
 		boost::shared_ptr<lux::Volume> interior;
-		ParamSet materialParams;
-		string material;
+		boost::shared_ptr<lux::Material> material;
 		ParamSet areaLightParams;
 		string areaLight;
 		string currentLight;
@@ -271,7 +266,6 @@ private:
 	map<string, lux::Transform> namedCoordinateSystems;
 	RenderOptions *renderOptions;
 	GraphicsState *graphicsState;
-	map<string, ParamSet> namedMaterials;
 	vector<GraphicsState> pushedGraphicsStates;
 	vector<lux::Transform> pushedTransforms;
 	RenderFarm *renderFarm;

@@ -52,7 +52,7 @@ public:
 	}
 	virtual float Y() const { return index; }
 
-	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	IrregularSPD N, K;
 	float index;

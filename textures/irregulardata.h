@@ -42,7 +42,7 @@ public:
 	}
 	virtual float Y() const { return SPD.Y(); }
 	virtual float Filter() const { return SPD.Filter(); }
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
 	IrregularSPD SPD;

@@ -46,7 +46,7 @@ BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	return bsdf;
 }
 Material* Null::CreateMaterial(const Transform &xform,
-		const TextureParams &mp) {
+		const ParamSet &mp) {
 
 	// Get Compositing Params
 	CompositingParams cP;

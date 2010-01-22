@@ -32,7 +32,7 @@ namespace lux
 class LampSpectrumTexture
 {
 public:
-	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 }//namespace lux

@@ -75,8 +75,7 @@ public:
 			mipmap->discardMipmaps(n);
 	}
 	
-	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	//static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
 	// ImageFloatTexture Private Methods
@@ -137,8 +136,7 @@ public:
 			mipmap->discardMipmaps(n);
 	}
 	
-	//static Texture<float> * CreateFloatTexture(const Transform &tex2world, const TextureParams &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const TextureParams &tp);
+	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
 	// ImageSpectrumTexture Private Methods

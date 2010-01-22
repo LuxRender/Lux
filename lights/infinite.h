@@ -71,7 +71,7 @@ public:
 		VisibilityTester *visibility, SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,
-		const ParamSet &paramSet, const TextureParams &tp);
+		const ParamSet &paramSet);
 
 	MIPMap<RGBColor> *radianceMap;
 	EnvironmentMapping *mapping;
