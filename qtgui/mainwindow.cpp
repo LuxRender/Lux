@@ -279,6 +279,8 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
 
+	msgBox = new QMessageBox();
+
 	//m_renderTimer->Start(1000*luxStatistics("displayInterval"));
 
 	// Set default splitter sizes
@@ -317,6 +319,7 @@ MainWindow::~MainWindow()
 	delete m_renderTimer;
 	delete renderView;
 	delete histogramView;
+	delete msgBox;
 }
 
 void MainWindow::ReadSettings()
@@ -340,10 +343,9 @@ void MainWindow::WriteSettings()
 }
 
 void MainWindow::ShowDialogBox(const std::string &msg, const std::string &caption, QMessageBox::Icon icon) {
-	QMessageBox msgBox;
-	msgBox.setIcon(icon);
-	msgBox.setText(msg.c_str());
-	msgBox.exec();
+	msgBox->setIcon(icon);
+	msgBox->setText(msg.c_str());
+	msgBox->exec();
 }
 
 void MainWindow::ShowWarningDialogBox(const std::string &msg, const std::string &caption) {
