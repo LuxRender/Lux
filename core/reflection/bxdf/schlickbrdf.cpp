@@ -105,7 +105,7 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	if (!SameHemisphere(wo, *wi))
 		return false;
 	const float specPdf = SchlickZ(fabsf(H.z)) * SchlickA(H) /
-		(8.f * M_PI * cosWH);
+		(4.f * M_PI * fabsf(wi->z));
 	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
 	if (!(*pdf > 0.f))
 		return false;
@@ -125,6 +125,6 @@ float SchlickBRDF::Pdf(const TsPack *tspack, const Vector &wo,
 		return 0.f;
 	const Vector H(Normalize(wo + wi));
 	return fabsf(wi.z) * INV_TWOPI + SchlickZ(fabsf(H.z)) * SchlickA(H) /
-		(8.f * M_PI * AbsDot(wi, H));
+		(4.f * M_PI * fabsf(wi.z));
 }
 
