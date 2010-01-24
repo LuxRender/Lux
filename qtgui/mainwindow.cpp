@@ -279,8 +279,6 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
 
-	msgBox = new QMessageBox();
-
 	//m_renderTimer->Start(1000*luxStatistics("displayInterval"));
 
 	// Set default splitter sizes
@@ -290,7 +288,6 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
 
-	m_guiWindowState = SHOWN;
 	changeRenderState(WAITING);
 	
 	ReadSettings();
@@ -319,7 +316,6 @@ MainWindow::~MainWindow()
 	delete m_renderTimer;
 	delete renderView;
 	delete histogramView;
-	delete msgBox;
 }
 
 void MainWindow::ReadSettings()
@@ -342,18 +338,16 @@ void MainWindow::WriteSettings()
 	settings.endGroup();
 }
 
-void MainWindow::ShowDialogBox(const std::string &msg, const std::string &caption, QMessageBox::Icon icon) {
-	msgBox->setIcon(icon);
-	msgBox->setText(msg.c_str());
-	msgBox->exec();
+void MainWindow::ShowDialogBox(const std::string &msg, const std::string &caption) {
+    QMessageBox::information(this, caption.c_str(), msg.c_str());
 }
 
 void MainWindow::ShowWarningDialogBox(const std::string &msg, const std::string &caption) {
-	ShowDialogBox(msg, caption, QMessageBox::Warning);
+    QMessageBox::warning(this, caption.c_str(), msg.c_str());
 }
 
 void MainWindow::ShowErrorDialogBox(const std::string &msg, const std::string &caption) {
-	ShowDialogBox(msg, caption, QMessageBox::Critical);
+    QMessageBox::critical(this, caption.c_str(), msg.c_str());
 }
 
 void MainWindow::updateWidgetValue(QSlider *slider, int value)
@@ -1461,7 +1455,7 @@ void MainWindow::aboutDialog()
 void MainWindow::applyTonemapping(bool withlayercomputation)
 {
 	if (m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
-    (m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
+    (!isMinimized () || m_guiRenderState == FINISHED)) {
 		if (!withlayercomputation) {
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 			statusMessage->setText(tr("Tonemapping..."));
@@ -1814,7 +1808,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 void MainWindow::renderTimeout()
 {
 	if (m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
-		(m_guiWindowState == SHOWN || m_guiRenderState == FINISHED)) {
+		(!isMinimized () || m_guiRenderState == FINISHED)) {
 		luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 		statusMessage->setText("Tonemapping...");
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));

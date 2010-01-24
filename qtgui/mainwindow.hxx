@@ -126,12 +126,6 @@ enum LuxGuiRenderState
 	TONEMAPPING // tonemapping an FLM file (not really a 'render' state)
 };
 
-enum LuxGuiWindowState
-{
-	SHOWN,
-	HIDDEN
-};
-
 namespace Ui
 {
 	class MainWindow;
@@ -193,7 +187,7 @@ public:
 
 	void UpdateNetworkTree();
 
-	void ShowDialogBox(const std::string &msg, const std::string &caption = "LuxRender", QMessageBox::Icon icon = QMessageBox::Information);
+	void ShowDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
 	void ShowWarningDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
 	void ShowErrorDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
 
@@ -206,7 +200,6 @@ private:
 	RenderView *renderView;
 	HistogramView *histogramView;
 	QString m_CurrentFile;
-	QMessageBox *msgBox;
 
 	QVector<LightGroupWidget*> m_LightGroupWidgets;
 
@@ -218,7 +211,6 @@ private:
 	double m_samplesSec;
 	
 	LuxGuiRenderState m_guiRenderState;
-	LuxGuiWindowState m_guiWindowState;
 	
 	QProgressDialog *m_progDialog;
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer;
