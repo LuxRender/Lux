@@ -184,8 +184,11 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, 
 	*pdf /= (2.f * M_PI * M_PI * sintheta);
 	// Return radiance value for direction
 	visibility->SetRay(p, *wi, tspack->time);
-	return SWCSpectrum(tspack, SPDbase) *
-		SWCSpectrum(tspack, radianceMap->Lookup(uv[0], uv[1]));
+	if (radianceMap)
+		return SWCSpectrum(tspack, SPDbase) *
+			SWCSpectrum(tspack, radianceMap->Lookup(uv[0], uv[1]));
+	else
+		return SWCSpectrum(tspack, SPDbase);
 }
 float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &,
 		const Vector &w) const {
