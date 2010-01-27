@@ -187,6 +187,7 @@ array_init: %prec HIGH_PRECEDENCE
 	if (curArray)
 		ArrayFree(curArray);
 	curArray = new ParamArray;
+	arrayIsSingleString = false;
 };
 
 string_array_init: %prec HIGH_PRECEDENCE
