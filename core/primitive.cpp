@@ -153,8 +153,13 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
 	isect->dg.handle = isect->primitive;
 	isect->primitive = this;
+	isect->dg.time = r.time;
 	if (material)
 		isect->material = material.get();
+	if (exterior)
+		isect->exterior = exterior.get();
+	if (interior)
+		isect->interior = interior.get();
 	return true;
 }
 
@@ -208,6 +213,12 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 	isect->dg.handle = isect->primitive;
 	isect->primitive = this;
 	isect->dg.time = r.time;
+	if (material)
+		isect->material = material.get();
+	if (exterior)
+		isect->exterior = exterior.get();
+	if (interior)
+		isect->interior = interior.get();
 	return true;
 }
 

@@ -259,9 +259,10 @@ public:
 	 *            instanced primitive's material.
 	 */
 	InstancePrimitive(boost::shared_ptr<Primitive> &i, const Transform &i2w,
-		boost::shared_ptr<Material> &mat) : instance(i),
+		boost::shared_ptr<Material> &mat, boost::shared_ptr<Volume> &ex,
+		boost::shared_ptr<Volume> &in) : instance(i),
 		InstanceToWorld(i2w), WorldToInstance(i2w.GetInverse()),
-		material(mat) { }
+		material(mat), exterior(ex), interior(in) { }
 	virtual ~InstancePrimitive() { }
 
 	virtual BBox WorldBound() const  {
@@ -309,6 +310,7 @@ private:
 	boost::shared_ptr<Primitive> instance;
 	Transform InstanceToWorld, WorldToInstance;
 	boost::shared_ptr<Material> material;
+	boost::shared_ptr<Volume> exterior, interior;
 };
 
 class Aggregate : public Primitive {
@@ -346,8 +348,10 @@ public:
 	 */
 	MotionPrimitive(boost::shared_ptr<Primitive> &i,
 		const Transform &i2ws, const Transform &i2we,
-		float s, float e) : instance(i), motionSystem(s, e, i2ws, i2we)
-	{ }
+		float s, float e, boost::shared_ptr<Material> &mat,
+		boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in) :
+		instance(i), motionSystem(s, e, i2ws, i2we), material(mat),
+		exterior(ex), interior(in) { }
 	virtual ~MotionPrimitive() { }
 
 	virtual BBox WorldBound() const;
@@ -395,6 +399,8 @@ private:
 	// MotionPrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
 	MotionSystem motionSystem;
+	boost::shared_ptr<Material> material;
+	boost::shared_ptr<Volume> exterior, interior;
 };
 
 

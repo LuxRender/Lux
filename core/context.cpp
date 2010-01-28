@@ -570,12 +570,15 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	}
 
 	// Lotus - Set the material
-	if (!(graphicsState->material)) {
+	if (graphicsState->material)
+		sh->SetMaterial(graphicsState->material);
+	else {
 		boost::shared_ptr<lux::Material> m(MakeMaterial("matte",
 			curTransform, ParamSet()));
 		sh->SetMaterial(m);
-	} else
-		sh->SetMaterial(graphicsState->material);
+	}
+	sh->SetExterior(graphicsState->exterior);
+	sh->SetInterior(graphicsState->interior);
 
 	// Create primitive and add to scene or current instance
 	boost::shared_ptr<Primitive> pr(sh);
@@ -678,7 +681,9 @@ void Context::ObjectInstance(const string &n) {
 	}
 
 	// Initialize material for instance
-	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0], curTransform, graphicsState->material));
+	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0],
+		curTransform, graphicsState->material,
+		graphicsState->exterior, graphicsState->interior));
 	renderOptions->primitives.push_back(o);
 }
 
@@ -727,7 +732,8 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 
 	// Initialize material for instance
 	boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform,
-		EndTransform, startTime, endTime));
+		EndTransform, startTime, endTime, graphicsState->material,
+		graphicsState->exterior, graphicsState->interior));
 	renderOptions->primitives.push_back(o);
 }
 
