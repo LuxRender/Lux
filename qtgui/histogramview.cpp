@@ -60,7 +60,7 @@ void HistogramView::Update()
 	w = frame->width() - 1;
 	delete imagebuffer;
 	imagebuffer = new unsigned char[w * h * 3];
-	for (unsigned int i=0; i < (w*h*3); i++)
+	for (int i=0; i < (w*h*3); i++)
 		imagebuffer[i] = 0;
 
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
