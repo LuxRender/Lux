@@ -31,21 +31,15 @@ namespace lux
 class ShinyMetal : public Material {
 public:
 	// ShinyMetal Public Methods
-	ShinyMetal(boost::shared_ptr<Texture<SWCSpectrum> > ks,
-		boost::shared_ptr<Texture<float> > u,
-		boost::shared_ptr<Texture<float> > v,
-		boost::shared_ptr<Texture<float> > flm,
-		boost::shared_ptr<Texture<float> > flmindex, 
-		boost::shared_ptr<Texture<SWCSpectrum> > kr,
-		boost::shared_ptr<Texture<float> > bump,
-		const CompositingParams &cp) {
-		Ks = ks;
-		Kr = kr;
-		nu = u;
-		nv = v;
-		film = flm;
-		filmindex = flmindex;
-		bumpMap = bump;
+	ShinyMetal(boost::shared_ptr<Texture<SWCSpectrum> > &ks,
+		boost::shared_ptr<Texture<float> > &u,
+		boost::shared_ptr<Texture<float> > &v,
+		boost::shared_ptr<Texture<float> > &flm,
+		boost::shared_ptr<Texture<float> > &flmindex, 
+		boost::shared_ptr<Texture<SWCSpectrum> > &kr,
+		boost::shared_ptr<Texture<float> > &bump,
+		const CompositingParams &cp) : Ks(ks), Kr(kr), nu(u), nv(v),
+		film(flm), filmindex(flmindex), bumpMap(bump) {
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~ShinyMetal() { }

@@ -96,12 +96,11 @@ private:
 // ProjectionLight Method Definitions
 ProjectionLight::
 	ProjectionLight(const Transform &light2world,
-		const boost::shared_ptr< Texture<SWCSpectrum> > L, 
+		const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 		float g, const string &texname,
 		float fov)
-	: Light(light2world) {
+	: Light(light2world), Lbase(L) {
 	lightPos = LightToWorld(Point(0,0,0));
-	Lbase = L;
 	Lbase->SetIlluminant();
 	gain = g;
 	// Create _ProjectionLight_ MIP-map
@@ -211,7 +210,7 @@ SWCSpectrum ProjectionLight::Le(const TsPack *tspack, const Scene *scene, const 
 
 Light* ProjectionLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float fov = paramSet.FindOneFloat("fov", 45.);
 	string texname = paramSet.FindOneString("mapname", "");

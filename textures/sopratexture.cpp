@@ -56,7 +56,7 @@ static float nmtolambda(float nm)
 }
 
 // CauchyTexture Method Definitions
-Texture<ConcreteFresnel> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	const string filename = tp.FindOneString("name", "");

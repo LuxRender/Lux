@@ -32,7 +32,7 @@ namespace lux
 {
 
 // CauchyTexture Declarations
-class SopraTexture : public Texture<ConcreteFresnel> {
+class SopraTexture : public Texture<const Fresnel *> {
 public:
 	// ConstantTexture Public Methods
 	SopraTexture(const vector<float> &wl, const vector<float> &n,
@@ -40,19 +40,18 @@ public:
 		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
 		index(N.Y()) { }
 	virtual ~SopraTexture() { }
-	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
 		// FIXME - Try to detect the best model to use
 		// FIXME - FresnelGeneral should take a float index for accurate
 		// non dispersive behaviour
-		FresnelGeneral *fresnel = ARENA_ALLOC(tspack->arena,
+		return ARENA_ALLOC(tspack->arena,
 			FresnelGeneral)(SWCSpectrum(tspack, N),
 			SWCSpectrum(tspack, K));
-		return ConcreteFresnel(fresnel);
 	}
 	virtual float Y() const { return index; }
 
-	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	IrregularSPD N, K;
 	float index;

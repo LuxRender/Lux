@@ -30,16 +30,13 @@
 using namespace lux;
 
 // Light Method Definitions
-Light::~Light() {
-}
-bool VisibilityTester::Unoccluded(const Scene *scene) const {
-	// Update shadow ray statistics
-	// radiance - disabled for threading // static StatsCounter nShadowRays("Lights","Number of shadow rays traced");
-	// radiance - disabled for threading // ++nShadowRays;
+bool VisibilityTester::Unoccluded(const Scene *scene) const
+{
 	return !scene->IntersectP(r);
 }
 
-bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, SWCSpectrum *f, float *pdf, float *pdfR) const
+bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
+	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
 	RayDifferential ray(r);
 	ray.time = tspack->time;
@@ -76,11 +73,13 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene, S
 }
 
 void VisibilityTester::Transmittance(const TsPack *tspack, const Scene *scene, 
-	const Sample *sample, SWCSpectrum *const L) const {
+	const Sample *sample, SWCSpectrum *const L) const
+{
 	scene->Transmittance(tspack, r, sample, L);
 }
-SWCSpectrum Light::Le(const TsPack *tspack, const RayDifferential &) const {
-	return SWCSpectrum(0.);
+SWCSpectrum Light::Le(const TsPack *tspack, const RayDifferential &) const
+{
+	return SWCSpectrum(0.f);
 }
 SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
@@ -88,7 +87,8 @@ SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	return SWCSpectrum(0.f);
 }
 
-void Light::AddPortalShape(boost::shared_ptr<Primitive> s) {
+void Light::AddPortalShape(boost::shared_ptr<Primitive> &s)
+{
 	if (s->CanIntersect() && s->CanSample()) {
 		PortalArea += s->Area();
 		PortalShapes.push_back(s);

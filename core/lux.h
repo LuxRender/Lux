@@ -156,7 +156,6 @@ namespace lux
   class BRDF;
   class BTDF;
   class Fresnel;
-  class ConcreteFresnel;
   class FresnelConductor;
   class FresnelDielectric;
   class FresnelGeneral;

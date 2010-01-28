@@ -47,20 +47,20 @@ BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
 }
 Material* MixMaterial::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-	boost::shared_ptr<Material> mat1 = mp.GetMaterial("namedmaterial1");
+	boost::shared_ptr<Material> mat1(mp.GetMaterial("namedmaterial1"));
 	if (!mat1) {
 		luxError(LUX_BADTOKEN, LUX_ERROR,
 			"First material of the mix is incorrect");
 		return NULL;
 	}
-	boost::shared_ptr<Material> mat2 = mp.GetMaterial("namedmaterial2");
+	boost::shared_ptr<Material> mat2(mp.GetMaterial("namedmaterial2"));
 	if (!mat2) {
 		luxError(LUX_BADTOKEN, LUX_ERROR,
 			"Second material of the mix is incorrect");
 		return NULL;
 	}
 
-	boost::shared_ptr<Texture<float> > amount = mp.GetFloatTexture("amount", 0.5f);
+	boost::shared_ptr<Texture<float> > amount(mp.GetFloatTexture("amount", 0.5f));
 
 	// Get Compositing Params
 	CompositingParams cP;

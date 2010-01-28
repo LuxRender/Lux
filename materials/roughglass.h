@@ -31,23 +31,16 @@ namespace lux
 class RoughGlass : public Material {
 public:
 	// RoughGlass Public Methods
-	RoughGlass(boost::shared_ptr<Texture<SWCSpectrum> > r,
-		boost::shared_ptr<Texture<SWCSpectrum> > t, 
-		boost::shared_ptr<Texture<float> > urough,
-		boost::shared_ptr<Texture<float> > vrough,
-		boost::shared_ptr<Texture<float> > i,
-		boost::shared_ptr<Texture<float> > cbf,
-		boost::shared_ptr<Texture<float> > bump,
-		const CompositingParams &cp) {
-		Kr = r;
-		Kt = t;
-		uroughness = urough;
-		vroughness = vrough;
-		index = i;
-		cauchyb = cbf;
-		bumpMap = bump;
-		compParams = new CompositingParams(cp);
-	}
+	RoughGlass(boost::shared_ptr<Texture<SWCSpectrum> > &r,
+		boost::shared_ptr<Texture<SWCSpectrum> > &t, 
+		boost::shared_ptr<Texture<float> > &urough,
+		boost::shared_ptr<Texture<float> > &vrough,
+		boost::shared_ptr<Texture<float> > &i,
+		boost::shared_ptr<Texture<float> > &cbf,
+		boost::shared_ptr<Texture<float> > &bump,
+		const CompositingParams &cp) : Kr(r), Kt(t), index(i),
+		cauchyb(cbf), uroughness(urough), vroughness(vrough),
+		bumpMap(bump) { compParams = new CompositingParams(cp); }
 	virtual ~RoughGlass() { }
 	virtual BSDF *GetBSDF(const TsPack *tspack,
 		const DifferentialGeometry &dgGeom,

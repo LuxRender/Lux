@@ -27,8 +27,7 @@
 namespace lux
 {
 
-const boost::shared_ptr<Matrix4x4> Transform::MAT_IDENTITY =
-	boost::shared_ptr<Matrix4x4>(new Matrix4x4());
+const boost::shared_ptr<Matrix4x4> Transform::MAT_IDENTITY(new Matrix4x4());
 
 // Transform Method Definitions
 ostream &operator<<(ostream &os, const Transform &t) {
@@ -140,13 +139,10 @@ Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
 	return Transform(camToWorld->Inverse(), camToWorld);
 }
 bool Transform::HasScale() const {
-//#if 0
 	float det = fabsf(m->m[0][0] * (m->m[1][1] * m->m[2][2] - m->m[1][2] * m->m[2][1])) -
 		(m->m[0][1] * (m->m[1][0] * m->m[2][2] - m->m[1][2] * m->m[2][0])) +
 		(m->m[0][2] * (m->m[1][0] * m->m[2][1] - m->m[1][1] * m->m[2][0]));
 	return (det < .999f || det > 1.001f);
-/*#endif
-	return false;*/
 }
 BBox Transform::operator()(const BBox &b) const {
 	const Transform &M = *this;
@@ -161,8 +157,8 @@ BBox Transform::operator()(const BBox &b) const {
 	return ret;
 }
 Transform Transform::operator*(const Transform &t2) const {
-	boost::shared_ptr<Matrix4x4> m1 = Matrix4x4::Mul(m, t2.m);
-	boost::shared_ptr<Matrix4x4> m2 = Matrix4x4::Mul(t2.mInv, mInv);
+	boost::shared_ptr<Matrix4x4> m1(Matrix4x4::Mul(m, t2.m));
+	boost::shared_ptr<Matrix4x4> m2(Matrix4x4::Mul(t2.mInv, mInv));
 	return Transform(m1, m2);
 }
 /*

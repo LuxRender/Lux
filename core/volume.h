@@ -58,6 +58,8 @@ public:
 	}
 	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
 		float step = 1.f, float offset = 0.5f) const = 0;
+	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &,
+		const Vector &) const = 0;
 };
 
 class RGBVolume : public Volume {
@@ -87,6 +89,8 @@ public:
 		return SigmaT(tspack, ray.o, -ray.d) *
 			(ray.d.Length() * (ray.maxt - ray.mint));
 	}
+	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &,
+		const Vector &) const { return NULL; } //FIXME
 private:
 	RGBColor sigA, sigS, le;
 	float g;
@@ -149,6 +153,10 @@ public:
 		rn.maxt = t1;
 		return volume.Tau(tspack, rn, stepSize, offset);
 	}
+	virtual const lux::Fresnel *Fresnel(const TsPack *tspack,
+		const Point &p, const Vector &w) const {
+		return volume.Fresnel(tspack, p, w);
+	}
 protected:
 	Transform WorldToVolume;
 	BBox region;
@@ -191,6 +199,10 @@ public:
 			tau += SigmaT(tspack, r(t0), -r.d);
 		return tau * stepSize;
 	}
+	virtual const lux::Fresnel *Fresnel(const TsPack *tspack,
+		const Point &p, const Vector &w) const {
+		return volume.Fresnel(tspack, p, w);
+	}
 protected:
 	// DensityVolume Protected Data
 	T volume;
@@ -214,6 +226,8 @@ public:
 		const Vector &) const;
 	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
 		float stepSize, float u) const;
+	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &,
+		const Vector &) const { return NULL; } //FIXME
 private:
 	// AggregateRegion Private Data
 	vector<Region *> regions;

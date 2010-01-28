@@ -63,9 +63,9 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Matte::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f));
-	boost::shared_ptr<Texture<float> > sigma = mp.GetFloatTexture("sigma", 0.f);
-	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f)));
+	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
+	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);

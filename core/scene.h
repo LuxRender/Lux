@@ -77,7 +77,7 @@ public:
 	// Scene Public Methods
 	void Render();
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
-		Sampler *s, boost::shared_ptr<Primitive> accel,
+		Sampler *s, boost::shared_ptr<Primitive> &accel,
 		const vector<Light *> &lts, const vector<string> &lg,
 		Region *vr);
 	Scene(Camera *c);

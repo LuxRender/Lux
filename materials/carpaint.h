@@ -32,19 +32,19 @@ namespace lux
 class CarPaint : public Material {
 public:
 	// CarPaint Public Methods
-	CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > kd,
-		boost::shared_ptr<Texture<SWCSpectrum> > ka,
-		boost::shared_ptr<Texture<float> > d,
-		boost::shared_ptr<Texture<SWCSpectrum> > ks1,
-		boost::shared_ptr<Texture<SWCSpectrum> > ks2,
-		boost::shared_ptr<Texture<SWCSpectrum> > ks3,
-		boost::shared_ptr<Texture<float> > r1,
-		boost::shared_ptr<Texture<float> > r2,
-		boost::shared_ptr<Texture<float> > r3,
-		boost::shared_ptr<Texture<float> > m1,
-		boost::shared_ptr<Texture<float> > m2,
-		boost::shared_ptr<Texture<float> > m3,
-		boost::shared_ptr<Texture<float> > bump,
+	CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ka,
+		boost::shared_ptr<Texture<float> > &d,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks1,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks2,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks3,
+		boost::shared_ptr<Texture<float> > &r1,
+		boost::shared_ptr<Texture<float> > &r2,
+		boost::shared_ptr<Texture<float> > &r3,
+		boost::shared_ptr<Texture<float> > &m1,
+		boost::shared_ptr<Texture<float> > &m2,
+		boost::shared_ptr<Texture<float> > &m3,
+		boost::shared_ptr<Texture<float> > &bump,
 		const CompositingParams &cp);
 	virtual ~CarPaint() { }
 

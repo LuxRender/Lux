@@ -27,7 +27,7 @@
 using namespace lux;
 
 // CauchyTexture Method Definitions
-Texture<ConcreteFresnel> *CauchyTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<const Fresnel *> *CauchyTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	const float cauchyb = tp.FindOneFloat("cauchyb", 0.f);

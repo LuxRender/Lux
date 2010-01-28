@@ -148,7 +148,7 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 		delete vFuncs[i];
 	delete[] vFuncs;
 
-	boost::shared_ptr<MIPMap<RGBColor> > ptr(new MIPMapFastImpl<RGBColor,
+	boost::shared_ptr<const MIPMap<RGBColor> > ptr(new MIPMapFastImpl<RGBColor,
 		TextureColor<float, 1> >(BILINEAR, xRes, yRes, &img[0]));
 	SetMipMap(ptr);
 
@@ -158,7 +158,7 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 void IESSphericalFunction::initDummy()
 {
 	TextureColor<float, 1> img[1] = {1.f};
-	boost::shared_ptr<MIPMap<RGBColor> > ptr(new MIPMapFastImpl<RGBColor,
+	boost::shared_ptr<const MIPMap<RGBColor> > ptr(new MIPMapFastImpl<RGBColor,
 		TextureColor<float, 1> >(NEAREST, 1, 1, &img[0]));
 	SetMipMap(ptr);
 }

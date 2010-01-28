@@ -33,12 +33,10 @@ namespace lux {
 // UnsafeKdAccelNode Declarations
 
 struct MailboxPrim {
-    MailboxPrim(boost::shared_ptr<Primitive> p) {
-        primitive = p;
-        lastMailboxId = -1;
-    }
-    boost::shared_ptr<Primitive> primitive;
-    int lastMailboxId;
+	MailboxPrim(boost::shared_ptr<Primitive> p) : primitive(p),
+		lastMailboxId(-1) { }
+	boost::shared_ptr<Primitive> primitive;
+	int lastMailboxId;
 };
 
 struct UnsafeKdAccelNode {

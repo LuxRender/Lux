@@ -96,7 +96,7 @@ boost::shared_ptr<lux::Texture<SWCSpectrum> > Context::GetColorTexture(const str
 	}
 	return boost::shared_ptr<lux::Texture<SWCSpectrum> >();
 }
-boost::shared_ptr<lux::Texture<ConcreteFresnel> > Context::GetFresnelTexture(const string &n) const
+boost::shared_ptr<lux::Texture<const Fresnel *> > Context::GetFresnelTexture(const string &n) const
 {
 	if (n != "") {
 		if (graphicsState->fresnelTextures.find(n) !=
@@ -106,7 +106,7 @@ boost::shared_ptr<lux::Texture<ConcreteFresnel> > Context::GetFresnelTexture(con
 		ss << "Couldn't find fresnel texture named '" << n << "'";
 		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 	}
-	return boost::shared_ptr<lux::Texture<ConcreteFresnel> >();
+	return boost::shared_ptr<lux::Texture<const Fresnel *> >();
 }
 boost::shared_ptr<lux::Material > Context::GetMaterial(const string &n) const
 {
@@ -393,8 +393,8 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<float> > ft =
-			MakeFloatTexture(texname, curTransform, params);
+		boost::shared_ptr<lux::Texture<float> > ft(
+			MakeFloatTexture(texname, curTransform, params));
 		if (ft)
 			graphicsState->floatTextures[n] = ft;
 	} else if (type == "color") {
@@ -405,8 +405,8 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<SWCSpectrum> > st =
-			MakeSWCSpectrumTexture(texname, curTransform, params);
+		boost::shared_ptr<lux::Texture<SWCSpectrum> > st(
+			MakeSWCSpectrumTexture(texname, curTransform, params));
 		if (st)
 			graphicsState->colorTextures[n] = st;
 	} else if (type == "fresnel") {
@@ -417,10 +417,10 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<ConcreteFresnel> > st =
-			MakeFresnelTexture(texname, curTransform, params);
-		if (st)
-			graphicsState->fresnelTextures[n] = st;
+		boost::shared_ptr<lux::Texture<const Fresnel *> > fr(
+			MakeFresnelTexture(texname, curTransform, params));
+		if (fr)
+			graphicsState->fresnelTextures[n] = fr;
 	} else {
 		std::stringstream ss;
 		ss << "Texture type '" << type << "' unknown";
@@ -453,7 +453,10 @@ void Context::NamedMaterial(const string &n) {
 	renderFarm->send("luxNamedMaterial", n);
 	if (graphicsState->namedMaterials.find(n) !=
 		graphicsState->namedMaterials.end()) {
-		graphicsState->material = graphicsState->namedMaterials[n];
+		// Create a temporary to increase share count
+		// The copy operator is just a swap
+		boost::shared_ptr<lux::Material> m(graphicsState->namedMaterials[n]);
+		graphicsState->material = m;
 	} else {
 		std::stringstream ss;
 		ss << "Named material '" << n << "' unknown";
@@ -532,8 +535,8 @@ void Context::AreaLightSource(const string &n, const ParamSet &params) {
 void Context::PortalShape(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("PortalShape");
 	renderFarm->send("luxPortalShape", n, params);
-	boost::shared_ptr<lux::Shape> sh = MakeShape(n, curTransform,
-			graphicsState->reverseOrientation, params);
+	boost::shared_ptr<Primitive> sh(MakeShape(n, curTransform,
+		graphicsState->reverseOrientation, params));
 	if (!sh)
 		return;
 	params.ReportUnused();
@@ -550,8 +553,8 @@ void Context::PortalShape(const string &n, const ParamSet &params) {
 void Context::Shape(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Shape");
 	renderFarm->send("luxShape", n, params);
-	boost::shared_ptr<lux::Shape> sh = MakeShape(n, curTransform,
-		graphicsState->reverseOrientation, params);
+	boost::shared_ptr<lux::Shape> sh(MakeShape(n, curTransform,
+		graphicsState->reverseOrientation, params));
 	if (!sh)
 		return;
 	params.ReportUnused();
@@ -566,34 +569,34 @@ void Context::Shape(const string &n, const ParamSet &params) {
 			area->group = lg;
 	}
 
-	// Create primitive and add to scene or current instance
-	if (!(graphicsState->material))
-		sh->SetMaterial(MakeMaterial("matte", curTransform,
-			ParamSet()));
-	else
-		sh->SetMaterial(graphicsState->material); // Lotus - Set the material
-	boost::shared_ptr<Primitive> prim;
-	if (area) {
-		// Lotus - add a decorator to set the arealight field
-		prim = boost::shared_ptr<Primitive>(new AreaLightPrimitive(sh, area));
+	// Lotus - Set the material
+	if (!(graphicsState->material)) {
+		boost::shared_ptr<lux::Material> m(MakeMaterial("matte",
+			curTransform, ParamSet()));
+		sh->SetMaterial(m);
 	} else
-		prim = sh;
+		sh->SetMaterial(graphicsState->material);
+
+	// Create primitive and add to scene or current instance
+	boost::shared_ptr<Primitive> pr(sh);
 	if (renderOptions->currentInstance) {
 		if (area)
 			luxError(LUX_UNIMPLEMENT, LUX_WARNING,
 				"Area lights not supported with object instancing");
-		if (!prim->CanIntersect())
-			prim->Refine(*(renderOptions->currentInstance),
-				PrimitiveRefinementHints(false), prim);
+		if (!pr->CanIntersect())
+			pr->Refine(*(renderOptions->currentInstance),
+				PrimitiveRefinementHints(false), pr);
 		else
-			renderOptions->currentInstance->push_back(prim);
-	} else {
+			renderOptions->currentInstance->push_back(pr);
+	} else if (area) {
+		// Lotus - add a decorator to set the arealight field
+		boost::shared_ptr<Primitive> prim(new AreaLightPrimitive(pr,
+			area));
 		renderOptions->primitives.push_back(prim);
-		if (area) {
-			// Add area light for primitive to light vector
-			renderOptions->lights.push_back(area);
-		}
-	}
+		// Add area light for primitive to light vector
+		renderOptions->lights.push_back(area);
+	} else
+		renderOptions->primitives.push_back(pr);
 }
 void Context::ReverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation");
@@ -610,16 +613,18 @@ void Context::Volume(const string &n, const ParamSet &params) {
 void Context::Exterior(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Exterior");
 	renderFarm->send("luxExterior", n, params);
-	lux::Volume *vr = MakeVolumeRegion(n, curTransform, params);
+	boost::shared_ptr<lux::Volume> vr(MakeVolumeRegion(n, curTransform,
+		params));
 	if (vr)
-		graphicsState->exterior = boost::shared_ptr<lux::Volume>(vr);
+		graphicsState->exterior = vr;
 }
 void Context::Interior(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Interior");
 	renderFarm->send("luxInterior", n, params);
-	lux::Volume *vr = MakeVolumeRegion(n, curTransform, params);
+	boost::shared_ptr<lux::Volume> vr(MakeVolumeRegion(n, curTransform,
+		params));
 	if (vr)
-		graphicsState->interior = boost::shared_ptr<lux::Volume>(vr);
+		graphicsState->interior = vr;
 }
 void Context::ObjectBegin(const string &n) {
 	VERIFY_WORLD("ObjectBegin");
@@ -660,10 +665,11 @@ void Context::ObjectInstance(const string &n) {
 		return;
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
-		boost::shared_ptr<Primitive> accel(MakeAccelerator(renderOptions->acceleratorName, in,
+		boost::shared_ptr<Primitive> accel(
+			MakeAccelerator(renderOptions->acceleratorName, in,
 			renderOptions->acceleratorParams));
 		if (!accel)
-			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
+			accel = MakeAccelerator("kdtree", in, ParamSet());
 		if (!accel)
 			luxError(LUX_BUG, LUX_SEVERE,
 				"Unable to find \"kdtree\" accelerator");
@@ -696,10 +702,11 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 		return;
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
 		// Refine instance _Primitive_s and create aggregate
-		boost::shared_ptr<Primitive> accel(MakeAccelerator(renderOptions->acceleratorName, in,
+		boost::shared_ptr<Primitive> accel(
+			MakeAccelerator(renderOptions->acceleratorName, in,
 			renderOptions->acceleratorParams));
 		if (!accel)
-			accel = boost::shared_ptr<Primitive>(MakeAccelerator("kdtree", in, ParamSet()));
+			accel = MakeAccelerator("kdtree", in, ParamSet());
 		if (!accel)
 			luxError(LUX_BUG, LUX_SEVERE,
 				"Unable to find \"kdtree\" accelerator");
@@ -785,8 +792,8 @@ Scene *Context::RenderOptions::MakeScene() const {
 		surfIntegratorName, surfIntegratorParams);
 	lux::VolumeIntegrator *volumeIntegrator = MakeVolumeIntegrator(
 		volIntegratorName, volIntegratorParams);
-	boost::shared_ptr<Primitive> accelerator = MakeAccelerator(acceleratorName,
-		primitives, acceleratorParams);
+	boost::shared_ptr<Primitive> accelerator(MakeAccelerator(acceleratorName,
+		primitives, acceleratorParams));
 	if (!accelerator) {
 		ParamSet ps;
 		accelerator = MakeAccelerator("kdtree", primitives, ps);

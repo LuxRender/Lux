@@ -35,10 +35,8 @@ struct Voxel;
 // GMailboxPrim Declarations
 
 struct GMailboxPrim {
-	GMailboxPrim(boost::shared_ptr<Primitive> p) {
-		primitive = p;
-		lastMailboxId = -1;
-	}
+	GMailboxPrim(boost::shared_ptr<Primitive> &p) : primitive(p),
+		lastMailboxId(-1) { }
 	boost::shared_ptr<Primitive> primitive;
 	int lastMailboxId;
 };

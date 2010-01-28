@@ -42,8 +42,8 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 		luxError(LUX_UNIMPLEMENT, LUX_ERROR, ss.str().c_str());
 		return NULL;
 	}
-	boost::shared_ptr<Texture<float> > tex1 = tp.GetFloatTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<float> > tex2 = tp.GetFloatTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<float> > tex1(tp.GetFloatTexture("tex1", 1.f));
+	boost::shared_ptr<Texture<float> > tex2(tp.GetFloatTexture("tex2", 0.f));
 	if (dim == 2) {
 		// Initialize 2D texture mapping _map_ from _tp_
 		TextureMapping2D *map = NULL;
@@ -92,8 +92,8 @@ Texture<SWCSpectrum> * Checkerboard::CreateSWCSpectrumTexture(const Transform &t
 		luxError(LUX_UNIMPLEMENT, LUX_ERROR, ss.str().c_str());
 		return NULL;
 	}
-	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("tex1", 1.f);
-	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("tex2", 0.f);
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("tex1", 1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex2(tp.GetSWCSpectrumTexture("tex2", 0.f));
 	if (dim == 2) {
 		// Initialize 2D texture mapping _map_ from _tp_
 		TextureMapping2D *map = NULL;

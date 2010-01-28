@@ -31,23 +31,16 @@ namespace lux
 class Glossy2 : public Material {
 public:
 	// Glossy Public Methods
-	Glossy2(boost::shared_ptr<Texture<SWCSpectrum> > kd,
-		boost::shared_ptr<Texture<SWCSpectrum> > ks,
-		boost::shared_ptr<Texture<SWCSpectrum> > ka,
-		boost::shared_ptr<Texture<float> > i,
-		boost::shared_ptr<Texture<float> > d,
-		boost::shared_ptr<Texture<float> > u,
-		boost::shared_ptr<Texture<float> > v,
-		boost::shared_ptr<Texture<float> > bump,
-		const CompositingParams &cp) {
-		Kd = kd;
-		Ks = ks;
-		Ka = ka;
-		index = i;
-		depth = d;
-		nu = u;
-		nv = v;
-		bumpMap = bump;
+	Glossy2(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ka,
+		boost::shared_ptr<Texture<float> > &i,
+		boost::shared_ptr<Texture<float> > &d,
+		boost::shared_ptr<Texture<float> > &u,
+		boost::shared_ptr<Texture<float> > &v,
+		boost::shared_ptr<Texture<float> > &bump,
+		const CompositingParams &cp) : Kd(kd), Ks(ks), Ka(ka), depth(d),
+		index(i), nu(u), nv(v), bumpMap(bump) {
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Glossy2() { }

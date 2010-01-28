@@ -169,7 +169,7 @@ void V4MulByMatrix(const boost::shared_ptr<Matrix4x4> &A, const float x[4], floa
 	b[3] = A->m[3][0]*x[0] + A->m[3][1]*x[1] + A->m[3][2]*x[2] + A->m[3][3]*x[3];
 }
 
-bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transforms &trans) const {
+bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms &trans) const {
 
 	boost::shared_ptr<Matrix4x4> locmat(new Matrix4x4(m->m));
 

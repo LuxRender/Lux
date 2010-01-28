@@ -86,12 +86,11 @@ public:
 // PointLight Method Definitions
 PointLight::PointLight(
 		const Transform &light2world,
-		const boost::shared_ptr< Texture<SWCSpectrum> > L,
+		const boost::shared_ptr< Texture<SWCSpectrum> > &L,
 		float g,
 		SampleableSphericalFunction *ssf)
-	: Light(light2world) {
+	: Light(light2world), Lbase(L) {
 	lightPos = LightToWorld(Point(0,0,0));
-	Lbase = L;
 	Lbase->SetIlluminant();
 	gain = g;
 	func = ssf;
@@ -179,13 +178,13 @@ SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 
-	const SphericalFunction *sf = CreateSphericalFunction(paramSet);
+	boost::shared_ptr<const SphericalFunction> sf(CreateSphericalFunction(paramSet));
 	SampleableSphericalFunction *ssf = NULL;
 	if(sf)
-		ssf = new SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));
+		ssf = new SampleableSphericalFunction(sf);
 
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;

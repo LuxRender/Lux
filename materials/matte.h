@@ -31,13 +31,11 @@ namespace lux
 class Matte : public Material {
 public:
 	// Matte Public Methods
-	Matte(boost::shared_ptr<Texture<SWCSpectrum> > kd,
-		boost::shared_ptr<Texture<float> > sig,
-		boost::shared_ptr<Texture<float> > bump,
-		const CompositingParams &cp) {
-		Kd = kd;
-		sigma = sig;
-		bumpMap = bump;
+	Matte(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
+		boost::shared_ptr<Texture<float> > &sig,
+		boost::shared_ptr<Texture<float> > &bump,
+		const CompositingParams &cp) : Kd(kd), sigma(sig),
+		bumpMap(bump) {
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Matte() { }

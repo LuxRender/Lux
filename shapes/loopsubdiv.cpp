@@ -37,7 +37,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		const Point *P,
 		const float *uv,
 		u_int nl,
-		const boost::shared_ptr<Texture<float> > dismap,
+		const boost::shared_ptr<Texture<float> > &dismap,
 		float dmscale, float dmoffset,
 		bool dmnormalsmooth, bool dmsharpboundary)
 	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale),
@@ -370,7 +370,7 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	ParamSet paramSet;
 
 	{
-		boost::shared_ptr<SubdivResult> res = Refine();
+		boost::shared_ptr<SubdivResult> res(Refine());
 
 		paramSet.AddInt("indices", res->indices, 3 * res->ntris);
 		paramSet.AddPoint("P", res->P, res->nverts);
@@ -584,7 +584,8 @@ Shape *LoopSubdiv::CreateShape(
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
-		displacementMap = (*floatTextures)[displacementMapName];
+		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
+		displacementMap = dm;
 
 		if (displacementMap.get() == NULL) {
             std::stringstream ss;

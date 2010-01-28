@@ -57,11 +57,11 @@ public:
 
 class QuadPrimitive : public Aggregate {
 public:
-	QuadPrimitive(const boost::shared_ptr<Primitive> &p1,
-		const boost::shared_ptr<Primitive> &p2,
-		const boost::shared_ptr<Primitive> &p3,
-		const boost::shared_ptr<Primitive> &p4)
-	{
+	// Don't use references to force temporaries and increase use count
+	QuadPrimitive(boost::shared_ptr<Primitive> p1,
+		boost::shared_ptr<Primitive> p2,
+		boost::shared_ptr<Primitive> p3,
+		boost::shared_ptr<Primitive> p4) {
 		primitives[0] = p1;
 		primitives[1] = p2;
 		primitives[2] = p3;

@@ -51,7 +51,7 @@ void Material::FindCompositingParams(const ParamSet &mp, CompositingParams *cp)
 	cp->A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
 }
 
-void Material::Bump(boost::shared_ptr<Texture<float> > d,
+void Material::Bump(const boost::shared_ptr<Texture<float> > &d,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgs,
 		DifferentialGeometry *dgBump) const {
@@ -60,7 +60,8 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	// Shift _dgEval_ _du_ in the $u$ direction and calculate bump map value
 	float du = .5f * (fabsf(dgs.dudx) + fabsf(dgs.dudy));
-	if (du == 0.f) du = bumpmapSampleDistance;
+	if (du == 0.f)
+		du = bumpmapSampleDistance;
 	dgEval.p += du * dgs.dpdu;
 	dgEval.u += du;
 	dgEval.nn = Normalize(dgs.nn + du * dgs.dndu);
@@ -68,7 +69,8 @@ void Material::Bump(boost::shared_ptr<Texture<float> > d,
 
 	// Shift _dgEval_ _dv_ in the $v$ direction and calculate bump map value
 	float dv = .5f * (fabsf(dgs.dvdx) + fabsf(dgs.dvdy));
-	if (dv == 0.f) dv = bumpmapSampleDistance;
+	if (dv == 0.f)
+		dv = bumpmapSampleDistance;
 	dgEval.p = dgs.p + dv * dgs.dpdv;
 	dgEval.u = dgs.u;
 	dgEval.v += dv;

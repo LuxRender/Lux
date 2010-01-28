@@ -68,14 +68,14 @@ private:
 	RGBColor color;
 };
 
-class ConstantFresnelTexture : public Texture<ConcreteFresnel> {
+class ConstantFresnelTexture : public Texture<const Fresnel *> {
 public:
 	// ConstantTexture Public Methods
 	ConstantFresnelTexture(const float &v) : value(1.f, v), val(v) { }
 	virtual ~ConstantFresnelTexture() { }
-	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return ConcreteFresnel(&value);
+		return &value;
 	}
 	virtual float Y() const { return val; }
 private:
@@ -88,7 +88,7 @@ class Constant
 public:
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
-	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 }//namespace lux
