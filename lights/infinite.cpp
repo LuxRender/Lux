@@ -22,6 +22,7 @@
 
 // infinite.cpp*
 #include "infinite.h"
+#include "randomgen.h"
 #include "imagereader.h"
 #include "mc.h"
 #include "paramset.h"

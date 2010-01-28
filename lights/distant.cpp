@@ -22,6 +22,8 @@
 
 // distant.cpp*
 #include "distant.h"
+#include "memory.h"
+#include "color.h"
 #include "mc.h"
 #include "bxdf.h"
 #include "paramset.h"

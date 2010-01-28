@@ -325,7 +325,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	}
 
 	// Initialize primitives for _BVHAccel_
-	nPrims = vPrims.size();
+	nPrims = vPrims.size();printf("%d primitives\n", nPrims);
 
 	// Temporary data for building
 	u_int *primsIndexes = new u_int[nPrims + 3]; // For the case where
@@ -343,7 +343,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	nodes = AllocAligned<QBVHNode>(maxNodes);
 	for (u_int i = 0; i < maxNodes; ++i)
 		nodes[i] = QBVHNode();
-
+printf("%d max nodes at %p\n", maxNodes, nodes);
 	// The arrays that will contain
 	// - the bounding boxes for all triangles
 	// - the centroids for all triangles	
@@ -353,7 +353,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	BBox centroidsBbox;
 	
 	// Fill each base array
-	for (u_int i = 0; i < vPrims.size(); ++i) {
+	for (u_int i = 0; i < nPrims; ++i) {
 		// This array will be reorganized during construction. 
 		primsIndexes[i] = i;
 
@@ -381,24 +381,24 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	BuildTree(0, nPrims, primsIndexes, primsBboxes, primsCentroids,
 		worldBound, centroidsBbox, -1, 0, 0);
 
-	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
+	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);printf("%d quad primitives at %p\n", nQuads, prims);
 	nQuads = 0;
 	PreSwizzle(0, primsIndexes, vPrims);
 	ss.str("");
 	ss << "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());printf("%d nodes at %p (%d allocated) and %d quads\n", nNodes, nodes, maxNodes, nQuads);
 	
 	// Release temporary memory
 	delete[] primsBboxes;
 	delete[] primsCentroids;
-	delete[] primsIndexes;
+	delete[] primsIndexes;exit(0);
 }
 
 /***************************************************/
 void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	BBox *primsBboxes, Point *primsCentroids, const BBox &nodeBbox,
 	const BBox &centroidsBbox, int32_t parentIndex, int32_t childIndex, int depth)
-{
+{printf("Build tree:\nstart=%d end=%d parent=%8x child=%8x depth=%d\n", start, end, parentIndex, childIndex, depth);
 	// Create a leaf ?
 	//********
 	if (end - start <= maxPrimsPerLeaf) {
@@ -551,9 +551,9 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	for (u_int i = start; i < end; ++i) {
 		u_int primIndex = primsIndexes[i];
 		
-		if (primsCentroids[primIndex][axis] <= splitPos) {
+		if (primsCentroids[primIndex][axis] <= splitPos) {printf("p[%d](%8x)=p[%d](%8x)\n", i, primsIndexes[i], storeIndex, primsIndexes[storeIndex]);
 			// Swap
-			primsIndexes[i] = primsIndexes[storeIndex];
+			primsIndexes[i] = primsIndexes[storeIndex];printf("p[%d](%8x)=p[%d](%8x)\n", storeIndex, primsIndexes[storeIndex], i, primIndex);
 			primsIndexes[storeIndex] = primIndex;
 			++storeIndex;
 			
@@ -581,9 +581,9 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 /***************************************************/
 void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 	u_int start, u_int end, const BBox &nodeBbox)
-{
+{printf("Create temporary leaf:\nparent=%8x child=%8x start=%d end=%d\n", parentIndex, childIndex, start, end);
 	// The leaf is directly encoded in the intermediate node.
-	if (parentIndex < 0) {
+	if (parentIndex < 0) {printf("The tree is a leaf\n");
 		// The entire tree is a leaf
 		nNodes = 1;
 		parentIndex = 0;
@@ -605,12 +605,12 @@ void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 	// Use the same encoding as the final one, but with a different meaning.
 	node.InitializeLeaf(childIndex, quads, start);
 
-	nQuads += quads;
+	nQuads += quads;printf("%d quads\n", nQuads);
 }
 
 void QBVHAccel::PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
 	const vector<boost::shared_ptr<Primitive> > &vPrims)
-{
+{printf("Swizzling node=%8x\n", nodeIndex);
 	for (int i = 0; i < 4; ++i) {
 		if (nodes[nodeIndex].ChildIsLeaf(i))
 			CreateSwizzledLeaf(nodeIndex, i, primsIndexes, vPrims);
@@ -621,7 +621,7 @@ void QBVHAccel::PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
 
 void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
 	u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims)
-{
+{printf("Create swizzled leaf:\nparent=%8x child=%8x\n", parentIndex, childIndex);
 	QBVHNode &node = nodes[parentIndex];
 	if (node.LeafIsEmpty(childIndex))
 		return;
@@ -634,18 +634,18 @@ void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
 	for (u_int q = 0; q < nbQuads; ++q) {
 		bool allTri = true;
 		for (u_int i = 0; i < 4; ++i)
-			allTri &= dynamic_cast<MeshBaryTriangle *>(vPrims[primsIndexes[primOffset + i]].get()) != NULL;
+			allTri &= dynamic_cast<MeshBaryTriangle *>(vPrims[primsIndexes[primOffset + i]].get()) != NULL;printf("Only triangles: %d\n", allTri?1:0);
 		if (allTri) {
-			boost::shared_ptr<QuadPrimitive> p(new QuadTriangle(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));
+			boost::shared_ptr<QuadPrimitive> p(new QuadTriangle(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));printf("Quad triangle with: %d %d %d %d\n", primsIndexes[primOffset], primsIndexes[primOffset+1], primsIndexes[primOffset+2], primsIndexes[primOffset+3]);
 			new (&prims[primNum]) boost::shared_ptr<QuadPrimitive>(p);
 		} else {
-			boost::shared_ptr<QuadPrimitive> p(new QuadPrimitive(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));
+			boost::shared_ptr<QuadPrimitive> p(new QuadPrimitive(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));printf("Quad primitive with: %d %d %d %d\n", primsIndexes[primOffset], primsIndexes[primOffset+1], primsIndexes[primOffset+2], primsIndexes[primOffset+3]);
 			new (&prims[primNum]) boost::shared_ptr<QuadPrimitive>(p);
 		}
 		++primNum;
 		primOffset += 4;
 	}
-	nQuads += nbQuads;
+	nQuads += nbQuads;printf("%d quads\n", nQuads);
 	node.InitializeLeaf(childIndex, nbQuads, startQuad);
 }
 

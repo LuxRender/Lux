@@ -27,6 +27,8 @@
 #include "paramset.h"
 #include "scene.h"		// for Scene
 #include "tonemap.h"
+#include "filter.h"
+#include "contribution.h"
 #include "stats.h"
 #include "blackbodyspd.h"
 #include "osfunc.h"
@@ -553,6 +555,14 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 			*ftp++ = filter->Evaluate(fx, fy);
 		}
 	}
+}
+
+Film::~Film()
+{
+	delete[] filterTable;
+	delete filter;
+	delete ZBuffer;
+	delete histogram; 
 }
 
 void Film::RequestBufferGroups(const vector<string> &bg)

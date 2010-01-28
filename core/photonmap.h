@@ -24,12 +24,10 @@
 #define LUX_PHOTONMAP_H
 
 #include "lux.h"
-#include "scene.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
 #include "kdtree.h"
 #include "bxdf.h"
-#include "primitive.h"
 #include "mc.h"
 
 namespace lux

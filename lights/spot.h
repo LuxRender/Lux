@@ -24,6 +24,7 @@
 #include "lux.h"
 #include "light.h"
 #include "texture.h"
+#include "geometry/raydifferential.h"
 
 namespace lux
 {

@@ -24,11 +24,9 @@
 #define LUX_FILM_H
 // film.h*
 #include "lux.h"
+#include "api.h"
 #include "color.h"
-#include "error.h"
 #include "memory.h"
-#include "filter.h"
-#include "contribution.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -383,13 +381,7 @@ public:
 		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		int reject_warmup, bool debugmode);
 
-	virtual ~Film() { 
-		delete[] filterTable;
-		delete filter;
-		if(ZBuffer)
-			delete ZBuffer;
-		delete histogram; 
-	}
+	virtual ~Film();
 
 	virtual void AddSample(Contribution *contrib);
 	virtual void AddSampleCount(float count);

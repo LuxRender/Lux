@@ -30,6 +30,8 @@
 #include "paramset.h"
 #include "renderfarm.h"
 #include "camera.h"
+#include "color.h"
+#include "film.h"
 #include "osfunc.h"
 
 #include <fstream>

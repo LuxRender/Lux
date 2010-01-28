@@ -22,6 +22,8 @@
 
 // sun.cpp*
 #include "sun.h"
+#include "memory.h"
+#include "randomgen.h"
 #include "spd.h"
 #include "regular.h"
 #include "irregular.h"

@@ -24,6 +24,9 @@
 #include "directlighting.h"
 #include "bxdf.h"
 #include "camera.h"
+#include "film.h"
+#include "sampling.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 
