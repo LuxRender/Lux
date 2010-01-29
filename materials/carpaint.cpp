@@ -75,9 +75,9 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum kd = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-    SWCSpectrum ka = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum ka = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 
-    float ld = depth->Evaluate(tspack, dgs);
+	float ld = depth->Evaluate(tspack, dgs);
 
 	SWCSpectrum ks1 = Ks1->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum ks2 = Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -134,16 +134,18 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	return bsdf;
 }
 
-void DataFromName(const string name, boost::shared_ptr<Texture<SWCSpectrum> > *Kd,
-				  boost::shared_ptr<Texture<SWCSpectrum> > *Ks1,
-				  boost::shared_ptr<Texture<SWCSpectrum> > *Ks2,
-				  boost::shared_ptr<Texture<SWCSpectrum> > *Ks3,
-				  boost::shared_ptr<Texture<float> > *R1,
-				  boost::shared_ptr<Texture<float> > *R2,
-				  boost::shared_ptr<Texture<float> > *R3,
-				  boost::shared_ptr<Texture<float> > *M1,
-				  boost::shared_ptr<Texture<float> > *M2,
-				  boost::shared_ptr<Texture<float> > *M3) {
+void DataFromName(const string name,
+	boost::shared_ptr<Texture<SWCSpectrum> > *Kd,
+	boost::shared_ptr<Texture<SWCSpectrum> > *Ks1,
+	boost::shared_ptr<Texture<SWCSpectrum> > *Ks2,
+	boost::shared_ptr<Texture<SWCSpectrum> > *Ks3,
+	boost::shared_ptr<Texture<float> > *R1,
+	boost::shared_ptr<Texture<float> > *R2,
+	boost::shared_ptr<Texture<float> > *R3,
+	boost::shared_ptr<Texture<float> > *M1,
+	boost::shared_ptr<Texture<float> > *M2,
+	boost::shared_ptr<Texture<float> > *M3)
+{
 	int numPaints = sizeof(carpaintdata) / sizeof(CarPaintData);
 
 	// default (Ford F8)
@@ -201,8 +203,8 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const ParamSet &mp)
 
 	string paintname = mp.FindOneString("name", "");
 
-	boost::shared_ptr<Texture<SWCSpectrum> > Ka;
-	boost::shared_ptr<Texture<float> > d;
+	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(0.f)));
+	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", 0.f));
 
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks1;
