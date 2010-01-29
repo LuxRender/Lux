@@ -88,11 +88,9 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		if (scene->Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
-			luxError(LUX_NOERROR, LUX_WARNING, "Unable to define the Autofocus focal distance");
+			LOG(LUX_WARNING,LUX_NOERROR)<<"Unable to define the Autofocus focal distance";
 
-		ss.str("");
-		ss << "Autofocus focal distance: " << FocalDistance;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_INFO,LUX_NOERROR)<< "Autofocus focal distance: " << FocalDistance;
 	}
 }
 
@@ -185,9 +183,7 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transfo
 	if (shutterdistribution == "uniform") shutterdist = 0;
 	else if (shutterdistribution == "gaussian") shutterdist = 1;
 	else {
-		std::stringstream ss;
-		ss<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
 		shutterdist = 0;
 	}
 

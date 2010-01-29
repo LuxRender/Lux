@@ -248,7 +248,7 @@ void luxDisableRandomMode();
 
 /* Error Handlers */
 extern int luxLastError; /*  Keeps track of the last error code */
-extern int luxLogFilter; /* Level of severity to report */
+extern void luxErrorFilter(int severity); /* Sets the minimal level of severity to report */
 typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
 extern void luxErrorHandler(LuxErrorHandler handler);
 extern void luxErrorAbort(int code, int severity, const char *message);

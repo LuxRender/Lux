@@ -103,7 +103,7 @@ int main(int ac, char *av[]) {
 		}
 
 		if (vm.count("verbosity"))
-			luxLogFilter = vm["verbosity"].as<int>();
+			luxErrorFilter(vm["verbosity"].as<int>());
 
 		ss.str("");
 		ss << "Lux version " << LUX_VERSION << " of " << __DATE__ << " at " << __TIME__;

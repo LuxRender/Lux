@@ -99,9 +99,7 @@ namespace lux {
 
     ImageData *ExrImageReader::read(const string &name) {
         try {
-			stringstream ss;
-			ss << "Loading OpenEXR Texture: '" << name << "'...";
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+            LOG(LUX_INFO,LUX_NOERROR)<< "Loading OpenEXR Texture: '" << name << "'...";
 
 			InputFile file(name.c_str());
             Box2i dw = file.header().dataWindow();
@@ -110,9 +108,7 @@ namespace lux {
             //todo: verify if this is always correct
             u_int noChannels = 3;
 
-			ss.str("");
-			ss << width << "x" << height << " (" << noChannels << " channels)";
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			LOG(LUX_INFO,LUX_NOERROR)<<  width << "x" << height << " (" << noChannels << " channels)";
 
             half *rgb = new half[noChannels * width * height];
 
@@ -141,9 +137,7 @@ namespace lux {
 
             return data;
         } catch (const std::exception &e) {
-            std::stringstream ss;
-            ss << "Unable to read EXR image file '" << name << "': " << e.what();
-            luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+        	LOG(LUX_ERROR,LUX_BUG)<< "Unable to read EXR image file '" << name << "': " << e.what();
             return NULL;
         }
     }
@@ -164,10 +158,7 @@ namespace lux {
         u_int noChannels = image.dimv();
         u_int pixels = width * height;
 
-		stringstream ss;
-		ss.str("");
-		ss << width << "x" << height << " (" << noChannels << " channels)";
-        luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        LOG(LUX_INFO,LUX_NOERROR)<< width << "x" << height << " (" << noChannels << " channels)";
 		
         TextureColorBase* ret;
 		// Dade - we support 1, 3 and 4 channel images
@@ -178,11 +169,7 @@ namespace lux {
         else if (noChannels == 4)
             ret = new TextureColor<T, 4> [width * height];
 		else {
-			ss.str("");
-			ss << "Unsupported channel count in StandardImageReader::read(" <<
-					name << ": " << noChannels;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Unsupported channel count in StandardImageReader::read(" << name << ": " << noChannels;
 			return NULL;
 		}
 
@@ -211,9 +198,7 @@ namespace lux {
 
     template <typename T> ImageData * StandardImageReader<T>::read(const string &name) {
         try {
-			stringstream ss;
-			ss << "Loading Cimg Texture: '" << name << "'...";
-            luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+        	LOG(LUX_INFO,LUX_NOERROR)<< "Loading Cimg Texture: '" << name << "'...";
 
 			CImg<T> image(name.c_str());
             size_t size = sizeof (T);
@@ -228,9 +213,7 @@ namespace lux {
 			}
 			return createImageData( name, image );
 		} catch (CImgIOException &e) {
-            std::stringstream ss;
-            ss << "Unable to read Cimg image file '" << name << "': " << e.message;
-            luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_ERROR,LUX_BUG)<< "Unable to read Cimg image file '" << name << "': " << e.message;
             return NULL;
         }
         return NULL;
@@ -242,9 +225,7 @@ namespace lux {
 			// boost::filesystem::exists() can throw an exception under Windows
 			// if the drive in imagePath doesn't exist
 			if (!boost::filesystem::exists(imagePath)) {
-				std::stringstream ss;
-				ss << "Unable to open image file '" << imagePath.string() << "'";
-				luxError(LUX_NOFILE, LUX_ERROR, ss.str().c_str());
+				LOG(LUX_ERROR,LUX_NOFILE)<< "Unable to open image file '" << imagePath.string() << "'";
 				return NULL;
 			}
 
@@ -302,14 +283,10 @@ namespace lux {
 				return stdImageReader.read(name);
 			}
 
-			std::stringstream ss;
-			ss << "Cannot recognise file format for image '" << name << "'";
-			luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_ERROR,LUX_BADFILE)<< "Cannot recognise file format for image '" << name << "'";
 			return NULL;
 		} catch (const std::exception &e) {
-			std::stringstream ss;
-			ss << "Unable to read image file '" << name << "': " << e.what();
-			luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_ERROR,LUX_BUG)<< "Unable to read image file '" << name << "': " << e.what();
 			return NULL;
 		}
     }
@@ -444,9 +421,7 @@ namespace lux {
 			file.setFrameBuffer(fb);
 			file.writePixels(yRes);
 		} catch (const std::exception &e) {
-			std::stringstream ss;
-			ss << "Unable to write image file '" << name << "': " << e.what();
-			luxError(LUX_BUG, LUX_SEVERE, ss.str().c_str());
+			LOG(LUX_SEVERE,LUX_BUG)<< "Unable to write image file '" << name << "': " << e.what();
 		}
 
 		// Cleanup used buffers

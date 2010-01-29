@@ -126,7 +126,7 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const
 							icol = k;
 						}
 					} else if (ipiv[k] > 1)
-						luxError(LUX_MATH, LUX_ERROR, "Singular matrix in MatrixInvert");
+						LOG(LUX_ERROR,LUX_MATH)<<"Singular matrix in MatrixInvert";
 				}
 			}
 		}
@@ -139,7 +139,7 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Inverse() const
 		indxr[i] = irow;
 		indxc[i] = icol;
 		if (minv[icol][icol] == 0.)
-			luxError(LUX_MATH, LUX_ERROR, "Singular matrix in MatrixInvert");
+			LOG(LUX_ERROR,LUX_MATH)<<"Singular matrix in MatrixInvert";
 		// Set $m[icol][icol]$ to one by scaling row _icol_ appropriately
 		float pivinv = 1.f / minv[icol][icol];
 		minv[icol][icol] = 1.f;

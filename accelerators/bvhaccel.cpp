@@ -72,24 +72,18 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetyp
 		bvList.push_back(ptr);
 	}
 
-	std::stringstream ss;
-	ss << "Building Bounding Volume Hierarchy, primitives: " << nPrims;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_INFO, LUX_NOERROR)<< "Building Bounding Volume Hierarchy, primitives: " << nPrims;
 
 	boost::shared_ptr<BVHAccelTreeNode> rootNode;
 	nNodes = 0;
 	rootNode = BuildHierarchy(bvList, 0, bvList.size(), 2);
 
-	ss.str("");
-	ss << "Pre-processing Bounding Volume Hierarchy, total nodes: " << nNodes;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_INFO, LUX_NOERROR)<<  "Pre-processing Bounding Volume Hierarchy, total nodes: " << nNodes;
 
 	bvhTree = AllocAligned<BVHAccelArrayNode>(nNodes);
 	BuildArray(rootNode, 0);
 
-	ss.str("");
-	ss << "Finished building Bounding Volume Hierarchy array";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_INFO, LUX_NOERROR)<<  "Finished building Bounding Volume Hierarchy array";
 }
 
 BVHAccel::~BVHAccel() {

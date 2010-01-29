@@ -374,9 +374,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	primsIndexes[nPrims + 2] = nPrims - 1;
 
 	// Recursively build the tree
-	std::stringstream ss;
-	ss << "Building QBVH, primitives: " << nPrims << ", initial nodes: " << maxNodes;
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Building QBVH, primitives: " << nPrims << ", initial nodes: " << maxNodes;
 	nQuads = 0;
 	BuildTree(0, nPrims, primsIndexes, primsBboxes, primsCentroids,
 		worldBound, centroidsBbox, -1, 0, 0);
@@ -384,9 +382,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
 	nQuads = 0;
 	PreSwizzle(0, primsIndexes, vPrims);
-	ss.str("");
-	ss << "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	LOG(LUX_DEBUG,LUX_NOERROR)<< "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Release temporary memory
 	delete[] primsBboxes;
@@ -440,7 +436,7 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	// than 64 primitives that share the same center.
 	if (isinf(k1)) {
 		if (end - start > 64)
-			luxError(LUX_LIMIT, LUX_ERROR, "QBVH unable to handle geometry, too many primitives with the same centroid");
+		{ LOG(LUX_ERROR,LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives with the same centroid"; }
 		CreateTempLeaf(parentIndex, childIndex, start, end, nodeBbox);
 		return;
 	}

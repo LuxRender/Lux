@@ -106,7 +106,7 @@ extern "C" void luxCleanup()
 	if (initialized == true)
 		Context::GetActive()->Cleanup();
 	else
-		luxError(LUX_NOTSTARTED, LUX_ERROR, "luxCleanup() called without luxInit().");
+		LOG(LUX_ERROR,LUX_NOTSTARTED)<<"luxCleanup() called without luxInit().";
 }
 
 extern "C" void luxIdentity()
@@ -437,7 +437,7 @@ extern "C" void luxInit()
 
 	// API Initialization
 	if (initialized)
-		luxError(LUX_ILLSTATE,LUX_ERROR,"luxInit() has already been called.");
+		{LOG(LUX_ERROR,LUX_ILLSTATE)<<"luxInit() has already been called.";}
 	else
 		Context::SetActive(new Context());
 
@@ -585,7 +585,7 @@ extern "C" double luxStatistics(const char *statName)
 {
 	if (initialized)
 		return Context::GetActive()->Statistics(statName);
-	luxError(LUX_NOTSTARTED, LUX_SEVERE, "luxInit() must be called before calling 'luxStatistics'. Ignoring.");
+	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
 	return 0.;
 }
 
@@ -615,24 +615,27 @@ extern "C" int luxGetNetworkServerUpdateInterval()
 }
 
 //error handling
-static LuxErrorHandler luxErrorDelegate = luxErrorPrint;
 int luxLastError = LUX_NOERROR;
-int luxLogFilter = -99;
 
-void luxErrorFilter(int code, int severity, const char *message)
+namespace lux
 {
-	if (severity >= luxLogFilter) {
-		luxErrorDelegate(code, severity, message);
-	}
+	int luxLogFilter = LUX_DEBUG; //jromang TODO : should set filter to DEBUG only if there is a 'DEBUG' compile time option, otherwise set to LUX_INFO
 }
-// The internal error handling function. It cannot changed through the 
-// API and allows to perform filtering on the errors before passing them to 
-// the (changeable) error handler 'luxErrorDelegate'.
-LuxErrorHandler luxError = luxErrorFilter;
+
+extern "C" void luxErrorFilter(int severity)
+{
+	lux::luxLogFilter=severity;
+}
+
+
+// The internal error handling function. It can be changed through the
+// API and allows to perform filtering on the errors by using the
+// 'LOG' macro defined in error.h
+LuxErrorHandler luxError = luxErrorPrint;
 
 extern "C" void luxErrorHandler(LuxErrorHandler handler)
 {
-	luxErrorDelegate = handler;
+	luxError = handler;
 }
 
 extern "C" void luxErrorAbort(int code, int severity, const char *message)
@@ -646,13 +649,6 @@ extern "C" void luxErrorIgnore(int code, int severity, const char *message)
 {
 	luxLastError = code;
 }
-
-extern "C" void luxErrorPrintFilter(int code, int severity, const char *message)
-{
-	if (severity >= luxLogFilter)
-		luxErrorPrint(code, severity, message);
-}
-
 
 extern "C" void luxErrorPrint(int code, int severity, const char *message)
 {

@@ -159,7 +159,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		}
 
 		if (vm.count("verbosity"))
-        	luxLogFilter = vm["verbosity"].as<int>();
+			luxErrorFilter(vm["verbosity"].as<int>());
 
 		if(vm.count("version")) {
 			//std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;

@@ -168,7 +168,7 @@ int main(int ac, char *av[]) {
 		}
 
 		if (vm.count("verbosity"))
-			luxLogFilter = vm["verbosity"].as<int>();
+			luxErrorFilter(vm["verbosity"].as<int>());
 
 		ss.str("");
 		ss << "Lux version " << LUX_VERSION << " of " << __DATE__ << " at " << __TIME__;
@@ -327,9 +327,11 @@ int main(int ac, char *av[]) {
 			renderServer->join();
 			delete renderServer;
 		} else {
+			LOG(LUX_ERROR,LUX_SYSTEM)<<"luxconsole: no input file";
+			/*
 			ss.str("");
 			ss << "luxconsole: no input file";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());*/
 		}
 
 	} catch (std::exception & e) {

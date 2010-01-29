@@ -34,10 +34,7 @@ namespace lux {
 
 static void LoadError(const string &type, const string &name)
 {
-	std::stringstream ss;
-	ss << "Static loading of " << type << " '" << name << "' failed.";
-	luxError(LUX_BUG, LUX_ERROR, ss.str().c_str());
-
+	LOG(LUX_ERROR,LUX_BUG)<< "Static loading of " << type << " '" << name << "' failed.";
 }
 
 boost::shared_ptr<Shape> MakeShape(const string &name,

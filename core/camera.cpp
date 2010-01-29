@@ -50,7 +50,7 @@ Camera::Camera(const Transform &w2cstart,
 	warnOnce = false;
 }
 bool Camera::IsDelta() const {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Camera::IsDelta() method called");
+	LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Camera::IsDelta() method called";
 	return true;
 }
 void Camera::SampleMotion(float time) {

@@ -40,13 +40,17 @@ public:
 	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const {
 		if (!warnOnce)
-			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W");
+		{
+			LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Camera::Sample_W";
+		}
 		warnOnce = true;
 		return false;
 	}
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const {
 		if (!warnOnce)
-			luxError(LUX_BUG, LUX_SEVERE, "Unimplemented Camera::Sample_W");
+		{
+			LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Camera::Sample_W";
+		}
 		warnOnce = true;
 		return false;
 	}
