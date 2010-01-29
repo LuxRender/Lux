@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "bxdf.h"
 #include "spectrum.h"
-#include "fresneldielectric.h"
 
 namespace lux
 {

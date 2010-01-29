@@ -26,13 +26,22 @@
 #include "bxdf.h"
 #include "light.h"
 #include "mc.h"
+#include "volume.h"
 
 namespace lux
 {
 
 // Integrator Method Definitions
-Integrator::~Integrator() {
+bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
+	const Volume *volume, const Ray &ray, Intersection *isect,
+	SWCSpectrum *L) const
+{
+	const bool result = scene->Intersect(ray, isect);
+	if (volume)
+		*L *= volume->Tau(tspack, ray);
+	return result;
 }
+
 // Integrator Utility Functions
 SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,

@@ -24,6 +24,7 @@
 #include "speculartransmission.h"
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
+#include "fresnel.h"
 
 using namespace lux;
 
