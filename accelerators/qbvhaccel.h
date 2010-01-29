@@ -98,7 +98,7 @@ public:
 		
 		// All children are empty leaves by default
 		for (int i = 0; i < 4; ++i)
-			children[i] = emptyLeafNode;printf("QBVHNode: parent=%8x children=[%8x,%8x,%8x,%8x] axis=[%d,%d,%d]\n", parentNodeIndex, children[0], children[1], children[2], children[3], axisMain, axisSubLeft, axisSubRight);
+			children[i] = emptyLeafNode;
 	}
 
 	/**
@@ -106,7 +106,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline bool ChildIsLeaf(int i) const {printf("Child %d (%8x) is leaf: %d\n", i, children[i], (children[i] < 0)?1:0);
+	inline bool ChildIsLeaf(int i) const {
 		return (children[i] < 0);
 	}
 
@@ -114,7 +114,7 @@ public:
 	   Same thing, directly from the index.
 	   @param index
 	*/
-	inline static bool IsLeaf(int32_t index) {printf("Child index %8x is leaf: %d\n", index, (index < 0)?1:0);
+	inline static bool IsLeaf(int32_t index) {
 		return (index < 0);
 	}
 
@@ -122,7 +122,7 @@ public:
 	   Indicates whether the ith child is an empty leaf.
 	   @param i
 	*/
-	inline bool LeafIsEmpty(int i) const {printf("Child %d (%8x) is empty: %d\n", i, children[i], (children[i] == emptyLeafNode)?1:0);
+	inline bool LeafIsEmpty(int i) const {
 		return (children[i] == emptyLeafNode);
 	}
 
@@ -130,7 +130,7 @@ public:
 	   Same thing, directly from the index.
 	   @param index
 	*/
-	inline static bool IsEmpty(int32_t index) {printf("Child index %8x is empty: %d\n", index, (index == emptyLeafNode)?1:0);
+	inline static bool IsEmpty(int32_t index) {
 		return (index == emptyLeafNode);
 	}
 	
@@ -140,7 +140,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline u_int NbQuadsInLeaf(int i) const {printf("%d quads in leaf %d (%8x)\n", static_cast<u_int>((children[i] >> 27) & 0xf) + 1, i, children[i]);
+	inline u_int NbQuadsInLeaf(int i) const {
 		return static_cast<u_int>((children[i] >> 27) & 0xf) + 1;
 	}
 
@@ -148,7 +148,7 @@ public:
 	   Return the number of group of 4 primitives, directly from the index.
 	   @param index
 	*/
-	inline static u_int NbQuadPrimitives(int32_t index) {printf("%d quads in leaf index %8x\n", static_cast<u_int>((index >> 27) & 0xf) + 1, index);
+	inline static u_int NbQuadPrimitives(int32_t index) {
 		return static_cast<u_int>((index >> 27) & 0xf) + 1;
 	}
 	
@@ -158,7 +158,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline u_int NbPrimitivesInLeaf(int i) const {printf("Primitives in leaf %d: 4 times next\n", i);
+	inline u_int NbPrimitivesInLeaf(int i) const {
 		return NbQuadsInLeaf(i) * 4;
 	}
 
@@ -168,7 +168,7 @@ public:
 	   @param i
 	   @return
 	*/
-	inline u_int FirstQuadIndexForLeaf(int i) const {printf("First quad index for leaf %d (%8x): %d\n", i, children[i], children[i] & 0x07ffffff);
+	inline u_int FirstQuadIndexForLeaf(int i) const {
 		return children[i] & 0x07ffffff;
 	}
 	
@@ -176,7 +176,7 @@ public:
 	   Same thing, directly from the index.
 	   @param index
 	*/
-	inline static u_int FirstQuadIndex(int32_t index) {printf("First quad index for leaf index %8x: %d\n", index, index & 0x07ffffff);
+	inline static u_int FirstQuadIndex(int32_t index) {
 		return index & 0x07ffffff;
 	}
 
@@ -186,7 +186,7 @@ public:
  	   @param nbQuads
 	   @param firstQuadIndex
 	*/
-	inline void InitializeLeaf(int i, u_int nbQuads, u_int firstQuadIndex) {printf("Initialize leaf %d with %d quads at %d: ", i, nbQuads, firstQuadIndex);
+	inline void InitializeLeaf(int i, u_int nbQuads, u_int firstQuadIndex) {
 		// Take care to make a valid initialisation of the leaf.
 		if (nbQuads == 0) {
 			children[i] = emptyLeafNode;
@@ -197,7 +197,7 @@ public:
 			children[i] |=  ((static_cast<int32_t>(nbQuads) - 1) & 0xf) << 27;
 
 			children[i] |= static_cast<int32_t>(firstQuadIndex) & 0x07ffffff;
-		}printf("%8x\n", children[i]);
+		}
 	}
 
 	/**
@@ -321,10 +321,10 @@ private:
 	   @param nodeBbox
 	*/
 	inline int32_t CreateIntermediateNode(int32_t parentIndex, int32_t childIndex,
-		const BBox &nodeBbox) {printf("Create intermediate node: parent=%8x child=%8x\n", parentIndex, childIndex);
+		const BBox &nodeBbox) {
 		int32_t index = nNodes++; // increment after assignment
 		if (nNodes >= maxNodes) {
-			QBVHNode *newNodes = AllocAligned<QBVHNode>(2 * maxNodes);printf("Reallocating %d nodes at %p\n", 2*maxNodes, newNodes);
+			QBVHNode *newNodes = AllocAligned<QBVHNode>(2 * maxNodes);
 			memcpy(newNodes, nodes, sizeof(QBVHNode) * maxNodes);
 			for (u_int i = 0; i < maxNodes; ++i)
 				newNodes[maxNodes + i] = QBVHNode();
@@ -334,7 +334,7 @@ private:
 		}
 		nodes[index].parentNodeIndex = parentIndex;
 		if (parentIndex >= 0) {
-			nodes[parentIndex].children[childIndex] = index;printf("Setting child to %8x\n", index);
+			nodes[parentIndex].children[childIndex] = index;
 			nodes[parentIndex].SetBBox(childIndex, nodeBbox);
 		}
 		return index;
