@@ -25,6 +25,9 @@
 #include "bxdf.h"
 #include "material.h"
 #include "camera.h"
+#include "sampling.h"
+#include "film.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 

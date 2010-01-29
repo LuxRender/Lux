@@ -22,6 +22,7 @@
 
 // gaussian.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "gaussianspd.h"
 #include "paramset.h"

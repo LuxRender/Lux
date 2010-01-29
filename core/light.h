@@ -24,11 +24,9 @@
 #define LUX_LIGHT_H
 // light.h*
 #include "lux.h"
+#include "geometry/transform.h"
 #include "spectrum.h"
-#include "texture.h"
-#include "primitive.h"
 #include "error.h"
-#include "sphericalfunction.h"
 #include "renderinghints.h"
 // Light Declarations
 
@@ -140,26 +138,11 @@ public:
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
 	virtual ~AreaLight();
 	virtual SWCSpectrum L(const TsPack *tspack,
-		const DifferentialGeometry &dg, const Vector& w) const {
-		if (Dot(dg.nn, w) > 0.f) {
-			SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
-			if (func) {
-				// Transform to the local coordinate system around the point
-				const Vector wLocal(Dot(dg.dpdu, w),
-					Dot(dg.dpdv, w), Dot(dg.nn, w));
-				Ll *= SWCSpectrum(tspack, func->f(wLocal));
-			}
-			return Ll;
-		}
-		return 0.f;
-	}
+		const DifferentialGeometry &dg, const Vector& w) const;
 	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray,
 		const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf,
 		float *pdf, float *pdfDirect) const;
-	virtual float Power(const Scene *scene) const {
-		return Le->Y() * gain * area * M_PI *
-			(func ? 2.f * func->Average_f() : 1.f);
-	}
+	virtual float Power(const Scene *scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Pdf(const TsPack *tspack, const Point &,

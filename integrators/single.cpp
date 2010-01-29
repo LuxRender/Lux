@@ -24,6 +24,7 @@
 #include "single.h"
 #include "randomgen.h"
 #include "light.h"
+#include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"
 

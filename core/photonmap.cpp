@@ -23,10 +23,14 @@
 #include "photonmap.h"
 #include "light.h"
 #include "mc.h"
-#include "spectrumwavelengths.h"
-#include "error.h"
-#include "osfunc.h"
 #include "mcdistribution.h"
+#include "spectrumwavelengths.h"
+#include "primitive.h"
+#include "scene.h"
+#include "sampling.h"
+#include "error.h"
+#include "randomgen.h"
+#include "osfunc.h"
 
 #include <fstream>
 #include <boost/thread/xtime.hpp>

@@ -23,6 +23,7 @@
 
 // scale.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"

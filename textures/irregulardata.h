@@ -22,6 +22,7 @@
 
 // irregulardata.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "irregular.h"
 #include "paramset.h"

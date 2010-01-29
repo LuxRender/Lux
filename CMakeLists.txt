@@ -57,9 +57,6 @@ IF (_mach_ppc)
 ENDIF (_mach_ppc)
 
 
-
-
-
 #############################################################################
 #############################################################################
 ###########################      Find BISON       ###########################
@@ -81,16 +78,6 @@ IF (NOT FLEX_EXECUTABLE)
 	MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
 
-
-#############################################################################
-#############################################################################
-###########################      Find OpenGL       ##########################
-#############################################################################
-#############################################################################
-SET(OPENGL_LIBRARY ${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
-
-MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
 
 
 #############################################################################
@@ -210,24 +197,6 @@ ELSE(JPEG_FOUND)
 ENDIF(JPEG_FOUND)
 
 
-#############################################################################
-#############################################################################
-######################### wxWidgets LIBRARIES SETUP #########################
-#############################################################################
-#############################################################################
-# Here you can define what libraries of wxWidgets you need for your
-# application. You can figure out what libraries you need here;
-# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-SET(wxWidgets_USE_LIBS base core gl aui adv )
-FIND_PACKAGE(wxWidgets)
-IF(wxWidgets_FOUND)
-    # Include wxWidgets macros
-    INCLUDE(${wxWidgets_USE_FILE})
-		MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
-ELSE(wxWidgets_FOUND)
-		MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
-ENDIF(wxWidgets_FOUND)
-
 
 #############################################################################
 #############################################################################
@@ -236,22 +205,6 @@ ENDIF(wxWidgets_FOUND)
 #############################################################################
 
 FIND_PACKAGE(Threads REQUIRED)
-
-#############################################################################
-#############################################################################
-############################   QT4 LIBRARIES    #############################
-#############################################################################
-#############################################################################
-
-FIND_PACKAGE(Qt4)
-IF(QT4_FOUND)
-	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
-	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
-	SET(QT_USE_QTOPENGL TRUE)
-	INCLUDE(${QT_USE_FILE})
-ELSE(QT4_FOUND)
-	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
-ENDIF(QT4_FOUND)
 
 #############################################################################
 #############################################################################
@@ -265,19 +218,6 @@ IF(CYGWIN)
 	SET(SYS_LIBRARIES wsock32 ws2_32)
 	ADD_DEFINITIONS(-D_WIN32_WINNT=0x0551 -D__USE_W32_SOCKETS -D_GLIBCXX__PTHREADS)
 ENDIF(CYGWIN)
-
-#############################################################################
-#############################################################################
-###########################   PYTHON LIBRARIES    ###########################
-#############################################################################
-#############################################################################
-FIND_PACKAGE(PythonLibs)
-IF(PYTHONLIBS_FOUND)
-	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
-	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
-ELSE(PYTHONLIBS_FOUND)
-	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
-ENDIF(PYTHONLIBS_FOUND)
 
 #############################################################################
 #All dependencies OK !
@@ -672,14 +612,13 @@ SET(lux_lib_src
 	${lux_tonemaps_src}
 	${lux_volumes_src}
 	)
-INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR}
+INCLUDE_DIRECTORIES(SYSTEM
+	${Boost_INCLUDE_DIRS}
+	${CMAKE_SOURCE_DIR}/core/external
 	${JPEG_INCLUDE_DIR}
 	${TIFF_INCLUDE_DIR}
 	${PNG_INCLUDE_DIR}
 	${OPENEXR_INCLUDE_DIRS}
-	${Boost_INCLUDE_DIRS}
-	${CMAKE_SOURCE_DIR}/core/external
-	${PYTHON_INCLUDE_PATH}
 	)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/reflection
@@ -738,9 +677,9 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 #############################################################################
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -763,9 +702,9 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -784,33 +723,11 @@ IF(APPLE)
 ENDIF(APPLE)
 
 #############################################################################
-#Here we build the python module
-#############################################################################
-IF(PYTHONLIBS_FOUND)
-	IF(APPLE)
-		ADD_LIBRARY(pylux MODULE python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2 ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
-#		ADD_CUSTOM_COMMAND(
-#			TARGET pylux POST_BUILD
-#			COMMAND mv libpylux.so pylux.so
-#		)
-	ELSE(APPLE)
-		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND mv libpylux.so pylux.so
-			)
-	ENDIF(APPLE)
-ENDIF(PYTHONLIBS_FOUND)
-
-
-#############################################################################
 #Here we build the LuxComp executable
 #############################################################################
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
@@ -831,14 +748,77 @@ IF(APPLE)
 ENDIF(APPLE)
 
 #############################################################################
+#Here we build the python module
+#############################################################################
+
+#############################################################################
+#############################################################################
+###########################   PYTHON LIBRARIES    ###########################
+#############################################################################
+#############################################################################
+FIND_PACKAGE(PythonLibs)
+IF(PYTHONLIBS_FOUND)
+	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
+	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
+
+	INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_PATH})
+	IF(APPLE)
+		ADD_LIBRARY(pylux MODULE python/binding.cpp)
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2 ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+#		ADD_CUSTOM_COMMAND(
+#			TARGET pylux POST_BUILD
+#			COMMAND mv libpylux.so pylux.so
+#		)
+	ELSE(APPLE)
+		ADD_LIBRARY(pylux SHARED python/binding.cpp)
+		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		ADD_CUSTOM_COMMAND(
+			TARGET pylux POST_BUILD
+			COMMAND mv libpylux.so pylux.so
+			)
+	ENDIF(APPLE)
+ELSE(PYTHONLIBS_FOUND)
+	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
+ENDIF(PYTHONLIBS_FOUND)
+
+
+#############################################################################
 #Here we build the wxWidgets GUI executable
 #############################################################################
+
+#############################################################################
+#############################################################################
+###########################      Find OpenGL       ##########################
+#############################################################################
+#############################################################################
+SET(OPENGL_LIBRARY ${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
+
+MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
+
+INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR})
+
+#############################################################################
+#############################################################################
+######################### wxWidgets LIBRARIES SETUP #########################
+#############################################################################
+#############################################################################
+# Here you can define what libraries of wxWidgets you need for your
+# application. You can figure out what libraries you need here;
+# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
+SET(wxWidgets_USE_LIBS base core gl aui adv )
+FIND_PACKAGE(wxWidgets)
+
 IF(wxWidgets_FOUND)
+	# Include wxWidgets macros
+	INCLUDE(${wxWidgets_USE_FILE})
+	MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
+
 	ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
-	INCLUDE_DIRECTORIES( ${wxWidgets_INCLUDE_DIRS} )
+	INCLUDE_DIRECTORIES(SYSTEM ${wxWidgets_INCLUDE_DIRS} )
 
 	IF(APPLE)
-		INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
+		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
 		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
 		FIND_LIBRARY(PYTHON_LIBRARY Python )
@@ -854,16 +834,31 @@ IF(wxWidgets_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
+ELSE(wxWidgets_FOUND)
+	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
 ENDIF(wxWidgets_FOUND)
 
 #############################################################################
 #Here we build the QT4 GUI executable
 #############################################################################
+
+#############################################################################
+#############################################################################
+############################   QT4 LIBRARIES    #############################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE(Qt4)
 IF(QT4_FOUND)
+	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
+	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
+	SET(QT_USE_QTOPENGL TRUE)
+	INCLUDE(${QT_USE_FILE})
+
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
 	QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )
 	QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} )
@@ -873,7 +868,7 @@ IF(QT4_FOUND)
 
 	ADD_EXECUTABLE(luxrenderqt ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
 	IF(APPLE)
-		INCLUDE_DIRECTORIES ( /Developer/Headers/FlatCarbon /usr/local/include)
+		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
 		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
 		FIND_LIBRARY(PYTHON_LIBRARY Python )
@@ -891,10 +886,12 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrenderqt -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PYTHON_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderqt -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY} ${PYTHON_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
 	ENDIF(APPLE)
+ELSE(QT4_FOUND)
+	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
 ENDIF(QT4_FOUND)
 
 #############################################################################

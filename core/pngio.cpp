@@ -22,7 +22,7 @@
 
 // pngio.cpp*
 #include "pngio.h"
-#include "error.h"
+#include "color.h"
 #include "error.h"
 #include "osfunc.h"
 #include <png.h>

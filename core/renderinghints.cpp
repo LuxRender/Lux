@@ -26,6 +26,7 @@
 #include "scene.h"
 #include "light.h"
 #include "mcdistribution.h"
+#include "sampling.h"
 #include "paramset.h"
 
 #include <boost/assert.hpp>

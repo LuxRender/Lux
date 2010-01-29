@@ -31,6 +31,9 @@
 #include "blackbodyspd.h"
 #include "reflection/bxdf.h"
 #include "reflection/bxdf/lambertian.h"
+#include "spectrum.h"
+#include "texture.h"
+#include "sphericalfunction.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -81,6 +84,28 @@ AreaLight::AreaLight(const Transform &light2world,
 AreaLight::~AreaLight()
 {
 	delete func;
+}
+
+SWCSpectrum AreaLight::L(const TsPack *tspack, const DifferentialGeometry &dg,
+	const Vector& w) const
+{
+	if (Dot(dg.nn, w) > 0.f) {
+		SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
+		if (func) {
+			// Transform to the local coordinate system around the point
+			const Vector wLocal(Dot(dg.dpdu, w), Dot(dg.dpdv, w),
+				Dot(dg.nn, w));
+			Ll *= SWCSpectrum(tspack, func->f(wLocal));
+		}
+		return Ll;
+	}
+	return SWCSpectrum(0.f);
+}
+
+float AreaLight::Power(const Scene *scene) const
+{
+	return Le->Y() * gain * area * M_PI *
+		(func ? 2.f * func->Average_f() : 1.f);
 }
 
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,

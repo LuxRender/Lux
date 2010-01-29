@@ -251,6 +251,23 @@ void Scene::SignalThreads(ThreadSignals signal) {
 }
 
 // Scene Methods -----------------------
+RenderThread::RenderThread(u_int _n, ThreadSignals _signal,
+	SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr,
+	Camera* _Cam, Scene* _Scn) : n(_n), signal(_signal),
+	surfaceIntegrator(_Si), volumeIntegrator(_Vi), sample(NULL),
+	sampler(_Splr->clone()), camera(_Cam), scene(_Scn), thread(NULL),
+	samples(0.), blackSamples(0.)
+{
+	sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
+}
+
+RenderThread::~RenderThread()
+{
+//	delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
+	delete sample;
+	delete thread;
+}
+
 void RenderThread::Render(RenderThread *myThread) {
 	if (myThread->scene->IsFilmOnly())
 		return;

@@ -28,6 +28,9 @@
 #include "spectrumwavelengths.h"
 #include "dynload.h"
 #include "camera.h"
+#include "sampling.h"
+#include "scene.h"
+#include "color.h"
 #include "mc.h"
 
 #include <boost/thread/xtime.hpp>
