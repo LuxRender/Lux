@@ -59,8 +59,11 @@ public:
 	}
 	float SchlickD(float cos1, float cos2, const Vector &H) const {
 		const float G = SchlickG(cos1) * SchlickG(cos2);
-		return (1.f - G * (1.f - SchlickZ(fabsf(H.z)) *
-			SchlickA(H))) / (4.f * M_PI * cos1 * cos2);
+// Alternative with interreflection in the coating creases
+//		return (0.f - G * (0.f - SchlickZ(fabsf(H.z)) *
+//			SchlickA(H))) / (4.f * M_PI * cos1 * cos2);
+		return G * SchlickZ(fabsf(H.z)) * SchlickA(H) /
+			(4.f * M_PI * cos1 * cos2);
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,

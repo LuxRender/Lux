@@ -57,8 +57,8 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 
-	float u = max(1.f, nu->Evaluate(tspack, dgs));
-	float v = max(1.f, nv->Evaluate(tspack, dgs));
+	float u = min(1.f, nu->Evaluate(tspack, dgs));
+	float v = min(1.f, nv->Evaluate(tspack, dgs));
 	float ld = depth->Evaluate(tspack, dgs);
 
 	BxDF *bxdf;

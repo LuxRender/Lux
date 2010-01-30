@@ -102,8 +102,6 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		cosWH = AbsDot(wo, H);
 		*wi = 2.f * cosWH * H - wo;
 	}
-	if (!SameHemisphere(wo, *wi))
-		return false;
 	const float specPdf = SchlickZ(fabsf(H.z)) * SchlickA(H) /
 		(4.f * M_PI * fabsf(wi->z));
 	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
