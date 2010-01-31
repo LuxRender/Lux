@@ -29,76 +29,82 @@
 using namespace lux;
 
 // Primitive Method Definitions
-Primitive::~Primitive() { }
-
 void Primitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
-		const PrimitiveRefinementHints& refineHints, boost::shared_ptr<Primitive> thisPtr)
+	const PrimitiveRefinementHints& refineHints,
+	const boost::shared_ptr<Primitive> &thisPtr)
 {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Refine method called!");
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::Refine method called!");
 }
 
-
-bool Primitive::Intersect(const Ray &r, Intersection *in) const {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Intersect method called!");
+bool Primitive::Intersect(const Ray &r, Intersection *in) const
+{
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::Intersect method called!");
 	return false;
 }
-bool Primitive::IntersectP(const Ray &r) const {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::IntersectP method called!");
+
+bool Primitive::IntersectP(const Ray &r) const
+{
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::IntersectP method called!");
 	return false;
 }
-
 
 void Primitive::GetShadingGeometry(const Transform &obj2world,
-			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
+	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::GetShadingGeometry method called!");
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::GetShadingGeometry method called!");
 }
 
-
-float Primitive::Area() const {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Area method called!");
+float Primitive::Area() const
+{
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::Area method called!");
 	return 0.f;
 }
-void Primitive::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
-	luxError(LUX_BUG,LUX_SEVERE,"Unimplemented Primitive::Sample method called!");
-}
-float Primitive::Pdf(const Point &p) const {
-	return 1.f / Area();
-}
-void Primitive::Sample(const TsPack *tspack, const Point &p,
-		float u1, float u2, float u3, DifferentialGeometry *dg) const
+
+void Primitive::Sample(float u1, float u2, float u3,
+	DifferentialGeometry *dg) const
 {
-	Sample(u1, u2, u3, dg);
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::Sample method called!");
 }
-float Primitive::Pdf(const Point &p, const Vector &wi) const {
+
+float Primitive::Pdf(const Point &p, const Vector &wi) const
+{
 	// Intersect sample ray with area light geometry
 	Intersection isect;
 	Ray ray(p, wi);
-	if (!Intersect(ray, &isect)) return 0.f;
+	if (!Intersect(ray, &isect))
+		return 0.f;
 	// Convert light sample weight to solid angle measure
 	float pdf = DistanceSquared(p, ray(ray.maxt)) /
 		(AbsDot(isect.dg.nn, -wi) * Area());
-	if (AbsDot(isect.dg.nn, -wi) == 0.f) pdf = INFINITY;
+	if (AbsDot(isect.dg.nn, -wi) == 0.f)
+		pdf = INFINITY;
 	return pdf;
-}
-float Primitive::Pdf(const Point &p, const Point &po) const {
-	return 1.f / Area();
 }
 
 // Intersection Method Definitions
-BSDF *Intersection::GetBSDF(const TsPack *tspack, const RayDifferential &ray)
-		const {
-	// radiance - disabled for threading // static StatsCounter pointsShaded("Shading", "Number of points shaded"); // NOBOOK
-	// radiance - disabled for threading // ++pointsShaded; // NOBOOK
+BSDF *Intersection::GetBSDF(const TsPack *tspack,
+	const RayDifferential &ray) const
+{
 	dg.ComputeDifferentials(ray);
 	DifferentialGeometry dgShading;
-	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg, &dgShading);
+	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg,
+		&dgShading);
 	return material->GetBSDF(tspack, dg, dgShading, exterior, interior);
 }
-SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const {
-	return arealight ? arealight->L(tspack, dg, w) : SWCSpectrum(0.);
+
+SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const
+{
+	return arealight ? arealight->L(tspack, dg, w) : SWCSpectrum(0.f);
 }
-SWCSpectrum Intersection::Le(const TsPack *tspack, const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+
+SWCSpectrum Intersection::Le(const TsPack *tspack, const Ray &ray,
+	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	if (arealight)
 		return arealight->L(tspack, ray, dg, n, bsdf, pdf, pdfDirect);
@@ -108,34 +114,31 @@ SWCSpectrum Intersection::Le(const TsPack *tspack, const Ray &ray, const Normal 
 }
 
 // AreaLightPrimitive Method Definitions
-AreaLightPrimitive::AreaLightPrimitive(boost::shared_ptr<Primitive> aPrim,
-		AreaLight* aAreaLight)
-{
-	this->prim = aPrim;
-	this->areaLight = aAreaLight;
-}
 void AreaLightPrimitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
-		const PrimitiveRefinementHints& refineHints,
-		boost::shared_ptr<Primitive> thisPtr)
+	const PrimitiveRefinementHints& refineHints,
+	const boost::shared_ptr<Primitive> &thisPtr)
 {
 	// Refine the decorated primitive and add an arealight decorator to each result
 	vector<boost::shared_ptr<Primitive> > tmpRefined;
 	prim->Refine(tmpRefined, refineHints, prim);
-	for(u_int i=0; i<tmpRefined.size(); i++) {
+	for (u_int i = 0; i < tmpRefined.size(); ++i) {
 		boost::shared_ptr<Primitive> currPrim(
 			new AreaLightPrimitive(tmpRefined[i], areaLight));
 		refined.push_back(currPrim);
 	}
 }
-bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const {
-	if(!prim->Intersect(r, in))
+
+bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const
+{
+	if (!prim->Intersect(r, in))
 		return false;
 	in->arealight = areaLight; // set the intersected arealight
 	return true;
 }
 
 // InstancePrimitive Method Definitions
-bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const {
+bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
+{
 	Ray ray = WorldToInstance(r);
 	if (!instance->Intersect(ray, isect))
 		return false;
@@ -150,13 +153,21 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const {
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
 	isect->dg.handle = isect->primitive;
 	isect->primitive = this;
-	if(material)
+	isect->dg.time = r.time;
+	if (material)
 		isect->material = material.get();
+	if (exterior)
+		isect->exterior = exterior.get();
+	if (interior)
+		isect->interior = interior.get();
 	return true;
 }
-bool InstancePrimitive::IntersectP(const Ray &r) const {
+
+bool InstancePrimitive::IntersectP(const Ray &r) const
+{
 	return instance->IntersectP(WorldToInstance(r));
 }
+
 void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
@@ -167,8 +178,10 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
 		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
 		dg.u, dg.v, dg.handle);
-	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords, 3 * sizeof(float));
-	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w, dgl, dgShading);
+	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords,
+		3 * sizeof(float));
+	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w,
+		dgl, dgShading);
 	dgShading->p = InstanceToWorld(dgShading->p);
 	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
 	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
@@ -180,9 +193,9 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 }
 
 // MotionPrimitive Method Definitions
-bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const {
-
-	Transform InstanceToWorld = motionSystem->Sample(r.time);
+bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
+{
+	Transform InstanceToWorld = motionSystem.Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
 	Ray ray = WorldToInstance(r);
@@ -200,11 +213,18 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const {
 	isect->dg.handle = isect->primitive;
 	isect->primitive = this;
 	isect->dg.time = r.time;
+	if (material)
+		isect->material = material.get();
+	if (exterior)
+		isect->exterior = exterior.get();
+	if (interior)
+		isect->interior = interior.get();
 	return true;
 }
 
-bool MotionPrimitive::IntersectP(const Ray &r) const {
-	Transform InstanceToWorld = motionSystem->Sample(r.time);
+bool MotionPrimitive::IntersectP(const Ray &r) const
+{
+	Transform InstanceToWorld = motionSystem.Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
 	return instance->IntersectP(WorldToInstance(r));
@@ -212,7 +232,7 @@ bool MotionPrimitive::IntersectP(const Ray &r) const {
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	Transform InstanceToWorld = motionSystem->Sample(dg.time);
+	Transform InstanceToWorld = motionSystem.Sample(dg.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 	Transform o2w(WorldToInstance * obj2world);
 	// Transform instance's differential geometry to world space
@@ -221,8 +241,10 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
 		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
 		dg.u, dg.v, dg.handle);
-	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords, 3 * sizeof(float));
-	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w, dgl, dgShading);
+	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords,
+		3 * sizeof(float));
+	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w,
+		dgl, dgShading);
 	dgShading->p = InstanceToWorld(dgShading->p);
 	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
 	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
@@ -233,7 +255,8 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	dgShading->dpdy = InstanceToWorld(dgShading->dpdy);
 }
 
-BBox MotionPrimitive::WorldBound() const  {
-	return motionSystem->Bound(instance->WorldBound());
+BBox MotionPrimitive::WorldBound() const
+{
+	return motionSystem.Bound(instance->WorldBound());
 }
 

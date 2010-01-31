@@ -22,6 +22,7 @@
 
 // frequency.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "frequencyspd.h"
 #include "paramset.h"

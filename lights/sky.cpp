@@ -22,6 +22,8 @@
 
 // sky.cpp*
 #include "sky.h"
+#include "memory.h"
+#include "randomgen.h"
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"

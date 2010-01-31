@@ -66,7 +66,7 @@ public:
 
 	Transform Sample(float time) const;
 
-	BBox Bound(BBox ibox) {
+	BBox Bound(BBox ibox) const {
       		// Compute total bounding box by naive unions.
 		// NOTE - radiance - this needs some work.
 		BBox tbox;
@@ -83,7 +83,7 @@ protected:
 	// [Sx][Sy][Sz][Shearx/y][Sx/z][Sz/y][Rx][Ry][Rz][Tx][Ty][Tz][P(x,y,z,w)]
 	// based on unmatrix() by Spencer W. Thomas from Graphic Gems II
 	// TODO - lordcrc - implement extraction of perspective transform
-	bool DecomposeMatrix(const boost::shared_ptr<Matrix4x4> m, Transforms &trans) const;
+	bool DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms &trans) const;
 
 	// MotionSystem Protected Data
 	float startTime, endTime;

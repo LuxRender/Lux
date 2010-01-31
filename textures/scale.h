@@ -23,6 +23,7 @@
 
 // scale.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -35,11 +36,8 @@ template <class T1, class T2>
 class ScaleTexture : public Texture<T2> {
 public:
 	// ScaleTexture Public Methods
-	ScaleTexture(boost::shared_ptr<Texture<T1> > t1,
-			boost::shared_ptr<Texture<T2> > t2) {
-		tex1 = t1;
-		tex2 = t2;
-	}
+	ScaleTexture(boost::shared_ptr<Texture<T1> > &t1,
+		boost::shared_ptr<Texture<T2> > &t2) : tex1(t1), tex2(t2) { }
 	virtual ~ScaleTexture() { }
 	virtual T2 Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		return tex1->Evaluate(tspack, dg) * tex2->Evaluate(tspack, dg);
@@ -63,16 +61,22 @@ private:
 template <class T, class U> inline Texture<float> * ScaleTexture<T,U>::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	return new ScaleTexture<float, float>(tp.GetFloatTexture("tex1", 1.f),
-		tp.GetFloatTexture("tex2", 1.f));
+	boost::shared_ptr<Texture<float> > tex1(tp.GetFloatTexture("tex1", 1.f)),
+		tex2(tp.GetFloatTexture("tex2", 1.f));
+	return new ScaleTexture<float, float>(tex1,tex2);
 }
 
 template <class T,class U> inline Texture<SWCSpectrum> * ScaleTexture<T,U>::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	return new ScaleTexture<SWCSpectrum, SWCSpectrum>(
-		tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f)),
-		tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex2(tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
+	boost::shared_ptr<Texture<float> > ftex1(tp.GetFloatTexture("tex1"));
+	if (ftex1)
+		return new ScaleTexture<float, SWCSpectrum>(ftex1, tex2);
+	else {
+		boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f)));
+		return new ScaleTexture<SWCSpectrum, SWCSpectrum>(tex1, tex2);
+	}
 }
 
 }//namespace lux

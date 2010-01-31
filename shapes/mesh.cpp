@@ -32,7 +32,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
-	boost::shared_ptr<Texture<float> > dmMap, float dmScale, float dmOffset,
+	boost::shared_ptr<Texture<float> > &dmMap, float dmScale, float dmOffset,
 	bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
 {
 	accelType = acceltype;
@@ -189,7 +189,7 @@ class MeshElemSharedPtr : public T
 {
 public:
 	MeshElemSharedPtr(const Mesh* m, u_int n,
-		boost::shared_ptr<Primitive> aPtr)
+		const boost::shared_ptr<Primitive> &aPtr)
 	: T(m,n), ptr(aPtr) { }
 private:
 	const boost::shared_ptr<Primitive> ptr;
@@ -197,7 +197,7 @@ private:
 
 void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	const PrimitiveRefinementHints &refineHints,
-	boost::shared_ptr<Primitive> thisPtr)
+	const boost::shared_ptr<Primitive> &thisPtr)
 {
 	if (ntris + nquads == 0)
 		return;
@@ -208,13 +208,12 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
 				// Apply subdivision
-				boost::shared_ptr<LoopSubdiv::SubdivResult> res;
 				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
 					ntris, nverts, triVertexIndex, p, uvs,
 					nSubdivLevels, displacementMap,
 					displacementMapScale, displacementMapOffset,
 					displacementMapNormalSmooth, displacementMapSharpBoundary);
-				res = loopsubdiv.Refine();
+				boost::shared_ptr<LoopSubdiv::SubdivResult> res(loopsubdiv.Refine());
 				// Check if subdivision was successfull
 				if (!res)
 					break;
@@ -553,7 +552,8 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		// Lotus - read subdivision data
 		map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
 
-		displacementMap = (*floatTextures)[displacementMapName];
+		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
+		displacementMap = dm;
 
 		if (displacementMap.get() == NULL) {
 			std::stringstream ss;

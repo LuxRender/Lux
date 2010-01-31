@@ -220,11 +220,11 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		delete[] nf;
 	}
 
+	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
 		plyNbVerts, p, n, NULL, Mesh::TRI_AUTO, plyNbTris, vertexIndex,
 		Mesh::QUAD_QUADRILATERAL, 0, NULL, Mesh::SUBDIV_LOOP, 0,
-		boost::shared_ptr<Texture<float> >(), 1.f, 0.f,
-		false, false);
+		dummytex, 1.f, 0.f, false, false);
 	delete[] p;
 	delete[] n;
 	delete[] vertexIndex;

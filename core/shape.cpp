@@ -32,77 +32,79 @@ using namespace lux;
 Shape::Shape(const Transform &o2w, bool ro)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
 	reverseOrientation(ro),
-	transformSwapsHandedness(o2w.SwapsHandedness()) {
-}
-Shape::Shape(const Transform &o2w, bool ro, boost::shared_ptr<Material> mat)
-	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
-	material(mat), reverseOrientation(ro),
 	transformSwapsHandedness(o2w.SwapsHandedness())
 {
-	// Update shape creation statistics
-	// radiance - disabled for threading // static StatsCounter nShapesMade("Geometry","Total shapes created");
-	// radiance - disabled for threading // ++nShapesMade;
+}
+
+Shape::Shape(const Transform &o2w, bool ro, boost::shared_ptr<Material> &mat,
+	boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in)
+	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
+	material(mat), exterior(ex), interior(in), reverseOrientation(ro),
+	transformSwapsHandedness(o2w.SwapsHandedness())
+{
 }
 
 // PrimitiveSet Method Definitions
-PrimitiveSet::PrimitiveSet(boost::shared_ptr<Aggregate> a) {
+PrimitiveSet::PrimitiveSet(boost::shared_ptr<Aggregate> &a) : accelerator(a)
+{
 	a->GetPrimitives(primitives);
-
 	initAreas();
-
-	accelerator = a;
 }
-PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) {
-	primitives = p;
 
+PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) :
+	primitives(p)
+{
 	initAreas();
 
 	// NOTE - ratow - Use accelerator for complex lights.
-	if(primitives.size() <= 16) {
+	if (primitives.size() <= 16) {
 		accelerator = boost::shared_ptr<Primitive>();
 		worldbound = BBox();
 		for(u_int i = 0; i < primitives.size(); i++)
 			worldbound = Union(worldbound, primitives[i]->WorldBound());
 		// NOTE - ratow - Correctly expands bounds when pMin is not negative or pMax is not positive.
-		worldbound.pMin -= (worldbound.pMax-worldbound.pMin)*0.01f;
-		worldbound.pMax += (worldbound.pMax-worldbound.pMin)*0.01f;
+		worldbound.pMin -= (worldbound.pMax - worldbound.pMin) * 0.01f;
+		worldbound.pMax += (worldbound.pMax - worldbound.pMin) * 0.01f;
 	} else {
 		accelerator = boost::shared_ptr<Primitive>(
-				MakeAccelerator("kdtree", primitives, ParamSet()));
+			MakeAccelerator("kdtree", primitives, ParamSet()));
 		if (!accelerator)
-			luxError(LUX_BUG,LUX_SEVERE,"Unable to find \"kdtree\" accelerator");
+			luxError(LUX_BUG, LUX_SEVERE,
+				"Unable to find \"kdtree\" accelerator");
 	}
 }
-bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const {
-	if(accelerator) {
+
+bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const
+{
+	if (accelerator)
 		return accelerator->Intersect(ray, in);
-	} else if(worldbound.IntersectP(ray)) {
+	if (worldbound.IntersectP(ray)) {
 		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
 		bool anyHit = false;
 		for (u_int i = 0; i < primitives.size(); ++i) {
-			if (primitives[i]->Intersect(ray, in)) {
+			if (primitives[i]->Intersect(ray, in))
 				anyHit = true;
-			}
 		}
 		return anyHit;
 	}
 	return false;
 }
 
-bool PrimitiveSet::IntersectP(const Ray &ray) const {
-	if(accelerator) {
+bool PrimitiveSet::IntersectP(const Ray &ray) const
+{
+	if (accelerator)
 		return accelerator->IntersectP(ray);
-	} else if(worldbound.IntersectP(ray)) {
+	if (worldbound.IntersectP(ray)) {
 		for (u_int i = 0; i < primitives.size(); ++i) {
-			if (primitives[i]->IntersectP(ray)) {
+			if (primitives[i]->IntersectP(ray))
 				return true;
-			}
 		}
 	}
 	return false;
 }
 
-void PrimitiveSet::initAreas() {
+void PrimitiveSet::initAreas()
+{
 	area = 0;
 	vector<float> areas;
 	areas.reserve(primitives.size());

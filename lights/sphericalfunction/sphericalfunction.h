@@ -72,10 +72,11 @@ namespace lux {
 	class MipMapSphericalFunction : public SphericalFunction {
 	public:
 		MipMapSphericalFunction();
-		MipMapSphericalFunction(boost::shared_ptr< const MIPMap<RGBColor> > aMipMap, bool flipZ);
+		MipMapSphericalFunction(boost::shared_ptr< const MIPMap<RGBColor> > &aMipMap, bool flipZ);
 
-		void SetMipMap( boost::shared_ptr< const MIPMap<RGBColor> > aMipMap ) {
-			mipMap = aMipMap;
+		void SetMipMap( boost::shared_ptr< const MIPMap<RGBColor> > &aMipMap ) {
+			boost::shared_ptr<const MIPMap<RGBColor> > mm(aMipMap);
+			mipMap = mm;
 		}
 
 		using SphericalFunction::f;
@@ -92,7 +93,7 @@ namespace lux {
 	public:
 		CompositeSphericalFunction() { }
 
-		void Add( boost::shared_ptr< const SphericalFunction > aFunc ) {
+		void Add( boost::shared_ptr< const SphericalFunction > &aFunc ) {
 			funcs.push_back( aFunc );
 		}
 
@@ -112,7 +113,7 @@ namespace lux {
 	 */
 	class SampleableSphericalFunction : public SphericalFunction {
 	public:
-		SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction> aFunc, 
+		SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction> &aFunc, 
 			u_int xRes = 512, u_int yRes = 256);
 		~SampleableSphericalFunction();
 

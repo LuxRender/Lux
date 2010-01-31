@@ -42,32 +42,6 @@ public:
 		SWCSpectrum *fr, SWCSpectrum *fi) const = 0;
 };
 
-// The ConcreteFresnel class allows an arbitrary Fresnel derivative to be
-// returned by a function
-// The destructor doesn't free the referenced class since it can be allocated
-// in a memory arena
-class ConcreteFresnel : public Fresnel {
-public:
-	ConcreteFresnel(const Fresnel *fr) : fresnel(fr) { }
-	virtual ~ConcreteFresnel() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi,
-		SWCSpectrum *const f) const {
-		fresnel->Evaluate(tspack, cosi, f);
-	}
-	virtual float Index(const TsPack *tspack) const {
-		return fresnel->Index(tspack);
-	}
-	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
-		return fresnel->SigmaA(tspack);
-	}
-	virtual void ComplexEvaluate(const TsPack *tspack,
-		SWCSpectrum *fr, SWCSpectrum *fi) const {
-		fresnel->ComplexEvaluate(tspack, fr, fi);
-	}
-private:
-	const Fresnel *fresnel;
-};
-
 void FrDiel(float cosi, float cost,
 	const SWCSpectrum &etai, const SWCSpectrum &etat, SWCSpectrum *const f);
 void FrDiel2(float cosi, const SWCSpectrum &cost, const SWCSpectrum &eta, SWCSpectrum *f);

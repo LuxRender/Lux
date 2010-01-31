@@ -22,6 +22,7 @@
 
 // blackbody.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "blackbodyspd.h"
 #include "paramset.h"

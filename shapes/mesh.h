@@ -39,7 +39,7 @@ public:
 			MeshTriangleType tritype, u_int trisCount, const int *tris,
 			MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 			MeshSubdivType subdivType, u_int nsubdivlevels,
-			boost::shared_ptr<Texture<float> > displacementMap,
+			boost::shared_ptr<Texture<float> > &displacementMap,
 			float displacementMapScale, float displacementMapOffset,
 			bool displacementMapNormalSmooth, bool displacementMapSharpBoundary);
 	virtual ~Mesh();
@@ -49,7 +49,7 @@ public:
 	virtual bool CanIntersect() const { return false; }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
-		boost::shared_ptr<Primitive> thisPtr);
+		const boost::shared_ptr<Primitive> &thisPtr);
 	virtual bool CanSample() const { return false; }
 
 	friend class MeshWaldTriangle;

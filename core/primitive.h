@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
-#include "spectrum.h"
 
 namespace lux
 {
@@ -37,7 +36,7 @@ class PrimitiveRefinementHints;
 class Primitive {
 public:
 	// Construction/Destruction
-	virtual ~Primitive();
+	virtual ~Primitive() { }
 
 	// General util
 	/**
@@ -56,7 +55,7 @@ public:
 	 */
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
-		boost::shared_ptr<Primitive> thisPtr);
+		const boost::shared_ptr<Primitive> &thisPtr);
 
 	// Intersection
 	/**
@@ -114,7 +113,7 @@ public:
 	 * @param p The point that was sampled.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const Point &p) const;
+	virtual float Pdf(const Point &p) const { return 1.f / Area(); }
 	/**
 	 * Samples a point on this primitive that will be tested for visibility
 	 * from a given point. Only the p, nn, dpdu, dpdv, u and v need to be
@@ -127,7 +126,9 @@ public:
 	 * @param dg The destination to store the sampled point in.
 	 */
 	virtual void Sample(const TsPack *tspack, const Point &p,
-			float u1, float u2, float u3, DifferentialGeometry *dg) const;
+		float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		Sample(u1, u2, u3, dg);
+	}
 	/**
 	 * Returns the probability density for sampling the given point.
 	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
@@ -144,7 +145,9 @@ public:
 	 * @param po The point that was sampled.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const Point &p, const Point &po) const;
+	virtual float Pdf(const Point &p, const Point &po) const {
+		return 1.f / Area();
+	}
 };
 
 class PrimitiveRefinementHints {
@@ -197,13 +200,14 @@ public:
 class AreaLightPrimitive : public Primitive {
 public:
 	// AreaLightPrimitive Public Methods
-	AreaLightPrimitive(boost::shared_ptr<Primitive> prim, AreaLight* arealight);
+	AreaLightPrimitive(boost::shared_ptr<Primitive> &aPrim,
+		AreaLight* aArealight) : prim(aPrim), areaLight(aArealight) { }
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
-		boost::shared_ptr<Primitive> thisPtr);
+		const boost::shared_ptr<Primitive> &thisPtr);
 
 	virtual bool CanIntersect() const { return prim->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in) const;
@@ -253,14 +257,11 @@ public:
 	 * @param mat The material this instance or NULL to use the
 	 *            instanced primitive's material.
 	 */
-	InstancePrimitive(boost::shared_ptr<Primitive> i,
-	                  const Transform &i2w,
-					  boost::shared_ptr<Material> mat) {
-		instance = i;
-		InstanceToWorld = i2w;
-		WorldToInstance = i2w.GetInverse();
-		material = mat;
-	}
+	InstancePrimitive(boost::shared_ptr<Primitive> &i, const Transform &i2w,
+		boost::shared_ptr<Material> &mat, boost::shared_ptr<Volume> &ex,
+		boost::shared_ptr<Volume> &in) : instance(i),
+		InstanceToWorld(i2w), WorldToInstance(i2w.GetInverse()),
+		material(mat), exterior(ex), interior(in) { }
 	virtual ~InstancePrimitive() { }
 
 	virtual BBox WorldBound() const  {
@@ -271,11 +272,13 @@ public:
 	virtual bool Intersect(const Ray &r, Intersection *in) const;
 	virtual bool IntersectP(const Ray &r) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
-			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const;
 
 	virtual bool CanSample() const { return instance->CanSample(); }
 	virtual float Area() const { return instance->Area(); }
-	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+	virtual void Sample(float u1, float u2, float u3,
+		DifferentialGeometry *dg) const  {
 		instance->Sample(u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
@@ -286,7 +289,7 @@ public:
 	}
 	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
 	virtual void Sample(const TsPack *tspack, const Point &P,
-			float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		instance->Sample(tspack, WorldToInstance(P), u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
@@ -306,6 +309,7 @@ private:
 	boost::shared_ptr<Primitive> instance;
 	Transform InstanceToWorld, WorldToInstance;
 	boost::shared_ptr<Material> material;
+	boost::shared_ptr<Volume> exterior, interior;
 };
 
 class Aggregate : public Primitive {
@@ -333,36 +337,36 @@ class MotionPrimitive : public Primitive {
 public:
 	// MotionPrimitive Public Methods
 	/**
-     * Creates a new instance from the given primitive.
-     *
-     * @param i   The primitive to instance.
-     * @param i2ws The instance to world transformation at start time.
-     * @param i2we The instance to world transformation at end time.
+	 * Creates a new instance from the given primitive.
+	 *
+	 * @param i   The primitive to instance.
+	 * @param i2ws The instance to world transformation at start time.
+	 * @param i2we The instance to world transformation at end time.
 	 * @param s   The time at start.
-     * @param e   The time at end.
-     */
-	MotionPrimitive(boost::shared_ptr<Primitive> i,
-		const Transform &i2ws,
-		const Transform &i2we,
-		float s, float e )
-	{
-		instance = i;
-		motionSystem = new MotionSystem(s, e, i2ws, i2we);
-	}
-	virtual ~MotionPrimitive() { delete motionSystem; }
+	 * @param e   The time at end.
+	 */
+	MotionPrimitive(boost::shared_ptr<Primitive> &i,
+		const Transform &i2ws, const Transform &i2we,
+		float s, float e, boost::shared_ptr<Material> &mat,
+		boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in) :
+		instance(i), motionSystem(s, e, i2ws, i2we), material(mat),
+		exterior(ex), interior(in) { }
+	virtual ~MotionPrimitive() { }
 
-    virtual BBox WorldBound() const;
+	virtual BBox WorldBound() const;
 
-    virtual bool CanIntersect() const { return instance->CanIntersect(); }
-    virtual bool Intersect(const Ray &r, Intersection *in) const;
-    virtual bool IntersectP(const Ray &r) const;
+	virtual bool CanIntersect() const { return instance->CanIntersect(); }
+	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool IntersectP(const Ray &r) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
-			const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const;
 
-    virtual bool CanSample() const { return instance->CanSample(); }
-    virtual float Area() const { return instance->Area(); }
-    virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
-		Transform InstanceToWorld = motionSystem->Sample(dg->time);
+	virtual bool CanSample() const { return instance->CanSample(); }
+	virtual float Area() const { return instance->Area(); }
+	virtual void Sample(float u1, float u2, float u3,
+		DifferentialGeometry *dg) const  {
+		Transform InstanceToWorld = motionSystem.Sample(dg->time);
 		instance->Sample(u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
@@ -370,11 +374,13 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
-    }
-    virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
-    virtual void Sample(const TsPack *tspack, const Point &P, float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		Transform InstanceToWorld = motionSystem->Sample(dg->time);
-		instance->Sample(tspack, InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
+	}
+	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
+	virtual void Sample(const TsPack *tspack, const Point &P,
+		float u1, float u2, float u3, DifferentialGeometry *dg) const {
+		Transform InstanceToWorld = motionSystem.Sample(dg->time);
+		instance->Sample(tspack, InstanceToWorld.GetInverse()(P),
+			u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
 		dg->dpdu = InstanceToWorld(dg->dpdu);
@@ -382,16 +388,18 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-    virtual float Pdf(const Point &p, const Vector &wi) const {
-        return instance->Pdf(p, wi);
-     }
-    virtual float Pdf(const Point &p, const Point &po) const {
-        return instance->Pdf(p, po);
-     }
+	virtual float Pdf(const Point &p, const Vector &wi) const {
+		return instance->Pdf(p, wi);
+	}
+	virtual float Pdf(const Point &p, const Point &po) const {
+		return instance->Pdf(p, po);
+	}
 private:
-    // MotionPrimitive Private Data
-    boost::shared_ptr<Primitive> instance;
-	MotionSystem *motionSystem;
+	// MotionPrimitive Private Data
+	boost::shared_ptr<Primitive> instance;
+	MotionSystem motionSystem;
+	boost::shared_ptr<Material> material;
+	boost::shared_ptr<Volume> exterior, interior;
 };
 
 

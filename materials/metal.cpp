@@ -41,14 +41,12 @@
 
 using namespace lux;
 
-Metal::Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k, 
-			 boost::shared_ptr<Texture<float> > u, boost::shared_ptr<Texture<float> > v,
-			 boost::shared_ptr<Texture<float> > bump, const CompositingParams &cp) {
-	N = n;
-	K = k;
-	nu = u;
-	nv = v;
-	bumpMap = bump;
+Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 
+	boost::shared_ptr<Texture<float> > &u,
+	boost::shared_ptr<Texture<float> > &v,
+	boost::shared_ptr<Texture<float> > &bump,
+	const CompositingParams &cp) : N(n), K(k), nu(u), nv(v), bumpMap(bump)
+{
 	compParams = new CompositingParams(cp);
 }
 
@@ -182,7 +180,7 @@ bool ReadSOPRAData(std::ifstream &fs, vector<float> &wl, vector<float> &n, vecto
 
 		// linearly interpolate units in file
 		// then convert to wavelength in nm
-		wl[i] = tolambda(lambda_first + (lambda_last - lambda_first) * i / (float)count);
+		wl[i] = tolambda(lambda_first + (lambda_last - lambda_first) * i / static_cast<float>(count));
 		n[i] = boost::lexical_cast<float>(m[1]);
 		k[i] = boost::lexical_cast<float>(m[2]);
 	}
@@ -214,7 +212,7 @@ bool ReadLuxpopData(std::ifstream &fs, vector<float> &wl, vector<float> &n, vect
 			return false;
 
 		// wavelength in data file is in Angstroms, we want nm
-		wl.push_back(boost::lexical_cast<float>(m[1]) * 0.1);
+		wl.push_back(boost::lexical_cast<float>(m[1]) * 0.1f);
 		n.push_back(boost::lexical_cast<float>(m[2]));
 		k.push_back(boost::lexical_cast<float>(m[3]));
 	}
@@ -394,9 +392,9 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	boost::shared_ptr<SPD > n (new IrregularSPD(&s_wl[0], &s_n[0], s_wl.size()) );
 	boost::shared_ptr<SPD > k (new IrregularSPD(&s_wl[0], &s_k[0], s_wl.size()) );
 
-	boost::shared_ptr<Texture<float> > uroughness = tp.GetFloatTexture("uroughness", .1f);
-	boost::shared_ptr<Texture<float> > vroughness = tp.GetFloatTexture("vroughness", .1f);
-	boost::shared_ptr<Texture<float> > bumpMap = tp.GetFloatTexture("bumpmap");
+	boost::shared_ptr<Texture<float> > uroughness(tp.GetFloatTexture("uroughness", .1f));
+	boost::shared_ptr<Texture<float> > vroughness(tp.GetFloatTexture("vroughness", .1f));
+	boost::shared_ptr<Texture<float> > bumpMap(tp.GetFloatTexture("bumpmap"));
 
 
 	// Get Compositing Params

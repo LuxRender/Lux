@@ -30,6 +30,10 @@
 #elif defined(__WIN32__)
 #include <windows.h>
 #else
+#ifdef WIN32
+#undef min
+#undef max
+#endif
 #include <boost/thread/mutex.hpp>
 #endif
 

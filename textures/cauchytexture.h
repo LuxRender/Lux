@@ -30,7 +30,7 @@ namespace lux
 {
 
 // CauchyTexture Declarations
-class CauchyTexture : public Texture<ConcreteFresnel> {
+class CauchyTexture : public Texture<const Fresnel *> {
 public:
 	// ConstantTexture Public Methods
 	CauchyTexture(float cauchya, float cauchyb) :
@@ -38,13 +38,13 @@ public:
 		index(cauchya + cauchyb * 1e6f /
 		(WAVELENGTH_END * WAVELENGTH_START)) { }
 	virtual ~CauchyTexture() { }
-	virtual ConcreteFresnel Evaluate(const TsPack *tspack,
+	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
-		return ConcreteFresnel(&fresnel);
+		return &fresnel;
 	}
 	virtual float Y() const { return index; }
 
-	static Texture<ConcreteFresnel> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	FresnelDielectric fresnel;
 	float index;

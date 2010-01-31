@@ -57,8 +57,8 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
+	float u = min(1.f, nu->Evaluate(tspack, dgs));
+	float v = min(1.f, nv->Evaluate(tspack, dgs));
 	float ld = depth->Evaluate(tspack, dgs);
 
 	BxDF *bxdf;
@@ -78,14 +78,14 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Glossy2::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd = mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f));
-	boost::shared_ptr<Texture<SWCSpectrum> > Ks = mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f));
-	boost::shared_ptr<Texture<SWCSpectrum> > Ka = mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f));
-	boost::shared_ptr<Texture<float> > i = mp.GetFloatTexture("index", 0.0f);
-	boost::shared_ptr<Texture<float> > d = mp.GetFloatTexture("d", .0f);
-	boost::shared_ptr<Texture<float> > uroughness = mp.GetFloatTexture("uroughness", .1f);
-	boost::shared_ptr<Texture<float> > vroughness = mp.GetFloatTexture("vroughness", .1f);
-	boost::shared_ptr<Texture<float> > bumpMap = mp.GetFloatTexture("bumpmap");
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f)));
+	boost::shared_ptr<Texture<float> > i(mp.GetFloatTexture("index", 0.0f));
+	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
+	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
+	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
+	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
 	// Get Compositing Params
 	CompositingParams cP;

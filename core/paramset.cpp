@@ -1165,8 +1165,8 @@ boost::shared_ptr<Texture<SWCSpectrum> >
 	ParamSet::GetSWCSpectrumTexture(const string &n,
 	const RGBColor &def) const
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > texture =
-		Context::GetActive()->GetColorTexture(FindTexture(n));
+	boost::shared_ptr<Texture<SWCSpectrum> > texture(
+		Context::GetActive()->GetColorTexture(FindTexture(n)));
 	if (texture)
 		return texture;
 	RGBColor val = FindOneRGBColor(n, def);
@@ -1180,21 +1180,21 @@ boost::shared_ptr<Texture<float> >
 boost::shared_ptr<Texture<float> >
 	ParamSet::GetFloatTexture(const string &n, float def) const
 {
-	boost::shared_ptr<Texture<float> > texture = GetFloatTexture(n);
+	boost::shared_ptr<Texture<float> > texture(GetFloatTexture(n));
 	if (texture)
 		return texture;
 	float val = FindOneFloat(n, def);
 	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
 }
-boost::shared_ptr<Texture<ConcreteFresnel> >
+boost::shared_ptr<Texture<const Fresnel *> >
 	ParamSet::GetFresnelTexture(const string &n, float def) const
 {
-	boost::shared_ptr<Texture<ConcreteFresnel> > texture =
-		Context::GetActive()->GetFresnelTexture(FindTexture(n));
+	boost::shared_ptr<Texture<const Fresnel *> > texture(
+		Context::GetActive()->GetFresnelTexture(FindTexture(n)));
 	if (texture)
 		return texture;
 	float val = FindOneFloat(n, def);
-	return boost::shared_ptr<Texture<ConcreteFresnel> >(new ConstantFresnelTexture(val));
+	return boost::shared_ptr<Texture<const Fresnel *> >(new ConstantFresnelTexture(val));
 }
 boost::shared_ptr<Material> ParamSet::GetMaterial(const string &n) const
 {

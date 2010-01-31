@@ -24,6 +24,7 @@
 #include "lux.h"
 #include "light.h"
 #include "texture.h"
+#include "geometry/raydifferential.h"
 
 namespace lux
 {
@@ -32,7 +33,8 @@ namespace lux
 class SpotLight : public Light {
 public:
 	// SpotLight Public Methods
-	SpotLight(const Transform &light2world, const boost::shared_ptr< Texture<SWCSpectrum> > L, 
+	SpotLight(const Transform &light2world,
+		const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 		float gain, float width, float fall);
 	virtual ~SpotLight();
 	virtual bool IsDeltaLight() const { return true; }

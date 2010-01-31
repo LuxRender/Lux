@@ -31,6 +31,9 @@
 #include "blackbodyspd.h"
 #include "reflection/bxdf.h"
 #include "reflection/bxdf/lambertian.h"
+#include "spectrum.h"
+#include "texture.h"
+#include "sphericalfunction.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -49,44 +52,66 @@ private:
 
 // AreaLight Method Definitions
 AreaLight::AreaLight(const Transform &light2world,
-		boost::shared_ptr<Texture<SWCSpectrum> > le,
-		float g, float pow, float e, 
-		SampleableSphericalFunction *ssf,
-		u_int ns, const boost::shared_ptr<Primitive> &p)
-	: Light(light2world, ns) {
-	Le = le;
-	gain = g;
-	power = pow;
-	efficacy = e;
-	func = ssf;
-
-	if (p->CanIntersect() && p->CanSample())
-		prim = p;
-	else {
+	boost::shared_ptr<Texture<SWCSpectrum> > &le, float g, float pow,
+	float e, SampleableSphericalFunction *ssf, u_int ns,
+	const boost::shared_ptr<Primitive> &p)
+	: Light(light2world, ns), Le(le), gain(g), power(pow), efficacy(e),
+	func(ssf)
+{
+	if (p->CanIntersect() && p->CanSample()) {
+		// Create a temporary to increase shared count
+		// The assignment is just a swap
+		boost::shared_ptr<Primitive> pr(p);
+		prim = pr;
+	} else {
 		// Create _PrimitiveSet_ for _Primitive_
 		vector<boost::shared_ptr<Primitive> > refinedPrims;
 		PrimitiveRefinementHints refineHints(true);
 		p->Refine(refinedPrims, refineHints, p);
-		if (refinedPrims.size() == 1) prim = refinedPrims[0];
-		else {
+		if (refinedPrims.size() == 1)
+			prim = refinedPrims[0];
+		else
 			prim = boost::shared_ptr<Primitive>(new PrimitiveSet(refinedPrims));
-		}
 	}
 	area = prim->Area();
 	Le->SetIlluminant(); // Illuminant must be set before updating gain
-	const float gainFactor = power * efficacy / (area * M_PI * Le->Y() * (func ? 2.f * func->Average_f() : 1.f));
+	const float gainFactor = power * efficacy /(area * M_PI * Le->Y() *
+		(func ? 2.f * func->Average_f() : 1.f));
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
 }
-AreaLight::~AreaLight() {
-	if(func)
-		delete func;
+
+AreaLight::~AreaLight()
+{
+	delete func;
+}
+
+SWCSpectrum AreaLight::L(const TsPack *tspack, const DifferentialGeometry &dg,
+	const Vector& w) const
+{
+	if (Dot(dg.nn, w) > 0.f) {
+		SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
+		if (func) {
+			// Transform to the local coordinate system around the point
+			const Vector wLocal(Dot(dg.dpdu, w), Dot(dg.dpdv, w),
+				Dot(dg.nn, w));
+			Ll *= SWCSpectrum(tspack, func->f(wLocal));
+		}
+		return Ll;
+	}
+	return SWCSpectrum(0.f);
+}
+
+float AreaLight::Power(const Scene *scene) const
+{
+	return Le->Y() * gain * area * M_PI *
+		(func ? 2.f * func->Average_f() : 1.f);
 }
 
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
-		const Normal &n, float u1, float u2, float u3,
-		Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
+	const Normal &n, float u1, float u2, float u3, Vector *wi, float *pdf,
+	VisibilityTester *visibility) const
+{
 	DifferentialGeometry dg;
 	dg.time = tspack->time;
 	prim->Sample(tspack, p, u1, u2, u3, &dg);
@@ -195,7 +220,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 
 class HemiSphereSphericalFunction : public SphericalFunction {
 public:
-	HemiSphereSphericalFunction(const boost::shared_ptr<const SphericalFunction> aSF) : sf(aSF) {}
+	HemiSphereSphericalFunction(const boost::shared_ptr<const SphericalFunction> &aSF) : sf(aSF) {}
 	RGBColor f(float phi, float theta) const {
 		return theta > 0.f ? sf->f(phi, theta) : 0.f;
 	}
@@ -206,17 +231,18 @@ private:
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,
 	const ParamSet &paramSet, const boost::shared_ptr<Primitive> &prim)
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L(
+		paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float p = paramSet.FindOneFloat("power", 100.f);		// Power/Lm in Watts
 	float e = paramSet.FindOneFloat("efficacy", 17.f);		// Efficacy Lm per Watt
 
-	const SphericalFunction *sf = CreateSphericalFunction(paramSet);
+	boost::shared_ptr<const SphericalFunction> sf(CreateSphericalFunction(paramSet));
 	SampleableSphericalFunction *ssf = NULL;
 	if (sf) {
-		sf = new HemiSphereSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));
-		ssf = new SampleableSphericalFunction(boost::shared_ptr<const SphericalFunction>(sf));
+		boost::shared_ptr<const SphericalFunction> hf(new HemiSphereSphericalFunction(sf));
+		ssf = new SampleableSphericalFunction(hf);
 	}
 
 	int nSamples = paramSet.FindOneInt("nsamples", 1);

@@ -22,6 +22,7 @@
 
 // dots.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -37,11 +38,10 @@ public:
 	virtual ~DotsTexture() {
 		delete mapping;
 	}
-	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<T> > c1,
-			boost::shared_ptr<Texture<T> > c2) {
+	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<T> > &c1,
+		boost::shared_ptr<Texture<T> > &c2) : outsideDot(c1),
+		insideDot(c2) {
 		mapping = m;
-		outsideDot = c1;
-		insideDot = c2;
 	}
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		// Compute cell indices for dots
@@ -106,9 +106,9 @@ template <class T> inline Texture<float> * DotsTexture<T>::CreateFloatTexture(co
 		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		map = new UVMapping2D;
 	}
-	return new DotsTexture<float>(map,
-		tp.GetFloatTexture("inside", 1.f),
-		tp.GetFloatTexture("outside", 0.f));
+	boost::shared_ptr<Texture<float> > in(tp.GetFloatTexture("inside", 1.f)),
+		out(tp.GetFloatTexture("outside", 0.f));
+	return new DotsTexture<float>(map, in, out);
 }
 
 template <class T> inline Texture<SWCSpectrum> * DotsTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
@@ -137,9 +137,10 @@ template <class T> inline Texture<SWCSpectrum> * DotsTexture<T>::CreateSWCSpectr
 		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 		map = new UVMapping2D;
 	}
-	return new DotsTexture<SWCSpectrum>(map,
-		tp.GetSWCSpectrumTexture("inside", RGBColor(1.f)),
-		tp.GetSWCSpectrumTexture("outside", RGBColor(0.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> >
+		in(tp.GetSWCSpectrumTexture("inside", RGBColor(1.f))),
+		out(tp.GetSWCSpectrumTexture("outside", RGBColor(0.f)));
+	return new DotsTexture<SWCSpectrum>(map, in, out);
 }
 
 }//namespace lux

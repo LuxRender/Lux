@@ -23,7 +23,6 @@
 #ifndef LUX_TIMER_H
 #define LUX_TIMER_H
 // timer.h*
-#include "lux.h"
 #if defined ( WIN32 ) || defined(__CYGWIN__)
 #include <windows.h>
 #else

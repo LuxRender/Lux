@@ -22,6 +22,8 @@
 
 // spot.cpp*
 #include "spot.h"
+#include "memory.h"
+#include "color.h"
 #include "bxdf.h"
 #include "mc.h"
 #include "paramset.h"
@@ -70,12 +72,11 @@ private:
 
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &light2world,
-		const boost::shared_ptr< Texture<SWCSpectrum> > L, 
+		const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 		float g, float width, float fall)
-	: Light(light2world) {
+	: Light(light2world), Lbase(L) {
 	lightPos = LightToWorld(Point(0,0,0));
 
-	Lbase = L;
 	Lbase->SetIlluminant();
 	gain = g;
 
@@ -147,7 +148,7 @@ SWCSpectrum SpotLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r
 }
 Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);
@@ -162,10 +163,9 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 	                                dir.x, dir.y, dir.z, 0.,
 	                                    0,     0,     0, 1.));
 	Transform dirToZ = Transform(o);
-	Transform light2world =
-	l2w *
-	Translate(Vector(from.x, from.y, from.z)) *
-	dirToZ.GetInverse();
+	Transform light2world = l2w *
+		Translate(Vector(from.x, from.y, from.z)) *
+		dirToZ.GetInverse();
 
 	SpotLight *l = new SpotLight(light2world, L, g, coneangle,
 		coneangle-conedelta);

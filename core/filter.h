@@ -23,7 +23,6 @@
 #ifndef LUX_FILTER_H
 #define LUX_FILTER_H
 // filter.h*
-#include "lux.h"
 
 namespace lux
 {

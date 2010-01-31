@@ -22,6 +22,7 @@
 
 // timer.cpp*
 #include "timer.h"
+#include "error.h"
 // Timer Method Definitions
 Timer::Timer()
 {

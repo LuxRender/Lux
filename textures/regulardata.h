@@ -22,6 +22,7 @@
 
 // regulardata.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "regular.h"
 #include "paramset.h"

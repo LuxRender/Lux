@@ -27,6 +27,9 @@
 #include "camera.h"
 #include "mcdistribution.h"
 #include "reflection/bxdf.h"
+#include "sampling.h"
+#include "film.h"
+#include "randomgen.h"
 #include "dynload.h"
 #include "paramset.h"
 

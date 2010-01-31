@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_RGBColorWAVELENGTHS_H
-#define LUX_RGBColorWAVELENGTHS_H
+#ifndef LUX_SPECTRUMWAVELENGTHS_H
+#define LUX_SPECTRUMWAVELENGTHS_H
 // Spectrumwavelengths.h*
 #include "lux.h"
 #include "spectrum.h"
@@ -101,4 +101,4 @@ private:
 
 }//namespace lux
 
-#endif // LUX_RGBColorWAVELENGTHS_H
+#endif // LUX_SPECTRUMWAVELENGTHS_H

@@ -22,6 +22,8 @@
 
 // distant.cpp*
 #include "distant.h"
+#include "memory.h"
+#include "color.h"
 #include "mc.h"
 #include "bxdf.h"
 #include "paramset.h"
@@ -65,12 +67,11 @@ private:
 
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &light2world,
-	const boost::shared_ptr<Texture<SWCSpectrum> > L, 
+	const boost::shared_ptr<Texture<SWCSpectrum> > &L, 
 	float g, float theta, const Vector &dir)
-	: Light(light2world) {
+	: Light(light2world), Lbase(L) {
 	lightDir = Normalize(LightToWorld(dir));
 	CoordinateSystem(lightDir, &x, &y);
-	Lbase = L;
 	Lbase->SetIlluminant();
 	gain = g;
 	if (theta == 0.f) {
@@ -287,7 +288,7 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 Light* DistantLight::CreateLight(const Transform &light2world,
 	const ParamSet &paramSet)
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > L = paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f));
+	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
 	float theta = Radians(paramSet.FindOneFloat("theta", 0.f));
 	Point from = paramSet.FindOnePoint("from", Point(0, 0, 0));

@@ -22,6 +22,7 @@
 
 // brick.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -33,81 +34,65 @@ namespace lux {
 template <class T>
 class BrickTexture3D : public Texture<T> {
 public:
-    // BrickTexture3D Public Methods
+	// BrickTexture3D Public Methods
 
-    virtual ~BrickTexture3D() {
-        delete mapping;
-    }
+	virtual ~BrickTexture3D() { delete mapping; }
 
-    BrickTexture3D(
-	        boost::shared_ptr<Texture<T> > c1,
-			boost::shared_ptr<Texture<T> > c2,
-            float brickw,
-			float brickh,
-			float brickd,
-			float mortar,
-            TextureMapping3D *map) : mapping(map) {
-		brickwidth = brickw;
-		brickheight = brickh;
-		brickdepth = brickd;
-		mortarsize = mortar;
-		tex1 = c1;
-		tex2 = c2;
-    }
+	BrickTexture3D(boost::shared_ptr<Texture<T> > &c1,
+		boost::shared_ptr<Texture<T> > &c2,
+		float brickw, float brickh, float brickd, float mortar,
+		TextureMapping3D *map) : brickwidth(brickw),
+		brickheight(brickh), brickdepth(brickd), mortarsize(mortar),
+		mapping(map), tex1(c1), tex2(c2) { }
 
 #define BRICK_EPSILON 1e-3f
 
-    virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-        Vector dpdx, dpdy;
-        Point P = mapping->Map(dg, &dpdx, &dpdy);
+	virtual T Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
+		Vector dpdx, dpdy;
+		Point P = mapping->Map(dg, &dpdx, &dpdy);
 
 		const float offs = BRICK_EPSILON + mortarsize;
 		Point bP = P + Point(offs, offs, offs);
 
 		// Check top
 		float bz = bP.z / brickheight;
-		int ibz = (int) bz; bz -= ibz;
-		if (bz < .0f) bz += 1.f;
+		bz -= Floor2Int(bz);
 		const float mortarheight = mortarsize / brickheight;
 		if (bz <= mortarheight)
 			return tex2->Evaluate(tspack, dg);
 		bz = (bP.z / brickheight) * .5f;
-		ibz = (int) bz; bz -= ibz;
-		if (bz < .0f) bz += 1.f;
+		bz -= Floor2Int(bz);
 
 		// Check odd sides
 		float bx = bP.x / brickwidth;
-		int ibx = (int) bx; bx -= ibx;
-		if (bx < .0f) bx += 1.f;
+		bx -= Floor2Int(bx);
 		const float mortarwidth  = mortarsize / brickwidth;
 		if ((bx <= mortarwidth) && (bz <= .5f))
 			return tex2->Evaluate(tspack, dg);
 
 		// Check even sides
 		bx = (bP.x / brickwidth) + .5f;
-		ibx = (int) bx; bx -= ibx;
-		if (bx < .0f) bx += 1.f;
+		bx -= Floor2Int(bx);
 		if ((bx <= mortarwidth) && (bz > .5f))
 			return tex2->Evaluate(tspack, dg);
 
 		// Check odd fronts
 		float by = bP.y / brickdepth;
-		int iby = (int) by; by -= iby;
-		if (by < .0f) by += 1.f;
+		by -= Floor2Int(by);
 		const float mortardepth  = mortarsize / brickdepth;
 		if ((by <= mortardepth) && (bz > .5f))
 			return tex2->Evaluate(tspack, dg);
 
 		// Check even fronts
 		by = (bP.y / brickdepth) + .5f;
-		iby = (int) by; by -= iby;
-		if (by < .0f) by += 1.f;
+		by -= Floor2Int(by);
 		if ((by <= mortardepth) && (bz <= .5f))
 			return tex2->Evaluate(tspack, dg);
 
 		// Inside brick
 		return tex1->Evaluate(tspack, dg);
-    }
+	}
 	virtual float Y() const {
 		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
 		return Lerp(m, tex2->Y(), tex1->Y());
@@ -121,12 +106,12 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
-    static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
-    // BrickTexture3D Private Data
+	// BrickTexture3D Private Data
 	float brickwidth, brickheight, brickdepth, mortarsize;
-    TextureMapping3D *mapping;
+	TextureMapping3D *mapping;
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 };
 
@@ -139,8 +124,8 @@ template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<float> > tex1 = tp.GetFloatTexture("bricktex", 1.f);
-	boost::shared_ptr<Texture<float> > tex2 = tp.GetFloatTexture("mortartex", 0.2f);
+	boost::shared_ptr<Texture<float> > tex1(tp.GetFloatTexture("bricktex", 1.f));
+	boost::shared_ptr<Texture<float> > tex2(tp.GetFloatTexture("mortartex", 0.2f));
 
 	float bw = tp.FindOneFloat("brickwidth", 0.3f);
 	float bh = tp.FindOneFloat("brickheight", 0.1f);
@@ -160,8 +145,8 @@ template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTex
 	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 
-	boost::shared_ptr<Texture<SWCSpectrum> > tex1 = tp.GetSWCSpectrumTexture("bricktex", RGBColor(1.f));
-	boost::shared_ptr<Texture<SWCSpectrum> > tex2 = tp.GetSWCSpectrumTexture("mortartex", RGBColor(0.2f));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("bricktex", RGBColor(1.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex2(tp.GetSWCSpectrumTexture("mortartex", RGBColor(0.2f)));
 
 	float bw = tp.FindOneFloat("brickwidth", 0.3f);
 	float bh = tp.FindOneFloat("brickheight", 0.1f);

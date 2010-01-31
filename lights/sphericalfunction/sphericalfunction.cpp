@@ -34,7 +34,7 @@ namespace lux {
 	MipMapSphericalFunction::MipMapSphericalFunction() {
 	}
 
-	MipMapSphericalFunction::MipMapSphericalFunction( boost::shared_ptr< const MIPMap<RGBColor> > aMipMap, bool flipZ ) {
+	MipMapSphericalFunction::MipMapSphericalFunction( boost::shared_ptr< const MIPMap<RGBColor> > &aMipMap, bool flipZ ) {
 		SetMipMap( aMipMap );
 	}
 
@@ -44,11 +44,9 @@ namespace lux {
 
 // SampleableSphericalFunction
 SampleableSphericalFunction::SampleableSphericalFunction(
-	boost::shared_ptr<const SphericalFunction> aFunc,
-	u_int xRes, u_int yRes)
+	boost::shared_ptr<const SphericalFunction> &aFunc,
+	u_int xRes, u_int yRes) : func(aFunc)
 {
-	func = aFunc;
-
 	// Compute scalar-valued image
 	float *img = new float[xRes * yRes];
 	for (u_int y = 0; y < yRes; ++y) {
@@ -99,49 +97,49 @@ float SampleableSphericalFunction::Average_f() const {
 	return uvDistrib->Average();
 }
 
-	SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet) {
-		bool flipZ = paramSet.FindOneBool("flipz", false);
-		string texname = paramSet.FindOneString("mapname", "");
-		string iesname = paramSet.FindOneString("iesname", "");
+SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
+{
+	bool flipZ = paramSet.FindOneBool("flipz", false);
+	string texname = paramSet.FindOneString("mapname", "");
+	string iesname = paramSet.FindOneString("iesname", "");
 
-		// Create _mipmap_ for _PointLight_
-		SphericalFunction *mipmapFunc = NULL;
-		if( texname.length() > 0 ) {
-			auto_ptr<ImageData> imgdata(ReadImage(texname));
-			if (imgdata.get()!=NULL) {
-				mipmapFunc = new MipMapSphericalFunction(
-					boost::shared_ptr< MIPMap<RGBColor> >(imgdata->createMIPMap<RGBColor>()), flipZ
-				);
-			}
-		}
-		// Create IES distribution
-		SphericalFunction *iesFunc = NULL;
-		if( iesname.length() > 0 ) {
-			PhotometricDataIES data(iesname.c_str());
-			if( data.IsValid() ) {
-				iesFunc = new IESSphericalFunction( data, flipZ );
-			}
-			else {
-				stringstream ss;
-				ss << "Invalid IES file: " << iesname;
-				luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
-			}
-		}
-
-		if( !iesFunc && !mipmapFunc )
-			return NULL;
-		else if( !iesFunc )
-			return mipmapFunc;
-		else if( !mipmapFunc )
-			return iesFunc;
-		else {
-			CompositeSphericalFunction *compositeFunc = new CompositeSphericalFunction();
-			compositeFunc->Add(
-				boost::shared_ptr<const SphericalFunction>(mipmapFunc) );
-			compositeFunc->Add(
-				boost::shared_ptr<const SphericalFunction>(iesFunc) );
-			return compositeFunc;
+	// Create _mipmap_ for _PointLight_
+	SphericalFunction *mipmapFunc = NULL;
+	if (texname.length() > 0) {
+		auto_ptr<ImageData> imgdata(ReadImage(texname));
+		if (imgdata.get() != NULL) {
+			boost::shared_ptr<const MIPMap<RGBColor> > mm(
+				imgdata->createMIPMap<RGBColor>());
+			mipmapFunc = new MipMapSphericalFunction(mm, flipZ);
 		}
 	}
+	// Create IES distribution
+	SphericalFunction *iesFunc = NULL;
+	if (iesname.length() > 0) {
+		PhotometricDataIES data(iesname.c_str());
+		if (data.IsValid()) {
+			iesFunc = new IESSphericalFunction( data, flipZ );
+		} else {
+			stringstream ss;
+			ss << "Invalid IES file: " << iesname;
+			luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
+		}
+	}
+
+	if (iesFunc && mipmapFunc) {
+		CompositeSphericalFunction *compositeFunc =
+			new CompositeSphericalFunction();
+		boost::shared_ptr<const SphericalFunction> mipmap(mipmapFunc);
+		compositeFunc->Add(mipmap);
+		boost::shared_ptr<const SphericalFunction> ies(iesFunc);
+		compositeFunc->Add(ies);
+		return compositeFunc;
+	} else if (mipmapFunc)
+		return mipmapFunc;
+	else if (iesFunc)
+		return iesFunc;
+	else
+		return NULL;
+}
 
 } //namespace lux

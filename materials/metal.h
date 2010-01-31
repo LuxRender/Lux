@@ -33,10 +33,10 @@ namespace lux
 class Metal : public Material {
 public:
 	// Metal Public Methods
-	Metal(boost::shared_ptr<SPD > n, boost::shared_ptr<SPD > k,
-		boost::shared_ptr<Texture<float> > u,
-		boost::shared_ptr<Texture<float> > v,
-		boost::shared_ptr<Texture<float> > bump,
+	Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
+		boost::shared_ptr<Texture<float> > &u,
+		boost::shared_ptr<Texture<float> > &v,
+		boost::shared_ptr<Texture<float> > &bump,
 		const CompositingParams &cp);
 	virtual ~Metal() { }
 

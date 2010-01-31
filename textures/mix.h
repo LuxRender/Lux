@@ -22,6 +22,7 @@
 
 // mix.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -34,13 +35,10 @@ template <class T>
 class MixTexture : public Texture<T> {
 public:
 	// MixTexture Public Methods
-	MixTexture(boost::shared_ptr<Texture<T> > t1,
-			   boost::shared_ptr<Texture<T> > t2,
-			   boost::shared_ptr<Texture<float> > amt) {
-		tex1 = t1;
-		tex2 = t2;
-		amount = amt;
-	}
+	MixTexture(boost::shared_ptr<Texture<T> > &t1,
+		boost::shared_ptr<Texture<T> > &t2,
+		boost::shared_ptr<Texture<float> > &amt) : tex1(t1), tex2(t2),
+		amount(amt) { }
 	virtual ~MixTexture() { }
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
@@ -64,18 +62,18 @@ private:
 // MixTexture Method Definitions
 template <class T> Texture<float> * MixTexture<T>::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp) {
-	return new MixTexture<float>(
-		tp.GetFloatTexture("tex1", 0.f),
-		tp.GetFloatTexture("tex2", 1.f),
-		tp.GetFloatTexture("amount", 0.5f));
+	boost::shared_ptr<Texture<float> > tex1(tp.GetFloatTexture("tex1", 0.f)),
+		tex2(tp.GetFloatTexture("tex2", 1.f));
+	boost::shared_ptr<Texture<float> > amount(tp.GetFloatTexture("amount", .5f));
+	return new MixTexture<float>(tex1, tex2, amount);
 }
 
 template <class T> Texture<SWCSpectrum> * MixTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp) {
-	return new MixTexture<SWCSpectrum>(
-		tp.GetSWCSpectrumTexture("tex1", RGBColor(0.f)),
-		tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)),
-		tp.GetFloatTexture("amount", 0.5f));
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("tex1", RGBColor(0.f))),
+		tex2(tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
+	boost::shared_ptr<Texture<float> > amount(tp.GetFloatTexture("amount", .5f));
+	return new MixTexture<SWCSpectrum>(tex1, tex2, amount);
 }
 
 }//namespace lux

@@ -22,6 +22,8 @@
 
 // emission.cpp*
 #include "emission.h"
+#include "sampling.h"
+#include "randomgen.h"
 #include "paramset.h"
 #include "dynload.h"
 #include "context.h"

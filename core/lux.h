@@ -142,6 +142,7 @@ namespace lux
   class SpectrumWavelengths;
   class RGBColor;
   class XYZColor;
+  class ColorSystem;
   class SPD;
   class Camera;
   class ProjectiveCamera;
@@ -156,7 +157,6 @@ namespace lux
   class BRDF;
   class BTDF;
   class Fresnel;
-  class ConcreteFresnel;
   class FresnelConductor;
   class FresnelDielectric;
   class FresnelGeneral;
@@ -196,12 +196,14 @@ namespace lux
   class RenderFarm;
   class Contribution;
   class ContributionBuffer;
+  class ContributionPool;
   class ContributionSystem;
   class MotionSystem;
   class Distribution1D;
   class Distribution2D;
   class IrregularDistribution1D;
   class MachineEpsilon;
+  class SampleableSphericalFunction;
 }
 
 // Global Constants

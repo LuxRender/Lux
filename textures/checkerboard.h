@@ -25,6 +25,7 @@
 
 // checkerboard.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "paramset.h"
 #include "sampling.h"
@@ -43,12 +44,10 @@ template <class T> class Checkerboard2D : public Texture<T> {
 public:
 	// Checkerboard2D Public Methods
 	Checkerboard2D(TextureMapping2D *m,
-	               boost::shared_ptr<Texture<T> > c1,
-			       boost::shared_ptr<Texture<T> > c2,
-				   const string &aa) {
+	               boost::shared_ptr<Texture<T> > &c1,
+			       boost::shared_ptr<Texture<T> > &c2,
+				   const string &aa) : tex1(c1), tex2(c2) {
 		mapping = m;
-		tex1 = c1;
-		tex2 = c2;
 		// Select anti-aliasing method for _Checkerboard2D_
 		if (aa == "none") aaMethod = NONE;
 		else if (aa == "supersample") aaMethod = SUPERSAMPLE;
@@ -148,11 +147,9 @@ template <class T> class Checkerboard3D : public Texture<T> {
 public:
 	// Checkerboard3D Public Methods
 	Checkerboard3D(TextureMapping3D *m,
-	               boost::shared_ptr<Texture<T> > c1,
-			       boost::shared_ptr<Texture<T> > c2) {
+               boost::shared_ptr<Texture<T> > &c1,
+	       boost::shared_ptr<Texture<T> > &c2) : tex1(c1), tex2(c2) {
 		mapping = m;
-		tex1 = c1;
-		tex2 = c2;
 	}
 	virtual ~Checkerboard3D() { delete mapping; }
 	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {

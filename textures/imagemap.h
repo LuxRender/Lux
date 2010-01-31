@@ -22,6 +22,7 @@
 
 // imagemap.cpp*
 #include "lux.h"
+#include "spectrum.h"
 #include "texture.h"
 #include "mipmap.h"
 #include "imagereader.h"

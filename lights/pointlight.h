@@ -36,7 +36,7 @@ class PointLight : public Light {
 public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, 
-		const boost::shared_ptr< Texture<SWCSpectrum> > L, float gain,
+		const boost::shared_ptr< Texture<SWCSpectrum> > &L, float gain,
 		SampleableSphericalFunction *ssf);
 	virtual ~PointLight();
 	virtual bool IsDeltaLight() const { return true; }

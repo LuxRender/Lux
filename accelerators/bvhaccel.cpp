@@ -74,9 +74,9 @@ BVHAccel::BVHAccel(const vector<boost::shared_ptr<Primitive> > &p, u_int treetyp
 
 	LOG(LUX_INFO, LUX_NOERROR)<< "Building Bounding Volume Hierarchy, primitives: " << nPrims;
 
-	boost::shared_ptr<BVHAccelTreeNode> rootNode;
 	nNodes = 0;
-	rootNode = BuildHierarchy(bvList, 0, bvList.size(), 2);
+	boost::shared_ptr<BVHAccelTreeNode> rootNode(BuildHierarchy(bvList, 0,
+		bvList.size(), 2));
 
 	LOG(LUX_INFO, LUX_NOERROR)<<  "Pre-processing Bounding Volume Hierarchy, total nodes: " << nNodes;
 
@@ -150,17 +150,19 @@ boost::shared_ptr<BVHAccelTreeNode> BVHAccel::BuildHierarchy(vector<boost::share
 		}
 	}
 
-	boost::shared_ptr<BVHAccelTreeNode> child, lastChild;
 	//Left Child
-	child = BuildHierarchy(list, splits[0], splits[1], splitAxis);
-	parent->leftChild = child;
+	boost::shared_ptr<BVHAccelTreeNode> child(BuildHierarchy(list,
+		splits[0], splits[1], splitAxis));
+	boost::shared_ptr<BVHAccelTreeNode> lchild(child);
+	parent->leftChild = lchild;
 	parent->bbox = Union(parent->bbox, child->bbox);
-	lastChild = child;
+	boost::shared_ptr<BVHAccelTreeNode> lastChild(child);
 
 	// Add remaining children
 	for(u_int i = 1; i < splits.size()-1; i++) {
 		child = BuildHierarchy(list, splits[i], splits[i+1], splitAxis);
-		lastChild->rightSibling = child;
+		boost::shared_ptr<BVHAccelTreeNode> rchild(child);
+		lastChild->rightSibling = rchild;
 		parent->bbox = Union(parent->bbox, child->bbox);
 		lastChild = child;
 	}
@@ -240,9 +242,10 @@ void BVHAccel::FindBestSplit(vector<boost::shared_ptr<BVHAccelTreeNode> > &list,
 	}
 }
 
-u_int BVHAccel::BuildArray(boost::shared_ptr<BVHAccelTreeNode> node, u_int offset) {
+u_int BVHAccel::BuildArray(boost::shared_ptr<BVHAccelTreeNode> &n, u_int offset) {
 	// Build array by recursively traversing the tree depth-first
-	while(node) {
+	boost::shared_ptr<BVHAccelTreeNode> node(n);
+	while (node) {
 		BVHAccelArrayNode* p = &bvhTree[offset];
 
 		p->bbox = node->bbox;
@@ -250,7 +253,8 @@ u_int BVHAccel::BuildArray(boost::shared_ptr<BVHAccelTreeNode> node, u_int offse
 		offset = BuildArray(node->leftChild, offset+1);
 		p->skipIndex = offset;
 
-		node = node->rightSibling;
+		boost::shared_ptr<BVHAccelTreeNode> next(node->rightSibling);
+		node = next;
 	}
 	return offset;
 }

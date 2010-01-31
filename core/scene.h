@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "api.h"
 #include "primitive.h"
-#include "sampling.h"
 #include "timer.h"
 
 #include "fastmutex.h"
@@ -41,19 +40,9 @@ class RenderThread : public boost::noncopyable {
 public:
 	RenderThread(u_int _n, ThreadSignals _signal, SurfaceIntegrator* _Si,
 		VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam,
-		Scene* _Scn) :
-		n(_n), signal(_signal), surfaceIntegrator(_Si),
-		volumeIntegrator(_Vi), sample(NULL), sampler(_Splr->clone()),
-		camera(_Cam), scene(_Scn), thread(NULL), samples(0.),
-		blackSamples(0.) {
-		sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
-	}
+		Scene* _Scn);
 
-	~RenderThread() {
-//		delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
-		delete sample;
-		delete thread;
-	}
+	~RenderThread();
 
 	static void Render(RenderThread *r);
 
@@ -77,7 +66,7 @@ public:
 	// Scene Public Methods
 	void Render();
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
-		Sampler *s, boost::shared_ptr<Primitive> accel,
+		Sampler *s, boost::shared_ptr<Primitive> &accel,
 		const vector<Light *> &lts, const vector<string> &lg,
 		Region *vr);
 	Scene(Camera *c);

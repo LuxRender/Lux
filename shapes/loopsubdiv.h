@@ -125,7 +125,7 @@ public:
 	LoopSubdiv(const Transform &o2w, bool ro,
 			u_int nt, u_int nv, const int *vi,
 			const Point *P, const float *uv, u_int nlevels,
-			const boost::shared_ptr<Texture<float> > dismap,
+			const boost::shared_ptr<Texture<float> > &dismap,
 			float dmscale, float dmoffset,
 			bool dmnormalsmooth, bool dmsharpboundary);
 	virtual ~LoopSubdiv();

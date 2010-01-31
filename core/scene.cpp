@@ -251,6 +251,23 @@ void Scene::SignalThreads(ThreadSignals signal) {
 }
 
 // Scene Methods -----------------------
+RenderThread::RenderThread(u_int _n, ThreadSignals _signal,
+	SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr,
+	Camera* _Cam, Scene* _Scn) : n(_n), signal(_signal),
+	surfaceIntegrator(_Si), volumeIntegrator(_Vi), sample(NULL),
+	sampler(_Splr->clone()), camera(_Cam), scene(_Scn), thread(NULL),
+	samples(0.), blackSamples(0.)
+{
+	sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
+}
+
+RenderThread::~RenderThread()
+{
+//	delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
+	delete sample;
+	delete thread;
+}
+
 void RenderThread::Render(RenderThread *myThread) {
 	if (myThread->scene->IsFilmOnly())
 		return;
@@ -509,68 +526,41 @@ Scene::~Scene() {
 }
 
 Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
-	Sampler *s, boost::shared_ptr<Primitive> accel,
-	const vector<Light *> &lts, const vector<string> &lg, Region *vr)
+	Sampler *s, boost::shared_ptr<Primitive> &accel,
+	const vector<Light *> &lts, const vector<string> &lg, Region *vr) :
+	lastSamples(0.), lastTime(0.), numberOfSamplesFromNetwork(0.),
+	stat_Samples(0.), stat_blackSamples(0.), aggregate(accel), lights(lts),
+	lightGroups(lg), camera(cam), volumeRegion(vr), surfaceIntegrator(si),
+	volumeIntegrator(vi), sampler(s), contribPool(NULL),
+	CurThreadSignal(PAUSE), tspack(NULL), filmOnly(false),
+	preprocessDone(false), suspendThreadsWhenDone(false)
 {
-	filmOnly = false;
-	lights = lts;
-	lightGroups = lg;
-	aggregate = accel;
-	camera = cam;
-	sampler = s;
-	surfaceIntegrator = si;
-	volumeIntegrator = vi;
-	volumeRegion = vr;
 	s_Timer.Reset();
-	lastSamples = 0.;
-	stat_Samples = 0.;
-	stat_blackSamples = 0.;
-	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
-	lastTime = 0.;
 	// Scene Constructor Implementation
-	bound = aggregate->WorldBound();
-	if (volumeRegion) bound = Union(bound, volumeRegion->WorldBound());
-	bound = Union(bound, camera->Bounds());
+	bound = Union(aggregate->WorldBound(), camera->Bounds());
+	if (volumeRegion)
+		bound = Union(bound, volumeRegion->WorldBound());
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
 	seedBase = rand();
 
-	preprocessDone = false;
-	suspendThreadsWhenDone = false;
 	camera->film->RequestBufferGroups(lightGroups);
-
-	contribPool = NULL;
-	tspack = NULL;
-
-	CurThreadSignal = PAUSE;
 }
 
-Scene::Scene(Camera *cam)
+Scene::Scene(Camera *cam) :
+	lastSamples(0.), lastTime(0.), numberOfSamplesFromNetwork(0.),
+	stat_Samples(0.), stat_blackSamples(0.), camera(cam),
+	volumeRegion(NULL), surfaceIntegrator(NULL),
+	volumeIntegrator(NULL), sampler(NULL), contribPool(NULL),
+	CurThreadSignal(PAUSE), tspack(NULL), filmOnly(true),
+	preprocessDone(false), suspendThreadsWhenDone(false)
 {
-	filmOnly = true;
 	for(u_int i = 0; i < cam->film->GetNumBufferGroups(); i++)
 		lightGroups.push_back( cam->film->GetGroupName(i) );
-	camera = cam;
-	sampler = NULL;
-	surfaceIntegrator = NULL;
-	volumeIntegrator = NULL;
-	volumeRegion = NULL;
 	s_Timer.Reset();
-	lastSamples = 0.;
-	numberOfSamplesFromNetwork = 0.; // NOTE - radiance - added initialization
-	lastTime = 0.;
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
 	seedBase = rand();
-
-	preprocessDone = false;
-	suspendThreadsWhenDone = false;
-	numberOfSamplesFromNetwork = 0.; //TODO init with number of samples in film
-
-	contribPool = NULL;
-	tspack = NULL;
-
-	CurThreadSignal = PAUSE;
 }
 
 SWCSpectrum Scene::Li(const RayDifferential &ray,
