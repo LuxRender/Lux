@@ -241,37 +241,6 @@ private:
 	float totalWeight;
 };
 
-class  BRDFToBTDF : public BxDF {
-public:
-	// BRDFToBTDF Public Methods
-	BRDFToBTDF(BxDF *b, float ei = 1.f, float et = 1.f, float c = 0.f)
-		: BxDF(BxDFType(b->type ^
-			(BSDF_REFLECTION | BSDF_TRANSMISSION))),
-		etai(ei), etat(et), cb(c), brdf(b) {}
-	virtual ~BRDFToBTDF() { }
-	static Vector otherHemisphere(const Vector &w) {
-		return Vector(w.x, w.y, -w.z);
-	}
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &w, u_int nSamples,
-			float *samples) const {
-		return brdf->rho(tspack, otherHemisphere(w), nSamples, samples);
-	}
-	virtual SWCSpectrum rho(const TsPack *tspack, u_int nSamples, float *samples) const {
-		return brdf->rho(tspack, nSamples, samples);
-	}
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
-		bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const {
-		return brdf->Weight(tspack, wo);
-	}
-	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
-private:
-	float etai, etat, cb;
-	BxDF *brdf;
-};
-
 // BSDF Inline Method Definitions
 inline void MultiBSDF::Add(BxDF *b)
 {

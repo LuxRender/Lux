@@ -24,6 +24,7 @@
 #include "mattetranslucent.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "brdftobtdf.h"
 #include "lambertian.h"
 #include "orennayar.h"
 #include "texture.h"

@@ -24,6 +24,7 @@
 #include "roughglass.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "brdftobtdf.h"
 #include "fresneldielectric.h"
 #include "microfacet.h"
 #include "blinn.h"
