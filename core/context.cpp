@@ -390,7 +390,7 @@ void Context::Texture(const string &n, const string &type,
 		if (graphicsState->floatTextures.find(n) !=
 			graphicsState->floatTextures.end()) {
 			std::stringstream ss;
-			ss << "Texture '" << n << "' being redefined.";
+			ss << "Float texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
 		boost::shared_ptr<lux::Texture<float> > ft(
@@ -402,7 +402,7 @@ void Context::Texture(const string &n, const string &type,
 		if (graphicsState->colorTextures.find(n) !=
 			graphicsState->colorTextures.end()) {
 			std::stringstream ss;
-			ss << "Texture '" << n << "' being redefined.";
+			ss << "Color texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
 		boost::shared_ptr<lux::Texture<SWCSpectrum> > st(
@@ -414,7 +414,7 @@ void Context::Texture(const string &n, const string &type,
 		if (graphicsState->fresnelTextures.find(n) !=
 			graphicsState->fresnelTextures.end()) {
 			std::stringstream ss;
-			ss << "Texture '" << n << "' being redefined.";
+			ss << "Fresnel texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
 		boost::shared_ptr<lux::Texture<const Fresnel *> > fr(

@@ -23,10 +23,14 @@
 
 // scale.cpp*
 #include "lux.h"
+#include "context.h"
 #include "spectrum.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
+
+#include <map>
+using std::map;
 
 namespace lux
 {
@@ -70,12 +74,13 @@ template <class T,class U> inline Texture<SWCSpectrum> * ScaleTexture<T,U>::Crea
 	const ParamSet &tp)
 {
 	boost::shared_ptr<Texture<SWCSpectrum> > tex2(tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
-	boost::shared_ptr<Texture<float> > ftex1(tp.GetFloatTexture("tex1"));
-	if (ftex1)
-		return new ScaleTexture<float, SWCSpectrum>(ftex1, tex2);
-	else {
+	map<string, boost::shared_ptr<Texture<float> > > *ft = Context::GetActiveFloatTextures();
+	if (ft->find(string("tex1")) == ft->end()) {
 		boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f)));
 		return new ScaleTexture<SWCSpectrum, SWCSpectrum>(tex1, tex2);
+	} else {
+		boost::shared_ptr<Texture<float> > ftex1(tp.GetFloatTexture("tex1", 1.f));
+		return new ScaleTexture<float, SWCSpectrum>(ftex1, tex2);
 	}
 }
 
