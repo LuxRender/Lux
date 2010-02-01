@@ -30,6 +30,8 @@
 #include <boost/python.hpp>
 #include <boost/python/type_id.hpp>
 #include <boost/pool/pool.hpp>
+#include <boost/thread.hpp>
+#include <boost/foreach.hpp>
 #include "error.h"
 #include "api.h"
 
@@ -288,6 +290,35 @@ boost::python::list pyLuxFramebuffer()
 	return pyFrameBuffer;
 }
 
+/*
+import pylux
+import threading
+pylux.init()
+pylux.lookAt(0,0,1,0,1,0,0,0,1)
+pylux.worldBegin()
+pylux.lightSource('infinite', [])
+pylux.worldEnd()
+*/
+
+//Asynchonous worldEnd
+std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worldend threads
+
+void pyLuxWorldEnd() //launch luxWorldEnd() into a thread
+{
+	LOG(LUX_DEBUG,LUX_NOERROR)<<"pyLux launching worldEnd thread";
+	pyLuxWorldEndThreads.push_back(new boost::thread(luxWorldEnd));
+}
+
+void pyLuxCleanup() //delete all threads on cleanup
+{
+	BOOST_FOREACH(boost::thread *t,pyLuxWorldEndThreads)
+	{
+		delete(t);
+	}
+	pyLuxWorldEndThreads.clear();
+	luxCleanup();
+}
+
 
 }//namespace lux
 
@@ -303,7 +334,7 @@ BOOST_PYTHON_MODULE(pylux)
     def("greet", greet); //Simple test function to check the module is imported
 
     def("init", luxInit);
-    def("cleanup", luxCleanup);
+    def("cleanup", pyLuxCleanup); //wrapper
     def("identity", luxIdentity);
     def("translate", luxTranslate);
     def("rotate", luxRotate);
@@ -341,7 +372,7 @@ BOOST_PYTHON_MODULE(pylux)
     def("objectEnd",luxObjectEnd);
     def("objectInstance",luxObjectInstance);
     def("motionInstance",luxMotionInstance);
-    def("worldEnd",luxWorldEnd);
+    def("worldEnd",pyLuxWorldEnd); //wrapper
     def("loadFLM",luxLoadFLM);
     def("saveFLM",luxSaveFLM);
     def("overrideResumeFLM",luxOverrideResumeFLM);
