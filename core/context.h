@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "paramset.h"
+#include "queryable/queryableregistry.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -185,6 +186,10 @@ public:
 	void DisableRandomMode();
 
 	void SetEpsilon(const float minValue, const float maxValue);
+
+	// jromang - registry containing all queryable objects of the current context
+	QueryableRegistry registry;
+
 
 private:
 	// API Local Classes

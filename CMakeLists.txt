@@ -595,6 +595,10 @@ SET(lux_volumes_src
 	volumes/homogeneous.cpp
 	volumes/volumegrid.cpp
 	)
+SET(lux_queryable_src
+	core/queryable/queryable.cpp
+	core/queryable/queryableattribute.cpp
+	)
 
 SET(lux_lib_src
 	${lux_core_src}
@@ -612,6 +616,7 @@ SET(lux_lib_src
 	${lux_textures_src}
 	${lux_tonemaps_src}
 	${lux_volumes_src}
+	${lux_queryable_src}
 	)
 INCLUDE_DIRECTORIES(SYSTEM
 	${Boost_INCLUDE_DIRS}
