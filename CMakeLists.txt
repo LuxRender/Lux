@@ -409,7 +409,6 @@ SET(lux_core_src
 	core/motionsystem.cpp
 	core/osfunc.cpp
 	core/paramset.cpp
-	core/parser.cpp
 	core/photonmap.cpp
 	core/pngio.cpp
 	core/primitive.cpp
