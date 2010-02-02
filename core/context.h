@@ -26,7 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "paramset.h"
-#include "queryable/queryableregistry.h"
+#include "queryableregistry.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
