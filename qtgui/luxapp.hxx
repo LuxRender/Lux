@@ -27,9 +27,6 @@
 
 #include "mainwindow.hxx"
 
-namespace lux
-{
-	
 class LuxGuiApp : public QApplication
 {
 	Q_OBJECT
@@ -53,7 +50,5 @@ private:
 	bool ProcessCommandLine (void);
 
 };
-
-} // namespace lux
 
 #endif // LUXAPP_H

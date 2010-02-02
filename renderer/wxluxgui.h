@@ -34,9 +34,6 @@
 #include "wxluxframe.h"
 #include "wxviewer.h"
 
-namespace lux
-{
-
 #define ID_RENDERUPDATE	2000
 #define ID_STATSUPDATE	2001
 #define ID_LOADUPDATE	2002
@@ -363,7 +360,5 @@ protected:
 /*** LuxGuiErrorHandler wrapper ***/
 
 void LuxGuiErrorHandler(int code, int severity, const char *msg);
-
-}//namespace lux
 
 #endif // LUX_WXLUXGUI_H

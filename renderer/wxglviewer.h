@@ -26,18 +26,19 @@
 #include "wxviewer.h"
 
 #ifdef LUX_USE_OPENGL
-#include "wx/wx.h"
-#include "wx/glcanvas.h"
+#include <wx/wx.h>
+#include <wx/glcanvas.h>
 #endif // LUX_USE_OPENGL
-
-#include "geometry/point.h"
-
-namespace lux
-{
 
 #ifdef LUX_USE_OPENGL
 
 #define ID_ANIMATIONUPDATE	3000
+
+class Point {
+public:
+	Point(float x_, float y_) : x(x_), y(y_) { }
+	float x, y;
+};
 
 class LuxGLViewer : public wxGLCanvas, public wxViewerBase {
 public:
@@ -130,7 +131,5 @@ public:
 };
 
 #endif // LUX_USE_OPENGL
-
-}//namespace lux
 
 #endif // LUX_WXGLVIEWER_H

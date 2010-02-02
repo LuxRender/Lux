@@ -36,11 +36,8 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include "lux.h"
 #include "api.h"
-#include "error.h"
 #include "renderserver.h"
-#include "osfunc.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
@@ -63,7 +60,7 @@ void engineThread() {
 	// NOTE - lordcrc - initialize rand()
 	srand(time(NULL));
 
-    ParseFile(sceneFileName.c_str());
+    luxParse(sceneFileName.c_str());
     if (luxStatistics("sceneIsReady") == 0.)
         parseError = true;
 }
@@ -171,7 +168,7 @@ int main(int ac, char *av[]) {
 			luxErrorFilter(vm["verbosity"].as<int>());
 
 		ss.str("");
-		ss << "Lux version " << LUX_VERSION << " of " << __DATE__ << " at " << __TIME__;
+		ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		if (vm.count("version"))
 			return 0;
@@ -180,7 +177,7 @@ int main(int ac, char *av[]) {
 			threads = vm["threads"].as<int>();
 		else {
 			// Dade - check for the hardware concurrency available
-			threads = osHardwareConcurrency();
+			threads = boost::thread::hardware_concurrency();
 			if (threads == 0)
 				threads = 1;
 		}
@@ -327,11 +324,9 @@ int main(int ac, char *av[]) {
 			renderServer->join();
 			delete renderServer;
 		} else {
-			LOG(LUX_ERROR,LUX_SYSTEM)<<"luxconsole: no input file";
-			/*
 			ss.str("");
 			ss << "luxconsole: no input file";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());*/
+			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
 		}
 
 	} catch (std::exception & e) {

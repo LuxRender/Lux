@@ -10,7 +10,6 @@
 #include "blank.xpm"
 
 ///////////////////////////////////////////////////////////////////////////
-using namespace lux;
 
 LuxMainFrame::LuxMainFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {

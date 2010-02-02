@@ -417,6 +417,12 @@ extern "C" void luxWorldEnd() {
 	Context::GetActive()->WorldEnd();
 }
 
+extern "C" const char *luxVersion()
+{
+	static const char *version = LUX_VERSION_STRING;
+	return version;
+}
+
 extern "C" void luxInit()
 {
 	// System-wide initialization
@@ -442,6 +448,36 @@ extern "C" void luxInit()
 		Context::SetActive(new Context());
 
 	initialized = true;
+}
+
+// Parsing Global Interface
+int luxParse(const char *filename)
+{
+	extern FILE *yyin;
+	extern int yyparse(void);
+	extern string currentFile;
+	extern u_int lineNum;
+
+	if (strcmp(filename, "-") == 0)
+		yyin = stdin;
+	else
+		yyin = fopen(filename, "r");
+	if (yyin != NULL) {
+		currentFile = filename;
+		if (yyin == stdin)
+			currentFile = "<standard input>";
+		lineNum = 1;
+		yyparse();
+		if (yyin != stdin)
+			fclose(yyin);
+	} else {
+		LOG(LUX_SEVERE, LUX_NOFILE) << "Unable to read scenefile '" <<
+			filename << "'";
+	}
+
+	currentFile = "";
+	lineNum = 0;
+	return (yyin != NULL);
 }
 
 // Load/save FLM file

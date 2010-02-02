@@ -35,6 +35,10 @@
 
 #include <cmath>
 #include <sstream>
+using std::ostringstream;
+#include <algorithm>
+using std::min;
+using std::max;
 
 #if defined (__WXMAC__) && !(__WXOSX_COCOA__)
 #define cimg_display_type  3
@@ -66,11 +70,8 @@
 #define cimg_debug 0     // Disable modal window in CImg exceptions.
 #include "cimg.h"
 
-#include "lux.h"
 #include "api.h"
-#include "wx/mstream.h"
-
-using namespace lux;
+#include <wx/mstream.h>
 
 BEGIN_EVENT_TABLE(LuxGLViewer, wxWindow)
 		EVT_PAINT            (LuxGLViewer::OnPaint)
@@ -588,12 +589,12 @@ void LuxGLViewer::DeleteTextures() {
 	m_tilesNr = m_tilesX = m_tilesY = 0;
 }
 
-lux::Point LuxGLViewer::TransformPoint(const Point &p){
+Point LuxGLViewer::TransformPoint(const Point &p){
 	return Point( (p.x - m_preScaleOffsetX)*m_scale + m_postScaleOffsetX,
 	              (p.y - m_preScaleOffsetY)*m_scale + m_postScaleOffsetY);
 }
 
-lux::Point LuxGLViewer::InverseTransformPoint(const Point &p){
+Point LuxGLViewer::InverseTransformPoint(const Point &p){
 	return Point( (p.x - m_postScaleOffsetX)/m_scale + m_preScaleOffsetX,
 	              (p.y - m_postScaleOffsetY)/m_scale + m_preScaleOffsetY);
 }
@@ -746,7 +747,7 @@ void  LuxGLViewer::DrawRulers(){
 		count = floor(-x_offset/(tickDist*10))*10;
 		x_start_offset = fmod(x_offset, tickDist*10);
 	}
-	std::ostringstream ss;
+	ostringstream ss;
 	for(float x=x_start_offset;x<m_windowW;x+=tickDist*10){
 		ss.str("");
 		ss<<count*tickSpacing;

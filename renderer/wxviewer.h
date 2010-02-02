@@ -27,9 +27,6 @@
 #include <wx/event.h>
 #include <wx/window.h>
 
-namespace lux
-{
-
 // wxViewerSelection Declarations - Used for zoom and other tools
 class wxViewerSelection {
 public:
@@ -109,7 +106,5 @@ public:
 	virtual void SetTmBurn(float v) {};
 	virtual void SetTmGamma(float v) {};
 };
-
-}//namespace lux
 
 #endif // LUX_WXLUXGUI_H

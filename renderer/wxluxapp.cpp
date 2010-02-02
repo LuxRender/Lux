@@ -21,27 +21,31 @@
  ***************************************************************************/
 
 // For compilers that don't support precompilation, include "wx/wx.h"
-#include "wx/wxprec.h"
+#include <wx/wxprec.h>
 
 #ifndef WX_PRECOMP
-#	include "wx/wx.h"
+#	include <wx/wx.h>
 #endif
 
 #include <boost/program_options.hpp>
+#include <boost/thread.hpp>
+#include <vector>
+using std::vector;
+#include <string>
+using std::string;
 #include <iostream>
+using std::cout;
+using std::endl;
 #include <fstream>
+using std::ifstream;
 #include <sstream>
+using std::stringstream;
 
-#include "lux.h"
 #include "api.h"
-#include "error.h"
-#include "osfunc.h"
-#include "epsilon.h"
 
 #include "wxluxapp.h"
 #include "wxluxgui.h"
 
-using namespace lux;
 namespace po = boost::program_options;
 
 IMPLEMENT_APP(LuxGuiApp)
@@ -69,7 +73,7 @@ bool LuxGuiApp::OnInit() {
 	}
 }
 
-void InfoDialogBox(const std::string &msg, const std::string &caption = "LuxRender") {
+void InfoDialogBox(const string &msg, const string &caption = "LuxRender") {
 	wxMessageBox(wxString(msg.c_str(), wxConvUTF8), 
 		wxString(caption.c_str(), wxConvUTF8), 
 		wxOK | wxICON_INFORMATION);
@@ -98,7 +102,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 		po::options_description config("Configuration", line_length);
 		config.add_options()
 			("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
-			("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
+			("useserver,u", po::value< vector<string> >()->composing(), "Specify the adress of a rendering server to use.")
 			("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
 			("logconsole,l", "Copy the output of the log tab to the console.")
 		;
@@ -142,17 +146,15 @@ bool LuxGuiApp::ProcessCommandLine() {
 			options(cmdline_options).positional(p).run(), vm);
 	#endif // Unicode/ANSI
 
-		std::ifstream ifs("luxrender.cfg");
+		ifstream ifs("luxrender.cfg");
 		store(parse_config_file(ifs, config_file_options), vm);
 		notify(vm);
 
 		if(vm.count("help")) {
-			//std::cout << "Usage: luxrender [options] file..." << std::endl;
-			//std::cout << visible << std::endl;
-			std::stringstream ss;
-			ss << "Usage: luxrender [options] file..." << std::endl;
+			stringstream ss;
+			ss << "Usage: luxrender [options] file..." << endl;
 			visible.print(ss);
-			ss << std::endl;
+			ss << endl;
 			InfoDialogBox(ss.str());			
 			return false;
 		}
@@ -161,9 +163,8 @@ bool LuxGuiApp::ProcessCommandLine() {
 			luxErrorFilter(vm["verbosity"].as<int>());
 
 		if(vm.count("version")) {
-			//std::cout << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
-			std::stringstream ss;
-			ss << "Lux version " << LUX_VERSION_STRING << " of " << __DATE__ << " at " << __TIME__ << std::endl;
+			stringstream ss;
+			ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__ << endl;
 			InfoDialogBox(ss.str());			
 			return false;
 		}
@@ -177,7 +178,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 			m_threads = vm["threads"].as < int >();
 		} else {
 			// Dade - check for the hardware concurrency available
-			m_threads = osHardwareConcurrency();
+			m_threads = boost::thread::hardware_concurrency();
 			if (m_threads == 0)
 				m_threads = 1;
 		}
@@ -199,11 +200,11 @@ bool LuxGuiApp::ProcessCommandLine() {
 		}
 
 		if(vm.count("useserver")) {
-			std::stringstream ss;
+			stringstream ss;
 
-			std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
+			vector<string> names = vm["useserver"].as<vector<string> >();
 
-			for(std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++) {
+			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
 				ss.str("");
 				ss << "Connecting to server '" <<(*i) << "'";
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
@@ -244,17 +245,17 @@ bool LuxGuiApp::ProcessCommandLine() {
 				const float maxe = vm["maxepsilon"].as<float>();
 				luxSetEpsilon(mine, maxe);
 			} else
-				luxSetEpsilon(mine, DEFAULT_EPSILON_MAX);
+				luxSetEpsilon(mine, -1.f);
 		} else {
 			if (vm.count("maxepsilon")) {
 				const float maxe = vm["maxepsilon"].as<float>();
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, maxe);
+				luxSetEpsilon(-1.f, maxe);
 			} else
-				luxSetEpsilon(DEFAULT_EPSILON_MIN, DEFAULT_EPSILON_MAX);
+				luxSetEpsilon(-1.f, -1.f);
 		}
 
 		if(vm.count("input-file")) {
-			const std::vector < std::string > &v = vm["input-file"].as < vector < string > >();
+			const vector<string> &v = vm["input-file"].as<vector<string> >();
 			if(v.size() > 1) {
 				luxError(LUX_SYSTEM, LUX_SEVERE, "More than one file passed on command line : rendering the first one.");
 			}
@@ -266,7 +267,7 @@ bool LuxGuiApp::ProcessCommandLine() {
 
 		return true;
 	} catch(std::exception &e) {
-		std::cout << e.what() << std::endl;
+		cout << e.what() << endl;
 		return false;
 	}
 }

@@ -32,7 +32,7 @@
 #include <boost/pool/pool.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
-#include "error.h"
+#include <boost/assert.hpp>
 #include "api.h"
 
 #define	EXTRACT_PARAMETERS(_params) \
@@ -305,7 +305,7 @@ std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worlde
 
 void pyLuxWorldEnd() //launch luxWorldEnd() into a thread
 {
-	LOG(LUX_DEBUG,LUX_NOERROR)<<"pyLux launching worldEnd thread";
+	luxError(LUX_NOERROR, LUX_DEBUG, "pyLux launching worldEnd thread");
 	pyLuxWorldEndThreads.push_back(new boost::thread(luxWorldEnd));
 }
 
@@ -333,7 +333,9 @@ BOOST_PYTHON_MODULE(pylux)
 
     def("greet", greet); //Simple test function to check the module is imported
 
+    def("version", luxVersion);
     def("init", luxInit);
+    def("parse", luxParse);
     def("cleanup", pyLuxCleanup); //wrapper
     def("identity", luxIdentity);
     def("translate", luxTranslate);

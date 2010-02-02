@@ -20,27 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <boost/program_options.hpp>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <QtGui/QApplication>
 #include <QTranslator>
 
-#include "lux.h"
-#include "api.h"
-#include "error.h"
-#include "osfunc.h"
-
 #include "luxapp.hxx"
-#include "mainwindow.hxx"
-
-using namespace lux;
 
 int main(int argc, char *argv[])
 {
-	lux::LuxGuiApp application(argc, argv);
+	LuxGuiApp application(argc, argv);
 	
 /*	QString locale = QLocale::system().name();
 

@@ -22,6 +22,8 @@
 
 #include "renderview.hxx"
 
+#include "api.h"
+
 RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
     if (opengl)
 		setViewport(new QGLWidget);

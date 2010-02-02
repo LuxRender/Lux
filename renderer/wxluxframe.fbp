@@ -12,7 +12,7 @@
         <property name="help_provider">none</property>
         <property name="internationalize">0</property>
         <property name="name">wxLuxGui</property>
-        <property name="namespace">&quot;lux&quot;</property>
+        <property name="namespace"></property>
         <property name="path">.</property>
         <property name="precompiled_header"></property>
         <property name="relative_path">1</property>

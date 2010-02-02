@@ -35,7 +35,6 @@
 #include <QClipboard>
 
 #include "api.h"
-#include "lux.h"
 
 class HistogramView : public QGraphicsView
 {
