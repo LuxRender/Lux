@@ -34,6 +34,7 @@
 #endif
 
 #include <cmath>
+using std::isinf;
 #include <sstream>
 using std::ostringstream;
 #include <algorithm>
