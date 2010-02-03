@@ -34,7 +34,6 @@
 #endif
 
 #include <cmath>
-using std::isinf;
 #include <sstream>
 using std::ostringstream;
 #include <algorithm>
@@ -447,7 +446,7 @@ void LuxGLViewer::SetZoom(const wxViewerSelection *selection) {
 	int selMinY = max(0, min(y1, y2));
 	float exactScale = min((float)m_viewW/(selMaxX-selMinX), (float)m_viewH/(selMaxY-selMinY));
 
-	if(isinf(exactScale)) // If selection is too small, increase it to 1 pixel
+	if((selMaxX-selMinX == 0) && (selMaxY-selMinY == 0)) // If selection is too small, increase it to 1 pixel
 		exactScale = min(m_viewW, m_viewH);
 
 	// Zoom in and center selection
