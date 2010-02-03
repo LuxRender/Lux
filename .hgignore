@@ -11,7 +11,7 @@
 ^luxmerger
 ^luxcomp
 ^pylux
-^doxygen/html
+^doc/html
 syntax: glob
 *.directory
 *.cdtproject
