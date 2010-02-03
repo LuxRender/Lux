@@ -306,3 +306,14 @@ unsigned int DJBHash(const std::string& str)
    return hash;
 }
 }
+
+//error.h nullstream
+namespace lux
+{
+	struct nullstream : std::ostream
+	{
+		nullstream(): std::ios(0), std::ostream(0) {}
+	} nullStream;
+}
+
+

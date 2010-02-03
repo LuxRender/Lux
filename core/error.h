@@ -55,11 +55,16 @@ namespace lux
 	   int severity, code;
 	   std::ostringstream os;
 	};
+
+	extern struct nullstream : std::ostream
+	{
+		nullstream(): std::ios(0), std::ostream(0) {}
+	} nullStream;
 }
 
 //LOG macro. The filtering test uses the ?: operator instead of if{}else{}
 //to avoid ambiguity when invoked in if{}/else{} constructs
-#define LOG(severity,code) (severity<lux::luxLogFilter)?:lux::Log().get(severity, code)
+#define LOG(severity,code) (severity<lux::luxLogFilter)?(lux::nullStream):lux::Log().get(severity, code)
 
 //With this call you bypass the API filtering option and force output to the user
 #define LOG_NO_FILTER(severity, code) Log().get(severity, code)
