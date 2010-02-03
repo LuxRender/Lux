@@ -220,6 +220,33 @@ IF(CYGWIN)
 ENDIF(CYGWIN)
 
 #############################################################################
+#############################################################################
+############################    DOXYGEN          ############################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE(Doxygen)
+
+IF (DOXYGEN_FOUND)
+	MESSAGE( STATUS "Found Doxygen : generating documentation" )
+	
+	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/doxygen.conf)
+	SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc)
+	SET(DOXYGEN_OUTPUT ${DOXYGEN_OUTPUT_DIR}/html/index.html)
+	
+	ADD_CUSTOM_COMMAND(
+	 OUTPUT ${DOXYGEN_OUTPUT}
+	 COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
+	 COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
+	 COMMAND ${CMAKE_COMMAND} -E echo "Done."
+	 DEPENDS ${DOXYGEN_INPUT}
+	 )
+	
+	ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
+ENDIF (DOXYGEN_FOUND)
+
+
+#############################################################################
 #All dependencies OK !
 #############################################################################
 
