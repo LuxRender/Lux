@@ -35,12 +35,8 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "lux.h"
 #include "api.h"
-#include "context.h"
 #include "film/fleximage.h"
-#include "error.h"
-#include "osfunc.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
@@ -256,7 +252,7 @@ int main(int ac, char *av[]) {
 			luxErrorFilter(vm["verbosity"].as<int>());
 
 		ss.str("");
-		ss << "Lux version " << LUX_VERSION << " of " << __DATE__ << " at " << __TIME__;
+		ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		if (vm.count("version"))
 			return 0;

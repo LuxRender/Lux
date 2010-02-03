@@ -33,8 +33,6 @@
 //#define BOOST_DISABLE_ASSERTS
 #include <boost/assert.hpp>
 
-extern LuxErrorHandler luxError;
-
 namespace lux
 {
 	extern int luxLogFilter;

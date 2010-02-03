@@ -98,6 +98,26 @@ extern "C" {
 #  define for if (0) ; else for
 #endif
 
+// Global Constants
+#ifdef M_PI
+#  undef M_PI
+#endif
+#define M_PI           3.14159265358979323846f
+#define INV_PI  0.31830988618379067154f
+#define INV_TWOPI  0.15915494309189533577f
+#ifndef INFINITY
+#  define INFINITY HUGE_VAL
+//#define INFINITY std::numeric_limits<float>::max()
+#endif
+#define LUX_VERSION 0.7
+#define LUX_VERSION_STRING "0.7 (devel)"
+#define COLOR_SAMPLES 3
+#if defined(WIN32) && !defined(__CYGWIN__)
+#  define LUX_PATH_SEP ";"
+#else
+#  define LUX_PATH_SEP ":"
+#endif
+
 // Global Type Declarations
 typedef double StatsCounterType;
 typedef unsigned char u_char;
@@ -204,44 +224,17 @@ namespace lux
   class IrregularDistribution1D;
   class MachineEpsilon;
   class SampleableSphericalFunction;
-}
-
-// Global Constants
-#ifdef M_PI
-#  undef M_PI
-#endif
-#define M_PI           3.14159265358979323846f
-#define INV_PI  0.31830988618379067154f
-#define INV_TWOPI  0.15915494309189533577f
-#ifndef INFINITY
-#  define INFINITY HUGE_VAL
-//#define INFINITY std::numeric_limits<float>::max()
-#endif
-#define LUX_VERSION 0.7
-#define LUX_VERSION_STRING "0.7 (devel)"
-#define COLOR_SAMPLES 3
-#if defined(WIN32) && !defined(__CYGWIN__)
-#  define LUX_PATH_SEP ";"
-#else
-#  define LUX_PATH_SEP ":"
-#endif
 
 // Global Function Declarations
-bool ParseFile(const char *filename);
-namespace lux
-{
   //string hashing function
   unsigned int DJBHash(const std::string& str);
 
   bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
 	ImageData *ReadImage(const string &name);
-}
 
 // Radiance - Thread specific pack of pointers to eliminate use of boost tss smart pointers.
 // Initialized per thread in scene.cpp/RenderThread::RenderThread and passed where needed.
-namespace lux {
-
 	struct TsPack {
 		// Thread specific data
 		SpectrumWavelengths *swl;

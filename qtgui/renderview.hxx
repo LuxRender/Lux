@@ -35,9 +35,6 @@
 #include <QClipboard>
 #include <QtOpenGL/QGLWidget>
 
-#include "api.h"
-#include "lux.h"
-
 class RenderView : public QGraphicsView
 {
 	Q_OBJECT

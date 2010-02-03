@@ -25,7 +25,11 @@
 
 #include "mainwindow.hxx"
 
-using namespace lux;
+#include "api.h"
+
+template<class T> inline T Clamp(T val, T low, T high) {
+	return val > low ? (val < high ? val : high) : low;
+}
 
 LightGroupWidget::LightGroupWidget(QWidget *parent, MainWindow *mw) : QWidget(parent), ui(new Ui::LightGroupWidget), mainwin(mw)
 {

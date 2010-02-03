@@ -43,7 +43,13 @@
 #define chdir _chdir
 #endif
 
-using namespace lux;
+template<class T> inline T Clamp(T val, T low, T high) {
+	return val > low ? (val < high ? val : high) : low;
+}
+
+inline int Floor2Int(float val) {
+	return static_cast<int>(floorf(val));
+}
 
 bool copyLog2Console = false;
 int EVT_LUX_PARSEERROR = QEvent::registerEventType();
@@ -1479,9 +1485,9 @@ void MainWindow::engineThread(QString filename)
 
 	// if stdin is input, don't use full path
 	if (filename == QString::fromAscii("-"))
-		ParseFile(filename.toStdString().c_str());
+		luxParse(filename.toStdString().c_str());
 	else
-		ParseFile(fullPath.leaf().c_str());
+		luxParse(fullPath.leaf().c_str());
 
 	if (luxStatistics("terminated"))
 		return;
@@ -1597,6 +1603,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 {
 	switch (state) {
 		case WAITING:
+		case PARSING:
 			// Waiting for input file. Most controls disabled.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled(false);

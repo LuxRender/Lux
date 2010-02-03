@@ -25,9 +25,6 @@
 
 #include "wxluxgui.h"
 
-namespace lux
-{
-
 // The LuxApp class.
 class LuxGuiApp : public wxApp {
 public:
@@ -45,7 +42,5 @@ protected:
 };
 
 DECLARE_APP(LuxGuiApp)
-
-}//namespace lux
 
 #endif // LUX_WXLUXAPP_H

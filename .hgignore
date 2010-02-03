@@ -10,10 +10,14 @@
 ^luxparse
 ^luxmerger
 ^luxcomp
+^pylux
+^doxygen/html
 syntax: glob
 *.directory
 *.cdtproject
 *.cproject
 *.project
 moc_*.cxx
+ui_*.h
+qrc_*.cxx
 *~

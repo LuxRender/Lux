@@ -26,10 +26,6 @@
 #include <QtGui/QWidget>
 #include <QtGui/QColorDialog>
 
-#include "lux.h"
-#include "api.h"
-#include "error.h"
-
 class MainWindow;
 
 namespace Ui

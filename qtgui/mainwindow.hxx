@@ -50,9 +50,7 @@
 #include <QSettings>
 #include <QTextCursor>
 
-#include "lux.h"
 #include "api.h"
-#include "error.h"
 #include "renderview.hxx"
 #include "histogramview.hxx"
 #include "lightgroupwidget.hxx"

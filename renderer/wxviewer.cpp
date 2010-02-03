@@ -22,9 +22,6 @@
 
 #include "wxviewer.h"
 
-using namespace lux;
-
-
 // wxViewerSelection Definitions
 wxViewerSelection::wxViewerSelection(int x1, int x2, int y1, int y2)
 	: m_x1(x1), m_x2(x2), m_y1(y1), m_y2(y2) {}
@@ -45,7 +42,7 @@ void wxViewerSelection::SetBounds(int x1, int x2, int y1, int y2) {
 
 
 // wxViewerEvent Definitions
-DEFINE_LOCAL_EVENT_TYPE(lux::wxEVT_LUX_VIEWER_SELECTION)
+DEFINE_LOCAL_EVENT_TYPE(wxEVT_LUX_VIEWER_SELECTION)
 
 wxViewerEvent::wxViewerEvent(const boost::shared_ptr<wxViewerSelection> selection, wxEventType eventType, int id): wxEvent(id, eventType), m_selection(selection) { m_propagationLevel = wxEVENT_PROPAGATE_MAX; }
 

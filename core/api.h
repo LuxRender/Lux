@@ -31,7 +31,9 @@ typedef const char *LuxToken;
 typedef const char *LuxPointer;
 #define LUX_NULL NULL
 
+const char *luxVersion();
 void luxInit();
+int luxParse(const char *filename);
 void luxCleanup();
 
 /* Basic control flow, scoping, stacks */
@@ -254,6 +256,8 @@ extern void luxErrorHandler(LuxErrorHandler handler);
 extern void luxErrorAbort(int code, int severity, const char *message);
 extern void luxErrorIgnore(int code, int severity, const char *message);
 extern void luxErrorPrint(int code, int severity, const char *message);
+extern LuxErrorHandler luxError;
+
 
 /*
  Error codes
