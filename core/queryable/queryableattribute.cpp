@@ -31,4 +31,9 @@ void QueryableAttribute::readOnlyFloatError(float f)
 	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read only float value :"<<f;
 }
 
+void QueryableAttribute::readOnlyIntError(int i)
+{
+	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read only int value :"<<i;
+}
+
 }//namespace lux

@@ -105,6 +105,7 @@ public:
 
 	//Default error functions for readonly attributes
 	static void readOnlyFloatError(float f);
+	static void readOnlyIntError(int i);
 
 //private:
 	std::string name;
