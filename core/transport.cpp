@@ -38,7 +38,7 @@ bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
 {
 	const bool result = scene->Intersect(ray, isect);
 	if (volume)
-		*L *= volume->Tau(tspack, ray);
+		*L *= Exp(-volume->Tau(tspack, ray));
 	return result;
 }
 

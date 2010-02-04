@@ -632,6 +632,7 @@ SET(lux_tonemaps_src
 	tonemaps/reinhard.cpp
 	)
 SET(lux_volumes_src
+	volumes/clearvolume.cpp
 	volumes/cloud.cpp
 	volumes/exponential.cpp
 	volumes/homogeneous.cpp

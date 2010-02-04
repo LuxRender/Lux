@@ -158,6 +158,22 @@ Region *MakeVolumeRegion(const string &name,
 	return NULL;
 }
 
+Volume *MakeVolume(const string &name,
+	const Transform &volume2world, const ParamSet &paramSet)
+{
+	if (DynamicLoader::registeredVolumes().find(name) !=
+		DynamicLoader::registeredVolumes().end()) {
+		Volume *ret =
+			DynamicLoader::registeredVolumes()[name](volume2world,
+				paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+
+	LoadError("volume", name);
+	return NULL;
+}
+
 SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet)
 {
@@ -331,6 +347,11 @@ map<string, DynamicLoader::CreateAreaLight> &DynamicLoader::registeredAreaLights
 map<string, DynamicLoader::CreateVolumeRegion> &DynamicLoader::registeredVolumeRegions()
 {
 	static map<string, DynamicLoader::CreateVolumeRegion> *Map = new map<string, DynamicLoader::CreateVolumeRegion>;
+	return *Map;
+}
+map<string, DynamicLoader::CreateVolume> &DynamicLoader::registeredVolumes()
+{
+	static map<string, DynamicLoader::CreateVolume> *Map = new map<string, DynamicLoader::CreateVolume>;
 	return *Map;
 }
 map<string, DynamicLoader::CreateSurfaceIntegrator> &DynamicLoader::registeredSurfaceIntegrators()

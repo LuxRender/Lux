@@ -52,6 +52,8 @@ AreaLight *MakeAreaLight(const string &name,
 	const boost::shared_ptr<Primitive> &prim);
 Region *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
+Volume *MakeVolume(const string &name,
+	const Transform &light2world, const ParamSet &paramSet);
 SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet);
 VolumeIntegrator *MakeVolumeIntegrator(const string &name,
@@ -155,6 +157,16 @@ public:
 		RegisterVolumeRegion<T>(const string &name) :
 			RegisterLoader<CreateVolumeRegion>(registeredVolumeRegions(), name, &T::CreateVolumeRegion) {}
 		virtual ~RegisterVolumeRegion<T>() {}
+	};
+
+	typedef Volume *(*CreateVolume)(const Transform&,
+		const ParamSet&);
+	static map<string, CreateVolume> &registeredVolumes();
+	template <class T> class RegisterVolume : public RegisterLoader<CreateVolume> {
+	public:
+		RegisterVolume<T>(const string &name) :
+			RegisterLoader<CreateVolume>(registeredVolumes(), name, &T::CreateVolume) {}
+		virtual ~RegisterVolume<T>() {}
 	};
 
 	typedef SurfaceIntegrator *(*CreateSurfaceIntegrator)(const ParamSet&);
