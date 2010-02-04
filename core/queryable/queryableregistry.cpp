@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,29 +20,23 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_QUERYABLE_REGISTRY_H
-#define LUX_QUERYABLE_REGISTRY_H
-
-#include <map>
-#include <string>
-#include "error.h"
+// queryableregistry.cpp
 #include "queryable.h"
+#include "queryableregistry.h"
 
 namespace lux
 {
 
-class QueryableRegistry
+void QueryableRegistry::insert(Queryable* object)
 {
-public:
-	void insert(Queryable* object);
-	void erase(Queryable* object);
-	std::string getContent();
+	//TODO jromang - add assertion (not duplicate name)
+	queryableObjects.insert(std::pair<std::string,Queryable*>(object->getName(),object));
+}
 
-private:
-	std::map<std::string, Queryable*> queryableObjects;
-};
+void QueryableRegistry::erase(Queryable* object)
+{
+	//TODO jromang - add assertion (existing object)
+	queryableObjects.erase(object->getName());
+}
 
 }//namespace lux
-
-
-#endif // LUX_QUERYABLE_REGISTRY_H

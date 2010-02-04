@@ -35,6 +35,17 @@ namespace lux
 
 typedef enum {ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_STRING} AttributeType;
 
+/*
+What's a 'QueryableAttribute' ? It's simply an object holding the attribute's type, the attribute's name,description, default values,...,...,and accessor methods :
+
+Code: Select all
+    //Accessors
+       void setValue(float f);
+       float getFloatValue();
+
+
+Of course these methods check if the attribute has the good type, eg. calling 'getFloatValue' on a integer attribute will raise an error.
+*/
 class QueryableAttribute
 {
 public:

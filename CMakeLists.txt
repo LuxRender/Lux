@@ -441,6 +441,7 @@ SET(lux_core_src
 	core/primitive.cpp
 	core/queryable/queryable.cpp
 	core/queryable/queryableattribute.cpp
+	core/queryable/queryableregistry.cpp
 	${lux_core_reflection_src}
 	core/renderfarm.cpp
 	core/renderinghints.cpp

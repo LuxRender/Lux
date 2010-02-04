@@ -29,56 +29,28 @@
 #include "error.h"
 #include "queryableattribute.h"
 
-/*
- *
-How it works :
-Each class that wants to expose one or more members has to inherit the 'Queryable' class :
-
-Code: Select all
-    class Sphere: public Shape, public Queryable
-
-
-It should also provide get/set member functions for each exposed attribute :
-
-Code: Select all
-    void Sphere::setRadius(float rad) {radius=rad;} //WARNING this is wrong ; changing the radius needs recomputing (see constructor)
-       float Sphere::getRadius() { return radius; }
-
-
-And finally it should add one line for each attribute in the constructor:
-
-Code: Select all
-    Sphere::Sphere(const Transform &o2w, bool ro, float rad,  float z0, float z1, float pm): Shape(o2w, ro) {
-       SET_FLOAT_ATTRIBUTE(Sphere,"sphereRadius",setRadius,getRadius);
-           ....
-
-
-That's all.
-
-After that, the Queryable class provides this method :
-
-Code: Select all
-    std::vector<QueryableAttribute> getAttributes() { return attributes; }
-
-
-
-So, a Queryable object can have one ore more 'QueryableAttributes'. What's a 'QueryableAttribute' ? It's simply an object holding the attribute's type, the attribute's name,description, default values,...,...,and accessor methods :
-
-Code: Select all
-    //Accessors
-       void setValue(float f);
-       float getFloatValue();
-
-
-Of course these methods check if the attribute has the good type, eg. calling 'getFloatValue' on a integer attribute will raise an error.
- *
- *
- */
-
 
 namespace lux
 {
-//All Queryable objects inherits from this class
+
+/*! \class Queryable
+ * \brief Parent class of all Queryable objects in the core module
+ * \author jromang
+ *
+ *  The rendering API allows external applications using lux to read or modify various parameters
+ *  of the rendering engine or objects loaded in a context.
+ *  To expose their attributes, objects allowing modifications via the API have to be 'Queryable' ; this
+ *  is easily done in 3 steps :
+ *
+ *  1) Each class that wants to expose one or more members has to inherit the 'Queryable' class :
+ *     'class Sphere: public Shape, public Queryable'
+ *  2) It should also provide get/set member functions for each exposed attribute :
+ *     'void Sphere::setRadius(float rad) {radius=rad;} //this is wrong ; changing the radius needs recomputing (see Sphere constructor)
+ *     float Sphere::getRadius() { return radius; }'
+ *  3) And finally it should add one line for each attribute in the constructor:
+ *     'SET_FLOAT_ATTRIBUTE(Sphere,"sphereRadius",getRadius,setRadius);'
+ *
+ */
 class Queryable
 {
 public:
