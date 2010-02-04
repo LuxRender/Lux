@@ -12,6 +12,7 @@
 ^luxcomp
 ^pylux
 ^doc/html
+^doxygen/doxygen.conf
 syntax: glob
 *.directory
 *.cdtproject
