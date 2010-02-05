@@ -523,6 +523,7 @@ SET(lux_lights_src
 SET(lux_materials_src
 	materials/carpaint.cpp
 	materials/glass.cpp
+	materials/glass2.cpp
 	materials/glossy.cpp
 	materials/glossy2.cpp
 	materials/matte.cpp

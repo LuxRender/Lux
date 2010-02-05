@@ -33,7 +33,7 @@ namespace lux
 class  SpecularReflection : public BxDF {
 public:
 	// SpecularReflection Public Methods
-	SpecularReflection(const SWCSpectrum &r, Fresnel *fr, float flm, float flmindex)
+	SpecularReflection(const SWCSpectrum &r, const Fresnel *fr, float flm, float flmindex)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
 		  R(r), fresnel(fr), film(flm), filmindex(flmindex) {
 	}
@@ -50,13 +50,13 @@ public:
 protected:
 	// SpecularReflection Private Data
 	SWCSpectrum R;
-	Fresnel *fresnel;
+	const Fresnel *fresnel;
 	float film, filmindex;
 };
 
 class ArchitecturalReflection : public SpecularReflection {
 public:
-	ArchitecturalReflection(const SWCSpectrum &r, Fresnel *fr, float flm, float flmindex)
+	ArchitecturalReflection(const SWCSpectrum &r, const Fresnel *fr, float flm, float flmindex)
 		: SpecularReflection(r, fr, flm, flmindex) {}
 	virtual ~ArchitecturalReflection() { }
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,

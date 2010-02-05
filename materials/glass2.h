@@ -20,38 +20,35 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SPECULARTRANSMISSION_H
-#define LUX_SPECULARTRANSMISSION_H
-// speculartransmission.h*
+// glass2.h*
 #include "lux.h"
-#include "bxdf.h"
-#include "spectrum.h"
+#include "material.h"
 
 namespace lux
 {
 
-class  SpecularTransmission : public BxDF {
+// Glass Class Declarations
+class Glass2 : public Material {
 public:
-	// SpecularTransmission Public Methods
-	SpecularTransmission(const SWCSpectrum &t, const Fresnel *fr, bool disp, bool archi = false)
-		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
-		  T(t), fresnel(fr), dispersive(disp), architectural(archi) { }
-	virtual ~SpecularTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-		return (architectural && Dot(wo, wi) < MachineEpsilon::E(1.f) - 1.f) ? 1.f : 0.f;
+	// Glass Public Methods
+	Glass2(bool archi, bool disp, boost::shared_ptr<Texture<float> > &bump,
+		const CompositingParams &cp) : bumpMap(bump),
+		architectural(archi), dispersion(disp) {
+		compParams = new CompositingParams(cp);
 	}
+	virtual ~Glass2() { }
+	virtual BSDF *GetBSDF(const TsPack *tspack,
+		const DifferentialGeometry &dgGeom,
+		const DifferentialGeometry &dgShading,
+		const Volume *exterior, const Volume *interior) const;
+	
+	static Material * CreateMaterial(const Transform &xform,
+		const ParamSet &mp);
 private:
-	// SpecularTransmission Private Data
-	SWCSpectrum T;
-	const Fresnel *fresnel;
-	bool dispersive, architectural;
+	// Glass Private Data
+	boost::shared_ptr<Texture<float> > bumpMap;
+	bool architectural, dispersion;
 };
 
 }//namespace lux
-
-#endif // LUX_SPECULARTRANSMISSION_H
 

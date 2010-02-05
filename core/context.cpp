@@ -616,16 +616,14 @@ void Context::Volume(const string &n, const ParamSet &params) {
 void Context::Exterior(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Exterior");
 	renderFarm->send("luxExterior", n, params);
-	boost::shared_ptr<lux::Volume> vr(MakeVolumeRegion(n, curTransform,
-		params));
+	boost::shared_ptr<lux::Volume> vr(MakeVolume(n, curTransform, params));
 	if (vr)
 		graphicsState->exterior = vr;
 }
 void Context::Interior(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Interior");
 	renderFarm->send("luxInterior", n, params);
-	boost::shared_ptr<lux::Volume> vr(MakeVolumeRegion(n, curTransform,
-		params));
+	boost::shared_ptr<lux::Volume> vr(MakeVolume(n, curTransform, params));
 	if (vr)
 		graphicsState->interior = vr;
 }
