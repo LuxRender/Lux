@@ -79,5 +79,5 @@ void FresnelDielectric::ComplexEvaluate(const TsPack *tspack,
 	const float *w = tspack->swl->w;
 	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 		fr->c[i] = eta_t + cb / (w[i] * w[i]);
-	*fi = SWCSpectrum(0.f);
+	*fi = k;
 }

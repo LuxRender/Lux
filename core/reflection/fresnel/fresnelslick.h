@@ -25,23 +25,32 @@
 // fresnelslick.h*
 #include "lux.h"
 #include "fresnel.h"
+#include "spectrumwavelengths.h"
 
 namespace lux
 {
 
 class  FresnelSlick : public Fresnel {
 public:
-  FresnelSlick (float r);
-  virtual ~FresnelSlick() { }
-  virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
-	virtual float Index(const TsPack *tspack) const { return (1.f - sqrtf(normal_incidence)) / (1.f + sqrtf(normal_incidence)); }
+	FresnelSlick (const SWCSpectrum &r, const SWCSpectrum &k_) :
+		normalIncidence(r), k(k_) { }
+	virtual ~FresnelSlick() { }
+	virtual void Evaluate(const TsPack *tspack, float cosi,
+		SWCSpectrum *const f) const;
+	virtual float Index(const TsPack *tspack) const {
+		return ((SWCSpectrum(1.f) - normalIncidence.Sqrt()) /
+			(SWCSpectrum(1.f) + normalIncidence.Sqrt())).Filter(tspack);
+	}
+	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+		return k / SWCSpectrum(tspack->swl->w) * (4.f * M_PI);
+	}
 	virtual void ComplexEvaluate(const TsPack *tspack,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
-		*fr = SWCSpectrum(Index(tspack));
-		*fi = SWCSpectrum(0.f);
+		*fr = Index(tspack);
+		*fi = k;
 	}
 private:
-  float normal_incidence;
+  SWCSpectrum normalIncidence, k;
 };
 
 }//namespace lux

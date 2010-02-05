@@ -71,7 +71,7 @@ private:
 class ConstantFresnelTexture : public Texture<const Fresnel *> {
 public:
 	// ConstantTexture Public Methods
-	ConstantFresnelTexture(const float &v) : value(1.f, v), val(v) { }
+	ConstantFresnelTexture(const float &v) : value(v, 0.f, 0.f), val(v) { }
 	virtual ~ConstantFresnelTexture() { }
 	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {

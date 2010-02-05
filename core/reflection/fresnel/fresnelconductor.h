@@ -37,9 +37,14 @@ public:
 		: eta(e), k(kk) {
 	}
 	virtual ~FresnelConductor() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const;
-	virtual float Index(const TsPack *tspack) const { return eta.Filter(tspack); }
-	virtual SWCSpectrum SigmaA(const TsPack *tspack) const { return k / SWCSpectrum(tspack->swl->w) * (4.f * M_PI); }
+	virtual void Evaluate(const TsPack *tspack, float cosi,
+		SWCSpectrum *const f) const;
+	virtual float Index(const TsPack *tspack) const {
+		return eta.Filter(tspack);
+	}
+	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+		return k / SWCSpectrum(tspack->swl->w) * (4.f * M_PI);
+	}
 	virtual void ComplexEvaluate(const TsPack *tspack,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
 		*fr = eta;

@@ -26,11 +26,9 @@
 
 using namespace lux;
 
-void FresnelSlick::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
-  *f = normal_incidence + (1.f - normal_incidence) * powf(1.f - cosi, 5.f);
+void FresnelSlick::Evaluate(const TsPack *tspack, float cosi,
+	SWCSpectrum *const f) const
+{
+  *f = normalIncidence + (SWCSpectrum(1.f) - normalIncidence) *
+	  powf(1.f - cosi, 5.f);
 }
-
-FresnelSlick::FresnelSlick (float ni) {
-  normal_incidence = ni;
-}
-

@@ -97,9 +97,9 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	MicrofacetDistribution *md3 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m3 * m3)) - 1.f);
 
 	// The Slick approximation is much faster and visually almost the same
-	Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1);
-	Fresnel *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2);
-	Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3);
+	Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
+	Fresnel *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
+	Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3, 0.f);
 
 	// The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 
