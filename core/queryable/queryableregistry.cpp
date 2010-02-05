@@ -42,7 +42,7 @@ void QueryableRegistry::Erase(Queryable* object)
 	queryableObjects.erase(object->GetName());
 }
 
-std::string QueryableRegistry::GetContent() const
+const char * QueryableRegistry::GetContent()
 {
 	std::stringstream XMLOutput;
 	//ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_STRING
@@ -73,7 +73,8 @@ std::string QueryableRegistry::GetContent() const
 
 	XMLOutput<<"</context>"<<std::endl;
 
-	return XMLOutput.str();
+	XMLOptionsString=XMLOutput.str();
+	return XMLOptionsString.c_str();
 }
 
 }//namespace lux

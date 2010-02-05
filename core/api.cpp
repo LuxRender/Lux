@@ -627,7 +627,7 @@ extern "C" double luxStatistics(const char *statName)
 
 extern "C" const char* luxGetOptions()
 {
-	return Context::GetActive()->registry.GetContent().c_str();
+	return Context::GetActive()->registry.GetContent();
 }
 
 extern "C" void luxEnableDebugMode()

@@ -36,10 +36,11 @@ class QueryableRegistry
 public:
 	void Insert(Queryable* object);
 	void Erase(Queryable* object);
-	std::string GetContent() const;
+	const char * GetContent();
 
 private:
 	std::map<std::string, Queryable*> queryableObjects;
+	std::string XMLOptionsString;
 };
 
 }//namespace lux
