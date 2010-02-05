@@ -40,40 +40,6 @@
 namespace lux
 {
 
-// Dade - this code comes from Boost 1.35 and it can be removed once we start to
-// use Boost 1.35 instead of 1.34.1
-
-// Copyright (C) 2001-2003
-// William E. Kempf
-// Copyright (C) 2007 Anthony Williams
-//
-//  Distributed under the Boost Software License, Version 1.0. (See accompanying 
-//  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-int osHardwareConcurrency() {
-#ifdef WIN32
-	SYSTEM_INFO info={0};
-	GetSystemInfo(&info);
-	return info.dwNumberOfProcessors;
-#else
-
-#if defined(PTW32_VERSION) || defined(__hpux)
-	return pthread_num_processors_np();
-#elif defined(__linux__)
-	return get_nprocs();
-#elif defined(__APPLE__) || defined(__FreeBSD__)
-	int count;
-	size_t size=sizeof(count);
-	return sysctlbyname("hw.ncpu",&count,&size,NULL,0)?0:count;
-#elif defined(__sun)
-	int const count=sysconf(_SC_NPROCESSORS_ONLN);
-	return (count>0)?count:0;
-#else
-	return 0;
-#endif
-
-#endif // WIN32
-}
-
 // Dade - used to check and swap bytes in the network rendering code and
 // other places
 bool osIsLittleEndian() {

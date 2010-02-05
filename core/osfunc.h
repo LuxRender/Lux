@@ -32,10 +32,6 @@ using boost::uint32_t;
 namespace lux
 {
 
-// Dade - return the number of concurrent threads the hardware can run or
-// 0 if the information is not avilable. The implementation come from Boost 1.35
-extern int osHardwareConcurrency();
-
 // Dade - used to check and swap bytes in the network rendering code and
 // other places
 extern bool osIsLittleEndian();
