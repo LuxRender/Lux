@@ -187,9 +187,9 @@ public:
 
 	void SetEpsilon(const float minValue, const float maxValue);
 
-	// jromang - registry containing all queryable objects of the current context
+	//! Registry containing all queryable objects of the current context
+	//! \author jromang
 	QueryableRegistry registry;
-
 
 private:
 	// API Local Classes

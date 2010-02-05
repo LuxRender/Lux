@@ -481,6 +481,9 @@ BOOST_PYTHON_MODULE(pylux)
     def("getStringParameterValue",luxGetStringParameterValue);
     def("getDefaultStringParameterValue",luxGetDefaultStringParameterValue);
 
+    // Queryable objects access
+    def("getOptions",luxGetOptions);
+
     // Networking
     def("addServer",luxAddServer);
     def("removeServer",luxRemoveServer);

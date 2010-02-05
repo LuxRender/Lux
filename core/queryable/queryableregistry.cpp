@@ -21,6 +21,9 @@
  ***************************************************************************/
 
 // queryableregistry.cpp
+#include <sstream>
+#include <iostream>
+#include <boost/foreach.hpp>
 #include "queryable.h"
 #include "queryableregistry.h"
 
@@ -37,6 +40,40 @@ void QueryableRegistry::Erase(Queryable* object)
 {
 	//TODO jromang - add assertion (existing object)
 	queryableObjects.erase(object->GetName());
+}
+
+std::string QueryableRegistry::GetContent() const
+{
+	std::stringstream XMLOutput;
+	//ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_STRING
+	static const char* typeString[]= {"none","int","float","string"};
+
+
+	XMLOutput<<"<?xml version='1.0' encoding='utf-8'?>"<<std::endl;
+	XMLOutput<<"<context>"<<std::endl;
+
+	std::pair<std::string, Queryable*> pairQObject;
+	BOOST_FOREACH( pairQObject, queryableObjects )
+	{
+
+		XMLOutput << "  <object>"<<std::endl;
+		XMLOutput << "    <name>"<<pairQObject.first<<"</name>"<<std::endl;
+
+		std::pair<std::string, QueryableAttribute> pairQAttribute;
+		BOOST_FOREACH( pairQAttribute, *(pairQObject.second) )
+		{
+			XMLOutput<<"    <attribute>"<<std::endl;
+			XMLOutput<<"      <name>"<< pairQAttribute.second.name <<"</name>"<<std::endl;
+			XMLOutput<<"      <type>"<< typeString[pairQAttribute.second.type] <<"</type>"<<std::endl;
+			XMLOutput<<"    </attribute>"<<std::endl;
+		}
+
+		XMLOutput << "  </object>"<<std::endl;
+	}
+
+	XMLOutput<<"</context>"<<std::endl;
+
+	return XMLOutput.str();
 }
 
 }//namespace lux

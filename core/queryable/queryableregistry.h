@@ -36,7 +36,7 @@ class QueryableRegistry
 public:
 	void Insert(Queryable* object);
 	void Erase(Queryable* object);
-	std::string GetContent();
+	std::string GetContent() const;
 
 private:
 	std::map<std::string, Queryable*> queryableObjects;

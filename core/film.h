@@ -27,6 +27,7 @@
 #include "api.h"
 #include "color.h"
 #include "memory.h"
+#include "queryable.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -373,7 +374,7 @@ private:
 };
 
 // Film Declarations
-class Film {
+class Film : public Queryable {
 public:
 	// Film Interface
 	Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
@@ -435,6 +436,9 @@ public:
 
 public:
 	// Film Public Data
+	u_int GetXResolution();
+	u_int GetYResolution();
+
 	u_int xResolution, yResolution;
 
 protected: // Put it here for better data alignment

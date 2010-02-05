@@ -511,10 +511,21 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 
 #define FILTER_TABLE_SIZE 16
 
+u_int Film::GetXResolution()
+{
+	return xResolution;
+}
+
+u_int Film::GetYResolution()
+{
+	return yResolution;
+}
+
 Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		   int reject_warmup, bool debugmode) :
+	Queryable("film"),
 	xResolution(xres), yResolution(yres),
 	filter(filt), filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
@@ -526,6 +537,10 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	EV(0.f), scene(NULL), histogram(NULL),
 	enoughSamplePerPixel(false)
 {
+	//Queryable parameters
+	SET_INT_ATTRIBUTE_READONLY(Film,"xResolution",GetXResolution);
+	SET_INT_ATTRIBUTE_READONLY(Film,"yResolution",GetYResolution);
+
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
 	xPixelStart = Ceil2UInt(xResolution * cropWindow[0]);

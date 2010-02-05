@@ -208,7 +208,7 @@ enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 				LUX_FILM_LG_SCALE_Z
 };
 
-// Parameter Access functions
+/* Parameter Access functions */
 void luxSetParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index = 0);
 double luxGetParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index = 0);
 double luxGetDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index = 0);
@@ -217,6 +217,8 @@ void luxSetStringParameterValue(luxComponent comp, luxComponentParameters param,
 unsigned int luxGetStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index = 0);
 unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index = 0);
 
+/* Queryable objects */
+const char* luxGetOptions(); /* Returns an XML string containing all queryable data of the current context */
 
 /* Networking */
 void luxAddServer(const char * name);
