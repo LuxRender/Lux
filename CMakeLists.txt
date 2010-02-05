@@ -231,7 +231,7 @@ IF (DOXYGEN_FOUND)
 	MESSAGE( STATUS "Found Doxygen and generating documentation" )
 			
 	SET(DOXYGEN_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/doxygen.template)
-	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen/doxygen.conf)
+	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen.conf)
 	SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc)
 	SET(DOXYGEN_OUTPUT ${DOXYGEN_OUTPUT_DIR}/html/index.html)
 		
