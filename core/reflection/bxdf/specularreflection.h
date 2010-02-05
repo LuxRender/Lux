@@ -30,27 +30,47 @@
 namespace lux
 {
 
-class  SpecularReflection : public BxDF {
+class SimpleSpecularReflection : public BxDF {
+public:
+	SimpleSpecularReflection(const Fresnel *fr) :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
+		fresnel(fr) { }
+	virtual ~SimpleSpecularReflection() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
+		SWCSpectrum *const f_) const { }
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+		const Vector &wi) const { return 0.f; }
+protected:
+	const Fresnel *fresnel;
+};
+
+class SimpleArchitecturalReflection : public SimpleSpecularReflection {
+public:
+	SimpleArchitecturalReflection(const Fresnel *fr) :
+		SimpleSpecularReflection(fr) { }
+	virtual ~SimpleArchitecturalReflection() { }
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
+};
+
+class  SpecularReflection : public SimpleSpecularReflection {
 public:
 	// SpecularReflection Public Methods
-	SpecularReflection(const SWCSpectrum &r, const Fresnel *fr, float flm, float flmindex)
-		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
-		  R(r), fresnel(fr), film(flm), filmindex(flmindex) {
-	}
+	SpecularReflection(const SWCSpectrum &r, const Fresnel *fr, float flm,
+		float flmindex) : SimpleSpecularReflection(fr), R(r),
+		film(flm), filmindex(flmindex) { }
 	virtual ~SpecularReflection() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f_) const {
-		
-	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-		return 0.f;
-	}
 protected:
 	// SpecularReflection Private Data
 	SWCSpectrum R;
-	const Fresnel *fresnel;
 	float film, filmindex;
 };
 

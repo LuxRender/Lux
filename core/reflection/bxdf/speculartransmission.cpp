@@ -28,8 +28,10 @@
 
 using namespace lux;
 
-bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
-	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const {
+bool SimpleSpecularTransmission::Sample_f(const TsPack *tspack,
+	const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_,
+	float *pdf, float *pdfBack, bool reverse) const
+{
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 
@@ -51,7 +53,8 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 		return false;
 	}
 	float cost = sqrtf(max(0.f, 1.f - sint2));
-	if (entering) cost = -cost;
+	if (entering)
+		cost = -cost;
 	if (architectural)
 		*wi = -wo;
 	else
@@ -63,10 +66,10 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	if (!architectural) {
 		if (reverse) {
 			fresnel->Evaluate(tspack, cost, &F);
-			*f_ = (SWCSpectrum(1.f) - F) * T / (eta2 * fabsf(cost));
+			*f_ = (SWCSpectrum(1.f) - F) / (eta2 * fabsf(cost));
 		} else {
 			fresnel->Evaluate(tspack, CosTheta(wo), &F);
-			*f_ = (SWCSpectrum(1.f) - F) * T / fabsf(cost);
+			*f_ = (SWCSpectrum(1.f) - F) / fabsf(cost);
 		}
 	} else {
 		if (reverse) {
@@ -81,11 +84,12 @@ bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 				F = SWCSpectrum(0.f);
 		}
 		F *= SWCSpectrum(1.f) + (SWCSpectrum(1.f) - F) * (SWCSpectrum(1.f) - F);
-		*f_ = (SWCSpectrum(1.f) - F) * T / fabsf(-CosTheta(wo));
+		*f_ = (SWCSpectrum(1.f) - F) / fabsf(-CosTheta(wo));
 	}
 	return true;
 }
-float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo) const
+float SimpleSpecularTransmission::Weight(const TsPack *tspack,
+	const Vector &wo) const
 {
 	if (architectural && wo.z < 0.f)
 		return 1.f;
@@ -97,7 +101,7 @@ float SpecularTransmission::Weight(const TsPack *tspack, const Vector &wo) const
 	else
 		return 1.f - F.Filter(tspack);
 }
-void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
+void SimpleSpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	if (!(architectural && Dot(wo, wi) < MachineEpsilon::E(1.f) - 1.f))
@@ -123,5 +127,23 @@ void SpecularTransmission::f(const TsPack *tspack, const Vector &wo,
 	else
 		F = SWCSpectrum(0.f);
 	F *= SWCSpectrum(1.f) + (SWCSpectrum(1.f) - F) * (SWCSpectrum(1.f) - F);
-	f_->AddWeighted(1.f / fabsf(CosTheta(wi)), (SWCSpectrum(1.f) - F) * T);
+	f_->AddWeighted(1.f / fabsf(CosTheta(wi)), (SWCSpectrum(1.f) - F));
+}
+
+bool SpecularTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
+	float *pdfBack, bool reverse) const
+{
+	if (!SimpleSpecularTransmission::Sample_f(tspack, wo, wi, u1, u2, f_,
+		pdf, pdfBack, reverse))
+		return false;
+	*f_ *= T;
+	return true;
+}
+void SpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
+	const Vector &wi, SWCSpectrum *const f_) const
+{
+	SWCSpectrum F(0.f);
+	SimpleSpecularTransmission::f(tspack, wo, wi, &F);
+	*f_ += T * F;
 }

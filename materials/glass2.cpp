@@ -53,15 +53,12 @@ BSDF *Glass2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		ior);
 	if (architectural)
 		bsdf->Add(ARENA_ALLOC(tspack->arena,
-			ArchitecturalReflection)(SWCSpectrum(1.f),
-			fri, 0.f, 1.f));
+			SimpleArchitecturalReflection)(fri));
 	else
 		bsdf->Add(ARENA_ALLOC(tspack->arena,
-			SpecularReflection)(SWCSpectrum(1.f),
-			fri, 0.f, 1.f));
+			SimpleSpecularReflection)(fri));
 	bsdf->Add(ARENA_ALLOC(tspack->arena,
-		SpecularTransmission)(SWCSpectrum(1.f), fri, dispersion,
-			architectural));
+		SimpleSpecularTransmission)(fri, dispersion, architectural));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
