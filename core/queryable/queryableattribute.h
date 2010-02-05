@@ -61,7 +61,7 @@ public:
 	}
 
 	//Get accessors
-	std::string value()
+	std::string Value()
 	{
 		switch(type)
 		{
@@ -71,13 +71,13 @@ public:
 		}
 	}
 
-	float floatValue()
+	float FloatValue()
 	{
 		BOOST_ASSERT(type==ATTRIBUTE_FLOAT);
 		return getFloatFunc();
 	}
 
-	int intValue()
+	int IntValue()
 	{
 		BOOST_ASSERT(type==ATTRIBUTE_INT);
 		return getIntFunc();
@@ -85,7 +85,7 @@ public:
 
 
 	//Set accessors
-	void setValue(const std::string &value)
+	void SetValue(const std::string &value)
 	{
 		switch(type)
 		{
@@ -95,13 +95,13 @@ public:
 		}
 	}
 
-	void setValue(float f)
+	void SetValue(float f)
 	{
 		BOOST_ASSERT(type==ATTRIBUTE_FLOAT);
 		setFloatFunc(f);
 	}
 
-	void setValue(int i)
+	void SetValue(int i)
 	{
 		BOOST_ASSERT(type==ATTRIBUTE_INT);
 		setIntFunc(i);
@@ -115,8 +115,8 @@ public:
 	//...TODO add all types here
 
 	//Default error functions for readonly attributes
-	static void readOnlyFloatError(float f);
-	static void readOnlyIntError(int i);
+	static void ReadOnlyFloatError(float f);
+	static void ReadOnlyIntError(int i);
 
 //private:
 	std::string name;

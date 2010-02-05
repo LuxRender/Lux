@@ -27,16 +27,16 @@
 namespace lux
 {
 
-void QueryableRegistry::insert(Queryable* object)
+void QueryableRegistry::Insert(Queryable* object)
 {
 	//TODO jromang - add assertion (not duplicate name)
-	queryableObjects.insert(std::pair<std::string,Queryable*>(object->getName(),object));
+	queryableObjects.insert(std::pair<std::string,Queryable*>(object->GetName(),object));
 }
 
-void QueryableRegistry::erase(Queryable* object)
+void QueryableRegistry::Erase(Queryable* object)
 {
 	//TODO jromang - add assertion (existing object)
-	queryableObjects.erase(object->getName());
+	queryableObjects.erase(object->GetName());
 }
 
 }//namespace lux

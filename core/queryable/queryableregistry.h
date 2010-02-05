@@ -34,9 +34,9 @@ namespace lux
 class QueryableRegistry
 {
 public:
-	void insert(Queryable* object);
-	void erase(Queryable* object);
-	std::string getContent();
+	void Insert(Queryable* object);
+	void Erase(Queryable* object);
+	std::string GetContent();
 
 private:
 	std::map<std::string, Queryable*> queryableObjects;

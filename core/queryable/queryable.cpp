@@ -30,13 +30,13 @@ namespace lux
 Queryable::Queryable(std::string _name) : name(_name)
 {
 	//add this object to the registry
-	Context::GetActive()->registry.insert(this);
+	Context::GetActive()->registry.Insert(this);
 }
 
 Queryable::~Queryable()
 {
 	//remove this object from the registry
-	Context::GetActive()->registry.erase(this);
+	Context::GetActive()->registry.Erase(this);
 }
 
 }//namespace lux

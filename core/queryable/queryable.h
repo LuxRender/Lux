@@ -57,7 +57,7 @@ public:
 	Queryable(std::string _name);
 	virtual ~Queryable();
 
-	void addAttribute(QueryableAttribute attr)
+	void AddAttribute(QueryableAttribute attr)
 	{
 		attributes.insert ( std::pair<std::string,QueryableAttribute>(attr.name,attr) );
 	}
@@ -91,7 +91,7 @@ public:
 		}
 	}
 
-	const std::string getName()
+	const std::string GetName()
 	{
 		return name;
 	}
@@ -112,25 +112,25 @@ private:
 	{ QueryableAttribute _tmpAttribute(attributeName,ATTRIBUTE_FLOAT); \
 	_tmpAttribute.setFloatFunc=boost::bind(&className::setMemberFunction, boost::ref(*this), _1); \
 	_tmpAttribute.getFloatFunc=boost::bind(&className::getMemberFunction, boost::ref(*this)); \
-	addAttribute(_tmpAttribute);}
+	AddAttribute(_tmpAttribute);}
 
 #define SET_FLOAT_ATTRIBUTE_READONLY(className,attributeName, getMemberFunction) \
 	{ QueryableAttribute _tmpAttribute(attributeName,ATTRIBUTE_FLOAT); \
-	_tmpAttribute.setFloatFunc=boost::bind(&QueryableAttribute::readOnlyFloatError, _1); \
+	_tmpAttribute.setFloatFunc=boost::bind(&QueryableAttribute::ReadOnlyFloatError, _1); \
 	_tmpAttribute.getFloatFunc=boost::bind(&className::getMemberFunction, boost::ref(*this)); \
-	addAttribute(_tmpAttribute);}
+	AddAttribute(_tmpAttribute);}
 
 #define SET_INT_ATTRIBUTE(className,attributeName, getMemberFunction ,setMemberFunction) \
 	{ QueryableAttribute _tmpAttribute(attributeName,ATTRIBUTE_INT); \
 	_tmpAttribute.setIntFunc=boost::bind(&className::setMemberFunction, boost::ref(*this), _1); \
 	_tmpAttribute.getIntFunc=boost::bind(&className::getMemberFunction, boost::ref(*this)); \
-	addAttribute(_tmpAttribute);}
+	AddAttribute(_tmpAttribute);}
 
 #define SET_INT_ATTRIBUTE_READONLY(className,attributeName, getMemberFunction) \
 	{ QueryableAttribute _tmpAttribute(attributeName,ATTRIBUTE_INT); \
-	_tmpAttribute.setIntFunc=boost::bind(&QueryableAttribute::readOnlyIntError,_1); \
+	_tmpAttribute.setIntFunc=boost::bind(&QueryableAttribute::ReadOnlyIntError,_1); \
 	_tmpAttribute.getIntFunc=boost::bind(&className::getMemberFunction, boost::ref(*this)); \
-	addAttribute(_tmpAttribute);}
+	AddAttribute(_tmpAttribute);}
 
 
 #endif // LUX_QUERYABLE_H
