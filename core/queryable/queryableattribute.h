@@ -68,7 +68,9 @@ public:
 		{
 			case ATTRIBUTE_FLOAT: return boost::lexical_cast<std::string>(getFloatFunc());
 			case ATTRIBUTE_INT: return boost::lexical_cast<std::string>(getIntFunc());
-			default: luxError(LUX_BUG, LUX_SEVERE, "QueryableAttribute has invalid attribute type");
+			default:
+				luxError(LUX_BUG, LUX_SEVERE, "QueryableAttribute has invalid attribute type");
+				return("null");
 		}
 	}
 

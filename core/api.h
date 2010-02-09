@@ -219,6 +219,7 @@ unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentPa
 
 /* Queryable objects */
 const char* luxGetOptions(); /* Returns an XML string containing all queryable data of the current context */
+int luxGetIntOption(const char * objectName, const char * attributeName); /* Returns the value of an int option */
 
 /* Networking */
 void luxAddServer(const char * name);

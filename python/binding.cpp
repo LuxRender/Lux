@@ -29,11 +29,14 @@
 #include <cstring>
 #include <boost/python.hpp>
 #include <boost/python/type_id.hpp>
+#include <boost/python/object.hpp>
 #include <boost/pool/pool.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include "api.h"
+#include "context.h"
+#include "queryable.h"
 
 #define	EXTRACT_PARAMETERS(_params) \
 	std::vector<LuxToken> aTokens; \
@@ -319,6 +322,25 @@ void pyLuxCleanup() //delete all threads on cleanup
 	luxCleanup();
 }
 
+//Queryable objects
+//Here I do a special handling for python :
+//Python is dynamically typed, unlike C++ which is statically typed.
+//Python variables may hold an integer, a float, list, dict, tuple, str, long etc., among other things.
+//So we don't need a getINT, getFLOAT, getXXX in the python api
+//This function handles all types
+boost::python::object pyLuxGetOption(const char *objectName, const char *attributeName)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if(object!=0)
+	{
+		QueryableAttribute attr=(*object)[attributeName];
+		if(attr.type==ATTRIBUTE_INT) return boost::python::object(attr.IntValue());
+		if(attr.type==ATTRIBUTE_FLOAT) return boost::python::object(attr.FloatValue());
+		if(attr.type==ATTRIBUTE_STRING) return boost::python::object(attr.Value());
+	}
+	else return boost::python::object(0);
+}
+
 
 }//namespace lux
 
@@ -483,6 +505,7 @@ BOOST_PYTHON_MODULE(pylux)
 
     // Queryable objects access
     def("getOptions",luxGetOptions);
+    def("getOption", pyLuxGetOption);
 
     // Networking
     def("addServer",luxAddServer);

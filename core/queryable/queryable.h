@@ -90,7 +90,8 @@ public:
 		else
 		{
 			LOG(LUX_SEVERE,LUX_BADTOKEN) << "Attribute '" << s << "' does not exist in Queryable object";
-			exit(1);
+			//exit(1);
+			return nullAttribute;
 		}
 	}
 
@@ -120,6 +121,7 @@ public:
 private:
 	std::map<std::string, QueryableAttribute> attributes;
 	std::string name;
+	QueryableAttribute nullAttribute;
 };
 
 }//namespace lux

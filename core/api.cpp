@@ -630,6 +630,13 @@ extern "C" const char* luxGetOptions()
 	return Context::GetActive()->registry.GetContent();
 }
 
+extern "C" int luxGetIntOption(const char * objectName, const char * attributeName)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if(object!=0) return (*object)[attributeName].IntValue();
+	else return 0;
+}
+
 extern "C" void luxEnableDebugMode()
 {
 	Context::GetActive()->EnableDebugMode();

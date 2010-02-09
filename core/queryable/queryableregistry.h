@@ -38,6 +38,17 @@ public:
 	void Erase(Queryable* object);
 	const char * GetContent();
 
+	Queryable* operator[] (const std::string &s)
+	{
+		std::map<std::string, Queryable*>::iterator it=queryableObjects.find(s);
+		if(it!=queryableObjects.end()) return((*it).second);
+		else
+		{
+			LOG(LUX_SEVERE,LUX_BADTOKEN) << "Object '" << s << "' does not exist in registry";
+			return(0);
+		}
+	}
+
 private:
 	std::map<std::string, Queryable*> queryableObjects;
 	std::string XMLOptionsString;
