@@ -48,7 +48,10 @@ namespace lux
  *     'void Sphere::setRadius(float rad) {radius=rad;} //this is wrong ; changing the radius needs recomputing (see Sphere constructor)
  *     float Sphere::getRadius() { return radius; }'
  *  3) And finally it should add one line for each attribute in the constructor:
- *     'SET_FLOAT_ATTRIBUTE(Sphere,"sphereRadius",getRadius,setRadius);'
+ *     'AddFloatAttribute(
+ *     						"radius", boost::bind(&Sphere::getRadius, boost::ref(*this)),
+ *     							      boost::bind(&Sphere::setRadius, boost::ref(*this))
+ *      );'
  *
  */
 class Queryable
