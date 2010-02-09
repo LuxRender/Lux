@@ -538,8 +538,11 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	enoughSamplePerPixel(false)
 {
 	//Queryable parameters
-	SET_INT_ATTRIBUTE_READONLY(Film,"xResolution",GetXResolution);
-	SET_INT_ATTRIBUTE_READONLY(Film,"yResolution",GetYResolution);
+	//SET_INT_ATTRIBUTE_READONLY(Film,"xResolution",GetXResolution);
+	//SET_INT_ATTRIBUTE_READONLY(Film,"yResolution",GetYResolution);
+
+	AddIntAttribute("xResolution", boost::bind(&Film::GetXResolution, boost::ref(*this)) );
+
 
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));

@@ -96,6 +96,21 @@ public:
 		return name;
 	}
 
+	void AddFloatAttribute(std::string attributeName, boost::function<float (void)> getFunc, boost::function<void (float)> setFunc=boost::bind(&QueryableAttribute::ReadOnlyFloatError,_1))
+	{
+		QueryableAttribute tmpAttribute(attributeName,ATTRIBUTE_FLOAT);
+		tmpAttribute.setFloatFunc=setFunc;
+		tmpAttribute.getFloatFunc=getFunc;
+		AddAttribute(tmpAttribute);
+	}
+
+	void AddIntAttribute(std::string attributeName, boost::function<int (void)> getFunc, boost::function<void (int)> setFunc=boost::bind(&QueryableAttribute::ReadOnlyIntError, _1))
+	{
+		QueryableAttribute tmpAttribute(attributeName,ATTRIBUTE_INT);
+		tmpAttribute.setIntFunc=setFunc;
+		tmpAttribute.getIntFunc=getFunc;
+		AddAttribute(tmpAttribute);
+	}
 
 
 
@@ -107,7 +122,10 @@ private:
 }//namespace lux
 
 
+
+
 //MACROS
+/*
 #define SET_FLOAT_ATTRIBUTE(className,attributeName, getMemberFunction, setMemberFunction) \
 	{ QueryableAttribute _tmpAttribute(attributeName,ATTRIBUTE_FLOAT); \
 	_tmpAttribute.setFloatFunc=boost::bind(&className::setMemberFunction, boost::ref(*this), _1); \
@@ -131,6 +149,7 @@ private:
 	_tmpAttribute.setIntFunc=boost::bind(&QueryableAttribute::ReadOnlyIntError,_1); \
 	_tmpAttribute.getIntFunc=boost::bind(&className::getMemberFunction, boost::ref(*this)); \
 	AddAttribute(_tmpAttribute);}
+*/
 
 
 #endif // LUX_QUERYABLE_H
