@@ -255,61 +255,6 @@ private:
 };
 
 /***************************************************/
-const boost::int16_t QBVHAccel::pathTable[] = {
-	// Note that the packed indices are stored in reverse
-	// order, that is first index is in the first 4 bits.
-	// visit = 0000
-	0x4444, 	0x4444, 	0x4444, 	0x4444,
-	0x4444, 	0x4444, 	0x4444, 	0x4444,
-	// visit = 0001
-	0x4440, 	0x4440, 	0x4440, 	0x4440,
-	0x4440, 	0x4440, 	0x4440, 	0x4440,
-	// visit = 0010
-	0x4441, 	0x4441, 	0x4441, 	0x4441,
-	0x4441, 	0x4441, 	0x4441, 	0x4441,
-	// visit = 0011
-	0x4410, 	0x4410, 	0x4401, 	0x4401,
-	0x4410, 	0x4410, 	0x4401, 	0x4401,
-	// visit = 0100
-	0x4442, 	0x4442, 	0x4442, 	0x4442,
-	0x4442, 	0x4442, 	0x4442, 	0x4442,
-	// visit = 0101
-	0x4420, 	0x4420, 	0x4420, 	0x4420,
-	0x4402, 	0x4402, 	0x4402, 	0x4402,
-	// visit = 0110
-	0x4421, 	0x4421, 	0x4421, 	0x4421,
-	0x4412, 	0x4412, 	0x4412, 	0x4412,
-	// visit = 0111
-	0x4210, 	0x4210, 	0x4201, 	0x4201,
-	0x4102, 	0x4102, 	0x4012, 	0x4012,
-	// visit = 1000
-	0x4443, 	0x4443, 	0x4443, 	0x4443,
-	0x4443, 	0x4443, 	0x4443, 	0x4443,
-	// visit = 1001
-	0x4430, 	0x4430, 	0x4430, 	0x4430,
-	0x4403, 	0x4403, 	0x4403, 	0x4403,
-	// visit = 1010
-	0x4431, 	0x4431, 	0x4431, 	0x4431,
-	0x4413, 	0x4413, 	0x4413, 	0x4413,
-	// visit = 1011
-	0x4310, 	0x4310, 	0x4301, 	0x4301,
-	0x4103, 	0x4103, 	0x4013, 	0x4013,
-	// visit = 1100
-	0x4432, 	0x4423, 	0x4432, 	0x4423,
-	0x4432, 	0x4432, 	0x4423, 	0x4423,
-	// visit = 1101
-	0x4320, 	0x4230, 	0x4320, 	0x4230,
-	0x4032, 	0x4023, 	0x4032, 	0x4023,
-	// visit = 1110
-	0x4321, 	0x4231, 	0x4321, 	0x4231,
-	0x4132, 	0x4123, 	0x4132, 	0x4123,
-	// visit = 1111
-	0x3210, 	0x2310, 	0x3201, 	0x2301,
-	0x1032, 	0x1023, 	0x0132, 	0x0123
-};
-
-
-/***************************************************/
 QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	u_int mp, u_int fst, u_int sf) : fullSweepThreshold(fst),
 	skipFactor(sf), maxPrimsPerLeaf(mp)
@@ -447,16 +392,6 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
 		leftChildIndex = 0;
 		rightChildIndex = 2;
-
-		nodes[currentNode].axisMain = axis;
-	} else {
-		if (childIndex == 0) {
-			//left subnode
-			nodes[currentNode].axisSubLeft = axis;
-		} else {
-			//right subnode
-			nodes[currentNode].axisSubRight = axis;
-		}
 	}
 
 	for (u_int i = start; i < end; i += step) {
@@ -671,50 +606,6 @@ int32_t QBVHNode::BBoxIntersect(const QuadRay &ray4, const __m128 invDir[3],
 
 	//return the visit flags
 	return _mm_movemask_ps(_mm_cmpge_ps(tMax, tMin));;
-		
-	//--------------------
-	//sort the subnodes using the axis directions
-	//(not the actual intersection distance, the article reporting
-	//better performances - less intersections - when using that)...
-	/*if (sign_[m_axis_main] == 1) {
-		//positive => childrens will be {0,1}, {2,3}.
-		if (sign_[m_axis_subleft] == 1) {
-			//it will be 0,1
-			bbox_order_[3] = 0;
-			bbox_order_[2] = 1;
-		} else {
-			bbox_order_[3] = 1;
-			bbox_order_[2] = 0;
-		}
-
-		if (sign_[m_axis_subright] == 1) {
-			//it will be 2,3
-			bbox_order_[1] = 2;
-			bbox_order_[0] = 3;
-		} else {
-			bbox_order_[1] = 3;
-			bbox_order_[0] = 2;
-		}
-	} else {
-		//negative => childrens will be {2,3}, {0,1}
-		if (sign_[m_axis_subright] == 1) {
-			//it will be 2,3
-			bbox_order_[3] = 2;
-			bbox_order_[2] = 3;
-		} else {
-			bbox_order_[3] = 3;
-			bbox_order_[2] = 2;
-		}
-		
-		if (sign_[m_axis_subleft] == 1) {
-			//it will be 0,1
-			bbox_order_[1] = 0;
-			bbox_order_[0] = 1;
-		} else {
-			bbox_order_[1] = 1;
-			bbox_order_[0] = 0;
-		}
-		}*/
 }
 
 /***************************************************/
@@ -748,20 +639,14 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			const int32_t visit = node.BBoxIntersect(ray4, invDir,
 				signs);
 
-			const int32_t nodeIdx = (signs[node.axisMain] << 2) |
-				(signs[node.axisSubLeft] << 1) |
-				(signs[node.axisSubRight]);
-			
-			boost::int16_t bboxOrder = pathTable[visit * 8 + nodeIdx];
-
-			// Push on the stack, if the bbox is hit by the ray
-			for (int i = 0; i < 4; ++i) {
-				if (bboxOrder & 0x4)
-					break;
-				++todoNode;
-				nodeStack[todoNode] = node.children[bboxOrder & 0x3];
-				bboxOrder >>= 4;
-			}
+			if (visit & 0x1)
+				nodeStack[++todoNode] = node.children[0];
+			if (visit & 0x2)
+				nodeStack[++todoNode] = node.children[1];
+			if (visit & 0x4)
+				nodeStack[++todoNode] = node.children[2];
+			if (visit & 0x8)
+				nodeStack[++todoNode] = node.children[3];
 		} else {
 			//----------------------
 			// It is a leaf,
@@ -815,20 +700,14 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			const int32_t visit = node.BBoxIntersect(ray4, invDir,
 				signs);
 
-			const int32_t nodeIdx = (signs[node.axisMain] << 2) |
-				(signs[node.axisSubLeft] << 1) |
-				(signs[node.axisSubRight]);
-			
-			boost::int16_t bboxOrder = pathTable[visit * 8 + nodeIdx];
-
-			// Push on the stack, if the bbox is hit by the ray
-			for (int i = 0; i < 4; i++) {
-				if (bboxOrder & 0x4)
-					break;
-				++todoNode;
-				nodeStack[todoNode] = node.children[bboxOrder & 0x3];
-				bboxOrder >>= 4;
-			}
+			if (visit & 0x1)
+				nodeStack[++todoNode] = node.children[0];
+			if (visit & 0x2)
+				nodeStack[++todoNode] = node.children[1];
+			if (visit & 0x4)
+				nodeStack[++todoNode] = node.children[2];
+			if (visit & 0x8)
+				nodeStack[++todoNode] = node.children[3];
 		} else {
 			//----------------------
 			// It is a leaf,

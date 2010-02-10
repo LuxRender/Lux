@@ -78,19 +78,10 @@ public:
 	int32_t children[4];
 
 	/**
-	   The 3 axis of split (main, sub-left, sub-right). 0 = x, 1 = y, 2 = z
-	*/
-	int32_t axisMain, axisSubLeft, axisSubRight;
-
-	/** Optimisation for shadow rays : keep the parent node index */
-	int32_t parentNodeIndex;
-	
-	/**
 	   Base constructor, init correct bounding boxes and a "root" node
 	   (parentNodeIndex == -1)
 	*/
-	inline QBVHNode() : axisMain(0), axisSubLeft(0), axisSubRight(0),
-		parentNodeIndex(-1) {
+	inline QBVHNode() {
 		for (int i = 0; i < 3; ++i) {
 			bboxes[0][i] = _mm_set1_ps(INFINITY);
 			bboxes[1][i] = _mm_set1_ps(-INFINITY);
@@ -332,7 +323,7 @@ private:
 			nodes = newNodes;
 			maxNodes *= 2;
 		}
-		nodes[index].parentNodeIndex = parentIndex;
+
 		if (parentIndex >= 0) {
 			nodes[parentIndex].children[childIndex] = index;
 			nodes[parentIndex].SetBBox(childIndex, nodeBbox);
