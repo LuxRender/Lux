@@ -55,7 +55,7 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		const float ti = (i-1)/(i+1);
 		s *= ti*ti;
 	}
-	s.Clamp(0.f, 1.f);
+	s = s.Clamp(0.f, 1.f);
 
 	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 

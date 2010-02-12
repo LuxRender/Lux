@@ -32,7 +32,7 @@ void FresnelGeneral::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *con
 		cost = cost / eta;
 	else
 		cost = cost * eta;
-	cost.Clamp(0.f, 1.f);
+	cost = cost.Clamp(0.f, 1.f);
 	cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
 	FrFull(fabsf(cosi), cost, eta, k, f);
 }

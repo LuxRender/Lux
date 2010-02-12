@@ -38,7 +38,7 @@ void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *
 			cost /= eta;
 		else
 			cost *= eta;
-		cost.Clamp(0.f, 1.f);
+		cost = cost.Clamp(0.f, 1.f);
 		cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
 		FrDiel2(fabsf(cosi), cost, eta, f);
 	} else {
