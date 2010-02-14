@@ -343,6 +343,39 @@ boost::python::object pyLuxGetOption(const char *objectName, const char *attribu
 	return boost::python::object(0);
 }
 
+void pyLuxSetOption(const char * objectName, const char * attributeName, boost::python::object value)
+{
+	//void luxSetOption(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if(object!=0)
+	{
+		QueryableAttribute &attribute=(*object)[attributeName];
+		//return (*object)[attributeName].IntValue();
+		switch(attribute.type)
+		{
+		case ATTRIBUTE_INT :
+			attribute.SetValue(boost::python::extract<int>(value));
+			break;
+
+		case ATTRIBUTE_FLOAT :
+			attribute.SetValue(boost::python::extract<float>(value));
+			break;
+
+		case ATTRIBUTE_STRING :
+			attribute.SetValue(boost::python::extract<std::string>(value));
+			break;
+
+		case ATTRIBUTE_NONE :
+		default:
+			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
+		}
+	}
+	else
+	{
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
 
 }//namespace lux
 
@@ -508,6 +541,7 @@ BOOST_PYTHON_MODULE(pylux)
     // Queryable objects access
     def("getOptions",luxGetOptions);
     def("getOption", pyLuxGetOption);
+    def("setOption", pyLuxSetOption);
 
     // Networking
     def("addServer",luxAddServer);
