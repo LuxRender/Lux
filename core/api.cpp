@@ -637,6 +637,37 @@ extern "C" int luxGetIntOption(const char * objectName, const char * attributeNa
 	else return 0;
 }
 
+extern "C" void luxSetOption(const char * objectName, const char * attributeName, int n, void *values)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if(object!=0)
+	{
+		QueryableAttribute &attribute=(*object)[attributeName];
+		//return (*object)[attributeName].IntValue();
+		switch(attribute.type)
+		{
+		case ATTRIBUTE_INT :
+			BOOST_ASSERT(n==1);
+			attribute.SetValue(*((int*)values));
+			break;
+
+		case ATTRIBUTE_FLOAT :
+			BOOST_ASSERT(n==1);
+			attribute.SetValue(*((float*)values));
+			break;
+
+		case ATTRIBUTE_STRING :
+			BOOST_ASSERT(n==1);
+			attribute.SetValue((char*)values);
+			break;
+
+		case ATTRIBUTE_NONE :
+		default:
+			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
+		}
+	}
+}
+
 extern "C" void luxEnableDebugMode()
 {
 	Context::GetActive()->EnableDebugMode();
