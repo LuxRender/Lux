@@ -337,8 +337,10 @@ boost::python::object pyLuxGetOption(const char *objectName, const char *attribu
 		if(attr.type==ATTRIBUTE_INT) return boost::python::object(attr.IntValue());
 		if(attr.type==ATTRIBUTE_FLOAT) return boost::python::object(attr.FloatValue());
 		if(attr.type==ATTRIBUTE_STRING) return boost::python::object(attr.Value());
+
+		LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
 	}
-	else return boost::python::object(0);
+	return boost::python::object(0);
 }
 
 
