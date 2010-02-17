@@ -32,6 +32,7 @@
 #include <boost/python/object.hpp>
 #include <boost/pool/pool.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/once.hpp>
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include "api.h"
@@ -46,8 +47,13 @@
 #define PASS_PARAMETERS \
 	count, aTokens.size()>0?&aTokens[0]:0, aValues.size()>0?&aValues[0]:0
 
+#define PASS_PARAMSET \
+	ParamSet( count, name, aTokens.size()>0?&aTokens[0]:0, aValues.size()>0?&aValues[0]:0 )
 
 namespace lux{
+
+boost::once_flag luxInitFlag = BOOST_ONCE_INIT;
+
 
 //The memory pool handles temporary allocations and is freed after each C API Call
 boost::pool<> memoryPool(sizeof(char));
@@ -135,138 +141,6 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 	return(n);
 }
 
-/*
- * Following 'pyXXX' functions are wrappers to the C-API calls that need special operations :
- * -parameter extractions from python lists
- * -callback handling
- * -creation of a python object as return value
- * -...
- */
-void pyLuxPixelFilter(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxPixelFilterV(name,PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxFilm(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxFilmV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxSampler(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxSamplerV(name,PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxAccelerator(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxAcceleratorV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxSurfaceIntegrator(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxSurfaceIntegratorV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxVolumeIntegrator(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxVolumeIntegratorV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxCamera(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxCameraV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxTexture(const char *name, const char *type, const char *texname, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxTextureV(name, type, texname, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxMaterial(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxMaterialV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxMakeNamedMaterial(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxMakeNamedMaterialV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxNamedMaterial(const char *name)
-{
-	luxNamedMaterial(name);
-	memoryPool.purge_memory();
-}
-
-void pyLuxLightSource(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxLightSourceV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxAreaLightSource(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxAreaLightSourceV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxPortalShape(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxPortalShapeV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxShape(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxShapeV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxVolume(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxVolumeV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxExterior(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxExteriorV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
-void pyLuxInterior(const char *name, boost::python::list params)
-{
-	EXTRACT_PARAMETERS(params);
-	luxInteriorV(name, PASS_PARAMETERS);
-	memoryPool.purge_memory();
-}
-
 //Error handling
 boost::python::object pythonErrorHandler;
 
@@ -277,20 +151,11 @@ void luxErrorPython(int code, int severity, const char *message)
 
 void pyLuxErrorHandler(boost::python::object handler)
 {
+	//System wide init (usefull if you set the handler before any context is created)
+	boost::call_once(&luxInit, luxInitFlag);
+
 	pythonErrorHandler=handler;
 	luxErrorHandler(luxErrorPython);
-}
-
-//Framebuffer
-boost::python::list pyLuxFramebuffer()
-{
-	boost::python::list pyFrameBuffer;
-	int nvalues=((int)luxStatistics("filmXres")) * ((int)luxStatistics("filmYres")) * 3; //get the number of values to copy
-	unsigned char* framebuffer=luxFramebuffer(); //get the framebuffer
-	//copy the values
-	for(int i=0;i<nvalues;i++)
-		pyFrameBuffer.append(framebuffer[i]);
-	return pyFrameBuffer;
 }
 
 /*
@@ -303,48 +168,338 @@ pylux.lightSource('infinite', [])
 pylux.worldEnd()
 */
 
-//Asynchonous worldEnd
-std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worldend threads
+/*
+ * PyContext class
+ */
 
-void pyLuxWorldEnd() //launch luxWorldEnd() into a thread
+class PyContext
 {
-	luxError(LUX_NOERROR, LUX_DEBUG, "pyLux launching worldEnd thread");
-	pyLuxWorldEndThreads.push_back(new boost::thread(luxWorldEnd));
-}
-
-void pyLuxCleanup() //delete all threads on cleanup
-{
-	BOOST_FOREACH(boost::thread *t,pyLuxWorldEndThreads)
+public:
+	PyContext(std::string name)
 	{
-		delete(t);
-	}
-	pyLuxWorldEndThreads.clear();
-	luxCleanup();
-}
+		//System wide init
+		boost::call_once(&luxInit, luxInitFlag);
 
-//Queryable objects
-//Here I do a special handling for python :
-//Python is dynamically typed, unlike C++ which is statically typed.
-//Python variables may hold an integer, a float, list, dict, tuple, str, long etc., among other things.
-//So we don't need a getINT, getFLOAT, getXXX in the python api
-//This function handles all types
-boost::python::object pyLuxGetOption(const char *objectName, const char *attributeName)
-{
-	Queryable *object=Context::GetActive()->registry[objectName];
-	if(object!=0)
+		//Here we create a new context
+		context=new Context(name);
+		LOG(LUX_INFO,LUX_NOERROR)<<"Created new context : '"<<name<<"'";
+	}
+
+	~PyContext()
 	{
-		QueryableAttribute attr=(*object)[attributeName];
-		if(attr.type==ATTRIBUTE_INT) return boost::python::object(attr.IntValue());
-		if(attr.type==ATTRIBUTE_FLOAT) return boost::python::object(attr.FloatValue());
-		if(attr.type==ATTRIBUTE_STRING) return boost::python::object(attr.Value());
-
-		LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
+		//destroy threads
+		BOOST_FOREACH(boost::thread *t,pyLuxWorldEndThreads)
+		{
+			delete(t);
+		}
+		pyLuxWorldEndThreads.clear();
 	}
-	return boost::python::object(0);
-}
+
+	void greet() { LOG(LUX_INFO,LUX_NOERROR)<<"Hello from context '"<<context->GetName()<<"' !"; }
+
+	int parse(const char *filename)
+	{
+		//TODO jromang - add thread lock here (we can only parse in one context)
+		Context::SetActive(context);
+		return luxParse(filename);
+	}
+
+	void cleanup() { context->Cleanup(); }
+	void identity() { context->Identity(); }
+	void translate(float dx, float dy, float dz) { context->Translate(dx,dy,dz); }
+	void rotate(float angle, float ax, float ay, float az) { context->Rotate(angle,ax,ay,az); }
+	void scale(float sx, float sy, float sz) { context->Scale(sx,sy,sz); }
+	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz) { context->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz); }
+	void concatTransform(float transform[16]) { context->ConcatTransform(transform); }
+	void transform(float transform[16]) { context->Transform(transform); }
+	void coordinateSystem(const char *name) { context->CoordinateSystem(std::string(name)); }
+	void coordSysTransform(const char *name) { context->CoordSysTransform(std::string(name)); }
+
+	void pixelFilter(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->PixelFilter(name,PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void film(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Film(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void sampler(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Sampler(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void accelerator(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Accelerator(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void surfaceIntegrator(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->SurfaceIntegrator(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void volumeIntegrator(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->VolumeIntegrator(name,PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void camera(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Camera(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void worldBegin() { context->WorldBegin(); }
+	void attributeBegin() { context->AttributeBegin(); }
+	void attributeEnd() { context->AttributeEnd(); }
+	void transformBegin() { context->TransformBegin(); }
+	void transformEnd() { context->TransformEnd(); }
+
+	void texture(const char *name, const char *type, const char *texname, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Texture(name, type, texname, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void material(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Material(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void makeNamedMaterial(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->MakeNamedMaterial(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void namedMaterial(const char *name) { context->NamedMaterial(name); }
+
+	void lightSource(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->LightSource(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void areaLightSource(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->AreaLightSource(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void portalShape(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->PortalShape(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void shape(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Shape(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void reverseOrientation() { context->ReverseOrientation(); }
+
+	void volume(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Volume(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void exterior(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Exterior(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void interior(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->Interior(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
+	void objectBegin(const char *name) { context->ObjectBegin(std::string(name)); }
+	void objectEnd() { context->ObjectEnd(); }
+	void objectInstance(const char *name) { context->ObjectInstance(std::string(name)); }
+
+	void motionInstance(const char *name, float startTime, float endTime, const char *toTransform)
+	{
+		context->MotionInstance(std::string(name), startTime, endTime, std::string(toTransform));
+	}
+
+	void worldEnd() //launch luxWorldEnd() into a thread
+	{
+		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(&PyContext::pyWorldEnd,this) ));
+	}
+
+	void loadFLM(const char* name) { context->LoadFLM(std::string(name)); }
+	void saveFLM(const char* name) { context->SaveFLM(std::string(name)); }
+	void overrideResumeFLM(const char *name) { context->OverrideResumeFLM(string(name)); }
+	void start() { context->Start(); }
+	void pause() { context->Pause(); }
+	void exit() { context->Exit(); }
+	void wait() { context->Wait(); }
+
+	void setHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone)
+	{
+		context->SetHaltSamplePerPixel(haltspp, haveEnoughSamplePerPixel, suspendThreadsWhenDone);
+	}
+
+	unsigned int addThread() { return context->AddThread(); }
+	void removeThread() { context->RemoveThread(); }
+
+	void setEpsilon(const float minValue, const float maxValue)
+	{
+		context->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
+	}
+
+	unsigned int getRenderingThreadsStatus(RenderingThreadInfo *info, unsigned int maxInfoCount)
+	{
+		return context->GetRenderingThreadsStatus(info, maxInfoCount);
+	}
+
+	void updateFramebuffer() { context->UpdateFramebuffer(); }
+
+	boost::python::list framebuffer()
+	{
+		boost::python::list pyFrameBuffer;
+		int nvalues=((int)luxStatistics("filmXres")) * ((int)luxStatistics("filmYres")) * 3; //get the number of values to copy
+		unsigned char* framebuffer=luxFramebuffer(); //get the framebuffer
+		//copy the values
+		for(int i=0;i<nvalues;i++)
+			pyFrameBuffer.append(framebuffer[i]);
+		return pyFrameBuffer;
+	}
+
+	void getHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options)
+	{
+		context->GetHistogramImage(outPixels, width, height, options);
+	}
+
+	void setParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index)
+	{
+		return context->SetParameterValue(comp, param, value, index);
+	}
+
+	double getParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index)
+	{
+		return context->GetParameterValue(comp, param, index);
+	}
+
+	double getDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index)
+	{
+		return context->GetDefaultParameterValue(comp, param, index);
+	}
+
+	void setStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, unsigned int index)
+	{
+		return context->SetStringParameterValue(comp, param, value, index);
+	}
+
+	unsigned int getStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index)
+	{
+		const string str = context->GetStringParameterValue(comp,
+			param, index);
+		unsigned int nToCopy = str.length() < dstlen ?
+			str.length() + 1 : dstlen;
+		if (nToCopy > 0) {
+			strncpy(dst, str.c_str(), nToCopy - 1);
+			dst[nToCopy - 1] = '\0';
+		}
+		return str.length();
+	}
+
+	unsigned int getDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index)
+	{
+		const string str = context->GetDefaultStringParameterValue(comp, param, index);
+		unsigned int nToCopy = str.length() < dstlen ?
+			str.length() + 1 : dstlen;
+		if (nToCopy > 0) {
+			strncpy(dst, str.c_str(), nToCopy - 1);
+			dst[nToCopy - 1] = '\0';
+		}
+		return str.length();
+	}
+
+	const char* getOptions() { return context->registry.GetContent(); }
+
+	//Queryable objects
+	//Here I do a special handling for python :
+	//Python is dynamically typed, unlike C++ which is statically typed.
+	//Python variables may hold an integer, a float, list, dict, tuple, str, long etc., among other things.
+	//So we don't need a getINT, getFLOAT, getXXX in the python api
+	//This function handles all types
+	boost::python::object getOption(const char *objectName, const char *attributeName)
+	{
+		Queryable *object=context->registry[objectName];
+		if(object!=0)
+		{
+			QueryableAttribute attr=(*object)[attributeName];
+			if(attr.type==ATTRIBUTE_INT) return boost::python::object(attr.IntValue());
+			if(attr.type==ATTRIBUTE_FLOAT) return boost::python::object(attr.FloatValue());
+			if(attr.type==ATTRIBUTE_STRING) return boost::python::object(attr.Value());
+
+			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
+		}
+		return boost::python::object(0);
+	}
+
+	void addServer(const char * name) { context->AddServer(std::string(name)); }
+	void removeServer(const char * name) { context->RemoveServer(std::string(name)); }
+	unsigned int getServerCount() { return context->GetServerCount(); }
+	void updateFilmFromNetwork() { context->UpdateFilmFromNetwork(); }
+	void setNetworkServerUpdateInterval(int updateInterval) { context->SetNetworkServerUpdateInterval(updateInterval); }
+	int getNetworkServerUpdateInterval() { return context->GetNetworkServerUpdateInterval(); }
+
+	unsigned int getRenderingServersStatus(RenderingServerInfo *info, unsigned int maxInfoCount)
+	{
+		return context->GetRenderingServersStatus(info, maxInfoCount);
+	}
+
+	double statistics(const char *statName) { return context->Statistics(statName); }
+
+	void enableDebugMode() { context->EnableDebugMode(); }
+	void disableRandomMode() { context->DisableRandomMode(); }
+
+private:
+	Context *context;
+
+	std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worldend threads
+	void pyWorldEnd()
+	{
+		context->WorldEnd();
+	}
+};
 
 
 }//namespace lux
+
 
 
 /*
@@ -355,61 +510,9 @@ BOOST_PYTHON_MODULE(pylux)
     using namespace boost::python;
     using namespace lux;
 
+    //Direct python module calls
     def("greet", greet); //Simple test function to check the module is imported
-
     def("version", luxVersion);
-    def("init", luxInit);
-    def("parse", luxParse);
-    def("cleanup", pyLuxCleanup); //wrapper
-    def("identity", luxIdentity);
-    def("translate", luxTranslate);
-    def("rotate", luxRotate);
-    def("scale", luxScale);
-    def("lookAt", luxLookAt);
-    def("concatTransform", luxConcatTransform);
-    def("transform", luxTransform);
-    def("coordinateSystem", luxCoordinateSystem);
-    def("coordSysTransform", luxCoordSysTransform);
-    def("pixelFilter", pyLuxPixelFilter); //wrapper
-    def("film",pyLuxFilm); //wrapper
-    def("sampler",pyLuxSampler); //wrapper
-    def("accelerator",pyLuxAccelerator); //wrapper
-    def("surfaceIntegrator",pyLuxSurfaceIntegrator); //wrapper
-    def("volumeIntegrator",pyLuxVolumeIntegrator); //wrapper
-    def("camera", pyLuxCamera); //wrapper
-    def("worldBegin",luxWorldBegin);
-    def("attributeBegin",luxAttributeBegin);
-    def("attributeEnd",luxAttributeEnd);
-    def("transformBegin",luxTransformBegin);
-    def("transformEnd",luxTransformEnd);
-    def("texture",pyLuxTexture); //wrapper
-    def("material",pyLuxMaterial); //wrapper
-    def("makeNamedMaterial",pyLuxMakeNamedMaterial); //wrapper
-    def("namedMaterial",pyLuxNamedMaterial); //wrapper
-    def("lightSource",pyLuxLightSource); //wrapper
-    def("areaLightSource",pyLuxAreaLightSource); //wrapper
-    def("portalShape",pyLuxPortalShape); //wrapper
-    def("shape",pyLuxShape); //wrapper
-    def("reverseOrientation",luxReverseOrientation);
-    def("volume",pyLuxVolume); //wrapper
-    def("exterior",pyLuxExterior); //wrapper
-    def("interior",pyLuxInterior); //wrapper
-    def("objectBegin",luxObjectBegin);
-    def("objectEnd",luxObjectEnd);
-    def("objectInstance",luxObjectInstance);
-    def("motionInstance",luxMotionInstance);
-    def("worldEnd",pyLuxWorldEnd); //wrapper
-    def("loadFLM",luxLoadFLM);
-    def("saveFLM",luxSaveFLM);
-    def("overrideResumeFLM",luxOverrideResumeFLM);
-    def("start",luxStart);
-    def("pause",luxPause);
-    def("exit",luxExit);
-    def("wait",luxWait);
-    def("setHaltSamplePerPixel",luxSetHaltSamplePerPixel);
-    def("addThread",luxAddThread);
-    def("removeThread",luxRemoveThread);
-    def("setEpsilon", luxSetEpsilon);
 
     // Information about the threads
     enum_<ThreadSignals>("ThreadSignals")
@@ -421,14 +524,6 @@ BOOST_PYTHON_MODULE(pylux)
 			.def_readonly("threadIndex", &RenderingThreadInfo::threadIndex)
 			.def_readonly("status", &RenderingThreadInfo::status);
         ;
-    def("renderingThreadsStatus",luxGetRenderingThreadsStatus);
-
-    // Framebuffer access
-    def("updateFramebuffer", luxUpdateFramebuffer);
-    def("framebuffer", pyLuxFramebuffer); //wrapper
-
-    // Histogram access
-    def("getHistogramImage",luxGetHistogramImage);
 
     // Parameter access
     enum_<luxComponent>("luxComponent")
@@ -497,25 +592,6 @@ BOOST_PYTHON_MODULE(pylux)
                 .value("LUX_FILM_LG_SCALE_Y",LUX_FILM_LG_SCALE_Y)
                 .value("LUX_FILM_LG_SCALE_Z",LUX_FILM_LG_SCALE_Z)
                 ;
-    // Parameter Access functions
-    def("setParameterValue",luxSetParameterValue);
-    def("getParameterValue",luxGetParameterValue);
-    def("getDefaultParameterValue",luxGetDefaultParameterValue);
-    def("setStringParameterValue",luxSetStringParameterValue);
-    def("getStringParameterValue",luxGetStringParameterValue);
-    def("getDefaultStringParameterValue",luxGetDefaultStringParameterValue);
-
-    // Queryable objects access
-    def("getOptions",luxGetOptions);
-    def("getOption", pyLuxGetOption);
-
-    // Networking
-    def("addServer",luxAddServer);
-    def("removeServer",luxRemoveServer);
-    def("getServerCount",luxGetServerCount);
-    def("updateFilmFromNetwork",luxUpdateFilmFromNetwork);
-    def("setNetworkServerUpdateInterval",luxSetNetworkServerUpdateInterval);
-    def("getNetworkServerUpdateInterval",luxGetNetworkServerUpdateInterval);
 
     class_<RenderingServerInfo>("RenderingServerInfo")
 				.def_readonly("serverIndex", &RenderingServerInfo::serverIndex)
@@ -525,16 +601,84 @@ BOOST_PYTHON_MODULE(pylux)
 				.def_readonly("numberOfSamplesReceived", &RenderingServerInfo::numberOfSamplesReceived)
 				.def_readonly("secsSinceLastContact", &RenderingServerInfo::secsSinceLastContact)
             ;
-    // information about the servers
-    def("getRenderingServersStatus",luxGetRenderingServersStatus);
-
-    // Informations and statistics
-    def("statistics",luxStatistics);
-
-    //Debug mode
-    def("enableDebugMode",luxEnableDebugMode);
-    def("disableRandomMode",luxDisableRandomMode);
 
     //Error handling in python
     def("errorHandler",pyLuxErrorHandler);
+
+    //PyContext class
+    class_<PyContext>("Context", init<std::string>())
+        .def("greet", &PyContext::greet)
+        .def("parse", &PyContext::parse)
+        .def("cleanup", &PyContext::cleanup)
+        .def("identity", &PyContext::identity)
+        .def("translate", &PyContext::translate)
+        .def("rotate", &PyContext::rotate)
+        .def("scale", &PyContext::scale)
+        .def("lookAt", &PyContext::lookAt)
+        .def("concatTransform", &PyContext::concatTransform)
+        .def("transform", &PyContext::transform)
+		.def("coordinateSystem", &PyContext::coordinateSystem)
+		.def("coordSysTransform", &PyContext::coordSysTransform)
+		.def("pixelFilter", &PyContext::pixelFilter)
+		.def("film", &PyContext::film)
+		.def("sampler", &PyContext::sampler)
+		.def("accelerator", &PyContext::accelerator)
+		.def("surfaceIntegrator", &PyContext::surfaceIntegrator)
+		.def("volumeIntegrator", &PyContext::volumeIntegrator)
+		.def("camera", &PyContext::camera)
+		.def("worldBegin", &PyContext::worldBegin)
+		.def("attributeBegin", &PyContext::attributeBegin)
+		.def("attributeEnd", &PyContext::attributeEnd)
+		.def("transformBegin", &PyContext::transformBegin)
+		.def("transformEnd", &PyContext::transformEnd)
+		.def("texture", &PyContext::texture)
+		.def("material", &PyContext::material)
+		.def("makeNamedMaterial", &PyContext::makeNamedMaterial)
+		.def("namedMaterial", &PyContext::namedMaterial)
+		.def("lightSource", &PyContext::lightSource)
+		.def("areaLightSource", &PyContext::areaLightSource)
+		.def("portalShape", &PyContext::portalShape)
+		.def("shape", &PyContext::shape)
+		.def("reverseOrientation", &PyContext::reverseOrientation)
+		.def("volume", &PyContext::volume)
+		.def("exterior", &PyContext::exterior)
+		.def("interior", &PyContext::interior)
+		.def("objectBegin", &PyContext::objectBegin)
+		.def("objectEnd", &PyContext::objectEnd)
+		.def("objectInstance", &PyContext::objectInstance)
+		.def("motionInstance", &PyContext::motionInstance)
+		.def("loadFLM", &PyContext::loadFLM)
+		.def("saveFLM", &PyContext::saveFLM)
+		.def("overrideResumeFLM", &PyContext::overrideResumeFLM)
+		.def("start", &PyContext::start)
+		.def("pause", &PyContext::pause)
+		.def("exit", &PyContext::exit)
+		.def("wait", &PyContext::wait)
+		.def("setHaltSamplePerPixel", &PyContext::setHaltSamplePerPixel)
+		.def("addThread", &PyContext::addThread)
+		.def("removeThread", &PyContext::removeThread)
+		.def("setEpsilon", &PyContext::setEpsilon)
+		.def("getRenderingThreadsStatus", &PyContext::getRenderingThreadsStatus)
+		.def("updateFramebuffer", &PyContext::updateFramebuffer)
+		.def("framebuffer", &PyContext::framebuffer)
+		.def("getHistogramImage", &PyContext::getHistogramImage)
+		.def("setParameterValue", &PyContext::setParameterValue)
+		.def("getParameterValue", &PyContext::getParameterValue)
+		.def("getDefaultParameterValue", &PyContext::getDefaultParameterValue)
+		.def("setStringParameterValue", &PyContext::setStringParameterValue)
+		.def("getStringParameterValue", &PyContext::getStringParameterValue)
+		.def("getDefaultStringParameterValue", &PyContext::getDefaultStringParameterValue)
+		.def("getOptions", &PyContext::getOptions)
+		.def("getOption", &PyContext::getOption)
+		.def("addServer", &PyContext::addServer)
+		.def("removeServer", &PyContext::removeServer)
+		.def("getServerCount", &PyContext::getServerCount)
+		.def("updateFilmFromNetwork", &PyContext::updateFilmFromNetwork)
+		.def("setNetworkServerUpdateInterval", &PyContext::setNetworkServerUpdateInterval)
+		.def("getNetworkServerUpdateInterval", &PyContext::getNetworkServerUpdateInterval)
+		.def("getRenderingServersStatus", &PyContext::getRenderingServersStatus)
+		.def("statistics", &PyContext::statistics)
+		.def("enableDebugMode", &PyContext::enableDebugMode)
+		.def("disableRandomMode", &PyContext::disableRandomMode)
+		;
 }

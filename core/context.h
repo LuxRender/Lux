@@ -80,6 +80,8 @@ public:
 	void Cleanup();
 	void Free();
 
+	std::string GetName() { return name; }
+
 	// API Function Declarations
 	void Accelerator(const string &name, const ParamSet &params);
 	void AreaLightSource(const string &name, const ParamSet &params);
@@ -97,7 +99,7 @@ public:
 	void LightSource(const string &name, const ParamSet &params);
 	void LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 		float ux, float uy, float uz);
-	void MakeNamedMaterial(const string &name, ParamSet &params);
+	void MakeNamedMaterial(const string &name, const ParamSet &params);
 	void Material(const string &name, const ParamSet &params);
 	void MotionInstance(const string &name, float startTime, float endTime,
 		const string &toTransform);

@@ -433,8 +433,9 @@ void Context::Material(const string &n, const ParamSet &params) {
 	graphicsState->material = MakeMaterial(n, curTransform, params);
 }
 
-void Context::MakeNamedMaterial(const string &n, ParamSet &params) {
+void Context::MakeNamedMaterial(const string &n, const ParamSet &_params) {
 	VERIFY_WORLD("MakeNamedMaterial");
+	ParamSet params=_params;
 	renderFarm->send("luxMakeNamedMaterial", n, params);
 	if (graphicsState->namedMaterials.find(n) !=
 		graphicsState->namedMaterials.end()) {
