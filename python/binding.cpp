@@ -470,6 +470,40 @@ public:
 		return boost::python::object(0);
 	}
 
+	void setOption(const char * objectName, const char * attributeName, boost::python::object value)
+	{
+		//void luxSetOption(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if(object!=0)
+		{
+			QueryableAttribute &attribute=(*object)[attributeName];
+			//return (*object)[attributeName].IntValue();
+			switch(attribute.type)
+			{
+			case ATTRIBUTE_INT :
+				attribute.SetValue(boost::python::extract<int>(value));
+				break;
+
+			case ATTRIBUTE_FLOAT :
+				attribute.SetValue(boost::python::extract<float>(value));
+				break;
+
+			case ATTRIBUTE_STRING :
+				attribute.SetValue(boost::python::extract<std::string>(value));
+				break;
+
+			case ATTRIBUTE_NONE :
+			default:
+				LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
+			}
+		}
+		else
+		{
+			LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+		}
+	}
+
+
 	void addServer(const char * name) { context->AddServer(std::string(name)); }
 	void removeServer(const char * name) { context->RemoveServer(std::string(name)); }
 	unsigned int getServerCount() { return context->GetServerCount(); }
@@ -670,6 +704,7 @@ BOOST_PYTHON_MODULE(pylux)
 		.def("getDefaultStringParameterValue", &PyContext::getDefaultStringParameterValue)
 		.def("getOptions", &PyContext::getOptions)
 		.def("getOption", &PyContext::getOption)
+		.def("setOption", &PyContext::setOption)
 		.def("addServer", &PyContext::addServer)
 		.def("removeServer", &PyContext::removeServer)
 		.def("getServerCount", &PyContext::getServerCount)

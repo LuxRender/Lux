@@ -666,6 +666,10 @@ extern "C" void luxSetOption(const char * objectName, const char * attributeName
 			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
 		}
 	}
+	else
+	{
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
 }
 
 extern "C" void luxEnableDebugMode()
