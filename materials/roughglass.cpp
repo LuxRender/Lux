@@ -67,13 +67,13 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 			1.f / vrough);
 	if (!R.Black()) {
 		Fresnel *fresnel = ARENA_ALLOC(tspack->arena,
-			FresnelDielectric)(1.f, ior, cb);
+			FresnelDielectric)(ior, cb, 0.f);
 		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(R, fresnel,
 			md));
 	}
 	if (!T.Black()) {
 		Fresnel *fresnel = ARENA_ALLOC(tspack->arena,
-			FresnelDielectricComplement)(1.f, ior, cb);
+			FresnelDielectricComplement)(ior, cb, 0.f);
 		bsdf->Add(ARENA_ALLOC(tspack->arena,
 			BRDFToBTDF)(ARENA_ALLOC(tspack->arena, Microfacet)(T,
 			fresnel, md), 1.f, ior, cb));

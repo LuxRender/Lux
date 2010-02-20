@@ -34,7 +34,7 @@ class CauchyTexture : public Texture<const Fresnel *> {
 public:
 	// ConstantTexture Public Methods
 	CauchyTexture(float cauchya, float cauchyb) :
-		fresnel(1.f, cauchya, cauchyb),
+		fresnel(cauchya, cauchyb, 0.f),
 		index(cauchya + cauchyb * 1e6f /
 		(WAVELENGTH_END * WAVELENGTH_START)) { }
 	virtual ~CauchyTexture() { }
