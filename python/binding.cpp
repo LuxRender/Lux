@@ -201,7 +201,9 @@ public:
 	{
 		//TODO jromang - add thread lock here (we can only parse in one context)
 		Context::SetActive(context);
-		return luxParse(filename);
+		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
+		//return luxParse(filename);
+		return true;
 	}
 
 	void cleanup() { context->Cleanup(); }
