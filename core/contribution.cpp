@@ -110,6 +110,8 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 		for(u_int i = 0; i < CSplat.size(); ++i)
 			CSplat[i]->Splat(film);
 
+		film->CheckWriteOuputInterval();
+
 		// return previously obtained buffer
 		return cold;
 	}

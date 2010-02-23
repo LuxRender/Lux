@@ -829,7 +829,6 @@ void Film::AddSample(Contribution *contrib) {
 		}
 	}
 
-	CheckWriteOuputInterval();
 }
 
 
