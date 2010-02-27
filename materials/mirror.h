@@ -40,6 +40,11 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Mirror() { }
+	virtual void GetShadingGeometry(const DifferentialGeometry &dgGeom,
+		DifferentialGeometry *dgBump) const {
+		if (bumpMap)
+			Bump(bumpMap, dgGeom, dgBump);
+	}
 	virtual BSDF *GetBSDF(const TsPack *tspack,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,

@@ -95,6 +95,7 @@ BSDF *Intersection::GetBSDF(const TsPack *tspack,
 	DifferentialGeometry dgShading;
 	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg,
 		&dgShading);
+	material->GetShadingGeometry(dg, &dgShading);
 	return material->GetBSDF(tspack, dg, dgShading, exterior, interior);
 }
 

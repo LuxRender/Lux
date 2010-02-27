@@ -36,15 +36,10 @@ using namespace lux;
 
 // Glossy Method Definitions
 BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
+	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
+	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum s = Ks->Evaluate(tspack, dgs);

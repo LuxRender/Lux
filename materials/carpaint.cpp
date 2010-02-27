@@ -60,17 +60,10 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 // CarPaint Method Definitions
 BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
+	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const {
 
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-
+	// Allocate _BSDF_
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn);
 
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection

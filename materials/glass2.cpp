@@ -36,16 +36,10 @@ using namespace lux;
 
 // Glass Method Definitions
 BSDF *Glass2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
+	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-
+	// Allocate _BSDF_
 	const Fresnel *fre = exterior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
 	const Fresnel *fri = interior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
 	const float ior = fri->Index(tspack) / fre->Index(tspack);

@@ -40,15 +40,10 @@ using namespace lux;
 // RoughGlass Method Definitions
 BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
+	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
+	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(tspack, dgs);
 	float cb = cauchyb->Evaluate(tspack, dgs);

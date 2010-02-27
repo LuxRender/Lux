@@ -35,16 +35,10 @@ using namespace lux;
 
 // Mirror Method Definitions
 BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
+	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
-	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	DifferentialGeometry dgs;
-	if (bumpMap)
-		Bump(bumpMap, dgGeom, dgShading, &dgs);
-	else
-		dgs = dgShading;
-
+	// Allocate _BSDF_
 	float flm = film->Evaluate(tspack, dgs);
 	float flmindex = filmindex->Evaluate(tspack, dgs);
 
