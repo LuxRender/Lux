@@ -308,8 +308,8 @@ bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
 void PerspectiveCamera::ClampRay(Ray &ray) const
 {
 	const float cosi = Dot(ray.d, normal);
-	ray.mint = ClipHither / cosi;
-	ray.maxt = ClipYon / cosi;
+	ray.mint = max(ray.mint, ClipHither / cosi);
+	ray.maxt = min(ray.maxt, ClipYon / cosi);
 }
 
 void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) const

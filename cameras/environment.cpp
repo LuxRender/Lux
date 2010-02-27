@@ -129,8 +129,8 @@ bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi,
 
 void EnvironmentCamera::ClampRay(Ray &ray) const
 {
-	ray.mint = ClipHither;
-	ray.maxt = ClipYon;
+	ray.mint = max(ray.mint, ClipHither);
+	ray.maxt = min(ray.maxt, ClipYon);
 }
 
 Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, 

@@ -157,8 +157,8 @@ bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float dist
 
 void OrthoCamera::ClampRay(Ray &ray) const
 {
-	ray.mint = ClipHither;
-	ray.maxt = ClipYon;
+	ray.mint = max(ray.mint, ClipHither);
+	ray.maxt = min(ray.maxt, ClipYon);
 }
 
 BBox OrthoCamera::Bounds() const

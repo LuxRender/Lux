@@ -40,11 +40,8 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
 {
 	RayDifferential ray(r);
 	ray.time = tspack->time;
-	if (cameraClip) {
+	if (cameraClip)
 		tspack->camera->ClampRay(ray);
-		ray.mint = max(ray.mint, r.mint);
-		ray.maxt = min(ray.maxt, r.maxt);
-	}
 	Vector d(Normalize(ray.d));
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
