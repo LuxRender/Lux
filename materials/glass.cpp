@@ -26,7 +26,7 @@
 #include "bxdf.h"
 #include "specularreflection.h"
 #include "speculartransmission.h"
-#include "fresneldielectric.h"
+#include "fresnelcauchy.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -56,7 +56,7 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)(ior, cb, 0.f);
+	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior, cb, 0.f);
 	if (!R.Black()) {
 		if (architectural)
 			bsdf->Add(ARENA_ALLOC(tspack->arena, ArchitecturalReflection)(R,

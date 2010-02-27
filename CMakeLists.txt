@@ -414,11 +414,12 @@ SET(lux_core_reflection_src
 	core/reflection/bxdf/schlickbrdf.cpp
 	core/reflection/bxdf/specularreflection.cpp
 	core/reflection/bxdf/speculartransmission.cpp
-	core/reflection/fresnel/fresnelnoop.cpp
-	core/reflection/fresnel/fresneldielectric.cpp
+	core/reflection/fresnel/fresnelcauchy.cpp
 	core/reflection/fresnel/fresnelconductor.cpp
-	core/reflection/fresnel/fresnelslick.cpp
+	core/reflection/fresnel/fresneldielectric.cpp
 	core/reflection/fresnel/fresnelgeneral.cpp
+	core/reflection/fresnel/fresnelnoop.cpp
+	core/reflection/fresnel/fresnelslick.cpp
 	core/reflection/microfacetdistribution/anisotropic.cpp
 	core/reflection/microfacetdistribution/beckmann.cpp
 	core/reflection/microfacetdistribution/blinn.cpp

@@ -25,6 +25,7 @@
 #include "memory.h"
 #include "bxdf.h"
 #include "brdftobtdf.h"
+#include "fresnelcauchy.h"
 #include "fresneldielectric.h"
 #include "microfacet.h"
 #include "blinn.h"
@@ -66,8 +67,8 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / urough,
 			1.f / vrough);
 	if (!R.Black()) {
-		Fresnel *fresnel = ARENA_ALLOC(tspack->arena,
-			FresnelDielectric)(ior, cb, 0.f);
+		Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior,
+			cb, 0.f);
 		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(R, fresnel,
 			md));
 	}

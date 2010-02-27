@@ -20,32 +20,38 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// cauchytexture.h*
+#ifndef LUX_FRESNELCAUCHY_H
+#define LUX_FRESNELCAUCHY_H
+// fresnelcauchy.h*
 #include "lux.h"
-#include "texture.h"
-#include "fresnelcauchy.h"
-#include "paramset.h"
+#include "fresnel.h"
 
 namespace lux
 {
 
-// CauchyTexture Declarations
-class CauchyTexture : public Texture<const Fresnel *> {
+class  FresnelCauchy : public Fresnel {
 public:
-	// ConstantTexture Public Methods
-	CauchyTexture(float cauchya, float cauchyb) :
-		fresnel(cauchya, cauchyb, 0.f), index(cauchya + cauchyb * 1e6f /
-		(WAVELENGTH_END * WAVELENGTH_START)) { }
-	virtual ~CauchyTexture() { }
-	virtual const Fresnel *Evaluate(const TsPack *tspack,
-		const DifferentialGeometry &dg) const { return &fresnel; }
-	virtual float Y() const { return index; }
-
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	// FresnelCauchy Public Methods
+	FresnelCauchy(float e, float cB, const SWCSpectrum &a_) : a(a_) {
+		eta_t = e;
+		cb = cB * 1e6f;
+	}
+	virtual ~FresnelCauchy() { }
+	virtual void Evaluate(const TsPack *tspack, float cosi,
+		SWCSpectrum *const f) const;
+	virtual float Index(const TsPack *tspack) const;
+	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+		return a;
+	}
+	virtual void ComplexEvaluate(const TsPack *tspack,
+		SWCSpectrum *fr, SWCSpectrum *fi) const;
 private:
-	FresnelCauchy fresnel;
-	float index;
+	// FresnelCauchy Private Data
+	float eta_t, cb;
+	SWCSpectrum a;
 };
 
 }//namespace lux
+
+#endif // LUX_FRESNELCAUCHY_H
 
