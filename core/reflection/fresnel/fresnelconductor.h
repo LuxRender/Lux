@@ -43,7 +43,9 @@ public:
 		return eta.Filter(tspack);
 	}
 	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
-		return k / SWCSpectrum(tspack->swl->w) * (4.f * M_PI);
+		// The 4e-9*Pi comes from Beer law (4*Pi) and unit conversion
+		// of w from nm to m
+		return k / SWCSpectrum(tspack->swl->w) * (4e-9f * M_PI);
 	}
 	virtual void ComplexEvaluate(const TsPack *tspack,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {

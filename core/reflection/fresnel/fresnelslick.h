@@ -32,8 +32,8 @@ namespace lux
 
 class  FresnelSlick : public Fresnel {
 public:
-	FresnelSlick (const SWCSpectrum &r, const SWCSpectrum &k_) :
-		normalIncidence(r), k(k_) { }
+	FresnelSlick (const SWCSpectrum &r, const SWCSpectrum &a_) :
+		normalIncidence(r), a(a_) { }
 	virtual ~FresnelSlick() { }
 	virtual void Evaluate(const TsPack *tspack, float cosi,
 		SWCSpectrum *const f) const;
@@ -42,15 +42,17 @@ public:
 			(SWCSpectrum(1.f) + normalIncidence.Sqrt())).Filter(tspack);
 	}
 	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
-		return k / SWCSpectrum(tspack->swl->w) * (4.f * M_PI);
+		return a;
 	}
 	virtual void ComplexEvaluate(const TsPack *tspack,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
 		*fr = Index(tspack);
-		*fi = k;
+		// The 4e9*Pi comes from Beer law (4*Pi) and unit conversion
+		// of w from nm to m
+		*fi = a * SWCSpectrum(tspack->swl->w) / (4e9f * M_PI);
 	}
 private:
-  SWCSpectrum normalIncidence, k;
+	SWCSpectrum normalIncidence, a;
 };
 
 }//namespace lux

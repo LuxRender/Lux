@@ -38,7 +38,7 @@ public:
 	SopraTexture(const vector<float> &wl, const vector<float> &n,
 		const vector<float> &k) :
 		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
-		index(N.Y()) { }
+		index(N.Filter()) { }
 	virtual ~SopraTexture() { }
 	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
